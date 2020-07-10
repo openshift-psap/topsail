@@ -1,0 +1,10 @@
+---
+- name: Gather Debug - Check kubeconfig
+  debug:
+    msg: "{{ kubeconfig }}"
+
+- name: Gather Debug - Get oc user
+  command: >
+    oc whoami 
+    --kubeconfig={{ openshift_kubeconfig_path }}
+  register: oc_user

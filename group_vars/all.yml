@@ -1,0 +1,2 @@
+# GPU definition file, Cloud agnostic key=values
+gpu_machineset_deff: "gpu_machineset_definition.json"
