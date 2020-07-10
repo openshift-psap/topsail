@@ -6,8 +6,6 @@
 ###############################################################################
 # Required configuration variables                                            #
 ###############################################################################
-openshift_kubeconfig_path="$KUBECONFIG"
-
 # json raw template from running workers
 gpu_machineset_template=gpu_machineset_aws_template.json
 
