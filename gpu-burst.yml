@@ -1,0 +1,31 @@
+---
+- name: Debug init checks
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
+  tasks:
+  - import_role:
+      name: openshift_node
+      tasks_from: gather_debug.yml
+- name: Pre-scaleup checks
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+  vars:
+    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
+  tasks:
+  - import_role:
+      name: openshift_node
+      tasks_from: scaleup_checks.yml   
+- name: Create GPU machines
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+  vars:
+    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
+  tasks:
+  - import_role:
+      name: openshift_node
+      tasks_from: create_machine.yml   
