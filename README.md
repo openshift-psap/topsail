@@ -11,7 +11,7 @@ GPU-burst leverages OpenShift machine autoscaling API to burst GPU nodes
 
 ## Setup
 
-The only thing that needs to be set is the instance type you want to scaleup at `inventory/<cloud-provider>/hosts, default is set to `p3.2xlarge`(AWS Default GPU node)
+The only thing that needs to be set is the instance type you want to scaleup at `inventory/<cloud-provider>/hosts`, default is set to `p3.2xlarge`(AWS Default GPU node)
 
 After that run the playbook
 
