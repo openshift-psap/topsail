@@ -2,6 +2,7 @@
 # If ansible_user is not root, ansible_become must be set to true and the
 # user must be configured for passwordless sudo
 #ansible_become=True
+localhost ansible_host=localhost
 
 ###############################################################################
 # Required configuration variables                                            #

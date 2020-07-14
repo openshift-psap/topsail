@@ -9,6 +9,7 @@
   - import_role:
       name: openshift_node
       tasks_from: gather_debug.yml
+
 - name: Pre-scaleup checks
   hosts: localhost
   connection: local
@@ -19,6 +20,7 @@
   - import_role:
       name: openshift_node
       tasks_from: scaleup_checks.yml   
+
 - name: Create GPU machines
   hosts: localhost
   connection: local

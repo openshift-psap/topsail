@@ -1,0 +1,32 @@
+---
+# Install and test NFD
+- name: CI Run OpenShift NFD
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
+  roles:
+  - openshift_nfd
+
+# Install and test SRO
+- name: CI Run OpenShift NFD
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
+  roles:
+  - openshift_sro
+  when: ci_sro == 'yes'
+
+# Install and test NV_GPU
+- name: CI Run OpenShift NV_GPU Operator
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
+  roles:
+  - nv_gpu
+  when: ci_nv_gpu == 'yes'

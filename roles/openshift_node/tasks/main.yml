@@ -1,0 +1,8 @@
+---
+# If using AWS
+- name: If using AWS, get node info for AWS nodes
+  include_tasks: aws.yaml
+  when: aws_check == 'yes'
+
+- include_tasks: scaleup_checks.yml 
+- include_tasks: create_machine.yml

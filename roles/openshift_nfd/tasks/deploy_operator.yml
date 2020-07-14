@@ -1,0 +1,10 @@
+---
+# Install NFD to the cluster
+- name: Deploy the operator
+  make:
+    chdir: '{{ nfd_download_path }}'
+    target: 'deploy'
+
+# Let user know the success
+- debug:
+    msg: 'NFD successfully installed to your cluster.'
