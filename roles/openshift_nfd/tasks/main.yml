@@ -1,0 +1,63 @@
+---
+
+# See if NFD has been installed to the user's cluster
+- name: Check if Node Feature Discovery has already been installed
+  block:
+    - name: Checking if Node Feature Discovery has already been installed to your cluster
+      shell: 'oc get crds | grep nodefeaturediscoveries.nfd.openshift.io'
+      register: nfd_installation
+  rescue:
+    - name: Node Feature Discovery not installed to your cluster.
+      debug:
+        msg: >
+          Node Feature Discovery (NFD) has not been installed to your cluster. Could not
+          find NFD custom resources. Ignoring false error. Continuing...
+
+# If the user is attempting to uninstall NFD when NFD is *not* installed, throw an error
+- name: Cannot uninstall NFD
+  fail:
+    msg: >
+      Node Feature Discovery (NFD) is not installed; therefore, it is not possible to
+      uninstall it. Ending the play now. (( P.S. If you would like to uninstall other
+      operators (e.g., SRO or the Kubeflow ones), then you should set the 'uninstall_nfd',
+      'uninstall_sro', and 'uninstall_kubeflow' extra vars equal to 'yes' or 'no',
+      depending on which one(s) you want to uninstall. ))
+  when: nfd_installation.stdout == '' and user_mode == 'uninstall'
+
+
+# Let user know if NFD has been installed to the cluster if the user wants to install it,
+# but does not force a reinstall.
+- debug:
+    msg: >
+      Node Feature Discovery (NFD) is already installed to your cluster. If you want to
+      force a reinstall, set the 'force_reinstall' extra var equal to 'yes' when running
+      the main playbook.
+  when: nfd_installation.stdout != '' and reinstall == 'no'
+
+# If forcing a reinstall or doing a fresh install, then call the following block
+- block:
+
+  # Download the git repo
+  - include_tasks: clone_nfd_git_repo.yaml 
+
+  # Call the below playbook when the user is forcing a reinstall of NFD
+  - include_tasks: uninstall_nfd.yaml 
+    when: >
+      (nfd_installation.stdout != '' and reinstall == 'yes') or
+      (nfd_installation.stdout != '' and user_mode == 'uninstall')
+
+  # Deploy the operator
+  - include_tasks: deploy_operator.yaml
+    when: >
+      user_mode == 'install'
+
+  # Remove the NFD download folder
+  - name: Remove NFD git repo
+    file:
+      state: absent
+      path: '{{ nfd_download_path }}'
+
+  when: >
+    (nfd_installation.stdout == '' and user_mode == 'install') or
+    (nfd_installation.stdout != '' and user_mode == 'install' and reinstall == 'yes') or
+    (nfd_installation.stdout != '' and user_mode == 'uninstall')

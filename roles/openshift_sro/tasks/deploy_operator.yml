@@ -1,0 +1,34 @@
+---
+# Build SRO
+- name: Build SRO
+  block:
+    - name: Attempting to build SRO
+      make:
+        chdir: '{{ sro_download_path }}'
+        target: 'build'
+        params:
+          PULLPOLICY: 'Always'
+          GOROOT: '{{ GOROOT }}'
+          GOPATH: '{{ GOPATH }}'
+          GOPROXY: 'https://proxy.golang.org'
+          GO111MODULE: 'on'
+          GO_BUILD_RECIPE: 'GOOS=$(GOOS) go build -o $(BIN) $(MAIN_PACKAGE)'
+  rescue:
+    - name: SRO build attempt failed
+      debug:
+        msg: 'SRO Build attempt failed. If the error suggests that a Go module could not be found, you may need to run "go get <module>" before running this playbook to fix your error.'
+    - meta: end_play
+
+# Let user know that SRO has successfully been built
+- debug:
+    msg: 'SRO has successfully been built.'
+
+# Install SRO to the cluster
+- name: Deploy the operator
+  make:
+    chdir: '{{ sro_download_path }}'
+    target: 'deploy'
+
+# Let user know the success
+- debug:
+    msg: 'SRO successfully installed to your cluster.'

@@ -1,4 +1,0 @@
----
-# this playbook uses ansible fact-gathering to collect the 
-# needed info from the OCP worker nodes:q
-# 
