@@ -7,4 +7,3 @@
     kubeconfig: "{{ ansible_env.KUBECONFIG }}"
   roles:
   - openshift_node    
-
