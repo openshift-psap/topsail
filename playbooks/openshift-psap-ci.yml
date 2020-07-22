@@ -7,4 +7,17 @@
   vars:
     kubeconfig: "{{ ansible_env.KUBECONFIG }}"
   roles:
-  - openshift_nfd
+    - role: openshift_nfd
+      when: test_nfd_operator == "yes"
+    
+# Install and test SRO
+- name: CI Run OpenShift SRO
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
+  roles:
+    - role: openshift_sro
+      when: test_sr_operator == "yes"
+    

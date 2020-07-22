@@ -4,6 +4,10 @@
   make:
     chdir: '{{ nfd_download_path }}'
     target: 'deploy'
+    params:
+      PULLPOLICY: "Always"
+      ORG: "openshift-psap"
+
 
 # Let user know the success
 - debug:
