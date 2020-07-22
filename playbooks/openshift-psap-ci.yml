@@ -7,26 +7,17 @@
   vars:
     kubeconfig: "{{ ansible_env.KUBECONFIG }}"
   roles:
-  - openshift_nfd
-
+    - role: openshift_nfd
+      when: test_nfd_operator == "yes"
+    
 # Install and test SRO
-- name: CI Run OpenShift NFD
+- name: CI Run OpenShift SRO
   hosts: localhost
   connection: local
   gather_facts: true
   vars:
     kubeconfig: "{{ ansible_env.KUBECONFIG }}"
   roles:
-  - openshift_sro
-  when: ci_sro == 'yes'
-
-# Install and test NV_GPU
-- name: CI Run OpenShift NV_GPU Operator
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  vars:
-    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
-  roles:
-  - nv_gpu
-  when: ci_nv_gpu == 'yes'
+    - role: openshift_sro
+      when: test_sr_operator == "yes"
+    

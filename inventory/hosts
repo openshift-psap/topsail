@@ -1,0 +1,5 @@
+[all:vars]
+
+[targets]
+localhost ansible_host=localhost
+

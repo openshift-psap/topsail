@@ -1,0 +1,41 @@
+---
+- name: Create the test namespace for the GPU Operator
+  block:
+    - name: apply namespace manifest 
+      command: oc apply -f "{{ gpu_operator_namespace }}"
+      register: test_namespace
+  rescue:
+    - name: Failed when creating the test namespace for the GPU Operator
+      fail:
+        msg: "{{ test_namespace }}"
+          
+- name: Create the operatorGroup object
+  block:
+    - name: apply operatorGroup manifest 
+      command: oc apply -f "{{ gpu_operator_operatorgroup }}"
+      register: test_operatorgroup
+  rescue:
+    - name: Failed when creating the operatorGroup object for the GPU Operator
+      fail:
+        msg: "{{ test_operatorgroup }}"
+          
+- name: Create the test operatorHub subscription for the GPU Operator
+  block:
+    - name: apply operatorhub subscription manifest 
+      command: oc apply -f "{{ gpu_operator_operatorhub_sub }}"
+      register: test_operatorhub_sub
+  rescue:
+    - name: Failed when creating the test operatorHub subscription for the GPU Operator
+      fail:
+        msg: "{{ test_operatorhub_sub }}"
+          
+- name: Create the test clusterPolicy CR for the GPU Operator
+  block:
+    - name: apply clusterpolicy manifest 
+      command: oc apply -f "{{ gpu_operator_crs }}"
+      register: test_clusterpolicy_cr
+  rescue:
+    - name: Failed when creating the test clusterpolicy CR for the GPU Operator
+      fail:
+        msg: "{{ test_clusterpolicy_cr }}"
+          

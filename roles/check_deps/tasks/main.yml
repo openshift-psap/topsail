@@ -1,28 +1,31 @@
 ---
 - name: Check for 'kubectl'
-  command: 'which kubectl'
+  command: >
+    type -a kubectl
   register: kubectl_cli
-  ignore_errors: yes
+  ignore_errors: True
 
 - name: If kubectl does not exist, check for 'oc'
-  command: 'which oc'
+  command: >
+    type -a oc
   register: oc_cli
-  ignore_errors: yes
+  ignore_errors: True
 
 - name: Check for 'jq', needed for parsing and debugging oc outputs
-  command: 'which jq'
+  command: >
+    type -a jq
   register: jq_cli
-  ignore_errors: yes
+  ignore_errors: True
 
 - name: check if the kubeconfig file exists
   stat: 
     path: "{{ kubeconfig }}"
   register: kubeconfig_file
 
-- name: Ensure [new_wg] group is populated
+- name: Kubeconfig file stat
   fail:
     msg: "Kubeconfig not found at {{ kubeconfig }}"
-  when: kubeconfig_file.exists == False 
+  when: kubeconfig_file.stat.exists != True 
   
 - name: Get oc user
   command: >
@@ -34,21 +37,4 @@
   - name: End play if user does not have oc or kubectl in PATH
     debug:
       msg: 'Could not find kubectl or oc CLI tools. Please update your PATH env variable or install kubectl/oc'
-  - meta: end_play
-  when: kubectl_cli.stdout == '' and oc_cli.stdout == ''
-
-- debug:
-    msg: 'Successfully found kubectl'
-  when: kubectl_cli.stdout != ''
-
-- debug:
-    msg: 'Successfully found oc'
-  when: oc_cli.stdout != ''
-
-- debug:
-    msg: 'Successfully found jq'
-  when: jq_cli.stdout != ''
-
-- debug:
-    msg: 'Could not found jq, please install jq tool'
-  when: jq_cli.stdout == ''
+  when: kubectl_cli is failed and oc_cli is failed
