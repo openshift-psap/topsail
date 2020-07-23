@@ -1,0 +1,45 @@
+#!/bin/bash -e
+#
+# This file serves as the default command to the openshift-ansible image.
+# Runs a playbook with inventory as specified by environment variables.
+#
+# SOURCE and HOME DIRECTORY: /opt/ci-artifacts/src
+
+set -o nounset
+set -o errexit
+set -o pipefail
+
+if [[ -z "${KUBECONFIG}" ]]
+then
+		echo "No kubeconfig, can't continue"
+		exit 1
+fi
+
+cd ${WORK_DIR}
+
+INVENTORY_ARG="-i inventory/hosts"
+OPTS-"-v"
+while true; do
+	case ${1:-} in
+
+        "gpu-ci")
+
+		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbook/gpu-burst.yml
+		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbook/openshift-psap-ci.yml
+	;;
+	
+	"psap-ci")
+		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbook/openshift-psap-ci.yml
+	;;
+
+        -*)
+            echo "Unknown option: ${1:-}"
+            exit 1
+        ;;
+	*)
+		break
+	;;
+	esac
+done
+
+exit 0

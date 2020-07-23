@@ -1,26 +1,26 @@
 FROM centos:7 
+
 MAINTAINER OpenShift PSAP Team <openshift-psap@redhat.com>
 
 USER root
 
+LABEL 	io.k8s.display-name="OpenShift PSAP Ci artifacts" \
+      	io.k8s.description="This are artifacts to run PSAP Ci" \
+ 	name="ci-artifacts" \
+	url="https://github.com/openshift-psap/ci-artifacts"
+
+# Add image scripts and files for running as a system container
+COPY build/root /
+# Add origin repo for including the oc client
+COPY build/origin-extra-root /
+
 RUN yum -y update \
  && yum -y install epel-release centos-release-openshift-origin \
  && yum -y install origin-clients \
+ && yum-config-manager --enable built > /dev/null && \
+    yum install --setopt=tsflags=nodocs -y \
+      openshift-ansible-test \
  && yum clean all
-
-RUN yum install -y \
-      ansible \
-      ansible-runner \
-      ansible-runner-http \
-      python-kubernetes \
-      python-openshift \
-      python-jmespath \
-      tini \
-      jq \
-      inotify-tools \
-      python-requests-2.6.0-7.el7_7 \
- && yum clean all \
- && rm -rf /var/cache/yum
 
 # Set up Ansible
 RUN mkdir -p /etc/ansible \
@@ -34,7 +34,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # Set up the runner user
 ENV USER_UID=1001 \
     USER_NAME=psap-ci-runner\
-    HOME=/opt/ci-artifacts
+    HOME=/opt/ci-artifacts/src/ 
 
 COPY group_vars ${HOME}/group_vars
 COPY inventory ${HOME}/inventory
@@ -49,8 +49,6 @@ RUN mkdir -p ${HOME}/.ansible/tmp \
  && chmod -R ug+rwx ${HOME}
 
 USER ${USER_UID}
-ENTRYPOINT ["entrypoint.sh"]
-LABEL 	io.k8s.display-name="OpenShift PSAP Ci artifacts" \
-      	io.k8s.description="This are artifacts to run PSAP Ci" \
- 	name="ci-artifacts" \
-	url="https://github.com/openshift-psap/ci-artifacts"
+WORKDIR ${HOME}
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
+CMD [ "/usr/loca/bin/run" ]
