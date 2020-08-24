@@ -1,4 +1,4 @@
-FROM centos:7 
+FROM centos:8 
 
 MAINTAINER OpenShift PSAP Team <openshift-psap@redhat.com>
 
@@ -11,25 +11,26 @@ LABEL 	io.k8s.display-name="OpenShift PSAP Ci artifacts" \
 
 # Add image scripts and files for running as a system container
 COPY build/root /
-# Add origin repo for including the oc client
-COPY build/origin-extra-root /
 
-RUN yum -y update \
- && yum -y install epel-release centos-release-openshift-origin \
- && yum -y install origin-clients \
- && yum-config-manager --enable built > /dev/null && \
-    yum install --setopt=tsflags=nodocs -y \
-      openshift-ansible-test \
- && yum clean all
+# Install openshift-ansible RPMs
+RUN yum install -y epel-release \
+    && yum update -y \
+    && yum install --setopt=tsflags=nodocs -y \
+      jq wget git\
+      inotify-tools \
+      python3 openssh-clients \
+ && yum clean all \
+ && rm -rf /var/cache/yum
+
+# Get kubectl binary
+ENV OC_RELEASE=4.5.3
+RUN wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/$OC_RELEASE/openshift-client-linux-$OC_RELEASE.tar.gz
 
 # Set up Ansible
 RUN mkdir -p /etc/ansible \
     && echo "localhost ansible_connection=local" > /etc/ansible/hosts
 COPY ansible.cfg /etc/ansible/ansible.cfg
 RUN sed -i '19s/roles\//\/opt\/ci-artifacts\/roles/' /etc/ansible/ansible.cfg
-
-COPY build/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Set up the runner user
 ENV USER_UID=1001 \
@@ -51,4 +52,4 @@ RUN mkdir -p ${HOME}/.ansible/tmp \
 USER ${USER_UID}
 WORKDIR ${HOME}
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
-CMD [ "/usr/loca/bin/run" ]
+CMD [ "/usr/local/bin/run" ]
