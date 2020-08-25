@@ -18,18 +18,17 @@ fi
 cd ${WORK_DIR}
 
 INVENTORY_ARG="-i inventory/hosts"
-OPTS-"-v"
 while true; do
 	case ${1:-} in
 
         "gpu-ci")
 
-		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbook/gpu-burst.yml
-		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbook/openshift-psap-ci.yml
+		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbooks/gpu-burst.yml
+		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbooks/openshift-psap-ci.yml
 	;;
 	
 	"psap-ci")
-		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbook/openshift-psap-ci.yml
+		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbooks/openshift-psap-ci.yml
 	;;
 
         -*)
