@@ -1,6 +1,6 @@
 # Which version/release of OpenShift? Include major version and major
 # release, no minor releases.
-openshift_release: '{{ oc_release | default("4.4") }}'
+openshift_release: '{{ oc_release | default("4.5") }}'
 
 # AWS deployment
 aws_check: '{{ use_aws | default("yes") }}'
@@ -26,20 +26,23 @@ GOROOT: '{{ goroot | default("/usr/lib/golang") }}'
 GOPATH: '{{ gopath | default("${HOME}/go") }}'
 GOPROXY: '{{ goproxy | default("https://proxy.golang.org") }}'
 
-# Test  NFD, SRO  or all?
+# Test  NFD, SRO, ODH or all?
 test_nfd_operator: '{{ test_nfd | default("yes") }}'
 test_sr_operator: '{{ test_sro | default("yes") }}'
 test_nv_operator: '{{ test_nv | default("no") }}'
+test_odh_operator: '{{ test_odh | default("no") }}'
 
 # Install NFD, SRO  or all?
 install_nfd_operator: '{{ install_nfd | default("yes") }}'
 install_sr_operator: '{{ install_sro | default("no") }}'
 install_nv_operator: '{{ install_nv | default("no") }}'
+install_odh_operator: '{{ install_odh | default("no") }}'
 
 # Uninstall NFD, SRO or all?
 uninstall_nfd_operator: '{{ uninstall_nfd | default("no") }}'
 uninstall_sr_operator: '{{ uninstall_sro | default("no") }}'
 uninstall_nv_operator: '{{ uninstall_nv | default("no") }}'
+uninstall_odh_operator: '{{ uninstall_odh | default("no") }}'
 
 # json raw template from running workers
 gpu_machineset_template: "gpu_machineset_aws_template.json"

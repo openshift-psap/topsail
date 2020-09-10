@@ -1,0 +1,28 @@
+---
+
+# Let the user know we're reinstalling Kubeflow
+- debug:
+    msg: 'Forcing reinstall of Kubeflow. Now uninstalling'
+
+# Uninstall (undeploy) Kubeflow
+- name: Undeploying Kubeflow
+  block:
+    - name: Attempting to undeploy Kubeflow. STEP ONE --> delete 'kfctl_openshift.yml'
+      shell: cd {{ kfdef_path }} && kfctl delete --file=kfctl_openshift.yaml --delete_storage -V --force-deletion
+    - name: Attempting to undeploy Kubeflow. STEP TWO --> remove 'kfdef/kustomize'
+      file:
+        state: absent
+        path: '{{ kfdef_path }}/kfdef/kustomize/'
+    - name: Attempting to undeploy Kubeflow. STEP THREE --> delete mutatingwebhookconfiguration CRs
+      shell: |
+        oc delete mutatingwebhookconfigurations admission-webhook-mutating-webhook-configuration
+        oc delete mutatingwebhookconfigurations inferenceservice.serving.kubeflow.org
+        oc delete mutatingwebhookconfigurations katib-mutating-webhook-config
+        oc delete mutatingwebhookconfigurations mutating-webhook-configurations 
+      register: mutating_webhook_configs_deletion_output
+      failed_when: mutating_webhook_configs_deletion_output.rc == 2
+  rescue:
+    - name: Undeployment failed 
+      debug:
+        msg: 'Kubeflow removal FAILED. Could not remove Kubeflow.'
+    - meta: end_play
