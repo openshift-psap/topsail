@@ -1,0 +1,9 @@
+---
+
+# Install Kubeflow to the cluster
+- name: Deploy Kubeflow. (This may take a while.)
+  shell: cd {{ kfdef_path }} && kfctl apply --file=kfctl_openshift.yaml
+
+# Let user know the success
+- debug:
+    msg: 'Kubeflow successfully installed to your cluster.'

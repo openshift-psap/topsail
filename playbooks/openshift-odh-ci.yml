@@ -1,0 +1,11 @@
+---
+# Install and test Kubeflow (via Open Data Hub)
+- name: CI Run Open Data Hub
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
+  roles:
+    - role: openshift_odh
+      when: test_odh_operator == "yes"

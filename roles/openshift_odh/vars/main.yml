@@ -1,0 +1,16 @@
+---
+
+# Where Open Data Hub will be downloaded
+odh_download_path: '/tmp/ANSIBLE__open-data-hub-manifests'
+
+# Where kfdef will be built
+kfdef_path: '/tmp/ANSIBLE__openshift-kfdef'
+
+# kubectl CLI info for downloadking kubectl
+kfctl_download_path: '/tmp/ANSIBLE__kfctl_cli'
+kfctl_major_version: 'v1.0.2'
+kfctl_full_release: 'v1.0.2-0-ga476281'
+
+# eksctl CLI info for downloading eksctl
+eksctl_download_path: '/tmp/ANSIBLE__eksctl_cli'
+eksctl_version: '0.18.0'
