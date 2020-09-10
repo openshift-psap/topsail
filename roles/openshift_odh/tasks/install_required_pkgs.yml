@@ -1,0 +1,81 @@
+---
+
+# Install gzip on RHEL 7
+- name: Install gzip on RHEL 7 if using RHEL 7
+  yum:
+    name: gzip
+    state: latest
+  become: yes
+  when: rhel_ver == '7'
+
+# Install gzip on RHEL 8
+- name: Install gzip on RHEL 8 if using RHEL 8
+  dnf:
+    name: gzip
+    state: latest
+  become: yes
+  when: rhel_ver == '8'
+
+# Delete kfctl download directory if it already exists
+- name: Remove kfctl download directory if it already exists
+  file:
+    state: absent
+    path: '{{ kfctl_download_path }}'
+
+# Create/Recreate download directory
+- name: Create or recreate kfctl download directory
+  file:
+    state: directory
+    path: '{{ kfctl_download_path }}'
+
+# Download and untar kfctl tarball so we can use kfctl
+- name: Download and untar kfctl tarball
+  unarchive:
+    src: 'https://github.com/kubeflow/kfctl/releases/download/{{ kfctl_major_version }}/kfctl_{{ kfctl_full_release }}_linux.tar.gz'
+    dest: '{{ kfctl_download_path }}'
+    remote_src: yes
+
+# Move kfctl to /usr/bin
+- name: Move kfctl to /usr/bin so it can be used later on
+  shell: mv {{ kfctl_download_path }}/kfctl /usr/bin
+  become: yes
+
+# Remove kfctl download path
+- name: Remove kfctl download directory since we don't need it anymore
+  file:
+    state: absent
+    path: '{{ kfctl_download_path }}'
+
+# Let user know kfctl has successfully been installed
+- debug:
+    msg: 'kfctl has successfully been installed'
+
+
+# If using AWS, we need to install eksctl in order to use kfctl
+- block:
+
+  # If using AWS, delete existing eksctl download dir
+  - name: If using AWS, eksctl must be installed. First, we must delete existing download directory
+    file:
+      state: absent
+      path: '{{ eksctl_download_path }}'
+
+  # Create/Recreate download dir
+  - name: Create or recreate eksctl download directory
+    file:
+      state: directory
+      path: '{{ eksctl_download_path }}'
+
+  # Now download the tarball
+  - name: If using AWS, download the eksctl tarball
+    unarchive:
+      src: 'https://github.com/weaveworks/eksctl/releases/download/{{ eksctl_version }}/eksctl_Linux_amd64.tar.gz'
+      dest: '{{ eksctl_download_path }}'
+      remote_src: yes
+
+  # Finally, move eksctl to /usr/bin so it can be used later
+  - name: Move eksctl to /usr/bin for later use
+    shell: mv {{ eksctl_download_path }}/eksctl /usr/bin
+    become: yes
+
+  when: aws_check == 'yes'

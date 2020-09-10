@@ -1,0 +1,28 @@
+---
+
+# Check to make sure that we have the NFD git repo still downloaded
+- name: Check for Open Data Hub git repo in {{ odh_download_path }}
+  stat:
+    path: '{{ odh_download_path }}'
+  register: found_odh
+
+# If the Open Data Hub git repo was found on the system, let the user know it's being deleted
+- block:
+  - debug:
+      msg: 'Found Open Data Hub git repo path. Removing it.'
+
+  - file:
+      state: absent
+      path: '{{ odh_download_path }}'
+
+  when: found_odh.stat.exists
+
+# Download/redownload Open Data Hub git repo
+- debug:
+    msg: 'Could not find Open Data Hub git repo path'
+  when: not found_odh.stat.exists
+
+- name: Clone the latest version of the Open Data Hub git repo
+  git:
+    repo: 'https://github.com/opendatahub-io/manifests.git'
+    dest: '{{ odh_download_path }}'
