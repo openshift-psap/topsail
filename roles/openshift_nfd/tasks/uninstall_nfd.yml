@@ -15,4 +15,3 @@
       debug:
         msg: 'Could not undeploy the operator. Likely, the "nfd-operator" namespace is stuck in terminating. This is an OpenShift issue. Please either increase the "task_timeout" value or try the following solution to force undeployment -- github.com/kubernetes/kubernetes/issues/60807#issuecomment-408599873 -- although you may need to follow instructions here -- github.com/kubernetes/kubernetes/issues/60807#issuecomment-410260006'
     - meta: end_play
-

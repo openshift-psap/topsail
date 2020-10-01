@@ -5,7 +5,7 @@
   yum:
     name: gzip
     state: latest
-  become: yes
+  become: true
   when: rhel_ver == '7'
 
 # Install gzip on RHEL 8
@@ -13,7 +13,7 @@
   dnf:
     name: gzip
     state: latest
-  become: yes
+  become: true
   when: rhel_ver == '8'
 
 # Delete kfctl download directory if it already exists
@@ -33,12 +33,12 @@
   unarchive:
     src: 'https://github.com/kubeflow/kfctl/releases/download/{{ kfctl_major_version }}/kfctl_{{ kfctl_full_release }}_linux.tar.gz'
     dest: '{{ kfctl_download_path }}'
-    remote_src: yes
+    remote_src: true
 
 # Move kfctl to /usr/bin
 - name: Move kfctl to /usr/bin so it can be used later on
   shell: mv {{ kfctl_download_path }}/kfctl /usr/bin
-  become: yes
+  become: true
 
 # Remove kfctl download path
 - name: Remove kfctl download directory since we don't need it anymore
@@ -71,11 +71,11 @@
     unarchive:
       src: 'https://github.com/weaveworks/eksctl/releases/download/{{ eksctl_version }}/eksctl_Linux_amd64.tar.gz'
       dest: '{{ eksctl_download_path }}'
-      remote_src: yes
+      remote_src: true
 
   # Finally, move eksctl to /usr/bin so it can be used later
   - name: Move eksctl to /usr/bin for later use
     shell: mv {{ eksctl_download_path }}/eksctl /usr/bin
-    become: yes
+    become: true
 
-  when: aws_check == 'yes'
+  when: aws_check == 'true'

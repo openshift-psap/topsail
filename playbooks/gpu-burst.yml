@@ -2,8 +2,8 @@
 - name: Scaling up an OCP GPU ready node
   hosts: localhost
   connection: local
-  gather_facts: yes
+  gather_facts: true
   vars:
     kubeconfig: "{{ ansible_env.KUBECONFIG }}"
   roles:
-  - openshift_node    
+    - openshift_node

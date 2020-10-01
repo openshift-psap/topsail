@@ -1,6 +1,5 @@
 ---
 # This task file is run with import_role for localhost from gpu-burst.yml
-
 - name: Get cluster worker nodes
   command: >
     oc get nodes
@@ -33,7 +32,7 @@
 - name: Save machineset json template    
   copy: 
     content: "{{ worker_machine_set.stdout }}" 
-    dest:  "{{ ansible_env.PWD }}/{{ gpu_machineset_template }}"
+    dest: "{{ ansible_env.PWD }}/{{ gpu_machineset_template }}"
   delegate_to: localhost    
 
 - name: Generate GPU machine set file
@@ -48,5 +47,5 @@
 - name: Save machineset definition file    
   copy: 
     content: "{{ gpu_machine_set_file.stdout }}" 
-    dest:  "{{ ansible_env.PWD }}/{{ gpu_machineset_deff }}"
+    dest: "{{ ansible_env.PWD }}/{{ gpu_machineset_deff }}"
   delegate_to: localhost    
