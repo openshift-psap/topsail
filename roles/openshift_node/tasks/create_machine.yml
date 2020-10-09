@@ -3,13 +3,12 @@
 
 - name: Create OpenShift object
   command: >
-    oc create -f {{ gpu_machineset_deff }}
-    --kubeconfig={{ kubeconfig }}
+    bash -c "oc create -f '{{ gpu_machineset_deff }}' --kubeconfig '{{ kubeconfig }}'"
   register: oc_create_gpu
 
 - name: Check machine is provisioned
-  shell: >
-    oc get machines --kubeconfig={{ kubeconfig }} -n openshift-machine-api |grep p3.2xlarge |awk '{ print $2 }'
+  command: >
+    bash -c "oc get machines --kubeconfig '{{ kubeconfig }}' -n openshift-machine-api |grep '{{ gpu_instance_type }}' |awk '{ print $2 }'"
   register: gpu_machine_state
   until:
   - gpu_machine_state.stdout == 'Running'

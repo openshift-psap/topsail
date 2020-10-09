@@ -49,7 +49,7 @@ gpu_machineset_template: "gpu_machineset_aws_template.json"
 
 # AWS desired instance type
 # Choose one from https://docs.aws.amazon.com/dlami/latest/devguide/gpu.html
-gpu_instance_type: "p3.2xlarge"
+gpu_instance_type: "g4dn.xlarge"
 
 # library for machine type parsing 
 parse_machine_set: "roles/openshift_node/files/aws_machineset_json.sh"

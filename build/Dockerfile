@@ -12,18 +12,18 @@ LABEL 	io.k8s.display-name="OpenShift PSAP Ci artifacts" \
 # Add image scripts and files for running as a system container
 COPY build/root /
 
-# Install openshift-ansible RPMs
+# Install openshift-ansible RPMs and some debugging tools
 RUN yum install -y epel-release \
     && yum update -y \
     && yum install --setopt=tsflags=nodocs -y \
-      jq wget git make \
+      jq wget git make vim \
       inotify-tools ansible \
       python3 openssh-clients \
  && yum clean all \
  && rm -rf /var/cache/yum
 
 # Get kubectl binary
-ENV OC_RELEASE=4.5.7
+ENV OC_RELEASE=4.5.14
 RUN wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/$OC_RELEASE/openshift-client-linux-$OC_RELEASE.tar.gz \ 
 	&& tar -C /usr/local/bin -xzf openshift-client-linux-$OC_RELEASE.tar.gz \
 	&& rm -f openshift-client-linux-$OC_RELEASE.tar.gz

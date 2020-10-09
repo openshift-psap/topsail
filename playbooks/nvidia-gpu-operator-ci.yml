@@ -1,4 +1,13 @@
 ---
+# Create a machineset GPU enabled
+- name: Scaling up an OCP GPU ready node
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
+  roles:
+    - openshift_node
 # Install and test GPU Operator
 - name: CI Run NVidia GPU operator
   hosts: localhost

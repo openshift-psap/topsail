@@ -5,9 +5,9 @@
 #
 # SOURCE and HOME DIRECTORY: /opt/ci-artifacts/src
 
-set -o nounset
-set -o errexit
 set -o pipefail
+set -o errexit
+set -o nounset
 
 if [[ -z "${KUBECONFIG}" ]]
 then
@@ -20,17 +20,12 @@ cd ${WORK_DIR}
 INVENTORY_ARG="-i inventory/hosts"
 while true; do
 	case ${1:-} in
-
         "gpu-ci")
-
-		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbooks/gpu-burst.yml
-		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbooks/openshift-psap-ci.yml
+		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbooks/nvidia-gpu-operator-ci.yml
 	;;
-	
 	"psap-ci")
 		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbooks/openshift-psap-ci.yml
 	;;
-
         -*)
             echo "Unknown option: ${1:-}"
             exit 1
