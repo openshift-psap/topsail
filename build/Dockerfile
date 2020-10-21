@@ -1,8 +1,6 @@
-FROM centos:8 
+FROM registry.access.redhat.com/ubi8/ubi
 
 MAINTAINER OpenShift PSAP Team <openshift-psap@redhat.com>
-
-USER root
 
 LABEL 	io.k8s.display-name="OpenShift PSAP Ci artifacts" \
       	io.k8s.description="This are artifacts to run PSAP Ci" \
@@ -13,20 +11,17 @@ LABEL 	io.k8s.display-name="OpenShift PSAP Ci artifacts" \
 COPY build/root /
 
 # Install openshift-ansible RPMs and some debugging tools
-RUN yum install -y epel-release \
-    && yum update -y \
-    && yum install --setopt=tsflags=nodocs -y \
-      jq wget git make vim \
-      inotify-tools ansible \
-      python3 openssh-clients \
- && yum clean all \
- && rm -rf /var/cache/yum
-
-# Get kubectl binary
-ENV OC_RELEASE=4.5.14
-RUN wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/$OC_RELEASE/openshift-client-linux-$OC_RELEASE.tar.gz \ 
-	&& tar -C /usr/local/bin -xzf openshift-client-linux-$OC_RELEASE.tar.gz \
-	&& rm -f openshift-client-linux-$OC_RELEASE.tar.gz
+RUN yum install -y \
+		glibc-langpack-en \
+		git make jq vim wget \
+		python3 python3-devel python3-pip python3-setuptools && \
+	pip3 install --no-cache-dir --upgrade setuptools pip && \
+	pip3 install --no-cache-dir \
+		openshift \
+		ansible==2.9.* && \
+	yum clean all && \
+	rm -rf $HOME/.cache && \
+	rm -rf /var/cache/yum
 
 # Set up Ansible
 RUN mkdir -p /etc/ansible \
@@ -49,9 +44,9 @@ COPY roles ${HOME}/roles
 RUN useradd -u ${USER_UID} -g 0 -d ${HOME} ${USER_NAME} 
 
 # Ensure directory permissions are properly set
-RUN mkdir -p ${HOME}/.ansible/tmp \
- && chown -R ${USER_UID}:0 ${HOME} \
- && chmod -R ug+rwx ${HOME}
+RUN mkdir -p ${HOME}/.ansible/tmp && \
+	chown -R ${USER_UID}:0 ${HOME} && \
+	chmod -R ug+rwx ${HOME}
 
 RUN /usr/local/bin/user_setup
 
