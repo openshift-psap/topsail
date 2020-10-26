@@ -5,6 +5,8 @@
 #
 # SOURCE and HOME DIRECTORY: /opt/ci-artifacts/src
 
+echo "===> Running GPU CI Test suite<==="
+
 set -o pipefail
 set -o errexit
 set -o nounset
@@ -14,6 +16,12 @@ then
 		echo "No kubeconfig, can't continue"
 		exit 1
 fi
+echo "Kubeconfiug found at ${KUBECONFIG}, proceeding with tests"
+
+# allow us to make a temporary user and group account for our OpenShift user
+echo "tempuser❌$(id -u):$(id -g):,,,:${HOME}:/bin/bash" >> /etc/passwd
+echo "tempuser❌$(id -G | cut -d' ' -f 2)" >> /etc/group
+exec id 
 
 cd ${WORK_DIR}
 

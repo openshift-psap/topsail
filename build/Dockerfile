@@ -33,7 +33,7 @@ RUN sed -i '19s/roles\//\/opt\/ci-artifacts\/roles/' /etc/ansible/ansible.cfg
 ENV USER_UID=1001 \
     USER_NAME=psap-ci-runner \
     HOME=/opt/ci-artifacts/src/ \
-    OPTS="-v" \
+    OPTS="-vvv" \
     WORK_DIR=/opt/ci-artifacts/src/
 
 COPY group_vars ${HOME}/group_vars

@@ -6,8 +6,8 @@ mkdir -p ${HOME}
 chown ${USER_UID}:0 ${HOME}
 chmod ug+rwx ${HOME}
 
-# runtime user will need to be able to self-insert in /etc/passwd
-chmod g+rw /etc/passwd
+# runtime user will need to be able to self-insert in /etc/passwd and /etc/group
+chmod g+rw /etc/passwd /etc/group
 
 # ensure that the ansible content is accessible
 chmod -R g+r ${WORK_DIR}
