@@ -10,6 +10,8 @@ aws_add_gpu_node: '{{ use_aws }}'
 # Force reinstallation of all operators, CRDs, etc.?
 force_reinstall: 'yes'
 
+install_operator_from_hub: 'yes'
+
 # user mode, set the behaviour of the playbook, available modes:
 # - install: basic install of desired operators operators
 # - uninstall: if installed, uninstall desired operators

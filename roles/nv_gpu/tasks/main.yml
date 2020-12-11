@@ -1,7 +1,8 @@
 ---
-- name: Check if NVidia GPU operator has been deployed
-  block:
-  - include_tasks: roles/nv_gpu/tasks/install.yml
+- block:
+  - name: Install GPU-operator from OperatorHub
+    include_tasks: roles/nv_gpu/tasks/install.yml
+    when: install_operator_from_hub == "yes"
 
   # Ci block
   - block:
