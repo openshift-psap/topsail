@@ -1,3 +1,7 @@
 ---
-- include_tasks: roles/openshift_node/tasks/scaleup_checks.yml 
-- include_tasks: roles/openshift_node/tasks/create_machine.yml
+- name: Scale-up checks
+  import_tasks: roles/openshift_node/tasks/scaleup_checks.yml
+  when: aws_add_gpu_node == "yes"
+- name: Create machine
+  import_tasks: roles/openshift_node/tasks/create_machine.yml
+  when: aws_add_gpu_node == "yes"

@@ -5,6 +5,7 @@ openshift_release: '4.6'
 # AWS deployment
 use_aws: 'yes'
 aws_check: '{{ use_aws }}'
+aws_add_gpu_node: '{{ use_aws }}'
 
 # Force reinstallation of all operators, CRDs, etc.?
 force_reinstall: 'yes'
