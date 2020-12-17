@@ -18,6 +18,9 @@ then
 fi
 echo "Kubeconfig found at ${KUBECONFIG}, proceeding with tests"
 
+ANSIBLE_OPTS=${ANSIBLE_OPTS:--v}
+WORK_DIR=${WORK_DIR:-.}
+
 cd ${WORK_DIR}
 
 INVENTORY_ARG="-i inventory/hosts"
