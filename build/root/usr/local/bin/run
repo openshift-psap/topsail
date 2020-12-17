@@ -51,6 +51,9 @@ if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
     OCP_VERSION="$(oc version -o json | jq --raw-output '.openshiftVersion' | cut -b-3)"
     ANSIBLE_OPTS="-vvv"
     ANSIBLE_OPTS="$ANSIBLE_OPTS -e openshift_release=$OCP_VERSION"
+
+    CI_IMAGE_GPU_COMMIT_CI_REPO="https://gitlab.com/kpouget_psap/gpu-operator.git"
+    CI_IMAGE_GPU_COMMIT_CI_REF="ci-testing"
 fi
 
 [[ "${INSIDE_CI_IMAGE:-}" == "y" ]] && set -x
@@ -60,6 +63,27 @@ ANSIBLE_OPTS=${ANSIBLE_OPTS:--v}
 INVENTORY_ARG="-i inventory/hosts"
 
 case ${1:-} in
+    "gpu-commit-ci")
+        if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
+            git_repo=${CI_IMAGE_GPU_COMMIT_CI_REPO}
+            git_ref=${CI_IMAGE_GPU_COMMIT_CI_REF}
+        else
+            if [ "$#" -lt 2 ]; then
+                echo "Usage: $0 $1 <git repository> <git reference>"
+                exit 1
+            fi
+            git_repo=$2
+            git_ref=$3
+        fi
+
+        echo "Using Git repository ${git_repo} with ref ${git_ref}"
+
+        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_git_repo=${git_repo}"
+        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_git_ref=${git_ref}"
+        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_image_tag_uid=$(cat /proc/sys/kernel/random/uuid | cut -b-8)"
+
+	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-commit-ci.yml
+        ;;
     "gpu-ci")
 	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-ci.yml
 	;;

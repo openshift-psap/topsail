@@ -1,0 +1,23 @@
+---
+
+- name: Build GPU-operator from custom commit
+  import_tasks: roles/nv_gpu_install_from_commit/tasks/build.yml
+- name: Deploy GPU-operator from custom commit with helm
+  import_tasks: roles/nv_gpu_install_from_commit/tasks/deploy.yml
+
+# Ci block
+- name: Run CI and always undeploy
+  block:
+  - include_tasks: roles/nv_gpu/tasks/ci_checks.yml
+    register: test_ci
+  when: user_mode == 'ci'
+  rescue:
+    - name: Failed to run CI checks
+      fail:
+        msg: "FAILED {{ test_ci }}"
+  always:
+    - name: Undeploy GPU-operator from custom commit with helm
+      import_tasks: roles/nv_gpu_install_from_commit/tasks/undeploy.yml
+
+- name: Cleanup custom commit resources
+  import_tasks: roles/nv_gpu_install_from_commit/tasks/cleanup.yml

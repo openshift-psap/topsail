@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: gpu-operator-ci
+  name: operator-image-builder-pod
+  namespace: gpu-operator-ci
+spec:
+  containers:
+  - command:
+    - /bin/sh
+    - /mnt/helper/run_operator_image_builder.sh
+    image: image-registry.openshift-image-registry.svc:5000/gpu-operator-ci-utils/gpu-operator-ci-utils:builder_helper
+    name: operator-image-builder
+    imagePullPolicy: Always
+    securityContext:
+      privileged: true
+    env:
+      - name: OPERATOR_GIT_REPO
+        value: "{{ gpu_operator_git_repo }}" # set by `build.yaml` ansible script
+      - name: OPERATOR_GIT_REF
+        value: "{{ gpu_operator_git_ref }}" # set by `build.yaml` ansible script
+      - name: IMAGESTREAM_NAME
+        value: "gpu-operator-ci/gpu-operator-ci"
+      - name: IMAGESTREAM_TAG
+        value: "{{ gpu_operator_image_tag }}" # set by `build.yaml` ansible script
+      - name: BUILDER_FROM_IMAGE
+        value: "quay.io/openshift-psap/golang:1.13" # avoid using docker.io and its quotas...
+    volumeMounts:
+    - mountPath: /mnt/helper/run_operator_image_builder.sh
+      name: operator-image-builder-script
+      readOnly: true
+      subPath: run_operator_image_builder.sh
+    - mountPath: /var/run/secrets/openshift.io/push
+      name: builder-dockercfg-push
+      readOnly: true
+  nodeSelector:
+    tuned.module.fuse: ""
+  restartPolicy: Never
+  volumes:
+  - configMap:
+      defaultMode: 511
+      name: operator-image-builder-script
+    name: operator-image-builder-script
+  - name: builder-dockercfg-push
+    secret:
+      defaultMode: 384
+      secretName: "{{ builder_secret }}" # set by `build.yaml` ansible script

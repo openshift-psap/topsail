@@ -1,0 +1,11 @@
+- name: delete possible stalled GPU-operator resources from failed undeployment
+  shell: |
+    oc delete ServiceAccount/gpu-operator -n gpu-operator || true
+    oc delete ClusterRole/gpu-operator || true
+    oc delete ClusterRoleBinding/gpu-operator || true
+    oc delete ClusterPolicy cluster-policy || true
+    oc delete SecurityContextConstraints restricted-readonly || true
+    oc delete Namespace/gpu-operator-resources || true
+
+- name: deploy the custom version of the GPU operator
+  command: bash roles/nv_gpu_install_from_commit/files/helm_deploy_operator.sh deploy "{{ gpu_operator_git_repo }}" "{{ gpu_operator_git_ref }}" "{{ gpu_operator_image_tag }}"
