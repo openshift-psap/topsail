@@ -13,30 +13,30 @@ set -o nounset
 
 if [[ -z "${KUBECONFIG}" ]]
 then
-		echo "No kubeconfig, can't continue"
-		exit 1
+    echo "No kubeconfig, can't continue"
+    exit 1
 fi
-echo "Kubeconfiug found at ${KUBECONFIG}, proceeding with tests"
+echo "Kubeconfig found at ${KUBECONFIG}, proceeding with tests"
 
 cd ${WORK_DIR}
 
 INVENTORY_ARG="-i inventory/hosts"
 while true; do
-	case ${1:-} in
+    case ${1:-} in
         "gpu-ci")
-		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbooks/nvidia-gpu-operator-ci.yml
-	;;
+	    exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-ci.yml
+	    ;;
 	"psap-ci")
-		exec ansible-playbook ${INVENTORY_ARG} ${OPTS} playbooks/openshift-psap-ci.yml
-	;;
+	    exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/openshift-psap-ci.yml
+	    ;;
         -*)
             echo "Unknown option: ${1:-}"
             exit 1
-        ;;
+            ;;
 	*)
-		break
-	;;
-	esac
+	    break
+	    ;;
+    esac
 done
 
 exit 0

@@ -33,7 +33,7 @@ RUN sed -i '19s/roles\//\/opt\/ci-artifacts\/roles/' /etc/ansible/ansible.cfg
 ENV USER_UID=1001 \
     USER_NAME=psap-ci-runner \
     HOME=/opt/ci-artifacts/src/ \
-    OPTS="-vvv" \
+    ANSIBLE_OPTS="-vvv" \
     WORK_DIR=/opt/ci-artifacts/src/
 
 COPY group_vars ${HOME}/group_vars
@@ -41,7 +41,7 @@ COPY inventory ${HOME}/inventory
 COPY playbooks ${HOME}/playbooks
 COPY roles ${HOME}/roles
 
-RUN useradd -u ${USER_UID} -g 0 -d ${HOME} ${USER_NAME} 
+RUN useradd -u ${USER_UID} -g 0 -d ${HOME} ${USER_NAME}
 
 # Ensure directory permissions are properly set
 RUN mkdir -p ${HOME}/.ansible/tmp && \
