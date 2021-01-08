@@ -18,11 +18,6 @@ then
 fi
 echo "Kubeconfiug found at ${KUBECONFIG}, proceeding with tests"
 
-# allow us to make a temporary user and group account for our OpenShift user
-echo "tempuser❌$(id -u):$(id -g):,,,:${HOME}:/bin/bash" >> /etc/passwd
-echo "tempuser❌$(id -G | cut -d' ' -f 2)" >> /etc/group
-exec id 
-
 cd ${WORK_DIR}
 
 INVENTORY_ARG="-i inventory/hosts"
