@@ -23,7 +23,7 @@ then
 fi
 echo "Kubeconfig found at ${KUBECONFIG}, proceeding with tests"
 
-if ! which oc &>/dev/null;
+if ! which oc &>/dev/null && [ ${1:-} == gpu-commit-ci ];
 then
     echo "OpenShift client not found, downloading it ..."
     mkdir bin -p
@@ -31,6 +31,21 @@ then
     wget --quiet https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz
     tar xvf openshift-client-linux.tar.gz
     rm openshift-client-linux.tar.gz
+    export PATH=$PWD:$PATH
+    cd ..
+fi
+
+if ! which helm &>/dev/null;
+then
+    echo "Helm not found, downloading it ..."
+    mkdir bin -p
+    cd bin
+
+    HELM_VERSION="v3.5.1"
+    wget https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz --quiet
+    tar xvf helm-${HELM_VERSION}-linux-amd64.tar.gz linux-amd64/helm
+    mv linux-amd64/helm .
+    rmdir linux-amd64
     export PATH=$PWD:$PATH
     cd ..
 fi
