@@ -8,4 +8,4 @@
     kubeconfig: "{{ ansible_env.KUBECONFIG }}"
   roles:
     - role: openshift_odh
-      when: test_odh_operator == "yes"
+      when: test_odh == "yes"

@@ -18,15 +18,15 @@
   - include_tasks: install_required_pkgs.yaml
 
   # Download the git repo
-  - include_tasks: clone_odh_git_repo.yaml 
+  - include_tasks: clone_odh_git_repo.yaml
 
   # Build the kfdef file for installing Kubeflow to the cluster or deleting it from the cluster
   - include_tasks: build_kfdef.yaml
 
   # Call the below playbook when the user is forcing a reinstall of NFD
-  - include_tasks: uninstall_odh.yaml 
+  - include_tasks: uninstall_odh.yaml
     when: >
-      (odh_installation.stdout != '' and reinstall == 'yes') or
+      (odh_installation.stdout != '' and force_reinstall == 'yes') or
       (odh_installation.stdout != '' and user_mode == 'uninstall')
 
   # Deploy the operator
@@ -42,7 +42,7 @@
       path: '{{ odh_download_path }}'
 
   when: >
-    (odh_installation.stdout == '') or 
-    (odh_installation.stdout != '' and reinstall == 'yes') or
+    (odh_installation.stdout == '') or
+    (odh_installation.stdout != '' and force_reinstall == 'yes') or
     (odh_installation.stdout != '' and user_mode == 'uninstall') or
     ("(NotFound)" in odh_installation.stdout)
