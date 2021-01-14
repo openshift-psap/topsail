@@ -1,48 +1,36 @@
 # Which version/release of OpenShift? Include major version and major
 # release, no minor releases.
-openshift_release: '{{ oc_release | default("4.5") }}'
+openshift_release: '4.5'
 
 # AWS deployment
-aws_check: '{{ use_aws | default("yes") }}'
+use_aws: 'yes'
+aws_check: '{{ use_aws }}'
 
 # Force reinstallation of all operators, CRDs, etc.?
-reinstall: '{{ force_reinstall | default("yes") }}'
+force_reinstall: 'yes'
 
 # user mode, set the behaviour of the playbook, available modes:
 # - install: basic install of desired operators operators
 # - uninstall: if installed, uninstall desired operators
 # - ci: ci bot mode
 # REQUIRED.
-user_mode: '{{ mode | default("ci") }}'
+user_mode: 'ci'
 
 # Set task timeout (in seconds). Default: 5 mins
-timeout_value_sec: '{{ task_timeout | default("300") }}'
+task_timeout: '300'
 
 # Set RHEL version. Default is RHEL 8. Set to RHEL 7 if using RHEL 7
-rhel_ver: '{{ rhel_version | default("8") }}'
+rhel_version: '8'
 
 # Set golang vars
-GOROOT: '{{ goroot | default("/usr/lib/golang") }}'
-GOPATH: '{{ gopath | default("${HOME}/go") }}'
-GOPROXY: '{{ goproxy | default("https://proxy.golang.org") }}'
+GOROOT: '/usr/lib/golang'
+GOPATH: '${HOME}/go"'
+GOPROXY: 'https://proxy.golang.org'
 
 # Test  NFD, SRO, ODH or all?
-test_nfd_operator: '{{ test_nfd | default("yes") }}'
-test_sr_operator: '{{ test_sro | default("yes") }}'
-test_nv_operator: '{{ test_nv | default("no") }}'
-test_odh_operator: '{{ test_odh | default("no") }}'
-
-# Install NFD, SRO  or all?
-install_nfd_operator: '{{ install_nfd | default("yes") }}'
-install_sr_operator: '{{ install_sro | default("no") }}'
-install_nv_operator: '{{ install_nv | default("no") }}'
-install_odh_operator: '{{ install_odh | default("no") }}'
-
-# Uninstall NFD, SRO or all?
-uninstall_nfd_operator: '{{ uninstall_nfd | default("no") }}'
-uninstall_sr_operator: '{{ uninstall_sro | default("no") }}'
-uninstall_nv_operator: '{{ uninstall_nv | default("no") }}'
-uninstall_odh_operator: '{{ uninstall_odh | default("no") }}'
+test_nfd: 'yes'
+test_sro: 'yes'
+test_odh: 'no'
 
 # json raw template from running workers
 gpu_machineset_template: "gpu_machineset_aws_template.json"
@@ -51,9 +39,8 @@ gpu_machineset_template: "gpu_machineset_aws_template.json"
 # Choose one from https://docs.aws.amazon.com/dlami/latest/devguide/gpu.html
 gpu_instance_type: "g4dn.xlarge"
 
-# library for machine type parsing 
+# library for machine type parsing
 parse_machine_set: "roles/openshift_node/files/aws_machineset_json.sh"
 
 # GPU definition file, Cloud agnostic key=values
 gpu_machineset_deff: "gpu_machineset_definition.json"
-

@@ -14,12 +14,12 @@
 - block:
 
   # Download the git repo
-  - include_tasks: clone_sro_git_repo.yml 
+  - include_tasks: clone_sro_git_repo.yml
 
   # Call the below playbook when the user is forcing a reinstall of NFD
-  - include_tasks: uninstall_sro.yml 
+  - include_tasks: uninstall_sro.yml
     when: >
-      (sro_installation.stdout != '' and reinstall == 'yes') or
+      (sro_installation.stdout != '' and force_reinstall == 'yes') or
       (sro_installation.stdout != '' and user_mode == 'uninstall') or
       (sro_installation.stdout != '' and user_mode == 'ci')
 
@@ -31,6 +31,6 @@
 
   when: >
     (sro_installation.stdout == '') or
-    (sro_installation.stdout != '' and reinstall == 'yes') or
+    (sro_installation.stdout != '' and force_reinstall == 'yes') or
     (sro_installation.stdout != '' and user_mode == 'uninstall') or
     (sro_installation.stdout != '' and user_mode == 'ci')

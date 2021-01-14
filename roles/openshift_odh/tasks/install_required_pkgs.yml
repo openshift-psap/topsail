@@ -6,7 +6,7 @@
     name: gzip
     state: latest
   become: true
-  when: rhel_ver == '7'
+  when: rhel_version == '7'
 
 # Install gzip on RHEL 8
 - name: Install gzip on RHEL 8 if using RHEL 8
@@ -14,7 +14,7 @@
     name: gzip
     state: latest
   become: true
-  when: rhel_ver == '8'
+  when: rhel_version == '8'
 
 # Delete kfctl download directory if it already exists
 - name: Remove kfctl download directory if it already exists
