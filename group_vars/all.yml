@@ -1,6 +1,6 @@
 # Which version/release of OpenShift? Include major version and major
 # release, no minor releases.
-openshift_release: '4.5'
+openshift_release: '4.6'
 
 # AWS deployment
 use_aws: 'yes'

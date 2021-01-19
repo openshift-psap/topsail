@@ -1,6 +1,10 @@
 ---
+# Manifest for installing NFD operator from operator Hub
+nfd_operator_namespace: roles/nv_gpu/files/011_namespace.yaml
+nfd_operator_operatorgroup: roles/nv_gpu/files/02_operatorgroup.yaml
+nfd_operator_operatorhub_sub: roles/nv_gpu/files/031_operator_sub.yaml
+nfd_operator_crd: roles/nv_gpu/files/041_customresources.yaml
 # Manifest for installing NV GPU operator from operator Hub
-gpu_operator_namespace: roles/nv_gpu/files/001_namespace.yaml
-gpu_operator_operatorgroup: roles/nv_gpu/files/002_operatorgroup.yaml
-gpu_operator_operatorhub_sub: roles/nv_gpu/files/003_operator_sub.yaml
-gpu_operator_crs: roles/nv_gpu/files/004_customresources.yaml
+gpu_operator_namespace: roles/nv_gpu/files/012_namespace.yaml
+gpu_operator_operatorhub_sub: roles/nv_gpu/files/032_operator_sub.yaml
+gpu_operator_crd: roles/nv_gpu/files/042_customresources.yaml
