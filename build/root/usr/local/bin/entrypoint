@@ -3,15 +3,10 @@
 # This file serves as the main entrypoint to the openshift-psap ci-artifacts image.
 #
 
-# Patch /etc/passwd file with the current user info.
-# The current user's entry must be correctly defined in this file in order for
-# the `ssh` command to work within the created container.
+git show
 
-USER=${USER:-default}
-export USER
-
-if ! whoami &>/dev/null; then
-  echo "${USER}:x:$(id -u):$(id -g):Default User:$HOME:/sbin/nologin" >> /etc/passwd
-fi
+echo "---"
+echo "Running '$@'"
+echo "---"
 
 exec "$@"

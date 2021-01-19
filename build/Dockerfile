@@ -30,27 +30,20 @@ COPY ansible.cfg /etc/ansible/ansible.cfg
 RUN sed -i '19s/roles\//\/opt\/ci-artifacts\/roles/' /etc/ansible/ansible.cfg
 
 # Set up the runner user
-ENV USER_UID=1001 \
-    USER_NAME=psap-ci-runner \
+ENV USER_NAME=psap-ci-runner \
+    USER=psap-ci-runner \
     HOME=/opt/ci-artifacts/src/ \
-    ANSIBLE_OPTS="-vvv" \
-    WORK_DIR=/opt/ci-artifacts/src/
+    ANSIBLE_OPTS="-vvv"
 
 COPY group_vars ${HOME}/group_vars
 COPY inventory ${HOME}/inventory
 COPY playbooks ${HOME}/playbooks
 COPY roles ${HOME}/roles
-
-RUN useradd -u ${USER_UID} -g 0 -d ${HOME} ${USER_NAME}
+COPY .git ${HOME}/.git
 
 # Ensure directory permissions are properly set
-RUN mkdir -p ${HOME}/.ansible/tmp && \
-	chown -R ${USER_UID}:0 ${HOME} && \
-	chmod -R ug+rwx ${HOME}
+RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R
 
-RUN /usr/local/bin/user_setup
-
-USER ${USER_UID}
 WORKDIR ${HOME}
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 CMD [ "/usr/local/bin/run" ]
