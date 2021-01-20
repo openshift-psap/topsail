@@ -35,6 +35,9 @@ test_nfd: 'yes'
 test_sro: 'yes'
 test_odh: 'no'
 
+# Undeploy the GPU-operator from custom commit with helm
+undeploy_gpu_operator: 'yes'
+
 # json raw template from running workers
 gpu_machineset_template: "gpu_machineset_aws_template.json"
 
