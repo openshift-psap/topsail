@@ -13,7 +13,7 @@
   command: >
     bash -c "oc get machinesets -n openshift-machine-api --kubeconfig '{{ kubeconfig }}' |grep worker |awk '{ print $1 }'"
   register: oc_get_machinesets
-  until: 
+  until:
   - oc_get_machinesets.stdout != ''
   retries: 30
   delay: 5
@@ -27,23 +27,23 @@
   retries: 30
   delay: 5
 
-- name: Save machineset json template    
-  copy: 
-    content: "{{ worker_machine_set.stdout }}" 
+- name: Save machineset json template
+  copy:
+    content: "{{ worker_machine_set.stdout }}"
     dest: "{{ ansible_env.PWD }}/{{ gpu_machineset_template }}"
-  delegate_to: localhost    
+  delegate_to: localhost
 
 - name: Generate GPU machine set file
   shell: >
-    {{ parse_machine_set | quote}} {{ gpu_machineset_template }} {{ gpu_instance_type }} 
+    {{ parse_machine_set | quote}} {{ gpu_machineset_template }} {{ gpu_instance_type }}
   register: gpu_machine_set_file
   until:
   - gpu_machine_set_file != ''
   retries: 30
   delay: 5
 
-- name: Save machineset definition file    
-  copy: 
-    content: "{{ gpu_machine_set_file.stdout }}" 
-    dest: "{{ ansible_env.PWD }}/{{ gpu_machineset_deff }}"
-  delegate_to: localhost    
+- name: Save machineset definition file
+  copy:
+    content: "{{ gpu_machine_set_file.stdout }}"
+    dest: "{{ ansible_env.PWD }}/{{ gpu_machineset_def }}"
+  delegate_to: localhost
