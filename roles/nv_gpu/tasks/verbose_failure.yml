@@ -7,6 +7,9 @@
 - name: get gpu-operator-resources DaemonSets (debug)
   ignore_errors: true
   command: oc get ds -n gpu-operator-resources
+- name: get driver-container logs (debug)
+  ignore_errors: true
+  command: oc logs ds/nvidia-driver-daemonset -n gpu-operator-resources
 - name: get GPU nodes (debug)
   ignore_errors: true
   command: oc get nodes -l nvidia.com/gpu.present=true
