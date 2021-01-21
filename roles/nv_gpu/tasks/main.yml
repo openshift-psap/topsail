@@ -1,9 +1,14 @@
 ---
-- include_tasks: roles/nv_gpu/tasks/install.yml
+- name: Check if NVidia GPU operator has been deployed
+  block:
+  - include_tasks: roles/nv_gpu/tasks/install.yml
 
-# Ci block
-- block:
-
-  - include_tasks: ci_checks.yml
-    
-  when: user_mode == 'ci' 
+  # Ci block
+  - block:
+    - include_tasks: ci_checks.yml
+      when: user_mode == 'ci'
+  rescue:
+  - include_tasks: verbose_failure.yml
+  - name: Failing because of a previous error
+    fail:
+      msg: "Failing because of a previous error"

@@ -33,7 +33,7 @@ RUN sed -i '19s/roles\//\/opt\/ci-artifacts\/roles/' /etc/ansible/ansible.cfg
 ENV USER_NAME=psap-ci-runner \
     USER=psap-ci-runner \
     HOME=/opt/ci-artifacts/src/ \
-    ANSIBLE_OPTS="-vvv"
+    INSIDE_CI_IMAGE="y"
 
 COPY group_vars ${HOME}/group_vars
 COPY inventory ${HOME}/inventory
@@ -45,5 +45,3 @@ COPY .git ${HOME}/.git
 RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R
 
 WORKDIR ${HOME}
-ENTRYPOINT ["/usr/local/bin/entrypoint"]
-CMD [ "/usr/local/bin/run" ]

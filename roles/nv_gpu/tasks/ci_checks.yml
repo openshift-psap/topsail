@@ -2,23 +2,18 @@
 # See if NV GPU Operator has been successfully installed
 - name: Check if NVidia GPU operator has already been installed
   block:
-    - name: CRD check - Ci mode 
-      shell: > 
+    - name: CRD check - Ci mode
+      shell: >
         oc get crds | grep clusterpolicies.nvidia.com
       register: nv_ci_crd_check
       until:
       - nv_ci_crd_check.rc == 0
       retries: 10
       delay: 10
-    - name: cuda vector add validation status 
+    - name: cuda vector add validation status
       shell: |
-        CUDA_VECTORADD_STATE=$(oc get pods --field-selector=status.phase=Succeeded -n gpu-operator-resources --no-headers 2> /dev/null |wc -l)
-        if [[ $CUDA_VECTORADD_STATE -eq 2 ]]
-        then
-          exit 0
-        else
-          exit 1
-        fi 
+        CUDA_VECTORADD_STATE=$(oc get pods --field-selector=status.phase=Succeeded -n gpu-operator-resources --no-headers 2> /dev/null | wc -l)
+        exec test $CUDA_VECTORADD_STATE -eq 2
       register: nv_ci_cuda_validation_check
       until:
       - nv_ci_cuda_validation_check.rc == 0

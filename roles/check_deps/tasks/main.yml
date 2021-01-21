@@ -1,15 +1,16 @@
 ---
-- name: Check for 'kubectl'
-  command: >
-    type -a kubectl
-  register: kubectl_cli
-  ignore_errors: true
-
-- name: If kubectl does not exist, check for 'oc'
+- name: Check for 'oc'
   command: >
     type -a oc
   register: oc_cli
   ignore_errors: true
+
+- name: If oc does not exist, check for 'kubectl'
+  command: >
+    type -a kubectl
+  register: kubectl_cli
+  ignore_errors: true
+  when: oc_cli is failed
 
 - name: Check for 'jq', needed for parsing and debugging oc outputs
   command: >
@@ -18,19 +19,18 @@
   ignore_errors: true
 
 - name: check if the kubeconfig file exists
-  stat: 
+  stat:
     path: "{{ kubeconfig }}"
   register: kubeconfig_file
 
 - name: Kubeconfig file stat
   fail:
     msg: "Kubeconfig not found at {{ kubeconfig }}"
-  when: kubeconfig_file.stat.exists != true 
-  
+  when: kubeconfig_file.stat.exists != true
+
 - name: Get oc user
   command: >
-    oc whoami 
-    --kubeconfig={{ kubeconfig }}
+    oc whoami --kubeconfig={{ kubeconfig }}
   register: oc_user
 
 - block:

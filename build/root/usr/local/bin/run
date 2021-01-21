@@ -5,7 +5,7 @@
 #
 # SOURCE and HOME DIRECTORY: /opt/ci-artifacts/src
 
-echo "===> Running GPU CI Test suite<==="
+echo "===> Running PSAP CI Test suite <==="
 
 set -o pipefail
 set -o errexit
@@ -13,30 +13,46 @@ set -o nounset
 
 if [[ -z "${KUBECONFIG}" ]]
 then
-    echo "No kubeconfig, can't continue"
+    echo "No KUBECONFIG set, cannot continue."
+    exit 1
+fi
+if [[ ! -e "${KUBECONFIG}" ]]
+then
+    echo "KUBECONFIG file doesn't exist, can't continue. ($KUBECONFIG)"
     exit 1
 fi
 echo "Kubeconfig found at ${KUBECONFIG}, proceeding with tests"
 
+if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
+    echo "===> $0 $@ <=="
+
+    git show -s || echo "Could not access git history ..."
+    echo
+    oc version
+    echo
+
+    ANSIBLE_OPTS="-vvv"
+fi
+
+[[ "${INSIDE_CI_IMAGE:-}" == "y" ]] && set -x
+
 ANSIBLE_OPTS=${ANSIBLE_OPTS:--v}
 
 INVENTORY_ARG="-i inventory/hosts"
-while true; do
-    case ${1:-} in
-        "gpu-ci")
-	    exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-ci.yml
-	    ;;
-	"psap-ci")
-	    exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/openshift-psap-ci.yml
-	    ;;
-        -*)
-            echo "Unknown option: ${1:-}"
-            exit 1
-            ;;
-	*)
-	    break
-	    ;;
-    esac
-done
+
+case ${1:-} in
+    "gpu-ci")
+	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-ci.yml
+	;;
+    "psap-ci")
+	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/openshift-psap-ci.yml
+	;;
+    -*)
+        echo "Unknown option: ${1:-}"
+        exit 1
+        ;;
+    *)
+	;;
+esac
 
 exit 0
