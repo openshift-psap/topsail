@@ -2,13 +2,17 @@
 # This task file is run with import_role for localhost from gpu-burst.yml
 
 - name: Create OpenShift object
-  command: >
-    bash -c "oc create -f '{{ gpu_machineset_deff }}' --kubeconfig '{{ kubeconfig }}'"
+  command: oc create -f '{{ gpu_machineset_def }}' --kubeconfig '{{ kubeconfig }}'
   register: oc_create_gpu
 
 - name: Check machine is provisioned
-  command: >
-    bash -c "oc get machines --kubeconfig '{{ kubeconfig }}' -n openshift-machine-api |grep '{{ gpu_instance_type }}' |awk '{ print $2 }'"
+  shell: |
+    oc get machines --kubeconfig '{{ kubeconfig }}' -n openshift-machine-api \
+      | grep '{{ gpu_instance_type }}' \
+      | awk '{ print $2 }' \
+      | grep Running \
+      | head -1
+
   register: gpu_machine_state
   until:
   - gpu_machine_state.stdout == 'Running'

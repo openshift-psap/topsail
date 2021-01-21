@@ -43,4 +43,4 @@ gpu_instance_type: "g4dn.xlarge"
 parse_machine_set: "roles/openshift_node/files/aws_machineset_json.sh"
 
 # GPU definition file, Cloud agnostic key=values
-gpu_machineset_deff: "gpu_machineset_definition.json"
+gpu_machineset_def: "gpu_machineset_definition.json"
