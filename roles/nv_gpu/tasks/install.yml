@@ -61,8 +61,8 @@
       command: oc apply -f "{{ gpu_operator_crd }}"
       register: test_clusterpolicy_cr
       until: test_clusterpolicy_cr.rc != 1
-      retries: 5
-      delay: 5
+      retries: 10
+      delay: 10
   rescue:
     - name: Failed when creating the clusterpolicy CR for the GPU Operator
       fail:
