@@ -31,7 +31,9 @@ if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
     oc version
     echo
 
-	echo "===> Apply entitlement manifests <=="
+    PSAP_ENTITLEMENT=/var/run/psap-entitlement-secret
+    echo "===> Apply entitlement manifests from ${PSAP_ENTITLEMENT}<=="
+
     oc create -f ${PSAP_ENTITLEMENT} && sleep 300
 
     ANSIBLE_OPTS="-vvv"
@@ -42,8 +44,6 @@ fi
 ANSIBLE_OPTS=${ANSIBLE_OPTS:--v}
 
 INVENTORY_ARG="-i inventory/hosts"
-
-PSAP_ENTITLEMENT=/var/run/psap-entitlement-secret
 
 case ${1:-} in
     "gpu-ci")
