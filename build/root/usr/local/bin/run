@@ -23,10 +23,22 @@ then
 fi
 echo "Kubeconfig found at ${KUBECONFIG}, proceeding with tests"
 
+if ! which oc &>/dev/null;
+then
+    echo "OpenShift client not found, downloading it ..."
+    mkdir bin -p
+    cd bin
+    wget --quiet https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz
+    tar xvf openshift-client-linux.tar.gz
+    rm openshift-client-linux.tar.gz
+    export PATH=$PWD:$PATH
+    cd ..
+fi
+
 if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
     echo "===> $0 $@ <=="
 
-    git show -s || echo "Could not access git history ..."
+    git show --quiet || echo "Could not access git history ..."
     echo
     oc version
     echo
