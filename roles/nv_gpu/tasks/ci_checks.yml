@@ -19,7 +19,14 @@
       - nv_ci_cuda_validation_check.rc == 0
       retries: 15
       delay: 60
+  always:
     - name: capture GPU Pods states
       command: oc get pods -owide -n gpu-operator-resources
+      ignore_errors: true
+    - name: capture Pod images
+      command: |
+        oc get pods -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
+      ignore_errors: true
     - name: capture GPU Nodes states
       command: oc describe node -lnvidia.com/gpu.present=true
+      ignore_errors: true
