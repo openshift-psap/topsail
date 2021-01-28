@@ -14,9 +14,12 @@
 
 - name: Create the OperatorHub subscription for the NFD Operator
   block:
-    - name: apply operatorhub subscription manifest
-      command: oc apply -f "{{ nfd_operator_operatorhub_sub }}"
+    - name: "apply operatorhub subscription manifest (nfd_channel = {{ nfd_channel }})"
+      shell: sed 's|{{ '{{' }} nfd_channel {{ '}}' }}|{{ nfd_channel }}|' "{{ nfd_operator_operatorhub_sub }}" \
+           | oc apply -f "{{ gpu_operator_operatorhub_sub }}"
       register: nfd_operatorhub_sub
+      args:
+        warn: false # don't warn about using sed here
   rescue:
     - name: Failed when creating the test operatorHub subscription for the NFD Operator
       fail:

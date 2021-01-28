@@ -8,3 +8,5 @@ nfd_operator_crd: roles/nv_gpu/files/041_customresources.yaml
 gpu_operator_namespace: roles/nv_gpu/files/012_namespace.yaml
 gpu_operator_operatorhub_sub: roles/nv_gpu/files/032_operator_sub.yaml
 gpu_operator_crd: roles/nv_gpu/files/042_customresources.yaml
+
+nfd_channel: "{% if openshift_release == '4.5' %}4.5{% else %}4.6{% endif %}"

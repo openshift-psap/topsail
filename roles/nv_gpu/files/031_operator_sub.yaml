@@ -4,7 +4,7 @@ metadata:
   name: nfd
   namespace: openshift-nfd
 spec:
-  channel: "4.6"
+  channel: "{{ nfd_channel }}"
   installPlanApproval: Automatic
   name: nfd
   source: redhat-operators
