@@ -1,4 +1,6 @@
 ---
+- name: Install GPU-operator from OperatorHub
+  include_tasks: roles/nv_gpu/tasks/install_nfd.yml
 
 - name: Build GPU-operator from custom commit
   import_tasks: roles/nv_gpu_install_from_commit/tasks/build.yml
