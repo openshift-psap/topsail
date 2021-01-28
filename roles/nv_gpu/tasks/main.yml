@@ -1,13 +1,15 @@
----
 - block:
-  - name: Install GPU-operator from OperatorHub
-    include_tasks: roles/nv_gpu/tasks/install.yml
-    when: install_operator_from_hub == "yes"
+  - name: Install NFD-operator from OperatorHub
+    include_tasks: roles/nv_gpu/tasks/install_nfd.yml
+    when: install_nfd_operator_from_hub == "yes"
 
-  # Ci block
-  - block:
-    - include_tasks: ci_checks.yml
-      when: user_mode == 'ci'
+  - name: Install GPU-operator from OperatorHub
+    include_tasks: roles/nv_gpu/tasks/install_nv.yml
+    when: install_gpu_operator_from_hub == "yes"
+
+  - include_tasks: ci_checks.yml
+    when: user_mode == 'ci'
+
   rescue:
   - include_tasks: verbose_failure.yml
   - name: Failing because of a previous error
