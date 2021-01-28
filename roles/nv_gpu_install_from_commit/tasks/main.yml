@@ -1,22 +1,28 @@
 ---
-- name: Install GPU-operator from OperatorHub
-  include_tasks: roles/nv_gpu/tasks/install_nfd.yml
+- block:
+  - name: Install NFD-operator from OperatorHub
+    include_role:
+      name: nv_gpu
+      tasks_from: install_nfd
+    when: install_nfd_operator_from_hub == "yes"
 
-- name: Build GPU-operator from custom commit
-  import_tasks: roles/nv_gpu_install_from_commit/tasks/build.yml
-- name: Deploy GPU-operator from custom commit with helm
-  import_tasks: roles/nv_gpu_install_from_commit/tasks/deploy.yml
+  - name: Build GPU-operator from custom commit
+    import_tasks: roles/nv_gpu_install_from_commit/tasks/build.yml
 
-# Ci block
-- name: Run CI and always undeploy
-  block:
+  - name: Deploy GPU-operator from custom commit with helm
+    import_tasks: roles/nv_gpu_install_from_commit/tasks/deploy.yml
+
   - include_tasks: roles/nv_gpu/tasks/ci_checks.yml
     register: test_ci
-  when: user_mode == 'ci'
+    when: user_mode == 'ci'
   rescue:
-    - name: Failed to run CI checks
-      fail:
-        msg: "FAILED {{ test_ci }}"
+  - name: Verbose Failure
+    include_role:
+      name: nv_gpu
+      tasks_from: verbose_failure
+  - name: Failing because of a previous error
+    fail:
+      msg: "Failing because of a previous error"
   always:
     - name: Undeploy GPU-operator from custom commit with helm
       import_tasks: roles/nv_gpu_install_from_commit/tasks/undeploy.yml
