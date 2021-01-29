@@ -16,7 +16,7 @@
   block:
     - name: "apply operatorhub subscription manifest (nfd_channel = {{ nfd_channel }})"
       shell: sed 's|{{ '{{' }} nfd_channel {{ '}}' }}|{{ nfd_channel }}|' "{{ nfd_operator_operatorhub_sub }}" \
-           | oc apply -f "{{ gpu_operator_operatorhub_sub }}"
+           | oc apply -f-
       register: nfd_operatorhub_sub
       args:
         warn: false # don't warn about using sed here
@@ -34,6 +34,9 @@
       retries: 20
       delay: 15
   rescue:
+    - name: Inspect NFD subscription
+      command: oc describe subscriptions/nfd -n openshift-nfd
+      ignore_errors: true
     - name: Failed when creating the test clusterpolicy CR for the GPU Operator
       fail:
         msg: "{{ nfd_cr }}"
