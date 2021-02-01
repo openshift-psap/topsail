@@ -26,7 +26,7 @@ echo "Kubeconfig found at ${KUBECONFIG}, proceeding with tests"
 if ! which oc &>/dev/null && [ ${1:-} == gpu-commit-ci ];
 then
     echo "OpenShift client not found, downloading it ..."
-    mkdir bin -p
+    mkdir -p bin
     cd bin
     wget --quiet https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz
     tar xvf openshift-client-linux.tar.gz
@@ -38,7 +38,7 @@ fi
 if ! which helm &>/dev/null;
 then
     echo "Helm not found, downloading it ..."
-    mkdir bin -p
+    mkdir -p bin
     cd bin
 
     HELM_VERSION="v3.5.1"
