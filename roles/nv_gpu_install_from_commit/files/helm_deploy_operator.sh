@@ -17,6 +17,8 @@ OPERATOR_NAME="gpu-operator-from-source"
 OPERATOR_NAMESPACE="gpu-operator-ci"
 HELM_SOURCE="./deployments/gpu-operator"
 
+NFD_ENABLED="${NFD_ENABLED:-false}"
+
 # https://stackoverflow.com/a/21189044/341106
 function parse_yaml {
    local prefix=$2
@@ -72,7 +74,7 @@ deploy() {
      \
      --set platform.openshift=true \
      --set operator.defaultRuntime=crio \
-     --set nfd.enabled=false \
+     --set nfd.enabled=${NFD_ENABLED} \
      \
      --set toolkit.version=${HELM_values[toolkit_version]/-ubuntu*/}-ubi8 \
      --set devicePlugin.version=${device_plugin_version} \
