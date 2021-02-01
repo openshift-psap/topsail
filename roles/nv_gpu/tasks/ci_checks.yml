@@ -25,7 +25,7 @@
       ignore_errors: true
     - name: capture Pod images
       command: |
-        oc get pods -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
+        oc get pods -n gpu-operator-resources -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
       ignore_errors: true
     - name: capture GPU Nodes states
       command: oc describe node -lnvidia.com/gpu.present=true
