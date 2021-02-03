@@ -1,18 +1,20 @@
----
-# This task file is run with import_role for localhost from gpu-burst.yml
-
-- name: Create OpenShift object
-  command: oc create -f '{{ gpu_machineset_def }}' --kubeconfig '{{ kubeconfig }}'
-  register: oc_create_gpu
+- name: Get GPU MachineSet object name
+  shell: cat '{{ gpu_machineset_def }}' | jq -r .metadata.name
+  register: gpu_machineset_name
+- block:
+  - name: Search if GPU MachineSet object already exists
+    command: oc get 'machineset/{{ gpu_machineset_name.stdout }}' -n openshift-machine-api -oname
+  rescue:
+  - name: Create GPU MachineSet object
+    command: oc create -f '{{ gpu_machineset_def }}'
+    register: oc_create_gpu
 
 - name: Check machine is provisioned
   shell: |
-    oc get machines --kubeconfig '{{ kubeconfig }}' -n openshift-machine-api \
-      | grep '{{ gpu_instance_type }}' \
-      | awk '{ print $2 }' \
-      | grep Running \
-      | head -1
-
+    oc get machines --no-headers \
+        -l machine.openshift.io/cluster-api-machineset={{ gpu_machineset_name.stdout }} \
+        -o=jsonpath='{range .items[*]}{.status.phase}{end}' \
+        -n openshift-machine-api
   register: gpu_machine_state
   until:
   - gpu_machine_state.stdout == 'Running'
