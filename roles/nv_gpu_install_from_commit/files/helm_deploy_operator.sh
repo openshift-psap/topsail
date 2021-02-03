@@ -4,14 +4,15 @@ set -Eeuo pipefail
 
 set -x
 if [ "$#" -gt 4 ]; then
-    echo "Usage: $0 deploy|undeploy <gpu_operator_git_repo> <gpu_operator_git_ref> <gpu_operator_image_tag>"
+    echo "Usage:"
+    echo "  $0 deploy <gpu_operator_git_repo> <gpu_operator_git_ref> <gpu_operator_image_tag>"
+    echo "  $0 undeploy"
     exit 1
 fi
 
+script_name="$0"
 action="$1"
-OPERATOR_GIT_REPO="$2"
-OPERATOR_GIT_REF="$3"
-OPERATOR_IMAGE_TAG="$4"
+shift
 
 OPERATOR_NAME="gpu-operator-from-source"
 OPERATOR_NAMESPACE="gpu-operator-ci"
@@ -38,6 +39,15 @@ function parse_yaml {
 }
 
 deploy() {
+    if [ ! "$#" -eq 3 ]; then
+        echo "Usage: $script_name deploy <gpu_operator_git_repo> <gpu_operator_git_ref> <gpu_operator_image_tag>"
+        exit 1
+    fi
+
+    OPERATOR_GIT_REPO="$1"
+    OPERATOR_GIT_REF="$2"
+    OPERATOR_IMAGE_TAG="$3"
+
     cd /tmp
     rm -rf gpu-operator
     git clone $OPERATOR_GIT_REPO -b $OPERATOR_GIT_REF --depth 1 gpu-operator
@@ -84,7 +94,7 @@ undeploy() {
 
 if [ "$action" == deploy ];
 then
-    deploy
+    deploy "$@"
 elif [ "$action" == undeploy ];
 then
     undeploy
