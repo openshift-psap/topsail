@@ -11,7 +11,8 @@ aws_add_gpu_node: '{{ use_aws }}'
 force_reinstall: 'yes'
 
 install_nfd_operator_from_hub: 'yes'
-install_gpu_operator_from_hub: 'yes'
+install_gpu_operator_from_hub: 'yes'    # nv_gpu role
+install_gpu_operator_from_commit: 'yes' # nv_gpu_install_from_commit role
 
 # user mode, set the behaviour of the playbook, available modes:
 # - install: basic install of desired operators operators

@@ -20,12 +20,13 @@
 
   - name: Build GPU-operator from custom commit
     import_tasks: roles/nv_gpu_install_from_commit/tasks/build.yml
+    when: install_gpu_operator_from_commit == "yes"
 
   - name: Deploy GPU-operator from custom commit with helm
     import_tasks: roles/nv_gpu_install_from_commit/tasks/deploy.yml
+    when: install_gpu_operator_from_commit == "yes"
 
   - include_tasks: roles/nv_gpu/tasks/ci_checks.yml
-    register: test_ci
     when: user_mode == 'ci'
   rescue:
   - name: Verbose Failure
