@@ -44,6 +44,9 @@ deploy() {
 
     cd gpu-operator
 
+    git show --quiet
+    echo
+
     set +x
     declare -A HELM_values
     while read line; do
