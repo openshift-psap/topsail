@@ -16,3 +16,7 @@
 - name: delete namespace and everything it contains
   command: oc delete -f "{{ gpu_operator_namespace }}"
   ignore_errors: true
+
+- name: delete utils namespace and everything it contains
+  command: oc delete -f "{{ gpu_operator_ci_utils }}"
+  ignore_errors: true
