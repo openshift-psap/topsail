@@ -53,15 +53,6 @@ deploy() {
     done <<< $(parse_yaml deployments/gpu-operator/values.yaml "")
     set -x
 
-    SKIP_BROKEN_UBI8_DEVICE_PLUGIN=1
-    if [ $SKIP_BROKEN_UBI8_DEVICE_PLUGIN == 1 ]; then
-        echo "Using default (ubuntu) device plugin image"
-        device_plugin_version=${HELM_values[devicePlugin_version]}
-    else
-        echo "Using ubi8 (maybe broken) device plugin image"
-        device_plugin_version=${HELM_values[devicePlugin_version]/-ubuntu*/}-ubi8
-    fi
-
     helm uninstall --namespace $OPERATOR_NAMESPACE $OPERATOR_NAME || true
     #helm template --debug # <-- this is for debugging helm install
     exec helm install \
@@ -77,7 +68,7 @@ deploy() {
      --set nfd.enabled=${NFD_ENABLED} \
      \
      --set toolkit.version=${HELM_values[toolkit_version]/-ubuntu*/}-ubi8 \
-     --set devicePlugin.version=${device_plugin_version} \
+     --set devicePlugin.version=${HELM_values[devicePlugin_version]/-ubuntu*/}-ubi8 \
      --set dcgmExporter.version=${HELM_values[dcgmExporter_version]/-ubuntu*/}-ubi8 \
      \
      --namespace $OPERATOR_NAMESPACE \
