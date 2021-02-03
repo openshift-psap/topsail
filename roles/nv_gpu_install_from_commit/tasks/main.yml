@@ -41,6 +41,6 @@
       import_tasks: roles/nv_gpu_install_from_commit/tasks/undeploy.yml
       when: undeploy_gpu_operator == 'yes'
 
-- name: Cleanup custom commit resources
-  import_tasks: roles/nv_gpu_install_from_commit/tasks/cleanup.yml
-  when: undeploy_gpu_operator == 'yes'
+    - name: Cleanup custom commit resources
+      import_tasks: roles/nv_gpu_install_from_commit/tasks/cleanup.yml
+      when: undeploy_gpu_operator == 'yes'
