@@ -3,29 +3,77 @@
 - name: Check if NVidia GPU operator has already been installed
   block:
     - name: CRD check - Ci mode
-      shell: >
-        oc get crds | grep clusterpolicies.nvidia.com
+      command: oc get crds/clusterpolicies.nvidia.com
       register: nv_ci_crd_check
       until:
       - nv_ci_crd_check.rc == 0
       retries: 10
       delay: 10
-    - name: cuda vector add validation status
-      shell: |
-        CUDA_VECTORADD_STATE=$(oc get pods --field-selector=status.phase=Succeeded -n gpu-operator-resources --no-headers 2> /dev/null | wc -l)
-        exec test $CUDA_VECTORADD_STATE -eq 2
-      register: nv_ci_cuda_validation_check
+
+    - name: check that nvidia-device-plugin-validation Pod has ran successfully
+      shell:
+        oc get pods --field-selector=status.phase=Succeeded
+                    -n gpu-operator-resources
+                    --no-headers 2> /dev/null
+        | grep nvidia-device-plugin-validation
+      register: nv_device_plugin_validation_check
       until:
-      - nv_ci_cuda_validation_check.rc == 0
+      - nv_device_plugin_validation_check.rc == 0
       retries: 15
       delay: 60
+    - block:
+      - name: check that gpu-feature-discovery Pod has labeled the nodes
+        shell: oc get nodes -l nvidia.com/gpu.count -oname | grep node/
+        register: nv_gpu_feature_discovery_check
+        until:
+        - nv_gpu_feature_discovery_check.rc == 0
+        retries: 10
+        delay: 30
+      rescue:
+      - name: GFD logs (debug)
+        command: oc logs ds/gpu-feature-discovery -n gpu-operator-resources
+
+    - block:
+      - name: check that the nvidia-dcgm-exporter Pod is responding appropriately
+        shell: |
+          DCGM_POD=$(oc get pods -lapp=nvidia-dcgm-exporter -oname -n gpu-operator-resources | head -1);
+          if [ -z "$DCGM_POD" ]; then
+            echo "Failed to find a pod for nvidia-dcgm-exporter";
+            exit 10;
+          fi;
+          DCGM_PORT=9400; LOCAL_PORT=9401;
+          retry=5;
+          timeout 10 oc port-forward ${DCGM_POD} ${LOCAL_PORT}:${DCGM_PORT} -n gpu-operator-resources &
+          while [ "$DCGM_OUTPUT" == "" ]; do
+            sleep 1;
+            DCGM_OUTPUT=$(curl localhost:${LOCAL_PORT}/metrics 2>/dev/null);
+            retry=$(($retry - 1));
+            if [[ $retry == 0 ]]; then
+              echo "Failed to get any output from DCGM/metrics ...";
+              exit 11;
+            fi;
+          done;
+          exec grep "# TYPE DCGM_FI_DEV" <<< ${DCGM_OUTPUT}
+        register: nv_dcgm_exporter_check
+        until:
+        - nv_dcgm_exporter_check.rc == 0
+        retries: 10
+        delay: 20
+      rescue:
+      - name: DCGM logs (debug)
+        command: oc logs ds/nvidia-dcgm-exporter -n gpu-operator-resources
+        ignore_errors: true
+      - fail:
+          msg: Failed to get DCGM metrics
+
   always:
     - name: capture GPU Pods states
       command: oc get pods -owide -n gpu-operator-resources
       ignore_errors: true
     - name: capture Pod images
-      command: |
-        oc get pods -n gpu-operator-resources -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
+      command:
+        oc get pods -n gpu-operator-resources
+                    -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
       ignore_errors: true
     - name: capture GPU Nodes states
       command: oc describe node -lnvidia.com/gpu.present=true
