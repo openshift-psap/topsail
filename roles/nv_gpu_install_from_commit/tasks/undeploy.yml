@@ -1,2 +1,3 @@
 - name: undeploy the custom version of the GPU operator
   command: bash roles/nv_gpu_install_from_commit/files/helm_deploy_operator.sh undeploy "{{ gpu_operator_git_repo }}" "{{ gpu_operator_git_ref }}" "{{ gpu_operator_image_tag }}"
+  ignore_errors: true
