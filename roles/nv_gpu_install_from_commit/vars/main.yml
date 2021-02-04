@@ -1,12 +1,12 @@
 ---
 # Manifest for installing NV GPU operator from a custom commit
-tuned_module_fuse: roles/nv_gpu_install_from_commit/files/tuned_module_fuse.yaml
+tuned_module_fuse: roles/nv_gpu_install_from_commit/files/tuned_module_fuse.yml
 tuned_module_fuse_label: tuned.module.fuse
-gpu_operator_ci_utils: roles/nv_gpu_install_from_commit/files/operator_ci_utils.yaml
-gpu_operator_namespace: roles/nv_gpu_install_from_commit/files/operator_namespace.yaml
-gpu_operator_imagestream: roles/nv_gpu_install_from_commit/files/operator_imagestream.yaml
-gpu_operator_image_builder_script: roles/nv_gpu_install_from_commit/files/operator_image_builder_script.yaml
-gpu_operator_helper_image_builder: roles/nv_gpu_install_from_commit/files/operator_helper_image_builder.yaml
-gpu_operator_image_builder_pod: roles/nv_gpu_install_from_commit/files/operator_image_builder_pod.yaml
+gpu_operator_ci_utils: roles/nv_gpu_install_from_commit/files/operator_ci_utils.yml
+gpu_operator_namespace: roles/nv_gpu_install_from_commit/files/operator_namespace.yml
+gpu_operator_imagestream: roles/nv_gpu_install_from_commit/files/operator_imagestream.yml
+gpu_operator_image_builder_script: roles/nv_gpu_install_from_commit/files/operator_image_builder_script.yml
+gpu_operator_helper_image_builder: roles/nv_gpu_install_from_commit/files/operator_helper_image_builder.yml
+gpu_operator_image_builder_pod: roles/nv_gpu_install_from_commit/files/operator_image_builder_pod.yml
 gpu_operator_helm_install: roles/nv_gpu_install_from_commit/files/helm_deploy_operator.sh
 gpu_operator_image_tag: "gpu-operator-{{ gpu_operator_image_tag_uid }}"
