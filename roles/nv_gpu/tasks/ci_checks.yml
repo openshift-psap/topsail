@@ -32,6 +32,7 @@
       rescue:
       - name: GFD logs (debug)
         command: oc logs ds/gpu-feature-discovery -n gpu-operator-resources
+        ignore_errors: true
 
     - block:
       - name: check that the nvidia-dcgm-exporter Pod is responding appropriately
