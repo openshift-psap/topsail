@@ -15,3 +15,7 @@
   - name: Failing because of a previous error
     fail:
       msg: "Failing because of a previous error"
+
+- name: Uninstall GPU-operator from OperatorHub
+  include_tasks: uninstall_nv.yml
+  when: undeploy_gpu_operator == "yes"
