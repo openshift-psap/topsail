@@ -2,27 +2,13 @@
   command: oc apply -f "{{ nfd_operator_namespace }}"
 
 - name: Create the OperatorGroup object
-  block:
-    - name: apply operatorGroup manifest
-      command: oc apply -f "{{ nfd_operator_operatorgroup }}"
-      register: test_operatorgroup
-  rescue:
-    - name: Failed when creating the OperatorGroup object for the NFD Operator
-      fail:
-        msg: "{{ test_operatorgroup }}"
+  command: oc apply -f "{{ nfd_operator_operatorgroup }}"
 
-- name: Create the OperatorHub subscription for the NFD Operator
-  block:
-    - name: "apply operatorhub subscription manifest (nfd_channel = {{ nfd_channel }})"
-      shell: sed 's|{{ '{{' }} nfd_channel {{ '}}' }}|{{ nfd_channel }}|' "{{ nfd_operator_operatorhub_sub }}" \
-           | oc apply -f-
-      register: nfd_operatorhub_sub
-      args:
-        warn: false # don't warn about using sed here
-  rescue:
-    - name: Failed when creating the test operatorHub subscription for the NFD Operator
-      fail:
-        msg: "{{ nfd_operatorhub_sub }}"
+- name: "Create the OperatorHub subscription for the NFD Operator (nfd_channel = {{ nfd_channel }})"
+  shell: sed 's|{{ '{{' }} nfd_channel {{ '}}' }}|{{ nfd_channel }}|' "{{ nfd_operator_operatorhub_sub }}" \
+       | oc apply -f-
+  args:
+    warn: false # don't warn about using sed here
 
 - name: Create the NodeFeatureDiscovery CR for the NFD Operator
   block:
