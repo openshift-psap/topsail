@@ -1,24 +1,31 @@
 - name: beginning of verbose failure (debug)
   debug:
     msg: "Beginning of verbose failure"
+
 - name: get gpu-operator-resources Pods (debug)
   ignore_errors: true
   command: oc get pods -n gpu-operator-resources -owide
+
 - name: get gpu-operator-resources DaemonSets (debug)
   ignore_errors: true
   command: oc get ds -n gpu-operator-resources
+
 - name: get driver-container logs (debug)
   ignore_errors: true
   command: oc logs ds/nvidia-driver-daemonset -n gpu-operator-resources
+
 - name: get GPU nodes (debug)
   ignore_errors: true
   command: oc get nodes -l nvidia.com/gpu.present=true
+
 - name: get all nodes (debug)
   ignore_errors: true
   command: oc get nodes
+
 - name: get all machines (debug)
   ignore_errors: true
   command: oc get machines -A
+
 - name: end of verbose failure (debug)
   debug:
     msg: "End of verbose failure"
