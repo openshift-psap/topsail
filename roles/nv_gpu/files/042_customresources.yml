@@ -1,5 +1,5 @@
-# Operator version 1.4.0
-# Jan 18 2021
+# Operator version 1.5.1
+# Feb 05 2021
 apiVersion: nvidia.com/v1
 kind: ClusterPolicy
 metadata:
@@ -24,7 +24,7 @@ spec:
     podSecurityContext: {}
     repository: nvcr.io/nvidia
     securityContext: {}
-    version: 'sha256:45b459c59d13a1ebf37260a33c4498046d4ade7cc243f2ed71115cd81054cd85'
+    version: 'sha256:4762b5ba832e498b17d5736224bb90c2f538e593ceb7731cbd2506a80ab8a610'
     image: k8s-device-plugin
     tolerations: []
   driver:
@@ -49,7 +49,7 @@ spec:
     podSecurityContext: {}
     repository: nvcr.io/nvidia
     securityContext: {}
-    version: 'sha256:82e6f61b715d710c60ac14be78953336ea5dbc712244beb51036139d1cc8d526'
+    version: 'sha256:12959cb7dc6419cfb085d62d9801a0fb286b7d000c5efc4d7b4d8759f702dab0'
     image: gpu-feature-discovery
     tolerations: []
     migStrategy: none
@@ -70,6 +70,6 @@ spec:
     podSecurityContext: {}
     repository: nvcr.io/nvidia/k8s
     securityContext: {}
-    version: 'sha256:b3f48033d7d9e1d5703b6ecffe35d219a45a17bdcf85374d78924dee9c8917be'
+    version: 'sha256:cfc343ebe6ff4fcd85bace556923fd7fc0494c569f7d1276a6eceaca7a424ad4'
     image: container-toolkit
     tolerations: []
