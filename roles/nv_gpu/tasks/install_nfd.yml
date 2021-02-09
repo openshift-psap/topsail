@@ -13,7 +13,7 @@
 - name: Create the NodeFeatureDiscovery CR for the NFD Operator
   block:
     - name: apply NodeFeatureDiscovery manifest
-      command: oc apply -f "{{ nfd_operator_crd }}"
+      command: oc apply -f "{{ nfd_operator_cr }}"
       register: nfd_cr
       until: nfd_cr.rc != 1
       retries: 20

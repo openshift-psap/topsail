@@ -3,7 +3,7 @@
 nfd_operator_namespace: roles/nv_gpu/files/011_namespace.yml
 nfd_operator_operatorgroup: roles/nv_gpu/files/02_operatorgroup.yml
 nfd_operator_operatorhub_sub: roles/nv_gpu/files/031_operator_sub.yml
-nfd_operator_crd: roles/nv_gpu/files/041_customresources.yml
+nfd_operator_cr: roles/nv_gpu/files/041_customresources.yml
 # Manifest for installing NV GPU operator from operator Hub
 gpu_operator_namespace: roles/nv_gpu/files/012_namespace.yml
 gpu_operator_operatorhub_sub: roles/nv_gpu/files/032_operator_sub.yml
