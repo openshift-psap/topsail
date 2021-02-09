@@ -18,6 +18,10 @@
   command: oc delete -f "{{ gpu_operator_cr }}"
   ignore_errors: true
 
+- name: Delete the CRD of the GPU Operator
+  command: oc delete crd clusterpolicies.nvidia.com
+  ignore_errors: true
+
 - name: Delete the namespace of the GPU Operator
   command: oc delete -f "{{ gpu_operator_namespace }}"
   ignore_errors: true
