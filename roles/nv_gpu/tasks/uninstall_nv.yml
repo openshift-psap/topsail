@@ -11,7 +11,7 @@
 - name: Delete the ClusterServiceVersion of the GPU Operator
   with_items: "{{ operator_csv_name.stdout_lines }}"
   shell: "oc delete {{ item }} -n openshift-operators"
-  #ignore_errors: true
+  ignore_errors: true
   when: operator_csv_name.rc == 0
 
 - name: Delete the clusterPolicy CR of the GPU Operator
