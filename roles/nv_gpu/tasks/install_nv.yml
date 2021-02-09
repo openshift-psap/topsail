@@ -4,8 +4,8 @@
 - name: Create the OperatorHub subscription for the GPU Operator
   command: oc apply -f "{{ gpu_operator_operatorhub_sub }}"
 
-- name: Create the clusterPolicy CRD for the GPU Operator
-  command: oc apply -f "{{ gpu_operator_crd }}"
+- name: Create the clusterPolicy CR for the GPU Operator
+  command: oc apply -f "{{ gpu_operator_cr }}"
   register: test_clusterpolicy_cr
   until: test_clusterpolicy_cr.rc != 1
   retries: 20
