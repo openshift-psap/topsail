@@ -101,6 +101,13 @@ case ${1:-} in
         ;;
     "gpu-ci")
 	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-ci.yml
+        ;;
+    "gpu-ci-undeploy")
+        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e install_nfd_operator_from_hub=no"
+        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e install_gpu_operator_from_hub=no"
+        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e undeploy_gpu_operator=yes"
+        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e user_mode=not-ci" # don't run CI tests here
+	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-ci.yml
 	;;
     "psap-ci")
 	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/openshift-psap-ci.yml
