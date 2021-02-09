@@ -47,15 +47,15 @@
     delay: 30
   rescue:
   - name: get info about helper image build failure
-    command: oc get pods -n gpu-operator-ci
+    command: oc get pods -n gpu-operator-ci-utils
     ignore_errors: true
-  - name: get logs of helper image build failure
-    command: oc get logs bc/helper-image-builder -n gpu-operator-ci
+  - name: get logs of helper image build failure -n gpu-operator-ci
+    command: oc logs bc/helper-image-builder -n gpu-operator-ci-utils
     ignore_errors: true
   - name: get info about helper image build failure
-    command: oc describe build/helper-image-builder-1 -n gpu-operator-ci
+    command: oc describe build/helper-image-builder-1 -n gpu-operator-ci-utils
   - debug:
-      msg: "suggestion: retry with 'oc new-build bc/helper-image-builder -ngpu-operator-ci-utils'"
+      msg: "suggestion: retry with 'oc new-build bc/helper-image-builder -n gpu-operator-ci-utils'"
   - name: operator image failed to build
     fail:
       msg: operator image failed to build
@@ -112,7 +112,7 @@
       command: oc get pods -n gpu-operator-ci
       ignore_errors: true
     - name: get logs of image build failure
-      command: oc get logs pod/operator-image-builder-pod
+      command: oc logs pod/operator-image-builder-pod
       ignore_errors: true
     - name: operator image failed to build
       fail:
