@@ -35,11 +35,7 @@ ENV USER_NAME=psap-ci-runner \
     HOME=/opt/ci-artifacts/src/ \
     INSIDE_CI_IMAGE="y"
 
-COPY group_vars ${HOME}/group_vars
-COPY inventory ${HOME}/inventory
-COPY playbooks ${HOME}/playbooks
-COPY roles ${HOME}/roles
-COPY .git ${HOME}/.git
+COPY . ${HOME}/
 
 # Ensure directory permissions are properly set
 RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R
