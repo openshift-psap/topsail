@@ -5,7 +5,7 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
-ANSIBLE_OPTS="${ANSIBLE_OPTS:--vvv}"
+ANSIBLE_OPTS="${ANSIBLE_OPTS:--vv}"
 INVENTORY_ARG="-i inventory/hosts"
 
 if [ -z "${OCP_VERSION:-}" ]; then

@@ -64,7 +64,7 @@ if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
     oc create -f ${PSAP_ENTITLEMENT} && sleep 300
 
     OCP_VERSION="$(oc version -o json | jq --raw-output '.openshiftVersion' | cut -b-3)"
-    ANSIBLE_OPTS="-vvv"
+    ANSIBLE_OPTS="-vv"
     ANSIBLE_OPTS="$ANSIBLE_OPTS -e openshift_release=$OCP_VERSION"
 
     CI_IMAGE_GPU_COMMIT_CI_REPO="https://github.com/NVIDIA/gpu-operator/"
