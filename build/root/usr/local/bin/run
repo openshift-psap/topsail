@@ -23,7 +23,7 @@ then
 fi
 echo "Kubeconfig found at ${KUBECONFIG}, proceeding with tests"
 
-if ! which oc &>/dev/null && [ ${1:-} == gpu-commit-ci ];
+if ! which oc &>/dev/null;
 then
     echo "OpenShift client not found, downloading it ..."
     mkdir -p bin
