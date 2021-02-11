@@ -19,3 +19,7 @@
 - name: Uninstall GPU-operator from OperatorHub
   include_tasks: uninstall_nv.yml
   when: undeploy_gpu_operator == "yes"
+
+- name: Uninstall NFD-operator from OperatorHub
+  include_tasks: uninstall_nfd.yml
+  when: undeploy_nfd_operator == "yes"

@@ -1,0 +1,27 @@
+---
+- name: Delete the OperatorHub subscription for the NFD Operator
+  command: oc delete -f "{{ nfd_operator_operatorhub_sub }}"
+  ignore_errors: true
+
+- name: Get the name of the NFD Operator ClusterServiceVersion
+  shell: oc get ClusterServiceVersion -n openshift-nfd -oname | grep /nfd
+  register: operator_csv_name
+  ignore_errors: true
+
+- name: Delete the ClusterServiceVersion of the NFD Operator
+  with_items: "{{ operator_csv_name.stdout_lines }}"
+  shell: "oc delete {{ item }} -n openshift-operators"
+  ignore_errors: true
+  when: operator_csv_name.rc == 0
+
+- name: Delete the NodeFeatureDiscovery CR of the NFD Operator
+  command: oc delete -f "{{ nfd_operator_cr }}"
+  ignore_errors: true
+
+- name: Delete the CRD of the NFD Operator
+  command: oc delete crd nodefeaturediscoveries.nfd.openshift.io
+  ignore_errors: true
+
+- name: Delete the namespace of the GPU Operator
+  command: oc delete -f "{{ nfd_operator_namespace }}"
+  ignore_errors: true

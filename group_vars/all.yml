@@ -42,6 +42,10 @@ test_odh: 'no'
 # - from OperatorHub (nv_gpu_role)
 undeploy_gpu_operator: 'no'
 
+# Undeploy the NFD-operator
+# - from OperatorHub (nv_gpu_role)
+undeploy_nfd_operator: 'no'
+
 # json raw template from running workers
 gpu_machineset_template: "gpu_machineset_aws_template.json"
 
