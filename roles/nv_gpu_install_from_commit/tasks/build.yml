@@ -112,7 +112,7 @@
       command: oc get pods -n gpu-operator-ci
       ignore_errors: true
     - name: get logs of image build failure
-      command: oc logs pod/operator-image-builder-pod
+      command: oc logs pod/operator-image-builder-pod -n gpu-operator-ci
       ignore_errors: true
     - name: operator image failed to build
       fail:
