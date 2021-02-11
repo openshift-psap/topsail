@@ -1,12 +1,12 @@
 ---
 # Manifest for installing NFD operator from operator Hub
-nfd_operator_namespace: roles/nv_gpu/files/011_namespace.yml
-nfd_operator_operatorgroup: roles/nv_gpu/files/02_operatorgroup.yml
-nfd_operator_operatorhub_sub: roles/nv_gpu/files/031_operator_sub.yml
-nfd_operator_cr: roles/nv_gpu/files/041_customresources.yml
-# Manifest for installing NV GPU operator from operator Hub
-gpu_operator_namespace: roles/nv_gpu/files/012_namespace.yml
-gpu_operator_operatorhub_sub: roles/nv_gpu/files/032_operator_sub.yml
-gpu_operator_cr: roles/nv_gpu/files/042_customresources.yml
-
+nfd_operator_namespace: roles/nv_gpu/files/nfd/010_namespace.yml
+nfd_operator_operatorgroup: roles/nv_gpu/files/nfd/020_operatorgroup.yml
+nfd_operator_operatorhub_sub: roles/nv_gpu/files/nfd/030_operator_sub.yml
+nfd_operator_cr: roles/nv_gpu/files/nfd/040_customresources.yml
 nfd_channel: "{% if openshift_release == '4.5' %}4.5{% else %}4.6{% endif %}"
+
+# Manifest for installing NV GPU operator from operator Hub
+gpu_operator_namespace: roles/nv_gpu/files/gpu/010_namespace.yml
+gpu_operator_operatorhub_sub: roles/nv_gpu/files/gpu/020_operator_sub.yml
+gpu_operator_cr: roles/nv_gpu/files/gpu/030_customresources.yml
