@@ -31,7 +31,9 @@
         delay: 30
       rescue:
       - name: GFD logs (debug)
-        command: oc logs ds/gpu-feature-discovery -n gpu-operator-resources
+        shell: "oc logs ds/gpu-feature-discovery -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_gfd_logs"
+        ignore_errors: true
+        when: artifact_extra_logs_dir | default('', true) | trim != ''
 
     - block:
       - name: check that the nvidia-dcgm-exporter Pod is responding appropriately
@@ -61,20 +63,25 @@
         delay: 20
       rescue:
       - name: DCGM logs (debug)
-        command: oc logs ds/nvidia-dcgm-exporter -n gpu-operator-resources
+        shell: "oc logs ds/nvidia-dcgm-exporter -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_dcgm_logs"
+        when: artifact_extra_logs_dir | default('', true) | trim != ''
         ignore_errors: true
       - fail:
           msg: Failed to get DCGM metrics
 
   always:
     - name: capture GPU Pods states
-      command: oc get pods -owide -n gpu-operator-resources
+      shell: "oc get pods -owide -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_pods_list"
       ignore_errors: true
+      when: artifact_extra_logs_dir | default('', true) | trim != ''
     - name: capture Pod images
-      command:
+      shell:
         oc get pods -n gpu-operator-resources
                     -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
+                    > {{ artifact_extra_logs_dir }}/gpu_pods_image
       ignore_errors: true
+      when: artifact_extra_logs_dir | default('', true) | trim != ''
     - name: capture GPU Nodes states
-      command: oc describe node -lnvidia.com/gpu.present=true
+      shell: "oc describe node -lnvidia.com/gpu.present=true > {{ artifact_extra_logs_dir }}/gpu_nodes_description"
       ignore_errors: true
+      when: artifact_extra_logs_dir | default('', true) | trim != ''

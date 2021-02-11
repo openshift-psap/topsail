@@ -54,3 +54,7 @@ parse_machine_set: "roles/openshift_node/files/aws_machineset_json.sh"
 
 # GPU definition file, Cloud agnostic key=values
 gpu_machineset_def: "gpu_machineset_definition.json"
+
+# directory where extra debugging logs are stored
+# if empty, extra logs are not stored
+artifact_extra_logs_dir: ""

@@ -4,27 +4,33 @@
 
 - name: get gpu-operator-resources Pods (debug)
   ignore_errors: true
-  command: oc get pods -n gpu-operator-resources -owide
+  shell: "oc get pods -n gpu-operator-resources -owide > {{ artifact_extra_logs_dir }}/debug_gpu_pods_list"
+  when: artifact_extra_logs_dir | default('', true) | trim != ''
 
 - name: get gpu-operator-resources DaemonSets (debug)
   ignore_errors: true
-  command: oc get ds -n gpu-operator-resources
+  shell: "oc get ds -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/debug_all_gpu_ds_list"
+  when: artifact_extra_logs_dir | default('', true) | trim != ''
 
 - name: get driver-container logs (debug)
   ignore_errors: true
-  command: oc logs ds/nvidia-driver-daemonset -n gpu-operator-resources
+  shell: "oc logs ds/nvidia-driver-daemonset -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/debug_gpu_driver_logs"
+  when: artifact_extra_logs_dir | default('', true) | trim != ''
 
 - name: get GPU nodes (debug)
   ignore_errors: true
-  command: oc get nodes -l nvidia.com/gpu.present=true
+  shell: "oc get nodes -l nvidia.com/gpu.present=true > {{ artifact_extra_logs_dir }}/debug_all_gpu_nodes_list"
+  when: artifact_extra_logs_dir | default('', true) | trim != ''
 
 - name: get all nodes (debug)
   ignore_errors: true
-  command: oc get nodes
+  shell: "oc get nodes > {{ artifact_extra_logs_dir }}/debug_all_nodes_list"
+  when: artifact_extra_logs_dir | default('', true) | trim != ''
 
 - name: get all machines (debug)
   ignore_errors: true
-  command: oc get machines -A
+  shell: "oc get machines -A > {{ artifact_extra_logs_dir }}/debug_all_machines_list"
+  when: artifact_extra_logs_dir | default('', true) | trim != ''
 
 - name: end of verbose failure (debug)
   debug:
