@@ -83,6 +83,7 @@ fi
 [[ "${INSIDE_CI_IMAGE:-}" == "y" ]] && set -x
 
 ANSIBLE_OPTS=${ANSIBLE_OPTS:--v}
+ANSIBLE_OPTS="${ANSIBLE_OPTS} ${EXTRA_ANSIBLE_OPTS:-}"
 
 INVENTORY_ARG="-i inventory/hosts"
 
