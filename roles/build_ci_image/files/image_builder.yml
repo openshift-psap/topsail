@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: ci-artifacts
+  name: image-builder
+  namespace: ci-artifacts
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: ci-artifacts:{{ local_ci_image_tag }}
+      namespace: ci-artifacts
+  resources: {}
+  source:
+    type: Git
+    git:
+      uri: "{{ local_ci_git_repo }}" # set by `build.yaml` ansible script
+      ref: "{{ local_ci_git_ref }}" # set by `build.yaml` ansible script
+    contextDir: ./
+  triggers:
+  - type: "ConfigChange"
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: build/Dockerfile
+      from:
+        kind: DockerImage
+        name: registry.access.redhat.com/ubi8/ubi

@@ -1,0 +1,10 @@
+---
+# Build and run the CI on OpenShift
+- name: Build CI image
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
+  roles:
+    - role: build_ci_image

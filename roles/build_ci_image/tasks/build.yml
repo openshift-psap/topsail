@@ -1,0 +1,53 @@
+---
+- name: ensure that LOCAL_CI_COMMAND is set
+  shell:
+    echo "{{ local_ci_command }}";
+    test ! -z "{{ local_ci_command }}"
+
+- name: apply namespace manifest
+  command: oc apply -f "{{ local_ci_namespace }}"
+
+- name: apply imagestream manifest
+  command: oc apply -f "{{ local_ci_imagestream }}"
+
+- name: delete kubeconfig secret
+  shell: oc delete secret -n ci-artifacts kubeconfig-secret || true
+
+- name: create kubeconfig secret
+  shell: oc create secret -n ci-artifacts generic kubeconfig-secret --from-file $KUBECONFIG
+
+- name: prepare CI Image
+  block:
+  - name: search if the image exists
+    command: oc get imagestreamtag -n ci-artifacts "ci-artifacts:{{ local_ci_image_tag }}" -oname
+  rescue:
+  - name: delete any old image builder manifest
+    shell: oc delete -f "{{ local_ci_image_builder }}" || true
+
+  - name: apply ci artifacts image builder manifest
+    shell: cat "{{ local_ci_image_builder }}" \
+       | sed 's|{{ '{{' }} local_ci_git_repo {{ '}}' }}|{{ local_ci_git_repo }}|' \
+       | sed 's|{{ '{{' }} local_ci_git_ref {{ '}}' }}|{{ local_ci_git_ref }}|' \
+       | sed 's|{{ '{{' }} local_ci_image_tag {{ '}}' }}|{{ local_ci_image_tag }}|' \
+       | oc apply -f-
+    args:
+      warn: false # don't warn about using sed here
+
+  - name: wait for the image to be built
+    shell: oc logs -f bc/image-builder -n ci-artifacts > /dev/null
+
+- name: ensure that the image exists
+  command: oc get imagestreamtag -n ci-artifacts "ci-artifacts:{{ local_ci_image_tag }}" -oname
+
+- name: delete any stalled CI execution Pod
+  shell: oc delete -f "{{ local_ci_execution_pod }}" || true
+
+- name: trigger the CI execution in a Pod
+  shell: cat "{{ local_ci_execution_pod }}" \
+       | sed 's|{{ '{{' }} local_ci_image_tag {{ '}}' }}|{{ local_ci_image_tag }}|' \
+       | sed 's|{{ '{{' }} local_ci_command {{ '}}' }}|{{ local_ci_command }}|' \
+       | oc apply -f-
+
+- name: Local CI execution launched.
+  debug:
+    msg: oc get pod/ci-artifacts -n ci-artifacts; oc logs -f pod/ci-artifacts -n ci-artifacts

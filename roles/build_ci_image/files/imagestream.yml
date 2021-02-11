@@ -1,0 +1,8 @@
+kind: ImageStream
+apiVersion: v1
+metadata:
+  name: ci-artifacts
+  namespace: ci-artifacts
+  labels:
+    app: ci-artifacts
+spec: {}

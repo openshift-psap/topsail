@@ -1,0 +1,14 @@
+---
+# Manifest for installing NV GPU operator from a custom commit
+local_ci_namespace: roles/build_ci_image/files/namespace.yml
+local_ci_imagestream: roles/build_ci_image/files/imagestream.yml
+local_ci_image_builder: roles/build_ci_image/files/image_builder.yml
+local_ci_execution_pod: roles/build_ci_image/files/execution_pod.yml
+
+local_ci_helm_install: roles/build_ci_image/files/helm_deploy_operator.sh
+local_ci_image_tag: "ci-artifacts-{{ local_ci_image_tag_uid }}"
+
+local_ci_command: "{{ lookup('env', 'LOCAL_CI_COMMAND') }}"
+
+local_ci_deploy: "yes"
+local_ci_cleanup: "no"

@@ -1,0 +1,20 @@
+# oc label node/$NODE_NAME tuned.module.fuse=
+apiVersion: tuned.openshift.io/v1
+kind: Tuned
+metadata:
+  name: tuned-module-fuse
+  namespace: openshift-cluster-node-tuning-operator
+spec:
+  profile:
+  - data: |
+      [main]
+      summary=An OpenShift profile to load 'fuse' module
+      include=openshift-node
+      [modules]
+      fuse=+r
+    name: openshift-fuse
+  recommend:
+  - match:
+    - label: tuned.module.fuse
+    profile: "openshift-fuse"
+    priority: 5
