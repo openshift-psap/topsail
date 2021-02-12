@@ -14,9 +14,8 @@ script_name="$0"
 action="$1"
 shift
 
-OPERATOR_NAME="gpu-operator-from-source"
-OPERATOR_NAMESPACE="gpu-operator-ci"
-HELM_SOURCE="./deployments/gpu-operator"
+OPERATOR_NAME="${OPERATOR_NAME:-gpu-operator-from-source}"
+OPERATOR_NAMESPACE="${OPERATOR_NAMESPACE:-gpu-operator-ci}"
 
 NFD_ENABLED="${NFD_ENABLED:-false}"
 
@@ -38,9 +37,31 @@ function parse_yaml {
    }'
 }
 
-deploy() {
+deploy_from_helm() {
+    if [ ! "$#" -eq 1 ]; then
+        echo "Usage: $script_name deploy_from_helm <version>"
+        exit 1
+    fi
+
+    HELM_VERSION="${1}"
+
+    HELM_REPO_NAME="nvidia"
+    HELM_REPO_ADDR="https://nvidia.github.io/gpu-operator"
+    HELM_REPO_PROJ="gpu-operator"
+
+    helm repo add $HELM_REPO_NAME $HELM_REPO_ADDR
+    helm repo update
+
+    YAML_VALUES=$(mktemp /tmp/gpu-operator_helm_values.XXXXXX.yaml)
+    curl https://raw.githubusercontent.com/NVIDIA/gpu-operator/${HELM_VERSION}/deployments/gpu-operator/values.yaml -s > $YAML_VALUES
+
+    HELM_CUSTOM_OPTIONS=""
+    deploy_operator "${YAML_VALUES}" "${HELM_CUSTOM_OPTIONS}" "${HELM_REPO_NAME}/${HELM_REPO_PROJ}"
+}
+
+deploy_from_commit() {
     if [ ! "$#" -eq 3 ]; then
-        echo "Usage: $script_name deploy <gpu_operator_git_repo> <gpu_operator_git_ref> <gpu_operator_image_tag>"
+        echo "Usage: $script_name deploy_from_commit <gpu_operator_git_repo> <gpu_operator_git_ref> <gpu_operator_image_tag>"
         exit 1
     fi
 
@@ -57,31 +78,53 @@ deploy() {
     git show --quiet
     echo
 
+    HELM_CUSTOM_OPTIONS="--set operator.repository=image-registry.openshift-image-registry.svc:5000/gpu-operator-ci \
+     --set operator.image=gpu-operator-ci \
+     --set operator.version=${OPERATOR_IMAGE_TAG}"
+
+    YAML_VALUES="deployments/gpu-operator/values.yaml"
+    HELM_SOURCE="./deployments/gpu-operator"
+
+    deploy_operator "${YAML_VALUES}" "${HELM_CUSTOM_OPTIONS}" "${HELM_SOURCE}"
+}
+
+deploy_operator() {
+    YAML_VALUES="$1"
+    HELM_CUSTOM_OPTIONS="$2"
+    HELM_SOURCE="$3"
+
     set +x
     declare -A HELM_values
     while read line; do
         key=$(echo $line | cut -d= -f1)
         value=$(echo $line | cut -d= -f2 | sed 's/^"//' | sed 's/"$//')
         HELM_values[$key]=$value
-    done <<< $(parse_yaml deployments/gpu-operator/values.yaml "")
+    done <<< $(parse_yaml ${YAML_VALUES} "")
     set -x
 
+    device_plugin_version=${HELM_values[devicePlugin_version]/-ubuntu*/}-ubi8
+    if [[ "$device_plugin_version" == "v0.7.1-ubi8" ]]; then
+        echo "WARNING: cannot use devicePlugin.version=$device_plugin_version"
+        device_plugin_version="v0.7.3-ubi8"
+        echo "WARNING: using devicePlugin.version=$device_plugin_version instead."
+    fi
+
     helm uninstall --namespace $OPERATOR_NAMESPACE $OPERATOR_NAME || true
+    oc delete crd/clusterpolicies.nvidia.com || true
+
     #helm template --debug # <-- this is for debugging helm install
     exec helm install \
      $OPERATOR_NAME $HELM_SOURCE \
      --devel \
      \
-     --set operator.repository=image-registry.openshift-image-registry.svc:5000/gpu-operator-ci \
-     --set operator.image=gpu-operator-ci \
-     --set operator.version=${OPERATOR_IMAGE_TAG} \
+     $HELM_CUSTOM_OPTIONS \
      \
      --set platform.openshift=true \
      --set operator.defaultRuntime=crio \
      --set nfd.enabled=${NFD_ENABLED} \
      \
      --set toolkit.version=${HELM_values[toolkit_version]/-ubuntu*/}-ubi8 \
-     --set devicePlugin.version=${HELM_values[devicePlugin_version]/-ubuntu*/}-ubi8 \
+     --set devicePlugin.version=${device_plugin_version} \
      --set dcgmExporter.version=${HELM_values[dcgmExporter_version]/-ubuntu*/}-ubi8 \
      \
      --namespace $OPERATOR_NAMESPACE \
@@ -92,9 +135,12 @@ undeploy() {
     exec helm uninstall --namespace $OPERATOR_NAMESPACE $OPERATOR_NAME
 }
 
-if [ "$action" == deploy ];
+if [ "$action" == deploy_from_commit ];
 then
-    deploy "$@"
+    deploy_from_commit "$@"
+elif [ "$action" == deploy_from_helm ];
+then
+    deploy_from_helm "$@"
 elif [ "$action" == undeploy ];
 then
     undeploy
