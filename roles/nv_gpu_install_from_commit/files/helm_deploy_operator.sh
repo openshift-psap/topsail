@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 
 set -x
-if [ "$#" -lt 2 -o "$#" -gt 4 ]; then
+if [ "$#" -lt 1 -o "$#" -gt 4 ]; then
     echo "Usage:"
     echo "  $0 deploy <gpu_operator_git_repo> <gpu_operator_git_ref> <gpu_operator_image_tag>"
     echo "  $0 undeploy"
