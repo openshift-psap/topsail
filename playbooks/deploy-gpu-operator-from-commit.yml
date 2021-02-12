@@ -3,7 +3,5 @@
   hosts: localhost
   connection: local
   gather_facts: true
-  vars:
-    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
   roles:
     - role: nv_gpu_install_from_commit

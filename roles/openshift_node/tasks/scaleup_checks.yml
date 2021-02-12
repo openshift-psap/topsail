@@ -2,7 +2,7 @@
 # This task file is run with import_role for localhost from gpu-burst.yml
 - name: Get cluster worker nodes
   command: >
-    bash -c "oc get nodes --kubeconfig '{{ kubeconfig }}' --output=name --selector='node-role.kubernetes.io/worker'"
+    bash -c "oc get nodes --output=name --selector='node-role.kubernetes.io/worker'"
   register: oc_get_workers
   until:
   - oc_get_workers.stdout != ''
@@ -11,7 +11,7 @@
 
 - name: Get worker machineset name
   command: >
-    bash -c "oc get machinesets -n openshift-machine-api --kubeconfig '{{ kubeconfig }}' |grep worker |awk '{ print $1 }'"
+    bash -c "oc get machinesets -n openshift-machine-api | grep worker |awk '{ print $1 }'"
   register: oc_get_machinesets
   until:
   - oc_get_machinesets.stdout != ''
@@ -20,7 +20,7 @@
 
 - name: Get worker machineset template
   command: >
-     bash -c "oc get machineset '{{ oc_get_machinesets.stdout_lines[0] }}' --kubeconfig '{{ kubeconfig }}' -n openshift-machine-api -o json"
+     bash -c "oc get machineset '{{ oc_get_machinesets.stdout_lines[0] }}' -n openshift-machine-api -o json"
   register: worker_machine_set
   until:
   - worker_machine_set != ''

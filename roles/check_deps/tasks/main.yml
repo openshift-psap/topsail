@@ -2,15 +2,6 @@
 - name: Check for 'oc'
   command: >
     type -a oc
-  register: oc_cli
-  ignore_errors: true
-
-- name: If oc does not exist, check for 'kubectl'
-  command: >
-    type -a kubectl
-  register: kubectl_cli
-  ignore_errors: true
-  when: oc_cli is failed
 
 - name: Check for 'jq', needed for parsing and debugging oc outputs
   command: >
@@ -18,23 +9,24 @@
   register: jq_cli
   ignore_errors: true
 
+- name: Get the KUBECONFIG value
+  shell: echo $KUBECONFIG
+  register: kubeconfig_value
+
 - name: check if the kubeconfig file exists
   stat:
-    path: "{{ kubeconfig }}"
+    path: "{{ kubeconfig_value.stdout }}"
   register: kubeconfig_file
 
-- name: Kubeconfig file stat
+- name: Verify that KUBECONFIG file exists
   fail:
-    msg: "Kubeconfig not found at {{ kubeconfig }}"
+    msg: "Kubeconfig not found at {{ kubeconfig.stdout }}"
   when: kubeconfig_file.stat.exists != true
 
 - name: Get oc user
   command: >
-    oc whoami --kubeconfig={{ kubeconfig }}
-  register: oc_user
+    oc whoami
 
-- block:
-  - name: End play if user does not have oc or kubectl in PATH
-    debug:
-      msg: 'Could not find kubectl or oc CLI tools. Please update your PATH env variable or install kubectl/oc'
-  when: kubectl_cli is failed and oc_cli is failed
+- name: Get oc version
+  command: >
+    oc version
