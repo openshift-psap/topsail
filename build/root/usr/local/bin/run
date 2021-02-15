@@ -112,6 +112,14 @@ case ${1:-} in
     "gpu-ci")
 	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-ci.yml
         ;;
+    "gpu-helm-ci")
+        toolbox/scaleup_gpu_node.sh
+        toolbox/nfd/deploy_from_operatorhub.sh
+        toolbox/gpu-operator/list_version_from_helm.sh
+        toolbox/gpu-operator/deploy_with_helm.sh 1.4.0
+        toolbox/gpu-operator/run_ci_checks.sh
+        exit 0
+        ;;
     "gpu-ci-undeploy")
         ANSIBLE_OPTS="${ANSIBLE_OPTS} -e install_nfd_operator_from_hub=no"
         ANSIBLE_OPTS="${ANSIBLE_OPTS} -e install_gpu_operator_from_hub=no"
