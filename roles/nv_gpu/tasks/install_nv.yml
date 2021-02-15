@@ -4,9 +4,24 @@
 - name: Create the OperatorHub subscription for the GPU Operator
   command: oc apply -f "{{ gpu_operator_operatorhub_sub }}"
 
-- name: Create the clusterPolicy CR for the GPU Operator
-  command: oc apply -f "{{ gpu_operator_cr }}"
-  register: test_clusterpolicy_cr
-  until: test_clusterpolicy_cr.rc != 1
-  retries: 20
-  delay: 15
+- block:
+  - name: Create the clusterPolicy CR for the GPU Operator
+    command: oc apply -f "{{ gpu_operator_cr }}"
+    register: test_clusterpolicy_cr
+    until: test_clusterpolicy_cr.rc != 1
+    retries: 20
+    delay: 15
+  rescue:
+  - name: Inspect the Subscriptions status (debug)
+    shell:
+      oc get subscriptions -n openshift-operators &&
+      oc describe subscriptions/gpu-operator-certified -n openshift-operators
+    ignore_errors: true
+  - name: Get the ClusterServiceVersion status (debug)
+    shell:
+      oc get ClusterServiceVersion -A &&
+      oc describe ClusterServiceVersion/gpu-operator-certified.v1.5.2 -n openshift-operators
+    ignore_errors: true
+  - name: Failing because the ClusterPolicy CR cannot be created
+    fail:
+      msg: Failed because the ClusterPolicy CR cannot be created

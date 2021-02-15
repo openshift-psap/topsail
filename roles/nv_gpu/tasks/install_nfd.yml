@@ -19,8 +19,15 @@
       retries: 20
       delay: 15
   rescue:
-    - name: Inspect NFD subscription
-      command: oc describe subscriptions/nfd -n openshift-nfd
+    - name: Inspect NFD subscription (debug)
+      shell:
+        oc get subscriptions -n openshift-nfd &&
+        oc describe subscriptions/nfd -n openshift-nfd
+      ignore_errors: true
+    - name: Get the ClusterServiceVersion status (debug)
+      shell:
+        oc get ClusterServiceVersion -n openshift-nfd
+        oc describe ClusterServiceVersion -n openshift-nfd
       ignore_errors: true
     - name: Failed when creating the test clusterpolicy CR for the GPU Operator
       fail:
