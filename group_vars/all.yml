@@ -46,18 +46,9 @@ undeploy_gpu_operator: 'no'
 # - from OperatorHub (nv_gpu_role)
 undeploy_nfd_operator: 'no'
 
-# json raw template from running workers
-gpu_machineset_template: "gpu_machineset_aws_template.json"
-
 # AWS desired instance type
 # Choose one from https://docs.aws.amazon.com/dlami/latest/devguide/gpu.html
 gpu_instance_type: "g4dn.xlarge"
-
-# library for machine type parsing
-parse_machine_set: "roles/openshift_node/files/aws_machineset_json.sh"
-
-# GPU definition file, Cloud agnostic key=values
-gpu_machineset_def: "gpu_machineset_definition.json"
 
 # directory where extra debugging logs are stored
 # if empty, extra logs are not stored

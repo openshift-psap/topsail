@@ -1,7 +1,13 @@
 ---
-- name: Scale-up checks
-  import_tasks: roles/openshift_node/tasks/scaleup_checks.yml
-  when: aws_add_gpu_node == "yes"
-- name: Create machine
-  import_tasks: roles/openshift_node/tasks/create_machine.yml
-  when: aws_add_gpu_node == "yes"
+- block:
+  - name: Check if GPU machines exist
+    shell: >
+      oc get machines --no-headers -n openshift-machine-api -l machine.openshift.io/instance-type={{ gpu_instance_type }}
+      | grep Running
+  - name: Found running GPU machines
+    debug:
+      msg: Found running GPU machines, no need to scale-up
+  rescue:
+  - name: Create new GPU machine
+    import_tasks: roles/openshift_node/tasks/create_machine.yml
+    when: aws_add_gpu_node == "yes"

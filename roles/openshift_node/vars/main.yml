@@ -21,3 +21,6 @@ g4_nodes:
   g4dn_16xlarge: 'g4dn.16xlarge'
 
 unknown: 'unknown'
+
+# library for machine type parsing
+parse_machine_set: "roles/openshift_node/files/aws_machineset_json.sh"
