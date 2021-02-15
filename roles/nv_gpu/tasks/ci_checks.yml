@@ -61,6 +61,13 @@
     retries: 10
     delay: 20
 
+  - name: check that Prometheus picked up the DCGM endpoint
+    shell:
+      oc get secret prometheus-k8s -n openshift-monitoring -ojson | jq -r '.data["prometheus.yaml.gz"]'
+      | base64 -d
+      | gunzip
+      | grep dcgm
+
   rescue:
   - name: DCGM logs (debug)
     shell: "oc logs ds/nvidia-dcgm-exporter -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_dcgm_logs"
