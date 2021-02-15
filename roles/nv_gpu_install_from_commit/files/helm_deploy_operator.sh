@@ -55,7 +55,8 @@ deploy_from_helm() {
     YAML_VALUES=$(mktemp /tmp/gpu-operator_helm_values.XXXXXX.yaml)
     curl https://raw.githubusercontent.com/NVIDIA/gpu-operator/${HELM_VERSION}/deployments/gpu-operator/values.yaml -s > $YAML_VALUES
 
-    HELM_CUSTOM_OPTIONS=""
+    HELM_CUSTOM_OPTIONS="--version ${HELM_VERSION}"
+
     deploy_operator "${YAML_VALUES}" "${HELM_CUSTOM_OPTIONS}" "${HELM_REPO_NAME}/${HELM_REPO_PROJ}"
 }
 
