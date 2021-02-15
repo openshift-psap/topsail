@@ -7,8 +7,27 @@
     include_tasks: roles/nv_gpu/tasks/install_nv.yml
     when: install_gpu_operator_from_hub == "yes"
 
-  - include_tasks: ci_checks.yml
-    when: user_mode == 'ci'
+  - name: Check if NVidia GPU operator has already been installed
+    block:
+    - include_tasks: ci_checks.yml
+      when: user_mode == 'ci'
+
+    always:
+    - name: capture GPU Pods states
+      shell: "oc get pods -owide -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_pods_list"
+      ignore_errors: true
+      when: artifact_extra_logs_dir | default('', true) | trim != ''
+    - name: capture Pod images
+      shell:
+        oc get pods -n gpu-operator-resources
+          -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
+          > {{ artifact_extra_logs_dir }}/gpu_pods_image
+      ignore_errors: true
+      when: artifact_extra_logs_dir | default('', true) | trim != ''
+    - name: capture GPU Nodes states
+      shell: "oc describe node -lnvidia.com/gpu.present=true > {{ artifact_extra_logs_dir }}/gpu_nodes_description"
+      ignore_errors: true
+      when: artifact_extra_logs_dir | default('', true) | trim != ''
 
   rescue:
   - include_tasks: verbose_failure.yml
