@@ -39,7 +39,7 @@
   - name: Wait for the GPU machine to be provisioned
     command:
       oc get machines --no-headers
-        -l machines/cluster-api-machineset={{ gpu_machineset_name.stdout }}
+        -l machine.openshift.io/cluster-api-machineset={{ gpu_machineset_name.stdout }}
         -o=jsonpath='{range .items[*]}{.status.phase}{end}'
         -n openshift-machine-api
     register: gpu_machine_state
@@ -50,10 +50,12 @@
   rescue:
     - name: Capture more information about why the scale-up failed
       shell: |
-        set -x;
+        echo MachineSets
         oc get 'machineset/{{ gpu_machineset_name.stdout }}' -n openshift-machine-api;
-        oc get machines -n openshift-machine-api -l machines/cluster-api-machineset={{ gpu_machineset_name.stdout }};
-        oc describe machines -n openshift-machine-api -l machines/cluster-api-machineset={{ gpu_machineset_name.stdout }};
+        echo GPU Machines
+        oc get machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ gpu_machineset_name.stdout }}';
+        echo GPU Machines description
+        oc describe machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ gpu_machineset_name.stdout }}';
     - name: Fail because of Machine scale-up failure
       fail:
         msg: Failing because of Machine scale-up failure
