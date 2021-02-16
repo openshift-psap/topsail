@@ -29,7 +29,7 @@ then
     mkdir -p bin
     cd bin
     wget --quiet https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz
-    tar xvf openshift-client-linux.tar.gz
+    tar xf openshift-client-linux.tar.gz
     rm openshift-client-linux.tar.gz
     export PATH=$PWD:$PATH
     cd ..
@@ -43,7 +43,7 @@ then
 
     HELM_VERSION="v3.5.1"
     wget https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz --quiet
-    tar xvf helm-${HELM_VERSION}-linux-amd64.tar.gz linux-amd64/helm
+    tar xf helm-${HELM_VERSION}-linux-amd64.tar.gz linux-amd64/helm
     mv linux-amd64/helm .
     rmdir linux-amd64
     export PATH=$PWD:$PATH
@@ -54,6 +54,8 @@ if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
     echo "===> $0 $@ <=="
 
     git show --quiet || echo "Could not access git history ..."
+    git show HEAD~ --quiet || true
+
     echo
     oc version
     echo
@@ -78,9 +80,8 @@ if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
         mkdir -p "${ARTIFACT_EXTRA_LOGS_DIR}"
         echo "Using ${ARTIFACT_EXTRA_LOGS_DIR} for storing extra log files."
     fi
+    set -x
 fi
-
-[[ "${INSIDE_CI_IMAGE:-}" == "y" ]] && set -x
 
 ANSIBLE_OPTS=${ANSIBLE_OPTS:--v}
 ANSIBLE_OPTS="${ANSIBLE_OPTS} ${EXTRA_ANSIBLE_OPTS:-}"
