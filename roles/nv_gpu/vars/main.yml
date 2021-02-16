@@ -7,6 +7,7 @@ nfd_operator_cr: roles/nv_gpu/files/nfd/040_customresources.yml
 nfd_channel: "{% if openshift_release == '4.5' %}4.5{% else %}4.6{% endif %}"
 
 # Manifest for installing NV GPU operator from operator Hub
+gpu_operator_packagemanifests: gpu-operator-certified
 gpu_operator_namespace: roles/nv_gpu/files/gpu/010_namespace.yml
+gpu_operator_operatorgroup: roles/nv_gpu/files/gpu/015_operatorgroup.yml
 gpu_operator_operatorhub_sub: roles/nv_gpu/files/gpu/020_operator_sub.yml
-gpu_operator_cr: roles/nv_gpu/files/gpu/030_customresources.yml

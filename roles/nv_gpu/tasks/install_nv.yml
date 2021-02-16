@@ -1,27 +1,70 @@
 - name: Create the namespace for the GPU Operator
   command: oc apply -f "{{ gpu_operator_namespace }}"
 
+- name: Create the OperatorGroup object
+  command: oc apply -f "{{ gpu_operator_operatorgroup }}"
+
+- name: Save the GPU Operator PackageManifests (debug)
+  ignore_errors: true
+  shell: "oc get packagemanifests/gpu-operator-certified > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.yml"
+  when: artifact_extra_logs_dir | default('', true) | trim != ''
+
+- name: Get the version of the GPU Operator on OperatorHub
+  shell:
+    oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -ojson
+    | jq -r .status.channels[0].currentCSV
+  register: gpu_operator_csv_name
+
+
+- name: Create a temporary file for the GPU Operator clusterpolicy
+  ansible.builtin.tempfile:
+    state: file
+    suffix: .clusterpolicy.temp.yaml
+  register: gpu_operator_clusterpolicy_tempfile
+
+- name: Get the clusterpolicy of the GPU Operator from OperatorHub
+  shell:
+    oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -ojson
+    | jq -r '.status.channels[0].currentCSVDesc.annotations."alm-examples"'
+    | jq .[0] > {{ gpu_operator_clusterpolicy_tempfile.path }}
+  register: operatorhub_clusterpolicy
+
+- name: Save the clusterpolicy of the GPU Operator from OperatorHub (debug)
+  copy:
+    src: "{{ gpu_operator_clusterpolicy_tempfile.path }}"
+    dest: "{{ artifact_extra_logs_dir }}/gpu_operator_clusterpolicy.json"
+  delegate_to: localhost
+  when: artifact_extra_logs_dir | default('', true) | trim != ''
+  ignore_errors: true
+
 - name: Create the OperatorHub subscription for the GPU Operator
   command: oc apply -f "{{ gpu_operator_operatorhub_sub }}"
 
 - block:
   - name: Create the clusterPolicy CR for the GPU Operator
-    command: oc apply -f "{{ gpu_operator_cr }}"
+    command: oc apply -f "{{ gpu_operator_clusterpolicy_tempfile.path }}"
     register: test_clusterpolicy_cr
     until: test_clusterpolicy_cr.rc != 1
     retries: 20
     delay: 15
+
   rescue:
   - name: Inspect the Subscriptions status (debug)
     shell:
-      oc get subscriptions -n openshift-operators &&
-      oc describe subscriptions/gpu-operator-certified -n openshift-operators
+      (oc get subscriptions -n openshift-operators &&
+       oc describe subscriptions/gpu-operator-certified -n openshift-operators)
+       > {{ artifact_extra_logs_dir }}/gpu_operator_Subscription.log
     ignore_errors: true
+    when: artifact_extra_logs_dir | default('', true) | trim != ''
+
   - name: Get the ClusterServiceVersion status (debug)
     shell:
-      oc get ClusterServiceVersion -A &&
-      oc describe ClusterServiceVersion/gpu-operator-certified.v1.5.2 -n openshift-operators
+      (oc get ClusterServiceVersion -A &&
+       oc describe "ClusterServiceVersion/{{ gpu_operator_csv_name.stdout }}" -n openshift-operators)
+       > {{ artifact_extra_logs_dir }}/gpu_operator_ClusterServiceVersion.log
+    when: artifact_extra_logs_dir | default('', true) | trim != ''
     ignore_errors: true
+
   - name: Failing because the ClusterPolicy CR cannot be created
     fail:
       msg: Failed because the ClusterPolicy CR cannot be created
