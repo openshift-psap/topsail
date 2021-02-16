@@ -45,7 +45,7 @@
     register: gpu_machine_state
     until:
     - gpu_machine_state.stdout == 'Running'
-    retries: 1
+    retries: 45
     delay: 10
   rescue:
     - name: Capture more information about why the scale-up failed
