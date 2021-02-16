@@ -5,52 +5,13 @@
 #
 # SOURCE and HOME DIRECTORY: /opt/ci-artifacts/src
 
-echo "===> Running PSAP CI Test suite <==="
-
 set -o pipefail
 set -o errexit
 set -o nounset
 
-if [[ -z "${KUBECONFIG}" ]]
-then
-    echo "No KUBECONFIG set, cannot continue."
-    exit 1
-fi
-if [[ ! -e "${KUBECONFIG}" ]]
-then
-    echo "KUBECONFIG file doesn't exist, can't continue. ($KUBECONFIG)"
-    exit 1
-fi
-echo "Kubeconfig found at ${KUBECONFIG}, proceeding with tests"
+ci_banner() {
+    echo "===> Running PSAP CI Test suite <==="
 
-if ! which oc &>/dev/null;
-then
-    echo "OpenShift client not found, downloading it ..."
-    mkdir -p bin
-    cd bin
-    wget --quiet https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz
-    tar xf openshift-client-linux.tar.gz
-    rm openshift-client-linux.tar.gz
-    export PATH=$PWD:$PATH
-    cd ..
-fi
-
-if ! which helm &>/dev/null;
-then
-    echo "Helm not found, downloading it ..."
-    mkdir -p bin
-    cd bin
-
-    HELM_VERSION="v3.5.1"
-    wget https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz --quiet
-    tar xf helm-${HELM_VERSION}-linux-amd64.tar.gz linux-amd64/helm
-    mv linux-amd64/helm .
-    rmdir linux-amd64
-    export PATH=$PWD:$PATH
-    cd ..
-fi
-
-if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
     echo "===> $0 $@ <=="
 
     git show --quiet || echo "Could not access git history ..."
@@ -59,84 +20,149 @@ if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
     echo
     oc version
     echo
+}
+
+prechecks() {
+    if [[ "${INSIDE_CI_IMAGE:-}" != "y" ]]; then
+        echo "FATAL: this script shouldn't run outside of the CI image ..."
+        exit 1
+    fi
+
+    if [[ -z "${KUBECONFIG}" ]]
+    then
+        echo "No KUBECONFIG set, cannot continue."
+        exit 1
+    fi
+    if [[ ! -e "${KUBECONFIG}" ]]
+    then
+        echo "KUBECONFIG file doesn't exist, can't continue. ($KUBECONFIG)"
+        exit 1
+    fi
+    echo "Kubeconfig found at ${KUBECONFIG}, proceeding with tests"
+
+    if ! which oc &>/dev/null;
+    then
+        echo "OpenShift client not found, downloading it ..."
+        mkdir -p bin
+        cd bin
+        wget --quiet https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz
+        tar xf openshift-client-linux.tar.gz
+        rm openshift-client-linux.tar.gz
+        export PATH=$PWD:$PATH
+        cd ..
+    fi
+
+    if ! which helm &>/dev/null;
+    then
+        echo "Helm not found, downloading it ..."
+        mkdir -p bin
+        cd bin
+
+        HELM_VERSION="v3.5.1"
+        wget https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz --quiet
+        tar xf helm-${HELM_VERSION}-linux-amd64.tar.gz linux-amd64/helm
+        mv linux-amd64/helm .
+        rmdir linux-amd64
+        export PATH=$PWD:$PATH
+        cd ..
+    fi
+}
+
+entitle() {
+    # TODO: this should become an ansible playbook properly waiting
+    # for the deployment of the entitlement
 
     PSAP_ENTITLEMENT=/var/run/psap-entitlement-secret
-    echo "===> Apply entitlement manifests from ${PSAP_ENTITLEMENT}<=="
+    if [ -f $PSAP_ENTITLEMENT ]; then
+        echo "===> Apply entitlement manifests from ${PSAP_ENTITLEMENT}<=="
 
-    oc create -f ${PSAP_ENTITLEMENT} && sleep 300
-
-    OCP_VERSION="$(oc version -o json | jq --raw-output '.openshiftVersion' | cut -b-3)"
-    ANSIBLE_OPTS="-vv"
-    ANSIBLE_OPTS="$ANSIBLE_OPTS -e openshift_release=$OCP_VERSION"
-
-    CI_IMAGE_GPU_COMMIT_CI_REPO="https://github.com/NVIDIA/gpu-operator/"
-    CI_IMAGE_GPU_COMMIT_CI_REF="master"
-
-    if [ -z "${ARTIFACT_DIR:-}" ]; then
-        echo "No ARTIFACT_DIR configured."
+        oc create -f ${PSAP_ENTITLEMENT} && sleep 300
     else
-        ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/${1:-}/extra_logs"
-        ANSIBLE_OPTS="$ANSIBLE_OPTS -e artifact_extra_logs_dir=${ARTIFACT_EXTRA_LOGS_DIR}"
-        mkdir -p "${ARTIFACT_EXTRA_LOGS_DIR}"
-        echo "Using ${ARTIFACT_EXTRA_LOGS_DIR} for storing extra log files."
+        echo "WARNING: PSAP entitlement resources not found ($PSAP_ENTITLEMENT)"
     fi
-    set -x
+}
+
+##############
+
+prechecks
+ci_banner
+entitle
+
+ANSIBLE_OPTS="-vv"
+
+if [ -z "${ARTIFACT_DIR:-}" ]; then
+    echo "No ARTIFACT_DIR configured."
+else
+    ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/${1:-}/extra_logs"
+    ANSIBLE_OPTS="$ANSIBLE_OPTS -e artifact_extra_logs_dir=${ARTIFACT_EXTRA_LOGS_DIR}"
+
+    mkdir -p "${ARTIFACT_EXTRA_LOGS_DIR}"
+    echo "Using ${ARTIFACT_EXTRA_LOGS_DIR} for storing extra log files."
 fi
+
+
 
 ANSIBLE_OPTS=${ANSIBLE_OPTS:--v}
 ANSIBLE_OPTS="${ANSIBLE_OPTS} ${EXTRA_ANSIBLE_OPTS:-}"
 
-INVENTORY_ARG="-i inventory/hosts"
-
 export ANSIBLE_OPTS
+export EXTRA_ANSIBLE_OPTS=
 
+echo "ANSIBLE_OPTS='$ANSIBLE_OPTS'"
+
+set -x
 case ${1:-} in
-    "gpu-commit-ci")
-        if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
-            git_repo=${CI_IMAGE_GPU_COMMIT_CI_REPO}
-            git_ref=${CI_IMAGE_GPU_COMMIT_CI_REF}
-        else
-            if [ "$#" -lt 2 ]; then
-                echo "Usage: $0 $1 <git repository> <git reference>"
-                exit 1
-            fi
-            git_repo=$2
-            git_ref=$3
-        fi
+     "gpu-commit-ci")
+        CI_IMAGE_GPU_COMMIT_CI_REPO="https://github.com/NVIDIA/gpu-operator/"
+        CI_IMAGE_GPU_COMMIT_CI_REF="master"
+        CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="ci-image"
 
-        echo "Using Git repository ${git_repo} with ref ${git_ref}"
+        echo "Using Git repository ${CI_IMAGE_GPU_COMMIT_CI_REPO} with ref ${CI_IMAGE_GPU_COMMIT_CI_REF}"
 
-        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_git_repo=${git_repo}"
-        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_git_ref=${git_ref}"
-        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_image_tag_uid=$(cat /proc/sys/kernel/random/uuid | cut -b-8)"
+        toolbox/scaleup_gpu_node.sh
+        toolbox/nfd/deploy_from_operatorhub.sh
+        toolbox/gpu-operator/deploy_from_commit.sh "${CI_IMAGE_GPU_COMMIT_CI_REPO}" \
+                                                   "${CI_IMAGE_GPU_COMMIT_CI_REF}" \
+                                                   "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}"
+        toolbox/gpu-operator/run_ci_checks.sh
 
-	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-commit-ci.yml
+	exit 0
         ;;
+
     "gpu-ci")
-	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-ci.yml
+        toolbox/scaleup_gpu_node.sh
+        toolbox/nfd/deploy_from_operatorhub.sh
+        toolbox/gpu-operator/deploy_from_operatorhub.sh
+        toolbox/gpu-operator/run_ci_checks.sh
+
+	exit 0
         ;;
+
     "gpu-helm-ci")
         toolbox/scaleup_gpu_node.sh
         toolbox/nfd/deploy_from_operatorhub.sh
         toolbox/gpu-operator/list_version_from_helm.sh
         toolbox/gpu-operator/deploy_with_helm.sh 1.4.0
         toolbox/gpu-operator/run_ci_checks.sh
+
         exit 0
         ;;
+
     "gpu-ci-undeploy")
-        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e install_nfd_operator_from_hub=no"
-        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e install_gpu_operator_from_hub=no"
-        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e undeploy_gpu_operator=yes"
-        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e user_mode=not-ci" # don't run CI tests here
-	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/nvidia-gpu-operator-ci.yml
+        toolbox/gpu-operator/undeploy_from_operatorhub.sh
 	;;
+
     "psap-ci")
+        INVENTORY_ARG="-i inventory/hosts"
+
 	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/openshift-psap-ci.yml
 	;;
+
     -*)
         echo "Unknown option: ${1:-}"
         exit 1
         ;;
+
     *)
 	echo "Nothing to do ..."
 	;;
