@@ -73,13 +73,13 @@ entitle() {
     # for the deployment of the entitlement
 
     PSAP_ENTITLEMENT=/var/run/psap-entitlement-secret
-    if [ -f $PSAP_ENTITLEMENT ]; then
-        echo "===> Apply entitlement manifests from ${PSAP_ENTITLEMENT}<=="
-
-        oc create -f ${PSAP_ENTITLEMENT} && sleep 300
-    else
-        echo "WARNING: PSAP entitlement resources not found ($PSAP_ENTITLEMENT)"
+    if [ ! -f "$PSAP_ENTITLEMENT" ]; then
+        echo "FATAL: PSAP entitlement resources not found ($PSAP_ENTITLEMENT)"
+        exit 1
     fi
+
+    echo "===> Apply entitlement manifests from ${PSAP_ENTITLEMENT}<=="
+    oc create -f "${PSAP_ENTITLEMENT}" && sleep 300
 }
 
 ##############
