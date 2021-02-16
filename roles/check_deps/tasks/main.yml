@@ -20,7 +20,7 @@
 
 - name: Verify that KUBECONFIG file exists
   fail:
-    msg: "Kubeconfig not found at {{ kubeconfig.stdout }}"
+    msg: "Kubeconfig not found at {{ kubeconfig_value.stdout }}"
   when: kubeconfig_file.stat.exists != true
 
 - name: Get oc user
