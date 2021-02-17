@@ -78,8 +78,12 @@ entitle() {
         exit 1
     fi
 
-    echo "===> Apply entitlement manifests from ${PSAP_ENTITLEMENT}<=="
-    oc create -f "${PSAP_ENTITLEMENT}" && sleep 300
+    if ! oc get mc/50-entitlement-pem -oname 2>/dev/null | grep -q 50-entitlement-pem; then
+        echo "===> Apply entitlement manifests from ${PSAP_ENTITLEMENT} <=="
+        oc create -f "${PSAP_ENTITLEMENT}" && sleep 300
+    else
+        echo "===> Entitlement already instanciated <=="
+    fi
 }
 
 ##############
