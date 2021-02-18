@@ -17,11 +17,18 @@
       shell: "oc get pods -owide -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_pods_list"
       ignore_errors: true
       when: artifact_extra_logs_dir | default('', true) | trim != ''
-    - name: capture Pod images
+    - name: capture GPU Pod images
       shell:
         oc get pods -n gpu-operator-resources
           -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
           > {{ artifact_extra_logs_dir }}/gpu_pods_image
+      ignore_errors: true
+      when: artifact_extra_logs_dir | default('', true) | trim != ''
+    - name: capture Operator Pod image
+      shell:
+        oc get pods -n openshift-operators
+          -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{", "}{end}{end}'
+          > {{ artifact_extra_logs_dir }}/operator_pods_image
       ignore_errors: true
       when: artifact_extra_logs_dir | default('', true) | trim != ''
     - name: capture GPU Nodes states
