@@ -6,7 +6,7 @@
 
 - name: Save the GPU Operator PackageManifests (debug)
   ignore_errors: true
-  shell: "oc get packagemanifests/gpu-operator-certified > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.yml"
+  shell: "oc get packagemanifests/gpu-operator-certified -o yaml > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.yml"
   when: artifact_extra_logs_dir | default('', true) | trim != ''
 
 - name: Get the version of the GPU Operator on OperatorHub
