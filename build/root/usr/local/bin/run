@@ -72,6 +72,11 @@ entitle() {
     # TODO: this should become an ansible playbook properly waiting
     # for the deployment of the entitlement
 
+    if [[ "${SKIP_ENTITLEMENT:-n}" == y ]]; then
+        echo "Skipping entitlement (SKIP_ENTITLEMENT=${SKIP_ENTITLEMENT})"
+        return
+    fi
+
     PSAP_ENTITLEMENT="/var/run/psap-entitlement-secret/01-cluster-wide-machineconfigs.yaml"
     if [ ! -f "$PSAP_ENTITLEMENT" ]; then
         echo "FATAL: PSAP entitlement resources not found ($PSAP_ENTITLEMENT)"

@@ -19,6 +19,8 @@ spec:
       value: -e use_aws=no
     - name: KUBECONFIG
       value: /etc/kubeconfig/kubeconfig
+    - name: SKIP_ENTITLEMENT
+      value: "y"
     volumeMounts:
     - mountPath: /etc/kubeconfig
       name: kubeconfig-secret
