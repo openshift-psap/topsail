@@ -68,6 +68,8 @@
       | gunzip
       | grep dcgm
     ignore_errors: true
+    retries: 5
+    delay: 20
 
   rescue:
   - name: DCGM logs (debug)
