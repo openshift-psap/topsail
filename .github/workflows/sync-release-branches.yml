@@ -25,10 +25,12 @@ jobs:
       - name: Synchronize release-* branches with master
         run: |
           set -x;
+          git show -s;
           git fetch origin;
           for branch in release-4.{5,6,7,8,9,next};
           do
             git checkout $branch;
-            git pull . master;
-            git push origin
+            git show -s;
+            git pull . master --ff-only;
+            git push origin;
           done
