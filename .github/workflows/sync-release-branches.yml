@@ -27,5 +27,7 @@ jobs:
           set -x;
           for branch in release-4.{5,6,7,8,9,next};
           do
-            git push origin HEAD:$branch --force;
+            git checkout $branch;
+            git pull . master;
+            git push origin
           done
