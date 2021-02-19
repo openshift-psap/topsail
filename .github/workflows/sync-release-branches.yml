@@ -31,6 +31,6 @@ jobs:
           do
             git checkout $branch;
             git show -s;
-            git pull . master --ff-only;
+            git reset --hard master;
             git push origin;
           done
