@@ -1,32 +1,20 @@
 ---
-- name: Check for 'oc'
-  command: >
-    type -a oc
+- name: Capture OpenShift version (debug)
+  command: oc version
 
-- name: Check for 'jq', needed for parsing and debugging oc outputs
-  command: >
-    type -a jq
-  register: jq_cli
-  ignore_errors: true
+- name: Fetch 'openshift_release' value and check dependencies
+  shell:
+    oc version -o json
+    | jq --raw-output '.openshiftVersion'
+    | cut -b-3
+  register: ocp_version
+  # Abort the play if anything goes wrong:
+  # - KUBECONFIG not valid
+  # - cannot join the server
+  # - oc or jq missing
+  failed_when: ocp_version.stdout == 'nul' or ocp_version.stdout == ""
 
-- name: Get the KUBECONFIG value
-  shell: echo $KUBECONFIG
-  register: kubeconfig_value
-
-- name: check if the kubeconfig file exists
-  stat:
-    path: "{{ kubeconfig_value.stdout }}"
-  register: kubeconfig_file
-
-- name: Verify that KUBECONFIG file exists
-  fail:
-    msg: "Kubeconfig not found at {{ kubeconfig_value.stdout }}"
-  when: kubeconfig_file.stat.exists != true
-
-- name: Get oc user
-  command: >
-    oc whoami
-
-- name: Get oc version
-  command: >
-    oc version
+- name: 'Store openshift_release={{ ocp_version.stdout }}'
+  set_fact:
+    openshift_release: "{{ ocp_version.stdout }}"
+  when: openshift_release | default('', true) | trim == ''
