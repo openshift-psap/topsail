@@ -128,7 +128,7 @@ case ${1:-} in
 
         echo "Using Git repository ${CI_IMAGE_GPU_COMMIT_CI_REPO} with ref ${CI_IMAGE_GPU_COMMIT_CI_REF}"
 
-        toolbox/scaleup_gpu_node.sh
+        toolbox/scaleup_cluster.sh
         toolbox/nfd/deploy_from_operatorhub.sh
         toolbox/gpu-operator/deploy_from_commit.sh "${CI_IMAGE_GPU_COMMIT_CI_REPO}" \
                                                    "${CI_IMAGE_GPU_COMMIT_CI_REF}" \
@@ -139,7 +139,7 @@ case ${1:-} in
         ;;
 
     "gpu-ci")
-        toolbox/scaleup_gpu_node.sh
+        toolbox/scaleup_cluster.sh
         toolbox/nfd/deploy_from_operatorhub.sh
         toolbox/gpu-operator/deploy_from_operatorhub.sh
         toolbox/gpu-operator/run_ci_checks.sh
@@ -148,7 +148,7 @@ case ${1:-} in
         ;;
 
     "gpu-helm-ci")
-        toolbox/scaleup_gpu_node.sh
+        toolbox/scaleup_cluster.sh
         toolbox/nfd/deploy_from_operatorhub.sh
         toolbox/gpu-operator/list_version_from_helm.sh
         toolbox/gpu-operator/deploy_with_helm.sh 1.4.0

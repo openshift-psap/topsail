@@ -10,43 +10,55 @@
     suffix: .machineset.temp.yaml
   register: machineset_tempfile
 
-- name: Create a temporary file for the GPU MachineSet
+- name: Create a temporary file for the new MachineSet
   ansible.builtin.tempfile:
     state: file
     suffix: .machineset.temp.yaml
-  register: gpu_machineset_tempfile
+  register: new_machineset_tempfile
 
 - name: Store the MachineSet json definition in a temp file
   shell:
     oc get '{{ oc_get_machinesets.stdout }}' -n openshift-machine-api -o json > "{{ machineset_tempfile.path }}"
 
-- name: "Transform the MachineSet to a GPU MachineSet (instance type: {{ gpu_instance_type }})"
+- name: "Update the MachineSet with the requested instance type ({{ machine_instance_type }})"
   shell: >-
-    {{ parse_machine_set }} {{ machineset_tempfile.path }} {{ gpu_instance_type }} > {{ gpu_machineset_tempfile.path }}
+    {{ parse_machine_set }} {{ machineset_tempfile.path }} {{ machine_instance_type }} > {{ new_machineset_tempfile.path }}
 
-- name: Get the name of the new GPU MachineSet
-  shell: cat '{{ gpu_machineset_tempfile.path }}' | jq -r .metadata.name
-  register: gpu_machineset_name
+- name: Get the name of the new MachineSet
+  shell: cat '{{ new_machineset_tempfile.path }}' | jq -r .metadata.name
+  register: new_machineset_name
 
 - block:
-  - name: Search if GPU MachineSet object already exists
-    command: oc get 'machineset/{{ gpu_machineset_name.stdout }}' -n openshift-machine-api -oname
+  - name: Search if new MachineSet object already exists
+    command: oc get 'machineset/{{ new_machineset_name.stdout }}' -n openshift-machine-api -oname
   rescue:
-  - name: Create GPU MachineSet object
-    command: oc create -f '{{ gpu_machineset_tempfile.path }}'
+  - name: Create the new MachineSet object
+    command: oc create -f '{{ new_machineset_tempfile.path }}'
 
 - block:
-  - name: Wait for the GPU machine to be provisioned
+  - name: Wait for the new Machine to be provisioned
     command:
       oc get machines --no-headers
-        -l machine.openshift.io/cluster-api-machineset={{ gpu_machineset_name.stdout }}
+        -l machine.openshift.io/cluster-api-machineset={{ new_machineset_name.stdout }}
         -o=jsonpath='{range .items[*]}{.status.phase}{end}'
         -n openshift-machine-api
-    register: gpu_machine_state
+    register: new_machine_state
     until:
-    - gpu_machine_state.stdout == 'Running'
+    - new_machine_state.stdout == 'Running'
     retries: 45
-    delay: 10
+    delay: 30
+
+  - name: Wait for the new Node to be Ready
+    command:
+      oc get nodes --no-headers
+        -l beta.kubernetes.io/instance-type={{ machine_instance_type }}
+        -o=jsonpath='{..status.conditions[?(@.type=="Ready")].status}'
+    register: new_node_ready
+    until:
+    - new_node_ready.stdout == 'True'
+    retries: 45
+    delay: 30
+
   rescue:
     - name: Capture more information about why the scale-up failed
       shell: |

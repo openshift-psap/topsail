@@ -1,13 +1,13 @@
 ---
 - block:
-  - name: Check if GPU machines exist
+  - name: Check if requested machines exist
     shell: >
-      oc get machines --no-headers -n openshift-machine-api -l machine.openshift.io/instance-type={{ gpu_instance_type }}
+      oc get machines --no-headers -n openshift-machine-api -l machine.openshift.io/instance-type={{ machine_instance_type }}
       | grep Running
-  - name: Found running GPU machines
+  - name: Found running machines with the requested machine type
     debug:
-      msg: Found running GPU machines, no need to scale-up
+      msg: "Found running machines with type '{{ machine_instance_type }}', no need to scale-up"
   rescue:
-  - name: Create new GPU machine
+  - name: Scale-up the cluster
     import_tasks: roles/openshift_node/tasks/create_machine.yml
-    when: aws_add_gpu_node == "yes"
+    when: aws_scaleup_cluster == "yes"
