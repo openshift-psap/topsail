@@ -16,5 +16,3 @@ fi
 ANSIBLE_OPTS="$ANSIBLE_OPTS -e openshift_release=$OCP_VERSION"
 
 cd $TOP_DIR
-
-set -x
