@@ -1,10 +1,13 @@
+- name: Ensure that the GPU Operator PackageManifest exists
+  command: oc get packagemanifests/gpu-operator-certified
+
 - name: Create the namespace for the GPU Operator
   command: oc apply -f "{{ gpu_operator_namespace }}"
 
 - name: Create the OperatorGroup object
   command: oc apply -f "{{ gpu_operator_operatorgroup }}"
 
-- name: Save the GPU Operator PackageManifests (debug)
+- name: Save the GPU Operator PackageManifest (debug)
   ignore_errors: true
   shell: "oc get packagemanifests/gpu-operator-certified -o yaml > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.yml"
   when: artifact_extra_logs_dir | default('', true) | trim != ''
