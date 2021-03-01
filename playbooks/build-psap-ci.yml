@@ -4,7 +4,5 @@
   hosts: localhost
   connection: local
   gather_facts: true
-  vars:
-    kubeconfig: "{{ ansible_env.KUBECONFIG }}"
   roles:
     - role: build_ci_image
