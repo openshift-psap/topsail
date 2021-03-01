@@ -113,8 +113,8 @@ deploy_operator() {
     helm uninstall --namespace $OPERATOR_NAMESPACE $OPERATOR_NAME || true
     oc delete crd/clusterpolicies.nvidia.com || true
 
-    #helm template --debug # <-- this is for debugging helm install
-    exec helm install \
+    #exec helm install \
+    helm_args="\
      $OPERATOR_NAME $HELM_SOURCE \
      --devel \
      \
@@ -129,7 +129,16 @@ deploy_operator() {
      --set dcgmExporter.version=${HELM_values[dcgmExporter_version]%-*}-ubi8 \
      \
      --namespace $OPERATOR_NAMESPACE \
-     --wait
+     --wait"
+
+    if [ ! -z "${ARTIFACT_DIR:-}" ]; then
+        ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/helm_deploy_operator/extra_logs"
+        mkdir -p "${ARTIFACT_EXTRA_LOGS_DIR}"
+
+        helm template --debug $helm_args > "${ARTIFACT_EXTRA_LOGS_DIR}/helm_deploy.yaml"
+    fi
+
+    exec helm install $helm_args
 }
 
 undeploy() {
