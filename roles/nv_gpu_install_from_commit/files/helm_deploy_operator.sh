@@ -103,7 +103,7 @@ deploy_operator() {
     done <<< $(parse_yaml ${YAML_VALUES} "")
     set -x
 
-    device_plugin_version=${HELM_values[devicePlugin_version]/-ubuntu*/}-ubi8
+    device_plugin_version=${HELM_values[devicePlugin_version]/%-*}-ubi8
     if [[ "$device_plugin_version" == "v0.7.1-ubi8" ]]; then
         echo "WARNING: cannot use devicePlugin.version=$device_plugin_version"
         device_plugin_version="v0.7.3-ubi8"
@@ -124,9 +124,9 @@ deploy_operator() {
      --set operator.defaultRuntime=crio \
      --set nfd.enabled=${NFD_ENABLED} \
      \
-     --set toolkit.version=${HELM_values[toolkit_version]/-ubuntu*/}-ubi8 \
+     --set toolkit.version=${HELM_values[toolkit_version]%-*}-ubi8 \
      --set devicePlugin.version=${device_plugin_version} \
-     --set dcgmExporter.version=${HELM_values[dcgmExporter_version]/-ubuntu*/}-ubi8 \
+     --set dcgmExporter.version=${HELM_values[dcgmExporter_version]%-*}-ubi8 \
      \
      --namespace $OPERATOR_NAMESPACE \
      --wait
