@@ -74,7 +74,7 @@
         msg: "No builder-dockercfg secret in the 'gpu-operator-ci' namespace ..."
 
 - name: delete operator image builder pod, if any
-  shell: oc delete -f "{{ gpu_operator_image_builder_pod }}" || true
+  shell: oc delete -f "{{ gpu_operator_image_builder_pod }}" --ignore-not-found=true
 
 - name: prepare the operator image
   block:

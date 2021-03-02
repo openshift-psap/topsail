@@ -11,7 +11,7 @@
   command: oc apply -f "{{ local_ci_imagestream }}"
 
 - name: delete kubeconfig secret
-  shell: oc delete secret -n ci-artifacts kubeconfig-secret || true
+  shell: oc delete secret -n ci-artifacts kubeconfig-secret --ignore-not-found=true
 
 - name: create kubeconfig secret
   shell: oc create secret -n ci-artifacts generic kubeconfig-secret --from-file $KUBECONFIG
@@ -22,7 +22,7 @@
     command: oc get imagestreamtag -n ci-artifacts "ci-artifacts:{{ local_ci_image_tag }}" -oname
   rescue:
   - name: delete any old image builder manifest
-    shell: oc delete -f "{{ local_ci_image_builder }}" || true
+    shell: oc delete -f "{{ local_ci_image_builder }}" --ignore-not-found=true
 
   - name: apply ci artifacts image builder manifest
     shell: cat "{{ local_ci_image_builder }}" \
@@ -40,7 +40,7 @@
   command: oc get imagestreamtag -n ci-artifacts "ci-artifacts:{{ local_ci_image_tag }}" -oname
 
 - name: delete any stalled CI execution Pod
-  shell: oc delete -f "{{ local_ci_execution_pod }}" || true
+  shell: oc delete -f "{{ local_ci_execution_pod }}" --ignore-not-found=true
 
 - name: trigger the CI execution in a Pod
   shell: cat "{{ local_ci_execution_pod }}" \

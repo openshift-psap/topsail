@@ -111,7 +111,7 @@ deploy_operator() {
     fi
 
     helm uninstall --namespace $OPERATOR_NAMESPACE $OPERATOR_NAME || true
-    oc delete crd/clusterpolicies.nvidia.com || true
+    oc delete crd/clusterpolicies.nvidia.com --ignore-not-found=true
 
     #exec helm install \
     helm_args="\

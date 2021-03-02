@@ -10,17 +10,13 @@
         msg: "No node with our tuned label"
 
 - name: delete tuned fuse profile # in the openshift-cluster-node-tuning-operator namespace
-  command: oc delete -f "{{ tuned_module_fuse }}"
-  ignore_errors: true
+  command: oc delete -f "{{ tuned_module_fuse }}" --ignore-not-found=true
 
 - name: delete namespace and everything it contains
-  command: oc delete -f "{{ gpu_operator_namespace }}"
-  ignore_errors: true
+  command: oc delete -f "{{ gpu_operator_namespace }}" --ignore-not-found=true
 
 - name: delete utils namespace and everything it contains
-  command: oc delete -f "{{ gpu_operator_ci_utils }}"
-  ignore_errors: true
+  command: oc delete -f "{{ gpu_operator_ci_utils }}" --ignore-not-found=true
 
 - name: delete GPU Operator CRD
-  command: oc delete crd clusterpolicies.nvidia.com
-  ignore_errors: true
+  command: oc delete crd clusterpolicies.nvidia.com --ignore-not-found=true
