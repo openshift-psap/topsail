@@ -67,7 +67,9 @@
       | base64 -d
       | gunzip
       | grep dcgm
+    register: nv_dcgm_exporter_prom
     ignore_errors: true
+    until: nv_dcgm_exporter_prom.rc == 0
     retries: 5
     delay: 20
 
