@@ -1,0 +1,22 @@
+---
+- block:
+  - name: "Deploy entitlement from resource file '{{ entitlement_resources }}'"
+    command: oc create -f "{{ entitlement_resources }}"
+  - meta: end_play
+  when: entitlement_resources | default('', true) | trim != ''
+
+- block:
+  - name: "Deploy RHSM from file '{{ entitlement_rhsm }}'"
+    shell:
+      python3 "{{ entitlement_py_apply }}"
+        "{{ entitlement_mc_rhsm }}" BASE64_ENCODED_RHSM_FILE "{{ entitlement_rhsm }}"
+      | oc create -f-
+  when: entitlement_rhsm | default('', true) | trim != ''
+
+- block:
+  - name: "Deploy the pem and key-pem from file '{{ entitlement_pem }}'"
+    shell:
+      python3 "{{ entitlement_py_apply }}"
+        "{{ entitlement_mc_pem }}" BASE64_ENCODED_PEM_FILE "{{ entitlement_pem }}"
+      | oc create -f-
+  when: entitlement_pem | default('', true) | trim != ''

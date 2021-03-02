@@ -1,0 +1,45 @@
+---
+- name: Set the number of retry loop to 1 if waiting not requested
+  set_fact:
+    entitlement_retries: 1
+  when: entitlement_test_wait != 'yes'
+
+- name: Specify the number of retries to perform to wait for the entitlement
+  set_fact:
+    nb_entitlement_retries: 10
+  when: entitlement_test_wait == 'yes'
+
+- name: "Set the number of retry loop to {{ nb_entitlement_retries }} if waiting is requested"
+  set_fact:
+    entitlement_retries: "{{ nb_entitlement_retries }}"
+  when: entitlement_test_wait == 'yes'
+
+- block:
+  - name: Wait for the entitlement Pod to succeed
+    shell: |
+      oc delete -f "{{ entitlement_test_pod }}" --ignore-not-found=true;
+      oc create -f "{{ entitlement_test_pod }}";
+      i=0;
+      CMD="oc get pod/entitlement-tester
+                -o custom-columns=:.status.phase
+                --no-headers
+                ";
+      while ! $CMD | egrep 'Succeeded|Error|Failed'; do
+          echo "Waiting for Pod completion ... (#${i})";
+          sleep 10;
+          i=$(($i+1));
+      done;
+      $CMD;
+      $CMD | egrep 'Succeeded';
+    register: entitlement_wait
+    until: entitlement_wait.rc == 0
+    retries: "{{ entitlement_retries}}"
+    delay: 30
+
+  always:
+  - name: Get the test Pod logs
+    command: oc logs pod/entitlement-tester
+    when: entitlement_inspect == "yes" or entitlement_wait.rc != 0
+
+  - name: Delete the test Pod
+    command: oc delete -f "{{ entitlement_test_pod }}"
