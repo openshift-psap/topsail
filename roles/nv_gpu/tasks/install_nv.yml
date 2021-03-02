@@ -9,14 +9,70 @@
 
 - name: Save the GPU Operator PackageManifest (debug)
   ignore_errors: true
-  shell: "oc get packagemanifests/gpu-operator-certified -o yaml > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.yml"
+  shell:
+    oc get packagemanifests/gpu-operator-certified -o yaml
+    > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.yml
   when: artifact_extra_logs_dir | default('', true) | trim != ''
 
-- name: Get the version of the GPU Operator on OperatorHub
+- block:
+  - name: Get the version of the GPU Operator on OperatorHub
+    shell:
+      oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -ojson
+      | jq -r .status.channels[0].currentCSV
+    register: gpu_operator_csv_name_cmd
+  - name: Store the CSV version
+    set_fact:
+      gpu_operator_csv_name: "{{ gpu_operator_csv_name_cmd.stdout }}"
+  when: gpu_operator_operatorhub_version == ''
+
+- block:
+  - name: Get the version of the GPU Operator on OperatorHub
+    command: echo "gpu-operator-certified.v{{ gpu_operator_operatorhub_version }}"
+    register: gpu_operator_csv_name_cmd
+  - name: Store the CSV version
+    set_fact:
+      gpu_operator_csv_name: "{{ gpu_operator_csv_name_cmd.stdout }}"
+  when: gpu_operator_operatorhub_version != ''
+
+- name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
+  debug:
+    msg: "{{ gpu_operator_csv_name }}"
+
+- name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
   shell:
-    oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -ojson
-    | jq -r .status.channels[0].currentCSV
-  register: gpu_operator_csv_name
+    cat {{ gpu_operator_operatorhub_sub }}
+    | sed 's|{{ '{{' }} startingCSV {{ '}}' }}|{{ gpu_operator_csv_name }}|'
+    | oc apply -f-
+  args:
+    warn: false # don't warn about using sed here
+
+- name: "Find the GPU Operator OperatorHub InstallPlan"
+  command:
+    oc get installplan
+      -oname
+      -loperators.coreos.com/gpu-operator-certified.openshift-operators
+      -n openshift-operators
+  register: gpu_operator_installplan_name
+  until: gpu_operator_installplan_name.stdout != ""
+  retries: 10
+  delay: 15
+
+- name: "Approve the GPU Operator OperatorHub InstallPlan"
+  command:
+    oc patch {{ gpu_operator_installplan_name.stdout }}
+       -n openshift-operators
+       --type merge
+       --patch '{"spec":{"approved":true}}'
+
+- name: "Wait for the GPU Operator OperatorHub ClusterServiceVersion"
+  command:
+    oc get  ClusterServiceVersion/{{ gpu_operator_csv_name }}
+      -oname
+      -n openshift-operators
+  register: gpu_operator_installplan_name
+  until: gpu_operator_installplan_name.stdout != ""
+  retries: 20
+  delay: 30
 
 - name: Create a temporary file for the GPU Operator clusterpolicy
   ansible.builtin.tempfile:
@@ -24,12 +80,18 @@
     suffix: .clusterpolicy.temp.yaml
   register: gpu_operator_clusterpolicy_tempfile
 
-- name: Get the clusterpolicy of the GPU Operator from OperatorHub
+- name: Get the clusterpolicy of the GPU Operator from OperatorHub CSV
   shell:
-    oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -ojson
-    | jq -r '.status.channels[0].currentCSVDesc.annotations."alm-examples"'
+    set -o pipefail;
+    oc get ClusterServiceVersion/{{ gpu_operator_csv_name }}
+       -n openshift-operators
+       -ojson
+    | jq -r '.metadata.annotations."alm-examples"'
     | jq .[0] > {{ gpu_operator_clusterpolicy_tempfile.path }}
   register: operatorhub_clusterpolicy
+  until: operatorhub_clusterpolicy.rc == 0
+  retries: 20
+  delay: 15
 
 - name: Save the clusterpolicy of the GPU Operator from OperatorHub (debug)
   copy:
@@ -38,9 +100,6 @@
   delegate_to: localhost
   when: artifact_extra_logs_dir | default('', true) | trim != ''
   ignore_errors: true
-
-- name: Create the OperatorHub subscription for the GPU Operator
-  command: oc apply -f "{{ gpu_operator_operatorhub_sub }}"
 
 - block:
   - name: Create the clusterPolicy CR for the GPU Operator
@@ -62,7 +121,7 @@
   - name: Get the ClusterServiceVersion status (debug)
     shell:
       (oc get ClusterServiceVersion -A &&
-       oc describe "ClusterServiceVersion/{{ gpu_operator_csv_name.stdout }}" -n openshift-operators)
+       oc describe "ClusterServiceVersion/{{ gpu_operator_csv_name }}" -n openshift-operators)
        > {{ artifact_extra_logs_dir }}/gpu_operator_ClusterServiceVersion.log
     when: artifact_extra_logs_dir | default('', true) | trim != ''
     ignore_errors: true

@@ -11,3 +11,7 @@ gpu_operator_packagemanifests: gpu-operator-certified
 gpu_operator_namespace: roles/nv_gpu/files/gpu/010_namespace.yml
 gpu_operator_operatorgroup: roles/nv_gpu/files/gpu/015_operatorgroup.yml
 gpu_operator_operatorhub_sub: roles/nv_gpu/files/gpu/020_operator_sub.yml
+gpu_operator_install_plan: roles/nv_gpu/files/gpu/030_install_plan.yml
+
+# Empty to use the latest version, or set to force a given version
+gpu_operator_operatorhub_version: ""

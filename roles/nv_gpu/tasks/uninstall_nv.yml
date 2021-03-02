@@ -1,6 +1,16 @@
 ---
+- name: Get the name of the GPU Operator ClusterPolicy CR
+  command: oc get ClusterPolicy -oname
+  register: gpu_operator_cr_name
+  ignore_errors: true
+
+- name: Delete the clusterPolicy CR of the GPU Operator
+  command: oc delete "{{ gpu_operator_cr_name.stdout }}"
+  when: gpu_operator_cr_name.rc == 0
+  ignore_errors: true
+
 - name: Delete the OperatorHub subscription for the GPU Operator
-  command: oc delete -f "{{ gpu_operator_operatorhub_sub }}"
+  command: oc delete Subscription/gpu-operator-certified -n openshift-operators
   ignore_errors: true
 
 - name: Get the name of the GPU Operator ClusterServiceVersion
@@ -13,10 +23,6 @@
   shell: "oc delete {{ item }} -n openshift-operators"
   ignore_errors: true
   when: operator_csv_name.rc == 0
-
-- name: Delete the clusterPolicy CR of the GPU Operator
-  command: oc delete -f "{{ gpu_operator_cr }}"
-  ignore_errors: true
 
 - name: Delete the CRD of the GPU Operator
   command: oc delete crd clusterpolicies.nvidia.com
