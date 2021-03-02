@@ -15,6 +15,7 @@ ci_banner() {
     echo "===> $0 $@ <=="
 
     git show --quiet || echo "Could not access git history ..."
+    echo
     git show HEAD~ --quiet || true
 
     echo
@@ -69,25 +70,25 @@ prechecks() {
 }
 
 entitle() {
-    # TODO: this should become an ansible playbook properly waiting
-    # for the deployment of the entitlement
-
-    if [[ "${SKIP_ENTITLEMENT:-n}" == y ]]; then
-        echo "Skipping entitlement (SKIP_ENTITLEMENT=${SKIP_ENTITLEMENT})"
+    if toolbox/entitlement/test.sh; then
+        echo "Cluster already entitled, skipping entitlement."
         return
     fi
 
-    PSAP_ENTITLEMENT="/var/run/psap-entitlement-secret/01-cluster-wide-machineconfigs.yaml"
-    if [ ! -f "$PSAP_ENTITLEMENT" ]; then
-        echo "FATAL: PSAP entitlement resources not found ($PSAP_ENTITLEMENT)"
+    ENTITLEMENT_RESOURCES=${ENTITLEMENT_RESOURCES:-/var/run/psap-entitlement-secret/01-cluster-wide-machineconfigs.yaml}
+    if [ -z "$ENTITLEMENT_RESOURCES" ]; then
+        echo "FATAL: Cluster isn't entitled, and no entitlement resource provided (ENTITLEMENT_RESOURCES)"
+        exit 1
+    elif [ ! -f "$ENTITLEMENT_RESOURCES" ]; then
+        echo "FATAL: Entitlement resource file not found ($ENTITLEMENT_RESOURCES)"
         exit 1
     fi
 
-    if ! oc get mc/50-entitlement-pem -oname 2>/dev/null | grep -q 50-entitlement-pem; then
-        echo "===> Apply entitlement manifests from ${PSAP_ENTITLEMENT} <=="
-        oc create -f "${PSAP_ENTITLEMENT}" && sleep 300
-    else
-        echo "===> Entitlement already instanciated <=="
+    echo "Deploying the entitlement from resources in ${ENTITLEMENT_RESOURCES}"
+    toolbox/entitlement/deploy.sh --machine-configs ${ENTITLEMENT_RESOURCES}
+    if ! toolbox/entitlement/wait.sh; then
+        echo "FATAL: Failed to properly entitle the cluster, cannot continue."
+        exit 1
     fi
 }
 
