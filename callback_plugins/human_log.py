@@ -86,11 +86,10 @@ class CallbackModule(default_CallbackModule):
         self.__display_result(result, color)
 
     def _print_task_banner(self, task):
-        self._display.display("---")
         self._display.display("")
         self._display.display(f"{task.get_path()}")
-
-        pass
+        self._display.display("---")
+        self._display.display("")
 
     def v2_runner_retry(self, result):
         color = C.COLOR_VERBOSE
