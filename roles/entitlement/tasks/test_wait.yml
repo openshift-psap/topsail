@@ -23,6 +23,7 @@
       CMD="oc get pod/entitlement-tester
                 -o custom-columns=:.status.phase
                 --no-headers
+                -n default
                 ";
       while ! $CMD | egrep 'Succeeded|Error|Failed'; do
           echo "Waiting for Pod completion ... (#${i})";
@@ -38,7 +39,7 @@
 
   always:
   - name: Get the test Pod logs
-    command: oc logs pod/entitlement-tester
+    command: oc logs pod/entitlement-tester -n default
     when: entitlement_inspect == "yes" or entitlement_wait.rc != 0
 
   - name: Delete the test Pod
