@@ -1,0 +1,37 @@
+---
+- name: Set the number of retry to 0 if waiting not requested
+  set_fact:
+    nfd_wait_gpu_retries: 0
+  when: nfd_wait_gpu_nodes != 'yes'
+
+- name: Specify the number of retries to perform to wait for the GPU nodes
+  set_fact:
+    nb_nfd_wait_gpu_retries: 10
+  when: nfd_wait_gpu_nodes == 'yes'
+
+- name: "Set the number of retry loop to {{ nfd_wait_gpu_nodes }} if waiting is requested"
+  set_fact:
+    nfd_wait_gpu_retries: "{{ nb_nfd_wait_gpu_retries }}"
+  when: nfd_wait_gpu_nodes == 'yes'
+
+- block:
+  - name: Wait for the GPU podes to appear
+    # label list should be in sync with:
+    # https://github.com/NVIDIA/gpu-operator/blob/master/pkg/controller/clusterpolicy/state_manager.go#L26
+    shell:
+      (   oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-10de.present
+       || oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-0302_10de.present
+       || oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-0300_10de.present
+      ) | grep .
+    register: nfd_gpu_wait
+    until: nfd_gpu_wait.rc == 0
+    retries: "{{ nfd_wait_gpu_retries }}"
+    delay: 30
+
+  rescue:
+  - name: Get the labels of the worker nodes (debug)
+    shell: oc get nodes --show-labels --selector='!node-role.kubernetes.io/master' | tr , '\n'
+
+  - name: Failing because no GPU node showed up
+    fail:
+      msg: Failed because no GPU node showed up
