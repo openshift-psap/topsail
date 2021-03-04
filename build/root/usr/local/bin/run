@@ -144,18 +144,28 @@ case ${1:-} in
         ;;
 
     "gpu-ci")
+        if [ ! -z "${2:-}" ]; then
+            OPERATOR_VERSION="$2"
+        else
+            OPERATOR_VERSION="" # latest version
+        fi
         prepare_cluster_for_gpu_operator
-        toolbox/gpu-operator/deploy_from_operatorhub.sh
+        toolbox/gpu-operator/deploy_from_operatorhub.sh ${OPERATOR_VERSION}
         toolbox/gpu-operator/run_ci_checks.sh
 
 	exit 0
         ;;
 
     "gpu-helm-ci")
-        prepare_cluster_for_gpu_operator
+        if [ -z "${2:-}" ]; then
+            echo "FATAL: $0 $1 should receive the operator version as parameter."
+            exit 1
+        fi
+        OPERATOR_VERSION="$2"
 
+        prepare_cluster_for_gpu_operator
         toolbox/gpu-operator/list_version_from_helm.sh
-        toolbox/gpu-operator/deploy_with_helm.sh 1.4.0
+        toolbox/gpu-operator/deploy_with_helm.sh ${OPERATOR_VERSION}
         toolbox/gpu-operator/run_ci_checks.sh
 
         exit 0
