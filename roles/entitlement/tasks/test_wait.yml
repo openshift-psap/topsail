@@ -25,6 +25,10 @@
           echo "Waiting for Pod completion ... (#${i})";
           sleep 10;
           i=$(($i+1));
+          if [[ "$i" == "12" ]]; then
+            echo "Pod took too long to terminate, aborting..."
+            exit 1;
+          fi;
       done;
       $CMD;
       $CMD | egrep 'Succeeded';
