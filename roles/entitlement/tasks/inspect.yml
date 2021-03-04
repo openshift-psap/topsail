@@ -16,5 +16,5 @@
   ignore_errors: true
 
 - name: Get the state of the nodes
-  command: oc nodes
+  command: oc get nodes
   ignore_errors: true
