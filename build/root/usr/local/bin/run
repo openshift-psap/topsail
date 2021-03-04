@@ -121,8 +121,12 @@ echo "ANSIBLE_OPTS='$ANSIBLE_OPTS'"
 
 prepare_cluster_for_gpu_operator() {
     entitle
-    toolbox/scaleup_cluster.sh
+
     toolbox/nfd/deploy_from_operatorhub.sh
+    if ! toolbox/nfd/has_gpu_nodes.sh; then
+        toolbox/scaleup_cluster.sh
+        toolbox/nfd/wait_gpu_nodes.sh
+    fi
 }
 
 set -x
