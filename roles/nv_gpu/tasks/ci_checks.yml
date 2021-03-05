@@ -9,6 +9,18 @@
   retries: 10
   delay: 10
 
+- name: Ensure that NFD is running
+  command: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID=rhcos
+
+- name: Ensure that NFD found nodes with GPU labels
+  # label list should be in sync with:
+  # https://github.com/NVIDIA/gpu-operator/blob/master/pkg/controller/clusterpolicy/state_manager.go#L26
+  shell:
+    (   oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-10de.present
+     || oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-0302_10de.present
+     || oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-0300_10de.present
+    ) | grep .
+
 - name: check that nvidia-device-plugin-validation Pod has ran successfully
   shell:
     oc get pods --field-selector=status.phase=Succeeded
