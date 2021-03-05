@@ -1,7 +1,7 @@
 ---
-- name: Set the number of retry loop to 1 if waiting not requested
+- name: Set the number of retry loop to 0 if waiting not requested
   set_fact:
-    entitlement_retries: 1
+    entitlement_retries: 0
   when: entitlement_test_wait != 'yes'
 
 - name: "Set the number of retry loop to {{ nb_entitlement_wait_retries }} if waiting is requested"
