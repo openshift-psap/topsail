@@ -16,7 +16,7 @@ entitlement_test: 'yes'
 entitlement_test_wait: 'yes'
 
 # gather information about entitlement deployment
-# (done anyway in case of test failure)
+# (done anyway in case of test failure, except if set to 'never')
 entitlement_inspect: 'no'
 
 # template files for the MachineConfig resources

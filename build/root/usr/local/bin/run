@@ -71,7 +71,7 @@ prechecks() {
 
 entitle() {
     echo "Testing if the cluster is already entitled ..."
-    if toolbox/entitlement/test.sh; then
+    if toolbox/entitlement/test.sh --no-inspect; then
         echo "Cluster already entitled, skipping entitlement."
         return
     fi

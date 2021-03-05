@@ -7,4 +7,9 @@ ANSIBLE_OPTS="${ANSIBLE_OPTS} -e entitlement_deploy=no"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e entitlement_test=yes"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e entitlement_test_wait=no"
 
+if [[ "$1" == "--no-inspect" ]]; then
+    ANSIBLE_OPTS="${ANSIBLE_OPTS} -e entitlement_inspect=never"
+    echo "INFO: Inspect on failure disabled."
+fi
+
 exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/entitlement.yml

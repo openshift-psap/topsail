@@ -6,6 +6,7 @@
     when: entitlement_test == 'yes'
   rescue:
   - include_tasks: roles/entitlement/tasks/inspect.yml
+    when: entitlement_inspect != 'never'
   - name: Failing because of a previous error
     fail:
       msg: Failed because of a previous error
