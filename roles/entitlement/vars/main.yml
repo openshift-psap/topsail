@@ -24,3 +24,6 @@ entitlement_mc_rhsm: 'roles/entitlement/files/mc_rhsm.yml'
 entitlement_mc_pem: 'roles/entitlement/files/mc_pem.yml'
 entitlement_py_apply: 'roles/entitlement/files/apply_template.py'
 entitlement_test_pod: 'roles/entitlement/files/test_pod.yml'
+
+# the number of retries to perform when waiting for the entitlement
+nb_entitlement_wait_retries: 20

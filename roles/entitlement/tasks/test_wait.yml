@@ -4,14 +4,9 @@
     entitlement_retries: 1
   when: entitlement_test_wait != 'yes'
 
-- name: Specify the number of retries to perform to wait for the entitlement
+- name: "Set the number of retry loop to {{ nb_entitlement_wait_retries }} if waiting is requested"
   set_fact:
-    nb_entitlement_retries: 10
-  when: entitlement_test_wait == 'yes'
-
-- name: "Set the number of retry loop to {{ nb_entitlement_retries }} if waiting is requested"
-  set_fact:
-    entitlement_retries: "{{ nb_entitlement_retries }}"
+    entitlement_retries: "{{ nb_entitlement_wait_retries }}"
   when: entitlement_test_wait == 'yes'
 
 - block:
