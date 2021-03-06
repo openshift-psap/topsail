@@ -54,8 +54,8 @@
       -n openshift-operators
   register: gpu_operator_installplan_name
   until: gpu_operator_installplan_name.stdout != ""
-  retries: 30
-  delay: 15
+  retries: 150
+  delay: 30
 
 - name: "Approve the GPU Operator OperatorHub InstallPlan"
   command:
