@@ -1,0 +1,87 @@
+---
+- name: Ensure that NFD found nodes with GPU labels
+  # label list should be in sync with:
+  # https://github.com/NVIDIA/gpu-operator/blob/master/pkg/controller/clusterpolicy/state_manager.go#L26
+  shell:
+    (   oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-10de.present
+     || oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-0302_10de.present
+     || oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-0300_10de.present
+    ) | grep .
+
+- name: Get the list of nodes with GPUs
+  shell:
+    oc get nodes
+       -lnvidia.com/gpu.present=true
+       -o custom-columns=NAME:metadata.name
+       --no-headers
+    | cut -d. -f1
+  register: gpu_burn_gpu_nodes
+  failed_when: gpu_burn_gpu_nodes.stdout == ""
+
+- name: Create the entrypoint ConfigMap
+  command: oc apply -f "{{ gpu_burn_cm_entrypoint }}"
+
+- name: Create GPU burn Pods
+  with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+  shell: |
+    set -eo pipefail;
+    GPU_NODE_HOSTNAME=$(echo '{{ item }}' );
+    echo "Hostname: $GPU_NODE_HOSTNAME";
+    oc delete pod/gpu-burn-$GPU_NODE_HOSTNAME -n default --ignore-not-found=true
+    cat "{{ gpu_burn_pod }}" \
+      | sed "s|{{ '{{' }} gpu_node_hostname {{ '}}' }}|$GPU_NODE_HOSTNAME|" \
+      | sed "s|{{ '{{' }} gpu_burn_time {{ '}}' }}|{{ gpu_burn_time }}|" \
+      | oc apply -f-
+
+- name: "Let the GPU burn Pods run {{ gpu_burn_time }}seconds"
+  command: "sleep {{ gpu_burn_time }}"
+
+- name: Wait for GPU burn Pods to complete
+  with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+  command:
+    oc get pod/gpu-burn-{{ item }}
+       -n default
+       -o custom-columns=:.status.phase
+       --no-headers
+  register: gpu_burn_gpu_wait
+  until: gpu_burn_gpu_wait.stdout == "Succeeded" or gpu_burn_gpu_wait.stdout == "Error" or gpu_burn_gpu_wait.stdout == "Failed"
+  retries: 10
+  delay: 30
+
+- block:
+  - name: Ensure that the GPU burn Pods to complete successfully
+    with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+    command:
+      oc get pod/gpu-burn-{{ item }}
+         -n default
+         -o custom-columns=:.status.phase
+         --no-headers
+    register: gpu_burn_gpu_test
+    failed_when: gpu_burn_gpu_test.stdout != "Succeeded"
+
+  - name: Ensure that no GPU was faulty
+    with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+    shell:
+      oc logs pod/gpu-burn-{{ item }} -n default | grep FAULTY
+    register: gpu_burn_gpu_test_faulty
+    failed_when: gpu_burn_gpu_test_faulty.rc == 0
+
+  always:
+  - name: Save the logs of the GPU burn Pods
+    shell: oc logs pod/gpu-burn-{{ item }} -n default | grep -o "[^$(printf '\r')]*$"
+    with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+    ignore_errors: true
+
+  - name: Save the full logs of the GPU burn Pods
+    shell: oc logs pod/gpu-burn-{{ item }} -n default > {{ artifact_extra_logs_dir }}/gpu_burn.{{ item }}.logs
+    with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+    ignore_errors: true
+    when: artifact_extra_logs_dir | default('', true) | trim != ''
+
+  - name: Cleanup the GPU burn Pods
+    command: oc delete pod/gpu-burn-{{ item }} -n default
+    with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+    ignore_errors: true
+
+  - name: Delete the entrypoint ConfigMap
+    command: oc delete -f "{{ gpu_burn_cm_entrypoint }}"

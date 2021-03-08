@@ -1,0 +1,5 @@
+gpu_burn_cm_entrypoint: roles/gpu_burn/files/gpu_burn_cm_entrypoint.yml
+gpu_burn_pod: roles/gpu_burn/files/gpu_burn_pod.yml
+
+# time argument for GPU burn, in seconds
+gpu_burn_time: 300
