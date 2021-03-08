@@ -2,6 +2,7 @@ import os
 
 from ansible.plugins.callback.default import CallbackModule as default_CallbackModule
 from ansible import constants as C
+import ansible.executor
 
 # extends this class: https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/callback/default.py
 
@@ -18,7 +19,7 @@ INTERESTING_MODULE_PROPS = {
     }
 
 class CallbackModule(default_CallbackModule):
-    def __display_result(self, result, color, ignore_errors=None):
+    def __display_result(self, result, color, ignore_errors=None, loop_idx=0):
         if ignore_errors is not None:
             self._display.display(f"==> FAILED | ignore_errors={ignore_errors}", color=color)
 
@@ -26,29 +27,47 @@ class CallbackModule(default_CallbackModule):
         try: self._display.display(f"msg: {result._result['msg']}", color=color)
         except KeyError: pass
 
-        try:
-            cmd = result._result['cmd']
+        if "results" in result._result:
+            for idx, res in enumerate(result._result['results']):
+                var = res['ansible_loop_var']
+                value = res['_ansible_item_label']
+                self._display.display("", color=color)
+                self._display.display(f"LOOP #{idx}: {var} = {value}", color=color)
+                item_result = ansible.executor.task_result.TaskResult(
+                    host=result._host, task=result._task, return_data=res)
+                self.__display_result(item_result, color, ignore_errors, loop_idx=idx)
 
+            return
+
+        def print_cmd(cmd):
             str_cmd = cmd if isinstance(cmd, str) \
                 else ' '.join(cmd)
 
             self._display.display(f"", color=color)
-            self._display.display(f"<command> {str_cmd}", color=color)
+            if "\n" in str_cmd:
+                self._display.display(f"<command>\n{str_cmd}</command>", color=color)
+            else:
+                self._display.display(f"<command> {str_cmd}", color=color)
+
             self._display.display(f"", color=color)
 
-        except KeyError:
-            def print_dict(key, d, depth=1):
-                for k, v in d.items():
-                    if k in INTERESTING_MODULE_PROPS:
-                        if INTERESTING_MODULE_PROPS[k] is None: continue
-                        if v not in INTERESTING_MODULE_PROPS[k]: continue
-                    if not isinstance(v, dict):
-                        self._display.display(f"{'  '*depth}- {k}:\t{v}", color=C.COLOR_VERBOSE)
-                    else:
-                        self._display.display(f"{'  '*depth}- {k}", color=C.COLOR_VERBOSE)
-                        print_dict(k, v, depth+1)
+        def print_result_as_dict(key, d, depth=1):
+            for k, v in d.items():
+                if k in INTERESTING_MODULE_PROPS:
+                    if INTERESTING_MODULE_PROPS[k] is None: continue
+                    if v not in INTERESTING_MODULE_PROPS[k]: continue
 
-            print_dict("_top", result._result)
+                if not isinstance(v, dict):
+                    self._display.display(f"{'  '*depth}- {k}:\t{v}", color=C.COLOR_VERBOSE)
+                else:
+                    self._display.display(f"{'  '*depth}- {k}", color=C.COLOR_VERBOSE)
+                    print_result_as_dict(k, v, depth+1)
+
+        try:
+            cmd = result._result['cmd']
+            print_cmd(cmd)
+        except KeyError:
+            print_result_as_dict("_top", result._result)
             # ^^^ will print stdout and stderr
             return
 
@@ -88,6 +107,11 @@ class CallbackModule(default_CallbackModule):
             else C.COLOR_OK
 
         self.__display_result(result, color)
+
+    # items are handled as part of the 'normal' task logging
+    def v2_runner_item_on_failed(self, result): pass
+    def v2_runner_item_on_ok(self, result): pass
+    def v2_runner_item_on_skipped(self, result): pass
 
     def _print_task_banner(self, task, head=False):
         if head:
