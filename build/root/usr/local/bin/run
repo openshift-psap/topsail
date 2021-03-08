@@ -143,6 +143,7 @@ case ${1:-} in
                                                    "${CI_IMAGE_GPU_COMMIT_CI_REF}" \
                                                    "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}"
         toolbox/gpu-operator/run_ci_checks.sh
+        toolbox/gpu-operator/run_gpu_burn.sh
 
 	exit 0
         ;;
@@ -156,6 +157,7 @@ case ${1:-} in
         prepare_cluster_for_gpu_operator
         toolbox/gpu-operator/deploy_from_operatorhub.sh ${OPERATOR_VERSION}
         toolbox/gpu-operator/run_ci_checks.sh
+        toolbox/gpu-operator/run_gpu_burn.sh
 
 	exit 0
         ;;
@@ -171,6 +173,7 @@ case ${1:-} in
         toolbox/gpu-operator/list_version_from_helm.sh
         toolbox/gpu-operator/deploy_with_helm.sh ${OPERATOR_VERSION}
         toolbox/gpu-operator/run_ci_checks.sh
+        toolbox/gpu-operator/run_gpu_burn.sh
 
         exit 0
         ;;
