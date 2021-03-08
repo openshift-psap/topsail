@@ -1,3 +1,5 @@
+import os
+
 from ansible.plugins.callback.default import CallbackModule as default_CallbackModule
 from ansible import constants as C
 
@@ -17,15 +19,11 @@ INTERESTING_MODULE_PROPS = {
 
 class CallbackModule(default_CallbackModule):
     def __display_result(self, result, color, ignore_errors=None):
-        self._display.display(f"{result._task}", color=color)
         if ignore_errors is not None:
             self._display.display(f"==> FAILED | ignore_errors={ignore_errors}", color=color)
 
 
         try: self._display.display(f"msg: {result._result['msg']}", color=color)
-        except KeyError: pass
-
-        try: self._display.display(f"changed: {result._result['changed']}", color=color)
         except KeyError: pass
 
         try:
@@ -67,7 +65,8 @@ class CallbackModule(default_CallbackModule):
             self._display.display(f"<{std_name}> {line}", color=color)
 
     def v2_runner_on_skipped(self, result):
-        self._display.display(f"{result._task}", color=C.COLOR_SKIP)
+        self._print_task_banner(result._task, head=True)
+
         self._display.display(f"==> SKIPPED | {result._result.get('skip_reason', '(no reason provided)')}",
                               color=C.COLOR_SKIP)
         for condition in result._task.when:
@@ -75,21 +74,34 @@ class CallbackModule(default_CallbackModule):
 
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
-        color = C.COLOR_VERBOSE if ignore_errors else C.COLOR_ERROR
+        self._print_task_banner(result._task, head=True)
 
+        color = C.COLOR_VERBOSE if ignore_errors else C.COLOR_ERROR
+        self._display.display("----- FAILED ----", C.COLOR_ERROR)
         self.__display_result(result, color, ignore_errors)
+        self._display.display("----- FAILED ----", C.COLOR_ERROR)
 
     def v2_runner_on_ok(self, result):
+        self._print_task_banner(result._task, head=True)
+
         color = C.COLOR_CHANGED if result._result.get('changed', False) \
             else C.COLOR_OK
 
         self.__display_result(result, color)
 
-    def _print_task_banner(self, task):
-        self._display.display("")
-        self._display.display(f"{task.get_path()}")
-        self._display.display("---")
-        self._display.display("")
+    def _print_task_banner(self, task, head=False):
+        if head:
+            self._display.display("---")
+            self._display.display("")
+            self._display.display("")
+            self._display.display("---")
+            self._display.display(f"{task.get_path().replace(os.getcwd()+'/', '')}")
+            self._display.display(f"{task}")
+
+        else:
+            self._display.display("")
+            # followed by:
+            "Monday 08 March 2021  10:38:44 +0100 (0:00:00.023)       0:00:06.476 **********"
 
     def v2_runner_retry(self, result):
         color = C.COLOR_VERBOSE
