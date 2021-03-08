@@ -81,7 +81,10 @@ toolbox/gpu-operator/deploy_from_commit.sh https://github.com/NVIDIA/gpu-operato
 toolbox/gpu-operator/run_ci_checks.sh
 ```
 
-- [ ] Run GPU Burst to validate that the GPUs can run workloads
+- [x] Run GPU Burst to validate that all the GPUs of all the nodes can run workloads
+```
+toolbox/gpu-operator/run_gpu_burn.sh [gpu-burn runtime, in seconds]
+```
 
 - [ ] Capture GPU operator possible issues (entitlement, NFD labelling, operator deployment, state of resources in gpu-operator-resources, ...)
   - already partly done inside the CI, but we should improve the toolbox aspect
