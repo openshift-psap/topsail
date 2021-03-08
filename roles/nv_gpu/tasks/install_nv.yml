@@ -47,11 +47,12 @@
     warn: false # don't warn about using sed here
 
 - name: "Find the GPU Operator OperatorHub InstallPlan"
+  # TODO: use 'oc get installplan -loperators.coreos.com/gpu-operator-certified.openshift-operators'
+  # when we get rid of OCP 4.5 support
   command:
-    oc get installplan
-      -oname
-      -loperators.coreos.com/gpu-operator-certified.openshift-operators
-      -n openshift-operators
+    oc get Subscription/gpu-operator-certified
+       -n openshift-operators
+       -ojsonpath={@.status.installPlanRef.name}
   register: gpu_operator_installplan_name
   until: gpu_operator_installplan_name.stdout != ""
   retries: 150
@@ -59,7 +60,7 @@
 
 - name: "Approve the GPU Operator OperatorHub InstallPlan"
   command:
-    oc patch {{ gpu_operator_installplan_name.stdout }}
+    oc patch InstallPlan/{{ gpu_operator_installplan_name.stdout }}
        -n openshift-operators
        --type merge
        --patch '{"spec":{"approved":true}}'
