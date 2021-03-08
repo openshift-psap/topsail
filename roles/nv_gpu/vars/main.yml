@@ -7,9 +7,9 @@ nfd_operator_cr: roles/nv_gpu/files/nfd/040_customresources.yml
 nfd_channel: "{% if openshift_release == '4.5' %}4.5{% else %}4.6{% endif %}"
 
 # test if a node with a NVIDIA GPU PCI card is available
-nfd_test_gpu_nodes: no
+nfd_test_gpu_nodes: false
 # wait for a node with a NVIDIA GPU PCI card to appear
-nfd_wait_gpu_nodes: no
+nfd_wait_gpu_nodes: false
 
 # Manifest for installing NV GPU operator from operator Hub
 gpu_operator_packagemanifests: gpu-operator-certified
