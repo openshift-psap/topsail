@@ -89,6 +89,20 @@ toolbox/gpu-operator/run_gpu_burn.sh [gpu-burn runtime, in seconds]
 - [ ] Capture GPU operator possible issues (entitlement, NFD labelling, operator deployment, state of resources in gpu-operator-resources, ...)
   - already partly done inside the CI, but we should improve the toolbox aspect
 
+- [x] Uninstall and cleanup stalled resources
+  - `helm` (in particular) fails to deploy when any resource is left
+    from a previously failed deployment, eg:
+
+```
+Error: rendered manifests contain a resource that already exists. Unable to continue with install: existing resource conflict: namespace: , name: gpu-operator, existing_kind: rbac.authorization.k8s.io/v1, Kind=ClusterRole, new_kind: rbac.authorization.k8s.io/v1, Kind=ClusterRole
+```
+
+ - This command ensures that the GPU Operator is fully undeployed from
+    the cluster:
+
+```
+toolbox/gpu-operator/cleanup_resources.sh
+```
 
 NFD
 ---

@@ -145,6 +145,21 @@ undeploy() {
     exec helm uninstall --namespace $OPERATOR_NAMESPACE $OPERATOR_NAME
 }
 
+cleanup() {
+    echo "Delete possible stalled GPU-operator resources from failed undeployment"
+    set -x
+    oc delete --ignore-not-found=true ServiceAccount     gpu-operator -n gpu-operator;
+    oc delete --ignore-not-found=true ClusterRole        gpu-operator;
+    oc delete --ignore-not-found=true ClusterRoleBinding gpu-operator;
+    oc delete --ignore-not-found=true Namespace          gpu-operator-resources;
+    oc delete --ignore-not-found=true SecurityContextConstraints restricted-readonly;
+    if oc get crd/clusterpolicies.nvidia.com 2>/dev/null; then
+        # this (below) fails if the type ClusterPolicy doesn't exist
+        oc delete --ignore-not-found=true ClusterPolicy      cluster-policy;
+    fi
+    oc delete --ignore-not-found=true crd clusterpolicies.nvidia.com
+}
+
 if [ "$action" == deploy_from_commit ];
 then
     deploy_from_commit "$@"
@@ -154,6 +169,9 @@ then
 elif [ "$action" == undeploy ];
 then
     undeploy
+elif [ "$action" == cleanup ];
+then
+    cleanup
 else
     echo "Unknown action command '$action' ..."
     exit 1
