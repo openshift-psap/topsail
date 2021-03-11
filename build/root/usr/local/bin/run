@@ -108,6 +108,9 @@ else
 
     mkdir -p "${ARTIFACT_EXTRA_LOGS_DIR}"
     echo "Using ${ARTIFACT_EXTRA_LOGS_DIR} for storing extra log files."
+
+    export ANSIBLE_LOG_PATH="${ARTIFACT_DIR}/ansible/logs"
+    echo "Using ${ANSIBLE_LOG_PATH} for storing ansible logs."
 fi
 
 
