@@ -1,8 +1,12 @@
 ---
 - name: Get the name of an existing worker machineset
-  shell:
-    oc get machinesets -n openshift-machine-api -oname | grep worker | head -1
+  command:
+    oc get machines
+      -n openshift-machine-api
+      -l machine.openshift.io/cluster-api-machine-role=worker
+      -o jsonpath='{range .items[*]}{.metadata.labels.machine\.openshift\.io/cluster-api-machineset}{"\n"}{end}'
   register: oc_get_machinesets
+  failed_when: oc_get_machinesets.stdout == ""
 
 - name: Create a temporary file for the original MachineSet
   ansible.builtin.tempfile:
@@ -17,15 +21,24 @@
   register: new_machineset_tempfile
 
 - name: Store the MachineSet json definition in a temp file
-  shell:
-    oc get '{{ oc_get_machinesets.stdout }}' -n openshift-machine-api -o json > "{{ machineset_tempfile.path }}"
+  command:
+    oc get 'machineset/{{ oc_get_machinesets.stdout_lines[0] }}' -n openshift-machine-api -o json
+  register: oc_get_machinesets_json
+  no_log: true # avoid overflowing stdout
+- copy:
+    dest: "{{ machineset_tempfile.path }}"
+    content: "{{ oc_get_machinesets_json.stdout }}"
 
 - name: "Update the MachineSet with the requested instance type ({{ machine_instance_type }})"
-  shell: >-
-    {{ parse_machine_set }} {{ machineset_tempfile.path }} {{ machine_instance_type }} > {{ new_machineset_tempfile.path }}
+  command: "{{ parse_machine_set }} {{ machineset_tempfile.path }} {{ machine_instance_type }}"
+  register: updated_machinesets_json
+  no_log: true # avoid overflowing stdout
+- copy:
+    dest: "{{ new_machineset_tempfile.path }}"
+    content: "{{ updated_machinesets_json.stdout }}"
 
 - name: Get the name of the new MachineSet
-  shell: cat '{{ new_machineset_tempfile.path }}' | jq -r .metadata.name
+  command: jq -r .metadata.name -- '{{ new_machineset_tempfile.path }}'
   register: new_machineset_name
 
 - block:
@@ -62,12 +75,14 @@
   rescue:
     - name: Capture more information about why the scale-up failed
       shell: |
-        echo MachineSets
+        echo MachineSets;
         oc get 'machineset/{{ gpu_machineset_name.stdout }}' -n openshift-machine-api;
-        echo GPU Machines
+        echo GPU Machines;
         oc get machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ gpu_machineset_name.stdout }}';
-        echo GPU Machines description
+        echo GPU Machines description;
         oc describe machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ gpu_machineset_name.stdout }}';
+      ignore_errors: true
+
     - name: Fail because of Machine scale-up failure
       fail:
         msg: Failing because of Machine scale-up failure
