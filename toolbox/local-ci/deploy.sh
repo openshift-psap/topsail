@@ -32,4 +32,4 @@ ANSIBLE_OPTS="${ANSIBLE_OPTS} -e local_ci_undeploy=no"
 
 export LOCAL_CI_COMMAND="$ci_command"
 
-exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/build-psap-ci.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/build-psap-ci.yml

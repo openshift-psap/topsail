@@ -8,4 +8,4 @@ if [ ! -z "${1-}" ]; then
     ANSIBLE_OPTS="${ANSIBLE_OPTS} -e machine_instance_type=${1}"
 fi
 
-exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/scaleup-cluster.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/scaleup-cluster.yml

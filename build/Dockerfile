@@ -27,6 +27,7 @@ RUN yum install -y \
 RUN mkdir -p /etc/ansible \
     && echo "localhost ansible_connection=local" > /etc/ansible/hosts
 COPY ansible.cfg /etc/ansible/ansible.cfg
+COPY inventory/hosts /etc/ansible/inventory/hosts
 RUN sed -i '19s/roles\//\/opt\/ci-artifacts\/roles/' /etc/ansible/ansible.cfg \
  && sed -i 's|callback_plugins = ./|callback_plugins = /opt/ci-artifacts/src/|' /etc/ansible/ansible.cfg
 

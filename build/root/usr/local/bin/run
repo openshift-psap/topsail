@@ -189,9 +189,7 @@ case ${1:-} in
 	;;
 
     "psap-ci")
-        INVENTORY_ARG="-i inventory/hosts"
-
-	exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/openshift-psap-ci.yml
+	exec ansible-playbook ${ANSIBLE_OPTS} playbooks/openshift-psap-ci.yml
 	;;
 
     -*)

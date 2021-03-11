@@ -6,4 +6,4 @@ source ${THIS_DIR}/../_common.sh
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e local_ci_deploy=no"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e local_ci_cleanup=yes"
 
-exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/build-psap-ci.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/build-psap-ci.yml

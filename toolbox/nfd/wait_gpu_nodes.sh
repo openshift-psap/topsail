@@ -9,4 +9,4 @@ ANSIBLE_OPTS="${ANSIBLE_OPTS} -e nfd_test_gpu_nodes=yes"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e nfd_wait_gpu_nodes=yes"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e user_mode=not-ci"
 
-exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/deploy-gpu-operator-from-operatorhub.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/deploy-gpu-operator-from-operatorhub.yml

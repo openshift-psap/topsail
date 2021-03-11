@@ -6,7 +6,6 @@ set -o errexit
 set -o nounset
 
 ANSIBLE_OPTS="${ANSIBLE_OPTS:--vv}"
-INVENTORY_ARG="-i inventory/hosts"
 
 if [ ! -z "${OCP_VERSION:-}" ]; then
     ANSIBLE_OPTS="$ANSIBLE_OPTS -e openshift_release=$OCP_VERSION"

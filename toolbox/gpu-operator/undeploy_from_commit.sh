@@ -12,4 +12,4 @@ ANSIBLE_OPTS="${ANSIBLE_OPTS} -e install_gpu_operator_from_commit=no"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e undeploy_gpu_operator=yes"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e user_mode=not-ci"
 
-exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/deploy-gpu-operator-from-commit.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/deploy-gpu-operator-from-commit.yml

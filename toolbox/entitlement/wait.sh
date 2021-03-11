@@ -8,4 +8,4 @@ ANSIBLE_OPTS="${ANSIBLE_OPTS} -e entitlement_test=yes"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e entitlement_test_wait=yes"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e entitlement_undeploy=no"
 
-exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/entitlement.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/entitlement.yml

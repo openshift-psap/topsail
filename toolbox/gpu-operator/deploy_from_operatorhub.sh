@@ -19,4 +19,4 @@ else
     echo "Deploying the GPU Operator from OperatorHub using the latest version available."
 fi
 
-exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/deploy-gpu-operator-from-operatorhub.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/deploy-gpu-operator-from-operatorhub.yml

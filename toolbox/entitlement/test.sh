@@ -12,4 +12,4 @@ if [[ "$1" == "--no-inspect" ]]; then
     echo "INFO: Inspect on failure disabled."
 fi
 
-exec ansible-playbook ${INVENTORY_ARG} ${ANSIBLE_OPTS} playbooks/entitlement.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/entitlement.yml
