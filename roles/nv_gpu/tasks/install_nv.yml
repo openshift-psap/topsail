@@ -58,35 +58,43 @@
     until: gpu_operator_installplan_name.stdout != ""
     retries: 20
     delay: 30
+
+  - name: "Approve the GPU Operator OperatorHub InstallPlan"
+    command:
+      oc patch InstallPlan/{{ gpu_operator_installplan_name.stdout }}
+         -n openshift-operators
+         --type merge
+         --patch '{"spec":{"approved":true}}'
+
+  - name: "Wait for the GPU Operator OperatorHub ClusterServiceVersion"
+    command:
+      oc get ClusterServiceVersion/{{ gpu_operator_csv_name }}
+         -oname
+         -n openshift-operators
+    register: gpu_operator_wait_csv
+    until: gpu_operator_wait_csv.stdout != ""
+    retries: 40
+    delay: 30
+
   rescue:
   - name: Capture the Catalog Operator logs (debug)
-    shell:
-      oc logs deployment.apps/catalog-operator
-         -n openshift-operator-lifecycle-manager
-      | grep gpu-operator-certified
-      | cut -b29- | uniq
+    command: oc logs deployment.apps/catalog-operator -n openshift-operator-lifecycle-manager
+    register: catalog_operator_logs
+    when: artifact_extra_logs_dir | default('', true) | trim != ''
     ignore_errors: true
+    no_log: true
 
-  - name: Fail because the InstallPlan was not created
-    fail:
-      msg: Failed because the InstallPlan was not created
+  - copy:
+      dest: "{{ artifact_extra_logs_dir }}/catalog_operator.logs"
+      content: "{{ catalog_operator_logs.stdout }}"
+    when: artifact_extra_logs_dir | default('', true) | trim != ''
 
-- name: "Approve the GPU Operator OperatorHub InstallPlan"
-  command:
-    oc patch InstallPlan/{{ gpu_operator_installplan_name.stdout }}
-       -n openshift-operators
-       --type merge
-       --patch '{"spec":{"approved":true}}'
+  - debug:
+      msg: "The logs of Catalog-operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.logs"
+    when: artifact_extra_logs_dir | default('', true) | trim != ''
 
-- name: "Wait for the GPU Operator OperatorHub ClusterServiceVersion"
-  command:
-    oc get  ClusterServiceVersion/{{ gpu_operator_csv_name }}
-      -oname
-      -n openshift-operators
-  register: gpu_operator_wait_csv
-  until: gpu_operator_wait_csv.stdout != ""
-  retries: 20
-  delay: 30
+  - fail:
+      msg: Failed because the GPU Operator could not be install from the Catalog Operator
 
 - name: Create a temporary file for the GPU Operator clusterpolicy
   ansible.builtin.tempfile:
