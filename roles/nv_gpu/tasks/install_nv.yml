@@ -1,5 +1,5 @@
 - name: Ensure that the GPU Operator PackageManifest exists
-  command: oc get packagemanifests/gpu-operator-certified
+  command: oc get packagemanifests/gpu-operator-certified -n openshift-marketplace
 
 - name: Create the namespace for the GPU Operator
   command: oc apply -f "{{ gpu_operator_namespace }}"
@@ -10,7 +10,7 @@
 - name: Save the GPU Operator PackageManifest (debug)
   ignore_errors: true
   shell:
-    oc get packagemanifests/gpu-operator-certified -o yaml
+    oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -oyaml
     > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.yml
   when: artifact_extra_logs_dir | default('', true) | trim != ''
 
