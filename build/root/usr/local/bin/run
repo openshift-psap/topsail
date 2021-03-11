@@ -111,6 +111,9 @@ else
 
     export ANSIBLE_LOG_PATH="${ARTIFACT_DIR}/ansible/logs"
     echo "Using ${ANSIBLE_LOG_PATH} for storing ansible logs."
+
+    export CACHE_PLUGIN_CONNECTION="${ARTIFACT_DIR}/ansible/facts"
+    echo "Using ${CACHE_PLUGIN_CONNECTION} for storing ansible facts."
 fi
 
 
