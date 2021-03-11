@@ -115,37 +115,51 @@ entitle() {
     fi
 }
 
-##############
+prepare_ansible() {
+    if [ -z "${ARTIFACT_DIR:-}" ]; then
+        export ARTIFACT_DIR="/tmp/ci-artifacts/$(date +%Y%m%d_%H%M)"
+        echo "No ARTIFACT_DIR configured, using $ARTIFACT_DIR"
+    fi
+    echo "Using ${ARTIFACT_DIR} for storing artifact files."
 
-prechecks
-ci_banner
-
-ANSIBLE_OPTS="-vv"
-
-if [ -z "${ARTIFACT_DIR:-}" ]; then
-    echo "No ARTIFACT_DIR configured."
-else
     ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/${1:-}/extra_logs"
-    ANSIBLE_OPTS="$ANSIBLE_OPTS -e artifact_extra_logs_dir=${ARTIFACT_EXTRA_LOGS_DIR}"
 
     mkdir -p "${ARTIFACT_EXTRA_LOGS_DIR}"
     echo "Using ${ARTIFACT_EXTRA_LOGS_DIR} for storing extra log files."
 
-    export ANSIBLE_LOG_PATH="${ARTIFACT_DIR}/ansible/logs"
+    if [ -z "${ANSIBLE_LOG_PATH:-}" ]; then
+        export ANSIBLE_LOG_PATH="${ARTIFACT_DIR}/ansible/logs"
+    fi
     echo "Using ${ANSIBLE_LOG_PATH} for storing ansible logs."
 
-    export CACHE_PLUGIN_CONNECTION="${ARTIFACT_DIR}/ansible/facts"
-    echo "Using ${CACHE_PLUGIN_CONNECTION} for storing ansible facts."
-fi
+    mkdir -p "$(dirname "${ANSIBLE_LOG_PATH}")"
 
+    if [ -z "${ANSIBLE_CACHE_PLUGIN_CONNECTION:-}" ]; then
+        export ANSIBLE_CACHE_PLUGIN_CONNECTION="${ARTIFACT_DIR}/ansible/facts"
+    fi
+    echo "Using ${ANSIBLE_CACHE_PLUGIN_CONNECTION} for storing ansible facts."
 
-ANSIBLE_OPTS=${ANSIBLE_OPTS:--v}
-ANSIBLE_OPTS="${ANSIBLE_OPTS} ${EXTRA_ANSIBLE_OPTS:-}"
+    mkdir -p "${ANSIBLE_CACHE_PLUGIN_CONNECTION}"
+    # ---
 
-export ANSIBLE_OPTS
-export EXTRA_ANSIBLE_OPTS=
+    ANSIBLE_OPTS=${ANSIBLE_OPTS:--v}
+    ANSIBLE_OPTS="${ANSIBLE_OPTS} \
+                  ${EXTRA_ANSIBLE_OPTS:-} \
+                  -e artifact_extra_logs_dir=${ARTIFACT_EXTRA_LOGS_DIR}"
 
-echo "ANSIBLE_OPTS='$ANSIBLE_OPTS'"
+    export ANSIBLE_OPTS
+    export EXTRA_ANSIBLE_OPTS=
+
+    echo "ANSIBLE_OPTS='$ANSIBLE_OPTS'"
+}
+
+##############
+
+prechecks
+ci_banner
+prepare_ansible
+
+#############
 
 prepare_cluster_for_gpu_operator() {
     entitle
