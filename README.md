@@ -56,11 +56,28 @@ GPU Operator
 ------------
 
 - [x] Deploy from OperatorHub
-    - [ ] allow deploying an older version https://github.com/openshift-psap/ci-artifacts/issues/76
+    - [x] allow deploying an older version https://github.com/openshift-psap/ci-artifacts/issues/76
 ```
-toolbox/gpu-operator/deploy_from_operatorhub.sh
+toolbox/gpu-operator/deploy_from_operatorhub.sh [<version>]
 toolbox/gpu-operator/undeploy_from_operatorhub.sh
 ```
+
+    - [x] List the versions available from OperatorHub (not 100%
+      reliable, the connection may timeout)
+
+```
+toolbox/gpu-operator/list_version_from_operator_hub.sh
+
+Usage:
+  toolbox/gpu-operator/list_version_from_operator_hub.sh [<package-name> [<catalog-name>]]
+  toolbox/gpu-operator/list_version_from_operator_hub.sh --help
+
+Defaults:
+  package-name: gpu-operator-certified
+  catalog-name: certified-operators
+  namespace: openshift-marketplace (controlled with NAMESPACE environment variable)
+```
+
 
 - [x] Deploy from helm
 ```
