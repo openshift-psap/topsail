@@ -35,3 +35,9 @@
   - name: Failing because no GPU node showed up
     fail:
       msg: Failed because no GPU node showed up
+    when: nfd_wait_gpu_nodes == 'yes'
+
+  - name: Failing because no GPU node is available
+    fail:
+      msg: Failed because no GPU node is available
+    when: nfd_wait_gpu_nodes != 'yes'
