@@ -103,8 +103,13 @@ toolbox/gpu-operator/run_ci_checks.sh
 toolbox/gpu-operator/run_gpu_burn.sh [gpu-burn runtime, in seconds]
 ```
 
-- [ ] Capture GPU operator possible issues (entitlement, NFD labelling, operator deployment, state of resources in gpu-operator-resources, ...)
-  - already partly done inside the CI, but we should improve the toolbox aspect
+- [x] Capture GPU operator possible issues (entitlement, NFD labelling, operator deployment, state of resources in gpu-operator-resources, ...)
+```
+toolbox/entitlement/test.sh
+toolbox/nfd/has_gpu_nodes.sh
+toolbox/gpu-operator/run_ci_checks.sh
+toolbox/gpu-operator/capture_deployment_state.sh
+```
 
 - [x] Uninstall and cleanup stalled resources
   - `helm` (in particular) fails to deploy when any resource is left
