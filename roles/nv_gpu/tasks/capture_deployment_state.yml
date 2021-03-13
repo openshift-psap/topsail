@@ -1,6 +1,6 @@
-- name: beginning of verbose failure (debug)
+- name: beginning of GPU Operator state cature (debug)
   debug:
-    msg: "Beginning of verbose failure"
+    msg: "Beginning of GPU Operator state cature (debug)"
 
 - name: get gpu-operator-resources Pods (debug)
   ignore_errors: true
@@ -32,6 +32,6 @@
   shell: "oc get machines -A > {{ artifact_extra_logs_dir }}/debug_all_machines_list"
   when: artifact_extra_logs_dir | default('', true) | trim != ''
 
-- name: end of verbose failure (debug)
+- name: end of GPU Operator state cature (debug)
   debug:
-    msg: "End of verbose failure"
+    msg: "End of GPU Operator state cature (debug)"

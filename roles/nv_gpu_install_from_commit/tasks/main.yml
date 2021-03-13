@@ -29,10 +29,10 @@
   - include_tasks: roles/nv_gpu/tasks/ci_checks.yml
     when: user_mode == 'ci'
   rescue:
-  - name: Verbose Failure
+  - name: Capture the state of the GPU Operator deployment
     include_role:
       name: nv_gpu
-      tasks_from: verbose_failure
+      tasks_from: capture_deployment_state
   - name: Failing because of a previous error
     fail:
       msg: "Failing because of a previous error"

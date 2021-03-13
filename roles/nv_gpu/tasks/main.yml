@@ -41,10 +41,14 @@
       when: artifact_extra_logs_dir | default('', true) | trim != ''
 
   rescue:
-  - include_tasks: verbose_failure.yml
+  - include_tasks: capture_deployment_state.yml
   - name: Failing because of a previous error
     fail:
       msg: "Failing because of a previous error"
+
+- name: Capture the state of the GPU Operator deployment
+  include_tasks: capture_deployment_state.yml
+  when: gpu_operator_capture_deployment_state == "yes"
 
 - name: Uninstall GPU-operator from OperatorHub
   include_tasks: uninstall_nv.yml
