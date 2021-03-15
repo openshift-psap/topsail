@@ -223,11 +223,6 @@ case ${1:-} in
     "gpu-ci-undeploy")
         toolbox/gpu-operator/undeploy_from_operatorhub.sh
 	;;
-
-    "psap-ci")
-	exec ansible-playbook ${ANSIBLE_OPTS} playbooks/openshift-psap-ci.yml
-	;;
-
     -*)
         echo "Unknown option: ${1:-}"
         exit 1
