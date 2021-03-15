@@ -161,6 +161,12 @@ prepare_ansible
 
 #############
 
+if [ -z "${ARTIFACT_DIR:-}" ]; then
+    echo "No ARTIFACT_DIR configured."
+else
+    echo "ARTIFACT_DIR=$ARTIFACT_DIR"
+fi
+
 prepare_cluster_for_gpu_operator() {
     entitle
 
