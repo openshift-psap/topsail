@@ -6,6 +6,8 @@ nfd_operator_operatorhub_sub: roles/nv_gpu/files/nfd/030_operator_sub.yml
 nfd_operator_cr: roles/nv_gpu/files/nfd/040_customresources.yml
 nfd_channel: "{% if openshift_release == '4.5' %}4.5{% else %}4.6{% endif %}"
 
+# test if a node with NFD labels is available
+nfd_test_nodes: false
 # test if a node with a NVIDIA GPU PCI card is available
 nfd_test_gpu_nodes: false
 # wait for a node with a NVIDIA GPU PCI card to appear

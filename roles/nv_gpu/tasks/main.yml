@@ -7,6 +7,10 @@
     include_tasks: roles/nv_gpu/tasks/test_nfd_gpu.yml
     when: nfd_test_gpu_nodes == "yes"
 
+  - name: Ensure that NFD nodes are available
+    include_tasks: roles/nv_gpu/tasks/test_nfd.yml
+    when: nfd_test_nodes == "yes"
+
   - name: Install GPU-operator from OperatorHub
     include_tasks: roles/nv_gpu/tasks/install_nv.yml
     when: install_gpu_operator_from_hub == "yes"

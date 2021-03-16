@@ -106,6 +106,7 @@ toolbox/gpu-operator/run_gpu_burn.sh [gpu-burn runtime, in seconds]
 - [x] Capture GPU operator possible issues (entitlement, NFD labelling, operator deployment, state of resources in gpu-operator-resources, ...)
 ```
 toolbox/entitlement/test.sh
+toolbox/nfd/has_nfd.sh
 toolbox/nfd/has_gpu_nodes.sh
 toolbox/gpu-operator/run_ci_checks.sh
 toolbox/gpu-operator/capture_deployment_state.sh
@@ -129,21 +130,22 @@ toolbox/gpu-operator/cleanup_resources.sh
 NFD
 ---
 
-- [ ]  Deploy the NFD operator from OperatorHub:
+- [x]  Deploy the NFD operator from OperatorHub:
 ```
 toolbox/nfd/deploy_from_operatorhub.sh
 toolbox/nfd/undeploy_from_operatorhub.sh
 ```
   - [ ]  Control the channel to use from the command-line
 
-- [ ] Test the NFD deployment #78
-  - [ ] test with the NFD if GPU nodes are available
-  - [ ] wait with the NFD for GPU nodes to become available  #78
+- [x] Test the NFD deployment
+  - [x] test with the NFD if GPU nodes are available
+  - [x] wait with the NFD for GPU nodes to become available
+
 ```
+toolbox/nfd/has_nfd.sh
 toolbox/nfd/has_gpu_nodes.sh
 toolbox/nfd/wait_gpu_nodes.sh
 ```
-
 
 Cluster
 -------
@@ -162,7 +164,7 @@ Cluster
 toolbox/entitlement/deploy.sh --pem /path/to/pem
 toolbox/entitlement/deploy.sh --machine-configs /path/to/machineconfigs
 toolbox/entitlement/undeploy.sh
-toolbox/entitlement/test.sh
+toolbox/entitlement/test.sh [--no-inspect]
 toolbox/entitlement/wait.sh
 ```
   - [x] Capture all the clues required to understand entitlement issues
