@@ -110,6 +110,12 @@ toolbox/nfd/has_nfd.sh
 toolbox/nfd/has_gpu_nodes.sh
 toolbox/gpu-operator/run_ci_checks.sh
 toolbox/gpu-operator/capture_deployment_state.sh
+toolbox/gpu-operator/run_gpu_burn.sh 30
+```
+
+or all in one step:
+```
+toolbox/gpu-operator/diagnose.sh
 ```
 
 - [x] Uninstall and cleanup stalled resources
