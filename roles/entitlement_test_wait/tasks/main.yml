@@ -1,13 +1,13 @@
 ---
-- name: Set the number of retry loop to 0 if waiting not requested
+- name: "Set the number of retry loop to 0 as waiting not requested"
   set_fact:
     entitlement_retries: 0
-  when: entitlement_test_wait != 'yes'
+  when: entitlement_test_and_wait != 'yes'
 
-- name: "Set the number of retry loop to {{ nb_entitlement_wait_retries }} if waiting is requested"
+- name: "Set the number of retry loop to {{ entitlement_nb_wait_retries }} as waiting is requested"
   set_fact:
-    entitlement_retries: "{{ nb_entitlement_wait_retries }}"
-  when: entitlement_test_wait == 'yes'
+    entitlement_retries: "{{ entitlement_nb_wait_retries }}"
+  when: entitlement_test_and_wait == 'yes'
 
 - block:
   - name: Wait for the entitlement Pod to succeed
@@ -37,10 +37,20 @@
     retries: "{{ entitlement_retries}}"
     delay: 30
 
+  rescue:
+  - include_role:
+      name: entitlement_inspect
+    vars:
+      _entitlement_inspect_called_from_testwait: "yes"
+    when: entitlement_inspect_on_failure == 'yes'
+
+  - fail:
+      msg: Failed because the entitlement Pod did not succeed.
+
   always:
   - name: Get the test Pod logs
     command: oc logs pod/entitlement-tester -n default
-    when: entitlement_inspect == "yes" or entitlement_wait.rc != 0
+    when: _entitlement_testwait_called_from_inspect == "yes" or entitlement_wait.rc != 0
 
   - name: Delete the test Pod
     command: oc delete -f "{{ entitlement_test_pod }}"

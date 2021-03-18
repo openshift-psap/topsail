@@ -1,8 +1,7 @@
 ---
-#
-- name: Deploy and test OpenShift entitlement
+- name: Test OpenShift entitlement
   hosts: localhost
   connection: local
   gather_facts: true
   roles:
-    - role: entitlement
+    - role: entitlement_test_wait

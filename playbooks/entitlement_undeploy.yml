@@ -1,0 +1,7 @@
+---
+- name: Undeploy OpenShift entitlement
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: entitlement_undeploy

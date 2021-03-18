@@ -1,4 +1,8 @@
 ---
+- include_role:
+    name: entitlement_test
+  when: _entitlement_inspect_called_from_testwait == "no"
+
 - name: List entitlement MachineConfig objects
   command: oc get MachineConfig 50-entitlement-key-pem 50-entitlement-pem 50-rhsm-conf
   ignore_errors: true

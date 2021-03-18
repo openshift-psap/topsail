@@ -1,0 +1,10 @@
+---
+- name: Wait for OpenShift entitlement deployment
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+  - include_role:
+      name: roles/entitlement_test_wait
+    vars:
+      entitlement_test_and_wait: 'yes'

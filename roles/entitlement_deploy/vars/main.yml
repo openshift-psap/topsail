@@ -1,0 +1,12 @@
+---
+# path to the pre-prepared yaml resources of the entitlement
+entitlement_resources: ''
+# path to the PEM file of the entitlement
+entitlement_pem: ''
+# path to the RHSM file of the entitlement
+entitlement_rhsm: 'roles/entitlement_deploy/files/rhsm.conf'
+
+# template files for the MachineConfig resources
+entitlement_mc_rhsm: 'roles/entitlement_deploy/files/mc_rhsm.yml'
+entitlement_mc_pem: 'roles/entitlement_deploy/files/mc_pem.yml'
+entitlement_py_apply: 'roles/entitlement_deploy/files/apply_template.py'
