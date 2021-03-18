@@ -17,9 +17,9 @@ fi
 
 if [ -z "${ARTIFACT_DIR:-}" ]; then
     export ARTIFACT_DIR="/tmp/ci-artifacts_$(date +%Y%m%d)"
-    echo "No ARTIFACT_DIR configured, using $ARTIFACT_DIR to store the test artifacts"
+    echo "Using '$ARTIFACT_DIR' to store the test artifacts (default value for ARTIFACT_DIR)."
 else
-    echo "Using '$ARTIFACT_DIR' to store the test artifacts"
+    echo "Using '$ARTIFACT_DIR' to store the test artifacts."
 fi
 
 
@@ -48,6 +48,14 @@ fi
 echo "Using '${ANSIBLE_CACHE_PLUGIN_CONNECTION}' to store ansible facts."
 mkdir -p "${ANSIBLE_CACHE_PLUGIN_CONNECTION}"
 
+# Ansible configuration file
+
+if [ -z "${ANSIBLE_CONFIG:-}" ]; then
+    export ANSIBLE_CONFIG="${TOP_DIR}/config/ansible.cfg"
+fi
+echo "Using '${ANSIBLE_CONFIG}' as ansible configuration file."
+
 ###
 
+echo ""
 cd $TOP_DIR

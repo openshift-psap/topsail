@@ -26,19 +26,20 @@ RUN yum install -y \
 # Set up Ansible
 RUN mkdir -p /etc/ansible \
     && echo "localhost ansible_connection=local" > /etc/ansible/hosts
-COPY ansible.cfg /etc/ansible/ansible.cfg
-COPY inventory/hosts /etc/ansible/inventory/hosts
-RUN sed -i '19s/roles\//\/opt\/ci-artifacts\/roles/' /etc/ansible/ansible.cfg \
- && sed -i 's|callback_plugins = ./|callback_plugins = /opt/ci-artifacts/src/|' /etc/ansible/ansible.cfg
+COPY config/ansible.cfg /etc/ansible/ansible.cfg
+COPY config/inventory/hosts /etc/ansible/inventory/hosts
+
+RUN sed -i 's|roles/|/opt/ci-artifacts/roles/|' /etc/ansible/ansible.cfg \
+ && sed -i 's|callback_plugins = ../|callback_plugins = /opt/ci-artifacts/src/|' /etc/ansible/ansible.cfg
 
 # Set up the runner user
 ENV USER_NAME=psap-ci-runner \
     USER=psap-ci-runner \
     HOME=/opt/ci-artifacts/src/ \
+    ANSIBLE_CONFIG="/etc/ansible/ansible.cfg" \
     INSIDE_CI_IMAGE="y"
 
 COPY . ${HOME}/
-RUN rm ${HOME}/ansible.cfg
 
 # Ensure directory permissions are properly set
 RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R
