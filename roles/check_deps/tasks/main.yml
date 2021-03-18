@@ -1,20 +1,40 @@
 ---
-- name: Capture OpenShift version (debug)
-  command: oc version
-
-- name: Fetch 'openshift_release' value and check dependencies
-  shell:
-    oc version -o json
-    | jq --raw-output '.openshiftVersion'
-    | cut -b-3
-  register: ocp_version
-  # Abort the play if anything goes wrong:
-  # - KUBECONFIG not valid
-  # - cannot join the server
-  # - oc or jq missing
-  failed_when: ocp_version.stdout == 'nul' or ocp_version.stdout == ""
+- block:
+  - name: Fetch 'openshift_release' value and check dependencies
+    # see the 'fail' message below before modifying this command,
+    # it verifies that the main dependencies are met.
+    shell:
+      oc version -o json
+      | jq --raw-output '.openshiftVersion'
+      | cut -b-3
+    register: ocp_version
+    failed_when: ocp_version.stdout == 'nul' or ocp_version.stdout == ""
+  rescue:
+    - fail:
+        msg: |
+          Failed to fetch OpenShift version. Please verify the failure message above and double check:
+            1. that `KUBECONFIG` is properly set ({{ lookup('env', 'KUBECONFIG')}})
+            2. that `oc` is available in the PATH
+            3. that `jq` is available in the PATH
+            4. that `oc` and `KUBECONFIG` are able to access the OpenShift cluster
 
 - name: 'Store openshift_release={{ ocp_version.stdout }}'
   set_fact:
     openshift_release: "{{ ocp_version.stdout }}"
   when: openshift_release | default('', true) | trim == ''
+
+- name: Capture OpenShift version (debug)
+  command: oc version -oyaml
+  register: ocp_version_yaml
+
+- name: Store OpenShift version in the artifacts (debug)
+  when: artifact_extra_logs_dir | default('', true) | trim != ''
+  copy:
+    content: "{{ ocp_version_yaml.stdout }}"
+    dest: "{{ artifact_extra_logs_dir }}/ocp_version.yml"
+
+- name: Get ci_artifact version from Git
+  shell:
+    git describe HEAD --long --always 2>/dev/null > {{ artifact_extra_logs_dir }}/.ci_artifact.version
+    || true
+  register: git_version
