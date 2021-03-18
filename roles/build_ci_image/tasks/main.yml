@@ -1,8 +1,0 @@
----
-- name: Build the CI image
-  import_tasks: roles/build_ci_image/tasks/build.yml
-  when: local_ci_deploy == "yes"
-
-- name: Cleanup the CI image
-  import_tasks: roles/build_ci_image/tasks/cleanup.yml
-  when: local_ci_cleanup == "yes"

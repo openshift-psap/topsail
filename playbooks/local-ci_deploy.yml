@@ -1,0 +1,10 @@
+---
+# This playbook builds the CI image and launches a Pod inside it,
+# in a similar way to what Prow infrastructure would do.
+
+- name: Build and deploy the CI image on the local cluster
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: local-ci_deploy

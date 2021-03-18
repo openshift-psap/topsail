@@ -1,8 +1,0 @@
----
-# Build and run the CI on OpenShift
-- name: Build CI image
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: build_ci_image

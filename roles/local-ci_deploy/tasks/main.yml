@@ -48,6 +48,6 @@
        | sed 's|{{ '{{' }} local_ci_command {{ '}}' }}|{{ local_ci_command }}|' \
        | oc apply -f-
 
-- name: Local CI execution launched.
+- name: local CI execution launched.
   debug:
     msg: oc get pod/ci-artifacts -n ci-artifacts; oc logs -f pod/ci-artifacts -n ci-artifacts

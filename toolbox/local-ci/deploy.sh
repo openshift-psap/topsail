@@ -27,9 +27,6 @@ ANSIBLE_OPTS="${ANSIBLE_OPTS} -e local_ci_git_repo=${git_repo}"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e local_ci_git_ref=${git_ref}"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e local_ci_image_tag_uid=${image_tag_uid}"
 
-ANSIBLE_OPTS="${ANSIBLE_OPTS} -e local_ci_deploy=yes"
-ANSIBLE_OPTS="${ANSIBLE_OPTS} -e local_ci_undeploy=no"
-
 export LOCAL_CI_COMMAND="$ci_command"
 
-exec ansible-playbook ${ANSIBLE_OPTS} playbooks/build-psap-ci.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/local-ci_deploy.yml
