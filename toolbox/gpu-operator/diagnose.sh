@@ -62,7 +62,7 @@ do_test "The cluster is reachable" \
 
 do_test "The cluster has the NFD operator" \
         "There is no NFD-labelled node. Is the NFD operator running properly?" \
-        toolbox/nfd/has_nfd.sh
+        toolbox/nfd/has_nfd_labels.sh
 
 do_test "The cluster is entitled" \
         "The cluster isn't entitled" \

@@ -1,0 +1,3 @@
+---
+nfd_wait_gpu_nodes: "no"
+nfd_wait_gpu_nb_retries: 10

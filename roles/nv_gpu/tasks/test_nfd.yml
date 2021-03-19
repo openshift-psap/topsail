@@ -1,2 +1,0 @@
-- name: Ensure that NFD labelled some nodes
-  command: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID=rhcos

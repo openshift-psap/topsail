@@ -106,7 +106,7 @@ toolbox/gpu-operator/run_gpu_burn.sh [gpu-burn runtime, in seconds]
 - [x] Capture GPU operator possible issues (entitlement, NFD labelling, operator deployment, state of resources in gpu-operator-resources, ...)
 ```
 toolbox/entitlement/test.sh
-toolbox/nfd/has_nfd.sh
+toolbox/nfd/has_nfd_labels.sh
 toolbox/nfd/has_gpu_nodes.sh
 toolbox/gpu-operator/run_ci_checks.sh
 toolbox/gpu-operator/capture_deployment_state.sh
@@ -148,7 +148,7 @@ toolbox/nfd/undeploy_from_operatorhub.sh
   - [x] wait with the NFD for GPU nodes to become available
 
 ```
-toolbox/nfd/has_nfd.sh
+toolbox/nfd/has_nfd_labels.sh
 toolbox/nfd/has_gpu_nodes.sh
 toolbox/nfd/wait_gpu_nodes.sh
 ```

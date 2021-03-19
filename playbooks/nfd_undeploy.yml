@@ -1,0 +1,7 @@
+---
+- name: Undeploy the NFD Operator from OperatorHub
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: nfd_undeploy

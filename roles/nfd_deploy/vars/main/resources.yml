@@ -1,0 +1,6 @@
+---
+# Manifest for installing NFD operator from OperatorHub
+nfd_operator_namespace: roles/nfd_deploy/files/010_namespace.yml
+nfd_operator_operatorgroup: roles/nfd_deploy/files/020_operatorgroup.yml
+nfd_operator_operatorhub_sub: roles/nfd_deploy/files/030_operator_sub.yml
+nfd_operator_cr: roles/nfd_deploy/files/040_customresources.yml

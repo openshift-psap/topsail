@@ -131,7 +131,10 @@ fi
 prepare_cluster_for_gpu_operator() {
     entitle
 
-    toolbox/nfd/deploy_from_operatorhub.sh
+    if ! toolbox/nfd/has_nfd_labels.sh; then
+        toolbox/nfd/deploy_from_operatorhub.sh
+    fi
+
     if ! toolbox/nfd/has_gpu_nodes.sh; then
         toolbox/scaleup_cluster.sh
         toolbox/nfd/wait_gpu_nodes.sh

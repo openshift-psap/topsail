@@ -4,18 +4,13 @@
     nfd_wait_gpu_retries: 0
   when: nfd_wait_gpu_nodes != 'yes'
 
-- name: Specify the number of retries to perform to wait for the GPU nodes
+- name: "Set the number of retry loop to {{ nfd_wait_gpu_nb_retries }} if waiting is requested"
   set_fact:
-    nb_nfd_wait_gpu_retries: 10
-  when: nfd_wait_gpu_nodes == 'yes'
-
-- name: "Set the number of retry loop to {{ nfd_wait_gpu_nodes }} if waiting is requested"
-  set_fact:
-    nfd_wait_gpu_retries: "{{ nb_nfd_wait_gpu_retries }}"
+    nfd_wait_gpu_retries: "{{ nfd_wait_gpu_nb_retries }}"
   when: nfd_wait_gpu_nodes == 'yes'
 
 - block:
-  - name: Wait for the GPU podes to appear
+  - name: Wait for the GPU nodes to appear
     # label list should be in sync with:
     # https://github.com/NVIDIA/gpu-operator/blob/master/pkg/controller/clusterpolicy/state_manager.go#L26
     shell:

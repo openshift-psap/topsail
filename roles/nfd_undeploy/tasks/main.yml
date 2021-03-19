@@ -1,0 +1,23 @@
+---
+- name: Delete the OperatorHub subscription for the NFD Operator
+  command: oc --ignore-not-found=true delete -f "{{ nfd_operator_operatorhub_sub }}"
+
+- name: Get the name of the NFD Operator ClusterServiceVersion
+  command: oc get ClusterServiceVersion -n openshift-nfd -oname
+  register: operator_csv_name
+  failed_when: false
+
+- name: Delete the ClusterServiceVersion of the NFD Operator
+  with_items: "{{ operator_csv_name.stdout_lines }}"
+  command: oc --ignore-not-found=true delete "{{ item }}" -n openshift-operators
+  when: operator_csv_name.rc == 0
+  failed_when: false
+
+- name: Delete the NodeFeatureDiscovery CR of the NFD Operator
+  command: oc --ignore-not-found=true delete -f "{{ nfd_operator_cr }}"
+
+- name: Delete the CRD of the NFD Operator
+  command: oc --ignore-not-found=true delete crd nodefeaturediscoveries.nfd.openshift.io
+
+- name: Delete the namespace of the NFD Operator
+  command: oc --ignore-not-found=true delete -f "{{ nfd_operator_namespace }}"

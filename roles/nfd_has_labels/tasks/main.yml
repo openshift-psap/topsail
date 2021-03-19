@@ -1,0 +1,17 @@
+- name: Ensure that NFD labeled some nodes
+  block:
+  - name: Ensure that NFD labeled some nodes
+    command: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID=rhcos
+    register: has_nfd_nodes
+    failed_when: has_nfd_nodes.stdout == ""
+
+  rescue:
+  - name: Check if NFD CR exists (debug)
+    command: oc get NodeFeatureDiscovery -A
+    register: has_nfd_cr
+    failed_when: has_nfd_cr.stdout == ""
+    ignore_errors: true
+
+  - name: Fail because nodes do not have NFD labels
+    fail:
+      msg: Fail because nodes do not have NFD labels
