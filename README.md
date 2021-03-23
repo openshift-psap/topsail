@@ -93,9 +93,9 @@ Example:
 toolbox/gpu-operator/deploy_from_commit.sh https://github.com/NVIDIA/gpu-operator.git master
 ```
 
-- [x] Run the GPU Operator deployment validation tests
+- [x] Wait for the GPU Operator deployment and validate it
 ```
-toolbox/gpu-operator/run_ci_checks.sh
+toolbox/gpu-operator/wait_deployment.sh
 ```
 
 - [x] Run [GPU-burn](https://github.com/openshift-psap/gpu-burn) to validate that all the GPUs of all the nodes can run workloads

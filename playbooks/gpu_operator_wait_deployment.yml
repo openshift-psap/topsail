@@ -1,0 +1,7 @@
+---
+- name: Wait for the GPU Operator to be properly deployed
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+  - role: gpu_operator_wait_deployment

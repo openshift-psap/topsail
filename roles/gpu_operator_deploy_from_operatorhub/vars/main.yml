@@ -1,0 +1,12 @@
+---
+# Manifest for installing the GPU operator from OperatorHub
+gpu_operator_packagemanifests: gpu-operator-certified
+gpu_operator_namespace: roles/gpu_operator_deploy_from_operatorhub/files/010_namespace.yml
+gpu_operator_operatorgroup: roles/gpu_operator_deploy_from_operatorhub/files/015_operatorgroup.yml
+gpu_operator_operatorhub_sub: roles/gpu_operator_deploy_from_operatorhub/files/020_operator_sub.yml
+gpu_operator_install_plan: roles/gpu_operator_deploy_from_operatorhub/files/030_install_plan.yml
+
+# ---
+
+# Empty to use the latest version, or set to force a given version
+gpu_operator_operatorhub_version: ""

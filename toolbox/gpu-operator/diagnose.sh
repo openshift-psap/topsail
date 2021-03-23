@@ -74,7 +74,7 @@ do_test "The cluster has NFD and GPU nodes" \
 
 do_test "The GPU Operator is properly deployed" \
         "The GPU Operator isn't properly deployed." \
-        toolbox/gpu-operator/run_ci_checks.sh
+        toolbox/gpu-operator/wait_deployment.sh
 
 do_test "The cluster is able to run GPU workload" \
         "The cluster is unable to run GPU workload" \
