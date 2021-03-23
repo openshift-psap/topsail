@@ -13,4 +13,4 @@ elif [ "$#" -eq 1 ]; then
     echo "Running GPU Burn for ${1} seconds."
 fi
 
-exec ansible-playbook ${ANSIBLE_OPTS} playbooks/gpu-burn.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/gpu_operator_run_gpu-burn.yml

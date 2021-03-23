@@ -1,0 +1,2 @@
+gpu_burn_cm_entrypoint: roles/gpu_operator_run_gpu-burn/files/gpu_burn_cm_entrypoint.yml
+gpu_burn_pod: roles/gpu_operator_run_gpu-burn/files/gpu_burn_pod.yml

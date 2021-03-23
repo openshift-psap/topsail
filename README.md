@@ -98,7 +98,7 @@ toolbox/gpu-operator/deploy_from_commit.sh https://github.com/NVIDIA/gpu-operato
 toolbox/gpu-operator/run_ci_checks.sh
 ```
 
-- [x] Run GPU Burst to validate that all the GPUs of all the nodes can run workloads
+- [x] Run [GPU-burn](https://github.com/openshift-psap/gpu-burn) to validate that all the GPUs of all the nodes can run workloads
 ```
 toolbox/gpu-operator/run_gpu_burn.sh [gpu-burn runtime, in seconds]
 ```
