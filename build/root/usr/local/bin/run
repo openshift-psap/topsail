@@ -118,7 +118,7 @@ entitle() {
 ##############
 
 prechecks
-ci_banner
+ci_banner "$@"
 
 #############
 
@@ -145,9 +145,12 @@ prepare_cluster_for_gpu_operator() {
 
 set -x
 case ${1:-} in
-     "gpu-commit-ci")
+    "gpu-commit-ci")
+        ;&
+    "gpu-operator_test-master-branch")
         CI_IMAGE_GPU_COMMIT_CI_REPO="${2:-https://github.com/NVIDIA/gpu-operator.git}"
         CI_IMAGE_GPU_COMMIT_CI_REF="${3:-master}"
+
         CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="ci-image"
 
         echo "Using Git repository ${CI_IMAGE_GPU_COMMIT_CI_REPO} with ref ${CI_IMAGE_GPU_COMMIT_CI_REF}"
@@ -161,10 +164,10 @@ case ${1:-} in
         toolbox/gpu-operator/capture_deployment_state.sh
 	exit 0
         ;;
-
     "gpu-ci")
+        ;&
+    "gpu-operator_test-operatorhub")
         OPERATOR_VERSION="${2:-}"
-
         prepare_cluster_for_gpu_operator
         toolbox/gpu-operator/deploy_from_operatorhub.sh ${OPERATOR_VERSION}
         toolbox/gpu-operator/wait_deployment.sh
@@ -172,8 +175,9 @@ case ${1:-} in
         toolbox/gpu-operator/capture_deployment_state.sh
 	exit 0
         ;;
-
     "gpu-helm-ci")
+        ;&
+    "gpu-operator_test-helm")
         if [ -z "${2:-}" ]; then
             echo "FATAL: $0 $1 should receive the operator version as parameter."
             exit 1
@@ -190,7 +194,10 @@ case ${1:-} in
         ;;
 
     "gpu-ci-undeploy")
+        ;&
+    "gpu-operator_undeploy-operatorhub")
         toolbox/gpu-operator/undeploy_from_operatorhub.sh
+        exit 0
 	;;
     -*)
         echo "Unknown option: ${1:-}"
@@ -199,7 +206,8 @@ case ${1:-} in
 
     *)
 	echo "Nothing to do ..."
+        exit 1
 	;;
 esac
 
-exit 0
+exit 1

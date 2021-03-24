@@ -36,9 +36,9 @@ for the nightly CI results.
 As an example, the nightly tests currently run commands such as:
 
 ```
-run gpu-ci             # test the GPU Operator from OperatorHub installation
-run gpu-commit-ci      # test the GPU Operator from its `master` branch
-run gpu-helm-ci 1.4.0  # test the GPU Operator from Helm installation
+run gpu-operator_test-operatorhub    # test the GPU Operator from OperatorHub installation
+run gpu-operator_test-master-branch  # test the GPU Operator from its `master` branch
+run gpu-operator_test-helm 1.4.0     # test the GPU Operator from Helm installation
 ```
 
 These commands will in-turn trigger `toolbox` commands, in order to
