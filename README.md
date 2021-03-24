@@ -82,8 +82,8 @@ Defaults:
 - [x] Deploy from helm
 ```
 toolbox/gpu-operator/list_version_from_helm.sh
-toolbox/gpu-operator/deploy_with_helm.sh <helm-version>
-toolbox/gpu-operator/undeploy_with_helm.sh
+toolbox/gpu-operator/deploy_from_helm.sh <helm-version>
+toolbox/gpu-operator/undeploy_from_helm.sh
 ```
 
 - [x]  Deploy from a custom commit.
