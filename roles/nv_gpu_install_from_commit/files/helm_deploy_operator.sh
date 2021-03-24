@@ -110,7 +110,7 @@ deploy_operator() {
         echo "WARNING: using devicePlugin.version=$device_plugin_version instead."
     fi
 
-    helm uninstall --namespace $OPERATOR_NAMESPACE $OPERATOR_NAME || true
+    helm uninstall --namespace $OPERATOR_NAMESPACE $OPERATOR_NAME 2>/dev/null || true
     oc delete crd/clusterpolicies.nvidia.com --ignore-not-found=true
 
     #exec helm install \
