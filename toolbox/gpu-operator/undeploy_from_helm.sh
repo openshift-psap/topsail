@@ -5,4 +5,4 @@ source ${THIS_DIR}/../_common.sh
 
 source ${THIS_DIR}/_helm_common.sh
 
-exec bash -x ./roles/nv_gpu_install_from_commit/files/helm_deploy_operator.sh undeploy
+exec bash -x "${HELM_DEPLOY_OPERATOR}" undeploy

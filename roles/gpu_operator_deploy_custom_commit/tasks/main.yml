@@ -1,0 +1,18 @@
+---
+- name: Check that gpu_operator_image_tag_uid is defined
+  fail: msg="Bailing out. This play requires 'gpu_operator_image_tag_uid'"
+  when: gpu_operator_image_tag_uid is undefined
+
+- name: Check that gpu_operator_git_repo is defined
+  fail: msg="Bailing out. This play requires 'gpu_operator_git_repo'"
+  when: gpu_operator_git_repo is undefined
+
+- name: Check that gpu_operator_git_ref is defined
+  fail: msg="Bailing out. This play requires 'gpu_operator_git_ref'"
+  when: gpu_operator_git_ref is undefined
+
+- name: Build GPU-operator from custom commit
+  include_tasks: build.yml
+
+- name: Deploy GPU-operator from custom commit with helm
+  include_tasks: deploy.yml
