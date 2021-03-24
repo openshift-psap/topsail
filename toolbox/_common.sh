@@ -23,9 +23,10 @@ else
 fi
 
 
-TOOLBOX_PATH="${0##*toolbox/}"
-ARTIFACT_DIRNAME="${TOOLBOX_PATH/\//__}"
-ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/$(date +%H%M%S)_${ARTIFACT_DIRNAME}"
+TOOLBOX_PATH="${0##*toolbox/}" # remove everything before 'toolbox/'
+TOOLBOX_PATH="${TOOLBOX_PATH%.*}" # remove file extension
+ARTIFACT_DIRNAME="${TOOLBOX_PATH//\//__}" # replace / by __
+ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/$(date +%H%M%S)__${ARTIFACT_DIRNAME}" # add ARTIFACT_DIR/date__
 export ARTIFACT_EXTRA_LOGS_DIR
 
 mkdir -p "${ARTIFACT_EXTRA_LOGS_DIR}"
@@ -35,7 +36,7 @@ ANSIBLE_OPTS="$ANSIBLE_OPTS -e artifact_extra_logs_dir=${ARTIFACT_EXTRA_LOGS_DIR
 ### Ansible logs  directory
 
 if [ -z "${ANSIBLE_LOG_PATH:-}" ]; then
-    export ANSIBLE_LOG_PATH="${ARTIFACT_EXTRA_LOGS_DIR}/ansible_logs"
+    export ANSIBLE_LOG_PATH="${ARTIFACT_EXTRA_LOGS_DIR}/_ansible_logs"
 fi
 echo "Using '${ANSIBLE_LOG_PATH}' to store ansible logs."
 mkdir -p "$(dirname "${ANSIBLE_LOG_PATH}")"
