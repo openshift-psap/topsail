@@ -1,0 +1,5 @@
+---
+# path to the pre-prepared yaml resources of the entitlement
+entitlement_resources: ''
+# path to the PEM file of the entitlement
+entitlement_pem: ''
