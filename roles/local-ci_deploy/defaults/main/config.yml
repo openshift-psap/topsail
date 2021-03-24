@@ -1,0 +1,6 @@
+---
+local_ci_git_repo: "https://github.com/openshift-psap/ci-artifacts.git"
+local_ci_git_ref: "master"
+
+local_ci_image_tag: "ci-artifacts-{{ local_ci_image_tag_uid }}"
+local_ci_command: "{{ lookup('env', 'LOCAL_CI_COMMAND') }}"
