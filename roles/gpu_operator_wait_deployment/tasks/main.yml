@@ -1,0 +1,106 @@
+---
+- name: Ensure that NFD is deployed
+  include_role:
+    name: nfd_has_labels
+
+- name: Ensure that there are GPU nodes
+  include_role:
+    name: nfd_test_wait_gpu
+
+- name: Wait for the ClusterPolicy CRD to be deployed
+  command: oc get crds/clusterpolicies.nvidia.com
+  register: has_clusterpolicy_crd
+  until:
+  - has_clusterpolicy_crd.rc == 0
+  retries: 10
+  delay: 10
+
+- name: Wait for the ClusterPolicy CR is deployed
+  command: oc get ClusterPolicies -oname
+  register: has_clusterpolicy
+  until:
+  - has_clusterpolicy.rc == 0
+  retries: 10
+  delay: 10
+
+- name: Ensure that nvidia-device-plugin-validation Pod has ran successfully
+  command:
+    oc get pods --field-selector=status.phase=Succeeded
+                -n gpu-operator-resources
+                -oname
+                --no-headers
+  register: has_deviceplugin_validation_pod
+  until:
+  - has_deviceplugin_validation_pod.stdout == "pod/nvidia-device-plugin-validation"
+  retries: 15
+  delay: 60
+
+- block:
+  - name: Wait for the gpu-feature-discovery Pod to label the nodes
+    command: oc get nodes -l nvidia.com/gpu.count -oname
+    register: has_gpu_feature_discovery_labels
+    until:
+    - has_gpu_feature_discovery_labels.stdout != ""
+    retries: 10
+    delay: 30
+
+  rescue:
+  - name: Capture the GFD logs (debug)
+    shell:
+      oc logs ds/gpu-feature-discovery
+         -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_operator_gfd.log
+    failed_when: false
+
+  - name: The GFD did not label the nodes
+    fail:
+      msg: The GFD did not label the nodes
+
+- block:
+  - name: Wait for the nvidia-dcgm-exporter Pod to respond appropriately
+    shell: |
+      DCGM_POD=$(oc get pods -lapp=nvidia-dcgm-exporter -oname -n gpu-operator-resources | head -1);
+      if [ -z "$DCGM_POD" ]; then
+        echo "Failed to find a pod for nvidia-dcgm-exporter";
+        exit 10;
+      fi;
+      DCGM_PORT=9400; LOCAL_PORT=9401;
+      retry=5;
+      timeout 10 oc port-forward ${DCGM_POD} ${LOCAL_PORT}:${DCGM_PORT} -n gpu-operator-resources &
+      while [ "$DCGM_OUTPUT" == "" ]; do
+        sleep 1;
+        DCGM_OUTPUT=$(curl localhost:${LOCAL_PORT}/metrics 2>/dev/null);
+        retry=$(($retry - 1));
+        if [[ $retry == 0 ]]; then
+          echo "Failed to get any output from DCGM/metrics ...";
+          exit 11;
+        fi;
+      done;
+      exec grep "# TYPE DCGM_FI_DEV" <<< ${DCGM_OUTPUT}
+    register: dcgm_exporter_check
+    until:
+    - dcgm_exporter_check.rc == 0
+    retries: 10
+    delay: 20
+
+  - name: Wait for Prometheus to pick up the DCGM endpoint
+    shell:
+      oc get secret prometheus-k8s -n openshift-monitoring -ojson | jq -r '.data["prometheus.yaml.gz"]'
+      | base64 -d
+      | gunzip
+      | grep dcgm
+    register: dcgm_exporter_prom
+    until: dcgm_exporter_prom.rc == 0
+    retries: 5
+    delay: 20
+    ignore_errors: true
+
+  rescue:
+  - name: Capture the DCGM logs (debug)
+    shell:
+      oc logs ds/nvidia-dcgm-exporter
+         -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_operator_dcgm.log
+    failed_when: false
+
+  - name: The DCGM does not correctly expose the GPU metrics
+    fail:
+      msg: The DCGM does not correctly expose the GPU metrics

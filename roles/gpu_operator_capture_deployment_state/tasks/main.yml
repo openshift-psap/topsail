@@ -1,0 +1,102 @@
+- name: Get all the nodes
+  failed_when: false
+  shell:
+    oc get nodes
+       > {{ artifact_extra_logs_dir }}/all_nodes.list
+
+- name: Get all the machines
+  shell:
+    oc get machines -A
+       > {{ artifact_extra_logs_dir }}/all_machines.list
+  failed_when: false
+
+# ---
+
+- name: Get the Pods in gpu-operator-resources
+  shell:
+    oc get pods
+       -n gpu-operator-resources -owide
+       > {{ artifact_extra_logs_dir }}/gpu_operator_pods.list
+  failed_when: false
+
+- name: Get the GPU Operator Pods Images
+  shell: |
+    dest_file="{{ artifact_extra_logs_dir }}/gpu_operator_pod.images.list";
+    for ns in gpu-operator-resources openshift-operators gpu-operator-ci; do
+      oc get project/$ns &>/dev/null || continue;
+      oc get pods -n "$ns" \
+         -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{" "}{end}{end}' \
+         >> $dest_file;
+         echo "" >> $dest_file;
+    done
+  failed_when: false
+
+- name: Get the DaemonSets in gpu-operator-resources
+  shell:
+    oc get ds
+       -n gpu-operator-resources
+       > {{ artifact_extra_logs_dir }}/all_gpu_ds.list
+  failed_when: false
+
+- name: Get the GPU Operator Pod status
+  shell: |
+    dest_file="{{ artifact_extra_logs_dir }}/gpu_operator_pod.yml";
+    for ns in gpu-operator-resources openshift-operators gpu-operator-ci; do
+      oc get project/$ns &>/dev/null || continue;
+      oc get pods -n $ns -l name=gpu-operator -oyaml >> $dest_file;
+    done
+  failed_when: false
+
+- name: Get the GPU nodes
+  shell:
+    oc get nodes
+       -l nvidia.com/gpu.present=true
+       > {{ artifact_extra_logs_dir }}/gpu_operator_nodes.list
+  failed_when: false
+
+# --
+
+- name: Get the GPU Operator logs
+  shell: |
+    dest_file="{{ artifact_extra_logs_dir }}/gpu_operator.log";
+    for ns in openshift-operators gpu-operator-ci; do
+      oc get project/$ns &>/dev/null || continue;
+      oc logs deployment/gpu-operator -n $ns >> $dest_file
+    done
+  failed_when: false
+
+- name: Get the driver-container logs
+  shell:
+    set -o pipefail; set -e;
+    oc get pods -l app=nvidia-driver-daemonset -oname | grep .;
+    oc logs ds/nvidia-driver-daemonset
+       -n gpu-operator-resources
+       > {{ artifact_extra_logs_dir }}/gpu_operator_driver.log
+  failed_when: false
+
+- name: Get the device-plugin logs
+  shell:
+    set -o pipefail; set -e;
+    oc get pods -l app=nvidia-device-plugin-daemonset -oname | grep .;
+    oc logs ds/nvidia-device-plugin-daemonset
+       -n gpu-operator-resources
+       > {{ artifact_extra_logs_dir }}/gpu_operator_device-plugin.log
+  failed_when: false
+
+- name: Get the DCGM logs
+  shell:
+    set -o pipefail; set -e;
+    oc get pods -l app=nvidia-dcgm-exporter -oname | grep .;
+    oc logs ds/nvidia-dcgm-exporter
+       -n gpu-operator-resources
+       > {{ artifact_extra_logs_dir }}/gpu_operator_dcgm.log
+  failed_when: false
+
+- name: Capture the GFD logs (debug)
+  shell:
+    set -o pipefail; set -e;
+    oc get pods -l app=gpu-feature-discovery -oname | grep .;
+    oc logs ds/gpu-feature-discovery
+       -n gpu-operator-resources
+       > {{ artifact_extra_logs_dir }}/gpu_operator_gfd.log
+  failed_when: false

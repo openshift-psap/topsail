@@ -1,0 +1,3 @@
+---
+# Empty to use the latest version, or set to force a given version
+gpu_operator_operatorhub_version: ""

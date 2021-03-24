@@ -8,11 +8,10 @@
   command: oc apply -f "{{ gpu_operator_operatorgroup }}"
 
 - name: Save the GPU Operator PackageManifest (debug)
-  ignore_errors: true
   shell:
     oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -oyaml
     > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.yml
-  when: artifact_extra_logs_dir | default('', true) | trim != ''
+  failed_when: false
 
 - block:
   - name: Get the version of the GPU Operator on OperatorHub
@@ -40,6 +39,7 @@
 
 - name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
   shell:
+    set -o pipefail;
     cat {{ gpu_operator_operatorhub_sub }}
     | sed 's|{{ '{{' }} startingCSV {{ '}}' }}|{{ gpu_operator_csv_name }}|'
     | oc apply -f-
@@ -64,7 +64,7 @@
       oc patch InstallPlan/{{ gpu_operator_installplan_name.stdout }}
          -n openshift-operators
          --type merge
-         --patch '{"spec":{"approved":true}}'
+         --patch '{"spec":{"approved":true }}'
 
   - name: "Wait for the GPU Operator OperatorHub ClusterServiceVersion"
     command:
@@ -78,22 +78,18 @@
 
   rescue:
   - name: Capture the Catalog Operator logs (debug)
-    command: oc logs deployment.apps/catalog-operator -n openshift-operator-lifecycle-manager
-    register: catalog_operator_logs
-    when: artifact_extra_logs_dir | default('', true) | trim != ''
-    ignore_errors: true
-    no_log: true
+    shell:
+      oc logs deployment.apps/catalog-operator
+         -n openshift-operator-lifecycle-manager
+         > {{ artifact_extra_logs_dir }}/catalog_operator.log
+    failed_when: false
 
-  - copy:
-      dest: "{{ artifact_extra_logs_dir }}/catalog_operator.logs"
-      content: "{{ catalog_operator_logs.stdout }}"
-    when: artifact_extra_logs_dir | default('', true) | trim != ''
+  - name: "Indicate where the Catalog-operator logs have been saved"
+    debug:
+      msg: "The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.log"
 
-  - debug:
-      msg: "The logs of Catalog-operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.logs"
-    when: artifact_extra_logs_dir | default('', true) | trim != ''
-
-  - fail:
+  - name: Failed because the GPU Operator could not be install from the Catalog Operator
+    fail:
       msg: Failed because the GPU Operator could not be install from the Catalog Operator
 
 - name: Create a temporary file for the GPU Operator clusterpolicy
@@ -119,9 +115,9 @@
   copy:
     src: "{{ gpu_operator_clusterpolicy_tempfile.path }}"
     dest: "{{ artifact_extra_logs_dir }}/gpu_operator_clusterpolicy.json"
+    mode: 0644
   delegate_to: localhost
-  when: artifact_extra_logs_dir | default('', true) | trim != ''
-  ignore_errors: true
+  failed_when: false
 
 - block:
   - name: Create the clusterPolicy CR for the GPU Operator
@@ -137,16 +133,14 @@
       (oc get subscriptions -n openshift-operators &&
        oc describe subscriptions/gpu-operator-certified -n openshift-operators)
        > {{ artifact_extra_logs_dir }}/gpu_operator_Subscription.log
-    ignore_errors: true
-    when: artifact_extra_logs_dir | default('', true) | trim != ''
+    failed_when: false
 
   - name: Get the ClusterServiceVersion status (debug)
     shell:
       (oc get ClusterServiceVersion -A &&
        oc describe "ClusterServiceVersion/{{ gpu_operator_csv_name }}" -n openshift-operators)
        > {{ artifact_extra_logs_dir }}/gpu_operator_ClusterServiceVersion.log
-    when: artifact_extra_logs_dir | default('', true) | trim != ''
-    ignore_errors: true
+    failed_when: false
 
   - name: Failing because the ClusterPolicy CR cannot be created
     fail:

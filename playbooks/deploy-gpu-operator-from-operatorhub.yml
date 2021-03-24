@@ -1,6 +1,0 @@
-- name: Deploy NFD and NVidia GPU operators
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: nv_gpu

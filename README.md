@@ -47,7 +47,7 @@ successful usage of the GPUs.
 
 The `toolbox` commands are described in the section below.
 
-## PSAP toolbox
+## GPU Operator toolbox
 
 See the progress and discussions about the toolbox development in
 [this issue](https://github.com/openshift-psap/ci-artifacts/issues/34).
@@ -108,9 +108,9 @@ toolbox/gpu-operator/run_gpu_burn.sh [gpu-burn runtime, in seconds]
 toolbox/entitlement/test.sh
 toolbox/nfd/has_nfd_labels.sh
 toolbox/nfd/has_gpu_nodes.sh
-toolbox/gpu-operator/run_ci_checks.sh
-toolbox/gpu-operator/capture_deployment_state.sh
+toolbox/gpu-operator/wait_deployment.sh
 toolbox/gpu-operator/run_gpu_burn.sh 30
+toolbox/gpu-operator/capture_deployment_state.sh
 ```
 
 or all in one step:
