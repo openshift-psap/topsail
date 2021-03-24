@@ -1,31 +1,36 @@
 ---
-- name: ensure that LOCAL_CI_COMMAND is set
-  shell:
-    echo "{{ local_ci_command }}";
-    test ! -z "{{ local_ci_command }}"
+- name: Ensure that LOCAL_CI_COMMAND is set ('{{ local_ci_command }}')
+  command: test ! -z "{{ local_ci_command }}"
 
-- name: apply namespace manifest
+- name: Apply the namespace manifest
   command: oc apply -f "{{ local_ci_namespace }}"
 
-- name: apply imagestream manifest
+- name: Apply the imagestream manifest
   command: oc apply -f "{{ local_ci_imagestream }}"
 
-- name: delete kubeconfig secret
-  shell: oc delete secret -n ci-artifacts kubeconfig-secret --ignore-not-found=true
+- name: Delete the kubeconfig secret, if it exists
+  command: oc delete secret -n ci-artifacts kubeconfig-secret --ignore-not-found=true
 
-- name: create kubeconfig secret
-  shell: oc create secret -n ci-artifacts generic kubeconfig-secret --from-file $KUBECONFIG
+- name: Create kubeconfig secret
+  command:
+    oc create secret generic kubeconfig-secret
+       -n ci-artifacts
+       --from-file {{ lookup('env', 'KUBECONFIG') }}
 
-- name: prepare CI Image
+- name: Search if the CI image exists
+  command: oc get imagestreamtag -n ci-artifacts "ci-artifacts:{{ local_ci_image_tag }}" -oname
+  register: has_ci_image
+
+- name: Build the CI image
+  when: has_ci_image.stdout != ""
   block:
-  - name: search if the image exists
-    command: oc get imagestreamtag -n ci-artifacts "ci-artifacts:{{ local_ci_image_tag }}" -oname
-  rescue:
-  - name: delete any old image builder manifest
-    shell: oc delete -f "{{ local_ci_image_builder }}" --ignore-not-found=true
+  - name: Delete any old image builder manifest
+    command: oc delete -f "{{ local_ci_image_builder }}" --ignore-not-found=true
 
-  - name: apply ci artifacts image builder manifest
-    shell: cat "{{ local_ci_image_builder }}" \
+  - name: Apply the CI artifacts image builder manifest
+    shell:
+      set -o pipefail;
+      cat "{{ local_ci_image_builder }}" \
        | sed 's|{{ '{{' }} local_ci_git_repo {{ '}}' }}|{{ local_ci_git_repo }}|' \
        | sed 's|{{ '{{' }} local_ci_git_ref {{ '}}' }}|{{ local_ci_git_ref }}|' \
        | sed 's|{{ '{{' }} local_ci_image_tag {{ '}}' }}|{{ local_ci_image_tag }}|' \
@@ -33,21 +38,23 @@
     args:
       warn: false # don't warn about using sed here
 
-  - name: wait for the image to be built
+  - name: Wait for the image to be built
     shell: oc logs -f bc/image-builder -n ci-artifacts > /dev/null
 
-- name: ensure that the image exists
+- name: Ensure that the image exists
   command: oc get imagestreamtag -n ci-artifacts "ci-artifacts:{{ local_ci_image_tag }}" -oname
 
-- name: delete any stalled CI execution Pod
-  shell: oc delete -f "{{ local_ci_execution_pod }}" --ignore-not-found=true
+- name: Delete any stalled CI execution Pod
+  command: oc delete -f "{{ local_ci_execution_pod }}" --ignore-not-found=true
 
-- name: trigger the CI execution in a Pod
-  shell: cat "{{ local_ci_execution_pod }}" \
-       | sed 's|{{ '{{' }} local_ci_image_tag {{ '}}' }}|{{ local_ci_image_tag }}|' \
-       | sed 's|{{ '{{' }} local_ci_command {{ '}}' }}|{{ local_ci_command }}|' \
-       | oc apply -f-
+- name: Trigger the CI execution in a Pod
+  shell:
+    set -o pipefail;
+    cat "{{ local_ci_execution_pod }}" \
+      | sed 's|{{ '{{' }} local_ci_image_tag {{ '}}' }}|{{ local_ci_image_tag }}|' \
+      | sed 's|{{ '{{' }} local_ci_command {{ '}}' }}|{{ local_ci_command }}|' \
+      | oc apply -f-
 
-- name: local CI execution launched.
+- name: "Finished: the local CI execution has been launched."
   debug:
     msg: oc get pod/ci-artifacts -n ci-artifacts; oc logs -f pod/ci-artifacts -n ci-artifacts
