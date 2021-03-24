@@ -129,6 +129,8 @@ else
 fi
 
 prepare_cluster_for_gpu_operator() {
+    toolbox/capture_environment.sh
+
     entitle
 
     if ! toolbox/nfd/has_nfd_labels.sh; then

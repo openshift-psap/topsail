@@ -1,0 +1,38 @@
+- name: Store OpenShift version identifier
+  shell:
+    set -o pipefail;
+    oc version -o json
+       | jq --raw-output '.openshiftVersion'
+       > {{ artifact_extra_logs_dir }}/ocp.version
+  register: ocp_full_version
+
+- name: Store OpenShift YAML version
+  shell:
+    oc version -oyaml
+       > {{ artifact_extra_logs_dir }}/ocp_version.yml
+
+- name: Fetch ci-artifact version from Git
+  command:
+    git describe HEAD --long --always
+  register: git_version
+  args:
+    warn: false # don't warn about using git here
+
+- name: Store ci-artifact version from Git
+  copy:
+    content: "{{ git_version.stdout }}"
+    dest: "{{ artifact_extra_logs_dir }}/ci_artifact.git_version"
+    mode: 0644
+
+- name: Fetch ci-artifact last git commit
+  command:
+    git show --no-patch
+  register: git_show
+  args:
+    warn: false # don't warn about using git here
+
+- name: Store ci-artifact last git commit
+  copy:
+    content: "{{ git_show.stdout }}"
+    dest: "{{ artifact_extra_logs_dir }}/ci_artifact.git_commit"
+    mode: 0644
