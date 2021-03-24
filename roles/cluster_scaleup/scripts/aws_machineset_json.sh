@@ -4,10 +4,7 @@ json_input=$(cat ${1})
 instance_type=${2}
 
 # Compute the machine set name
-machinesetname=$(echo ${json_input} \
-    | jq -c '.metadata.name' \
-    | sed -e "s/worker/$(echo ${instance_type} | tr . -)/" \
-    | sed -e 's/^"//' -e 's/"$//')
+machinesetname="$(echo ${json_input} | jq -r '.metadata.name')--$(echo ${instance_type} | tr . -)"
 
 # Change the values for instance type and machine set name
 # Clean the status key=value

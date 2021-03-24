@@ -138,7 +138,7 @@ prepare_cluster_for_gpu_operator() {
     fi
 
     if ! toolbox/nfd/has_gpu_nodes.sh; then
-        toolbox/scaleup_cluster.sh
+        toolbox/cluster/scaleup.sh
         toolbox/nfd/wait_gpu_nodes.sh
     fi
 }

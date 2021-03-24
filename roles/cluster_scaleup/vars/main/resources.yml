@@ -1,0 +1,3 @@
+---
+# library for transforming a machineset into a given machine-type
+cluster_scaleup_parse_machine_set: "roles/cluster_scaleup/scripts/aws_machineset_json.sh"

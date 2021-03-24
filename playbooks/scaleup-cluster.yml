@@ -1,8 +1,0 @@
----
-# Create a machineset GPU enabled
-- name: Scaling up an OCP GPU ready node
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - openshift_node

@@ -158,11 +158,11 @@ Cluster
 
 - [x] Add a GPU node on AWS
 ```
-./toolbox/scaleup_cluster.sh
+./toolbox/cluster/scaleup.sh
 ```
    - [x] Specify a machine type in the command-line, and skip scale-up if a node with the given machine-type is already present
 ```
-./toolbox/scaleup_cluster.sh <machine-type>
+./toolbox/cluster/scaleup.sh <machine-type>
 ```
 
 - [x] Entitle the cluster, by passing a PEM file, checking if they should be concatenated or not, etc. And do nothing is the cluster is already entitled

@@ -1,0 +1,7 @@
+---
+- name: Scale-up the cluster with a given machine-type
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+  - cluster_scaleup
