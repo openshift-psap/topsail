@@ -1,5 +1,6 @@
 ---
-- include_role:
+- name: Run the entitlement test taskbook
+  include_role:
     name: entitlement_test_wait
   when: _entitlement_inspect_called_from_testwait == "no"
 

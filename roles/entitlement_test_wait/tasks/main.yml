@@ -13,6 +13,7 @@
   - name: Wait for the entitlement Pod to succeed
     shell: |
       set -o errexit;
+      set -o pipefail;
       oc delete -f "{{ entitlement_test_pod }}" --ignore-not-found=true;
       oc create -f "{{ entitlement_test_pod }}";
       i=0;
@@ -34,18 +35,20 @@
       $CMD | egrep 'Succeeded';
     register: entitlement_wait
     until: entitlement_wait.rc == 0
-    retries: "{{ entitlement_retries}}"
+    retries: "{{ entitlement_retries }}"
     delay: 30
 
   rescue:
-  - include_role:
+  - name: Run the entitlement inspection taskbook
+    include_role:
       name: entitlement_inspect
     vars:
       _entitlement_inspect_called_from_testwait: "yes"
     when: entitlement_inspect_on_failure == 'yes'
 
-  - fail:
-      msg: Failed because the entitlement Pod did not succeed.
+  - name: Failed because the entitlement test Pod did not succeed.
+    fail:
+      msg: Failed because the entitlement test Pod did not succeed.
 
   always:
   - name: Get the test Pod logs
