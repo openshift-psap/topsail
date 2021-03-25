@@ -51,6 +51,7 @@ spec:
             git \
             bzip2 \
             xz \
+            go \
             go-md2man \
             runc \
             fuse-overlayfs \
