@@ -143,6 +143,12 @@ prepare_cluster_for_gpu_operator() {
     fi
 }
 
+validate_gpu_operator_deployment() {
+    toolbox/gpu-operator/wait_deployment.sh
+    toolbox/gpu-operator/run_gpu_burn.sh
+    toolbox/gpu-operator/capture_deployment_state.sh
+}
+
 set -x
 case ${1:-} in
     "gpu-commit-ci")
@@ -159,9 +165,7 @@ case ${1:-} in
         toolbox/gpu-operator/deploy_from_commit.sh "${CI_IMAGE_GPU_COMMIT_CI_REPO}" \
                                                    "${CI_IMAGE_GPU_COMMIT_CI_REF}" \
                                                    "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}"
-        toolbox/gpu-operator/wait_deployment.sh
-        toolbox/gpu-operator/run_gpu_burn.sh
-        toolbox/gpu-operator/capture_deployment_state.sh
+        validate_gpu_operator_deployment
 	exit 0
         ;;
     "gpu-ci")
@@ -170,9 +174,7 @@ case ${1:-} in
         OPERATOR_VERSION="${2:-}"
         prepare_cluster_for_gpu_operator
         toolbox/gpu-operator/deploy_from_operatorhub.sh ${OPERATOR_VERSION}
-        toolbox/gpu-operator/wait_deployment.sh
-        toolbox/gpu-operator/run_gpu_burn.sh
-        toolbox/gpu-operator/capture_deployment_state.sh
+        validate_gpu_operator_deployment
 	exit 0
         ;;
     "gpu-helm-ci")
@@ -187,9 +189,7 @@ case ${1:-} in
         prepare_cluster_for_gpu_operator
         toolbox/gpu-operator/list_version_from_helm.sh
         toolbox/gpu-operator/deploy_with_helm.sh ${OPERATOR_VERSION}
-        toolbox/gpu-operator/wait_deployment.sh
-        toolbox/gpu-operator/run_gpu_burn.sh
-        toolbox/gpu-operator/capture_deployment_state.sh
+        validate_gpu_operator_deployment
         exit 0
         ;;
 
