@@ -27,7 +27,7 @@ jobs:
           set -x;
           git show -s;
           git fetch origin --unshallow;
-          for branch in release-{4.5,4.6,4.7,4.8,4.9,next};
+          for branch in release-{4.6,4.7,4.8,4.9};
           do
             git checkout $branch;
             git show -s;
