@@ -19,6 +19,19 @@ OPERATOR_NAMESPACE="${OPERATOR_NAMESPACE:-gpu-operator-ci}"
 
 NFD_ENABLED="${NFD_ENABLED:-false}"
 
+if [ ! -z "${ARTIFACT_DIR:-}" ]; then
+    EXTRA_LOGS_DIR="${ARTIFACT_DIR}/$(date +%H%M%S)__helm_deploy_operator"
+    mkdir -p "${EXTRA_LOGS_DIR}"
+    echo "Using $EXTRA_LOGS_DIR to store helm logs."
+    exec > "${EXTRA_LOGS_DIR}/_helm_deploy_operator.log"
+    exec 2>&1
+
+else
+    EXTRA_LOGS_DIR=""
+    echo "ARTIFACT_DIR not set, not storing helm log artifacts."
+fi
+
+
 # https://stackoverflow.com/a/21189044/341106
 function parse_yaml {
    local prefix=$2
@@ -79,6 +92,10 @@ deploy_from_commit() {
     git show --quiet
     echo
 
+    if [ ! -z "${EXTRA_LOGS_DIR}" ]; then
+        git show --quiet > "${EXTRA_LOGS_DIR}/gpu_operator.commit"
+    fi
+
     HELM_CUSTOM_OPTIONS="--set operator.repository=image-registry.openshift-image-registry.svc:5000/gpu-operator-ci \
      --set operator.image=gpu-operator-ci \
      --set operator.version=${OPERATOR_IMAGE_TAG}"
@@ -113,7 +130,6 @@ deploy_operator() {
     helm uninstall --namespace $OPERATOR_NAMESPACE $OPERATOR_NAME 2>/dev/null || true
     oc delete crd/clusterpolicies.nvidia.com --ignore-not-found=true
 
-    #exec helm install \
     helm_args="\
      $OPERATOR_NAME $HELM_SOURCE \
      --devel \
@@ -131,11 +147,8 @@ deploy_operator() {
      --namespace $OPERATOR_NAMESPACE \
      --wait"
 
-    if [ ! -z "${ARTIFACT_DIR:-}" ]; then
-        ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/helm_deploy_operator/extra_logs"
-        mkdir -p "${ARTIFACT_EXTRA_LOGS_DIR}"
-
-        helm template --debug $helm_args > "${ARTIFACT_EXTRA_LOGS_DIR}/helm_deploy.yaml"
+    if [ ! -z "${EXTRA_LOGS_DIR}" ]; then
+        helm template --debug $helm_args > "${EXTRA_LOGS_DIR}/helm_deploy.yaml"
     fi
 
     exec helm install $helm_args
