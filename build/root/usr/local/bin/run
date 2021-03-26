@@ -141,8 +141,8 @@ prepare_cluster_for_gpu_operator() {
 set -x
 case ${1:-} in
      "gpu-commit-ci")
-        CI_IMAGE_GPU_COMMIT_CI_REPO="https://github.com/NVIDIA/gpu-operator/"
-        CI_IMAGE_GPU_COMMIT_CI_REF="master"
+        CI_IMAGE_GPU_COMMIT_CI_REPO="${2:-https://github.com/NVIDIA/gpu-operator.git}"
+        CI_IMAGE_GPU_COMMIT_CI_REF="${3:-master}"
         CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="ci-image"
 
         echo "Using Git repository ${CI_IMAGE_GPU_COMMIT_CI_REPO} with ref ${CI_IMAGE_GPU_COMMIT_CI_REF}"
@@ -158,11 +158,8 @@ case ${1:-} in
         ;;
 
     "gpu-ci")
-        if [ ! -z "${2:-}" ]; then
-            OPERATOR_VERSION="$2"
-        else
-            OPERATOR_VERSION="" # latest version
-        fi
+        OPERATOR_VERSION="${2:-}"
+
         prepare_cluster_for_gpu_operator
         toolbox/gpu-operator/deploy_from_operatorhub.sh ${OPERATOR_VERSION}
         toolbox/gpu-operator/run_ci_checks.sh
