@@ -42,6 +42,7 @@ EOF
 Problem detected with '$@', capturing extra information...
 EOF
 
+    toolbox/capture_environment.sh > /dev/null || true
     toolbox/gpu-operator/capture_deployment_state.sh > /dev/null || true
 
     cat <<EOF
