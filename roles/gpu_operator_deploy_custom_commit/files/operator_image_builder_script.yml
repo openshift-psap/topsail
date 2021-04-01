@@ -21,7 +21,7 @@ data:
 
     git show --quiet
 
-    if [ ! -z "${BUILDER_FROM_IMAGE}" ]; then
+    if [ "${BUILDER_FROM_IMAGE}" ]; then
       # if provided, use custom 'FROM ... as builder' image
       sed "s|FROM golang:.* as builder|FROM ${BUILDER_FROM_IMAGE} as builder|" -i ${CONTAINER_FILE}
     fi

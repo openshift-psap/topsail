@@ -20,7 +20,7 @@ EOF
 
 }
 
-if [ ! -z "${1:-}" ]; then
+if [ "${1:-}" ]; then
     if [ "$1" == "--help" ]; then
         usage
         exit 0
@@ -30,7 +30,7 @@ else
     PACKAGE_NAME="$DEFAULT_PACKAGE_NAME"
 fi
 
-if [ ! -z "${2:-}" ]; then
+if [ "${2:-}" ]; then
     CATALOG="$2"
 else
     CATALOG="$DEFAULT_CATALOG"

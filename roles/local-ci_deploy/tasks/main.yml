@@ -1,6 +1,6 @@
 ---
 - name: Ensure that LOCAL_CI_COMMAND is set ('{{ local_ci_command }}')
-  command: test ! -z "{{ local_ci_command }}"
+  command: test "{{ local_ci_command }}"
 
 - name: Apply the namespace manifest
   command: oc apply -f "{{ local_ci_namespace }}"

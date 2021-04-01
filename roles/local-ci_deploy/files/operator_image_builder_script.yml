@@ -18,7 +18,7 @@ data:
 
     cd gpu-operator
 
-    if [ ! -z "${BUILDER_FROM_IMAGE}" ]; then
+    if [ "${BUILDER_FROM_IMAGE}" ]; then
       sed "s|FROM golang:1.13|FROM ${BUILDER_FROM_IMAGE}|" -i ./docker/Dockerfile.ubi8.prod
     fi
 

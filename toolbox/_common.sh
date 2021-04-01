@@ -9,7 +9,7 @@ ANSIBLE_OPTS="${ANSIBLE_OPTS:--vv}"
 
 ### OpenShift version
 
-if [ ! -z "${OCP_VERSION:-}" ]; then
+if [ "${OCP_VERSION:-}" ]; then
     ANSIBLE_OPTS="$ANSIBLE_OPTS -e openshift_release=$OCP_VERSION"
 fi
 

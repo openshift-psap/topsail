@@ -19,7 +19,7 @@ OPERATOR_NAMESPACE="${OPERATOR_NAMESPACE:-gpu-operator-ci}"
 
 NFD_ENABLED="${NFD_ENABLED:-false}"
 
-if [ ! -z "${ARTIFACT_DIR:-}" ]; then
+if [ "${ARTIFACT_DIR:-}" ]; then
     EXTRA_LOGS_DIR="${ARTIFACT_DIR}/$(date +%H%M%S)__helm_deploy_operator"
     mkdir -p "${EXTRA_LOGS_DIR}"
     echo "Using $EXTRA_LOGS_DIR to store helm logs."
@@ -92,7 +92,7 @@ deploy_from_commit() {
     git show --quiet
     echo
 
-    if [ ! -z "${EXTRA_LOGS_DIR}" ]; then
+    if [ "${EXTRA_LOGS_DIR}" ]; then
         git show --quiet > "${EXTRA_LOGS_DIR}/gpu_operator.commit"
     fi
 
@@ -147,7 +147,7 @@ deploy_operator() {
      --namespace $OPERATOR_NAMESPACE \
      --wait"
 
-    if [ ! -z "${EXTRA_LOGS_DIR}" ]; then
+    if [ "${EXTRA_LOGS_DIR}" ]; then
         helm template --debug $helm_args > "${EXTRA_LOGS_DIR}/helm_deploy.yaml"
     fi
 
