@@ -6,14 +6,18 @@ metadata:
 data:
   entrypoint.sh: |-
     #!/bin/bash
+    set -e
 
-    NUM_GPUS=$(nvidia-smi -L | wc -l)
-    if [ $NUM_GPUS -eq 0 ]; then
-      echo "ERROR: No GPUs found"
-      exit 1
-    fi
+    cd /tmp
 
-    echo "Running on ${NUM_GPUS} GPUs:"
-    nvidia-smi -L
+    GITHUB_REPO=kpouget/gpu-burn
+    REF=471cc9b3ea3967a4d7bec698ec768df80344504a # kpouget/ci-friendly
+    SRC=https://raw.githubusercontent.com/$GITHUB_REPO/$REF
+    
+    for f in  compare.cu  gpu_burn-drv.cpp Makefile; do
+      curl -s $SRC/$f > $f
+    done
+    make
+
     echo ""
-    time /usr/local/bin/gpu-burn $GPU_BURN_TIME
+    time /tmp/gpu_burn $GPU_BURN_TIME
