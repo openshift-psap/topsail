@@ -1,0 +1,72 @@
+---
+- name: Check that cluster_upgrade_image  is defined
+  fail: msg="Bailing out. This play requires 'cluster_upgrade_image' to be defined"
+  when: cluster_upgrade_image is undefined
+
+- name: Get the current version of the cluster
+  command: oc get clusterversion
+
+- name: Store old OpenShift version identifier
+  shell:
+    set -o pipefail;
+    oc version -o json
+       | jq --raw-output '.openshiftVersion'
+       > {{ artifact_extra_logs_dir }}/ocp.before.version
+  register: ocp_full_version
+
+- name: Store old OpenShift YAML version
+  shell:
+    oc version -oyaml
+       > {{ artifact_extra_logs_dir }}/ocp_version.before.yml
+
+- name: Trigger the cluster upgrade
+  command:
+    oc adm upgrade '--to-image={{ cluster_upgrade_image }}'
+      --allow-explicit-upgrade
+      --force=true
+      --allow-upgrade-with-warnings
+
+- name: Wait a bit for the upgrade to start
+  command: sleep 30
+
+- name: Wait for the end of the upgrade
+  command:
+    oc get ClusterVersion/version -o jsonpath='{.status.history[0].state}{"\n"}'
+  register: cluster_version
+  until:
+  - cluster_version.rc == 0
+  - cluster_version.stdout
+  - cluster_version.stdout != "Partial"
+  retries: 90
+  delay: 60
+
+- name: Get ClusterVersion status
+  command: oc get ClusterVersion/version
+
+- name: Store new OpenShift version identifier
+  shell:
+    set -o pipefail;
+    oc version -o json
+       | jq --raw-output '.openshiftVersion'
+       > {{ artifact_extra_logs_dir }}/ocp.after.version
+  register: ocp_full_version
+
+- name: Store new OpenShift YAML version
+  shell:
+    oc version -oyaml
+       > {{ artifact_extra_logs_dir }}/ocp_version.after.yml
+
+- name: Get ClusterVersion description
+  shell:
+    oc describe ClusterVersion/version > {{ artifact_extra_logs_dir }}/ClusterVersion.descr
+
+- name: Get ClusterVersion YAML
+  shell:
+    oc get -oyaml ClusterVersion/version > {{ artifact_extra_logs_dir }}/ClusterVersion.yml
+
+- name: Ensure that the upgrade succeeded
+  fail: msg="Upgrade failed".
+  when: cluster_version.stdout != "Completed"
+
+- name: Cluster upgrade finished
+  debug: msg="Upgrade succeeded"

@@ -1,0 +1,7 @@
+---
+- name: (force) upgrade the cluster to a given version
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+  - cluster_upgrade_to_image

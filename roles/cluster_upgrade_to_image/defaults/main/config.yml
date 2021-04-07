@@ -1,0 +1,2 @@
+# the image to which the cluster will be upgraded
+cluster_upgrade_image: ""
