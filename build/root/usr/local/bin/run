@@ -153,8 +153,6 @@ validate_gpu_operator_deployment() {
 
 set -x
 case ${1:-} in
-    "gpu-commit-ci")
-        ;&
     "gpu-operator_test-master-branch")
         CI_IMAGE_GPU_COMMIT_CI_REPO="${2:-https://github.com/NVIDIA/gpu-operator.git}"
         CI_IMAGE_GPU_COMMIT_CI_REF="${3:-master}"
@@ -170,8 +168,6 @@ case ${1:-} in
         validate_gpu_operator_deployment
 	exit 0
         ;;
-    "gpu-ci")
-        ;&
     "gpu-operator_test-operatorhub")
         OPERATOR_VERSION="${2:-}"
         prepare_cluster_for_gpu_operator
@@ -179,8 +175,6 @@ case ${1:-} in
         validate_gpu_operator_deployment
 	exit 0
         ;;
-    "gpu-helm-ci")
-        ;&
     "gpu-operator_test-helm")
         if [ -z "${2:-}" ]; then
             echo "FATAL: $0 $1 should receive the operator version as parameter."
@@ -194,9 +188,6 @@ case ${1:-} in
         validate_gpu_operator_deployment
         exit 0
         ;;
-
-    "gpu-ci-undeploy")
-        ;&
     "gpu-operator_undeploy-operatorhub")
         toolbox/gpu-operator/undeploy_from_operatorhub.sh
         exit 0
