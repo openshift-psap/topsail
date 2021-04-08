@@ -36,7 +36,7 @@ ANSIBLE_OPTS="$ANSIBLE_OPTS -e artifact_extra_logs_dir=${ARTIFACT_EXTRA_LOGS_DIR
 ### Ansible logs  directory
 
 if [ -z "${ANSIBLE_LOG_PATH:-}" ]; then
-    export ANSIBLE_LOG_PATH="${ARTIFACT_EXTRA_LOGS_DIR}/_ansible_logs"
+    export ANSIBLE_LOG_PATH="${ARTIFACT_EXTRA_LOGS_DIR}/_ansible.log"
 fi
 echo "Using '${ANSIBLE_LOG_PATH}' to store ansible logs."
 mkdir -p "$(dirname "${ANSIBLE_LOG_PATH}")"
