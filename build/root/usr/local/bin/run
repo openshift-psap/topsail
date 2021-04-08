@@ -129,7 +129,7 @@ else
 fi
 
 prepare_cluster_for_gpu_operator() {
-    toolbox/capture_environment.sh
+    toolbox/cluster/capture_environment.sh
 
     entitle
 
