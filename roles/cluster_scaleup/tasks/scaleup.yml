@@ -83,5 +83,4 @@
     failed_when: false
 
   - name: Fail because of the cluster scale-up failed
-    fail:
-      msg: Failing because of cluster scale-up failed
+    fail: msg="Failing because of cluster scale-up failed"

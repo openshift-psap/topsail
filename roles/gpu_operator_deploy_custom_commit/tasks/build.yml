@@ -61,12 +61,11 @@
     failed_when: false
 
   - name: Suggest how to retry the build
-    debug:
-      msg: "Suggestion: retry with 'oc new-build bc/helper-image-builder -n gpu-operator-ci-utils'"
+    debug: msg="To retry the build, run 'oc new-build bc/helper-image-builder -n gpu-operator-ci-utils'"
 
   - name: Fail because the custom operator image failed to build
-    fail:
-      msg: Fail because the custom operator image failed to build
+    fail: msg="Fail because the custom operator image failed to build"
+
 
 - name: Apply the operator image builder script manifest
   command: oc apply -f "{{ gpu_operator_image_builder_script }}"
@@ -77,8 +76,8 @@
       register: builder_secret
   rescue:
     - name: Failed to find the builder-dockercfg secret
-      fail:
-        msg: "No builder-dockercfg secret in the 'gpu-operator-ci' namespace ..."
+      fail: msg="No builder-dockercfg secret in the 'gpu-operator-ci' namespace ..."
+
 
 - name: Delete the operator image builder pod, if any
   command: oc delete -f "{{ gpu_operator_image_builder_pod }}" --ignore-not-found=true
@@ -92,8 +91,7 @@
   when: has_operator_image.rc != 0
   block:
   - name: The operator image does not exist, build it
-    debug:
-      msg: The operator image does not exist, build it
+    debug: msg="The operator image does not exist, build it"
 
   - name: Apply the operator image builder pod manifest
     shell:
@@ -119,9 +117,7 @@
 
     - name: Fail if the operator image failed to be built
       when: "'Failed' in wait_image_builder_pod.stdout or 'Error' in wait_image_builder_pod.stdout"
-      fail:
-        msg: The operator image failed to build
-
+      fail: msg="The operator image failed to build"
 
     rescue:
     - name: Get info about the operator image build failure (debug)
@@ -133,5 +129,4 @@
       failed_when: false
 
     - name: Fail because the operator image failed to build
-      fail:
-        msg: Fail because the operator image failed to build
+      fail: msg="Fail because the operator image failed to build"

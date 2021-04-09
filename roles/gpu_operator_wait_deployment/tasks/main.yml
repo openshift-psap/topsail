@@ -53,8 +53,7 @@
     failed_when: false
 
   - name: The GFD did not label the nodes
-    fail:
-      msg: The GFD did not label the nodes
+    fail: msg="The GFD did not label the nodes"
 
 - block:
   - name: Wait for the nvidia-dcgm-exporter Pod to respond appropriately
@@ -103,5 +102,4 @@
     failed_when: false
 
   - name: The DCGM does not correctly expose the GPU metrics
-    fail:
-      msg: The DCGM does not correctly expose the GPU metrics
+    fail: msg="The DCGM does not correctly expose the GPU metrics"

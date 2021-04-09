@@ -13,5 +13,4 @@
     ignore_errors: true
 
   - name: Fail because nodes do not have NFD labels
-    fail:
-      msg: Fail because nodes do not have NFD labels
+    fail: msg="Fail because nodes do not have NFD labels"

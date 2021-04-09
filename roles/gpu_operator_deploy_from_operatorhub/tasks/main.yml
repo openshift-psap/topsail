@@ -34,8 +34,7 @@
   when: gpu_operator_operatorhub_version != ''
 
 - name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
-  debug:
-    msg: "{{ gpu_operator_csv_name }}"
+  debug: msg="{{ gpu_operator_csv_name }}"
 
 - name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
   shell:
@@ -85,12 +84,10 @@
     failed_when: false
 
   - name: "Indicate where the Catalog-operator logs have been saved"
-    debug:
-      msg: "The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.log"
+    debug: msg="The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.log"
 
   - name: Failed because the GPU Operator could not be install from the Catalog Operator
-    fail:
-      msg: Failed because the GPU Operator could not be install from the Catalog Operator
+    fail: msg="Failed because the GPU Operator could not be install from the Catalog Operator"
 
 - name: Create a temporary file for the GPU Operator clusterpolicy
   ansible.builtin.tempfile:
@@ -143,8 +140,7 @@
     failed_when: false
 
   - name: Failing because the ClusterPolicy CR cannot be created
-    fail:
-      msg: Failed because the ClusterPolicy CR cannot be created
+    fail: msg="Failed because the ClusterPolicy CR cannot be created"
 
 - block:
   - name: Check if the namespace has the openshift.io/cluster-monitoring label

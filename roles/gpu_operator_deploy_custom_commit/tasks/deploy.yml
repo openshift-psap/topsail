@@ -27,5 +27,4 @@
     failed_when: false
 
   - name: Fail because the GPU Operator custom commit could not be deployed
-    fail:
-      msg: Fail because the GPU Operator custom commit could not be deployed
+    fail: msg="Fail because the GPU Operator custom commit could not be deployed"

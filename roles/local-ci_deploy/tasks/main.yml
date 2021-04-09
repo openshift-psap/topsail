@@ -56,5 +56,4 @@
       | oc apply -f-
 
 - name: "Finished: the local CI execution has been launched."
-  debug:
-    msg: oc get pod/ci-artifacts -n ci-artifacts; oc logs -f pod/ci-artifacts -n ci-artifacts
+  debug: msg="oc get pod/ci-artifacts -n ci-artifacts; oc logs -f pod/ci-artifacts -n ci-artifacts"

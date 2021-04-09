@@ -11,8 +11,7 @@
   when: cluster_has_machinetype.stdout != ""
   block:
     - name: Cluster has running machines with the requested machine type
-      debug:
-        msg: "Cluster has running machines with type '{{ cluster_scaleup_machine_instance_type }}', no need to scale-up"
+      debug: msg="Cluster has running machines with type '{{ cluster_scaleup_machine_instance_type }}', no need to scale-up"
 
     - name: Cluster already scaled-up, end the play
       # Warning: this will prevent using multiple roles side by side ...

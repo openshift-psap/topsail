@@ -47,8 +47,7 @@
     when: entitlement_inspect_on_failure == 'yes'
 
   - name: Failed because the entitlement test Pod did not succeed.
-    fail:
-      msg: Failed because the entitlement test Pod did not succeed.
+    fail: msg="Failed because the entitlement test Pod did not succeed."
 
   always:
   - name: Get the test Pod logs
