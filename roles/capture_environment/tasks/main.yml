@@ -4,7 +4,6 @@
     oc version -o json
        | jq --raw-output '.openshiftVersion'
        > {{ artifact_extra_logs_dir }}/ocp.version
-  register: ocp_full_version
 
 - name: Store OpenShift YAML version
   shell:
