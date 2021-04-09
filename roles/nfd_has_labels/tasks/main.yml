@@ -8,9 +8,7 @@
   rescue:
   - name: Check if NFD CR exists (debug)
     command: oc get NodeFeatureDiscovery -A
-    register: has_nfd_cr
-    failed_when: has_nfd_cr.stdout == ""
-    ignore_errors: true
+    failed_when: false
 
   - name: Fail because nodes do not have NFD labels
     fail: msg="Fail because nodes do not have NFD labels"
