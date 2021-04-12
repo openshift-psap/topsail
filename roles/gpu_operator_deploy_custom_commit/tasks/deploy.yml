@@ -17,6 +17,17 @@
                 "{{ gpu_operator_image_tag }}"
 
   rescue:
+  - name: "Get the state of the GPU operator image (debug: ImagePullBackOff)"
+    command: oc get imagestreamtag/ci-artifacts:gpu-operator-ci-image -n gpu-operator-ci
+    failed_when: false
+
+  - name: "Get the name of the GPU Operator pod image (debug: ImagePullBackOff)"
+    command:
+      oc get pods
+         -n gpu-operator-ci
+         -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{" "}{end}{end}'
+    failed_when: false
+
   - name: Get the state of the GPU operator pod (debug)
     command: oc get pods -n gpu-operator-ci
     failed_when: false
