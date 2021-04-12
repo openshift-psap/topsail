@@ -44,7 +44,7 @@ mkdir -p "$(dirname "${ANSIBLE_LOG_PATH}")"
 # Ansible caching directory
 
 if [ -z "${ANSIBLE_CACHE_PLUGIN_CONNECTION:-}" ]; then
-    export ANSIBLE_CACHE_PLUGIN_CONNECTION="${ARTIFACT_EXTRA_LOGS_DIR}/ansible_facts"
+    export ANSIBLE_CACHE_PLUGIN_CONNECTION="${ARTIFACT_DIR}/ansible_facts"
 fi
 echo "Using '${ANSIBLE_CACHE_PLUGIN_CONNECTION}' to store ansible facts."
 mkdir -p "${ANSIBLE_CACHE_PLUGIN_CONNECTION}"
