@@ -56,6 +56,14 @@ if [ -z "${ANSIBLE_CONFIG:-}" ]; then
 fi
 echo "Using '${ANSIBLE_CONFIG}' as ansible configuration file."
 
+# Custom Ansible JSON logging
+
+if [ -z "${ANSIBLE_JSON_TO_LOGFILE:-}" ]; then
+    export ANSIBLE_JSON_TO_LOGFILE="${ARTIFACT_EXTRA_LOGS_DIR}/_ansible.log.json"
+fi
+
+echo "Using '${ANSIBLE_JSON_TO_LOGFILE}' as ansible json log file."
+
 ###
 
 echo ""
