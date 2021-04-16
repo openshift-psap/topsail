@@ -40,6 +40,9 @@
       gpu_operator_csv_name: "{{ gpu_operator_csv_name_cmd.stdout }}"
   when: gpu_operator_operatorhub_version != ''
 
+- name: Store the version of the GPU Operator that will be installed
+  shell: echo "{{ gpu_operator_csv_name }}" > {{ artifact_extra_logs_dir }}/gpu_operator_csv_name.txt
+
 - name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
   debug: msg="{{ gpu_operator_csv_name }}"
 

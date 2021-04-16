@@ -1,6 +1,10 @@
 #! /bin/bash -e
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+cd ${THIS_DIR}/../..
+
+RUN_ALL="$([[ "$*" == *"--run-all"* ]] && echo "yes" || echo "no")"
+has_errors=0
 
 cat <<EOF
 ###
@@ -10,7 +14,6 @@ cat <<EOF
 
 EOF
 
-source ${THIS_DIR}/../_common.sh
 
 do_test() {
     success_msg="$1"
@@ -54,7 +57,12 @@ EOF
 ###############
 EOF
 
-    return 1
+    if [[ $RUN_ALL == yes ]]; then
+        has_errors=$(($has_errors + 1))
+        return 0
+    else
+        return 1
+    fi
 }
 
 do_test "The cluster is reachable" \
@@ -73,20 +81,36 @@ do_test "The cluster has NFD and GPU nodes" \
         "There is no NFD-labelled GPU node. Is there a GPU node in the cluster?" \
         toolbox/nfd/has_gpu_nodes.sh
 
-do_test "The GPU Operator is properly deployed" \
-        "The GPU Operator isn't properly deployed." \
-        toolbox/gpu-operator/wait_deployment.sh
+if [[ "$has_errors" == 0 ]]; then
+    do_test "The GPU Operator is properly deployed" \
+            "The GPU Operator isn't properly deployed." \
+            toolbox/gpu-operator/wait_deployment.sh
+else
+    echo "Found errors with the GPU Operator, skipping the deployment testing."
+fi
 
-do_test "The cluster is able to run GPU workload" \
-        "The cluster is unable to run GPU workload" \
-        toolbox/gpu-operator/run_gpu_burn.sh 30
+if [[ "$has_errors" == 0 ]]; then
+    do_test "The cluster is able to run GPU workload" \
+            "The cluster is unable to run GPU workload" \
+            toolbox/gpu-operator/run_gpu_burn.sh 30
+else
+    echo "Found errors with the GPU Operator, skipping GPU-Burn testing."
+fi
 
 do_test "All the relevant output logs have been captured in ${ARTIFACT_DIR}" \
         "(this step shouldn't fail)" \
         toolbox/gpu-operator/capture_deployment_state.sh
 
-cat <<EOF
+if [[ "$has_errors" == 0 ]]; then
+    cat <<EOF
 ######################################
 # The GPU Operator is up and running #
 ######################################
 EOF
+else
+    cat <<EOF
+###############################################
+# Found multiple errors with the GPU Operator #
+###############################################
+EOF
+fi
