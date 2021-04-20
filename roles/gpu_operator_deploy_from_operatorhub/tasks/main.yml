@@ -1,3 +1,10 @@
+- name: Capture the state of the CatalogSource/certified-operators (debug)
+  command:
+    oc get -oyaml CatalogSource/certified-operators
+       -n openshift-marketplace
+       -ojsonpath={.status.connectionState.lastObservedState}{"\n"}
+  failed_when: false
+
 - name: Ensure that the GPU Operator PackageManifest exists
   command: oc get packagemanifests/gpu-operator-certified -n openshift-marketplace
 
