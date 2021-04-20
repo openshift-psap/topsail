@@ -2,7 +2,7 @@
   command:
     oc get -oyaml CatalogSource/certified-operators
        -n openshift-marketplace
-       -ojsonpath={.status.connectionState.lastObservedState}{"\n"}
+       '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}'
   failed_when: false
 
 - name: Ensure that the GPU Operator PackageManifest exists
