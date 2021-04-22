@@ -1,0 +1,57 @@
+- name: Get all the nodes
+  failed_when: false
+  shell:
+    oc get nodes
+       > {{ artifact_extra_logs_dir }}/all_nodes.list
+
+- name: Get all the machines
+  failed_when: false
+  shell:
+    oc get machines -A
+       > {{ artifact_extra_logs_dir }}/all_machines.list
+
+- name: Get the deployments in openshift-special-resource-operator
+  failed_when: false
+  shell:
+    oc get deployments
+       -n openshift-special-resource-operator
+       > {{ artifact_extra_logs_dir }}/all_sro_deployments.list
+
+- name: Get the Pods in openshift-special-resource-operator
+  failed_when: false
+  shell: 
+    oc get pods
+       -n openshift-special-resource-operator
+       -owide
+       > {{ artifact_extra_logs_dir }}/sro_pods.list
+
+- name: Get the sro Pod object yaml
+  failed_when: false
+  shell:
+    oc get pods -n openshift-special-resource-operator 
+        -l control-plane=controller-manager -o yaml 
+        > {{ artifact_extra_logs_dir }}/sro_operator_pod.yml;
+
+# --
+
+- name: Get the SRO Operator pod logs
+  failed_when: false
+  shell:
+    oc logs deployment/special-resource-controller-manager 
+        -n openshift-special-resource-operator 
+        -c manager 
+        > {{ artifact_extra_logs_dir }}/sro_operator.log
+
+- name: Get the driver-container-base pods
+  failed_when: false
+  shell:
+    oc get pods
+       -n driver-container-base -owide
+       > {{ artifact_extra_logs_dir }}/driver-container-base_pods.list
+
+- name: Get the simple-kmod pods
+  failed_when: false
+  shell:
+    oc get pods
+       -n simple-kmod -owide
+       > {{ artifact_extra_logs_dir }}/simple-kmod_pods.list

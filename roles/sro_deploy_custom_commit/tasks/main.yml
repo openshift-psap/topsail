@@ -1,0 +1,15 @@
+---
+- name: Check that sro_image_tag is defined
+  fail: msg="Bailing out. This play requires 'sro_image_tag'"
+  when: sro_image_tag is undefined
+
+- name: Check that sro_git_repo is defined
+  fail: msg="Bailing out. This play requires 'sro_git_repo'"
+  when: sro_git_repo is undefined
+
+- name: Check that sro_git_ref is defined
+  fail: msg="Bailing out. This play requires 'sro_git_ref'"
+  when: sro_git_ref is undefined
+
+- name: Deploy SRO from custom commit, from github
+  include_tasks: deploy.yml

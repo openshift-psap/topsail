@@ -1,0 +1,7 @@
+---
+- name: Deploy a custom commit of SRO
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: sro_deploy_custom_commit

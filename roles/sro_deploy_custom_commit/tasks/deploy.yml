@@ -1,0 +1,26 @@
+- block:
+  - name: Git checkout
+    git:
+      repo: "{{ sro_git_repo }}"
+      dest: /tmp/special-resource-operator
+      version: "{{ sro_git_ref }}"
+      
+  - name: Deploy the custom version of the special resource operator
+    shell:
+      make deploy TAG="{{ sro_image_tag }}" NAMESPACE="openshift-special-resource-operator"
+          > {{ artifact_extra_logs_dir }}/sro_deploy_custom.log 2>&1
+    args:
+      chdir: /tmp/special-resource-operator
+
+  rescue:
+  - name: Get the state of the special resource operator pod (debug)
+    command: oc get pods -n openshift-special-resource-operator
+    failed_when: false
+
+  - name: Get the logs of SRO the pod (debug)
+    command:
+       oc logs -n openshift-special-resource-operator deployment.apps/special-resource-controller-manager -c manager
+    failed_when: false
+
+  - name: Fail because the SRO custom commit could not be deployed
+    fail: msg="Fail because the SRO custom commit could not be deployed"
