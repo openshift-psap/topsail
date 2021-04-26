@@ -1,9 +1,0 @@
-# Operator version 4.6.0-202012161211.p0
-# Jan 18 2021
-apiVersion: nfd.openshift.io/v1alpha1
-kind: NodeFeatureDiscovery
-metadata:
-  name: nfd-master-server
-  namespace: openshift-nfd
-spec:
-  namespace: openshift-nfd

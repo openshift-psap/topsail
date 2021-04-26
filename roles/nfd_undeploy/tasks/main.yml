@@ -13,9 +13,6 @@
   when: operator_csv_name.rc == 0
   failed_when: false
 
-- name: Delete the NodeFeatureDiscovery CR of the NFD Operator
-  command: oc --ignore-not-found=true delete -f "{{ nfd_operator_cr }}"
-
 - name: Delete the CRD of the NFD Operator
   command: oc --ignore-not-found=true delete crd nodefeaturediscoveries.nfd.openshift.io
 

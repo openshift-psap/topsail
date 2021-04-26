@@ -1,3 +1,19 @@
+- name: Capture the state of the CatalogSource/certified-operators (debug)
+  command:
+    oc get -oyaml CatalogSource/certified-operators
+       -n openshift-marketplace
+       '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}'
+  failed_when: false
+
+- name: Ensure that the NFD Operator PackageManifest exists
+  command: oc get packagemanifests/nfd -n openshift-marketplace
+
+- name: Save the NFD Operator PackageManifest (debug)
+  shell:
+    oc get packagemanifests/nfd -n openshift-marketplace -oyaml
+    > {{ artifact_extra_logs_dir }}/nfd_packagemanifest.yml
+  failed_when: false
+
 - name: Create the namespace for the NFD Operator
   command: oc apply -f "{{ nfd_operator_namespace }}"
 
@@ -12,10 +28,36 @@
   args:
     warn: false # don't warn about using sed here
 
+- name: "Wait for the NFD Operator OperatorHub ClusterServiceVersion"
+  command:
+    oc get ClusterServiceVersion
+       -oname
+       -n openshift-nfd
+  register: nfd_operator_csv_name
+  until: nfd_operator_csv_name.stdout != ""
+  retries: 40
+  delay: 30
+
+- name: Get the clusterpolicy of the NFD Operator from OperatorHub CSV
+  shell:
+    set -o pipefail;
+    oc get {{ nfd_operator_csv_name.stdout }}
+       -n openshift-nfd
+       -ojson
+    | jq -r '.metadata.annotations."alm-examples"'
+    | jq .[0]
+    | jq --arg  ns openshift-nfd '.metadata.namespace = $ns'
+    | jq --arg  ns openshift-nfd '.spec.namespace = $ns'
+    > {{ artifact_extra_logs_dir }}/nfd_cr.json
+  register: operatorhub_clusterpolicy
+  until: operatorhub_clusterpolicy.rc == 0
+  retries: 20
+  delay: 15
+
 - name: Create the NodeFeatureDiscovery CR for the NFD Operator
   block:
-    - name: Apply NodeFeatureDiscovery manifest
-      command: oc apply -f "{{ nfd_operator_cr }}"
+    - name: Create the NodeFeatureDiscovery CR
+      command: oc apply -f "{{ artifact_extra_logs_dir }}/nfd_cr.json"
       register: apply_nfd_cr
       until: apply_nfd_cr.rc != 1
       retries: 20

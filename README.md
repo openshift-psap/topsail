@@ -137,11 +137,12 @@ NFD
 ---
 
 - [x]  Deploy the NFD operator from OperatorHub:
+  - [x]  Control the install channel from the command-line
+
 ```
-toolbox/nfd/deploy_from_operatorhub.sh
+toolbox/nfd/deploy_from_operatorhub.sh [nfd_channel, eg: 4.7]
 toolbox/nfd/undeploy_from_operatorhub.sh
 ```
-  - [ ]  Control the channel to use from the command-line
 
 - [x] Test the NFD deployment
   - [x] test with the NFD if GPU nodes are available
