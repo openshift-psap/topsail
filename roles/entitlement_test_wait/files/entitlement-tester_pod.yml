@@ -17,9 +17,6 @@ spec:
     - name: host-etc-os-release
       mountPath: /etc-host/os-release
       readOnly: true
-    env:
-      - name: OPENSHIFT_VERSION
-        value: "{{ openshift_release }}"
   restartPolicy: Never
   volumes:
   - name: entrypoint

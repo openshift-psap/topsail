@@ -17,9 +17,7 @@
 
       oc apply -f "{{ entitlement_tester_entrypoint }}"
       oc delete -f "{{ entitlement_tester_pod }}" --ignore-not-found=true;
-      cat "{{ entitlement_tester_pod }}" \
-        | sed 's|{{ '{{' }} openshift_release {{ '}}' }}|{{ openshift_release }}|' \
-        | oc create -f-;
+      oc create -f "{{ entitlement_tester_pod }}";
 
       i=0;
       CMD="oc get pod/entitlement-tester
