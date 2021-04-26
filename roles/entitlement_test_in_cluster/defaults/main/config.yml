@@ -1,0 +1,6 @@
+---
+# path to the PEM key to test locally
+entitlement_pem:
+
+# container image to use for testing the entitlement
+entitlement_test_image: registry.access.redhat.com/ubi8:latest

@@ -1,0 +1,7 @@
+---
+- name: Test a PEM entitlement key in an OpenShift Pod
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: entitlement_test_in_cluster

@@ -180,6 +180,7 @@ toolbox/entitlement/test.sh [--no-inspect]
 toolbox/entitlement/wait.sh
 
 toolbox/entitlement/test_in_podman.sh /path/to/key.pem
+toolbox/entitlement/test_in_cluster.sh /path/to/key.pem
 ```
   - [x] Capture all the clues required to understand entitlement issues
 

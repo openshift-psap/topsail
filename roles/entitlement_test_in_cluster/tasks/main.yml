@@ -1,0 +1,69 @@
+---
+- name: "Ensure that the entitlement file 'entitlement_pem={{ entitlement_pem }}' exists"
+  stat:
+    path: '{{ entitlement_pem }}'
+  register: entitlement_pem_stat
+  failed_when: not entitlement_pem_stat.stat.exists
+
+- name: "Ensure that the entitlement RHSM file 'entitlement_rhsm={{ entitlement_rhsm }}' exists"
+  stat:
+    path: '{{ entitlement_rhsm }}'
+  register: entitlement_rhsm_stat
+  failed_when: not entitlement_rhsm_stat.stat.exists
+
+- name: Create the entrypoint ConfigMap
+  command: oc apply -f "{{ entitlement_tester_entrypoint }}"
+
+- name: Delete the entitlement secret if it exists
+  command: oc delete --ignore-not-found=true secret/entitlement-tester-secret-files
+
+- name: Create the entitlement secret
+  command: oc create secret generic entitlement-tester-secret-files
+      -n default
+      --from-file 'PEM={{ entitlement_pem }}'
+      --from-file 'RHSM={{ entitlement_rhsm }}'
+
+- name: Delete the entitlement tester Pod if it exists
+  command: oc delete  --ignore-not-found=true -f "{{ entitlement_tester_pod }}"
+
+- block:
+  - name: Create the entitlement tester Pod
+    command: oc create -f "{{ entitlement_tester_pod }}"
+
+  - name: Wait for the entitlement test Pod to terminate
+    command:
+      oc get pod/entitlement-tester
+         -n default
+         -o custom-columns=:.status.phase
+         --no-headers
+    register: entitlement_wait
+    until: entitlement_wait.stdout == "Succeeded" or entitlement_wait.stdout == "Error" or entitlement_wait.stdout == "Failed"
+    retries: 5
+    delay: 30
+
+  - name: Fetch the test logs
+    command: oc logs pod/entitlement-tester -n default
+    register: entitlement_tester_logs
+
+  - name: Store the test logs in a file
+    copy:
+      content: "{{ entitlement_tester_logs.stdout }}"
+      dest: "{{ artifact_extra_logs_dir }}/entitlement_tester.log"
+      mode: 0644
+
+  always:
+  - name: Delete the entitlement secret
+    command: oc delete --ignore-not-found=true secret/entitlement-tester-secret-files -n default
+    failed_when: false
+
+  - name: Create the entrypoint ConfigMap
+    command: oc delete --ignore-not-found=true -f "{{ entitlement_tester_entrypoint }}"
+    failed_when: false
+
+  - name: Delete the entitlement tester pod
+    command: oc delete --ignore-not-found=true -f "{{ entitlement_tester_pod }}"
+    failed_when: false
+
+- name: Fail when the test execution failed
+  fail: msg="PEM key testing failed."
+  when: entitlement_wait.stdout != "Succeeded"

@@ -19,12 +19,22 @@ data:
     source /etc-host/os-release
     echo
 
-    echo "# md5sum of entitlement file (debug)"
+    echo "# md5sum of host entitlement files (debug)"
     if md5sum /etc/rhsm-host/rhsm.conf /etc/pki/entitlement-host/entitlement{,-key}.pem; then
-      echo "# INFO: entitlement files found"
+      echo "# INFO: host entitlement files found"
     else
       echo "#"
-      echo "# WARNING: entitlement files missing"
+      echo "# WARNING: host entitlement files missing"
+      echo "#"
+    fi
+    echo
+
+    echo "# md5sum of pod entitlement files (debug)"
+    if md5sum /etc/rhsm/rhsm.conf /etc/pki/entitlement/entitlement{,-key}.pem; then
+      echo "# INFO: pod entitlement files found"
+    else
+      echo "#"
+      echo "# INFO: pod entitlement files missing"
       echo "#"
     fi
 
