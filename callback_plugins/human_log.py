@@ -15,7 +15,8 @@ INTERESTING_MODULE_PROPS = {
     "msg": None,
     "changed": None,
     "ansible_facts": None,
-    "include_args": None
+    "include_args": None,
+    "failed_when_result": None,
     }
 
 class CallbackModule(default_CallbackModule):
