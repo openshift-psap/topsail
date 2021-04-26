@@ -7,7 +7,7 @@ source ${THIS_DIR}/_helm_common.sh
 
 set +e
 toolbox/gpu-operator/undeploy_from_operatorhub.sh
-toolbox/gpu-operator/undeploy_with_helm.sh
+toolbox/gpu-operator/undeploy_from_helm.sh
 
 bash "${HELM_DEPLOY_OPERATOR}" cleanup
 
