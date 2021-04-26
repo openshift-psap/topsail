@@ -1,0 +1,3 @@
+---
+# path to the entrypoint script to run in the Podman container
+entitlement_tester_entrypoint: roles/entitlement_test_in_podman/files/entrypoint.sh

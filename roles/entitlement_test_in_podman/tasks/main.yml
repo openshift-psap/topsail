@@ -1,0 +1,30 @@
+---
+- name: "Ensure that the entitlement file 'entitlement_pem={{ entitlement_pem }}' exists"
+  stat:
+    path: '{{ entitlement_pem }}'
+  register: entitlement_pem_stat
+  failed_when: not entitlement_pem_stat.stat.exists
+
+- name: Ensure that podman is available
+  command: which podman
+
+- name: Test if the entitlement key file works
+  shell:
+    podman run --rm -it
+      -v "$(realpath '{{ entitlement_pem }}'):/etc/pki/entitlement/entitlement.pem"
+      -v "$(realpath '{{ entitlement_pem }}'):/etc/pki/entitlement/entitlement-key.pem"
+      -v "$(realpath '{{ entitlement_tester_entrypoint }}'):/bin/entrypoint.sh"
+      "{{ entitlement_test_image }}"
+      bash -x "/bin/entrypoint.sh"
+  register: entitlement_tester_pod_logs
+  failed_when: false
+
+- name: Store the test logs in a file
+  copy:
+    content: "{{ entitlement_tester_pod_logs.stdout }}"
+    dest: "{{ artifact_extra_logs_dir }}/entitlement_test_in_podman.log"
+    mode: 0644
+
+- name: Fail when the test execution failed
+  fail: msg="PEM key testing failed."
+  when: entitlement_tester_pod_logs.rc != 0

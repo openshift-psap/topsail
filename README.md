@@ -173,11 +173,13 @@ Example usage:
 
 - [x] Entitle the cluster, by passing a PEM file, checking if they should be concatenated or not, etc. And do nothing is the cluster is already entitled
 ```
-toolbox/entitlement/deploy.sh --pem /path/to/pem
+toolbox/entitlement/deploy.sh --pem /path/to/key.pem
 toolbox/entitlement/deploy.sh --machine-configs /path/to/machineconfigs
 toolbox/entitlement/undeploy.sh
 toolbox/entitlement/test.sh [--no-inspect]
 toolbox/entitlement/wait.sh
+
+toolbox/entitlement/test_in_podman.sh /path/to/key.pem
 ```
   - [x] Capture all the clues required to understand entitlement issues
 
