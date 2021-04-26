@@ -31,3 +31,7 @@
 - name: Delete the namespace of the GPU Operator
   command: oc --ignore-not-found=true delete -f "{{ gpu_operator_namespace }}"
   failed_when: false
+
+- name: Delete the ServiceAccount of the GPU Operator
+  command: oc --ignore-not-found=true delete ServiceAccount/gpu-operator -n openshift-operators
+  failed_when: false
