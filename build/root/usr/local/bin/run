@@ -143,15 +143,22 @@ prepare_cluster_for_gpu_operator() {
     fi
 }
 
+collect_must_gather() {
+    /usr/bin/gather
+    DEST="${ARTIFACT_DIR}/$(date +%H%M%S)__gpu-operator__must-gather"
+    mkdir -p "$DEST"
+    cp -r /must-gather/* "$DEST"
+}
+
 validate_gpu_operator_deployment() {
-    trap toolbox/gpu-operator/must-gather.sh ERR
+    trap collect_must_gather ERR
 
     toolbox/gpu-operator/wait_deployment.sh
     toolbox/gpu-operator/run_gpu_burn.sh
 
     trap - ERR
 
-    toolbox/gpu-operator/must-gather.sh
+    collect_must_gather
 }
 
 set -x

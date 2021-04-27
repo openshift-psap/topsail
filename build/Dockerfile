@@ -23,6 +23,9 @@ RUN yum install -y \
 	rm -rf $HOME/.cache && \
 	rm -rf /var/cache/yum
 
+# For /usr/bin/gather
+RUN mkdir /must-gather && chmod 777 /must-gather
+
 # Set up Ansible
 RUN mkdir -p /etc/ansible \
     && echo "localhost ansible_connection=local" > /etc/ansible/hosts
@@ -40,6 +43,7 @@ ENV USER_NAME=psap-ci-runner \
     INSIDE_CI_IMAGE="y"
 
 COPY . ${HOME}/
+RUN ln -s ${HOME}/toolbox/gpu-operator/must-gather.sh /usr/bin/gather
 
 # Ensure directory permissions are properly set
 RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R
