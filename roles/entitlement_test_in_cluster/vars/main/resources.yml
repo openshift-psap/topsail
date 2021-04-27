@@ -1,6 +1,6 @@
 ---
 entitlement_tester_pod: 'roles/entitlement_test_in_cluster/files/entitlement-tester_pod.yml'
-entitlement_tester_entrypoint: 'roles/entitlement_test_wait/files/entitlement-tester_entrypoint.yml'
+entitlement_tester_entrypoint: 'roles/entitlement_test_wait_deployment/files/entitlement-tester_entrypoint.yml'
 
 # path to the RHSM file of the entitlement
 entitlement_rhsm: 'roles/entitlement_deploy/files/rhsm.conf'

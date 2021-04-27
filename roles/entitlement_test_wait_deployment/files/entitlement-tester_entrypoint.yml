@@ -9,33 +9,44 @@ data:
     set -o errexit;
     set -o pipefail;
     set -x
-
+    env
     echo "# Kernel version"
     uname -a
-    echo
 
+    echo
     echo "# Host OS Release"
     cat /etc-host/os-release
     source /etc-host/os-release
-    echo
 
-    echo "# md5sum of host entitlement files (debug)"
-    if md5sum /etc/rhsm-host/rhsm.conf /etc/pki/entitlement-host/entitlement{,-key}.pem; then
-      echo "# INFO: host entitlement files found"
-    else
-      echo "#"
-      echo "# WARNING: host entitlement files missing"
-      echo "#"
-    fi
-    echo
+    if [[ "${REMOVE_HOST_ENTITLEMENT:-}" == "1" ]]; then
+       # this flag is activated in 'entitlement_test_in_cluster',
+       # so that we can test the given PEM key without risking that
+       # the host / cluster-wide entitlement alters the test result.
+       # This is harmless for the host of course.
 
-    echo "# md5sum of pod entitlement files (debug)"
-    if md5sum /etc/rhsm/rhsm.conf /etc/pki/entitlement/entitlement{,-key}.pem; then
-      echo "# INFO: pod entitlement files found"
+       echo "# INFO: removing host entitlement links (REMOVE_HOST_ENTITLEMENT=${REMOVE_HOST_ENTITLEMENT})"
+       rm -fv /etc/pki/entitlement-host /etc/rhsm-host
+
+       echo
+       echo "# md5sum of pod entitlement files (debug)"
+       if md5sum /etc/rhsm/rhsm.conf /etc/pki/entitlement/entitlement{,-key}.pem; then
+         echo "# INFO: pod entitlement files found"
+      else
+        echo "#"
+        echo "# INFO: pod entitlement files missing"
+        echo "#"
+      fi
+
     else
-      echo "#"
-      echo "# INFO: pod entitlement files missing"
-      echo "#"
+      echo
+      echo "# md5sum of host entitlement files (debug)"
+      if md5sum /etc/rhsm-host/rhsm.conf /etc/pki/entitlement-host/entitlement{,-key}.pem; then
+        echo "# INFO: host entitlement files found"
+      else
+        echo "#"
+        echo "# WARNING: host entitlement files missing"
+        echo "#"
+      fi
     fi
 
     if [[ "${RHEL_VERSION}" == "8.4" ]]; then
@@ -95,3 +106,4 @@ data:
     echo "# ensure that RH repositories can be accessed"
 
     dnf list kernel-core --showduplicates
+    # done

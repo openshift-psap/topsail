@@ -1,3 +1,0 @@
----
-entitlement_tester_pod: 'roles/entitlement_test_wait/files/entitlement-tester_pod.yml'
-entitlement_tester_entrypoint: 'roles/entitlement_test_wait/files/entitlement-tester_entrypoint.yml'

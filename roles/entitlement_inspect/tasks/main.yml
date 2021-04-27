@@ -1,7 +1,7 @@
 ---
 - name: Run the entitlement test taskbook
   include_role:
-    name: entitlement_test_wait
+    name: entitlement_test_wait_deployment
   when: _entitlement_inspect_called_from_testwait == "no"
 
 - name: List entitlement MachineConfig objects

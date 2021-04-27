@@ -1,9 +1,9 @@
 ---
-- name: Wait for OpenShift entitlement deployment
+- name: Wait for OpenShift cluster-wide entitlement deployment
   hosts: localhost
   connection: local
   gather_facts: true
   vars:
     entitlement_test_and_wait: 'yes'
   roles:
-  - role: entitlement_test_wait
+  - role: entitlement_test_wait_deployment

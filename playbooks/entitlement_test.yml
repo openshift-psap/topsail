@@ -1,7 +1,7 @@
 ---
-- name: Test OpenShift entitlement
+- name: Test OpenShift cluster-wide entitlement
   hosts: localhost
   connection: local
   gather_facts: true
   roles:
-    - role: entitlement_test_wait
+    - role: entitlement_test_wait_deployment
