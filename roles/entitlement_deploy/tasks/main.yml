@@ -1,35 +1,42 @@
 ---
-- block:
-  - name: "Deploy entitlement from resource file '{{ entitlement_resources }}'"
-    command: oc create -f "{{ entitlement_resources }}"
-  - name: Entitlement is already deployed, end the play
-    # Warning: this will prevent using multiple roles side by side ...
-    meta: end_play
-  when: entitlement_resources | default('', true) | trim != ''
+- name: "Ensure that the entitlement file 'entitlement_pem={{ entitlement_pem }}' exists"
+  stat:
+    path: '{{ entitlement_pem }}'
+  register: entitlement_pem_stat
+  failed_when: not entitlement_pem_stat.stat.exists
 
-- block:
-  - name: "Deploy RHSM from file '{{ entitlement_rhsm }}'"
-    shell:
-      set -o pipefail;
-      python3 "{{ entitlement_py_apply }}"
-        "{{ entitlement_mc_rhsm }}" BASE64_ENCODED_RHSM_FILE "{{ entitlement_rhsm }}"
-      | oc apply -f-
-  when: entitlement_rhsm | default('', true) | trim != ''
+- name: "Ensure that the entitlement RHSM file 'entitlement_rhsm={{ entitlement_rhsm }}' exists"
+  stat:
+    path: '{{ entitlement_rhsm }}'
+  register: entitlement_rhsm_stat
+  failed_when: not entitlement_rhsm_stat.stat.exists
 
-- block:
-  - name: "Deploy the pem and key-pem from file '{{ entitlement_pem }}'"
-    shell:
-      set -o pipefail;
-      python3 "{{ entitlement_py_apply }}"
-        "{{ entitlement_mc_pem }}" BASE64_ENCODED_PEM_FILE "{{ entitlement_pem }}"
-      | oc apply -f-
-  when: entitlement_pem | default('', true) | trim != ''
+- name: Compute the md5sum of the entitlement files (debug)
+  command: md5sum '{{ entitlement_rhsm }}' '{{ entitlement_pem }}'
 
-- block:
+- name: "Deploy RHSM from file '{{ entitlement_rhsm }}'"
+  shell:
+    set -o pipefail;
+    python3 "{{ entitlement_py_apply }}"
+            "{{ entitlement_mc_rhsm }}" BASE64_ENCODED_RHSM_FILE "{{ entitlement_rhsm }}"
+    | oc apply -f-
+
+- name: "Deploy the pem and key-pem from file '{{ entitlement_pem }}'"
+  shell:
+    set -o pipefail;
+    python3 "{{ entitlement_py_apply }}"
+            "{{ entitlement_mc_pem }}" BASE64_ENCODED_PEM_FILE "{{ entitlement_pem }}"
+    | oc apply -f-
+
+- name: "Deploy the repo CA from file '{{ entitlement_mc_rhsm_ca }}' if requested"
+  block:
+  - name: Compute the md5sum of the CA file (debug)
+    command: md5sum '{{ entitlement_repo_ca }}'
+
   - name: "Deploy the repo CA from file '{{ entitlement_mc_rhsm_ca }}'"
     shell:
       set -o pipefail;
       python3 "{{ entitlement_py_apply }}"
-        "{{ entitlement_mc_rhsm_ca }}" BASE64_ENCODED_RHSM_CA_FILE "{{ entitlement_repo_ca }}"
+              "{{ entitlement_mc_rhsm_ca }}" BASE64_ENCODED_RHSM_CA_FILE "{{ entitlement_repo_ca }}"
       | oc apply -f-
   when: entitlement_repo_ca | default('', true) | trim != ''

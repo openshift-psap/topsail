@@ -28,50 +28,42 @@ if toolbox/entitlement/test.sh --no-inspect; then
     exit 0
 fi
 
-entitlement_deployed=0
+ENTITLEMENT_PEM=${ENTITLEMENT_PEM:-}
+ENTITLEMENT_RESOURCES=${ENTITLEMENT_RESOURCES:-/var/run/psap-entitlement-secret/01-cluster-wide-machineconfigs.yaml}
 
-ENTITLEMENT_PEM=${ENTITLEMENT_PEM:-/var/run/psap-entitlement-secret/entitlement.pem}
-if [ -z "$ENTITLEMENT_PEM" ]; then
-    echo "INFO: no entitlement key provided (ENTITLEMENT_PEM)"
-elif [ ! -e "$ENTITLEMENT_PEM" ]; then
-    echo "INFO: entitlement key doesn't exist (ENTITLEMENT_PEM=$ENTITLEMENT_PEM)"
-else
-    echo "Deploying the entitlement with PEM key from ${ENTITLEMENT_PEM}"
-    toolbox/entitlement/deploy.sh --pem ${ENTITLEMENT_PEM}
-    entitlement_deployed=1
+if [[ -e "$ENTITLEMENT_RESOURCES" && ! -e "$ENTITLEMENT_PEM" ]]; then
+    echo "INFO: found entitlement resource file but no entitlement key."
+
+    ENTITLEMENT_PEM=/tmp/key.pem
+
+    echo "INFO: extracting the key from the resource file..."
+    echo "INFO: $ENTITLEMENT_RESOURCES --> $ENTITLEMENT_PEM"
+
+    extract_entitlement_key $ENTITLEMENT_RESOURCES $ENTITLEMENT_PEM
 fi
 
- if oc version | grep -q "Server Version: 4.8"; then
+REPO_CA=""
+if oc version | grep -q "Server Version: 4.8"; then
      # Random CA file until we have the right certificate stored as a secret
      RHEL_BETA_REPO_CA=/etc/rhsm/ca/redhat-uep.pem
      ENTITLEMENT_REPO_CA=${ENTITLEMENT_REPO_CA:-$RHEL_BETA_REPO_CA}
      echo "INFO: Using $ENTITLEMENT_REPO_CA as RHEL-beta repo CA"
 
      REPO_CA="--ca $ENTITLEMENT_REPO_CA"
-else
-     REPO_CA=""
 fi
 
-ENTITLEMENT_RESOURCES=${ENTITLEMENT_RESOURCES:-/var/run/psap-entitlement-secret/01-cluster-wide-machineconfigs.yaml}
-if [ "$entitlement_deployed" == 1 ]; then
-    # entitlement already deployed
-    true
-elif [ -z "$ENTITLEMENT_RESOURCES" ]; then
-    echo "INFO: no entitlement resource provided (ENTITLEMENT_RESOURCES)"
-elif [ ! -e "$ENTITLEMENT_RESOURCES" ]; then
-    echo "INFO: entitlement resource file doesn't exist (ENTITLEMENT_RESOURCES=$ENTITLEMENT_RESOURCES)"
-else
-    ENTITLEMENT_KEY=/tmp/key.pem
-    extract_entitlement_key $ENTITLEMENT_RESOURCES $ENTITLEMENT_KEY
-
-    toolbox/entitlement/deploy.sh --pem "${ENTITLEMENT_KEY}" $REPO_CA
-    entitlement_deployed=1
-fi
-
-if [ "$entitlement_deployed" == 0 ]; then
-    echo "FATAL: cluster isn't entitled and not entitlement provided (ENTITLEMENT_PEM)"
+if [ ! -e "$ENTITLEMENT_PEM" ]; then
+    if [ -z "$ENTITLEMENT_PEM" ]; then
+        echo "INFO: no entitlement key provided (ENTITLEMENT_PEM)"
+    else
+        echo "INFO: entitlement key doesn't exist (ENTITLEMENT_PEM=$ENTITLEMENT_PEM)"
+    fi
+    echo "FATAL: cluster isn't entitled and not entitlement key was provided."
     exit 1
 fi
+
+echo "Deploying the entitlement with PEM key from ${ENTITLEMENT_PEM}"
+toolbox/entitlement/deploy.sh --pem ${ENTITLEMENT_PEM} ${REPO_CA}
 
 if ! toolbox/entitlement/wait.sh; then
     echo "FATAL: Failed to properly entitle the cluster, cannot continue."
