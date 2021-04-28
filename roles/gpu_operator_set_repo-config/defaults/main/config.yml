@@ -1,4 +1,6 @@
 ---
+# set to true to use RHEL beta repositories
+gpu_operator_set_repo_use_rhel_beta: false
 # path to the file to use a repo list in the Driver container
 # (ignored if gpu_operator_set_repo_use_rhel_beta is true)
 gpu_operator_set_repo_filename: ""
