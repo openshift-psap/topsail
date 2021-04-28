@@ -166,14 +166,18 @@ case ${1:-} in
                                                    "${CI_IMAGE_GPU_COMMIT_CI_REF}" \
                                                    "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}"
         validate_gpu_operator_deployment
-	exit 0
+        exit 0
         ;;
     "gpu-operator_test-operatorhub")
         OPERATOR_VERSION="${2:-}"
         prepare_cluster_for_gpu_operator
         toolbox/gpu-operator/deploy_from_operatorhub.sh ${OPERATOR_VERSION}
         validate_gpu_operator_deployment
-	exit 0
+        exit 0
+        ;;
+    "gpu-operator_validate-deployment")
+        validate_gpu_operator_deployment
+        exit 0
         ;;
     "gpu-operator_test-helm")
         if [ -z "${2:-}" ]; then
