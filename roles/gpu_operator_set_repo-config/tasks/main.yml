@@ -1,0 +1,62 @@
+---
+- name: Find the name of the ClusterPolicy
+  block:
+  - name: Find the name of the ClusterPolicy
+    command: oc get ClusterPolicies -oname
+    register: cluster_policy_name
+    failed_when: cluster_policy_name.rc != 0 or not cluster_policy_name.stdout
+  rescue:
+  - name: Explain why we failed
+    fail: msg="Failed because no ClusterPolicy is available. Is the GPU Operator deployed?"
+
+- name: Ensure that the DevicePlugin is not running
+  block:
+  - name: Get the number of DevicePlugin Pods ready
+    command:
+      oc get ds/nvidia-device-plugin-daemonset
+         -n gpu-operator-resources
+         -ojsonpath={.status.numberReady}
+         --ignore-not-found=true
+    register: device_plugin_pods_ready
+    failed_when: device_plugin_pods_ready.stdout and device_plugin_pods_ready.stdout != "0"
+  rescue:
+  - name: Explain why we failed
+    fail: msg="Failed because NVIDIA driver seems to be already loaded"
+
+- name: Prepare the user-provided repo list file
+  block:
+  - name: Prepare the user-provided repo list file ({{ gpu_operator_set_repo_filename }})
+    copy:
+      src: "{{ gpu_operator_set_repo_filename }}"
+      dest: "{{ artifact_extra_logs_dir }}/gpu-operator.dnf.repo"
+      mode: 0644
+
+- name: Delete the ConfigMap if it existed
+  command:
+    oc delete configmap repo-config
+       -n gpu-operator-resources
+       --ignore-not-found=true
+
+- name: Create a ConfigMap with the repo list
+  command:
+    oc create configmap repo-config
+       -n gpu-operator-resources
+       --from-file "{{ artifact_extra_logs_dir }}/gpu-operator.dnf.repo"
+
+- name: Patch the ClusterPolicy spec.driver.repoConfig
+  command: |
+    oc patch {{ cluster_policy_name.stdout }}
+       --type merge
+       --patch
+       '{"spec":{"driver":{"repoConfig": {"configMapName":"repo-config", "destinationDir": "{{ gpu_operator_set_repo_destdir }}" }} }}'
+
+- name: Store the ClusterPolicy YAML definition
+  shell:
+    oc get {{ cluster_policy_name.stdout }} -oyaml
+       > {{ artifact_extra_logs_dir }}/ClusterPolicy.yml
+
+- name: Delete the driver DaemonSet for the operator to recreate it
+  command:
+    oc delete ds/nvidia-driver-daemonset
+       -n gpu-operator-resources
+       --ignore-not-found=true

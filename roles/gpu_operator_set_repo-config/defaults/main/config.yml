@@ -1,0 +1,8 @@
+---
+# path to the file to use a repo list in the Driver container
+# (ignored if gpu_operator_set_repo_use_rhel_beta is true)
+gpu_operator_set_repo_filename: ""
+
+
+# path where the repo file will be stored in the driver container
+gpu_operator_set_repo_destdir: "/etc/distro.repos.d"
