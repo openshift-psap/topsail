@@ -171,12 +171,3 @@
 
   - name: Failing because the ClusterPolicy CR cannot be created
     fail: msg="Failed because the ClusterPolicy CR cannot be created"
-
-- block:
-  - name: Check if the namespace has the openshift.io/cluster-monitoring label
-    shell: oc get ns -l openshift.io/cluster-monitoring -oname | grep gpu-operator-resources
-  rescue:
-  - name: Get the namespace yaml specification
-    command: oc get ns/gpu-operator-resources -oyaml
-  - name: Make sure that namespace has the openshift.io/cluster-monitoring label
-    command: oc label ns/gpu-operator-resources openshift.io/cluster-monitoring=true
