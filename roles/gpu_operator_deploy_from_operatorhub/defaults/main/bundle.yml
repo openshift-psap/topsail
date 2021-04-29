@@ -1,0 +1,4 @@
+deploy_bundle_package_name: gpu-operator-certified
+deploy_bundle_namespace: openshift-operators
+deploy_bundle_image: quay.io/openshift-psap/ci-artifacts:gpu-operator_bundle_latest
+deploy_bundle_operator_image: quay.io/openshift-psap/ci-artifacts:gpu-operator_operator_latest

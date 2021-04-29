@@ -1,0 +1,127 @@
+- name: Ensure the GPU Operator package is available
+  block:
+  - name: Capture the state of the CatalogSource/certified-operators (debug)
+    command:
+      oc get -oyaml CatalogSource/certified-operators
+         -n openshift-marketplace
+         '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}'
+    failed_when: false
+
+  - name: Ensure that the GPU Operator PackageManifest exists
+    command: oc get packagemanifests/gpu-operator-certified -n openshift-marketplace
+    failed_when: false
+    register: gpu_operator_package_available
+
+  - name: Wait for the GPU Operator to be available or its catalog to be fully populated
+    when: gpu_operator_package_available.rc != 0
+    shell:
+      oc get packagemanifests/gpu-operator-certified -n openshift-marketplace
+         ||
+      test $(oc get -oyaml CatalogSource/certified-operators
+                -n openshift-marketplace
+                '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}') == "READY"
+    register: gpu_operator_package_wait
+    until: gpu_operator_package_wait.rc == 0
+    retries: 15
+    delay: 30
+
+  - name: Ensure that the GPU Operator PackageManifest exists
+    command: oc get packagemanifests/gpu-operator-certified -n openshift-marketplace
+
+- name: Create the namespace for the GPU Operator
+  command: oc apply -f "{{ gpu_operator_namespace }}"
+
+- name: Create the OperatorGroup object
+  command: oc apply -f "{{ gpu_operator_operatorgroup }}"
+
+- name: Save the GPU Operator PackageManifest (debug)
+  shell:
+    oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -oyaml
+    > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.yml
+  failed_when: false
+
+- block:
+  - name: Get the version of the GPU Operator on OperatorHub
+    shell:
+      oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -ojson
+      | jq -r .status.channels[0].currentCSV
+    register: gpu_operator_csv_name_cmd
+  - name: Store the CSV version
+    set_fact:
+      gpu_operator_csv_name: "{{ gpu_operator_csv_name_cmd.stdout }}"
+  when: gpu_operator_operatorhub_version == ''
+
+- block:
+  - name: Get the version of the GPU Operator on OperatorHub
+    command: echo "gpu-operator-certified.v{{ gpu_operator_operatorhub_version }}"
+    register: gpu_operator_csv_name_cmd
+  - name: Store the CSV version
+    set_fact:
+      gpu_operator_csv_name: "{{ gpu_operator_csv_name_cmd.stdout }}"
+  when: gpu_operator_operatorhub_version != ''
+
+- name: Store the version of the GPU Operator that will be installed
+  shell: echo "{{ gpu_operator_csv_name }}" > {{ artifact_extra_logs_dir }}/gpu_operator_csv_name.txt
+
+- name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
+  debug: msg="{{ gpu_operator_csv_name }}"
+
+- name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
+  shell:
+    set -o pipefail;
+    cat {{ gpu_operator_operatorhub_sub }}
+    | sed 's|{{ '{{' }} startingCSV {{ '}}' }}|{{ gpu_operator_csv_name }}|'
+    | oc apply -f-
+  args:
+    warn: false # don't warn about using sed here
+
+- block:
+  - name: Find the GPU Operator OperatorHub InstallPlan
+    # TODO: use 'oc get installplan -loperators.coreos.com/gpu-operator-certified.openshift-operators'
+    # when we get rid of OCP 4.5 support
+    command:
+      oc get Subscription/gpu-operator-certified
+         -n openshift-operators
+         -ojsonpath={@.status.installPlanRef.name}
+    register: gpu_operator_installplan_name
+    until: gpu_operator_installplan_name.stdout != ""
+    retries: 20
+    delay: 30
+
+  - name: Approve the GPU Operator OperatorHub InstallPlan
+    command:
+      oc patch InstallPlan/{{ gpu_operator_installplan_name.stdout }}
+         -n openshift-operators
+         --type merge
+         --patch '{"spec":{"approved":true }}'
+
+  - name: Wait for the GPU Operator OperatorHub ClusterServiceVersion
+    command:
+      oc get ClusterServiceVersion/{{ gpu_operator_csv_name }}
+         -oname
+         -n openshift-operators
+    register: gpu_operator_wait_csv
+    until: gpu_operator_wait_csv.stdout != ""
+    retries: 40
+    delay: 30
+
+  rescue:
+  - name: Capture the Catalog Operator logs (debug)
+    shell:
+      oc logs deployment.apps/catalog-operator
+         -n openshift-operator-lifecycle-manager
+         > {{ artifact_extra_logs_dir }}/catalog_operator.log
+    failed_when: false
+
+  - name: Indicate where the Catalog-operator logs have been saved
+    debug: msg="The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.log"
+
+  - name: Failed because the GPU Operator could not be install from the Catalog Operator
+    fail: msg="Failed because the GPU Operator could not be install from the Catalog Operator"
+
+- name: Store the YAML of the GPU Operator CSV that being installed
+  shell:
+    oc get ClusterServiceVersion/{{ gpu_operator_csv_name }}
+       -oyaml
+       -n openshift-operators
+       > {{ artifact_extra_logs_dir }}/gpu_operator_csv.yml

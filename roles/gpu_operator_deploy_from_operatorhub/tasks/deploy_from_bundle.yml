@@ -1,0 +1,46 @@
+- name: Make sure that 'operator-sdk' is available
+  command: operator-sdk version
+
+- name: Delete the bundle catalog, if it exists
+  command:
+    oc delete catalogsource/{{ deploy_bundle_package_name }}-catalog
+      -n {{ deploy_bundle_namespace }}
+      --ignore-not-found=true
+
+- name: Delete the bundle subscription, if it exists
+  command:
+    oc delete subscription
+      -l operators.coreos.com/{{ deploy_bundle_package_name }}.{{ deploy_bundle_namespace }}
+      -n {{ deploy_bundle_namespace }}
+      --ignore-not-found=true
+
+- name: Deploy the GPU Operator from the bundle
+  block:
+  - name: Deploy the GPU Operator from the bundle
+    command:
+      operator-sdk run bundle
+        -n {{ deploy_bundle_namespace }}
+        {{ deploy_bundle_image }}
+  rescue:
+  - name: Fix the GPU Operator image
+    command:
+      oc set image deployment/gpu-operator
+         gpu-operator={{ deploy_bundle_operator_image }}
+         -n {{ deploy_bundle_namespace }}
+
+- name: Store the version of the GPU Operator that will be installed
+  shell:
+    set -eo pipefail;
+    oc get ClusterServiceVersion
+       -oname
+       -n {{ deploy_bundle_namespace }}
+     | grep {{ deploy_bundle_package_name }}
+     | tee {{ artifact_extra_logs_dir }}/gpu_operator_bundle_csv_name.txt
+  register: gpu_operator_csv_name
+
+- name: Store the YAML of the GPU Operator CSV that being installed
+  shell:
+    oc get {{ gpu_operator_csv_name.stdout }}
+       -oyaml
+       -n {{ deploy_bundle_namespace }}
+       > {{ artifact_extra_logs_dir }}/gpu_operator_bundle_csv.yml
