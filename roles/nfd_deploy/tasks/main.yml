@@ -31,6 +31,7 @@
 - name: "Wait for the NFD Operator OperatorHub ClusterServiceVersion"
   command:
     oc get ClusterServiceVersion
+       -l operators.coreos.com/nfd.openshift-nfd
        -oname
        -n openshift-nfd
   register: nfd_operator_csv_name
