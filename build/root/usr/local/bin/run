@@ -67,6 +67,23 @@ prechecks() {
         export PATH=$PWD:$PATH
         cd ..
     fi
+
+    if ! which operator-sdk &>/dev/null;
+    then
+        echo "OperatorSDK not found, downloading it ..."
+        export ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(uname -m) ;; esac)
+        export OS=$(uname | awk '{print tolower($0)}')
+
+        mkdir -p bin
+        cd bin
+        export OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/v1.6.2
+        curl -LO ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}
+
+        chmod +x operator-sdk_${OS}_${ARCH}
+        mv operator-sdk_${OS}_${ARCH} operator-sdk
+        export PATH=$PWD:$PATH
+        cd ..
+    fi
 }
 
 entitle() {
@@ -164,6 +181,13 @@ validate_gpu_operator_deployment() {
 set -x
 case ${1:-} in
     "gpu-operator_test-master-branch")
+        prepare_cluster_for_gpu_operator
+        toolbox/gpu-operator/deploy_from_operatorhub.sh --from-bundle=master
+
+        validate_gpu_operator_deployment
+        exit 0
+        ;;
+    "gpu-operator_test-commit")
         CI_IMAGE_GPU_COMMIT_CI_REPO="${2:-https://github.com/NVIDIA/gpu-operator.git}"
         CI_IMAGE_GPU_COMMIT_CI_REF="${3:-master}"
 
