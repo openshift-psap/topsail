@@ -1,12 +1,32 @@
-- name: Capture the state of the CatalogSource/certified-operators (debug)
-  command:
-    oc get -oyaml CatalogSource/certified-operators
-       -n openshift-marketplace
-       '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}'
-  failed_when: false
+- name: Ensure the NFD package is available
+  block:
+  - name: Capture the state of the CatalogSource/redhat-operators (debug)
+    command:
+      oc get -oyaml CatalogSource/redhat-operators
+         -n openshift-marketplace
+         '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}'
+    failed_when: false
 
-- name: Ensure that the NFD Operator PackageManifest exists
-  command: oc get packagemanifests/nfd -n openshift-marketplace
+  - name: Ensure that the NFD Operator PackageManifest exists
+    command: oc get packagemanifests/nfd -n openshift-marketplace
+    failed_when: false
+    register: nfd_package_available
+
+  - name: Wait for the NFD to be available or its catalog to be fully populated
+    when: nfd_package_available.rc != 0
+    shell:
+      oc get packagemanifests/nfd -n openshift-marketplace
+         ||
+      test $(oc get -oyaml CatalogSource/redhat-operators
+                -n openshift-marketplace
+                '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}') == "READY"
+    register: nfd_package_wait
+    until: nfd_package_wait.rc == 0
+    retries: 15
+    delay: 30
+
+  - name: Ensure that the NFD Operator PackageManifest exists
+    command: oc get packagemanifests/nfd -n openshift-marketplace
 
 - name: Save the NFD Operator PackageManifest (debug)
   shell:
