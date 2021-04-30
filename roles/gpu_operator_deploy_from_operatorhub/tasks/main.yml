@@ -1,9 +1,29 @@
-- name: Capture the state of the CatalogSource/certified-operators (debug)
-  command:
-    oc get -oyaml CatalogSource/certified-operators
-       -n openshift-marketplace
-       '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}'
-  failed_when: false
+- name: Ensure the GPU Operator package is available
+  block:
+  - name: Capture the state of the CatalogSource/certified-operators (debug)
+    command:
+      oc get -oyaml CatalogSource/certified-operators
+         -n openshift-marketplace
+         '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}'
+    failed_when: false
+
+  - name: Ensure that the GPU Operator PackageManifest exists
+    command: oc get packagemanifests/gpu-operator-certified -n openshift-marketplace
+    failed_when: false
+    register: gpu_operator_package_available
+
+  - name: Wait for the GPU Operator to be available or its catalog to be fully populated
+    when: gpu_operator_package_available.rc != 0
+    shell:
+      oc get packagemanifests/gpu-operator-certified -n openshift-marketplace
+         ||
+      test $(oc get -oyaml CatalogSource/certified-operators
+                -n openshift-marketplace
+                '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}') == "READY"
+    register: gpu_operator_package_wait
+    until: gpu_operator_package_wait.rc == 0
+    retries: 15
+    delay: 30
 
 - name: Ensure that the GPU Operator PackageManifest exists
   command: oc get packagemanifests/gpu-operator-certified -n openshift-marketplace
