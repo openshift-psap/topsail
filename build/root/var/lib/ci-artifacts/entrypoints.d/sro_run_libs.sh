@@ -5,11 +5,8 @@ set -o errexit
 set -o nounset
 
 prepare_cluster_for_sro() {
-    source $ENTRY_LIB_DIR/entitle.sh 
-
     toolbox/cluster/capture_environment.sh
-
-    entitle
+    toolbox/entitlement/entitle.sh
 
     if ! toolbox/nfd/has_nfd_labels.sh; then
         toolbox/nfd/deploy_from_operatorhub.sh

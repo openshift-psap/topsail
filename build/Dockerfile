@@ -18,6 +18,7 @@ RUN yum install -y \
 	pip3 install --no-cache-dir --upgrade setuptools pip && \
 	pip3 install --no-cache-dir \
 		openshift \
+		yq \
 		ansible==2.9.* && \
 	yum clean all && \
 	rm -rf $HOME/.cache && \
