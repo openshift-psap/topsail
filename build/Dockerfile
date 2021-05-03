@@ -62,9 +62,11 @@ ENV USER_NAME=psap-ci-runner \
 
 COPY . ${HOME}/
 
-# Prepare GPU-operator /usr/bin/gather
+# Prepare the image for must-gather support
 RUN mkdir /must-gather && chmod 777 /must-gather
-RUN ln -s ${HOME}/toolbox/gpu-operator/must-gather.sh /usr/bin/gather
+
+# Prepare the GPU-operator's gather script
+RUN ln -s ${HOME}/toolbox/gpu-operator/must-gather.sh /usr/bin/gpu-operator_gather
 
 # Ensure directory permissions are properly set
 RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R

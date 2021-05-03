@@ -1,6 +1,6 @@
 #! /bin/bash -ex
 
-if [[ "$0" == "/usr/bin/gather" ]]; then
+if [[ "$0" == "/usr/bin/gpu-operator_gather" ]]; then
     echo "Running as must-gather plugin image"
     export ARTIFACT_DIR=/must-gather
 
