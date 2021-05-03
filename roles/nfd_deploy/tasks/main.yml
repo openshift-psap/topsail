@@ -48,16 +48,29 @@
   args:
     warn: false # don't warn about using sed here
 
-- name: "Wait for the NFD Operator OperatorHub ClusterServiceVersion"
-  command:
-    oc get ClusterServiceVersion
-       -l operators.coreos.com/nfd.openshift-nfd
-       -oname
-       -n openshift-nfd
-  register: nfd_operator_csv_name
-  until: nfd_operator_csv_name.stdout != ""
-  retries: 40
-  delay: 30
+- name: Wait for the NFD Operator OperatorHub ClusterServiceVersion
+  block:
+  - name: Wait for the NFD Operator OperatorHub ClusterServiceVersion
+    command:
+      oc get ClusterServiceVersion
+         -l operators.coreos.com/nfd.openshift-nfd
+         -oname
+         -n openshift-nfd
+    register: nfd_operator_csv_name
+    until: nfd_operator_csv_name.stdout != ""
+    retries: 40
+    delay: 30
+  rescue:
+  - name: List the ClusterServiceVersion in the openshift-nfd namespace
+    command: oc get ClusterServiceVersion -n openshift-nfd
+
+  - name: Store the YAML of the ClusterServiceVersion in the openshift-nfd namespace
+    shell:
+      oc get ClusterServiceVersion -n openshift-nfd -oyaml
+         > {{ artifact_extra_logs_dir }}/openshift-nfd_ClusterServiceVersions.yml
+
+  - name: Failed to find NFD Operator ClusterServiceVersion
+    fail: msg="Failed to find NFD Operator ClusterServiceVersion"
 
 - name: Get the clusterpolicy of the NFD Operator from OperatorHub CSV
   shell:

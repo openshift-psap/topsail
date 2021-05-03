@@ -5,6 +5,8 @@ set -o errexit
 set -o nounset
 
 prepare_cluster_for_gpu_operator() {
+    trap collect_must_gather ERR
+
     toolbox/cluster/capture_environment.sh
     toolbox/entitlement/entitle.sh
 
