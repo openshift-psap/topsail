@@ -24,8 +24,25 @@ RUN yum install -y \
 	rm -rf $HOME/.cache && \
 	rm -rf /var/cache/yum
 
-# For /usr/bin/gather
-RUN mkdir /must-gather && chmod 777 /must-gather
+
+# Install dependencies: `oc`
+ARG OCP_CLI_VERSION=latest
+ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
+RUN curl ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
+
+# Install dependencies: `helm`
+ARG HELM_VERSION=v3.5.1
+ARG HELM_URL=https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
+RUN curl ${HELM_URL} | tar xfz - -C /usr/local/bin linux-amd64/helm
+
+
+# Install dependencies: `operator-sdk`
+ARG OPERATOR_SDK_VERSION=v1.6.2
+ARG OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}
+RUN cd /usr/local/bin \
+ && curl -LO ${OPERATOR_SDK_URL}/operator-sdk_linux_amd64 \
+ && mv operator-sdk_linux_amd64 operator-sdk \
+ && chmod +x operator-sdk
 
 # Set up Ansible
 RUN mkdir -p /etc/ansible \
@@ -44,6 +61,9 @@ ENV USER_NAME=psap-ci-runner \
     INSIDE_CI_IMAGE="y"
 
 COPY . ${HOME}/
+
+# Prepare GPU-operator /usr/bin/gather
+RUN mkdir /must-gather && chmod 777 /must-gather
 RUN ln -s ${HOME}/toolbox/gpu-operator/must-gather.sh /usr/bin/gather
 
 # Ensure directory permissions are properly set

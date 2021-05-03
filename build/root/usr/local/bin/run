@@ -19,7 +19,11 @@ ci_banner() {
     git show HEAD~ --quiet || true
 
     echo
-    oc version
+    echo OpenShift version:
+    if ! oc version > /dev/null; then
+        echo "Cannot access OpenShift cluster, can't continue."
+        exit 1
+    fi
     echo
 }
 
@@ -31,26 +35,20 @@ prechecks() {
 
     if [[ -z "${KUBECONFIG}" ]]
     then
-        echo "No KUBECONFIG set, cannot continue."
+        echo "KUBECONFIG not set, cannot continue."
         exit 1
     fi
     if [[ ! -e "${KUBECONFIG}" ]]
     then
-        echo "KUBECONFIG file doesn't exist, can't continue. ($KUBECONFIG)"
+        echo "KUBECONFIG file doesn't exist, can't continue. (KUBECONFIG=${KUBECONFIG})"
         exit 1
     fi
-    echo "Kubeconfig found at ${KUBECONFIG}, proceeding with tests"
+    echo "Using KUBECONFIG=${KUBECONFIG}"
 
     if ! which oc &>/dev/null;
     then
-        echo "OpenShift client not found, downloading it ..."
-        mkdir -p bin
-        cd bin
-        wget --quiet https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz
-        tar xf openshift-client-linux.tar.gz
-        rm openshift-client-linux.tar.gz
-        export PATH=$PWD:$PATH
-        cd ..
+        echo "oc not found, this is unexpected in the CI image. Can't continue."
+        exit 1
     fi
 
     if ! which kubectl &>/dev/null;
@@ -62,46 +60,14 @@ prechecks() {
         export PATH=$PWD:$PATH
         cd ..
     fi
-
-    if ! which helm &>/dev/null;
-    then
-        echo "Helm not found, downloading it ..."
-        mkdir -p bin
-        cd bin
-
-        HELM_VERSION="v3.5.1"
-        wget https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz --quiet
-        tar xf helm-${HELM_VERSION}-linux-amd64.tar.gz linux-amd64/helm
-        mv linux-amd64/helm .
-        rmdir linux-amd64
-        export PATH=$PWD:$PATH
-        cd ..
-    fi
-
-    if ! which operator-sdk &>/dev/null;
-    then
-        echo "OperatorSDK not found, downloading it ..."
-        export ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(uname -m) ;; esac)
-        export OS=$(uname | awk '{print tolower($0)}')
-
-        mkdir -p bin
-        cd bin
-        export OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/v1.6.2
-        curl -LO ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}
-
-        chmod +x operator-sdk_${OS}_${ARCH}
-        mv operator-sdk_${OS}_${ARCH} operator-sdk
-        export PATH=$PWD:$PATH
-        cd ..
-    fi
 }
 
 
 
 ##############
 
-prechecks
 ci_banner "$@"
+prechecks
 
 #############
 
