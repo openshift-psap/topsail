@@ -15,8 +15,8 @@ RUN yum install -y \
 		glibc-langpack-en \
 		go git make jq vim wget \
 		python3 python3-devel python3-pip python3-setuptools && \
-	pip3 install --no-cache-dir --upgrade setuptools pip && \
-	pip3 install --no-cache-dir \
+	python3 -m pip install --no-cache-dir --upgrade setuptools pip wheel && \
+	python3 -m pip install --no-cache-dir \
 		openshift \
 		yq \
 		ansible==2.9.* && \
