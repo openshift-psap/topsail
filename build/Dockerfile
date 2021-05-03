@@ -2,8 +2,8 @@ FROM registry.access.redhat.com/ubi8/ubi
 
 MAINTAINER OpenShift PSAP Team <openshift-psap@redhat.com>
 
-LABEL 	io.k8s.display-name="OpenShift PSAP Ci artifacts" \
-      	io.k8s.description="This are artifacts to run PSAP Ci" \
+LABEL 	io.k8s.display-name="OpenShift PSAP CI artifacts" \
+      	io.k8s.description="An image for running Ansible artifacts for OpenShift PSAP CI" \
  	name="ci-artifacts" \
 	url="https://github.com/openshift-psap/ci-artifacts"
 
