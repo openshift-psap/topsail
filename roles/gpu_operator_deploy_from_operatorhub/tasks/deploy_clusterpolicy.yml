@@ -1,4 +1,4 @@
-- name: Get the GPU Operator OperatorHub ClusterServiceVersion name
+- name: Wait for the GPU Operator OperatorHub ClusterServiceVersion name
   command:
     oc get ClusterServiceVersion
        -l operators.coreos.com/gpu-operator-certified.openshift-operators
@@ -6,6 +6,8 @@
        -n openshift-operators
   register: gpu_operator_csv_name_cmd
   failed_when: not gpu_operator_csv_name_cmd.stdout
+  retries: 15
+  delay: 30
 
 - name: Get the clusterpolicy of the GPU Operator from OperatorHub CSV
   shell:
