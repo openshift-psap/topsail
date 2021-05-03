@@ -1,0 +1,28 @@
+From d6d0260e42223889aa1b14c742a3958279848a2d Mon Sep 17 00:00:00 2001
+From: Stanislav Zubov <szubov@ptsecurity.com>
+Date: Mon, 7 Oct 2019 18:04:50 +0700
+Subject: [PATCH] sphinx1.7+: ImportError workaround, allows to see help
+URL: https://github.com/z00sts/sphinxcontrib-versioning/commit/d6d0260e42223889aa1b14c742a3958279848a2d
+
+---
+ sphinxcontrib/versioning/sphinx_.py | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/sphinxcontrib/versioning/sphinx_.py b/sphinxcontrib/versioning/sphinx_.py
+index a90587d4..1d58117a 100644
+--- a/sphinxcontrib/versioning/sphinx_.py
++++ b/sphinxcontrib/versioning/sphinx_.py
+@@ -6,7 +6,12 @@
+ import os
+ import sys
+ 
+-from sphinx import application, build_main, locale
++from sphinx import application, locale
++try:
++    from sphinx import build_main
++except ImportError:
++    # Sphinx 1.7+ ImportError fix
++    from sphinx.cmd.build import build_main
+ from sphinx.builders.html import StandaloneHTMLBuilder
+ from sphinx.config import Config as SphinxConfig
+ from sphinx.errors import SphinxError

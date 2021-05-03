@@ -21,3 +21,6 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: docs/_build/html # The folder the action should deploy.
+
+    - name: Generate the MultiVersion documentation
+      run: cd docs; make gh-action_multiversion # currently not doing anything
