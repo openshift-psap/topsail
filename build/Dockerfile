@@ -13,7 +13,7 @@ COPY build/root /
 # Install openshift-ansible RPMs and some debugging tools
 RUN yum install -y \
 		glibc-langpack-en \
-		go git make jq vim wget \
+		go git make jq vim wget rsync \
 		python3 python3-devel python3-pip python3-setuptools && \
 	python3 -m pip install --no-cache-dir --upgrade setuptools pip wheel && \
 	python3 -m pip install --no-cache-dir \
