@@ -13,7 +13,7 @@ extract_entitlement_key() {
 }
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source ${THIS_DIR}/../_common.sh
+cd ${THIS_DIR}/../..
 
 echo "Testing if the cluster is already entitled ..."
 if toolbox/entitlement/test.sh --no-inspect; then
