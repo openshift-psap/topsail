@@ -157,13 +157,18 @@ toolbox/nfd/wait_gpu_nodes.sh
 Cluster
 -------
 
-- [x] Add a GPU node on AWS
+- [x] Set number of nodes with given instance type on AWS
 ```
-./toolbox/cluster/scaleup.sh
-```
-   - [x] Specify a machine type in the command-line, and skip scale-up if a node with the given machine-type is already present
-```
-./toolbox/cluster/scaleup.sh <machine-type>
+./toolbox/cluster/set_scale.sh <machine-type> <replicas>
+
+Example usage:
+# Set the total number of g4dn.xlarge nodes to 2
+./toolbox/cluster/set_scale.sh g4dn.xlarge 2
+
+# Set the total number of g4dn.xlarge nodes to 5,
+# even when there are some machinesets that might need to be downscaled
+# to 0 to achive that.
+./toolbox/cluster/set_scale.sh g4dn.xlarge 5 --force
 ```
 
 - [x] Entitle the cluster, by passing a PEM file, checking if they should be concatenated or not, etc. And do nothing is the cluster is already entitled

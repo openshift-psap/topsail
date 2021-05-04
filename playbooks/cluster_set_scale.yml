@@ -1,0 +1,7 @@
+---
+- name: Ensures that the cluster has the requested number of machines of a given instance-type
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+  - cluster_set_scale

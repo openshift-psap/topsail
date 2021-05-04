@@ -1,0 +1,100 @@
+# See meta/main.yml for a list of dependency roles that will be executed prior to this role
+---
+- name: Ensure parameters have been set
+  fail: msg="Bailing out. This role requires 'machineset_instance_type' and 'scale' to be defined"
+  when: not machineset_instance_type or not scale
+
+- name: Get current replicas of machinesets with type {{ machineset_instance_type }}
+  command:
+    oc get machineset -n openshift-machine-api
+    -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.spec.replicas}{"\n"}{end}'
+  register: machineset_replicas
+
+- name: Calculate sum of replicas of machinesets with type {{ machineset_instance_type }}
+  set_fact:
+    current_replicas_sum: "{{ machineset_replicas.stdout_lines | map('int') | sum(start=0) }}"
+
+- name: Log sum result
+  debug:
+    msg: "Current sum of replicas is {{ current_replicas_sum }}, wanted {{ scale }}"
+
+- when: current_replicas_sum != scale
+  name: Change all {{ machineset_instance_type }} machinesets replicas to have sum {{ scale }}
+  block:
+  - name: Get the names of existing worker machinesets with type {{ machineset_instance_type }}
+    command:
+      oc get machineset -n openshift-machine-api -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.metadata.name}{"\n"}{end}'
+    register: oc_get_machinesets
+    failed_when: not oc_get_machinesets.stdout
+
+  - name: Don't downscale any machinesets other than the first one, unless the user used force
+    block:
+    - name: Calculate sum of replicas of machinesets with type {{ machineset_instance_type }}, except for the first one
+      set_fact:
+        current_replicas_sum_non_first: "{{ machineset_replicas.stdout_lines[1:] | map('int') | sum(start=0) }}"
+
+    - name: Check whether non-zero scale, non-first machinesets exist and the user has not used force
+      when: current_replicas_sum_non_first | int > 0 and not force_scale
+      block:
+        - name: Ending play, cannot downscale other machinesets without force
+          debug: msg="Cannot downscale {{ oc_get_machinesets.stdout_lines[1:] }} without the force flag"
+
+        - name: End play
+          fail: msg="Missing force flag"
+
+  - name: Set the replicas of all {{ machineset_instance_type }} machinesets to 0 except the first
+    command: |
+      oc patch machineset -n openshift-machine-api {{ item }} --patch '{"spec": {"replicas": 0 }}' --type merge
+    loop: "{{ oc_get_machinesets.stdout_lines[1:] }}"
+
+  - name: Get first machineset
+    set_fact:
+      first_machineset: "{{ oc_get_machinesets.stdout_lines[0] }}"
+
+  - name: Set the replicas of the first {{ machineset_instance_type }} machineset ({{ first_machineset }}) to {{ scale }}
+    command: >
+      oc patch machineset -n openshift-machine-api {{ first_machineset }}
+      --patch '{"spec": {"replicas": {{ scale }} }}' --type merge
+
+- block:
+  - name: Wait for all machinesets with type {{ machineset_instance_type }} to be ready
+    # This is done by verifying that at the availableReplicas
+
+    # jq purpose, respectively:
+    # 1. Default .status.availableReplicas to 0 if it's not set, to simplify further queries
+    # 2. Select all machinesets with status fields that don't match current .spec.replicas
+    #    The status field availableReplicas tracks the number of ready nodes corresponding to the machineset machines.
+    #    See https://docs.openshift.com/container-platform/4.7/rest_api/machine_apis/machineset-machine-openshift-io-v1beta1.html
+    #    for more information.
+    # 3. Perform some extra formatting for nicer logging
+    shell: >
+      oc get machinesets -n openshift-machine-api \
+        -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}' \
+      | jq 'if .status | has("availableReplicas") then . else . * {"status": {"availableReplicas": 0 }} end' \
+      | jq 'select(.status.availableReplicas != .spec.replicas or .status.replicas != .spec.replicas)' \
+      | jq '{
+          "name": .metadata.name,
+          "expected_replicas": .spec.replicas,
+          "current_replicas": .status.replicas,
+          "current_available_replicas": .status.availableReplicas
+      }'
+    register: non_ready_replicas
+    until: not non_ready_replicas.stdout_lines
+    retries: 120
+    delay: 10
+
+  rescue:
+  - name: Capture more information about the machineset failure
+    shell: |
+      echo Dumping information for machineset {{ item }}
+      echo MachineSets;
+      oc get 'machineset/{{ item }}' -n openshift-machine-api;
+      echo GPU Machines;
+      oc get machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}';
+      echo GPU Machines description;
+      oc describe machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}';
+    failed_when: false
+    loop: "{{ oc_get_machinesets.stdout_lines }}"
+
+  - name: Fail because the cluster machineset creation failed
+    fail: msg="Failing because cluster machineset creation failed"

@@ -1,0 +1,3 @@
+---
+# library for transforming a machineset into a given machine-type
+reconfigure_machineset: "roles/cluster_ensure_machineset/scripts/reconfigure_machineset.sh"

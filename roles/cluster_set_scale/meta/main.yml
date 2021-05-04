@@ -1,0 +1,4 @@
+---
+dependencies:
+  - role: check_deps
+  - role: cluster_ensure_machineset

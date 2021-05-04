@@ -1,0 +1,19 @@
+---
+# The instance type to use for the machineset being scaled
+machineset_instance_type: ""
+
+# scale is the total amount (across all machinesets of given instance type) of replicas to set.
+#
+# If the machinesets of the given instance type already have the required total number of replicas,
+# their replica parameters will not be modified.
+#
+# Otherwise,
+# - If there's only one machineset with the given instance type, its replicas will be set to the value of this parameter.
+#
+# - If there are other machinesets with non-zero replicas, the playbook will fail, unless the 'force_scale' parameter is
+#   set to true. In that case, the number of replicas of the other machinesets will be zeroed before setting the replicas
+#   of the first machineset to the value of this parameter.
+scale: ""
+
+# See "scale" parameter description
+force_scale: false

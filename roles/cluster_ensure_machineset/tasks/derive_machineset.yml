@@ -1,0 +1,34 @@
+---
+- name: Get the names of an existing worker machinesets (of any instance type)
+  command:
+    oc get machinesets -n openshift-machine-api -o
+    jsonpath='{range .items[?(@.spec.template.metadata.labels.machine\.openshift\.io/cluster-api-machine-role=="worker")]}{.metadata.name}{"\n"}{end}'
+  register: oc_get_machinesets
+  failed_when: not oc_get_machinesets.stdout
+
+- name: Store the MachineSet json definition in a file
+  shell:
+    oc get 'machineset/{{ oc_get_machinesets.stdout_lines[0] }}'
+       -n openshift-machine-api
+       -o json
+       > {{ artifact_extra_logs_dir }}/source_machineset.json
+
+- name: Update the MachineSet with the requested instance type ({{ machineset_instance_type }}) and store in a file
+  shell:
+    "{{ reconfigure_machineset }}
+      {{ artifact_extra_logs_dir }}/source_machineset.json
+      {{ machineset_instance_type }}
+      > {{ artifact_extra_logs_dir }}/new_machineset.json"
+
+- name: Get the name of the new MachineSet
+  command: jq -r .metadata.name -- '{{ artifact_extra_logs_dir }}/new_machineset.json'
+  register: new_machineset_name
+
+- name: Search if new the MachineSet resource already exists
+  command: oc get 'machineset/{{ new_machineset_name.stdout }}' -n openshift-machine-api -oname
+  register: has_machineset
+  failed_when: false
+
+- name: Create the new MachineSet resource if it does not exist
+  command: oc create -f '{{ artifact_extra_logs_dir }}/new_machineset.json'
+  when: not has_machineset.stdout

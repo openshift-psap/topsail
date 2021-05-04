@@ -14,4 +14,4 @@ echo ${json_input} \
     | jq --arg machinesetname "${machinesetname}" '.spec.selector.matchLabels."machine.openshift.io/cluster-api-machineset" = $machinesetname' \
     | jq -c --arg machinesetname "${machinesetname}" '.spec.template.metadata.labels."machine.openshift.io/cluster-api-machineset" = $machinesetname' \
     | jq -c 'del(.status)|del(.metadata.selfLink)|del(.metadata.uid)' \
-    | jq '.spec.replicas = 1'
+    | jq '.spec.replicas = 0'
