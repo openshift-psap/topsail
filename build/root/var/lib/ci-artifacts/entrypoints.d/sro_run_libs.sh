@@ -31,6 +31,11 @@ test_master_branch() {
     validate_sro_deployment
 }
 
+if [ -z "${1:-}" ]; then
+    echo "FATAL: $0 expects at least 1 argument ..."
+    exit 1
+fi
+
 action="$1"
 shift
 
@@ -42,11 +47,11 @@ case ${action:-} in
         exit 0
         ;;
     -*)
-        echo "Unknown option: ${target:-}"
+        echo "FATAL: Unknown option: ${action}"
         exit 1
         ;;
     *)
-        echo "Nothing to do ..."
+        echo "FATAL: Nothing to do ..."
         exit 1
         ;;
 esac

@@ -33,10 +33,10 @@ validate_gpu_operator_deployment() {
 }
 
 test_master_branch() {
-        prepare_cluster_for_gpu_operator
-        toolbox/gpu-operator/deploy_from_operatorhub.sh --from-bundle=master
+    prepare_cluster_for_gpu_operator
+    toolbox/gpu-operator/deploy_from_operatorhub.sh --from-bundle=master
 
-        validate_gpu_operator_deployment
+    validate_gpu_operator_deployment
 }
 
 test_commit() {
@@ -62,21 +62,26 @@ test_operatorhub() {
 }
 
 test_helm() {
-        if [ -z "${1:-}" ]; then
-            echo "FATAL: run $0 should receive the operator version as parameter."
-            exit 1
-        fi
-        OPERATOR_VERSION="$1"
+    if [ -z "${1:-}" ]; then
+        echo "FATAL: run $0 should receive the operator version as parameter."
+        exit 1
+    fi
+    OPERATOR_VERSION="$1"
 
-        prepare_cluster_for_gpu_operator
-        toolbox/gpu-operator/list_version_from_helm.sh
-        toolbox/gpu-operator/deploy_with_helm.sh ${OPERATOR_VERSION}
-        validate_gpu_operator_deployment
+    prepare_cluster_for_gpu_operator
+    toolbox/gpu-operator/list_version_from_helm.sh
+    toolbox/gpu-operator/deploy_with_helm.sh ${OPERATOR_VERSION}
+    validate_gpu_operator_deployment
 }
 
 undeploy_operatorhub() {
-        toolbox/gpu-operator/undeploy_from_operatorhub.sh
+    toolbox/gpu-operator/undeploy_from_operatorhub.sh
 }
+
+if [ -z "${1:-}" ]; then
+    echo "FATAL: $0 expects at least 1 argument ..."
+    exit 1
+fi
 
 action="$1"
 shift
@@ -109,11 +114,11 @@ case ${action:-} in
         exit 0
         ;;
     -*)
-        echo "Unknown option: ${target:-}"
+        echo "FATAL: Unknown option: ${action}"
         exit 1
         ;;
     *)
-        echo "Nothing to do ..."
+        echo "FATAL: Nothing to do ..."
         exit 1
         ;;
 esac

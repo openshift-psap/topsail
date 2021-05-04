@@ -1,7 +1,6 @@
-#!/bin/bash -e
+#! /usr/bin/env bash
 #
-# This file serves as the default command to the openshift-ansible image.
-# Runs a playbook with inventory as specified by environment variables.
+# This file serves as entrypoint to the nightly testing of PSAP operators.
 #
 # SOURCE and HOME DIRECTORY: /opt/ci-artifacts/src
 
@@ -62,8 +61,6 @@ prechecks() {
     fi
 }
 
-
-
 ##############
 
 ci_banner "$@"
@@ -78,57 +75,58 @@ else
 fi
 
 if [ $1 == "gpu-operator_test-master-branch" ]; then
-        target="gpu-operator"
-        action="test_master_branch"
-        shift 1
+    target="gpu-operator"
+    action="test_master_branch"
+    shift 1
 elif [ $1 == "gpu-operator_test-operatorhub" ]; then
-        target="gpu-operator"
-        action="test_operatorhub"
-        shift 1
+    target="gpu-operator"
+    action="test_operatorhub"
+    shift 1
 elif [ $1 == "gpu-operator_test-helm" ]; then
-        target="gpu-operator"
-        action="test_helm"
-        shift 1
+    target="gpu-operator"
+    action="test_helm"
+    shift 1
 elif [ $1 == "gpu-operator_undeploy-operatorhub" ]; then
-        target="gpu-operator"
-        action="undeploy_operatorhub"
-        shift 1
+    target="gpu-operator"
+    action="undeploy_operatorhub"
+    shift 1
+elif [ $1 == "cluster-upgrade" ]; then
+    target="cluster"
+    action="upgrade"
+    shift 1
 else
-        script_name="$0"
-        target="$1"
-        action="$2"
-        shift 2
+    script_name="$0"
+    target="$1"
+    action="$2"
+    shift 2
 fi
 
 set -x
 
-export ENTRY_LIB_DIR="/var/lib/ci-artifacts/entrypoints.d"
-case ${target:-} in
+ENTRY_LIB_DIR="/var/lib/ci-artifacts/entrypoints.d"
+case ${target} in
     "gpu-operator")
-        $ENTRY_LIB_DIR/gpu_operator_run_libs.sh $action "$@"
+        $ENTRY_LIB_DIR/gpu_operator_run_libs.sh "$action" "$@"
 	exit 0
         ;;
     "sro")
-        $ENTRY_LIB_DIR/sro_run_libs.sh $action "$@"
+        $ENTRY_LIB_DIR/sro_run_libs.sh "$action" "$@"
 	exit 0
         ;;
-    "cluster-upgrade")
-        if [ -z "${CLUSTER_UPGRADE_TARGET_IMAGE:-}" ]; then
-            echo "FATAL: CLUSTER_UPGRADE_TARGET_IMAGE must be provided to upgrade the cluster"
-            exit 1
-        fi
-        toolbox/cluster/upgrade_to_image.sh "$CLUSTER_UPGRADE_TARGET_IMAGE"
+    "cluster")
+        $ENTRY_LIB_DIR/cluster_run_libs.sh "$action" "$@"
         exit 0
         ;;
     -*)
-        echo "Unknown option: ${target:-}"
+        echo "FATAL: Unknown option: ${target}"
         exit 1
         ;;
 
     *)
-	echo "Nothing to do ..."
+	echo "FATAL: Nothing to do ..."
         exit 1
 	;;
 esac
 
+echo "FATAL: Unreachable ... (target: $target)"
 exit 1
