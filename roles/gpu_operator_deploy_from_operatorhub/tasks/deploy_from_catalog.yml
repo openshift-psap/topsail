@@ -43,9 +43,11 @@
 - block:
   - name: Get the version of the GPU Operator on OperatorHub
     shell:
+      set -o pipefail;
       oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -ojson
       | jq -r .status.channels[0].currentCSV
     register: gpu_operator_csv_name_cmd
+
   - name: Store the CSV version
     set_fact:
       gpu_operator_csv_name: "{{ gpu_operator_csv_name_cmd.stdout }}"
