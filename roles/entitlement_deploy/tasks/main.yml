@@ -13,7 +13,7 @@
       set -o pipefail;
       python3 "{{ entitlement_py_apply }}"
         "{{ entitlement_mc_rhsm }}" BASE64_ENCODED_RHSM_FILE "{{ entitlement_rhsm }}"
-      | oc create -f-
+      | oc apply -f-
   when: entitlement_rhsm | default('', true) | trim != ''
 
 - block:
@@ -22,5 +22,14 @@
       set -o pipefail;
       python3 "{{ entitlement_py_apply }}"
         "{{ entitlement_mc_pem }}" BASE64_ENCODED_PEM_FILE "{{ entitlement_pem }}"
-      | oc create -f-
+      | oc apply -f-
   when: entitlement_pem | default('', true) | trim != ''
+
+- block:
+  - name: "Deploy the repo CA from file '{{ entitlement_mc_rhsm_ca }}'"
+    shell:
+      set -o pipefail;
+      python3 "{{ entitlement_py_apply }}"
+        "{{ entitlement_mc_rhsm_ca }}" BASE64_ENCODED_RHSM_CA_FILE "{{ entitlement_repo_ca }}"
+      | oc apply -f-
+  when: entitlement_repo_ca | default('', true) | trim != ''

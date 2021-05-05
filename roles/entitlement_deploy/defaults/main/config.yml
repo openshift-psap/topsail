@@ -3,3 +3,5 @@
 entitlement_resources: ''
 # path to the PEM file of the entitlement
 entitlement_pem: ''
+# optional: path to a CA PEM key to authenticate a custom repo
+entitlement_repo_ca: ''
