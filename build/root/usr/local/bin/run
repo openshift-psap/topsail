@@ -103,25 +103,23 @@ fi
 
 set -x
 
-ENTRY_LIB_DIR="/var/lib/ci-artifacts/entrypoints.d"
 case ${target} in
     "gpu-operator")
-        $ENTRY_LIB_DIR/gpu_operator_run_libs.sh "$action" "$@"
-	exit 0
+        gpu_operator_run_libs.sh "$action" "$@"
+        exit 0
         ;;
     "sro")
-        $ENTRY_LIB_DIR/sro_run_libs.sh "$action" "$@"
-	exit 0
+        sro_run_libs.sh "$action" "$@"
+        exit 0
         ;;
     "cluster")
-        $ENTRY_LIB_DIR/cluster_run_libs.sh "$action" "$@"
+        cluster_run_libs.sh "$action" "$@"
         exit 0
         ;;
     -*)
         echo "FATAL: Unknown option: ${target}"
         exit 1
         ;;
-
     *)
 	echo "FATAL: Nothing to do ..."
         exit 1

@@ -6,7 +6,7 @@ set -o nounset
 
 prepare_cluster_for_sro() {
     toolbox/cluster/capture_environment.sh
-    toolbox/entitlement/entitle.sh
+    entitle.sh
 
     if ! toolbox/nfd/has_nfd_labels.sh; then
         toolbox/nfd/deploy_from_operatorhub.sh

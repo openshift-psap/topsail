@@ -1,5 +1,9 @@
 #! /bin/bash -e
 
+set -o pipefail
+set -o errexit
+set -o nounset
+
 extract_entitlement_key() {
     resource=$1
     key=$2
@@ -11,9 +15,6 @@ extract_entitlement_key() {
         | base64 -d \
         > "$key"
 }
-
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-cd ${THIS_DIR}/../..
 
 echo "Testing if the cluster is already entitled ..."
 if toolbox/entitlement/test.sh --no-inspect; then
