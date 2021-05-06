@@ -30,6 +30,11 @@ collect_must_gather() {
 validate_gpu_operator_deployment() {
     trap collect_must_gather ERR EXIT
 
+    if oc version | grep -q "Server Version: 4.8"; then
+        echo "Running on OCP 4.8, enabling RHEL beta repository"
+        ./toolbox/gpu-operator/set_repo-config.sh --rhel-beta
+    fi
+
     toolbox/gpu-operator/wait_deployment.sh
     toolbox/gpu-operator/run_gpu_burn.sh
 }

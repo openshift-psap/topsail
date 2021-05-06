@@ -41,6 +41,17 @@ else
     entitlement_deployed=1
 fi
 
+ if oc version | grep -q "Server Version: 4.8"; then
+     # Random CA file until we have the right certificate stored as a secret
+     RHEL_BETA_REPO_CA=/etc/rhsm/ca/redhat-uep.pem
+     ENTITLEMENT_REPO_CA=${ENTITLEMENT_REPO_CA:-$RHEL_BETA_REPO_CA}
+     echo "INFO: Using $ENTITLEMENT_REPO_CA as RHEL-beta repo CA"
+
+     REPO_CA="--ca $ENTITLEMENT_REPO_CA"
+else
+     REPO_CA=""
+fi
+
 ENTITLEMENT_RESOURCES=${ENTITLEMENT_RESOURCES:-/var/run/psap-entitlement-secret/01-cluster-wide-machineconfigs.yaml}
 if [ "$entitlement_deployed" == 1 ]; then
     # entitlement already deployed
@@ -53,7 +64,7 @@ else
     ENTITLEMENT_KEY=/tmp/key.pem
     extract_entitlement_key $ENTITLEMENT_RESOURCES $ENTITLEMENT_KEY
 
-    toolbox/entitlement/deploy.sh --pem "${ENTITLEMENT_KEY}"
+    toolbox/entitlement/deploy.sh --pem "${ENTITLEMENT_KEY}" $REPO_CA
     entitlement_deployed=1
 fi
 
