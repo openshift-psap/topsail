@@ -26,6 +26,7 @@ case ${action:-} in
     "upgrade")
         cluster_upgrade
         exit 0
+        ;;
     -*)
         echo "FATAL: Unknown option: ${action}"
         exit 1
