@@ -99,8 +99,8 @@
       | grep dcgm
     register: dcgm_exporter_prom
     until: dcgm_exporter_prom.rc == 0
-    retries: 5
-    delay: 20
+    retries: 20
+    delay: 30
     ignore_errors: true
 
   rescue:
