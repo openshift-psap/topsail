@@ -5,7 +5,7 @@
        -oname
        -n openshift-operators
   register: gpu_operator_csv_name_cmd
-  failed_when: not gpu_operator_csv_name_cmd.stdout
+  until: gpu_operator_csv_name_cmd.stdout != ""
   retries: 15
   delay: 30
 
