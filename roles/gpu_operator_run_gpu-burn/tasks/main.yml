@@ -43,36 +43,27 @@
 - name: "Let the GPU burn Pods run {{ gpu_burn_time }}seconds"
   command: "sleep {{ gpu_burn_time }}"
 
-- name: Wait for GPU burn Pods to complete
-  with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
-  command:
-    oc get pod/gpu-burn-{{ item }}
-       -n default
-       -o custom-columns=:.status.phase
-       --no-headers
-  register: gpu_burn_gpu_wait
-  until: gpu_burn_gpu_wait.stdout == "Succeeded" or gpu_burn_gpu_wait.stdout == "Error" or gpu_burn_gpu_wait.stdout == "Failed"
-  retries: 10
-  delay: 30
-
 - name: Ensure that the GPU burn ran successfully
   block:
-  - name: Ensure that the GPU burn Pods to complete successfully
+  - name: Wait for GPU burn Pods to complete
     with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     command:
       oc get pod/gpu-burn-{{ item }}
          -n default
          -o custom-columns=:.status.phase
          --no-headers
-    register: gpu_burn_gpu_test
-    failed_when: gpu_burn_gpu_test.stdout != "Succeeded"
+    register: gpu_burn_wait
+    until: gpu_burn_wait.stdout == "Succeeded" or gpu_burn_wait.stdout == "Error" or gpu_burn_wait.stdout == "Failed"
+    failed_when: gpu_burn_wait.stdout != "Succeeded"
+    retries: 10
+    delay: 30
 
   - name: Ensure that no GPU was faulty
     with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     shell:
       oc logs pod/gpu-burn-{{ item }} -n default | grep FAULTY
-    register: gpu_burn_gpu_test_faulty
-    failed_when: gpu_burn_gpu_test_faulty.rc == 0
+    register: gpu_burn_test_faulty
+    failed_when: gpu_burn_test_faulty.rc == 0
 
   always:
   - name: Save the logs of the GPU burn Pods
@@ -80,11 +71,15 @@
     with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     failed_when: false
 
+  - name: Save the description of the GPU burn Pods
+    shell: oc describe pod/gpu-burn-{{ item }} -n default > {{ artifact_extra_logs_dir }}/gpu_burn.{{ item }}.description.txt
+    with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+    failed_when: false
+
   - name: Save the full logs of the GPU burn Pods
     shell: oc logs pod/gpu-burn-{{ item }} -n default > {{ artifact_extra_logs_dir }}/gpu_burn.{{ item }}.log
     with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     failed_when: false
-
 
   - name: Cleanup the GPU burn Pods
     command: oc --ignore-not-found=true delete pod/gpu-burn-{{ item }} -n default
