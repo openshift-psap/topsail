@@ -4,6 +4,12 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+if ! [ -f toolbox/entitlement/test.sh ]; then
+  echo "FATAL: entitlement scripts not found in $PWD/toolbox/entitlement/"
+  echo "INFO: $0 is intended only for running in the 'OpenShift PSAP CI artifacts' image. (INSIDE_CI_IMAGE=$INSIDE_CI_IMAGE)"
+  exit 1
+fi
+
 extract_entitlement_key() {
     resource=$1
     key=$2

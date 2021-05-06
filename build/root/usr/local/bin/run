@@ -105,15 +105,15 @@ set -x
 
 case ${target} in
     "gpu-operator")
-        gpu_operator_run_libs.sh "$action" "$@"
+        ci_entrypoint_gpu-operator.sh "$action" "$@"
         exit 0
         ;;
     "sro")
-        sro_run_libs.sh "$action" "$@"
+        ci_entrypoint_sro.sh "$action" "$@"
         exit 0
         ;;
     "cluster")
-        cluster_run_libs.sh "$action" "$@"
+        ci_entrypoint_cluster.sh "$action" "$@"
         exit 0
         ;;
     -*)
