@@ -93,15 +93,15 @@
 
   - name: Wait for Prometheus to pick up the DCGM endpoint
     shell:
+      set -o pipefail;
       oc get secret prometheus-k8s -n openshift-monitoring -ojson | jq -r '.data["prometheus.yaml.gz"]'
       | base64 -d
       | gunzip
       | grep dcgm
     register: dcgm_exporter_prom
     until: dcgm_exporter_prom.rc == 0
-    retries: 20
+    retries: 30
     delay: 30
-    ignore_errors: true
 
   rescue:
   - name: Capture the DCGM logs (debug)
@@ -111,4 +111,4 @@
     failed_when: false
 
   - name: The DCGM does not correctly expose the GPU metrics
-    fail: msg="The DCGM does not correctly expose the GPU metrics"
+    fail: msg="The DCGM does not correctly expose the GPU metrics to Prometheus"
