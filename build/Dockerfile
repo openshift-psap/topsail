@@ -33,7 +33,7 @@ RUN curl ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 # Install dependencies: `helm`
 ARG HELM_VERSION=v3.5.1
 ARG HELM_URL=https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
-RUN curl ${HELM_URL} | tar xfz - -C /usr/local/bin linux-amd64/helm
+RUN curl ${HELM_URL} | tar xfz - -C /usr/local/bin --strip-components 1 linux-amd64/helm
 
 
 # Install dependencies: `operator-sdk`
