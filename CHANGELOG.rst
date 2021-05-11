@@ -16,6 +16,14 @@ Retro-compatibility breaks
   - ``toolbox/cluster/scaleup.sh`` has been removed,
   - ``toolbox/cluster/set_scale.sh`` has been `introduced <https://openshift-psap.github.io/ci-artifacts/toolbox/cluster.html#cluster-scale>`_ as a replacement.
 
+- Add easy ways to test the entitlement `#120 <https://github.com/openshift-psap/ci-artifacts/pull/120>`_
+
+  - ``toolbox/entitlement/deploy.sh --machine-configs /path/to/machineconfigs`` has been removed
+  - ``toolbox/entitlement/deploy.sh --pem /path/to/key.pem`` should be
+    used instead. See `there
+    <https://github.com/openshift-psap/ci-artifacts/blob/7aad891ee7c41fea3d31a0152b882fe07d325479/build/root/usr/local/bin/entitle.sh#L13>`_
+    for a function to extract the PEM key from a ``machine-configs`` resource file.
+
 Other changes
 ^^^^^^^^^^^^^
 
@@ -26,6 +34,12 @@ Other changes
     to control the scale (node count, of a given AWS instance-type) of
     a cluster
 
+- Add easy ways to test the entitlement `#120 <https://github.com/openshift-psap/ci-artifacts/pull/120>`_
+
+  - new commands to test a PEM key before deploying it:
+
+    - ``toolbox/entitlement/test_in_podman.sh /path/to/key.pem``
+    - ``toolbox/entitlement/test_in_cluster.sh /path/to/key.pem``
 
 CI Image and Testing
 ~~~~~~~~~~~~~~~~~~~~
