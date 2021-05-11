@@ -58,6 +58,26 @@ Deployment
 
     toolbox/gpu-operator/deploy_from_commit.sh https://github.com/NVIDIA/gpu-operator.git master
 
+Configuration
+=============
+
+* Set a custom repository list to use in the GPU Operator
+  ``ClusterPolicy``
+
+*Using a repo-list file*
+
+.. code-block:: shell
+
+   toolbox/gpu-operator/set_repo-config.sh /path/to/repo.list
+
+*Using RHEL 8.4-beta repo-list*
+
+Note that this currently requires the deployment of a Red Hat internal CA PEM `file <https://github.com/openshift/shared-secrets/blob/master/mirror/ops-mirror.pem>`_.
+
+.. code-block:: shell
+
+   toolbox/gpu-operator/set_repo-config.sh --rhel-beta
+
 
 Testing and Waiting
 ===================

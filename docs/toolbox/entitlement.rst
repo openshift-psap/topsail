@@ -8,13 +8,19 @@ Deployment
 
 * Deploy the entitlement cluster-wide
 
-Deploy a PEM key and RHSM configuration
+Deploy a PEM key and RHSM configuration, and optionally, a custom CA
+PEM file.
+
+The custom CA file will be stored in
+``/etc/rhsm-host/ca/custom-repo-ca.pem`` in the host and in
+``/etc/rhsm/ca/custom-repo-ca.pem`` in the Pods.
 
 .. code-block:: shell
 
     toolbox/entitlement/deploy.sh --pem /path/to/key.pem
 
-* Undeploy the cluster-wide entitlement
+* Undeploy the cluster-wide entitlement (PEM keys, RHSM configuration
+  and custom CA, if they exist)
 
 .. code-block:: shell
 

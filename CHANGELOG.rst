@@ -24,6 +24,7 @@ Retro-compatibility breaks
     <https://github.com/openshift-psap/ci-artifacts/blob/7aad891ee7c41fea3d31a0152b882fe07d325479/build/root/usr/local/bin/entitle.sh#L13>`_
     for a function to extract the PEM key from a ``machine-configs`` resource file.
 
+
 Other changes
 ^^^^^^^^^^^^^
 
@@ -41,11 +42,23 @@ Other changes
     - ``toolbox/entitlement/test_in_podman.sh /path/to/key.pem``
     - ``toolbox/entitlement/test_in_cluster.sh /path/to/key.pem``
 
+- gpu_operator_set_repo-config: new role to set spec.driver.repoConfig `#124 <https://github.com/openshift-psap/ci-artifacts/pull/124/files>`_
+
+  - new option to deploy a custom PEM CA file, to access private repo mirrors
+
+    - ``toolbox/entitlement/deploy.sh --pem </path/to/key.pem> [--ca </path/to/key.ca.pem>]``
+
+  - new command to configure the GPU Operator with a given repo-list file (or RHEL 8.4-beta repolist)
+
+    - ``toolbox/gpu-operator/set_repo-config.sh <path/to/repo.list>|--rhel-beta``
+
+
 CI Image and Testing
 ~~~~~~~~~~~~~~~~~~~~
 
--
+- gpu_operator_set_repo-config: new role to set spec.driver.repoConfig `#124 <https://github.com/openshift-psap/ci-artifacts/pull/124/files>`_
 
+  - Added a hook to enable RHEL 8.4-beta repo-list in OpenShift 4.8
 
 Bug fixes
 ~~~~~~~~~
