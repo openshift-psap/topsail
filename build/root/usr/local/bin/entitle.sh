@@ -3,6 +3,7 @@
 set -o pipefail
 set -o errexit
 set -o nounset
+set -x
 
 if ! [ -f toolbox/entitlement/test.sh ]; then
   echo "FATAL: entitlement scripts not found in $PWD/toolbox/entitlement/"
