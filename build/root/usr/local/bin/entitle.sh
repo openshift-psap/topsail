@@ -23,9 +23,9 @@ extract_entitlement_key() {
         > "$key"
 }
 
-echo "Testing if the cluster is already entitled ..."
+echo "INFO: Testing if the cluster is already entitled ..."
 if toolbox/entitlement/test.sh --no-inspect; then
-    echo "Cluster already entitled, skipping entitlement."
+    echo "INFO: Cluster already entitled, skipping entitlement."
     exit 0
 fi
 
@@ -65,7 +65,7 @@ if [ ! -e "$ENTITLEMENT_PEM" ]; then
     exit 1
 fi
 
-echo "Deploying the entitlement with PEM key from ${ENTITLEMENT_PEM}"
+echo "INFO: Deploying the entitlement with PEM key from ${ENTITLEMENT_PEM}"
 toolbox/entitlement/deploy.sh --pem "${ENTITLEMENT_PEM}" ${REPO_CA_FLAG}
 
 if ! toolbox/entitlement/wait.sh; then
