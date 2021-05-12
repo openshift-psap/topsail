@@ -23,17 +23,41 @@
   retries: 10
   delay: 10
 
-- name: Ensure that nvidia-device-plugin-validation Pod has ran successfully
-  command:
-    oc get pods
-      --field-selector=metadata.name=nvidia-device-plugin-validation,status.phase=Succeeded
-      -n gpu-operator-resources
-      -oname --no-headers
-  register: has_deviceplugin_validation_pod
-  until:
-  - has_deviceplugin_validation_pod.stdout == "pod/nvidia-device-plugin-validation"
-  retries: 15
-  delay: 60
+- name: Test if the ClusterPolicy has the 'validator' stanza
+  command: oc get {{ has_clusterpolicy.stdout }} -ojsonpath={.spec.validator.version}
+  register: clusterpolicy_has_validator
+  failed_when: false
+
+- name: Wait for the GPU Operator (>= v1.7.0) to run its internal validation steps
+  when: clusterpolicy_has_validator.stdout
+  block:
+  - name: Ensure that nvidia-operator-validator DS is ready
+    command:
+      oc get ds/nvidia-operator-validator
+         -n gpu-operator-resources
+         -oyaml
+         -ojsonpath={.status.numberUnavailable}
+    register: operator_validator_numberUnavailable
+    until:
+    - operator_validator_numberUnavailable.rc == 0
+    - not operator_validator_numberUnavailable.stdout
+    retries: 15
+    delay: 60
+
+- name: Wait for the GPU Operator (< v1.7.0) to run its internal validation steps
+  when: not clusterpolicy_has_validator.stdout
+  block:
+  - name: Ensure that nvidia-device-plugin-validation Pod has ran successfully
+    command:
+      oc get pods
+        --field-selector=metadata.name=nvidia-device-plugin-validation,status.phase=Succeeded
+        -n gpu-operator-resources
+        -oname --no-headers
+    register: has_deviceplugin_validation_pod
+    until:
+    - has_deviceplugin_validation_pod.stdout == "pod/nvidia-device-plugin-validation"
+    retries: 15
+    delay: 60
 
 - block:
   - name: Wait for the gpu-feature-discovery Pod to label the nodes
