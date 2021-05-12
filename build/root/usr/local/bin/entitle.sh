@@ -30,9 +30,18 @@ if toolbox/entitlement/test.sh --no-inspect; then
 fi
 
 ENTITLEMENT_SECRET_PATH=/var/run/psap-entitlement-secret
+ENTITLEMENT_VERSION=${ENTITLEMENT_PEM:-${ENTITLEMENT_SECRET_PATH}/version}
 ENTITLEMENT_PEM=${ENTITLEMENT_PEM:-${ENTITLEMENT_SECRET_PATH}/entitlement.pem}
 ENTITLEMENT_RESOURCES=${ENTITLEMENT_RESOURCES:-${ENTITLEMENT_SECRET_PATH}/01-cluster-wide-machineconfigs.yaml}
 ENTITLEMENT_REPO_CA=${ENTITLEMENT_REPO_CA:-${ENTITLEMENT_SECRET_PATH}/ops-mirror.pem}
+
+echo "INFO: info about the entitlement secret:"
+md5sum ${ENTITLEMENT_SECRET_PATH}/* || true
+if [[ -e "$ENTITLEMENT_VERSION" ]]; then
+    echo "INFO: Version of the secret vault:"
+    cat "$ENTITLEMENT_VERSION"
+fi
+
 
 if [[ -e "$ENTITLEMENT_RESOURCES" && ! -e "$ENTITLEMENT_PEM" ]]; then
     echo "INFO: found entitlement resource file but no entitlement key."
