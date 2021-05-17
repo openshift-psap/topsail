@@ -15,6 +15,13 @@ To date, this includes:
 - the Node Tuning Operator
 
 
+Documentation
+-------------
+
+See the `documentation pages
+<https://openshift-psap.github.io/ci-artifacts/index.html>`_.
+
+
 Dependencies
 ------------
 
@@ -91,7 +98,7 @@ repository.
 Currently, only the GPU Operator results are exposed in
 `this dashboard <https://openshift-psap.github.io/ci-dashboard/gpu-operator_daily-matrix.html>`_:
 
-.. image:: img/ci-dashboard.png
+.. image:: https://openshift-psap.github.io/ci-artifacts/_images/ci-dashboard.png
   :width: 100%
   :alt: GPU Operator CI Dashboard
 
@@ -106,8 +113,9 @@ deployment of the NFD, SRO and NVIDIA GPU Operators, but also their
 configuration and troubleshooting.
 
 
-The functionalities of the toolbox commands is described in the
-`documentation page <https://openshift-psap.github.io/ci-artifacts/index.html#psap-toolbox>`_.
+The functionalities of the toolbox commands are described in the
+`documentation page
+<https://openshift-psap.github.io/ci-artifacts/index.html#psap-toolbox>`_.
 
 .. code-block:: shell
 
@@ -115,11 +123,13 @@ The functionalities of the toolbox commands is described in the
     toolbox
     ├── cluster
     │   ├── capture_environment.sh
-    │   ├── scaleup.sh
+    │   ├── set_scale.sh
     │   └── upgrade_to_image.sh
     ├── entitlement
     │   ├── deploy.sh
     │   ├── inspect.sh
+    │   ├── test_in_cluster.sh
+    │   ├── test_in_podman.sh
     │   ├── test.sh
     │   ├── undeploy.sh
     │   └── wait.sh
@@ -134,6 +144,7 @@ The functionalities of the toolbox commands is described in the
     │   ├── list_version_from_operator_hub.sh
     │   ├── must-gather.sh
     │   ├── run_gpu_burn.sh
+    │   ├── set_repo-config.sh
     │   ├── undeploy_from_commit.sh
     │   ├── undeploy_from_helm.sh
     │   ├── undeploy_from_operatorhub.sh
