@@ -19,7 +19,7 @@ ci_banner() {
 
     echo
     echo OpenShift version:
-    if ! oc version > /dev/null; then
+    if ! oc version; then
         echo "Cannot access OpenShift cluster, can't continue."
         exit 1
     fi
