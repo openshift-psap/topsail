@@ -77,14 +77,17 @@ data:
     sslverify = 0
     enabled = 1
     EOF
+      echo "# INFO: NOT storing ${RHEL_VERSION} into /etc/yum/vars/releasever (not working with 4.8 beta)"
     else
       echo "# INFO: no need to enable RHEL beta repositories on ${RHEL_VERSION}"
+
+      echo "# INFO: Storing ${RHEL_VERSION} into /etc/yum/vars/releasever"
+      echo "${RHEL_VERSION}" > /etc/yum/vars/releasever
     fi
 
     echo
     echo "# test EUS and OCP repositories (debug)"
 
-    echo "${RHEL_VERSION}" > /etc/yum/vars/releasever
     for repo in rhocp-${OPENSHIFT_VERSION}-for-rhel-8-x86_64-rpms rhel-8-for-x86_64-baseos-eus-rpms; do
       if dnf config-manager --set-enabled $repo; then
         if dnf makecache; then
