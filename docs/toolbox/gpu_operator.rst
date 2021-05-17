@@ -68,7 +68,11 @@ Configuration
 
 .. code-block:: shell
 
-   toolbox/gpu-operator/set_repo-config.sh /path/to/repo.list
+   toolbox/gpu-operator/set_repo-config.sh /path/to/repo.list [dest-dir-in-pod]
+
+**Default values**:
+
+- *dest-dir-in-pod*: ``/etc/distro.repos.d``
 
 *Using RHEL 8.4-beta repo-list*
 
