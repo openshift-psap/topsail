@@ -33,7 +33,6 @@
         [rhel-8-beta-baseos-rpms]
         name = Red Hat Enterprise Linux 8 Beta BaseOS (RPMs)
         baseurl = https://mirror.openshift.com/enterprise/reposync/ci-deps/rhel-8-beta-baseos-rpms/
-        failovermethod = priority
         gpgcheck = 0
         sslclientcert = /etc/rhsm-host/ca/custom-repo-ca.pem
         sslclientkey = /etc/rhsm-host/ca/custom-repo-ca.pem
@@ -43,12 +42,55 @@
         [rhel-8-beta-appstream-rpms]
         name = Red Hat Enterprise Linux 8 Beta AppStream (RPMs)
         baseurl = https://mirror.openshift.com/enterprise/reposync/ci-deps/rhel-8-beta-appstream-rpms/
-        failovermethod = priority
         gpgcheck = 0
         sslclientcert = /etc/rhsm-host/ca/custom-repo-ca.pem
         sslclientkey = /etc/rhsm-host/ca/custom-repo-ca.pem
         sslverify = 0
         enabled = 1
+
+        [rhel-8-for-x86_64-baseos-eus-rpms]
+        name = rhel-8-for-x86_64-baseos-eus-rpms -- FAKE for GPU Operator
+        baseurl = https://mirror.openshift.com/enterprise/reposync/ci-deps/rhel-8-beta-appstream-rpms/
+        gpgcheck = 0
+        sslclientcert = /etc/rhsm-host/ca/custom-repo-ca.pem
+        sslclientkey = /etc/rhsm-host/ca/custom-repo-ca.pem
+        sslverify = 0
+        enabled = 1
+
+        [rhocp-4.8-for-rhel-8-x86_64-rpms]
+        name = rhocp-4.8-for-rhel-8-x86_64-rpms -- FAKE for GPU Operator
+        baseurl = https://mirror.openshift.com/enterprise/reposync/ci-deps/rhel-8-beta-appstream-rpms/
+        gpgcheck = 0
+        sslclientcert = /etc/rhsm-host/ca/custom-repo-ca.pem
+        sslclientkey = /etc/rhsm-host/ca/custom-repo-ca.pem
+        sslverify = 0
+        enabled = 1
+
+        [rhel-8-for-x86_64-appstream-rpms]
+        name = Red Hat Enterprise Linux 8 for x86_64 - AppStream (RPMs)
+        baseurl = https://cdn.redhat.com/content/dist/rhel8/8.3/x86_64/appstream/os
+        enabled = 1
+        gpgcheck = 1
+        gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+        sslverify = 1
+        sslcacert = /etc/rhsm-host/ca/redhat-uep.pem
+        sslclientkey = /etc/pki/entitlement-host/entitlement-key.pem
+        sslclientcert = /etc/pki/entitlement-host/entitlement.pem
+        metadata_expire = 86400
+        enabled_metadata = 1
+
+        [rhel-8-for-x86_64-baseos-rpms]
+        name = Red Hat Enterprise Linux 8 for x86_64 - BaseOS (RPMs)
+        baseurl = https://cdn.redhat.com/content/dist/rhel8/8.3/x86_64/baseos/os
+        enabled = 1
+        gpgcheck = 1
+        gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+        sslverify = 1
+        sslcacert = /etc/rhsm-host/ca/redhat-uep.pem
+        sslclientkey = /etc/pki/entitlement-host/entitlement-key.pem
+        sslclientcert = /etc/pki/entitlement-host/entitlement.pem
+        metadata_expire = 86400
+        enabled_metadata = 1
 
       dest: "{{ artifact_extra_logs_dir }}/gpu-operator.dnf.repo"
       mode: 0644
