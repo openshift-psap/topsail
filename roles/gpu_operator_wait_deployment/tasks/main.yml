@@ -15,7 +15,7 @@
   retries: 10
   delay: 10
 
-- name: Wait for the ClusterPolicy CR is deployed
+- name: Wait for the ClusterPolicy CR to be deployed
   command: oc get ClusterPolicies -oname
   register: has_clusterpolicy
   until:
