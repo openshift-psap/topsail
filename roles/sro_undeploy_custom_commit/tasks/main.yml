@@ -7,7 +7,7 @@
     force: yes
 
 - name: Deploy the custom version of the special resource operator
-  shell: 
+  shell:
     make undeploy NAMESPACE="openshift-special-resource-operator"
         > {{ artifact_extra_logs_dir }}/sro_undeploy_custom.log 2>&1
   args:
