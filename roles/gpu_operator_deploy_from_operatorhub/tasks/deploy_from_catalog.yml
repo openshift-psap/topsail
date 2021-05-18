@@ -28,9 +28,6 @@
   - name: Ensure that the GPU Operator PackageManifest exists
     command: oc get packagemanifests/gpu-operator-certified -n openshift-marketplace
 
-- name: Create the namespace for the GPU Operator
-  command: oc apply -f "{{ gpu_operator_namespace }}"
-
 - name: Save the GPU Operator PackageManifest (debug)
   shell:
     oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -oyaml
