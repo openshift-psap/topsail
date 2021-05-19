@@ -25,11 +25,11 @@
 
 - name: Test if the ClusterPolicy has the 'validator' stanza
   command: oc get {{ has_clusterpolicy.stdout }} -ojsonpath={.spec.validator.version}
-  register: clusterpolicy_has_validator
+  register: gpu_operator_atleast_v170
   failed_when: false
 
 - name: Wait for the GPU Operator (>= v1.7.0) to run its internal validation steps
-  when: clusterpolicy_has_validator.stdout
+  when: gpu_operator_atleast_v170.stdout
   block:
   - name: Ensure that nvidia-operator-validator DS is ready
     command:
@@ -45,7 +45,7 @@
     delay: 60
 
 - name: Wait for the GPU Operator (< v1.7.0) to run its internal validation steps
-  when: not clusterpolicy_has_validator.stdout
+  when: not gpu_operator_atleast_v170.stdout
   block:
   - name: Ensure that nvidia-device-plugin-validation Pod has ran successfully
     command:
