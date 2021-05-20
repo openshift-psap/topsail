@@ -75,7 +75,7 @@ do_test "The cluster has the NFD operator" \
 
 do_test "The cluster is entitled" \
         "The cluster isn't entitled" \
-        toolbox/entitlement/test.sh
+        toolbox/entitlement/test_cluster.sh
 
 do_test "The cluster has NFD and GPU nodes" \
         "There is no NFD-labelled GPU node. Is there a GPU node in the cluster?" \

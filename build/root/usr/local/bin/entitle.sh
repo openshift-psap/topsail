@@ -5,7 +5,7 @@ set -o errexit
 set -o nounset
 set -x
 
-if ! [ -f toolbox/entitlement/test.sh ]; then
+if ! [ -f toolbox/entitlement/test_cluster.sh ]; then
   echo "FATAL: entitlement scripts not found in $PWD/toolbox/entitlement/"
   echo "INFO: $0 is intended only for running in the 'OpenShift PSAP CI artifacts' image. (INSIDE_CI_IMAGE=$INSIDE_CI_IMAGE)"
   exit 1
@@ -24,7 +24,7 @@ extract_entitlement_key() {
 }
 
 echo "INFO: Testing if the cluster is already entitled ..."
-if toolbox/entitlement/test.sh --no-inspect; then
+if toolbox/entitlement/test_cluster.sh --no-inspect; then
     echo "INFO: Cluster already entitled, skipping entitlement."
     exit 0
 fi

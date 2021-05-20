@@ -24,6 +24,11 @@ Retro-compatibility breaks
     <https://github.com/openshift-psap/ci-artifacts/blob/7aad891ee7c41fea3d31a0152b882fe07d325479/build/root/usr/local/bin/entitle.sh#L13>`_
     for a function to extract the PEM key from a ``machine-configs`` resource file.
 
+- toolbox: rename entitlement/test.sh -> entitlement/test_cluster.sh `#166 https://github.com/openshift-psap/ci-artifacts/pull/166`_
+
+  - ``toolbox/entitlement/test.sh`` was renamed into
+  - ``toolbox/entitlement/test_cluster.sh``
+
 
 Other changes
 ^^^^^^^^^^^^^

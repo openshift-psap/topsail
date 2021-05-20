@@ -49,7 +49,7 @@ Testing and Waiting
 
 .. code-block:: shell
 
-    toolbox/entitlement/test.sh [--no-inspect]
+    toolbox/entitlement/test_cluster.sh [--no-inspect]
 
 * Wait for the cluster-wide entitlement to be deployed
 

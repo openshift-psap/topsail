@@ -130,7 +130,7 @@ The functionalities of the toolbox commands are described in the
     │   ├── inspect.sh
     │   ├── test_in_cluster.sh
     │   ├── test_in_podman.sh
-    │   ├── test.sh
+    │   ├── test_cluster.sh
     │   ├── undeploy.sh
     │   └── wait.sh
     ├── gpu-operator
