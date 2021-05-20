@@ -3,9 +3,16 @@
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 if [[ -z "${1:-}" || -z "${2:-}" || "${3:---force}" != "--force" ]]; then
-    echo "USAGE: ${0} <instance_type> <scale> [--force]"
+
     echo "
-AWS instance information:
+USAGE: ${0} <instance_type> <scale> [--force]
+
+EXAMPLE:
+      ${0} g4dn.xlarge 1 # ensure that the cluster has 1 GPU node
+
+AWS instance information
+------------------------
+
 We typically use the g4dn.xlarge instance type as a cheap GPU node.
 By default, on AWS, the OCS installer usually uses m4.large, which does not have a GPU.
 For a list of AWS instance types see https://aws.amazon.com/ec2/instance-types/.
