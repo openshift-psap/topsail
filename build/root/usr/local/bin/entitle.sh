@@ -55,16 +55,6 @@ if [[ -e "$ENTITLEMENT_RESOURCES" && ! -e "$ENTITLEMENT_PEM" ]]; then
     extract_entitlement_key $ENTITLEMENT_RESOURCES $ENTITLEMENT_PEM
 fi
 
-REPO_CA_FLAG=""
-if oc version | grep -q "Server Version: 4.8"; then
-    if [ ! -e "$ENTITLEMENT_REPO_CA" ]; then
-        echo "WARNING: Running with OCP 4.8 and RHEL-beta repo CA missing..."
-    else
-        echo "INFO: Using $ENTITLEMENT_REPO_CA as RHEL-beta repo CA"
-        REPO_CA_FLAG="--ca $ENTITLEMENT_REPO_CA"
-    fi
-fi
-
 if [ ! -e "$ENTITLEMENT_PEM" ]; then
     if [ -z "$ENTITLEMENT_PEM" ]; then
         echo "INFO: no entitlement key provided (ENTITLEMENT_PEM)"
@@ -76,7 +66,7 @@ if [ ! -e "$ENTITLEMENT_PEM" ]; then
 fi
 
 echo "INFO: Deploying the entitlement with PEM key from ${ENTITLEMENT_PEM}"
-toolbox/entitlement/deploy.sh --pem "${ENTITLEMENT_PEM}" ${REPO_CA_FLAG}
+toolbox/entitlement/deploy.sh --pem "${ENTITLEMENT_PEM}"
 
 if ! toolbox/entitlement/wait.sh; then
     echo "FATAL: Failed to properly entitle the cluster, cannot continue."

@@ -49,41 +49,8 @@ data:
       fi
     fi
 
-    if [[ "${RHEL_VERSION}" == "8.4" ]]; then
-      echo
-      echo "# enable OCP 4.8 / RHEL 8.4 beta repository"
-      if ! md5sum /etc/rhsm-host/ca/custom-repo-ca.pem; then
-        echo "# WARNING: custom certificate for RHEL 8.4 beta repo not found"
-      fi
-      rm -rf /etc/yum.repos.d/*.repo
-      cat << EOF > /etc/yum.repos.d/dci-rpm-mirrors.repo
-    [rhel-8-beta-baseos-rpms]
-    name = Red Hat Enterprise Linux 8 Beta BaseOS (RPMs)
-    baseurl = https://mirror.openshift.com/enterprise/reposync/ci-deps/rhel-8-beta-baseos-rpms/
-    failovermethod = priority
-    gpgcheck = 0
-    sslclientcert = /etc/rhsm-host/ca/custom-repo-ca.pem
-    sslclientkey = /etc/rhsm-host/ca/custom-repo-ca.pem
-    sslverify = 0
-    enabled = 1
-
-    [rhel-8-beta-appstream-rpms]
-    name = Red Hat Enterprise Linux 8 Beta AppStream (RPMs)
-    baseurl = https://mirror.openshift.com/enterprise/reposync/ci-deps/rhel-8-beta-appstream-rpms/
-    failovermethod = priority
-    gpgcheck = 0
-    sslclientcert = /etc/rhsm-host/ca/custom-repo-ca.pem
-    sslclientkey = /etc/rhsm-host/ca/custom-repo-ca.pem
-    sslverify = 0
-    enabled = 1
-    EOF
-      echo "# INFO: NOT storing ${RHEL_VERSION} into /etc/yum/vars/releasever (not working with 4.8 beta)"
-    else
-      echo "# INFO: no need to enable RHEL beta repositories on ${RHEL_VERSION}"
-
-      echo "# INFO: Storing ${RHEL_VERSION} into /etc/yum/vars/releasever"
-      echo "${RHEL_VERSION}" > /etc/yum/vars/releasever
-    fi
+    echo "# INFO: Storing ${RHEL_VERSION} into /etc/yum/vars/releasever"
+    echo "${RHEL_VERSION}" > /etc/yum/vars/releasever
 
     echo
     echo "# test EUS and OCP repositories (debug)"

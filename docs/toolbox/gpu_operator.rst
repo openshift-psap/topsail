@@ -74,14 +74,6 @@ Configuration
 
 - *dest-dir-in-pod*: ``/etc/distro.repos.d``
 
-*Using RHEL 8.4-beta repo-list*
-
-Note that this currently requires the deployment of a Red Hat internal CA PEM `file <https://github.com/openshift/shared-secrets/blob/master/mirror/ops-mirror.pem>`_.
-
-.. code-block:: shell
-
-   toolbox/gpu-operator/set_repo-config.sh --rhel-beta
-
 
 Testing and Waiting
 ===================

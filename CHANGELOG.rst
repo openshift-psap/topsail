@@ -48,17 +48,15 @@ Other changes
 
     - ``toolbox/entitlement/deploy.sh --pem </path/to/key.pem> [--ca </path/to/key.ca.pem>]``
 
-  - new command to configure the GPU Operator with a given repo-list file (or RHEL 8.4-beta repolist)
+  - new command to configure the GPU Operator with a given repo-list file
 
-    - ``toolbox/gpu-operator/set_repo-config.sh <path/to/repo.list>|--rhel-beta``
+    - ``toolbox/gpu-operator/set_repo-config.sh <path/to/repo.list> [<dest-dir>]``
 
 
 CI Image and Testing
 ~~~~~~~~~~~~~~~~~~~~
 
 - gpu_operator_set_repo-config: new role to set spec.driver.repoConfig `#124 <https://github.com/openshift-psap/ci-artifacts/pull/124/files>`_
-
-  - Added a hook to enable RHEL 8.4-beta repo-list in OpenShift 4.8
 
 Bug fixes
 ~~~~~~~~~
