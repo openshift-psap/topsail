@@ -57,6 +57,9 @@ Other changes
 
     - ``toolbox/gpu-operator/set_repo-config.sh <path/to/repo.list> [<dest-dir>]``
 
+- gpu_operator_deploy_from_operatorhub: add support for setting the channel `# <https://github.com/openshift-psap/ci-artifacts/pull/173>`
+
+    - ``toolbox/gpu-operator/deploy_from_operatorhub.sh [<version> [<channel>]]``
 
 CI Image and Testing
 ~~~~~~~~~~~~~~~~~~~~

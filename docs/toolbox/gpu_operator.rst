@@ -9,9 +9,37 @@ Deployment
 
 .. code-block:: shell
 
-    toolbox/gpu-operator/deploy_from_operatorhub.sh [<version>]
+    toolbox/gpu-operator/deploy_from_operatorhub.sh [<version>] [<channel>]
     toolbox/gpu-operator/undeploy_from_operatorhub.sh
 
+**Examples:**
+
+- ``./toolbox/gpu-operator/deploy_from_operatorhub.sh``
+
+  - Installs the latest version available
+
+- ``./toolbox/gpu-operator/deploy_from_operatorhub.sh 1.7.0 v1.7``
+
+  - Installs ``v1.7.0`` from the ``v1.7`` channel
+
+- ``./toolbox/gpu-operator/deploy_from_operatorhub.sh 1.6.2 stable``
+
+  - Installs ``v1.6.2`` from the ``stable`` channel
+
+**Note about the GPU Operator channel:**
+
+- Before ``v1.7.0``, the GPU Operator was using a unique channel name
+  (``stable``). Within this channel, OperatorHub would automatically
+  upgrade the operator to the latest available version. This was an
+  issue as the operator doesn't support (yet) being upgraded (remove
+  and reinstall is the official way). OperatorHub allows specifying
+  the upgrade as ``Manual``, but this isn't the default behavior.
+- Starting with ``v1.7.0``, the channel is set to ``v1.7``, so that
+  OperatorHub won't trigger an automatic upgrade.
+- See the `OpenShift Subscriptions and channel documentation`_ for
+  further information.
+
+.. _OpenShift Subscriptions and channel documentation: https://docs.openshift.com/container-platform/4.7/operators/understanding/olm/olm-understanding-olm.html#olm-subscription_olm-understanding-olm
 
 * List the versions available from OperatorHub
 

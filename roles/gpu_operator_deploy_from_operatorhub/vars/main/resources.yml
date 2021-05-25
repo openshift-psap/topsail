@@ -3,4 +3,4 @@
 gpu_operator_packagemanifests: gpu-operator-certified
 
 gpu_operator_namespace: roles/gpu_operator_deploy_from_operatorhub/files/010_namespace.yml
-gpu_operator_operatorhub_sub: roles/gpu_operator_deploy_from_operatorhub/files/020_operator_sub.yml
+gpu_operator_operatorhub_sub: roles/gpu_operator_deploy_from_operatorhub/templates/020_operator_sub.yml.j2

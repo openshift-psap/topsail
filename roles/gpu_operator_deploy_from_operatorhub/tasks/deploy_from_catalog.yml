@@ -32,29 +32,65 @@
   shell:
     oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -oyaml
     > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.yml
-  failed_when: false
 
-- block:
-  - name: Get the version of the GPU Operator on OperatorHub
-    shell:
-      set -o pipefail;
-      oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -ojson
-      | jq -r .status.channels[0].currentCSV
+- name: Store the GPU Operator PackageManifest
+  shell:
+    oc get packagemanifests/gpu-operator-certified -n openshift-marketplace -ojson
+    > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.json
+
+- name: Store the CSV version
+  when: gpu_operator_operatorhub_version | length > 0
+  set_fact:
+    gpu_operator_csv_name: "gpu-operator-certified.v{{ gpu_operator_operatorhub_version }}"
+
+- name: "Fetch the channel name for the requested version ({{ gpu_operator_operatorhub_version }})"
+  when: gpu_operator_operatorhub_version != "" and not gpu_operator_operatorhub_channel
+  block:
+
+  - name: Fetch the channel name for the requested CSV
+    command:
+      jq -r
+         '.status.channels[] | select(.currentCSV=="{{ gpu_operator_csv_name }}") | .name'
+         "{{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.json"
+    register: gpu_operator_channel_cmd
+
+  - name: Fail if the channel of the CSV could not be found
+    fail: msg="Could not find the channel for the requested GPU Operator version '{{ gpu_operator_operatorhub_version }}'"
+    when: not gpu_operator_channel_cmd.stdout
+
+  - name: Store the channel name
+    set_fact:
+      gpu_operator_operatorhub_channel: "{{ gpu_operator_channel_cmd.stdout }}"
+
+- name: Fetch the default channel name
+  when: not gpu_operator_operatorhub_channel
+  block:
+  - name: Get the default channel of the GPU Operator on OperatorHub
+    command:
+      jq -r .status.defaultChannel {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.json
+    register: gpu_operator_channel_cmd
+
+  - name: Store the channel name
+    set_fact:
+      gpu_operator_operatorhub_channel: "{{ gpu_operator_channel_cmd.stdout }}"
+
+- name: Fetch the GPU Operator version and store its CSV name
+  when: not gpu_operator_operatorhub_version
+  block:
+  - name: "Get the version of the GPU Operator on OperatorHub on channel {{ gpu_operator_operatorhub_channel }}"
+    command:
+      jq -r
+         '.status.channels[] | select(.name == "{{ gpu_operator_operatorhub_channel }}") | .currentCSV'
+         {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.json
     register: gpu_operator_csv_name_cmd
+
+  - name: Fail if current CSV not found for the channel
+    fail: msg="Could not find the current CSV for the GPU Operator Channel '{{ gpu_operator_operatorhub_channel }}'"
+    when: not gpu_operator_csv_name_cmd.stdout
 
   - name: Store the CSV version
     set_fact:
       gpu_operator_csv_name: "{{ gpu_operator_csv_name_cmd.stdout }}"
-  when: gpu_operator_operatorhub_version == ''
-
-- block:
-  - name: Get the version of the GPU Operator on OperatorHub
-    command: echo "gpu-operator-certified.v{{ gpu_operator_operatorhub_version }}"
-    register: gpu_operator_csv_name_cmd
-  - name: Store the CSV version
-    set_fact:
-      gpu_operator_csv_name: "{{ gpu_operator_csv_name_cmd.stdout }}"
-  when: gpu_operator_operatorhub_version != ''
 
 - name: Store the version of the GPU Operator that will be installed
   shell: echo "{{ gpu_operator_csv_name }}" > {{ artifact_extra_logs_dir }}/gpu_operator_csv_name.txt
@@ -62,14 +98,18 @@
 - name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
   debug: msg="{{ gpu_operator_csv_name }}"
 
+- name: Store the CSV version
+  set_fact:
+    startingCSV: "{{ gpu_operator_csv_name }}"
+
 - name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
-  shell:
-    set -o pipefail;
-    cat {{ gpu_operator_operatorhub_sub }}
-    | sed 's|{{ '{{' }} startingCSV {{ '}}' }}|{{ gpu_operator_csv_name }}|'
-    | oc apply -f-
-  args:
-    warn: false # don't warn about using sed here
+  template:
+    src: "{{ gpu_operator_operatorhub_sub }}"
+    dest: "{{ artifact_extra_logs_dir }}/gpu_operator_sub.yml"
+    mode: 0400
+
+- name: Instantiate the OperatorHub subscription
+  command: oc create -f "{{ artifact_extra_logs_dir }}/gpu_operator_sub.yml"
 
 - block:
   - name: Find the GPU Operator OperatorHub InstallPlan
