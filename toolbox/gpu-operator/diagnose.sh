@@ -40,13 +40,15 @@ EOF
         return 0
     fi
 
-    cat <<EOF
+    if [[ $RUN_ALL != yes ]]; then
+        cat <<EOF
 
 Problem detected with '$@', capturing extra information...
 EOF
 
-    toolbox/cluster/capture_environment.sh > /dev/null || true
-    toolbox/gpu-operator/capture_deployment_state.sh > /dev/null || true
+        toolbox/cluster/capture_environment.sh > /dev/null || true
+        toolbox/gpu-operator/capture_deployment_state.sh > /dev/null || true
+    fi
 
     cat <<EOF
 
@@ -97,9 +99,13 @@ else
     echo "Found errors with the GPU Operator, skipping GPU-Burn testing."
 fi
 
-do_test "All the relevant output logs have been captured in ${ARTIFACT_DIR}" \
-        "(this step shouldn't fail)" \
-        toolbox/gpu-operator/capture_deployment_state.sh
+if [[ $RUN_ALL == yes ]]; then
+    echo "Capture the deployment state ..."
+    toolbox/gpu-operator/capture_deployment_state.sh > /dev/null || true
+    echo "Capture the cluster environment ..."
+    toolbox/cluster/capture_environment.sh > /dev/null || true
+    echo "Done with the state capture."
+fi
 
 if [[ "$has_errors" == 0 ]]; then
     cat <<EOF
