@@ -65,38 +65,18 @@
     done
   failed_when: false
 
-- name: Get the driver-container logs
-  shell:
-    set -o pipefail; set -e;
-    oc get pods -l app=nvidia-driver-daemonset -oname | grep .;
-    oc logs ds/nvidia-driver-daemonset
-       -n gpu-operator-resources
-       > {{ artifact_extra_logs_dir }}/gpu_operator_driver.log
-  failed_when: false
+- name: Get the name of the GPU Operator DaemonSets
+  command:
+    oc get DaemonSets -o name -n gpu-operator-resources
+  register: gpu_operator_daemonsets
 
-- name: Get the device-plugin logs
+- name: Get the logs of the GPU Operator DaemonSets
   shell:
-    set -o pipefail; set -e;
-    oc get pods -l app=nvidia-device-plugin-daemonset -oname | grep .;
-    oc logs ds/nvidia-device-plugin-daemonset
+    set -eo pipefail;
+    echo "Saving {{ item }} logs ...";
+    oc logs
        -n gpu-operator-resources
-       > {{ artifact_extra_logs_dir }}/gpu_operator_device-plugin.log
-  failed_when: false
-
-- name: Get the DCGM logs
-  shell:
-    set -o pipefail; set -e;
-    oc get pods -l app=nvidia-dcgm-exporter -oname | grep .;
-    oc logs ds/nvidia-dcgm-exporter
-       -n gpu-operator-resources
-       > {{ artifact_extra_logs_dir }}/gpu_operator_dcgm.log
-  failed_when: false
-
-- name: Capture the GFD logs (debug)
-  shell:
-    set -o pipefail; set -e;
-    oc get pods -l app=gpu-feature-discovery -oname | grep .;
-    oc logs ds/gpu-feature-discovery
-       -n gpu-operator-resources
-       > {{ artifact_extra_logs_dir }}/gpu_operator_gfd.log
-  failed_when: false
+       "{{ item }}"
+       --all-containers --prefix
+       > {{ artifact_extra_logs_dir }}/gpu_operator_$(echo "{{ item }}" | cut -d/ -f2).log
+  with_items: "{{ gpu_operator_daemonsets.stdout_lines }}"
