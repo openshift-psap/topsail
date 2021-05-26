@@ -26,7 +26,10 @@ fi
 TOOLBOX_PATH="${0##*toolbox/}" # remove everything before 'toolbox/'
 TOOLBOX_PATH="${TOOLBOX_PATH%.*}" # remove file extension
 ARTIFACT_DIRNAME="${TOOLBOX_PATH//\//__}" # replace / by __
-ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/$(date +%H%M%S)__${ARTIFACT_DIRNAME}" # add ARTIFACT_DIR/date__
+
+mkdir -p "${ARTIFACT_DIR}"
+
+ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/$(printf '%03d' $(ls "${ARTIFACT_DIR}/" | grep __ | wc -l))__${ARTIFACT_DIRNAME}" # add ARTIFACT_DIR/date__
 export ARTIFACT_EXTRA_LOGS_DIR
 
 mkdir -p "${ARTIFACT_EXTRA_LOGS_DIR}"
