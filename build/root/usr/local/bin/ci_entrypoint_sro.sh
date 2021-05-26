@@ -14,7 +14,7 @@ prepare_cluster_for_sro() {
 }
 
 validate_sro_deployment() {
-    trap toolbox/special-resource-operator/capture_deployment_state.sh ERR EXIT
+    trap toolbox/special-resource-operator/capture_deployment_state.sh EXIT
 
     toolbox/special-resource-operator/run_e2e_test.sh "${CI_IMAGE_SRO_COMMIT_CI_REPO}" "${CI_IMAGE_SRO_COMMIT_CI_REF}"
 }

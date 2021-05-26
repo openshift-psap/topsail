@@ -30,7 +30,7 @@ collect_must_gather() {
 }
 
 validate_gpu_operator_deployment() {
-    trap collect_must_gather ERR EXIT
+    trap collect_must_gather EXIT
 
     toolbox/gpu-operator/wait_deployment.sh
     toolbox/gpu-operator/run_gpu_burn.sh
