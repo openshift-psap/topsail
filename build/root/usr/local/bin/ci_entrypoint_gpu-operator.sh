@@ -25,10 +25,20 @@ collect_must_gather() {
     echo "Running gpu-operator_gather ..."
     /usr/bin/gpu-operator_gather &> /dev/null
 
-    DEST="${ARTIFACT_DIR}/$(date +%H%M%S)__gpu-operator__must-gather"
-    echo "Running gpu-operator_gather ... copying results to $DEST..."
-    mkdir -p "$DEST"
-    cp -r /must-gather/* "$DEST"
+    export TOOLBOX_SCRIPT_NAME=toolbox/gpu-operator/must-gather.sh
+
+    COMMON_SH=$(
+        bash -c 'source toolbox/_common.sh;
+                 echo "8<--8<--8<--";
+                 # only evaluate these variables from _common.sh
+                 env | egrep "(^ARTIFACT_EXTRA_LOGS_DIR=)"'
+             )
+    ENV=$(echo "$COMMON_SH" | tac | sed '/8<--8<--8<--/Q' | tac) # keep only what's after the 8<--
+    eval $ENV
+
+    echo "Running gpu-operator_gather ... copying results to $ARTIFACT_EXTRA_LOGS_DIR"
+
+    cp -r /must-gather/* "$ARTIFACT_EXTRA_LOGS_DIR"
 
     echo "Running gpu-operator_gather ... finished."
 }
