@@ -60,8 +60,10 @@ test_commit() {
 
 test_operatorhub() {
     OPERATOR_VERSION="${1:-}"
+    OPERATOR_CHANNEL="${2:-}"
+
     prepare_cluster_for_gpu_operator
-    toolbox/gpu-operator/deploy_from_operatorhub.sh ${OPERATOR_VERSION}
+    toolbox/gpu-operator/deploy_from_operatorhub.sh ${OPERATOR_VERSION} ${OPERATOR_CHANNEL}
     validate_gpu_operator_deployment
 }
 
