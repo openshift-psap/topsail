@@ -1,31 +1,37 @@
-#! /bin/bash -ex
+#! /bin/bash -e
 
 if [[ "$0" == "/usr/bin/gpu-operator_gather" ]]; then
     echo "Running as must-gather plugin image"
     export ARTIFACT_DIR=/must-gather
 
-    THIS_DIR="$(dirname "$(readlink -f "$0")")"
+    TOP_DIR="$(dirname "$(readlink -f "$0")")/../../"
 else
     # avoid sourcing _common.sh and messing up different env variables
-    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        export ARTIFACT_DIR="/tmp/ci-artifacts_$(date +%Y%m%d)"
-        echo "Using '$ARTIFACT_DIR' to store the test artifacts (default value for ARTIFACT_DIR)."
-    else
-        echo "Using '$ARTIFACT_DIR' to store the test artifacts."
-    fi
+    export TOOLBOX_SCRIPT_NAME=$0
 
-    export ARTIFACT_DIR="$ARTIFACT_DIR/$(date +%H%M%S)__gpu-operator__must-gather"
-    THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+    COMMON_SH=$(
+        bash -c 'source toolbox/_common.sh;
+                 echo "8<--8<--8<--";
+                 # only evaluate these variables from _common.sh
+                 env | egrep "(^ARTIFACT_EXTRA_LOGS_DIR=|^ARTIFACT_DIR=|^TOP_DIR=)"'
+             )
+    echo "$COMMON_SH" | sed '/8<--8<--8<--/Q'
+    ENV=$(echo "$COMMON_SH" | tac | sed '/8<--8<--8<--/Q' | tac) # keep only what's after the 8<--
+
+    echo "Setting env values:"
+    echo "$ENV"
+    eval $ENV
 fi
 
-mkdir -p "$ARTIFACT_DIR"
-cd $THIS_DIR/../../
+cd $TOP_DIR
 
 MUST_GATHER_LOGS_DIR="$ARTIFACT_DIR"
 MUST_GATHER_INSPECT_DIR="$ARTIFACT_DIR/oc_adm_inspect"
 
 exec 1> >(tee $MUST_GATHER_LOGS_DIR/_must-gather.log)
 exec 2> >(tee $MUST_GATHER_LOGS_DIR/_must-gather.stderr.log >&2)
+
+set -x
 
 # product
 cat <<EOF > $MUST_GATHER_LOGS_DIR/version

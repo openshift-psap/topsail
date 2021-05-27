@@ -22,8 +22,8 @@ else
     echo "Using '$ARTIFACT_DIR' to store the test artifacts."
 fi
 
-
-TOOLBOX_PATH="${0##*toolbox/}" # remove everything before 'toolbox/'
+TOOLBOX_SCRIPT_NAME="${TOOLBOX_SCRIPT_NAME:-$0}"
+TOOLBOX_PATH="${TOOLBOX_SCRIPT_NAME##*toolbox/}" # remove everything before 'toolbox/'
 TOOLBOX_PATH="${TOOLBOX_PATH%.*}" # remove file extension
 ARTIFACT_DIRNAME="${TOOLBOX_PATH//\//__}" # replace / by __
 
