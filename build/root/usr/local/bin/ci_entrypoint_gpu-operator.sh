@@ -21,12 +21,16 @@ prepare_cluster_for_gpu_operator() {
 }
 
 collect_must_gather() {
+    set +x
     echo "Running gpu-operator_gather ..."
     /usr/bin/gpu-operator_gather &> /dev/null
-    echo "Running gpu-operator_gather ... finished."
+
     DEST="${ARTIFACT_DIR}/$(date +%H%M%S)__gpu-operator__must-gather"
+    echo "Running gpu-operator_gather ... copying results to $DEST..."
     mkdir -p "$DEST"
     cp -r /must-gather/* "$DEST"
+
+    echo "Running gpu-operator_gather ... finished."
 }
 
 validate_gpu_operator_deployment() {
