@@ -6,14 +6,17 @@ if [[ "$0" == "/usr/bin/gpu-operator_gather" ]]; then
 
     TOP_DIR="$(dirname "$(readlink -f "$0")")/../../"
 else
+    THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
     # avoid sourcing _common.sh and messing up different env variables
     export TOOLBOX_SCRIPT_NAME=$0
 
     COMMON_SH=$(
-        bash -c 'source toolbox/_common.sh;
+        bash -c 'source '$THIS_DIR'/../_common.sh;
                  echo "8<--8<--8<--";
                  # only evaluate these variables from _common.sh
-                 env | egrep "(^ARTIFACT_EXTRA_LOGS_DIR=|^ARTIFACT_DIR=|^TOP_DIR=)"'
+                 echo TOP_DIR=$(pwd)
+                 env | egrep "(^ARTIFACT_EXTRA_LOGS_DIR=|^ARTIFACT_DIR=)"'
              )
     echo "$COMMON_SH" | sed '/8<--8<--8<--/Q'
     ENV=$(echo "$COMMON_SH" | tac | sed '/8<--8<--8<--/Q' | tac) # keep only what's after the 8<--
