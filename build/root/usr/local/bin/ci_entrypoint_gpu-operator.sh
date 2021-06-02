@@ -58,17 +58,30 @@ test_master_branch() {
 }
 
 test_commit() {
-    CI_IMAGE_GPU_COMMIT_CI_REPO="${1:-https://github.com/NVIDIA/gpu-operator.git}"
-    CI_IMAGE_GPU_COMMIT_CI_REF="${2:-master}"
-
+    gpu_operator_git_repo="${1:-}"
+    gpu_operator_git_ref="${2:-}"
     CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="ci-image"
 
-    echo "Using Git repository ${CI_IMAGE_GPU_COMMIT_CI_REPO} with ref ${CI_IMAGE_GPU_COMMIT_CI_REF}"
+    if [[ -z "$gpu_operator_git_repo" || -z "$gpu_operator_git_ref" ]]; then
+        echo "FATAL: test_commit must receive a git repo/ref to be tested."
+        return 1
+    fi
+
+    echo "Using Git repository ${gpu_operator_git_repo} with ref ${gpu_operator_git_ref}"
 
     prepare_cluster_for_gpu_operator
-    toolbox/gpu-operator/deploy_from_commit.sh "${CI_IMAGE_GPU_COMMIT_CI_REPO}" \
-                                               "${CI_IMAGE_GPU_COMMIT_CI_REF}" \
+
+    GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET=${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET:-"/var/run/psap-entitlement-secret/openshift-psap-openshift-ci-secret.yml"}
+    GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME:-"quay.io/openshift-psap/ci-artifacts"}
+
+    toolbox/gpu-operator/bundle_from_commit.sh "${gpu_operator_git_repo}" \
+                                               "${gpu_operator_git_ref}" \
+                                               "${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET}" \
+                                               "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}" \
                                                "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}"
+
+    toolbox/gpu-operator/deploy_from_operatorhub.sh "--from-bundle=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-ci-image"
+
     validate_gpu_operator_deployment
 }
 
@@ -108,13 +121,13 @@ shift
 
 set -x
 
-case ${action:-} in
+case ${action} in
     "test_master_branch")
         test_master_branch "$@"
         exit 0
         ;;
     "test_commit")
-        test_commit "$@"
+        test_commit "https://github.com/NVIDIA/gpu-operator.git" master
         exit 0
         ;;
     "test_operatorhub")
