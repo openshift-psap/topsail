@@ -9,5 +9,7 @@ gpu_operator_namespace: roles/gpu_operator_deploy_custom_commit/files/operator_n
 gpu_operator_imagestream: roles/gpu_operator_deploy_custom_commit/files/operator_imagestream.yml
 gpu_operator_image_builder_script: roles/gpu_operator_deploy_custom_commit/files/operator_image_builder_script.yml
 gpu_operator_helper_image_builder: roles/gpu_operator_deploy_custom_commit/files/operator_helper_image_builder.yml
-gpu_operator_image_builder_pod: roles/gpu_operator_deploy_custom_commit/files/operator_image_builder_pod.yml
 gpu_operator_helm_install: roles/gpu_operator_deploy_custom_commit/scripts/helm_deploy_operator.sh
+# ---
+# Templates
+gpu_operator_image_builder_pod: roles/gpu_operator_deploy_custom_commit/templates/operator_image_builder_pod.yml.j2

@@ -35,29 +35,35 @@
 
 - block:
   - name: Wait for the helper image to be built
-    shell:
-      set -o pipefail;
+    command:
       oc get pod -lopenshift.io/build.name
-                 --field-selector=status.phase=Succeeded
+                 -ocustom-columns=phase:status.phase
                  --no-headers
-                 -oname
                  -n gpu-operator-ci-utils
-      | grep helper-image-builder
     register: wait_helper_image
-    until: wait_helper_image.rc != 1
+    until: "'Succeeded' in wait_helper_image.stdout or 'Failed' in wait_helper_image.stdout or 'Error' in wait_helper_image.stdout"
     retries: 40
     delay: 30
+
+  - name: Fail if the helper image failed to be built
+    when: "'Failed' in wait_helper_image.stdout or 'Error' in wait_helper_image.stdout"
+    fail: msg="The helper image failed to build"
+
   rescue:
   - name: Get info about the helper image build failure
     command: oc get pods -n gpu-operator-ci-utils
     failed_when: false
 
   - name: Get the logs of the helper image build failure
-    command: oc logs bc/helper-image-builder -n gpu-operator-ci-utils
+    shell:
+      oc logs bc/helper-image-builder -n gpu-operator-ci-utils
+         > {{ artifact_extra_logs_dir }}/helper-image-builder.log
     failed_when: false
 
   - name: Get the description of the helper image build failure
-    command: oc describe build/helper-image-builder-1 -n gpu-operator-ci-utils
+    shell:
+      oc describe build/helper-image-builder-1 -n gpu-operator-ci-utils
+         > {{ artifact_extra_logs_dir }}/helper-image-builder.descr
     failed_when: false
 
   - name: Suggest how to retry the build
@@ -66,21 +72,29 @@
   - name: Fail because the custom operator image failed to build
     fail: msg="Fail because the custom operator image failed to build"
 
-
 - name: Apply the operator image builder script manifest
   command: oc apply -f "{{ gpu_operator_image_builder_script }}"
 
 - block:
-    - name: Find the name of the builder-dockercfg secret
-      shell: oc get secrets -oname -n gpu-operator-ci | cut -d/ -f2 | grep builder-dockercfg
-      register: builder_secret
-  rescue:
-    - name: Failed to find the builder-dockercfg secret
-      fail: msg="No builder-dockercfg secret in the 'gpu-operator-ci' namespace ..."
+  - name: Find the name of the builder-dockercfg secret
+    shell: oc get secrets -oname -n gpu-operator-ci | cut -d/ -f2 | grep builder-dockercfg
+    register: builder_secret_cmd
 
+  - name: Store the name of the secret in a variable
+    set_fact:
+      builder_secret: "{{ builder_secret_cmd.stdout }}"
+  rescue:
+  - name: Failed to find the builder-dockercfg secret
+    fail: msg="No builder-dockercfg secret in the 'gpu-operator-ci' namespace ..."
+
+- name: Instantiate the template of the image builder Pod
+  template:
+    src: "{{ gpu_operator_image_builder_pod }}"
+    dest: "{{ artifact_extra_logs_dir }}/image_builder_pod.yml"
+    mode: 0400
 
 - name: Delete the operator image builder pod, if any
-  command: oc delete -f "{{ gpu_operator_image_builder_pod }}" --ignore-not-found=true
+  command: oc delete -f "{{ artifact_extra_logs_dir }}/image_builder_pod.yml" --ignore-not-found=true
 
 - name: Check if the operator image already exists
   command: oc get "imagestreamtag/gpu-operator-ci:{{ gpu_operator_image_tag }}" -n gpu-operator-ci
@@ -94,14 +108,8 @@
     debug: msg="The operator image does not exist, build it"
 
   - name: Apply the operator image builder pod manifest
-    shell:
-      sed 's|{{ '{{' }} builder_secret {{ '}}' }}|{{ builder_secret.stdout }}|' "{{ gpu_operator_image_builder_pod }}"
-      | sed 's|{{ '{{' }} gpu_operator_git_repo {{ '}}' }}|{{ gpu_operator_git_repo }}|'
-      | sed 's|{{ '{{' }} gpu_operator_git_ref {{ '}}' }}|{{ gpu_operator_git_ref }}|'
-      | sed 's|{{ '{{' }} gpu_operator_image_tag {{ '}}' }}|{{ gpu_operator_image_tag }}|'
-      | oc apply -f-
-    args:
-      warn: false # don't warn about using sed here
+    command:
+      oc apply -f "{{ artifact_extra_logs_dir }}/image_builder_pod.yml"
 
   - block:
     - name: Wait for the operator image to be built
