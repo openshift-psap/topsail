@@ -10,7 +10,7 @@ spec:
   - command:
     - /bin/sh
     - /mnt/helper/run_operator_image_builder.sh
-    image: image-registry.openshift-image-registry.svc:5000/gpu-operator-ci-utils/gpu-operator-ci-utils:builder_helper
+    image: "{{ helper_image_name }}"
     name: operator-image-builder
     imagePullPolicy: Always
     securityContext:
@@ -20,10 +20,8 @@ spec:
         value: "{{ gpu_operator_git_repo }}"
       - name: OPERATOR_GIT_REF
         value: "{{ gpu_operator_git_ref }}"
-      - name: IMAGESTREAM_NAME
-        value: "gpu-operator-ci/gpu-operator-ci"
-      - name: IMAGESTREAM_TAG
-        value: "{{ gpu_operator_image_tag }}"
+      - name: OPERATOR_IMAGE_NAME
+        value: "{{ operator_image_name }}"
       - name: BUILDER_FROM_IMAGE
         value: "quay.io/openshift-psap/golang:1.15" # avoid using docker.io and its quotas...
     volumeMounts:

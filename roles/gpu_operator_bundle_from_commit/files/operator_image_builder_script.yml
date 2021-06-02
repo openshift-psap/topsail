@@ -10,7 +10,8 @@ data:
     #! /bin/bash
     set -ex
 
-    IMAGE_STREAM=image-registry.openshift-image-registry.svc:5000/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+    echo "OPERATOR_IMAGE_NAME=${OPERATOR_IMAGE_NAME}"
+
     CONTAINER_FILE=./Dockerfile
 
     mkdir /work && cd /work
@@ -35,8 +36,7 @@ data:
     EOF
     chmod u+x /usr/local/bin/docker
 
-    IMAGE_NAME="gpu-operator:latest"
-    make docker-build IMG=${IMAGE_NAME}
+    make docker-build IMG=${OPERATOR_IMAGE_NAME}
 
     # push the image locally
 
@@ -44,6 +44,6 @@ data:
     cp /var/run/secrets/openshift.io/push/.dockercfg /tmp
     (echo "{ \"auths\": " ; cat /var/run/secrets/openshift.io/push/.dockercfg ; echo "}") > /tmp/.dockercfg
 
-    podman push $AUTH $IMAGE_NAME $IMAGE_STREAM
+    podman push $AUTH $OPERATOR_IMAGE_NAME $OPERATOR_IMAGE_NAME
 
-    echo "GPU Operator built from $OPERATOR_GIT_REPO / $OPERATOR_GIT_REF and pushed to $IMAGE_STREAM"
+    echo "GPU Operator built from $OPERATOR_GIT_REPO / $OPERATOR_GIT_REF and pushed to $OPERATOR_IMAGE_NAME"

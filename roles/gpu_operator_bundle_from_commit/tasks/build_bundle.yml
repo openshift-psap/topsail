@@ -1,0 +1,118 @@
+---
+#
+# Build the Operator bundle image
+#
+
+- name: Compute quay.io bundle image name
+  set_fact:
+    quay_bundle_image_name: "{{ gpu_operator_commit_quay_image_name }}:operator_bundle_{{ gpu_operator_image_tag }}"
+
+- name: Delete the kubeconfig secret, if it exists
+  command: oc delete secret -n gpu-operator-ci kubeconfig-secret --ignore-not-found=true
+
+- name: Ensure that quay secret file path is set
+  command: test -f "{{ gpu_operator_commit_quay_push_secret }}"
+
+- name: Ensure that quay secret file exists
+  command: test -z "{{ gpu_operator_commit_quay_image_name }}"
+  register: test_quay_image_name
+  failed_when: test_quay_image_name.rc == 0
+
+- name: Get quay.io secret name
+  command:
+    yq -r .metadata.name "{{ gpu_operator_commit_quay_push_secret }}"
+  register: quay_push_secret_name_cmd
+
+- name: Store quay.io secret name
+  set_fact:
+    quay_push_secret_name: "{{ quay_push_secret_name_cmd.stdout }}"
+
+- name: Create quay.io secret
+  command:
+    oc apply -f "{{ gpu_operator_commit_quay_push_secret }}" -n gpu-operator-ci
+
+- name: Create kubeconfig secret
+  command:
+    oc create secret generic kubeconfig-secret
+       -n gpu-operator-ci
+       --from-file kubeconfig={{ lookup('env', 'KUBECONFIG') }}
+
+- name: Authorize 'ns/openshift-operators' Pods to access ns/gpu-operator-ci images
+  command:
+    oc policy add-role-to-user
+              system:image-puller system:serviceaccount:openshift-operators:gpu-operator
+              --namespace=gpu-operator-ci
+
+- name: Apply the operator bundle image builder script manifest
+  command: oc apply -f "{{ gpu_operator_bundle_image_builder_script }}"
+
+- name: Instantiate the template of the bundle image builder Pod
+  template:
+    src: "{{ gpu_operator_bundle_image_builder_pod }}"
+    dest: "{{ artifact_extra_logs_dir }}/operator-bundle-image-builder-pod.yml"
+    mode: 0400
+
+- name: Delete the operator bundle image builder pod, if any
+  command: oc delete -f "{{ artifact_extra_logs_dir }}/operator-bundle-image-builder-pod.yml" --ignore-not-found=true
+
+- name: Delete the bundle subscription
+  command: oc delete subscription -nopenshift-operators -loperators.coreos.com/gpu-operator-certified.openshift-operators --ignore-not-found=true
+
+- name: Delete the bundle installplan
+  command: oc delete installplan -nopenshift-operators -loperators.coreos.com/gpu-operator-certified.openshift-operators --ignore-not-found=true
+
+- name: Delete the bundle catalogsource
+  command: oc delete catalogsource/gpu-operator-certified-catalog -nopenshift-operators --ignore-not-found=true
+
+- name: Apply the operator bundle image builder pod manifest
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/operator-bundle-image-builder-pod.yml"
+
+- block:
+  - name: Wait for the bundle operator image to be built
+    command:
+      oc get pod/operator-bundle-image-builder-pod
+         --no-headers
+         -ocustom-columns=phase:status.phase
+         -n gpu-operator-ci
+    register: wait_bundle_image_builder_pod
+    until: "'Succeeded' in wait_bundle_image_builder_pod.stdout or 'Failed' in wait_bundle_image_builder_pod.stdout or 'Error' in wait_bundle_image_builder_pod.stdout"
+    retries: 40
+    delay: 10
+
+  - name: Fail if the bundle operator image failed to be built
+    when: "'Failed' in wait_bundle_image_builder_pod.stdout or 'Error' in wait_bundle_image_builder_pod.stdout"
+    fail: msg="The operator bundle image failed to build"
+
+  always:
+  - name: Store the logs of bundle image build (debug)
+    shell:
+      oc logs pod/operator-bundle-image-builder-pod -n gpu-operator-ci
+         > "{{ artifact_extra_logs_dir }}/operator-bundle-image-builder-pod.log"
+    failed_when: false
+
+  rescue:
+  - name: Delete the operator bundle image if it was pushed
+    command:
+      oc delete
+        imagestreamtags/gpu-operator-ci:{{ gpu_operator_bundle_image_tag }}
+        -ngpu-operator-ci
+        --ignore-not-found=true
+    failed_when: false
+
+  - name: Get info about the bundle operator image build failure (debug)
+    command: oc get pods -n gpu-operator-ci
+    failed_when: false
+
+  - name: Get info about the bundle operator image build failure (debug)
+    command: oc get pods -n gpu-operator-ci
+    failed_when: false
+
+  - name: Get the description of the helper image build failure
+    shell:
+      oc describe pod/operator-bundle-image-builder-pod -n gpu-operator-ci
+         > {{ artifact_extra_logs_dir }}/operator-bundle-image-builder-pod.descr
+    failed_when: false
+
+  - name: Fail because the operator bundle image failed to build
+    fail: msg="Fail because the operator bundle image failed to build"

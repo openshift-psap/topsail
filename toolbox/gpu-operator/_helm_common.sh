@@ -1,6 +1,6 @@
-ROLE_CUSTOM_COMMIT_RESOURCES_FILE="roles/gpu_operator_deploy_custom_commit/vars/main/resources.yml"
-ROLE_CUSTOM_COMMIT_RESOURCES_KEY="gpu_operator_helm_install"
-HELM_DEPLOY_OPERATOR=$(cat "${ROLE_CUSTOM_COMMIT_RESOURCES_FILE}" | grep "${ROLE_CUSTOM_COMMIT_RESOURCES_KEY}" | cut -d: -f2 | xargs)
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+HELM_DEPLOY_OPERATOR=$THIS_DIR/_helm_deploy_operator.sh
 
 if [ ! -f "${HELM_DEPLOY_OPERATOR}" ]; then
     echo "WARNING: cannot find the helm deploy script"

@@ -1,0 +1,65 @@
+---
+#
+# Helper image
+#
+
+- name: Set local imagestreamtag name
+  set_fact:
+    helper_imagestreamtag: "gpu-operator-ci-utils:builder_helper"
+
+- name: Compute local image name
+  set_fact:
+    helper_image_name: "image-registry.openshift-image-registry.svc:5000/gpu-operator-ci-utils/{{ helper_imagestreamtag }}"
+
+- name: Check if the helper image already exists
+  command: oc get "imagestreamtag/{{ helper_imagestreamtag }}" -n gpu-operator-ci-utils
+  failed_when: false
+  register: has_helper_image
+
+- name: Build the helper image
+  when: has_helper_image.rc != 0
+  block:
+  - name: Delete the image helper builder manifest, if any
+    command: oc delete -f "{{ gpu_operator_helper_image_builder }}" --ignore-not-found=true
+
+  - name: Apply the image helper builder manifest
+    command: oc apply -f "{{ gpu_operator_helper_image_builder }}"
+
+  - name: Wait for the helper image to be built
+    command:
+      oc get pod -lopenshift.io/build.name
+                 -ocustom-columns=phase:status.phase
+                 --no-headers
+                 -n gpu-operator-ci-utils
+    register: wait_helper_image
+    until: "'Succeeded' in wait_helper_image.stdout or 'Failed' in wait_helper_image.stdout or 'Error' in wait_helper_image.stdout"
+    retries: 40
+    delay: 30
+
+  - name: Fail if the helper image failed to be built
+    when: "'Failed' in wait_helper_image.stdout or 'Error' in wait_helper_image.stdout"
+    fail: msg="The helper image failed to build"
+
+  always:
+  - name: Store the logs of the helper image build (debug)
+    shell:
+      oc logs bc/helper-image-builder -n gpu-operator-ci-utils
+         > {{ artifact_extra_logs_dir }}/helper-image-builder.log
+    failed_when: false
+
+  rescue:
+  - name: Get info about the helper image build failure
+    command: oc get pods -n gpu-operator-ci-utils
+    failed_when: false
+
+  - name: Get the description of the helper image build failure
+    shell:
+      oc describe build/helper-image-builder-1 -n gpu-operator-ci-utils
+         > {{ artifact_extra_logs_dir }}/helper-image-builder.descr
+    failed_when: false
+
+  - name: Suggest how to retry the build
+    debug: msg="To retry the build, run 'oc new-build bc/helper-image-builder -n gpu-operator-ci-utils'"
+
+  - name: Fail because the custom operator image failed to build
+    fail: msg="Fail because the custom operator image failed to build"

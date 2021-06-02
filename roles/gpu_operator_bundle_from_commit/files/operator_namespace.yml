@@ -1,8 +1,7 @@
-kind: ImageStream
+kind: Namespace
 apiVersion: v1
 metadata:
   name: gpu-operator-ci
-  namespace: gpu-operator-ci
   labels:
     app: gpu-operator-ci
 spec: {}

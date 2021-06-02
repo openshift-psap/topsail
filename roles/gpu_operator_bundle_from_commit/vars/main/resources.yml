@@ -1,0 +1,17 @@
+---
+# Custom label to apply to the node where we'll load fuse
+tuned_module_fuse_label: tuned.module.fuse
+# ---
+# Manifest for installing the GPU operator from a custom commit
+tuned_module_fuse: roles/gpu_operator_bundle_from_commit/files/tuned_module_fuse.yml
+gpu_operator_ci_utils: roles/gpu_operator_bundle_from_commit/files/operator_ci_utils.yml
+gpu_operator_namespace: roles/gpu_operator_bundle_from_commit/files/operator_namespace.yml
+gpu_operator_imagestream: roles/gpu_operator_bundle_from_commit/files/operator_imagestream.yml
+gpu_operator_image_builder_script: roles/gpu_operator_bundle_from_commit/files/operator_image_builder_script.yml
+gpu_operator_helper_image_builder: roles/gpu_operator_bundle_from_commit/files/operator_helper_image_builder.yml
+#---
+gpu_operator_bundle_image_builder_script: roles/gpu_operator_bundle_from_commit/files/operator_bundle_image_builder_script.yml
+# ---
+# Templates
+gpu_operator_image_builder_pod: roles/gpu_operator_bundle_from_commit/templates/operator_image_builder_pod.yml.j2
+gpu_operator_bundle_image_builder_pod: roles/gpu_operator_bundle_from_commit/templates/operator_bundle_image_builder_pod.yml.j2

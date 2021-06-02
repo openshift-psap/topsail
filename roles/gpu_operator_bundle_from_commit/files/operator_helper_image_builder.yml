@@ -57,6 +57,9 @@ spec:
             fuse-overlayfs \
             fuse3 \
             containers-common \
+            jq \
+            python3 python3-devel python3-pip python3-setuptools \
+            hostname \
           && mkdir /root/buildah \
           && git clone https://github.com/containers/buildah /root/buildah/src/github.com/containers/buildah \
           && cd /root/buildah/src/github.com/containers/buildah \
@@ -64,7 +67,10 @@ spec:
           && make install \
           && rm -rf /root/buildah/* \
           && yum -y remove bats golang go-md2man \
-          && yum clean all
+          && yum clean all \
+          && cd / \
+          && python3 -m pip install --no-cache-dir --upgrade setuptools pip wheel \
+          && python3 -m pip install --no-cache-dir yq
 
       ADD https://raw.githubusercontent.com/containers/buildah/master/contrib/buildahimage/stable/containers.conf /etc/containers/
 

@@ -1,0 +1,8 @@
+kind: ImageStream
+apiVersion: v1
+metadata:
+  name: gpu-operator-ci
+  namespace: openshift-operators
+  labels:
+    app: gpu-operator-ci
+spec: {}

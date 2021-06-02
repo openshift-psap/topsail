@@ -1,0 +1,30 @@
+---
+- name: Check that gpu_operator_image_tag_uid is defined
+  fail: msg="Bailing out. This play requires 'gpu_operator_image_tag_uid'"
+  when: gpu_operator_image_tag_uid is undefined
+
+- name: Check that gpu_operator_git_repo is defined
+  fail: msg="Bailing out. This play requires 'gpu_operator_git_repo'"
+  when: gpu_operator_git_repo is undefined
+
+- name: Check that gpu_operator_git_ref is defined
+  fail: msg="Bailing out. This play requires 'gpu_operator_git_ref'"
+  when: gpu_operator_git_ref is undefined
+
+- name: Prepare the environment for building the images
+  include_tasks: prepare.yml
+
+- name: Build the image-builder helper image
+  include_tasks: build_helper.yml
+
+- name: Build the operator image from custom commit
+  include_tasks: build_operator.yml
+
+- name: Build the bundle image from custom commit
+  include_tasks: build_bundle.yml
+
+- name: Share the operator image address
+  debug: msg="Operator image address is {{ operator_image_name }}"
+
+- name: Share the bundle operator image address
+  debug: msg="Bundle image address is {{ quay_bundle_image_name }}"

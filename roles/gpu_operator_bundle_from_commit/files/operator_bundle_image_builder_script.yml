@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: gpu-operator-ci
+  name: operator-bundle-image-builder-script
+  namespace: gpu-operator-ci
+data:
+  run_operator_bundle_image_builder.sh: |
+    #! /bin/bash
+    set -ex
+    set -o nounset
+
+    echo "QUAY_BUNDLE_IMAGE_NAME=${QUAY_BUNDLE_IMAGE_NAME}"
+    echo "OPERATOR_IMAGE_NAME=${OPERATOR_IMAGE_NAME}"
+
+    CONTAINER_FILE=./bundle.Dockerfile
+    CONTEXT_LOCATION="."
+
+    CSV_FILE=bundle/manifests/gpu-operator.clusterserviceversion.yaml
+
+    mkdir /work && cd /work
+
+    git clone ${OPERATOR_GIT_REPO} gpu-operator -b ${OPERATOR_GIT_REF} --depth 1
+
+    cd gpu-operator
+
+    git show --quiet
+    GIT_VERSION=$(git rev-parse --short HEAD)
+
+    mv $CSV_FILE ${CSV_FILE}.orig
+    cat ${CSV_FILE}.orig | yq \
+      | jq .metadata.annotations.containerImage=\"$OPERATOR_IMAGE_NAME\" \
+      | jq .metadata.name=\"gpu-operator-certified-git-$GIT_VERSION\" \
+      | jq .spec.version=\"9.9.9-git$GIT_VERSION\" \
+      | jq .spec.install.spec.deployments[0].spec.template.spec.containers[0].image=\"$OPERATOR_IMAGE_NAME\" \
+      > $CSV_FILE
+
+    rm ${CSV_FILE}.orig
+    cat $CSV_FILE | grep containerImage
+
+    # build
+
+    podman build -f $CONTAINER_FILE $CONTEXT_LOCATION -t $QUAY_BUNDLE_IMAGE_NAME
+
+    # push the image to quay.io
+
+    cat /var/run/secrets/openshift.io/push/.dockerconfigjson > /tmp/.dockercfg
+    AUTH="--tls-verify=false --authfile /tmp/.dockercfg"
+
+    podman push $AUTH $QUAY_BUNDLE_IMAGE_NAME

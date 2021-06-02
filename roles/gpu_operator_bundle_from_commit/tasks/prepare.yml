@@ -1,0 +1,45 @@
+---
+- name: Find a node with our NTO/TuneD fuse label
+  command: oc get nodes -l "{{ tuned_module_fuse_label }}" -oname
+  register: fuse_nodes
+
+- name: Find a worker node to label for loading the fuse module with NTO/TuneD
+  command: oc get nodes -l node-role.kubernetes.io/worker -oname
+  when: not fuse_nodes.stdout
+  register: worker_nodes
+
+- name: Mark the node with our NTO/TuneD fuse label
+  command: oc label "{{ worker_nodes.stdout_lines[0] }}" "{{ tuned_module_fuse_label }}="
+  when: not fuse_nodes.stdout
+
+- name: Apply NTO/TuneD fuse module profile manifest
+  command: oc apply -f "{{ tuned_module_fuse }}"
+
+- name: Apply the CI utils manifest
+  command: oc apply -f "{{ gpu_operator_ci_utils }}"
+
+- name: Apply the namespace manifest
+  command: oc apply -f "{{ gpu_operator_namespace }}"
+
+- name: Apply the imagestream manifest
+  command: oc apply -f "{{ gpu_operator_imagestream }}"
+
+- name: Authorize 'ns/gpu-operator-ci' Pods to access ns/gpu-operator-ci-utils images
+  command:
+    oc policy add-role-to-user
+              system:image-puller system:serviceaccount:gpu-operator-ci:default
+              --namespace=gpu-operator-ci-utils
+
+- block:
+  - name: Find the name of the builder-dockercfg secret
+    shell:
+      set -o pipefail;
+      oc get secrets -oname -n gpu-operator-ci | cut -d/ -f2 | grep builder-dockercfg
+    register: builder_secret_cmd
+
+  - name: Store the name of the secret in a variable
+    set_fact:
+      builder_secret: "{{ builder_secret_cmd.stdout }}"
+  rescue:
+  - name: Failed to find the builder-dockercfg secret
+    fail: msg="No builder-dockercfg secret in the 'gpu-operator-ci' namespace ..."
