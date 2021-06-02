@@ -88,34 +88,20 @@
   - name: Make sure that namespace has the openshift.io/cluster-monitoring label
     command: oc label ns/gpu-operator-resources openshift.io/cluster-monitoring=true
 
-- block:
+- name: Validate that the DCGM metrics are correctly exposed
+  block:
   - name: Wait for the nvidia-dcgm-exporter Pod to respond appropriately
-    shell: |
-      DCGM_POD=$(oc get pods -lapp=nvidia-dcgm-exporter -oname -n gpu-operator-resources | head -1);
-      if [ -z "$DCGM_POD" ]; then
-        echo "Failed to find a pod for nvidia-dcgm-exporter";
-        exit 10;
-      fi;
-      DCGM_PORT=9400; LOCAL_PORT=9401;
-      retry=5;
-      timeout 10 oc port-forward ${DCGM_POD} ${LOCAL_PORT}:${DCGM_PORT} -n gpu-operator-resources &
-      while [ "$DCGM_OUTPUT" == "" ]; do
-        sleep 1;
-        DCGM_OUTPUT=$(curl localhost:${LOCAL_PORT}/metrics 2>/dev/null);
-        retry=$(($retry - 1));
-        if [[ $retry == 0 ]]; then
-          echo "Failed to get any output from DCGM/metrics ...";
-          exit 11;
-        fi;
-      done;
-      exec grep "# TYPE DCGM_FI_DEV" <<< ${DCGM_OUTPUT}
+    command:
+      bash "{{ gpu_operator_fetch_pod_metrics_script }}" \
+           9400 app=nvidia-dcgm-exporter gpu-operator-resources \
+           '# HELP'
     register: dcgm_exporter_check
     until:
     - dcgm_exporter_check.rc == 0
     retries: 10
     delay: 20
 
-  - name: Wait for Prometheus to pick up the DCGM endpoint
+  - name: Wait for Prometheus to pick up the GPU Operator DCGM target
     shell:
       set -o pipefail;
       oc get secret prometheus-k8s -n openshift-monitoring -ojson | jq -r '.data["prometheus.yaml.gz"]'
@@ -134,5 +120,5 @@
          -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_operator_dcgm.log
     failed_when: false
 
-  - name: The DCGM does not correctly expose the GPU metrics
-    fail: msg="The DCGM does not correctly expose the GPU metrics to Prometheus"
+  - name: The GPU Operator does not correctly expose its DCGM metrics
+    fail: msg="The GPU Opertor does not correctly expose the its DCGM metrics to Prometheus"
