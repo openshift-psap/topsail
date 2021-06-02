@@ -22,6 +22,11 @@
        > {{ artifact_extra_logs_dir }}/worker_MachineConfigPool.desc
   failed_when: false
 
+- name: Get the description of the master MachineConfigPool
+  shell: oc describe MachineConfigPool/master
+       > {{ artifact_extra_logs_dir }}/master_MachineConfigPool.desc
+  failed_when: false
+
 - name: Get the state of the nodes
   command: oc get nodes
   failed_when: false
