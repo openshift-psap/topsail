@@ -112,6 +112,10 @@ case ${target} in
         ci_entrypoint_sro.sh "$action" "$@"
         exit 0
         ;;
+    "nto")
+        ci_entrypoint_nto.sh "$action" "$@"
+        exit 0
+        ;;
     "cluster")
         ci_entrypoint_cluster.sh "$action" "$@"
         exit 0
@@ -121,7 +125,7 @@ case ${target} in
         exit 1
         ;;
     *)
-	echo "FATAL: Nothing to do ..."
+	echo "FATAL: Unknown target \"${target}\""
         exit 1
 	;;
 esac
