@@ -4,19 +4,13 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
-nto_dir=cluster-node-tuning-operator
-
 nto_e2e() {
-    local nto_repo=https://github.com/openshift/$nto_dir
     local commit=${1:-}
 
     test $commit || {
         commit=origin/release-$(oc get clusterversion -o jsonpath='{.items[].status.desired.version}' | grep -Po '^\d+\.\d+')
     }
-    rm -rf $nto_dir
-    git clone -n $nto_repo && cd $nto_dir && git checkout ${commit}
-    make test-e2e
-    cd ..
+    toolbox/nto/test-e2e.sh "$commit"
 }
 
 if [ -z "${1:-}" ]; then
