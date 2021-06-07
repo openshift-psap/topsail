@@ -98,7 +98,7 @@ repository.
 Currently, only the GPU Operator results are exposed in
 `this dashboard <https://openshift-psap.github.io/ci-dashboard/gpu-operator_daily-matrix.html>`_:
 
-.. image:: https://openshift-psap.github.io/ci-artifacts/_images/ci-dashboard.png
+.. image:: https://openshift-psap.github.io/ci-artifacts/_static/ci-dashboard.png
   :width: 100%
   :alt: GPU Operator CI Dashboard
 
