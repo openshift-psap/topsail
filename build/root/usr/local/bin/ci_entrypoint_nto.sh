@@ -5,12 +5,8 @@ set -o errexit
 set -o nounset
 
 nto_e2e() {
-    local commit=${1:-}
-
-    test $commit || {
-        commit=origin/release-$(oc get clusterversion -o jsonpath='{.items[].status.desired.version}' | grep -Po '^\d+\.\d+')
-    }
-    toolbox/nto/test-e2e.sh "$commit"
+    toolbox/cluster/capture_environment.sh
+    toolbox/nto/run_e2e_test.sh "$@"
 }
 
 if [ -z "${1:-}" ]; then

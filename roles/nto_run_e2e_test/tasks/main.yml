@@ -1,0 +1,14 @@
+---
+- name: Git checkout the NTO repository with e2e tests
+  ansible.builtin.git:
+    repo: "{{ nto_git_repo }}"
+    dest: /tmp/nto
+    version: "{{ nto_git_ref }}"
+    force: yes
+
+- name: Run the NTO e2e tests
+  shell:
+    make test-e2e
+        > {{ artifact_extra_logs_dir }}/nto_e2e_test.log 2>&1
+  args:
+    chdir: /tmp/nto
