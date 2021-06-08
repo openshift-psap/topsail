@@ -24,10 +24,6 @@ case ${action:-} in
         nto_e2e "$@"
         exit 0
         ;;
-    -*)
-        echo "FATAL: Unknown option: ${action}"
-        exit 1
-        ;;
     *)
         echo "FATAL: Unknown action \"${action}\""
         exit 1

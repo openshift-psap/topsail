@@ -128,9 +128,9 @@ The functionalities of the toolbox commands are described in the
     ├── entitlement
     │   ├── deploy.sh
     │   ├── inspect.sh
+    │   ├── test_cluster.sh
     │   ├── test_in_cluster.sh
     │   ├── test_in_podman.sh
-    │   ├── test_cluster.sh
     │   ├── undeploy.sh
     │   └── wait.sh
     ├── gpu-operator
@@ -158,6 +158,8 @@ The functionalities of the toolbox commands are described in the
     │   ├── has_nfd_labels.sh
     │   ├── undeploy_from_operatorhub.sh
     │   └── wait_gpu_nodes.sh
+    ├── nto
+    │   └── run_e2e_test.sh
     └── special-resource-operator
         ├── capture_deployment_state.sh
         ├── deploy_from_commit.sh

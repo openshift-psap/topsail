@@ -120,12 +120,8 @@ case ${target} in
         ci_entrypoint_cluster.sh "$action" "$@"
         exit 0
         ;;
-    -*)
-        echo "FATAL: Unknown option: ${target}"
-        exit 1
-        ;;
     *)
-	echo "FATAL: Unknown target \"${target}\""
+        echo "FATAL: Unknown target \"${target}\""
         exit 1
 	;;
 esac

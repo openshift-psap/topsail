@@ -1,14 +1,28 @@
 ---
+- name: Check that nto_git_repo is defined
+  fail: msg="Bailing out. This play requires 'nto_git_repo'"
+  when: nto_git_repo is undefined
+
+- name: Check that nto_git_ref is defined
+  fail: msg="Bailing out. This play requires 'nto_git_ref'"
+  when: nto_git_ref is undefined
+
 - name: Git checkout the NTO repository with e2e tests
   ansible.builtin.git:
     repo: "{{ nto_git_repo }}"
-    dest: /tmp/nto
+    dest: "{{ nto_tmp_dir }}"
     version: "{{ nto_git_ref }}"
-    force: yes
+    force: true
+
+- name: Store the current git commit
+  shell:
+    git show -s > {{ artifact_extra_logs_dir }}/git.commit
+  args:
+    chdir: "{{ nto_tmp_dir }}"
 
 - name: Run the NTO e2e tests
   shell:
     make test-e2e
         > {{ artifact_extra_logs_dir }}/nto_e2e_test.log 2>&1
   args:
-    chdir: /tmp/nto
+    chdir: "{{ nto_tmp_dir }}"
