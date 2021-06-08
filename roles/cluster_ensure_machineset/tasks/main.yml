@@ -12,5 +12,5 @@
 - name: Create machineset with requested instance type, as the cluster does not have one
   when: not cluster_has_machineset.stdout
   block:
-  - name: Create the new machineset
+  - name: Derive the new machineset
     include_tasks: derive_machineset.yml

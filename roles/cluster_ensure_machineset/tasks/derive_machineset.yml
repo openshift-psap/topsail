@@ -6,9 +6,22 @@
   register: oc_get_machinesets
   failed_when: not oc_get_machinesets.stdout
 
+- name: "Check if a base machineset is specified: base_machineset={{ base_machineset | default('not set') }}"
+  set_fact:
+    base_machineset={{ base_machineset | default(oc_get_machinesets.stdout_lines[0], true) }}
+
+- name: Ensure that the specified base machineset exists
+  fail: msg="Specified base machineset ({{ base_machineset }}) is invalid or does not exist"
+  when: base_machineset not in oc_get_machinesets.stdout_lines
+
+- name: Ensure that the base machineset exists
+  command: oc get machinesets/{{ base_machineset }} -n openshift-machine-api -oname
+  register: machineset_exists
+  failed_when: not machineset_exists
+
 - name: Store the MachineSet json definition in a file
   shell:
-    oc get 'machineset/{{ oc_get_machinesets.stdout_lines[0] }}'
+    oc get 'machineset/{{ base_machineset }}'
        -n openshift-machine-api
        -o json
        > {{ artifact_extra_logs_dir }}/source_machineset.json
