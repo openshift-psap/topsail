@@ -104,20 +104,24 @@ fi
 set -x
 
 case ${target} in
+    "cluster")
+        ci_entrypoint_cluster.sh "$action" "$@"
+        exit 0
+        ;;
     "gpu-operator")
         ci_entrypoint_gpu-operator.sh "$action" "$@"
         exit 0
         ;;
-    "sro")
-        ci_entrypoint_sro.sh "$action" "$@"
+    "nfd-operator")
+        ci_entrypoint_nfd-operator.sh "$action" "$@"
         exit 0
         ;;
     "nto")
         ci_entrypoint_nto.sh "$action" "$@"
         exit 0
         ;;
-    "cluster")
-        ci_entrypoint_cluster.sh "$action" "$@"
+    "sro")
+        ci_entrypoint_sro.sh "$action" "$@"
         exit 0
         ;;
     *)
