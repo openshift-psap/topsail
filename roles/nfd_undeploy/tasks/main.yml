@@ -18,3 +18,10 @@
 
 - name: Delete the namespace of the NFD Operator
   command: oc --ignore-not-found=true delete -f "{{ nfd_operator_namespace }}"
+
+- name: Delete labels created by the NFD Operator
+  shell:
+    set -o pipefail;
+    oc get nodes -o json \
+    | jq 'del( .items[].metadata.labels."nfd.node.kubernetes.io" , .items[].metadata.labels."feature.node.kubernetes.io" )' \
+    | oc replace -f -
