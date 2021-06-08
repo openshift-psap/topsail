@@ -20,9 +20,10 @@
 - name: Search if the CI image exists
   command: oc get imagestreamtag -n ci-artifacts "ci-artifacts:{{ local_ci_image_tag }}" -oname
   register: has_ci_image
+  failed_when: false
 
 - name: Build the CI image
-  when: has_ci_image.stdout != ""
+  when: not has_ci_image.stdout
   block:
   - name: Delete any old image builder manifest
     command: oc delete -f "{{ local_ci_image_builder }}" --ignore-not-found=true
@@ -40,6 +41,10 @@
 
   - name: Wait for the image to be built
     shell: oc logs -f bc/image-builder -n ci-artifacts > /dev/null
+    register: image_builder_logs
+    until: image_builder_logs.rc == 0
+    retries: 120
+    delay: 10
 
 - name: Ensure that the image exists
   command: oc get imagestreamtag -n ci-artifacts "ci-artifacts:{{ local_ci_image_tag }}" -oname
