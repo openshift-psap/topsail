@@ -20,6 +20,7 @@ Red Hat PSAP CI-Artifacts toolbox
    toolbox/entitlement
    toolbox/gpu_operator
    toolbox/nfd
+   toolbox/nto
    toolbox/sro
    toolbox/local-ci
 

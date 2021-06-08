@@ -19,6 +19,8 @@
     git show -s > {{ artifact_extra_logs_dir }}/git.commit
   args:
     chdir: "{{ nto_tmp_dir }}"
+  tags:
+    - skip_ansible_lint
 
 - name: Run the NTO e2e tests
   shell:
