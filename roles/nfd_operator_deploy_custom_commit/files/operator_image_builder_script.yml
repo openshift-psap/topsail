@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: nfd-operator-ci
+  name: operator-image-builder-script
+  namespace: nfd-operator-ci
+data:
+  run_operator_image_builder.sh: |
+    #! /bin/bash
+    set -ex
+
+    IMAGE_STREAM=image-registry.openshift-image-registry.svc:5000/${IMAGESTREAM_NAMESPACED_NAME}:${IMAGESTREAM_TAG}
+    CONTAINER_FILE=./Dockerfile
+    IMAGE_BUILD_CMD="buildah bud"
+    IMAGE_PUSH_CMD="podman push"
+
+    mkdir /work && cd /work
+
+    git clone ${OPERATOR_GIT_REPO} cluster-nfd-operator -b ${OPERATOR_GIT_REF} --depth 1
+
+    cd cluster-nfd-operator
+
+    git show --quiet
+
+    cat <<EOF > /usr/local/bin/docker
+    #! /bin/sh
+    exec podman --cgroup-manager=cgroupfs "\$@"
+    EOF
+    chmod u+x /usr/local/bin/docker
+
+    podman pull docker.io/library/golang:1.16.3-buster
+    podman pull registry.access.redhat.com/ubi8/ubi:latest
+    sed -i 's/registry.ci.openshift.org\/ocp\/builder:rhel-8-golang-1.16-openshift-4.8/docker.io\/library\/golang:1.16.3-buster/' Dockerfile
+    sed -i 's/registry.ci.openshift.org\/ocp\/4.8:base/registry.access.redhat.com\/ubi8\/ubi/' Dockerfile
+
+    IMAGE_NAME="nfd-operator-ci:latest"
+    make image IMAGE_TAG=${IMAGE_NAME}
+
+    # push the image locally
+
+    AUTH="--tls-verify=false --authfile /tmp/.dockercfg"
+    cp /var/run/secrets/openshift.io/push/.dockercfg /tmp
+    (echo "{ \"auths\": " ; cat /var/run/secrets/openshift.io/push/.dockercfg ; echo "}") > /tmp/.dockercfg
+
+    podman push $AUTH $IMAGE_NAME $IMAGE_STREAM
+
+    echo "NFD Operator built from $OPERATOR_GIT_REPO / $OPERATOR_GIT_REF and pushed to $IMAGE_STREAM"

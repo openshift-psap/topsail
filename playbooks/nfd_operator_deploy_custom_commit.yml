@@ -1,0 +1,7 @@
+---
+- name: Deploy a custom commit of NFD Operator
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: nfd_operator_deploy_custom_commit

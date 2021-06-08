@@ -1,0 +1,13 @@
+---
+# Custom label to apply to the node where we'll load fuse
+tuned_module_fuse_label: tuned.module.fuse
+# NFD Deploy Script
+nfd_install_script: roles/nfd_operator_deploy_custom_commit/scripts/deploy_operator.sh
+# Manifest for installing the nfd operator from a custom commit
+tuned_module_fuse: roles/nfd_operator_deploy_custom_commit/files/tuned_module_fuse.yml
+nfd_operator_ci_utils: roles/nfd_operator_deploy_custom_commit/files/operator_ci_utils.yml
+nfd_operator_imagestream: roles/nfd_operator_deploy_custom_commit/files/operator_imagestream.yml
+nfd_operator_image_builder_script: roles/nfd_operator_deploy_custom_commit/files/operator_image_builder_script.yml
+nfd_operator_helper_image_builder: roles/nfd_operator_deploy_custom_commit/files/operator_helper_image_builder.yml
+# Templates
+nfd_operator_image_builder_pod: roles/nfd_operator_deploy_custom_commit/templates/operator_image_builder_pod.yml.j2

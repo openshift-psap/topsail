@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: nfd-operator-ci
+  name: operator-image-builder-pod
+  namespace: nfd-operator-ci
+spec:
+  containers:
+  - command:
+    - /bin/sh
+    - /mnt/helper/run_operator_image_builder.sh
+    image: image-registry.openshift-image-registry.svc:5000/nfd-operator-ci-utils/nfd-operator-ci-utils:builder_helper
+    name: operator-image-builder
+    imagePullPolicy: Always
+    securityContext:
+      privileged: true
+    env:
+      - name: OPERATOR_GIT_REPO
+        value: "{{ nfd_operator_git_repo }}"
+      - name: OPERATOR_GIT_REF
+        value: "{{ nfd_operator_git_ref }}"
+      - name: IMAGESTREAM_NAMESPACED_NAME
+        value: "nfd-operator-ci/nfd-operator-ci"
+      - name: IMAGESTREAM_TAG
+        value: "{{ nfd_operator_image_tag }}"
+    volumeMounts:
+    - mountPath: /mnt/helper/run_operator_image_builder.sh
+      name: operator-image-builder-script
+      readOnly: true
+      subPath: run_operator_image_builder.sh
+    - mountPath: /var/run/secrets/openshift.io/push
+      name: builder-dockercfg-push
+      readOnly: true
+  nodeSelector:
+    tuned.module.fuse: ""
+  restartPolicy: Never
+  volumes:
+  - configMap:
+      defaultMode: 511
+      name: operator-image-builder-script
+    name: operator-image-builder-script
+  - name: builder-dockercfg-push
+    secret:
+      defaultMode: 384
+      secretName: "{{ builder_secret }}"

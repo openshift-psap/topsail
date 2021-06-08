@@ -1,0 +1,30 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nfd-operator
+  labels:
+    app: nfd-operator-ci
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: nfd-operator-ci
+  labels:
+    app: nfd-operator-ci
+spec: {}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nfd-operator-resources
+  labels:
+    app: nfd-operator-ci
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: nfd-operator-ci-utils
+  labels:
+    app: nfd-operator-ci
+spec: {}

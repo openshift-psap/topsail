@@ -1,0 +1,18 @@
+---
+kind: ImageStream
+apiVersion: v1
+metadata:
+  name: nfd-operator-ci
+  namespace: nfd-operator-ci
+  labels:
+    app: nfd-operator-ci
+spec: {}
+---
+kind: ImageStream
+apiVersion: v1
+metadata:
+  name: nfd-operator-ci-utils
+  namespace: nfd-operator-ci-utils
+  labels:
+    app: nfd-operator-ci
+spec: {}

@@ -1,0 +1,4 @@
+---
+nfd_operator_git_repo: ""
+nfd_operator_git_ref: ""
+nfd_operator_image_tag: "ci_image"

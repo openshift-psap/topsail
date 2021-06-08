@@ -1,0 +1,39 @@
+---
+- block:
+  - name: Git checkout
+    git:
+      repo: "{{ nfd_operator_git_repo }}"
+      dest: /tmp/cluster-nfd-operator
+      version: "{{ nfd_operator_git_ref }}"
+
+  - name: Deploy the custom version of the Node Feature Discovery Operator
+    shell:
+      make deploy IMAGE_TAG="image-registry.openshift-image-registry.svc:5000/nfd-operator-ci/nfd-operator-ci:{{ nfd_operator_image_tag }}"
+          > {{ artifact_extra_logs_dir }}/nfd_deploy_custom.log 2>&1
+    args:
+      chdir: /tmp/cluster-nfd-operator
+
+  - name: Authorize 'sa/nfd-operator' Pods to access ns/nfd-operator-ci images
+    command:
+      oc policy add-role-to-user
+                system:image-puller system:serviceaccount:openshift-nfd:nfd-operator
+                --namespace=nfd-operator-ci
+
+  - name: Apply the sample CR NodeFeatureDiscoveries from Git source
+    command:
+      oc apply -f config/samples/nfd.openshift.io_v1_nodefeaturediscovery.yaml
+    args:
+      chdir: /tmp/cluster-nfd-operator
+
+  rescue:
+  - name: Get the state of the NFD operator controller-manager pod (debug)
+    command: oc get pods -n openshift-nfd
+    failed_when: false
+
+  - name: Get the logs of nfd the pod (debug)
+    command:
+       oc logs -n openshift-nfd deployment.apps/nfd-controller-manager -c manager
+    failed_when: false
+
+  - name: Fail because the nfd custom commit could not be deployed
+    fail: msg="Fail because the nfd custom commit could not be deployed"
