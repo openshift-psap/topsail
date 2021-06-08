@@ -47,3 +47,9 @@ Search for these NVIDIA GPU PCI labels (that's the labels used by the `GPU Opera
 .. code-block:: shell
 
     toolbox/nfd/wait_gpu_nodes.sh
+
+* Test NFD Operator from it's master branch
+
+.. code-block:: shell
+
+    toolbox/local-ci/deploy.sh "run nfd-operator test_master_branch" https://github.com/openshift-psap/ci-artifacts master
