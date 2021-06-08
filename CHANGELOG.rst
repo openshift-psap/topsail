@@ -2,11 +2,26 @@
 
 (Organized release by release)
 
-Changes since version May 7th, 2021
------------------------------------
+Changes since version 1.0.0 (June 2021)
+---------------------------------------
 
 Toolbox
-~~~~~~~
+^^^^^^^
+
+...
+
+Retro-compatibility breaks
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+...
+
+Other changes
+^^^^^^^^^^^^^
+
+...
+
+Changes since version May 7th, 2021
+-----------------------------------
 
 Retro-compatibility breaks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
