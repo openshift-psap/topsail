@@ -5,6 +5,7 @@
       repo: "{{ nfd_operator_git_repo }}"
       dest: /tmp/cluster-nfd-operator
       version: "{{ nfd_operator_git_ref }}"
+      force: true
 
   - name: Deploy the custom version of the Node Feature Discovery Operator
     shell:

@@ -31,10 +31,12 @@ fi
 # Set vars
 git_repo=$1
 git_ref=$2
-image_tag=$3
+if [[ "${3:-}"  ]]; then
+  image_tag=$3
+  ANSIBLE_OPTS="${ANSIBLE_OPTS} -e nfd_operator_image_tag=${image_tag}"
+fi
 
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e nfd_operator_git_repo=${git_repo}"
 ANSIBLE_OPTS="${ANSIBLE_OPTS} -e nfd_operator_git_ref=${git_ref}"
-ANSIBLE_OPTS="${ANSIBLE_OPTS} -e nfd_operator_image_tag=${image_tag}"
 
 exec ansible-playbook ${ANSIBLE_OPTS} playbooks/nfd_operator_deploy_custom_commit.yml

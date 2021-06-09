@@ -6,8 +6,8 @@ set -o nounset
 
 prepare_cluster_for_nfd() {
     if toolbox/nfd/has_nfd_labels.sh; then
-     echo "FATAL: NFD labels found in the cluster"
-     exit 1
+        echo "FATAL: NFD labels found in the cluster"
+        exit 1
     fi
     toolbox/cluster/capture_environment.sh
 }
@@ -28,7 +28,7 @@ test_master_branch() {
     CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG="ci-image"
 
     prepare_cluster_for_nfd
-    toolbox/nfd/deploy_from_commit.sh   "${CI_IMAGE_NFD_COMMIT_CI_REPO}" \
+    toolbox/nfd-operator/deploy_from_commit.sh   "${CI_IMAGE_NFD_COMMIT_CI_REPO}" \
                                         "${CI_IMAGE_NFD_COMMIT_CI_REF}" \
                                         "${CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG}"
     validate_nfd_deployment
@@ -54,7 +54,7 @@ case ${action:-} in
         exit 1
         ;;
     *)
-        echo "FATAL: Nothing to do ..."
+        echo "FATAL: Unknown target \"${target}\""
         exit 1
         ;;
 esac

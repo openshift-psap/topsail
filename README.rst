@@ -153,12 +153,12 @@ The functionalities of the toolbox commands are described in the
     │   ├── cleanup.sh
     │   └── deploy.sh
     ├── nfd
-    │   ├── deploy_from_commit.sh
+    │   ├── has_gpu_nodes.sh
+    │   ├── has_nfd_labels.sh
     │   └── wait_nfd_labels.sh
     ├── nfd-operator
     │   ├── deploy_from_operatorhub.sh
-    │   ├── has_gpu_nodes.sh
-    │   ├── has_nfd_labels.sh
+    │   ├── deploy_from_commit.sh
     │   ├── undeploy_from_operatorhub.sh
     │   └── wait_gpu_nodes.sh
     ├── nto

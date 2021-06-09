@@ -41,15 +41,26 @@ Search for these NVIDIA GPU PCI labels (that's the labels used by the `GPU Opera
 
     toolbox/nfd/has_gpu_nodes.sh
 
-
 * Wait with NFD for GPU nodes to become available
 
 .. code-block:: shell
 
     toolbox/nfd/wait_gpu_nodes.sh
 
-* Test NFD Operator from it's master branch
+* Test NFD Operator from its master branch
 
 .. code-block:: shell
 
     toolbox/local-ci/deploy.sh "run nfd-operator test_master_branch" https://github.com/openshift-psap/ci-artifacts master
+
+* Deploy NFD Operator from its master branch
+
+.. code-block:: shell
+
+    toolbox/nfd/deploy_from_commit.sh <repo> <ref> [tag]   
+
+Example:
+
+.. code-block:: shell
+    
+    toolbox/nfd/deploy_from_commit.sh https://github.com/openshift/cluster-nfd-operator.git master
