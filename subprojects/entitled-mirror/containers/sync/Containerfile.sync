@@ -1,0 +1,8 @@
+FROM registry.access.redhat.com/ubi8/nginx-118:latest
+
+USER root
+
+RUN dnf install yum-utils -y
+
+RUN ["chmod", "+x", "/scripts/sync_commands.sh"]
+ENTRYPOINT ["/scripts/sync_commands.sh"]

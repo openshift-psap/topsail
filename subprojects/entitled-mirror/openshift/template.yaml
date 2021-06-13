@@ -1,0 +1,244 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: rhods-entitled-mirror
+  annotations:
+    openshift.io/display-name: Entitled mirror repository with packages for building GPU drivers
+    description: ""
+    tags: nginx,entitlement,mirror
+    iconClass: icon-nginx
+    openshift.io/long-description: ""
+    openshift.io/provider-display-name: PSAP
+    openshift.io/documentation-url: rhods-entitled-mirror
+    openshift.io/support-url: ""
+message: ""
+labels:
+  template: rhods-entitled-mirror
+objects:
+  - kind: Namespace
+    apiVersion: v1
+    metadata:
+        name: ${NAMESPACE}
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      namespace: ${NAMESPACE}
+      name: ${NAME}
+    spec:
+      ports:
+        - name: web
+          port: 443
+          targetPort: 443
+      selector:
+        app: ${NAME}
+  - kind: Route
+    apiVersion: v1
+    metadata:
+      name: ${NAME}
+      namespace: ${NAMESPACE}
+      annotations:
+        template.openshift.io/expose-uri: http://{.spec.host}{.spec.path}
+        kubernetes.io/tls-acme: "true"
+        acme.openshift.io/secret-name: ${NAME}-acme
+    spec:
+      host: ""
+      port:
+        targetPort: 443
+      tls:
+        termination: passthrough
+      to:
+        kind: Service
+        name: ${NAME}
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: ${NAME}
+      namespace: ${NAMESPACE}
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 80Gi
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: ${NAME}
+      namespace: ${NAMESPACE}
+  - apiVersion: security.openshift.io/v1
+    kind: SecurityContextConstraints
+    metadata:
+      name: ${NAME}
+    priority: null
+    readOnlyRootFilesystem: false
+    requiredDropCapabilities: null
+    runAsUser:
+      type: RunAsAny
+    seLinuxContext:
+      type: RunAsAny
+    seccompProfiles:
+      - '*'
+    supplementalGroups:
+      type: RunAsAny
+    users:
+      - system:serviceaccount:${NAMESPACE}:${NAME}
+    volumes:
+      - '*'
+    allowHostDirVolumePlugin: true
+    allowHostIPC: false
+    allowHostNetwork: false
+    allowHostPID: true
+    allowHostPorts: false
+    allowPrivilegeEscalation: true
+    allowPrivilegedContainer: true
+    allowedCapabilities:
+      - '*'
+    allowedUnsafeSysctls:
+      - '*'
+    defaultAddCapabilities: null
+    fsGroup:
+      type: RunAsAny
+    groups:
+      - system:cluster-admins
+      - system:nodes
+      - system:masters
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${NAME}-client-auth
+      namespace: ${NAMESPACE}
+    type: Opaque
+    data:
+      client-ca: ${CLIENT_CA} 
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: ${NAME}-nginx
+      namespace: ${NAMESPACE}
+    binaryData:
+      nginx.conf: ${NGINX_CONFIG} 
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: ${NAME}-sync-script
+      namespace: ${NAMESPACE}
+    binaryData:
+      sync_commands.sh: ${SYNC_COMMANDS} 
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: ${NAME}
+      namespace: ${NAMESPACE}
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: ${NAME}
+      template:
+        metadata:
+          name: ${NAME}
+          labels:
+            app: ${NAME}
+        spec:
+          serviceAccount: ${NAME}
+          serviceAccountName: ${NAME}
+          nodeSelector:
+            entitled: "true"
+          volumes:
+            - name: repo
+              persistentVolumeClaim:
+                claimName: ${NAME}
+            - name: client-auth
+              secret:
+                secretName: ${NAME}-client-auth
+                items:
+                  - key: client-ca
+                    path: client_ca.crt
+            - name: acme
+              secret:
+                secretName: ${NAME}-acme
+                items:
+                  - key: tls.crt
+                    path: tls.crt
+                  - key: tls.key
+                    path: tls.key
+            - name: nginx-config
+              configMap:
+                name: ${NAME}-nginx
+                items:
+                  - key: nginx.conf
+                    path: nginx.conf
+            - name: sync-script
+              configMap:
+                name: ${NAME}-sync-script
+                defaultMode: 0777
+                items:
+                  - key: sync_commands.sh
+                    path: sync_commands.sh
+          initContainers:
+            - name: reposync
+              image: ${QUAY_REPO}:sync
+              securityContext:
+                privileged: true
+              volumeMounts:
+                - name: repo
+                  mountPath: /repo
+                - name: sync-script
+                  mountPath: /scripts/sync_commands.sh
+                  subPath: sync_commands.sh
+          containers:
+            - name: nginx
+              image: ${QUAY_REPO}:serve
+              volumeMounts:
+                - name: nginx-config
+                  mountPath: /etc/nginx/nginx.conf
+                  subPath: nginx.conf
+                - name: repo
+                  mountPath: /repo
+                - name: client-auth
+                  mountPath: /client-auth/
+                  readOnly: true
+                - name: acme
+                  mountPath: /acme/
+                  readOnly: true
+              ports:
+                - containerPort: 443
+              readinessProbe:
+                timeoutSeconds: 3
+                initialDelaySeconds: 3
+                httpGet:
+                  path: /ready
+                  port: 8080
+                  scheme: HTTP
+
+parameters:
+  - name: NAME
+    displayName: Name
+    description: The name assigned to all of the frontend objects defined in this template.
+    required: true
+    value: ""
+  - name: NAMESPACE
+    displayName: Namespace
+    description: The OpenShift Namespace where the ImageStream resides.
+    required: true
+    value: ""
+  - name: CLIENT_CA
+    displayName: Client CA certificate
+    description: The certificate used to sign client certificates
+    required: true
+    value: ""
+  - name: QUAY_REPO
+    displayName: Quay repo for mirror images
+    description: A quay repo containing the tags `sync` and `serve` with the mirror images
+    required: true
+    value: "quay.io/openshift-psap/entitled-mirror"
+  - name: NGINX_CONFIG
+    displayName: NGINX Configuration File
+    description: NGINX Configuration File
+    required: true
+    value: ""
+  - name: SYNC_COMMANDS
+    displayName: The script used to sync the mirrored repositories
+    description: The script used to sync the mirrored repositories
+    required: true
+    value: ""
