@@ -1,0 +1,220 @@
+---
+- block:
+  - name: Check if the GPU Operator namespace has the openshift.io/cluster-monitoring label
+    shell:
+      set -o pipefail;
+      oc get ns -l openshift.io/cluster-monitoring -oname | grep gpu-operator-resources
+  rescue:
+  - name: Get the namespace yaml specification
+    command: oc get ns/gpu-operator-resources -oyaml
+
+  - name: Make sure that namespace has the openshift.io/cluster-monitoring label
+    command: oc label ns/gpu-operator-resources openshift.io/cluster-monitoring=true
+
+### DCGM metrics
+
+- name: Validate that the DCGM metrics are correctly exposed
+  block:
+  - name: Wait for the nvidia-dcgm-exporter Pod to respond appropriately
+    command:
+      bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+           9400 app=nvidia-dcgm-exporter gpu-operator-resources
+           'DCGM'
+    register: dcgm_exporter_check
+    until:
+    - dcgm_exporter_check.rc == 0
+    retries: 10
+    delay: 20
+
+  - name: Wait for Prometheus to pick up the GPU Operator DCGM ServiceMonitor (ServiceDiscovery)
+    shell:
+      set -o pipefail;
+      oc get secret prometheus-k8s -n openshift-monitoring -ojson
+      | jq -r '.data["prometheus.yaml.gz"]'
+      | base64 -d
+      | gunzip
+      | grep dcgm
+    register: dcgm_exporter_prom
+    until: dcgm_exporter_prom.rc == 0
+    retries: 30
+    delay: 30
+
+  - name: Get the current number of targets in the DCGM scrape pool
+    shell:
+      set -o pipefail;
+      bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+           9090 app=prometheus openshift-monitoring
+           'nvidia-dcgm-exporter'
+      | grep prometheus_target_scrape_pool_targets
+      | cut -d' ' -f2
+    register: prom_dcgm_scrape_pool
+    until: prom_dcgm_scrape_pool.stdout | length > 0
+    retries: 30
+    delay: 30
+
+  - name: Ensure that the DCGM scrape pool is not empty
+    command: test {{ prom_dcgm_scrape_pool.stdout }} -ne 0
+
+  rescue:
+  - name: Capture Prometheus scrape pools metrics page
+    shell:
+      bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+           9090 app=prometheus openshift-monitoring
+           '.'
+           > {{ artifact_extra_logs_dir }}/metrics_prometheus_scrape_pools.txt
+
+  - name: Capture the DCGM logs (debug)
+    shell:
+      oc logs ds/nvidia-dcgm-exporter
+         -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_operator_dcgm.log
+    failed_when: false
+
+  - name: The GPU Operator does not correctly expose its DCGM metrics
+    fail: msg="The GPU Opertor does not correctly expose the its DCGM metrics to Prometheus"
+
+### Node Metrics
+
+- name: Check if the GPU Operator node-status metrics are exposed
+  command: oc get ServiceMonitor/nvidia-node-status-exporter -n gpu-operator-resources -oname
+  failed_when: false
+  register: gpu_operator_has_node_servicemonitor
+
+- name: Validate that the GPU Operator node-status metrics are correctly exposed
+  when: gpu_operator_has_node_servicemonitor.rc == 0
+  block:
+  - name: Fetch the GPU Operator node-status-exporter metrics
+    shell:
+      bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+           8000 app=nvidia-node-status-exporter gpu-operator-resources
+           '.' > {{ artifact_extra_logs_dir }}/metrics.gpu_operator_node.txt
+
+  - name: Ensure that the node-status-exporter metrics contains our custom metrics
+    command: grep gpu_operator_node {{ artifact_extra_logs_dir }}/metrics.gpu_operator_node.txt
+
+  - name: Wait for Prometheus to pick up the GPU Operator node-status target
+    shell:
+      set -o pipefail;
+      oc get secret prometheus-k8s -n openshift-monitoring -ojson
+      | jq -r '.data["prometheus.yaml.gz"]'
+      | base64 -d
+      | gunzip
+      | grep nvidia-node-status-exporter
+    register: node_status_exporter_prom
+    until: node_status_exporter_prom.rc == 0
+    retries: 30
+    delay: 30
+
+  - name: Get the current number of targets in the operator scrape pool
+    shell:
+      set -o pipefail;
+      bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+           9090 app=prometheus openshift-monitoring
+           'nvidia-node-status-exporter'
+      | grep prometheus_target_scrape_pool_targets
+      | cut -d' ' -f2
+    register: prom_node_scrape_pool
+    until: prom_node_scrape_pool.stdout | length > 0
+    retries: 30
+    delay: 30
+
+  - name: Ensure that the node-status-exporter scrape pool is not empty
+    command: test {{ prom_node_scrape_pool.stdout }} -ne 0
+
+  rescue:
+  - name: The GPU Operator does not correctly expose its node-status metrics
+    fail: msg="The GPU Operator does not correctly expose its node-status metrics to Prometheus"
+
+- name: Capture Prometheus scrape pools metrics page
+  shell:
+    bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+         9090 app=prometheus openshift-monitoring
+         '.'
+         > {{ artifact_extra_logs_dir }}/prometheus_scrape_pools.metrics.text
+
+- name: Capture Prometheus scrape pools metrics page
+  shell:
+    bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+         9090 app=prometheus openshift-monitoring
+         '.'
+         > {{ artifact_extra_logs_dir }}/prometheus_scrape_pools.metrics.text
+
+### Operator metrics
+
+- name: Check if the GPU-Operator operator metrics are exposed
+  command: oc get ServiceMonitor/gpu-operator -n openshift-operators -oname
+  failed_when: false
+  register: gpu_operator_has_servicemonitor
+
+- name: Inform that the GPU Operator operator metrics are not exposed
+  when: gpu_operator_has_servicemonitor.rc != 0
+  debug: msg="GPU-Operator ServiceMonitor not found, skipping the validation."
+
+- name: Validate that the GPU Operator operator metrics are correctly exposed
+  when: gpu_operator_has_servicemonitor.rc == 0
+  block:
+  - name: Check if the namespace has the openshift.io/cluster-monitoring label
+    block:
+    - name: Check if the namespace has the openshift.io/cluster-monitoring label
+      shell:
+        set -o pipefail;
+        oc get ns -l openshift.io/cluster-monitoring -oname
+        | grep openshift-operators
+    rescue:
+    - name: Make sure that namespace has the openshift.io/cluster-monitoring label
+      command: oc label ns/openshift-operators openshift.io/cluster-monitoring=true
+
+  - name: Fetch the GPU Operator operator metrics
+    shell:
+      bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+           8080 app=gpu-operator openshift-operators
+           '.' > {{ artifact_extra_logs_dir }}/metrics.gpu_operator.txt
+
+  - name: Ensure that it contains our custom metrics
+    command: grep gpu_operator {{ artifact_extra_logs_dir }}/metrics.gpu_operator.txt
+
+  - name: Wait for Prometheus to pick up the GPU Operator operator target
+    shell:
+      set -o pipefail;
+      oc get secret prometheus-k8s -n openshift-monitoring -ojson
+      | jq -r '.data["prometheus.yaml.gz"]'
+      | base64 -d
+      | gunzip
+      | grep /gpu-operator/
+    register: operator_metrics_exporter_prom
+    until: operator_metrics_exporter_prom.rc == 0
+    retries: 30
+    delay: 30
+
+  - name: Get the current number of targets in the operator scrape pool
+    shell:
+      set -o pipefail;
+      bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+           9090 app=prometheus openshift-monitoring
+           '/gpu-operator/'
+      | grep prometheus_target_scrape_pool_targets
+      | cut -d' ' -f2
+    register: prom_operator_scrape_pool
+    until: prom_operator_scrape_pool.stdout | length > 0
+    retries: 30
+    delay: 30
+
+  - name: Ensure that the operator scrape pool is not empty
+    command: test {{ prom_operator_scrape_pool.stdout }} -ne 0
+
+  rescue:
+  - name: Save Prometheus metrics target page
+    shell:
+      bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+           9090 app=prometheus openshift-monitoring
+           '.'
+           > {{ artifact_extra_logs_dir }}/metrics.prometheus_scrape_pools.txt
+
+  - name: The GPU Operator does not correctly expose its operator metrics
+    fail: msg="The GPU Operator does not correctly expose its operator metrics to Prometheus"
+
+- name: Capture Prometheus scrape pools metrics page
+  shell:
+    bash "{{ gpu_operator_fetch_pod_metrics_script }}"
+         9090 app=prometheus openshift-monitoring
+         '.'
+         > {{ artifact_extra_logs_dir }}/metrics.prometheus_scrape_pools.txt

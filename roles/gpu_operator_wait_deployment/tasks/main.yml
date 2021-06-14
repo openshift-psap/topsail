@@ -94,37 +94,5 @@
   - name: Make sure that namespace has the openshift.io/cluster-monitoring label
     command: oc label ns/gpu-operator-resources openshift.io/cluster-monitoring=true
 
-- name: Validate that the DCGM metrics are correctly exposed
-  block:
-  - name: Wait for the nvidia-dcgm-exporter Pod to respond appropriately
-    command:
-      bash "{{ gpu_operator_fetch_pod_metrics_script }}" \
-           9400 app=nvidia-dcgm-exporter gpu-operator-resources \
-           '# HELP'
-    register: dcgm_exporter_check
-    until:
-    - dcgm_exporter_check.rc == 0
-    retries: 10
-    delay: 20
-
-  - name: Wait for Prometheus to pick up the GPU Operator DCGM target
-    shell:
-      set -o pipefail;
-      oc get secret prometheus-k8s -n openshift-monitoring -ojson | jq -r '.data["prometheus.yaml.gz"]'
-      | base64 -d
-      | gunzip
-      | grep dcgm
-    register: dcgm_exporter_prom
-    until: dcgm_exporter_prom.rc == 0
-    retries: 30
-    delay: 30
-
-  rescue:
-  - name: Capture the DCGM logs (debug)
-    shell:
-      oc logs ds/nvidia-dcgm-exporter
-         -n gpu-operator-resources > {{ artifact_extra_logs_dir }}/gpu_operator_dcgm.log
-    failed_when: false
-
-  - name: The GPU Operator does not correctly expose its DCGM metrics
-    fail: msg="The GPU Opertor does not correctly expose the its DCGM metrics to Prometheus"
+- name: Validate the GPU Operator metrics
+  include_tasks: metrics.yml
