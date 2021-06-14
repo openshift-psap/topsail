@@ -1,0 +1,3 @@
+---
+- name: Delete the namespace manifest
+  command: oc delete -f "{{ gpu_operator_ci_utils }}"
