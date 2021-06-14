@@ -6,6 +6,9 @@ set -o nounset
 
 prepare_cluster_for_sro() {
     ./run_toolbox.py cluster capture_environment
+
+    finalizers+=("./run_toolbox.py entitlement undeploy")
+
     entitle.sh
 
     if ! ./run_toolbox.py nfd has_labels; then
@@ -14,7 +17,7 @@ prepare_cluster_for_sro() {
 }
 
 validate_sro_deployment() {
-    trap "./run_toolbox.py sro capture_deployment_state" EXIT
+    finalizers+=("./run_toolbox.py sro capture_deployment_state")
 
     ./run_toolbox.py sro run_e2e_test "${CI_IMAGE_SRO_COMMIT_CI_REPO}" "${CI_IMAGE_SRO_COMMIT_CI_REF}"
 }
@@ -31,10 +34,24 @@ test_master_branch() {
     validate_sro_deployment
 }
 
+finalizers=()
+run_finalizers() {
+    [ ${#finalizers[@]} -eq 0 ] && return
+
+    echo "Running exit finalizers ..."
+    for finalizer in "${finalizers[@]}"
+    do
+        echo "$finalizer"
+        eval $finalizer
+    done
+}
+
 if [ -z "${1:-}" ]; then
     echo "FATAL: $0 expects at least 1 argument ..."
     exit 1
 fi
+
+trap run_finalizers EXIT
 
 action="$1"
 shift
