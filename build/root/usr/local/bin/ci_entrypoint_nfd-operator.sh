@@ -49,10 +49,6 @@ case ${action:-} in
         test_master_branch "$@"
         exit 0
         ;;
-    -*)
-        echo "FATAL: Unknown option: ${action}"
-        exit 1
-        ;;
     *)
         echo "FATAL: Unknown target \"${target}\""
         exit 1
