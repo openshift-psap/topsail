@@ -11,7 +11,7 @@ prepare_cluster_for_gpu_operator() {
     entitle.sh
 
     if ! toolbox/nfd/has_nfd_labels.sh; then
-        toolbox/nfd/deploy_from_operatorhub.sh
+        toolbox/nfd-operator/deploy_from_operatorhub.sh
     fi
 
     if ! toolbox/nfd/has_gpu_nodes.sh; then

@@ -10,7 +10,7 @@ Deployment
 
 .. code-block:: shell
 
-    toolbox/nfd/deploy_from_operatorhub.sh [nfd_channel, eg: 4.7]
+    toolbox/nfd-operator/deploy_from_operatorhub.sh [nfd_channel, eg: 4.7]
     toolbox/nfd/undeploy_from_operatorhub.sh
 
 Testing and Waiting

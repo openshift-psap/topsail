@@ -12,4 +12,4 @@ elif [ "$#" -eq 1 ]; then
     echo "Deploying the NFD Operator from OperatorHub using channel '$1'."
 fi
 
-exec ansible-playbook ${ANSIBLE_OPTS} playbooks/nfd_deploy.yml
+exec ansible-playbook ${ANSIBLE_OPTS} playbooks/nfd_operator_deploy_from_operatorhub.yml
