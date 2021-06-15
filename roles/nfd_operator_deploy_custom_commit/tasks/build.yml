@@ -30,7 +30,8 @@
 - name: Apply the image helper builder manifest
   command: oc apply -f "{{ nfd_operator_helper_image_builder }}"
 
-- block:
+- name: Wait for the helper image to be built
+  block:
   - name: Wait for the helper image to be built
     command:
       oc get pod -lopenshift.io/build.name
@@ -54,7 +55,7 @@
     failed_when: false
 
   - name: Get the description of the helper image build failure
-    shell: 
+    shell:
       oc describe build/helper-image-builder-1 -n nfd-operator-ci-utils
       > {{ artifact_extra_logs_dir }}/nfd_operator_helper_image_builder.log
     failed_when: false
@@ -69,14 +70,15 @@
 - name: Apply the operator image builder script manifest
   command: oc apply -f "{{ nfd_operator_image_builder_script }}"
 
-- block:
-    - name: Find the name of the builder-dockercfg secret
-      shell: oc get secrets -oname -n nfd-operator-ci | cut -d/ -f2 | grep builder-dockercfg
-      register: builder_secret_cmd
-    
-    - name: Set ansible variable for builder_secret
-      set_fact:
-        builder_secret: "{{ builder_secret_cmd.stdout }}"
+- name: Prepare builder-dockercfg secret
+  block:
+  - name: Find the name of the builder-dockercfg secret
+    shell: oc get secrets -oname -n nfd-operator-ci | cut -d/ -f2 | grep builder-dockercfg
+    register: builder_secret_cmd
+
+  - name: Set ansible variable for builder_secret
+    set_fact:
+      builder_secret: "{{ builder_secret_cmd.stdout }}"
 
   rescue:
   - name: Failed to find the builder-dockercfg secret

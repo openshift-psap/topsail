@@ -1,5 +1,5 @@
 ---
-- name: Deploy NFD Operator from OperatorHub
+- name: Wait for a node to appear with an NVIDIA GPU PCI label
   hosts: localhost
   connection: local
   gather_facts: true
