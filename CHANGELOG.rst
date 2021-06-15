@@ -8,17 +8,27 @@ Changes since version 1.0.0 (June 2021)
 Toolbox
 ^^^^^^^
 
-...
+- Add nfd test_master_branch protocol `#179 <https://github.com/openshift-psap/ci-artifacts/pull/179>`_
+
+  - new toolbox command: ``toolbox/nfd-operator/deploy_from_commit.sh <git repository> <git reference>`` to deploy NFD Operator from a custom commit.
+
+-  Support for running NTO e2e tests `#185 <https://github.com/openshift-psap/ci-artifacts/pull/185>`_
+
+  - new toolbox command: ``toolbox/nto/run_e2e_test.sh <git repository> <git reference>`` to run the NTO e2e testsuite from a given commit.
+
 
 Retro-compatibility breaks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-...
+- Add nfd test_master_branch protocol `#179 https://github.com/openshift-psap/ci-artifacts/pull/179>`_
 
-Other changes
-^^^^^^^^^^^^^
+  - ``toolbox/nfd/deploy_from_operatorhub.sh`` was moved to ``toolbox/nfd-operator/deploy_from_operatorhub.sh``
 
-...
+Bug fixes
+^^^^^^^^^
+
+- ``toolbox/local-ci/deploy.sh <ci command> <git repository> <git reference>`` was fixed `#179 <https://github.com/openshift-psap/ci-artifacts/pull/179>`_
+
 
 Changes since version May 7th, 2021
 -----------------------------------
