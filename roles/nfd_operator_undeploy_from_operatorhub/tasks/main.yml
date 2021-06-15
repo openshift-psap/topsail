@@ -22,6 +22,6 @@
 - name: Delete labels created by the NFD Operator
   shell:
     set -o pipefail;
-    oc get nodes -o json \
-    | jq 'del( .items[].metadata.labels."nfd.node.kubernetes.io" , .items[].metadata.labels."feature.node.kubernetes.io" )' \
+    oc get nodes -o json
+    | jq 'del( .items[].metadata.labels."nfd.node.kubernetes.io" , .items[].metadata.labels."feature.node.kubernetes.io" )'
     | oc replace -f -
