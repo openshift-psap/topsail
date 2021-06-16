@@ -1,8 +1,6 @@
 ---
 # Custom label to apply to the node where we'll load fuse
 tuned_module_fuse_label: tuned.module.fuse
-# NFD Deploy Script
-nfd_install_script: roles/nfd_operator_deploy_custom_commit/scripts/deploy_operator.sh
 # Manifest for installing the nfd operator from a custom commit
 tuned_module_fuse: roles/nfd_operator_deploy_custom_commit/files/tuned_module_fuse.yml
 nfd_operator_ci_utils: roles/nfd_operator_deploy_custom_commit/files/operator_ci_utils.yml
