@@ -1,2 +1,1 @@
 ---
-sro_install_script: roles/sro_deploy_custom_commit/scripts/deploy_operator.sh
