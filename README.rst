@@ -163,6 +163,9 @@ The functionalities of the toolbox commands are described in the
     │   └── wait_gpu_nodes.sh
     ├── nto
     │   └── run_e2e_test.sh
+    ├── repo
+    │   ├── validate_role_files.py
+    │   └── validate_role_vars_used.py
     └── special-resource-operator
         ├── capture_deployment_state.sh
         ├── deploy_from_commit.sh

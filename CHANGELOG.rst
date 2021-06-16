@@ -30,6 +30,14 @@ Bug fixes
 - ``toolbox/local-ci/deploy.sh <ci command> <git repository> <git reference>`` was fixed `#179 <https://github.com/openshift-psap/ci-artifacts/pull/179>`_
 
 
+Other changes
+^^^^^^^^^^^^^
+
+- Introduce a Github Action for checking ansible variable consistency `#196 <https://github.com/openshift-psap/ci-artifacts/pull/196>`_
+
+  - ``toolbox/repo/validate_role_files.py`` is a new script to ensure that all the Ansible variables defining a filepath (``roles/``) do point to an existing file
+  - ``toolbox/repo/validate_role_vars_used.py`` is a new script to ensure that all the Ansible variables defined are actually used in their role (with an exception for symlinks)
+
 Changes since version May 7th, 2021
 -----------------------------------
 

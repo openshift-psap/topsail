@@ -23,6 +23,7 @@ Red Hat PSAP CI-Artifacts toolbox
    toolbox/nto
    toolbox/sro
    toolbox/local-ci
+   toolbox/repo
 
 
 Documentation generated on |today| from |release|.
