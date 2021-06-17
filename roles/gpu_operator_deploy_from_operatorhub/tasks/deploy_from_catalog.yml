@@ -26,13 +26,23 @@
       > {{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.json
 
   rescue:
+  - name: Capture the Catalog Operator logs (debug)
+    shell:
+      oc logs deployment.apps/catalog-operator
+         -n openshift-operator-lifecycle-manager
+         > {{ artifact_extra_logs_dir }}/catalog_operator.log
+    failed_when: false
+
+  - name: Indicate where the Catalog-operator logs have been saved
+    debug: msg="The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.log"
+
   - name: Mark the failure as flake
     shell:
       echo "Failed because of the GPU Operator packagemanifest not available"
            > "{{ artifact_dir }}/FLAKE"
 
-  - name: Failing because of previous error
-    fail: msg="Failing because of the GPU Operator packagemanifest not available"
+  - name: Failed because the GPU Operator could not be install from the Catalog Operator
+    fail: msg="Failed because the GPU Operator could not be install from the Catalog Operator"
 
 - name: Store the CSV version
   when: gpu_operator_operatorhub_version | length > 0
