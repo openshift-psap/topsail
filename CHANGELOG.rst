@@ -2,7 +2,7 @@
 
 (Organized release by release)
 
-Changes since version 1.0.0 (June 2021)
+Changes since version 0.1.0 (June 2021)
 ---------------------------------------
 
 Toolbox
