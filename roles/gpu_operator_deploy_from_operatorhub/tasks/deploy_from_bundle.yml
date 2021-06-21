@@ -15,18 +15,10 @@
       --ignore-not-found=true
 
 - name: Deploy the GPU Operator from the bundle
-  block:
-  - name: Deploy the GPU Operator from the bundle
-    command:
-      operator-sdk run bundle
-        -n {{ deploy_bundle_namespace }}
-        {{ deploy_bundle_image }}
-  rescue:
-  - name: Fix the GPU Operator image
-    command:
-      oc set image deployment/gpu-operator
-         gpu-operator={{ deploy_bundle_operator_image }}
-         -n {{ deploy_bundle_namespace }}
+  command:
+    operator-sdk run bundle
+                 -n {{ deploy_bundle_namespace }}
+                 {{ deploy_bundle_image }}
 
 - name: Store the version of the GPU Operator that will be installed
   shell:
@@ -37,6 +29,34 @@
      | grep {{ deploy_bundle_package_name }}
      | tee {{ artifact_extra_logs_dir }}/gpu_operator_bundle_csv_name.txt
   register: gpu_operator_csv_name
+
+- name: Fix the GPU Operator image when deploying our master operator bundle image
+  when: deploy_bundle_image == psap_quay_master_bundle
+  block:
+  - name: Fix the image of the operator deployment in the CSV
+    command: |
+      oc patch {{ gpu_operator_csv_name.stdout }}
+         --type='json'
+         -p='[{"op": "replace", "path": "/spec/install/spec/deployments/0/spec/template/spec/containers/0/image", "value":"{{ psap_quay_master_operator }}"}]'
+         -n {{ deploy_bundle_namespace }}
+
+
+  - name: Wait for the operator deployment to be updated by the CSV controller
+    shell:
+      set -euxo pipefail;
+      oc get deployment/gpu-operator -n openshift-operators
+         -ojsonpath={.spec.template.spec.containers[0].image}
+         | grep {{ psap_quay_master_operator }}
+    register: operator_deployment_image
+    retries: 15
+    delay: 30
+
+  - name: Wait for the GPU Operator master image to be redeployed by the deployment controller
+    command:
+      oc wait deployment/gpu-operator
+              --for=condition=available
+              --timeout=600s
+              -n openshift-operators
 
 - name: Store the YAML of the GPU Operator CSV that being installed
   shell:
