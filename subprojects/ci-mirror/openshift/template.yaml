@@ -1,19 +1,18 @@
 kind: Template
-apiVersion: v1
+apiVersion: template.openshift.io/v1
 metadata:
-  name: rhods-entitled-mirror
+  name: mirror
   annotations:
-    openshift.io/display-name: Entitled mirror repository with packages for building GPU drivers
+    openshift.io/display-name: ""
     description: ""
-    tags: nginx,entitlement,mirror
-    iconClass: icon-nginx
+    tags: ""
     openshift.io/long-description: ""
-    openshift.io/provider-display-name: PSAP
-    openshift.io/documentation-url: rhods-entitled-mirror
+    openshift.io/provider-display-name: ""
+    openshift.io/documentation-url: ""
     openshift.io/support-url: ""
 message: ""
 labels:
-  template: rhods-entitled-mirror
+  template: ""
 objects:
   - kind: Namespace
     apiVersion: v1
@@ -59,7 +58,7 @@ objects:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 80Gi
+          storage: ${PVC_SIZE}
   - apiVersion: v1
     kind: ServiceAccount
     metadata:
@@ -176,25 +175,31 @@ objects:
                   - key: sync_commands.sh
                     path: sync_commands.sh
           initContainers:
-            - name: reposync
+            - name: sync
               image: ${QUAY_REPO}:sync
+              env:
+                - name: SYNC_DESTINATION
+                  value: ${SYNC_DESTINATION}
               securityContext:
                 privileged: true
               volumeMounts:
                 - name: repo
-                  mountPath: /repo
+                  mountPath: ${SYNC_DESTINATION}
                 - name: sync-script
                   mountPath: /scripts/sync_commands.sh
                   subPath: sync_commands.sh
           containers:
             - name: nginx
               image: ${QUAY_REPO}:serve
+              env:
+                - name: SYNC_DESTINATION
+                  value: ${SYNC_DESTINATION}
               volumeMounts:
                 - name: nginx-config
                   mountPath: /etc/nginx/nginx.conf
                   subPath: nginx.conf
                 - name: repo
-                  mountPath: /repo
+                  mountPath: ${SYNC_DESTINATION}
                 - name: client-auth
                   mountPath: /client-auth/
                   readOnly: true
@@ -214,24 +219,24 @@ objects:
 parameters:
   - name: NAME
     displayName: Name
-    description: The name assigned to all of the frontend objects defined in this template.
+    description: The name assigned to all of the objects defined in this template.
     required: true
     value: ""
   - name: NAMESPACE
     displayName: Namespace
-    description: The OpenShift Namespace where the ImageStream resides.
+    description: The OpenShift Namespace for all the template objects
     required: true
     value: ""
   - name: CLIENT_CA
     displayName: Client CA certificate
-    description: The certificate used to sign client certificates
+    description: The certificate that was used to sign client certificates
     required: true
     value: ""
   - name: QUAY_REPO
     displayName: Quay repo for mirror images
     description: A quay repo containing the tags `sync` and `serve` with the mirror images
     required: true
-    value: "quay.io/openshift-psap/entitled-mirror"
+    value: ""
   - name: NGINX_CONFIG
     displayName: NGINX Configuration File
     description: NGINX Configuration File
@@ -242,3 +247,13 @@ parameters:
     description: The script used to sync the mirrored repositories
     required: true
     value: ""
+  - name: PVC_SIZE
+    displayName: The size to use for the PersistentVolumeClaim
+    description: The size to use for the PersistentVolumeClaim
+    required: true
+    value: ""
+  - name: SYNC_DESTINATION
+    displayName: The directory that the mirror syncs to and serves from
+    description: The directory that the mirror syncs to and serves from. Note that this must match the value specified in your NGINX_CONFIG config file
+    required: false
+    value: "/mirror_files"

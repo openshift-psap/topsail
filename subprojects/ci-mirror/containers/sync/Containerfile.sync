@@ -4,5 +4,4 @@ USER root
 
 RUN dnf install yum-utils -y
 
-RUN ["chmod", "+x", "/scripts/sync_commands.sh"]
 ENTRYPOINT ["/scripts/sync_commands.sh"]
