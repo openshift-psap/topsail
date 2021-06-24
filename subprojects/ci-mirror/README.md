@@ -15,7 +15,7 @@ The mirrors cluster is expected to only be deployed once and run indefinitely fo
 mkdir generated_auth
 pushd generated_auth
 ../../auth/all.sh
-cp ../../auth/**/generated* .
+cp -v ../../auth/**/generated* .
 popd
 ```
 - The github.com/openshift-psap forked openshift-acme controller (see `./deploy_acme.sh`) must be running on the cluster
@@ -27,10 +27,10 @@ done
 ```
 - At least one entitled (SKU MCT2741F3) Node with label `entitled="true"`. This requirement is also for mirrors that don't actually need entitlement, because of OpenShift template limitations (can't conditionally choose whether to add a nodeSelector to a pod in the template).
 ```bash
-# Entitle a node, then set its name here:
 oc get nodes
-NODE=<node_name>
-oc label node/$NODE entitled=true
+NODE=$(oc get nodes -lnode-role.kubernetes.io/worker -oname | head -1)
+echo "Marking $NODE as entitled"
+oc label $NODE entitled=true
 ```
 
 # Cluster Architecture
@@ -48,6 +48,7 @@ These CRs include: (you may need to read further sections in this README to unde
 ## Mirror configuration files
 The differences between each mirror are encoded in the `mirrors` subdirectory.
 
+```
 mirrors
 ├── .nginx-default.conf # A default NGINX configuration file to be used by the mirrors
 ├── dataset
@@ -58,6 +59,7 @@ mirrors
     ├── sync.sh # The sync script for the entitled-yum mirror
     └── yum.repo.d
         └── rhods_mirror.repo # An example `yum` repo configuration file to make use of the entitled yum mirror.
+```
 
 ## Containers
 Each mirror deployment makes use of two container images:
@@ -95,10 +97,22 @@ Example on how to deploy & wait for all mirrors:
 for mirror in $(ls mirrors); do
     source ./mirrors/${mirror}/config.env
 
-    echo Deploying mirror $mirror
+    echo Making sure that the mirror app hostname that will be generated is shorter than 64 chars, otherwise the certificate generation will fail:
+    echo See https://stackoverflow.com/questions/39035571/distinguished-name-length-constraint-in-x-509-certificate for more information
 
-    # Deploy mirror
-    ./deploy.sh
+    MIRROR_APPNAME="$NAME-$NAMESPACE"
+    MIRROR_HOSTNAME=$(oc get console/cluster -ojsonpath={@.status.consoleURL} | sed s/console-openshift-console/$MIRROR_APPNAME/ | sed 's|https://||')
+
+    if [[ $(echo $MIRROR_HOSTNAME | wc -c) -ge 64 ]]; then
+        echo "Too many characters in your mirror"
+        echo "$MIRROR_HOSTNAME --> $(echo $MIRROR_HOSTNAME | wc -c) chars"
+    else
+        echo "$MIRROR_HOSTNAME is short enough, proceeding" 
+        echo Deploying mirror $mirror
+
+        # Deploy mirror
+        ./deploy.sh
+    fi
 done
 
 # Sleep for a bit

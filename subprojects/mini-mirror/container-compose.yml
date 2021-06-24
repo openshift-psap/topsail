@@ -1,0 +1,33 @@
+version: "3"
+services:
+  serve:
+    # This image and the sync's container image are using the container images
+    # of the ci-mirror, which are a great fit, but this is not right - the mini
+    # mirror should have its own image repositories, because it has nothing to do
+    # with CI
+    image: quay.io/openshift-psap/ci-mirror:serve
+    ports:
+      - 8080:8080
+    volumes:
+      - app-volume:/mirror_files/
+      - type: bind
+        source: ./nginx.conf
+        target: /etc/nginx/nginx.conf
+  sync:
+    image: quay.io/openshift-psap/ci-mirror:sync
+    environment:
+      SYNC_DESTINATION: /mirror_files/
+    volumes:
+      - app-volume:/mirror_files/
+      - type: bind
+        source: ./sync.sh
+        mode: "x"
+        target: /scripts/sync_commands.sh
+      - type: bind
+        source: entitlement.pem
+        target: /etc/pki/entitlement/entitlement.pem
+      - type: bind
+        source: entitlement.pem
+        target: /etc/pki/entitlement/entitlement-key.pem
+volumes:
+   app-volume: 
