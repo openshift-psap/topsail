@@ -68,40 +68,12 @@ prechecks
 
 #############
 
-if [ -z "${ARTIFACT_DIR:-}" ]; then
-    echo "No ARTIFACT_DIR configured."
-else
-    echo "Using '$ARTIFACT_DIR' to store the test artifacts"
-fi
-
-if [ $1 == "gpu-operator_test-master-branch" ]; then
-    target="gpu-operator"
-    action="test_master_branch"
-    shift 1
-elif [ $1 == "gpu-operator_test-operatorhub" ]; then
-    target="gpu-operator"
-    action="test_operatorhub"
-    shift 1
-elif [ $1 == "gpu-operator_test-helm" ]; then
-    target="gpu-operator"
-    action="test_helm"
-    shift 1
-elif [ $1 == "gpu-operator_undeploy-operatorhub" ]; then
-    target="gpu-operator"
-    action="undeploy_operatorhub"
-    shift 1
-elif [ $1 == "cluster-upgrade" ]; then
-    target="cluster"
-    action="upgrade"
-    shift 1
-else
-    script_name="$0"
-    target="$1"
-    action="$2"
-    shift 2
-fi
-
-set -x
+target="${1:-}"
+shift
+action="${1:-}"
+echo
+echo "Test target: '$target'; test action: '$action'"
+echo
 
 case ${target} in
     "cluster")
