@@ -61,10 +61,35 @@ prechecks() {
     fi
 }
 
+postchecks() {
+    set +e
+    set +x
+
+    reason=$1
+    shift
+
+    if [[ "$reason" == ERR ]]; then
+        touch $ARTIFACT_DIR/FAILURE
+
+        if ! oc version >/dev/null 2>&1; then
+            echo "Cluster unreachable" > $ARTIFACT_DIR/UNREACHABLE
+        fi
+    elif [[ "$reason" == EXIT ]]; then
+        if [ ! -e "$ARTIFACT_DIR/FAILURE" ]; then
+            echo "Test of '$@' succeeded."
+        else
+            echo "Test of '$@' failed."
+        fi
+    fi
+}
+
 ##############
 
 ci_banner "$@"
 prechecks
+
+trap "postchecks EXIT $*" EXIT
+trap "postchecks ERR" ERR
 
 #############
 
