@@ -67,7 +67,7 @@ objects:
   - apiVersion: security.openshift.io/v1
     kind: SecurityContextConstraints
     metadata:
-      name: ${NAME}
+      name: ${NAMESPACE}-${NAME}
     priority: null
     readOnlyRootFilesystem: false
     requiredDropCapabilities: null

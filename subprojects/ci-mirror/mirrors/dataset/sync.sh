@@ -11,8 +11,8 @@ echo "Downloading COCO to ${PWD}"
 
 CURL_FLAGS=("--fail-early" "--fail")
 
-ANNOTATIONS="http://images.cocodataset.org/annotations/"
-DATASETS="http://images.cocodataset.org/zips/"
+ANNOTATIONS="http://images.cocodataset.org/annotations"
+DATASETS="http://images.cocodataset.org/zips"
 
 for url in $ANNOTATIONS $DATASETS; do
     if [[ $url == $ANNOTATIONS ]]; then
