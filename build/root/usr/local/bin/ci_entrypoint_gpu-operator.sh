@@ -123,7 +123,9 @@ set -x
 
 case ${action} in
     "test_master_branch")
-        test_master_branch "$@"
+        ## currently broken
+        #test_master_branch "$@"
+        test_commit "https://github.com/NVIDIA/gpu-operator.git" master
         exit 0
         ;;
     "test_commit")
