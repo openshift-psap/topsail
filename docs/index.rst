@@ -10,6 +10,15 @@ Red Hat PSAP CI-Artifacts toolbox
    contrib
    changelog
 
+.. _psap_ci:
+
+.. toctree::
+   :maxdepth: 3
+   :caption: PSAP Operator CI
+
+   ci/intro
+   ci/files
+
 .. _psap_toolbox:
 
 .. toctree::
