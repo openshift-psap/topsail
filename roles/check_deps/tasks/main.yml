@@ -1,4 +1,12 @@
 ---
+- name: Fail if artifact_dir is not defined
+  fail: msg="'artifact_dir' must be defined before running this role"
+  when: artifact_dir is undefined
+
+- name: Fail if artifact_extra_logs_dir is not defined
+  fail: msg="'artifact_extra_logs_dir' must be defined before running this role"
+  when: artifact_extra_logs_dir is undefined
+
 - block:
   - name: Fetch 'openshift_release' value and check dependencies
     # see the 'fail' message below before modifying this command,

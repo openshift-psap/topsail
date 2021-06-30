@@ -21,6 +21,7 @@ if [ -z "${ARTIFACT_DIR:-}" ]; then
 else
     echo "Using '$ARTIFACT_DIR' to store the test artifacts."
 fi
+ANSIBLE_OPTS="$ANSIBLE_OPTS -e artifact_dir=${ARTIFACT_DIR}"
 
 TOOLBOX_SCRIPT_NAME="${TOOLBOX_SCRIPT_NAME:-$0}"
 TOOLBOX_PATH="${TOOLBOX_SCRIPT_NAME##*toolbox/}" # remove everything before 'toolbox/'

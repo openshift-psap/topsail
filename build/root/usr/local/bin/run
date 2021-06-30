@@ -29,9 +29,13 @@ ci_banner() {
 prechecks() {
     if [[ "${INSIDE_CI_IMAGE:-}" != "y" ]]; then
         echo "FATAL: this script shouldn't run outside of the CI image ..."
+        echo "INFO: 'export INSIDE_CI_IMAGE=y' to force"
         exit 1
     fi
-
+    if [ -z "${ARTIFACT_DIR:-}" ]; then
+        echo "ARTIFACT_DIR not set, cannot configured."
+        exit 1
+    fi
     if [[ -z "${KUBECONFIG}" ]]
     then
         echo "KUBECONFIG not set, cannot continue."
