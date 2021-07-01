@@ -29,24 +29,11 @@
     retries: 15
     delay: 30
 
-- name: Get the clusterpolicy of the GPU Operator from OperatorHub CSV
-  shell:
-    set -o pipefail;
-    oc get "{{ gpu_operator_csv_name_cmd.stdout }}"
-       -n openshift-operators
-       -ojson
-    | jq -r '.metadata.annotations."alm-examples"'
-    | jq .[0] > "{{ artifact_extra_logs_dir }}/gpu_operator_clusterpolicy.json"
-  register: operatorhub_clusterpolicy
-  until: operatorhub_clusterpolicy.rc == 0
-  retries: 20
-  delay: 15
-
 - block:
-  - name: Create the clusterPolicy CR for the GPU Operator
-    command: oc apply -f "{{ artifact_extra_logs_dir }}/gpu_operator_clusterpolicy.json"
-    register: test_clusterpolicy_cr
-    until: test_clusterpolicy_cr.rc != 1
+  - name: Wait for the GPU Operator ClusterPolicy CRD to appear
+    command: oc get crd clusterpolicy.nvidia.com
+    register: has_clusterpolicy_cr
+    until: has_clusterpolicy_cr.rc != 1
     retries: 20
     delay: 15
 
@@ -67,6 +54,18 @@
 
   - name: Failing because the ClusterPolicy CR cannot be created
     fail: msg="Failed because the ClusterPolicy CR cannot be created"
+
+- name: Get the clusterpolicy of the GPU Operator from OperatorHub CSV
+  shell:
+    set -o pipefail;
+    oc get "{{ gpu_operator_csv_name_cmd.stdout }}"
+       -n openshift-operators
+       -ojson
+    | jq -r '.metadata.annotations."alm-examples"'
+    | jq .[0] > "{{ artifact_extra_logs_dir }}/gpu_operator_clusterpolicy.json"
+
+- name: Create the clusterPolicy CR for the GPU Operator
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/gpu_operator_clusterpolicy.json"
 
 - name: Test if the ClusterPolicy has the 'validator' stanza
   command: oc get clusterpolicy.nvidia.com -ojsonpath='{range .items[*]}{.spec.validator.version}{end}'
