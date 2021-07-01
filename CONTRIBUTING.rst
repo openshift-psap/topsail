@@ -104,7 +104,8 @@ Coding guidelines
 
     - name: Inspect the Subscriptions status (debug)
       shell:
-        oc describe subscriptions/gpu-operator-certified -n openshift-operators
+        oc describe subscriptions.operators.coreos.com/gpu-operator-certified
+           -n openshift-operators
            > {{ artifact_extra_logs_dir }}/gpu_operator_Subscription.log
       failed_when: false
 

@@ -9,7 +9,7 @@
 
 - name: Delete the bundle subscription, if it exists
   command:
-    oc delete subscription
+    oc delete subscription.operators.coreos.com
       -l operators.coreos.com/{{ deploy_bundle_package_name }}.{{ deploy_bundle_namespace }}
       -n {{ deploy_bundle_namespace }}
       --ignore-not-found=true

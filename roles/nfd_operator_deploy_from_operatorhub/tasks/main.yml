@@ -128,11 +128,11 @@
     delay: 15
   rescue:
   - name: List the NFD subscription (debug)
-    command: oc get subscriptions -n openshift-nfd
+    command: oc get subscriptions.operators.coreos.com -n openshift-nfd
     failed_when: false
 
   - name: Describe the NFD subscription (debug)
-    command: oc describe subscriptions/nfd -n openshift-nfd
+    command: oc describe subscriptions.operators.coreos.com/nfd -n openshift-nfd
     failed_when: false
 
   - name: List the ClusterServiceVersion status (debug)
