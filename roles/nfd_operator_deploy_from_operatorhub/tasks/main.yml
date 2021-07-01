@@ -132,7 +132,9 @@
     failed_when: false
 
   - name: Describe the NFD subscription (debug)
-    command: oc describe subscriptions.operators.coreos.com/nfd -n openshift-nfd
+    shell:
+      oc describe subscriptions.operators.coreos.com/nfd -n openshift-nfd
+         > {{ artifact_extra_logs_dir }}/nfd_subscription.desc
     failed_when: false
 
   - name: List the ClusterServiceVersion status (debug)
@@ -140,7 +142,9 @@
     failed_when: false
 
   - name: Describe the ClusterServiceVersion status (debug)
-    command: oc describe ClusterServiceVersion -n openshift-nfd
+    shell:
+      oc describe ClusterServiceVersion -n openshift-nfd
+         > {{ artifact_extra_logs_dir }}/nfd_ClusterServiceVersion.desc
     failed_when: false
 
   - name: Failed when creating the NFD NodeFeatureDiscovery CR

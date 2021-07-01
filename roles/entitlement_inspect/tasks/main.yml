@@ -17,7 +17,9 @@
   failed_when: false
 
 - name: Get the description of the worker MachineConfigPool
-  command: oc describe MachineConfigPool/worker
+  shell:
+    oc describe MachineConfigPool/worker
+       > {{ artifact_extra_logs_dir }}/worker_MachineConfigPool.desc
   failed_when: false
 
 - name: Get the state of the nodes

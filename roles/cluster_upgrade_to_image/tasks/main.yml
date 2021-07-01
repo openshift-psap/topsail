@@ -58,11 +58,11 @@
 
 - name: Get ClusterVersion description
   shell:
-    oc describe ClusterVersion/version > {{ artifact_extra_logs_dir }}/ClusterVersion.descr
+    oc describe ClusterVersion/version > {{ artifact_extra_logs_dir }}/version_ClusterVersion.desc
 
 - name: Get ClusterVersion YAML
   shell:
-    oc get -oyaml ClusterVersion/version > {{ artifact_extra_logs_dir }}/ClusterVersion.yml
+    oc get -oyaml ClusterVersion/version > {{ artifact_extra_logs_dir }}/version_ClusterVersion.yml
 
 - name: Ensure that the upgrade succeeded
   fail: msg="Upgrade failed".

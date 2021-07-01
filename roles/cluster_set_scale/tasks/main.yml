@@ -91,8 +91,12 @@
       oc get 'machineset/{{ item }}' -n openshift-machine-api;
       echo GPU Machines;
       oc get machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}';
-      echo GPU Machines description;
-      oc describe machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}';
+    failed_when: false
+    loop: "{{ oc_get_machinesets.stdout_lines }}"
+
+  - name: Capture more information about the machineset failure
+    shell: |
+      oc describe machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}' > {{ artifact_extra_logs_dir }}/machines_{{ item }}.desc
     failed_when: false
     loop: "{{ oc_get_machinesets.stdout_lines }}"
 
