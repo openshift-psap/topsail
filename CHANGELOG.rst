@@ -2,7 +2,7 @@
 
 (Organized release by release)
 
-Changes since version 0.1.0 (June 2021)
+Changes since version 0.1 (June 2021)
 ---------------------------------------
 
 Toolbox
@@ -21,6 +21,19 @@ Retro-compatibility breaks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Add nfd test_master_branch protocol `#179 https://github.com/openshift-psap/ci-artifacts/pull/179>`_
+
+Bug fixes
+~~~~~~~~~
+
+- Use ``subscriptions.operators.coreos.com`` instead of
+  ``subscriptions`` to avoid conflicts with Knative `subscriptions
+  <https://knative.dev/docs/eventing/channels/subscriptions>`_ `#207
+  <https://github.com/openshift-psap/ci-artifacts/pull/207>`_ `#208
+  <https://github.com/openshift-psap/ci-artifacts/pull/208>`_
+
+
+Features of version 0.1 (June 2021)
+-----------------------------------
 
   - ``toolbox/nfd/deploy_from_operatorhub.sh`` was moved to ``toolbox/nfd-operator/deploy_from_operatorhub.sh``
 
