@@ -31,7 +31,7 @@
 
 - block:
   - name: Wait for the GPU Operator ClusterPolicy CRD to appear
-    command: oc get crd clusterpolicy.nvidia.com
+    command: oc get crd clusterpolicies.nvidia.com
     register: has_clusterpolicy_cr
     until: has_clusterpolicy_cr.rc != 1
     retries: 20
@@ -68,7 +68,7 @@
   command: oc apply -f "{{ artifact_extra_logs_dir }}/gpu_operator_clusterpolicy.json"
 
 - name: Test if the ClusterPolicy has the 'validator' stanza
-  command: oc get clusterpolicy.nvidia.com -ojsonpath='{range .items[*]}{.spec.validator.version}{end}'
+  command: oc get clusterpolicies.nvidia.com -ojsonpath='{range .items[*]}{.spec.validator.version}{end}'
   register: gpu_operator_atleast_v170
   failed_when: false
 
