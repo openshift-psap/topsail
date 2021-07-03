@@ -48,6 +48,8 @@
          -ojsonpath={.spec.template.spec.containers[0].image}
          | grep {{ psap_quay_master_operator }}
     register: operator_deployment_image
+    until:
+    - operator_deployment_image.rc == 0
     retries: 15
     delay: 30
 
