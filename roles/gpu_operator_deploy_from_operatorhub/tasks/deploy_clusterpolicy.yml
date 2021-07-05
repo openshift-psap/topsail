@@ -32,8 +32,8 @@
 - block:
   - name: Wait for the GPU Operator ClusterPolicy CRD to appear
     command: oc get crd clusterpolicies.nvidia.com
-    register: has_clusterpolicy_cr
-    until: has_clusterpolicy_cr.rc != 1
+    register: has_clusterpolicy_crd
+    until: has_clusterpolicy_crd.rc != 1
     retries: 20
     delay: 15
 
