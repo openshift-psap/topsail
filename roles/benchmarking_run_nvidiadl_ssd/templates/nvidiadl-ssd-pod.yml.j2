@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ benchmarking_nvidiadl_ssd_name }}"
+  namespace: "{{ benchmarking_namespace }}"
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: {{ benchmarking_node_hostname }}
+  containers:
+  - name: nvidiadl
+    image: quay.io/openshift-psap/nvidiadl-ssd-training-benchmark
+    resources:
+      # limits:
+      #   nvidia.com/gpu: 0
+      # requests:
+      #   nvidia.com/gpu: 0
+    volumeMounts:
+    - name: entrypoint-volume
+      mountPath: /mnt/entrypoint/entrypoint.sh
+      readOnly: false
+      subPath: entrypoint.sh
+    - mountPath: /storage/
+      name: storage-volume
+    command:
+    - bash
+    - -c
+    - "/mnt/entrypoint/entrypoint.sh"
+  volumes:
+  - name: entrypoint-volume
+    configMap:
+      defaultMode: 0777
+      name: {{ benchmarking_nvidiadl_ssd_entrypoint_cm_name }}
+  - name: storage-volume
+    persistentVolumeClaim:
+      claimName: {{ benchmarking_coco_dataset_pvc_name }}

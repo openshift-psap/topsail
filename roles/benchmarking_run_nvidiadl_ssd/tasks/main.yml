@@ -1,0 +1,64 @@
+---
+- name: Ensure that a hostname was passed in parameter
+  fail: msg="'benchmarking_node_hostname' must be provided"
+  when: benchmarking_node_hostname | default('', true) | length == 0
+
+- name: Ensure that a valid hostname name was passed in parameter
+  command: oc get nodes -l kubernetes.io/hostname={{ benchmarking_node_hostname }} -oname
+
+- name: Ensure that the coco dataset PVC exists
+  command:
+    oc get pvc/{{ benchmarking_coco_dataset_pvc_name }}
+       -n {{ benchmarking_namespace }}
+
+- name: Delete the entrypoint ConfigMap, if it exists
+  command:
+    oc delete cm {{ benchmarking_nvidiadl_ssd_entrypoint_cm_name }}
+       --ignore-not-found=true
+       -n {{ benchmarking_namespace }}
+
+- name: Create the entrypoint ConfigMap
+  command:
+    oc create cm {{ benchmarking_nvidiadl_ssd_entrypoint_cm_name }}
+       --from-file="{{ benchmarking_nvidiadl_ssd_entrypoint }}"
+       -n {{ benchmarking_namespace }}
+
+- name: Apply the Pod template
+  template:
+    src: "{{ benchmarking_nvidiadl_ssd_pod }}"
+    dest: "{{ artifact_extra_logs_dir }}/pod.yml"
+    mode: 0400
+
+- name: Delete the Pod, if it exists
+  command:
+    oc delete -f "{{ artifact_extra_logs_dir }}/pod.yml"
+       --ignore-not-found=true
+
+- name: Deploy the Pod to run the benchmark
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/pod.yml"
+
+- name: Wait for the benchmark completion
+  command:
+    oc get pod/{{ benchmarking_nvidiadl_ssd_name }}
+    --no-headers
+    -ocustom-columns=phase:status.phase
+    -n {{ benchmarking_namespace }}
+  register: wait_benchmark_pod_cmd
+  until: "'Succeeded' in wait_benchmark_pod_cmd.stdout or 'Failed' in wait_benchmark_pod_cmd.stdout or 'Error' in wait_benchmark_pod_cmd.stdout"
+  retries: 40
+  delay: 60
+
+- name: Store the logs of benchmark execution (for post-processing)
+  shell:
+    oc logs pod/{{ benchmarking_nvidiadl_ssd_name }} -n {{ benchmarking_namespace }}
+       > "{{ artifact_extra_logs_dir }}/nvidiadl_ssd_pod.log"
+  failed_when: false
+
+- name: Store the status of the benchmark execution (for post-processing)
+  shell:
+    echo "{{ wait_benchmark_pod_cmd.stdout }}" > "{{ artifact_extra_logs_dir }}/status"
+
+- name: Fail if the pod execution failed
+  when: "'Failed' in wait_benchmark_pod_cmd.stdout or 'Error' in wait_benchmark_pod_cmd.stdout"
+  fail: msg="The benchmark execution failed"

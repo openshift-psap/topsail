@@ -1,0 +1,16 @@
+# namespace in which the ssd benchmark will be executed
+# the coco dataset PVC must be in the same namespace
+benchmarking_namespace: "default"
+
+# hostname of node in which the ssd benchmark will be executed
+# the coco dataset PVC must be available in this node
+benchmarking_node_hostname: ""
+
+# name of the pod that will be created running the benchmark
+benchmarking_nvidiadl_ssd_name: "benchmarking-nvidiadl-ssd"
+
+# name of the PVC containing the coco dataset
+benchmarking_coco_dataset_pvc_name: "benchmarking-coco-dataset"
+
+# name of the config map where the benchmark entrypoint will be stored
+benchmarking_nvidiadl_ssd_entrypoint_cm_name: "benchmarking-nvidiadl-ssd-entrypoint"
