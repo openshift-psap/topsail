@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Pod
+metadata:
+ name: coco-dataset-downloader
+ namespace: {{ benchmarking_namespace }}
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: {{ benchmarking_node_hostname }}
+  containers:
+  - name: coco-dataset-downloader
+    image: registry.access.redhat.com/ubi8/ubi
+    command: [bash, /mnt/entrypoint/entrypoint.sh]
+    env:
+{% if benchmarking_coco_dataset_mirror_base_url|length %}
+    - name: DATASET_BASE_URL
+      value: "{{ benchmarking_coco_dataset_mirror_base_url }}"
+{% endif %}
+{% if benchmarking_coco_dataset_client_cert|length %}
+    - name: CERT_FILE
+      value: /etc/mirror-secret/mirror.pem
+{% endif %}
+    volumeMounts:
+{% if benchmarking_coco_dataset_client_cert|length %}
+    - name: mirror-secret
+      mountPath: /etc/mirror-secret
+      readOnly: true
+{% endif %}
+    - name: entrypoint-cm
+      mountPath: /mnt/entrypoint/entrypoint.sh
+      readOnly: true
+      subPath: entrypoint.sh
+    - name: storage
+      mountPath: /storage/
+  volumes:
+{% if benchmarking_coco_dataset_client_cert|length %}
+  - name: mirror-secret
+    secret:
+      secretName: mirror-secret
+{% endif %}
+  - name: storage
+    persistentVolumeClaim:
+      claimName: {{ benchmarking_coco_dataset_pvc_name }}
+  - name: entrypoint-cm
+    configMap:
+      defaultMode: 0777
+      name: coco-dataset-downloader

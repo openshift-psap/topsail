@@ -1,0 +1,84 @@
+---
+- name: Ensure that a hostname was passed in parameter
+  fail: msg="'benchmarking_node_hostname' must be provided"
+  when: benchmarking_node_hostname | default('', true) | length == 0
+
+- name: Ensure that a valid hostname name was passed in parameter
+  command: oc get nodes -l kubernetes.io/hostname={{ benchmarking_node_hostname }} -oname
+
+- name: Delete the mirror secret, if it exists
+  command:
+    oc delete secret/mirror-secret
+       -n {{ benchmarking_namespace }}
+       --ignore-not-found=true
+
+- name: Create the mirror secret
+  command:
+    oc create secret generic mirror-secret
+       -n {{ benchmarking_namespace }}
+       --from-file=mirror.pem={{ benchmarking_coco_dataset_client_cert }}
+
+- name: Delete the entrypoint CM, if it exists
+  command:
+    oc delete cm/coco-dataset-downloader
+       -n {{ benchmarking_namespace }}
+       --ignore-not-found=true
+
+- name: Create the entrypoint config map
+  command:
+    oc create cm coco-dataset-downloader
+       --from-file="entrypoint.sh={{ coco_dataset_entrypoint }}"
+       -n {{ benchmarking_namespace }}
+
+- name: Apply the PVC template
+  template:
+    src: "{{ coco_dataset_pvc }}"
+    dest: "{{ artifact_extra_logs_dir }}/pvc.yml"
+    mode: 0400
+
+- name: Check if the PVC already exists
+  command: oc get -f "{{ artifact_extra_logs_dir }}/pvc.yml" -oname
+  failed_when: false
+  register: has_pvc
+
+- name: Create a PVC for storing the COCO dataset
+  when: has_pvc.rc != 0
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/pvc.yml"
+
+- name: Apply the Pod template
+  template:
+    src: "{{ coco_dataset_pod }}"
+    dest: "{{ artifact_extra_logs_dir }}/pod.yml"
+    mode: 0400
+
+- name: Delete the Pod, if it exists
+  command:
+    oc delete -f "{{ artifact_extra_logs_dir }}/pod.yml"
+       --ignore-not-found=true
+
+- name: Create a Pod for downloading the COCO dataset
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/pod.yml"
+
+- name: Wait for the downloader Pod to terminate
+  command:
+    oc get -f "{{ artifact_extra_logs_dir }}/pod.yml"
+       --no-headers
+       -ocustom-columns=phase:status.phase
+  register: wait_dataset_downloader_pod
+  until: "'Succeeded' in wait_dataset_downloader_pod.stdout or 'Failed' in wait_dataset_downloader_pod.stdout or 'Error' in wait_dataset_downloader_pod.stdout"
+  retries: 100
+  delay: 60
+
+- name: Get the logs of the download Pod (debug)
+  shell:
+    oc logs pod/coco-dataset-downloader
+       -n {{ benchmarking_namespace }}
+       > {{ artifact_extra_logs_dir }}/pod_downloader.log
+
+  failed_when: false
+
+- name: Fail if the the downloader Pod failed
+  when: "'Failed' in wait_dataset_downloader_pod.stdout or 'Error' in wait_dataset_downloader_pod.stdout"
+  fail: msg="The download failed ..."

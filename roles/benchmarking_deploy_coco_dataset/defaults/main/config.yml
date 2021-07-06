@@ -1,0 +1,16 @@
+# namespace in which the coco dataset will be downloaded
+benchmarking_namespace: "default"
+
+# hostname of node in which the coco dataset download pod will be executed
+benchmarking_node_hostname: ""
+
+# name of the PVC that will be created for storing the coco dataset
+benchmarking_coco_dataset_pvc_name: "benchmarking-coco-dataset"
+
+# Base URL where the coco dataset files should be fetched
+# if empty, download from the upstream repository
+benchmarking_coco_dataset_mirror_base_url: ""
+
+# name of the file containing the certificate to access the coco dataset,
+# (if required for accessing the base URL above)
+benchmarking_coco_dataset_client_cert: ""

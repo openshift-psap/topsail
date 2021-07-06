@@ -16,6 +16,7 @@ from toolbox.nfd_operator import NFDOperator
 from toolbox.local_ci import LocalCI
 from toolbox.repo import Repo
 from toolbox.special_resource_operator import SpecialResourceOperator
+from toolbox.benchmarking import Benchmarking
 
 
 class Toolbox:
@@ -38,7 +39,7 @@ class Toolbox:
         self.repo = Repo
         self.local_ci = LocalCI
         self.sro = SpecialResourceOperator
-
+        self.benchmarking = Benchmarking
 
 def main(no_exit=False):
     # Print help rather than opening a pager
