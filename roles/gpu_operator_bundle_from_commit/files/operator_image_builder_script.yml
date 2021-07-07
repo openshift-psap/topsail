@@ -12,8 +12,6 @@ data:
 
     echo "OPERATOR_IMAGE_NAME=${OPERATOR_IMAGE_NAME}"
 
-    CONTAINER_FILE=./Dockerfile
-
     mkdir /work && cd /work
 
     git clone ${OPERATOR_GIT_REPO} gpu-operator -b ${OPERATOR_GIT_REF} --depth 1
@@ -22,21 +20,19 @@ data:
 
     git show --quiet
 
-    if [ "${BUILDER_FROM_IMAGE}" ]; then
-      # if provided, use custom 'FROM ... as builder' image
-      sed "s|FROM golang:.* as builder|FROM ${BUILDER_FROM_IMAGE} as builder|" -i ${CONTAINER_FILE}
-    fi
-
-    # avoid docker.io quotas ...
-    sed -i 's|FROM nvidia/cuda:|FROM nvcr.io/nvidia/cuda:|' ${CONTAINER_FILE}
-
     cat <<EOF > /usr/local/bin/docker
     #! /bin/sh
     exec podman --cgroup-manager=cgroupfs "\$@"
     EOF
     chmod u+x /usr/local/bin/docker
 
-    make docker-build IMG=${OPERATOR_IMAGE_NAME}
+    # if provided, use custom 'FROM ... as builder' image by setting BUILDER_IMAGE variable
+    # avoid docker.io quotas by setting CUDA_IMAGE
+
+    # This generates an images OUT_IMAGE (based on OPERATOR_IMAGE_NAME)
+    make docker-image \
+      REGISTRY="" \
+      OUT_IMAGE=${OPERATOR_IMAGE_NAME} CUDA_IMAGE=nvcr.io/nvidia/cuda ${BUILDER_FROM_IMAGE:+BUILDER_IMAGE=${BUILDER_FROM_IMAGE}}
 
     # push the image locally
 
