@@ -26,13 +26,24 @@ data:
     EOF
     chmod u+x /usr/local/bin/docker
 
-    # if provided, use custom 'FROM ... as builder' image by setting BUILDER_IMAGE variable
-    # avoid docker.io quotas by setting CUDA_IMAGE
+    CONTAINER_FILE=./Dockerfile
+    if [ -f ${CONTAINER_FILE} ]; then
+      if [ "${BUILDER_FROM_IMAGE}" ]; then
+        # if provided, use custom 'FROM ... as builder' image
+        sed "s|FROM golang:.* as builder|FROM ${BUILDER_FROM_IMAGE} as builder|" -i ${CONTAINER_FILE}
+      fi
 
-    # This generates an images OUT_IMAGE (based on OPERATOR_IMAGE_NAME)
-    make docker-image \
-      REGISTRY="" \
-      OUT_IMAGE=${OPERATOR_IMAGE_NAME} CUDA_IMAGE=nvcr.io/nvidia/cuda ${BUILDER_FROM_IMAGE:+BUILDER_IMAGE=${BUILDER_FROM_IMAGE}}
+      # avoid docker.io quotas ...
+      sed -i 's|FROM nvidia/cuda:|FROM nvcr.io/nvidia/cuda:|' ${CONTAINER_FILE}
+      make docker-build IMG=${OPERATOR_IMAGE_NAME}
+    else
+      # if provided, use custom 'FROM ... as builder' image by setting BUILDER_IMAGE variable
+      # avoid docker.io quotas by setting CUDA_IMAGE
+      # This generates an images OUT_IMAGE (based on OPERATOR_IMAGE_NAME)
+      make docker-image \
+        REGISTRY="" \
+        OUT_IMAGE=${OPERATOR_IMAGE_NAME} CUDA_IMAGE=nvcr.io/nvidia/cuda ${BUILDER_FROM_IMAGE:+BUILDER_IMAGE=${BUILDER_FROM_IMAGE}}
+    fi
 
     # push the image locally
 
