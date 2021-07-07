@@ -37,8 +37,8 @@ if [[ "${1:-}" == "--help" || "${1:-}" == -h ]]; then
     exit 0
 fi
 
-if [ "$#" -gt 1 ]; then
-    echo "FATAL: expected 0 or 1 parameter ... (got '$@')"
+if [ "$#" -gt 2 ]; then
+    echo "FATAL: expected 2 parameters or less ... (got '$@')"
     usage
     exit 1
 elif [[ "${1:-}" == "$DEPLOY_FROM_BUNDLE_FLAG"* ]]; then
