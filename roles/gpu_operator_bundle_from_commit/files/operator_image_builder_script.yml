@@ -28,6 +28,7 @@ data:
 
     CONTAINER_FILE=./Dockerfile
     if [ -f ${CONTAINER_FILE} ]; then
+      # TODO: Remove this backwards compatible code once we stop testing versions that do not use the new Makefile
       if [ "${BUILDER_FROM_IMAGE}" ]; then
         # if provided, use custom 'FROM ... as builder' image
         sed "s|FROM golang:.* as builder|FROM ${BUILDER_FROM_IMAGE} as builder|" -i ${CONTAINER_FILE}
