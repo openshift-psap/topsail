@@ -20,15 +20,16 @@ data:
 
     git show --quiet
 
-    cat <<EOF > /usr/local/bin/docker
-    #! /bin/sh
-    exec podman --cgroup-manager=cgroupfs "\$@"
-    EOF
-    chmod u+x /usr/local/bin/docker
-
     CONTAINER_FILE=./Dockerfile
     if [ -f ${CONTAINER_FILE} ]; then
       # TODO: Remove this backwards compatible code once we stop testing versions that do not use the new Makefile
+
+      cat <<EOF > /usr/local/bin/docker
+      #! /bin/sh
+      exec podman --cgroup-manager=cgroupfs "\$@"
+      EOF
+      chmod u+x /usr/local/bin/docker
+
       if [ "${BUILDER_FROM_IMAGE}" ]; then
         # if provided, use custom 'FROM ... as builder' image
         sed "s|FROM golang:.* as builder|FROM ${BUILDER_FROM_IMAGE} as builder|" -i ${CONTAINER_FILE}
@@ -40,10 +41,13 @@ data:
     else
       # if provided, use custom 'FROM ... as builder' image by setting BUILDER_IMAGE variable
       # avoid docker.io quotas by setting CUDA_IMAGE
-      # This generates an images OUT_IMAGE (based on OPERATOR_IMAGE_NAME)
+      # The docker-image generates an image OUT_IMAGE (based on OPERATOR_IMAGE_NAME)
       make docker-image \
         REGISTRY="" \
-        OUT_IMAGE=${OPERATOR_IMAGE_NAME} CUDA_IMAGE=nvcr.io/nvidia/cuda ${BUILDER_FROM_IMAGE:+BUILDER_IMAGE=${BUILDER_FROM_IMAGE}}
+        DOCKER=podman \
+        OUT_IMAGE=${OPERATOR_IMAGE_NAME} \
+        CUDA_IMAGE=nvcr.io/nvidia/cuda \
+        ${BUILDER_FROM_IMAGE:+BUILDER_IMAGE=${BUILDER_FROM_IMAGE}}
     fi
 
     # push the image locally
