@@ -11,8 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Install dependencies
+        run: |
+          python -m pip install fire pyyaml
+
       - name: Check that all the variables point to existing files
-        run: toolbox/repo/validate_role_files.py
+        run: ./run_toolbox.py repo validate_role_files
 
       - name: Check that all the variables defined are actually used
-        run: toolbox/repo/validate_role_vars_used.py
+        run: ./run_toolbox.py repo validate_role_vars_used

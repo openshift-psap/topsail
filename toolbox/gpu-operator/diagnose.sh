@@ -46,8 +46,8 @@ EOF
 Problem detected with '$@', capturing extra information...
 EOF
 
-        toolbox/cluster/capture_environment.sh > /dev/null || true
-        toolbox/gpu-operator/capture_deployment_state.sh > /dev/null || true
+        ./run_toolbox.py cluster capture_environment > /dev/null || true
+        ./run_toolbox.py gpu_operator capture_deployment_state > /dev/null || true
     fi
 
     cat <<EOF
@@ -73,20 +73,20 @@ do_test "The cluster is reachable" \
 
 do_test "The cluster has the NFD operator" \
         "There is no NFD-labelled node. Is the NFD operator running properly?" \
-        toolbox/nfd/has_nfd_labels.sh
+        ./run_toolbox.py nfd has_labels
 
 do_test "The cluster is entitled" \
         "The cluster isn't entitled" \
-        toolbox/entitlement/test_cluster.sh
+        ./run_toolbox.py entitlement test_cluster
 
 do_test "The cluster has NFD and GPU nodes" \
         "There is no NFD-labelled GPU node. Is there a GPU node in the cluster?" \
-        toolbox/nfd/has_gpu_nodes.sh
+        ./run_toolbox.py nfd has_gpu_nodes
 
 if [[ "$has_errors" == 0 ]]; then
     do_test "The GPU Operator is properly deployed" \
             "The GPU Operator isn't properly deployed." \
-            toolbox/gpu-operator/wait_deployment.sh
+            ./run_toolbox.py gpu_operator wait_deployment
 else
     echo "Found errors with the GPU Operator, skipping the deployment testing."
 fi
@@ -94,16 +94,16 @@ fi
 if [[ "$has_errors" == 0 ]]; then
     do_test "The cluster is able to run GPU workload" \
             "The cluster is unable to run GPU workload" \
-            toolbox/gpu-operator/run_gpu_burn.sh 30
+            ./run_toolbox.py gpu_operator run_gpu_burn --runtime=30
 else
     echo "Found errors with the GPU Operator, skipping GPU-Burn testing."
 fi
 
 if [[ $RUN_ALL == yes ]]; then
     echo "Capture the deployment state ..."
-    toolbox/gpu-operator/capture_deployment_state.sh > /dev/null || true
+    ./run_toolbox.py gpu_operator capture_deployment_state > /dev/null || true
     echo "Capture the cluster environment ..."
-    toolbox/cluster/capture_environment.sh > /dev/null || true
+    ./run_toolbox.py cluster capture_environment > /dev/null || true
     echo "Done with the state capture."
 fi
 

@@ -5,18 +5,18 @@ set -o errexit
 set -o nounset
 
 prepare_cluster_for_sro() {
-    toolbox/cluster/capture_environment.sh
+    ./run_toolbox.py cluster capture_environment
     entitle.sh
 
-    if ! toolbox/nfd/has_nfd_labels.sh; then
-        toolbox/nfd-operator/deploy_from_operatorhub.sh
+    if ! ./run_toolbox.py nfd has_labels; then
+        ./run_toolbox.py nfd_operator deploy_from_operatorhub
     fi
 }
 
 validate_sro_deployment() {
-    trap toolbox/special-resource-operator/capture_deployment_state.sh EXIT
+    trap "./run_toolbox.py sro capture_deployment_state" EXIT
 
-    toolbox/special-resource-operator/run_e2e_test.sh "${CI_IMAGE_SRO_COMMIT_CI_REPO}" "${CI_IMAGE_SRO_COMMIT_CI_REF}"
+    ./run_toolbox.py sro run_e2e_test "${CI_IMAGE_SRO_COMMIT_CI_REPO}" "${CI_IMAGE_SRO_COMMIT_CI_REF}"
 }
 
 test_master_branch() {
@@ -26,8 +26,8 @@ test_master_branch() {
     echo "Using Git repository ${CI_IMAGE_SRO_COMMIT_CI_REPO} with ref ${CI_IMAGE_SRO_COMMIT_CI_REF}"
 
     prepare_cluster_for_sro
-    toolbox/special-resource-operator/deploy_from_commit.sh "${CI_IMAGE_SRO_COMMIT_CI_REPO}" \
-                                               "${CI_IMAGE_SRO_COMMIT_CI_REF}"
+    ./run_toolbox.py sro deploy_from_commit "${CI_IMAGE_SRO_COMMIT_CI_REPO}" \
+                                    "${CI_IMAGE_SRO_COMMIT_CI_REF}"
     validate_sro_deployment
 }
 

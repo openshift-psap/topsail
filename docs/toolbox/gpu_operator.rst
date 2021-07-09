@@ -9,20 +9,20 @@ Deployment
 
 .. code-block:: shell
 
-    toolbox/gpu-operator/deploy_from_operatorhub.sh [<version>] [<channel>]
-    toolbox/gpu-operator/undeploy_from_operatorhub.sh
+    ./run_toolbox.py gpu_operator deploy_from_operatorhub [--version=<version>] [--chanel=<channel>]
+    ./run_toolbox.py gpu_operator undeploy_from_operatorhub
 
 **Examples:**
 
-- ``./toolbox/gpu-operator/deploy_from_operatorhub.sh``
+- ``./run_toolbox.py gpu_operator deploy_from_operatorhub``
 
   - Installs the latest version available
 
-- ``./toolbox/gpu-operator/deploy_from_operatorhub.sh 1.7.0 v1.7``
+- ``./run_toolbox.py gpu_operator deploy_from_operatorhub --version=1.7.0 --channel=v1.7``
 
   - Installs ``v1.7.0`` from the ``v1.7`` channel
 
-- ``./toolbox/gpu-operator/deploy_from_operatorhub.sh 1.6.2 stable``
+- ``./run_toolbox.py gpu_operator deploy_from_operatorhub --version=1.6.2 --channel=stable``
 
   - Installs ``v1.6.2`` from the ``stable`` channel
 
@@ -78,13 +78,13 @@ Deployment
 
 .. code-block:: shell
 
-    toolbox/gpu-operator/deploy_from_commit.sh <git repository> <git reference> [gpu_operator_image_tag_uid]
+    ./run_toolbox.py gpu_operator deploy_from_commit <git repository> <git reference> [--tag_uid=TAG_UID]
 
 **Example:**
 
 .. code-block:: shell
 
-    toolbox/gpu-operator/deploy_from_commit.sh https://github.com/NVIDIA/gpu-operator.git master
+    ./run_toolbox.py gpu_operator deploy_from_commit https://github.com/NVIDIA/gpu-operator.git master
 
 Configuration
 =============
@@ -96,7 +96,7 @@ Configuration
 
 .. code-block:: shell
 
-   toolbox/gpu-operator/set_repo-config.sh /path/to/repo.list [dest-dir-in-pod]
+   ./run_toolbox.py gpu_operator set_repo_config /path/to/repo.list [--dest_dir=DEST_DIR]
 
 **Default values**:
 
@@ -110,7 +110,7 @@ Testing and Waiting
 
 .. code-block:: shell
 
-    toolbox/gpu-operator/wait_deployment.sh
+    ./run_toolbox.py gpu_operator wait_deployment
 
 
 * Run `GPU-burn_` to validate that all the GPUs of all the nodes can
@@ -118,7 +118,7 @@ Testing and Waiting
 
 .. code-block:: shell
 
-    toolbox/gpu-operator/run_gpu_burn.sh [gpu-burn runtime, in seconds]
+    ./run_toolbox.py gpu_operator run_gpu_burn [--runtime=RUNTIME, in seconds]
 
 **Default values:**
 
@@ -139,12 +139,12 @@ in gpu-operator-resources, ...)
 
 .. code-block:: shell
 
-    toolbox/entitlement/test_cluster.sh
-    toolbox/nfd/has_nfd_labels.sh
-    toolbox/nfd/has_gpu_nodes.sh
-    toolbox/gpu-operator/wait_deployment.sh
-    toolbox/gpu-operator/run_gpu_burn.sh 30
-    toolbox/gpu-operator/capture_deployment_state.sh
+    ./run_toolbox.py entitlement test_cluster
+    ./run_toolbox.py nfd has_labels
+    ./run_toolbox.py nfd has_gpu_nodes
+    ./run_toolbox.py gpu_operator wait_deployment
+    ./run_toolbox.py gpu_operator run_gpu_burn 30
+    ./run_toolbox.py gpu_operator capture_deployment_state
 
 
 or all in one step:

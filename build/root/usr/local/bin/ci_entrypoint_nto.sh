@@ -5,7 +5,7 @@ set -o errexit
 set -o nounset
 
 nto_e2e() {
-    toolbox/cluster/capture_environment.sh
+    ./run_toolbox.py cluster capture_environment
     toolbox/nto/run_e2e_test.sh "$@"
 }
 

@@ -10,8 +10,8 @@ Deployment
 
 .. code-block:: shell
 
-    toolbox/nfd-operator/deploy_from_operatorhub.sh [nfd_channel, eg: 4.7]
-    toolbox/nfd-operator/undeploy_from_operatorhub.sh
+    ./run_toolbox.py nfd_operator deploy_from_operatorhub [--channel=CHANNEL, eg: 4.7]
+    ./run_toolbox.py nfd_operator undeploy_from_operatorhub
 
 Testing and Waiting
 ===================
@@ -23,7 +23,7 @@ label)
 
 .. code-block:: shell
 
-    toolbox/nfd/has_nfd_labels.sh
+    ./run_toolbox.py nfd has_labels
 
 * Test with NFD if NVIDIA GPU nodes are available
 
@@ -39,25 +39,25 @@ Search for these NVIDIA GPU PCI labels (that's the labels used by the `GPU Opera
 
 .. code-block:: shell
 
-    toolbox/nfd/has_gpu_nodes.sh
+    ./run_toolbox.py nfd has_gpu_nodes
 
 * Wait with NFD for GPU nodes to become available
 
 .. code-block:: shell
 
-    toolbox/nfd/wait_gpu_nodes.sh
+    ./run_toolbox.py nfd wait_gpu_nodes
 
 * Deploy NFD Operator from its master branch
 
 .. code-block:: shell
 
-    toolbox/nfd/deploy_from_commit.sh <repo> <ref> [tag]
+    ./run_toolbox.py nfd_operator deploy_from_commit <repo> <ref> [tag]
 
 Example:
 
 .. code-block:: shell
 
-    toolbox/nfd/deploy_from_commit.sh https://github.com/openshift/cluster-nfd-operator.git master
+    ./run_toolbox.py nfd_operator deploy_from_commit https://github.com/openshift/cluster-nfd-operator.git master
 
 End-to-end Testing
 ==================
@@ -66,7 +66,7 @@ End-to-end Testing
 
 .. code-block:: shell
 
-    toolbox/local-ci/deploy.sh "run nfd-operator test_master_branch" https://github.com/openshift-psap/ci-artifacts master
+    ./run_toolbox.py local_ci deploy "run nfd-operator test_master_branch" https://github.com/openshift-psap/ci-artifacts master
 
 
 Cleaning Up
@@ -76,4 +76,4 @@ Cleaning Up
 
 .. code-block::
 
-    toolbox/nfd-operator/undeploy_from_operatorhub.sh
+    ./run_toolbox.py nfd_operator undeploy_from_operatorhub

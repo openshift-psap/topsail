@@ -3,7 +3,8 @@
 # This script ensures that all the Ansible variables defining a
 # filepath (`roles/`) do point to an existing file.
 
-import glob, os, sys
+import os
+import sys
 import yaml
 import pathlib
 
@@ -15,7 +16,7 @@ os.chdir(TOP_DIR)
 ROLES_VARS_GLOB = "roles/*/vars/*/*"
 FILE_PREFIX = "roles/"
 
-def validate_role_vars_files(filename, yaml_doc):
+def validate_role_vars_files(yaml_doc):
     errors = 0
 
     for key, value in yaml_doc.items():
@@ -54,7 +55,7 @@ def traverse_role_vars():
             print(f"--> empty file")
             continue
 
-        file_errors = validate_role_vars_files(filename, yaml_doc)
+        file_errors = validate_role_vars_files(yaml_doc)
         errors += file_errors
 
         print(f"--> found {file_errors} error{'s' if file_errors > 1 else ''} in {filename.relative_to(TOP_DIR)}")

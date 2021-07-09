@@ -11,7 +11,7 @@ Consistency checks
 
 .. code-block:: shell
 
-    toolbox/repo/validate_role_files.py
+    ./run_toolbox.py repo validate_role_files
 
 
 * Ensure that all the Ansible variables defined are actually used in
@@ -20,4 +20,4 @@ Consistency checks
 
 .. code-block:: shell
 
-    toolbox/repo/validate_role_vars_used.py
+    ./run_toolbox.py repo validate_role_vars_used

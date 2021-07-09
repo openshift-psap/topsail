@@ -17,14 +17,14 @@ The custom CA file will be stored in
 
 .. code-block:: shell
 
-    toolbox/entitlement/deploy.sh --pem /path/to/key.pem
+    ./run_toolbox.py entitlement deploy --pem /path/to/key.pem
 
 * Undeploy the cluster-wide entitlement (PEM keys, RHSM configuration
   and custom CA, if they exist)
 
 .. code-block:: shell
 
-    toolbox/entitlement/undeploy.sh
+    ./run_toolbox.py entitlement undeploy
 
 Testing and Waiting
 ===================
@@ -34,14 +34,14 @@ Testing and Waiting
 
 .. code-block:: shell
 
-   toolbox/entitlement/test_in_podman.sh /path/to/key.pem
+   ./run_toolbox.py entitlement test_in_podman /path/to/key.pem
 
 * Test a PEM key inside a cluster Pod (without deploying it)
 
 
 .. code-block:: shell
 
-   toolbox/entitlement/test_in_cluster.sh /path/to/key.pem
+   ./run_toolbox.py entitlement test_in_cluster /path/to/key.pem
 
 * Test cluster-wide entitlement
 
@@ -49,7 +49,7 @@ Testing and Waiting
 
 .. code-block:: shell
 
-    toolbox/entitlement/test_cluster.sh [--no-inspect]
+    ./run_toolbox.py entitlement test_cluster [--no-inspect]
 
 * Wait for the cluster-wide entitlement to be deployed
 
@@ -57,11 +57,11 @@ Testing and Waiting
 
 .. code-block:: shell
 
-    toolbox/entitlement/wait.sh
+    ./run_toolbox.py entitlement wait
 
 Troubleshooting
 ===============
 
 .. code-block:: shell
 
-    toolbox/entitlement/inspect.sh
+    ./run_toolbox.py entitlement inspect

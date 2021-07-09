@@ -9,7 +9,7 @@ cluster_upgrade() {
         echo "FATAL: CLUSTER_UPGRADE_TARGET_IMAGE must be provided to upgrade the cluster"
         exit 1
     fi
-    toolbox/cluster/upgrade_to_image.sh "$CLUSTER_UPGRADE_TARGET_IMAGE"
+    ./run_toolbox.py cluster upgrade_to_image "$CLUSTER_UPGRADE_TARGET_IMAGE"
 }
 
 if [ -z "${1:-}" ]; then

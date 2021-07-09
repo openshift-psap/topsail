@@ -7,16 +7,16 @@ set -o nounset
 prepare_cluster_for_gpu_operator() {
     trap collect_must_gather ERR
 
-    toolbox/cluster/capture_environment.sh
+    ./run_toolbox.py cluster capture_environment
     entitle.sh
 
-    if ! toolbox/nfd/has_nfd_labels.sh; then
-        toolbox/nfd-operator/deploy_from_operatorhub.sh
+    if ! ./run_toolbox.py nfd has_labels; then
+        ./run_toolbox.py nfd_operator deploy_from_operatorhub
     fi
 
-    if ! toolbox/nfd/has_gpu_nodes.sh; then
-        toolbox/cluster/set_scale.sh g4dn.xlarge 1
-        toolbox/nfd/wait_gpu_nodes.sh
+    if ! ./run_toolbox.py nfd has_gpu_nodes; then
+        ./run_toolbox.py cluster set_scale g4dn.xlarge 1
+        ./run_toolbox.py nfd wait_gpu_nodes
     fi
 }
 
@@ -46,15 +46,15 @@ collect_must_gather() {
 validate_gpu_operator_deployment() {
     trap collect_must_gather EXIT
 
-    toolbox/gpu-operator/wait_deployment.sh
-    toolbox/gpu-operator/run_gpu_burn.sh
+    ./run_toolbox.py gpu_operator wait_deployment
+    ./run_toolbox.py gpu_operator run_gpu_burn
 }
 
 test_master_branch() {
     prepare_cluster_for_gpu_operator
-    toolbox/gpu-operator/deploy_from_operatorhub.sh --from-bundle=master
+    ./run_toolbox.py gpu_operator deploy_from_bundle --bundle=master
 
-    validate_gpu_operator_deployment
+    validate_gpu_operator_deployment --bundle=master
 }
 
 test_commit() {
@@ -74,23 +74,28 @@ test_commit() {
     GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET=${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET:-"/var/run/psap-entitlement-secret/openshift-psap-openshift-ci-secret.yml"}
     GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME:-"quay.io/openshift-psap/ci-artifacts"}
 
-    toolbox/gpu-operator/bundle_from_commit.sh "${gpu_operator_git_repo}" \
-                                               "${gpu_operator_git_ref}" \
-                                               "${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET}" \
-                                               "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}" \
-                                               "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}"
+    ./run_toolbox.py gpu_operator bundle_from_commit "${gpu_operator_git_repo}" \
+                                             "${gpu_operator_git_ref}" \
+                                             "${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET}" \
+                                             "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}" \
+                                             --tag_uid="${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}"
 
-    toolbox/gpu-operator/deploy_from_operatorhub.sh "--from-bundle=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-ci-image"
+    ./run_toolbox.py gpu_operator deploy_from_bundle "--bundle=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-ci-image"
 
     validate_gpu_operator_deployment
 }
 
 test_operatorhub() {
-    OPERATOR_VERSION="${1:-}"
-    OPERATOR_CHANNEL="${2:-}"
+    if [ "${1:-}" ]; then
+        OPERATOR_VERSION="--version={$1}"
+    fi
+    shift || true
+    if [ "${1:-}" ]; then
+        OPERATOR_CHANNEL="--channel={$1}"
+    fi
 
     prepare_cluster_for_gpu_operator
-    toolbox/gpu-operator/deploy_from_operatorhub.sh ${OPERATOR_VERSION} ${OPERATOR_CHANNEL}
+    ./run_toolbox.py gpu_operator deploy_from_operatorhub ${OPERATOR_VERSION:-} ${OPERATOR_CHANNEL:-}
     validate_gpu_operator_deployment
 }
 
@@ -108,7 +113,7 @@ test_helm() {
 }
 
 undeploy_operatorhub() {
-    toolbox/gpu-operator/undeploy_from_operatorhub.sh
+    ./run_toolbox.py gpu_operator undeploy_from_operatorhub
 }
 
 if [ -z "${1:-}" ]; then

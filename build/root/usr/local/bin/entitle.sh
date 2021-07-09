@@ -5,8 +5,8 @@ set -o errexit
 set -o nounset
 set -x
 
-if ! [ -f toolbox/entitlement/test_cluster.sh ]; then
-  echo "FATAL: entitlement scripts not found in $PWD/toolbox/entitlement/"
+if ! [ -f ./toolbox/entitlement.py ]; then
+  echo "FATAL: entitlement script not found in $PWD/toolbox/"
   echo "INFO: $0 is intended only for running in the 'OpenShift PSAP CI artifacts' image. (INSIDE_CI_IMAGE=$INSIDE_CI_IMAGE)"
   exit 1
 fi
@@ -24,7 +24,7 @@ extract_entitlement_key() {
 }
 
 echo "INFO: Testing if the cluster is already entitled ..."
-if toolbox/entitlement/test_cluster.sh --no-inspect; then
+if ./run_toolbox.py entitlement test_cluster --no_inspect; then
     echo "INFO: Cluster already entitled, skipping entitlement."
     exit 0
 fi
@@ -66,9 +66,9 @@ if [ ! -e "$ENTITLEMENT_PEM" ]; then
 fi
 
 echo "INFO: Deploying the entitlement with PEM key from ${ENTITLEMENT_PEM}"
-toolbox/entitlement/deploy.sh --pem "${ENTITLEMENT_PEM}"
+./run_toolbox.py entitlement deploy "${ENTITLEMENT_PEM}"
 
-if ! toolbox/entitlement/wait.sh; then
+if ! ./run_toolbox.py entitlement wait; then
     echo "FATAL: Failed to properly entitle the cluster, cannot continue."
     exit 1
 fi

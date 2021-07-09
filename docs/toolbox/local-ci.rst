@@ -9,18 +9,18 @@ Deployment
 
 .. code-block:: shell
 
-    toolbox/local-ci/deploy.sh                 \
+    ./run_toolbox.py local-ci deploy                   \
               <ci command>                     \
               <git repository> <git reference> \
-              [gpu_operator_image_tag_uid]
+              [--tag_uid=TAG_UID]
 
 **Example:**
 
 .. code-block:: shell
 
-    toolbox/local-ci/deploy.sh                        \
-                "run gpu-operator test_master_branch" \
-                https://github.com/openshift-psap/ci-artifacts.git master
+    ./run_toolbox.py local-ci deploy                          \
+             "run gpu-operator test_master_branch" \
+             https://github.com/openshift-psap/ci-artifacts.git master
 
 Cleaning Up
 ===========
@@ -29,4 +29,4 @@ Cleaning Up
 
 .. code-block:: shell
 
-    toolbox/local-ci/cleanup.sh
+    ./run_toolbox.py local-ci cleanup

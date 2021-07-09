@@ -7,19 +7,19 @@ Deployment
 
 .. code-block:: shell
 
-    toolbox/special-resource-operator/deploy_from_commit.sh
-    toolbox/special-resource-operator/undeploy_from_commit.sh
+    ./run_toolbox.py sro deploy_from_commit
+    ./run_toolbox.py sro undeploy_from_commit
 
 Testing
 =======
 
 .. code-block:: shell
 
-    toolbox/special-resource-operator/run_e2e_test.sh
+    ./run_toolbox.py sro run_e2e_test
 
 Troubleshooting
 ===============
 
 .. code-block:: shell
 
-    toolbox/special-resource-operator/capture_deployment_state.sh
+    ./run_toolbox.py sro capture_deployment_state

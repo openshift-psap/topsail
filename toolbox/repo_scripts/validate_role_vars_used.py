@@ -3,7 +3,8 @@
 # This script ensures that all the Ansible variables defined are
 # actually used in their role (with an exception for symlinks)
 
-import glob, os, sys
+import os
+import sys
 import yaml
 import subprocess
 import pathlib

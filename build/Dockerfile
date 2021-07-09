@@ -10,16 +10,15 @@ LABEL 	io.k8s.display-name="OpenShift PSAP CI artifacts" \
 # Add image scripts and files for running as a system container
 COPY build/root /
 
+COPY requirements.txt /
+
 # Install openshift-ansible RPMs and some debugging tools
 RUN yum install -y \
 		glibc-langpack-en \
 		go git make jq vim wget rsync \
 		python3 python3-devel python3-pip python3-setuptools && \
 	python3 -m pip install --no-cache-dir --upgrade setuptools pip wheel && \
-	python3 -m pip install --no-cache-dir \
-		openshift \
-		yq \
-		ansible==2.9.* && \
+	python3 -m pip install --no-cache-dir -r /requirements.txt && \
 	yum clean all && \
 	rm -rf $HOME/.cache && \
 	rm -rf /var/cache/yum

@@ -1,0 +1,5 @@
+openshift
+yq
+pyyaml
+fire
+ansible==2.9.*
