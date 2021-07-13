@@ -28,7 +28,7 @@ data:
       cat <<EOF > /usr/local/bin/docker
       #! /bin/sh
       exec podman --cgroup-manager=cgroupfs "\$@"
-      EOF
+    EOF
       chmod u+x /usr/local/bin/docker
 
       if [ "${BUILDER_FROM_IMAGE}" ]; then
@@ -44,7 +44,7 @@ data:
       # avoid docker.io quotas by setting CUDA_IMAGE
       # The docker-image generates an image OUT_IMAGE (based on OPERATOR_IMAGE_NAME)
       make docker-image \
-        REGISTRY="" \
+        VERSION=$(git rev-parse --short HEAD) \
         DOCKER=podman \
         OUT_IMAGE=${OPERATOR_IMAGE_NAME} \
         CUDA_IMAGE=nvcr.io/nvidia/cuda \
