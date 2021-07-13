@@ -23,6 +23,7 @@ data:
     CONTAINER_FILE=./Dockerfile
     if [ -f ${CONTAINER_FILE} ]; then
       # TODO: Remove this backwards compatible code once we stop testing versions that do not use the new Makefile
+      # This was merged in https://github.com/NVIDIA/gpu-operator/commit/b0e99d9e6ac8738ee335f6e866242b1c9977ea09
 
       cat <<EOF > /usr/local/bin/docker
       #! /bin/sh
