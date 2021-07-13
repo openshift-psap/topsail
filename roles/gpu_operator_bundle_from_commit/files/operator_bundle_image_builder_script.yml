@@ -15,6 +15,12 @@ data:
     echo "OPERATOR_IMAGE_NAME=${OPERATOR_IMAGE_NAME}"
 
     CONTAINER_FILE=./bundle.Dockerfile
+    if [ ! -f ${CONTAINER_FILE} ]; then
+      # TODO: This branch allows for bundles to be built for the modified GPU operator make file.
+      # This was merged in https://github.com/NVIDIA/gpu-operator/commit/b0e99d9e6ac8738ee335f6e866242b1c9977ea09
+      # This can be set as the default once no older versions are built.
+      CONTAINER_FILE=./docker/bundle.Dockerfile
+    fi
     CONTEXT_LOCATION="."
 
     CSV_FILE=bundle/manifests/gpu-operator.clusterserviceversion.yaml
