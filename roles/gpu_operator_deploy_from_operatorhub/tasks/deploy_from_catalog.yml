@@ -125,7 +125,7 @@
     # TODO: use 'oc get installplan -loperators.coreos.com/gpu-operator-certified.openshift-operators'
     # when we get rid of OCP 4.5 support
     command:
-      oc get Subscription/gpu-operator-certified
+      oc get subscriptions.operators.coreos.com/gpu-operator-certified
          -n openshift-operators
          -ojsonpath={@.status.installPlanRef.name}
     register: gpu_operator_installplan_name

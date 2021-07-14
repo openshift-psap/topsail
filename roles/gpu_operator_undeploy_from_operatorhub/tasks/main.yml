@@ -10,7 +10,7 @@
   failed_when: false
 
 - name: Delete the OperatorHub subscription for the GPU Operator
-  command: oc --ignore-not-found=true delete Subscription/gpu-operator-certified -n openshift-operators
+  command: oc --ignore-not-found=true delete subscriptions.operators.coreos.com/gpu-operator-certified -n openshift-operators
   failed_when: false
 
 - name: Get the name of the GPU Operator ClusterServiceVersion
