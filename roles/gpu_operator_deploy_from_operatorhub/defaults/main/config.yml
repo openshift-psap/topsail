@@ -4,3 +4,9 @@ gpu_operator_operatorhub_version: ""
 
 # Channel to use in OperatorHub deployment subscription
 gpu_operator_operatorhub_channel: ""
+
+# With OperatorHub deployment, this variable configures if the GPU Operator
+# upgrades should be automatically approved (Automaic) or not (Manual)
+# Manual is set by default, so that we can install older versions of the
+# operator without them being automatically upgraded by OperatorHub
+gpu_operator_installplan_approval: Manual
