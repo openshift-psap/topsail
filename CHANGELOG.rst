@@ -51,6 +51,10 @@ Other changes
   - ``toolbox/repo/validate_role_files.py`` is a new script to ensure that all the Ansible variables defining a filepath (``roles/``) do point to an existing file
   - ``toolbox/repo/validate_role_vars_used.py`` is a new script to ensure that all the Ansible variables defined are actually used in their role (with an exception for symlinks)
 
+- gpu_operator_deploy_from_operatorhub: allow overriding subscription.spec.installPlanApproval `#219<https://github.com/openshift-psap/ci-artifacts/pull/219>`_
+
+  - ``./toolbox/gpu-operator/deploy_from_operatorhub.sh`` can receive a new flag ``-install-plan=Manual|Automatic`` (``Manual`` is the default) to override the Subscription install-plan approval setting when deploying from OperatorHub.
+
 Changes since version May 7th, 2021
 -----------------------------------
 

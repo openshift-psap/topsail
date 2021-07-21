@@ -1,5 +1,7 @@
-from toolbox._common import PlaybookRun
+import sys
 import secrets
+
+from toolbox._common import PlaybookRun
 
 
 class GPUOperator:
@@ -57,13 +59,14 @@ class GPUOperator:
         return PlaybookRun("gpu_operator_deploy_from_operatorhub", opts)
 
     @staticmethod
-    def deploy_from_operatorhub(version=None, channel=None):
+    def deploy_from_operatorhub(version=None, channel=None, installPlan="Manual"):
         """
         Deploys the GPU operator from OperatorHub
 
         Args:
             version: The version to deploy. If unspecified, deploys the latest version available in OperatorHub. Run the toolbox gpu_operator list_version_from_operator_hub subcommand to see the available versions.
             channel: Optional channel to deploy from.
+            installPlan: Optional InstallPlan approval mode (Automatic or Manual [default])
         """
         opts = {}
 
@@ -82,6 +85,17 @@ class GPUOperator:
             print(
                 f"Deploying the GPU Operator from OperatorHub using channel '{channel}'."
             )
+
+        opts["gpu_operator_installplan_approval"] = installPlan
+        if installPlan not in ("Manual", "Automatic"):
+            print(
+                f"InstallPlan can only be Manual or Automatic. Received '{installPlan}'."
+            )
+            sys.exit(1)
+
+        print(
+            f"Deploying the GPU Operator from OperatorHub using InstallPlan approval '{installPlan}'."
+        )
 
         print("Deploying the GPU Operator from OperatorHub using its master bundle.")
         return PlaybookRun("gpu_operator_deploy_from_operatorhub", opts)
@@ -175,7 +189,7 @@ class GPUOperator:
             git_ref: Git ref to bundle
             quay_push_secret: A file Kube Secret YAML file with `.dockerconfigjson` data and type kubernetes.io/dockerconfigjson
             quay_image_image: The quay repo to push to
-            tag_uid: The image tag suffix to use. 
+            tag_uid: The image tag suffix to use.
         """
         if tag_uid is None:
             tag_uid = secrets.token_hex(4)

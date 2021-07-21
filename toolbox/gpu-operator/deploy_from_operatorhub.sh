@@ -5,15 +5,15 @@ source ${THIS_DIR}/../_common.sh
 
 DEPLOY_FROM_BUNDLE_FLAG="--from-bundle="
 DEPLOY_ONLY_CLUSTERPOLICY_FLAG="--only-clusterpolicy"
-
+INSTALL_PLAN="--install-plan="
 usage() {
     cat <<EOF
 Deploys the GPU Operator from OperatorHub / OLM
 
 Usage:
     $0
-    $0 <version> [<channel>]
-    $0 $DEPLOY_FROM_BUNDLE_FLAG
+    $0 <version> [<channel>] [--install-plan=Automatic|Manual]
+    $0 ${DEPLOY_FROM_BUNDLE_FLAG}master|<bundle image>
     $0 $DEPLOY_ONLY_CLUSTERPOLICY_FLAG
 
 Flags:
@@ -21,8 +21,11 @@ Flags:
 
   ${DEPLOY_FROM_BUNDLE_FLAG}master Deploy the current master-branch version from the bundle image
                        See roles/gpu_operator_deploy_from_operatorhub/defaults/main/bundle.yml for the image path.
-  ${DEPLOY_FROM_BUNDLE_FLAG}<path> Deploy the from the given bundle image
+  ${DEPLOY_FROM_BUNDLE_FLAG}<bundle image>
+                       Deploy the from the given bundle image
   $DEPLOY_ONLY_CLUSTERPOLICY_FLAG Do not deploy the operator itself, only create the ClusterPolicy from the CSV.
+  ${INSTALL_PLAN}Automatic|Manual
+                       When deploying from OperatorHub, set the Subscription 'installPlanApproval' to Automatic or Manual (default).
   <empty>              Deploy the latest version available in OperatorHub
 
   <version>            Deploy a given version from OperatorHub
@@ -37,8 +40,8 @@ if [[ "${1:-}" == "--help" || "${1:-}" == -h ]]; then
     exit 0
 fi
 
-if [ "$#" -gt 2 ]; then
-    echo "FATAL: expected 2 parameters or less ... (got '$@')"
+if [ "$#" -gt 3 ]; then
+    echo "FATAL: expected 3 parameters or less ... (got '$@')"
     usage
     exit 1
 elif [[ "${1:-}" == "$DEPLOY_FROM_BUNDLE_FLAG"* ]]; then
@@ -55,23 +58,47 @@ elif [[ "${1:-}" == "$DEPLOY_FROM_BUNDLE_FLAG"* ]]; then
 elif [[ "${1:-}" == "$DEPLOY_ONLY_CLUSTERPOLICY_FLAG" ]]; then
     ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_deploy_from=pre-deployed"
     echo "Not deploying the GPU Operator, only create the ClusterPolicy from the CSV."
-elif [[ "${1:-}" == "-"* ]]; then
+elif [[ "${1:-}" == "-"* && "${1:-}" != "$INSTALL_PLAN"* ]]; then
     echo "FATAL: unexpected parameters ... ($@)"
     usage
     exit 1
-elif [[ "$#" == 0 ]]; then
+elif [[ "$#" == 0 || "$#" == 1 && "$1" == "$INSTALL_PLAN"* ]]; then
     echo "Deploying the GPU Operator from OperatorHub using the latest version available."
-elif [[ "$#" == 1 || "$#" == 2 ]]; then
-    ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_operatorhub_version=$1"
-    echo "Deploying the GPU Operator from OperatorHub using version '$1'."
-    if [[ "$#" == 2 ]]; then
-        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_operatorhub_channel=$2"
-        echo "Deploying the GPU Operator from OperatorHub using channel '$2'."
+    if [[ "${1:-}" == "$INSTALL_PLAN"* ]]; then
+        approval=$(echo $1 | cut -d= -f2)
+        if [[ "$approval" != "Manual" && "$approval" != "Automatic" ]]; then
+            echo "FATAL: invalid value for $1. Must be Manual or Automatic."
+            usage
+            exit 1
+        fi
+        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_installplan_approval=$approval"
+        echo "Deploying the GPU Operator from OperatorHub using InstallPlan approval '$approval'."
     fi
 else
-    echo "FATAL: unexpected number of paramters (got '$@')"
-    usage
-    exit 1
+    ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_operatorhub_version=$1"
+    echo "Deploying the GPU Operator from OperatorHub using version '$1'."
+    shift
+    if [[ "$#" -ge 1 && "$1" != "-"* ]]; then
+        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_operatorhub_channel=$1"
+        echo "Deploying the GPU Operator from OperatorHub using channel '$1'."
+        shift
+    fi
+    if [[ "$#" -ge 1 ]]; then
+        if [[ "$1" != "$INSTALL_PLAN"* ]]; then
+            echo "FATAL: unknown flag: $1"
+            usage
+            exit 1
+        fi
+
+        approval=$(echo $1 | cut -d= -f2)
+        if [[ "$approval" != "Manual" && "$approval" != "Automatic" ]]; then
+            echo "FATAL: invalid value for $1. Must be Manual or Automatic."
+            usage
+            exit 1
+        fi
+        ANSIBLE_OPTS="${ANSIBLE_OPTS} -e gpu_operator_installplan_approval=$approval"
+        echo "Deploying the GPU Operator from OperatorHub using InstallPlan approval '$approval'."
+    fi
 fi
 
 exec ansible-playbook ${ANSIBLE_OPTS} playbooks/gpu_operator_deploy_from_operatorhub.yml

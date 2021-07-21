@@ -9,7 +9,7 @@ Deployment
 
 .. code-block:: shell
 
-    ./run_toolbox.py gpu_operator deploy_from_operatorhub [--version=<version>] [--channel=<channel>]
+    ./run_toolbox.py gpu_operator deploy_from_operatorhub [--version=<version>] [--channel=<channel>] [--installPlan=Automatic|Manual]
     ./run_toolbox.py gpu_operator undeploy_from_operatorhub
 
 **Examples:**
@@ -25,6 +25,10 @@ Deployment
 - ``./run_toolbox.py gpu_operator deploy_from_operatorhub --version=1.6.2 --channel=stable``
 
   - Installs ``v1.6.2`` from the ``stable`` channel
+
+- ``./run_toolbox.py gpu_operator deploy_from_operatorhub --installPlan=Automatic``
+
+  - Forces the install plan approval to be set to ``Automatic``.
 
 **Note about the GPU Operator channel:**
 
