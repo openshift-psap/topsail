@@ -58,13 +58,14 @@ data:
     for repo in rhocp-${OPENSHIFT_VERSION}-for-rhel-8-x86_64-rpms rhel-8-for-x86_64-baseos-eus-rpms; do
       if dnf config-manager --set-enabled $repo; then
         if dnf makecache; then
-          echo "# INFO: repo '$repo' can be enabled"
+          echo "# INFO: repo '$repo' enabled"
         else
           echo "#"
           echo "# WARNING: failed to cache repo '$repo'"
           echo "#"
+          dnf config-manager --set-disabled $repo
         fi
-        dnf config-manager --set-disabled $repo
+
       else
         echo "#"
         echo "# WARNING: failed to enable repo '$repo'"
