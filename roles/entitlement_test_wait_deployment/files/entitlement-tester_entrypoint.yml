@@ -73,6 +73,15 @@ data:
       fi
     done
 
+    # inspect the PEM certificate "notAfter" date
+    yum install -yq openssl
+
+    EXPIRATION_WARNING_DELAY_HR=48
+    openssl x509 -enddate -noout -in /etc/pki/entitlement-host/entitlement.pem # prints the `notAfter` date
+    if ! openssl x509 -checkend $(($EXPIRATION_WARNING_DELAY_HR * 60 * 60)) -noout -in /etc/pki/entitlement-host/entitlement.pem; then
+      echo "WARNING: PEM certificate expires in less than ${EXPIRATION_WARNING_DELAY_HR} hours ..."
+    fi
+
     echo
     echo "# ensure that RH repositories can be accessed"
 
