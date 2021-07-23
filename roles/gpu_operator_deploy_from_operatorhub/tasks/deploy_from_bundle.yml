@@ -16,7 +16,7 @@
 
 - name: Deploy the GPU Operator from the bundle
   command:
-    operator-sdk run bundle
+    operator-sdk run bundle --timeout=5m
                  -n {{ deploy_bundle_namespace }}
                  {{ deploy_bundle_image }}
 
