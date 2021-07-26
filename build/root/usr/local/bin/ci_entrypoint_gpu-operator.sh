@@ -107,15 +107,39 @@ EOF
 }
 
 test_master_branch() {
-    prepare_cluster_for_gpu_operator
-    ./run_toolbox.py gpu_operator deploy_from_bundle --bundle=master
+    trap collect_must_gather EXIT
 
-    validate_gpu_operator_deployment --bundle=master
+    oc label ns/openshift-operators openshift.io/cluster-monitoring=true --overwrite
+
+    # currently broken, until we can generate in quay.io (or
+    # elsewhere) a bundle image pointing to the the current master
+    # operator image
+    #./run_toolbox.py gpu_operator deploy_from_bundle --bundle=master
+
+    # meanwhile:
+    deploy_commit "https://github.com/NVIDIA/gpu-operator.git" "master"
+
+    prepare_cluster_for_gpu_operator_with_alerts
+
+    validate_gpu_operator_deployment
 }
 
 test_commit() {
     gpu_operator_git_repo="${1:-}"
     gpu_operator_git_ref="${2:-}"
+
+    prepare_cluster_for_gpu_operator
+
+    deploy_commit $gpu_operator_git_repo $gpu_operator_git_ref
+
+    validate_gpu_operator_deployment
+}
+
+deploy_commit() {
+    gpu_operator_git_repo="${1:-}"
+    shift
+    gpu_operator_git_ref="${1:-}"
+
     CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="ci-image"
 
     if [[ -z "$gpu_operator_git_repo" || -z "$gpu_operator_git_ref" ]]; then
@@ -124,8 +148,6 @@ test_commit() {
     fi
 
     echo "Using Git repository ${gpu_operator_git_repo} with ref ${gpu_operator_git_ref}"
-
-    prepare_cluster_for_gpu_operator
 
     GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET=${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET:-"/var/run/psap-entitlement-secret/openshift-psap-openshift-ci-secret.yml"}
     GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME:-"quay.io/openshift-psap/ci-artifacts"}
@@ -137,6 +159,45 @@ test_commit() {
                                              --tag_uid="${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}"
 
     ./run_toolbox.py gpu_operator deploy_from_bundle "--bundle=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-ci-image"
+}
+
+prepare_cluster_for_gpu_operator_with_alerts() {
+    mkdir -p ${ARTIFACT_DIR}/alerts
+
+    ./run_toolbox.py gpu-operator prepare_test_alerts \
+                     --alert_delay=1 \
+                     --alert_prefix=CI
+
+    mv ${ARTIFACT_DIR}/*__gpu-operator__prepare_test_alerts ${ARTIFACT_DIR}/alerts
+
+    # wait for NFD alert to fire
+    ./run_toolbox.py cluster wait_for_alert \
+                     CIGPUOperatorReconciliationFailedNfdLabelsMissing \
+                     --alert-active=true
+    mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert ${ARTIFACT_DIR}/alerts
+
+    ./run_toolbox.py nfd_operator deploy_from_operatorhub
+    ./run_toolbox.py cluster set_scale g4dn.xlarge 1
+
+    # wait for NFD alert to stop firing
+    ./run_toolbox.py cluster wait_for_alert \
+                     CIGPUOperatorReconciliationFailedNfdLabelsMissing \
+                     --alert-active=false
+
+    # wait for driver alert to fire
+    ./run_toolbox.py cluster wait_for_alert \
+                     CIGPUOperatorNodeDeploymentDriverFailed \
+                     --alert-active=true
+    mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert ${ARTIFACT_DIR}/alerts
+
+    # entitle the cluster
+    entitle.sh
+
+    # wait for driver alert to stop fireing
+    ./run_toolbox.py cluster wait_for_alert \
+                     CIGPUOperatorNodeDeploymentDriverFailed \
+                     --alert-active=false
+    mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert ${ARTIFACT_DIR}/alerts
 
     validate_gpu_operator_deployment
 }
@@ -204,9 +265,7 @@ set -x
 
 case ${action} in
     "test_master_branch")
-        ## currently broken
-        #test_master_branch "$@"
-        test_commit "https://github.com/NVIDIA/gpu-operator.git" master
+        test_master_branch
         exit 0
         ;;
     "test_commit")

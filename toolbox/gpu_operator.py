@@ -212,3 +212,21 @@ class GPUOperator:
         """
 
         return PlaybookRun("gpu_operator_get_csv_version")
+
+    @staticmethod
+    def prepare_test_alerts(alert_delay=1, alert_prefix="CI"):
+        """
+        Prepare test alerts based on the existing GPU Operator alerts.
+        Test alerts have a shorter delay than default alerts.
+
+        Args:
+          alert_delay: Delay (in minutes) before the alerts fire.
+          alert_prefix: Prefix to prepend to the alert names, to distinguish them from the normal alerts.
+        """
+
+        opts = {
+            "gpu_operator_test_alerts_delay": alert_delay,
+            "gpu_operator_test_alerts_prefix": alert_prefix,
+        }
+
+        return PlaybookRun("gpu_operator_prepare_test_alerts", opts)

@@ -1,0 +1,29 @@
+---
+- name: Check that cluster_wait_for_alert_name is defined
+  fail: msg="Bailing out. This play requires 'cluster_wait_for_alert_name'"
+  when: cluster_wait_for_alert_name | default('', true) | length == 0
+
+- name: Check that cluster_wait_for_alert_active is defined
+  fail: msg="Bailing out. This play requires 'cluster_wait_for_alert_active'"
+  when: cluster_wait_for_alert_active | default('', true) | length == 0
+
+- name: Get alert manager hostname
+  command: oc -n openshift-monitoring get routes/alertmanager-main -o jsonpath='{@.spec.host}'
+  register: alert_manager_route_cmd
+
+- name: Compute storage filename
+  set_fact:
+    alert_filename: "{{ artifact_extra_logs_dir }}/alerts_{{ cluster_wait_for_alert_name }}_{{ cluster_wait_for_alert_active }}.txt"
+
+- name: Wait for the alert
+  shell: |
+    set -e;
+    set -o pipefail;
+    curl -s -k -H "Authorization: Bearer $(oc -n openshift-monitoring sa get-token prometheus-k8s)" https://{{ alert_manager_route_cmd.stdout }}/api/v1/alerts \
+       | jq . > "{{ alert_filename }}"; \
+    grep -q '"alertname": "{{ cluster_wait_for_alert_name }}"' "{{ alert_filename }}" # could be improved with 'jq' and a stronger json inspection ...
+  register: wait_for_alert
+  until: (cluster_wait_for_alert_active == "true" and wait_for_alert.rc == 0) or (cluster_wait_for_alert_active == "false" and wait_for_alert.rc == 1)
+  failed_when: not ((cluster_wait_for_alert_active == "true" and wait_for_alert.rc == 0) or (cluster_wait_for_alert_active == "false" and wait_for_alert.rc == 1))
+  retries: 30
+  delay: 30

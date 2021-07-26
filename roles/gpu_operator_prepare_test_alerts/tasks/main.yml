@@ -1,0 +1,78 @@
+---
+- name: Prepare Operator test prometheus rule
+  block:
+  - name: Wait for the Operator PrometheusRule to be available
+    command:
+      oc get prometheusrule/nvidia-gpu-operator-metrics
+         -n openshift-operators
+         -oname
+    register: has_operator_prometheusrule
+    until: has_operator_prometheusrule.rc == 0
+    retries: 30
+    delay: 30
+
+  - name: Prepare the Operator test rules resource file
+    shell: |
+      cat <<'EOF' > {{ artifact_extra_logs_dir }}/prometheusrules_operator.yml
+      apiVersion: monitoring.coreos.com/v1
+      kind: PrometheusRule
+      metadata:
+        labels:
+          app: gpu-operator
+        name: ci-gpu-operator-alerts
+        namespace: openshift-operators
+      spec:
+        groups:
+      EOF
+
+  - name: Derive the Operator test rules
+    shell: |
+      set -o pipefail;
+      oc get prometheusrules/nvidia-gpu-operator-metrics -oyaml -n openshift-operators \
+      | sed -ne '/^spec:/,$ p' \
+      | sed 1,2d \
+      | sed 's/alert: GPUOperator/alert: {{  gpu_operator_test_alerts_prefix }}GPUOperator/' \
+      | sed 's/ts_seconds > 1800/ts_seconds > {{ (gpu_operator_test_alerts_delay | int) * 60 }}/' \
+      >> {{ artifact_extra_logs_dir }}/prometheusrules_operator.yml
+
+  - name: Create Operator test rules
+    command: oc apply -f {{ artifact_extra_logs_dir }}/prometheusrules_operator.yml
+
+
+- name: Prepare Operator test prometheus rule
+  block:
+  - name: Wait for the Node PrometheusRule to be available
+    command:
+      oc get prometheusrule/nvidia-node-status-exporter-alerts
+         -n gpu-operator-resources
+         -oname
+    register: has_node_prometheusrule
+    retries: 30
+    delay: 30
+
+  - name: Prepare the Node test rules resource file
+    shell: |
+      cat <<'EOF' > {{ artifact_extra_logs_dir }}/prometheusrules_node.yml
+      apiVersion: monitoring.coreos.com/v1
+      kind: PrometheusRule
+      metadata:
+        labels:
+          app: gpu-operator
+        name: ci-gpu-node-alerts
+        namespace: gpu-operator-resources
+      spec:
+        groups:
+      EOF
+
+  - name: Derive the Node test rules
+    shell: |
+      set -o pipefail;
+      oc get prometheusrules/nvidia-node-status-exporter-alerts -oyaml -n gpu-operator-resources \
+      | sed -ne '/^spec:/,$ p' \
+      | sed 1,2d \
+      | sed 's/alert: GPUOperator/alert: {{ gpu_operator_test_alerts_prefix }}GPUOperator/' \
+      | sed 's/for: 30m/for: {{ gpu_operator_test_alerts_delay }}m/' \
+      >> {{ artifact_extra_logs_dir }}/prometheusrules_node.yml
+
+  - name: Create the Node test rules
+    command: oc apply -f {{ artifact_extra_logs_dir }}/prometheusrules_node.yml

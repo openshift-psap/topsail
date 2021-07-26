@@ -1,0 +1,7 @@
+---
+- name: Wait for an alert to be active or inactive.
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: cluster_wait_for_alert

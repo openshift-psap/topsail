@@ -1,0 +1,5 @@
+---
+# The name of the alert to wait for
+cluster_wait_for_alert_name:
+# A boolean telling if the alert should be active or not
+cluster_wait_for_alert_active:

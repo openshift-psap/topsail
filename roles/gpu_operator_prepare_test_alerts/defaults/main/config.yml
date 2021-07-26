@@ -1,0 +1,5 @@
+---
+# Delay (in minutes) before the alerts fire.
+gpu_operator_test_alerts_delay: 1
+# Prefix to prepend to the alert names, to distinguish them from the normal alerts.
+gpu_operator_test_alerts_prefix: "CI"
