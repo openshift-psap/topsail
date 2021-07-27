@@ -9,7 +9,7 @@ Deployment
 
 .. code-block:: shell
 
-    ./run_toolbox.py gpu_operator deploy_from_operatorhub [--version=<version>] [--chanel=<channel>]
+    ./run_toolbox.py gpu_operator deploy_from_operatorhub [--version=<version>] [--channel=<channel>]
     ./run_toolbox.py gpu_operator undeploy_from_operatorhub
 
 **Examples:**
@@ -143,7 +143,7 @@ in gpu-operator-resources, ...)
     ./run_toolbox.py nfd has_labels
     ./run_toolbox.py nfd has_gpu_nodes
     ./run_toolbox.py gpu_operator wait_deployment
-    ./run_toolbox.py gpu_operator run_gpu_burn 30
+    ./run_toolbox.py gpu_operator run_gpu_burn --runtime=30
     ./run_toolbox.py gpu_operator capture_deployment_state
 
 
