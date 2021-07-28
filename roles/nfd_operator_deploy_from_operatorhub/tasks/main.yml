@@ -46,36 +46,16 @@
 
 - name: Wait for the NFD Operator OperatorHub ClusterServiceVersion
   block:
-  - name: Use different methods for OCP 4.5 vs more recent
-    block:
-    - name: Use 'rescue' block for OCP 4.5
-      when: openshift_release == "4.5"
-      fail: msg="Label operators.coreos.com/nfd.openshift-nfd not available in OCP 4.5"
-
-    - name: Wait for the NFD Operator OperatorHub ClusterServiceVersion (except v4.5)
-      command:
-        oc get ClusterServiceVersion
-           -l operators.coreos.com/nfd.openshift-nfd
-           -oname
-           -n openshift-nfd
-      register: nfd_operator_csv_name
-      until: nfd_operator_csv_name.stdout != ""
-      retries: 40
-      delay: 30
-
-    rescue:
-    - name: Wait for the NFD Operator OperatorHub ClusterServiceVersion (only v4.5)
-      when: openshift_release == "4.5"
-      shell:
-        set -o pipefail;
-        oc get ClusterServiceVersion
-           -oname
-           -n openshift-nfd
-           | grep /nfd
-      register: nfd_operator_csv_name
-      until: nfd_operator_csv_name.stdout != ""
-      retries: 40
-      delay: 30
+  - name: Wait for the NFD Operator OperatorHub ClusterServiceVersion
+    command:
+      oc get ClusterServiceVersion
+         -l operators.coreos.com/nfd.openshift-nfd
+         -oname
+         -n openshift-nfd
+    register: nfd_operator_csv_name
+    until: nfd_operator_csv_name.stdout != ""
+    retries: 40
+    delay: 30
 
   rescue:
   - name: List the ClusterServiceVersion in the openshift-nfd namespace (debug)

@@ -109,12 +109,11 @@
 
 - block:
   - name: Find the GPU Operator OperatorHub InstallPlan
-    # TODO: use 'oc get installplan -loperators.coreos.com/gpu-operator-certified.openshift-operators'
-    # when we get rid of OCP 4.5 support
     command:
-      oc get subscriptions.operators.coreos.com/gpu-operator-certified
+      oc get InstallPlan
          -n openshift-operators
-         -ojsonpath={@.status.installPlanRef.name}
+         -oname
+         -loperators.coreos.com/gpu-operator-certified.openshift-operators
     register: gpu_operator_installplan_name
     until: gpu_operator_installplan_name.stdout != ""
     retries: 20
@@ -122,7 +121,7 @@
 
   - name: Approve the GPU Operator OperatorHub InstallPlan
     command:
-      oc patch InstallPlan/{{ gpu_operator_installplan_name.stdout }}
+      oc patch {{ gpu_operator_installplan_name.stdout }}
          -n openshift-operators
          --type merge
          --patch '{"spec":{"approved":true }}'

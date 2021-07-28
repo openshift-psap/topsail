@@ -1,13 +1,3 @@
-[rhocp-4.5-for-rhel-8-x86_64-rpms]
-name=rhocp-4.5-for-rhel-8-x86_64-rpms
-baseurl=https://mirror-entitled-yum.apps.ci-mirror/g.psap.aws.rhperfscale.org/rhocp-4.5-for-rhel-8-x86_64-rpms/
-enabled=1
-sslverify=1
-gpgcheck = 1
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-sslclientkey=/etc/rhsm-host/yum-client-auth/creds.pem
-sslclientcert=/etc/rhsm-host/yum-client-auth/creds.pem
-
 [rhocp-4.6-for-rhel-8-x86_64-rpms]
 name=rhocp-4.6-for-rhel-8-x86_64-rpms
 baseurl=https://mirror-entitled-yum.apps.ci-mirror/g.psap.aws.rhperfscale.org/rhocp-4.6-for-rhel-8-x86_64-rpms/
@@ -21,6 +11,16 @@ sslclientcert=/etc/rhsm-host/yum-client-auth/creds.pem
 [rhocp-4.7-for-rhel-8-x86_64-rpms]
 name=rhocp-4.7-for-rhel-8-x86_64-rpms
 baseurl=https://mirror-entitled-yum.apps.ci-mirror/g.psap.aws.rhperfscale.org/rhocp-4.7-for-rhel-8-x86_64-rpms/
+enabled=1
+sslverify=1
+gpgcheck = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+sslclientkey=/etc/rhsm-host/yum-client-auth/creds.pem
+sslclientcert=/etc/rhsm-host/yum-client-auth/creds.pem
+
+[rhocp-4.8-for-rhel-8-x86_64-rpms]
+name=rhocp-4.8-for-rhel-8-x86_64-rpms
+baseurl=https://mirror-entitled-yum.apps.ci-mirror/g.psap.aws.rhperfscale.org/rhocp-4.8-for-rhel-8-x86_64-rpms/
 enabled=1
 sslverify=1
 gpgcheck = 1
@@ -47,5 +47,3 @@ gpgcheck = 1
 gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
 sslclientkey=/etc/rhsm-host/yum-client-auth/creds.pem
 sslclientcert=/etc/rhsm-host/yum-client-auth/creds.pem
-
-

@@ -12,10 +12,6 @@ the nightly testing of the OpenShift operators under Red Hat PSAP team
 responsibility, and in particular, NVIDIA GPU Operator and the Special
 Resource Operator (SRO).
 
-The OpenShift version we are supporting is 4.N, 4.N-1 and 4.N-2, where 4.N is
-the current latest version released. So as of May 2021, we need to
-support 4.7, 4.6 and 4.5.
-
 The secondary goal of the repository is to offer a toolbox for
 interacting with our operators, and configuring the cluster as required.
 

@@ -14,13 +14,15 @@ To date, this includes:
 - the Node Feature Discovery
 - the Node Tuning Operator
 
+The OpenShift version we are supporting is 4.N+1, 4.N, 4.N-1 and 4.N-2, where
+4.N is the current latest version released. So as of July 2021, we
+need to support 4.9 (master), 4.8 (GA), 4.7 and 4.6.
 
 Documentation
 -------------
 
 See the `documentation pages
 <https://openshift-psap.github.io/ci-artifacts/index.html>`_.
-
 
 Dependencies
 ------------
@@ -113,7 +115,7 @@ deployment of the NFD, SRO and NVIDIA GPU Operators, but also their
 configuration and troubleshooting.
 
 The entrypoint for the toolbox is the `./run_toolbox.py <run_toolbox.py>`_ at the root
-of this repository. Run it without any arguments to see the list of 
+of this repository. Run it without any arguments to see the list of
 available commands.
 
 The functionalities of the toolbox commands are described in the
