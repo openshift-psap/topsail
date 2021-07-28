@@ -74,13 +74,8 @@
 
 ### Node Metrics
 
-- name: Check if the GPU Operator node-status metrics are exposed
-  command: oc get ServiceMonitor/nvidia-node-status-exporter -n gpu-operator-resources -oname
-  failed_when: false
-  register: gpu_operator_has_node_servicemonitor
-
 - name: Validate that the GPU Operator node-status metrics are correctly exposed
-  when: gpu_operator_has_node_servicemonitor.rc == 0
+  when: gpu_operator_version >= "1.8.0"
   block:
   - name: Fetch the GPU Operator node-status-exporter metrics
     shell:
@@ -140,17 +135,8 @@
 
 ### Operator metrics
 
-- name: Check if the GPU-Operator operator metrics are exposed
-  command: oc get ServiceMonitor/gpu-operator -n openshift-operators -oname
-  failed_when: false
-  register: gpu_operator_has_servicemonitor
-
-- name: Inform that the GPU Operator operator metrics are not exposed
-  when: gpu_operator_has_servicemonitor.rc != 0
-  debug: msg="GPU-Operator ServiceMonitor not found, skipping the validation."
-
 - name: Validate that the GPU Operator operator metrics are correctly exposed
-  when: gpu_operator_has_servicemonitor.rc == 0
+  when: gpu_operator_version >= "1.8.0"
   block:
   - name: Check if the namespace has the openshift.io/cluster-monitoring label
     block:
