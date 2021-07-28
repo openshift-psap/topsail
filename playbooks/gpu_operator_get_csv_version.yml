@@ -1,0 +1,7 @@
+---
+- name: Get the version of the GPU Operator currently installed from OLM
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: gpu_operator_get_csv_version

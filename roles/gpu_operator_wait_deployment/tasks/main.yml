@@ -23,13 +23,19 @@
   retries: 10
   delay: 10
 
-- name: Test if the ClusterPolicy has the 'validator' stanza
-  command: oc get {{ has_clusterpolicy.stdout }} -ojsonpath={.spec.validator.version}
-  register: gpu_operator_atleast_v170
-  failed_when: false
+- name: Wait for the GPU Operator namespace (only >= v1.7.0)
+  when: gpu_operator_version is version("1.7.0", ">=")
+  # With the GPU Operator >=v1.7.0, the namespace is created by the
+  # operator, so it takes a few seconds before being available after the
+  # deployment.
+  command: oc get ns/gpu-operator-resources
+  register: has_gpu_operator_namespace
+  until: has_gpu_operator_namespace.rc == 0
+  retries: 10
+  delay: 10
 
 - name: Wait for the GPU Operator (>= v1.7.0) to run its internal validation steps
-  when: gpu_operator_atleast_v170.stdout
+  when: gpu_operator_version is version("1.7.0", ">=")
   block:
   - name: Ensure that nvidia-operator-validator DS is ready
     command:
@@ -45,7 +51,7 @@
     delay: 60
 
 - name: Wait for the GPU Operator (< v1.7.0) to run its internal validation steps
-  when: not gpu_operator_atleast_v170.stdout
+  when: gpu_operator_version is version("1.7.0", "<")
   block:
   - name: Ensure that nvidia-device-plugin-validation Pod has ran successfully
     command:

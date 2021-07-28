@@ -1,4 +1,3 @@
 ---
 dependencies:
   - role: check_deps
-  - role: gpu_operator_get_csv_version

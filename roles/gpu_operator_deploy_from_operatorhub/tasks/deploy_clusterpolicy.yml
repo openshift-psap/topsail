@@ -48,26 +48,12 @@
 - name: Create the clusterPolicy CR for the GPU Operator
   command: oc apply -f "{{ artifact_extra_logs_dir }}/gpu_operator_clusterpolicy.json"
 
-- name: Test if the ClusterPolicy has the 'validator' stanza
-  command: oc get clusterpolicies.nvidia.com -ojsonpath='{range .items[*]}{.spec.validator.version}{end}'
-  register: gpu_operator_atleast_v170
-  failed_when: false
+- name: Get the GPU Operation version
+  include_role:
+    name: gpu_operator_get_csv_version
 
 - name: Create the namespace for the GPU Operator (only < v1.7.0)
-  when: not gpu_operator_atleast_v170.stdout
+  when: gpu_operator_version is version("1.7.0", "<")
   block:
   - name: Create the namespace for the GPU Operator
     command: oc apply -f "{{ gpu_operator_namespace }}"
-
-- name: Wait for the GPU Operator to create the namespace (only >= v1.7.0)
-  when: gpu_operator_atleast_v170.stdout
-  block:
-  - name: Wait for the GPU Operator namespace
-    # With the GPU Operator >v1.7.0, the namespace is created by the
-    # operator, so it takes a few seconds before being available after the
-    # deployment.
-    command: oc get ns/gpu-operator-resources
-    register: has_gpu_operator_namespace
-    until: has_gpu_operator_namespace.rc == 0
-    retries: 10
-    delay: 10

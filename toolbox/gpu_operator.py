@@ -203,3 +203,12 @@ class GPUOperator:
         }
 
         return PlaybookRun("gpu_operator_bundle_from_commit", opts)
+
+    @staticmethod
+    def get_csv_version():
+        """
+        Get the version of the GPU Operator currently installed from OLM
+        Stores the version in the 'ARTIFACT_EXTRA_LOGS_DIR' artifacts directory.
+        """
+
+        return PlaybookRun("gpu_operator_get_csv_version")
