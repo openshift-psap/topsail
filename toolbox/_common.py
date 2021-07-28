@@ -59,11 +59,12 @@ def run_ansible_playbook(playbook_name, opts: dict = dict()):
     artifact_dir = Path(os.environ["ARTIFACT_DIR"])
     artifact_dir.mkdir(parents=True, exist_ok=True)
 
-    previous_extra_count = len(list(artifact_dir.glob("*__*")))
-    os.environ["ARTIFACT_EXTRA_LOGS_DIR"] = str(
+    if os.environ.get("ARTIFACT_EXTRA_LOGS_DIR") is None:
+        previous_extra_count = len(list(artifact_dir.glob("*__*")))
+        os.environ["ARTIFACT_EXTRA_LOGS_DIR"] = str(
             Path(os.environ["ARTIFACT_DIR"]) /
             f"{previous_extra_count:03d}__{os.environ['ARTIFACT_DIRNAME']}"
-            )
+        )
 
     artifact_extra_logs_dir = Path(os.environ["ARTIFACT_EXTRA_LOGS_DIR"])
     artifact_extra_logs_dir.mkdir(parents=True, exist_ok=True)

@@ -30,8 +30,10 @@ ARTIFACT_DIRNAME="${TOOLBOX_PATH//\//__}" # replace / by __
 
 mkdir -p "${ARTIFACT_DIR}"
 
-ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/$(printf '%03d' $(ls "${ARTIFACT_DIR}/" | grep __ | wc -l))__${ARTIFACT_DIRNAME}" # add ARTIFACT_DIR/date__
-export ARTIFACT_EXTRA_LOGS_DIR
+if [ -z "${ARTIFACT_EXTRA_LOGS_DIR:-}" ]; then
+    ARTIFACT_EXTRA_LOGS_DIR="${ARTIFACT_DIR}/$(printf '%03d' $(ls "${ARTIFACT_DIR}/" | grep __ | wc -l))__${ARTIFACT_DIRNAME}" # add ARTIFACT_DIR/date__
+    export ARTIFACT_EXTRA_LOGS_DIR
+fi
 
 mkdir -p "${ARTIFACT_EXTRA_LOGS_DIR}"
 echo "Using '${ARTIFACT_EXTRA_LOGS_DIR}' to store extra log files."
