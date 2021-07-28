@@ -87,11 +87,11 @@ test_commit() {
 
 test_operatorhub() {
     if [ "${1:-}" ]; then
-        OPERATOR_VERSION="--version={$1}"
+        OPERATOR_VERSION="--version=$1"
     fi
     shift || true
     if [ "${1:-}" ]; then
-        OPERATOR_CHANNEL="--channel={$1}"
+        OPERATOR_CHANNEL="--channel=$1"
     fi
 
     prepare_cluster_for_gpu_operator
