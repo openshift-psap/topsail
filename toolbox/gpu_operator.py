@@ -81,7 +81,7 @@ class GPUOperator:
                 print("Channel may only be specified if --version is specified")
                 sys.exit(1)
 
-            opts["gpu_operator_operatorhub_channel"] = version
+            opts["gpu_operator_operatorhub_channel"] = channel
             print(
                 f"Deploying the GPU Operator from OperatorHub using channel '{channel}'."
             )
