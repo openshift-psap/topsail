@@ -29,11 +29,11 @@ Dependencies
 
 Requirements:
 
-- ``ansible`` (`>= 2.9.5`), ``yq``, ``jq``
+- See requirements.txt for reference
 
 .. code-block:: shell
 
-    pip3 install yq ansible==2.9.*
+    pip3 install -r requirements.txt
     dnf install jq
 
 
