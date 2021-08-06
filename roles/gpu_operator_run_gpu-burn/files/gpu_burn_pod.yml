@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   labels:
     app: gpu-burn
-  name: gpu-burn-{{ gpu_node_hostname }}
+  name: gpu-burn-{{ gpu_node_name }}
   namespace: default
 spec:
   restartPolicy: Never

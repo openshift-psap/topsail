@@ -16,7 +16,6 @@
        -lnvidia.com/gpu.present=true
        -o custom-columns=NAME:metadata.name
        --no-headers
-    | cut -d. -f1
   register: gpu_burn_gpu_nodes
   failed_when: gpu_burn_gpu_nodes.stdout == ""
 
@@ -32,10 +31,17 @@
   with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
   shell: |
     set -eo pipefail;
-    GPU_NODE_HOSTNAME=$(echo '{{ item }}' );
+
+    if [[ "{{ openshift_release_major }}" == 4 && "{{ openshift_release_minor }}" -le 8 ]]; then
+      GPU_NODE_HOSTNAME=$(echo '{{ item }}' | cut -d. -f1);
+    else
+      GPU_NODE_HOSTNAME=$(echo '{{ item }}' );
+    fi
+
     echo "Hostname: $GPU_NODE_HOSTNAME";
     oc --ignore-not-found=true delete pod/gpu-burn-$GPU_NODE_HOSTNAME -n default
     cat "{{ gpu_burn_pod }}" \
+      | sed "s|{{ '{{' }} gpu_node_name {{ '}}' }}|{{ item }}|" \
       | sed "s|{{ '{{' }} gpu_node_hostname {{ '}}' }}|$GPU_NODE_HOSTNAME|" \
       | sed "s|{{ '{{' }} gpu_burn_time {{ '}}' }}|{{ gpu_burn_time }}|" \
       | oc apply -f-
