@@ -65,7 +65,7 @@
     register: has_gpu_feature_discovery_labels
     until:
     - has_gpu_feature_discovery_labels.stdout != ""
-    retries: 10
+    retries: 20
     delay: 30
 
   rescue:
