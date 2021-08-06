@@ -12,6 +12,7 @@
     # see the 'fail' message below before modifying this command,
     # it verifies that the main dependencies are met.
     shell:
+      set -eo pipefail;
       oc version -o json
       | jq --raw-output '.openshiftVersion'
       | cut -b-3
@@ -30,3 +31,17 @@
 - name: 'Store openshift_release={{ ocp_version.stdout }}'
   set_fact:
     openshift_release: "{{ ocp_version.stdout }}"
+
+- name: Get openshift major and minor version
+  shell:
+    set -eo pipefail;
+    echo "{{ openshift_release }}" | tr '.' '\n'
+  register: ocp_major_minor_version
+
+- name: Store openshift major and minor version
+  set_fact:
+    openshift_release_major: "{{ ocp_major_minor_version.stdout[0] }}"
+    openshift_release_minor: "{{ ocp_major_minor_version.stdout[2] }}"
+
+- name: Store openshift major and minor version
+  debug: msg="openshift_release_major='{{ openshift_release_major }}', openshift_release_minor='{{ openshift_release_minor }}'"
