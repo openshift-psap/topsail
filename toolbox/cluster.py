@@ -19,12 +19,16 @@ class Cluster:
         set to true. In that case, the number of replicas of the other machinesets will be zeroed before setting the replicas
         of the first machineset to the value of this parameter."
 
+        - If `--base-machineset=machineset` flag is passed, `machineset` machineset will be used to derive the new
+        machinetset (otherwise, the first machinetset of the listing will be used). This is useful if the desired `instance_type`
+        is only available in some specific regions and, controlled by different machinesets.
+
         Example: ./run_toolbox.py cluster set_scale g4dn.xlarge 1 # ensure that the cluster has 1 GPU node
 
         Args:
             instance_type: The instance type to use, for example, g4dn.xlarge
             scale: The number of required nodes with given instance type
-            base_machineset: Name of a machineset to use to derive the new one. Defaults: pickup the first machineset found in `oc get machinesets -n openshift-machine-api`.
+            base_machineset: Name of a machineset to use to derive the new one. Default: pickup the first machineset found in `oc get machinesets -n openshift-machine-api`.
         """
         opts = {
                 "machineset_instance_type": instance_type,

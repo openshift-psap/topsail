@@ -17,6 +17,10 @@ Toolbox
   - new toolbox command: ``toolbox/nto/run_e2e_test.sh <git repository> <git reference>`` to run the NTO e2e testsuite from a given commit.
 
 
+- Add ``--base_machineset`` flag to ``run_toolbox.py cluster set_scale`` `#243 <https://github.com/openshift-psap/ci-artifacts/pull/243>`_
+
+  - new flag to set the base machineset, from which the new machineset will be derived.
+
 Retro-compatibility breaks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
