@@ -1,2 +1,2 @@
 ---
-nfd_channel: "{% if openshift_release == '4.8' %}4.7{% else %}{{ openshift_release }}{% endif %}"
+nfd_channel: ""

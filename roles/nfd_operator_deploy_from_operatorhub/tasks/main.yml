@@ -36,13 +36,25 @@
 - name: Create the OperatorGroup object
   command: oc apply -f "{{ nfd_operator_operatorgroup }}"
 
+- name: Set default NFD channel if needed
+  when: nfd_channel | length == 0
+  block:
+  - name: Find NFD Operator default channel
+    command: oc get packagemanifests/nfd -n openshift-marketplace -ojsonpath={.status.defaultChannel}
+    register: nfd_default_channel
+
+  - name: Set NFD Operator channel
+    set_fact:
+      nfd_channel: "{{ nfd_default_channel.stdout }}"
+
 - name: "Create the OperatorHub subscription for the NFD Operator (nfd_channel = {{ nfd_channel }})"
-  shell:
-    set -o pipefail;
-    sed 's|{{ '{{' }} nfd_channel {{ '}}' }}|{{ nfd_channel }}|' "{{ nfd_operator_operatorhub_sub }}"
-      | oc apply -f-
-  args:
-    warn: false # don't warn about using sed here
+  template:
+    src: "{{ nfd_operator_operatorhub_sub }}"
+    dest: "{{ artifact_extra_logs_dir }}/nfd_operator_sub.yml"
+    mode: 0400
+
+- name: "Create the OperatorHub subscription for the NFD Operator (nfd_channel = {{ nfd_channel }})"
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/nfd_operator_sub.yml"
 
 - name: Wait for the NFD Operator OperatorHub ClusterServiceVersion
   block:
