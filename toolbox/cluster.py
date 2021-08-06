@@ -6,7 +6,7 @@ class Cluster:
     Commands relating to cluster scaling, upgrading and environment capture
     """
     @staticmethod
-    def set_scale(instance_type, scale, force=False):
+    def set_scale(instance_type, scale, base_machineset="", force=False):
         """
         Ensures that the cluster has exactly `scale` nodes with instance_type `instance_type`
 
@@ -24,14 +24,16 @@ class Cluster:
         Args:
             instance_type: The instance type to use, for example, g4dn.xlarge
             scale: The number of required nodes with given instance type
+            base_machineset: Name of a machineset to use to derive the new one. Defaults: pickup the first machineset found in `oc get machinesets -n openshift-machine-api`.
         """
         opts = {
                 "machineset_instance_type": instance_type,
                 "scale": scale,
+                "base_machineset": base_machineset,
             }
 
         if force:
-            opts = {**opts, "force_scale": "true"}
+            opts["force_scale"] = "true"
 
         return PlaybookRun("cluster_set_scale", opts)
 
