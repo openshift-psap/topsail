@@ -44,6 +44,12 @@ collect_must_gather() {
         cp -r /must-gather/* "$ARTIFACT_EXTRA_LOGS_DIR"
 
         echo "Running gpu-operator_gather ... finished."
+
+        (cat "$ARTIFACT_EXTRA_LOGS_DIR"/*__gpu_operator__get_csv_version/gpu_operator.version || echo MISSING) > ${ARTIFACT_DIR}/operator.version
+        (cat "$ARTIFACT_EXTRA_LOGS_DIR"/*__cluster__capture_environment/ocp.version || echo MISSING) > ${ARTIFACT_DIR}/ocp.version
+        (cat "$ARTIFACT_EXTRA_LOGS_DIR"/*__cluster__capture_environment/ci_artifact.git_version || echo MISSING) > ${ARTIFACT_DIR}/ci_artifact.git_version
+
+        echo "Versions collected."
     }
 
     # run the function above in a subshell to avoid polluting the local `env`.
