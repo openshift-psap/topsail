@@ -99,7 +99,7 @@ trap "postchecks ERR" ERR
 target="${1:-}"
 shift
 action="${1:-}"
-shift
+shift || true
 
 echo
 echo "Test target: '$target'; test action: '$action'"
