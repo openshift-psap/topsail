@@ -126,6 +126,10 @@ case ${target} in
         ci_entrypoint_sro.sh "$action" "$@"
         exit 0
         ;;
+    "custom")
+        ci_entrypoint_custom.sh
+        exit 0
+        ;;
     *)
         echo "FATAL: Unknown target \"${target}\""
         exit 1
