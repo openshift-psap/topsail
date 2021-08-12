@@ -34,6 +34,7 @@
   command:
     operator-sdk run bundle --timeout=5m
                  -n {{ gpu_operator_operator_namespace }}
+                 --install-mode OwnNamespace
                  {{ deploy_bundle_image }}
 
 - name: Store the version of the GPU Operator that will be installed

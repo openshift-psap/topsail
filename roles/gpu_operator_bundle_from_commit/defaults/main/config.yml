@@ -8,4 +8,4 @@ gpu_operator_bundle_image_tag: "gpu-operator-bundle-{{ gpu_operator_image_tag_ui
 # Namespace in which the GPU Operator will be deployed.
 # Before v1.9, the value must be "openshift-operators".
 # With >=v1.9, the namespace can freely chosen (except 'openshift-operators').
-gpu_operator_target_namespace: openshift-operators
+gpu_operator_target_namespace: nvidia-gpu-operator

@@ -147,6 +147,7 @@ deploy_commit() {
     gpu_operator_git_ref="${1:-}"
 
     CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="ci-image"
+    OPERATOR_NAMESPACE="nvidia-gpu-operator"
 
     if [[ -z "$gpu_operator_git_repo" || -z "$gpu_operator_git_ref" ]]; then
         echo "FATAL: test_commit must receive a git repo/ref to be tested."
@@ -162,10 +163,11 @@ deploy_commit() {
                                              "${gpu_operator_git_ref}" \
                                              "${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET}" \
                                              "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}" \
-                                             --tag_uid="${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}"
+                                             --tag_uid "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}" \
+                                             --namespace "${OPERATOR_NAMESPACE}"
 
-    ./run_toolbox.py gpu_operator deploy_from_bundle "--bundle=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-ci-image" \
-                                                     --namespace openshift-operators
+    ./run_toolbox.py gpu_operator deploy_from_bundle --bundle "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-ci-image" \
+                                                     --namespace "${OPERATOR_NAMESPACE}"
 }
 
 prepare_cluster_for_gpu_operator_with_alerts() {
