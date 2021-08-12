@@ -9,7 +9,7 @@
 
 - name: Delete the ClusterServiceVersion of the NFD Operator
   with_items: "{{ operator_csv_name.stdout_lines }}"
-  command: oc --ignore-not-found=true delete "{{ item }}" -n openshift-operators
+  command: oc --ignore-not-found=true delete "{{ item }}" -n openshift-nfd
   when: operator_csv_name.rc == 0
   failed_when: false
 
