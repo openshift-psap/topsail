@@ -14,10 +14,26 @@
       -n {{ deploy_bundle_namespace }}
       --ignore-not-found=true
 
+- name: Ensure that the GPU Operator namespace exists
+  command:
+    oc get ns/{{ gpu_operator_operator_namespace }}
+  failed_when: false
+  register: namespace_exists_cmd
+
+- name: Create the GPU Operator namespace, if it does not exist (mandatory for operator-sdk run bundle)
+  when: namespace_exists_cmd.rc != 0
+  command:
+    oc create namespace {{ gpu_operator_operator_namespace }}
+
+- name: Label the GPU Operator namespace for monitoring, if it did not exist
+  when: namespace_exists_cmd.rc != 0
+  command:
+    oc label ns/{{ gpu_operator_operator_namespace }} openshift.io/cluster-monitoring=true
+
 - name: Deploy the GPU Operator from the bundle
   command:
     operator-sdk run bundle --timeout=5m
-                 -n {{ deploy_bundle_namespace }}
+                 -n {{ gpu_operator_operator_namespace }}
                  {{ deploy_bundle_image }}
 
 - name: Store the version of the GPU Operator that will be installed
@@ -44,7 +60,8 @@
   - name: Wait for the operator deployment to be updated by the CSV controller
     shell:
       set -euxo pipefail;
-      oc get deployment/gpu-operator -n openshift-operators
+      oc get deployment/gpu-operator
+         -n "{{ deploy_bundle_namespace }}"
          -ojsonpath={.spec.template.spec.containers[0].image}
          | grep {{ psap_quay_master_operator }}
     register: operator_deployment_image
@@ -58,7 +75,7 @@
       oc wait deployment/gpu-operator
               --for=condition=available
               --timeout=600s
-              -n openshift-operators
+              -n "{{ deploy_bundle_namespace }}"
 
 - name: Store the YAML of the GPU Operator CSV that being installed
   shell:

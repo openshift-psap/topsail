@@ -1,0 +1,53 @@
+---
+- name: Set the GPU Operator operator namespace
+  block:
+  - name: Check if parameter is set
+    when: gpu_operator_target_namespace | default('', true) | length == 0
+    fail: msg="Use rescue block"
+
+  - name: Set the GPU Operator operator namespace from parameter
+    set_fact:
+      gpu_operator_operator_namespace: "{{ gpu_operator_target_namespace }}"
+  rescue:
+  - name: Ensure that there is a GPU Operator pod in the cluster
+    command:
+      oc get pod -l app.kubernetes.io/component=gpu-operator -A -oname
+    register: gpu_operator_pod
+    failed_when: gpu_operator_pod.stdout | length == 0
+
+  - name: Get the GPU Operator operator namespace by looking up the GPU Operator pod
+    command:
+      oc get pod -l app.kubernetes.io/component=gpu-operator -A
+         -ojsonpath={.items[].metadata.namespace}
+    register: operator_namespace_cmd
+
+  - name: Set the GPU Operator operator namespace from its Pod
+    set_fact:
+      gpu_operator_operator_namespace: "{{  operator_namespace_cmd.stdout_lines[0] }}"
+- name: Set the GPU Operator resource and all namespaces
+  block:
+  - name: Switch to 'rescue' is share namespace
+    fail: msg="switch to rescue block"
+    when: gpu_operator_operator_namespace == "openshift-operators"
+
+  - name: "Set the GPU Operator single namespace: {{ gpu_operator_operator_namespace }}"
+    set_fact:
+      gpu_operator_namespace: "{{ gpu_operator_operator_namespace }}"
+      gpu_operator_all_namespaces: "{{ gpu_operator_operator_namespace }}"
+
+  rescue:
+  - name: "Set the GPU Operator old (<1.9) namespaces: openshift-operators and gpu-operator-resources"
+    set_fact:
+      gpu_operator_namespace: gpu-operator-resources
+      gpu_operator_all_namespaces: openshift-operators gpu-operator-resources
+
+- name: Store all the GPU Operator namespaces
+  set_fact:
+    gpu_operator_all_namespaces: "{{ gpu_operator_operator_namespace }}"
+
+- name: Display namespaces information
+  debug:
+    msg: |
+      gpu_operator_operator_namespace is:   {{ gpu_operator_operator_namespace }}
+      gpu_operator_namespace (operands) is: {{ gpu_operator_namespace }}
+      gpu_operator_all_namespaces is:       {{ gpu_operator_all_namespaces }}

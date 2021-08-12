@@ -3,17 +3,17 @@
   command:
     oc get csv
        -oname
-       -n openshift-operators
-       -loperators.coreos.com/gpu-operator-certified.openshift-operators
+       -n {{ gpu_operator_operator_namespace }}
+       -loperators.coreos.com/gpu-operator-certified.{{ gpu_operator_operator_namespace }}
   register: gpu_operator_csv_name_cmd
   failed_when: gpu_operator_csv_name_cmd.stdout | length == 0
+
 
 - name: Get the version from the GPU Operator CSV
   command:
     oc get {{ gpu_operator_csv_name_cmd.stdout }}
-       -n openshift-operators
+       -n {{ gpu_operator_operator_namespace }}
        -ojsonpath={.spec.version}
-
   register: gpu_operator_csv_version_cmd
   failed_when: gpu_operator_csv_version_cmd.stdout | length == 0
 

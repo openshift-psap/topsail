@@ -158,7 +158,8 @@ deploy_commit() {
                                              "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}" \
                                              --tag_uid="${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}"
 
-    ./run_toolbox.py gpu_operator deploy_from_bundle "--bundle=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-ci-image"
+    ./run_toolbox.py gpu_operator deploy_from_bundle "--bundle=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-ci-image" \
+                                                     --namespace openshift-operators
 }
 
 prepare_cluster_for_gpu_operator_with_alerts() {
@@ -223,7 +224,7 @@ test_operatorhub() {
     fi
 
     prepare_cluster_for_gpu_operator
-    ./run_toolbox.py gpu_operator deploy_from_operatorhub ${OPERATOR_VERSION:-} ${OPERATOR_CHANNEL:-}
+    ./run_toolbox.py gpu_operator deploy_from_operatorhub ${OPERATOR_VERSION:-} ${OPERATOR_CHANNEL:-} --namespace openshift-operators
     validate_gpu_operator_deployment
 }
 

@@ -12,17 +12,17 @@
 
 # ---
 
-- name: Get the Pods in gpu-operator-resources
+- name: Get the Pods in {{ gpu_operator_namespace }}
   shell:
     oc get pods
-       -n gpu-operator-resources -owide
+       -n {{ gpu_operator_namespace }} -owide
        > {{ artifact_extra_logs_dir }}/gpu_operator_pods.list
   failed_when: false
 
 - name: Get the GPU Operator Pods Images
   shell: |
     dest_file="{{ artifact_extra_logs_dir }}/gpu_operator_pod.images.list";
-    for ns in gpu-operator-resources openshift-operators gpu-operator-ci; do
+    for ns in {{ gpu_operator_all_namespaces }} gpu-operator-ci; do
       oc get project/$ns &>/dev/null || continue;
       oc get pods -n "$ns" \
          -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{" "}{end}{end}' \
@@ -31,17 +31,17 @@
     done
   failed_when: false
 
-- name: Get the DaemonSets in gpu-operator-resources
+- name: Get the DaemonSets in {{ gpu_operator_namespace }}
   shell:
     oc get ds
-       -n gpu-operator-resources
+       -n {{ gpu_operator_namespace }}
        > {{ artifact_extra_logs_dir }}/all_gpu_ds.list
   failed_when: false
 
 - name: Get the GPU Operator Pod status
   shell: |
     dest_file="{{ artifact_extra_logs_dir }}/gpu_operator_pod.yml";
-    for ns in gpu-operator-resources openshift-operators gpu-operator-ci; do
+    for ns in {{ gpu_operator_all_namespaces }} gpu-operator-ci; do
       oc get project/$ns &>/dev/null || continue;
       oc get pods -n $ns -l name=gpu-operator -oyaml >> $dest_file;
     done
@@ -59,7 +59,7 @@
 - name: Get the GPU Operator logs
   shell: |
     dest_file="{{ artifact_extra_logs_dir }}/gpu_operator.log";
-    for ns in openshift-operators gpu-operator-ci; do
+    for ns in {{ gpu_operator_operator_namespace }}} gpu-operator-ci; do
       oc get project/$ns &>/dev/null || continue;
       oc logs deployment/gpu-operator -n $ns >> $dest_file
     done
@@ -67,7 +67,7 @@
 
 - name: Get the name of the GPU Operator DaemonSets
   command:
-    oc get DaemonSets -o name -n gpu-operator-resources
+    oc get DaemonSets -o name -n {{ gpu_operator_namespace }}
   register: gpu_operator_daemonsets
 
 - name: Get the logs of the GPU Operator DaemonSets
@@ -75,7 +75,7 @@
     set -eo pipefail;
     echo "Saving {{ item }} logs ...";
     oc logs
-       -n gpu-operator-resources
+       -n {{ gpu_operator_namespace }}
        "{{ item }}"
        --all-containers --prefix
        > {{ artifact_extra_logs_dir }}/gpu_operator_$(echo "{{ item }}" | cut -d/ -f2).log

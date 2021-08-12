@@ -47,6 +47,7 @@ git show -s > $MUST_GATHER_LOGS_DIR/version.git_commit
 # Named resource list, eg. ns/openshift-config
 named_resources=()
 named_resources+=(ns/gpu-operator-resources)
+named_resources+=(ns/nvidia-gpu-operator)
 named_resources+=(ns/openshift-nfd)
 
 echo "# resources to inspect: ${named_resources[@]}"

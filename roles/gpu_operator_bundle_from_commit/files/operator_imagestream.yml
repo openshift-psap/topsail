@@ -2,7 +2,7 @@ kind: ImageStream
 apiVersion: v1
 metadata:
   name: gpu-operator-ci
-  namespace: openshift-operators
+  namespace: gpu-operator-ci
   labels:
     app: gpu-operator-ci
 spec: {}

@@ -6,7 +6,7 @@ Fetch metrics from a Pod
 
 Usage: $0 <POD_PORT> <LABEL_SELECTOR> <NAMESPACE> <PROM_GREP_KEY>
 Example:
-  $0 9400 app=nvidia-dcgm-exporter gpu-operator-resources '#HELP'
+  $0 9400 app=nvidia-dcgm-exporter $GPU_OPERATOR_NAMESPACE '#HELP'
 EOF
     exit 0
 fi

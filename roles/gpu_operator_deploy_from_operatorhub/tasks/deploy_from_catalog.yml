@@ -121,9 +121,9 @@
   - name: Find the GPU Operator OperatorHub InstallPlan
     command:
       oc get InstallPlan
-         -n openshift-operators
+         -n "{{ deploy_bundle_namespace }}"
          -oname
-         -loperators.coreos.com/gpu-operator-certified.openshift-operators
+         -loperators.coreos.com/gpu-operator-certified."{{ deploy_bundle_namespace }}"
     register: gpu_operator_installplan_name
     until: gpu_operator_installplan_name.stdout != ""
     retries: 20
@@ -132,7 +132,7 @@
   - name: Approve the GPU Operator OperatorHub InstallPlan
     command:
       oc patch {{ gpu_operator_installplan_name.stdout }}
-         -n openshift-operators
+         -n "{{ deploy_bundle_namespace }}"
          --type merge
          --patch '{"spec":{"approved":true }}'
 
@@ -140,7 +140,7 @@
     command:
       oc get ClusterServiceVersion/{{ gpu_operator_csv_name }}
          -oname
-         -n openshift-operators
+         -n "{{ deploy_bundle_namespace }}"
     register: gpu_operator_wait_csv
     until: gpu_operator_wait_csv.stdout != ""
     retries: 40
@@ -164,5 +164,5 @@
   shell:
     oc get ClusterServiceVersion/{{ gpu_operator_csv_name }}
        -oyaml
-       -n openshift-operators
+       -n "{{ deploy_bundle_namespace }}"
        > {{ artifact_extra_logs_dir }}/gpu_operator_csv.yml

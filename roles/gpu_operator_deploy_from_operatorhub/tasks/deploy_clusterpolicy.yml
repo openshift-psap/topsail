@@ -2,9 +2,9 @@
 - name: Wait for the GPU Operator OperatorHub ClusterServiceVersion name
   command:
     oc get ClusterServiceVersion
-       -l operators.coreos.com/gpu-operator-certified.openshift-operators
+       -l "operators.coreos.com/gpu-operator-certified.{{ deploy_bundle_namespace }}"
        -oname
-       -n openshift-operators
+       -n "{{ deploy_bundle_namespace }}"
   register: gpu_operator_csv_name_cmd
   until: gpu_operator_csv_name_cmd.stdout != ""
   retries: 15
@@ -21,15 +21,15 @@
   rescue:
   - name: Inspect the Subscriptions status (debug)
     shell:
-      (oc get subscriptions.operators.coreos.com -n openshift-operators &&
-       oc describe subscriptions.operators.coreos.com/gpu-operator-certified -n openshift-operators)
+      (oc get subscriptions.operators.coreos.com -n "{{ deploy_bundle_namespace }}" &&
+       oc describe subscriptions.operators.coreos.com/gpu-operator-certified -n "{{ deploy_bundle_namespace }}")
        > {{ artifact_extra_logs_dir }}/gpu_operator_Subscription.log
     failed_when: false
 
   - name: Get the ClusterServiceVersion status (debug)
     shell:
       (oc get ClusterServiceVersion -A &&
-       oc describe "{{ gpu_operator_csv_name_cmd.stdout }}" -n openshift-operators)
+       oc describe "{{ gpu_operator_csv_name_cmd.stdout }}" -n "{{ deploy_bundle_namespace }}")
        > {{ artifact_extra_logs_dir }}/gpu_operator_ClusterServiceVersion.log
     failed_when: false
 
@@ -40,7 +40,7 @@
   shell:
     set -o pipefail;
     oc get "{{ gpu_operator_csv_name_cmd.stdout }}"
-       -n openshift-operators
+       -n "{{ deploy_bundle_namespace }}"
        -ojson
     | jq -r '.metadata.annotations."alm-examples"'
     | jq .[0] > "{{ artifact_extra_logs_dir }}/gpu_operator_clusterpolicy.json"
@@ -56,4 +56,4 @@
   when: gpu_operator_version is version("1.7.0", "<")
   block:
   - name: Create the namespace for the GPU Operator
-    command: oc apply -f "{{ gpu_operator_namespace }}"
+    command: oc apply -f "{{ gpu_operator_resource_namespace_file }}"

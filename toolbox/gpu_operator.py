@@ -42,33 +42,38 @@ class GPUOperator:
         )
 
     @staticmethod
-    def deploy_from_bundle(bundle):
+    def deploy_from_bundle(bundle, namespace):
         """
         Deploys the GPU Operator from a bundle
 
         Args:
             bundle: Either a bundle OCI image or "master" to deploy the latest bundle
+            namespace: Namespace in which the GPU Operator will be deployed. Before v1.9, the value must be "openshift-operators". With >=v1.9, the namespace can freely chosen (except 'openshift-operators'). Suggested namespace is: nvidia-gpu-operator.
         """
-        opts = {"gpu_operator_deploy_from": "bundle"}
+        opts = {"gpu_operator_deploy_from": "bundle",
+                "gpu_operator_target_namespace": namespace}
 
         if bundle == 'master':
             print("Deploying the GPU Operator from OperatorHub using the master bundle")
             return PlaybookRun("gpu_operator_deploy_from_operatorhub", opts)
 
+
+
         opts["deploy_bundle_image"] = bundle
         return PlaybookRun("gpu_operator_deploy_from_operatorhub", opts)
 
     @staticmethod
-    def deploy_from_operatorhub(version=None, channel=None, installPlan="Manual"):
+    def deploy_from_operatorhub(namespace, version=None, channel=None, installPlan="Manual"):
         """
         Deploys the GPU operator from OperatorHub
 
         Args:
+            namespace: Namespace in which the GPU Operator will be deployed. Before v1.9, the value must be "openshift-operators". With >=v1.9, the namespace can freely chosen. Suggested namespace is: nvidia-gpu-operator.
             version: The version to deploy. If unspecified, deploys the latest version available in OperatorHub. Run the toolbox gpu_operator list_version_from_operator_hub subcommand to see the available versions.
             channel: Optional channel to deploy from.
             installPlan: Optional InstallPlan approval mode (Automatic or Manual [default])
         """
-        opts = {}
+        opts = {"gpu_operator_target_namespace": namespace}
 
         if version is not None:
             opts["gpu_operator_operatorhub_version"] = version
@@ -174,6 +179,7 @@ class GPUOperator:
         quay_push_secret,
         quay_image_name,
         tag_uid=None,
+        namespace=None,
     ):
         """
         Build an image of the GPU Operator from sources (<git repository> <git reference>)
@@ -189,7 +195,8 @@ class GPUOperator:
             git_ref: Git ref to bundle
             quay_push_secret: A file Kube Secret YAML file with `.dockerconfigjson` data and type kubernetes.io/dockerconfigjson
             quay_image_image: The quay repo to push to
-            tag_uid: The image tag suffix to use.
+            tag_uid: Optional image tag suffix to use.
+            namespace: Optional namespace to use to deploy the GPU Operator. Default: nvidia-gpu-operator
         """
         if tag_uid is None:
             tag_uid = secrets.token_hex(4)
@@ -201,6 +208,9 @@ class GPUOperator:
             "gpu_operator_commit_quay_push_secret": quay_push_secret,
             "gpu_operator_commit_quay_image_name": quay_image_name,
         }
+
+        if namespace is not None:
+            opts["gpu_operator_target_namespace"] = namespace
 
         return PlaybookRun("gpu_operator_bundle_from_commit", opts)
 

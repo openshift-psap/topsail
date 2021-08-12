@@ -37,16 +37,16 @@
        -n gpu-operator-ci
        --from-file kubeconfig={{ lookup('env', 'KUBECONFIG') }}
 
-- name: Authorize 'ns/openshift-operators' Pods to access 'ns/gpu-operator-ci' images
+- name: Authorize 'ns/{{ gpu_operator_operator_namespace }}' Pods to access 'ns/gpu-operator-ci' images
   command:
     oc policy add-role-to-user
-              system:image-puller system:serviceaccount:openshift-operators:gpu-operator
+              system:image-puller system:serviceaccount:{{ gpu_operator_operator_namespace }}:gpu-operator
               --namespace=gpu-operator-ci
 
-- name: Authorize 'ns/gpu-operator-resources' Pods to access 'ns/gpu-operator-ci' images
+- name: Authorize 'ns/{{ gpu_operator_namespace }}' Pods to access 'ns/gpu-operator-ci' images
   command:
     oc policy add-role-to-user
-              system:image-puller system:serviceaccount:gpu-operator-resources:{{ item }}
+              system:image-puller system:serviceaccount:{{ gpu_operator_namespace }}:{{ item }}
               --namespace=gpu-operator-ci
   with_items:
   - nvidia-driver
@@ -67,16 +67,29 @@
     mode: 0400
 
 - name: Delete the operator bundle image builder pod, if any
-  command: oc delete -f "{{ artifact_extra_logs_dir }}/operator-bundle-image-builder-pod.yml" --ignore-not-found=true
+  command:
+    oc delete -f "{{ artifact_extra_logs_dir }}/operator-bundle-image-builder-pod.yml"
+       --ignore-not-found=true
 
 - name: Delete the bundle subscription
-  command: oc delete subscription -nopenshift-operators -loperators.coreos.com/gpu-operator-certified.openshift-operators --ignore-not-found=true
+  command:
+    oc delete subscription
+       -n {{ gpu_operator_operator_namespace }}
+       -loperators.coreos.com/gpu-operator-certified.{{ gpu_operator_operator_namespace }}
+       --ignore-not-found=true
 
 - name: Delete the bundle installplan
-  command: oc delete installplan -nopenshift-operators -loperators.coreos.com/gpu-operator-certified.openshift-operators --ignore-not-found=true
+  command:
+    oc delete installplan
+       -n {{ gpu_operator_operator_namespace }}
+       -loperators.coreos.com/gpu-operator-certified.{{ gpu_operator_operator_namespace }}
+       --ignore-not-found=true
 
 - name: Delete the bundle catalogsource
-  command: oc delete catalogsource/gpu-operator-certified-catalog -nopenshift-operators --ignore-not-found=true
+  command:
+    oc delete catalogsource/gpu-operator-certified-catalog
+       -n {{ gpu_operator_operator_namespace }}
+        --ignore-not-found=true
 
 - name: Apply the operator bundle image builder pod manifest
   command:
@@ -115,16 +128,21 @@
     failed_when: false
 
   - name: Get info about the bundle operator image build failure (debug)
-    command: oc get pods -n gpu-operator-ci
+    command:
+      oc get pods
+         -n gpu-operator-ci
     failed_when: false
 
   - name: Get info about the bundle operator image build failure (debug)
-    command: oc get pods -n gpu-operator-ci
+    command:
+      oc get pods
+         -n gpu-operator-ci
     failed_when: false
 
   - name: Get the description of the helper image build failure
     shell:
-      oc describe pod/operator-bundle-image-builder-pod -n gpu-operator-ci
+      oc describe pod/operator-bundle-image-builder-pod
+         -n gpu-operator-ci
          > {{ artifact_extra_logs_dir }}/operator-bundle-image-builder-pod.descr
     failed_when: false
 

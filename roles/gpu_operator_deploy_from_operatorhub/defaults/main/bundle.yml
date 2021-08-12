@@ -5,5 +5,5 @@ psap_quay_master_bundle: quay.io/openshift-psap/ci-artifacts:gpu-operator_bundle
 psap_quay_master_operator: quay.io/openshift-psap/ci-artifacts:gpu-operator_operator_latest
 
 deploy_bundle_package_name: gpu-operator-certified
-deploy_bundle_namespace: openshift-operators
+deploy_bundle_namespace: "{{ gpu_operator_operator_namespace }}"
 deploy_bundle_image: "{{ psap_quay_master_bundle }}"

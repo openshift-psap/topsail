@@ -1,37 +1,56 @@
 ---
 - name: Get the name of the GPU Operator ClusterPolicy CR
-  command: oc get ClusterPolicy -oname
+  command:
+    oc get ClusterPolicy
+       -oname
   register: gpu_operator_cr_name
   failed_when: false
 
 - name: Delete the clusterPolicy CR of the GPU Operator
-  command: oc --ignore-not-found=true delete "{{ gpu_operator_cr_name.stdout }}"
+  command:
+    oc delete "{{ gpu_operator_cr_name.stdout }}"
+       --ignore-not-found=true
   when: gpu_operator_cr_name.stdout
   failed_when: false
 
 - name: Delete the OperatorHub subscription for the GPU Operator
-  command: oc --ignore-not-found=true delete subscriptions.operators.coreos.com/gpu-operator-certified -n openshift-operators
+  command:
+    oc delete subscriptions.operators.coreos.com/gpu-operator-certified
+       --ignore-not-found=true
+       -n "{{ gpu_operator_operator_namespace }}"
   failed_when: false
 
 - name: Get the name of the GPU Operator ClusterServiceVersion
-  command: oc get ClusterServiceVersion -n openshift-operators -oname
+  command:
+    oc get ClusterServiceVersion
+       -n "{{ gpu_operator_operator_namespace }}"
+       -oname
   register: operator_csv_name
   failed_when: false
 
 - name: Delete the ClusterServiceVersion of the GPU Operator
   with_items: "{{ operator_csv_name.stdout_lines }}"
-  command: "oc delete {{ item }} -n openshift-operators"
+  command:
+    oc delete "{{ item }}"
+       -n "{{ gpu_operator_operator_namespace }}"
   when: operator_csv_name.stdout
   failed_when: false
 
 - name: Delete the CRD of the GPU Operator
-  command: oc --ignore-not-found=true delete crd clusterpolicies.nvidia.com
+  command:
+    oc delete crd clusterpolicies.nvidia.com
+       --ignore-not-found=true
   failed_when: false
 
 - name: Delete the namespace of the GPU Operator
-  command: oc --ignore-not-found=true delete -f "{{ gpu_operator_namespace }}"
+  command:
+    oc delete -f "{{ gpu_operator_namespace }}"
+       --ignore-not-found=true
   failed_when: false
 
 - name: Delete the ServiceAccount of the GPU Operator
-  command: oc --ignore-not-found=true delete ServiceAccount/gpu-operator -n openshift-operators
+  command:
+    oc delete ServiceAccount/gpu-operator
+       -n "{{ gpu_operator_operator_namespace }}"
+       --ignore-not-found=true
   failed_when: false

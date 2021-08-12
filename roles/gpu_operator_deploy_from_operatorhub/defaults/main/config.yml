@@ -10,3 +10,9 @@ gpu_operator_operatorhub_channel: ""
 # Manual is set by default, so that we can install older versions of the
 # operator without them being automatically upgraded by OperatorHub
 gpu_operator_installplan_approval: Manual
+
+# Namespace in which the GPU Operator will be deployed.
+# Cannot be empty.
+# Before v1.9, the value must be "openshift-operators".
+# With >=v1.9, the namespace can freely chosen (except 'openshift-operators'). Suggested namespace is: nvidia-gpu-operator
+gpu_operator_target_namespace:

@@ -4,3 +4,8 @@ gpu_operator_git_ref: ""
 gpu_operator_image_tag_uid: ""
 gpu_operator_image_tag: "gpu-operator-{{ gpu_operator_image_tag_uid }}"
 gpu_operator_bundle_image_tag: "gpu-operator-bundle-{{ gpu_operator_image_tag_uid }}"
+
+# Namespace in which the GPU Operator will be deployed.
+# Before v1.9, the value must be "openshift-operators".
+# With >=v1.9, the namespace can freely chosen (except 'openshift-operators').
+gpu_operator_target_namespace: openshift-operators

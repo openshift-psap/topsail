@@ -2,3 +2,4 @@
 dependencies:
   - role: check_deps
   - role: gpu_operator_get_csv_version
+  - role: gpu_operator_set_namespace

@@ -4,7 +4,7 @@
   - name: Wait for the Operator PrometheusRule to be available
     command:
       oc get prometheusrule/nvidia-gpu-operator-metrics
-         -n openshift-operators
+         -n {{ gpu_operator_operator_namespace }}
          -oname
     register: has_operator_prometheusrule
     until: has_operator_prometheusrule.rc == 0
@@ -20,7 +20,7 @@
         labels:
           app: gpu-operator
         name: ci-gpu-operator-alerts
-        namespace: openshift-operators
+        namespace: {{ gpu_operator_operator_namespace }}
       spec:
         groups:
       EOF
@@ -28,7 +28,7 @@
   - name: Derive the Operator test rules
     shell: |
       set -o pipefail;
-      oc get prometheusrules/nvidia-gpu-operator-metrics -oyaml -n openshift-operators \
+      oc get prometheusrules/nvidia-gpu-operator-metrics -oyaml -n {{ gpu_operator_operator_namespace }} \
       | sed -ne '/^spec:/,$ p' \
       | sed 1,2d \
       | sed 's/alert: GPUOperator/alert: {{  gpu_operator_test_alerts_prefix }}GPUOperator/' \
@@ -44,7 +44,7 @@
   - name: Wait for the Node PrometheusRule to be available
     command:
       oc get prometheusrule/nvidia-node-status-exporter-alerts
-         -n gpu-operator-resources
+         -n {{ gpu_operator_namespace }}
          -oname
     register: has_node_prometheusrule
     retries: 30
@@ -59,7 +59,7 @@
         labels:
           app: gpu-operator
         name: ci-gpu-node-alerts
-        namespace: gpu-operator-resources
+        namespace: {{ gpu_operator_namespace }}
       spec:
         groups:
       EOF
@@ -67,7 +67,7 @@
   - name: Derive the Node test rules
     shell: |
       set -o pipefail;
-      oc get prometheusrules/nvidia-node-status-exporter-alerts -oyaml -n gpu-operator-resources \
+      oc get prometheusrules/nvidia-node-status-exporter-alerts -oyaml -n {{ gpu_operator_namespace }} \
       | sed -ne '/^spec:/,$ p' \
       | sed 1,2d \
       | sed 's/alert: GPUOperator/alert: {{ gpu_operator_test_alerts_prefix }}GPUOperator/' \
