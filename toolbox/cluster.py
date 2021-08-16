@@ -6,7 +6,7 @@ class Cluster:
     Commands relating to cluster scaling, upgrading and environment capture
     """
     @staticmethod
-    def set_scale(instance_type, scale, base_machineset="", force=False):
+    def set_scale(instance_type, scale, base_machineset=None, force=False):
         """
         Ensures that the cluster has exactly `scale` nodes with instance_type `instance_type`
 
@@ -31,10 +31,12 @@ class Cluster:
             base_machineset: Name of a machineset to use to derive the new one. Default: pickup the first machineset found in `oc get machinesets -n openshift-machine-api`.
         """
         opts = {
-                "machineset_instance_type": instance_type,
-                "scale": scale,
-                "base_machineset": base_machineset,
-            }
+            "machineset_instance_type": instance_type,
+            "scale": scale,
+        }
+
+        if base_machineset is not None:
+            opts["base_machineset"] = base_machineset
 
         if force:
             opts["force_scale"] = "true"
