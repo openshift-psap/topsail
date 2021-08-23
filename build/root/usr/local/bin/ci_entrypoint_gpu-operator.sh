@@ -8,7 +8,7 @@ prepare_cluster_for_gpu_operator() {
     ./run_toolbox.py cluster capture_environment
 
     finalizers+=("collect_must_gather")
-    finalizers+=("./run_toolbox.py entitlement undeploy")
+    finalizers+=("./run_toolbox.py entitlement undeploy &> /dev/null")
 
     entitle.sh
 
