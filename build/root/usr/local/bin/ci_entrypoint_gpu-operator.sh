@@ -171,10 +171,17 @@ prepare_cluster_for_gpu_operator_with_alerts() {
     mv ${ARTIFACT_DIR}/*__gpu-operator__prepare_test_alerts ${ARTIFACT_DIR}/alerts
 
     # wait for NFD alert to fire
-    ./run_toolbox.py cluster wait_for_alert \
-                     CIGPUOperatorReconciliationFailedNfdLabelsMissing \
-                     --alert-active=true
-    mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert ${ARTIFACT_DIR}/alerts
+    if ! ./run_toolbox.py nfd has_labels; then
+        ./run_toolbox.py cluster wait_for_alert \
+                         CIGPUOperatorReconciliationFailedNfdLabelsMissing \
+                         --alert-active=true
+    else
+        DEST_DIR="${ARTIFACT_DIR}/999__cluster__wait_for_alert__FailedNfdLabelsMissing"
+        mkdir "$DEST_DIR"
+        echo "Cannot check for NFD alert, nodes already labelled." > "$DEST_DIR/msg"
+    fi
+
+    mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert* ${ARTIFACT_DIR}/alerts
 
     ./run_toolbox.py nfd_operator deploy_from_operatorhub
     ./run_toolbox.py cluster set_scale g4dn.xlarge 1
@@ -183,11 +190,17 @@ prepare_cluster_for_gpu_operator_with_alerts() {
     ./run_toolbox.py cluster wait_for_alert \
                      CIGPUOperatorReconciliationFailedNfdLabelsMissing \
                      --alert-active=false
+    if ! ./run_toolbox.py entitlement test_cluster --no_inspect; then
+        # wait for driver alert to fire
+        ./run_toolbox.py cluster wait_for_alert \
+                         CIGPUOperatorNodeDeploymentDriverFailed \
+                         --alert-active=true
+    else
+        DEST_DIR="${ARTIFACT_DIR}/999__cluster__wait_for_alert__NodeDeploymentDriverFailed__not_tested"
+        mkdir "$DEST_DIR"
+        echo "Cannot check for driver alert to fire, cluster already entitled." > "$DEST_DIR/msg"
+    fi
 
-    # wait for driver alert to fire
-    ./run_toolbox.py cluster wait_for_alert \
-                     CIGPUOperatorNodeDeploymentDriverFailed \
-                     --alert-active=true
     mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert ${ARTIFACT_DIR}/alerts
 
     # entitle the cluster
@@ -198,8 +211,6 @@ prepare_cluster_for_gpu_operator_with_alerts() {
                      CIGPUOperatorNodeDeploymentDriverFailed \
                      --alert-active=false
     mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert ${ARTIFACT_DIR}/alerts
-
-    validate_gpu_operator_deployment
 }
 
 test_operatorhub() {
