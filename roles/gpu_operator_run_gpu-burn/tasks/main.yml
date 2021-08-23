@@ -61,7 +61,7 @@
     register: gpu_burn_wait
     until: gpu_burn_wait.stdout == "Succeeded" or gpu_burn_wait.stdout == "Error" or gpu_burn_wait.stdout == "Failed"
     failed_when: gpu_burn_wait.stdout != "Succeeded"
-    retries: 10
+    retries: 20
     delay: 30
 
   - name: Ensure that no GPU was faulty
