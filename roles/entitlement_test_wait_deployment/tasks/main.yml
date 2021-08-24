@@ -25,7 +25,13 @@
                 --no-headers
                 -n default
                 ";
-      while ! $CMD | egrep 'Succeeded|Error|Failed'; do
+      while true; do
+          state=$($CMD)
+          echo $state
+          if echo "$state" | egrep 'Succeeded|Error|Failed'; then
+            echo "Done"
+            break
+          fi
           echo "Waiting for Pod completion ... (#${i})";
           sleep 10;
           i=$(($i+1));
@@ -34,7 +40,7 @@
             exit 1;
           fi;
       done;
-      $CMD;
+
       $CMD | egrep 'Succeeded';
     register: entitlement_wait
     until: entitlement_wait.rc == 0
