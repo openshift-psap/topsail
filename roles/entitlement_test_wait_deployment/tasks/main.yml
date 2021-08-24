@@ -55,17 +55,23 @@
       _entitlement_inspect_called_from_testwait: "yes"
     when: entitlement_inspect_on_failure == 'yes'
 
+  - name: Store the description of the test Pod (debug)
+    shell:
+      oc describe pod/entitlement-tester -n default
+         > {{ artifact_extra_logs_dir }}/entitlement-test.pod.descr
+    failed_when: false
+
   - name: Failed because the entitlement test Pod did not succeed.
     fail: msg="Failed because the entitlement test Pod did not succeed."
 
   always:
-  - name: Store the test Pod logs
+  - name: Store the test Pod logs (debug)
     shell:
       oc logs pod/entitlement-tester -n default
          > {{ artifact_extra_logs_dir }}/entitlement-test.pod.log
     failed_when: false
 
-  - name: Show the test Pod logs
+  - name: Show the test Pod logs (debug)
     command: oc logs pod/entitlement-tester -n default
     when: _entitlement_testwait_called_from_inspect == "yes" or entitlement_wait.rc != 0
     failed_when: false
