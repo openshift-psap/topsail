@@ -24,6 +24,8 @@ spec:
         value: "{{ gpu_operator_git_ref }}"
       - name: OPERATOR_IMAGE_NAME
         value: "{{ operator_image_name }}"
+      - name: VALIDATOR_IMAGE_VERSION
+        value: "{{ validator_image_version }}"
       - name: IMAGESTREAM_SECRET_NAME
         value: "{{ builder_secret }}"
       - name: QUAY_BUNDLE_IMAGE_NAME

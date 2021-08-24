@@ -1,0 +1,68 @@
+---
+#
+# Operator image
+#
+
+- name: Compute local imagestreamtag name
+  set_fact:
+    validator_image_version: "validator_{{ gpu_operator_image_tag }}"
+    validator_imagestreamtag: "gpu-operator-ci:validator_{{ gpu_operator_image_tag }}"
+
+- name: Compute local image name
+  set_fact:
+    validator_image_name: "image-registry.openshift-image-registry.svc:5000/gpu-operator-ci/{{ validator_imagestreamtag }}"
+
+- name: Check if the validator image already exists
+  command: oc get "imagestreamtag/{{ validator_imagestreamtag }}" -n gpu-operator-ci
+  failed_when: false
+  register: has_validator_image
+
+- name: Build the validator image
+  when: has_validator_image.rc != 0
+  block:
+  - name: The validator image does not exist, build it
+    debug: msg="The validator image does not exist, build it"
+
+  - name: Instantiate the template of the validator image buildconfig
+    template:
+      src: "{{ gpu_operator_validator_image_buildconfig }}"
+      dest: "{{ artifact_extra_logs_dir }}/validator-image-buildconfig.yml"
+      mode: 0400
+
+  - name: Delete the validator image build config
+    command: oc delete -f "{{ artifact_extra_logs_dir }}/validator-image-buildconfig.yml"
+    failed_when: false
+
+  - name: Apply the validator image build config
+    command: oc apply -f "{{ artifact_extra_logs_dir }}/validator-image-buildconfig.yml"
+
+  - name: Get the name of the Build
+    command:
+      oc get builds
+         -lbuildconfig=gpu-operator-validator
+         -oname
+         -n gpu-operator-ci
+    register: build_name_cmd
+    failed_when: build_name_cmd.stdout | length == 0
+
+  - block:
+    - name: Wait for the validator image to be built
+      command:
+        oc get {{ build_name_cmd.stdout }}
+           -ojsonpath={.status.phase}
+           -n gpu-operator-ci
+      register: wait_validator_build
+      until: "'Complete' in wait_validator_build.stdout or 'Failed' in wait_validator_build.stdout"
+      retries: 40
+      delay: 30
+
+    - name: Fail if the operator image failed to be built
+      when: "'Failed' in wait_validator_build.stdout"
+      fail: msg="The validator image failed to build"
+
+    always:
+    - name: Store the logs of validator image build (debug)
+      shell:
+        oc logs {{ build_name_cmd.stdout }} -n gpu-operator-ci
+           > {{ artifact_extra_logs_dir }}/validator-image-build.log
+      failed_when: false

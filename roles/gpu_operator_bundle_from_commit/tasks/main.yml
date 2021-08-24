@@ -20,6 +20,9 @@
 - name: Build the operator image from custom commit
   include_tasks: build_operator.yml
 
+- name: Build the validator image from custom commit
+  include_tasks: build_validator.yml
+
 - name: Build the bundle image from custom commit
   include_tasks: build_bundle.yml
 

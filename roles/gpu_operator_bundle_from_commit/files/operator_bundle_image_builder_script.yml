@@ -34,6 +34,7 @@ data:
     git show --quiet
     GIT_VERSION=$(git rev-parse --short HEAD)
 
+    # update operator image
     mv $CSV_FILE ${CSV_FILE}.orig
     cat ${CSV_FILE}.orig | yq \
       | jq .metadata.annotations.containerImage=\"$OPERATOR_IMAGE_NAME\" \
@@ -42,10 +43,30 @@ data:
       | jq .spec.install.spec.deployments[0].spec.template.spec.containers[0].image=\"$OPERATOR_IMAGE_NAME\" \
       > $CSV_FILE
 
-    rm ${CSV_FILE}.orig
     cat $CSV_FILE | grep containerImage
+    rm ${CSV_FILE}.orig
 
-    # build
+    # update validator image in the ClusterPolicy
+
+    cat ${CSV_FILE} | yq \
+      | jq '.metadata.annotations."alm-examples"' -r \
+      > clusterpolicy.json.orig
+
+    cat clusterpolicy.json.orig \
+      | jq '.[].spec.validator.image="gpu-operator-ci"' \
+      | jq '.[].spec.validator.repository="image-registry.openshift-image-registry.svc:5000/gpu-operator-ci"' \
+      | jq '.[].spec.validator.version="'$VALIDATOR_IMAGE_VERSION'"' \
+      > clusterpolicy.json
+    rm  clusterpolicy.json.orig
+
+    # update ClusterPolicy in the CSV
+
+    mv $CSV_FILE ${CSV_FILE}.orig
+    yq --yaml-roundtrip --rawfile alm_examples clusterpolicy.json '.metadata.annotations."alm-examples" = $alm_examples' ${CSV_FILE}.orig > ${CSV_FILE}
+    rm ${CSV_FILE}.orig
+    rm  clusterpolicy.json
+
+    # build the bundle image
 
     podman build -f $CONTAINER_FILE $CONTEXT_LOCATION -t $QUAY_BUNDLE_IMAGE_NAME
 

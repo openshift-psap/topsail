@@ -37,11 +37,25 @@
        -n gpu-operator-ci
        --from-file kubeconfig={{ lookup('env', 'KUBECONFIG') }}
 
-- name: Authorize 'ns/openshift-operators' Pods to access ns/gpu-operator-ci images
+- name: Authorize 'ns/openshift-operators' Pods to access 'ns/gpu-operator-ci' images
   command:
     oc policy add-role-to-user
               system:image-puller system:serviceaccount:openshift-operators:gpu-operator
               --namespace=gpu-operator-ci
+
+- name: Authorize 'ns/gpu-operator-resources' Pods to access 'ns/gpu-operator-ci' images
+  command:
+    oc policy add-role-to-user
+              system:image-puller system:serviceaccount:gpu-operator-resources:{{ item }}
+              --namespace=gpu-operator-ci
+  with_items:
+  - nvidia-driver
+  - nvidia-container-toolkit
+  - nvidia-device-plugin
+  - nvidia-dcgm
+  - nvidia-dcgm-exporter
+  - nvidia-gpu-feature-discovery
+  - nvidia-node-status-exporter
 
 - name: Apply the operator bundle image builder script manifest
   command: oc apply -f "{{ gpu_operator_bundle_image_builder_script }}"

@@ -19,10 +19,10 @@
   command: oc apply -f "{{ gpu_operator_ci_utils }}"
 
 - name: Apply the namespace manifest
-  command: oc apply -f "{{ gpu_operator_namespace }}"
+  command: oc apply -f "{{ gpu_operator_ci_namespace }}"
 
 - name: Apply the imagestream manifest
-  command: oc apply -f "{{ gpu_operator_imagestream }}"
+  command: oc apply -f "{{ gpu_operator_ci_imagestream }}"
 
 - name: Authorize 'ns/gpu-operator-ci' Pods to access ns/gpu-operator-ci-utils images
   command:
