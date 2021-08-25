@@ -73,13 +73,14 @@ cleanup_cluster() {
     ./run_toolbox.py nfd-operator undeploy_from_operatorhub
 
     # ensure that the MachineConfigPool have finished all pending updates
-    tries_left=20
+    tries_left=40
     WAIT_TIME_SECONDS=30
+    set -x
 
-    MCP_MACHINE_COUNT=$(oc get mcp -ojsonpath={.items[*].status.machineCount} | jq .)
     while true; do
+        mcp_machine_count=$(oc get mcp -ojsonpath={.items[*].status.machineCount} | jq .)
         mcp_machine_updated=$(oc get mcp -ojsonpath={.items[*].status.updatedMachineCount} | jq .)
-        if [ "$MCP_MACHINE_COUNT" == "$mcp_machine_updated" ]; then
+        if [ "$mcp_machine_count" == "$mcp_machine_updated" ]; then
             echo "All the MachineConfigPools have been updated."
             break
         fi
@@ -88,11 +89,13 @@ cleanup_cluster() {
             cat <<EOF
 Failed to wait for the MachineConfigPools to be properly updated.
 machineCount:
-$MCP_MACHINE_COUNT
+$mcp_machine_count
 
 updatedMachineCount:
 $mcp_machine_updated
 EOF
+            oc get mcp > ${ARTIFACT_DIR}/mcp.list
+            oc describe mcp > ${ARTIFACT_DIR}/mcp.all.descr
             exit 1
         fi
         sleep $WAIT_TIME_SECONDS
@@ -161,6 +164,15 @@ test_helm() {
     validate_gpu_operator_deployment
 }
 
+validate_deployment_post_upgrade() {
+    finalizers+=("collect_must_gather")
+    finalizers+=("./run_toolbox.py entitlement undeploy &> /dev/null")
+
+    entitle.sh
+
+    validate_gpu_operator_deployment
+}
+
 finalizers=()
 run_finalizers() {
     [ ${#finalizers[@]} -eq 0 ] && return
@@ -201,7 +213,7 @@ case ${action} in
         test_operatorhub "$@"
         exit 0
         ;;
-    "validate_deployment")
+    "validate_deployment_post_upgrade")
         validate_gpu_operator_deployment "$@"
         exit 0
         ;;
