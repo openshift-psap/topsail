@@ -62,6 +62,43 @@ validate_gpu_operator_deployment() {
     ./run_toolbox.py gpu_operator run_gpu_burn
 }
 
+cleanup_cluster() {
+    # undeploy the entitlement
+    ./run_toolbox.py entitlement undeploy
+    # ensure that there is no GPU Operator in the cluster
+    ./run_toolbox.py gpu_operator undeploy_from_operatorhub
+    # ensure that there is no GPU node in the cluster
+    ./run_toolbox.py cluster set_scale g4dn.xlarge 0
+    # ensure that NFD is not installed in the cluster
+    ./run_toolbox.py nfd-operator undeploy_from_operatorhub
+
+    # ensure that the MachineConfigPool have finished all pending updates
+    tries_left=20
+    WAIT_TIME_SECONDS=30
+
+    MCP_MACHINE_COUNT=$(oc get mcp -ojsonpath={.items[*].status.machineCount} | jq .)
+    while true; do
+        mcp_machine_updated=$(oc get mcp -ojsonpath={.items[*].status.updatedMachineCount} | jq .)
+        if [ "$MCP_MACHINE_COUNT" == "$mcp_machine_updated" ]; then
+            echo "All the MachineConfigPools have been updated."
+            break
+        fi
+        tries_left=$(($tries_left - 1))
+        if [[ $tries_left == 0 ]]; then
+            cat <<EOF
+Failed to wait for the MachineConfigPools to be properly updated.
+machineCount:
+$MCP_MACHINE_COUNT
+
+updatedMachineCount:
+$mcp_machine_updated
+EOF
+            exit 1
+        fi
+        sleep $WAIT_TIME_SECONDS
+    done
+}
+
 test_master_branch() {
     prepare_cluster_for_gpu_operator
     ./run_toolbox.py gpu_operator deploy_from_bundle --bundle=master
@@ -124,10 +161,6 @@ test_helm() {
     validate_gpu_operator_deployment
 }
 
-undeploy_operatorhub() {
-    ./run_toolbox.py gpu_operator undeploy_from_operatorhub
-}
-
 finalizers=()
 run_finalizers() {
     [ ${#finalizers[@]} -eq 0 ] && return
@@ -176,8 +209,8 @@ case ${action} in
         test_helm "$@"
         exit 0
         ;;
-    "undeploy_operatorhub")
-        undeploy_operatorhub "$@"
+    "undeploy_operatorhub" | "cleanup_cluster")
+        cleanup_cluster
         exit 0
         ;;
     -*)
