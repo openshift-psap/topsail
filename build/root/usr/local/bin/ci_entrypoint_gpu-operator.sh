@@ -69,8 +69,12 @@ cleanup_cluster() {
     ./run_toolbox.py gpu_operator undeploy_from_operatorhub
     # ensure that there is no GPU node in the cluster
     ./run_toolbox.py cluster set_scale g4dn.xlarge 0
+
     # ensure that NFD is not installed in the cluster
-    ./run_toolbox.py nfd-operator undeploy_from_operatorhub
+    ## not working as expected at the moment: NFD labels remain
+    ## visible, but new labels not added, making the
+    ## `nfd__wait_gpu_nodes` test fail.
+    #./run_toolbox.py nfd-operator undeploy_from_operatorhub
 
     # ensure that the MachineConfigPool have finished all pending updates
     tries_left=40
