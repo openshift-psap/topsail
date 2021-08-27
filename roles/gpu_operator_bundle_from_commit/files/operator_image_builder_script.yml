@@ -20,36 +20,15 @@ data:
 
     git show --quiet
 
-    CONTAINER_FILE=./Dockerfile
-    if [ -f ${CONTAINER_FILE} ]; then
-      # TODO: Remove this backwards compatible code once we stop testing versions that do not use the new Makefile
-      # This was merged in https://github.com/NVIDIA/gpu-operator/commit/b0e99d9e6ac8738ee335f6e866242b1c9977ea09
-
-      cat <<EOF > /usr/local/bin/docker
-      #! /bin/sh
-      exec podman --cgroup-manager=cgroupfs "\$@"
-    EOF
-      chmod u+x /usr/local/bin/docker
-
-      if [ "${BUILDER_FROM_IMAGE}" ]; then
-        # if provided, use custom 'FROM ... as builder' image
-        sed "s|FROM golang:.* as builder|FROM ${BUILDER_FROM_IMAGE} as builder|" -i ${CONTAINER_FILE}
-      fi
-
-      # avoid docker.io quotas ...
-      sed -i 's|FROM nvidia/cuda:|FROM nvcr.io/nvidia/cuda:|' ${CONTAINER_FILE}
-      make docker-build IMG=${OPERATOR_IMAGE_NAME}
-    else
-      # if provided, use custom 'FROM ... as builder' image by setting BUILDER_IMAGE variable
-      # avoid docker.io quotas by setting CUDA_IMAGE
-      # The docker-image generates an image OUT_IMAGE (based on OPERATOR_IMAGE_NAME)
-      make docker-image \
-        VERSION=$(git rev-parse --short HEAD) \
-        DOCKER=podman \
-        OUT_IMAGE=${OPERATOR_IMAGE_NAME} \
-        CUDA_IMAGE=nvcr.io/nvidia/cuda \
-        ${BUILDER_FROM_IMAGE:+BUILDER_IMAGE=${BUILDER_FROM_IMAGE}}
-    fi
+    # if provided, use custom 'FROM ... as builder' image by setting BUILDER_IMAGE variable
+    # avoid docker.io quotas by setting CUDA_IMAGE
+    # The docker-image generates an image OUT_IMAGE (based on OPERATOR_IMAGE_NAME)
+    make docker-image \
+      VERSION=$(git rev-parse --short HEAD) \
+      DOCKER=podman \
+      OUT_IMAGE=${OPERATOR_IMAGE_NAME} \
+      CUDA_IMAGE=nvcr.io/nvidia/cuda \
+      ${BUILDER_FROM_IMAGE:+BUILDER_IMAGE=${BUILDER_FROM_IMAGE}}
 
     # push the image locally
 
