@@ -1,0 +1,6 @@
+  overrides:
+  - kind: Etcd
+    group: operator.openshift.io
+    name: cluster
+    namespace: openshift-etcd
+    unmanaged: true
