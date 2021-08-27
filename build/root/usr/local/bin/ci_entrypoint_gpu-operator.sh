@@ -298,6 +298,11 @@ case ${action} in
         cleanup_cluster
         exit 0
         ;;
+    "source")
+        set +x
+        echo "INFO: GPU Operator CI entrypoint has been sourced"
+        # file is being sourced by another script
+        ;;
     -*)
         echo "FATAL: Unknown option: ${action}"
         exit 1
