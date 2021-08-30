@@ -1,13 +1,21 @@
 ---
-- name: Get the version from the GPU Operator CSV
-  shell:
-    set -o pipefail;
+- name: Ensure that there is a CSV for the GPU Operator
+  command:
     oc get csv
-    -n openshift-operators
-    -loperators.coreos.com/gpu-operator-certified.openshift-operators
-    -ojson
-    | jq -r .items[0].spec.version
+       -oname
+       -n openshift-operators
+       -loperators.coreos.com/gpu-operator-certified.openshift-operators
+  register: gpu_operator_csv_name_cmd
+  failed_when: gpu_operator_csv_name_cmd.stdout | length == 0
+
+- name: Get the version from the GPU Operator CSV
+  command:
+    oc get {{ gpu_operator_csv_name_cmd.stdout }}
+       -n openshift-operators
+       -ojsonpath={.spec.version}
+
   register: gpu_operator_csv_version_cmd
+  failed_when: gpu_operator_csv_version_cmd.stdout | length == 0
 
 - name: Store the version '{{ gpu_operator_csv_version_cmd.stdout }}' as an ansible variable
   set_fact:
