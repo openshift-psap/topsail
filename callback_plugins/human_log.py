@@ -21,7 +21,7 @@ INTERESTING_MODULE_PROPS = {
 
 class CallbackModule(default_CallbackModule):
     def __display_result(self, result, color, ignore_errors=None, loop_idx=0):
-        if ignore_errors is not None:
+        if ignore_errors not in (None, False):
             self._display.display(f"==> FAILED | ignore_errors={ignore_errors}", color=color)
 
 
