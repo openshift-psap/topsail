@@ -46,7 +46,7 @@ data:
     cat $CSV_FILE | grep containerImage
     rm ${CSV_FILE}.orig
 
-    # update validator image in the ClusterPolicy
+    # update validator & node-status-exporter images in the ClusterPolicy
 
     cat ${CSV_FILE} | yq \
       | jq '.metadata.annotations."alm-examples"' -r \
@@ -56,6 +56,9 @@ data:
       | jq '.[].spec.validator.image="gpu-operator-ci"' \
       | jq '.[].spec.validator.repository="image-registry.openshift-image-registry.svc:5000/gpu-operator-ci"' \
       | jq '.[].spec.validator.version="'$VALIDATOR_IMAGE_VERSION'"' \
+      | jq '.[].spec.nodeStatusExporter.image="gpu-operator-ci"' \
+      | jq '.[].spec.nodeStatusExporter.repository="image-registry.openshift-image-registry.svc:5000/gpu-operator-ci"' \
+      | jq '.[].spec.nodeStatusExporter.version="'$VALIDATOR_IMAGE_VERSION'"' \
       > clusterpolicy.json
     rm  clusterpolicy.json.orig
 
