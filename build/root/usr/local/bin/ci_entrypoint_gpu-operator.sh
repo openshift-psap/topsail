@@ -295,7 +295,7 @@ case ${action} in
         test_helm "$@"
         exit 0
         ;;
-    "undeploy_operatorhub" | "cleanup_cluster")
+    "cleanup_cluster")
         cleanup_cluster
         exit 0
         ;;
