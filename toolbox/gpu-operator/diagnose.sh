@@ -45,9 +45,8 @@ EOF
 
 Problem detected with '$@', capturing extra information...
 EOF
-
-        ./run_toolbox.py cluster capture_environment > /dev/null || true
         ./run_toolbox.py gpu_operator capture_deployment_state > /dev/null || true
+        ./run_toolbox.py gpu_operator get_csv_version > /dev/null || true
     fi
 
     cat <<EOF
@@ -66,6 +65,14 @@ EOF
         return 1
     fi
 }
+
+if [[ $RUN_ALL == yes ]]; then
+    echo "Capture the deployment state ..."
+    ./run_toolbox.py gpu_operator capture_deployment_state > /dev/null || true
+    echo "Capture the cluster environment ..."
+    ./run_toolbox.py cluster capture_environment > /dev/null || true
+    echo "Done with the state capture."
+fi
 
 do_test "The cluster is reachable" \
         "The cluster is not reachable. Are 'oc' and 'KUBECONFIG' properly configured?" \
@@ -99,13 +106,7 @@ else
     echo "Found errors with the GPU Operator, skipping GPU-Burn testing."
 fi
 
-if [[ $RUN_ALL == yes ]]; then
-    echo "Capture the deployment state ..."
-    ./run_toolbox.py gpu_operator capture_deployment_state > /dev/null || true
-    echo "Capture the cluster environment ..."
-    ./run_toolbox.py cluster capture_environment > /dev/null || true
-    echo "Done with the state capture."
-fi
+./run_toolbox.py cluster capture_environment > /dev/null || true
 
 if [[ "$has_errors" == 0 ]]; then
     cat <<EOF
