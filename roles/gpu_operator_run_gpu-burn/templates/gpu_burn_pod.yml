@@ -7,6 +7,7 @@ metadata:
   namespace: default
 spec:
   restartPolicy: Never
+  nodeName: "{{ gpu_node_name }}"
   containers:
   - image: nvcr.io/nvidia/cuda:11.2.2-devel-ubi8
     imagePullPolicy: Always
@@ -28,4 +29,3 @@ spec:
         name: gpu-burn-entrypoint
   nodeSelector:
     nvidia.com/gpu.present: "true"
-    kubernetes.io/hostname: "{{ gpu_node_hostname }}"

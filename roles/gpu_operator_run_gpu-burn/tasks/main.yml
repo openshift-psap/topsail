@@ -10,8 +10,7 @@
     ) | grep .
 
 - name: Get the list of nodes with GPUs
-  shell:
-    set -o pipefail;
+  command:
     oc get nodes
        -lnvidia.com/gpu.present=true
        -o custom-columns=NAME:metadata.name
@@ -27,32 +26,26 @@
   with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
   failed_when: false
 
-- name: Create GPU burn Pods
-  with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
-  shell: |
-    set -eo pipefail;
+- name: Instanciate GPU Burn Pods from template
+  loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+  loop_control:
+    loop_var: gpu_node_name
+  template:
+    src: "{{ gpu_burn_pod }}"
+    dest: "{{ artifact_extra_logs_dir }}/gpu_burn.{{ gpu_node_name }}.yml"
+    mode: 0400
 
-    if [[ "{{ openshift_release_major }}" == 4 && "{{ openshift_release_minor }}" -le 8 ]]; then
-      GPU_NODE_HOSTNAME=$(echo '{{ item }}' | cut -d. -f1);
-    else
-      GPU_NODE_HOSTNAME=$(echo '{{ item }}' );
-    fi
+- name: Create GPU Burn Pods from template
+  loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/gpu_burn.{{ item }}.yml"
 
-    echo "Hostname: $GPU_NODE_HOSTNAME";
-    oc --ignore-not-found=true delete pod/gpu-burn-$GPU_NODE_HOSTNAME -n default
-    cat "{{ gpu_burn_pod }}" \
-      | sed "s|{{ '{{' }} gpu_node_name {{ '}}' }}|{{ item }}|" \
-      | sed "s|{{ '{{' }} gpu_node_hostname {{ '}}' }}|$GPU_NODE_HOSTNAME|" \
-      | sed "s|{{ '{{' }} gpu_burn_time {{ '}}' }}|{{ gpu_burn_time }}|" \
-      | oc apply -f-
-
-- name: "Let the GPU burn Pods run {{ gpu_burn_time }}seconds"
+- name: "Let the GPU burn Pods run {{ gpu_burn_time }} seconds"
   command: "sleep {{ gpu_burn_time }}"
 
 - name: Ensure that the GPU burn ran successfully
   block:
   - name: Wait for GPU burn Pods to complete
-    with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+    loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     command:
       oc get pod/gpu-burn-{{ item }}
          -n default
@@ -65,7 +58,7 @@
     delay: 30
 
   - name: Ensure that no GPU was faulty
-    with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+    loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     shell:
       oc logs pod/gpu-burn-{{ item }} -n default | grep FAULTY
     register: gpu_burn_test_faulty
