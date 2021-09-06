@@ -12,11 +12,32 @@
 
 # ---
 
-- name: Get the Pods in {{ gpu_operator_namespace }}
+- name: "Get the GPU Operator Pod in {{ gpu_operator_operator_namespace }} (list)"
   shell:
-    oc get pods
-       -n {{ gpu_operator_namespace }} -owide
-       > {{ artifact_extra_logs_dir }}/gpu_operator_pods.list
+    oc get pods -lapp=gpu-operator
+       -n {{ gpu_operator_operator_namespace }} -owide
+       > {{ artifact_extra_logs_dir }}/gpu_operator_pod.list
+  failed_when: false
+
+- name: "Get the GPU Operator Pod in {{ gpu_operator_operator_namespace }} (yaml)"
+  shell:
+    oc get pods -lapp=gpu-operator
+       -n {{ gpu_operator_operator_namespace }} -oyaml
+       > {{ artifact_extra_logs_dir }}/gpu_operator_pod.yaml
+  failed_when: false
+
+- name: "Get the Pods in {{ gpu_operator_namespace }} (list)"
+  shell:
+    oc get pods -owide
+       -n {{ gpu_operator_namespace }}
+       > {{ artifact_extra_logs_dir }}/all_gpu_pods.list
+  failed_when: false
+
+- name: "Get the Pods in {{ gpu_operator_namespace }} (yaml)"
+  shell:
+    oc get pods -oyaml
+       -n {{ gpu_operator_namespace }}
+       > {{ artifact_extra_logs_dir }}/all_gpu_pods.yaml
   failed_when: false
 
 - name: Get the GPU Operator Pods Images
@@ -31,38 +52,41 @@
     done
   failed_when: false
 
-- name: Get the DaemonSets in {{ gpu_operator_namespace }}
+- name: "Get the DaemonSets in {{ gpu_operator_namespace }} (list)"
   shell:
     oc get ds
        -n {{ gpu_operator_namespace }}
        > {{ artifact_extra_logs_dir }}/all_gpu_ds.list
   failed_when: false
 
-- name: Get the GPU Operator Pod status
-  shell: |
-    dest_file="{{ artifact_extra_logs_dir }}/gpu_operator_pod.yml";
-    for ns in {{ gpu_operator_all_namespaces }} gpu-operator-ci; do
-      oc get project/$ns &>/dev/null || continue;
-      oc get pods -n $ns -l name=gpu-operator -oyaml >> $dest_file;
-    done
+- name: "Get the DaemonSets in {{ gpu_operator_namespace }} (yaml)"
+  shell:
+    oc get ds -oyaml
+       -n {{ gpu_operator_namespace }}
+       > {{ artifact_extra_logs_dir }}/all_gpu_ds.yaml
   failed_when: false
 
-- name: Get the GPU nodes
+- name: Get the GPU nodes (list)
   shell:
     oc get nodes
        -l nvidia.com/gpu.present=true
        > {{ artifact_extra_logs_dir }}/gpu_operator_nodes.list
   failed_when: false
 
+- name: Get the labels of GPU nodes (list)
+  shell:
+    set -eo pipefail;
+    oc get nodes
+       -l nvidia.com/gpu.present=true
+       | sed 's|,|,- |g' | tr ',' '\n'
+       > {{ artifact_extra_logs_dir }}/gpu_operator_nodes.list
+  failed_when: false
+
 # --
 
 - name: Get the GPU Operator logs
-  shell: |
-    dest_file="{{ artifact_extra_logs_dir }}/gpu_operator.log";
-    for ns in {{ gpu_operator_operator_namespace }}} gpu-operator-ci; do
-      oc get project/$ns &>/dev/null || continue;
-      oc logs deployment/gpu-operator -n $ns >> $dest_file
-    done
+  shell:
+    oc logs deployment/gpu-operator -n {{ gpu_operator_operator_namespace }} > "{{ artifact_extra_logs_dir }}/gpu_operator.log"
   failed_when: false
 
 - name: Get the name of the GPU Operator DaemonSets
