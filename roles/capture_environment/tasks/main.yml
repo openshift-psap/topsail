@@ -10,6 +10,11 @@
     oc version -oyaml
        > {{ artifact_extra_logs_dir }}/ocp_version.yml
 
+- name: Store OpenShift YAML clusterversion
+  shell:
+    oc get clusterversion/version -oyaml
+       > {{ artifact_extra_logs_dir }}/ocp_clusterversion.yml
+
 - name: Fetch ci-artifact version from Git
   command:
     git describe HEAD --long --always
