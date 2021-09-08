@@ -37,7 +37,7 @@
   - cluster_version.rc == 0
   - cluster_version.stdout
   - cluster_version.stdout != "Partial"
-  retries: 90
+  retries: 120
   delay: 60
 
 - name: Get ClusterVersion status
