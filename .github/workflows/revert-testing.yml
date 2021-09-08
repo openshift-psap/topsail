@@ -31,10 +31,11 @@ jobs:
 
           if ! echo "$COMMIT_MSG" | grep '^\[TEST TMP\]' -q; then
             echo "Not a temporary test commit, do nothing."
+            exit 0
           fi
 
           echo "Temporary test commit detected, reverting $COMMIT_MSG ..."
           git show --stat HEAD
           git revert HEAD
-          git commit --amend --author="$COMMIT_AUTHOR" --no-edit
-          git push
+          git commit --amend --author="$COMMIT_AUTHOR" --no-edit --quiet
+          git push origin master
