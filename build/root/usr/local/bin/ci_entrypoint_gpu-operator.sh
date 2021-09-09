@@ -8,7 +8,10 @@ prepare_cluster_for_gpu_operator() {
     ./run_toolbox.py cluster capture_environment
 
     finalizers+=("collect_must_gather")
-    finalizers+=("./run_toolbox.py entitlement undeploy &> /dev/null")
+
+    if [[ "${1:-}" != "no_undeploy" ]]; then
+        finalizers+=("./run_toolbox.py entitlement undeploy &> /dev/null")
+    fi
 
     entitle.sh
 
@@ -119,16 +122,18 @@ test_master_branch() {
     # meanwhile:
     deploy_commit "https://github.com/NVIDIA/gpu-operator.git" "master"
 
-    prepare_cluster_for_gpu_operator_with_alerts
+    prepare_cluster_for_gpu_operator_with_alerts "$@"
 
     validate_gpu_operator_deployment
 }
 
 test_commit() {
-    gpu_operator_git_repo="${1:-}"
-    gpu_operator_git_ref="${2:-}"
+    gpu_operator_git_repo="${1}"
+    shift;
+    gpu_operator_git_ref="${1}"
+    shift;
 
-    prepare_cluster_for_gpu_operator
+    prepare_cluster_for_gpu_operator "$@"
 
     deploy_commit $gpu_operator_git_repo $gpu_operator_git_ref
 
@@ -163,6 +168,14 @@ deploy_commit() {
 }
 
 prepare_cluster_for_gpu_operator_with_alerts() {
+    ./run_toolbox.py cluster capture_environment
+
+    finalizers+=("collect_must_gather")
+
+    if [[ "${1:-}" != "no_undeploy" ]]; then
+        finalizers+=("./run_toolbox.py entitlement undeploy &> /dev/null")
+    fi
+
     mkdir -p ${ARTIFACT_DIR}/alerts
 
     ./run_toolbox.py gpu-operator prepare_test_alerts \
@@ -222,8 +235,10 @@ test_operatorhub() {
     if [ "${1:-}" ]; then
         OPERATOR_CHANNEL="--channel=$1"
     fi
+    shift || true
 
-    prepare_cluster_for_gpu_operator
+    prepare_cluster_for_gpu_operator "$@"
+
     ./run_toolbox.py gpu_operator deploy_from_operatorhub ${OPERATOR_VERSION:-} ${OPERATOR_CHANNEL:-} --namespace openshift-operators
     validate_gpu_operator_deployment
 }
@@ -277,11 +292,11 @@ set -x
 
 case ${action} in
     "test_master_branch")
-        test_master_branch
+        test_master_branch "$@"
         exit 0
         ;;
     "test_commit")
-        test_commit "https://github.com/NVIDIA/gpu-operator.git" master
+        test_commit "https://github.com/NVIDIA/gpu-operator.git" master "$@"
         exit 0
         ;;
     "test_operatorhub")
@@ -289,7 +304,7 @@ case ${action} in
         exit 0
         ;;
     "validate_deployment_post_upgrade")
-        validate_gpu_operator_deployment "$@"
+        validate_gpu_operator_deployment
         exit 0
         ;;
     "test_helm")
