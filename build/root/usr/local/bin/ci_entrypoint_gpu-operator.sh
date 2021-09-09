@@ -243,19 +243,6 @@ test_operatorhub() {
     validate_gpu_operator_deployment
 }
 
-test_helm() {
-    if [ -z "${1:-}" ]; then
-        echo "FATAL: run $0 should receive the operator version as parameter."
-        exit 1
-    fi
-    OPERATOR_VERSION="$1"
-
-    prepare_cluster_for_gpu_operator
-    toolbox/gpu-operator/list_version_from_helm.sh
-    toolbox/gpu-operator/deploy_with_helm.sh ${OPERATOR_VERSION}
-    validate_gpu_operator_deployment
-}
-
 validate_deployment_post_upgrade() {
     finalizers+=("collect_must_gather")
     finalizers+=("./run_toolbox.py entitlement undeploy &> /dev/null")
@@ -305,10 +292,6 @@ case ${action} in
         ;;
     "validate_deployment_post_upgrade")
         validate_gpu_operator_deployment
-        exit 0
-        ;;
-    "test_helm")
-        test_helm "$@"
         exit 0
         ;;
     "cleanup_cluster")
