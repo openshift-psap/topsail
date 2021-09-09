@@ -80,3 +80,4 @@
        --all-containers --prefix
        > {{ artifact_extra_logs_dir }}/gpu_operator_$(echo "{{ item }}" | cut -d/ -f2).log
   with_items: "{{ gpu_operator_daemonsets.stdout_lines }}"
+  failed_when: false
