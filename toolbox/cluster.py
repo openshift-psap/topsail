@@ -63,7 +63,7 @@ class Cluster:
         Args:
             image: The image to upgrade the cluster to
         """
-        return PlaybookRun("capture_environment")
+        return PlaybookRun("cluster_capture_environment")
 
     @staticmethod
     def wait_for_alert(alert_name, alert_active: bool):
