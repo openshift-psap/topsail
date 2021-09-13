@@ -13,9 +13,8 @@ ci_banner() {
 
     echo "===> $0 $@ <=="
 
-    git show --quiet || echo "Could not access git history ..."
-    echo
-    git show HEAD~ --quiet || true
+    echo ""
+    git show --quiet --oneline HEAD $(git log --pretty=%P -n 1 HEAD || true) || echo "Could not access git history ..."
 
     echo
     echo OpenShift version:
