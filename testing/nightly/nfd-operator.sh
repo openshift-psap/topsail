@@ -4,6 +4,9 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+cd ${THIS_DIR}/../..
+
 prepare_cluster_for_nfd() {
     if ./run_toolbox.py nfd has_labels; then
         echo "FATAL: NFD labels found in the cluster"

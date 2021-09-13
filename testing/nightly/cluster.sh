@@ -4,6 +4,9 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+cd ${THIS_DIR}/../..
+
 cluster_upgrade() {
     if [ -z "${CLUSTER_UPGRADE_TARGET_IMAGE:-}" ]; then
         echo "FATAL: CLUSTER_UPGRADE_TARGET_IMAGE must be provided to upgrade the cluster"
@@ -22,17 +25,13 @@ shift
 
 set -x
 
-case ${action:-} in
+case ${action} in
     "upgrade")
         cluster_upgrade
         exit 0
         ;;
-    -*)
-        echo "FATAL: Unknown option: ${action}"
-        exit 1
-        ;;
     *)
-        echo "FATAL: Nothing to do ..."
+        echo "FATAL: Action not supported: '$action')"
         exit 1
         ;;
 esac

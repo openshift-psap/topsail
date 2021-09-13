@@ -7,9 +7,6 @@ LABEL 	io.k8s.display-name="OpenShift PSAP CI artifacts" \
  	name="ci-artifacts" \
 	url="https://github.com/openshift-psap/ci-artifacts"
 
-# Add image scripts and files for running as a system container
-COPY build/root /
-
 COPY requirements.txt /
 
 # Install openshift-ansible RPMs and some debugging tools
@@ -60,6 +57,12 @@ ENV USER_NAME=psap-ci-runner \
     INSIDE_CI_IMAGE="y"
 
 COPY . ${HOME}/
+
+# Prepare the CI `run` entrypoint
+RUN echo -e '#!/usr/bin/env bash \n\
+exec ${HOME}/testing/run "$@" \n\
+' > /usr/local/bin/run; chmod ugo+x /usr/local/bin/run
+
 
 # Prepare the image for must-gather support
 RUN mkdir /must-gather && chmod 777 /must-gather

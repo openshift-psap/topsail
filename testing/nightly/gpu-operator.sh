@@ -4,6 +4,9 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+cd ${THIS_DIR}/../..
+
 prepare_cluster_for_gpu_operator() {
     ./run_toolbox.py cluster capture_environment
 
@@ -13,7 +16,7 @@ prepare_cluster_for_gpu_operator() {
         finalizers+=("./run_toolbox.py entitlement undeploy &> /dev/null")
     fi
 
-    entitle.sh
+    ${THIS_DIR}/entitle.sh
 
     if ! ./run_toolbox.py nfd has_labels; then
         ./run_toolbox.py nfd_operator deploy_from_operatorhub
@@ -218,7 +221,7 @@ prepare_cluster_for_gpu_operator_with_alerts() {
     mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert ${ARTIFACT_DIR}/alerts
 
     # entitle the cluster
-    entitle.sh
+    ${THIS_DIR}/entitle.sh
 
     # wait for driver alert to stop fireing
     ./run_toolbox.py cluster wait_for_alert \
@@ -247,7 +250,7 @@ validate_deployment_post_upgrade() {
     finalizers+=("collect_must_gather")
     finalizers+=("./run_toolbox.py entitlement undeploy &> /dev/null")
 
-    entitle.sh
+    ${THIS_DIR}/entitle.sh
 
     validate_gpu_operator_deployment
 }

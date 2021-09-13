@@ -4,6 +4,9 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+cd ${THIS_DIR}/../..
+
 nto_e2e() {
     ./run_toolbox.py cluster capture_environment
     toolbox/nto/run_e2e_test.sh "$@"

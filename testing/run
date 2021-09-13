@@ -1,8 +1,6 @@
 #! /usr/bin/env bash
 #
-# This file serves as entrypoint to the nightly testing of PSAP operators.
-#
-# SOURCE and HOME DIRECTORY: /opt/ci-artifacts/src
+# This file serves as entrypoint to the CI testing
 
 set -o pipefail
 set -o errexit
@@ -20,37 +18,32 @@ ci_banner() {
     echo OpenShift version:
     if ! oc version; then
         echo "Cannot access OpenShift cluster, can't continue."
-        exit 1
+        false
     fi
     echo
 }
 
 prechecks() {
-    if [[ "${INSIDE_CI_IMAGE:-}" != "y" ]]; then
-        echo "FATAL: this script shouldn't run outside of the CI image ..."
-        echo "INFO: 'export INSIDE_CI_IMAGE=y' to force"
-        exit 1
-    fi
     if [ -z "${ARTIFACT_DIR:-}" ]; then
         echo "ARTIFACT_DIR not set, cannot configured."
-        exit 1
+        false
     fi
     if [[ -z "${KUBECONFIG}" ]]
     then
         echo "KUBECONFIG not set, cannot continue."
-        exit 1
+        false
     fi
     if [[ ! -e "${KUBECONFIG}" ]]
     then
         echo "KUBECONFIG file doesn't exist, can't continue. (KUBECONFIG=${KUBECONFIG})"
-        exit 1
+        false
     fi
     echo "Using KUBECONFIG=${KUBECONFIG}"
 
     if ! which oc &>/dev/null;
     then
         echo "oc not found, this is unexpected in the CI image. Can't continue."
-        exit 1
+        false
     fi
 
     if ! which kubectl &>/dev/null;
@@ -62,11 +55,12 @@ prechecks() {
         export PATH=$PWD:$PATH
         cd ..
     fi
+
+    # avoid incorrect error reporting (mostly for outside of CI)
+    rm -f "${ARTIFACT_DIR}/FAILURE"
 }
 
 postchecks() {
-    set +x
-
     reason=$1
     shift
 
@@ -77,6 +71,7 @@ postchecks() {
             echo "Cluster unreachable" > $ARTIFACT_DIR/UNREACHABLE
         fi
     elif [[ "$reason" == EXIT ]]; then
+        echo ""
         if [ ! -e "$ARTIFACT_DIR/FAILURE" ]; then
             echo "Test of '$@' succeeded."
         else
@@ -95,45 +90,28 @@ trap "postchecks ERR" ERR
 
 #############
 
-target="${1:-}"
+if [[ -z "${1:-}" ]]; then
+    echo "FATAL: No entrypoint provided ..."
+
+    false
+fi
+
+target="${1}"
 shift
-action="${1:-}"
-shift || true
 
 echo
-echo "Test target: '$target'; test action: '$action'"
+echo "Test target: '$target'"
 echo
 
-case ${target} in
-    "cluster")
-        ci_entrypoint_cluster.sh "$action" "$@"
-        exit 0
-        ;;
-    "gpu-operator")
-        ci_entrypoint_gpu-operator.sh "$action" "$@"
-        exit 0
-        ;;
-    "nfd-operator")
-        ci_entrypoint_nfd-operator.sh "$action" "$@"
-        exit 0
-        ;;
-    "nto")
-        ci_entrypoint_nto.sh "$action" "$@"
-        exit 0
-        ;;
-    "sro")
-        ci_entrypoint_sro.sh "$action" "$@"
-        exit 0
-        ;;
-    "custom")
-        ci_entrypoint_custom.sh
-        exit 0
-        ;;
-    *)
-        echo "FATAL: Unknown target \"${target}\""
-        exit 1
-	;;
-esac
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-echo "FATAL: Unreachable ... (target: $target)"
-exit 1
+target_entrypoint="$THIS_DIR/nightly/${target}.sh"
+
+if [[ ! -e "$target_entrypoint" ]]; then
+    echo "FATAL: Unknown entrypoint '${target}'"
+
+    false
+fi
+
+# do not 'exec' here, so that 'postchecks' can be executed on exit
+${target_entrypoint} "$@"

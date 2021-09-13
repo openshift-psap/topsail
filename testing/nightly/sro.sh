@@ -4,12 +4,15 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+cd ${THIS_DIR}/../..
+
 prepare_cluster_for_sro() {
     ./run_toolbox.py cluster capture_environment
 
     finalizers+=("./run_toolbox.py entitlement undeploy")
 
-    entitle.sh
+    ${THIS_DIR}/entitle.sh
 
     if ! ./run_toolbox.py nfd has_labels; then
         ./run_toolbox.py nfd_operator deploy_from_operatorhub
