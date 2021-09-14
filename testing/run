@@ -13,13 +13,6 @@ ci_banner() {
 
     echo ""
     git show --quiet --oneline HEAD $(git log --pretty=%P -n 1 HEAD || true) || echo "Could not access git history ..."
-
-    echo
-    echo OpenShift version:
-    if ! oc version; then
-        echo "Cannot access OpenShift cluster, can't continue."
-        false
-    fi
     echo
 }
 
@@ -46,6 +39,12 @@ prechecks() {
         false
     fi
 
+    if ! which jq &>/dev/null;
+    then
+        echo "jq not found. Can't continue."
+        false
+    fi
+
     if ! which kubectl &>/dev/null;
     then
         echo "kubectl not found, symlinking to oc"
@@ -58,6 +57,20 @@ prechecks() {
 
     # avoid incorrect error reporting (mostly for outside of CI)
     rm -f "${ARTIFACT_DIR}/FAILURE"
+
+    # store `ci-artifacts` version in use
+    (git describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/ci_artifact.git_version
+
+    # check that the OCP cluster can be reached
+    ocp_version=$(oc version -o json | jq --raw-output '.openshiftVersion' || true)
+    if [[ -z "$ocp_version" ]]; then
+        echo "Cluster cannot be accessed. Can't continue."
+        false
+    fi
+
+    # store the OCP version of the cluster
+    echo "$ocp_version" > ${ARTIFACT_DIR}/ocp.version
+
 }
 
 postchecks() {
