@@ -67,6 +67,8 @@ EOF
 }
 
 if [[ $RUN_ALL == yes ]]; then
+    echo "Capture the operator version ..."
+    ./run_toolbox.py gpu_operator get_csv_version > /dev/null || true
     echo "Capture the deployment state ..."
     ./run_toolbox.py gpu_operator capture_deployment_state > /dev/null || true
     echo "Capture the cluster environment ..."
