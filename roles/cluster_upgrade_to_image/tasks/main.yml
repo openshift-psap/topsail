@@ -30,15 +30,21 @@
   command: sleep 30
 
 - name: Wait for the end of the upgrade
-  command:
-    oc get ClusterVersion/version -o jsonpath='{.status.history[0].state}{"\n"}'
-  register: cluster_version
-  until:
-  - cluster_version.rc == 0
-  - cluster_version.stdout
-  - cluster_version.stdout != "Partial"
-  retries: 120
-  delay: 60
+  block:
+  - name: Wait for the end of the upgrade
+    command:
+      oc get ClusterVersion/version -o jsonpath='{.status.history[0].state}{"\n"}'
+    register: cluster_version
+    until:
+    - cluster_version.rc == 0
+    - cluster_version.stdout
+    - cluster_version.stdout != "Partial"
+    retries: 120
+    delay: 60
+  always:
+  - name: Get the status of the upgrade (debug)
+    command:
+      oc get ClusterVersion/version
 
 - name: Get ClusterVersion status
   command: oc get ClusterVersion/version
