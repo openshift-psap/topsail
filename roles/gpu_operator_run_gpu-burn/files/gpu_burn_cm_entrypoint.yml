@@ -6,18 +6,17 @@ metadata:
 data:
   entrypoint.sh: |-
     #!/bin/bash
-    set -e
 
-    cd /tmp
+    set -o pipefail
+    set -o errexit
+    set -o nounset
 
-    GITHUB_REPO=kpouget/gpu-burn
-    REF=471cc9b3ea3967a4d7bec698ec768df80344504a # kpouget/ci-friendly
-    SRC=https://raw.githubusercontent.com/$GITHUB_REPO/$REF
+    set -x
 
-    for f in  compare.cu  gpu_burn-drv.cpp Makefile; do
-      curl -s $SRC/$f > $f
-    done
+    cp /gpu-burn-src/* .
+
     make
 
     echo ""
-    time /tmp/gpu_burn $GPU_BURN_TIME
+    echo "Running GPU Burn for ${GPU_BURN_TIME} seconds."
+    time ./gpu_burn $GPU_BURN_TIME

@@ -19,13 +19,20 @@ spec:
       mountPath: /bin/entrypoint.sh
       readOnly: true
       subPath: entrypoint.sh
+    - name: src
+      mountPath: /gpu-burn-src
+      readOnly: true
     env:
     - name: GPU_BURN_TIME
       value: "{{ gpu_burn_time }}"
   volumes:
-    - name: entrypoint
-      configMap:
-        defaultMode: 0700
-        name: gpu-burn-entrypoint
+  - name: entrypoint
+    configMap:
+      defaultMode: 0700
+      name: gpu-burn-entrypoint
+  - name: src
+    configMap:
+      defaultMode: 0700
+      name: gpu-burn-src
   nodeSelector:
     nvidia.com/gpu.present: "true"

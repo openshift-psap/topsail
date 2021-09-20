@@ -4,9 +4,9 @@
   # https://github.com/NVIDIA/gpu-operator/blob/master/pkg/controller/clusterpolicy/state_manager.go#L26
   shell:
     set -o pipefail;
-    (   oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-10de.present
-     || oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-0302_10de.present
-     || oc get nodes -oname --ignore-not-found=false -l feature.node.kubernetes.io/pci-0300_10de.present
+    (   oc get nodes -oname -l feature.node.kubernetes.io/pci-10de.present
+     || oc get nodes -oname -l feature.node.kubernetes.io/pci-0302_10de.present
+     || oc get nodes -oname -l feature.node.kubernetes.io/pci-0300_10de.present
     ) | grep .
 
 - name: Get the list of nodes with GPUs
@@ -20,6 +20,18 @@
 
 - name: Create the entrypoint ConfigMap
   command: oc apply -f "{{ gpu_burn_cm_entrypoint }}"
+
+- name: Delete the src ConfigMap, if it exists
+  command:
+    oc delete cm/gpu-burn-src
+       --ignore-not-found=true
+       -n default
+
+- name: Create the src ConfigMap
+  command:
+    oc create configmap gpu-burn-src
+       --from-file={{ gpu_burn_src_dir }}
+       -n default
 
 - name: Delete possibly stalled GPU burn Pods
   command: oc --ignore-not-found=true delete pod/gpu-burn-{{ item }} -n default
