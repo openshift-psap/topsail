@@ -98,10 +98,24 @@
   shell:
     set -eo pipefail;
     echo "Saving {{ item }} logs ...";
-    oc logs
+    oc logs "{{ item }}"
        -n {{ gpu_operator_namespace }}
-       "{{ item }}"
        --all-containers --prefix
        > {{ artifact_extra_logs_dir }}/gpu_operator_$(echo "{{ item }}" | cut -d/ -f2).log
   with_items: "{{ gpu_operator_daemonsets.stdout_lines }}"
+  failed_when: false
+
+- name: Get the name of the GPU Operator Pods
+  command:
+    oc get Pods -o name -n {{ gpu_operator_namespace }}
+  register: gpu_operator_pods
+
+- name: Get the description of the GPU Operator Pods
+  shell:
+    set -eo pipefail;
+    echo "Saving {{ item }} description ...";
+    oc describe "{{ item }}"
+       -n {{ gpu_operator_namespace }}
+       > {{ artifact_extra_logs_dir }}/gpu_operator_$(echo "{{ item }}" | cut -d/ -f2).descr
+  with_items: "{{ gpu_operator_pods.stdout_lines }}"
   failed_when: false
