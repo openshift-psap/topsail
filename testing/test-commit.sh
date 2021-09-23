@@ -17,7 +17,8 @@ set -o nounset
 
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-cd ${THIS_DIR}/../..
+BASE_DIR="${THIS_DIR}/../"
+cd "$BASE_DIR"
 
 ANCHOR="test-path: "
 
@@ -46,21 +47,16 @@ BASE_ARTIFACT_DIR=${ARTIFACT_DIR}
 
 while read cmd;
 do
-    if ! grep "^testing/" -q <<< "$cmd"; then
-        echo "ERROR: test command must start with testing/: $cmd"
-        continue
-    fi
-
     basename=$(basename "$cmd" | sed 's/ /_/g')
 
     echo "Running test-path: $cmd"
     echo ""
     export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/${basename}"
+    echo "Using ARTIFACT_DIR=${ARTIFACT_DIR}"
+    echo
     mkdir -p "${ARTIFACT_DIR}"
-    bash $(echo "$cmd")  |& tee "${ARTIFACT_DIR}/test-log.txt"
+    bash ${THIS_DIR}/run $(echo "$cmd")  |& tee "${ARTIFACT_DIR}/test-log.txt"
     echo ""
-    echo "Test of '$cmd' succeeded."
 done <<< "$testpaths"
 
-echo ""
 echo "All done."

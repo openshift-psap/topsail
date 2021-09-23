@@ -18,9 +18,19 @@ ci_banner() {
 
 prechecks() {
     if [ -z "${ARTIFACT_DIR:-}" ]; then
-        echo "ARTIFACT_DIR not set, cannot configured."
-        false
+        if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
+            echo "ARTIFACT_DIR not set, cannot proceed without inside the image."
+            false
+        fi
+
+        export ARTIFACT_DIR="/tmp/ci-artifacts_$(date +%Y%m%d)"
+        mkdir -p "$ARTIFACT_DIR"
+
+        echo "Using ARTIFACT_DIR=$ARTIFACT_DIR as default artifacts directory."
+    else
+        echo "Using ARTIFACT_DIR=$ARTIFACT_DIR."
     fi
+
     if [[ -z "${KUBECONFIG}" ]]
     then
         echo "KUBECONFIG not set, cannot continue."
@@ -70,7 +80,6 @@ prechecks() {
 
     # store the OCP version of the cluster
     echo "$ocp_version" > ${ARTIFACT_DIR}/ocp.version
-
 }
 
 postchecks() {
@@ -95,11 +104,16 @@ postchecks() {
 
 ##############
 
-ci_banner "$@"
-prechecks
+if [[ "${INSIDE_RUN:-}" != "y" ]]; then
+    ci_banner "$@"
+    prechecks
+    echo
 
-trap "postchecks EXIT $*" EXIT
-trap "postchecks ERR" ERR
+    trap "postchecks EXIT $*" EXIT
+    trap "postchecks ERR" ERR
+
+    export INSIDE_RUN=y
+fi
 
 #############
 
@@ -111,20 +125,38 @@ fi
 
 target="${1}"
 shift
-
-echo
-echo "Test target: '$target'"
-echo
+second_target="${1:-}"
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-target_entrypoint="$THIS_DIR/nightly/${target}.sh"
+# Note: do not 'exec' into the entrypoint, so that 'postchecks' can be
+# executed on exit.
 
-if [[ ! -e "$target_entrypoint" ]]; then
-    echo "FATAL: Unknown entrypoint '${target}'"
+target_entrypoint_file="${THIS_DIR}/${target}.sh"
+if [[ -e "${target_entrypoint_file}" ]]; then
+    "${target_entrypoint_file}" "$@"
 
-    false
+    exit 0
 fi
 
-# do not 'exec' here, so that 'postchecks' can be executed on exit
-${target_entrypoint} "$@"
+target_entrypoint_dir="${THIS_DIR}/${target}"
+target_entrypoint_file="${target_entrypoint_dir}/${second_target}.sh"
+
+if [[ -e "${target_entrypoint_file}" ]]; then
+    shift # eat second_target
+
+    "${target_entrypoint_file}" "$@"
+    exit 0
+fi
+
+# for retro-compatibility, before openshift/release can be updated
+target_entrypoint_file="${THIS_DIR}/nightly/${target}.sh"
+if [[ -e "${target_entrypoint_file}" ]]; then
+    "${target_entrypoint_file}" "$@"
+
+    exit 0
+fi
+
+echo "FATAL: Unknown entrypoint '${target}' | $@"
+
+false
