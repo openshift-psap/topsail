@@ -15,6 +15,17 @@
 
 - name: Validate that the DCGM metrics are correctly exposed
   block:
+  - name: Wait for the nvidia-dcgm-exporter Pod to start running
+    command:
+      oc get pods -l app=nvidia-dcgm-exporter
+         -n {{ gpu_operator_namespace }}
+         -o custom-columns=:.status.phase
+         --no-headers
+    register: dcgm_wait
+    until: dcgm_wait.stdout == "Succeeded" or dcgm_wait.stdout == "Error" or dcgm_wait.stdout == "Failed" or dcgm_wait.stdout == "Running"
+    retries: 15
+    delay: 30
+
   - name: Wait for the nvidia-dcgm-exporter Pod to respond appropriately
     command:
       bash "{{ gpu_operator_fetch_pod_metrics_script }}"
@@ -23,7 +34,7 @@
     register: dcgm_exporter_check
     until:
     - dcgm_exporter_check.rc == 0
-    retries: 10
+    retries: 5
     delay: 20
 
   - name: Wait for Prometheus to pick up the GPU Operator DCGM ServiceMonitor (ServiceDiscovery)
@@ -77,11 +88,24 @@
 - name: Validate that the GPU Operator node-status metrics are correctly exposed
   when: gpu_operator_version >= "1.8.0"
   block:
+  - name: Wait for the node-status-exporter Pod to start running
+    command:
+      oc get pods -l app=nvidia-node-status-exporter
+         -n {{ gpu_operator_namespace }}
+         -o custom-columns=:.status.phase
+         --no-headers
+    register: node_status_wait
+    until: node_status_wait.stdout == "Succeeded" or node_status_wait.stdout == "Error" or node_status_wait.stdout == "Failed" or node_status_wait.stdout == "Running"
+    retries: 2
+    delay: 30
+
   - name: Fetch the GPU Operator node-status-exporter metrics
     shell:
       bash "{{ gpu_operator_fetch_pod_metrics_script }}"
            8000 app=nvidia-node-status-exporter {{ gpu_operator_namespace }}
            '.' > {{ artifact_extra_logs_dir }}/metrics.gpu_operator_node.txt
+    retries: 2
+    delay: 30
 
   - name: Ensure that the node-status-exporter metrics contains our custom metrics
     command: grep gpu_operator_node {{ artifact_extra_logs_dir }}/metrics.gpu_operator_node.txt
