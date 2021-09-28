@@ -8,8 +8,10 @@ metadata:
 data:
   run_operator_bundle_image_builder.sh: |
     #! /bin/bash
-    set -ex
+    set -o pipefail
+    set -o errexit
     set -o nounset
+    set -x
 
     echo "QUAY_BUNDLE_IMAGE_NAME=${QUAY_BUNDLE_IMAGE_NAME}"
     echo "OPERATOR_IMAGE_NAME=${OPERATOR_IMAGE_NAME}"
@@ -34,16 +36,17 @@ data:
     git show --quiet
     GIT_VERSION=$(git rev-parse --short HEAD)
 
+    CSV_VERSION="9.9.9-latest.git.${GIT_VERSION}"
+
     # update operator image
     mv $CSV_FILE ${CSV_FILE}.orig
     cat ${CSV_FILE}.orig | yq \
-      | jq .metadata.annotations.containerImage=\"$OPERATOR_IMAGE_NAME\" \
-      | jq .metadata.name=\"gpu-operator-certified-git-$GIT_VERSION\" \
-      | jq .spec.version=\"9.9.9-git$GIT_VERSION\" \
+      | jq .metadata.annotations.containerImage=\"${OPERATOR_IMAGE_NAME}\" \
+      | jq .metadata.name=\"gpu-operator-certified-${CSV_VERSION}\" \
+      | jq .spec.version=\"${CSV_VERSION}\" \
       | jq .spec.install.spec.deployments[0].spec.template.spec.containers[0].image=\"$OPERATOR_IMAGE_NAME\" \
       > $CSV_FILE
 
-    cat $CSV_FILE | grep containerImage
     rm ${CSV_FILE}.orig
 
     # update validator & node-status-exporter images in the ClusterPolicy
@@ -55,27 +58,27 @@ data:
     cat clusterpolicy.json.orig \
       | jq '.[].spec.validator.image="gpu-operator-ci"' \
       | jq '.[].spec.validator.repository="image-registry.openshift-image-registry.svc:5000/gpu-operator-ci"' \
-      | jq '.[].spec.validator.version="'$VALIDATOR_IMAGE_VERSION'"' \
+      | jq '.[].spec.validator.version="'${VALIDATOR_IMAGE_VERSION}'"' \
       | jq '.[].spec.nodeStatusExporter.image="gpu-operator-ci"' \
       | jq '.[].spec.nodeStatusExporter.repository="image-registry.openshift-image-registry.svc:5000/gpu-operator-ci"' \
-      | jq '.[].spec.nodeStatusExporter.version="'$VALIDATOR_IMAGE_VERSION'"' \
+      | jq '.[].spec.nodeStatusExporter.version="'${VALIDATOR_IMAGE_VERSION}'"' \
       > clusterpolicy.json
     rm  clusterpolicy.json.orig
 
     # update ClusterPolicy in the CSV
 
-    mv $CSV_FILE ${CSV_FILE}.orig
-    yq --yaml-roundtrip --rawfile alm_examples clusterpolicy.json '.metadata.annotations."alm-examples" = $alm_examples' ${CSV_FILE}.orig > ${CSV_FILE}
-    rm ${CSV_FILE}.orig
-    rm  clusterpolicy.json
+    mv "${CSV_FILE}" "${CSV_FILE}.orig"
+    yq --yaml-roundtrip --rawfile alm_examples clusterpolicy.json '.metadata.annotations."alm-examples" = $alm_examples' "${CSV_FILE}.orig" > "${CSV_FILE}"
+    rm "${CSV_FILE}.orig"
+    rm clusterpolicy.json
 
     # build the bundle image
 
-    podman build -f $CONTAINER_FILE $CONTEXT_LOCATION -t $QUAY_BUNDLE_IMAGE_NAME
+    podman build -f "${CONTAINER_FILE}" "${CONTEXT_LOCATION}" -t "${QUAY_BUNDLE_IMAGE_NAME}"
 
     # push the image to quay.io
 
     cat /var/run/secrets/openshift.io/push/.dockerconfigjson > /tmp/.dockercfg
     AUTH="--tls-verify=false --authfile /tmp/.dockercfg"
 
-    podman push $AUTH $QUAY_BUNDLE_IMAGE_NAME
+    podman push $AUTH "$QUAY_BUNDLE_IMAGE_NAME"
