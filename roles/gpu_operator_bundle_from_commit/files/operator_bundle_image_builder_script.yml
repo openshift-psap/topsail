@@ -36,7 +36,8 @@ data:
     git show --quiet
     GIT_VERSION=$(git rev-parse --short HEAD)
 
-    CSV_VERSION="9.9.9-latest.git.${GIT_VERSION}"
+    DATE_VERSION=$(date -d "@$(git log -1 ${GIT_VERSION} --format="%at")" +%y.%-m.%-d) # gives 21.9.29
+    CSV_VERSION="${DATE_VERSION}-git.${GIT_VERSION}"
 
     # update operator image
     mv $CSV_FILE ${CSV_FILE}.orig
