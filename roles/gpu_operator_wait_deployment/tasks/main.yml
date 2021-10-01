@@ -34,7 +34,20 @@
   retries: 10
   delay: 10
 
-- name: Wait for the GPU Operator (>= v1.7.0) to run its internal validation steps
+
+- name: Wait for the GPU Operator to validate the driver deployment
+  when: gpu_operator_version is version("1.7.0", ">=")
+  command:
+    oc rsh
+       -n {{ gpu_operator_namespace }}
+       ds/nvidia-node-status-exporter
+       test -f /run/nvidia/validations/driver-ready
+  register: has_gpu_operator_driver
+  until: has_gpu_operator_driver.rc == 0
+  retries: 15
+  delay: 60
+
+- name: Wait for the GPU Operator to run its internal validation steps
   when: gpu_operator_version is version("1.7.0", ">=")
   block:
   - name: Ensure that nvidia-operator-validator DS is ready
