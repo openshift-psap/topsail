@@ -6,6 +6,8 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 ci_banner() {
     echo "===> Running PSAP CI Test suite <==="
 
@@ -102,6 +104,26 @@ postchecks() {
     fi
 }
 
+list_available() {
+    target_entrypoint_dir=${1:-}
+    shift || true
+    target_entrypoint_file=${1:-}
+
+    fmt() {
+        sed 's/.sh$//g' | sed 's/^/- /'
+    }
+    if [[ -f "$target_entrypoint_file" ]]; then
+        echo "$target_entrypoint_file is an entrypoint."
+
+    elif [[ -d "$target_entrypoint_dir" ]]; then
+        echo "Available '$(basename $target_entrypoint_dir)' entrypoint points:"
+        ls "$target_entrypoint_dir" | fmt
+    else
+        echo "Available base entrypoint points:"
+        ls "$THIS_DIR" | grep -v '^run$' | fmt
+    fi
+}
+
 ##############
 
 if [[ "${INSIDE_RUN:-}" != "y" ]]; then
@@ -118,7 +140,10 @@ fi
 #############
 
 if [[ -z "${1:-}" ]]; then
+    echo
     echo "FATAL: No entrypoint provided ..."
+    echo
+    list_available
 
     false
 fi
@@ -126,8 +151,6 @@ fi
 target="${1}"
 shift
 second_target="${1:-}"
-
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # Note: do not 'exec' into the entrypoint, so that 'postchecks' can be
 # executed on exit.
@@ -156,7 +179,9 @@ if [[ -e "${target_entrypoint_file}" ]]; then
 
     exit 0
 fi
-
+echo
 echo "FATAL: Unknown entrypoint '${target}' | $@"
+echo
+list_available "$target_entrypoint_dir"
 
 false
