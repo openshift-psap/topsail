@@ -150,7 +150,7 @@ if [[ -e "${target_entrypoint_file}" ]]; then
 fi
 
 # for retro-compatibility, before openshift/release can be updated
-target_entrypoint_file="${THIS_DIR}/nightly/${target}.sh"
+target_entrypoint_file="${THIS_DIR}/prow/${target}.sh"
 if [[ -e "${target_entrypoint_file}" ]]; then
     "${target_entrypoint_file}" "$@"
 

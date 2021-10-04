@@ -9,7 +9,7 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 PSAP_SECRET_PATH=/var/run/psap-entitlement-secret
 
-source $THIS_DIR/../nightly/gpu-operator.sh source
+source $THIS_DIR/../prow/gpu-operator.sh source
 
 prepare_cluster_for_gpu_operator
 
