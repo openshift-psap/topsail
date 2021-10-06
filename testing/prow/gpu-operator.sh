@@ -19,7 +19,19 @@ prepare_cluster_for_gpu_operator() {
     ${THIS_DIR}/entitle.sh
 
     if ! ./run_toolbox.py nfd has_labels; then
-        ./run_toolbox.py nfd_operator deploy_from_operatorhub
+        if oc get packagemanifests/nfd -n openshift-marketplace > /dev/null; then
+            ./run_toolbox.py nfd_operator deploy_from_operatorhub
+        else
+            # in 4.9, NFD is currently not available from its default location,
+            touch "${ARTIFACT_DIR}/NFD_DEPLOYED_FROM_MASTER"
+            # install the NFD Operator from sources
+            CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
+            CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
+            CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG="ci-image"
+            ./run_toolbox.py nfd_operator deploy_from_commit "${CI_IMAGE_NFD_COMMIT_CI_REPO}" \
+                             "${CI_IMAGE_NFD_COMMIT_CI_REF}"  \
+                             --image-tag="${CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG}"
+        fi
     fi
 
     if ! ./run_toolbox.py nfd has_gpu_nodes; then
@@ -200,8 +212,25 @@ prepare_cluster_for_gpu_operator_with_alerts() {
 
     mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert* ${ARTIFACT_DIR}/alerts
 
-    ./run_toolbox.py nfd_operator deploy_from_operatorhub
-    ./run_toolbox.py cluster set_scale g4dn.xlarge 1
+    if ! ./run_toolbox.py nfd has_labels; then
+        if oc get packagemanifests/nfd -n openshift-marketplace > /dev/null; then
+            ./run_toolbox.py nfd_operator deploy_from_operatorhub
+        else
+            # in 4.9, NFD is currently not available from its default location,
+            touch "${ARTIFACT_DIR}/NFD_DEPLOYED_FROM_MASTER"
+            # install the NFD Operator from sources
+            CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
+            CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
+            CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG="ci-image"
+            ./run_toolbox.py nfd_operator deploy_from_commit "${CI_IMAGE_NFD_COMMIT_CI_REPO}" \
+                             "${CI_IMAGE_NFD_COMMIT_CI_REF}"  \
+                             --image-tag="${CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG}"
+        fi
+    fi
+    if ! ./run_toolbox.py nfd has_gpu_nodes; then
+        ./run_toolbox.py cluster set_scale g4dn.xlarge 1
+        ./run_toolbox.py nfd wait_gpu_nodes
+    fi
 
     # wait for NFD alert to stop firing
     ./run_toolbox.py cluster wait_for_alert \
