@@ -36,7 +36,7 @@
 
 
 - name: Wait for the GPU Operator to validate the driver deployment
-  when: gpu_operator_version is version("1.7.0", ">=")
+  when: gpu_operator_version is version("1.8.0", ">=")
   command:
     oc rsh
        -n {{ gpu_operator_namespace }}
