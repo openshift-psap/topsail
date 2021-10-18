@@ -72,16 +72,16 @@ jobs``. Secondary configuration options can then be modified in the
 
 The Prow CI jobs run in an OpenShift Pod. The `ContainerFile
 <build/Dockerfile>`_ is used to build their base-image, and the
-``run`` (``build/root/usr/local/bin/run``) file is used as entrypoint.
+``run prow ...`` command is used as entrypoint.
 
 From this entrypoint, we trigger the different high-level tasks of the
 operator end-to-end testing, eg:
 
-* ``run gpu-operator test-master-branch``
-* ``run gpu-operator test-operatorhub``
-* ``run gpu-operator validate-deployment``
-* ``run gpu-operator undeploy-operatorhub``
-* ``run cluster upgrade``
+* ``run prow gpu-operator test_master_branch``
+* ``run prow gpu-operator test_operatorhub``
+* ``run prow gpu-operator validate_deployment_post_upgrade``
+* ``run prow gpu-operator cleanup_cluster``
+* ``run prow cluster upgrade``
 
 These different high-level tasks rely on the toolbox scripts to
 automate the deployment of the required dependencies (eg, the NFD
