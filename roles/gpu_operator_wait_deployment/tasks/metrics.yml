@@ -16,11 +16,13 @@
 - name: Validate that the DCGM metrics are correctly exposed
   block:
   - name: Wait for the nvidia-dcgm-exporter Pod to start running
-    command:
+    shell:
+      set -o pipefail;
       oc get pods -l app=nvidia-dcgm-exporter
          -n {{ gpu_operator_namespace }}
          -o custom-columns=:.status.phase
          --no-headers
+      | head -1
     register: dcgm_wait
     until: dcgm_wait.stdout == "Succeeded" or dcgm_wait.stdout == "Error" or dcgm_wait.stdout == "Failed" or dcgm_wait.stdout == "Running"
     retries: 15
@@ -89,11 +91,13 @@
   when: gpu_operator_version >= "1.8.0"
   block:
   - name: Wait for the node-status-exporter Pod to start running
-    command:
+    shell:
+      set -o pipefail;
       oc get pods -l app=nvidia-node-status-exporter
          -n {{ gpu_operator_namespace }}
          -o custom-columns=:.status.phase
          --no-headers
+      | head -1
     register: node_status_wait
     until: node_status_wait.stdout == "Succeeded" or node_status_wait.stdout == "Error" or node_status_wait.stdout == "Failed" or node_status_wait.stdout == "Running"
     retries: 2
