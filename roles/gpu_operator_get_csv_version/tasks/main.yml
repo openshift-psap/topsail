@@ -1,21 +1,27 @@
 ---
-- name: Ensure that there is a CSV for the GPU Operator
-  command:
-    oc get csv
-       -oname
-       -n {{ gpu_operator_operator_namespace }}
-       -loperators.coreos.com/gpu-operator-certified.{{ gpu_operator_operator_namespace }}
-  register: gpu_operator_csv_name_cmd
-  failed_when: gpu_operator_csv_name_cmd.stdout | length == 0
+- name: Get the operator version
+  block:
+  - name: check if env is available
+    shell: echo "$GPU_OPERATOR_VERSION"
+    register: gpu_operator_csv_version_cmd
+    failed_when: gpu_operator_csv_version_cmd.stdout | length == 0
+  rescue:
+  - name: Ensure that there is a CSV for the GPU Operator
+    command:
+      oc get csv
+         -oname
+         -n {{ gpu_operator_operator_namespace }}
+         -loperators.coreos.com/gpu-operator-certified.{{ gpu_operator_operator_namespace }}
+    register: gpu_operator_csv_name_cmd
+    failed_when: gpu_operator_csv_name_cmd.stdout | length == 0
 
-
-- name: Get the version from the GPU Operator CSV
-  command:
-    oc get {{ gpu_operator_csv_name_cmd.stdout }}
-       -n {{ gpu_operator_operator_namespace }}
-       -ojsonpath={.spec.version}
-  register: gpu_operator_csv_version_cmd
-  failed_when: gpu_operator_csv_version_cmd.stdout | length == 0
+  - name: Get the version from the GPU Operator CSV
+    command:
+      oc get {{ gpu_operator_csv_name_cmd.stdout }}
+         -n {{ gpu_operator_operator_namespace }}
+         -ojsonpath={.spec.version}
+    register: gpu_operator_csv_version_cmd
+    failed_when: gpu_operator_csv_version_cmd.stdout | length == 0
 
 - name: Store the version '{{ gpu_operator_csv_version_cmd.stdout }}' as an ansible variable
   set_fact:
