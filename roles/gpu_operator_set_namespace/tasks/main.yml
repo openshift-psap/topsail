@@ -1,6 +1,11 @@
 ---
 - name: Set the GPU Operator operator namespace
   block:
+  - name: Check if env is set
+    when: lookup('env', 'GPU_OPERATOR_NAMESPACE') | default('', true) | length != 0
+    set_fact:
+      gpu_operator_target_namespace: "{{ lookup('env', 'GPU_OPERATOR_NAMESPACE') }}"
+
   - name: Check if parameter is set
     when: gpu_operator_target_namespace | default('', true) | length == 0
     fail: msg="Use rescue block"
@@ -24,6 +29,7 @@
   - name: Set the GPU Operator operator namespace from its Pod
     set_fact:
       gpu_operator_operator_namespace: "{{  operator_namespace_cmd.stdout_lines[0] }}"
+
 - name: Set the GPU Operator resource and all namespaces
   block:
   - name: Switch to 'rescue' is share namespace
