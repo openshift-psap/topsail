@@ -41,8 +41,6 @@ spec:
     - mountPath: /etc/kubeconfig
       name: kubeconfig-secret
       readOnly: true
-  nodeSelector:
-    tuned.module.fuse: ""
   restartPolicy: Never
   volumes:
   - configMap:

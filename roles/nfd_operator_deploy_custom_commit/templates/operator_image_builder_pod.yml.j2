@@ -32,8 +32,6 @@ spec:
     - mountPath: /var/run/secrets/openshift.io/push
       name: builder-dockercfg-push
       readOnly: true
-  nodeSelector:
-    tuned.module.fuse: ""
   restartPolicy: Never
   volumes:
   - configMap:

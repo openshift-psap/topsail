@@ -1,20 +1,4 @@
 ---
-- name: Find a node with our NTO/TuneD fuse label
-  command: oc get nodes -l "{{ tuned_module_fuse_label }}" -oname
-  register: fuse_nodes
-
-- name: Find a worker node to label for loading the fuse module with NTO/TuneD
-  command: oc get nodes -l node-role.kubernetes.io/worker -oname
-  when: not fuse_nodes.stdout
-  register: worker_nodes
-
-- name: Mark the node with our NTO/TuneD fuse label
-  command: oc label "{{ worker_nodes.stdout_lines[0] }}" "{{ tuned_module_fuse_label }}="
-  when: not fuse_nodes.stdout
-
-- name: Apply NTO/TuneD fuse module profile manifest
-  command: oc apply -f "{{ tuned_module_fuse }}"
-
 - name: Apply the CI utils manifest
   command: oc apply -f "{{ nfd_operator_ci_utils }}"
 
