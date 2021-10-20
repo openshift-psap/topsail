@@ -8,6 +8,7 @@ set -x
 cd /storage
 
 DOWNLOAD_MAX_TIME_MIN=20
+CERT_FILE=${CERT_FILE:-}
 
 cat > checksum.md5sum <<EOF
 77ad2c53ac5d0aea611d422c0938fb35  test2017.zip
@@ -16,12 +17,20 @@ cced6f7f71b7629ddf16f17bbcfab6b2  train2017.zip
 f4bbac642086de4f52a3fdda2de5fa2c  annotations_trainval2017.zip
 EOF
 
-if [[ -z "${DATASET_BASE_URL:-}" ]]; then
-    DATASET_BASE_URL="https://....."
-    echo "Using the upstream base URL: $DATASET_BASE_URL"
-fi
+declare -A DIR_PREFIXES=(
+    ["test2017.zip"]="zips"
+    ["train2017.zip"]="zips"
+    ["val2017.zip"]="zips"
+    ["annotations_trainval2017.zip"]="annotations"
+)
 
-if [[ ! -e "$CERT_FILE" ]]; then
+if [[ -z "$CERT_FILE" ]]; then
+    echo "INFO: no cert file provided, downloading from upstream."
+
+    DATASET_BASE_URL="http://images.cocodataset.org"
+    echo "Using the upstream base URL: $DATASET_BASE_URL"
+
+elif [[ ! -e "$CERT_FILE" ]]; then
     echo "FATAL: cert file not found ($CERT_FILE)"
     exit 1
 fi
@@ -51,15 +60,28 @@ do
         fi
     fi
 
+    url="$DATASET_BASE_URL"
+    if [[ -z "$CERT_FILE" ]]; then
+        url="${url}/${DIR_PREFIXES[$dataset_filename]}"
+        cert=""
+    else
+        cert="--cert $CERT_FILE"
+    fi
+    url="${url}/$dataset_filename"
+
+    echo "Downloading $url ..."
+
+
     if ! time \
          curl \
+         $cert \
          --silent  --fail --show-error \
-         --cert "$CERT_FILE" \
          --retry 999999 \
          --retry-max-time $(($DOWNLOAD_MAX_TIME_MIN * 60)) \
          --continue-at - \
-         "$DATASET_BASE_URL/$dataset_filename" \
-            | tee "$dataset_filename" | md5sum --check stdin.md5sum;
+         "${url}" \
+            | tee "$dataset_filename" \
+            | md5sum --check stdin.md5sum;
     then
         echo "FATAL: failed to download/verify $dataset_filename ..."
         exit 1

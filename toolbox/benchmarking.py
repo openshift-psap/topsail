@@ -16,7 +16,7 @@ class Benchmarking:
             namespace: Name of the namespace in which the resources will be created.
             pvc_name: Name of the PVC that will be create to store the dataset files.
             mirror_base_url: Optional base URL where to fetch the dataset
-            client_cert: Optional tath to the client cert to use for accessing the base URL.
+            client_cert: Optional path to the client cert to use for accessing the base URL.
         """
         opts = {
             "benchmarking_node_hostname": node_hostname,

@@ -7,12 +7,14 @@
   command: oc get nodes -l kubernetes.io/hostname={{ benchmarking_node_hostname }} -oname
 
 - name: Delete the mirror secret, if it exists
+  when: benchmarking_coco_dataset_client_cert | default('', true) | length != 0
   command:
     oc delete secret/mirror-secret
        -n {{ benchmarking_namespace }}
        --ignore-not-found=true
 
 - name: Create the mirror secret
+  when: benchmarking_coco_dataset_client_cert | default('', true) | length != 0
   command:
     oc create secret generic mirror-secret
        -n {{ benchmarking_namespace }}
@@ -76,7 +78,13 @@
     oc logs pod/coco-dataset-downloader
        -n {{ benchmarking_namespace }}
        > {{ artifact_extra_logs_dir }}/pod_downloader.log
+  failed_when: false
 
+- name: Get the description of the download Pod (debug)
+  shell:
+    oc logs pod/coco-dataset-downloader
+       -n {{ benchmarking_namespace }}
+       > {{ artifact_extra_logs_dir }}/pod_downloader.desc
   failed_when: false
 
 - name: Fail if the the downloader Pod failed

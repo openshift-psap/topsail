@@ -16,9 +16,11 @@ spec:
     - name: DATASET_BASE_URL
       value: "{{ benchmarking_coco_dataset_mirror_base_url }}"
 {% endif %}
-{% if benchmarking_coco_dataset_client_cert|length %}
     - name: CERT_FILE
+{% if benchmarking_coco_dataset_client_cert|length %}
       value: /etc/mirror-secret/mirror.pem
+{% else %}
+      value:
 {% endif %}
     volumeMounts:
 {% if benchmarking_coco_dataset_client_cert|length %}
