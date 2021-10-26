@@ -1,6 +1,6 @@
 ---
 #
-# Operator image
+# Validator image
 #
 
 - name: Compute local imagestreamtag name

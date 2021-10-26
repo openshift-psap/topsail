@@ -9,3 +9,17 @@ gpu_operator_bundle_image_tag: "gpu-operator-bundle-{{ gpu_operator_image_tag_ui
 # Before v1.9, the value must be "openshift-operators".
 # With >=v1.9, the namespace can freely chosen (except 'openshift-operators').
 gpu_operator_target_namespace: nvidia-gpu-operator
+
+# Enable building the driver image (not empty to enable)
+gpu_operator_with_driver: ""
+#gpu_operator_driver_git_repo: "https://gitlab.com/nvidia/container-images/driver.git"
+#gpu_operator_driver_git_ref: "master"
+
+gpu_operator_driver_git_repo: "https://gitlab.com/kpouget_psap/nvidia-driver-container"
+gpu_operator_driver_git_ref: "ci"
+
+# Enable building the validator image (not empty to enable)
+gpu_operator_with_validator: ""
+
+# Publish the full bundle (including images) to Quay.io (not empty to enable)
+gpu_operator_publish_to_quay: ""

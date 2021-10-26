@@ -5,7 +5,12 @@
 
 - name: Compute quay.io bundle image name
   set_fact:
-    quay_bundle_image_name: "{{ gpu_operator_commit_quay_image_name }}:operator_bundle_{{ gpu_operator_image_tag }}"
+    quay_bundle_image: "{{ gpu_operator_commit_quay_image_name }}"
+
+- name: Store the driver and validator image tags
+  set_fact:
+    validator_image_version: "validator_{{ gpu_operator_image_tag }}"
+    driver_image_version: "driver_{{ gpu_operator_image_tag }}"
 
 - name: Delete the kubeconfig secret, if it exists
   command: oc delete secret -n gpu-operator-ci kubeconfig-secret --ignore-not-found=true

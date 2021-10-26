@@ -159,6 +159,9 @@ class GPUOperator:
         quay_image_name,
         tag_uid=None,
         namespace=None,
+        with_validator=False,
+        with_driver=False,
+        publish_to_quay=False
     ):
         """
         Build an image of the GPU Operator from sources (<git repository> <git reference>)
@@ -176,9 +179,21 @@ class GPUOperator:
             quay_image_image: The quay repo to push to
             tag_uid: Optional image tag suffix to use.
             namespace: Optional namespace to use to deploy the GPU Operator. Default: nvidia-gpu-operator
+            with_validator: Optional flag to enable building the validator image (default: false)
+            with_driver: Optional flag to enable building the driver image (default: false)
+            publish_to_quay: Optional flag to publish the full bundle (including images) to Quay.io (default: false)
         """
         if tag_uid is None:
             tag_uid = secrets.token_hex(4)
+
+        def to_y(_s):
+            if not _s: return ""
+            if isinstance(_s, bool): return "y" # can't be false here
+            s = str(_s).lower()
+            if s == "false": return ""
+            if s == "n": return ""
+            if s == "no": return ""
+            return "y"
 
         opts = {
             "gpu_operator_git_repo": git_repo,
@@ -186,6 +201,9 @@ class GPUOperator:
             "gpu_operator_image_tag_uid": tag_uid,
             "gpu_operator_commit_quay_push_secret": quay_push_secret,
             "gpu_operator_commit_quay_image_name": quay_image_name,
+            "gpu_operator_with_driver": to_y(with_driver),
+            "gpu_operator_with_validator": to_y(with_validator),
+            "gpu_operator_publish_to_quay":  to_y(publish_to_quay),
         }
 
         if namespace is not None:

@@ -1,0 +1,99 @@
+---
+#
+# Driver image
+#
+
+- name: Check that gpu_operator_git_repo is defined
+  fail: msg="Bailing out. This play requires 'gpu_operator_driver_git_repo'"
+  when: gpu_operator_driver_git_repo is undefined
+
+- name: Check that gpu_operator_git_ref is defined
+  fail: msg="Bailing out. This play requires 'gpu_operator_driver_git_ref'"
+  when: gpu_operator_driver_git_ref is undefined
+
+- name: Check that gpu_operator_publish_to_quay is not enabled
+  fail: msg="Bailing out. Cannot publish the driver image to quay"
+  when: gpu_operator_publish_to_quay | default('', true) | length != 0
+
+- name: Get the version of the driver
+  shell:
+    set -o pipefail;
+    curl --silent  --fail --show-error \
+         "$(echo "{{ gpu_operator_git_repo }}" | sed 's/.git$//')/-/raw/{{ gpu_operator_git_ref }}/deployments/gpu-operator/values.yaml" \
+    | yq -r .driver.version
+  register: driver_version_cmd
+
+- name: Get the branch of the driver
+  shell:
+    set -o pipefail;
+    echo "{{ driver_version_cmd.stdout }}" | cut -d. -f1
+  register: driver_branch_cmd
+
+- name: Store the driver version and branch
+  set_fact:
+    driver_version: "{{ driver_version_cmd.stdout }}"
+    driver_branch: "{{ driver_branch_cmd.stdout }}"
+
+- name: Store the local imagestreamtag name
+  set_fact:
+    driver_image_version: "driver_{{ gpu_operator_image_tag }}"
+    driver_imagestreamtag: "gpu-operator-ci:driver_{{ gpu_operator_image_tag }}"
+
+- name: Store the local image name
+  set_fact:
+    driver_image_name: "image-registry.openshift-image-registry.svc:5000/gpu-operator-ci/{{ driver_imagestreamtag }}"
+
+- name: Check if the driver image already exists
+  command: oc get "imagestreamtag/{{ driver_imagestreamtag }}" -n gpu-operator-ci
+  failed_when: false
+  register: has_driver_image
+
+- name: Build the driver image
+  when: has_driver_image.rc != 0
+  block:
+  - name: The driver image does not exist, build it
+    debug: msg="The driver image does not exist, build it"
+
+  - name: Instantiate the template of the driver image buildconfig
+    template:
+      src: "{{ gpu_operator_driver_image_buildconfig }}"
+      dest: "{{ artifact_extra_logs_dir }}/driver-image-buildconfig.yml"
+      mode: 0400
+
+  - name: Delete the driver image build config
+    command: oc delete -f "{{ artifact_extra_logs_dir }}/driver-image-buildconfig.yml"
+    failed_when: false
+
+  - name: Apply the driver image build config
+    command: oc apply -f "{{ artifact_extra_logs_dir }}/driver-image-buildconfig.yml"
+
+  - name: Get the name of the Build
+    command:
+      oc get builds
+         -lbuildconfig=gpu-operator-driver
+         -oname
+         -n gpu-operator-ci
+    register: build_name_cmd
+    failed_when: build_name_cmd.stdout | length == 0
+
+  - block:
+    - name: Wait for the driver image to be built
+      command:
+        oc get {{ build_name_cmd.stdout }}
+           -ojsonpath={.status.phase}
+           -n gpu-operator-ci
+      register: wait_driver_build
+      until: "'Complete' in wait_driver_build.stdout or 'Failed' in wait_driver_build.stdout"
+      retries: 40
+      delay: 30
+
+    - name: Fail if the operator image failed to be built
+      when: "'Failed' in wait_driver_build.stdout"
+      fail: msg="The driver image failed to build"
+
+    always:
+    - name: Store the logs of driver image build (debug)
+      shell:
+        oc logs {{ build_name_cmd.stdout }} -n gpu-operator-ci
+           > {{ artifact_extra_logs_dir }}/driver-image-build.log
+      failed_when: false

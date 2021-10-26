@@ -24,19 +24,28 @@ spec:
         value: "{{ gpu_operator_git_ref }}"
       - name: OPERATOR_IMAGE_NAME
         value: "{{ operator_image_name }}"
-      - name: VALIDATOR_IMAGE_VERSION
-        value: "{{ validator_image_version }}"
+      - name: OPERATOR_IMAGES_TAG_SUFFIX
+        value: "{{ gpu_operator_image_tag }}"
       - name: IMAGESTREAM_SECRET_NAME
         value: "{{ builder_secret }}"
       - name: QUAY_BUNDLE_IMAGE_NAME
-        value: "{{ quay_bundle_image_name }}"
+        value: "{{ quay_bundle_image }}"
+      - name: WITH_VALIDATOR
+        value: "{{ gpu_operator_with_validator }}"
+      - name: WITH_DRIVER
+        value: "{{ gpu_operator_with_driver }}"
+      - name: PUBLISH_TO_QUAY
+        value: "{{ gpu_operator_publish_to_quay }}"
     volumeMounts:
     - mountPath: /mnt/helper/run_operator_bundle_image_builder.sh
       name: operator-bundle-image-builder-script
       readOnly: true
       subPath: run_operator_bundle_image_builder.sh
+    - mountPath: /var/run/secrets/quay.io/push
+      name: quay-dockercfg
+      readOnly: true
     - mountPath: /var/run/secrets/openshift.io/push
-      name: builder-dockercfg-push
+      name: builder-dockercfg
       readOnly: true
     - mountPath: /etc/kubeconfig
       name: kubeconfig-secret
@@ -47,10 +56,14 @@ spec:
       defaultMode: 511
       name: operator-bundle-image-builder-script
     name: operator-bundle-image-builder-script
-  - name: builder-dockercfg-push
+  - name: quay-dockercfg
     secret:
       defaultMode: 384
-      secretName: "{{ quay_push_secret_name }}" #"{{ builder_secret }}"
+      secretName: "{{ quay_push_secret_name }}"
   - name: kubeconfig-secret
     secret:
       secretName: kubeconfig-secret
+  - name: builder-dockercfg
+    secret:
+      defaultMode: 384
+      secretName: "{{ builder_secret }}"

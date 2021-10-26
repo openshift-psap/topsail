@@ -22,12 +22,14 @@
 
 - name: Build the validator image from custom commit
   include_tasks: build_validator.yml
+  when: gpu_operator_with_validator | default('', true) | length != 0
+
+- name: Build the driver image from custom commit
+  include_tasks: build_driver.yml
+  when: gpu_operator_with_driver | default('', true) | length != 0
 
 - name: Build the bundle image from custom commit
   include_tasks: build_bundle.yml
 
-- name: Share the operator image address
-  debug: msg="Operator image address is {{ operator_image_name }}"
-
 - name: Share the bundle operator image address
-  debug: msg="Bundle image address is {{ quay_bundle_image_name }}"
+  debug: msg="Bundle image address is {{ gpu_operator_commit_quay_image_name }}:operator_bundle_gpu-operator-{{ gpu_operator_image_tag_uid }}"
