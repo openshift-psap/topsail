@@ -8,27 +8,6 @@ class GPUOperator:
     """
     Commands for deploying, building and testing the GPU operator in various ways
     """
-    @staticmethod
-    def deploy_from_commit(git_repository, git_reference, tag_uid=None):
-        """
-        Deploys the GPU operator from the given git commit
-
-        Args:
-            git_repository: The git repository to deploy from, e.g. https://github.com/NVIDIA/gpu-operator.git
-            git_reference: The git ref to deploy from, e.g. master
-            tag_uid: The GPU operator image tag UID. See 'oc get imagestreamtags -n gpu-operator-ci -oname' for the tag-uid to reuse
-        """
-
-        if tag_uid is None:
-            tag_uid = secrets.token_hex(4)
-
-        opts = {
-            "gpu_operator_git_repo": git_repository,
-            "gpu_operator_git_ref": git_reference,
-            "gpu_operator_image_tag_uid": tag_uid,
-        }
-
-        return PlaybookRun("gpu_operator_deploy_custom_commit", opts)
 
     @staticmethod
     def deploy_cluster_policy():
