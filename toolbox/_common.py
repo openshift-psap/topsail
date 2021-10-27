@@ -101,6 +101,7 @@ def run_ansible_playbook(playbook_name, opts: dict = dict()):
 
     with open(artifact_extra_logs_dir / "_ansible.cmd", "w") as f:
         print(" ".join(cmd), file=f)
+    print("<+>", cmd)
 
     with open(artifact_extra_logs_dir / "_ansible.env", "w") as f:
         for k, v in os.environ.items():
