@@ -176,7 +176,9 @@ deploy_commit() {
                                              "${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET}" \
                                              "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}" \
                                              --tag_uid "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}" \
-                                             --namespace "${OPERATOR_NAMESPACE}"
+                                             --namespace "${OPERATOR_NAMESPACE}" \
+                                             --with_driver=true \
+                                             --with_validator=true
 
     ./run_toolbox.py gpu_operator deploy_from_bundle --bundle "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-ci-image" \
                                                      --namespace "${OPERATOR_NAMESPACE}"
