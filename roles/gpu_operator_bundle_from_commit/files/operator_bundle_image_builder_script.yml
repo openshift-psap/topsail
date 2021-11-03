@@ -100,7 +100,7 @@ data:
     fi
 
     if [ "${WITH_DRIVER:-}" ]; then
-      # update vdriver image in the ClusterPolicy
+      # update driver image in the ClusterPolicy
       img="${OPERATOR_IMAGE_REPOSITORY}/${OPERATOR_IMAGE_NAME}:driver_${OPERATOR_IMAGES_TAG_SUFFIX}"
       podman pull --quiet $LOCAL_AUTH "$img"
       DRIVER_IMAGE_VERSION="$(podman inspect "$img" | jq -r .[].Digest)"
@@ -111,6 +111,17 @@ data:
         | jq '.[].spec.driver.image="'${OPERATOR_IMAGE_NAME}'"' \
         | jq '.[].spec.driver.repository="'${OPERATOR_IMAGE_REPOSITORY}'"' \
         | jq '.[].spec.driver.version="'${DRIVER_IMAGE_VERSION}'"' \
+        > clusterpolicy.json
+      rm  clusterpolicy.json.orig
+    else
+      # update driver image in the ClusterPolicy with TMP v1.9.0
+
+      mv clusterpolicy.json{,.orig}
+
+      cat clusterpolicy.json.orig \
+        | jq '.[].spec.driver.image="driver"' \
+        | jq '.[].spec.driver.repository="quay.io/shivamerla"' \
+        | jq '.[].spec.driver.version="470.57.02"' \
         > clusterpolicy.json
       rm  clusterpolicy.json.orig
     fi
