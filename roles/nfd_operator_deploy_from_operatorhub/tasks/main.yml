@@ -19,7 +19,7 @@
   - name: Mark the failure as flake
     shell:
       echo "Failed because of the NFD Operator packagemanifest not available"
-           > "{{ artifact_dir }}/FLAKE"
+           >> "{{ artifact_extra_logs_dir }}/FLAKE"
 
   - name: Failing because of previous error
     fail: msg="Failing because of the NFD Operator packagemanifest not available"
