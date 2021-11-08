@@ -89,10 +89,13 @@ postchecks() {
     shift
 
     if [[ "$reason" == ERR ]]; then
-        touch $ARTIFACT_DIR/FAILURE
+        last_toolbox_dir=$(ls ${ARTIFACT_DIR}/*__* -d | tail -1)
+
+        echo "Last step:  ${last_toolbox_dir/$ARTIFACT_DIR\//}" > $ARTIFACT_DIR/FAILURE
 
         if ! oc version >/dev/null 2>&1; then
-            echo "Cluster unreachable" > $ARTIFACT_DIR/UNREACHABLE
+            mkdir -p $ARTIFACT_DIR/FLAKE
+            echo "Cluster unreachable" >> $ARTIFACT_DIR/FLAKE
         fi
     elif [[ "$reason" == EXIT ]]; then
         echo ""
