@@ -37,10 +37,21 @@ interpreted to enhance the dashboard display:
 - ``$ARTIFACT_DIR/FAILURE``: the presence this file after the CI
   execution indicates that the testing failed.
 
-- ``$ARTIFACT_DIR/FLAKE``: the presence of this file after a toolbox
-  command fail indicates that a known flake occurred. The file
-  contains a brief description of the problem that happened.
+- ``$ARTIFACT_DIR/<toolbox step>/FLAKE``: the presence of this file
+  after a toolbox command fail indicates that a known flake
+  occurred. The file contains a brief description of the problem(s)
+  that happened, each on a dedicated line.
 
-- ``$ARTIFACT_DIR/UNREACHABLE``: the presence this file after the CI
-  execution indicates that the testing failed and the cluster was
-  unreachable during our tear-down execution.
+- ``$ARTIFACT_DIR/<toolbox step>/EXPECTED_FAIL``: the presence of this
+  file after a test run indicates that this toolbox box step failure
+  was expected (i.e., not a failure, only a condition test). The file
+  contains a brief description of what was being tested.
+
+
+- ``$ARTIFACT_DIR/FLAKE``: the presence of this file after a test run
+  indicates that a known flake occurred. The file contains a brief
+  description of the problem that happened.
+
+- ``$ARTIFACT_DIR/_WARNINGS``: the presence of this directory after a
+  test run indicates that some warnings were raised. The files contain
+  a brief description of the problem that happened.
