@@ -16,7 +16,7 @@
       oc version -o json
       | jq --raw-output '.openshiftVersion'
     register: ocp_version
-    failed_when: ocp_version.stdout == 'nul' or ocp_version.stdout == ""
+    failed_when: ocp_version.stdout == 'null' or ocp_version.stdout == ""
   rescue:
   - name: Fail because of a dependency issue
     fail:
