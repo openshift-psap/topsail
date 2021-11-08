@@ -7,6 +7,66 @@ set -o nounset
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd ${THIS_DIR}/../..
 
+_warning() {
+    fname="$1"
+    msg="$2"
+
+    DEST_DIR="${ARTIFACT_DIR}/_WARNING/"
+    mkdir -p "$DEST_DIR"
+    echo "$msg" > "${DEST_DIR}/$fname"
+
+    echo "WARNING: $msg"
+}
+
+_expected_fail() {
+    # mark the last toolbox step as an expected fail (for clearer
+    # parsing/display in ci-dashboard)
+    # eg: if cluster doesn't have NFD labels (expected fail), deploy NFD
+    # eg: if cluster doesn't have GPU nodes (expected fail), scale up with GPU nodes
+
+    last_toolbox_dir=$(ls ${ARTIFACT_DIR}/*__* -d | tail -1)
+    echo "$1" > ${last_toolbox_dir}/EXPECTED_FAIL
+}
+
+DTK_NOT_VALID_WARNING_FLAG=dtk_image_not_valid
+dtk_image_is_valid() {
+    if [[ -f ${ARTIFACT_DIR}/_WARNING/$DTK_NOT_VALID_WARNING_FLAG ]]; then
+        echo "Found 'dtk_image_not_valid' warning flag"
+        return 1
+    fi
+
+    MINI_POD_SPEC='{"apiVersion": "v1", "kind":"Pod","metadata":{"name":"test"},"spec":{"containers":[{"name":"cnt"}]}}'
+    DTK_IMAGE="image-registry.openshift-image-registry.svc:5000/openshift/driver-toolkit:latest"
+
+    dtk_release=$(oc debug --quiet -f <(echo "$MINI_POD_SPEC") --image=${DTK_IMAGE} \
+                     -- \
+                     cat /etc/driver-toolkit-release.json)
+    dtk_kernel=$(echo "$dtk_release" | jq -r .KERNEL_VERSION)
+
+    node_kernel=$(oc get nodes -ojsonpath={.items[].status.nodeInfo.kernelVersion})
+
+    echo "Driver toolkit 'latest' image kernel: ${dtk_kernel}"
+    echo "Nodes kernel: ${node_kernel}"
+
+    [[ "${dtk_kernel}" == "${node_kernel}" ]]
+}
+
+dtk_or_entitle() {
+    if dtk_image_is_valid; then
+        echo "DTK image is valid"
+    else
+        # During OpenShift nightly testing, the DTK image may be
+        # invalid, when the release-controller updated the RHCOS
+        # version but didn't trigger a Driver Toolkit rebuild. This is
+        # expected, and should not impact publicly released OpenShift
+        # versions.
+
+        _warning $DTK_NOT_VALID_WARNING_FLAG "Driver Toolkit image is not valid, using entitled-build fallback"
+        ${THIS_DIR}/entitle.sh
+    fi
+
+}
+
 prepare_cluster_for_gpu_operator() {
     ./run_toolbox.py cluster capture_environment
 
@@ -19,11 +79,14 @@ prepare_cluster_for_gpu_operator() {
     ${THIS_DIR}/entitle.sh
 
     if ! ./run_toolbox.py nfd has_labels; then
+        _expected_fail "Checking if the cluster had NFD labels"
+
         if oc get packagemanifests/nfd -n openshift-marketplace > /dev/null; then
             ./run_toolbox.py nfd_operator deploy_from_operatorhub
         else
             # in 4.9, NFD is currently not available from its default location,
-            touch "${ARTIFACT_DIR}/NFD_DEPLOYED_FROM_MASTER"
+            _warning "NFD_deployed_from_master" "NFD was deployed from master (not available in OperatorHub)"
+
             # install the NFD Operator from sources
             CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
             CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
@@ -35,6 +98,8 @@ prepare_cluster_for_gpu_operator() {
     fi
 
     if ! ./run_toolbox.py nfd has_gpu_nodes; then
+        _expected_fail "Checking if the cluster had GPU nodes"
+
         ./run_toolbox.py cluster set_scale g4dn.xlarge 1
         ./run_toolbox.py nfd wait_gpu_nodes
     fi
@@ -74,6 +139,10 @@ collect_must_gather() {
 }
 
 validate_gpu_operator_deployment() {
+    if ! dtk_image_is_valid; then
+        oc patch clusterpolicy/gpu-cluster-policy --type='json' -p='[{"op": "replace", "path": "/spec/driver/use_ocp_driver_toolkit", "value": false}]' # noop if ClusterPolicy field doesn't exist
+    fi
+
     ./run_toolbox.py gpu_operator wait_deployment
     ./run_toolbox.py gpu_operator run_gpu_burn
 }
@@ -203,6 +272,8 @@ prepare_cluster_for_gpu_operator_with_alerts() {
 
     # wait for NFD alert to fire
     if ! ./run_toolbox.py nfd has_labels; then
+        _expected_fail "Checking if the cluster had NFD labels"
+
         ./run_toolbox.py cluster wait_for_alert \
                          CIGPUOperatorReconciliationFailedNfdLabelsMissing \
                          --alert-active=true
@@ -215,11 +286,13 @@ prepare_cluster_for_gpu_operator_with_alerts() {
     mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert* ${ARTIFACT_DIR}/alerts
 
     if ! ./run_toolbox.py nfd has_labels; then
+        _expected_fail "Checking if the cluster had NFD labels"
+
         if oc get packagemanifests/nfd -n openshift-marketplace > /dev/null; then
             ./run_toolbox.py nfd_operator deploy_from_operatorhub
         else
             # in 4.9, NFD is currently not available from its default location,
-            touch "${ARTIFACT_DIR}/NFD_DEPLOYED_FROM_MASTER"
+            _warning "NFD_deployed_from_master" "NFD was deployed from master (not available in OperatorHub)"
             # install the NFD Operator from sources
             CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
             CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
@@ -230,6 +303,8 @@ prepare_cluster_for_gpu_operator_with_alerts() {
         fi
     fi
     if ! ./run_toolbox.py nfd has_gpu_nodes; then
+        _expected_fail "Checking if the cluster had GPU nodes"
+
         ./run_toolbox.py cluster set_scale g4dn.xlarge 1
         ./run_toolbox.py nfd wait_gpu_nodes
     fi
@@ -239,6 +314,8 @@ prepare_cluster_for_gpu_operator_with_alerts() {
                      CIGPUOperatorReconciliationFailedNfdLabelsMissing \
                      --alert-active=false
     if ! ./run_toolbox.py entitlement test_cluster --no_inspect; then
+        _expected_fail "Checking if the cluster was entitled"
+
         # wait for driver alert to fire
         ./run_toolbox.py cluster wait_for_alert \
                          CIGPUOperatorNodeDeploymentDriverFailed \
@@ -251,8 +328,7 @@ prepare_cluster_for_gpu_operator_with_alerts() {
 
     mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert ${ARTIFACT_DIR}/alerts
 
-    # entitle the cluster
-    ${THIS_DIR}/entitle.sh
+    dtk_or_entitle
 
     # wait for driver alert to stop fireing
     ./run_toolbox.py cluster wait_for_alert \
@@ -281,7 +357,7 @@ validate_deployment_post_upgrade() {
     finalizers+=("collect_must_gather")
     finalizers+=("./run_toolbox.py entitlement undeploy &> /dev/null")
 
-    ${THIS_DIR}/entitle.sh
+    dtk_or_entitle
 
     validate_gpu_operator_deployment
 }
