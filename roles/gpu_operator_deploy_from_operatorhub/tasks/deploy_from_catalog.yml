@@ -39,7 +39,7 @@
   - name: Mark the failure as flake
     shell:
       echo "Failed because of the GPU Operator packagemanifest not available"
-           > "{{ artifact_dir }}/FLAKE"
+           >> "{{ artifact_extra_logs_dir }}/FLAKE"
 
   - name: Failed because the GPU Operator could not be install from the Catalog Operator
     fail: msg="Failed because the GPU Operator could not be install from the Catalog Operator"
