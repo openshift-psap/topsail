@@ -38,7 +38,10 @@ dtk_image_is_valid() {
     MINI_POD_SPEC='{"apiVersion": "v1", "kind":"Pod","metadata":{"name":"test"},"spec":{"containers":[{"name":"cnt"}]}}'
     DTK_IMAGE="image-registry.openshift-image-registry.svc:5000/openshift/driver-toolkit:latest"
 
-    dtk_release=$(oc debug --quiet -f <(echo "$MINI_POD_SPEC") --image=${DTK_IMAGE} \
+    dtk_release=$(oc debug -f <(echo "$MINI_POD_SPEC") \
+                     --quiet \
+                     -n default \
+                     --image=${DTK_IMAGE} \
                      -- \
                      cat /etc/driver-toolkit-release.json)
     dtk_kernel=$(echo "$dtk_release" | jq -r .KERNEL_VERSION)
