@@ -388,8 +388,6 @@ trap run_finalizers EXIT
 action="$1"
 shift
 
-set -x
-
 case ${action} in
     "test_master_branch")
         test_master_branch "$@"
@@ -412,7 +410,6 @@ case ${action} in
         exit 0
         ;;
     "source")
-        set +x
         echo "INFO: GPU Operator CI entrypoint has been sourced"
         # file is being sourced by another script
         ;;
