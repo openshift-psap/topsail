@@ -67,6 +67,9 @@ exec ${HOME}/testing/run "$@" \n\
 # Prepare the image for must-gather support
 RUN mkdir /must-gather && chmod 777 /must-gather
 
+# Prepare osde2e results folder
+RUN mkdir /test-run-results && chmod 777 /test-run-results
+
 # Prepare the GPU-operator's gather script
 RUN ln -s ${HOME}/toolbox/gpu-operator/must-gather.sh /usr/bin/gpu-operator_gather
 
@@ -74,3 +77,6 @@ RUN ln -s ${HOME}/toolbox/gpu-operator/must-gather.sh /usr/bin/gpu-operator_gath
 RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R
 
 WORKDIR ${HOME}
+
+ENTRYPOINT ["bash"]
+CMD ["run"]

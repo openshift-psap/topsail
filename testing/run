@@ -32,18 +32,20 @@ prechecks() {
     else
         echo "Using ARTIFACT_DIR=$ARTIFACT_DIR."
     fi
-
-    if [[ -z "${KUBECONFIG}" ]]
-    then
-        echo "KUBECONFIG not set, cannot continue."
-        false
+    
+    if ! oc version; then
+        if [[ -z "${KUBECONFIG}" ]]
+        then
+            echo "KUBECONFIG not set, cannot continue."
+            false
+        fi
+        if [[ ! -e "${KUBECONFIG}" ]]
+        then
+            echo "KUBECONFIG file doesn't exist, can't continue. (KUBECONFIG=${KUBECONFIG})"
+            false
+        fi
+        echo "Using KUBECONFIG=${KUBECONFIG}"
     fi
-    if [[ ! -e "${KUBECONFIG}" ]]
-    then
-        echo "KUBECONFIG file doesn't exist, can't continue. (KUBECONFIG=${KUBECONFIG})"
-        false
-    fi
-    echo "Using KUBECONFIG=${KUBECONFIG}"
 
     if ! which oc &>/dev/null;
     then
@@ -126,6 +128,19 @@ list_available() {
         ls "$THIS_DIR" | grep -v '^run$' | fmt
     fi
 }
+
+##############
+
+if [[ $HOSTNAME == "addon-tests"* ]]; then
+    # Running inside OSDE2E CI
+    # Even though this repo is not mainly used for osde2e, it was decided to 
+    # have artifacts dir used by osde2e as the default, because passing 
+    # arguments is limited in osde2e
+    echo "INFO: Running in OSDE2E addon test CI. Preparing for OSDE2E ..."
+    set -- "osde2e" "gpu-addon"
+    export ARTIFACT_DIR="/test-run-results"
+    export JUNIT_OUTPUT_DIR=$ARTIFACT_DIR
+fi
 
 ##############
 
