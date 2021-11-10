@@ -29,10 +29,10 @@
     delay: 30
 
   - name: Wait for the nvidia-dcgm-exporter Pod to respond appropriately
-    command:
+    shell:
       bash "{{ gpu_operator_fetch_pod_metrics_script }}"
            9400 app=nvidia-dcgm-exporter {{ gpu_operator_namespace }}
-           'DCGM'
+           '.' > {{ artifact_extra_logs_dir }}/metrics.gpu_operator_node.txt
     register: dcgm_exporter_check
     until:
     - dcgm_exporter_check.rc == 0
