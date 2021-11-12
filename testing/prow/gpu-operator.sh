@@ -227,7 +227,7 @@ deploy_commit() {
     shift
     gpu_operator_git_ref="${1:-}"
 
-    CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="ci-image"
+    CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID:-ci-image}"
     OPERATOR_NAMESPACE="nvidia-gpu-operator"
 
     if [[ -z "$gpu_operator_git_repo" || -z "$gpu_operator_git_ref" ]]; then
