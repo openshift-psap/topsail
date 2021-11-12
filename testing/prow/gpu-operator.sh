@@ -193,6 +193,17 @@ EOF
     done
 }
 
+publish_master_bundle() {
+    trap collect_must_gather EXIT
+
+    export CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="master"
+    deploy_commit "https://gitlab.com/nvidia/kubernetes/gpu-operator.git" "master"
+
+    prepare_cluster_for_gpu_operator
+
+    validate_gpu_operator_deployment
+}
+
 test_master_branch() {
     trap collect_must_gather EXIT
 
@@ -249,7 +260,7 @@ deploy_commit() {
                                              --with_validator=true \
                                              --publish_to_quay=true
 
-    ./run_toolbox.py gpu_operator deploy_from_bundle --bundle "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-ci-image" \
+    ./run_toolbox.py gpu_operator deploy_from_bundle --bundle "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}" \
                                                      --namespace "${OPERATOR_NAMESPACE}"
 }
 
@@ -400,6 +411,10 @@ case ${action} in
         ;;
     "validate_deployment_post_upgrade")
         validate_gpu_operator_deployment
+        exit 0
+        ;;
+    "publish_master_bundle")
+        publish_master_bundle
         exit 0
         ;;
     "cleanup_cluster")
