@@ -196,8 +196,6 @@ EOF
 test_master_branch() {
     trap collect_must_gather EXIT
 
-    oc label ns/openshift-operators openshift.io/cluster-monitoring=true --overwrite
-
     # currently broken, until we can generate in quay.io (or
     # elsewhere) a bundle image pointing to the the current master
     # operator image
