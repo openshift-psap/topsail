@@ -9,11 +9,11 @@
   - name: Get the gpu-operator subscription package name
     block:
     - name: Count gpu operator subscription candidates
-      shell: oc get subscription --all-namespaces -ojson | jq '[.items[] | select(.metadata.name | test("gpu-operator"))] | length'
+      shell: oc get subscription --all-namespaces -ojson | jq '[.items[] | select(.spec.name | test("gpu-operator"))] | length'
       register: gpu_subscriptions
       failed_when: gpu_subscriptions.stdout != '1'
     - name: Read the package name from the first gpu-operator subscription
-      shell: oc get subscription -A -ojson | jq '[.items[] | select(.metadata.name | test("gpu-operator"))][0].spec.name'
+      shell: oc get subscription -A -ojson | jq '[.items[] | select(.spec.name | test("gpu-operator"))][0].spec.name'
       register: gpu_operator_subscription_package_name
   - name: Ensure that there is a CSV for the GPU Operator
     command:
