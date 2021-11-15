@@ -63,7 +63,13 @@
   - nvidia-node-status-exporter
 
 - name: Apply the operator bundle image builder script manifest
-  command: oc apply -f "{{ gpu_operator_bundle_image_builder_script }}"
+  shell:
+    set -o pipefail;
+    oc create cm operator-bundle-image-builder-script
+       -n gpu-operator-ci
+       "--from-file=run_operator_bundle_image_builder.sh={{ gpu_operator_bundle_image_builder_script }}"
+       --dry-run -oyaml
+       | oc apply -f-
 
 - name: Instantiate the template of the bundle image builder Pod
   template:

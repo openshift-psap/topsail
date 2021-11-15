@@ -7,7 +7,7 @@ gpu_operator_ci_imagestream: roles/gpu_operator_bundle_from_commit/files/operato
 gpu_operator_image_builder_script: roles/gpu_operator_bundle_from_commit/files/operator_image_builder_script.yml
 gpu_operator_helper_image_builder: roles/gpu_operator_bundle_from_commit/files/operator_helper_image_builder.yml
 #---
-gpu_operator_bundle_image_builder_script: roles/gpu_operator_bundle_from_commit/files/operator_bundle_image_builder_script.yml
+gpu_operator_bundle_image_builder_script: roles/gpu_operator_bundle_from_commit/files/operator_bundle_image_builder_script.sh
 # ---
 # Templates
 gpu_operator_image_builder_pod: roles/gpu_operator_bundle_from_commit/templates/operator_image_builder_pod.yml.j2
