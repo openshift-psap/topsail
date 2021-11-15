@@ -50,3 +50,6 @@
 
 - name: Store openshift major and minor version
   debug: msg="openshift_release_major='{{ openshift_release_major }}', openshift_release_minor='{{ openshift_release_minor }}'"
+
+- name: Get the address of the console (debug)
+  command: oc whoami --show-console
