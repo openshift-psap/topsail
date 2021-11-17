@@ -139,7 +139,6 @@ if [[ $HOSTNAME == "addon-tests"* ]]; then
     echo "INFO: Running in OSDE2E addon test CI. Preparing for OSDE2E ..."
     set -- "osde2e" "gpu-addon"
     export ARTIFACT_DIR="/test-run-results"
-    export JUNIT_OUTPUT_DIR=$ARTIFACT_DIR
 fi
 
 ##############

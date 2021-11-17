@@ -16,7 +16,6 @@ function exit_and_abort() {
 echo "====== Starting OSDE2E tests..."
 
 echo "Using ARTIFACT_DIR=$ARTIFACT_DIR."
-echo "Using JUNIT_OUTPUT_DIR=$JUNIT_OUTPUT_DIR."
 
 echo "====== waiting for gpu-operator..."
 
