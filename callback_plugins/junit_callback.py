@@ -6,8 +6,8 @@
 
 # Forked since the original callback plugin considers all
 # errored tasks as failure, even if there is a rescue task to fallback to.
-# This fork aims to solve that issue in this project since we do use a lot 
-# of rescue blocks. 
+# This fork aims to solve that issue in this project since we do use a lot
+# of rescue blocks.
 # otherwise the junit report will cause the osde2e addon CI to fail even though it did not.
 
 from __future__ import (absolute_import, division, print_function)

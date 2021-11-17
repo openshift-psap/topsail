@@ -25,5 +25,3 @@ echo "====== Operator found."
 echo "====== Running burn test for $((BURN_RUNTIME_SEC/60)) minutes ..."
 ./run_toolbox.py gpu_operator run_gpu_burn --runtime=${BURN_RUNTIME_SEC} || exit_and_abort
 echo "====== Done."
-
-
