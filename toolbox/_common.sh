@@ -70,13 +70,6 @@ fi
 
 echo "Using '${ANSIBLE_JSON_TO_LOGFILE}' as ansible json log file."
 
-# Ansible JUNIT plugin
-
-if [ -z "${JUNIT_OUTPUT_DIR:-}" ]; then
-    export JUNIT_OUTPUT_DIR="${ARTIFACT_EXTRA_LOGS_DIR}"
-fi
-echo "Using '${JUNIT_OUTPUT_DIR}' as ansible junit destination directory."
-
 ###
 
 echo ""

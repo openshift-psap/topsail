@@ -3,4 +3,3 @@ yq
 pyyaml
 fire
 ansible==2.9.*
-junit_xml

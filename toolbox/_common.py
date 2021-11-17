@@ -90,10 +90,6 @@ def run_ansible_playbook(playbook_name, opts: dict = dict()):
         os.environ["ANSIBLE_JSON_TO_LOGFILE"] = str(artifact_extra_logs_dir / "_ansible.log.json")
     print(f"Using '{os.environ['ANSIBLE_JSON_TO_LOGFILE']}' as ansible json log file.")
 
-    if os.environ.get("JUNIT_OUTPUT_DIR") is None:
-        os.environ["JUNIT_OUTPUT_DIR"] = str(artifact_extra_logs_dir)
-    print(f"Using '{os.environ['JUNIT_OUTPUT_DIR']}' as ansible junit destination directory.")
-
     option_flags = flatten(
         [
             ["-e", f"{option_name}={option_value}"]
