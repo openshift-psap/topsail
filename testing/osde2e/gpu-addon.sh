@@ -25,28 +25,38 @@ function exit_and_abort() {
 }
 
 function run_test() {
-    TARGET=${1-}
+    TARGET=${1:-}
     echo "====== Running toolbox '$TARGET'"
     TARGET_NAME=$(echo $TARGET | sed 's/ /_/g')
-    JUNIT_FILE="${ARTIFACT_EXTRA_LOGS_DIR}/junit_${TARGET_NAME}.xml"
+    JUNIT_FILE="${ARTIFACT_DIR}/junit_${TARGET_NAME}.xml"
+    RUNTIME_FILE="${ARTIFACT_DIR}/runtime"
+    OUTPUT_FILE="${ARTIFACT_DIR}/output"
 
-    echo $JUNIT_HEADER_TEMPLATE > "${JUNIT_FILE}"
+    cat > ${JUNIT_FILE} <<EOF
+$JUNIT_HEADER_TEMPLATE
+EOF
 
-    RAW_OUTPUT=$(/usr/bin/time -o ${ARTIFACT_DIR}/runtime  ./run_toolbox.py ${TARGET})
+    /usr/bin/time -o ${RUNTIME_FILE} ./run_toolbox.py ${TARGET} > $OUTPUT_FILE
     STATUS=$?
 
-    OUTPUT=$(echo $RAW_OUTPUT | jq -sRr @uri)
-    RUNTIME="$(cat ${ARTIFACT_DIR}/runtime | egrep -o '[0-9]+:[0-9]+\.[0-9]+elapsed' | sed 's/elapsed//')"
+    cat $OUTPUT_FILE
 
+    # Replace '<' and '>' from output so it won't break the XML
+    sed  -i 's/[<>]/\*\*/g' $OUTPUT_FILE
 
+    RUNTIME="$(cat ${RUNTIME_FILE} | egrep -o '[0-9]+:[0-9]+\.[0-9]+elapsed' | sed 's/elapsed//')"
 
     sed -i "s/RUNTIME/${RUNTIME}/g" "${JUNIT_FILE}"
     sed -i "s/TEST_TARGET/${TARGET_NAME}/g" "${JUNIT_FILE}"
     sed -i "s/TIMESTAMP/$(date -Is)/g" "${JUNIT_FILE}"
 
-    echo $OUTPUT >> "${JUNIT_FILE}"
+    cat $OUTPUT_FILE >> $JUNIT_FILE
+    cat >> "${JUNIT_FILE}" <<EOF  
+    $JUNIT_FOOTER_TEMPLATE
+EOF
 
-    echo $JUNIT_FOOTER_TEMPLATE >> "${JUNIT_FILE}"
+    rm -rf ${RUNTIME_FILE}
+    rm -rf ${OUTPUT_FILE}
 
     if [[ $STATUS == 0 ]]; then
         sed -i 's/NUM_ERRORS/0/g' "${JUNIT_FILE}"
@@ -68,5 +78,5 @@ run_test "gpu_operator wait_deployment"
 echo "====== Operator found."
 
 echo "====== Running burn test for $((BURN_RUNTIME_SEC/60)) minutes ..."
-tun_test "gpu_operator run_gpu_burn --runtime=${BURN_RUNTIME_SEC}"
+run_test "gpu_operator run_gpu_burn --runtime=${BURN_RUNTIME_SEC}"
 echo "====== Done."
