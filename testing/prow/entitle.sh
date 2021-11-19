@@ -11,6 +11,16 @@ if ! [ -f ./toolbox/entitlement.py ]; then
   exit 1
 fi
 
+_expected_fail() {
+    # mark the last toolbox step as an expected fail (for clearer
+    # parsing/display in ci-dashboard)
+    # eg: if cluster doesn't have NFD labels (expected fail), deploy NFD
+    # eg: if cluster doesn't have GPU nodes (expected fail), scale up with GPU nodes
+
+    last_toolbox_dir=$(ls ${ARTIFACT_DIR}/*__* -d | tail -1)
+    echo "$1" > ${last_toolbox_dir}/EXPECTED_FAIL
+}
+
 extract_entitlement_key() {
     resource=$1
     key=$2
@@ -28,6 +38,9 @@ if ./run_toolbox.py entitlement test_cluster --no_inspect; then
     echo "INFO: Cluster already entitled, skipping entitlement."
     exit 0
 fi
+
+# mark the failure of "entitlement test_cluster" ^^^ as expected
+_expected_fail "Checking if the cluster was entitled"
 
 ENTITLEMENT_SECRET_PATH=/var/run/psap-entitlement-secret
 ENTITLEMENT_VERSION=${ENTITLEMENT_SECRET_PATH}/version
