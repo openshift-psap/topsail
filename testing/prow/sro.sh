@@ -7,6 +7,17 @@ set -o nounset
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd ${THIS_DIR}/../..
 
+_warning() {
+    fname="$1"
+    msg="$2"
+
+    DEST_DIR="${ARTIFACT_DIR}/_WARNING/"
+    mkdir -p "$DEST_DIR"
+    echo "$msg" > "${DEST_DIR}/$fname"
+
+    echo "WARNING: $msg"
+}
+
 _expected_fail() {
     # mark the last toolbox step as an expected fail (for clearer
     # parsing/display in ci-dashboard)
@@ -31,8 +42,8 @@ prepare_cluster_for_sro() {
         if oc get packagemanifests/nfd -n openshift-marketplace > /dev/null; then
             ./run_toolbox.py nfd_operator deploy_from_operatorhub
         else
-            # in 4.9, NFD is currently not available from its default location,
-            touch "${ARTIFACT_DIR}/NFD_DEPLOYED_FROM_MASTER"
+            _warning "NFD_deployed_from_master" "NFD was deployed from master (not available in OperatorHub)"
+
             # install the NFD Operator from sources
             CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
             CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
