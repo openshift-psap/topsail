@@ -32,7 +32,7 @@
     shell:
       bash "{{ gpu_operator_fetch_pod_metrics_script }}"
            9400 app=nvidia-dcgm-exporter {{ gpu_operator_namespace }}
-           '.' > {{ artifact_extra_logs_dir }}/metrics.gpu_operator_node.txt
+           '.' > {{ artifact_extra_logs_dir }}/metrics.dcgm.txt
     register: dcgm_exporter_check
     until:
     - dcgm_exporter_check.rc == 0
