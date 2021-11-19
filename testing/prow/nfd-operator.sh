@@ -7,11 +7,25 @@ set -o nounset
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd ${THIS_DIR}/../..
 
+_expected_fail() {
+    # mark the last toolbox step as an expected fail (for clearer
+    # parsing/display in ci-dashboard)
+    # eg: if cluster doesn't have NFD labels (expected fail), deploy NFD
+    # eg: if cluster doesn't have GPU nodes (expected fail), scale up with GPU nodes
+
+    last_toolbox_dir=$(ls ${ARTIFACT_DIR}/*__* -d | tail -1)
+    echo "$1" > ${last_toolbox_dir}/EXPECTED_FAIL
+}
+
 prepare_cluster_for_nfd() {
     if ./run_toolbox.py nfd has_labels; then
         echo "FATAL: NFD labels found in the cluster"
         exit 1
     fi
+
+    # mark the failure of "nfd has_labels" ^^^ as expected
+    _expected_fail "Checking if the cluster had NFD labels"
+
     ./run_toolbox.py cluster capture_environment
 }
 
