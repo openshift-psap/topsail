@@ -87,7 +87,6 @@ prepare_cluster_for_gpu_operator() {
         if oc get packagemanifests/nfd -n openshift-marketplace > /dev/null; then
             ./run_toolbox.py nfd_operator deploy_from_operatorhub
         else
-            # in 4.9, NFD is currently not available from its default location,
             _warning "NFD_deployed_from_master" "NFD was deployed from master (not available in OperatorHub)"
 
             # install the NFD Operator from sources
