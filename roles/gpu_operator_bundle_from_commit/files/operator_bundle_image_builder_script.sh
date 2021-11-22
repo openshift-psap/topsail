@@ -172,25 +172,31 @@ if [ "${WITH_DRIVER:-}" ]; then
         | jq '.[].spec.driver.repository="'${OPERATOR_IMAGE_REPOSITORY}'"' \
         | jq '.[].spec.driver.version="'${DRIVER_IMAGE_VERSION_SHA}'"' \
              > clusterpolicy.json
-    rm  clusterpolicy.json.orig
+    rm clusterpolicy.json.orig
 else
-    # TMP update driver image in the ClusterPolicy with Shiva's v1.9.0 build
+    # Use custom driver image shared by NVIDIA developers (required
+    # when the driver repository is updated, but the GPU Operator's
+    # Driver image isn't updated yet).
 
-    DRIVER_TMP_IMAGE="quay.io/shivamerla/driver:470.57.02-rhcos4.9"
+    # (currently disabled)
 
-    DRIVER_IMAGE=$(get_image_sha "$DRIVER_TMP_IMAGE")
+    DRIVER_TMP_IMAGE=""
 
-    replace_related_image "driver-image" "$DRIVER_IMAGE"
+    if [[ "$DRIVER_TMP_IMAGE" ]]; then
+        DRIVER_IMAGE=$(get_image_sha "$DRIVER_TMP_IMAGE")
 
-    DRIVER_IMAGE_VERSION_SHA=$(echo "$DRIVER_IMAGE" | cut -d@ -f2)
+        replace_related_image "driver-image" "$DRIVER_IMAGE"
 
-    mv clusterpolicy.json{,.orig}
-    cat clusterpolicy.json.orig \
-        | jq '.[].spec.driver.image="driver"' \
-        | jq '.[].spec.driver.repository="quay.io/shivamerla"' \
-        | jq '.[].spec.driver.version="'$DRIVER_IMAGE_VERSION_SHA'"' \
-             > clusterpolicy.json
-    rm  clusterpolicy.json.orig
+        DRIVER_IMAGE_VERSION_SHA=$(echo "$DRIVER_IMAGE" | cut -d@ -f2)
+
+        mv clusterpolicy.json{,.orig}
+        cat clusterpolicy.json.orig \
+            | jq '.[].spec.driver.image="driver"' \
+            | jq '.[].spec.driver.repository="quay.io/shivamerla"' \
+            | jq '.[].spec.driver.version="'$DRIVER_IMAGE_VERSION_SHA'"' \
+                 > clusterpolicy.json
+        rm clusterpolicy.json.orig
+    fi
 fi
 
 # update ClusterPolicy in the CSV
