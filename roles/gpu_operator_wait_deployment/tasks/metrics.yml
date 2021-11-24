@@ -5,11 +5,22 @@
       set -o pipefail;
       oc get ns -l openshift.io/cluster-monitoring -oname | grep {{ gpu_operator_namespace }}
   rescue:
+  - name: The GPU Operator namespace is not properly labelled for monitoring
+    when: gpu_operator_version is version("1.9.0", ">=")
+    fail: msg="The GPU Operator namespace is not properly labelled for monitoring"
+
   - name: Get the namespace yaml specification
     command: oc get ns/{{ gpu_operator_namespace }} -oyaml
 
   - name: Make sure that namespace has the openshift.io/cluster-monitoring label
     command: oc label ns/{{ gpu_operator_namespace }} openshift.io/cluster-monitoring=true
+
+- name: Ensure that the GPU Operator operator namespace has the openshift.io/cluster-monitoring label
+  when: gpu_operator_version is version("1.9.0", "<")
+  command:
+    oc label ns/{{ gpu_operator_operator_namespace }}
+             openshift.io/cluster-monitoring=true
+             --overwrite
 
 ### DCGM metrics
 
@@ -166,17 +177,6 @@
 - name: Validate that the GPU Operator operator metrics are correctly exposed
   when: gpu_operator_version is version("1.8.0", ">=")
   block:
-  - name: Check if the namespace has the openshift.io/cluster-monitoring label
-    block:
-    - name: Check if the namespace has the openshift.io/cluster-monitoring label
-      shell:
-        set -o pipefail;
-        oc get ns -l openshift.io/cluster-monitoring -oname
-        | grep {{ gpu_operator_operator_namespace }}
-    rescue:
-    - name: Make sure that namespace has the openshift.io/cluster-monitoring label
-      command: oc label ns/{{ gpu_operator_operator_namespace }} openshift.io/cluster-monitoring=true
-
   - name: Fetch the GPU Operator operator metrics
     shell:
       bash "{{ gpu_operator_fetch_pod_metrics_script }}"
