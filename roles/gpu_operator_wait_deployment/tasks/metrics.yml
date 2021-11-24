@@ -88,7 +88,7 @@
 ### Node Metrics
 
 - name: Validate that the GPU Operator node-status metrics are correctly exposed
-  when: gpu_operator_version >= "1.8.0"
+  when: gpu_operator_version is version("1.8.0", ">=")
   block:
   - name: Wait for the node-status-exporter Pod to start running
     shell:
@@ -164,7 +164,7 @@
 ### Operator metrics
 
 - name: Validate that the GPU Operator operator metrics are correctly exposed
-  when: gpu_operator_version >= "1.8.0"
+  when: gpu_operator_version is version("1.8.0", ">=")
   block:
   - name: Check if the namespace has the openshift.io/cluster-monitoring label
     block:
