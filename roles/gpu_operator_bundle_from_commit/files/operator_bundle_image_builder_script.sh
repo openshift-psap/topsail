@@ -68,16 +68,24 @@ get_image_sha() {
 
 push_to_quay() {
     local_img=$1
-    dest_img="${QUAY_BUNDLE_IMAGE_NAME}:$(echo $local_img | cut -d: -f2)"
+    dest_img="${QUAY_BUNDLE_IMAGE_NAME}:$(echo $local_img | sed 's/:/\n/g' | tail -1 )"
 
     # pull the images locally
     podman pull --quiet $LOCAL_AUTH "$local_img" > /dev/null
     # then push it to quay
     podman push --quiet $QUAY_AUTH "$local_img" "$dest_img" > /dev/null
 
-    SHA=$(podman inspect "$local_img" | jq -r .[].Digest)
+    LOCAL_SHA=$(podman inspect "$local_img" | jq -r .[].Digest)
 
-    echo "${dest_img}@${SHA}"
+    podman image rm --force "$local_img" > /dev/null
+    podman pull --quiet $QUAY_AUTH "$dest_img" > /dev/null
+
+    DEST_SHA=$(podman inspect "$dest_img" | jq -r .[].Digest)
+
+    echo "LOCAL_SHA: $LOCAL_SHA" >&2
+    echo "DEST_SHA: $DEST_SHA" >&2
+
+    echo "${QUAY_BUNDLE_IMAGE_NAME}@${DEST_SHA}"
 }
 
 # ---
@@ -98,7 +106,7 @@ CSV_VERSION="${DATE_VERSION}-git.${GIT_VERSION}"
 
 OPERATOR_IMAGE_VERSION="operator_${OPERATOR_IMAGES_TAG_SUFFIX}"
 
-OPERATOR_LOCAL_IMAGE_FULL="${OPERATOR_IMAGE_REPOSITORY}/${OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_VERSION}"
+OPERATOR_LOCAL_IMAGE_FULL="${LOCAL_OPERATOR_IMAGE_REPOSITORY}/${LOCAL_OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_VERSION}"
 
 if [ "${PUBLISH_TO_QUAY:-}" ]; then
     OPERATOR_IMAGE=$(push_to_quay "${OPERATOR_LOCAL_IMAGE_FULL}")
@@ -126,7 +134,7 @@ cat ${CSV_FILE} | yq \
 if [ "${WITH_VALIDATOR:-}" ]; then
     # update validator & node-status-exporter images in the ClusterPolicy
     VALIDATOR_IMAGE_VERSION="validator_${OPERATOR_IMAGES_TAG_SUFFIX}"
-    VALIDATOR_LOCAL_IMAGE="${OPERATOR_IMAGE_REPOSITORY}/${OPERATOR_IMAGE_NAME}:${VALIDATOR_IMAGE_VERSION}"
+    VALIDATOR_LOCAL_IMAGE="${LOCAL_OPERATOR_IMAGE_REPOSITORY}/${LOCAL_OPERATOR_IMAGE_NAME}:${VALIDATOR_IMAGE_VERSION}"
 
     if [ "${PUBLISH_TO_QUAY:-}" ]; then
         VALIDATOR_IMAGE=$(push_to_quay "${VALIDATOR_LOCAL_IMAGE}")
@@ -154,7 +162,7 @@ fi
 if [ "${WITH_DRIVER:-}" ]; then
     # update driver image in the ClusterPolicy
 
-    DRIVER_LOCAL_IMAGE="${OPERATOR_IMAGE_REPOSITORY}/${OPERATOR_IMAGE_NAME}:driver_${OPERATOR_IMAGES_TAG_SUFFIX}"
+    DRIVER_LOCAL_IMAGE="${LOCAL_OPERATOR_IMAGE_REPOSITORY}/${LOCAL_OPERATOR_IMAGE_NAME}:driver_${OPERATOR_IMAGES_TAG_SUFFIX}"
 
     if [ "${PUBLISH_TO_QUAY:-}" ]; then
         DRIVER_IMAGE=$(push_to_quay "${DRIVER_LOCAL_IMAGE}")
