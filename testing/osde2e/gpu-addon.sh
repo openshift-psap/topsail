@@ -27,8 +27,9 @@ function exit_and_abort() {
 function run_test() {
     TARGET=${1:-}
     echo "====== Running toolbox '$TARGET'"
+    JUNIT_FILE_NAME=$(echo $TARGET | awk '{print "junit_"$1"_"$2".xml"}')
     TARGET_NAME=$(echo $TARGET | sed 's/ /_/g')
-    JUNIT_FILE="${ARTIFACT_DIR}/junit_${TARGET_NAME}.xml"
+    JUNIT_FILE="${ARTIFACT_DIR}/${JUNIT_FILE_NAME}"
     RUNTIME_FILE="${ARTIFACT_DIR}/runtime"
     OUTPUT_FILE="${ARTIFACT_DIR}/output"
 
