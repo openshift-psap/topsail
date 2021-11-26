@@ -404,6 +404,10 @@ trap run_finalizers EXIT
 action="$1"
 shift
 
+if [[ "${action}" != "source" ]]; then
+    set -x
+fi
+
 case ${action} in
     "test_master_branch")
         test_master_branch "$@"
@@ -436,8 +440,8 @@ case ${action} in
         exit 0
         ;;
     "source")
-        echo "INFO: GPU Operator CI entrypoint has been sourced"
         # file is being sourced by another script
+        echo "INFO: GPU Operator CI entrypoint has been sourced"
         ;;
     -*)
         echo "FATAL: Unknown option: ${action}"
