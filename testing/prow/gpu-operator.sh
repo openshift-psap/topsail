@@ -238,15 +238,23 @@ deploy_commit() {
     shift
     gpu_operator_git_ref="${1:-}"
 
-    CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID:-ci-image}"
-    OPERATOR_NAMESPACE="nvidia-gpu-operator"
-
     if [[ -z "$gpu_operator_git_repo" || -z "$gpu_operator_git_ref" ]]; then
         echo "FATAL: test_commit must receive a git repo/ref to be tested."
         return 1
     fi
-
     echo "Using Git repository ${gpu_operator_git_repo} with ref ${gpu_operator_git_ref}"
+
+    OPERATOR_NAMESPACE="nvidia-gpu-operator"
+    if [[ "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID:-}" ]]; then
+        # use CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID when it's set
+        true
+    elif [[ "${JOB_NAME:-}" ]]; then
+        # running in a CI job, use the job name
+        CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="ci-image-${JOB_NAME}"
+    else
+        echo "FATAL: test_commit expects CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID or JOB_NAME to be defined."
+        return 1
+    fi
 
     GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET=${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET:-"/var/run/psap-entitlement-secret/openshift-psap-openshift-ci-secret.yml"}
     GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME:-"quay.io/openshift-psap/ci-artifacts"}
