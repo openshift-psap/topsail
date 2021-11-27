@@ -13,6 +13,6 @@ source $THIS_DIR/../prow/gpu-operator.sh source
 
 prepare_cluster_for_gpu_operator
 
-./run_toolbox.py gpu_operator deploy_from_operatorhub --namespace openshift-operators
+./run_toolbox.py gpu_operator deploy_from_operatorhub --namespace openshift-operators --version 1.8.2 --channel v1.8
 
 ./testing/osde2e/gpu-addon.sh
