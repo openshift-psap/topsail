@@ -5,6 +5,8 @@ if ! [[ -d  $ARTIFACT_DIR ]] ; then
     exit 1
 fi
 
+CI_ARTIFACT_DIR=${ARTIFACT_DIR}/artifacts
+
 BURN_RUNTIME_SEC=600
 
 JUNIT_HEADER_TEMPLATE='<?xml version="1.0" encoding="utf-8"?>
@@ -18,6 +20,8 @@ JUNIT_FOOTER_TEMPLATE='
     </testcase>
 </testsuite>
 '
+
+mkdir -p $CI_ARTIFACT_DIR
 
 function exit_and_abort() {
     echo "Failed. Aborting."
@@ -37,7 +41,7 @@ function run_test() {
 $JUNIT_HEADER_TEMPLATE
 EOF
 
-    /usr/bin/time -o ${RUNTIME_FILE} ./run_toolbox.py ${TARGET} > $OUTPUT_FILE
+    ARTIFACT_DIR=$CI_ARTIFACT_DIR /usr/bin/time -o ${RUNTIME_FILE} ./run_toolbox.py ${TARGET} > $OUTPUT_FILE
     STATUS=$?
 
     cat $OUTPUT_FILE
