@@ -48,26 +48,26 @@ class GPUOperator:
 
         Args:
             namespace: Namespace in which the GPU Operator will be deployed. Before v1.9, the value must be "openshift-operators". With >=v1.9, the namespace can freely chosen. Suggested namespace is: nvidia-gpu-operator.
-            version: The version to deploy. If unspecified, deploys the latest version available in OperatorHub. Run the toolbox gpu_operator list_version_from_operator_hub subcommand to see the available versions.
-            channel: Optional channel to deploy from.
+            channel: Optional channel to deploy from. If unspecified, deploys the CSV's default channel.
+            version: Optional version to deploy. If unspecified, deploys the latest version available in the selected channel. Run the toolbox gpu_operator list_version_from_operator_hub subcommand to see the available versions.
             installPlan: Optional InstallPlan approval mode (Automatic or Manual [default])
         """
         opts = {"gpu_operator_target_namespace": namespace}
 
-        if version is not None:
-            opts["gpu_operator_operatorhub_version"] = version
-            print(
-                f"Deploying the GPU Operator from OperatorHub using version '{version}'."
-            )
-
         if channel is not None:
-            if version is None:
-                print("Channel may only be specified if --version is specified")
-                sys.exit(1)
-
             opts["gpu_operator_operatorhub_channel"] = channel
             print(
                 f"Deploying the GPU Operator from OperatorHub using channel '{channel}'."
+            )
+
+        if version is not None:
+            if channel is None:
+                print("Version may only be specified if --channel is specified")
+                sys.exit(1)
+
+            opts["gpu_operator_operatorhub_version"] = version
+            print(
+                f"Deploying the GPU Operator from OperatorHub using version '{version}'."
             )
 
         opts["gpu_operator_installplan_approval"] = installPlan
@@ -81,7 +81,7 @@ class GPUOperator:
             f"Deploying the GPU Operator from OperatorHub using InstallPlan approval '{installPlan}'."
         )
 
-        print("Deploying the GPU Operator from OperatorHub using its master bundle.")
+        print("Deploying the GPU Operator from OperatorHub.")
         return PlaybookRun("gpu_operator_deploy_from_operatorhub", opts)
 
     @staticmethod

@@ -357,18 +357,27 @@ prepare_cluster_for_gpu_operator_with_alerts() {
 }
 
 test_operatorhub() {
+    OPERATOR_NAMESPACE="nvidia-gpu-operator"
+
     if [ "${1:-}" ]; then
         OPERATOR_VERSION="--version=$1"
     fi
     shift || true
     if [ "${1:-}" ]; then
         OPERATOR_CHANNEL="--channel=$1"
+        if [[ "${OPERATOR_CHANNEL}" != *"1.9"* ]]; then
+            OPERATOR_NAMESPACE="openshift-operators"
+        fi
     fi
     shift || true
 
     prepare_cluster_for_gpu_operator "$@"
 
-    ./run_toolbox.py gpu_operator deploy_from_operatorhub ${OPERATOR_VERSION:-} ${OPERATOR_CHANNEL:-} --namespace openshift-operators
+    ./run_toolbox.py gpu_operator deploy_from_operatorhub \
+                     ${OPERATOR_CHANNEL:-} \
+                     ${OPERATOR_VERSION:-} \
+                     --namespace ${OPERATOR_NAMESPACE}
+
     validate_gpu_operator_deployment
 }
 
@@ -418,13 +427,7 @@ case ${action} in
         exit 0
         ;;
     "test_operatorhub")
-        if [[ -z "$*" ]]; then
-            # Testing of v1.9.0-beta currently broken, use v1.8 instead
-            test_operatorhub 1.8.2 v1.8
-        else
-            # Test the latest version available (using the PackageManifest default channel)
-            test_operatorhub "$@"
-        fi
+        test_operatorhub "$@"
         exit 0
         ;;
     "validate_deployment_post_upgrade")

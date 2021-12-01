@@ -65,7 +65,7 @@ prechecks() {
         mkdir -p bin
         cd bin
         if [[ ! -f kubectl ]]; then
-            ln -sf $(which oc) kubectl
+            ln --symbolic $(which oc) kubectl
         fi
         export PATH=$PWD:$PATH
         which kubectl # fail is still not working

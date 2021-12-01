@@ -7,7 +7,7 @@
          '-ojsonpath={.status.connectionState.lastObservedState}{"\n"}'
     failed_when: false
 
-  - name: Wait for the GPU Operator to be available
+  - name: Wait for the GPU Operator package manifest to be available
     command:
       oc get packagemanifests/gpu-operator-certified -n openshift-marketplace
     register: gpu_operator_package_wait
@@ -39,7 +39,7 @@
   - name: Mark the failure as flake
     shell:
       echo "Failed because of the GPU Operator packagemanifest not available"
-           >> "{{ artifact_extra_logs_dir }}/FLAKE"
+           > "{{ artifact_extra_logs_dir }}/FLAKE"
 
   - name: Failed because the GPU Operator could not be install from the Catalog Operator
     fail: msg="Failed because the GPU Operator could not be install from the Catalog Operator"
@@ -48,25 +48,6 @@
   when: gpu_operator_operatorhub_version | length > 0
   set_fact:
     gpu_operator_csv_name: "gpu-operator-certified.v{{ gpu_operator_operatorhub_version }}"
-
-- name: "Fetch the channel name for the requested version ({{ gpu_operator_operatorhub_version }})"
-  when: gpu_operator_operatorhub_version != "" and not gpu_operator_operatorhub_channel
-  block:
-
-  - name: Fetch the channel name for the requested CSV
-    command:
-      jq -r
-         '.status.channels[] | select(.currentCSV=="{{ gpu_operator_csv_name }}") | .name'
-         "{{ artifact_extra_logs_dir }}/gpu_operator_packagemanifest.json"
-    register: gpu_operator_channel_cmd
-
-  - name: Fail if the channel of the CSV could not be found
-    fail: msg="Could not find the channel for the requested GPU Operator version '{{ gpu_operator_operatorhub_version }}'"
-    when: not gpu_operator_channel_cmd.stdout
-
-  - name: Store the channel name
-    set_fact:
-      gpu_operator_operatorhub_channel: "{{ gpu_operator_channel_cmd.stdout }}"
 
 - name: Fetch the default channel name
   when: not gpu_operator_operatorhub_channel
@@ -107,6 +88,21 @@
 - name: Store the CSV version
   set_fact:
     startingCSV: "{{ gpu_operator_csv_name }}"
+
+- name: Prepare the GPU Operator namespace (only when deploying outside of openshift-operators namespace)
+  when: deploy_bundle_namespace != "openshift-operators"
+  block:
+  - name: Create the namespace, if it did not exist
+    shell: oc get "ns/{{ deploy_bundle_namespace }}" || oc create ns "{{ deploy_bundle_namespace }}"
+
+  - name: Instantiate the OperatorHub OperatorGroup template
+    template:
+      src: "{{ gpu_operator_operatorhub_group }}"
+      dest: "{{ artifact_extra_logs_dir }}/gpu_operator_group.yml"
+      mode: 0400
+
+  - name: Instantiate the OperatorHub OperatorGroup resource
+    command: oc apply -f "{{ artifact_extra_logs_dir }}/gpu_operator_group.yml"
 
 - name: "Create the OperatorHub subscription for {{ gpu_operator_csv_name }}"
   template:
