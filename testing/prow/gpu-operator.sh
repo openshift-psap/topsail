@@ -443,12 +443,8 @@ case ${action} in
         # file is being sourced by another script
         echo "INFO: GPU Operator CI entrypoint has been sourced"
         ;;
-    -*)
-        echo "FATAL: Unknown option: ${action}"
-        exit 1
-        ;;
     *)
-        echo "FATAL: Nothing to do ..."
+        echo "FATAL: Unknown action: ${action}" "$@"
         exit 1
         ;;
 esac
