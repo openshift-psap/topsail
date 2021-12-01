@@ -64,8 +64,11 @@ prechecks() {
         echo "kubectl not found, symlinking to oc"
         mkdir -p bin
         cd bin
-        ln -s $(which oc) kubectl
+        if [[ ! -f kubectl ]]; then
+            ln -sf $(which oc) kubectl
+        fi
         export PATH=$PWD:$PATH
+        which kubectl # fail is still not working
         cd ..
     fi
 
