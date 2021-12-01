@@ -94,9 +94,7 @@ postchecks() {
     shift
 
     if [[ "$reason" == ERR ]]; then
-        last_toolbox_dir=$(ls ${ARTIFACT_DIR}/*__* -d | tail -1)
-
-        echo "Last step:  ${last_toolbox_dir/$ARTIFACT_DIR\//}" > $ARTIFACT_DIR/FAILURE
+        touch $ARTIFACT_DIR/FAILURE
 
         if ! oc version >/dev/null 2>&1; then
             mkdir -p $ARTIFACT_DIR/FLAKE
