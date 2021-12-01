@@ -1,0 +1,19 @@
+- name: Check that local_image_name is defined
+  fail: msg="Bailing out. This play requires 'local_image_name'"
+  when: local_image_name is undefined
+
+- name: Check that image_tag is defined
+  fail: msg="Bailing out. This play requires 'image_tag'"
+  when: image_tag is undefined
+
+- name: Build and publish image
+  command: 
+    /bin/bash "{{ gpu_operator_build_push_image_script }}" 
+      -n "{{ local_image_name }}"
+      -t "{{ image_tag }}"
+      -d "{{ docker_path }}"
+      -g "{{ git_repo }}"
+      -p "{{ git_path }}"
+      -q "{{ quay_repo }}"
+      -a "{{ auth_file }}"
+      
