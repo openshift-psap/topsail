@@ -16,4 +16,3 @@
       -p "{{ git_path }}"
       -q "{{ quay_repo }}"
       -a "{{ auth_file }}"
-      
