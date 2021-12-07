@@ -21,13 +21,13 @@ class GPUOperator:
         )
 
     @staticmethod
-    def deploy_from_bundle(bundle, namespace):
+    def deploy_from_bundle(bundle, namespace="nvidia-gpu-operator"):
         """
         Deploys the GPU Operator from a bundle
 
         Args:
             bundle: Either a bundle OCI image or "master" to deploy the latest bundle
-            namespace: Namespace in which the GPU Operator will be deployed. Before v1.9, the value must be "openshift-operators". With >=v1.9, the namespace can freely chosen (except 'openshift-operators'). Suggested namespace is: nvidia-gpu-operator.
+            namespace: Optional namespace in which the GPU Operator will be deployed. Before v1.9, the value must be "openshift-operators". With >=v1.9, the namespace can freely chosen (except 'openshift-operators'). Default: nvidia-gpu-operator.
         """
         opts = {"gpu_operator_deploy_from": "bundle",
                 "gpu_operator_target_namespace": namespace}
@@ -36,18 +36,16 @@ class GPUOperator:
             print("Deploying the GPU Operator from OperatorHub using the master bundle")
             return PlaybookRun("gpu_operator_deploy_from_operatorhub", opts)
 
-
-
         opts["deploy_bundle_image"] = bundle
         return PlaybookRun("gpu_operator_deploy_from_operatorhub", opts)
 
     @staticmethod
-    def deploy_from_operatorhub(namespace, version=None, channel=None, installPlan="Manual"):
+    def deploy_from_operatorhub(namespace="nvidia-gpu-operator", version=None, channel=None, installPlan="Manual"):
         """
         Deploys the GPU operator from OperatorHub
 
         Args:
-            namespace: Namespace in which the GPU Operator will be deployed. Before v1.9, the value must be "openshift-operators". With >=v1.9, the namespace can freely chosen. Suggested namespace is: nvidia-gpu-operator.
+            namespace: Optional namespace in which the GPU Operator will be deployed. Before v1.9, the value must be "openshift-operators". With >=v1.9, the namespace can freely chosen. Default: nvidia-gpu-operator.
             channel: Optional channel to deploy from. If unspecified, deploys the CSV's default channel.
             version: Optional version to deploy. If unspecified, deploys the latest version available in the selected channel. Run the toolbox gpu_operator list_version_from_operator_hub subcommand to see the available versions.
             installPlan: Optional InstallPlan approval mode (Automatic or Manual [default])
