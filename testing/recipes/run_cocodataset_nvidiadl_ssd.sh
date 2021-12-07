@@ -23,7 +23,7 @@ else
     echo "Using GPU node name: $gpu_node_hostname"
 fi
 
-./run_toolbox.py gpu_operator deploy_from_operatorhub --namespace openshift-operators
+./run_toolbox.py gpu_operator deploy_from_operatorhub
 ./run_toolbox.py gpu_operator wait_deployment
 
 DL_OPT=""
