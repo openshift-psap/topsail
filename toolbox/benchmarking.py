@@ -23,7 +23,7 @@ class Benchmarking:
             "benchmarking_namespace": namespace,
         }
         if pvc_name is not None:
-            opts["benchmarking_coco_dataset_pvc_name"] = pvc_name,
+            opts["benchmarking_coco_dataset_pvc_name"] = pvc_name
             print(
                 f"Using '{pvc_name}' as PVC name."
             )
