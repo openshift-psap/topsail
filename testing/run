@@ -139,7 +139,8 @@ if [[ $HOSTNAME == "addon-tests"* ]]; then
     # arguments is limited in osde2e
     echo "INFO: Running in OSDE2E addon test CI. Preparing for OSDE2E ..."
     set -- "osde2e" "gpu-addon"
-    export ARTIFACT_DIR="/test-run-results"
+    export ARTIFACT_DIR="/test-run-results/ci-artifacts"
+    mkdir -p $ARTIFACT_DIR
 fi
 
 ##############

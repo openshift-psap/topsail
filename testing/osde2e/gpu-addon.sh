@@ -5,7 +5,7 @@ if ! [[ -d  $ARTIFACT_DIR ]] ; then
     exit 1
 fi
 
-CI_ARTIFACT_DIR=${ARTIFACT_DIR}/artifacts
+JUNIT_DIR=/test-run-results
 
 BURN_RUNTIME_SEC=600
 
@@ -21,10 +21,13 @@ JUNIT_FOOTER_TEMPLATE='
 </testsuite>
 '
 
-mkdir -p $CI_ARTIFACT_DIR
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $THIS_DIR/../prow/gpu-operator.sh source
 
 function exit_and_abort() {
-    echo "Failed. Aborting."
+    echo "====== Failed. Aborting."
+    must_gather
+    tar_artifacts
     exit 1
 }
 
@@ -33,18 +36,41 @@ function run_test() {
     echo "====== Running toolbox '$TARGET'"
     JUNIT_FILE_NAME=$(echo $TARGET | awk '{print "junit_"$1"_"$2".xml"}')
     TARGET_NAME=$(echo $TARGET | sed 's/ /_/g')
-    JUNIT_FILE="${ARTIFACT_DIR}/${JUNIT_FILE_NAME}"
-    RUNTIME_FILE="${ARTIFACT_DIR}/runtime"
-    OUTPUT_FILE="${ARTIFACT_DIR}/output"
+    JUNIT_FILE="${JUNIT_DIR}/${JUNIT_FILE_NAME}"
+    RUNTIME_FILE="${JUNIT_DIR}/runtime"
+    OUTPUT_FILE="${JUNIT_DIR}/output"
+
+    trap trap_run_test EXIT
 
     cat > ${JUNIT_FILE} <<EOF
 $JUNIT_HEADER_TEMPLATE
 EOF
 
-    ARTIFACT_DIR=$CI_ARTIFACT_DIR /usr/bin/time -o ${RUNTIME_FILE} ./run_toolbox.py ${TARGET} > $OUTPUT_FILE
+    /usr/bin/time -o ${RUNTIME_FILE} ./run_toolbox.py ${TARGET} > $OUTPUT_FILE
+
+    finalize_junit
+}
+
+function trap_run_test() {
+    finalize_junit
+    must_gather
+    tar_artifacts
+}
+
+function must_gather() {
+    echo "===== Running must gather"
+    collect_must_gather
+    echo "===== Done must gather"
+}
+
+function finalize_junit() {
     STATUS=$?
 
+    trap - EXIT
+
     cat $OUTPUT_FILE
+    echo
+    echo
 
     # Replace '<' and '>' from output so it won't break the XML
     sed  -i 's/[<>]/\*\*/g' $OUTPUT_FILE
@@ -73,15 +99,27 @@ EOF
     fi
 }
 
+function tar_artifacts() {
+    TARBALL_TMP="${JUNIT_DIR}/ci-artifacts.tar.gz"
+    TARBALL="${ARTIFACT_DIR}/ci-artifacts.tar.gz"
+    echo "====== Archiving ci-artifacts..."
+    tar -czf ${TARBALL_TMP} ${ARTIFACT_DIR}
+    mv $TARBALL_TMP $TARBALL
+    echo "====== Archive Done."
+}
 
 echo "====== Starting OSDE2E tests..."
 
 echo "Using ARTIFACT_DIR=$ARTIFACT_DIR."
+echo "Using JUNIT_DIR=$JUNIT_DIR"
 
-echo "====== waiting for gpu-operator..."
+echo "====== Waiting for gpu-operator..."
 run_test "gpu_operator wait_deployment"
 echo "====== Operator found."
 
 echo "====== Running burn test for $((BURN_RUNTIME_SEC/60)) minutes ..."
 run_test "gpu_operator run_gpu_burn --runtime=${BURN_RUNTIME_SEC}"
-echo "====== Done."
+
+must_gather
+tar_artifacts
+echo "====== Finished all jobs."
