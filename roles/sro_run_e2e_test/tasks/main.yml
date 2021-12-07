@@ -8,7 +8,7 @@
 
 - name: Deploy the custom version of the special resource operator
   shell:
-    make test-e2e NAMESPACE="openshift-special-resource-operator"
+    make e2e-test NAMESPACE="openshift-special-resource-operator"
         > {{ artifact_extra_logs_dir }}/sro_e2e_test.log 2>&1
   args:
     chdir: /tmp/special-resource-operator
