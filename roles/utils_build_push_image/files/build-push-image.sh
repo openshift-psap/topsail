@@ -1,5 +1,9 @@
 #! /bin/bash
 
+set -o errexit
+set -o pipefail
+set -o nounset
+
 function help() {
     echo "Options:
         -h: Help
