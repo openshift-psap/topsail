@@ -8,7 +8,7 @@ path="/NVIDIA/benchmarks/ssd/implementations/pytorch"
 quay="openshift-psap/nvidiadl-ssd-training-benchmark"
 auth="/var/run/psap-entitlement-secret/openshift-psap-openshift-ci-secret.yml"
 
-./run_toolbox.py gpu_operator build_push_image $local_name $tag \
+./run_toolbox.py utils build_push_image $local_name $tag \
     --git_repo=$repo \
     --git_path=$path \
     --quay_org_repo=$quay \
