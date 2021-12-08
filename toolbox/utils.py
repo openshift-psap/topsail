@@ -15,6 +15,7 @@ class Utils:
         dockerfile=None,
         git_repo=None,
         git_path=None,
+        branch=None,
         quay_org_repo=None,
         auth_file=None
     ):
@@ -29,6 +30,7 @@ class Utils:
             dockerfile - Path/Name of Dockerfile if used as source
             git_repo - Git repo containing Dockerfile if used as source
             git_path - Path to Dockerfile in git repo
+            branch - Branch of repo to clone
             quay_org_repo - Org/Repo in quay to push to
             auth_file - Auth file for quay
         """
@@ -42,6 +44,7 @@ class Utils:
             "docker_path": dockerfile if dockerfile else "",
             "git_repo": git_repo if git_repo else "",
             "git_path": git_path if git_path else "",
+            "branch": branch if branch else "",
             "quay_repo": quay_org_repo if quay_org_repo else "",
             "auth_file": auth_file if auth_file else ""
         }

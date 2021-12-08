@@ -8,12 +8,13 @@ function help() {
         -d: Path/Name of Dockerfile
         -g: Git repo containing Dockerfile
         -p: Path/Name of git repo Dockerfile
+        -b: Branch of repo to clone
         -q: Quay.io Org/Repo
         -a: Authfile for quay.io
     "
 }
 
-while getopts n:t:g:d:p:q:a:h flag
+while getopts n:t:g:d:p:q:a:b:h flag
 do
     case "${flag}" in
         h) help
@@ -25,6 +26,7 @@ do
         p) path=${OPTARG};;
         q) quay="quay.io/${OPTARG}";;
         a) authfile=${OPTARG};;
+        b) branch=${OPTARG};;
         *) exit 1 ;;
     esac
 done
@@ -46,7 +48,11 @@ fi
 if [[ -n $dockerfile ]] ; then
     podman build -t $name:tag -f $dockerfile
 elif [[ -n $repo ]] ; then
-    git clone --depth 1 $repo repo
+    if [[ -n $branch ]] ; then
+        git clone --depth 1 $repo --branch $branch repo
+    else
+        git clone --depth 1 $repo repo
+    fi
     cd repo
     podman build -t $name:tag -f $path
 fi
