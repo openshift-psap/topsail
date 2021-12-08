@@ -1,7 +1,7 @@
 #! /bin/bash
 
 function help() {
-    printf -- "Options:
+    echo "Options:
         -h: Help
         -n: Name of image
         -t: Tag for image
@@ -30,16 +30,16 @@ do
 done
 
 if [[ -z $repo && -z $dockerfile ]] ; then
-    printf -- "Either a git repo (-g) or Dockerfile (-d) is required\n"
+    echo "Either a git repo (-g) or Dockerfile (-d) is required"
     exit 1
 elif [[ -n $repo && -n $dockerfile ]] ; then
-    printf -- "Cannot have both -g and -d\n"
+    echo "Cannot have both -g and -d"
     exit 1
 elif [[ -n $repo && -z $path ]] ; then
-    printf -- "Must supply path to Dockerfile within git repo (-p)\n"
+    echo -- "Must supply path to Dockerfile within git repo (-p)"
     exit 1
 elif [[ -z $name || -z $tag ]] ; then
-    printf -- "Image name (-n) and tag (-t) required\n"
+    echo -- "Image name (-n) and tag (-t) required"
     exit 1
 fi
 
@@ -52,7 +52,7 @@ fi
 
 if [[ -n ${quay:8} ]] ; then
     if [[ -z $authfile ]] ; then
-        printf -- "Authfile (-a) required for push\n"
+        echo "Authfile (-a) required for push"
     fi
     podman tag $name:$tag $quay:$tag
     podman push --tls-verify=false --authfile $authfile $quay:$tag
