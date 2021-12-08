@@ -13,6 +13,7 @@ COPY requirements.txt /
 RUN yum install -y \
 		glibc-langpack-en \
 		go git make jq vim wget rsync time\
+		podman\
 		python3 python3-devel python3-pip python3-setuptools && \
 	python3 -m pip install --no-cache-dir --upgrade setuptools pip wheel && \
 	python3 -m pip install --no-cache-dir -r /requirements.txt && \
