@@ -1,0 +1,3 @@
+---
+# Script for building and pushing images
+utils_build_push_image_script: roles/utils_build_push_image/files/build-push-image.sh

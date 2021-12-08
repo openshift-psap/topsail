@@ -17,6 +17,7 @@ from toolbox.local_ci import LocalCI
 from toolbox.repo import Repo
 from toolbox.special_resource_operator import SpecialResourceOperator
 from toolbox.benchmarking import Benchmarking
+from toolbox.utils import Utils
 
 
 class Toolbox:
@@ -40,6 +41,7 @@ class Toolbox:
         self.local_ci = LocalCI
         self.sro = SpecialResourceOperator
         self.benchmarking = Benchmarking
+        self.utils = Utils
 
 def main(no_exit=False):
     # Print help rather than opening a pager

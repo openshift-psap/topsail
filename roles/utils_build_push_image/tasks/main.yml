@@ -8,7 +8,7 @@
 
 - name: Build and publish image
   command: 
-    /bin/bash "{{ gpu_operator_build_push_image_script }}" 
+    /bin/bash "{{ utils_build_push_image_script }}" 
       -n "{{ local_image_name }}"
       -t "{{ image_tag }}"
       -d "{{ docker_path }}"

@@ -4,4 +4,4 @@
   connection: local
   gather_facts: true
   roles:
-    - role: gpu_operator_build_push_image
+    - role: utils_build_push_image

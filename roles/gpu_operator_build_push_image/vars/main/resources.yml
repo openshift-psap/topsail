@@ -1,3 +1,0 @@
----
-# Script for building and pushing images
-gpu_operator_build_push_image_script: roles/gpu_operator_build_push_image/files/build-push-image.sh
