@@ -46,7 +46,8 @@ fi
 if [[ -n $dockerfile ]] ; then
     podman build -t $name:tag -f $dockerfile
 elif [[ -n $repo ]] ; then
-    git clone $repo
+    git clone --depth 1 $repo repo
+    cd repo
     podman build -t $name:tag -f $path
 fi
 
