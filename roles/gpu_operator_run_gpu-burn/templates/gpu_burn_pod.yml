@@ -7,6 +7,7 @@ metadata:
   namespace: default
 spec:
   restartPolicy: Never
+  # force the name of the node in which this pod should run
   nodeName: "{{ gpu_node_name }}"
   containers:
   - image: nvcr.io/nvidia/cuda:11.2.2-devel-ubi8
@@ -25,6 +26,10 @@ spec:
     env:
     - name: GPU_BURN_TIME
       value: "{{ gpu_burn_time }}"
+    resources:
+      limits:
+        # '0' means 'get access to all the GPUs of the local node'
+        nvidia.com/gpu: 0
   volumes:
   - name: entrypoint
     configMap:
@@ -34,5 +39,3 @@ spec:
     configMap:
       defaultMode: 0700
       name: gpu-burn-src
-  nodeSelector:
-    nvidia.com/gpu.present: "true"

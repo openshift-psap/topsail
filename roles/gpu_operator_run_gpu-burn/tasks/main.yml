@@ -18,20 +18,32 @@
   register: gpu_burn_gpu_nodes
   failed_when: gpu_burn_gpu_nodes.stdout == ""
 
-- name: Create the entrypoint ConfigMap
-  command: oc apply -f "{{ gpu_burn_cm_entrypoint }}"
-
-- name: Delete the src ConfigMap, if it exists
-  command:
-    oc delete cm/gpu-burn-src
-       --ignore-not-found=true
+# Store the configmap into a file, for easy reproduction from artifacts
+- name: Create the entrypoint ConfigMap file
+  shell:
+    oc create configmap gpu-burn-entrypoint
+       --from-file=entrypoint.sh={{ gpu_burn_entrypoint }}
        -n default
+       --dry-run=client
+       -oyaml
+       > {{ artifact_extra_logs_dir }}/000_configmap_gpu-burn_entrypoint.yml
 
-- name: Create the src ConfigMap
+- name: Create the entrypoint ConfigMap resource
   command:
+    oc apply -f {{ artifact_extra_logs_dir }}/000_configmap_gpu-burn_entrypoint.yml
+
+# Store the configmap into a file, for easy reproduction from artifacts
+- name: Create the src ConfigMap file
+  shell:
     oc create configmap gpu-burn-src
        --from-file={{ gpu_burn_src_dir }}
        -n default
+       --dry-run=client
+       -oyaml
+       > {{ artifact_extra_logs_dir }}/000_configmap_gpu-burn_src.yml
+
+- name: Create the src ConfigMap resource
+  command: oc apply -f {{ artifact_extra_logs_dir }}/000_configmap_gpu-burn_src.yml
 
 - name: Delete possibly stalled GPU burn Pods
   command: oc --ignore-not-found=true delete pod/gpu-burn-{{ item }} -n default
@@ -44,15 +56,17 @@
     loop_var: gpu_node_name
   template:
     src: "{{ gpu_burn_pod }}"
-    dest: "{{ artifact_extra_logs_dir }}/gpu_burn.{{ gpu_node_name }}.yml"
+    dest: "{{ artifact_extra_logs_dir }}/001_pod_gpu-burn_{{ gpu_node_name }}.yml"
     mode: 0400
 
 - name: Create GPU Burn Pods from template
   loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/gpu_burn.{{ item }}.yml"
+  loop_control:
+    loop_var: gpu_node_name
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/001_pod_gpu-burn_{{ gpu_node_name }}.yml"
 
 - name: "Let the GPU burn Pods run {{ gpu_burn_time }} seconds"
-  command: "sleep {{ gpu_burn_time }}"
+  command: sleep "{{ gpu_burn_time }}"
 
 - name: Ensure that the GPU burn ran successfully
   block:
@@ -98,5 +112,9 @@
     failed_when: false
 
   - name: Delete the entrypoint ConfigMap
-    command: oc --ignore-not-found=true delete -f "{{ gpu_burn_cm_entrypoint }}"
+    command: oc --ignore-not-found=true delete configmap gpu-burn-entrypoint -n default
+    failed_when: false
+
+  - name: Delete the src ConfigMap
+    command: oc --ignore-not-found=true delete configmap src -n default
     failed_when: false
