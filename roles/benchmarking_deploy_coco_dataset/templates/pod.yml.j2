@@ -6,6 +6,7 @@ metadata:
 spec:
   restartPolicy: Never
   nodeSelector:
+    # Force the Pod to run on a given Node
     kubernetes.io/hostname: {{ benchmarking_node_hostname }}
   containers:
   - name: coco-dataset-downloader
@@ -16,11 +17,9 @@ spec:
     - name: DATASET_BASE_URL
       value: "{{ benchmarking_coco_dataset_mirror_base_url }}"
 {% endif %}
-    - name: CERT_FILE
 {% if benchmarking_coco_dataset_client_cert|length %}
+    - name: CERT_FILE
       value: /etc/mirror-secret/mirror.pem
-{% else %}
-      value:
 {% endif %}
     volumeMounts:
 {% if benchmarking_coco_dataset_client_cert|length %}

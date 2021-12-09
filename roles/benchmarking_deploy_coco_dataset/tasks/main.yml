@@ -26,46 +26,52 @@
        -n {{ benchmarking_namespace }}
        --ignore-not-found=true
 
-- name: Create the entrypoint config map
-  command:
+- name: Create the entrypoint ConfigMap file
+  shell:
     oc create cm coco-dataset-downloader
        --from-file="entrypoint.sh={{ coco_dataset_entrypoint }}"
        -n {{ benchmarking_namespace }}
+       --dry-run=client
+       -oyaml
+       > {{ artifact_extra_logs_dir }}/000_configmap_coco-dataset_entrypoint.yml
+
+- name: Create the entrypoint ConfigMap resource
+  command: oc apply -f {{ artifact_extra_logs_dir }}/000_configmap_coco-dataset_entrypoint.yml
 
 - name: Apply the PVC template
   template:
     src: "{{ coco_dataset_pvc }}"
-    dest: "{{ artifact_extra_logs_dir }}/pvc.yml"
+    dest: "{{ artifact_extra_logs_dir }}/001_pvc_coco-dataset.yml"
     mode: 0400
 
 - name: Check if the PVC already exists
-  command: oc get -f "{{ artifact_extra_logs_dir }}/pvc.yml" -oname
+  command: oc get -f "{{ artifact_extra_logs_dir }}/001_pvc_coco-dataset.yml" -oname
   failed_when: false
   register: has_pvc
 
 - name: Create a PVC for storing the COCO dataset
   when: has_pvc.rc != 0
   command:
-    oc apply -f "{{ artifact_extra_logs_dir }}/pvc.yml"
+    oc apply -f "{{ artifact_extra_logs_dir }}/001_pvc_coco-dataset.yml"
 
 - name: Apply the Pod template
   template:
     src: "{{ coco_dataset_pod }}"
-    dest: "{{ artifact_extra_logs_dir }}/pod.yml"
+    dest: "{{ artifact_extra_logs_dir }}/002_pod_coco-dataset.yml"
     mode: 0400
 
 - name: Delete the Pod, if it exists
   command:
-    oc delete -f "{{ artifact_extra_logs_dir }}/pod.yml"
+    oc delete -f "{{ artifact_extra_logs_dir }}/002_pod_coco-dataset.yml"
        --ignore-not-found=true
 
 - name: Create a Pod for downloading the COCO dataset
   command:
-    oc apply -f "{{ artifact_extra_logs_dir }}/pod.yml"
+    oc apply -f "{{ artifact_extra_logs_dir }}/002_pod_coco-dataset.yml"
 
 - name: Wait for the downloader Pod to terminate
   command:
-    oc get -f "{{ artifact_extra_logs_dir }}/pod.yml"
+    oc get -f "{{ artifact_extra_logs_dir }}/002_pod_coco-dataset.yml"
        --no-headers
        -ocustom-columns=phase:status.phase
   register: wait_dataset_downloader_pod
