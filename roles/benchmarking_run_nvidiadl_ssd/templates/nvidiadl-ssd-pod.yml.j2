@@ -1,20 +1,19 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "{{ benchmarking_nvidiadl_ssd_name }}"
-  namespace: "{{ benchmarking_namespace }}"
+  name: {{ benchmarking_nvidiadl_ssd_name }}
+  namespace: {{ benchmarking_namespace }}
 spec:
   restartPolicy: Never
+  # Force the Pod to run on the same Node where the PVC was bound
   nodeSelector:
     kubernetes.io/hostname: {{ benchmarking_node_hostname }}
   containers:
   - name: nvidiadl
     image: quay.io/openshift-psap/nvidiadl-ssd-training-benchmark
     resources:
-      # limits:
-      #   nvidia.com/gpu: 0
-      # requests:
-      #   nvidia.com/gpu: 0
+      limits:
+        nvidia.com/gpu: 1
     volumeMounts:
     - name: entrypoint-volume
       mountPath: /mnt/entrypoint/entrypoint.sh

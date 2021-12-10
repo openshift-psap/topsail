@@ -11,32 +11,39 @@
     oc get pvc/{{ benchmarking_coco_dataset_pvc_name }}
        -n {{ benchmarking_namespace }}
 
-- name: Delete the entrypoint ConfigMap, if it exists
-  command:
-    oc delete cm {{ benchmarking_nvidiadl_ssd_entrypoint_cm_name }}
-       --ignore-not-found=true
+- name: Fetch the coco dataset PVC definition (debug)
+  shell:
+    oc get pvc/{{ benchmarking_coco_dataset_pvc_name }}
        -n {{ benchmarking_namespace }}
+       -oyaml
+       > {{ artifact_extra_logs_dir }}/pvc_coco-dataset.yml
 
-- name: Create the entrypoint ConfigMap
-  command:
+- name: Create the entrypoint ConfigMap file
+  shell:
     oc create cm {{ benchmarking_nvidiadl_ssd_entrypoint_cm_name }}
        --from-file="{{ benchmarking_nvidiadl_ssd_entrypoint }}"
        -n {{ benchmarking_namespace }}
+       --dry-run=client
+       -oyaml
+       > {{ artifact_extra_logs_dir }}/000_configmap_run-nvidiadl-ssd_entrypoint.yml
+
+- name: Create the entrypoint ConfigMap resource
+  command: oc apply -f {{ artifact_extra_logs_dir }}/000_configmap_run-nvidiadl-ssd_entrypoint.yml
 
 - name: Apply the Pod template
   template:
     src: "{{ benchmarking_nvidiadl_ssd_pod }}"
-    dest: "{{ artifact_extra_logs_dir }}/pod.yml"
+    dest: "{{ artifact_extra_logs_dir }}/001_pod_run-nvidiadl-ssd.yml"
     mode: 0400
 
 - name: Delete the Pod, if it exists
   command:
-    oc delete -f "{{ artifact_extra_logs_dir }}/pod.yml"
+    oc delete -f "{{ artifact_extra_logs_dir }}/001_pod_run-nvidiadl-ssd.yml"
        --ignore-not-found=true
 
 - name: Deploy the Pod to run the benchmark
   command:
-    oc create -f "{{ artifact_extra_logs_dir }}/pod.yml"
+    oc create -f "{{ artifact_extra_logs_dir }}/001_pod_run-nvidiadl-ssd.yml"
 
 - name: Wait for the benchmark completion
   command:
@@ -52,12 +59,18 @@
 - name: Store the logs of benchmark execution (for post-processing)
   shell:
     oc logs pod/{{ benchmarking_nvidiadl_ssd_name }} -n {{ benchmarking_namespace }}
-       > "{{ artifact_extra_logs_dir }}/nvidiadl_ssd_pod.log"
+       > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.log"
   failed_when: false
 
 - name: Store the status of the benchmark execution (for post-processing)
   shell:
-    echo "{{ wait_benchmark_pod_cmd.stdout }}" > "{{ artifact_extra_logs_dir }}/status"
+    echo "{{ wait_benchmark_pod_cmd.stdout }}" > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.status"
+
+- name: Store the description of benchmark execution (debug)
+  shell:
+    oc describe pod/{{ benchmarking_nvidiadl_ssd_name }} -n {{ benchmarking_namespace }}
+       > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.descr"
+  failed_when: false
 
 - name: Fail if the pod execution failed
   when: "'Failed' in wait_benchmark_pod_cmd.stdout or 'Error' in wait_benchmark_pod_cmd.stdout"

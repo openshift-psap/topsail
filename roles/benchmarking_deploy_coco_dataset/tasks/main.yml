@@ -20,12 +20,6 @@
        -n {{ benchmarking_namespace }}
        --from-file=mirror.pem={{ benchmarking_coco_dataset_client_cert }}
 
-- name: Delete the entrypoint CM, if it exists
-  command:
-    oc delete cm/coco-dataset-downloader
-       -n {{ benchmarking_namespace }}
-       --ignore-not-found=true
-
 - name: Create the entrypoint ConfigMap file
   shell:
     oc create cm coco-dataset-downloader
