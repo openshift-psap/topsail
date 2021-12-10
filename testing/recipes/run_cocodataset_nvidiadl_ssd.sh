@@ -42,4 +42,12 @@ for i in $(seq $RUN_CNT); do
     ./run_toolbox.py benchmarking download_coco_dataset "$gpu_node_hostname" $DL_OPT
 done
 
-./run_toolbox.py benchmarking run_nvidiadl_ssd "$gpu_node_hostname"
+RUN_CNT=1
+if [[ "$@" == *benchmark_twice* ]]; then
+    # for testing purposes, to make sure that the files are cached and not actually downloaded twice
+    RUN_CNT=2
+fi
+
+for i in $(seq $RUN_CNT); do
+    ./run_toolbox.py benchmarking run_nvidiadl_ssd "$gpu_node_hostname"
+done
