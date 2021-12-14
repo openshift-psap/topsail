@@ -110,7 +110,7 @@ prepare_cluster_for_gpu_operator() {
 collect_must_gather() {
     run_in_sub_shell() {
         echo "Running the GPU Operator must-gather image ..."
-        OPERATOR_IMAGE=$(oc get pods -A -lapp=gpu-operator -o=jsonpath='{.items[0].spec.containers[0].image}' || true)
+        OPERATOR_IMAGE=$(oc get pods -A -lapp=gpu-operator -o=jsonpath='{.items[0].spec.containers[0].image}' 2> /dev/null || true)
 
         TMP_DIR="$(mktemp -d -t gpu-operator_XXXX)"
 
