@@ -155,10 +155,14 @@ collect_must_gather() {
 
         echo "Running gpu_operator capture_deployment_state ... done."
 
+        version=$(cat "$ARTIFACT_DIR"/*__gpu_operator__capture_deployment_state/gpu_operator.version 2> /dev/null || echo MISSING)
+        echo "$version" > ${ARTIFACT_DIR}/operator.version
 
-        (cat "$ARTIFACT_EXTRA_LOGS_DIR"/*__gpu_operator__wait_deployment/gpu_operator.version 2> /dev/null || echo MISSING) > ${ARTIFACT_DIR}/operator.version
-
-        echo "Operator versions collected."
+        if [[ "$version" != "MISSING" ]]; then
+            echo "Operator versions collected."
+        else
+            echo "Failed to collect the operator version ..."
+        fi
     }
 
     # run the function above in a subshell to avoid polluting the local `env`.
