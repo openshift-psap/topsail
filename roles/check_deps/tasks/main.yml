@@ -53,3 +53,6 @@
 
 - name: Get the address of the console (debug)
   command: oc whoami --show-console
+
+- name: Get the cluster username (debug)
+  command: oc whoami
