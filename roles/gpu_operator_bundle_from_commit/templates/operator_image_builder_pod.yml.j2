@@ -23,7 +23,7 @@ spec:
       - name: OPERATOR_IMAGE_NAME
         value: "{{ operator_image_name }}"
       - name: BUILDER_FROM_IMAGE
-        value: "quay.io/openshift-psap/golang:1.15" # avoid using docker.io and its quotas...
+        value: "quay.io/openshift-psap/golang:1.17" # avoid using docker.io and its quotas...
     volumeMounts:
     - mountPath: /mnt/helper/run_operator_image_builder.sh
       name: operator-image-builder-script
