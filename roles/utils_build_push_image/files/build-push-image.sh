@@ -58,7 +58,8 @@ elif [[ -n $repo ]] ; then
         git clone --depth 1 $repo repo
     fi
     cd repo
-    podman build -t $name:tag -f $path
+    full="$(pwd)$path"
+    podman build -t $name:tag -f $full
 fi
 
 if [[ -n ${quay:8} ]] ; then
