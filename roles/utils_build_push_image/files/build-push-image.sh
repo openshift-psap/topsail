@@ -50,7 +50,7 @@ elif [[ -z $name || -z $tag ]] ; then
 fi
 
 if [[ -n $dockerfile ]] ; then
-    podman build -t $name:tag -f $dockerfile
+    podman build --security-opt label=disable --security-opt unmask=ALL --device /dev/fuse -t $name:tag -f $dockerfile
 elif [[ -n $repo ]] ; then
     if [[ -n $branch ]] ; then
         git clone --depth 1 $repo --branch $branch repo
@@ -59,7 +59,7 @@ elif [[ -n $repo ]] ; then
     fi
     cd repo
     full="$(pwd)$path"
-    podman build -t $name:tag -f $full
+    podman build --security-opt label=disable --security-opt unmask=ALL --device /dev/fuse -t $name:tag -f $full
 fi
 
 if [[ -n ${quay:8} ]] ; then

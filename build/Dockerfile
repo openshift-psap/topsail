@@ -14,9 +14,14 @@ RUN yum install -y \
 		glibc-langpack-en \
 		go git make jq vim wget rsync time\
 		podman\
+		buildah\
+		iptables\
+		fuse-overlayfs\
+		crun\
 		python3 python3-devel python3-pip python3-setuptools && \
 	python3 -m pip install --no-cache-dir --upgrade setuptools pip wheel && \
 	python3 -m pip install --no-cache-dir -r /requirements.txt && \
+	#yum reinstall -y shadow-utils && \
 	yum clean all && \
 	rm -rf $HOME/.cache && \
 	rm -rf /var/cache/yum
@@ -58,6 +63,31 @@ ENV USER_NAME=psap-ci-runner \
     INSIDE_CI_IMAGE="y"
 
 COPY . ${HOME}/
+
+#RUN echo "psap-ci-runner:231072:65536" >> /etc/subuid \
+#	&& echo "psap-ci-runner:231072:65536" >> /etc/subgid \
+RUN useradd psap-ci-runner -d /opt/ci-artifacts/src/ \
+	&& usermod --add-subuids 200000-201000 --add-subgids 200000-201000 psap-ci-runner \
+	&& chmod 7777 /usr/bin/newgidmap \
+	&& chmod 7777 /usr/bin/newuidmap
+
+VOLUME /var/lib/containers
+VOLUME /home/podman/.local/share/containers
+ADD https://raw.githubusercontent.com/containers/libpod/master/contrib/podmanimage/stable/containers.conf /etc/containers/containers.conf
+ADD https://raw.githubusercontent.com/containers/libpod/master/contrib/podmanimage/stable/podman-containers.conf /home/podman/.config/containers/containers.conf
+
+# chmod containers.conf and adjust storage.conf to enable Fuse storage.
+RUN chmod 644 /etc/containers/containers.conf; sed -i -e 's|^#mount_program|mount_program|g' -e '/additionalimage.*/a "/var/lib/shared",' -e 's|^mountopt[[:space:]]*=.*$|mountopt = "nodev,fsync=0"|g' /etc/containers/storage.conf
+RUN mkdir -p /var/lib/shared/overlay-images /var/lib/shared/overlay-layers /var/lib/shared/vfs-images /var/lib/shared/vfs-layers; touch /var/lib/shared/overlay-images/images.lock; touch /var/lib/shared/overlay-layers/layers.lock; touch /var/lib/shared/vfs-images/images.lock; touch /var/lib/shared/vfs-layers/layers.lock
+
+ENV _CONTAINERS_USERNS_CONFIGURED=""
+
+# order testing
+RUN yum reinstall -y shadow-utils && \
+	yum clean all && \
+	rm -rf $HOME/.cache && \
+	rm -rf /var/cache/yum && \
+	podman system migrate
 
 # Prepare the CI `run` entrypoint
 RUN echo -e '#!/usr/bin/env bash \n\
