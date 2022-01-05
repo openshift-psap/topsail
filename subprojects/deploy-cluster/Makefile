@@ -19,5 +19,6 @@ include config_install.mk
 
 include cluster_full.mk
 include cluster_single-master.mk
+include cluster_sno.mk
 
 include entitlement.mk
