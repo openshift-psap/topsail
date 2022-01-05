@@ -1,0 +1,20 @@
+---
+# Name of the catalog containing the operator.
+cluster_deploy_operator_catalog:
+# Name of the operator package manifest.
+cluster_deploy_operator_manifest_name:
+
+# Namespace in which the operator will be deployed.
+cluster_deploy_operator_namespace:
+cluster_deploy_operator_all_namespaces: False
+# Optional boolean flag to enable OpenShift namespace monitoring.
+cluster_deploy_operator_namespace_monitoring: False
+
+# Optional channel to deploy from. If unspecified, deploys the CSV's default channel.
+cluster_deploy_operator_channel:
+# Optional version to deploy. If unspecified, deploys the latest version available in the selected channel.
+cluster_deploy_operator_version:
+# Optional InstallPlan approval mode (Automatic or Manual). Default: Manual.
+cluster_deploy_operator_installplan_approval:
+# Optional flag to deploy the first example CR found in the CSV. Use 'True' as true value.
+cluster_deploy_operator_deploy_cr:

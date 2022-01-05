@@ -1,0 +1,7 @@
+---
+- name: Deploy an Operator from OperatorHub
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: cluster_deploy_operator

@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ cluster_deploy_operator_namespace }}
+{% if cluster_deploy_operator_namespace_monitoring | bool %}
+  label:
+    openshift.io/cluster-monitoring: true
+{% endif %}
+

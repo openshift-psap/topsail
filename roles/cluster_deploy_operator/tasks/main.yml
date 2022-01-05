@@ -1,0 +1,294 @@
+---
+- name: Check that cluster_deploy_operator_catalog is defined
+  fail: msg="Bailing out. This role requires 'cluster_deploy_operator_catalog'"
+  when: cluster_deploy_operator_catalog is undefined
+
+- name: Check that cluster_deploy_operator_manifest_name is defined
+  fail: msg="Bailing out. This role requires 'cluster_deploy_operator_manifest_name'"
+  when: cluster_deploy_operator_manifest_name is undefined
+
+- name: Check that cluster_deploy_operator_namespace is defined
+  fail: msg="Bailing out. This role requires 'cluster_deploy_operator_namespace'"
+  when: cluster_deploy_operator_namespace is undefined
+
+- name: Store deployment values (debug)
+  shell: |
+    cat <<EOF > {{ artifact_extra_logs_dir }}/deployment.txt
+    # Name of the catalog containing the operator.
+    cluster_deploy_operator_catalog: {{ cluster_deploy_operator_catalog }}
+    # Name of the operator package manifest.
+    cluster_deploy_operator_manifest_name: {{ cluster_deploy_operator_manifest_name }}
+
+    # Namespace in which the operator will be deployed.
+    cluster_deploy_operator_namespace: {{ cluster_deploy_operator_namespace }}
+    cluster_deploy_operator_all_namespaces: {{ cluster_deploy_operator_all_namespaces }}
+
+    # Optional channel to deploy from. If unspecified, deploys the CSV default channel.
+    cluster_deploy_operator_channel: {{ cluster_deploy_operator_channel }}
+    # Optional version to deploy. If unspecified, deploys the latest version available in the selected channel.
+    cluster_deploy_operator_version: {{ cluster_deploy_operator_version }}
+    # Optional InstallPlan approval mode (Automatic or Manual). Default: Manual.
+    cluster_deploy_operator_installplan_approval: {{ cluster_deploy_operator_installplan_approval }}
+    # Optional flag to deploy the first example CR found in the CSV. Use 'True' as true value.
+    cluster_deploy_operator_deploy_cr: {{ cluster_deploy_operator_deploy_cr }}
+    # Optional boolean flag to enable OpenShift namespace monitoring.
+    cluster_deploy_operator_namespace_monitoring: {{ cluster_deploy_operator_namespace_monitoring }}
+    EOF
+
+- name: Ensure the operator package is available
+  block:
+  - name: Ensure that the CatalogSource exists
+    command:
+      oc get CatalogSource/{{ cluster_deploy_operator_catalog }}
+         -n openshift-marketplace
+
+  - name: Capture the state of the CatalogSource (debug)
+    shell:
+      oc get -oyaml CatalogSource/{{ cluster_deploy_operator_catalog }}
+         -n openshift-marketplace
+         -oyaml
+      > {{ artifact_extra_logs_dir }}/catalogsource.yml
+    failed_when: false
+
+  - name: Ensure that the operator package manifest exists
+    command:
+      oc get packagemanifests/{{ cluster_deploy_operator_manifest_name }} -n openshift-marketplace
+    register: operator_package_available
+    until: operator_package_available.rc == 0
+    retries: 15
+    delay: 30
+
+  - name: Save the operator PackageManifest YAML (debug)
+    shell:
+      oc get packagemanifests/{{ cluster_deploy_operator_manifest_name }}
+         -n openshift-marketplace
+         -oyaml
+         > {{ artifact_extra_logs_dir }}/operator_packagemanifest.yml
+
+  - name: Store the operator PackageManifest JSON
+    shell:
+      oc get packagemanifests/{{ cluster_deploy_operator_manifest_name }}
+         -n openshift-marketplace
+         -ojson
+         > {{ artifact_extra_logs_dir }}/operator_packagemanifest.json
+
+  rescue:
+  - name: Capture the Catalog Operator logs (debug)
+    shell:
+      oc logs deployment.apps/catalog-operator
+         -n openshift-operator-lifecycle-manager
+         > {{ artifact_extra_logs_dir }}/catalog_operator.log
+    failed_when: false
+
+  - name: Indicate where the Catalog-operator logs have been saved
+    debug: msg="The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.log"
+
+  - name: Mark the failure as flake
+    shell:
+      echo "Failed because of the {{ cluster_deploy_operator_manifest_name }} PackageManifest not available"
+           > "{{ artifact_extra_logs_dir }}/FLAKE"
+
+  - name: Failed because the operator could not be found in the CatalogSource
+    fail: msg="Failed because the operator could not be found in the CatalogSource"
+
+- name: List the available channels if requested
+  when: cluster_deploy_operator_channel == "?"
+  block:
+
+  - name: List the channels available in the operator package manifest
+    command: |
+      jq '.status.channels[] | {
+            "channel": .name,
+            "version": .currentCSVDesc.version
+         }'
+         "{{ artifact_extra_logs_dir }}/operator_packagemanifest.json"
+    register: available_channels_cmd
+
+  - name: Get the default channel (debug)
+    command:
+      jq -r .status.defaultChannel "{{ artifact_extra_logs_dir }}/operator_packagemanifest.json"
+    register: default_channel_cmd
+
+  - name: Fail with the listing the available channels
+    fail:
+      msg: |
+        Available channels:
+        {{ available_channels_cmd.stdout }}
+        Default channel: {{ default_channel_cmd.stdout }}
+
+- name: Fetch the default channel name when none was requested
+  when: not cluster_deploy_operator_channel
+  block:
+  - name: Get the default channel of the operator
+    command:
+      jq -r
+         '.status.defaultChannel'
+         {{ artifact_extra_logs_dir }}/operator_packagemanifest.json
+    register: operator_channel_cmd
+    failed_when: not operator_channel_cmd.stdout
+
+- name: Store the channel name
+  block:
+  - name: Use the rescue block
+    when: cluster_deploy_operator_channel | default('', true) | length != 0
+    fail: msg="Use the rescue block"
+
+  - name: Store the channel name just computed
+    set_fact:
+      operator_channel: "{{ operator_channel_cmd.stdout }}"
+  rescue:
+  - name: Store the channel name passed as parameter
+    set_fact:
+      operator_channel: "{{ cluster_deploy_operator_channel }}"
+
+- name: "Get the version of the operator on channel '{{ cluster_deploy_operator_channel }}'"
+  when: cluster_deploy_operator_version | default('', true) | length == 0
+  command:
+    jq -r
+      '.status.channels[] | select(.name == "{{ operator_channel }}") | .currentCSV'
+      {{ artifact_extra_logs_dir }}/operator_packagemanifest.json
+  register: operator_csv_name_cmd
+  failed_when: not operator_csv_name_cmd.stdout
+
+- name: Fail if current CSV not found for the channel
+  fail: msg="Could not find the current CSV for the operator Channel '{{ operator_channel }}'"
+  when: cluster_deploy_operator_version | default('', true) | length == 0 and not operator_csv_name_cmd.stdout
+
+- name: Fetch the operator version and store its CSV name
+  block:
+  - name: Skip if the version was passed as a parameter '{{ cluster_deploy_operator_version }}'
+    when: cluster_deploy_operator_version | default('', true) | length > 0
+    fail: msg="Use the rescue block"
+
+  - name: Store the CSV version
+    set_fact:
+      operator_csv_name: "{{ operator_csv_name_cmd.stdout }}"
+
+  rescue:
+  - name: Store the CSV version from the parameter
+    set_fact:
+      operator_csv_name: "{{ cluster_deploy_operator_manifest_name }}.v{{ cluster_deploy_operator_version }}"
+
+- name: Store the CSV version
+  set_fact:
+    startingCSV: "{{ operator_csv_name }}"
+
+- name: Store the version of the Operator that will be installed
+  shell: echo "{{ startingCSV }}" > "{{ artifact_extra_logs_dir }}/operator_csv_name.txt"
+
+- name: "Create the Subscription"
+  debug: msg="startingCSV is {{ startingCSV }}"
+
+- name: Create the namespace, if it did not exist
+  when: not cluster_deploy_operator_all_namespaces | bool
+  block:
+  - name: Instantiate the Namespace template
+    template:
+      src: "{{ cluster_deploy_operator_res_ns }}"
+      dest: "{{ artifact_extra_logs_dir }}/000_namespace.yml"
+      mode: 0400
+
+  - name: Check if the namespace exists
+    command: oc get "ns/{{ cluster_deploy_operator_namespace }}"
+    failed_when: false
+    register: namespace_exists_cmd
+
+  - name: Create the namespace resource
+    when: namespace_exists_cmd.rc == 1
+    command:
+      oc create -f "{{ artifact_extra_logs_dir }}/000_namespace.yml"
+
+  - name: Mark the namespace for monitoring, if requested
+    when: cluster_deploy_operator_namespace_monitoring | bool
+    command:
+      oc label ns/{{ cluster_deploy_operator_namespace }} openshift.io/cluster-monitoring=true
+
+- name: Create the OperatorGroup for deploying in a dedicated namespace
+  when: not cluster_deploy_operator_all_namespaces | bool
+  block:
+  - name: Instantiate the OperatorGroup template
+    template:
+      src: "{{ cluster_deploy_operator_res_group }}"
+      dest: "{{ artifact_extra_logs_dir }}/001_operator_group.yml"
+      mode: 0400
+
+  - name: Instantiate the OperatorHub OperatorGroup resource
+    command: oc apply -f "{{ artifact_extra_logs_dir }}/001_operator_group.yml"
+
+- name: "Create the Subscription for {{ operator_csv_name }}"
+  template:
+    src: "{{ cluster_deploy_operator_res_sub }}"
+    dest: "{{ artifact_extra_logs_dir }}/002_sub.yml"
+    mode: 0400
+
+- name: Instantiate the Subscription
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/002_sub.yml"
+
+- block:
+  - name: Find the operator InstallPlan
+    command:
+      oc get InstallPlan
+         -n "{{ cluster_deploy_operator_namespace }}"
+         -oname
+         -loperators.coreos.com/"{{ cluster_deploy_operator_manifest_name }}.{{ cluster_deploy_operator_namespace }}"
+    register: operator_installplan_name
+    until: operator_installplan_name.stdout != ""
+    retries: 20
+    delay: 30
+
+  - name: Approve the operator InstallPlan
+    when: cluster_deploy_operator_installplan_approval == "Manual"
+    command:
+      oc patch {{ operator_installplan_name.stdout }}
+         -n "{{ cluster_deploy_operator_namespace }}"
+         --type merge
+         --patch '{"spec":{"approved":true }}'
+
+  - name: Wait for the ClusterServiceVersion
+    command:
+      oc get ClusterServiceVersion/{{ operator_csv_name }}
+         -oname
+         -n "{{ cluster_deploy_operator_namespace }}"
+    register: operator_wait_csv
+    until: operator_wait_csv.stdout != ""
+    retries: 40
+    delay: 30
+
+  - name: Wait for the ClusterServiceVersion install to complete
+    command:
+      oc get ClusterServiceVersion/{{ operator_csv_name }}
+         -ojsonpath={.status.phase}
+         -n "{{ cluster_deploy_operator_namespace }}"
+    register: operator_csv_phase
+    until: operator_csv_phase.stdout != "Pending" and operator_csv_phase.stdout != "InstallReady" and operator_csv_phase.stdout != "Installing"
+    retries: 40
+    delay: 30
+
+  - name: Fail if the ClusterServiceVersion install did not succeeded
+    fail: msg="ClusterServiceVersion install not successful ({{ operator_csv_phase.stdout }})"
+    when: operator_csv_phase.stdout != "Succeeded"
+
+  always:
+  - name: Store the YAML of the operator CSV that was installed (debug)
+    shell:
+      oc get ClusterServiceVersion/{{ operator_csv_name }}
+         -oyaml
+          -n "{{ cluster_deploy_operator_namespace }}"
+          > {{ artifact_extra_logs_dir }}/operator_csv.yml
+  rescue:
+  - name: Capture the Catalog Operator logs (debug)
+    shell:
+      oc logs deployment.apps/catalog-operator
+         -n openshift-operator-lifecycle-manager
+         > {{ artifact_extra_logs_dir }}/catalog_operator.log
+    failed_when: false
+
+  - name: Indicate where the Catalog-operator logs have been saved
+    debug: msg="The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.log"
+
+  - name: Failed because the operator could not be installed from the CatalogSource
+    fail: msg="Failed because the operator could not be installed from the CatalogSource"
+
+- name: Deploy the operator CustomResource from its ClusterServiceVersion
+  include_tasks: deploy_cr.yml
+  when: cluster_deploy_operator_deploy_cr | bool

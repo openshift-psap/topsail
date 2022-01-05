@@ -1,0 +1,9 @@
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: {{ cluster_deploy_operator_manifest_name }}-operator-group
+  namespace: {{ cluster_deploy_operator_namespace }}
+spec:
+  targetNamespaces:
+  - {{ cluster_deploy_operator_namespace }}

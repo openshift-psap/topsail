@@ -1,0 +1,13 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: gpu-operator-certified
+  namespace: "{{ cluster_deploy_operator_namespace }}"
+spec:
+  channel: "{{ cluster_deploy_operator_channel }}"
+  installPlanApproval: "{{ cluster_deploy_operator_installplan_approval }}"
+  name: "{{ cluster_deploy_operator_manifest_name }}"
+  source: "{{ cluster_deploy_operator_catalog }}"
+  sourceNamespace: openshift-marketplace
+  startingCSV: "{{ startingCSV }}"

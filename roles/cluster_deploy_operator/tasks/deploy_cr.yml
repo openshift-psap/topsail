@@ -1,0 +1,11 @@
+---
+- name: Get the CR of the operator from the CSV
+  shell:
+    set -o pipefail;
+    oc get "csv/{{ operator_csv_name }}"
+       -n "{{ cluster_deploy_operator_namespace }}"
+       -ojsonpath={.metadata.annotations."alm-examples"}
+    | jq .[0] > "{{ artifact_extra_logs_dir }}/003_operator_cr.json"
+
+- name: Create the operator CR
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/003_operator_cr.json"
