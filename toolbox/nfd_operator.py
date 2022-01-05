@@ -33,12 +33,17 @@ class NFDOperator:
         Args:
             The operator hub channel to deploy. e.g. 4.7
         """
-        opts = {}
+        opts = {
+            "cluster_deploy_operator_catalog": "redhat-operators",
+            "cluster_deploy_operator_manifest_name": "nfd",
+            "cluster_deploy_operator_namespace": "openshift-nfd",
+            "cluster_deploy_operator_deploy_cr": True,
+        }
 
         if channel is not None:
-            opts["nfd_channel"] = channel
+            opts["cluster_deploy_operator_channel"] = channel
 
-        return PlaybookRun("nfd_operator_deploy_from_operatorhub", opts)
+        return PlaybookRun("cluster_deploy_operator", opts)
 
     @staticmethod
     def undeploy_from_operatorhub():
