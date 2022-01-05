@@ -37,4 +37,5 @@ SINGLE_MASTER_DST := ${CLUSTER_PATH}/manifests/
 OPENSHIFT_INSTALLER ?= ${UTILS_DIR}/installers/${OCP_VERSION}/openshift-install
 OPENSHIFT_INSTALLER_URL = "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OCP_VERSION}/openshift-install-linux-${OCP_VERSION}.tar.gz"
 
+# unset to skip diff confirmation in 'config_base_install'
 DIFF_TOOL := meld

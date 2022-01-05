@@ -52,7 +52,9 @@ config_base_install:
 		echo "You must copy ${CLUSTER_PATH}/install-config.yaml to ${BASE_INSTALL_CONFIG}"; \
 		exit 1; \
 	fi
-        ${DIFF_TOOL} ${BASE_INSTALL_CONFIG} ${CLUSTER_PATH}/install-config.yaml
+	@if [ "${DIFF_TOOL}" ]; then \
+           ${DIFF_TOOL} ${BASE_INSTALL_CONFIG} ${CLUSTER_PATH}/install-config.yaml; \
+	fi
 
 kubeconfig:
 	@if [ ! -e ${CLUSTER_PATH}/auth/kubeconfig ]; then \
