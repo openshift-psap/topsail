@@ -1,0 +1,2 @@
+boto3==1.19
+openshift-python-wrapper==2.1
