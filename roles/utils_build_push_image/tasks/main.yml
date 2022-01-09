@@ -19,6 +19,9 @@
       -b "{{ branch }}"
       -o "{{ build_config_output_dir }}"
 
+- name: Create namespace for images if doesn't exist
+  command: kubectl create namespace utils-ci --dry-run=client -o yaml | kubectl apply -f -
+
 - name: Delete old image build config
   command: oc delete -f "{{ build_config_output_dir }}/config.yml"
   failed_when: false
