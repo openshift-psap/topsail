@@ -18,3 +18,41 @@
       -a "{{ auth_file }}"
       -b "{{ branch }}"
       -o "{{ build_config_output_dir }}"
+
+- name: Delete old image build config
+    command: oc delete -f "{{ build_config_output_dir }}/config.yml"
+    failed_when: false
+
+- name: Apply image build config
+    command: oc apply -f "{{ build_config_output_dir }}/config.yml"
+
+- name: Get the name of the build
+    command:
+      oc get builds
+         -lbuildconfig={{ local_image_name }}
+         -oname
+         -n utils-ci
+    register: build_name_cmd
+    failed_when: build_name_cmd.stdout | length == 0
+
+- block:
+  - name: Wait for the image to be built
+    command:
+      oc get {{ build_name_cmd.stdout }}
+          -ojsonpath={.status.phase}
+          -n utils-ci
+    register: wait_img_build
+    until: "'Complete' in wait_img_build.stdout or 'Failed' in wait_img_build.stdout"
+    retries: 40
+    delay: 30
+
+  - name: Fail if the image failed to be built
+    when: "'Failed' in wait_img_build.stdout"
+    fail: msg="The image failed to build"
+
+  always:
+  - name: Store the logs of image build (debug)
+    shell:
+      oc logs {{ build_name_cmd.stdout }} -n utils-ci
+          > {{ artifact_extra_logs_dir }}/image-build.log
+    failed_when: false
