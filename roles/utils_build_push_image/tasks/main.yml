@@ -6,9 +6,9 @@
   fail: msg="Bailing out. This play requires 'image_tag'"
   when: image_tag is undefined
 
-- name: Build and publish image
+- name: Create build config from template
   command: 
-    /bin/bash "{{ utils_build_push_image_script }}" 
+    /bin/bash "{{ utils_create_build_config_script }}" 
       -n "{{ local_image_name }}"
       -t "{{ image_tag }}"
       -d "{{ docker_path }}"
@@ -17,3 +17,4 @@
       -q "{{ quay_repo }}"
       -a "{{ auth_file }}"
       -b "{{ branch }}"
+      -o "{{ build_config_output_dir }}"

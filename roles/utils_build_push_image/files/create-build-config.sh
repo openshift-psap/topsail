@@ -13,12 +13,13 @@ function help() {
         -g: Git repo containing Dockerfile
         -p: Path/Name of git repo Dockerfile
         -b: Branch of repo to clone
+        -o: Output dir for build config
         -q: Quay.io Org/Repo
         -a: Authfile for quay.io
     "
 }
 
-while getopts n:t:g:d:p:q:a:b:h flag
+while getopts n:t:g:d:p:q:a:b:o:h flag
 do
     case "${flag}" in
         h) help
@@ -31,6 +32,7 @@ do
         q) quay="quay.io/${OPTARG}";;
         a) authfile=${OPTARG};;
         b) branch=${OPTARG};;
+        o) outdir=${OPTARG};;
         *) exit 1 ;;
     esac
 done
@@ -47,25 +49,28 @@ elif [[ -n $repo && -z $path ]] ; then
 elif [[ -z $name || -z $tag ]] ; then
     echo -- "Image name (-n) and tag (-t) required"
     exit 1
+elif [[ -z $outdir ]] ; then
+    echo -- "Build config output dir (-o) required"
+    exit 1
 fi
 
+export image_name=$name
+export image_tag=$tag
 if [[ -n $dockerfile ]] ; then
-    podman build --security-opt label=disable --security-opt unmask=ALL --device /dev/fuse -t $name:tag -f $dockerfile
+    export docker_path=$dockerfile
+    template="roles/utils_build_push_image/templates/local.yml"
+    #FIXME: INCOMPLETE OPTION
 elif [[ -n $repo ]] ; then
-    if [[ -n $branch ]] ; then
-        git clone --depth 1 $repo --branch $branch repo
-    else
-        git clone --depth 1 $repo repo
-    fi
-    cd repo
-    full="$(pwd)$path"
-    podman build --security-opt label=disable --security-opt unmask=ALL --device /dev/fuse -t $name:tag -f $full
+    export git_repo=$repo
+    export context_dir=$path
+    export branch=$branch
+    template="roles/utils_build_push_image/templates/repo.yml"
 fi
 
-if [[ -n ${quay:8} ]] ; then
-    if [[ -z $authfile ]] ; then
-        echo "Authfile (-a) required for push"
-    fi
-    podman tag $name:$tag $quay:$tag
-    podman push --tls-verify=false --authfile $authfile $quay:$tag
-fi
+rm -f "$outdir/config.yml $outdir/temp.yml"
+( echo "cat <<EOF >$outdir/config.yml";
+  cat "$template";
+  echo -e "\nEOF";
+) >"$outdir/temp.yml"
+source "$outdir/temp.yml"
+rm -f "$outdir/temp.yml"

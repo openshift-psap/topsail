@@ -1,0 +1,27 @@
+---
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: ci-artifacts
+  name: ${image_name}
+  namespace: utils-ci
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: ${image_name}:${image_tag}
+      namespace: utils-ci
+  resources: {}
+  source:
+    type: Git
+    git:
+      uri: ${repo}
+      ref: ${branch}
+    contextDir: ${path}
+  triggers:
+    - type: ConfigChange
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile

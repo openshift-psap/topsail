@@ -1,3 +1,4 @@
 ---
 # Script for building and pushing images
-utils_build_push_image_script: roles/utils_build_push_image/files/build-push-image.sh
+utils_create_build_config_script: roles/utils_build_push_image/files/create-build-config.sh
+build_config_output_dir: roles/utils_build_push_image/files
