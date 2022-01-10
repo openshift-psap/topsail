@@ -54,6 +54,11 @@
     retries: 40
     delay: 30
 
+  - name: Get build config description (again)
+    command: oc describe --namespace=utils-ci bc/ssd
+    register: build_config_desc_post
+    failed_when: build_config_desc_post.stdout | length == 0
+
   - name: Fail if the image failed to be built
     when: "'Failed' in wait_img_build.stdout"
     fail: msg="The image failed to build"
