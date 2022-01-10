@@ -7,6 +7,8 @@ set -o nounset
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd ${THIS_DIR}/../..
 
+nfd_git_repo=https://github.com/openshift/cluster-nfd-operator.git
+
 _expected_fail() {
     # mark the last toolbox step as an expected fail (for clearer
     # parsing/display in ci-dashboard)
@@ -37,8 +39,27 @@ validate_nfd_deployment() {
 }
 
 test_master_branch() {
-    CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
+    CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-$nfd_git_repo}"
     CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
+
+    echo "Using Git repository ${CI_IMAGE_NFD_COMMIT_CI_REPO} with ref ${CI_IMAGE_NFD_COMMIT_CI_REF}"
+
+    CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG="ci-image"
+
+    prepare_cluster_for_nfd
+    ./run_toolbox.py nfd_operator deploy_from_commit "${CI_IMAGE_NFD_COMMIT_CI_REPO}" \
+                                             "${CI_IMAGE_NFD_COMMIT_CI_REF}"  \
+                                             --image-tag="${CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG}"
+    validate_nfd_deployment
+}
+
+test_branch() {
+    CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-$nfd_git_repo}"
+    CI_IMAGE_NFD_COMMIT_CI_REF="${2:-}"
+
+    test "$CI_IMAGE_NFD_COMMIT_CI_REF" || {
+    CI_IMAGE_NFD_COMMIT_CI_REF=origin/release-$(oc get clusterversion -o jsonpath='{.items[].status.desired.version}' | grep -Po '^\d+\.\d+')
+    }
 
     echo "Using Git repository ${CI_IMAGE_NFD_COMMIT_CI_REPO} with ref ${CI_IMAGE_NFD_COMMIT_CI_REF}"
 
@@ -64,6 +85,10 @@ set -x
 case ${action:-} in
     "test_master_branch")
         test_master_branch "$@"
+        exit 0
+        ;;
+    "test_branch")
+        test_branch "$@"
         exit 0
         ;;
     *)
