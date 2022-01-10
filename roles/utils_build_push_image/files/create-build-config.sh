@@ -70,7 +70,7 @@ fi
 rm -f "$outdir/config.yml $outdir/temp.yml"
 ( echo "cat <<EOF >$outdir/config.yml";
   cat "$template";
-  echo -e "\nEOF";
+  echo "EOF";
 ) >"$outdir/temp.yml"
 source "$outdir/temp.yml"
 rm -f "$outdir/temp.yml"

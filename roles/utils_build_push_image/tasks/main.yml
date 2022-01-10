@@ -38,6 +38,11 @@
   register: build_name_cmd
   failed_when: build_name_cmd.stdout | length == 0
 
+- name: Get build config description
+  command: oc describe bc/ssd
+  register: build_config_desc
+  failed_when: build_config_desc.stdout | length == 0
+
 - block:
   - name: Wait for the image to be built
     command:
