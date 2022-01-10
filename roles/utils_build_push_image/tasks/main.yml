@@ -39,7 +39,7 @@
   failed_when: build_name_cmd.stdout | length == 0
 
 - name: Get build config description
-  command: oc describe -A bc/ssd
+  command: oc describe --namespace=utils-ci bc/ssd
   register: build_config_desc
   failed_when: build_config_desc.stdout | length == 0
 
