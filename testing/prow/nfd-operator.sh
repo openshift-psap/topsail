@@ -58,7 +58,7 @@ test_branch() {
     CI_IMAGE_NFD_COMMIT_CI_REF="${2:-}"
 
     test "$CI_IMAGE_NFD_COMMIT_CI_REF" || {
-    CI_IMAGE_NFD_COMMIT_CI_REF=origin/release-$(oc get clusterversion -o jsonpath='{.items[].status.desired.version}' | grep -Po '^\d+\.\d+')
+    CI_IMAGE_NFD_COMMIT_CI_REF=release-$(oc get clusterversion -o jsonpath='{.items[].status.desired.version}' | grep -Po '^\d+\.\d+')
     }
 
     echo "Using Git repository ${CI_IMAGE_NFD_COMMIT_CI_REPO} with ref ${CI_IMAGE_NFD_COMMIT_CI_REF}"
