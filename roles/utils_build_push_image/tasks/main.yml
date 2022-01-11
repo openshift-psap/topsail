@@ -22,6 +22,9 @@
 - name: Create namespace for images if doesn't exist
   shell: kubectl create namespace utils-ci --dry-run=client -o yaml | kubectl apply -f -
 
+- name: Create imagestream for image if doesn't exist
+  shell: oc create imagestream {{ local_image_name }} --dry-run=client -o yaml | oc apply -f -
+
 - name: Delete old image build config
   command: oc delete -f "{{ build_config_output_dir }}/config.yml"
   failed_when: false

@@ -7,7 +7,7 @@ set -o nounset
 local_name="ssd"
 tag="latest"
 
-repo="https://github.com/openshift-psap/training_results_v0.7"
+repo="https://github.com/openshift-psap/training_results_v0.7.git"
 path="NVIDIA/benchmarks/ssd/implementations/pytorch"
 branch="fix/build-error"
 quay="openshift-psap/nvidiadl-ssd-training-benchmark"
