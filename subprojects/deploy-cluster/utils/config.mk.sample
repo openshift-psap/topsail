@@ -2,7 +2,7 @@ TODAY ?= $(shell date '+%Y%m%d')
 CLUSTER_NAME ?= ${USER}-${TODAY}
 CLUSTER_PATH ?= ${PWD}/clusters/${CLUSTER_NAME}
 
-ENTITLEMENT_PEM ?= /path/to/entitlement.pem
+ENTITLEMENT_PEM ?= # /path/to/entitlement.pem
 
 OCP_VERSION ?= 4.9.11
 
