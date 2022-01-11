@@ -13,31 +13,31 @@ ${OPENSHIFT_INSTALLER}:
 	test -e "${OPENSHIFT_INSTALLER}"
 
 manifest: has_installer
-	@[[ -f ${CLUSTER_PATH}/install-config.yaml ]] && cp ${CLUSTER_PATH}/install-config{,.back}.yaml || echo
-	${OPENSHIFT_INSTALLER} create manifests --dir=${CLUSTER_PATH} > /dev/null;
+	@[ -f "${CLUSTER_PATH}/install-config.yaml" ] && cp "${CLUSTER_PATH}"/install-config{,.back}.yaml || echo
+	"${OPENSHIFT_INSTALLER}" create manifests --dir="${CLUSTER_PATH}" > /dev/null;
 
 install: has_installer
-	@[[ -f ${CLUSTER_PATH}/install-config.yaml ]] && cp ${CLUSTER_PATH}/install-config{,.back}.yaml || echo
-	@if [ -e ${CLUSTER_PATH}/install.log ]; then \
+	@[ -f "${CLUSTER_PATH}/install-config.yaml" ] && cp "${CLUSTER_PATH}"/install-config{,.back}.yaml || echo
+	@if [ -e "${CLUSTER_PATH}/install.log" ]; then \
 	  echo "INFO: Found ${CLUSTER_PATH}/install.log" \
 	  echo "ERROR: Cluster already installed ..."; \
 	  exit 1; \
 	fi
-	time ${OPENSHIFT_INSTALLER} create cluster --dir=${CLUSTER_PATH} --log-level=debug 2>&1 | tee ${CLUSTER_PATH}/install.log
+	time "${OPENSHIFT_INSTALLER}" create cluster --dir="${CLUSTER_PATH}" --log-level=debug 2>&1 | tee "${CLUSTER_PATH}/install.log"
 
 config_new_install: has_installer
-	@mkdir ${CLUSTER_PATH} -p
-	@if [ -f '${INSTALL_CONFIG}' ]; then\
+	@mkdir "${CLUSTER_PATH}" -p
+	@if [ -f "${INSTALL_CONFIG}" ]; then\
 	  echo "ERROR: ${INSTALL_CONFIG} already exists ...";\
 	  exit 1;\
 	fi
 	@echo "Generating ${CLUSTER_PATH}/install-config.yaml ..."
-	${OPENSHIFT_INSTALLER} create install-config --dir=${CLUSTER_PATH} --log-level=debug
+	"${OPENSHIFT_INSTALLER}" create install-config --dir="${CLUSTER_PATH}" --log-level=debug
 
 config_base_install:
-	@mkdir ${CLUSTER_PATH} -p
-	@if [ ! -f ${CLUSTER_PATH}/install-config.yaml ]; then \
-	  if [ ! -f ${BASE_INSTALL_CONFIG} ]; then \
+	@mkdir "${CLUSTER_PATH}" -p
+	@if [ ! -f "${CLUSTER_PATH}/install-config.yaml" ]; then \
+	  if [ ! -f "${BASE_INSTALL_CONFIG}" ]; then \
 	    echo "ERROR: Base install config file not found in ${BASE_INSTALL_CONFIG}."; \
 	    echo "1. Generate one with 'make config_new_install'"; \
 	    echo "2. Give 'cluster-name' as cluster name"; \
@@ -45,19 +45,19 @@ config_base_install:
 	    echo "4. Move it to '${BASE_INSTALL_CONFIG}'"; \
 	    exit 1; \
 	  fi; \
-	  cp ${BASE_INSTALL_CONFIG} ${CLUSTER_PATH}/install-config.yaml; \
-	  sed -i "s/cluster-name/${CLUSTER_NAME} # OCP_VERSION ${OCP_VERSION}/" ${CLUSTER_PATH}/install-config.yaml; \
+	  cp "${BASE_INSTALL_CONFIG}" "${CLUSTER_PATH}/install-config.yaml"; \
+	  sed -i "s/cluster-name/${CLUSTER_NAME} # OCP_VERSION ${OCP_VERSION}/" "${CLUSTER_PATH}/install-config.yaml"; \
 	fi
-	@if [ ! -f ${BASE_INSTALL_CONFIG} ]; then \
+	@if [ ! -f "${BASE_INSTALL_CONFIG}" ]; then \
 		echo "You must copy ${CLUSTER_PATH}/install-config.yaml to ${BASE_INSTALL_CONFIG}"; \
 		exit 1; \
 	fi
 	@if [ "${DIFF_TOOL}" ]; then \
-           ${DIFF_TOOL} ${BASE_INSTALL_CONFIG} ${CLUSTER_PATH}/install-config.yaml; \
+           "${DIFF_TOOL}" "${BASE_INSTALL_CONFIG}" "${CLUSTER_PATH}/install-config.yaml"; \
 	fi
 
 kubeconfig:
-	@if [ ! -e ${CLUSTER_PATH}/auth/kubeconfig ]; then \
+	@if [ ! -e "${CLUSTER_PATH}/auth/kubeconfig" ]; then \
 	  echo "Kubeconfig for ${CLUSTER_NAME} not found in ${CLUSTER_PATH}/auth/kubeconfig"; \
 	  exit 1;\
 	fi
@@ -71,17 +71,17 @@ uninstall: has_installer
 	  echo "ERROR: Cluster not found"; \
 	  exit 1; \
 	fi
-	@if [ -e ${CLUSTER_PATH}/uninstall.log ]; then \
+	@if [ -e "${CLUSTER_PATH}/uninstall.log" ]; then \
 	  echo "INFO: Found ${CLUSTER_PATH}/uninstall.log"; \
 	  echo "ERROR: Cluster already uninstalled ..."; \
 	  exit 1; \
 	fi
-	time ${OPENSHIFT_INSTALLER} destroy cluster --dir=${CLUSTER_PATH} --log-level=debug 2>&1 | tee ${CLUSTER_PATH}/uninstall.log
+	time "${OPENSHIFT_INSTALLER}" destroy cluster --dir="${CLUSTER_PATH}" --log-level=debug 2>&1 | tee "${CLUSTER_PATH}/uninstall.log"
 
 cleanup:
-	@if [ ! -e ${CLUSTER_PATH}/uninstall.log ]; then \
+	@if [ ! -e "${CLUSTER_PATH}/uninstall.log" ]; then \
 	  echo "INFO: Could not find ${CLUSTER_PATH}/uninstall.log"; \
 	  echo "ERROR: Cluster not uninstalled ..."; \
 	  exit 1; \
 	fi
-	rm -rf ${CLUSTER_PATH}
+	rm -rf "${CLUSTER_PATH}"
