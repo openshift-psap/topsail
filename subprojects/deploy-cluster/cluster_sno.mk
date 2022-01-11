@@ -4,6 +4,7 @@ cluster_sno:
 	@make config_base_install
 	@make config_sno
 	@make manifest
+	@make manifest_entitle
 	@make install
 	@make kubeconfig
 
