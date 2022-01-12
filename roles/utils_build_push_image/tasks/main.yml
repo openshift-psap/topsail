@@ -25,11 +25,11 @@
   failed_when: false
 
 - name: Delete old image build config if exists
-  command: oc delete -f "{{ build_config_output_dir }}/config.yml"
+  command: oc delete -f "{{ artifact_extra_logs_dir }}/config.yml"
   failed_when: false
 
 - name: Apply image build config
-  command: oc apply -f "{{ build_config_output_dir }}/config.yml"
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/config.yml"
 
 - name: Get the name of the build
   command:
