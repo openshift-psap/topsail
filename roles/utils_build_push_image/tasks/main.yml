@@ -14,10 +14,8 @@
       -d "{{ docker_path }}"
       -g "{{ git_repo }}"
       -p "{{ git_path }}"
-      -q "{{ quay_repo }}"
-      -a "{{ auth_file }}"
       -b "{{ branch }}"
-      -o "{{ build_config_output_dir }}"
+      -o "{{ artifact_extra_logs_dir }}"
 
 - name: Create namespace for images if doesn't exist
   shell: kubectl create namespace utils-ci --dry-run=client -o yaml | kubectl apply -f -

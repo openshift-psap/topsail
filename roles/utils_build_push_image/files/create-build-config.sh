@@ -14,12 +14,10 @@ function help() {
         -p: Path/Name of git repo Dockerfile
         -b: Branch of repo to clone
         -o: Output dir for build config
-        -q: Quay.io Org/Repo
-        -a: Authfile for quay.io
     "
 }
 
-while getopts n:t:g:d:p:q:a:b:o:h flag
+while getopts n:t:g:d:p:b:o:h flag
 do
     case "${flag}" in
         h) help
@@ -29,8 +27,6 @@ do
         g) repo=${OPTARG};;
         d) dockerfile=${OPTARG};;
         p) path=${OPTARG};;
-        q) quay="quay.io/${OPTARG}";;
-        a) authfile=${OPTARG};;
         b) branch=${OPTARG};;
         o) outdir=${OPTARG};;
         *) exit 1 ;;
