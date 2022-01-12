@@ -16,14 +16,5 @@ spec:
     requests:
       memory: ${memory}
   source:
-    type: Git
-    git:
-      uri: ${repo}
-      ref: ${branch}
-    contextDir: ${path}
-  triggers:
-    - type: ConfigChange
-  strategy:
-    type: Docker
-    dockerStrategy:
-      dockerfilePath: Dockerfile
+    dockerfile: |
+${dockerfile}

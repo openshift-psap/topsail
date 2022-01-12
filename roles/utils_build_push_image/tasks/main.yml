@@ -6,6 +6,10 @@
   fail: msg="Bailing out. This play requires 'image_tag'"
   when: image_tag is undefined
 
+- name: Check that memory is defined
+  fail: msg="Bailing out. This play requires 'memory'"
+  when: memory is undefined
+
 - name: Create build config from template
   command: 
     /bin/bash "{{ utils_create_build_config_script }}" 
@@ -15,6 +19,7 @@
       -g "{{ git_repo }}"
       -p "{{ git_path }}"
       -b "{{ branch }}"
+      -m "{{ memory }}"
       -o "{{ artifact_extra_logs_dir }}"
 
 - name: Create namespace for images if doesn't exist

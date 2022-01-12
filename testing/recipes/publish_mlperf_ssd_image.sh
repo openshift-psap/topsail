@@ -10,6 +10,7 @@ tag="latest"
 repo="https://github.com/openshift-psap/training_results_v0.7.git"
 path="NVIDIA/benchmarks/ssd/implementations/pytorch"
 branch="fix/build-error"
+memory=5
 quay="openshift-psap/nvidiadl-ssd-training-benchmark"
 auth="/var/run/psap-entitlement-secret/openshift-psap-openshift-ci-secret.yml"
 
@@ -17,5 +18,6 @@ auth="/var/run/psap-entitlement-secret/openshift-psap-openshift-ci-secret.yml"
     --git_repo=$repo \
     --git_path=$path \
     --branch=$branch \
+    --memory=$memory \
     --quay_org_repo=$quay \
     --auth_file=$auth
