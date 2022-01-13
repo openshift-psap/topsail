@@ -1,0 +1,93 @@
+---
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: ci-artifacts
+  name: "{{ image_name }}"-helper
+  namespace: utils-ci
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: "{{ image_name }}":helper
+      namespace: utils-ci
+  source:
+    type: Dockerfile
+    dockerfile: |
+      # git/Dockerfile
+      # https://github.com/containers/buildah/blob/master/contrib/buildahimage/upstream/Dockerfile
+      #
+      # Build a Buildah container image from the latest
+      # upstream version of Buildah on GitHub.
+      # https://github.com/containers/buildah
+      # This image can be used to create a secured container
+      # that runs safely with privileges within the container.
+      # The containers created by this image also come with a
+      # Buildah development environment in /root/buildah.
+      #
+      FROM registry.fedoraproject.org/fedora:latest
+      ENV GOPATH=/root/buildah
+      # Install the software required to build Buildah.
+      # Then create a directory and clone from the Buildah
+      # GitHub repository, make and install Buildah
+      # to the container.
+      # Finally remove the buildah directory and a few other packages
+      # that are needed for building but not running Buildah
+      RUN useradd build \
+          && yum -y update \
+          && yum -y reinstall shadow-utils \
+          && yum -y install --enablerepo=updates-testing \
+            make \
+            golang \
+            podman \
+            bats \
+            btrfs-progs-devel \
+            device-mapper-devel \
+            glib2-devel \
+            gpgme-devel \
+            libassuan-devel \
+            libseccomp-devel \
+            git \
+            bzip2 \
+            xz \
+            go \
+            go-md2man \
+            runc \
+            fuse-overlayfs \
+            fuse3 \
+            containers-common \
+            jq \
+            python3 python3-devel python3-pip python3-setuptools \
+            hostname \
+          && mkdir /root/buildah \
+          && git clone https://github.com/containers/buildah /root/buildah/src/github.com/containers/buildah \
+          && cd /root/buildah/src/github.com/containers/buildah \
+          && make \
+          && make install \
+          && rm -rf /root/buildah/* \
+          && yum -y remove bats golang go-md2man \
+          && yum clean all \
+          && cd / \
+          && python3 -m pip install --no-cache-dir --upgrade setuptools pip wheel \
+          && python3 -m pip install --no-cache-dir yq
+      ADD https://raw.githubusercontent.com/containers/buildah/master/contrib/buildahimage/stable/containers.conf /etc/containers/
+      # Adjust storage.conf to enable Fuse storage.
+      RUN chmod 644 /etc/containers/containers.conf \
+        && sed -i -e 's|^#mount_program|mount_program|g' -e '/additionalimage.*/a "/var/lib/shared",' -e 's|^mountopt[[:space:]]*=.*$|mountopt = "nodev,fsync=0"|g' /etc/containers/storage.conf
+      RUN mkdir -p /var/lib/shared/overlay-images /var/lib/shared/overlay-layers /var/lib/shared/vfs-images /var/lib/shared/vfs-layers \
+        && touch /var/lib/shared/overlay-images/images.lock \
+        && touch /var/lib/shared/overlay-layers/layers.lock \
+        && touch /var/lib/shared/vfs-images/images.lock \
+        && touch /var/lib/shared/vfs-layers/layers.lock
+      # Set an environment variable to default to chroot isolation for RUN
+      # instructions and "buildah run".
+      ENV BUILDAH_ISOLATION=chroot
+  strategy:
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: registry.fedoraproject.org/fedora:latest
+    type: Docker
+  triggers:
+  - type: ConfigChange
