@@ -77,10 +77,10 @@
     failed_when: false
 
 - name: Create helper image build config from template
-template:
-  src: "{{ utils_helper_image_build_config }}"
-  dest: "{{ artifact_extra_logs_dir }}/helper.yml"
-  mode: 0400
+  template:
+    src: "{{ utils_helper_image_build_config }}"
+    dest: "{{ artifact_extra_logs_dir }}/helper.yml"
+    mode: 0400
 
 - name: Apply helper image build config
 command: oc apply -f "{{ artifact_extra_logs_dir }}/helper.yml"
