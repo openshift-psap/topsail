@@ -84,7 +84,7 @@ cleanup:
 	  echo "ERROR: Cluster not uninstalled ..."; \
 	  exit 1; \
 	fi
-	@if [ ! -e "${CLUSTER_PATH}/metadata.json" ]; then \
+	@if [ -e "${CLUSTER_PATH}/metadata.json" ]; then \
 	  echo "INFO: ${CLUSTER_PATH}/metadata.json still exists"; \
 	  echo "ERROR: Cluster not fully destroyed by openshift-installer ..."; \
 	  exit 1; \
