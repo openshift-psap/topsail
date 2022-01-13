@@ -4,13 +4,13 @@ kind: BuildConfig
 metadata:
   labels:
     app: ci-artifacts
-  name: "{{ local_image_name }}"-helper
+  name: {{ local_image_name }}-helper
   namespace: utils-ci
 spec:
   output:
     to:
       kind: ImageStreamTag
-      name: "{{ local_image_name }}":helper
+      name: {{ local_image_name }}:helper
       namespace: utils-ci
   source:
     type: Dockerfile
