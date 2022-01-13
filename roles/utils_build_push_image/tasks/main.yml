@@ -83,16 +83,16 @@
     mode: 0400
 
 - name: Apply helper image build config
-command: oc apply -f "{{ artifact_extra_logs_dir }}/helper.yml"
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/helper.yml"
 
 - name: Get the name of the helper build
-command:
-  oc get builds
-      -lbuildconfig={{ local_image_name }}-helper
-      -oname
-      -n utils-ci
-register: helper_name_cmd
-failed_when: helper_name_cmd.stdout | length == 0
+  command:
+    oc get builds
+        -lbuildconfig={{ local_image_name }}-helper
+        -oname
+        -n utils-ci
+  register: helper_name_cmd
+  failed_when: helper_name_cmd.stdout | length == 0
 
 - block:
   - name: Wait for the helper image to be built
