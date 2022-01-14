@@ -114,3 +114,38 @@
     shell:
       oc logs {{ helper_name_cmd.stdout }} -n utils-ci > {{ artifact_extra_logs_dir }}/image-helper-build.log
     failed_when: false
+
+- block:
+  - name: Find the name of the builder-dockercfg secret
+    shell:
+      set -o pipefail;
+      oc get secrets -oname -n gpu-operator-ci | cut -d/ -f2 | grep builder-dockercfg
+    register: builder_secret_cmd
+
+  - name: Store the name of the secret in a variable
+    set_fact:
+      builder_secret: "{{ builder_secret_cmd.stdout }}"
+  rescue:
+  - name: Failed to find the builder-dockercfg secret
+    fail: msg="No builder-dockercfg secret in the 'gpu-operator-ci' namespace ..."
+
+- name: Apply the helper image script manifest
+  shell:
+    set -o pipefail;
+    oc create cm helper-image-script
+       -n utils-ci
+       "--from-file=run-helper-image-push.sh={{ utils_helper_image_push_script }}"
+       --dry-run -oyaml
+       | oc apply -f-
+
+- name: Instantiate the template of the image push pod
+  template:
+    src: "{{ utils_helper_image_push_pod }}"
+    dest: "{{ artifact_extra_logs_dir }}/helper-image-push-pod.yml"
+    mode: 0400
+
+- name: Delete image push pod if already exists
+  command: oc delete pod {{ local_image_name }}-push-pod -n utils-ci
+
+- name: Create push pod and run image push
+  command: oc apply -f {{ artifact_extra_logs_dir }}/helper-image-push-pod.yml

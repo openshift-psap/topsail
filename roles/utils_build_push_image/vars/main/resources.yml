@@ -2,3 +2,5 @@
 # Script for building and pushing images
 utils_create_build_config_script: roles/utils_build_push_image/files/create-build-config.sh
 utils_helper_image_build_config: roles/utils_build_push_image/templates/push.yml.j2
+utils_helper_image_push_script: roles/utils_build_push_image/files/run-helper-image-push.sh
+utils_helper_image_push_pod: roles/utils_build_push_image/templates/pod.yml.j2
