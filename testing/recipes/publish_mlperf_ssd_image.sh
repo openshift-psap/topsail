@@ -5,13 +5,13 @@ set -o pipefail
 set -o nounset
 
 local_name="ssd"
-tag="latest"
+tag="nvidiadl-ssd-training-benchmark"
 
 repo="https://github.com/openshift-psap/training_results_v0.7.git"
 path="NVIDIA/benchmarks/ssd/implementations/pytorch"
 branch="fix/build-error"
 memory=5
-quay="openshift-psap/nvidiadl-ssd-training-benchmark"
+quay="openshift-psap/ci-artifacts"
 auth="/var/run/psap-entitlement-secret/openshift-psap-openshift-ci-secret.yml"
 
 ./run_toolbox.py utils build_push_image $local_name $tag \
