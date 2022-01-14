@@ -33,7 +33,14 @@ def rollback(snapshot, cluster_name, instance, zone):
             {
                 'ResourceType': 'replace-root-volume-task',
                 'Tags': [
-                    {'Key': f'kubernetes.io/cluster/{cluster_name}', 'Value': 'owned'},
+                    # replace-root-volume-task objects cannot be
+                    # deleted, so do not use the 'owned' value below,
+                    # otherwise `openshift-install destroy cluster`
+                    # will loop forever as it detects resources owned
+                    # by the cluster.
+                    # https://github.com/aws/aws-cli/issues/6650
+                    {'Key': f'kubernetes.io/cluster/{cluster_name}', 'Value': 'createdby'},
+                    {'Key': f'costless-resource', 'Value': 'true'},
                 ]
             },
         ]
@@ -70,7 +77,7 @@ def has_ongoing_rollback(cluster_name, instance, zone):
     resp = client_ec2.describe_replace_root_volume_tasks(
         Filters=[{
             'Name': f'tag:kubernetes.io/cluster/{cluster_name}',
-            'Values': ['owned']
+            'Values': ['createdby']
         }]
     )
 
