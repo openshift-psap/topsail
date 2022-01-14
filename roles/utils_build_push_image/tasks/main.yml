@@ -159,6 +159,7 @@
 
 - name: Delete image push pod if already exists
   command: oc delete pod {{ local_image_name }}-push-pod -n utils-ci
+  failed_when: false
 
 - name: Create push pod and run image push
   command: oc apply -f {{ artifact_extra_logs_dir }}/helper-image-push-pod.yml
