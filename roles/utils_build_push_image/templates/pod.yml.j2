@@ -20,6 +20,8 @@ spec:
     #    value: /etc/kubeconfig/kubeconfig
       - name: LOCAL_IMAGE
         value: "image-registry.openshift-image-registry.svc:5000/utils-ci/{{ local_image_name }}:{{ image_tag }}"
+      - name: IMAGE_TAG
+        value: "{{ image_tag }}"
       - name: QUAY_REPO
         value: "{{ quay_repo }}"
       - name: QUAY_AUTH_FILE
@@ -29,9 +31,9 @@ spec:
       name: helper-image-script
       readOnly: true
       subPath: run-helper-image-push.sh
-    #- mountPath: /var/run/secrets/quay.io/push
-    #  name: quay-dockercfg
-    #  readOnly: true
+    - mountPath: /var/run/secrets/quay.io/push
+      name: quay-dockercfg
+      readOnly: true
     - mountPath: /var/run/secrets/openshift.io/push
       name: builder-dockercfg
       readOnly: true
@@ -44,10 +46,10 @@ spec:
       defaultMode: 511
       name: helper-image-script
     name: helper-image-script
-  #- name: quay-dockercfg
-  #  secret:
-  #    defaultMode: 384
-  #    secretName: "{{ quay_push_secret_name }}"
+  - name: quay-dockercfg
+    secret:
+      defaultMode: 384
+      secretName: "{{ quay_push_secret_name }}"
   #- name: kubeconfig-secret
   #  secret:
   #    secretName: kubeconfig-secret
