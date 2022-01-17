@@ -4,17 +4,17 @@ kind: BuildConfig
 metadata:
   labels:
     app: ci-artifacts
-  name: ${image_name}
+  name: {{ local_image_name }}
   namespace: utils-ci
 spec:
   output:
     to:
       kind: ImageStreamTag
-      name: ${image_name}:${image_tag}
+      name: {{ local_image_name }}:{{ image_tag }}
       namespace: utils-ci
   resources:
     requests:
-      memory: ${memory}
+      memory: {{ memory }}
   source:
     dockerfile: |
-${dockerfile}
+{{ dockerfile.stdout }}

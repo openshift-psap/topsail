@@ -6,21 +6,36 @@
   fail: msg="Bailing out. This play requires 'image_tag'"
   when: image_tag is undefined
 
+- name: Check that branch is defined
+  fail: msg="Bailing out. This play requires 'branch'"
+  when: branch is undefined
+
+- name: Check that artifact_extra_logs_dir is defined
+  fail: msg="Bailing out. This play requires 'artifact_extra_logs_dir'"
+  when: artifact_extra_logs_dir is undefined
+
 - name: Check that memory is defined
   fail: msg="Bailing out. This play requires 'memory'"
   when: memory is undefined
 
-- name: Create build config from template
-  command: 
-    /bin/bash "{{ utils_create_build_config_script }}" 
-      -n "{{ local_image_name }}"
-      -t "{{ image_tag }}"
-      -d "{{ docker_path }}"
-      -g "{{ git_repo }}"
-      -p "{{ git_path }}"
-      -b "{{ branch }}"
-      -m "{{ memory }}"
-      -o "{{ artifact_extra_logs_dir }}"
+- name: Create git repo build config from template
+  template:
+    src: "{{ utils_repo_build_config }}"
+    dest: "{{ artifact_extra_logs_dir }}/config.yml"
+    mode: 0400
+  when: git_repo != ""
+
+- name: Grab local Dockerfile content
+  command: sed 's/^/      /' {{ docker_path }}
+  register: dockerfile
+  when: docker_path != ""
+
+- name: Create git local build config from template
+  template:
+    src: "{{ utils_local_build_config }}"
+    dest: "{{ artifact_extra_logs_dir }}/config.yml"
+    mode: 0400
+  when: docker_path != ""
 
 - name: Create namespace for images if doesn't exist
   shell: kubectl create namespace utils-ci --dry-run=client -o yaml | kubectl apply -f -
