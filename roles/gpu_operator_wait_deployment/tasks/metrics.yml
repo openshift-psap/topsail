@@ -67,7 +67,7 @@
     shell:
       set -o pipefail;
       bash "{{ gpu_operator_fetch_pod_metrics_script }}"
-           9090 app=prometheus openshift-monitoring
+           9090 prometheus=k8s openshift-monitoring
            'nvidia-dcgm-exporter'
       | grep prometheus_target_scrape_pool_targets
       | cut -d' ' -f2
@@ -83,7 +83,7 @@
   - name: Capture Prometheus scrape pools metrics page
     shell:
       bash "{{ gpu_operator_fetch_pod_metrics_script }}"
-           9090 app=prometheus openshift-monitoring
+           9090 prometheus=k8s openshift-monitoring
            '.'
            > {{ artifact_extra_logs_dir }}/metrics_prometheus_scrape_pools.txt
 
@@ -142,7 +142,7 @@
     shell:
       set -o pipefail;
       bash "{{ gpu_operator_fetch_pod_metrics_script }}"
-           9090 app=prometheus openshift-monitoring
+           9090 prometheus=k8s openshift-monitoring
            'nvidia-node-status-exporter'
       | grep prometheus_target_scrape_pool_targets
       | cut -d' ' -f2
@@ -161,14 +161,14 @@
 - name: Capture Prometheus scrape pools metrics page
   shell:
     bash "{{ gpu_operator_fetch_pod_metrics_script }}"
-         9090 app=prometheus openshift-monitoring
+         9090 prometheus=k8s openshift-monitoring
          '.'
          > {{ artifact_extra_logs_dir }}/prometheus_scrape_pools.metrics.text
 
 - name: Capture Prometheus scrape pools metrics page
   shell:
     bash "{{ gpu_operator_fetch_pod_metrics_script }}"
-         9090 app=prometheus openshift-monitoring
+         9090 prometheus=k8s openshift-monitoring
          '.'
          > {{ artifact_extra_logs_dir }}/prometheus_scrape_pools.metrics.text
 
@@ -203,7 +203,7 @@
     shell:
       set -o pipefail;
       bash "{{ gpu_operator_fetch_pod_metrics_script }}"
-           9090 app=prometheus openshift-monitoring
+           9090 prometheus=k8s openshift-monitoring
            '/gpu-operator/'
       | grep prometheus_target_scrape_pool_targets
       | cut -d' ' -f2
@@ -219,7 +219,7 @@
   - name: Save Prometheus metrics target page
     shell:
       bash "{{ gpu_operator_fetch_pod_metrics_script }}"
-           9090 app=prometheus openshift-monitoring
+           9090 prometheus=k8s openshift-monitoring
            '.'
            > {{ artifact_extra_logs_dir }}/metrics.prometheus_scrape_pools.txt
 
@@ -229,6 +229,6 @@
 - name: Capture Prometheus scrape pools metrics page
   shell:
     bash "{{ gpu_operator_fetch_pod_metrics_script }}"
-         9090 app=prometheus openshift-monitoring
+         9090 prometheus=k8s openshift-monitoring
          '.'
          > {{ artifact_extra_logs_dir }}/metrics.prometheus_scrape_pools.txt
