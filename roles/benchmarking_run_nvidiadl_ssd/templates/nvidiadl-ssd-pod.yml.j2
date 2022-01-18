@@ -10,7 +10,7 @@ spec:
     kubernetes.io/hostname: {{ benchmarking_node_hostname }}
   containers:
   - name: nvidiadl
-    image: quay.io/openshift-psap/nvidiadl-ssd-training-benchmark
+    image: quay.io/openshift-psap/ci-artifacts:nvidiadl-ssd-training-benchmark
     resources:
       limits:
         nvidia.com/gpu: 1
