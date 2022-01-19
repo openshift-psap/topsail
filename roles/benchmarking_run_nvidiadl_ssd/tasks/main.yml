@@ -53,7 +53,7 @@
     -n {{ benchmarking_namespace }}
   register: wait_benchmark_pod_cmd
   until: "'Succeeded' in wait_benchmark_pod_cmd.stdout or 'Failed' in wait_benchmark_pod_cmd.stdout or 'Error' in wait_benchmark_pod_cmd.stdout"
-  retries: 40
+  retries: 100
   delay: 60
 
 - name: Store the logs of benchmark execution (for post-processing)
