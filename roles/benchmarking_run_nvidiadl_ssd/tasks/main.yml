@@ -45,7 +45,7 @@
   command:
     oc create -f "{{ artifact_extra_logs_dir }}/001_pod_run-nvidiadl-ssd.yml"
 
--block: 
+- block: 
   - name: Wait for the benchmark completion
     command:
       oc get pod/{{ benchmarking_nvidiadl_ssd_name }}
