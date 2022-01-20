@@ -46,8 +46,6 @@ class Utils:
             except ValueError:
                 print("ERROR: memory must be of type float or int")
                 exit(1)
-        else:
-            memory = "10Mi"
 
         if not git_repo and not dockerfile:
             print("Either a git repo or Dockerfile is required")
@@ -67,7 +65,7 @@ class Utils:
             "git_repo": git_repo if git_repo else "",
             "git_path": git_path if git_path else "",
             "branch": branch if branch else "main",
-            "memory": memory,
+            "memory": memory if memory else "",
             "quay_repo": quay_org_repo if quay_org_repo else "",
             "auth_file": auth_file if auth_file else ""
         }

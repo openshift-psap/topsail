@@ -9,8 +9,8 @@ tag="nvidiadl-ssd-training-benchmark"
 
 repo="https://github.com/openshift-psap/training_results_v0.7.git"
 path="NVIDIA/benchmarks/ssd/implementations/pytorch"
-branch="fix/build-error"
-memory=5
+branch="fix/build-error" # Using a custom commit to avoid an existing image build bug
+memory=5 # Gb
 quay="openshift-psap/ci-artifacts"
 auth="/var/run/psap-entitlement-secret/openshift-psap-openshift-ci-secret.yml"
 

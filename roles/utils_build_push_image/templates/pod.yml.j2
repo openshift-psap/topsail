@@ -16,8 +16,6 @@ spec:
     securityContext:
       privileged: true
     env:
-    #  - name: KUBECONFIG
-    #    value: /etc/kubeconfig/kubeconfig
       - name: LOCAL_IMAGE
         value: "image-registry.openshift-image-registry.svc:5000/utils-ci/{{ local_image_name }}:{{ image_tag }}"
       - name: IMAGE_TAG
@@ -37,9 +35,6 @@ spec:
     - mountPath: /var/run/secrets/openshift.io/push
       name: builder-dockercfg
       readOnly: true
-    #- mountPath: /etc/kubeconfig
-    #  name: kubeconfig-secret
-    #  readOnly: true
   restartPolicy: Never
   volumes:
   - configMap:
@@ -50,9 +45,6 @@ spec:
     secret:
       defaultMode: 384
       secretName: "{{ quay_push_secret_name }}"
-  #- name: kubeconfig-secret
-  #  secret:
-  #    secretName: kubeconfig-secret
   - name: builder-dockercfg
     secret:
       defaultMode: 384
