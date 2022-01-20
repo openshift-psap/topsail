@@ -45,33 +45,37 @@
   command:
     oc create -f "{{ artifact_extra_logs_dir }}/001_pod_run-nvidiadl-ssd.yml"
 
-- name: Wait for the benchmark completion
-  command:
-    oc get pod/{{ benchmarking_nvidiadl_ssd_name }}
-    --no-headers
-    -ocustom-columns=phase:status.phase
-    -n {{ benchmarking_namespace }}
-  register: wait_benchmark_pod_cmd
-  until: "'Succeeded' in wait_benchmark_pod_cmd.stdout or 'Failed' in wait_benchmark_pod_cmd.stdout or 'Error' in wait_benchmark_pod_cmd.stdout"
-  retries: 60
-  delay: 60
+-block: 
+  - name: Wait for the benchmark completion
+    command:
+      oc get pod/{{ benchmarking_nvidiadl_ssd_name }}
+      --no-headers
+      -ocustom-columns=phase:status.phase
+      -n {{ benchmarking_namespace }}
+    register: wait_benchmark_pod_cmd
+    until: "'Succeeded' in wait_benchmark_pod_cmd.stdout or 'Failed' in wait_benchmark_pod_cmd.stdout or 'Error' in wait_benchmark_pod_cmd.stdout"
+    retries: 60
+    delay: 60
 
-- name: Store the logs of benchmark execution (for post-processing)
-  shell:
-    oc logs pod/{{ benchmarking_nvidiadl_ssd_name }} -n {{ benchmarking_namespace }}
-       > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.log"
-  failed_when: false
+  - name: Fail if the pod execution failed
+    when: "'Failed' in wait_benchmark_pod_cmd.stdout or 'Error' in wait_benchmark_pod_cmd.stdout"
+    fail: msg="The benchmark execution failed"
 
-- name: Store the status of the benchmark execution (for post-processing)
-  shell:
-    echo "{{ wait_benchmark_pod_cmd.stdout }}" > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.status"
+  always:
+  - name: Store the logs of benchmark execution (for post-processing)
+    shell:
+      oc logs pod/{{ benchmarking_nvidiadl_ssd_name }} -n {{ benchmarking_namespace }}
+        > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.log"
+    failed_when: false
 
-- name: Store the description of benchmark execution (debug)
-  shell:
-    oc describe pod/{{ benchmarking_nvidiadl_ssd_name }} -n {{ benchmarking_namespace }}
-       > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.descr"
-  failed_when: false
+  always:
+  - name: Store the status of the benchmark execution (for post-processing)
+    shell:
+      echo "{{ wait_benchmark_pod_cmd.stdout }}" > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.status"
 
-- name: Fail if the pod execution failed
-  when: "'Failed' in wait_benchmark_pod_cmd.stdout or 'Error' in wait_benchmark_pod_cmd.stdout"
-  fail: msg="The benchmark execution failed"
+  always:
+  - name: Store the description of benchmark execution (debug)
+    shell:
+      oc describe pod/{{ benchmarking_nvidiadl_ssd_name }} -n {{ benchmarking_namespace }}
+        > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.descr"
+    failed_when: false
