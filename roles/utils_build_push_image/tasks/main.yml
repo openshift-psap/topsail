@@ -26,7 +26,7 @@
   when: git_repo != ""
 
 - name: Grab local Dockerfile content
-  command: sed 's/^/      /' {{ docker_path }}
+  command: cat {{ docker_path }}
   register: dockerfile
   when: docker_path != ""
 

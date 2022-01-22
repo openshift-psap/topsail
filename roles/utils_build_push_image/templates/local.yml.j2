@@ -19,4 +19,4 @@ spec:
 {% endif %}
   source:
     dockerfile: |
-{{ dockerfile.stdout }}
+{{ dockerfile.stdout | indent(6, True) }}
