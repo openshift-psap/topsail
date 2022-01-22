@@ -68,12 +68,10 @@
         > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.log"
     failed_when: false
 
-  always:
   - name: Store the status of the benchmark execution (for post-processing)
     shell:
       echo "{{ wait_benchmark_pod_cmd.stdout }}" > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.status"
 
-  always:
   - name: Store the description of benchmark execution (debug)
     shell:
       oc describe pod/{{ benchmarking_nvidiadl_ssd_name }} -n {{ benchmarking_namespace }}
