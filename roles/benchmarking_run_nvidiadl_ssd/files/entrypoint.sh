@@ -26,4 +26,5 @@ exec python -u -m bind_launch --nsockets_per_node=1 --ncores_per_socket=4 --npro
               --threshold=0.25 \
               --data /storage \
               --batch-size=32 \
-              --warmup=1
+              --warmup=1 \
+              --local_rank=0
