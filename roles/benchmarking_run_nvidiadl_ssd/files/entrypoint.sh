@@ -1,6 +1,23 @@
 #! /bin/bash
 
 ls /storage
+unset CUDA_VISIBLE_DEVICES
+
+PYCMD=$(cat <<EOF
+import pycuda
+from pycuda import compiler
+import pycuda.driver as drv
+
+drv.init()
+print("%d device(s) found." % drv.Device.count())
+           
+for ordinal in range(drv.Device.count()):
+    dev = drv.Device(ordinal)
+    print (ordinal, dev.name())
+EOF
+)
+
+python -c "$PYCMD"
 
 exec python -u -m bind_launch --nsockets_per_node=1 --ncores_per_socket=4 --nproc_per_node=4 \
      train.py --epochs 2 \
