@@ -19,6 +19,7 @@ EOF
 
 python -c "$PYCMD"
 
+export NCCL_DEBUG=INFO
 export CUDA_VISIBLE_DEVICES=0
 exec python -u -m bind_launch --nsockets_per_node=1 --ncores_per_socket=4 --nproc_per_node=4 \
      train.py --epochs 2 \
