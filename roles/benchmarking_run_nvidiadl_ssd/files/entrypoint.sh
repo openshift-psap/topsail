@@ -1,6 +1,7 @@
 #! /bin/bash
 
 ls /storage
+ls -alF /storage/annotations
 unset CUDA_VISIBLE_DEVICES
 
 PYCMD=$(cat <<EOF
