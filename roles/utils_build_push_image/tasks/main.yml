@@ -14,9 +14,13 @@
   fail: msg="Bailing out. This play requires 'artifact_extra_logs_dir'"
   when: artifact_extra_logs_dir is undefined
 
-- name: Check that memory is defined
-  fail: msg="Bailing out. This play requires 'memory'"
-  when: memory is undefined
+- name: Check that quay_repo is defined
+  fail: msg="Bailing out. This play requires 'quay_repo'"
+  when: quay_repo is undefined
+
+- name: Check that auth_file is defined
+  fail: msg="Bailing out. This play requires 'auth_file'"
+  when: auth_file is undefined
 
 - name: Create git repo BuildConfig from template
   template:
@@ -44,6 +48,9 @@
   command: oc create imagestream {{ local_image_name }} --namespace=utils-ci
   failed_when: false
 
+- name: Build the image-builder helper image
+  include_tasks: build_helper.yml
+
 - name: Delete old image BuildConfig if exists
   command: oc delete -f "{{ artifact_extra_logs_dir }}/image_buildconfig.yml"
   failed_when: false
@@ -59,11 +66,8 @@
         -n utils-ci
   register: build_name_cmd
   failed_when: build_name_cmd.stdout | length == 0
-
-- name: Get BuildConfig description
-  command: oc describe --namespace=utils-ci bc/{{ local_image_name }}
-  register: buildconfig_desc
-  failed_when: buildconfig_desc.stdout | length == 0
+  retries: 5
+  delay: 10
 
 - block:
   - name: Wait for the image to be built
@@ -81,53 +85,13 @@
     fail: msg="The image failed to build"
 
   always:
-  - name: Get BuildConfig description (again)
-    command: oc describe --namespace=utils-ci bc/{{ local_image_name }}
-    register: buildconfig_desc_post
-    failed_when: buildconfig_desc_post.stdout | length == 0
+  - name: Get BuildConfig description (debug)
+    shell: oc describe --namespace=utils-ci bc/{{ local_image_name }} > {{ artifact_extra_logs_dir }}/image-build.descr
+    failed_when: false
 
   - name: Store the logs of image build (debug)
     shell:
       oc logs {{ build_name_cmd.stdout }} -n utils-ci > {{ artifact_extra_logs_dir }}/image-build.log
-    failed_when: false
-
-- name: Create helper image BuildConfig from template
-  template:
-    src: "{{ utils_helper_image_buildconfig }}"
-    dest: "{{ artifact_extra_logs_dir }}/helper.yml"
-    mode: 0400
-
-- name: Apply helper image BuildConfig
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/helper.yml"
-
-- name: Get the name of the helper build
-  command:
-    oc get builds
-        -lbuildconfig={{ local_image_name }}-helper
-        -oname
-        -n utils-ci
-  register: helper_name_cmd
-  failed_when: helper_name_cmd.stdout | length == 0
-
-- block:
-  - name: Wait for the helper image to be built
-    command:
-      oc get {{ helper_name_cmd.stdout }}
-          -ojsonpath={.status.phase}
-          -n utils-ci
-    register: wait_helper_build
-    until: "'Complete' in wait_helper_build.stdout or 'Failed' in wait_helper_build.stdout"
-    retries: 40
-    delay: 30
-
-  - name: Fail if the helper image failed to be built
-    when: "'Failed' in wait_helper_build.stdout"
-    fail: msg="The helper image failed to build"
-
-  always:
-  - name: Store the logs of helper image build (debug)
-    shell:
-      oc logs {{ helper_name_cmd.stdout }} -n utils-ci > {{ artifact_extra_logs_dir }}/image-helper-build.log
     failed_when: false
 
 - block:

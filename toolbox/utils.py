@@ -11,30 +11,29 @@ class Utils:
     @staticmethod
     def build_push_image(
         image_name,
+        quay_org_repo,
+        auth_file,
         image_tag=None,
         dockerfile=None,
         git_repo=None,
         git_path=None,
         branch=None,
-        memory=None,
-        quay_org_repo=None,
-        auth_file=None
+        memory=None
     ):
         """
         Build and publish an image to quay using either a Dockerfile or
-        git repo. Will only publish if quay org/repo is specified (see
-        args below for more details).
+        git repo.
 
         Args:
             image_name - Name of locally built image
+            quay_org_repo - Org/Repo in quay to push to
+            auth_file - Auth file for quay
             image_tag - Tag for image
             dockerfile - Path/Name of Dockerfile if used as source
             git_repo - Git repo containing Dockerfile if used as source
             git_path - Path to Dockerfile in git repo
             branch - Branch of repo to clone (default='main')
             memory - Required memory to build the image (in Gb)
-            quay_org_repo - Org/Repo in quay to push to
-            auth_file - Auth file for quay
         """
 
         if not image_tag:
@@ -66,8 +65,8 @@ class Utils:
             "git_path": git_path if git_path else "",
             "branch": branch if branch else "main",
             "memory": memory if memory else "",
-            "quay_repo": quay_org_repo if quay_org_repo else "",
-            "auth_file": auth_file if auth_file else ""
+            "quay_repo": quay_org_repo,
+            "auth_file": auth_file
         }
 
         return PlaybookRun("utils_build_push_image", opts)

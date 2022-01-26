@@ -1,0 +1,15 @@
+---
+# Expected parameters
+local_image_name: ""
+image_tag: ""
+branch: ""
+quay_repo: ""
+auth_file: ""
+
+# Conditional parameters
+git_repo: ""
+git_path: ""
+docker_path: ""
+
+# Optional parameters
+memory: ""
