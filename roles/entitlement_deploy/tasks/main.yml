@@ -15,7 +15,7 @@
   command: md5sum '{{ entitlement_rhsm }}' '{{ entitlement_pem }}'
 
 - name: Get cluster control plane topology
-  command: oc get scheduler -ojsonpath="{.items[0].spec.mastersSchedulable}\n"
+  command: oc get scheduler -ojsonpath="{.items[0].spec.mastersSchedulable}"
   register: masters_are_also_workers
 
 - name: Set master as machine config target role in single node clusters
@@ -24,7 +24,7 @@
       machine_config_role: master
 
 - name: Set worker as machine config target role in non-single-node clusters
-  when: not masters_are_also_workers.stdout == "false"
+  when: masters_are_also_workers.stdout == "false"
   set_fact:
       machine_config_role: worker
 
