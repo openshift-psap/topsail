@@ -78,7 +78,7 @@ class CallbackModule(default_CallbackModule):
         self.__print_std_lines(result, "stderr", color)
 
     def __print_std_lines(self, result, std_name, color):
-        if not result._result[f'{std_name}_lines']:
+        if not result._result.get(f'{std_name}_lines'):
             return
 
         for line in result._result[f'{std_name}_lines']:
