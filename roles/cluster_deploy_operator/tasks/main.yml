@@ -260,7 +260,7 @@
          -ojsonpath={.status.phase}
          -n "{{ cluster_deploy_operator_namespace }}"
     register: operator_csv_phase
-    until: operator_csv_phase.stdout != "Pending" and operator_csv_phase.stdout != "InstallReady" and operator_csv_phase.stdout != "Installing"
+    until: operator_csv_phase.stdout and operator_csv_phase.stdout != "Pending" and operator_csv_phase.stdout != "InstallReady" and operator_csv_phase.stdout != "Installing"
     retries: 40
     delay: 30
 
