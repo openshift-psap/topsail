@@ -56,10 +56,10 @@
          -n {{ gpu_operator_namespace }}
          -oyaml
          -ojsonpath={.status.numberUnavailable}
-    register: operator_validator_numberUnavailable
+    register: operator_validator_number_unavailable
     until:
-    - operator_validator_numberUnavailable.rc == 0
-    - not operator_validator_numberUnavailable.stdout
+    - operator_validator_number_unavailable.rc == 0
+    - not operator_validator_number_unavailable.stdout
     retries: 15
     delay: 60
 
