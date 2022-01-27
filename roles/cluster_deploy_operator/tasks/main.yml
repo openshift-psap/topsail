@@ -171,13 +171,13 @@
 
 - name: Store the CSV version
   set_fact:
-    startingCSV: "{{ operator_csv_name }}"
+    starting_csv: "{{ operator_csv_name }}"
 
 - name: Store the version of the Operator that will be installed
-  shell: echo "{{ startingCSV }}" > "{{ artifact_extra_logs_dir }}/operator_csv_name.txt"
+  shell: echo "{{ starting_csv }}" > "{{ artifact_extra_logs_dir }}/operator_csv_name.txt"
 
 - name: "Create the Subscription"
-  debug: msg="startingCSV is {{ startingCSV }}"
+  debug: msg="starting_csv is {{ starting_csv }}"
 
 - name: Create the namespace, if it did not exist
   when: not cluster_deploy_operator_all_namespaces | bool
