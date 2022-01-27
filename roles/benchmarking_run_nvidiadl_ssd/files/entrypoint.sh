@@ -1,9 +1,14 @@
 #! /bin/bash
 
-export DATASET_DIR=/storage
-export TORCH_HOME=/storage/torchvision
-'[' '!' -f /storage/annotations/bbox_only_instances_val2017.json ']'
-'[' '!' -f /storage/coco2017/annotations/bbox_only_instances_train2017.json ']'
+DATASET_DIR=/storage
+if [ ! -f ${DATASET_DIR}/annotations/bbox_only_instances_train2017.json ]; then
+    echo "Prepare instances_train2017.json ..."
+    ./prepare-json.py \
+        "${DATASET_DIR}/annotations/instances_train2017.json" \
+        "${DATASET_DIR}/annotations/bbox_only_instances_train2017.json"
+fi
+
+export TORCH_HOME=${DATASET_DIR}/torchvision
 
 ls /storage
 ls -alF /storage/annotations
