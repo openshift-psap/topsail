@@ -87,7 +87,7 @@
 
 - name: Store the CSV version
   set_fact:
-    startingCSV: "{{ gpu_operator_csv_name }}"
+    starting_csv: "{{ gpu_operator_csv_name }}"
 
 - name: Prepare the GPU Operator namespace (only when deploying outside of openshift-operators namespace)
   when: deploy_bundle_namespace != "openshift-operators"
