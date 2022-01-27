@@ -16,7 +16,8 @@
   register: helper_name_cmd
   failed_when: helper_name_cmd.stdout | length == 0
 
-- block:
+- name: Await and log helper image build completion
+  block:
   - name: Wait for the helper image to be built
     command:
       oc get {{ helper_name_cmd.stdout }}
