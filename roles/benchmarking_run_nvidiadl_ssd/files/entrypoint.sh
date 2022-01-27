@@ -8,6 +8,13 @@ if [ ! -f ${DATASET_DIR}/annotations/bbox_only_instances_train2017.json ]; then
         "${DATASET_DIR}/annotations/bbox_only_instances_train2017.json"
 fi
 
+if [ ! -f ${DATASET_DIR}/annotations/bbox_only_instances_val2017.json ]; then
+    echo "Prepare instances_val2017.json ..."
+    ./prepare-json.py --keep-keys \
+        "${DATASET_DIR}/annotations/instances_val2017.json" \
+        "${DATASET_DIR}/annotations/bbox_only_instances_val2017.json"
+fi
+
 export TORCH_HOME=${DATASET_DIR}/torchvision
 
 ls /storage
