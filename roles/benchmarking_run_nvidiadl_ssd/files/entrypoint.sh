@@ -1,5 +1,10 @@
 #! /bin/bash
 
+export DATASET_DIR=/storage
+export TORCH_HOME=/storage/torchvision
+'[' '!' -f /data/coco2017/annotations/bbox_only_instances_val2017.json ']'
+'[' '!' -f /data/coco2017/annotations/bbox_only_instances_train2017.json ']'
+
 ls /storage
 ls -alF /storage/annotations
 unset CUDA_VISIBLE_DEVICES
