@@ -25,8 +25,7 @@ spec:
     - bash
     - -c
     - "/mnt/entrypoint/entrypoint.sh"
-    - {{ benchmarking_epochs }}
-    - {{ benchmarking_threshold }}
+    args:["{{ benchmarking_epochs }}", "{{ benchmarking_threshold }}"]
   volumes:
   - name: entrypoint-volume
     configMap:
