@@ -14,3 +14,7 @@ benchmarking_coco_dataset_pvc_name: "benchmarking-coco-dataset"
 
 # name of the config map where the benchmark entrypoint will be stored
 benchmarking_nvidiadl_ssd_entrypoint_cm_name: "benchmarking-nvidiadl-ssd-entrypoint"
+
+# benchmark default hyperparams
+benchmarking_epochs: ""
+benchmarking_threshold: ""

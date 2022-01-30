@@ -1,5 +1,22 @@
 #! /bin/bash
 
+set -o pipefail
+set -o errexit
+set -o nounset
+set -x
+
+if [ -z "$0" ]; then
+    EPOCHS=80
+else
+    EPOCHS=$0
+fi
+
+if [ -z "$1" ]; then
+    THRESHOLD=0.23
+else
+    THRESHOLD=$1
+fi
+
 DATASET_DIR=/storage
 if [ ! -f ${DATASET_DIR}/annotations/bbox_only_instances_train2017.json ]; then
     echo "Prepare instances_train2017.json ..."
@@ -40,9 +57,9 @@ python -c "$PYCMD"
 export NCCL_DEBUG=INFO
 export CUDA_VISIBLE_DEVICES=0
 exec python -u -m bind_launch --nsockets_per_node=1 --ncores_per_socket=1 --nproc_per_node=1 \
-     train.py --epochs 2 \
+     train.py --epochs ${EPOCHS} \
               --warmup-factor 0 \
-              --threshold=0.25 \
+              --threshold=${THRESHOLD} \
               --data /storage \
               --batch-size=32 \
               --warmup=1 \

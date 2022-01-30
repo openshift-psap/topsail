@@ -43,7 +43,7 @@ class Benchmarking:
         return PlaybookRun("benchmarking_deploy_coco_dataset", opts)
 
     @staticmethod
-    def run_nvidiadl_ssd(node_hostname, namespace="default", pvc_name=None):
+    def run_nvidiadl_ssd(node_hostname, namespace="default", pvc_name=None, epochs=None, threshold=None):
         """
         Run NVIDIA Deep Learning SSD Detection training benchmark.
 
@@ -51,15 +51,34 @@ class Benchmarking:
             node_hostname: Hostname of the node where the ssd benchmark will be executed.
             namespace: Name of the namespace in which the resources will be created.
             pvc_name: Name of the PVC that will be create to store the dataset files.
+            epochs: Number of epochs to run the benchmark for.
+            threshold: Benchmark threshold target value.
         """
 
         opts = {
             "benchmarking_node_hostname": node_hostname,
             "benchmarking_namespace": namespace,
         }
+
         if pvc_name is not None:
             opts["benchmarking_coco_dataset_pvc_name"] = pvc_name
             print(
                 f"Using '{pvc_name}' as PVC where the coco dataset is stored."
             )
+
+        if epochs:
+            try:
+                epochs = str(int(epochs))
+                opts["benchmarking_epochs"] = epochs
+            except ValueError:
+                print("ERROR: epochs must be of type int")
+                exit(1)
+        if threshold:
+            try:
+                threshold = str(float(threshold))
+                opts["benchmarking_threshold"] = threshold
+            except ValueError:
+                print("ERROR: threshold must be of type float")
+                exit(1)
+
         return PlaybookRun("benchmarking_run_nvidiadl_ssd", opts)
