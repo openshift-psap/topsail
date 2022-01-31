@@ -5,6 +5,8 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+EPOCHS=3
+
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 PSAP_SECRET_PATH=/var/run/psap-entitlement-secret
@@ -47,5 +49,5 @@ if [[ "$@" == *benchmark_twice* ]]; then
 fi
 
 for i in $(seq $RUN_CNT); do
-    ./run_toolbox.py benchmarking run_nvidiadl_ssd "$gpu_node_hostname"
+    ./run_toolbox.py benchmarking run_nvidiadl_ssd "$gpu_node_hostname" --epochs=$EPOCHS
 done

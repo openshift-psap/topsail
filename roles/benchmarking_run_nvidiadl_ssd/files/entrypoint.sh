@@ -54,4 +54,5 @@ exec python -u -m bind_launch --nsockets_per_node=1 --ncores_per_socket=1 --npro
               --data /storage \
               --batch-size=32 \
               --warmup=1 \
-              --local_rank=0
+              --local_rank=0 \
+              --seed 95137217
