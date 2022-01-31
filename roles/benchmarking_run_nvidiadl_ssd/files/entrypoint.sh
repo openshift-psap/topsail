@@ -5,17 +5,8 @@ set -o errexit
 set -o nounset
 set -x
 
-if [ -z "$1" ]; then
-    EPOCHS=80
-else
-    EPOCHS=$1
-fi
-
-if [ -z "$2" ]; then
-    THRESHOLD=0.23
-else
-    THRESHOLD=$2
-fi
+EPOCHS=${1:-80}
+THRESHOLD=${2:-0.23}
 
 DATASET_DIR=/storage
 if [ ! -f ${DATASET_DIR}/annotations/bbox_only_instances_train2017.json ]; then
