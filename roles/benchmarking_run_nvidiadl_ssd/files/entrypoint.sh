@@ -5,16 +5,16 @@ set -o errexit
 set -o nounset
 set -x
 
-if [ -z "$0" ]; then
+if [ -z "$1" ]; then
     EPOCHS=80
 else
-    EPOCHS=$0
+    EPOCHS=$1
 fi
 
-if [ -z "$1" ]; then
+if [ -z "$2" ]; then
     THRESHOLD=0.23
 else
-    THRESHOLD=$1
+    THRESHOLD=$2
 fi
 
 DATASET_DIR=/storage
