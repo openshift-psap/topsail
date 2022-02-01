@@ -11,7 +11,8 @@ PSAP_SECRET_PATH=/var/run/psap-entitlement-secret
 
 source $THIS_DIR/../prow/gpu-operator.sh source
 
-prepare_cluster_for_gpu_operator
+# WDM_DEPENDENCY_FILE exported in ^^^^
+./toolbox/wdm ensure has_gpu_operator
 
 gpu_node_hostname=$(oc get nodes -oname -lfeature.node.kubernetes.io/pci-10de.present -ojsonpath={.items[].metadata.labels} | jq -r '.["kubernetes.io/hostname"]')
 
@@ -22,9 +23,6 @@ if [ -z "$gpu_node_hostname" ]; then
 else
     echo "Using GPU node name: $gpu_node_hostname"
 fi
-
-./run_toolbox.py gpu_operator deploy_from_operatorhub
-./run_toolbox.py gpu_operator wait_deployment
 
 DL_OPT=""
 if [[ "$@" == *use_mirror* ]]; then
