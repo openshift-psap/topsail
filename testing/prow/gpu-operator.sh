@@ -7,6 +7,8 @@ set -o nounset
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd ${THIS_DIR}/../..
 
+export WDM_DEPENDENCY_FILE=${THIS_DIR}/../wdm/gpu-operator.yml
+
 _warning() {
     fname="$1"
     msg="$2"
@@ -81,29 +83,26 @@ prepare_cluster_for_gpu_operator() {
 
     ${THIS_DIR}/entitle.sh
 
-    if ! ./run_toolbox.py nfd has_labels; then
+    if ! ./toolbox/wdm test has_nfd_labels; then
         _expected_fail "Checking if the cluster had NFD labels"
 
-        if oc get packagemanifests/nfd -n openshift-marketplace > /dev/null; then
-            ./run_toolbox.py nfd_operator deploy_from_operatorhub
+        if ./toolbox/wdm test has_nfd_in_operatorhub; then
+            ./toolbox/wdm ensure has_nfd_from_operatorhub
         else
             _warning "NFD_deployed_from_master" "NFD was deployed from master (not available in OperatorHub)"
 
             # install the NFD Operator from sources
-            CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
-            CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
-            CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG="ci-image"
-            ./run_toolbox.py nfd_operator deploy_from_commit "${CI_IMAGE_NFD_COMMIT_CI_REPO}" \
-                             "${CI_IMAGE_NFD_COMMIT_CI_REF}"  \
-                             --image-tag="${CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG}"
+            export CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
+            export CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
+            export CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG="ci-image"
+            ./toolbox/wdm ensure has_nfd_from_master
         fi
     fi
 
-    if ! ./run_toolbox.py nfd has_gpu_nodes; then
+    if ! ./toolbox/wdm test has_gpu_nodes; then
         _expected_fail "Checking if the cluster had GPU nodes"
 
-        ./run_toolbox.py cluster set_scale g4dn.xlarge 1
-        ./run_toolbox.py nfd wait_gpu_nodes
+        ./toolbox/wdm ensure has_gpu_nodes
     fi
 }
 
@@ -320,7 +319,7 @@ prepare_cluster_for_gpu_operator_with_alerts() {
     mv ${ARTIFACT_DIR}/*__gpu-operator__prepare_test_alerts ${ARTIFACT_DIR}/alerts
 
     # wait for NFD alert to fire
-    if ! ./run_toolbox.py nfd has_labels; then
+    if ! ./toolbox/wdm test has_nfd_labels; then
         _expected_fail "Checking if the cluster had NFD labels"
 
         ./run_toolbox.py cluster wait_for_alert \
@@ -334,35 +333,34 @@ prepare_cluster_for_gpu_operator_with_alerts() {
 
     mv ${ARTIFACT_DIR}/*__cluster__wait_for_alert* ${ARTIFACT_DIR}/alerts
 
-    if ! ./run_toolbox.py nfd has_labels; then
+    if ! ./toolbox/wdm test has_nfd_labels; then
         _expected_fail "Checking if the cluster had NFD labels"
 
-        if oc get packagemanifests/nfd -n openshift-marketplace > /dev/null; then
-            ./run_toolbox.py nfd_operator deploy_from_operatorhub
+        if ./toolbox/wdm test has_nfd_from_operatorhub; then
+            ./toolbox/wdm ensure has_nfd_from_operatorhub
         else
             # in 4.9, NFD is currently not available from its default location,
             _warning "NFD_deployed_from_master" "NFD was deployed from master (not available in OperatorHub)"
             # install the NFD Operator from sources
-            CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
-            CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
-            CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG="ci-image"
-            ./run_toolbox.py nfd_operator deploy_from_commit "${CI_IMAGE_NFD_COMMIT_CI_REPO}" \
-                             "${CI_IMAGE_NFD_COMMIT_CI_REF}"  \
-                             --image-tag="${CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG}"
+            export CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
+            export CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
+            export CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG="ci-image"
+
+            ./toolbox/wdm ensure has_nfd_from_master
         fi
     fi
-    if ! ./run_toolbox.py nfd has_gpu_nodes; then
+    if ! ./toolbox/wdm test has_gpu_nodes; then
         _expected_fail "Checking if the cluster had GPU nodes"
 
-        ./run_toolbox.py cluster set_scale g4dn.xlarge 1
-        ./run_toolbox.py nfd wait_gpu_nodes
+        ./toolbox/wdm ensure has_gpu_nodes
     fi
 
     # wait for NFD alert to stop firing
     ./run_toolbox.py cluster wait_for_alert \
                      CIGPUOperatorReconciliationFailedNfdLabelsMissing \
                      --alert-active=false
-    if ! ./run_toolbox.py entitlement test_cluster --no_inspect; then
+
+    if ! ./toolbox/wdm test has_entitlement; then
         _expected_fail "Checking if the cluster was entitled"
 
         # wait for driver alert to fire
