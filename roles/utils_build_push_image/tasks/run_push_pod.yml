@@ -1,0 +1,91 @@
+---
+# Find the builder secret (to access the imagestream)
+
+- name: Find and store the builder-dockercfg secret
+  block:
+  - name: Find the name of the builder-dockercfg secret
+    shell:
+      set -o pipefail;
+      oc get secrets -oname -n "{{ utils_build_push_image_namespace }}"
+         | cut -d/ -f2
+         | grep builder-dockercfg
+    register: builder_secret_cmd
+
+  - name: Store the name of the secret in a variable
+    set_fact:
+      builder_secret: "{{ builder_secret_cmd.stdout }}"
+  rescue:
+  - name: Failed to find the builder-dockercfg secret
+    fail: msg="No builder-dockercfg secret in the '"{{ utils_build_push_image_namespace }}"' namespace ..."
+
+# Prepare our Quay.io's push secret
+
+- name: Create the remote image registry secret
+  command:
+    oc apply
+       -f "{{ utils_build_push_image_remote_auth_file }}"
+       -n "{{ utils_build_push_image_namespace }}"
+       -ojsonpath={.metadata.name}
+  register: remote_registry_secret_name_cmd
+
+- name: Store the remote image secret name
+  set_fact:
+    remote_registry_secret_name: "{{ remote_registry_secret_name_cmd.stdout }}"
+
+# Prepare and run the push helper Pod
+
+- name: Apply the push helper script manifest
+  shell:
+    set -o pipefail;
+    oc create cm helper-image-script
+       "--from-file=run-helper-image-push.sh={{ utils_helper_image_push_script }}"
+       -n "{{ utils_build_push_image_namespace }}"
+       -oyaml
+       --dry-run
+       | tee "{{ artifact_extra_logs_dir }}/004_push-helper-entrypoint.yml"
+       | oc apply -f-
+
+- name: Instantiate the template of the image push pod
+  template:
+    src: "{{ utils_helper_image_push_pod }}"
+    dest: "{{ artifact_extra_logs_dir }}/005_push-helper-pod.yml"
+    mode: 0400
+
+- name: Delete image push pod if already exists
+  command:
+    oc delete
+       -f "{{ artifact_extra_logs_dir }}/005_push-helper-pod.yml"
+       -n "{{ utils_build_push_image_namespace }}"
+       --ignore-not-found
+
+- name: Create push pod and run image push
+  command:
+    oc apply
+      -f "{{ artifact_extra_logs_dir }}/005_push-helper-pod.yml"
+      -n "{{ utils_build_push_image_namespace }}"
+      -oname
+  register: push_pod_name_cmd
+
+- name: Await and log image push completion
+  block:
+  - name: Wait for the image to finish pushing
+    command:
+      oc get "{{ push_pod_name_cmd.stdout }}"
+          -n "{{ utils_build_push_image_namespace }}"
+          -ojsonpath={.status.phase}
+    register: wait_final_pod
+    until: "'Succeeded' in wait_final_pod.stdout or 'Failed' in wait_final_pod.stdout"
+    retries: 40
+    delay: 30
+
+  - name: Fail if the image push failed
+    when: "'Failed' in wait_final_pod.stdout"
+    fail: msg="The image push failed"
+
+  always:
+  - name: Store final build and push logs
+    shell:
+      oc logs "{{ push_pod_name_cmd.stdout }}"
+         -n "{{ utils_build_push_image_namespace }}"
+         > "{{ artifact_extra_logs_dir }}/push-helper-pod.log"
+    failed_when: false

@@ -3,27 +3,24 @@ kind: Pod
 metadata:
   labels:
     app: ci-artifacts
-  name: {{ local_image_name }}-push-pod
-  namespace: utils-ci
+  name: "{{ utils_build_push_image_local_name }}-push-pod"
 spec:
   containers:
   - command:
-    - /bin/sh
+    - bash
     - /mnt/helper/run-helper-image-push.sh
-    image: image-registry.openshift-image-registry.svc:5000/utils-ci/{{ local_image_name }}:helper
-    name: {{ local_image_name }}-helper
+    image: "image-registry.openshift-image-registry.svc:5000/{{ utils_build_push_image_namespace }}/{{ utils_build_push_image_local_name }}:helper"
+    name: "{{ utils_build_push_image_local_name }}-helper"
     imagePullPolicy: Always
     securityContext:
       privileged: true
     env:
       - name: LOCAL_IMAGE
-        value: "image-registry.openshift-image-registry.svc:5000/utils-ci/{{ local_image_name }}:{{ image_tag }}"
+        value: "image-registry.openshift-image-registry.svc:5000/{{ utils_build_push_image_namespace }}/{{ utils_build_push_image_local_name }}:{{ utils_build_push_image_tag }}"
       - name: IMAGE_TAG
-        value: "{{ image_tag }}"
-      - name: QUAY_REPO
-        value: "{{ quay_repo }}"
-      - name: QUAY_AUTH_FILE
-        value: "{{ auth_file }}"
+        value: "{{ utils_build_push_image_tag }}"
+      - name: REMOTE_REPO
+        value: "{{ utils_build_push_image_remote_repo }}"
     volumeMounts:
     - mountPath: /mnt/helper/run-helper-image-push.sh
       name: helper-image-script
@@ -44,7 +41,7 @@ spec:
   - name: quay-dockercfg
     secret:
       defaultMode: 384
-      secretName: "{{ quay_push_secret_name }}"
+      secretName: "{{ remote_registry_secret_name }}"
   - name: builder-dockercfg
     secret:
       defaultMode: 384

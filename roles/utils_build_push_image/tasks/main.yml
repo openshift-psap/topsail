@@ -1,169 +1,47 @@
-- name: Check that local_image_name is defined
-  fail: msg="Bailing out. This play requires 'local_image_name'"
-  when: local_image_name is undefined
-
-- name: Check that image_tag is defined
-  fail: msg="Bailing out. This play requires 'image_tag'"
-  when: image_tag is undefined
-
-- name: Check that branch is defined
-  fail: msg="Bailing out. This play requires 'branch'"
-  when: branch is undefined
-
-- name: Check that artifact_extra_logs_dir is defined
-  fail: msg="Bailing out. This play requires 'artifact_extra_logs_dir'"
-  when: artifact_extra_logs_dir is undefined
-
-- name: Check that quay_repo is defined
-  fail: msg="Bailing out. This play requires 'quay_repo'"
-  when: quay_repo is undefined
-
-- name: Check that auth_file is defined
-  fail: msg="Bailing out. This play requires 'auth_file'"
-  when: auth_file is undefined
-
-- name: Create git repo BuildConfig from template
-  template:
-    src: "{{ utils_repo_buildconfig }}"
-    dest: "{{ artifact_extra_logs_dir }}/image_buildconfig.yml"
-    mode: 0400
-  when: git_repo | length > 0
-
-- name: Grab local Dockerfile content
-  command: cat {{ docker_path }}
-  register: dockerfile
-  when: docker_path | length > 0
-
-- name: Create git local BuildConfig from template
-  template:
-    src: "{{ utils_local_buildconfig }}"
-    dest: "{{ artifact_extra_logs_dir }}/image_buildconfig.yml"
-    mode: 0400
-  when: docker_path | length > 0
-
-- name: Create namespace for images if doesn't exist
-  shell: 
-    set -o pipefail && \
-    oc create namespace utils-ci --dry-run=client -o yaml | oc apply -f -
-
-- name: Create imagestream for image if doesn't exist
-  command: oc create imagestream {{ local_image_name }} --namespace=utils-ci
-  failed_when: false
-
-- name: Build the image-builder helper image
-  include_tasks: build_helper.yml
-
-- name: Delete old image BuildConfig if exists
-  command: oc delete -f "{{ artifact_extra_logs_dir }}/image_buildconfig.yml"
-  failed_when: false
-
-- name: Apply image BuildConfig
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/image_buildconfig.yml"
-
-- name: Get the name of the build
-  command:
-    oc get builds
-        -lbuildconfig={{ local_image_name }}
-        -oname
-        -n utils-ci
-  register: build_name_cmd
-  failed_when: build_name_cmd.stdout | length == 0
-  retries: 5
-  delay: 10
-
-- name: Await and log image build completion
-  block:
-  - name: Wait for the image to be built
-    command:
-      oc get {{ build_name_cmd.stdout }}
-          -ojsonpath={.status.phase}
-          -n utils-ci
-    register: wait_img_build
-    until: "'Complete' in wait_img_build.stdout or 'Failed' in wait_img_build.stdout"
-    retries: 40
-    delay: 30
-
-  - name: Fail if the image failed to be built
-    when: "'Failed' in wait_img_build.stdout"
-    fail: msg="The image failed to build"
-
-  always:
-  - name: Get BuildConfig description (debug)
-    shell: oc describe --namespace=utils-ci bc/{{ local_image_name }} > {{ artifact_extra_logs_dir }}/image-build.descr
-    failed_when: false
-
-  - name: Store the logs of image build (debug)
-    shell:
-      oc logs {{ build_name_cmd.stdout }} -n utils-ci > {{ artifact_extra_logs_dir }}/image-build.log
-    failed_when: false
-
-- name: Find and store the builder-dockercfg secret
-  block:
-  - name: Find the name of the builder-dockercfg secret
-    shell:
-      set -o pipefail;
-      oc get secrets -oname -n utils-ci | cut -d/ -f2 | grep builder-dockercfg
-    register: builder_secret_cmd
-
-  - name: Store the name of the secret in a variable
-    set_fact:
-      builder_secret: "{{ builder_secret_cmd.stdout }}"
-  rescue:
-  - name: Failed to find the builder-dockercfg secret
-    fail: msg="No builder-dockercfg secret in the 'utils-ci' namespace ..."
-
-- name: Get quay.io secret name
-  command:
-    yq -r .metadata.name "{{ auth_file }}"
-  register: quay_push_secret_name_cmd
-
-- name: Store quay.io secret name
-  set_fact:
-    quay_push_secret_name: "{{ quay_push_secret_name_cmd.stdout }}"
-
-- name: Create quay.io secret
-  command:
-    oc apply -f "{{ auth_file }}" -n utils-ci
-
-- name: Apply the helper image script manifest
+- name: Create namespace for images if does not exist
   shell:
     set -o pipefail;
-    oc create cm helper-image-script
-       -n utils-ci
-       "--from-file=run-helper-image-push.sh={{ utils_helper_image_push_script }}"
-       --dry-run -oyaml
-       | oc apply -f-
+    oc create namespace "{{ utils_build_push_image_namespace }}"
+       --dry-run=client
+       -oyaml
+    | tee "{{ artifact_extra_logs_dir }}/000_namespace.yml"
+    | oc apply -f-
 
-- name: Instantiate the template of the image push pod
-  template:
-    src: "{{ utils_helper_image_push_pod }}"
-    dest: "{{ artifact_extra_logs_dir }}/helper-image-push-pod.yml"
-    mode: 0400
+- name: Create the imagestream, if does not exist
+  shell:
+    set -o pipefail &&
+    oc create imagestream "{{ utils_build_push_image_local_name }}"
+       --dry-run=client
+       -oyaml
+    | tee "{{ artifact_extra_logs_dir }}/001_imagestream.yml"
+    | oc apply -f- -n "{{ utils_build_push_image_namespace }}"
 
-- name: Delete image push pod if already exists
-  command: oc delete pod {{ local_image_name }}-push-pod -n utils-ci
+- name: Check if the image is already built
+  command:
+    oc get
+       "istag/{{ utils_build_push_image_local_name }}:{{ utils_build_push_image_tag }}"
+       -n "{{ utils_build_push_image_namespace }}"
+  register: has_image
   failed_when: false
 
-- name: Create push pod and run image push
-  command: oc apply -f {{ artifact_extra_logs_dir }}/helper-image-push-pod.yml
+- name: Build the image
+  include_tasks: build_image.yml
+  when: has_image.rc != 0
 
-- name: Await and log image push completion
+- name: Build the helper image and push remotely
+  when: utils_build_push_image_remote_repo | length
   block:
-  - name: Wait for the image to finish pushing
+  - name: Check if the helper image is already built
     command:
-      oc get pods {{ local_image_name }}-push-pod
-          -ojsonpath={.status.phase}
-          -n utils-ci
-    register: wait_final_pod
-    until: "'Succeeded' in wait_final_pod.stdout or 'Failed' in wait_final_pod.stdout"
-    retries: 40
-    delay: 30
-
-  - name: Fail if the image push failed
-    when: "'Failed' in wait_final_pod.stdout"
-    fail: msg="The image push failed"
-
-  always:
-  - name: Store final build and push logs
-    shell: oc logs {{ local_image_name }}-push-pod -n utils-ci > {{ artifact_extra_logs_dir }}/final-build-push.log
+      oc get
+         "istag/{{ utils_build_push_image_local_name }}:helper"
+         -n "{{ utils_build_push_image_namespace }}"
+    register: has_helper_image
     failed_when: false
+
+  - name: Build the image-builder helper image
+    include_tasks: build_helper.yml
+    when: has_helper_image.rc != 0
+
+  - name: Run the push pod
+    include_tasks: run_push_pod.yml

@@ -1,15 +1,17 @@
 ---
 # Expected parameters
-local_image_name: ""
-image_tag: ""
-branch: ""
-quay_repo: ""
-auth_file: ""
+utils_build_push_image_local_name: ""
+utils_build_push_image_tag: ""
+
+utils_build_push_image_remote_repo: ""
+utils_build_push_image_remote_auth_file: ""
 
 # Conditional parameters
-git_repo: ""
-git_path: ""
-docker_path: ""
+utils_build_push_image_git_repo: ""
+utils_build_push_image_git_ref: ""
+
+utils_build_push_image_context_dir: ""
+utils_build_push_image_dockerfile_path: ""
 
 # Optional parameters
-memory: ""
+utils_build_push_image_memory: ""

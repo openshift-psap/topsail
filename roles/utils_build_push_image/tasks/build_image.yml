@@ -1,0 +1,83 @@
+---
+- name: Grab local Dockerfile content
+  command: cat "{{ utils_build_push_image_dockerfile_path }}"
+  register: dockerfile_content_cmd
+  when: not utils_build_push_image_git_repo
+
+- name: Create BuildConfig from template
+  template:
+    src: "{{ utils_image_buildconfig }}"
+    dest: "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
+    mode: 0400
+
+- name: Delete old image BuildConfig if exists
+  command:
+    oc delete
+    -f "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
+    -n "{{ utils_build_push_image_namespace }}"
+    --ignore-not-found
+
+- name: Apply image BuildConfig
+  command:
+    oc apply
+       -f "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
+       -n "{{ utils_build_push_image_namespace }}"
+       -oname
+  register: builconfig_name_cmd
+
+- name: Get the name of the build
+  command:
+    oc get builds
+       "-lbuildconfig={{ utils_build_push_image_local_name }}"
+       -oname
+       -n "{{ utils_build_push_image_namespace }}"
+  register: build_name_cmd
+  until: build_name_cmd.stdout | length != 0
+  retries: 5
+  delay: 10
+
+- name: Await and log image build completion
+  block:
+  - name: Wait for the Pod to start running
+    command:
+      oc get "{{ build_name_cmd.stdout }}"
+          -ojsonpath={.status.phase}
+          -n "{{ utils_build_push_image_namespace }}"
+    register: wait_pod_running
+    until: "'Running' in wait_pod_running.stdout or 'Failed' in wait_pod_running.stdout or 'Complete' in wait_pod_running.stdout"
+    retries: 4
+    delay: 15
+
+  - name: Fail if the pod is still pending
+    when: "'Pending' in wait_img_build.stdout"
+    fail: msg="The Build could not start. Check 'image-build.descr' to understand what happened. Maybe no Node has enough memory?"
+
+  - name: Wait for the image to be built
+    command:
+      oc get "{{ build_name_cmd.stdout }}"
+          -ojsonpath={.status.phase}
+          -n "{{ utils_build_push_image_namespace }}"
+    register: wait_img_build
+    until: "'Complete' in wait_img_build.stdout or 'Failed' in wait_img_build.stdout"
+    retries: 40
+    delay: 30
+
+  - name: Fail if the image failed to be built
+    when: "'Failed' in wait_img_build.stdout"
+    fail: msg="The image failed to build"
+
+  always:
+  - name: Get BuildConfig description (debug)
+    shell:
+      oc describe
+         -n "{{ utils_build_push_image_namespace }}"
+         {{ builconfig_name_cmd.stdout }}
+         > {{ artifact_extra_logs_dir }}/image-build.descr
+    failed_when: false
+
+  - name: Store the logs of image build (debug)
+    shell:
+      oc logs {{ build_name_cmd.stdout }}
+        -n "{{ utils_build_push_image_namespace }}"
+        > {{ artifact_extra_logs_dir }}/image-build.log
+    failed_when: false

@@ -1,28 +1,33 @@
 - name: Create helper image BuildConfig from template
   template:
     src: "{{ utils_helper_image_buildconfig }}"
-    dest: "{{ artifact_extra_logs_dir }}/helper.yml"
+    dest: "{{ artifact_extra_logs_dir }}/003_helper_buildconfig.yml"
     mode: 0400
 
 - name: Apply helper image BuildConfig
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/helper.yml"
+  command:
+    oc apply
+       -f "{{ artifact_extra_logs_dir }}/003_helper_buildconfig.yml"
+       -n "{{ utils_build_push_image_namespace }}"
 
 - name: Get the name of the helper build
   command:
     oc get builds
-        -lbuildconfig={{ local_image_name }}-helper
-        -oname
-        -n utils-ci
+       "-lbuildconfig={{ utils_build_push_image_local_name }}-helper"
+       -oname
+       -n "{{ utils_build_push_image_namespace }}"
   register: helper_name_cmd
-  failed_when: helper_name_cmd.stdout | length == 0
+  until: helper_name_cmd.stdout | length != 0
+  retries: 5
+  delay: 10
 
 - name: Await and log helper image build completion
   block:
   - name: Wait for the helper image to be built
     command:
-      oc get {{ helper_name_cmd.stdout }}
+      oc get "{{ helper_name_cmd.stdout }}"
           -ojsonpath={.status.phase}
-          -n utils-ci
+          -n "{{ utils_build_push_image_namespace }}"
     register: wait_helper_build
     until: "'Complete' in wait_helper_build.stdout or 'Failed' in wait_helper_build.stdout"
     retries: 40
@@ -35,5 +40,7 @@
   always:
   - name: Store the logs of helper image build (debug)
     shell:
-      oc logs {{ helper_name_cmd.stdout }} -n utils-ci > {{ artifact_extra_logs_dir }}/image-helper-build.log
+      oc logs "{{ helper_name_cmd.stdout }}"
+         -n "{{ utils_build_push_image_namespace }}"
+         > "{{ artifact_extra_logs_dir }}/image-helper-build.log"
     failed_when: false

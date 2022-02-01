@@ -1,0 +1,35 @@
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: ci-artifacts
+  name: {{ utils_build_push_image_local_name }}
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: {{ utils_build_push_image_local_name }}:{{ utils_build_push_image_tag }}
+{% if utils_build_push_image_memory|length %}
+  resources:
+    requests:
+      memory: {{ utils_build_push_image_memory }}
+{% endif %}
+{% if utils_build_push_image_git_repo|length %}
+  source:
+    type: Git
+    git:
+      uri: {{ utils_build_push_image_git_repo }}
+      ref: {{ utils_build_push_image_git_ref }}
+    contextDir: {{ utils_build_push_image_context_dir }}
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: {{ utils_build_push_image_dockerfile_path }}
+{% elif dockerfile.stdout|length %}
+  source:
+    dockerfile: |
+{{ dockerfile.stdout | indent(6, True) }}
+{% endif %}
+  triggers:
+    - type: ConfigChange
