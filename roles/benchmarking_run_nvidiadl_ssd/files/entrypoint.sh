@@ -5,8 +5,13 @@ set -o errexit
 set -o nounset
 set -x
 
-EPOCHS=${1:-80}
-THRESHOLD=${2:-0.23}
+# Chosen as it's tested to terminate within the alloted time
+SEED=95137217
+
+EPOCHS=${BENCHMARKING_EPOCHS:-80}
+echo "Using epochs=$EPOCHS"
+THRESHOLD=${BENCHMARKING_THRESHOLD:-0.23}
+echo "Using threshold=$THRESHOLD"
 
 DATASET_DIR=/storage
 if [ ! -f ${DATASET_DIR}/annotations/bbox_only_instances_train2017.json ]; then
@@ -55,4 +60,4 @@ exec python -u -m bind_launch --nsockets_per_node=1 --ncores_per_socket=1 --npro
               --batch-size=32 \
               --warmup=1 \
               --local_rank=0 \
-              --seed 95137217
+              --seed $SEED
