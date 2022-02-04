@@ -1,0 +1,68 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: hello-world
+spec:
+  sshAuthMountPath: /home/mpi/.ssh
+  cleanPodPolicy: Running
+  slotsPerWorker: 1
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          containers:
+          - name: mpi-launcher
+            command:
+            - mpirun
+            - -np
+            - "2"
+            - -bind-to
+            - nonem
+            - -map-by
+            - slot
+            - -mca
+            - pml
+            - ob1
+            - -mca
+            - btl
+            - ^openib
+            - bash
+            - -c
+            - echo Hello World from $(cat /proc/sys/kernel/hostname)
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base-python
+            imagePullPolicy: Always
+    Worker:
+      replicas: 2
+      template:
+        metadata:
+          labels:
+            app: mpi-app
+        spec:
+          topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app: mpi-app
+          containers:
+          - name: mpi-worker
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base-python
+            imagePullPolicy: Always
+            command:
+            - python3
+            - /mnt/sshdless-script/sshd_server.py
+            env:
+            - name: SSH_KEY
+              value: /home/mpi/.ssh/id_rsa
+            - name: SSHD_PORT
+              value: "2222"
+            volumeMounts:
+            - mountPath: /mnt/sshdless-script
+              name: sshdless-script
+          volumes:
+          - name: sshdless-script
+            configMap:
+              defaultMode: 0777
+              name: sshdless-script

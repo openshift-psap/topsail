@@ -1,0 +1,162 @@
+---
+name: cluster_is_prepared
+spec:
+  requirements:
+  - has_mpi_operator
+
+  - has_mpi_namespace
+  - has_entitlement
+  - has_mpi_base_image
+---
+name: has_mpi_operator
+spec:
+  tests:
+  - name: has_mpi_crd
+    type: shell
+    spec: oc get -oname crd/mpijobs.kubeflow.org
+  install:
+  - name: install_mpi_operator
+    type: shell
+    spec: |
+      oc apply -f \
+         https://raw.githubusercontent.com/kubeflow/mpi-operator/v0.3.0/deploy/v2beta1/mpi-operator.yaml
+  - name: Fix MPI-Operator image
+    type: shell
+    spec: |
+      oc set image deployment.apps/mpi-operator \
+                   mpi-operator=docker.io/mpioperator/mpi-operator:0.3.0 \
+                   -n mpi-operator
+---
+name: has_volcano
+spec:
+  tests:
+  - name: has_podgroupd_crd
+    type: shell
+    spec: oc get -oname crd/podgroups.scheduling.volcano.sh
+  install:
+  - name: install_volcano
+    type: shell
+    spec: |
+      oc apply -f \
+         https://raw.githubusercontent.com/volcano-sh/volcano/master/installer/volcano-development.yaml
+---
+name: has_entitlement
+spec:
+  tests:
+  - name: has_entitlement
+    type: shell
+    spec: |
+      cd ../..
+      export WDM_DEPENDENCY_FILE=testing/wdm/gpu-operator.yml
+      ./toolbox/wdm test has_entitlement
+  install:
+  - name: ensure_has_entitlement
+    type: shell
+    spec: |
+      cd ${HOME}
+      export WDM_DEPENDENCY_FILE=testing/wdm/gpu-operator.yml
+      ./toolbox/wdm ensure has_entitlement
+---
+name: has_mpi_namespace
+spec:
+  tests:
+  - name: has_mpi_namespace
+    type: shell
+    spec: oc get ns/mpi-benchmark -oname
+  install:
+  - name: goto_mpi_namespace
+    type: shell
+    spec: oc new-project mpi-benchmark
+---
+name: has_mpi_imagestream
+spec:
+  requirements:
+  - has_mpi_namespace
+  tests:
+  - name: has_imagestream
+    type: shell
+    spec: oc get is/mpi-bench -n mpi-benchmark
+  install:
+  - name: create_imagesteam
+    type: shell
+    spec: oc apply -f 001_imagestream.yaml -n mpi-benchmark
+---
+name: has_mpi_base_image
+spec:
+  requirements:
+  - has_mpi_namespace
+  - has_mpi_imagestream
+  tests:
+  - name: has_base_image
+    type: shell
+    spec: oc get istag/mpi-bench:base -oname -n mpi-benchmark
+  install:
+  - name: build_base_image
+    type: ansible
+    spec:
+    - name: Set local imagebuild name
+      set_fact:
+        buildconfig_file: 002_base_image.buildconfig.yaml
+        buildconfig_name: mpi-base-image
+
+    - name: Delete the image helper builder manifest, if any
+      command: oc delete -f "{{ buildconfig_file }}" --ignore-not-found=true  -n mpi-benchmark
+
+    - name: Apply the image helper builder manifest
+      command: oc apply -f "{{ buildconfig_file }}"  -n mpi-benchmark
+
+    - name: Wait for the helper image to be built
+      command:
+        oc get builds
+           -lopenshift.io/build-config.name={{ buildconfig_name }}
+           -ocustom-columns=phase:status.phase
+           --no-headers
+            -n mpi-benchmark
+      register: wait_buildconfig
+      until: "'Complete' in wait_buildconfig.stdout or 'Failed' in wait_buildconfig.stdout"
+      retries: 40
+      delay: 30
+
+    - name: Fail if the buildconfig failed to be built
+      when: "'Failed' in wait_buildconfig.stdout or 'Error' in wait_buildconfig.stdout"
+      fail: msg="The buildconfig {{ buildconfig_file }} failed to build"
+---
+name: has_mpi_python_base_image
+spec:
+  requirements:
+  - has_mpi_namespace
+  - has_mpi_base_image
+  tests:
+  - name: has_base_image
+    type: shell
+    spec: oc get istag/mpi-bench:base-python -oname -n mpi-benchmark
+  install:
+  - name: build_base_image
+    type: ansible
+    spec:
+    - name: Set local imagebuild name
+      set_fact:
+        buildconfig_file: 003_base_image.python.buildconfig.yaml
+        buildconfig_name: mpi-python-base-image
+
+    - name: Delete the image helper builder manifest, if any
+      command: oc delete -f "{{ buildconfig_file }}" --ignore-not-found=true  -n mpi-benchmark
+
+    - name: Apply the image helper builder manifest
+      command: oc apply -f "{{ buildconfig_file }}"  -n mpi-benchmark
+
+    - name: Wait for the helper image to be built
+      command:
+        oc get builds
+           -lopenshift.io/build-config.name={{ buildconfig_name }}
+           -ocustom-columns=phase:status.phase
+           --no-headers
+            -n mpi-benchmark
+      register: wait_buildconfig
+      until: "'Complete' in wait_buildconfig.stdout or 'Failed' in wait_buildconfig.stdout"
+      retries: 40
+      delay: 30
+
+    - name: Fail if the buildconfig failed to be built
+      when: "'Failed' in wait_buildconfig.stdout or 'Error' in wait_buildconfig.stdout"
+      fail: msg="The buildconfig {{ buildconfig_file }} failed to build"
