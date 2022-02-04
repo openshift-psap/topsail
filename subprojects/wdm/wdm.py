@@ -34,6 +34,9 @@ def run_ansible(task, depth):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     env["ANSIBLE_CONFIG"] = dir_path + "/../../config/ansible.cfg"
 
+    sys.stdout.flush()
+    sys.stderr.flush()
+
     try:
         proc = subprocess.run(["ansible-playbook", tmp.name],
                               env=env, stdin=None)
@@ -53,7 +56,9 @@ def run_shell(task, depth):
     print(" "*depth, f"|>SHELL<| \n{cmd.strip()}")
 
     print("-"*(depth+2))
-    proc = subprocess.run(["/bin/bash", "-ceuo", "pipefail", cmd], stdin=subprocess.PIPE)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    proc = subprocess.run(["bash", "-ceuo", "pipefail", cmd], stdin=subprocess.PIPE)
     ret = proc.returncode
     print("-"*(depth+2))
 
