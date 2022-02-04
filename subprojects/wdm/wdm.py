@@ -40,8 +40,8 @@ def run_ansible(task, depth):
 
         ret = proc.returncode
     finally:
-        #os.remove(tmp.name)
-        pass
+        os.remove(tmp.name)
+
     print("-"*(depth+2))
 
     return ret == 0
