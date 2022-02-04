@@ -35,7 +35,7 @@ def run_ansible(task, depth):
     env["ANSIBLE_CONFIG"] = dir_path + "/../../config/ansible.cfg"
 
     try:
-        proc = subprocess.run(["/usr/bin/ansible-playbook", tmp.name],
+        proc = subprocess.run(["ansible-playbook", tmp.name],
                               env=env, stdin=None)
 
         ret = proc.returncode
