@@ -4,6 +4,7 @@ manifest_entitle:
 	else \
 	  echo "ENTITLEMENT_PEM not defined, not preparing the entitlement manifests."; \
 	fi
+
 _manifest_entitle:
 	@echo "PEM:      ${ENTITLEMENT_PEM}"
 	@[ -f "${ENTITLEMENT_PEM}" ]
@@ -24,6 +25,13 @@ _manifest_entitle:
 	@ls "${ENTITLEMENT_DST_BASENAME}"_*
 
 manifest_entitle_master:
+	@if [ "${ENTITLEMENT_PEM}" ]; then \
+	  make _manifest_entitle_master; \
+	else \
+	  echo "ENTITLEMENT_PEM not defined, not preparing the master entitlement manifests."; \
+	fi
+
+_manifest_entitle_master:
 	@cat "${ENTITLEMENT_TEMPLATE}" \
 	  | sed "s/BASE64_ENCODED_PEM_FILE/$(shell base64 -w 0 ${ENTITLEMENT_PEM})/g" \
 	  | sed "s/BASE64_ENCODED_RHSM_FILE/$(shell base64 -w 0 ${ENTITLEMENT_RHSM})/g" \
