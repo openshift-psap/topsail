@@ -7,7 +7,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: mpi-bench:base
+      name: mpi:base
   source:
     dockerfile: |2
       FROM registry.access.redhat.com/ubi8/ubi

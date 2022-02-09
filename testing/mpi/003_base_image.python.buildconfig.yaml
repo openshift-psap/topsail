@@ -7,10 +7,10 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: mpi-bench:base-python
+      name: mpi:base-python
   source:
     dockerfile: |2
-      FROM mpi-bench:base
+      FROM mpi:base
 
       RUN dnf install --quiet -y python3 python3-pynacl python3-gssapi \
        && pip3 install --upgrade pip \
@@ -20,8 +20,8 @@ spec:
   strategy:
     dockerStrategy:
       from:
-        kind: DockerImage
-        name: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base
+        kind: ImageStreamTag
+        name: mpi:base
     type: Docker
   triggers:
   - type: ConfigChange

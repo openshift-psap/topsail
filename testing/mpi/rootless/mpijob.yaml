@@ -15,7 +15,7 @@ spec:
         spec:
           initContainers:
           - name: wait-hostfilename
-            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi:base
             command:
             - bash
             - -cx
@@ -45,7 +45,7 @@ spec:
             - bash
             - -c
             - echo Hello World from $(cat /proc/sys/kernel/hostname)
-            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi:base
             imagePullPolicy: Always
     Worker:
       replicas: 2
@@ -63,7 +63,7 @@ spec:
                 app: mpi-app
           containers:
           - name: mpi-worker
-            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi:base
             imagePullPolicy: Always
             command:
             - /usr/sbin/sshd

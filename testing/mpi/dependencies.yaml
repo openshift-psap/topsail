@@ -75,7 +75,7 @@ spec:
   tests:
   - name: has_imagestream
     type: shell
-    spec: oc get is/mpi-bench -n mpi-benchmark
+    spec: oc get is/mpi -n mpi-benchmark
   install:
   - name: create_imagesteam
     type: shell
@@ -89,7 +89,7 @@ spec:
   tests:
   - name: has_base_image
     type: shell
-    spec: oc get istag/mpi-bench:base -oname -n mpi-benchmark
+    spec: oc get istag/mpi:base -oname -n mpi-benchmark
   install:
   - name: build_base_image
     type: ansible
@@ -129,7 +129,7 @@ spec:
   tests:
   - name: has_base_image
     type: shell
-    spec: oc get istag/mpi-bench:base-python -oname -n mpi-benchmark
+    spec: oc get istag/mpi:base-python -oname -n mpi-benchmark
   install:
   - name: build_base_image
     type: ansible

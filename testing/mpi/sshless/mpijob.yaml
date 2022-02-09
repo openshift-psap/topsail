@@ -32,7 +32,7 @@ spec:
             - bash
             - -c
             - echo Hello World from $(cat /proc/sys/kernel/hostname)
-            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base-python
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi:base-python
             imagePullPolicy: Always
             env:
             - name: OMPI_MCA_plm_rsh_agent
@@ -68,7 +68,7 @@ spec:
                 app: mpi-app
           containers:
           - name: mpi-worker
-            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base-python
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi:base-python
             imagePullPolicy: Always
             env:
             - name: OMPI_MCA_plm_rsh_agent
