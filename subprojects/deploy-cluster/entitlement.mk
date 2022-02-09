@@ -21,8 +21,8 @@ _manifest_entitle:
 	@# openshift-install doesn't allow files with multiple objects
 	@awk '{ print > "${ENTITLEMENT_DST_BASENAME}_worker_"++i".yaml" }' RS='---\n' "${ENTITLEMENT_DST_BASENAME}_worker.yaml"
 	@rm "${ENTITLEMENT_DST_BASENAME}_worker.yaml"
-	@echo "Entitlement MachineConfig generated:"
-	@ls "${ENTITLEMENT_DST_BASENAME}"_*
+	@echo "Entitlement MachineConfig generated for the Worker nodes:"
+	@ls "${ENTITLEMENT_DST_BASENAME}_worker"_*
 
 manifest_entitle_master:
 	@if [ "${ENTITLEMENT_PEM}" ]; then \
@@ -42,5 +42,5 @@ _manifest_entitle_master:
 	@# openshift-install doesn't allow files with multiple objects
 	@awk '{ print > "${ENTITLEMENT_DST_BASENAME}_master_"++i".yaml" }' RS='---\n' "${ENTITLEMENT_DST_BASENAME}_master.yaml"
 	@rm "${ENTITLEMENT_DST_BASENAME}_master.yaml"
-	@echo "Entitlement MachineConfig generated:"
+	@echo "Entitlement MachineConfig generated for the Master nodes:"
 	@ls "${ENTITLEMENT_DST_BASENAME}_master"_*
