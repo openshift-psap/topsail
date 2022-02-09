@@ -1,0 +1,65 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  label:
+    profile: rootless
+  name: osu-mpi-latency
+spec:
+  sshAuthMountPath: /home/mpi/.ssh
+  cleanPodPolicy: Running
+  slotsPerWorker: 1
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          initContainers:
+          - name: wait-hostfilename
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi:base
+            command:
+            - bash
+            - -cx
+            - "[[ $(cat /etc/mpi/hostfile | wc -l) != 0 ]] && (date; echo 'Hostfile is ready'; cat /etc/mpi/hostfile) || (date; echo 'Hostfile not ready ...'; sleep 10; exit 1) && while read host; do while ! ssh $host echo $host ; do date; echo \"Pod $host is not up ...\"; sleep 10; done; date; echo \"Pod $host is ready\"; done <<< \"$(cat /etc/mpi/hostfile)\""
+            volumeMounts:
+            - mountPath: /etc/mpi
+              name: mpi-job-config
+            - mountPath: /home/mpi/.ssh
+              name: ssh-auth
+          containers:
+          - name: mpi-launcher
+            command:
+            - mpirun
+            - --allow-run-as-root
+            - -np
+            - "2"
+            - -bind-to
+            - none
+            - -map-by
+            - slot
+            - -mca
+            - pml
+            - ob1
+            - -mca
+            - btl
+            - ^openib
+            - /opt/osu-micro-benchmarks/libexec/osu-micro-benchmarks/mpi/pt2pt/osu_latency
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi:base
+            imagePullPolicy: Always
+    Worker:
+      replicas: 2
+      template:
+        metadata:
+          labels:
+            app: mpi-app
+        spec:
+          topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app: mpi-app
+          containers:
+          - name: mpi-worker
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi:osu-mpi
+            imagePullPolicy: Always
