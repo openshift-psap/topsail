@@ -9,9 +9,10 @@ NAME="hello-world"
 NAMESPACE="mpi-benchmark"
 
 mode=$1
-destdir="$"
+mpijob_filename=${2:-$mode/mpijob.yaml}
 
-if [ -z "${ARTIFACT_DIR:-}" ]; then
+
+if [[ -z "${ARTIFACT_DIR:-}" ]]; then
     ARTIFACT_DIR="/tmp/ci-artifacts_$(date +%Y%m%d)"
     mkdir -p "$ARTIFACT_DIR"
 
@@ -23,42 +24,52 @@ fi
 DEST_DIR="${ARTIFACT_DIR}/$(printf '%03d' $(ls "${ARTIFACT_DIR}/" | grep __ | wc -l))__mpi_$mode"
 mkdir -p "$DEST_DIR"
 
-oc delete -f "$mode/mpijob.yaml" -n $NAMESPACE --ignore-not-found
-oc create -f "$mode/mpijob.yaml" -n $NAMESPACE
+oc delete -f "$mpijob_filename" -n $NAMESPACE --ignore-not-found
+mpijob_name=$(oc create -f "$mpijob_filename" -n $NAMESPACE -oname)
+
+# remove the resource type 'mpijob.../'
+name=${mpijob_name#*/}
 
 set +e
 retries=60 # 10min
-while [[ -z "$(oc get mpijob.kubeflow.org/$NAME -ojsonpath={.status.completionTime} -n $NAMESPACE)" ]];
+while [[ -z "$(oc get "$mpijob_name" -ojsonpath={.status.completionTime} -n $NAMESPACE)" ]];
 do
     sleep 10
     if oc get pods | grep Failed; then
-        echo "One of the Pods failed, bailing out."
-        touch "$DEST_DIR/failed"
+        echo "WARNING: One of the Pods failed, bailing out."
+        touch "$DEST_DIR/${name}_failed"
         break
     fi
     retries=$(($retries - 1))
     if [[ "$retries" == 0 ]]; then
-        echo "Job took too long to complete, bailing out."
-        touch "$DEST_DIR/failed"
+        echo "WARNING: Job took too long to complete, bailing out."
+        touch "$DEST_DIR/${name}_failed"
         break
     fi
 done
 
+failed_launcher=$(oc get "$mpijob_name" -ojsonpath={.status.replicaStatuses.Launcher.failed})
+
+if [[ "$failed_launcher" && "$failed_launcher" != 0 ]]; then
+    echo "WARNING: The MPI Operator detected a failure of the launcher Pod (failed_launcher=$failed_launcher)."
+    touch "$DEST_DIR/${name}_failed"
+fi
+
 oc get pods \
    -owide \
    -n "$NAMESPACE" \
-    | tee "$DEST_DIR/pods.status"
+    | tee "$DEST_DIR/${name}-pods.status"
 
 oc logs \
    $(oc get pods \
-        -ltraining.kubeflow.org/job-name=$NAME,training.kubeflow.org/job-role=launcher \
+        -ltraining.kubeflow.org/job-name="$name",training.kubeflow.org/job-role=launcher \
         -n "$NAMESPACE" \
         -oname
-   ) | tee "$DEST_DIR/launcher.logs"
+   ) | tee "$DEST_DIR/${name}-launcher.logs"
 
 
 for worker in $(oc get pods \
-                   -ltraining.kubeflow.org/job-name=$NAME,training.kubeflow.org/job-role=worker \
+                   -ltraining.kubeflow.org/job-name="$name",training.kubeflow.org/job-role=worker \
                    -n "$NAMESPACE" \
                    -oname | tr '\n' ' ');
 do
@@ -66,10 +77,10 @@ do
         | tee -a "$DEST_DIR/$(echo "$worker" | cut -d/ -f2).log"
 done
 
-oc get mpijob/$NAME -n "$NAMESPACE" -oyaml > "$DEST_DIR/mpijob.status.yaml"
+oc get $mpijob_name -n "$NAMESPACE" -oyaml > "$DEST_DIR/${name}-mpijob.status.yaml"
 
-oc delete mpijob/$NAME -n "$NAMESPACE"
+oc delete $mpijob_name -n "$NAMESPACE"
 
 echo "All done, artifacts saved in $DEST_DIR"
 
-[[ -e "$DEST_DIR/failed" ]] && exit 1 || exit 0
+[[ -e "$DEST_DIR/${name}_failed" ]] && exit 1 || exit 0
