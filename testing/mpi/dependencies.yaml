@@ -160,3 +160,42 @@ spec:
     - name: Fail if the buildconfig failed to be built
       when: "'Failed' in wait_buildconfig.stdout or 'Error' in wait_buildconfig.stdout"
       fail: msg="The buildconfig {{ buildconfig_file }} failed to build"
+---
+name: has_mpi_osu_image
+spec:
+  requirements:
+  - has_mpi_namespace
+  - has_mpi_base_image
+  tests:
+  - name: has_osu-mpi_image
+    type: shell
+    spec: oc get istag/mpi:osu-mpi -oname
+  install:
+  - name: build_osu_image
+    type: ansible
+    spec:
+    - name: Set local imagebuild name
+      set_fact:
+        buildconfig_file: 004_osu-mpi.buildconfig.yaml
+        buildconfig_name: osu-mpi-image
+
+    - name: Delete the image helper builder manifest, if any
+      command: oc delete -f "{{ buildconfig_file }}" --ignore-not-found=true
+
+    - name: Apply the image helper builder manifest
+      command: oc apply -f "{{ buildconfig_file }}"
+
+    - name: Wait for the helper image to be built
+      command:
+        oc get builds
+           -lopenshift.io/build-config.name={{ buildconfig_name }}
+           -ocustom-columns=phase:status.phase
+           --no-headers
+      register: wait_buildconfig
+      until: "'Complete' in wait_buildconfig.stdout or 'Failed' in wait_buildconfig.stdout"
+      retries: 40
+      delay: 30
+
+    - name: Fail if the buildconfig failed to be built
+      when: "'Failed' in wait_buildconfig.stdout or 'Error' in wait_buildconfig.stdout"
+      fail: msg="The buildconfig {{ buildconfig_file }} failed to build"

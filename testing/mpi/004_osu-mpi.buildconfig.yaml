@@ -1,0 +1,36 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: osu-mpi-image
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: mpi:osu-mpi
+  source:
+    dockerfile: |2
+      FROM mpi:base
+
+      RUN dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
+       && dnf -y install --quiet make wget gcc-c++ openmpi-devel
+
+      RUN cd "${HOME}" \
+       && OSU_VERSION=5.8 \
+       && wget --quiet https://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-${OSU_VERSION}.tgz \
+       && tar xvf osu-micro-benchmarks-${OSU_VERSION}.tgz \
+       && cd osu-micro-benchmarks-${OSU_VERSION} \
+       && ./configure --prefix=/opt/osu-micro-benchmarks CC=/usr/lib64/openmpi/bin/mpicc LIBS="-L/usr/lib64/openmpi/lib -lmpi -lpthread" \
+       && make \
+       && make install \
+       && cd "${HOME}" \
+       && rm -rf "${HOME}/osu-micro-benchmarks-${OSU_VERSION} osu-micro-benchmarks-${OSU_VERSION}.tar.gz"
+
+    type: Dockerfile
+  strategy:
+    dockerStrategy:
+      from:
+        kind: ImageStreamTag
+        name: mpi:base
+    type: Docker
+  triggers:
+  - type: ConfigChange
