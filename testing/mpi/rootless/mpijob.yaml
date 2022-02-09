@@ -65,8 +65,3 @@ spec:
           - name: mpi-worker
             image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi:base
             imagePullPolicy: Always
-            command:
-            - /usr/sbin/sshd
-            - -De
-            - -f
-            - /home/mpi/custom_ssh/sshd_config

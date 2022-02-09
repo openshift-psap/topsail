@@ -33,8 +33,8 @@ spec:
        && ssh-keygen -f ${HOME}/custom_ssh/ssh_host_rsa_key -N '' -t rsa \
        && ssh-keygen -f ${HOME}/custom_ssh/ssh_host_dsa_key -N '' -t dsa \
        \
-       && echo -e > ${HOME}/custom_ssh/sshd_config \
-       "Port 2222 \n\
+       && echo -e > ${HOME}/custom_ssh/sshd_config "\
+       Port 2222 \n\
        HostKey ${HOME}/custom_ssh/ssh_host_rsa_key \n\
        HostKey ${HOME}/custom_ssh/ssh_host_dsa_key \n\
        AuthorizedKeysFile  .ssh/authorized_keys \n\
@@ -44,6 +44,7 @@ spec:
        PidFile ${HOME}/custom_ssh/sshd.pid \n\
        StrictModes no \n\
        " \
+       && rm -f /etc/ssh/sshd_config && ln -s ${HOME}/custom_ssh/sshd_config /etc/ssh/ \
        && rm /sbin/nologin && ln -s /usr/bin/bash /sbin/nologin \
        \
        && touch /var/log/lastlog \
