@@ -107,6 +107,6 @@ def run_ansible_playbook(playbook_name, opts: dict = dict()):
         for k, v in os.environ.items():
             print(f"{k}={v}", file=f)
 
-    os.execvpe(cmd[0], cmd, os.environ)
+    run_result = subprocess.run(cmd, env=os.environ.copy(), check=False)
 
-    raise RuntimeError("os.execvpe shouldn't return ...")
+    raise SystemExit(run_result.returncode)
