@@ -6,7 +6,7 @@ set -o nounset
 set -x
 
 # Chosen as it's tested to terminate within the alloted time
-SEED=95137217
+SEED=5652442
 
 EPOCHS=${BENCHMARKING_EPOCHS:-80}
 echo "Using epochs=$EPOCHS"
@@ -54,10 +54,14 @@ export NCCL_DEBUG=INFO
 export CUDA_VISIBLE_DEVICES=0
 exec python -u -m bind_launch --nsockets_per_node=1 --ncores_per_socket=1 --nproc_per_node=1 \
      train.py --epochs ${EPOCHS} \
-              --warmup-factor 0 \
               --threshold=${THRESHOLD} \
               --data /storage \
-              --batch-size=32 \
-              --warmup=1 \
+              --no-save \
+              --use-fp16 --nhwc \
+              --evaluation 1 2 3 6 12 40 70 \
+              --num-workers=1 \
+              --batch-size=16 \
               --local_rank=0 \
+              --warmup=1 \
+              --warmup-factor 1 \
               --seed $SEED

@@ -14,6 +14,8 @@ spec:
     resources:
       limits:
         nvidia.com/gpu: 1
+      requests:
+        memory: 12Gi
     volumeMounts:
     - name: entrypoint-volume
       mountPath: /mnt/entrypoint/entrypoint.sh
@@ -21,6 +23,8 @@ spec:
       subPath: entrypoint.sh
     - mountPath: /storage/
       name: storage-volume
+    - mountPath: /dev/shm
+      name: dshm
     command:
     - bash
     - -c
@@ -38,3 +42,6 @@ spec:
   - name: storage-volume
     persistentVolumeClaim:
       claimName: {{ benchmarking_coco_dataset_pvc_name }}
+  - name: dshm
+    emptyDir:
+      medium: Memory
