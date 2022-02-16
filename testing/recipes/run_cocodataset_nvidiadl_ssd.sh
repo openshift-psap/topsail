@@ -5,8 +5,8 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
-EPOCHS=4
-THRESHOLD=0.07
+EPOCHS=3
+THRESHOLD=0.05
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
