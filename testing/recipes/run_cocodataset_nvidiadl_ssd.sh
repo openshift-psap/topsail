@@ -16,7 +16,6 @@ source $THIS_DIR/../prow/gpu-operator.sh source
 
 # WDM_DEPENDENCY_FILE exported in ^^^^
 ./toolbox/wdm ensure has_gpu_operator
-./run_toolbox.py gpu_operator wait_deployment
 
 gpu_node_hostname=$(oc get nodes -oname -lfeature.node.kubernetes.io/pci-10de.present -ojsonpath={.items[].metadata.labels} | jq -r '.["kubernetes.io/hostname"]')
 
