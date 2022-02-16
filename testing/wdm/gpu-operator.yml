@@ -4,14 +4,14 @@ spec:
   - has_nfd
   - has_gpu_nodes
   tests:
-  - name: has_gpu_operatpr
+  - name: has_gpu_operator
     type: shell
-    spec: oc get pod -l app.kubernetes.io/component=gpu-operator -A -oname
+    spec: oc get pod -l app.kubernetes.io/component=gpu-operator -A -oname | grep .
   install:
   - name: install_gpu_operator
     type: shell
     spec: ./run_toolbox.py gpu_operator deploy_from_operatorhub
-  - name: install_gpu_operator
+  - name: wait_gpu_deployment
     type: shell
     spec: ./run_toolbox.py gpu_operator wait_deployment
 ---
