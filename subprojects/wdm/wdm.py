@@ -4,6 +4,7 @@ import yaml
 import sys, os
 import subprocess
 import tempfile
+import pathlib
 
 deps = {}
 resolved = set()
@@ -167,7 +168,7 @@ wdm <mode> target
     - install: test dependencies and install those unsatisfied.
 
 Environment:
-    WDM_DEPENDENCY_FILE must point to a valid WDM dependency file.
+    WDM_DEPENDENCY_FILE can point to a valid WDM dependency file. Default: ./dependencies.yaml
 
 Returns:
     2 if an error occured
@@ -226,9 +227,16 @@ def main():
         usage()
         sys.exit(2)
 
-    WDM_DEPENDENCY_FILE = os.getenv("WDM_DEPENDENCY_FILE")
-    if WDM_DEPENDENCY_FILE is None:
-        print("ERROR: WDM_DEPENDENCY_FILE must give the path to the dependency file.")
+    WDM_DEPENDENCY_FILE = os.getenv("WDM_DEPENDENCY_FILE", "./dependencies.yaml")
+
+    wdm_dependency_file = pathlib.Path(WDM_DEPENDENCY_FILE)
+
+    if not wdm_dependency_file.is_file():
+        import pdb;pdb.set_trace()
+        if os.getenv("WDM_DEPENDENCY_FILE"):
+            print(f"ERROR: WDM_DEPENDENCY_FILE must point to a valid file. (WDM_DEPENDENCY_FILE={WDM_DEPENDENCY_FILE})")
+        else:
+            print("ERROR: WDM_DEPENDENCY_FILE must point to a valid file, or ./dependencies.yaml must exist (WDM_DEPENDENCY_FILE is not set)")
         usage()
         sys.exit(2)
 
