@@ -29,4 +29,8 @@ oc create cm sshless-scripts -n mpi-benchmark \
    --from-file=server.py=server.py
 
 cd ${THIS_DIR}/..
+
+../../toolbox/wdm ensure cluster_is_prepared
+../../toolbox/wdm ensure has_mpi_python_base_image
+
 exec bash ./wait_and_collect.sh sshless

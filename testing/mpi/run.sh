@@ -23,8 +23,4 @@ fi
 ENTITLEMENT_SECRET_PATH=/var/run/psap-entitlement-secret
 export ENTITLEMENT_PEM=${ENTITLEMENT_PEM:-${ENTITLEMENT_SECRET_PATH}/entitlement.pem}
 
-export WDM_DEPENDENCY_FILE=./dependencies.yaml
-../../toolbox/wdm ensure cluster_is_prepared
-../../toolbox/wdm ensure has_mpi_python_base_image # not needed for rootless
-../../toolbox/wdm ensure has_mpi_osu_image # only needed for rootless
 exec bash ./$mode/run.sh
