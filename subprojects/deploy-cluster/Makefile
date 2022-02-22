@@ -12,6 +12,7 @@ all:
 	@[ -f "${OPENSHIFT_INSTALLER}" ] && echo "    Installer found" || echo "    Installer not found"
 	@echo "OPENSHIFT_INSTALLER = ${OPENSHIFT_INSTALLER}"
 	@echo "OpenShift Installer URL: ${OPENSHIFT_INSTALLER_URL}"
+	@echo "DIFF_TOOL = ${DIFF_TOOL}"
 
 # ---
 
