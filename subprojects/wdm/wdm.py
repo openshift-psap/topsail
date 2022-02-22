@@ -216,7 +216,7 @@ def main():
     global WDM_DEPENDENCY_FILE, wdm_mode
 
     try: wdm_mode = sys.argv[1]
-    except KeyError: wdm_mode = None
+    except IndexError: wdm_mode = None
 
     if wdm_mode == "usage":
         usage(full=True)
