@@ -12,7 +12,9 @@ spec:
     dockerfile: |2
       FROM mpi:base
 
-      RUN dnf install --quiet -y python3 python3-pynacl python3-gssapi \
+      RUN dnf --quiet -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
+       && dnf install --quiet -y python3 python3-pynacl python3-gssapi \
+       && dnf install --quiet -y openssl \
        && pip3 install --upgrade pip \
        && pip3 install setuptools-rust paramiko
 

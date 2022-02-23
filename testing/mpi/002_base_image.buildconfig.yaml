@@ -10,7 +10,7 @@ spec:
       name: mpi:base
   source:
     dockerfile: |2
-      FROM registry.access.redhat.com/ubi8/ubi
+      FROM quay.io/centos/centos:stream8
 
       ENV USER_NAME=mpi \
           USER=mpi \
@@ -18,8 +18,7 @@ spec:
 
       WORKDIR ${HOME}
 
-      RUN dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
-       && dnf -y install --quiet \
+      RUN dnf -y install --quiet \
           vim openssh-server openssh-clients openmpi \
         \
        && ln -s /usr/lib64/openmpi/bin/orted /usr/bin/orted \
@@ -61,7 +60,7 @@ spec:
     dockerStrategy:
       from:
         kind: DockerImage
-        name: registry.access.redhat.com/ubi8/ubi
+        name: quay.io/centos/centos:stream8
     type: Docker
   triggers:
   - type: ConfigChange
