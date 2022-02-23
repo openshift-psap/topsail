@@ -5,7 +5,6 @@ spec:
   - has_mpi_operator
 
   - has_mpi_namespace
-  - has_entitlement
   - has_mpi_base_image
 ---
 name: has_mpi_operator
@@ -39,23 +38,6 @@ spec:
     spec: |
       oc apply -f \
          https://raw.githubusercontent.com/volcano-sh/volcano/master/installer/volcano-development.yaml
----
-name: has_entitlement
-spec:
-  tests:
-  - name: has_entitlement
-    type: shell
-    spec: |
-      cd ../..
-      export WDM_DEPENDENCY_FILE=testing/wdm/gpu-operator.yml
-      ./toolbox/wdm test has_entitlement
-  install:
-  - name: ensure_has_entitlement
-    type: shell
-    spec: |
-      cd ${HOME}
-      export WDM_DEPENDENCY_FILE=testing/wdm/gpu-operator.yml
-      ./toolbox/wdm ensure has_entitlement
 ---
 name: has_mpi_namespace
 spec:
