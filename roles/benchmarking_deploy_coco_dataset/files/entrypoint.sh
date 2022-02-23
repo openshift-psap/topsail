@@ -23,6 +23,7 @@ declare -A DIR_PREFIXES=(
     ["train2017.zip"]="zips"
     ["val2017.zip"]="zips"
     ["annotations_trainval2017.zip"]="annotations"
+    ["image_info_test2017.zip"]="annotations"
 )
 
 if [[ -z "$CERT_FILE" ]]; then
