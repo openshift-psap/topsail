@@ -64,7 +64,7 @@ class Utils:
         else:
             print(f"Using local dockerfile at {dockerfile_path} for building the image.")
 
-        if not git_repo and context_dir:
+        if not git_repo and context_dir != "/":
             print("ERROR: local builds (no git_repo) cannot specify a context_dir.")
             sys.exit(1)
 
