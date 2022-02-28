@@ -223,7 +223,8 @@ def main():
         sys.exit(0)
 
     if wdm_mode not in ("dryrun", "test", "ensure"):
-        print("ERROR: <mode> must be 'dryrun', 'test' or 'ensure', not '{wdm_mode}'.")
+        print(f"ERROR: <mode> must be 'dryrun', 'test' or 'ensure', not '{wdm_mode}'.")
+        print()
         usage()
         sys.exit(2)
 
