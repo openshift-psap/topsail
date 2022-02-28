@@ -19,6 +19,7 @@ from toolbox.utils import Utils
 from toolbox.nto import NTO
 from toolbox.rhods import RHODS
 
+
 class Toolbox:
     """
     The PSAP Operators Toolbox
@@ -41,6 +42,7 @@ class Toolbox:
         self.utils = Utils
         self.nto = NTO
         self.rhods = RHODS
+
 
 def main(no_exit=False):
     # Print help rather than opening a pager

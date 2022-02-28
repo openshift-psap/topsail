@@ -22,6 +22,12 @@ ARG OCP_CLI_VERSION=latest
 ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
 RUN curl --silent ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 
+# Install dependencies: `ocm`
+ARG OCM_CLI_VERSION=v0.1.60
+ARG OCM_CLI_URL=https://github.com/openshift-online/ocm-cli/releases/download/${OCM_CLI_VERSION}/ocm-linux-amd64
+RUN curl -L ${OCM_CLI_URL} --output /usr/local/bin/ocm
+RUN chmod +x /usr/local/bin/ocm
+
 # Install dependencies: `helm`
 ARG HELM_VERSION=v3.5.1
 ARG HELM_URL=https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz

@@ -1,0 +1,3 @@
+ocm_deploy_addon_id:
+ocm_deploy_addon_cluster_name:
+ocm_deploy_addon_wait_for_ready_state: true
