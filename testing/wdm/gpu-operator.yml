@@ -63,8 +63,8 @@ spec:
     type: shell
     spec:
       ./run_toolbox.py nfd_operator deploy_from_commit
-                       "${CI_IMAGE_NFD_COMMIT_CI_REPO}" \
-                       "${CI_IMAGE_NFD_COMMIT_CI_REF}"  \
+                       "${CI_IMAGE_NFD_COMMIT_CI_REPO}"
+                       "${CI_IMAGE_NFD_COMMIT_CI_REF}"
                        --image-tag="${CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG}"
 ---
 name: has_gpu_nodes
