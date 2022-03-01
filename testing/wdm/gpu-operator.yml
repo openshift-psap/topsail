@@ -47,10 +47,7 @@ spec:
     spec: ./run_toolbox.py nfd_operator deploy_from_operatorhub
   - name: wait_nfd_labels
     type: shell
-    spec:
-      while ! oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID=rhcos -oname | grep .; do
-        sleep 5;
-      done
+    spec: ./run_toolbox.py nfd wait_labels
 ---
 name: has_nfd_from_master
 spec:
@@ -66,6 +63,9 @@ spec:
                        "${CI_IMAGE_NFD_COMMIT_CI_REPO}"
                        "${CI_IMAGE_NFD_COMMIT_CI_REF}"
                        --image-tag="${CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG}"
+  - name: wait_nfd_labels
+    type: shell
+    spec: ./run_toolbox.py nfd wait_labels
 ---
 name: has_gpu_nodes
 spec:
