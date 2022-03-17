@@ -153,3 +153,11 @@ class Cluster:
         print("Deploying the operator.")
 
         return PlaybookRun("cluster_deploy_operator", opts)
+
+    @staticmethod
+    def deploy_aws_efs():
+        """
+        Deploy AWS EFS CSI driver and configure AWS accordingly.
+        Assumes that AWS (credentials, Ansible module, Python module) is properly configured in the system.
+        """
+        return PlaybookRun("cluster_deploy_aws_efs", {})

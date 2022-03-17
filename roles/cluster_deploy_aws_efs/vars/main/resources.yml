@@ -1,0 +1,2 @@
+cluster_deploy_aws_efs_csi_driver: roles/cluster_deploy_aws_efs/templates/cluster-csi-driver.yml.j2
+cluster_deploy_aws_efs_storage_class: roles/cluster_deploy_aws_efs/templates/storage-class.yml.j2

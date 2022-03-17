@@ -1,0 +1,121 @@
+---
+- name: Get K8s api+machine name
+  command: oc get nodes -lnode-role.kubernetes.io/worker -ojsonpath={.items[0].metadata.annotations[\'machine\\.openshift\\.io/machine\']}
+  register: api_machinename_cmd
+  failed_when: api_machinename_cmd.stdout | length == 0
+
+- name: Get K8s machine name
+  command: basename "{{ api_machinename_cmd.stdout }}"
+  register: machinename_cmd
+
+- name: Get AWS instance id
+  command:
+    oc get machine/{{ machinename_cmd.stdout }}
+       -n openshift-machine-api
+       -ojsonpath={.status.providerStatus.instanceId}
+  register: instance_id_cmd
+
+- name: Get AWS cluster name tag
+  command:
+    oc get machine/{{ machinename_cmd.stdout }}
+       -n openshift-machine-api
+       -ojsonpath={.spec.providerSpec.value.tags[?(@.value==\"owned\")].name}
+  register: cluster_name_tag_cmd
+
+- name: Get AWS cluster name
+  command:
+    basename "{{ cluster_name_tag_cmd.stdout }}"
+  register: cluster_name_cmd
+
+- name: Get AWS subnet names
+  command:
+    oc get machinesets
+       -n openshift-machine-api
+       -ojsonpath='{range .items[*]}{.spec.template.spec.providerSpec.value.subnet.filters[?(@.name=="tag:Name")].values[0]}{"\n"}{end}'
+  register: subnet_names_cmd
+
+- name: Gather information about a particular instance using ID
+  amazon.aws.ec2_instance_info:
+    instance_ids:
+      - "{{ instance_id_cmd.stdout }}"
+  register: ec2_instance_aws
+
+- name: Print the VPC ID
+  command: echo "VPC is {{ ec2_instance_aws.instances[0].vpc_id }}"
+
+- name: Print the SecurityGroup ID
+  command: echo "SecurityGroup is {{ ec2_instance_aws.instances[0] }}"
+
+- name: Print the SecurityGroup ID
+  command: echo "SecurityGroup is {{ ec2_instance_aws.instances[0].security_groups[0].group_id }}"
+
+  # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_subnet_info_module.html
+- name: Get AWS VPC subnet infos
+  amazon.aws.ec2_vpc_subnet_info:
+    filters:
+      vpc-id: "{{ ec2_instance_aws.instances[0].vpc_id }}"
+      "tag:Name": "{{ item }}"
+  loop: "{{ subnet_names_cmd.stdout_lines }}"
+  register: subnets_info_aws
+
+- name: Print the subnet IDs
+  command: echo "Subnet for zone {{ item.subnets[0].availability_zone }} is {{ item.subnets[0].subnet_id }}"
+
+  loop: "{{ subnets_info_aws.results }}"
+
+- name: Populate the targets dict
+  set_fact:
+    targets: []
+
+- name: Populate the targets dict
+  set_fact:
+    targets: "{{ targets + [{'subnet_id': item.subnets[0].subnet_id, 'security_groups': [ec2_instance_aws.instances[0].security_groups[0].group_id]}] }}"
+  with_items:
+  - "{{ subnets_info_aws.results }}"
+
+- name: Populate the tags dict
+  set_fact:
+    tags_not_working:
+      Name: "{{ cluster_name_cmd.stdout }}"
+      "{{ cluster_name_tag_cmd.stdout }}": owned
+
+- name: Populate the tags dict
+  set_fact:
+    tags: "{{ tags | default({}) | combine ({ item.key : item.value }) }}"
+  with_items:
+      - { 'key': 'Name' , 'value': '{{ cluster_name_cmd.stdout }}'}
+      - { 'key': '{{ cluster_name_tag_cmd.stdout }}' , 'value': 'owned'}
+      - { 'key': 'Purpose', 'value': ''}
+
+- name: Get the SecurityGroup content
+  amazon.aws.ec2_group_info:
+    filters:
+      group_id: "{{ ec2_instance_aws.instances[0].security_groups[0].group_id }}"
+      vpc-id: "{{ ec2_instance_aws.instances[0].vpc_id }}"
+  register: security_group_aws
+
+  # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_group_module.html
+- name: Allow NFS communications in the SecurityGroup
+  amazon.aws.ec2_group:
+    name: "{{ security_group_aws.security_groups[0].group_name }}"
+    description: "{{ security_group_aws.security_groups[0].description }}"
+    purge_rules: false
+    purge_rules_egress: false
+    rules:
+    - proto: tcp
+      ports:
+      - 2049
+      cidr_ip: 10.0.0.0/16
+      rule_desc: "Allow NFS communications"
+
+- name: Create EFS filesystem
+  community.aws.efs:
+    state: present
+    name: "EFS {{ cluster_name_cmd.stdout }}"
+    tags: "{{ tags }}"
+    targets: "{{ targets }}"
+  register: aws_efs_fs
+
+- name: Save AWS EFS fs id
+  set_fact:
+    aws_efs_fs_id: "{{ aws_efs_fs.efs.file_system_id }}"

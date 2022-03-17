@@ -1,0 +1,7 @@
+---
+- name: Run the entitlement inspection taskbook
+  include_role:
+    name: entitlement_inspect
+  vars:
+    _entitlement_inspect_called_from_testwait: "yes"
+  when: entitlement_inspect_on_failure == 'yes'
