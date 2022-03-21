@@ -6,19 +6,19 @@
 - name: Ensure that a valid hostname name was passed in parameter
   command: oc get nodes -l kubernetes.io/hostname={{ benchmarking_node_hostname }} -oname
 
-- name: Delete the mirror secret, if it exists
-  when: benchmarking_coco_dataset_client_cert | default('', true) | length != 0
+- name: Delete the s3 secret, if it exists
+  when: benchmarking_coco_dataset_s3_cred | default('', true) | length != 0
   command:
-    oc delete secret/mirror-secret
+    oc delete secret/s3-secret
        -n {{ benchmarking_namespace }}
        --ignore-not-found=true
 
-- name: Create the mirror secret
-  when: benchmarking_coco_dataset_client_cert | default('', true) | length != 0
+- name: Create the s3 secret
+  when: benchmarking_coco_dataset_s3_cred | default('', true) | length != 0
   command:
-    oc create secret generic mirror-secret
+    oc create secret generic s3-secret
        -n {{ benchmarking_namespace }}
-       --from-file=mirror.pem={{ benchmarking_coco_dataset_client_cert }}
+       --from-file=cococred.csv={{ benchmarking_coco_dataset_s3_cred }}
 
 - name: Create the entrypoint ConfigMap file
   shell:

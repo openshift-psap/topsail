@@ -7,7 +7,7 @@ class Benchmarking:
     """
 
     @staticmethod
-    def download_coco_dataset(node_hostname, namespace="default", pvc_name=None, mirror_base_url=None, client_cert=None):
+    def download_coco_dataset(node_hostname, namespace="default", pvc_name=None, storage_dir=None, s3_cred=None):
         """
         Downloads the COCO dataset into a PVC of the cluster
 
@@ -15,8 +15,7 @@ class Benchmarking:
             node_hostname: Hostname of the node where the download pod will be executed.
             namespace: Name of the namespace in which the resources will be created.
             pvc_name: Name of the PVC that will be create to store the dataset files.
-            mirror_base_url: Optional base URL where to fetch the dataset
-            client_cert: Optional path to the client cert to use for accessing the base URL.
+            s3_cred: Optional path to credentials to use for accessing the dataset s3 bucket.
         """
         opts = {
             "benchmarking_node_hostname": node_hostname,
@@ -27,17 +26,17 @@ class Benchmarking:
             print(
                 f"Using '{pvc_name}' as PVC name."
             )
-
-        if mirror_base_url is not None:
-            opts["benchmarking_coco_dataset_mirror_base_url"] = mirror_base_url
+        
+        if storage_dir is not None:
+            opts["benchmarking_coco_dataset_storage_dir"] = storage_dir
             print(
-                f"Using '{mirror_base_url}' as mirror base URL."
+                f"Using '{storage_dir}' as storage dir."
             )
 
-        if client_cert is not None:
-            opts["benchmarking_coco_dataset_client_cert"] = client_cert
+        if s3_cred is not None:
+            opts["benchmarking_coco_dataset_s3_cred"] = s3_cred
             print(
-                f"Using '{client_cert}' as client certificate."
+                f"Using '{s3_cred}' as s3 credentials."
             )
 
         return PlaybookRun("benchmarking_deploy_coco_dataset", opts)

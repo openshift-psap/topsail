@@ -83,16 +83,9 @@ def run(task, depth):
 
 def do_test(dep, depth, print_first_test=True):
     if not dep["spec"].get("tests"):
-        has_install = bool(dep["spec"].get("install"))
-        if has_install:
-            if print_first_test:
-                print(f"Nothing to test for '{dep['name']}'. Has install tasks, run them.")
-            success = False
-        else:
-            if print_first_test:
-                print(f"Nothing to test for '{dep['name']}'. Doesn't have install tasks, we're good.")
-            success = True
-        return success
+        if print_first_test:
+            print(f"Nothing to test for '{dep['name']}'")
+        return True
 
     for task in dep["spec"].get("tests", []):
         if print_first_test:
@@ -157,11 +150,8 @@ def resolve(dep, depth=0):
             sys.exit(1)
 
         if not do_test(dep, depth, print_first_test=False):
-            if dep["spec"].get("tests"):
-                print(f"ERROR: '{dep['name']}' installed, but test still failing.")
-                sys.exit(1)
-            else:
-                print(f"INFO: '{dep['name']}' installed, but has no test. Continuing nevertheless.")
+            print(f"ERROR: '{dep['name']}' installed, but test still failing.")
+            sys.exit(1)
 
 
     resolved.add(dep['name'])

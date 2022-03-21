@@ -13,18 +13,18 @@ spec:
     image: registry.access.redhat.com/ubi8/ubi
     command: [bash, /mnt/entrypoint/entrypoint.sh]
     env:
-{% if benchmarking_coco_dataset_mirror_base_url|length %}
-    - name: DATASET_BASE_URL
-      value: "{{ benchmarking_coco_dataset_mirror_base_url }}"
+{% if benchmarking_coco_dataset_s3_cred|length %}
+    - name: CRED_FILE
+      value: /etc/s3-secret/cococred.csv
 {% endif %}
-{% if benchmarking_coco_dataset_client_cert|length %}
-    - name: CERT_FILE
-      value: /etc/mirror-secret/mirror.pem
+{% if benchmarking_coco_dataset_storage_dir|length %}
+    - name: STORAGE_DIR
+      value: {{ benchmarking_coco_dataset_storage_dir }}
 {% endif %}
     volumeMounts:
-{% if benchmarking_coco_dataset_client_cert|length %}
-    - name: mirror-secret
-      mountPath: /etc/mirror-secret
+{% if benchmarking_coco_dataset_s3_cred|length %}
+    - name: s3-secret
+      mountPath: /etc/s3-secret
       readOnly: true
 {% endif %}
     - name: entrypoint-cm
@@ -34,10 +34,10 @@ spec:
     - name: storage
       mountPath: /storage/
   volumes:
-{% if benchmarking_coco_dataset_client_cert|length %}
-  - name: mirror-secret
+{% if benchmarking_coco_dataset_s3_cred|length %}
+  - name: s3-secret
     secret:
-      secretName: mirror-secret
+      secretName: s3-secret
 {% endif %}
   - name: storage
     persistentVolumeClaim:

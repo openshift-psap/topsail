@@ -7,6 +7,8 @@ set -o nounset
 
 EPOCHS=3
 THRESHOLD=0.05
+MINSR=150.0
+MAXDR=30
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -28,9 +30,9 @@ else
 fi
 
 DL_OPT=""
-if [[ "$@" == *use_mirror* ]]; then
-   DL_OPT="${DL_OPT} --mirror_base_url=https://mirror-dataset.apps.ci-mirror.psap.aws.rhperfscale.org/coco"
-   DL_OPT="${DL_OPT} --client-cert=${PSAP_SECRET_PATH}/entitled-mirror-client-creds.pem"
+if [[ "$@" == *use_private_s3* ]]; then
+    S3_CRED="${PSAP_SECRET_PATH}/cococred.csv"
+    DL_OPT="--s3_cred=$S3_CRED"
 fi
 
 RUN_CNT=1
