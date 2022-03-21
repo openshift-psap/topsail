@@ -20,35 +20,35 @@
 
 - name: Create the entrypoint ConfigMap file
   shell:
-    oc create cm {{ benchmarking_nvidiadl_ssd_entrypoint_cm_name }}
-       --from-file="{{ benchmarking_nvidiadl_ssd_entrypoint }}"
+    oc create cm {{ benchmarking_mlperf_ssd_entrypoint_cm_name }}
+       --from-file="{{ benchmarking_mlperf_ssd_entrypoint }}"
        -n {{ benchmarking_namespace }}
        --dry-run=client
        -oyaml
-       > {{ artifact_extra_logs_dir }}/000_configmap_run-nvidiadl-ssd_entrypoint.yml
+       > {{ artifact_extra_logs_dir }}/000_configmap_run-mlperf-ssd_entrypoint.yml
 
 - name: Create the entrypoint ConfigMap resource
-  command: oc apply -f {{ artifact_extra_logs_dir }}/000_configmap_run-nvidiadl-ssd_entrypoint.yml
+  command: oc apply -f {{ artifact_extra_logs_dir }}/000_configmap_run-mlperf-ssd_entrypoint.yml
 
 - name: Apply the Pod template
   template:
-    src: "{{ benchmarking_nvidiadl_ssd_pod }}"
-    dest: "{{ artifact_extra_logs_dir }}/001_pod_run-nvidiadl-ssd.yml"
+    src: "{{ benchmarking_mlperf_ssd_pod }}"
+    dest: "{{ artifact_extra_logs_dir }}/001_pod_run-mlperf-ssd.yml"
     mode: 0400
 
 - name: Delete the Pod, if it exists
   command:
-    oc delete -f "{{ artifact_extra_logs_dir }}/001_pod_run-nvidiadl-ssd.yml"
+    oc delete -f "{{ artifact_extra_logs_dir }}/001_pod_run-mlperf-ssd.yml"
        --ignore-not-found=true
 
 - name: Deploy the Pod to run the benchmark
   command:
-    oc create -f "{{ artifact_extra_logs_dir }}/001_pod_run-nvidiadl-ssd.yml"
+    oc create -f "{{ artifact_extra_logs_dir }}/001_pod_run-mlperf-ssd.yml"
 
 - block: 
   - name: Wait for the benchmark completion
     command:
-      oc get pod/{{ benchmarking_nvidiadl_ssd_name }}
+      oc get pod/{{ benchmarking_mlperf_ssd_name }}
       --no-headers
       -ocustom-columns=phase:status.phase
       -n {{ benchmarking_namespace }}
@@ -64,16 +64,28 @@
   always:
   - name: Store the logs of benchmark execution (for post-processing)
     shell:
-      oc logs pod/{{ benchmarking_nvidiadl_ssd_name }} -n {{ benchmarking_namespace }}
-        > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.log"
+      oc logs pod/{{ benchmarking_mlperf_ssd_name }} -n {{ benchmarking_namespace }}
+        > "{{ artifact_extra_logs_dir }}/pod_run-mlperf-ssd.log"
     failed_when: false
 
   - name: Store the status of the benchmark execution (for post-processing)
     shell:
-      echo "{{ wait_benchmark_pod_cmd.stdout }}" > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.status"
+      echo "{{ wait_benchmark_pod_cmd.stdout }}" > "{{ artifact_extra_logs_dir }}/pod_run-mlperf-ssd.status"
 
   - name: Store the description of benchmark execution (debug)
     shell:
-      oc describe pod/{{ benchmarking_nvidiadl_ssd_name }} -n {{ benchmarking_namespace }}
-        > "{{ artifact_extra_logs_dir }}/pod_run-nvidiadl-ssd.descr"
+      oc describe pod/{{ benchmarking_mlperf_ssd_name }} -n {{ benchmarking_namespace }}
+        > "{{ artifact_extra_logs_dir }}/pod_run-mlperf-ssd.descr"
     failed_when: false
+
+- name: Get average sample rate
+  shell:
+    set -o pipefail;
+    cat "{{ artifact_extra_logs_dir }}/pod_run-mlperf-ssd.log" | grep avg. | tail -n1 | awk '{ print $NF " samples/sec" }' > "{{ artifact_dir }}/benchmarking_run_ssd_sample_rate.log";
+    cp {{ artifact_dir }}/benchmarking_run_ssd_sample_rate.log {{ artifact_extra_logs_dir }}/benchmarking_run_ssd_sample_rate.log
+
+- name: Get time to run benchmark
+  shell:
+    set -o pipefail;
+    cat "{{ artifact_extra_logs_dir }}/pod_run-mlperf-ssd.log" | grep real | awk '{ print $NF }' | awk -Fm '{ print $1 " mins" }' > "{{ artifact_dir }}/benchmarking_run_ssd_bench_duration.log";
+    cp {{ artifact_dir }}/benchmarking_run_ssd_bench_duration.log {{ artifact_extra_logs_dir }}/benchmarking_run_ssd_bench_duration.log

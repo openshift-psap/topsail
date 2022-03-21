@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{ benchmarking_nvidiadl_ssd_name }}
+  name: {{ benchmarking_mlperf_ssd_name }}
   namespace: {{ benchmarking_namespace }}
 spec:
   restartPolicy: Never
@@ -9,8 +9,8 @@ spec:
   nodeSelector:
     kubernetes.io/hostname: {{ benchmarking_node_hostname }}
   containers:
-  - name: nvidiadl
-    image: quay.io/openshift-psap/ci-artifacts:nvidiadl-ssd-training-benchmark
+  - name: mlperf
+    image: quay.io/openshift-psap/ci-artifacts:mlperf-ssd-training-benchmark
     resources:
       limits:
         nvidia.com/gpu: 1
@@ -36,7 +36,7 @@ spec:
   - name: entrypoint-volume
     configMap:
       defaultMode: 0777
-      name: {{ benchmarking_nvidiadl_ssd_entrypoint_cm_name }}
+      name: {{ benchmarking_mlperf_ssd_entrypoint_cm_name }}
   - name: storage-volume
     persistentVolumeClaim:
       claimName: {{ benchmarking_coco_dataset_pvc_name }}

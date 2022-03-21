@@ -14,6 +14,7 @@ THRESHOLD=${BENCHMARKING_THRESHOLD:-0.23}
 echo "Using threshold=$THRESHOLD"
 
 DATASET_DIR=/storage
+
 if [ ! -f ${DATASET_DIR}/annotations/bbox_only_instances_train2017.json ]; then
     echo "Prepare instances_train2017.json ..."
     ./prepare-json.py \
@@ -52,10 +53,10 @@ python -c "$PYCMD"
 
 export NCCL_DEBUG=INFO
 export CUDA_VISIBLE_DEVICES=0
-exec python -u -m bind_launch --nsockets_per_node=1 --ncores_per_socket=1 --nproc_per_node=1 \
+time python -u -m bind_launch --nsockets_per_node=1 --ncores_per_socket=1 --nproc_per_node=1 \
      train.py --epochs ${EPOCHS} \
               --threshold=${THRESHOLD} \
-              --data /storage \
+              --data ${DATASET_DIR} \
               --no-save \
               --use-fp16 --nhwc \
               --evaluation 1 2 3 6 12 40 70 \

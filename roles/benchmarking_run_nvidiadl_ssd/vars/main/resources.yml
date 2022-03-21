@@ -1,3 +1,0 @@
----
-benchmarking_nvidiadl_ssd_pod: 'roles/benchmarking_run_nvidiadl_ssd/templates/nvidiadl-ssd-pod.yml.j2'
-benchmarking_nvidiadl_ssd_entrypoint: 'roles/benchmarking_run_nvidiadl_ssd/files/entrypoint.sh'

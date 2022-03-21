@@ -7,13 +7,13 @@ benchmarking_namespace: "default"
 benchmarking_node_hostname: ""
 
 # name of the pod that will be created running the benchmark
-benchmarking_nvidiadl_ssd_name: "benchmarking-nvidiadl-ssd"
+benchmarking_mlperf_ssd_name: "benchmarking-mlperf-ssd"
 
 # name of the PVC containing the coco dataset
 benchmarking_coco_dataset_pvc_name: "benchmarking-coco-dataset"
 
 # name of the config map where the benchmark entrypoint will be stored
-benchmarking_nvidiadl_ssd_entrypoint_cm_name: "benchmarking-nvidiadl-ssd-entrypoint"
+benchmarking_mlperf_ssd_entrypoint_cm_name: "benchmarking-mlperf-ssd-entrypoint"
 
 # benchmark default hyperparams
 benchmarking_epochs: ""

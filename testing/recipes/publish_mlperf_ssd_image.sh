@@ -6,7 +6,7 @@ set -o nounset
 set -x
 
 local_name="ssd"
-tag="nvidiadl-ssd-training-benchmark"
+tag="mlperf-ssd-training-benchmark"
 
 repo="https://github.com/openshift-psap/training_results_v0.7.git"
 ref="fix/build-error" # Using a custom commit to avoid an existing image build bug

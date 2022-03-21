@@ -5,14 +5,30 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+PSAP_SECRET_PATH=/var/run/psap-entitlement-secret
 EPOCHS=3
 THRESHOLD=0.05
 MINSR=150.0
 MAXDR=30
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+assess_benchmark_stats () {
+    artifact_dir=${ARTIFACT_DIR:-"/tmp/ci-artifacts_$(date +%Y%m%d)"}
+    sample_rate=$(cat "${artifact_dir}/benchmarking_run_ssd_sample_rate.log" | cut -d" " -f1)
+    bench_duration=$(cat "${artifact_dir}/benchmarking_run_ssd_bench_duration.log" | cut -d" " -f1)
+    if (( $(echo "$MINSR > $sample_rate" |bc -l) )) ; then
+        echo "ERROR: Sample rate ($sample_rate) below minimum expected ($MINSR)"
+        return 1
+    fi
+    echo "Sample rate test passed!"
+    if [[ "$MAXDR" -lt "$bench_duration" ]] ; then
+        echo "ERROR: Benchmark duration ($bench_duration) above maximum expected ($MAXDR)"
+        return 1
+    fi
+    echo "Benchmark duration test passed!"
+    return 0
+}
 
-PSAP_SECRET_PATH=/var/run/psap-entitlement-secret
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 source $THIS_DIR/../prow/gpu-operator.sh source
 
@@ -52,5 +68,8 @@ if [[ "$@" == *benchmark_twice* ]]; then
 fi
 
 for i in $(seq $RUN_CNT); do
-    ./run_toolbox.py benchmarking run_nvidiadl_ssd "$gpu_node_hostname" --epochs=$EPOCHS --threshold=$THRESHOLD
+    ./run_toolbox.py benchmarking run_mlperf_ssd "$gpu_node_hostname" --epochs=$EPOCHS --threshold=$THRESHOLD
+    if ! assess_benchmark_stats; then
+        exit 1
+    fi
 done
