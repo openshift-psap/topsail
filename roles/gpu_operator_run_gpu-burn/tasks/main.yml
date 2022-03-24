@@ -50,7 +50,7 @@
   with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
   failed_when: false
 
-- name: Instanciate GPU Burn Pods from template
+- name: Instantiate GPU Burn Pods from template
   loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
   loop_control:
     loop_var: gpu_node_name

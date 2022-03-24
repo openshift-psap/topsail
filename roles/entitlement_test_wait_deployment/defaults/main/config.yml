@@ -1,5 +1,5 @@
 ---
-# wait for the successfull deployment of the entitlement?
+# wait for the successful deployment of the entitlement?
 entitlement_test_and_wait: "no"
 
 # the number of retries to perform when waiting for the entitlement
