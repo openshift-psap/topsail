@@ -49,7 +49,7 @@
     delay: 15
 
   - name: Fail if the pod is still pending
-    when: "'Pending' in wait_img_build.stdout"
+    when: "'Pending' in wait_pod_running.stdout"
     fail: msg="The Build could not start. Check 'image-build.descr' to understand what happened. Maybe no Node has enough memory?"
 
   - name: Wait for the image to be built
