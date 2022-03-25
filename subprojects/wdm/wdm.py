@@ -19,6 +19,35 @@ except ModuleNotFoundError:
     logging.error("WDM requires the Python `fire` package.")
     sys.exit(1)
 
+# ---
+import enum
+import pydantic
+import typing
+
+class TaskType(str, enum.Enum):
+    shell = 'shell'
+    ansible = 'ansible'
+
+class TaskModel(pydantic.BaseModel):
+    name: str
+    type: TaskType
+    spec: typing.Union[str, list[dict]]
+
+class DependencySpecModel(pydantic.BaseModel):
+    requirements: list[str] = None
+    tests: list[TaskModel] = None
+    install: list[TaskModel] = None
+
+class DependencyModel(pydantic.BaseModel):
+    """
+    This is the description of a dependency object
+    """
+
+    name: str
+    spec: DependencySpecModel
+
+# ---
+
 deps = {}
 resolved = set()
 
@@ -63,11 +92,11 @@ def run_ansible(task, depth):
     tmp = tempfile.NamedTemporaryFile("w+", dir=os.getcwd(), delete=False)
 
     play = [
-        dict(name=f"Run {task['name']}",
+        dict(name=f"Run {task.name}",
              connection="local",
              gather_facts=False,
              hosts="localhost",
-             tasks=task["spec"],
+             tasks=task.spec,
              )
     ]
 
@@ -87,7 +116,7 @@ def run_ansible(task, depth):
         proc = subprocess.Popen(["ansible-playbook", tmp.name],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                               env=env, stdin=subprocess.PIPE)
-        subprocess_stdout_to_log(proc, prefix=task["name"])
+        subprocess_stdout_to_log(proc, prefix=task.name)
         proc.wait()
         ret = proc.returncode
     except KeyboardInterrupt:
@@ -100,7 +129,7 @@ def run_ansible(task, depth):
 
 
 def run_shell(task, depth):
-    cmd = task["spec"].strip()
+    cmd = task.spec.strip()
 
     for line in cmd.split("\n"):
         logging.debug(f">SHELL<| %s", line)
@@ -111,7 +140,7 @@ def run_shell(task, depth):
         proc = subprocess.Popen(["bash", "-ceuo", "pipefail", cmd],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                               stdin=subprocess.PIPE)
-        subprocess_stdout_to_log(proc, prefix=task["name"])
+        subprocess_stdout_to_log(proc, prefix=task.name)
         proc.wait()
         ret = proc.returncode
     except KeyboardInterrupt:
@@ -121,8 +150,8 @@ def run_shell(task, depth):
     return ret == 0
 
 def run(task, depth):
-    logging.debug(f"Running '{task['name']}' ...")
-    type_ = task["type"]
+    logging.debug(f"Running '{task.name}' ...")
+    type_ = task.type
     if type_ == "shell":
         success = run_shell(task, depth)
     elif type_ == "ansible":
@@ -131,33 +160,32 @@ def run(task, depth):
         logging.error(f"unknown task type: {type_}.")
         sys.exit(1)
 
-    logging.debug(f"Running '{task['name']}': %s", "Success" if success else "Failure")
+    logging.debug(f"Running '{task.name}': %s", "Success" if success else "Failure")
     logging.debug("|___")
 
     return success
 
 
 def do_test(dep, depth, print_first_test=True):
-    if not dep["spec"].get("tests"):
-        has_install = bool(dep["spec"].get("install"))
-        if has_install:
+    if not dep.spec.tests:
+        if dep.spec.install:
             if print_first_test:
-                logging.debug(f"Nothing to test for '{dep['name']}'. Has install tasks, run them.")
+                logging.debug(f"Nothing to test for '{dep.name}'. Has install tasks, run them.")
             success = False
         else:
             if print_first_test:
-                logging.debug(f"Nothing to test for '{dep['name']}'. Doesn't have install tasks, we're good.")
+                logging.debug(f"Nothing to test for '{dep.name}'. Doesn't have install tasks, we're good.")
             success = True
         return success
 
-    for task in dep["spec"].get("tests", []):
+    for task in dep.spec.tests:
         if print_first_test:
-            logging.debug(f"Testing '{dep['name']}' ...")
+            logging.debug(f"Testing '{dep.name}' ...")
             print_first_test = False
 
         success = run(task, depth) if wdm_mode != "dryrun" else None
 
-        tested[f"{dep['name']} -> {task['name']}"] = success
+        tested[f"{dep.name} -> {task.name}"] = success
         if success:
             return True
 
@@ -165,14 +193,14 @@ def do_test(dep, depth, print_first_test=True):
 
 
 def resolve(dep, depth=0):
-    logging.info(f"Treating '{dep['name']}' dependency ...")
+    logging.info(f"Treating '{dep.name}' dependency ...")
 
-    if dep['name'] in resolved:
-        logging.info(f"Dependency '{dep['name']}' has already need resolved, skipping.")
+    if dep.name in resolved:
+        logging.info(f"Dependency '{dep.name}' has already need resolved, skipping.")
         return
 
-    for req in dep["spec"].get("requirements", []):
-        logging.info(f"Dependency '{dep['name']}' needs '{req}' ...")
+    for req in dep.spec.requirements or []:
+        logging.info(f"Dependency '{dep.name}' needs '{req}' ...")
         try:
             next_dep = deps[req]
         except KeyError as e:
@@ -181,42 +209,42 @@ def resolve(dep, depth=0):
         resolve(next_dep, depth=depth+1)
 
     if do_test(dep, depth) == True:
-        if dep["spec"].get("tests"):
-            logging.debug( f"Dependency '{dep['name']}' is satisfied, no need to install.")
+        if dep.spec.tests:
+            logging.debug( f"Dependency '{dep.name}' is satisfied, no need to install.")
 
     elif wdm_mode in ("dryrun", "test"):
-        logging.debug(f"Running in test mode, skipping '{dep['name']}' installation.")
-        for task in dep["spec"].get("install", []):
-            installed[f"{dep['name']} -> {task['name']}"] = True
+        logging.debug(f"Running in test mode, skipping '{dep.name}' installation.")
+        for task in dep.spec.install:
+            installed[f"{dep.name} -> {task.name}"] = True
     else:
         first_install = True
-        for task in dep["spec"].get("install", []):
+        for task in dep.spec.install:
             if first_install:
                 first_install = False
-                logging.info(f"Installing '{dep['name']}' ...")
+                logging.info(f"Installing '{dep.name}' ...")
 
             if not run(task, depth):
-                logging.error(f"install of '{dep['name']}' failed.")
+                logging.error(f"install of '{dep.name}' failed.")
                 sys.exit(1)
 
-            installed[f"{dep['name']} -> {task['name']}"] = True
+            installed[f"{dep.name} -> {task.name}"] = True
 
         if first_install:
             # no install task available
 
-            logging.error(f"'{dep['name']}' test failed, but no install script provided.")
+            logging.error(f"'{dep.name}' test failed, but no install script provided.")
             sys.exit(1)
 
         if not do_test(dep, depth, print_first_test=False):
-            if dep["spec"].get("tests"):
-                logging.error(f"'{dep['name']}' installed, but test still failing.")
+            if dep.spec.tests:
+                logging.error(f"'{dep.name}' installed, but test still failing.")
                 sys.exit(1)
 
-            logging.info(f"'{dep['name']}' installed, but has no test. Continuing nevertheless.")
+            logging.info(f"'{dep.name}' installed, but has no test. Continuing nevertheless.")
 
 
-    resolved.add(dep['name'])
-    logging.info(f"Done with {dep['name']}.")
+    resolved.add(dep.name)
+    logging.info(f"Done with {dep.name}.")
 
 def wdm_main(kwargs):
     global wdm_mode, cli_args
@@ -237,16 +265,15 @@ def wdm_main(kwargs):
     with open(wdm_dependency_file) as f:
         docs = list(yaml.safe_load_all(f))
 
+    main_target = kwargs["target"]
     for doc in docs:
         if doc is None: continue # empty block
-        deps[doc["name"]] = doc
+        obj = DependencyModel.parse_obj(doc)
+        deps[obj.name] = obj
+        if not main_target:
+             main_target = obj.name
 
-    try:
-        entrypoint = sys.argv[2]
-    except IndexError:
-        entrypoint = docs[0]["name"]
-
-    resolve(deps[entrypoint])
+    resolve(deps[main_target])
 
     logging.info("All done.")
 
