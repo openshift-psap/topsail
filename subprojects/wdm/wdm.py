@@ -5,6 +5,19 @@ import sys, os
 import subprocess
 import tempfile
 import pathlib
+import logging
+import selectors
+
+logging.basicConfig(
+    level=os.environ.get("LOGLEVEL", "DEBUG"),
+    format="%(levelname)6s | %(message)s",
+)
+
+try:
+    import fire
+except ModuleNotFoundError:
+    logging.error("WDM requires the Python `fire` package.")
+    sys.exit(1)
 
 deps = {}
 resolved = set()
@@ -12,14 +25,45 @@ resolved = set()
 tested = dict()
 installed = dict()
 
-WDM_DEPENDENCY_FILE = None
 wdm_mode = None
+cli_args = None
+
+def subprocess_stdout_to_log(proc, prefix):
+    sel = selectors.DefaultSelector()
+    sel.register(proc.stdout, selectors.EVENT_READ)
+    sel.register(proc.stderr, selectors.EVENT_READ)
+    first_stdout = True
+    first_stderr = True
+    prefix = f" DEBUG | {prefix} |"
+    while True:
+        for key, _ in sel.select():
+            data = key.fileobj.read1().decode()
+            if not data:
+                if not first_stderr: print("")
+                if not first_stdout: print("")
+                return
+
+            data = data.replace("\n", "\n"+prefix + " ")
+
+            if key.fileobj is proc.stdout:
+                if first_stdout:
+                    print(prefix, data, end="")
+                    first_stdout = False
+                else:
+                    print(data, end="")
+            else:
+                if first_stderr:
+                    print(prefix, data, end="")
+                    first_stderr = False
+                else:
+                    print(data, end="")
+
 
 def run_ansible(task, depth):
     tmp = tempfile.NamedTemporaryFile("w+", dir=os.getcwd(), delete=False)
 
     play = [
-        dict(name=f"Run { task['name']}",
+        dict(name=f"Run {task['name']}",
              connection="local",
              gather_facts=False,
              hosts="localhost",
@@ -30,54 +74,66 @@ def run_ansible(task, depth):
     yaml.dump(play, tmp)
     tmp.close()
 
-    print("-"*(depth+2))
     env = os.environ.copy()
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    env["ANSIBLE_CONFIG"] = dir_path + "/../../config/ansible.cfg"
+
+    env["ANSIBLE_CONFIG"] = cli_args["ansible_config"] if cli_args.get("ansible_config") != None \
+        else dir_path + "/../../config/ansible.cfg"
 
     sys.stdout.flush()
     sys.stderr.flush()
 
     try:
-        proc = subprocess.run(["ansible-playbook", tmp.name],
-                              env=env, stdin=None)
-
+        proc = subprocess.Popen(["ansible-playbook", tmp.name],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              env=env, stdin=subprocess.PIPE)
+        subprocess_stdout_to_log(proc, prefix=task["name"])
+        proc.wait()
         ret = proc.returncode
+    except KeyboardInterrupt:
+        logging.error(f"Task '{task}' was interrupted ...")
+        sys.exit(1)
     finally:
         os.remove(tmp.name)
 
-    print("-"*(depth+2))
-
     return ret == 0
 
-    pass
 
 def run_shell(task, depth):
-    cmd = task["spec"]
-    print(" "*depth, f"|>SHELL<| \n{cmd.strip()}")
+    cmd = task["spec"].strip()
 
-    print("-"*(depth+2))
+    for line in cmd.split("\n"):
+        logging.debug(f">SHELL<| %s", line)
+
     sys.stdout.flush()
     sys.stderr.flush()
-    proc = subprocess.run(["bash", "-ceuo", "pipefail", cmd], stdin=subprocess.PIPE)
-    ret = proc.returncode
-    print("-"*(depth+2))
+    try:
+        proc = subprocess.Popen(["bash", "-ceuo", "pipefail", cmd],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              stdin=subprocess.PIPE)
+        subprocess_stdout_to_log(proc, prefix=task["name"])
+        proc.wait()
+        ret = proc.returncode
+    except KeyboardInterrupt:
+        logging.error(f"Task '{task}' was interrupted ...")
+        sys.exit(1)
 
     return ret == 0
 
 def run(task, depth):
-    print(" "*depth, f"|Running '{task['name']}' ...")
+    logging.debug(f"Running '{task['name']}' ...")
     type_ = task["type"]
     if type_ == "shell":
         success = run_shell(task, depth)
     elif type_ == "ansible":
         success = run_ansible(task, depth)
     else:
-        print(f"ERROR: unknown task type: {type_}.")
+        logging.error(f"unknown task type: {type_}.")
         sys.exit(1)
 
-    print(" "*depth, f"|Running '{task['name']}':", "Success" if success else "Failure")
-    print(" "*depth, f"|___")
+    logging.debug(f"Running '{task['name']}': %s", "Success" if success else "Failure")
+    logging.debug("|___")
+
     return success
 
 
@@ -86,19 +142,18 @@ def do_test(dep, depth, print_first_test=True):
         has_install = bool(dep["spec"].get("install"))
         if has_install:
             if print_first_test:
-                print(f"Nothing to test for '{dep['name']}'. Has install tasks, run them.")
+                logging.debug(f"Nothing to test for '{dep['name']}'. Has install tasks, run them.")
             success = False
         else:
             if print_first_test:
-                print(f"Nothing to test for '{dep['name']}'. Doesn't have install tasks, we're good.")
+                logging.debug(f"Nothing to test for '{dep['name']}'. Doesn't have install tasks, we're good.")
             success = True
         return success
 
     for task in dep["spec"].get("tests", []):
         if print_first_test:
-            print(" "*depth, f"Testing '{dep['name']}' ...")
+            logging.debug(f"Testing '{dep['name']}' ...")
             print_first_test = False
-
 
         success = run(task, depth) if wdm_mode != "dryrun" else None
 
@@ -110,31 +165,27 @@ def do_test(dep, depth, print_first_test=True):
 
 
 def resolve(dep, depth=0):
-    print(" "*depth, f"Treating '{dep['name']}' dependency ...")
+    logging.info(f"Treating '{dep['name']}' dependency ...")
 
     if dep['name'] in resolved:
-        print(" "*depth, f"Dependency '{dep['name']}' has already need resolved, skipping.")
+        logging.info(f"Dependency '{dep['name']}' has already need resolved, skipping.")
         return
 
     for req in dep["spec"].get("requirements", []):
-        print(" "*depth, f"Dependency '{dep['name']}' needs '{req}' ...")
+        logging.info(f"Dependency '{dep['name']}' needs '{req}' ...")
         try:
             next_dep = deps[req]
         except KeyError as e:
-            print(f"ERROR: missing dependency: {req}")
+            logging.error(f"missing dependency: {req}")
             sys.exit(1)
         resolve(next_dep, depth=depth+1)
 
-        print(" "*depth, f"Nothing to test for '{dep['name']}'.")
-
     if do_test(dep, depth) == True:
         if dep["spec"].get("tests"):
-            print(" "*depth, f"Dependency '{dep['name']}' is satisfied, no need to install.")
-        else:
-            print(" "*depth, f"Nothing to test for '{dep['name']}'.")
+            logging.debug( f"Dependency '{dep['name']}' is satisfied, no need to install.")
 
     elif wdm_mode in ("dryrun", "test"):
-        print(" "*depth, f"Running in test mode, skipping '{dep['name']}' installation.")
+        logging.debug(f"Running in test mode, skipping '{dep['name']}' installation.")
         for task in dep["spec"].get("install", []):
             installed[f"{dep['name']} -> {task['name']}"] = True
     else:
@@ -142,10 +193,10 @@ def resolve(dep, depth=0):
         for task in dep["spec"].get("install", []):
             if first_install:
                 first_install = False
-                print(" "*depth, f"Installing '{dep['name']}' ...")
+                logging.info(f"Installing '{dep['name']}' ...")
 
             if not run(task, depth):
-                print(f"ERROR: install of '{dep['name']}' failed.")
+                logging.error(f"install of '{dep['name']}' failed.")
                 sys.exit(1)
 
             installed[f"{dep['name']} -> {task['name']}"] = True
@@ -153,42 +204,148 @@ def resolve(dep, depth=0):
         if first_install:
             # no install task available
 
-            print(f"ERROR: '{dep['name']}' test failed, but no install script provided.")
+            logging.error(f"'{dep['name']}' test failed, but no install script provided.")
             sys.exit(1)
 
         if not do_test(dep, depth, print_first_test=False):
             if dep["spec"].get("tests"):
-                print(f"ERROR: '{dep['name']}' installed, but test still failing.")
+                logging.error(f"'{dep['name']}' installed, but test still failing.")
                 sys.exit(1)
-            else:
-                print(f"INFO: '{dep['name']}' installed, but has no test. Continuing nevertheless.")
+
+            logging.info(f"'{dep['name']}' installed, but has no test. Continuing nevertheless.")
 
 
     resolved.add(dep['name'])
-    print(" "*depth, f"Done with {dep['name']}.")
+    logging.info(f"Done with {dep['name']}.")
 
-def usage(full=False):
-    print("""\
-wdm <mode> target
+def wdm_main(kwargs):
+    global wdm_mode, cli_args
+    wdm_mode = kwargs["wdm_mode"]
 
-    <mode>: dryrun|test|install|usage
-    - usage: prints this message.
-    - dryrun: do not run test nor install tasks.
-    - test: only test if a dependency is satisfied.
-    - install: test dependencies and install those unsatisfied.
+    update_env_with_env_files()
+    update_kwargs_with_env(kwargs)
+    cli_args = kwargs
 
-Environment:
-    WDM_DEPENDENCY_FILE can point to a valid WDM dependency file. Default: ./dependencies.yaml
+    wdm_dependency_file = cli_args["dependency_file"]
 
-Returns:
+    if not pathlib.Path(wdm_dependency_file).is_file():
+        logging.error(f"Flag 'dependency_file' must point to a valid file. (dependency_file='{wdm_dependency_file}')")
+        sys.exit(2)
+
+    # ---
+
+    with open(wdm_dependency_file) as f:
+        docs = list(yaml.safe_load_all(f))
+
+    for doc in docs:
+        if doc is None: continue # empty block
+        deps[doc["name"]] = doc
+
+    try:
+        entrypoint = sys.argv[2]
+    except IndexError:
+        entrypoint = docs[0]["name"]
+
+    resolve(deps[entrypoint])
+
+    logging.info("All done.")
+
+    if wdm_mode in ("dryrun"):
+        logging.info("Would have tested:")
+    else:
+        logging.info("Tested:")
+
+    has_test_failures = False
+    for taskname, success in tested.items():
+        logging.info(f"- {'☑ ' if success else ('' if success is None else '❎ ')}{taskname}")
+        if success == False: has_test_failures = True
+
+    if installed:
+        if wdm_mode in ("test", "dryrun"):
+            logging.info("Would have installed:")
+        else:
+            logging.info("Installed:")
+        [logging.info(f"- {taskname}") for taskname in installed]
+    else:
+        if wdm_mode in ("test", "dryrun"):
+            logging.info("Would have installed: nothing.")
+        else:
+            logging.info("Installed: nothing.")
+
+    if has_test_failures:
+        logging.info("Some tests failed, exit with errcode=1.")
+        sys.exit(1)
+
+
+def update_env_with_env_files():
+    """
+    Overrides the function default args with the flags found in the environment variables files
+    """
+    for env in ".env", ".env.generated":
+        try:
+            with open(env) as f:
+                for line in f.readlines():
+                    key, found , value = line.strip().partition("=")
+                    if not found:
+                        logging.warning("invalid line in {env}: {line.strip()}")
+                        continue
+                    if key in os.environ: continue # prefer env to env file
+                    os.environ[key] = value
+        except FileNotFoundError: pass # ignore missing files
+
+
+def update_kwargs_with_env(kwargs):
+    # override the function default args with the flags found in the environment variables
+
+    for flag, current_value in kwargs.items():
+        if current_value: continue # already set, ignore.
+
+        env_value = os.environ.get(f"WDM_{flag.upper()}")
+        if not env_value: continue # not set, ignore.
+        kwargs[flag] = env_value # override the function arg with the environment variable value
+
+
+def get_entrypoint(entrypoint_name):
+
+    def entrypoint(dependency_file: str = "./dependencies.yaml",
+                   target: str = "",
+                   ansible_config: str = None,
+                   ):
+        """
+Run Workload Dependency Manager
+
+Modes:
+    dryrun: do not run test nor install tasks.
+    test: only test if a dependency is satisfied.
+    ensure: test dependencies and install those unsatisfied.
+
+Env:
+    WDM_DEPENDENCY_FILE
+
+See the `FLAGS` section for the descriptions.
+
+Return codes:
     2 if an error occured
     1 if the testing is unsuccessful (test mode)
     1 if an installation failed (ensure mode)
     0 if the testing is successful (test mode)
     0 if the dependencies are all satisfied (ensure mode)
-""")
-    if not full: return
-    print("""\
+
+Args:
+    dependency_file: Path of the dependency file to resolve.
+    target: Dependency to resolve. If empty, take the first entry defined the dependency file.
+    ansible_config: Ansible config file (for Ansible tasks).
+"""
+
+        kwargs = dict(locals()) # capture the function arguments
+        kwargs["wdm_mode"] = entrypoint_name
+
+        return wdm_main(kwargs)
+
+    return entrypoint
+
+def show_example():
+    print("""
 Examples:
     $ export WDM_DEPENDENCY_FILE=...
     $ wdm test has_nfd
@@ -222,78 +379,28 @@ spec:
     spec: ./run_toolbox.py nfd_operator deploy_from_operatorhub
 """)
 
+class WDM_Entrypoint:
+    def __init__(self):
+        self.dryrun = get_entrypoint("dryrun")
+        self.ensure = get_entrypoint("ensure")
+        self.test = get_entrypoint("test")
+        self.example = show_example
+
 def main():
-    global WDM_DEPENDENCY_FILE, wdm_mode
+    # Print help rather than opening a pager
+    fire.core.Display = lambda lines, out: print(*lines, file=out)
 
-    try: wdm_mode = sys.argv[1]
-    except IndexError: wdm_mode = None
+    # Launch CLI, get a runnable
+    runnable = None
+    runnable = fire.Fire(WDM_Entrypoint())
 
-    if wdm_mode == "usage":
-        usage(full=True)
-        sys.exit(0)
-
-    if wdm_mode not in ("dryrun", "test", "ensure"):
-        print(f"ERROR: <mode> must be 'dryrun', 'test' or 'ensure', not '{wdm_mode}'.")
-        print()
-        usage()
-        sys.exit(2)
-
-    WDM_DEPENDENCY_FILE = os.getenv("WDM_DEPENDENCY_FILE", "./dependencies.yaml")
-
-    wdm_dependency_file = pathlib.Path(WDM_DEPENDENCY_FILE)
-
-    if not wdm_dependency_file.is_file():
-        import pdb;pdb.set_trace()
-        if os.getenv("WDM_DEPENDENCY_FILE"):
-            print(f"ERROR: WDM_DEPENDENCY_FILE must point to a valid file. (WDM_DEPENDENCY_FILE={WDM_DEPENDENCY_FILE})")
-        else:
-            print("ERROR: WDM_DEPENDENCY_FILE must point to a valid file, or ./dependencies.yaml must exist (WDM_DEPENDENCY_FILE is not set)")
-        usage()
-        sys.exit(2)
-
-    # ---
-
-    with open(WDM_DEPENDENCY_FILE) as f:
-        docs = list(yaml.safe_load_all(f))
-
-    for doc in docs:
-        if doc is None: continue # empty block
-        deps[doc["name"]] = doc
-
-    try:
-        entrypoint = sys.argv[2]
-    except IndexError:
-        entrypoint = docs[0]["name"]
-
-    resolve(deps[entrypoint])
-    print("All done.")
-
-    if wdm_mode in ("dryrun"):
-        print("Would have tested:")
+    # Run the actual workload
+    if hasattr(runnable, "_run"):
+        runnable._run()
     else:
-        print("Tested:")
-
-    has_test_failures = False
-    for taskname, success in tested.items():
-        print(f"- {'☑ ' if success else ('' if success is None else '❎ ')}{taskname}")
-        if success == False: has_test_failures = True
-
-    if installed:
-        if wdm_mode in ("test", "dryrun"):
-            print("Would have installed:")
-        else:
-            print("Installed:")
-        [print(f"- {taskname}") for taskname in installed]
-    else:
-        if wdm_mode in ("test", "dryrun"):
-            print("Would have installed: nothing.")
-        else:
-            print("Installed: nothing.")
-
-    if has_test_failures:
-        print("Some tests failed, exit with errcode=1.")
-        sys.exit(1)
-
+        # CLI didn't resolve completely - either by lack of arguments
+        # or use of `--help`. This is okay.
+        pass
 
 if __name__ == "__main__":
     main()
