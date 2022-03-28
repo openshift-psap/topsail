@@ -94,11 +94,11 @@ postchecks() {
     shift
 
     if [[ "$reason" == ERR ]]; then
-        touch $ARTIFACT_DIR/FAILURE
+        touch "$ARTIFACT_DIR/FAILURE"
 
         if ! oc version >/dev/null 2>&1; then
-            mkdir -p $ARTIFACT_DIR/FLAKE
-            echo "Cluster unreachable" >> $ARTIFACT_DIR/FLAKE
+            mkdir -p "$ARTIFACT_DIR/FLAKE"
+            echo "Cluster unreachable" >> "$ARTIFACT_DIR/FLAKE/cluster_destroyed"
         fi
     elif [[ "$reason" == EXIT ]]; then
         echo ""
