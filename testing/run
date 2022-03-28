@@ -192,7 +192,7 @@ if [[ -e "${target_entrypoint_file}" ]]; then
 fi
 
 echo
-echo "FATAL: Unknown entrypoint '${target}' | $@"
+echo "FATAL: Unknown entrypoint '${second_target}' inside '${target}' directory | $@"
 echo
 list_available "$target_entrypoint_dir"
 
