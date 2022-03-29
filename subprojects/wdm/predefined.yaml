@@ -1,0 +1,66 @@
+name: run_pod_file_to_completion
+type: ansible
+configuration:
+- pod_file
+- namespace
+spec:
+- name: delete the preparation pod, if it exists
+  command: oc delete -f {{ pod_file }} --ignore-not-found -n {{ namespace }}
+
+- name: create the preparation pod
+  command: oc create -f {{ pod_file }} -oname -n {{ namespace }}
+  register: pod_name_cmd
+
+- name: Wait for the preparation pod to complete
+  command:
+    oc get {{ pod_name_cmd.stdout }}
+       -ocustom-columns=phase:status.phase
+       --no-headers
+       -n {{ namespace }}
+  register: wait_pod
+  until: "'Succeeded' in wait_pod.stdout or 'Failed' in wait_pod.stdout"
+  retries: 160
+  delay: 30
+
+- name: Fail if the prepa pod failed
+  when: "'Failed' in wait_pod.stdout or 'Error' in wait_pod.stdout"
+  fail: msg="The execution of Pod {{ pod_name_cmd.stdout }} failed ..."
+---
+name: run_build_config_to_completion
+type: ansible
+configuration:
+- buildconfig_file
+- namespace
+spec:
+- name: Delete the image helper builder manifest, if any
+  command: oc delete -f {{ buildconfig_file }} --ignore-not-found=true  -n {{ namespace }}
+
+- name: Apply the image helper builder manifest
+  command: oc apply -f {{ buildconfig_file }} -n {{ namespace }} -ojsonpath={.metadata.name}
+  register: build_config_name_cmd
+
+- name: Wait for the helper image to be built
+  command:
+    oc get builds
+       -lopenshift.io/build-config.name={{ build_config_name_cmd.stdout }}
+       -ocustom-columns=phase:status.phase
+       --no-headers
+       -n {{ namespace }}
+  register: wait_buildconfig
+  until: "'Complete' in wait_buildconfig.stdout or 'Failed' in wait_buildconfig.stdout"
+  retries: 40
+  delay: 30
+
+- name: Fail if the buildconfig failed to be built
+  when: "'Failed' in wait_buildconfig.stdout or 'Error' in wait_buildconfig.stdout"
+  fail: msg="The buildconfig {{ buildconfig_file }} failed to build"
+---
+name: run_toolbox
+type: shell
+configuration:
+- group
+- command
+- args
+spec: |
+  cd ${HOME}/openshift/ci-artifacts
+  ./run_toolbox.py $group $command $args

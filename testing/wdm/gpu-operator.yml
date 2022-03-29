@@ -9,11 +9,15 @@ spec:
     spec: oc get pod -l app.kubernetes.io/component=gpu-operator -A -oname | grep .
   install:
   - name: install_gpu_operator
-    type: shell
-    spec: ./run_toolbox.py gpu_operator deploy_from_operatorhub
+    type: toolbox
+    spec:
+      group: gpu_operator
+      command: deploy_from_operatorhub
   - name: wait_gpu_deployment
-    type: shell
-    spec: ./run_toolbox.py gpu_operator wait_deployment
+    type: toolbox
+    spec:
+      group: gpu_operator
+      command: wait_deployment
 ---
 name: has_nfd
 spec:
@@ -32,66 +36,99 @@ name: has_nfd_labels
 spec:
   tests:
   - name: has_nfd_labels
-    type: shell
-    spec: ./run_toolbox.py nfd has_labels
+    type: toolbox
+    spec:
+      group: nfd
+      command: has_labels
 ---
 name: has_nfd_from_operatorhub
 spec:
   tests:
   - name: has_nfd_labels
-    type: shell
-    spec: ./run_toolbox.py nfd has_labels
+    type: toolbox
+    spec:
+      group: nfd
+      command: has_labels
   install:
   - name: install_nfd_from_operatorhub
-    type: shell
-    spec: ./run_toolbox.py nfd_operator deploy_from_operatorhub
+    type: toolbox
+    spec:
+      group: nfd_operator
+      command: deploy_from_operatorhub
   - name: wait_nfd_labels
-    type: shell
-    spec: ./run_toolbox.py nfd wait_labels
+    type: toolbox
+    spec:
+      group: nfd
+      command: wait_labels
 ---
 name: has_nfd_from_master
 spec:
   tests:
   - name: has_nfd_labels
-    type: shell
-    spec: ./run_toolbox.py nfd has_labels
+    type: toolbox
+    spec:
+      group: nfd
+      command: has_labels
   install:
   - name: has_nfd_from_master
-    type: shell
+    type: toolbox
     spec:
-      ./run_toolbox.py nfd_operator deploy_from_commit
-                       "${CI_IMAGE_NFD_COMMIT_CI_REPO}"
-                       "${CI_IMAGE_NFD_COMMIT_CI_REF}"
-                       --image-tag="${CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG}"
+      group: nfd-operator
+      command: deploy_from_commit
+      args:
+      - "${CI_IMAGE_NFD_COMMIT_CI_REPO}"
+      - "${CI_IMAGE_NFD_COMMIT_CI_REF}"
+      - image-tag="${CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG}"
   - name: wait_nfd_labels
-    type: shell
-    spec: ./run_toolbox.py nfd wait_labels
+    type: toolbox
+    spec:
+      group: nfd
+      command: wait_labels
 ---
 name: has_gpu_nodes
 spec:
   tests:
   - name: has_gpu_nodes
-    type: shell
-    spec: ./run_toolbox.py nfd has_gpu_nodes
+    type: toolbox
+    spec:
+      group: nfd
+      command: has_gpu_nodes
   install:
   - name: add_gpu_nodes
-    type: shell
-    spec: ./run_toolbox.py cluster set_scale ${INSTANCE_TYPE:-g4dn.xlarge} ${INSTANCE_COUNT:-1}
+    type: toolbox
+    spec:
+      group: cluster
+      command: set_scale
+      arguments:
+      - ${INSTANCE_TYPE:-g4dn.xlarge}
+      - ${INSTANCE_COUNT:-1}
   - name: wait_gpu_labels
-    type: shell
-    spec: ./run_toolbox.py nfd wait_gpu_nodes
+    type: toolbox
+    spec:
+      group: nfd
+      command: wait_gpu_nodes
 ---
 name: has_entitlement
 spec:
   tests:
   - name: test_entitlement
-    type: shell
-    spec: ./run_toolbox.py entitlement test_cluster --no_inspect
+    type: toolbox
+    spec:
+      group: entitlement
+      command: test_cluster
+      args:
+      - --no_inspect
   install:
   - name: deploy_entitlement
-    type: shell
-    spec: ./run_toolbox.py entitlement deploy "${ENTITLEMENT_PEM}"
+    type: toolbox
+    spec:
+      group: entitlement
+      command: deploy
+      args:
+      - "${ENTITLEMENT_PEM}"
   - name: wait_entitlement
-    type: shell
-    spec: ./run_toolbox.py entitlement wait
+    type: toolbox
+    spec:
+      group: entitlement
+      command: wait
 ---

@@ -24,19 +24,63 @@ import enum
 import pydantic
 import typing
 
+file_configuration = {}
+
+# ---
+
 class TaskType(str, enum.Enum):
     shell = 'shell'
     ansible = 'ansible'
+    toolbox = 'toolbox'
+    predefined = 'predefined'
 
-class TaskModel(pydantic.BaseModel):
+class TaskAbstractModel(pydantic.BaseModel):
     name: str
     type: TaskType
-    spec: typing.Union[str, list[dict]]
+    configuration: list[str] = None
+
+# ---
+
+class ToolboxTaskSpecModel(pydantic.BaseModel):
+    group: str
+    command: str
+    args: list[str] = None
+
+class ToolboxTaskModel(TaskAbstractModel):
+    type: str = pydantic.Field(TaskType.toolbox.value, const=True)
+    spec: ToolboxTaskSpecModel
+
+# ---
+
+class ShellTaskModel(TaskAbstractModel):
+    type: str = pydantic.Field(TaskType.shell.value, const=True)
+    spec: str
+
+# ---
+
+class AnsibleTaskModel(TaskAbstractModel):
+    type: str = pydantic.Field(TaskType.ansible.value, const=True)
+    spec: list[dict]
+
+# ---
+
+class PredefinedSpecTaskModel(pydantic.BaseModel):
+    name: str
+    args: dict[str, str]
+
+class PredefinedTaskModel(TaskAbstractModel):
+    type: str = pydantic.Field(TaskType.predefined.value, const=True)
+    spec: PredefinedSpecTaskModel
+
+# ---
+
+TaskModels = typing.Union[ShellTaskModel, AnsibleTaskModel, PredefinedTaskModel, ToolboxTaskModel]
 
 class DependencySpecModel(pydantic.BaseModel):
     requirements: list[str] = None
-    tests: list[TaskModel] = None
-    install: list[TaskModel] = None
+    configuration: list[str] = None
+    test: list[TaskModels] = None
+    install: list[TaskModels] = None
 
 class DependencyModel(pydantic.BaseModel):
     """
@@ -44,7 +88,8 @@ class DependencyModel(pydantic.BaseModel):
     """
 
     name: str
-    spec: DependencySpecModel
+    configuration: dict = None
+    spec: DependencySpecModel = None
 
 # ---
 
@@ -61,36 +106,36 @@ def subprocess_stdout_to_log(proc, prefix):
     sel = selectors.DefaultSelector()
     sel.register(proc.stdout, selectors.EVENT_READ)
     sel.register(proc.stderr, selectors.EVENT_READ)
-    first_stdout = True
-    first_stderr = True
-    prefix = f" DEBUG | {prefix} |"
+
+    prefix = f"{prefix} |"
+    pending = dict(stdout="", stderr="")
     while True:
         for key, _ in sel.select():
             data = key.fileobj.read1().decode()
             if not data:
-                if not first_stderr: print("")
-                if not first_stdout: print("")
+                for out in pending.keys():
+                    if pending[out]:
+                        logging.debug("%s %s", prefix, pending[out])
                 return
 
-            data = data.replace("\n", "\n"+prefix + " ")
+            is_stdout = key.fileobj is proc.stdout
+            is_std = dict(stdout=is_stdout, stderr=not is_stdout)
 
-            if key.fileobj is proc.stdout:
-                if first_stdout:
-                    print(prefix, data, end="")
-                    first_stdout = False
-                else:
-                    print(data, end="")
-            else:
-                if first_stderr:
-                    print(prefix, data, end="")
-                    first_stderr = False
-                else:
-                    print(data, end="")
+            for line in data.split("\n")[:-1]:
+                for out in pending.keys():
+                    if is_std[out] and pending[out]:
+                        line = f"{pending[out]}{line}"
+                        pending[out] = ""
+
+                logging.debug("%s %s", prefix, line)
+
+            unfinished_line = data.rpartition("\n")[-1]
+            for out in pending.keys():
+                if is_std[out] and unfinished_line:
+                    pending[out] = unfinished_line
 
 
-def run_ansible(task, depth):
-    tmp = tempfile.NamedTemporaryFile("w+", dir=os.getcwd(), delete=False)
-
+def run_ansible(dep, task, *, is_test):
     play = [
         dict(name=f"Run {task.name}",
              connection="local",
@@ -99,9 +144,6 @@ def run_ansible(task, depth):
              tasks=task.spec,
              )
     ]
-
-    yaml.dump(play, tmp)
-    tmp.close()
 
     env = os.environ.copy()
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -112,15 +154,27 @@ def run_ansible(task, depth):
     sys.stdout.flush()
     sys.stderr.flush()
 
+    tmp = tempfile.NamedTemporaryFile("w+", dir=os.getcwd(), delete=False)
+    yaml.dump(play, tmp)
+    tmp.close()
+
+    cmd = ["ansible-playbook", tmp.name]
+
+    for key, value in get_configuration_kv(dep, task).items():
+        logging.debug(f"[ansible] define %s=%s", key, value)
+        cmd += ["-e", f"{key}={value}"]
+
+    logging.debug("[ansible] %s", " ".join(cmd))
     try:
-        proc = subprocess.Popen(["ansible-playbook", tmp.name],
+        proc = subprocess.Popen(cmd,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                               env=env, stdin=subprocess.PIPE)
         subprocess_stdout_to_log(proc, prefix=task.name)
         proc.wait()
         ret = proc.returncode
     except KeyboardInterrupt:
-        logging.error(f"Task '{task}' was interrupted ...")
+        print()
+        logging.error(f"Task '{task.name}' was interrupted ...")
         sys.exit(1)
     finally:
         os.remove(tmp.name)
@@ -128,18 +182,47 @@ def run_ansible(task, depth):
     return ret == 0
 
 
-def run_shell(task, depth):
+def get_configuration_kv(dep, task):
+    kv = {}
+    for key in ([] + (dep.spec.configuration or []) + (task.configuration or [])):
+        value = None
+        try: value = dep.configuration[key]
+        except (KeyError, TypeError): pass
+
+        if value is None:
+            try: value = file_configuration[key]
+            except KeyError: pass
+
+        if value is None:
+            logging.error(f"Could not find a value for the configuration key '%s'", key)
+            sys.exit(1)
+
+        kv[key] = value
+
+    return kv
+
+def run_shell(dep, task, *, is_test):
+    logging.debug(f"[shell] Running '{task.name}' ...")
+    if not isinstance(task.spec, str): import pdb;pdb.set_trace()
     cmd = task.spec.strip()
 
+    env = os.environ.copy()
+
+    for key, value in get_configuration_kv(dep, task).items():
+        env[key] = value
+        logging.debug(f"[shell] env %s=%s", key, value)
+
     for line in cmd.split("\n"):
-        logging.debug(f">SHELL<| %s", line)
+        logging.debug(f"[shell] %s", line)
 
     sys.stdout.flush()
     sys.stderr.flush()
     try:
         proc = subprocess.Popen(["bash", "-ceuo", "pipefail", cmd],
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              stdin=subprocess.PIPE)
+                                env=env,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                stdin=subprocess.PIPE)
+
         subprocess_stdout_to_log(proc, prefix=task.name)
         proc.wait()
         ret = proc.returncode
@@ -149,25 +232,62 @@ def run_shell(task, depth):
 
     return ret == 0
 
-def run(task, depth):
-    logging.debug(f"Running '{task.name}' ...")
-    type_ = task.type
-    if type_ == "shell":
-        success = run_shell(task, depth)
-    elif type_ == "ansible":
-        success = run_ansible(task, depth)
-    else:
-        logging.error(f"unknown task type: {type_}.")
+def run_predefined(_dep, task, *, is_test):
+    predefined_task = predefined_tasks[task.spec.name].copy()
+
+    predefined_task.name = f"{task.name} | predefined({task.spec.name})"
+
+    logging.debug(f"[predefined] Running '{predefined_task.name}' ...")
+    dep = _dep.copy()
+
+    if not dep.configuration:
+        dep.configuration = {}
+    dep.configuration.update(task.spec.args)
+    run(dep, predefined_task, is_test=is_test)
+
+def run_toolbox(dep, task, *, is_test):
+    toolbox_task = predefined_tasks["run_toolbox"]
+    predefined_toolbox_task = PredefinedTaskModel.parse_obj(
+        dict(
+            name=f"{task.name} | toolbox()",
+            spec=dict(
+                name=toolbox_task.name,
+                args=dict(
+                    group=task.spec.group,
+                    command=task.spec.command,
+                    args=task.spec.args or "",
+                )
+            )
+        )
+    )
+    logging.debug(f"[toolbox] Running '{predefined_toolbox_task.name}' ...")
+    run_predefined(dep, predefined_toolbox_task, is_test=is_test)
+
+TaskTypeFunctions = {
+    TaskType.shell: run_shell,
+    TaskType.ansible: run_ansible,
+    TaskType.predefined: run_predefined,
+    TaskType.toolbox: run_toolbox,
+}
+
+def run(dep, task, *, is_test):
+    logging.debug(f"Running %s task '{task.name}' ...", "test" if is_test else "install")
+
+    try:
+        fn = TaskTypeFunctions[task.type]
+    except KeyError:
+        logging.error(f"unknown task type: {task.type}.")
         sys.exit(1)
 
-    logging.debug(f"Running '{task.name}': %s", "Success" if success else "Failure")
-    logging.debug("|___")
+    success = fn(dep, task, is_test=is_test)
+
+    logging.info("%s of '%s': %s", "Testing" if is_test else "Installation", task.name, "Success" if success else "Failed")
 
     return success
 
 
-def do_test(dep, depth, print_first_test=True):
-    if not dep.spec.tests:
+def do_test(dep, print_first_test=True):
+    if not dep.spec.test:
         if dep.spec.install:
             if print_first_test:
                 logging.debug(f"Nothing to test for '{dep.name}'. Has install tasks, run them.")
@@ -178,12 +298,12 @@ def do_test(dep, depth, print_first_test=True):
             success = True
         return success
 
-    for task in dep.spec.tests:
+    for task in dep.spec.test:
         if print_first_test:
             logging.debug(f"Testing '{dep.name}' ...")
             print_first_test = False
 
-        success = run(task, depth) if wdm_mode != "dryrun" else None
+        success = run(dep, task, is_test=True) if wdm_mode != "dryrun" else None
 
         tested[f"{dep.name} -> {task.name}"] = success
         if success:
@@ -191,25 +311,39 @@ def do_test(dep, depth, print_first_test=True):
 
     return False
 
+def resolve_task_requirement(requirement):
+    try:
+        next_dep = deps[requirement]
+    except KeyError as e:
+        logging.error(f"missing required dependency: {req}")
+        sys.exit(1)
 
-def resolve(dep, depth=0):
+    return resolve(next_dep)
+
+def resolve_task_config_requirement(config_requirements):
+    for config_key in config_requirements:
+        if config_key in file_configuration: continue
+
+        logging.error(f"missing required configuration dependency: {config_key}")
+        logging.info(f"Available configuration keys: {', '.join(file_configuration.keys())}")
+        sys.exit(1)
+
+def resolve(dep):
     logging.info(f"Treating '{dep.name}' dependency ...")
 
     if dep.name in resolved:
         logging.info(f"Dependency '{dep.name}' has already need resolved, skipping.")
         return
 
+    if dep.spec.configuration:
+        resolve_task_config_requirement(dep.spec.configuration)
+
     for req in dep.spec.requirements or []:
         logging.info(f"Dependency '{dep.name}' needs '{req}' ...")
-        try:
-            next_dep = deps[req]
-        except KeyError as e:
-            logging.error(f"missing dependency: {req}")
-            sys.exit(1)
-        resolve(next_dep, depth=depth+1)
+        resolve_task_requirement(req)
 
-    if do_test(dep, depth) == True:
-        if dep.spec.tests:
+    if do_test(dep) == True:
+        if dep.spec.test:
             logging.debug( f"Dependency '{dep.name}' is satisfied, no need to install.")
 
     elif wdm_mode in ("dryrun", "test"):
@@ -218,13 +352,13 @@ def resolve(dep, depth=0):
             installed[f"{dep.name} -> {task.name}"] = True
     else:
         first_install = True
-        for task in dep.spec.install:
+        for task in dep.spec.install or []:
             if first_install:
                 first_install = False
                 logging.info(f"Installing '{dep.name}' ...")
 
-            if not run(task, depth):
-                logging.error(f"install of '{dep.name}' failed.")
+            if not run(dep, task, is_test=False):
+                logging.error(f"Installation of '{dep.name}' failed.")
                 sys.exit(1)
 
             installed[f"{dep.name} -> {task.name}"] = True
@@ -235,8 +369,8 @@ def resolve(dep, depth=0):
             logging.error(f"'{dep.name}' test failed, but no install script provided.")
             sys.exit(1)
 
-        if not do_test(dep, depth, print_first_test=False):
-            if dep.spec.tests:
+        if not do_test(dep, print_first_test=False):
+            if dep.spec.test:
                 logging.error(f"'{dep.name}' installed, but test still failing.")
                 sys.exit(1)
 
@@ -244,7 +378,34 @@ def resolve(dep, depth=0):
 
 
     resolved.add(dep.name)
-    logging.info(f"Done with {dep.name}.")
+    logging.info(f"Done with '{dep.name}'.\n")
+
+predefined_tasks = dict()
+
+def populate_predefined_tasks():
+    global predefined_tasks
+
+    subproject_dirname = pathlib.Path(__file__).resolve().parent
+    with open(subproject_dirname / "predefined.yaml") as f:
+        docs = list(yaml.safe_load_all(f))
+
+    class Model(pydantic.BaseModel):
+        task: TaskModels
+
+    for doc in docs:
+        if doc is None: continue # empty block
+        try:
+            obj = Model.parse_obj(dict(task=doc))
+            task = obj.task
+        except pydantic.error_wrappers.ValidationError as e:
+            logging.error(f"Failed to parse the YAML predefined file: {e}")
+            logging.info("Faulty YAML entry:\n" + yaml.dump(doc))
+            sys.exit(1)
+        if task.name in predefined_tasks:
+            logging.warning(f"Predefined task '{obj.name}' already known. Keeping only the first one.")
+            continue
+
+        predefined_tasks[task.name] = task
 
 def wdm_main(kwargs):
     global wdm_mode, cli_args
@@ -262,13 +423,31 @@ def wdm_main(kwargs):
 
     # ---
 
+    populate_predefined_tasks()
+
     with open(wdm_dependency_file) as f:
         docs = list(yaml.safe_load_all(f))
 
     main_target = kwargs["target"]
     for doc in docs:
         if doc is None: continue # empty block
-        obj = DependencyModel.parse_obj(doc)
+
+        try: obj = DependencyModel.parse_obj(doc)
+        except pydantic.error_wrappers.ValidationError as e:
+            logging.error(f"Failed to parse the YAML dependency file: {e}")
+            logging.info("Faulty YAML entry:\n" + yaml.dump(doc))
+            sys.exit(1)
+
+
+        if not obj.spec:
+            if file_configuration:
+                logging.error("File configuration already populated ... (%s)", file_configuration["__name__"])
+                sys.exit(1)
+
+            file_configuration.update(obj.configuration)
+            file_configuration["__name__"] = obj.name
+            continue
+
         deps[obj.name] = obj
         if not main_target:
              main_target = obj.name
@@ -300,7 +479,7 @@ def wdm_main(kwargs):
             logging.info("Installed: nothing.")
 
     if has_test_failures:
-        logging.info("Some tests failed, exit with errcode=1.")
+        logging.info("Test failed, exit with errcode=1.")
         sys.exit(1)
 
 
@@ -382,7 +561,7 @@ name: has_gpu_operator
 spec:
   requirements:
   - has_nfd
-  tests:
+  test:
   - name: has_nfd_operatorhub
     type: shell
     spec: oc get pod -l app.kubernetes.io/component=gpu-operator -A -oname
@@ -396,7 +575,7 @@ spec:
 ---
 name: has_nfd
 spec:
-  tests:
+  test:
   - name: has_nfd_labels
     type: shell
     spec: ./run_toolbox.py nfd has_labels
