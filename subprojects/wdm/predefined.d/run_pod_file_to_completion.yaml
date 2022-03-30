@@ -1,0 +1,27 @@
+name: run_pod_file_to_completion
+type: ansible
+configuration:
+- pod_file
+- namespace
+spec:
+- name: delete the preparation pod, if it exists
+  command: oc delete -f {{ pod_file }} --ignore-not-found -n {{ namespace }}
+
+- name: create the preparation pod
+  command: oc create -f {{ pod_file }} -oname -n {{ namespace }}
+  register: pod_name_cmd
+
+- name: Wait for the preparation pod to complete
+  command:
+    oc get {{ pod_name_cmd.stdout }}
+       -ocustom-columns=phase:status.phase
+       --no-headers
+       -n {{ namespace }}
+  register: wait_pod
+  until: "'Succeeded' in wait_pod.stdout or 'Failed' in wait_pod.stdout"
+  retries: 160
+  delay: 30
+
+- name: Fail if the prepa pod failed
+  when: "'Failed' in wait_pod.stdout or 'Error' in wait_pod.stdout"
+  fail: msg="The execution of Pod {{ pod_name_cmd.stdout }} failed ..."

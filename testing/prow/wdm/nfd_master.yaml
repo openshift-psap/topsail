@@ -1,0 +1,28 @@
+---
+name: has_nfd_from_master
+spec:
+  test:
+  - name: has_nfd_labels
+    type: toolbox
+    spec:
+      group: nfd
+      command: has_labels
+  install:
+  - name: has_nfd_from_master
+    type: toolbox
+    configuration:
+    - nfd_commit_ci_repo
+    - nfd_commit_ci_ref
+    - nfd_commit_ci_tag
+    spec:
+      group: nfd-operator
+      command: deploy_from_commit
+      args:
+      - "$nfd_commit_ci_repo"
+      - "$nfd_commit_ci_ref"
+      - image-tag="$nfd_commit_ci_tag"
+  - name: wait_nfd_labels
+    type: toolbox
+    spec:
+      group: nfd
+      command: wait_labels

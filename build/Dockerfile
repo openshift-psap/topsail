@@ -7,19 +7,15 @@ LABEL 	io.k8s.display-name="OpenShift PSAP CI artifacts" \
  	name="ci-artifacts" \
 	url="https://github.com/openshift-psap/ci-artifacts"
 
-COPY requirements.txt /
-
 # Install openshift-ansible RPMs and some debugging tools
 RUN yum install -y --quiet \
 		glibc-langpack-en \
 		go git make jq vim wget rsync time\
 		python3 python3-devel python3-pip python3-setuptools && \
 	python3 -m pip install --no-cache-dir --upgrade setuptools pip wheel && \
-	python3 -m pip install --no-cache-dir -r /requirements.txt && \
 	yum clean all && \
 	rm -rf $HOME/.cache && \
 	rm -rf /var/cache/yum
-
 
 # Install dependencies: `oc`
 ARG OCP_CLI_VERSION=latest
@@ -57,6 +53,10 @@ ENV USER_NAME=psap-ci-runner \
     INSIDE_CI_IMAGE="y"
 
 COPY . ${HOME}/
+
+# Install Python requirements
+RUN python3 -m pip install --no-cache-dir -r ${HOME}/requirements.txt && \
+    python3 -m pip install --no-cache-dir -r ${HOME}/subprojects/wdm/requirements.txt
 
 # Prepare the CI `run` entrypoint
 RUN echo -e '#!/usr/bin/env bash \n\

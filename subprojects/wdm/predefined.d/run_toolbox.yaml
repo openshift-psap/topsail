@@ -1,0 +1,9 @@
+name: run_toolbox
+type: shell
+configuration:
+- group
+- command
+- args
+spec: |
+  cd ${HOME}/openshift/ci-artifacts
+  ./run_toolbox.py $group $command $args

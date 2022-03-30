@@ -1,0 +1,116 @@
+import logging
+import sys
+
+import wdm.main as main
+import wdm.model as model
+import wdm.env_config as env_config
+import wdm.run as run
+
+def do_test(dep, print_first_test=True):
+    if not dep.spec.test:
+        if dep.spec.install:
+            if print_first_test:
+                logging.debug(f"Nothing to test for '{dep.name}'. Has install tasks, run them.")
+            success = False
+        else:
+            if print_first_test:
+                logging.debug(f"Nothing to test for '{dep.name}'. Doesn't have install tasks, we're good.")
+            success = True
+        return success
+
+    for task in dep.spec.test:
+        if print_first_test:
+            if main.state.wdm_mode == "dryrun":
+                logging.debug(f"Testing '{dep.name}' ... Running in dry mode, skipping.")
+            else:
+                logging.debug(f"Testing '{dep.name}' ...")
+            print_first_test = False
+
+        success = run.run(dep, task, is_test=True) if main.state.wdm_mode != "dryrun" else None
+
+        main.state.tested[f"{dep.name} -> {task.name}"] = success
+        if success:
+            return True
+
+    return False
+
+
+def resolve_task_requirement(dep, requirement_name):
+    prefix = main.state.dependency_prefixes[dep.name]
+
+    next_dep = None
+    for name in f"{prefix}{requirement_name}", requirement_name:
+        try: next_dep = main.state.dependencies[name]
+        except KeyError: pass
+
+    if next_dep is None:
+        logging.error(f"Missing required dependency: [{prefix}]{requirement_name}")
+        sys.exit(1)
+
+    return resolve(next_dep)
+
+
+def resolve_task_config_requirement(dep, config_requirements):
+    kv = env_config.get_configuration_kv(dep)
+
+    missing = [config_key for config_key in config_requirements if config_key not in kv]
+    for config_key in missing:
+        logging.error(f"Missing required configuration dependency: {config_key}")
+
+    if missing:
+        import pdb;pdb.set_trace()
+        logging.info(f"Available configuration keys: {', '.join(kv.keys())}")
+        sys.exit(1)
+
+def resolve(dep):
+    logging.info(f"Resolving '{dep.name}' dependency ...")
+
+    if dep.name in main.state.resolved:
+        logging.info(f"Dependency '{dep.name}' has already need resolved, skipping.")
+        return
+
+    if dep.spec.configuration:
+        resolve_task_config_requirement(dep, dep.spec.configuration)
+
+    for req in dep.spec.requirements or []:
+        logging.info(f"Dependency '{dep.name}' needs '{req}' ...")
+        resolve_task_requirement(dep, req)
+
+    if do_test(dep) == True:
+        if dep.spec.test:
+            logging.debug( f"Dependency '{dep.name}' is satisfied, no need to install.")
+
+    elif main.state.wdm_mode in ("dryrun", "test"):
+        logging.debug(f"Installing '{dep.name}' ... "
+                     f"Running in {'test' if main.state.wdm_mode == 'test' else 'dry'} mode, skipping.")
+        for task in dep.spec.install:
+            main.state.installed[f"{dep.name} -> {task.name}"] = True
+    else:
+        first_install = True
+        for task in dep.spec.install or []:
+            if first_install:
+                first_install = False
+                logging.info(f"Installing '{dep.name}' ...")
+
+            if not run.run(dep, task, is_test=False):
+                logging.error(f"Installation of '{dep.name}' failed.")
+                sys.exit(1)
+
+            main.state.installed[f"{dep.name} -> {task.name}"] = True
+
+        if first_install:
+            # no install task available
+
+            logging.error(f"'{dep.name}' test failed, but no install script provided.")
+            sys.exit(1)
+
+        if not do_test(dep, print_first_test=False):
+            if dep.spec.test:
+                logging.error(f"'{dep.name}' installed, but test still failing.")
+                sys.exit(1)
+
+            logging.info(f"'{dep.name}' installed, but has no test. Continuing nevertheless.")
+
+
+    main.state.resolved.add(dep.name)
+    logging.info(f"Done with '{dep.name}'.\n")
