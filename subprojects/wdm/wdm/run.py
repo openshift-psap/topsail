@@ -137,7 +137,7 @@ def run_shell(dep, task, *, is_test):
     sys.stdout.flush()
     sys.stderr.flush()
 
-    popen_cmd = ["bash", "-ceuo", "pipefail", cmd]
+    popen_cmd = ["bash", "-cxeuo", "pipefail", cmd]
 
     if wdm.state.wdm_mode == "dryrun":
         logging.info("Dry mode, skipping execution.")
