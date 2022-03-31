@@ -19,23 +19,9 @@ import wdm.main as wdm_main
 
 # ---
 
-def get_entrypoint(entrypoint_name):
+def get_entrypoint(entrypoint_name, descr):
 
-    def entrypoint(dependency_file: str = "./dependencies.yaml",
-                   target: str = "",
-                   ansible_config: str = None,
-                   library: bool = False,
-                   config: str = "",
-                   config_file: str = ""
-                   ):
-        """
-Run Workload Dependency Manager
-
-Modes:
-    dryrun: do not run test nor install tasks.
-    test: only test if a dependency is satisfied.
-    ensure: test dependencies and install those unsatisfied.
-
+    doc = """
 Env:
     WDM_DEPENDENCY_FILE
     WDM_TARGET
@@ -60,6 +46,15 @@ Args:
     config: comma-separated key=value list of configuration values.
     config_file: Path to a file containing configuration key=value pairs, one per line. If empty, loads '.wdm_config' if it exists, or 'no' to skip loading any config file.
 """
+
+    def entrypoint(dependency_file: str = "./dependencies.yaml",
+                   target: str = "",
+                   ansible_config: str = None,
+                   library: bool = False,
+                   config: str = "",
+                   config_file: str = ""
+                   ):
+
         kwargs = dict(locals()) # capture the function arguments
 
         env_config.update_env_with_env_files()
@@ -68,6 +63,8 @@ Args:
         wdm_dependency_file = kwargs["dependency_file"]
 
         return wdm_main.wdm_main(entrypoint_name, kwargs)
+
+    entrypoint.__doc__ = descr + "\n" + doc
 
     return entrypoint
 
@@ -111,10 +108,10 @@ spec:
 
 class WDM_Entrypoint:
     def __init__(self):
-        self.dryrun = get_entrypoint("dryrun")
-        self.ensure = get_entrypoint("ensure")
-        self.test = get_entrypoint("test")
-        self.list = get_entrypoint("list")
+        self.dryrun = get_entrypoint("dryrun", "Do not run test nor install tasks, only confirm that they could be executed.")
+        self.ensure = get_entrypoint("ensure", "Test dependencies and install those unsatisfied.")
+        self.test = get_entrypoint("test", "Only test if dependencies are satisfied.")
+        self.list = get_entrypoint("list", "List the available dependency targets.")
         self.example = show_example
 
 def main():
