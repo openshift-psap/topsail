@@ -1,5 +1,6 @@
 import os
 import logging
+import wdm
 
 def update_env_with_env_files():
     """
@@ -59,12 +60,11 @@ def get_config_from_cli(cli_arg):
 
 
 def get_configuration_kv(dep):
-    import wdm.main as main # avoid import loops ...
 
     config_sources = [
-        main.state.cli_configuration,
-        main.state.dep_file_configuration,
-        main.state.cfg_file_configuration,
+        wdm.state.cli_configuration,
+        wdm.state.dep_file_configuration,
+        wdm.state.cfg_file_configuration,
     ]
     kv = {}
     for src in config_sources:
@@ -85,7 +85,6 @@ def get_task_configuration_kv(dep, task):
 
         try: value = all_kv[key]
         except KeyError:
-            import pdb;pdb.set_trace()
             raise KeyError(f"Could not find a value for the configuration key '{key}'")
 
         kv[key] = value

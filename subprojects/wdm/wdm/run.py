@@ -6,8 +6,8 @@ import logging
 import yaml
 import pathlib
 
+import wdm
 import wdm.env_config as env_config
-import wdm.main as main
 import wdm.model as model
 
 def run(dep, task, *, is_test):
@@ -74,7 +74,7 @@ def run_ansible(dep, task, *, is_test):
     ]
 
     repo_ansible_config = pathlib.Path(__file__).parent.parent.parent.parent / "config" / "ansible.cfg"
-    cli_ansible_config = main.state.cli_args.get("ansible_config")
+    cli_ansible_config = wdm.state.cli_args.get("ansible_config")
     ENV_ANSIBLE_CONFIG = "ANSIBLE_CONFIG"
 
     env = os.environ.copy()
@@ -100,7 +100,7 @@ def run_ansible(dep, task, *, is_test):
 
     logging.debug("[ansible] command: %s", " ".join(cmd))
 
-    if main.state.wdm_mode == "dryrun":
+    if wdm.state.wdm_mode == "dryrun":
         logging.info("Dry mode, skipping execution.")
         return None
 
@@ -122,7 +122,7 @@ def run_ansible(dep, task, *, is_test):
 
 def run_shell(dep, task, *, is_test):
     logging.debug(f"[shell] Running '{task.name}' ...")
-    if not isinstance(task.spec, str): import pdb;pdb.set_trace()
+
     cmd = task.spec.strip()
 
     env = os.environ.copy()
@@ -139,7 +139,7 @@ def run_shell(dep, task, *, is_test):
 
     popen_cmd = ["bash", "-ceuo", "pipefail", cmd]
 
-    if main.state.wdm_mode == "dryrun":
+    if wdm.state.wdm_mode == "dryrun":
         logging.info("Dry mode, skipping execution.")
         return None
 
@@ -160,10 +160,10 @@ def run_shell(dep, task, *, is_test):
 
 def run_predefined(_dep, task, *, is_test):
     try:
-        predefined_task = main.state.predefined_tasks[task.spec.name].copy()
+        predefined_task = wdm.state.predefined_tasks[task.spec.name].copy()
     except KeyError:
         logging.error(f"{_dep.name}/{task.name}: Could not find predefined task {task.spec.name}")
-        logging.info("Available predefined tasks: %s", ", ".join(main.state.predefined_tasks))
+        logging.info("Available predefined tasks: %s", ", ".join(wdm.state.predefined_tasks))
         sys.exit(1)
 
     predefined_task.name = f"{task.name} | predefined({task.spec.name})"
@@ -179,11 +179,11 @@ def run_predefined(_dep, task, *, is_test):
 
 def run_toolbox(dep, toolbox_task, *, is_test):
     try:
-        predefined_toolbox_task = main.state.predefined_tasks["run_toolbox"]
+        predefined_toolbox_task = wdm.state.predefined_tasks["run_toolbox"]
     except KeyError:
         logging.error("Could not find the task 'run_toolbox' in the predefined tasks. "
                       "That's unexpected ...")
-        logging.info("Available predefined tasks: %s", ", ".join(main.state.predefined_tasks.keys()))
+        logging.info("Available predefined tasks: %s", ", ".join(wdm.state.predefined_tasks.keys()))
         sys.exit(1)
 
     obj = dict(

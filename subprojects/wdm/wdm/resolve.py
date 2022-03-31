@@ -1,7 +1,8 @@
 import logging
 import sys
 
-import wdm.main as main
+import wdm
+
 import wdm.model as model
 import wdm.env_config as env_config
 import wdm.run as run
@@ -25,7 +26,7 @@ def do_test(dep, print_first_test=True):
 
         success = run.run(dep, task, is_test=True)
 
-        main.state.tested[f"{dep.name} -> {task.name}"] = success
+        wdm.state.tested[f"{dep.name} -> {task.name}"] = success
         if success:
             return True
 
@@ -33,11 +34,11 @@ def do_test(dep, print_first_test=True):
 
 
 def resolve_task_requirement(dep, requirement_name):
-    prefix = main.state.dependency_prefixes[dep.name]
+    prefix = wdm.state.dependency_prefixes[dep.name]
 
     next_dep = None
     for name in f"{prefix}{requirement_name}", requirement_name:
-        try: next_dep = main.state.dependencies[name]
+        try: next_dep = wdm.state.dependencies[name]
         except KeyError: pass
 
     if next_dep is None:
@@ -55,14 +56,13 @@ def resolve_task_config_requirement(dep, config_requirements):
         logging.error(f"Missing required configuration dependency: {config_key}")
 
     if missing:
-        import pdb;pdb.set_trace()
         logging.info(f"Available configuration keys: {', '.join(kv.keys())}")
         sys.exit(1)
 
 def resolve(dep):
     logging.info(f"Resolving '{dep.name}' dependency ...")
 
-    if dep.name in main.state.resolved:
+    if dep.name in wdm.state.resolved:
         logging.info(f"Dependency '{dep.name}' has already need resolved, skipping.")
         return
 
@@ -77,11 +77,11 @@ def resolve(dep):
         if dep.spec.test:
             logging.debug( f"Dependency '{dep.name}' is satisfied, no need to install.")
 
-    elif main.state.wdm_mode == "test":
-        logging.debug(f"Running in {'test' if main.state.wdm_mode == 'test' else 'dry'} mode, "
+    elif wdm.state.wdm_mode == "test":
+        logging.debug(f"Running in {'test' if wdm.state.wdm_mode == 'test' else 'dry'} mode, "
                       f"skipping {task.name} installation.")
         for task in dep.spec.install:
-            main.state.installed[f"{dep.name} -> {task.name}"] = True
+            wdm.state.installed[f"{dep.name} -> {task.name}"] = True
     else:
         first_install = True
         for task in dep.spec.install or []:
@@ -93,7 +93,7 @@ def resolve(dep):
                 logging.error(f"Installation of '{dep.name}' failed.")
                 sys.exit(1)
 
-            main.state.installed[f"{dep.name} -> {task.name}"] = True
+            wdm.state.installed[f"{dep.name} -> {task.name}"] = True
 
         if first_install and wdm.state.wdm_mode != "dryrun":
             # no install task available
@@ -108,5 +108,5 @@ def resolve(dep):
             logging.info(f"'{dep.name}' installed, but has no test. Continuing nevertheless.")
 
 
-    main.state.resolved.add(dep.name)
+    wdm.state.resolved.add(dep.name)
     logging.info(f"Done with '{dep.name}'.\n")
