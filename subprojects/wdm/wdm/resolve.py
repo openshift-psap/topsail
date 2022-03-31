@@ -78,9 +78,10 @@ def resolve(dep):
             logging.debug( f"Dependency '{dep.name}' is satisfied, no need to install.")
 
     elif wdm.state.wdm_mode == "test":
-        logging.debug(f"Running in {'test' if wdm.state.wdm_mode == 'test' else 'dry'} mode, "
-                      f"skipping {task.name} installation.")
+
         for task in dep.spec.install:
+            logging.debug(f"Running in {'test' if wdm.state.wdm_mode == 'test' else 'dry'} mode, "
+                          f"skipping {task.name} installation.")
             wdm.state.installed[f"{dep.name} -> {task.name}"] = True
     else:
         first_install = True
