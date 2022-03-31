@@ -21,7 +21,8 @@ def run(dep, task, *, is_test):
 
     success = fn(dep, task, is_test=is_test)
 
-    logging.info("%s of '%s': %s", "Testing" if is_test else "Installation", task.name, "Success" if success else "Failed")
+    if success != None:
+        logging.info("%s of '%s': %s", "Testing" if is_test else "Installation", task.name, "Success" if success else "Failed")
 
     return success
 
@@ -94,10 +95,15 @@ def run_ansible(dep, task, *, is_test):
     cmd = ["ansible-playbook", tmp.name]
 
     for key, value in env_config.get_task_configuration_kv(dep, task).items():
-        logging.debug(f"[ansible] define %s=%s", key, value)
-        cmd += ["-e", f"{key}={value}"]
+        logging.debug(f"[ansible] extra var: %s=%s", key, value)
+        cmd += ["--extra-vars", f"{key}={value}"]
 
-    logging.debug("[ansible] %s", " ".join(cmd))
+    logging.debug("[ansible] command: %s", " ".join(cmd))
+
+    if main.state.wdm_mode == "dryrun":
+        logging.info("Dry mode, skipping execution.")
+        return None
+
     try:
         proc = subprocess.Popen(cmd,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -130,8 +136,15 @@ def run_shell(dep, task, *, is_test):
 
     sys.stdout.flush()
     sys.stderr.flush()
+
+    popen_cmd = ["bash", "-ceuo", "pipefail", cmd]
+
+    if main.state.wdm_mode == "dryrun":
+        logging.info("Dry mode, skipping execution.")
+        return None
+
     try:
-        proc = subprocess.Popen(["bash", "-ceuo", "pipefail", cmd],
+        proc = subprocess.Popen(popen_cmd,
                                 env=env,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 stdin=subprocess.PIPE)

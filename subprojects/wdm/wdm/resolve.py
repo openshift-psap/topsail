@@ -20,19 +20,16 @@ def do_test(dep, print_first_test=True):
 
     for task in dep.spec.test:
         if print_first_test:
-            if main.state.wdm_mode == "dryrun":
-                logging.debug(f"Testing '{dep.name}' ... Running in dry mode, skipping.")
-            else:
-                logging.debug(f"Testing '{dep.name}' ...")
+            logging.debug(f"Testing '{dep.name}' ...")
             print_first_test = False
 
-        success = run.run(dep, task, is_test=True) if main.state.wdm_mode != "dryrun" else None
+        success = run.run(dep, task, is_test=True)
 
         main.state.tested[f"{dep.name} -> {task.name}"] = success
         if success:
             return True
 
-    return False
+    return success # False or None
 
 
 def resolve_task_requirement(dep, requirement_name):
@@ -80,9 +77,9 @@ def resolve(dep):
         if dep.spec.test:
             logging.debug( f"Dependency '{dep.name}' is satisfied, no need to install.")
 
-    elif main.state.wdm_mode in ("dryrun", "test"):
-        logging.debug(f"Installing '{dep.name}' ... "
-                     f"Running in {'test' if main.state.wdm_mode == 'test' else 'dry'} mode, skipping.")
+    elif main.state.wdm_mode == "test":
+        logging.debug(f"Running in {'test' if main.state.wdm_mode == 'test' else 'dry'} mode, "
+                      f"skipping {task.name} installation.")
         for task in dep.spec.install:
             main.state.installed[f"{dep.name} -> {task.name}"] = True
     else:
@@ -92,19 +89,18 @@ def resolve(dep):
                 first_install = False
                 logging.info(f"Installing '{dep.name}' ...")
 
-            if not run.run(dep, task, is_test=False):
+            if run.run(dep, task, is_test=False) == False:
                 logging.error(f"Installation of '{dep.name}' failed.")
                 sys.exit(1)
 
             main.state.installed[f"{dep.name} -> {task.name}"] = True
 
-        if first_install:
+        if first_install and wdm.state.wdm_mode != "dryrun":
             # no install task available
-
             logging.error(f"'{dep.name}' test failed, but no install script provided.")
             sys.exit(1)
 
-        if not do_test(dep, print_first_test=False):
+        if do_test(dep, print_first_test=False) == False:
             if dep.spec.test:
                 logging.error(f"'{dep.name}' installed, but test still failing.")
                 sys.exit(1)
