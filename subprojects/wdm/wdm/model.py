@@ -3,7 +3,6 @@ import typing
 
 import pydantic
 
-
 class TaskType(str, enum.Enum):
     shell = 'shell'
     ansible = 'ansible'
@@ -13,14 +12,14 @@ class TaskType(str, enum.Enum):
 class TaskAbstractModel(pydantic.BaseModel):
     name: str
     type: TaskType
-    configuration: list[str] = None
+    configuration: typing.List[str] = None
 
 # ---
 
 class ToolboxTaskSpecModel(pydantic.BaseModel, extra=pydantic.Extra.forbid):
     group: str
     command: str
-    args: list[str] = None
+    args: typing.List[str] = None
 
 class ToolboxTaskModel(TaskAbstractModel, extra=pydantic.Extra.forbid):
     type: str = pydantic.Field(TaskType.toolbox.value, const=True)
@@ -36,13 +35,13 @@ class ShellTaskModel(TaskAbstractModel, extra=pydantic.Extra.forbid):
 
 class AnsibleTaskModel(TaskAbstractModel, extra=pydantic.Extra.forbid):
     type: str = pydantic.Field(TaskType.ansible.value, const=True)
-    spec: list[dict]
+    spec: typing.List[dict]
 
 # ---
 
 class PredefinedSpecTaskModel(pydantic.BaseModel, extra=pydantic.Extra.forbid):
     name: str
-    args: dict[str, str]
+    args: typing.Dict[str, str]
 
 class PredefinedTaskModel(TaskAbstractModel, extra=pydantic.Extra.forbid):
     type: str = pydantic.Field(TaskType.predefined.value, const=True)
@@ -53,10 +52,10 @@ class PredefinedTaskModel(TaskAbstractModel, extra=pydantic.Extra.forbid):
 TaskModels = typing.Union[ShellTaskModel, AnsibleTaskModel, PredefinedTaskModel, ToolboxTaskModel]
 
 class DependencySpecModel(pydantic.BaseModel, extra=pydantic.Extra.forbid):
-    requirements: list[str] = None
-    configuration: list[str] = None
-    test: list[TaskModels] = None
-    install: list[TaskModels] = None
+    requirements: typing.List[str] = None
+    configuration: typing.List[str] = None
+    test: typing.List[TaskModels] = None
+    install: typing.List[TaskModels] = None
 
 class DependencyModel(pydantic.BaseModel, extra=pydantic.Extra.forbid):
     """
@@ -64,5 +63,5 @@ class DependencyModel(pydantic.BaseModel, extra=pydantic.Extra.forbid):
     """
 
     name: str
-    config_values: dict[str, str] = None
+    config_values: typing.Dict[str, str] = None
     spec: DependencySpecModel = None
