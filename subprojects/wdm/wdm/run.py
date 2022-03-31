@@ -177,7 +177,7 @@ def run_predefined(_dep, task, *, is_test):
 
     return run(dep, predefined_task, is_test=is_test)
 
-def run_toolbox(dep, toolbox_task, *, is_test):
+def run_toolbox(dep, task, *, is_test):
     try:
         predefined_toolbox_task = wdm.state.predefined_tasks["run_toolbox"]
     except KeyError:
@@ -187,20 +187,21 @@ def run_toolbox(dep, toolbox_task, *, is_test):
         sys.exit(1)
 
     obj = dict(
-        name=f"{toolbox_task.name} | toolbox()",
+        name=f"{task.name} | toolbox()",
+        configuration=task.configuration,
         spec=dict(
             name=predefined_toolbox_task.name,
             args=dict(
-                group=toolbox_task.spec.group,
-                command=toolbox_task.spec.command,
-                args=" ".join(toolbox_task.spec.args) if toolbox_task.spec.args else ""
+                group=task.spec.group,
+                command=task.spec.command,
+                args=" ".join(task.spec.args or [])
             )
         )
     )
-    actual_toolbox_task = model.PredefinedTaskModel.parse_obj(obj)
+    toolbox_task = model.PredefinedTaskModel.parse_obj(obj)
 
-    logging.debug(f"[toolbox] Running '{actual_toolbox_task.name}' ...")
-    return run_predefined(dep, actual_toolbox_task, is_test=is_test)
+    logging.debug(f"[toolbox] Running '{toolbox_task.name}' ...")
+    return run_predefined(dep, toolbox_task, is_test=is_test)
 
 TaskTypeFunctions = {
     model.TaskType.shell: run_shell,
