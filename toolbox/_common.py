@@ -125,6 +125,9 @@ def run_ansible_role(role_name, opts: dict = dict()):
     with open(artifact_extra_logs_dir / "_python.cmd", "w") as f:
         print(" ".join(sys.argv), file=f)
 
+    sys.stdout.flush()
+    sys.stderr.flush()
+
     try:
         run_result = subprocess.run(cmd, env=env, check=False)
         ret = run_result.returncode
