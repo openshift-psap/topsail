@@ -186,15 +186,23 @@ def run_toolbox(dep, task, *, is_test):
         logging.info("Available predefined tasks: %s", ", ".join(wdm.state.predefined_tasks.keys()))
         sys.exit(1)
 
+    task_config = env_config.get_task_configuration_kv(dep, task)
+    def apply_config(val):
+        for key, value in task_config.items():
+            val = val.replace(f"${key}", value)
+            val = val.replace(f"${{{key}}}", value)
+
+        return val
+
     obj = dict(
         name=f"{task.name} | toolbox()",
         configuration=task.configuration,
         spec=dict(
             name=predefined_toolbox_task.name,
             args=dict(
-                group=task.spec.group,
-                command=task.spec.command,
-                args=" ".join(task.spec.args or [])
+                group=apply_config(task.spec.group),
+                command=apply_config(task.spec.command),
+                args=apply_config(" ".join(task.spec.args or []))
             )
         )
     )
