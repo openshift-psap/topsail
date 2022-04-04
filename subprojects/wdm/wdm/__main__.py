@@ -47,8 +47,8 @@ Args:
     config_file: Path to a file containing configuration key=value pairs, one per line. If empty, loads '.wdm_config' if it exists, or 'no' to skip loading any config file.
 """
 
-    def entrypoint(dependency_file: str = "./dependencies.yaml",
-                   target: str = "",
+    def entrypoint(target: str = "",
+                   dependency_file: str = "./dependencies.yaml",
                    ansible_config: str = None,
                    library: bool = False,
                    config: str = "",
