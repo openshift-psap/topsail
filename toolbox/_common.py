@@ -117,11 +117,14 @@ def run_ansible_role(role_name, opts: dict = dict()):
 
     with open(artifact_extra_logs_dir / "_ansible.cmd", "w") as f:
         print(" ".join(cmd), file=f)
-    print("<+>", cmd)
 
     with open(artifact_extra_logs_dir / "_ansible.env", "w") as f:
         for k, v in env.items():
             print(f"{k}={v}", file=f)
+
+    with open(artifact_extra_logs_dir / "_python.cmd", "w") as f:
+        print(" ".join(sys.argv), file=f)
+
     try:
         run_result = subprocess.run(cmd, env=env, check=False)
         ret = run_result.returncode
