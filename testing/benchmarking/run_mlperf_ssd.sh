@@ -11,20 +11,47 @@ THRESHOLD=0.05
 MINSR=150.0
 MAXDR=30
 
+_info() {
+    fname="$1"
+    msg="$2"
+
+    DEST_DIR="${ARTIFACT_DIR}/_INFO/"
+    mkdir -p "$DEST_DIR"
+    echo "$msg" > "${DEST_DIR}/$fname"
+
+    echo "INFO: $msg"
+}
+
+_error() {
+    fname="$1"
+    msg="$2"
+
+    DEST_DIR="${ARTIFACT_DIR}/_ERROR/"
+    mkdir -p "$DEST_DIR"
+    echo "$msg" > "${DEST_DIR}/$fname"
+
+    echo "ERROR: $msg"
+}
+
+
 assess_benchmark_stats () {
     artifact_dir=${ARTIFACT_DIR:-"/tmp/ci-artifacts_$(date +%Y%m%d)"}
     sample_rate=$(cat "${artifact_dir}/benchmarking_run_ssd_sample_rate.log" | cut -d" " -f1)
     bench_duration=$(cat "${artifact_dir}/benchmarking_run_ssd_bench_duration.log" | cut -d" " -f1)
     if (( $(echo "$MINSR > $sample_rate" |bc -l) )) ; then
-        echo "ERROR: Sample rate ($sample_rate) below minimum expected ($MINSR)"
+        _error "benchmarking_sample_rate_below_minimum" "Sample rate ($sample_rate) below minimum expected ($MINSR)"
         return 1
     fi
     echo "Sample rate test passed!"
+
     if [[ "$MAXDR" -lt "$bench_duration" ]] ; then
-        echo "ERROR: Benchmark duration ($bench_duration) above maximum expected ($MAXDR)"
+        _error "benchmarking_duration_above_maximum" "Benchmark duration ($bench_duration) above maximum expected ($MAXDR)"
         return 1
     fi
     echo "Benchmark duration test passed!"
+
+    _info "benchmarking_results_ok" "Benchmarking results: $bench_duration minutes, $sample_rate samples/sec"
+
     return 0
 }
 
