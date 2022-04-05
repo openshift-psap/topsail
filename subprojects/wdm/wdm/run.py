@@ -36,11 +36,13 @@ def subprocess_stdout_to_log(proc, prefix):
     pending = dict(stdout="", stderr="")
     while True:
         for key, _ in sel.select():
-            read1_args = []
-            if sys.version_info.minor <= 6:
-                read1_args += [1]
+            read = key.fileobj.read1
 
-            data = key.fileobj.read1(*read1_args).decode()
+            # remove when Py 3.6 is not supported anymore:
+            if sys.version_info.minor <= 6:
+                read = key.fileobj.read
+
+            data = read().decode()
             if not data:
                 for out in pending.keys():
                     if pending[out]:
