@@ -32,6 +32,8 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 source $THIS_DIR/../prow/gpu-operator.sh source
 
+finalizers+=("collect_must_gather")
+
 # WDM_DEPENDENCY_FILE exported in ^^^^
 ./toolbox/wdm ensure has_gpu_operator
 
