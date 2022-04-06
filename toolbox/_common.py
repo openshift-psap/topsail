@@ -4,7 +4,8 @@ import os
 import time
 import sys
 from pathlib import Path
-
+import yaml
+import tempfile
 
 top_dir = Path(__file__).resolve().parent.parent
 
@@ -35,14 +36,14 @@ class PlaybookRun:
         return ""
 
     def _run(self):
-        run_ansible_playbook(self.playbook_name, self.opts)
+        run_ansible_role(self.playbook_name, self.opts)
 
 
 def flatten(lst):
     return itertools.chain(*lst)
 
 
-def run_ansible_playbook(playbook_name, opts: dict = dict()):
+def run_ansible_role(role_name, opts: dict = dict()):
     version_override = os.environ.get("OCP_VERSION")
     if version_override is not None:
         opts["openshift_release"] = version_override
@@ -97,7 +98,19 @@ def run_ansible_playbook(playbook_name, opts: dict = dict()):
         ]
     )
 
-    cmd = ["ansible-playbook", "-vv", *option_flags, f"playbooks/{playbook_name}.yml"]
+    tmp_play_file = tempfile.NamedTemporaryFile("w+", dir=os.getcwd(), delete=False)
+    play = [
+        dict(name=f"Run {role_name} role",
+             connection="local",
+             gather_facts=False,
+             hosts="localhost",
+             roles=[role_name],
+             )
+    ]
+    yaml.dump(play, tmp_play_file)
+    tmp_play_file.close()
+
+    cmd = ["ansible-playbook", "-vv", *option_flags, tmp_play_file.name]
 
     with open(artifact_extra_logs_dir / "_ansible.cmd", "w") as f:
         print(" ".join(cmd), file=f)
@@ -106,7 +119,10 @@ def run_ansible_playbook(playbook_name, opts: dict = dict()):
     with open(artifact_extra_logs_dir / "_ansible.env", "w") as f:
         for k, v in os.environ.items():
             print(f"{k}={v}", file=f)
+    try:
+        run_result = subprocess.run(cmd, env=os.environ.copy(), check=False)
+        ret = run_result.returncode
+    finally:
+        os.remove(tmp_play_file.name)
 
-    run_result = subprocess.run(cmd, env=os.environ.copy(), check=False)
-
-    raise SystemExit(run_result.returncode)
+    raise SystemExit(ret)
