@@ -196,6 +196,8 @@ def run_toolbox(dep, task, *, is_test):
 
         return val
 
+    toolbox_dir = pathlib.Path(__file__).parent.parent.parent.parent
+
     obj = dict(
         name=f"{task.name} | toolbox()",
         configuration=task.configuration,
@@ -204,7 +206,8 @@ def run_toolbox(dep, task, *, is_test):
             args=dict(
                 group=apply_config(task.spec.group),
                 command=apply_config(task.spec.command),
-                args=apply_config(" ".join(task.spec.args or []))
+                args=apply_config(" ".join(task.spec.args or [])),
+                toolbox_dir=str(toolbox_dir),
             )
         )
     )

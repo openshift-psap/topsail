@@ -4,6 +4,7 @@ configuration:
 - group
 - command
 - args
+- toolbox_dir
 spec: |
-  cd ${HOME}/openshift/ci-artifacts
+  cd "$toolbox_dir"
   ./run_toolbox.py $group $command $args
