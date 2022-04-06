@@ -1,7 +1,0 @@
----
-- name: Deploy the COCO dataset in a PVC
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: benchmarking_deploy_coco_dataset

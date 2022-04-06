@@ -1,7 +1,0 @@
----
-- name: Wait for NFD Labels to be set on every node
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-  - role: nfd_test_wait_labels

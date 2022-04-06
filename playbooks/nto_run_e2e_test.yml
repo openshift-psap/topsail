@@ -1,7 +1,0 @@
----
-- name: Run NTO e2e tests
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: nto_run_e2e_test

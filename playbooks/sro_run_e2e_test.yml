@@ -1,7 +1,0 @@
----
-- name: Run e2e test for SRO
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: sro_run_e2e_test

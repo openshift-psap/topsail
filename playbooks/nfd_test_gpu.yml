@@ -1,7 +1,0 @@
----
-- name: Deploy NFD Operator from OperatorHub
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - nfd_test_wait_gpu

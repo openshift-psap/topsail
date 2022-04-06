@@ -1,7 +1,0 @@
----
-- name: Test if nodes with NFD labels can be found
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: nfd_has_labels

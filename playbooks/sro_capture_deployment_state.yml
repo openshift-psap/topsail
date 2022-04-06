@@ -1,7 +1,0 @@
----
-- name: Capture information about the SRO deployment
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: sro_capture_deployment_state

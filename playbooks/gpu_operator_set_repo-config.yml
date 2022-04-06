@@ -1,7 +1,0 @@
----
-- name: Set a custom repository list to use in the GPU Operator ClusterPolicy
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: gpu_operator_set_repo-config

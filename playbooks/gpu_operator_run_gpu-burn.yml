@@ -1,7 +1,0 @@
----
-- name: Run GPU burn to validate the GPU deployment
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: gpu_operator_run_gpu-burn

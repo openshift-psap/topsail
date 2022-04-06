@@ -1,7 +1,0 @@
----
-- name: Cleanup the resources used to prepare the GPU Operator bundle from a custom commit
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: gpu_operator_cleanup_bundle_from_commit

@@ -1,7 +1,0 @@
----
-- name: Capture information about the ci-artifact repo and OpenShift version
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: cluster_capture_environment

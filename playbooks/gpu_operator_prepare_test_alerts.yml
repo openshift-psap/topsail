@@ -1,7 +1,0 @@
----
-- name: Prepare test alerts based on the existing GPU Operator alerts.
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-    - role: gpu_operator_prepare_test_alerts

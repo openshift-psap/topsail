@@ -1,7 +1,0 @@
----
-- name: Ensures that the cluster has at least one machineset with the given instance type
-  hosts: localhost
-  connection: local
-  gather_facts: true
-  roles:
-  - cluster_ensure_machineset
