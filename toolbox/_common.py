@@ -48,48 +48,51 @@ def run_ansible_role(role_name, opts: dict = dict()):
     if version_override is not None:
         opts["openshift_release"] = version_override
 
-    if os.environ.get("ARTIFACT_DIR") is None:
-        os.environ["ARTIFACT_DIR"] = f"/tmp/ci-artifacts_{time.strftime('%Y%m%d')}"
-        print(f"Using '{os.environ['ARTIFACT_DIR']}' to store the test artifacts (default value for ARTIFACT_DIR).")
+    # do not modify the `os.environ` of this Python process
+    env = os.environ.copy()
+
+    if env.get("ARTIFACT_DIR") is None:
+        env["ARTIFACT_DIR"] = f"/tmp/ci-artifacts_{time.strftime('%Y%m%d')}"
+        print(f"Using '{env['ARTIFACT_DIR']}' to store the test artifacts (default value for ARTIFACT_DIR).")
     else:
-        print(f"Using '{os.environ['ARTIFACT_DIR']}' to store the test artifacts.")
-    opts["artifact_dir"] = os.environ["ARTIFACT_DIR"]
+        print(f"Using '{env['ARTIFACT_DIR']}' to store the test artifacts.")
+    opts["artifact_dir"] = env["ARTIFACT_DIR"]
 
-    os.environ["ARTIFACT_DIRNAME"] = '__'.join(sys.argv[1:3])
+    env["ARTIFACT_DIRNAME"] = '__'.join(sys.argv[1:3])
 
-    artifact_dir = Path(os.environ["ARTIFACT_DIR"])
+    artifact_dir = Path(env["ARTIFACT_DIR"])
     artifact_dir.mkdir(parents=True, exist_ok=True)
 
-    if os.environ.get("ARTIFACT_EXTRA_LOGS_DIR") is None:
+    if env.get("ARTIFACT_EXTRA_LOGS_DIR") is None:
         previous_extra_count = len(list(artifact_dir.glob("*__*")))
-        os.environ["ARTIFACT_EXTRA_LOGS_DIR"] = str(
-            Path(os.environ["ARTIFACT_DIR"]) /
-            f"{previous_extra_count:03d}__{os.environ['ARTIFACT_DIRNAME']}"
+        env["ARTIFACT_EXTRA_LOGS_DIR"] = str(
+            Path(env["ARTIFACT_DIR"]) /
+            f"{previous_extra_count:03d}__{env['ARTIFACT_DIRNAME']}"
         )
 
-    artifact_extra_logs_dir = Path(os.environ["ARTIFACT_EXTRA_LOGS_DIR"])
+    artifact_extra_logs_dir = Path(env["ARTIFACT_EXTRA_LOGS_DIR"])
     artifact_extra_logs_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Using '{artifact_extra_logs_dir}' to store extra log files.")
     opts["artifact_extra_logs_dir"] = str(artifact_extra_logs_dir)
 
-    if os.environ.get("ANSIBLE_LOG_PATH") is None:
-        os.environ["ANSIBLE_LOG_PATH"] = str(artifact_extra_logs_dir / "_ansible.log")
-    print(f"Using '{os.environ['ANSIBLE_LOG_PATH']}' to store ansible logs.")
-    Path(os.environ["ANSIBLE_LOG_PATH"]).parent.mkdir(parents=True, exist_ok=True)
+    if env.get("ANSIBLE_LOG_PATH") is None:
+        env["ANSIBLE_LOG_PATH"] = str(artifact_extra_logs_dir / "_ansible.log")
+    print(f"Using '{env['ANSIBLE_LOG_PATH']}' to store ansible logs.")
+    Path(env["ANSIBLE_LOG_PATH"]).parent.mkdir(parents=True, exist_ok=True)
 
-    if os.environ.get("ANSIBLE_CACHE_PLUGIN_CONNECTION") is None:
-        os.environ["ANSIBLE_CACHE_PLUGIN_CONNECTION"] = str(artifact_dir / "ansible_facts")
-    print(f"Using '{os.environ['ANSIBLE_CACHE_PLUGIN_CONNECTION']}' to store ansible facts.")
-    Path(os.environ["ANSIBLE_CACHE_PLUGIN_CONNECTION"]).parent.mkdir(parents=True, exist_ok=True)
+    if env.get("ANSIBLE_CACHE_PLUGIN_CONNECTION") is None:
+        env["ANSIBLE_CACHE_PLUGIN_CONNECTION"] = str(artifact_dir / "ansible_facts")
+    print(f"Using '{env['ANSIBLE_CACHE_PLUGIN_CONNECTION']}' to store ansible facts.")
+    Path(env["ANSIBLE_CACHE_PLUGIN_CONNECTION"]).parent.mkdir(parents=True, exist_ok=True)
 
-    if os.environ.get("ANSIBLE_CONFIG") is None:
-        os.environ["ANSIBLE_CONFIG"] = str(top_dir / "config" / "ansible.cfg")
-    print(f"Using '{os.environ['ANSIBLE_CONFIG']}' as ansible configuration file.")
+    if env.get("ANSIBLE_CONFIG") is None:
+        env["ANSIBLE_CONFIG"] = str(top_dir / "config" / "ansible.cfg")
+    print(f"Using '{env['ANSIBLE_CONFIG']}' as ansible configuration file.")
 
-    if os.environ.get("ANSIBLE_JSON_TO_LOGFILE") is None:
-        os.environ["ANSIBLE_JSON_TO_LOGFILE"] = str(artifact_extra_logs_dir / "_ansible.log.json")
-    print(f"Using '{os.environ['ANSIBLE_JSON_TO_LOGFILE']}' as ansible json log file.")
+    if env.get("ANSIBLE_JSON_TO_LOGFILE") is None:
+        env["ANSIBLE_JSON_TO_LOGFILE"] = str(artifact_extra_logs_dir / "_ansible.log.json")
+    print(f"Using '{env['ANSIBLE_JSON_TO_LOGFILE']}' as ansible json log file.")
 
     option_flags = flatten(
         [
@@ -117,10 +120,10 @@ def run_ansible_role(role_name, opts: dict = dict()):
     print("<+>", cmd)
 
     with open(artifact_extra_logs_dir / "_ansible.env", "w") as f:
-        for k, v in os.environ.items():
+        for k, v in env.items():
             print(f"{k}={v}", file=f)
     try:
-        run_result = subprocess.run(cmd, env=os.environ.copy(), check=False)
+        run_result = subprocess.run(cmd, env=env, check=False)
         ret = run_result.returncode
     finally:
         os.remove(tmp_play_file.name)
