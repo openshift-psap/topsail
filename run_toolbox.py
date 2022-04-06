@@ -18,7 +18,7 @@ from toolbox.repo import Repo
 from toolbox.special_resource_operator import SpecialResourceOperator
 from toolbox.benchmarking import Benchmarking
 from toolbox.utils import Utils
-
+from toolbox.nto import NTO
 
 class Toolbox:
     """
@@ -42,6 +42,7 @@ class Toolbox:
         self.sro = SpecialResourceOperator
         self.benchmarking = Benchmarking
         self.utils = Utils
+        self.nto = NTO
 
 def main(no_exit=False):
     # Print help rather than opening a pager
