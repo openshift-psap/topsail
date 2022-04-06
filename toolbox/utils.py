@@ -2,7 +2,7 @@ import sys
 
 import secrets
 
-from toolbox._common import PlaybookRun
+from toolbox._common import RunAnsibleRole
 
 
 class Utils:
@@ -97,4 +97,4 @@ class Utils:
             "utils_build_push_image_memory": memory,
         }
 
-        return PlaybookRun("utils_build_push_image", opts)
+        return RunAnsibleRole("utils_build_push_image", opts)

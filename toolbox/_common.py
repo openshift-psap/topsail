@@ -10,7 +10,7 @@ import tempfile
 top_dir = Path(__file__).resolve().parent.parent
 
 
-class PlaybookRun:
+class RunAnsibleRole:
     """
     Playbook runner
 

@@ -1,7 +1,7 @@
 import sys
 import secrets
 
-from toolbox._common import PlaybookRun
+from toolbox._common import RunAnsibleRole
 
 
 class GPUOperator:
@@ -15,7 +15,7 @@ class GPUOperator:
         Creates the ClusterPolicy from the OLM ClusterServiceVersion
         """
         print("Creating the ClusterPolicy from the CSV")
-        return PlaybookRun(
+        return RunAnsibleRole(
             "gpu_operator_deploy_from_operatorhub",
             {"gpu_operator_deploy_from": "pre-deployed"},
         )
@@ -34,10 +34,10 @@ class GPUOperator:
 
         if bundle == 'master':
             print("Deploying the GPU Operator from OperatorHub using the master bundle")
-            return PlaybookRun("gpu_operator_deploy_from_operatorhub", opts)
+            return RunAnsibleRole("gpu_operator_deploy_from_operatorhub", opts)
 
         opts["deploy_bundle_image"] = bundle
-        return PlaybookRun("gpu_operator_deploy_from_operatorhub", opts)
+        return RunAnsibleRole("gpu_operator_deploy_from_operatorhub", opts)
 
     @staticmethod
     def deploy_from_operatorhub(namespace="nvidia-gpu-operator", version=None, channel=None, installPlan="Manual"):
@@ -90,7 +90,7 @@ class GPUOperator:
         )
 
         print("Deploying the GPU Operator from OperatorHub.")
-        return PlaybookRun("cluster_deploy_operator", opts)
+        return RunAnsibleRole("cluster_deploy_operator", opts)
 
     @staticmethod
     def run_gpu_burn(runtime=None):
@@ -105,7 +105,7 @@ class GPUOperator:
             opts["gpu_burn_time"] = runtime
             print(f"Running GPU Burn for {runtime} seconds.")
 
-        return PlaybookRun("gpu_operator_run_gpu-burn", opts)
+        return RunAnsibleRole("gpu_operator_run_gpu-burn", opts)
 
     @staticmethod
     def set_repo_config(repo_file, dest_dir=None):
@@ -120,7 +120,7 @@ class GPUOperator:
         if dest_dir is not None:
             opts["gpu_operator_set_repo_destdir"] = dest_dir
 
-        return PlaybookRun("gpu_operator_set_repo-config", opts)
+        return RunAnsibleRole("gpu_operator_set_repo-config", opts)
 
     @staticmethod
     def undeploy_from_commit():
@@ -128,7 +128,7 @@ class GPUOperator:
         Undeploys a GPU-operator that was deployed from a commit
         """
 
-        return PlaybookRun("gpu_operator_undeploy_custom_commit")
+        return RunAnsibleRole("gpu_operator_undeploy_custom_commit")
 
     @staticmethod
     def undeploy_from_operatorhub():
@@ -136,28 +136,28 @@ class GPUOperator:
         Undeploys a GPU-operator that was deployed from OperatorHub
         """
 
-        return PlaybookRun("gpu_operator_undeploy_from_operatorhub")
+        return RunAnsibleRole("gpu_operator_undeploy_from_operatorhub")
 
     @staticmethod
     def wait_deployment():
         """
         Waits for the GPU operator to deploy
         """
-        return PlaybookRun("gpu_operator_wait_deployment")
+        return RunAnsibleRole("gpu_operator_wait_deployment")
 
     @staticmethod
     def capture_deployment_state():
         """
         Captures the GPU operator deployment state
         """
-        return PlaybookRun("gpu_operator_capture-deployment_state")
+        return RunAnsibleRole("gpu_operator_capture-deployment_state")
 
     @staticmethod
     def cleanup_bundle_from_commit():
         """
         Cleanup resources leftover from building a bundle from a commit
         """
-        return PlaybookRun("gpu_operator_cleanup_bundle_from_commit")
+        return RunAnsibleRole("gpu_operator_cleanup_bundle_from_commit")
 
     @staticmethod
     def bundle_from_commit(
@@ -217,7 +217,7 @@ class GPUOperator:
         if namespace is not None:
             opts["gpu_operator_target_namespace"] = namespace
 
-        return PlaybookRun("gpu_operator_bundle_from_commit", opts)
+        return RunAnsibleRole("gpu_operator_bundle_from_commit", opts)
 
     @staticmethod
     def get_csv_version():
@@ -226,7 +226,7 @@ class GPUOperator:
         Stores the version in the 'ARTIFACT_EXTRA_LOGS_DIR' artifacts directory.
         """
 
-        return PlaybookRun("gpu_operator_get_csv_version")
+        return RunAnsibleRole("gpu_operator_get_csv_version")
 
     @staticmethod
     def prepare_test_alerts(alert_delay=1, alert_prefix="CI"):
@@ -244,4 +244,4 @@ class GPUOperator:
             "gpu_operator_test_alerts_prefix": alert_prefix,
         }
 
-        return PlaybookRun("gpu_operator_prepare_test_alerts", opts)
+        return RunAnsibleRole("gpu_operator_prepare_test_alerts", opts)

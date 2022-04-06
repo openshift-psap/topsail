@@ -1,4 +1,4 @@
-from toolbox._common import PlaybookRun
+from toolbox._common import RunAnsibleRole
 import secrets
 import os
 
@@ -30,11 +30,11 @@ class LocalCI:
 
         os.environ["LOCAL_CI_COMMAND"] = ci_command
 
-        return PlaybookRun("local-ci_deploy", opts)
+        return RunAnsibleRole("local-ci_deploy", opts)
 
     @staticmethod
     def cleanup():
         """
         Clean the local CI artifacts
         """
-        return PlaybookRun("local-ci_cleanup")
+        return RunAnsibleRole("local-ci_cleanup")

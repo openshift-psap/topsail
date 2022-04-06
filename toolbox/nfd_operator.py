@@ -1,4 +1,4 @@
-from toolbox._common import PlaybookRun
+from toolbox._common import RunAnsibleRole
 
 
 class NFDOperator:
@@ -23,7 +23,7 @@ class NFDOperator:
         if image_tag is not None:
             opts["nfd_operator_image_tag"] = image_tag
 
-        return PlaybookRun("nfd_operator_deploy_custom_commit", opts)
+        return RunAnsibleRole("nfd_operator_deploy_custom_commit", opts)
 
     @staticmethod
     def deploy_from_operatorhub(channel=None):
@@ -43,11 +43,11 @@ class NFDOperator:
         if channel is not None:
             opts["cluster_deploy_operator_channel"] = channel
 
-        return PlaybookRun("cluster_deploy_operator", opts)
+        return RunAnsibleRole("cluster_deploy_operator", opts)
 
     @staticmethod
     def undeploy_from_operatorhub():
         """
         Undeploys an NFD-operator that was deployed from OperatorHub
         """
-        return PlaybookRun("nfd_operator_undeploy_from_operatorhub")
+        return RunAnsibleRole("nfd_operator_undeploy_from_operatorhub")

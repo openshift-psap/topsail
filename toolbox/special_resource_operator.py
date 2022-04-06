@@ -1,4 +1,4 @@
-from toolbox._common import PlaybookRun
+from toolbox._common import RunAnsibleRole
 
 
 class SpecialResourceOperator:
@@ -7,7 +7,7 @@ class SpecialResourceOperator:
     """
     @staticmethod
     def capture_deployment_state():
-        return PlaybookRun("sro_capture_deployment_state")
+        return RunAnsibleRole("sro_capture_deployment_state")
 
     @staticmethod
     def deploy_from_commit(git_repo, git_ref, image_tag=None):
@@ -27,7 +27,7 @@ class SpecialResourceOperator:
         if image_tag is not None:
             opts["sro_image_tag"] = image_tag
 
-        return PlaybookRun("sro_deploy_custom_commit", opts)
+        return RunAnsibleRole("sro_deploy_custom_commit", opts)
 
     @staticmethod
     def run_e2e_test(git_repo, git_ref):
@@ -43,7 +43,7 @@ class SpecialResourceOperator:
             "sro_git_ref": git_ref,
         }
 
-        return PlaybookRun("sro_run_e2e_test", opts)
+        return RunAnsibleRole("sro_run_e2e_test", opts)
 
     @staticmethod
     def undeploy_from_commit(git_repo, git_ref):
@@ -59,4 +59,4 @@ class SpecialResourceOperator:
             "sro_git_ref": git_ref,
         }
 
-        return PlaybookRun("sro_undeploy_custom_commit", opts)
+        return RunAnsibleRole("sro_undeploy_custom_commit", opts)

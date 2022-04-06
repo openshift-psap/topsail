@@ -1,4 +1,4 @@
-from toolbox._common import PlaybookRun
+from toolbox._common import RunAnsibleRole
 
 
 class Benchmarking:
@@ -39,7 +39,7 @@ class Benchmarking:
                 f"Using '{s3_cred}' as s3 credentials."
             )
 
-        return PlaybookRun("benchmarking_deploy_coco_dataset", opts)
+        return RunAnsibleRole("benchmarking_deploy_coco_dataset", opts)
 
     @staticmethod
     def run_mlperf_ssd(node_hostname, namespace="default", pvc_name=None, epochs=None, threshold=None):
@@ -80,4 +80,4 @@ class Benchmarking:
                 print("ERROR: threshold must be of type float")
                 exit(1)
 
-        return PlaybookRun("benchmarking_run_mlperf_ssd", opts)
+        return RunAnsibleRole("benchmarking_run_mlperf_ssd", opts)

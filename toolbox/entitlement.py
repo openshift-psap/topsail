@@ -1,4 +1,4 @@
-from toolbox._common import PlaybookRun
+from toolbox._common import RunAnsibleRole
 
 
 class Entitlement:
@@ -21,7 +21,7 @@ class Entitlement:
         if pem_ca is not None:
             opts["entitlement_repo_ca"] = pem_ca
 
-        return PlaybookRun("entitlement_deploy", opts)
+        return RunAnsibleRole("entitlement_deploy", opts)
 
     @staticmethod
     def test_in_cluster(pem_key):
@@ -31,7 +31,7 @@ class Entitlement:
         Args:
             pem_key: The PEM entitlement key to test
         """
-        return PlaybookRun("entitlement_test_in_cluster", {"entitlement_pem": pem_key})
+        return RunAnsibleRole("entitlement_test_in_cluster", {"entitlement_pem": pem_key})
 
     @staticmethod
     def test_in_podman(pem_key):
@@ -41,7 +41,7 @@ class Entitlement:
         Args:
             pem_key: The PEM entitlement key to test
         """
-        return PlaybookRun("entitlement_test_in_podman", {"entitlement_pem": pem_key})
+        return RunAnsibleRole("entitlement_test_in_podman", {"entitlement_pem": pem_key})
 
     @staticmethod
     def test_cluster(no_inspect=False):
@@ -58,21 +58,21 @@ class Entitlement:
             print("INFO: Inspect on failure disabled.")
             opts["entitlement_inspect_on_failure"] = "no"
 
-        return PlaybookRun("entitlement_test_wait_deployment", opts)
+        return RunAnsibleRole("entitlement_test_wait_deployment", opts)
 
     @staticmethod
     def inspect():
         """
         Inspects the cluster entitlement
         """
-        return PlaybookRun("entitlement_inspect")
+        return RunAnsibleRole("entitlement_inspect")
 
     @staticmethod
     def undeploy():
         """
         Undeploys entitlement from cluster
         """
-        return PlaybookRun("entitlement_undeploy")
+        return RunAnsibleRole("entitlement_undeploy")
 
     @staticmethod
     def wait():
@@ -83,4 +83,4 @@ class Entitlement:
             "entitlement_test_and_wait": "yes"
         }
 
-        return PlaybookRun("entitlement_wait", opts)
+        return RunAnsibleRole("entitlement_wait", opts)

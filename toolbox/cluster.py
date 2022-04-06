@@ -1,6 +1,6 @@
 import sys
 
-from toolbox._common import PlaybookRun
+from toolbox._common import RunAnsibleRole
 
 
 class Cluster:
@@ -43,7 +43,7 @@ class Cluster:
         if force:
             opts["force_scale"] = "true"
 
-        return PlaybookRun("cluster_set_scale", opts)
+        return RunAnsibleRole("cluster_set_scale", opts)
 
     @staticmethod
     def upgrade_to_image(image):
@@ -53,7 +53,7 @@ class Cluster:
         Args:
             image: The image to upgrade the cluster to
         """
-        return PlaybookRun("cluster_upgrade_to_image", {"cluster_upgrade_image": image})
+        return RunAnsibleRole("cluster_upgrade_to_image", {"cluster_upgrade_image": image})
 
     @staticmethod
     def capture_environment():
@@ -63,7 +63,7 @@ class Cluster:
         Args:
             image: The image to upgrade the cluster to
         """
-        return PlaybookRun("cluster_capture_environment")
+        return RunAnsibleRole("cluster_capture_environment")
 
     @staticmethod
     def wait_for_alert(alert_name, alert_active: bool):
@@ -84,7 +84,7 @@ class Cluster:
             "cluster_wait_for_alert_active": alert_active,
         }
 
-        return PlaybookRun("cluster_wait_for_alert", opts)
+        return RunAnsibleRole("cluster_wait_for_alert", opts)
 
 
     @staticmethod
@@ -152,7 +152,7 @@ class Cluster:
 
         print("Deploying the operator.")
 
-        return PlaybookRun("cluster_deploy_operator", opts)
+        return RunAnsibleRole("cluster_deploy_operator", opts)
 
     @staticmethod
     def deploy_aws_efs():
@@ -160,4 +160,4 @@ class Cluster:
         Deploy AWS EFS CSI driver and configure AWS accordingly.
         Assumes that AWS (credentials, Ansible module, Python module) is properly configured in the system.
         """
-        return PlaybookRun("cluster_deploy_aws_efs", {})
+        return RunAnsibleRole("cluster_deploy_aws_efs", {})
