@@ -50,4 +50,4 @@ class NFDOperator:
         """
         Undeploys an NFD-operator that was deployed from OperatorHub
         """
-        return PlaybookRun("nfd_operator_undeploy")
+        return PlaybookRun("nfd_operator_undeploy_from_operatorhub")

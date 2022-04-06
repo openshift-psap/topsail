@@ -10,7 +10,7 @@ class NFD:
         """
         Checks if the cluster has GPU nodes
         """
-        return PlaybookRun("nfd_test_gpu")
+        return PlaybookRun("nfd_test_wait_gpu")
 
     @staticmethod
     def has_labels():
@@ -24,11 +24,14 @@ class NFD:
         """
         Wait until nfd find GPU nodes
         """
-        return PlaybookRun("nfd_wait_gpu")
+        opts = {
+            "nfd_wait_gpu_nodes": "yes"
+        }
+        return PlaybookRun("nfd_test_wait_gpu", opts)
 
     @staticmethod
     def wait_labels():
         """
         Wait until nfd labels the nodes
         """
-        return PlaybookRun("nfd_wait_labels")
+        return PlaybookRun("nfd_test_wait_labels")

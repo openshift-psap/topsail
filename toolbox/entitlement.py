@@ -58,7 +58,7 @@ class Entitlement:
             print("INFO: Inspect on failure disabled.")
             opts["entitlement_inspect_on_failure"] = "no"
 
-        return PlaybookRun("entitlement_test", opts)
+        return PlaybookRun("entitlement_test_wait_deployment", opts)
 
     @staticmethod
     def inspect():
@@ -79,4 +79,8 @@ class Entitlement:
         """
         Waits for entitlement to be deployed
         """
-        return PlaybookRun("entitlement_wait")
+        opts = {
+            "entitlement_test_and_wait": "yes"
+        }
+
+        return PlaybookRun("entitlement_wait", opts)

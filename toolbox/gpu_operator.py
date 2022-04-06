@@ -150,7 +150,7 @@ class GPUOperator:
         """
         Captures the GPU operator deployment state
         """
-        return PlaybookRun("gpu_operator_capture-deployment-state")
+        return PlaybookRun("gpu_operator_capture-deployment_state")
 
     @staticmethod
     def cleanup_bundle_from_commit():
