@@ -97,8 +97,8 @@ postchecks() {
         touch "$ARTIFACT_DIR/FAILURE"
 
         if ! oc version >/dev/null 2>&1; then
-            mkdir -p "$ARTIFACT_DIR/FLAKE"
-            echo "Cluster unreachable" >> "$ARTIFACT_DIR/FLAKE/cluster_destroyed"
+            mkdir -p "$ARTIFACT_DIR/_FLAKE"
+            echo "Cluster unreachable" >> "$ARTIFACT_DIR/_FLAKE/cluster_unreachable"
         fi
     elif [[ "$reason" == EXIT ]]; then
         echo ""
