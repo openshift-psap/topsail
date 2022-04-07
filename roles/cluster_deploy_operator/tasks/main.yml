@@ -85,7 +85,7 @@
 
   - name: Mark the failure as flake
     shell:
-      echo "Failed because of the {{ cluster_deploy_operator_manifest_name }} PackageManifest not available"
+      echo "Failed because the {{ cluster_deploy_operator_manifest_name }} PackageManifest is not available"
            > "{{ artifact_extra_logs_dir }}/FLAKE"
 
   - name: Failed because the operator could not be found in the CatalogSource
