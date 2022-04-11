@@ -31,7 +31,7 @@ data:
 
     podman pull docker.io/library/golang:1.16.3-buster
     podman pull registry.access.redhat.com/ubi8/ubi:latest
-    sed -i 's|FROM registry.ci.openshift.org/ocp/builder:rhel-.*-golang-\(.*\)-openshift-.* AS|FROM docker.io/library/golang:\1 AS|' Dockerfile
+    sed -i 's|FROM registry.ci.openshift.org/ocp/builder:rhel-.*-golang-\(.*\)-openshift-.* [Aa][sS]|FROM docker.io/library/golang:\1 AS|' Dockerfile
     sed -i '10s|.*|FROM registry.access.redhat.com/ubi8/ubi|' Dockerfile
 
     IMAGE_NAME="nfd-operator-ci:latest"
