@@ -150,7 +150,7 @@ class GPUOperator:
         """
         Captures the GPU operator deployment state
         """
-        return RunAnsibleRole("gpu_operator_capture-deployment_state")
+        return RunAnsibleRole("gpu_operator_capture_deployment_state")
 
     @staticmethod
     def cleanup_bundle_from_commit():
