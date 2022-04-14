@@ -42,7 +42,8 @@ def resolve_task_requirement(dep, requirement_name):
         except KeyError: pass
 
     if next_dep is None:
-        logging.error(f"Missing required dependency: [{prefix}]{requirement_name}")
+        pfix = f"[{prefix}]" if prefix else ""
+        logging.error(f"Missing required dependency: {pfix}{requirement_name}")
         sys.exit(1)
 
     return resolve(next_dep)
