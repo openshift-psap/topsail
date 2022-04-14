@@ -3,7 +3,6 @@ name: has_gpu_operator
 spec:
   requirements:
   - library.nfd.has_nfd
-  - library.gpu.has_gpu_nodes
   test:
   - name: has_gpu_operator
     type: shell
@@ -14,6 +13,10 @@ spec:
     spec:
       group: gpu_operator
       command: deploy_from_operatorhub
+---
+name: is_ready
+spec:
+  test:
   - name: wait_gpu_deployment
     type: toolbox
     spec:
