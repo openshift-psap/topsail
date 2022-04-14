@@ -4,14 +4,14 @@ configuration:
 - buildconfig_file
 - namespace
 spec:
-- name: Delete the image helper builder manifest, if any
+- name: Delete the image BuildConfig manifest, if it already exists
   command: oc delete -f {{ buildconfig_file }} --ignore-not-found=true  -n {{ namespace }}
 
-- name: Apply the image helper builder manifest
+- name: Apply the image BuildConfig manifest
   command: oc apply -f {{ buildconfig_file }} -n {{ namespace }} -ojsonpath={.metadata.name}
   register: build_config_name_cmd
 
-- name: Wait for the helper image to be built
+- name: Wait for the BuildConfig to be complete
   command:
     oc get builds
        -lopenshift.io/build-config.name={{ build_config_name_cmd.stdout }}
@@ -23,6 +23,6 @@ spec:
   retries: 40
   delay: 30
 
-- name: Fail if the buildconfig failed to be built
+- name: Fail if the BuildConfig failed
   when: "'Failed' in wait_buildconfig.stdout or 'Error' in wait_buildconfig.stdout"
   fail: msg="The buildconfig {{ buildconfig_file }} failed to build"
