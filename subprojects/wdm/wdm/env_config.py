@@ -65,6 +65,7 @@ def get_configuration_kv(dep):
         wdm.state.cli_configuration,
         wdm.state.dep_file_configuration,
         wdm.state.cfg_file_configuration,
+        dep.config_values,
     ]
     kv = {}
     for src in config_sources:
@@ -78,7 +79,11 @@ def get_task_configuration_kv(dep, task):
     if dep.config_values:
         all_kv.update(dep.config_values)
 
-    config_requirements = (dep.spec.configuration or []) + (task and task.configuration or [])
+    config_requirements = []
+    config_requirements += (dep.spec.configuration or [])
+    config_requirements += (task and task.configuration or [])
+    config_requirements += (dep.config_values or [])
+
     kv = {}
     for key in config_requirements:
         value = None
