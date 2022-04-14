@@ -15,19 +15,15 @@ name: has_nfd_labels
 spec:
   test:
   - name: has_nfd_labels
-    type: toolbox
-    spec:
-      group: nfd
-      command: has_labels
+    type: shell
+    spec: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID -oname | grep .
 ---
 name: has_nfd_from_operatorhub
 spec:
   test:
   - name: has_nfd_labels
-    type: toolbox
-    spec:
-      group: nfd
-      command: has_labels
+    type: shell
+    spec: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID -oname | grep .
   install:
   - name: install_nfd_from_operatorhub
     type: toolbox
