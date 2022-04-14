@@ -17,7 +17,7 @@ def print_summary():
         logging.info("Tested:")
 
     for taskname, success in wdm.state.tested.items():
-        logging.info(f"- {'☑ ' if success else ('' if success is None else '❎ ')}{taskname}")
+        logging.info(f"- {'☑  ' if success else ('' if success is None else '❎ ')}{taskname}")
 
     if wdm.state.installed:
         if wdm.state.wdm_mode in ("test", "dryrun"):
