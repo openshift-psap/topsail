@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    batch.kubernetes.io/job-tracking: ""
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"batch/v1","kind":"Job","metadata":{"annotations":{},"labels":{"deployment":"ods-ci"},"name":"ods-ci","namespace":"default"},"spec":{"activeDeadlineSeconds":18000,"backoffLimit":15,"completionMode":"Indexed","completions":90,"parallelism":90,"template":{"metadata":{"name":"ods-ci-loadtest"},"spec":{"containers":[{"command":["sleep","60"],"image":"registry.redhat.io/ubi8/ubi","name":"ods-ci"}],"restartPolicy":"Never"}}}}
+  creationTimestamp: "2022-04-15T18:26:53Z"
+  generation: 1
+  labels:
+    deployment: ods-ci
+  name: ods-ci
+  namespace: default
+  resourceVersion: "6610459"
+  uid: 926c42ba-daef-4a64-b55d-7ef490596a17
+spec:
+  activeDeadlineSeconds: 18000
+  backoffLimit: 15
+  completionMode: Indexed
+  completions: 90
+  parallelism: 90
+  selector:
+    matchLabels:
+      controller-uid: 926c42ba-daef-4a64-b55d-7ef490596a17
+  suspend: false
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        controller-uid: 926c42ba-daef-4a64-b55d-7ef490596a17
+        job-name: ods-ci
+      name: ods-ci-loadtest
+    spec:
+      containers:
+      - command:
+        - sleep
+        - "60"
+        image: registry.redhat.io/ubi8/ubi
+        imagePullPolicy: Always
+        name: ods-ci
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  completedIndexes: 0-89
+  completionTime: "2022-04-15T18:28:31Z"
+  conditions:
+  - lastProbeTime: "2022-04-15T18:28:31Z"
+    lastTransitionTime: "2022-04-15T18:28:31Z"
+    status: "True"
+    type: Complete
+  startTime: "2022-04-15T18:26:53Z"
+  succeeded: 90
+  uncountedTerminatedPods: {}
