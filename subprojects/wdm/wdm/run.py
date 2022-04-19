@@ -118,8 +118,8 @@ def run_ansible(dep, task, *, is_test):
         logging.error(f"Task '{task.name}' was interrupted ...")
         sys.exit(1)
     finally:
-        os.remove(tmp.name)
-
+        try: os.remove(tmp.name)
+        except FileNotFoundError: pass # ignore
     return ret == 0
 
 def run_shell(dep, task, *, is_test):
