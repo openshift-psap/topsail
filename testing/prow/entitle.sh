@@ -12,7 +12,6 @@ if ! [ -f ./toolbox/entitlement.py ]; then
 fi
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-export WDM_DEPENDENCY_FILE=${THIS_DIR}/../wdm/gpu-operator.yml
 
 _expected_fail() {
     # mark the last toolbox step as an expected fail (for clearer
@@ -37,7 +36,7 @@ extract_entitlement_key() {
 }
 
 echo "INFO: Testing if the cluster is already entitled ..."
-if ./toolbox/wdm test has_entitlement; then
+if ./toolbox/wdm test has_entitlement "--dependency-file=${THIS_DIR}/wdm/entitlement.yaml"; then
     echo "INFO: Cluster already entitled, skipping entitlement."
     exit 0
 fi
@@ -83,8 +82,9 @@ fi
 
 echo "INFO: Deploying the entitlement with PEM key from ${ENTITLEMENT_PEM}"
 
-export ENTITLEMENT_PEM
-if ! ./toolbox/wdm ensure has_entitlement; then
+if ! ./toolbox/wdm ensure has_entitlement \
+     "--dependency-file=${THIS_DIR}/wdm/entitlement.yaml" \
+     "--config=entitlement_pem=$ENTITLEMENT_PEM"; then
     echo "FATAL: Failed to properly entitle the cluster, cannot continue."
     exit 1
 fi

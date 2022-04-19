@@ -1,0 +1,37 @@
+name: has_nfd
+spec:
+  requirements:
+  - has_nfd_in_operatorhub
+  - has_nfd_from_operatorhub
+---
+name: has_nfd_in_operatorhub
+spec:
+  test:
+  - name: has_nfd_operatorhub
+    type: shell
+    spec: oc get packagemanifests/nfd -n openshift-marketplace > /dev/null
+---
+name: has_nfd_labels
+spec:
+  test:
+  - name: has_nfd_labels
+    type: shell
+    spec: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID -oname | grep .
+---
+name: has_nfd_from_operatorhub
+spec:
+  test:
+  - name: has_nfd_labels
+    type: shell
+    spec: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID -oname | grep .
+  install:
+  - name: install_nfd_from_operatorhub
+    type: toolbox
+    spec:
+      group: nfd_operator
+      command: deploy_from_operatorhub
+  - name: wait_nfd_labels
+    type: toolbox
+    spec:
+      group: nfd
+      command: wait_labels

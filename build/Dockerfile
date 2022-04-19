@@ -7,36 +7,32 @@ LABEL 	io.k8s.display-name="OpenShift PSAP CI artifacts" \
  	name="ci-artifacts" \
 	url="https://github.com/openshift-psap/ci-artifacts"
 
-COPY requirements.txt /
-
 # Install openshift-ansible RPMs and some debugging tools
-RUN yum install -y \
+RUN yum install -y --quiet \
 		glibc-langpack-en \
 		go git make jq vim wget rsync time\
 		python3 python3-devel python3-pip python3-setuptools && \
 	python3 -m pip install --no-cache-dir --upgrade setuptools pip wheel && \
-	python3 -m pip install --no-cache-dir -r /requirements.txt && \
 	yum clean all && \
 	rm -rf $HOME/.cache && \
 	rm -rf /var/cache/yum
 
-
 # Install dependencies: `oc`
 ARG OCP_CLI_VERSION=latest
 ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
-RUN curl ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
+RUN curl --silent ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 
 # Install dependencies: `helm`
 ARG HELM_VERSION=v3.5.1
 ARG HELM_URL=https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
-RUN curl ${HELM_URL} | tar xfz - -C /usr/local/bin --strip-components 1 linux-amd64/helm
+RUN curl --silent ${HELM_URL} | tar xfz - -C /usr/local/bin --strip-components 1 linux-amd64/helm
 
 
 # Install dependencies: `operator-sdk`
 ARG OPERATOR_SDK_VERSION=v1.6.2
 ARG OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}
 RUN cd /usr/local/bin \
- && curl -LO ${OPERATOR_SDK_URL}/operator-sdk_linux_amd64 \
+ && curl --silent -LO ${OPERATOR_SDK_URL}/operator-sdk_linux_amd64 \
  && mv operator-sdk_linux_amd64 operator-sdk \
  && chmod +x operator-sdk
 
@@ -57,6 +53,10 @@ ENV USER_NAME=psap-ci-runner \
     INSIDE_CI_IMAGE="y"
 
 COPY . ${HOME}/
+
+# Install Python requirements
+RUN python3 -m pip install --no-cache-dir -r ${HOME}/requirements.txt && \
+    python3 -m pip install --no-cache-dir -r ${HOME}/subprojects/wdm/requirements.txt
 
 # Prepare the CI `run` entrypoint
 RUN echo -e '#!/usr/bin/env bash \n\

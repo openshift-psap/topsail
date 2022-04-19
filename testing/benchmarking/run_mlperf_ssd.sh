@@ -58,11 +58,13 @@ assess_benchmark_stats () {
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 source $THIS_DIR/../prow/gpu-operator.sh source
-
 finalizers+=("collect_must_gather")
 
-# WDM_DEPENDENCY_FILE exported in ^^^^
-./toolbox/wdm ensure has_gpu_operator
+
+./toolbox/wdm ensure library.gpu-operator.has_gpu_operator --library
+GPU_NODE_CONFIG=--config=instance_type=g4dn.xlarge,instance_count=1
+./toolbox/wdm ensure library.gpu.has_gpu_nodes --library $GPU_NODE_CONFIG
+./toolbox/wdm ensure library.gpu-operator.is_ready --library
 
 gpu_node_hostname=$(oc get nodes -oname -lfeature.node.kubernetes.io/pci-10de.present -ojsonpath={.items[].metadata.labels} | jq -r '.["kubernetes.io/hostname"]')
 

@@ -1,0 +1,10 @@
+name: run_toolbox
+type: shell
+configuration:
+- group
+- command
+- args
+- toolbox_dir
+spec: |
+  cd "$toolbox_dir"
+  ./run_toolbox.py $group $command $args

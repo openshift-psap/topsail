@@ -1,0 +1,34 @@
+---
+name: has_gpu_nodes
+spec:
+  configuration:
+  - instance_type
+  - instance_count
+  test:
+  - name: has_gpu_nodes
+    type: toolbox
+    spec:
+      group: nfd
+      command: has_gpu_nodes
+  install:
+  - name: add_gpu_nodes
+    type: toolbox
+    spec:
+      group: cluster
+      command: set_scale
+      args:
+      - $instance_type
+      - $instance_count
+  - name: wait_gpu_labels
+    type: toolbox
+    spec:
+      group: nfd
+      command: wait_gpu_nodes
+---
+name: has_pci_gpu
+spec:
+  test:
+  - name: has_pci_gpu
+    type: shell
+    spec: oc get nodes -lfeature.node.kubernetes.io/pci-10de.present
+

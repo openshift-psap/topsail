@@ -1,0 +1,24 @@
+---
+name: has_gpu_operator
+spec:
+  requirements:
+  - library.nfd.has_nfd
+  test:
+  - name: has_gpu_operator
+    type: shell
+    spec: oc get pod -l app.kubernetes.io/component=gpu-operator -A -oname | grep .
+  install:
+  - name: install_gpu_operator
+    type: toolbox
+    spec:
+      group: gpu_operator
+      command: deploy_from_operatorhub
+---
+name: is_ready
+spec:
+  test:
+  - name: wait_gpu_deployment
+    type: toolbox
+    spec:
+      group: gpu_operator
+      command: wait_deployment

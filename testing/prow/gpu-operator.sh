@@ -7,8 +7,6 @@ set -o nounset
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd ${THIS_DIR}/../..
 
-export WDM_DEPENDENCY_FILE=${THIS_DIR}/../wdm/gpu-operator.yml
-
 _warning() {
     fname="$1"
     msg="$2"
@@ -35,26 +33,30 @@ prepare_cluster_for_gpu_operator() {
 
     finalizers+=("collect_must_gather")
 
-    if ! ./toolbox/wdm test has_nfd_labels; then
+    if ! ./toolbox/wdm test library.nfd.has_nfd_labels --library; then
         _expected_fail "Checking if the cluster had NFD labels"
 
-        if ./toolbox/wdm test has_nfd_in_operatorhub; then
-            ./toolbox/wdm ensure has_nfd_from_operatorhub
+        if ./toolbox/wdm test library.nfd.has_nfd_in_operatorhub --library; then
+            ./toolbox/wdm ensure library.nfd.has_nfd_from_operatorhub --library
         else
             _warning "NFD_deployed_from_master" "NFD was deployed from master (not available in OperatorHub)"
 
             # install the NFD Operator from sources
-            export CI_IMAGE_NFD_COMMIT_CI_REPO="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
-            export CI_IMAGE_NFD_COMMIT_CI_REF="${2:-master}"
-            export CI_IMAGE_NFD_COMMIT_CI_IMAGE_TAG="ci-image"
-            ./toolbox/wdm ensure has_nfd_from_master
+            repo="${1:-https://github.com/openshift/cluster-nfd-operator.git}"
+            ref="${2:-master}"
+            tag="ci-image"
+
+            ./toolbox/wdm ensure has_nfd_from_master \
+                          "--dependency-file=${THIS_DIR}/wdm/nfd_master.yaml" \
+                          "--config=nfd_commit_ci_repo=$repo,nfd_commit_ci_ref=$ref,nfd_commit_ci_tag=$tag"
         fi
     fi
 
-    if ! ./toolbox/wdm test has_gpu_nodes; then
+    GPU_NODE_CONFIG=--config=instance_type=g4dn.xlarge,instance_count=1
+    if ! ./toolbox/wdm test library.gpu.has_gpu_nodes $GPU_NODE_CONFIG --library; then
         _expected_fail "Checking if the cluster had GPU nodes"
 
-        ./toolbox/wdm ensure has_gpu_nodes
+        ./toolbox/wdm ensure library.gpu.has_gpu_nodes $GPU_NODE_CONFIG --library
     fi
 }
 

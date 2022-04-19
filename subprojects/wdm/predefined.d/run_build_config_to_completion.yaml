@@ -1,0 +1,28 @@
+name: run_build_config_to_completion
+type: ansible
+configuration:
+- buildconfig_file
+- namespace
+spec:
+- name: Delete the image BuildConfig manifest, if it already exists
+  command: oc delete -f {{ buildconfig_file }} --ignore-not-found=true  -n {{ namespace }}
+
+- name: Apply the image BuildConfig manifest
+  command: oc apply -f {{ buildconfig_file }} -n {{ namespace }} -ojsonpath={.metadata.name}
+  register: build_config_name_cmd
+
+- name: Wait for the BuildConfig to be complete
+  command:
+    oc get builds
+       -lopenshift.io/build-config.name={{ build_config_name_cmd.stdout }}
+       -ocustom-columns=phase:status.phase
+       --no-headers
+       -n {{ namespace }}
+  register: wait_buildconfig
+  until: "'Complete' in wait_buildconfig.stdout or 'Failed' in wait_buildconfig.stdout"
+  retries: 40
+  delay: 30
+
+- name: Fail if the BuildConfig failed
+  when: "'Failed' in wait_buildconfig.stdout or 'Error' in wait_buildconfig.stdout"
+  fail: msg="The buildconfig {{ buildconfig_file }} failed to build"
