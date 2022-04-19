@@ -76,7 +76,10 @@ def resolve(dep):
 
     if do_test(dep) == True:
         if dep.spec.test:
-            logging.debug( f"Dependency '{dep.name}' is satisfied, no need to install.")
+            if dep.spec.install:
+                logging.debug( f"Dependency '{dep.name}' is satisfied, no need to install.")
+            else:
+                logging.debug( f"Dependency '{dep.name}' is satisfied (and it cannot be installed).")
 
     elif wdm.state.wdm_mode == "test":
 
