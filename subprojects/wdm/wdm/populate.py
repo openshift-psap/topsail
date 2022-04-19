@@ -5,6 +5,7 @@ import sys
 import pydantic
 
 import wdm.model as model
+import wdm.env_config as env_config
 
 def populate_predefined_tasks(filepath, predefined_tasks):
     with open(filepath) as f:
@@ -51,6 +52,14 @@ def populate_dependencies(filepath, dependencies, dependency_prefixes,
             if obj.config_values and file_configuration is None:
                 logging.error("Library file '%s' cannot have a file 'configuration-values' field.", filepath)
                 sys.exit(1)
+            for k, v in obj.config_values.items():
+                if v is not None: continue
+                if k in env_config.get_configuration_kv(None):
+                    continue
+
+                logging.error(f"Configuration key '{k}' not provided ...")
+                sys.exit(1)
+
 
             file_configuration.update(obj.config_values)
             continue

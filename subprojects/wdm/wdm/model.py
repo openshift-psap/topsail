@@ -63,5 +63,5 @@ class DependencyModel(pydantic.BaseModel, extra=pydantic.Extra.forbid):
     """
 
     name: str
-    config_values: typing.Dict[str, str] = None
+    config_values: typing.Dict[str, typing.Union[str, None]] = None
     spec: DependencySpecModel = None

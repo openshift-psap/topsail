@@ -60,16 +60,17 @@ def get_config_from_cli(cli_arg):
 
 
 def get_configuration_kv(dep):
-
     config_sources = [
         wdm.state.cli_configuration,
         wdm.state.dep_file_configuration,
         wdm.state.cfg_file_configuration,
-        dep.config_values,
+        dep.config_values if dep else {},
     ]
+
     kv = {}
     for src in config_sources:
         for k, v in (src or {}).items():
+            if v is None: continue
             kv[k] = v
 
     return kv
