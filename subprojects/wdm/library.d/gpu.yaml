@@ -24,3 +24,11 @@ spec:
     spec:
       group: nfd
       command: wait_gpu_nodes
+---
+name: has_pci_gpu
+spec:
+  test:
+  - name: has_pci_gpu
+    type: shell
+    spec: oc get nodes -lfeature.node.kubernetes.io/pci-10de.present
+
