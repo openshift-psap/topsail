@@ -17,6 +17,7 @@ from toolbox.repo import Repo
 from toolbox.benchmarking import Benchmarking
 from toolbox.utils import Utils
 from toolbox.nto import NTO
+from toolbox.rhods import RHODS
 
 class Toolbox:
     """
@@ -39,6 +40,7 @@ class Toolbox:
         self.benchmarking = Benchmarking
         self.utils = Utils
         self.nto = NTO
+        self.rhods = RHODS
 
 def main(no_exit=False):
     # Print help rather than opening a pager
