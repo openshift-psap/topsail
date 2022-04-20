@@ -20,6 +20,7 @@
 
 - name: Create RHODS namespaces
   shell:
+    set -o pipefail;
     oc create ns {{ item }} --dry-run=client -oyaml | oc apply -f-
   loop:
   - redhat-ods-operator

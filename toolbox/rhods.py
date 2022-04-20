@@ -17,6 +17,14 @@ class RHODS:
         return RunAnsibleRole("rhods_deploy_ods")
 
     @staticmethod
+    def undeploy_ods():
+        """
+        Undeploy ODS operator
+        """
+
+        return RunAnsibleRole("rhods_undeploy_ods")
+
+    @staticmethod
     def deploy_ldap(username_prefix, username_count: int, secret_properties_file):
         """
         Deploy OpenLDAP and LDAP Oauth
