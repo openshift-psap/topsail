@@ -27,6 +27,20 @@
     basename "{{ cluster_name_tag_cmd.stdout }}"
   register: cluster_name_cmd
 
+- name: Get AWS cluster region
+  command:
+    oc get machine/{{ machinename_cmd.stdout }}
+       -n openshift-machine-api
+       -ojsonpath={.spec.providerSpec.value.placement.region}
+  register: cluster_region_cmd
+
+- name: Store AWS cluster region in a variable
+  set_fact:
+    cluster_region: "{{ cluster_region_cmd.stdout }}"
+
+- name: Print the cluster region
+  command: echo "Cluster region is {{ cluster_region }}"
+
 - name: Get AWS subnet names
   command:
     oc get machinesets
@@ -36,6 +50,7 @@
 
 - name: Gather information about a particular instance using ID
   amazon.aws.ec2_instance_info:
+    region: "{{ cluster_region }}"
     instance_ids:
       - "{{ instance_id_cmd.stdout }}"
   register: ec2_instance_aws
@@ -52,6 +67,7 @@
   # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_subnet_info_module.html
 - name: Get AWS VPC subnet infos
   amazon.aws.ec2_vpc_subnet_info:
+    region: "{{ cluster_region }}"
     filters:
       vpc-id: "{{ ec2_instance_aws.instances[0].vpc_id }}"
       "tag:Name": "{{ item }}"
@@ -60,7 +76,6 @@
 
 - name: Print the subnet IDs
   command: echo "Subnet for zone {{ item.subnets[0].availability_zone }} is {{ item.subnets[0].subnet_id }}"
-
   loop: "{{ subnets_info_aws.results }}"
 
 - name: Populate the targets dict
@@ -89,6 +104,7 @@
 
 - name: Get the SecurityGroup content
   amazon.aws.ec2_group_info:
+    region: "{{ cluster_region }}"
     filters:
       group_id: "{{ ec2_instance_aws.instances[0].security_groups[0].group_id }}"
       vpc-id: "{{ ec2_instance_aws.instances[0].vpc_id }}"
@@ -97,6 +113,7 @@
   # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_group_module.html
 - name: Allow NFS communications in the SecurityGroup
   amazon.aws.ec2_group:
+    region: "{{ cluster_region }}"
     name: "{{ security_group_aws.security_groups[0].group_name }}"
     description: "{{ security_group_aws.security_groups[0].description }}"
     purge_rules: false
@@ -110,6 +127,7 @@
 
 - name: Create EFS filesystem
   community.aws.efs:
+    region: "{{ cluster_region }}"
     state: present
     name: "EFS {{ cluster_name_cmd.stdout }}"
     tags: "{{ tags }}"
