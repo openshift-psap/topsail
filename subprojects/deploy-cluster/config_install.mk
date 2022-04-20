@@ -35,7 +35,7 @@ config_new_install: has_installer
 	"${OPENSHIFT_INSTALLER}" create install-config --dir="${CLUSTER_PATH}" --log-level=debug
 
 config_base_install:
-	@mkdir "${CLUSTER_PATH}" -p
+	@mkdir -p "${CLUSTER_PATH}"
 	@if [ ! -f "${CLUSTER_PATH}/install-config.yaml" ]; then \
 	  if [ ! -f "${BASE_INSTALL_CONFIG}" ]; then \
 	    echo "ERROR: Base install config file not found in ${BASE_INSTALL_CONFIG}."; \
@@ -52,6 +52,8 @@ config_base_install:
 		echo "You must copy ${CLUSTER_PATH}/install-config.yaml to ${BASE_INSTALL_CONFIG}"; \
 		exit 1; \
 	fi
+
+diff:
 	@if [ "${DIFF_TOOL}" ]; then \
            "${DIFF_TOOL}" "${BASE_INSTALL_CONFIG}" "${CLUSTER_PATH}/install-config.yaml"; \
 	fi
