@@ -1,4 +1,5 @@
 import time, datetime
+import urllib3
 
 print("Importing OpenShift/Kubernetes packages ...")
 
@@ -6,38 +7,58 @@ import kubernetes
 import ocp_resources
 import openshift
 
-from ocp_resources.node import Node
-from ocp_resources.machine import Machine
-from ocp_resources.node import Node
+import ocp_resources.node
+import ocp_resources.machine
 
-from openshift.dynamic import DynamicClient
-try:
-    client_k8s = DynamicClient(client=kubernetes.config.new_client_from_config())
-except Exception:
-    client_k8s = None
-    print("WARNING: kubernetes not available.")
+import openshift.dynamic
 
 print("Importing AWS boto3 ...")
 
 import boto3
+import botocore
 
-# https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html
+client_k8s = None
+client_ec2 = None
+resource_ec2 = None
 
-client_ec2 = boto3.client('ec2')
-resource_ec2 = boto3.resource('ec2')
+def configure():
+    #
+    # K8s
+    #
 
-print("Ready.")
+    global client_k8s
+    try:
+        client_k8s = openshift.dynamic.DynamicClient(client=kubernetes.config.new_client_from_config())
+    except Exception as e:
+        print("WARNING: kubernetes not available:", e)
+
+    #
+    # AWS
+    #
+
+    machines = [m for m in ocp_resources.machine.Machine.get(dyn_client=client_k8s)]
+    if not machines:
+        raise RuntimeError("No machine available ...")
+    cluster_region = machines[0].instance.spec.providerSpec.value.placement.region
+
+    global client_ec2, resource_ec2
+    cfg = botocore.config.Config(region_name=cluster_region)
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html
+    client_ec2 = boto3.client('ec2', config=cfg)
+    resource_ec2 = boto3.resource('ec2', config=cfg)
+
+    print("Ready.")
 
 def wait_openshift():
     first = True
     print("Waiting for OpenShift cluster to be ready ...")
-    import urllib3
+
     while True:
         try:
             global client_k8s
             client_k8s = DynamicClient(client=kubernetes.config.new_client_from_config())
 
-            nodes = [m for m in Node.get(dyn_client=client_k8s)]
+            nodes = [m for m in ocp_resources.node.Node.get(dyn_client=client_k8s)]
             if len(nodes) != 0:
                 print(f"Found {len(nodes)} node, OpenShift Cluster is ready!")
                 break
@@ -50,7 +71,7 @@ def get_machine_props():
     if not client_k8s:
         return None, None
 
-    machines = [m for m in Machine.get(dyn_client=client_k8s)]
+    machines = [m for m in ocp_resources.machine.Machine.get(dyn_client=client_k8s)]
     if len(machines) != 1:
         raise RuntimeError("Should be only one machine ...")
 
@@ -58,6 +79,7 @@ def get_machine_props():
 
     cluster_name = machine.cluster_name
     print(f"Cluster name: {cluster_name}")
+
     instance = resource_ec2.Instance(machine.instance.status.providerStatus.instanceId)
     instance.load()
     print(f"Instance Id: {instance.id}")

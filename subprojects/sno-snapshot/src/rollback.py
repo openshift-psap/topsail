@@ -4,13 +4,6 @@ import sys, time
 
 import common
 
-from ocp_resources.node import Node
-from ocp_resources.machine import Machine
-
-client_ec2 = common.client_ec2
-resource_ec2 = common.resource_ec2
-client_k8s = common.client_k8s
-
 def rollback(snapshot, cluster_name, instance, zone):
     volume = common.get_instance_root_volume(instance)
 
@@ -19,7 +12,7 @@ def rollback(snapshot, cluster_name, instance, zone):
     print(f"Old Volume Id: {volume.id}")
 
     print("Triggering the rollback!")
-    resp = client_ec2.create_replace_root_volume_task(
+    resp = common.client_ec2.create_replace_root_volume_task(
         InstanceId=instance.id,
         SnapshotId=snapshot.id,
         TagSpecifications=[
@@ -54,7 +47,7 @@ def rollback(snapshot, cluster_name, instance, zone):
     while state in ('pending', 'in-progress'):
         time.sleep(10)
 
-        resp = client_ec2.describe_replace_root_volume_tasks(
+        resp = common.client_ec2.describe_replace_root_volume_tasks(
             ReplaceRootVolumeTaskIds=[replace_id]
         )
         state = resp["ReplaceRootVolumeTasks"][0]["TaskState"]
@@ -74,7 +67,7 @@ def rollback(snapshot, cluster_name, instance, zone):
 def has_ongoing_rollback(cluster_name, instance, zone):
     first = True
 
-    resp = client_ec2.describe_replace_root_volume_tasks(
+    resp = common.client_ec2.describe_replace_root_volume_tasks(
         Filters=[{
             'Name': f'tag:kubernetes.io/cluster/{cluster_name}',
             'Values': ['createdby']
@@ -94,6 +87,7 @@ def has_ongoing_rollback(cluster_name, instance, zone):
     return ongoing
 
 def main():
+    common.configure()
     machine_props = common.get_machine_props()
     print()
 

@@ -4,10 +4,6 @@ import sys
 
 import common
 
-client_ec2 = common.client_ec2
-resource_ec2 = common.resource_ec2
-client_k8s = common.client_k8s
-
 def create_snapshot(cluster_name, instance, zone):
     volume = common.get_instance_root_volume(instance)
 
@@ -27,7 +23,7 @@ def create_snapshot(cluster_name, instance, zone):
 
     print(f"Snapshot Id: {snapshot.id}")
 
-    resp = client_ec2.enable_fast_snapshot_restores(
+    resp = common.client_ec2.enable_fast_snapshot_restores(
         AvailabilityZones=[zone,],
         SourceSnapshotIds=[snapshot.id,],
     )
@@ -41,6 +37,8 @@ def create_snapshot(cluster_name, instance, zone):
 
 
 def main():
+    common.configure()
+
     machine_props = common.get_machine_props()
     print()
 
