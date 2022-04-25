@@ -3,6 +3,7 @@ cluster_single-master_entitled:
 	@make has_installer
 	@make config_base_install
 	@make config_single-master
+	@make diff
 	@make manifest
 	@make manifest_entitle
 	@make manifest_single-master
