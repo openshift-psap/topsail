@@ -1,0 +1,173 @@
+---
+- name: Ensure that the secret properties file exists
+  stat:
+    path: "{{ rhods_test_jupyterlab_secret_properties }}"
+
+- name: Ensure that the user count is set
+  fail: msg="user count isn't set"
+  when: rhods_test_jupyterlab_user_count | int < 0
+
+- name: Ensure that the username prefix is set
+  fail: msg="username prefix isn't set"
+  when: not rhods_test_jupyterlab_username_prefix
+
+- name: Define the test environments
+  set_fact:
+    rhods_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_test_namespace }}/{{ rhods_test_istag }}
+    rhods_notebook_namespace: rhods-notebooks
+
+- name: Get JupyterHub hostname
+  command: oc get route/jupyterhub -n redhat-ods-applications -ojsonpath={.spec.host}
+  register: jupyterhub_hostname_cmd
+
+- name: Get RHODS dashboard address
+  command: oc get route/rhods-dashboard -n redhat-ods-applications -ojsonpath={.spec.host}
+  register: rhods_dashboard_hostname_cmd
+
+- name: Get OCP console URL
+  command: oc whoami --show-console
+  register: oc_console_url_cmd
+
+- name: Get OCP API URL
+  command: oc config view --minify -o jsonpath='{.clusters[0].cluster.server}'
+  register: oc_api_url_cmd
+
+- name: Get the ODS-CI sample var file
+  shell:
+    oc debug istag/{{ rhods_test_istag }}
+       -n {{ rhods_test_namespace }}
+       -- cat test-variables.yml.template > /tmp/test-variables.yml.template
+
+- name: Apply the ODS-CI template
+  shell:
+    set -o pipefail;
+    export OCP_CONSOLE_URL="{{ oc_console_url_cmd.stdout }}";
+    export OCP_API_URL="{{ oc_api_url_cmd.stdout }}";
+    export ODH_DASHBOARD_URL="https://{{ rhods_dashboard_hostname_cmd.stdout }}";
+
+    export TEST_USER_AUTH_TYPE="{{ rhods_ldap_auth_type }}";
+    export TEST_USER_USERNAME="{{ rhods_test_jupyterlab_username_prefix }}_#{JOB_COMPLETION_INDEX}";
+
+    export TEST_USER_PASSWORD="PASSWORD_WILL_BE_HERE";
+
+    cat /tmp/test-variables.yml.template | envsubst \
+        > {{ artifact_extra_logs_dir }}/test-variables_safe.yml;
+
+
+    export TEST_USER_PASSWORD="$(cat "{{ rhods_test_jupyterlab_secret_properties }}" | grep '^user_password=' | cut -d= -f2)";
+
+    cat /tmp/test-variables.yml.template | envsubst > /tmp/test-variables.yml;
+
+- name: Delete the ODS-CI secret, it it exists
+  command:
+    oc delete secret ods-ci-test-variables
+       -n {{ rhods_test_namespace }}
+       --ignore-not-found
+
+- name: Create the ODS-CI secret
+  command:
+    oc create secret generic ods-ci-test-variables
+       --from-file test-variables.yml=/tmp/test-variables.yml
+       -n {{ rhods_test_namespace }}
+
+- name: Delete the ODS-CI secret file
+  file:
+    path: /tmp/test-variables.yml
+    state: absent
+
+- name: Instantiate the RHODS tester job template
+  template:
+    src: "{{ rhods_test_jupyterlab_job }}"
+    dest: "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
+    mode: 0400
+
+- name: Delete the RHODS tester job, if it exists
+  command:
+    oc delete
+       -f "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
+       --ignore-not-found
+       -n {{ rhods_test_namespace }}
+
+- name: Create the RHODS test job
+  command:
+    oc create
+       -f "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
+       -n {{ rhods_test_namespace }}
+
+# ---
+
+- name: Wait for the RHODS tester job to start
+  shell:
+    oc get jobs/ods-ci -ojsonpath={.status.startTime} -n {{ rhods_test_namespace }}
+  register: wait_rhods_test_job_start
+  retries: 12
+  delay: 5
+  until: wait_rhods_test_job_start.stdout
+
+- name: Wait for the RHODS tester job to terminate
+  shell:
+    oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ rhods_test_namespace }}
+  register: wait_rhods_test_job
+  retries: 30
+  delay: 20
+  until: not wait_rhods_test_job.stdout
+
+- name: Get the status of the tester Pods
+  shell:
+    oc get pods -ljob-name=ods-ci
+       -n {{ rhods_test_namespace }}
+        > "{{ artifact_extra_logs_dir }}/tester_pods.status"
+
+- name: Get the status of the tester Job
+  shell:
+    oc get job/ods-ci
+       -n {{ rhods_test_namespace }}
+        > "{{ artifact_extra_logs_dir }}/tester_job.status"
+
+- name: Get the names of the tester_pods
+  command:
+    oc get pods -oname -ljob-name=ods-ci
+       -n {{ rhods_test_namespace }}
+  register: pod_names_cmd
+
+- name: Get the logs of the tester Pod
+  shell:
+    oc logs {{ item }}
+       -n {{ rhods_test_namespace }}
+       > "{{ artifact_extra_logs_dir }}/tester_pod_$(basename "{{ item }}").log"
+  loop: "{{ pod_names_cmd.stdout_lines }}"
+  failed_when: false
+
+- name: Get the yaml of the tester Pods
+  shell:
+    oc get pods -ljob-name=ods-ci -oyaml
+       -n {{ rhods_test_namespace }}
+       > "{{ artifact_extra_logs_dir }}/tester_pods.yaml"
+  failed_when: false
+
+- name: Get the yaml of the tester Job
+  shell:
+    oc get job/ods-ci -oyaml
+       -n {{ rhods_test_namespace }}
+       > "{{ artifact_extra_logs_dir }}/tester_job.yaml"
+  failed_when: false
+
+- name: Get the events of the tester namespace
+  shell:
+    oc get ev -oyaml
+       -n {{ rhods_test_namespace }}
+       > "{{ artifact_extra_logs_dir }}/tester_events.yaml"
+  failed_when: false
+
+- name: Get the events of the notebook namespace
+  shell:
+    oc get ev -oyaml
+       -n {{ rhods_notebook_namespace }}
+       > "{{ artifact_extra_logs_dir }}/notebook_events.yaml"
+  failed_when: false
+
+- name: Test if the RHODS test job failed
+  command:
+    oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_test_namespace }}
+  register: check_rhods_test_job
+  failed_when: check_rhods_test_job.stdout | length > 0

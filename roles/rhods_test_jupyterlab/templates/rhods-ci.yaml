@@ -1,0 +1,40 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    deployment: ods-ci
+  name: ods-ci
+spec:
+  parallelism: {{ rhods_test_jupyterlab_user_count }}
+  completions: {{ rhods_test_jupyterlab_user_count }}
+  activeDeadlineSeconds: 18000
+  backoffLimit: 0
+  completionMode: Indexed
+  template:
+    metadata:
+      name: ods-ci-loadtest
+    spec:
+      containers:
+      - image: "{{ rhods_test_image }}"
+        imagePullPolicy: Always
+        name: ods-ci
+        command: ['bash', '-cxe']
+        args:
+        - |
+          sed  "s/#{JOB_COMPLETION_INDEX}/${JOB_COMPLETION_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml;
+          ./run_robot_test.sh \
+              --skip-pip-install \
+              --test-variables-file /tmp/test-variables.yml \
+              --test-case "$TEST_CASE"
+        env:
+        - name: TEST_CASE
+          value: "tests/Tests/500__jupyterhub/test-jupyterlab-cpu-stresstest.robot"
+        volumeMounts:
+        - name: ods-ci-test-variables
+          mountPath: /mnt/ods-ci-test-variables
+      restartPolicy: Never
+      volumes:
+      - name: ods-ci-test-variables
+        secret:
+          secretName: ods-ci-test-variables

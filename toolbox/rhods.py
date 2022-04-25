@@ -16,6 +16,24 @@ class RHODS:
 
         return RunAnsibleRole("rhods_deploy_ods")
 
+
+    @staticmethod
+    def test_jupyterlab(username_prefix, user_count: int, secret_properties_file):
+        """
+        Test JupyterLab (WIP)
+
+        Args:
+          user_count: Number of users to run in parallel
+          secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'deploy_ldap' command)
+
+        """
+        opts = {
+            "rhods_test_jupyterlab_username_prefix": username_prefix,
+            "rhods_test_jupyterlab_user_count": user_count,
+            "rhods_test_jupyterlab_secret_properties": secret_properties_file,
+        }
+        return RunAnsibleRole("rhods_test_jupyterlab", opts)
+
     @staticmethod
     def undeploy_ods():
         """
