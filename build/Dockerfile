@@ -63,9 +63,6 @@ RUN echo -e '#!/usr/bin/env bash \n\
 exec ${HOME}/testing/run "$@" \n\
 ' > /usr/local/bin/run; chmod ugo+x /usr/local/bin/run
 
-# Prepare osde2e results folder
-RUN mkdir /test-run-results && chmod 777 /test-run-results
-
 # Ensure directory permissions are properly set
 RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R
 
