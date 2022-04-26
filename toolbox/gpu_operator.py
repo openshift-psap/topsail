@@ -153,13 +153,6 @@ class GPUOperator:
         return RunAnsibleRole("gpu_operator_capture_deployment_state")
 
     @staticmethod
-    def cleanup_bundle_from_commit():
-        """
-        Cleanup resources leftover from building a bundle from a commit
-        """
-        return RunAnsibleRole("gpu_operator_cleanup_bundle_from_commit")
-
-    @staticmethod
     def get_csv_version():
         """
         Get the version of the GPU Operator currently installed from OLM
