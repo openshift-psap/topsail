@@ -15,6 +15,6 @@ sno: cluster_sno
 # ---
 
 config_sno:
-	yq --yml-output -i '.controlPlane.replicas=1' "${CLUSTER_PATH}/install-config.yaml"
-	yq --yml-output -i 'del(.compute[0].platform)'  "${CLUSTER_PATH}/install-config.yaml"
-	yq --yml-output -i '.compute[0].replicas=0'  "${CLUSTER_PATH}/install-config.yaml"
+	yq e -i '.controlPlane.replicas=1' "${CLUSTER_PATH}/install-config.yaml"
+	yq e -i 'del(.compute[0].platform)'  "${CLUSTER_PATH}/install-config.yaml"
+	yq e -i '.compute[0].replicas=0'  "${CLUSTER_PATH}/install-config.yaml"
