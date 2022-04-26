@@ -136,6 +136,9 @@ def run_ansible_role(role_name, opts: dict = dict()):
         print("Interrupted :/")
         sys.exit(1)
     finally:
-        os.remove(tmp_play_file.name)
+        try:
+            os.remove(tmp_play_file.name)
+        except FileNotFoundError:
+            pass # play file was removed, ignore
 
     raise SystemExit(ret)
