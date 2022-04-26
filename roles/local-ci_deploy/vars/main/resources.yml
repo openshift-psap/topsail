@@ -1,5 +1,0 @@
----
-local_ci_namespace: roles/local-ci_deploy/files/namespace.yml
-local_ci_imagestream: roles/local-ci_deploy/files/imagestream.yml
-local_ci_image_builder: roles/local-ci_deploy/files/image_builder.yml
-local_ci_execution_pod: roles/local-ci_deploy/files/execution_pod.yml
