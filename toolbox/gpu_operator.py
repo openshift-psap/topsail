@@ -108,21 +108,6 @@ class GPUOperator:
         return RunAnsibleRole("gpu_operator_run_gpu-burn", opts)
 
     @staticmethod
-    def set_repo_config(repo_file, dest_dir=None):
-        """
-        Sets the GPU-operator driver yum repo configuration file
-
-        Args:
-            repo_file: Absolute path to the repo file
-            dest_dir: The destination dir in the pod to place the repo in
-        """
-        opts = {"gpu_operator_set_repo_filename": repo_file}
-        if dest_dir is not None:
-            opts["gpu_operator_set_repo_destdir"] = dest_dir
-
-        return RunAnsibleRole("gpu_operator_set_repo-config", opts)
-
-    @staticmethod
     def undeploy_from_commit():
         """
         Undeploys a GPU-operator that was deployed from a commit
