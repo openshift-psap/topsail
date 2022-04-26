@@ -108,14 +108,6 @@ class GPUOperator:
         return RunAnsibleRole("gpu_operator_run_gpu-burn", opts)
 
     @staticmethod
-    def undeploy_from_commit():
-        """
-        Undeploys a GPU-operator that was deployed from a commit
-        """
-
-        return RunAnsibleRole("gpu_operator_undeploy_custom_commit")
-
-    @staticmethod
     def undeploy_from_operatorhub():
         """
         Undeploys a GPU-operator that was deployed from OperatorHub
