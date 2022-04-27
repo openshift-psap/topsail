@@ -1,2 +1,3 @@
 ---
 rhods_test_jupyterlab_job: "roles/rhods_test_jupyterlab/templates/rhods-ci.yaml"
+rhods_test_jupyterlab_entrypoint: "roles/rhods_test_jupyterlab/files/entrypoint.sh"

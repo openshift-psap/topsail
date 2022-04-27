@@ -81,6 +81,24 @@
     dest: "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
     mode: 0400
 
+- name: Delete the RHODS test entrypoint, if it exists
+  command:
+    oc delete cm/rhods-jupyterlab-entrypoint
+       -n {{ rhods_test_namespace }}
+       --ignore-not-found
+
+- name: Create the RHODS test entrypoint
+  command:
+    oc create cm rhods-jupyterlab-entrypoint
+       "--from-file=entrypoint.sh={{ rhods_test_jupyterlab_entrypoint }}"
+       -n {{ rhods_test_namespace }}
+
+
+- name: Empty the Minio S3 stoage
+  shell:
+    oc -c minio -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
+       rm -rf /data/mybucket/ods-ci
+
 - name: Delete the RHODS tester job, if it exists
   command:
     oc delete
@@ -166,7 +184,18 @@
        > "{{ artifact_extra_logs_dir }}/notebook_events.yaml"
   failed_when: false
 
-- name: Test if the RHODS test job failed
+- name: Extract the ODS-CI test artifacts from the Minio S3 container
+  shell:
+    DEST_DIR="{{ artifact_extra_logs_dir }}/ods-ci/";
+    MINIO_PODNAME=$(oc get pod -lapp=minio -n minio -ojsonpath={.items[0].metadata.name});
+    mkdir -p "$DEST_DIR";
+    oc cp
+       -n minio
+       -c ubi8
+       "$MINIO_PODNAME:/data/mybucket/ods-ci"
+       "$DEST_DIR"
+
+- name: Test if the RHODS test job crashed
   command:
     oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_test_namespace }}
   register: check_rhods_test_job
