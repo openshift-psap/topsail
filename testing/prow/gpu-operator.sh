@@ -7,26 +7,7 @@ set -o nounset
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd ${THIS_DIR}/../..
 
-_warning() {
-    fname="$1"
-    msg="$2"
-
-    DEST_DIR="${ARTIFACT_DIR}/_WARNING/"
-    mkdir -p "$DEST_DIR"
-    echo "$msg" > "${DEST_DIR}/$fname"
-
-    echo "WARNING: $msg"
-}
-
-_expected_fail() {
-    # mark the last toolbox step as an expected fail (for clearer
-    # parsing/display in ci-dashboard)
-    # eg: if cluster doesn't have NFD labels (expected fail), deploy NFD
-    # eg: if cluster doesn't have GPU nodes (expected fail), scale up with GPU nodes
-
-    last_toolbox_dir=$(ls ${ARTIFACT_DIR}/*__* -d | tail -1)
-    echo "$1" > ${last_toolbox_dir}/EXPECTED_FAIL
-}
+source ${THIS_DIR}/_logging.sh
 
 prepare_cluster_for_gpu_operator() {
     ./run_toolbox.py cluster capture_environment
@@ -153,25 +134,10 @@ test_operatorhub() {
     validate_gpu_operator_deployment
 }
 
-finalizers=()
-run_finalizers() {
-    [ ${#finalizers[@]} -eq 0 ] && return
-    set +x
-
-    echo "Running exit finalizers ..."
-    for finalizer in "${finalizers[@]}"
-    do
-        echo "Running finalizer '$finalizer' ..."
-        eval $finalizer
-    done
-}
-
 if [ -z "${1:-}" ]; then
     echo "FATAL: $0 expects at least 1 argument ..."
     exit 1
 fi
-
-trap run_finalizers EXIT
 
 action="$1"
 shift

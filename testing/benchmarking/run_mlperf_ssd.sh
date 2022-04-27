@@ -5,33 +5,17 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+source $THIS_DIR/../prow/gpu-operator.sh source
+source $THIS_DIR/../prow/cluster.sh source
+finalizers+=("collect_must_gather")
+
 PSAP_SECRET_PATH=/var/run/psap-entitlement-secret
 EPOCHS=3
 THRESHOLD=0.05
 MINSR=150.0
 MAXDR=30
-
-_info() {
-    fname="$1"
-    msg="$2"
-
-    DEST_DIR="${ARTIFACT_DIR}/_INFO/"
-    mkdir -p "$DEST_DIR"
-    echo "$msg" > "${DEST_DIR}/$fname"
-
-    echo "INFO: $msg"
-}
-
-_error() {
-    fname="$1"
-    msg="$2"
-
-    DEST_DIR="${ARTIFACT_DIR}/_ERROR/"
-    mkdir -p "$DEST_DIR"
-    echo "$msg" > "${DEST_DIR}/$fname"
-
-    echo "ERROR: $msg"
-}
 
 
 assess_benchmark_stats () {
