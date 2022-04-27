@@ -10,7 +10,6 @@ Reads a property file passed in parameter, and generates base64-encoded
 user&passwords lists.
 Expected properties:
 - user_password # unique password of the users
-- adminuser     # name of the admin user
 - adminpassword # password of the admin user
 
 Add the '--verbose' flag to the command line to show the generated content of stderr
@@ -53,6 +52,7 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--secret_props')
+    parser.add_argument('--admin_user')
     parser.add_argument('--prefix')
     parser.add_argument('--nbusers')
     parser.add_argument('--verbose', action='store_true')
@@ -73,11 +73,11 @@ def parse_args():
         sys.exit(1)
 
     args = types.SimpleNamespace()
+    args.admin_user = cli_args.admin_user
     args.prefix = cli_args.prefix
     args.nbusers = cli_args.nbusers
     args.user_password = None
 
-    args.admin_user = None
     args.admin_password = None
 
     with open(fname) as f:
@@ -136,6 +136,6 @@ passwords         = {passwords}
 b64(passwords)    = {passwords64}
 adminuser         = {args.admin_user}
 b64(adminuser)    = {adminuser64}
-adminpassord      = {args.admin_password}
+adminpassword     = {args.admin_password}
 b64(adminpassord) = {adminpassword64}\
 """, file=sys.stderr)

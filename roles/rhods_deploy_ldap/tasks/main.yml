@@ -21,7 +21,8 @@
       python3 "{{ rhods_deploy_ldap_secret_generator }}" \
               --secret_props "{{ rhods_deploy_ldap_secret_properties }}" \
               --prefix "{{ rhods_deploy_ldap_username_prefix }}" \
-              --nbusers "{{ rhods_deploy_ldap_username_count }}"
+              --nbusers "{{ rhods_deploy_ldap_username_count }}" \
+              --admin_user "{{ rhods_deploy_ldap_admin_user }}"
 
 - name: Ensure that the Python command works in test mode
   args:
