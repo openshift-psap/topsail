@@ -5,33 +5,17 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+source $THIS_DIR/../prow/gpu-operator.sh source
+source $THIS_DIR/../prow/cluster.sh source
+finalizers+=("collect_must_gather")
+
 PSAP_SECRET_PATH=/var/run/psap-entitlement-secret
 EPOCHS=3
 THRESHOLD=0.05
 MINSR=150.0
 MAXDR=30
-
-_info() {
-    fname="$1"
-    msg="$2"
-
-    DEST_DIR="${ARTIFACT_DIR}/_INFO/"
-    mkdir -p "$DEST_DIR"
-    echo "$msg" > "${DEST_DIR}/$fname"
-
-    echo "INFO: $msg"
-}
-
-_error() {
-    fname="$1"
-    msg="$2"
-
-    DEST_DIR="${ARTIFACT_DIR}/_ERROR/"
-    mkdir -p "$DEST_DIR"
-    echo "$msg" > "${DEST_DIR}/$fname"
-
-    echo "ERROR: $msg"
-}
 
 
 assess_benchmark_stats () {
@@ -55,11 +39,12 @@ assess_benchmark_stats () {
     return 0
 }
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+# ---
 
-source $THIS_DIR/../prow/gpu-operator.sh source
-finalizers+=("collect_must_gather")
-
+if ! dtk_image_is_valid; then
+    _flake "dtk_image_not_valid" "DriverToolkit is not valid, cannot continue."
+    exit 1
+fi
 
 ./toolbox/wdm ensure library.gpu-operator.has_gpu_operator --library
 GPU_NODE_CONFIG=--config=instance_type=g4dn.xlarge,instance_count=1
@@ -71,10 +56,11 @@ gpu_node_hostname=$(oc get nodes -oname -lfeature.node.kubernetes.io/pci-10de.pr
 if [ -z "$gpu_node_hostname" ]; then
     echo "Couldn't find the GPU node ..."
     oc get nodes --show-labels | sed 's|,|,- |g' | tr ',' '\n'
+    _error "no_gpu_node" "Couldn't find a GPU node in the cluster ..."
     exit 1
-else
-    echo "Using GPU node name: $gpu_node_hostname"
 fi
+
+echo "Using GPU node name: $gpu_node_hostname"
 
 DL_OPT=""
 if [[ "$@" == *use_private_s3* ]]; then
@@ -82,25 +68,7 @@ if [[ "$@" == *use_private_s3* ]]; then
     DL_OPT="--s3_cred=$S3_CRED"
 fi
 
-RUN_CNT=1
-if [[ "$@" == *download_twice* ]]; then
-    # for testing purposes, to make sure that the files are cached and not actually downloaded twice
-    RUN_CNT=2
-fi
+./run_toolbox.py benchmarking download_coco_dataset "$gpu_node_hostname" $DL_OPT
 
-for i in $(seq $RUN_CNT); do
-    ./run_toolbox.py benchmarking download_coco_dataset "$gpu_node_hostname" $DL_OPT
-done
-
-RUN_CNT=1
-if [[ "$@" == *benchmark_twice* ]]; then
-    # for testing purposes, to make sure that the files are cached and not actually downloaded twice
-    RUN_CNT=2
-fi
-
-for i in $(seq $RUN_CNT); do
-    ./run_toolbox.py benchmarking run_mlperf_ssd "$gpu_node_hostname" --epochs=$EPOCHS --threshold=$THRESHOLD
-    if ! assess_benchmark_stats; then
-        exit 1
-    fi
-done
+./run_toolbox.py benchmarking run_mlperf_ssd "$gpu_node_hostname" --epochs=$EPOCHS --threshold=$THRESHOLD
+assess_benchmark_stats

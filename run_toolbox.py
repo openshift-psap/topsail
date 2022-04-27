@@ -13,9 +13,7 @@ from toolbox.entitlement import Entitlement
 from toolbox.gpu_operator import GPUOperator
 from toolbox.nfd import NFD
 from toolbox.nfd_operator import NFDOperator
-from toolbox.local_ci import LocalCI
 from toolbox.repo import Repo
-from toolbox.special_resource_operator import SpecialResourceOperator
 from toolbox.benchmarking import Benchmarking
 from toolbox.utils import Utils
 from toolbox.nto import NTO
@@ -38,8 +36,6 @@ class Toolbox:
         self.nfd_operator = NFDOperator
         self.nfd = NFD
         self.repo = Repo
-        self.local_ci = LocalCI
-        self.sro = SpecialResourceOperator
         self.benchmarking = Benchmarking
         self.utils = Utils
         self.nto = NTO

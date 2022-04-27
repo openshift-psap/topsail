@@ -1,4 +1,0 @@
----
-- name: delete namespace and everything it contains
-  command: oc delete --ignore-not-found=true -f "{{ local_ci_namespace }}"
-  failed_when: false

@@ -65,27 +65,6 @@ class Cluster:
         """
         return RunAnsibleRole("cluster_capture_environment")
 
-    @staticmethod
-    def wait_for_alert(alert_name, alert_active: bool):
-        """
-        Wait for an alert to be active or inactive.
-
-        Args:
-            alert_name: The name of the alert to wait for
-            alert_active: A boolean telling if the alert should be active or not (true|false)
-        """
-
-        if alert_active not in ("true", "false"):
-            print(f"Unexpected value for alert_active: '{alert_active}'. Expected a boolean (true|false).")
-            sys.exit(1)
-
-        opts = {
-            "cluster_wait_for_alert_name": alert_name,
-            "cluster_wait_for_alert_active": alert_active,
-        }
-
-        return RunAnsibleRole("cluster_wait_for_alert", opts)
-
 
     @staticmethod
     def deploy_operator(catalog, manifest_name, namespace, version=None, channel=None, install_plan="Manual", deploy_cr=False, ns_monitoring=False):
