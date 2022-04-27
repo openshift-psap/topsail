@@ -128,123 +128,6 @@ validate_gpu_operator_deployment() {
     ./run_toolbox.py gpu_operator run_gpu_burn
 }
 
-cleanup_cluster() {
-    # undeploy the entitlement
-    ./run_toolbox.py entitlement undeploy
-    # ensure that there is no GPU Operator in the cluster
-    ./run_toolbox.py gpu_operator undeploy_from_operatorhub
-    # ensure that there is no GPU node in the cluster
-    ./run_toolbox.py cluster set_scale g4dn.xlarge 0
-
-    # ensure that NFD is not installed in the cluster
-    ## not working as expected at the moment: NFD labels remain
-    ## visible, but new labels not added, making the
-    ## `nfd__wait_gpu_nodes` test fail.
-    #./run_toolbox.py nfd-operator undeploy_from_operatorhub
-
-    # ensure that the MachineConfigPool have finished all pending updates
-    tries_left=40
-    WAIT_TIME_SECONDS=30
-    set -x
-
-    while true; do
-        mcp_machine_count=$(oc get mcp -ojsonpath={.items[*].status.machineCount} | jq .)
-        mcp_machine_updated=$(oc get mcp -ojsonpath={.items[*].status.updatedMachineCount} | jq .)
-        if [ "$mcp_machine_count" == "$mcp_machine_updated" ]; then
-            echo "All the MachineConfigPools have been updated."
-            break
-        fi
-        tries_left=$(($tries_left - 1))
-        if [[ $tries_left == 0 ]]; then
-            cat <<EOF
-Failed to wait for the MachineConfigPools to be properly updated.
-machineCount:
-$mcp_machine_count
-
-updatedMachineCount:
-$mcp_machine_updated
-EOF
-            oc get mcp > ${ARTIFACT_DIR}/mcp.list
-            oc describe mcp > ${ARTIFACT_DIR}/mcp.all.descr
-            exit 1
-        fi
-        sleep $WAIT_TIME_SECONDS
-    done
-}
-
-publish_master_bundle() {
-    trap collect_must_gather EXIT
-
-    export CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="master"
-    deploy_commit "https://gitlab.com/nvidia/kubernetes/gpu-operator.git" "master"
-
-    prepare_cluster_for_gpu_operator
-
-    validate_gpu_operator_deployment
-}
-
-test_master_branch() {
-    trap collect_must_gather EXIT
-
-    deploy_commit "https://gitlab.com/nvidia/kubernetes/gpu-operator.git" "master"
-
-    prepare_cluster_for_gpu_operator "$@"
-
-    validate_gpu_operator_deployment
-}
-
-test_commit() {
-    gpu_operator_git_repo="${1}"
-    shift;
-    gpu_operator_git_ref="${1}"
-    shift;
-
-    prepare_cluster_for_gpu_operator "$@"
-
-    deploy_commit $gpu_operator_git_repo $gpu_operator_git_ref
-
-    validate_gpu_operator_deployment
-}
-
-deploy_commit() {
-    gpu_operator_git_repo="${1:-}"
-    shift
-    gpu_operator_git_ref="${1:-}"
-
-    if [[ -z "$gpu_operator_git_repo" || -z "$gpu_operator_git_ref" ]]; then
-        echo "FATAL: test_commit must receive a git repo/ref to be tested."
-        return 1
-    fi
-    echo "Using Git repository ${gpu_operator_git_repo} with ref ${gpu_operator_git_ref}"
-
-    OPERATOR_NAMESPACE="nvidia-gpu-operator"
-    if [[ "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID:-}" ]]; then
-        # use CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID when it's set
-        true
-    elif [[ "${JOB_NAME:-}" ]]; then
-        # running in a CI job, use the job name
-        CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID="ci-image-${JOB_NAME}"
-    else
-        echo "FATAL: test_commit expects CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID or JOB_NAME to be defined."
-        return 1
-    fi
-
-    GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET=${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET:-"/var/run/psap-entitlement-secret/openshift-psap-openshift-ci-secret.yml"}
-    GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME=${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME:-"quay.io/openshift-psap/ci-artifacts"}
-
-    ./run_toolbox.py gpu_operator bundle_from_commit "${gpu_operator_git_repo}" \
-                                             "${gpu_operator_git_ref}" \
-                                             "${GPU_OPERATOR_QUAY_BUNDLE_PUSH_SECRET}" \
-                                             "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}" \
-                                             --tag_uid "${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}" \
-                                             --namespace "${OPERATOR_NAMESPACE}" \
-                                             --with_validator=true \
-                                             --publish_to_quay=true
-
-    ./run_toolbox.py gpu_operator deploy_from_bundle --bundle "${GPU_OPERATOR_QUAY_BUNDLE_IMAGE_NAME}:operator_bundle_gpu-operator-${CI_IMAGE_GPU_COMMIT_CI_IMAGE_UID}" \
-                                                     --namespace "${OPERATOR_NAMESPACE}"
-}
-
 test_operatorhub() {
     OPERATOR_NAMESPACE="nvidia-gpu-operator"
 
@@ -266,13 +149,6 @@ test_operatorhub() {
                      ${OPERATOR_CHANNEL:-} \
                      ${OPERATOR_VERSION:-} \
                      --namespace ${OPERATOR_NAMESPACE}
-
-    validate_gpu_operator_deployment
-}
-
-validate_deployment_post_upgrade() {
-    finalizers+=("collect_must_gather")
-    finalizers+=("./run_toolbox.py entitlement undeploy &> /dev/null")
 
     validate_gpu_operator_deployment
 }
@@ -305,28 +181,8 @@ if [[ "${action}" != "source" ]]; then
 fi
 
 case ${action} in
-    "test_master_branch")
-        test_master_branch "$@"
-        exit 0
-        ;;
-    "test_commit")
-        test_commit "https://gitlab.com/nvidia/kubernetes/gpu-operator.git" master "$@"
-        exit 0
-        ;;
     "test_operatorhub")
         test_operatorhub "$@"
-        exit 0
-        ;;
-    "validate_deployment_post_upgrade")
-        validate_gpu_operator_deployment
-        exit 0
-        ;;
-    "publish_master_bundle")
-        publish_master_bundle
-        exit 0
-        ;;
-    "cleanup_cluster")
-        cleanup_cluster
         exit 0
         ;;
     "source")
