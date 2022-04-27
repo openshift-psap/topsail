@@ -39,11 +39,12 @@ assess_benchmark_stats () {
     return 0
 }
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+# ---
 
-source $THIS_DIR/../prow/gpu-operator.sh source
-finalizers+=("collect_must_gather")
-
+if ! dtk_image_is_valid; then
+    _flake "dtk_image_not_valid" "DriverToolkit is not valid, cannot continue."
+    exit 1
+fi
 
 ./toolbox/wdm ensure library.gpu-operator.has_gpu_operator --library
 GPU_NODE_CONFIG=--config=instance_type=g4dn.xlarge,instance_count=1
