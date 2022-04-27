@@ -140,3 +140,23 @@ class Cluster:
         Assumes that AWS (credentials, Ansible module, Python module) is properly configured in the system.
         """
         return RunAnsibleRole("cluster_deploy_aws_efs", {})
+
+    @staticmethod
+    def deploy_minio_s3_server(secret_properties_file):
+        """
+        Deploy Minio S3 server
+
+        Example of secret properties file:
+
+        user_password=passwd
+        admin_password=adminpasswd
+
+        Args
+            secret_properties_file: Path of a file containing the properties of S3 secrets.
+        """
+
+        opts = {
+            "cluster_deploy_minio_s3_server_secret_properties": secret_properties_file,
+        }
+
+        return RunAnsibleRole("cluster_deploy_minio_s3_server", opts)
