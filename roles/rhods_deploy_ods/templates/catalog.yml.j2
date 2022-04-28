@@ -5,7 +5,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   displayName: Managed Open Data Hub Operator
-  image: quay.io/modh/qe-catalog-source:{{ rhods_catalog_version }}
+  image: {{ rhods_deploy_ods_catalog_image }}:{{ rhods_deploy_ods_catalog_image_tag }}
   publisher: OSD Red Hat Addons
   sourceType: grpc
   secrets:

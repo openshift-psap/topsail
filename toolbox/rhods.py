@@ -3,24 +3,35 @@ import sys
 from toolbox._common import RunAnsibleRole
 
 
+ODS_CATALOG_IMAGE_DEFAULT = "quay.io/modh/qe-catalog-source"
+ODS_CATALOG_IMAGE_VERSION_DEFAULT = "v160-8"
 class RHODS:
     """
     Commands relating to RHODS
     """
 
     @staticmethod
-    def deploy_ods():
+    def deploy_ods(catalog_image=ODS_CATALOG_IMAGE_DEFAULT,
+                   version=ODS_CATALOG_IMAGE_VERSION_DEFAULT):
         """
         Deploy ODS operator from its custom catalog
+
+        Args:
+          catalog_image: Optional. Container image containing ODS bundle.
+          version: Optional. Version (catalog image tag) of ODS to deploy.
         """
 
-        return RunAnsibleRole("rhods_deploy_ods")
+        opts = {
+            "rhods_deploy_ods_catalog_image": catalog_image,
+            "rhods_deploy_ods_catalog_image_tag": version,
+        }
 
+        return RunAnsibleRole("rhods_deploy_ods", opts)
 
     @staticmethod
     def test_jupyterlab(username_prefix, user_count: int, secret_properties_file):
         """
-        Test JupyterLab (WIP)
+        Test RHODS JupyterLab notebooks
 
         Args:
           user_count: Number of users to run in parallel

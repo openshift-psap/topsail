@@ -9,6 +9,9 @@ set -x
 PSAP_ODS_SECRET_PATH="/var/run/psap-entitlement-secret"
 S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 
+ODS_CATALOG_VERSION="quay.io/modh/qe-catalog-source"
+ODS_CATALOG_IMAGE_VERSION="v160-8"
+
 ODS_CI_TEST_NAMESPACE=loadtest
 ODS_CI_REPO="https://github.com/openshift-psap/ods-ci.git"
 ODS_CI_REF="multiuser"
@@ -52,7 +55,8 @@ oc create namespace "$ODS_CI_TEST_NAMESPACE"
 
 ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 
-./run_toolbox.py rhods deploy_ods
+echo "Deploying ODS $ODS_CATALOG_IMAGE_VERSION (from $ODS_CATALOG_VERSION)"
+./run_toolbox.py rhods deploy_ods "$ODS_CATALOG_VERSION" "$ODS_CATALOG_IMAGE_VERSION"
 
 oc_adm_groups_new_rhods_users "$ODS_CI_USER_GROUP" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS"
 

@@ -1,8 +1,4 @@
 ---
-- name: Set RHODS version
-  set_fact:
-    rhods_catalog_version: v160-8
-
 - name: Apply the RHODS catalog template
   template:
     src: "{{ rhods_install_ods_catalog }}"
