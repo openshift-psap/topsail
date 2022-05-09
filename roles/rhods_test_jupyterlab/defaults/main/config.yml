@@ -2,7 +2,7 @@
 rhods_test_jupyterlab_user_count:
 rhods_test_jupyterlab_username_prefix:
 rhods_test_jupyterlab_secret_properties:
+rhods_test_jupyterlab_idp_name:
 
 rhods_test_namespace: loadtest
 rhods_test_istag: ods-ci:latest
-rhods_ldap_auth_type: MyLocalldap

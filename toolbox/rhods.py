@@ -29,16 +29,18 @@ class RHODS:
         return RunAnsibleRole("rhods_deploy_ods", opts)
 
     @staticmethod
-    def test_jupyterlab(username_prefix, user_count: int, secret_properties_file):
+    def test_jupyterlab(idp_name, username_prefix, user_count: int, secret_properties_file):
         """
         Test RHODS JupyterLab notebooks
 
         Args:
+          idp_name: Name of the identity provider to use.
           user_count: Number of users to run in parallel
           secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'deploy_ldap' command)
 
         """
         opts = {
+            "rhods_test_jupyterlab_idp_name": idp_name,
             "rhods_test_jupyterlab_username_prefix": username_prefix,
             "rhods_test_jupyterlab_user_count": user_count,
             "rhods_test_jupyterlab_secret_properties": secret_properties_file,
