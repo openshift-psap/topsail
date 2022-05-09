@@ -33,9 +33,9 @@
               --admin_user "{{ rhods_deploy_ldap_admin_user }}"
 
 - name: Ensure that the Python command works in test mode
-  args:
-    warn: false # with 'command', the quotes and new lines of ^^^ mess up everythin
-  shell: "{{ py_secret_generator_cmd }} --test"
+  shell: |
+    true; # mute ansible-lint warning
+    {{ py_secret_generator_cmd }} --test
 
 - name: Prepare python command 2
   set_fact:
