@@ -19,6 +19,10 @@
   fail: msg="LDAP IDP name isn't set"
   when: not rhods_deploy_ldap_idp_name
 
+- name: Ensure that OCM is properly connected
+  when: rhods_deploy_ldap_use_ocm | length > 0
+  command: ocm describe cluster "{{ rhods_deploy_ldap_use_ocm }}"
+
 - name: Prepare python command 1
   set_fact:
     py_secret_generator_cmd: >-
@@ -58,17 +62,56 @@
 - name: Apply the LDAP resources
   command: oc apply -f "{{ rhods_deploy_ldap_resources }}"
 
-- name: Create the LDAP binding secret
-  shell:
-    set -o pipefail;
-    {{ py_secret_generator }}
-    cat "{{ rhods_deploy_ldap_bind_secret_template }}" | envsubst | oc apply -f-
-
 - name: Apply the Oauth template
   template:
     src: "{{ rhods_deploy_ldap_oauth }}"
     dest: "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
     mode: 0400
 
-- name: Create the LDAP Oauth resource
-  command: oc replace -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
+- name: Deploy on OCP
+  when: not rhods_deploy_ldap_use_ocm
+  block:
+  - name: Create the LDAP binding secret
+    shell:
+      set -o pipefail;
+      {{ py_secret_generator }}
+      cat "{{ rhods_deploy_ldap_bind_secret_template }}" | envsubst | oc apply -f-
+  - name: Create the LDAP Oauth resource
+    command: oc replace -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
+
+- name: Deploy on OSD
+  when: rhods_deploy_ldap_use_ocm | length > 0
+  block:
+  - name: Get LDAP URL
+    command:
+      oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
+         -ojsonpath={.spec.identityProviders[0].ldap.url}
+    register: ldap_url_cmd
+
+  - name: Get LDAP Bind DN
+    command:
+      oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
+         -ojsonpath={.spec.identityProviders[0].ldap.bindDN}
+    register: ldap_bindDN_cmd
+
+  - name: Create the IDP resource
+    shell: |
+      set -o pipefail;
+      {{ py_secret_generator }}
+      ocm create idp \
+          --type ldap \
+          --cluster "{{ rhods_deploy_ldap_use_ocm }}" \
+          --name "{{ rhods_deploy_ldap_idp_name }}" \
+          --url "{{ ldap_url_cmd.stdout }}" \
+          --bind-dn "{{ ldap_bindDN_cmd.stdout }}" \
+          --bind-password $(echo "$rhods_ldap_adminpassword" | base64 -d)
+
+  - name: Dirty patch the OAuth to allow insecure LDAP connection
+    # Workaround until `ocm` supports the --insecure flag
+    # https://github.com/openshift-online/ocm-cli/issues/385
+    # or the task above can work with `rosa` tool.
+    # WARNING: This operator will be automatically reverted by OCM
+    # after a random period of time :/
+    shell: |
+      set -o pipefail;
+      oc get oauth/cluster -ojson | sed 's/"insecure": false/"insecure": true/' | oc apply -f-

@@ -29,6 +29,24 @@ class RHODS:
         return RunAnsibleRole("rhods_deploy_ods", opts)
 
     @staticmethod
+    def deploy_addon(cluster_name, wait_for_ready_state=True):
+        """
+        Installs the RHODS OCM addon
+
+        Args:
+            cluster_name: The name of the cluster where RHODS should be deployed.
+            wait_for_ready_state: Optional. If true (default), will cause the role to wait until addon reports ready state. (Can time out)
+        """
+
+        opt = {
+            "ocm_deploy_addon_id": "managed-odh",
+            "ocm_deploy_addon_cluster_name": cluster_name,
+            "ocm_deploy_addon_wait_for_ready_state": wait_for_ready_state,
+        }
+
+        return RunAnsibleRole("ocm_deploy_addon", opt)
+
+    @staticmethod
     def test_jupyterlab(idp_name, username_prefix, user_count: int, secret_properties_file):
         """
         Test RHODS JupyterLab notebooks
@@ -56,7 +74,7 @@ class RHODS:
         return RunAnsibleRole("rhods_undeploy_ods")
 
     @staticmethod
-    def deploy_ldap(idp_name, username_prefix, username_count: int, secret_properties_file):
+    def deploy_ldap(idp_name, username_prefix, username_count: int, secret_properties_file, use_ocm=""):
         """
         Deploy OpenLDAP and LDAP Oauth
 
@@ -66,10 +84,11 @@ class RHODS:
         admin_password=adminpasswd
 
         Args:
-            idp_name: Name of the LDAP identity provider.
-            username_prefix: Prefix for the creation of the users (suffix is 0..username_count)
-            username_count: Number of users to create.
-            secret_properties_file: Path of a file containing the properties of LDAP secrets.
+          idp_name: Name of the LDAP identity provider.
+          username_prefix: Prefix for the creation of the users (suffix is 0..username_count)
+          username_count: Number of users to create.
+          secret_properties_file: Path of a file containing the properties of LDAP secrets.
+          use_ocm: Optional. If set with a cluster name, use `ocm create idp` to deploy the LDAP identity provider.
         """
 
         opts = {
@@ -77,6 +96,7 @@ class RHODS:
             "rhods_deploy_ldap_username_prefix": username_prefix,
             "rhods_deploy_ldap_username_count": username_count,
             "rhods_deploy_ldap_secret_properties": secret_properties_file,
+            "rhods_deploy_ldap_use_ocm": use_ocm,
         }
 
         return RunAnsibleRole("rhods_deploy_ldap", opts)
