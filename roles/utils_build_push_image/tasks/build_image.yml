@@ -45,7 +45,7 @@
           -n "{{ utils_build_push_image_namespace }}"
     register: wait_pod_running
     until: "'Running' in wait_pod_running.stdout or 'Failed' in wait_pod_running.stdout or 'Complete' in wait_pod_running.stdout"
-    retries: 4
+    retries: 12
     delay: 15
 
   - name: Fail if the pod is still pending

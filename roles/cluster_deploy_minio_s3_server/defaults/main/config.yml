@@ -1,0 +1,5 @@
+---
+cluster_deploy_minio_s3_server_secret_properties:
+cluster_deploy_minio_s3_server_namespace: minio
+cluster_deploy_minio_s3_server_access_key: minio
+cluster_deploy_minio_s3_server_root_user: admin

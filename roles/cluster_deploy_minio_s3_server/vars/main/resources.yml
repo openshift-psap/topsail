@@ -1,0 +1,2 @@
+---
+cluster_deploy_minio_s3_server_deployment: roles/cluster_deploy_minio_s3_server/files/deploy_minio.yaml

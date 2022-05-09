@@ -1,0 +1,4 @@
+rhods_deploy_ldap_secret_properties: ""
+rhods_deploy_ldap_username_prefix: ""
+rhods_deploy_ldap_username_count: ""
+rhods_deploy_ldap_admin_user: "admin"
