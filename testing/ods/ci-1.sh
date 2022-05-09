@@ -24,6 +24,8 @@ ODS_CI_USER_PREFIX=testuser
 
 ODS_CI_USER_GROUP=rhods-users
 
+LDAP_IDP_NAME=RHODS_CI_LDAP
+
 oc_adm_groups_new_rhods_users() {
     group=$1
     shift
@@ -51,7 +53,7 @@ oc create namespace "$ODS_CI_TEST_NAMESPACE"
 # no need to add machines, there's already 2 workers in the CI cluster
 #./run_toolbox.py cluster set-scale m5.xlarge 2
 
-./run_toolbox.py rhods deploy_ldap "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS"
+./run_toolbox.py rhods deploy_ldap "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS"
 
 ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 

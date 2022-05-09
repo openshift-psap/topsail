@@ -54,7 +54,7 @@ class RHODS:
         return RunAnsibleRole("rhods_undeploy_ods")
 
     @staticmethod
-    def deploy_ldap(username_prefix, username_count: int, secret_properties_file):
+    def deploy_ldap(idp_name, username_prefix, username_count: int, secret_properties_file):
         """
         Deploy OpenLDAP and LDAP Oauth
 
@@ -64,12 +64,14 @@ class RHODS:
         admin_password=adminpasswd
 
         Args:
+            idp_name: Name of the LDAP identity provider.
             username_prefix: Prefix for the creation of the users (suffix is 0..username_count)
             username_count: Number of users to create.
             secret_properties_file: Path of a file containing the properties of LDAP secrets.
         """
 
         opts = {
+            "rhods_deploy_ldap_idp_name": idp_name,
             "rhods_deploy_ldap_username_prefix": username_prefix,
             "rhods_deploy_ldap_username_count": username_count,
             "rhods_deploy_ldap_secret_properties": secret_properties_file,

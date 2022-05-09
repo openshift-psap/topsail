@@ -15,6 +15,10 @@
   fail: msg="username count isn't set"
   when: rhods_deploy_ldap_username_count | int < 0
 
+- name: Ensure that the LDAP IDP name is set
+  fail: msg="LDAP IDP name isn't set"
+  when: not rhods_deploy_ldap_idp_name
+
 - name: Prepare python command 1
   set_fact:
     py_secret_generator_cmd: >-
@@ -60,5 +64,11 @@
     {{ py_secret_generator }}
     cat "{{ rhods_deploy_ldap_bind_secret_template }}" | envsubst | oc apply -f-
 
+- name: Apply the Oauth template
+  template:
+    src: "{{ rhods_deploy_ldap_oauth }}"
+    dest: "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
+    mode: 0400
+
 - name: Create the LDAP Oauth resource
-  command: oc replace -f "{{ rhods_deploy_ldap_oauth }}"
+  command: oc replace -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
