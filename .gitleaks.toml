@@ -1,0 +1,7 @@
+title = "ci-artifacts gitleaks config"
+[whitelist]
+files = [
+  "roles/rhods_deploy_ldap/templates/bind-secret.yml", 
+  "roles/rhods_deploy_ldap/templates/secret.yml"
+]
+

@@ -122,10 +122,13 @@ if __name__ == "__main__":
         sys.exit(0)
 
     print(f"""\
-export rhods_ldap_adminuser="{adminuser64}"
-export rhods_ldap_adminpassword="{adminpassword64}"
-export rhods_ldap_users="{users64}"
-export rhods_ldap_passwords="{passwords64}"\
+export rhods_ldap_adminuser64="{adminuser64}"
+export rhods_ldap_adminpassword64="{adminpassword64}"
+export rhods_ldap_users64="{users64}"
+export rhods_ldap_passwords64="{passwords64}"\
+
+export rhods_ldap_adminuser="{args.admin_user}"
+export rhods_ldap_adminpassword="{args.admin_password}"
 """)
 
     if args.verbose:

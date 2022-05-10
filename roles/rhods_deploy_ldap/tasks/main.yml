@@ -46,7 +46,7 @@
   shell:
     set -o pipefail;
     {{ py_secret_generator }}
-    test "$(echo "$rhods_ldap_adminuser" | base64 -d)" == "admin"
+    test "$rhods_ldap_adminuser" == "admin"
 
 - name: Create the LDAP namespace
   shell:
@@ -104,7 +104,7 @@
           --name "{{ rhods_deploy_ldap_idp_name }}" \
           --url "{{ ldap_url_cmd.stdout }}" \
           --bind-dn "{{ ldap_bindDN_cmd.stdout }}" \
-          --bind-password $(echo "$rhods_ldap_adminpassword" | base64 -d)
+          --bind-password $(echo "$rhods_ldap_adminpassword")
 
   - name: Dirty patch the OAuth to allow insecure LDAP connection
     # Workaround until `ocm` supports the --insecure flag
