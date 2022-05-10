@@ -40,3 +40,31 @@
     cluster_deploy_operator_namespace: openshift-operators
     cluster_deploy_operator_channel: beta
     cluster_deploy_operator_all_namespaces: "True"
+
+- name: Get RHODS dashboard route host
+  command: oc get route/rhods-dashboard -n redhat-ods-applications -ojsonpath={.spec.host}
+  register: rhods_dashboard_hostname_cmd
+
+- name: Wait for RHODS dashboard to be ready
+  shell:
+    curl -Ssf --insecure https://{{ rhods_dashboard_hostname_cmd.stdout }} || true
+  args:
+    warn: false # don't warn about using curl here
+  register: wait_ods_dashboard
+  until: '"The requested URL returned error: 403" in wait_ods_dashboard.stderr'
+  retries: 40
+  delay: 30
+
+- name: Get JupyterLab route host
+  command: oc get route/jupyterhub -n redhat-ods-applications -ojsonpath={.spec.host}
+  register: jupyterlab_hostname_cmd
+
+- name: Wait for JupyterLab to be ready
+  command:
+    curl -Ssf --insecure https://{{ jupyterlab_hostname_cmd.stdout }}
+  args:
+    warn: false # don't warn about using curl here
+  register: wait_jupyterlab
+  until: wait_jupyterlab.rc == 0
+  retries: 40
+  delay: 30
