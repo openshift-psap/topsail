@@ -136,8 +136,8 @@
   shell:
     oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ rhods_test_namespace }}
   register: wait_rhods_test_job
-  retries: 30
-  delay: 20
+  retries: 60
+  delay: 40
   until: not wait_rhods_test_job.stdout
 
 - name: Get the status of the tester Pods
