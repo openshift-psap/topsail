@@ -10,7 +10,7 @@ PSAP_ODS_SECRET_PATH="/var/run/psap-entitlement-secret"
 S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 
 ODS_CATALOG_VERSION="quay.io/modh/qe-catalog-source"
-ODS_CATALOG_IMAGE_VERSION="v160-8"
+ODS_CATALOG_IMAGE_VERSION="v1100-6"
 
 ODS_CI_TEST_NAMESPACE=loadtest
 ODS_CI_REPO="https://github.com/openshift-psap/ods-ci.git"
