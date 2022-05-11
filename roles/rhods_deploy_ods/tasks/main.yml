@@ -23,6 +23,13 @@
   - redhat-ods-applications
   - redhat-ods-monitoring
 
+- name: Create dummy secrets
+  shell:
+     oc create secret generic redhat-rhods-deadmanssnitch -n redhat-ods-monitoring --from-literal=SNITCH_URL=no-snitch;
+     oc create secret generic redhat-rhods-smtp -n redhat-ods-monitoring;
+     oc create secret generic redhat-rhods-pagerduty -n redhat-ods-monitoring;
+     oc create secret generic addon-managed-odh-parameters -n redhat-ods-operator;
+
 - name: Test if the RHODS operator is installed
   command:
      oc get subscription.operators.coreos.com -A -oname
