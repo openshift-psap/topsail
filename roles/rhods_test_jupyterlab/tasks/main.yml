@@ -204,6 +204,11 @@
        -c ubi8
        "$MINIO_PODNAME:/data/mybucket/ods-ci"
        "$DEST_DIR"
+  register: extract_s3_logs
+  retries: 5
+  delay: 5
+  until: extract_s3_logs.rc == 0
+  failed_when: false
 
 - name: Test if the RHODS test job crashed
   command:
