@@ -42,6 +42,12 @@
        -n {{ rhods_test_namespace }}
        -- cat test-variables.yml.template > /tmp/test-variables.yml.template
 
+- name: Get the RHODS version
+  shell:
+    set -o pipefail;
+    oc get csv -n redhat-ods-operator | grep "rhods-operator" | awk '{print $1}' | sed 's/rhods-operator.//'
+  register: rhods_version_cmd
+
 - name: Apply the ODS-CI template
   shell:
     set -o pipefail;
@@ -54,9 +60,9 @@
 
     export TEST_USER_PASSWORD="PASSWORD_WILL_BE_HERE";
 
+    export RHODS_VERSION="{{ rhods_version_cmd.stdout }}";
     cat /tmp/test-variables.yml.template | envsubst \
         > {{ artifact_extra_logs_dir }}/test-variables_safe.yml;
-
 
     export TEST_USER_PASSWORD="$(cat "{{ rhods_test_jupyterlab_secret_properties }}" | grep '^user_password=' | cut -d= -f2)";
 
