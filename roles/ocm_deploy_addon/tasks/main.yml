@@ -63,7 +63,7 @@
     echo "$output" >&2; # for observation
     echo "$output" | jq -r '.state'
   register: addon_state_result
-  retries: 30
+  retries: 60
   delay: 60
   until: |
     (addon_state_result.stdout == 'deleting') or
