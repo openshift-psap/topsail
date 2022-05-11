@@ -60,7 +60,7 @@
   register: wait_ods_dashboard
   until: '"The requested URL returned error: 403" in wait_ods_dashboard.stderr'
   retries: 40
-  delay: 30
+  delay: 60
 
 - name: Get JupyterLab route host
   command: oc get route/jupyterhub -n redhat-ods-applications -ojsonpath={.spec.host}
@@ -74,4 +74,4 @@
   register: wait_jupyterlab
   until: wait_jupyterlab.rc == 0
   retries: 40
-  delay: 30
+  delay: 60
