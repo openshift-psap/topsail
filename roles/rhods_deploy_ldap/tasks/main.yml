@@ -15,6 +15,14 @@
   fail: msg="username count isn't set"
   when: rhods_deploy_ldap_username_count | int < 0
 
+- name: Ensure that the LDAP IDP name is set
+  fail: msg="LDAP IDP name isn't set"
+  when: not rhods_deploy_ldap_idp_name
+
+- name: Ensure that OCM is properly connected
+  when: rhods_deploy_ldap_use_ocm | length > 0
+  command: ocm describe cluster "{{ rhods_deploy_ldap_use_ocm }}"
+
 - name: Prepare python command 1
   set_fact:
     py_secret_generator_cmd: >-
@@ -25,9 +33,9 @@
               --admin_user "{{ rhods_deploy_ldap_admin_user }}"
 
 - name: Ensure that the Python command works in test mode
-  args:
-    warn: false # with 'command', the quotes and new lines of ^^^ mess up everythin
-  shell: "{{ py_secret_generator_cmd }} --test"
+  shell: |
+    true; # mute ansible-lint warning
+    {{ py_secret_generator_cmd }} --test
 
 - name: Prepare python command 2
   set_fact:
@@ -38,7 +46,7 @@
   shell:
     set -o pipefail;
     {{ py_secret_generator }}
-    test "$(echo "$rhods_ldap_adminuser" | base64 -d)" == "admin"
+    test "$rhods_ldap_adminuser" == "admin"
 
 - name: Create the LDAP namespace
   shell:
@@ -54,11 +62,65 @@
 - name: Apply the LDAP resources
   command: oc apply -f "{{ rhods_deploy_ldap_resources }}"
 
-- name: Create the LDAP binding secret
-  shell:
-    set -o pipefail;
-    {{ py_secret_generator }}
-    cat "{{ rhods_deploy_ldap_bind_secret_template }}" | envsubst | oc apply -f-
+- name: Apply the Oauth template
+  template:
+    src: "{{ rhods_deploy_ldap_oauth }}"
+    dest: "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
+    mode: 0400
 
-- name: Create the LDAP Oauth resource
-  command: oc replace -f "{{ rhods_deploy_ldap_oauth }}"
+- name: Deploy on OCP
+  when: not rhods_deploy_ldap_use_ocm
+  block:
+  - name: Create the LDAP binding secret
+    shell:
+      set -o pipefail;
+      {{ py_secret_generator }}
+      cat "{{ rhods_deploy_ldap_bind_secret_template }}" | envsubst | oc apply -f-
+  - name: Create the LDAP Oauth resource
+    command: oc replace -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
+
+- name: Deploy on OSD
+  when: rhods_deploy_ldap_use_ocm | length > 0
+  block:
+  - name: Get LDAP URL
+    command:
+      oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
+         -ojsonpath={.spec.identityProviders[0].ldap.url}
+    register: ldap_url_cmd
+
+  - name: Get LDAP Bind DN
+    command:
+      oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
+         -ojsonpath={.spec.identityProviders[0].ldap.bindDN}
+    register: ldap_bindDN_cmd
+
+  - name: Create the IDP resource
+    when: false # keeping it disabled until https://github.com/openshift-online/ocm-cli/issues/385 is resolved
+    shell: |
+      set -o pipefail;
+      {{ py_secret_generator }}
+      ocm create idp \
+          --type ldap \
+          --cluster "{{ rhods_deploy_ldap_use_ocm }}" \
+          --name "{{ rhods_deploy_ldap_idp_name }}" \
+          --url "{{ ldap_url_cmd.stdout }}" \
+          --bind-dn "{{ ldap_bindDN_cmd.stdout }}" \
+          --bind-password $(echo "$rhods_ldap_adminpassword")
+          # need to add --insecure here, when available in `ocm`.
+
+  # Workaround until `ocm` supports the --insecure flag
+
+  - name: Get the cluster ID
+    shell:
+      ocm describe cluster "{{ rhods_deploy_ldap_use_ocm }}" --json | jq .id -r
+    register: cluster_id_cmd
+
+  - name: Create the IDP resource manually
+    shell: |
+      set -o pipefail;
+      {{ py_secret_generator }}
+
+      export rhods_deploy_ldap_idp_name="{{ rhods_deploy_ldap_idp_name }}"
+      url="https://api.openshift.com/api/clusters_mgmt/v1/clusters/{{ cluster_id_cmd.stdout }}/identity_providers";
+      body=$(cat "{{ rhods_deploy_ldap_ocm_idp }}" | envsubst);
+      ocm post "$url" --body <(echo "$body")

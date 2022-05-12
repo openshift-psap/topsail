@@ -27,7 +27,7 @@ def validate_role_vars_used(filename, yaml_doc):
     for key in yaml_doc:
         grep_command = ["grep", key,
                         str(pathlib.Path("roles") / role_name),
-                        "--recursive",
+                        "--dereference-recursive",
                         ]
         proc = subprocess.run(grep_command, capture_output=True)
 

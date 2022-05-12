@@ -1,0 +1,76 @@
+---
+- name: Fail if ocm_deploy_addon_id is undefined
+  fail: msg="Bailing out. This play requires 'ocm_deploy_addon_id'"
+  when: ocm_deploy_addon_id is undefined
+
+- name: Fail if ocm_deploy_addon_cluster_name is undefined
+  fail: msg="Bailing out. This play requires 'ocm_deploy_addon_cluster_name'"
+  when: ocm_deploy_addon_cluster_name is undefined
+
+- name: Check if ocm is available
+  command: ocm version
+
+- name: Check ocm whoami
+  command: ocm whoami
+
+- name: Get the cluster ID
+  shell:
+    set -o pipefail;
+    ocm describe cluster {{ ocm_deploy_addon_cluster_name }} --json | jq -r .id
+  register: cluster_id_cmd
+
+- name: Store the cluster ID
+  set_fact:
+    cluster_id: "{{ cluster_id_cmd.stdout }}"
+
+- name: Check if addon is already installed
+  shell:
+    set -o pipefail;
+    ocm get /api/clusters_mgmt/v1/clusters/{{ cluster_id }}/addons/{{ ocm_deploy_addon_id  }} |& jq -r '.kind' || true
+  register: ocm_addon_precheck
+
+- name: Create ocm addon install payload
+  template:
+    src: "{{ ocm_deploy_addon_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/addon_{{ ocm_deploy_addon_id }}.json"
+    mode: 0400
+  when: '"Error" in ocm_addon_precheck.stdout'
+
+- name: "Install addon {{ ocm_deploy_addon_id }} via OCM API"
+  shell: |
+    set -o pipefail;
+    url="/api/clusters_mgmt/v1/clusters/{{ cluster_id }}/addons"
+    body="{{ artifact_extra_logs_dir }}/addon_{{ ocm_deploy_addon_id  }}.json"
+    output=$(ocm post "$url" --body=$body 2>&1);
+    echo "$output" >&2; # for observation
+    echo "$output" | jq -r '.kind'
+  register: addon_install_command
+  failed_when: false
+  when: '"Error" in ocm_addon_precheck.stdout'
+
+- name: Fail if response kind is not AddOnInstallation
+  fail: 'msg="response kind: {{ addon_install_command.stdout }}"'
+  when:
+    - addon_install_command is defined
+    - addon_install_command.stdout is defined
+    - addon_install_command.stdout != 'AddOnInstallation'
+
+- name: Poll addon state until reached desired state
+  shell: |
+    set -o pipefail;
+    url="/api/clusters_mgmt/v1/clusters/{{ cluster_id }}/addons/{{ ocm_deploy_addon_id }}";
+    output=$(ocm get "$url" 2>&1)
+    echo "$output" >&2; # for observation
+    echo "$output" | jq -r '.state'
+  register: addon_state_result
+  retries: 60
+  delay: 60
+  until: |
+    (addon_state_result.stdout == 'deleting') or
+    (addon_state_result.stdout == 'failed') or
+    (addon_state_result.stdout == 'installing' and not ocm_deploy_addon_wait_for_ready_state) or
+    (addon_state_result.stdout == 'ready')
+  failed_when: |
+    (addon_state_result.stdout == 'deleting') or
+    (addon_state_result.stdout == 'failed') or
+    (ocm_deploy_addon_wait_for_ready_state and addon_state_result.stdout != 'ready')

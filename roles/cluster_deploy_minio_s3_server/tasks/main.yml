@@ -27,6 +27,7 @@
 - name: Create minio Secret
   shell:
     set -o pipefail;
+    set -e;
     SECRET_KEY=$(cat "{{ cluster_deploy_minio_s3_server_secret_properties }}" | grep user_password | cut -d= -f2);
     ADMIN_PASSWORD=$(cat "{{ cluster_deploy_minio_s3_server_secret_properties }}" | grep admin_password | cut -d= -f2);
     oc create secret generic minio

@@ -29,20 +29,43 @@ class RHODS:
         return RunAnsibleRole("rhods_deploy_ods", opts)
 
     @staticmethod
-    def test_jupyterlab(username_prefix, user_count: int, secret_properties_file):
+    def deploy_addon(cluster_name, wait_for_ready_state=True):
+        """
+        Installs the RHODS OCM addon
+
+        Args:
+            cluster_name: The name of the cluster where RHODS should be deployed.
+            wait_for_ready_state: Optional. If true (default), will cause the role to wait until addon reports ready state. (Can time out)
+        """
+
+        opt = {
+            "ocm_deploy_addon_id": "managed-odh",
+            "ocm_deploy_addon_cluster_name": cluster_name,
+            "ocm_deploy_addon_wait_for_ready_state": wait_for_ready_state,
+        }
+
+        return RunAnsibleRole("ocm_deploy_addon", opt)
+
+    @staticmethod
+    def test_jupyterlab(idp_name, username_prefix, user_count: int, secret_properties_file, sut_cluster_kubeconfig=""):
         """
         Test RHODS JupyterLab notebooks
 
         Args:
+          idp_name: Name of the identity provider to use.
           user_count: Number of users to run in parallel
           secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'deploy_ldap' command)
-
+          sut_cluster_kubeconfig: Optional. Path of the system-under-test cluster's Kubeconfig. If provided, the RHODS endpoints will be looked up in this cluster.
         """
+
         opts = {
+            "rhods_test_jupyterlab_idp_name": idp_name,
             "rhods_test_jupyterlab_username_prefix": username_prefix,
             "rhods_test_jupyterlab_user_count": user_count,
             "rhods_test_jupyterlab_secret_properties": secret_properties_file,
+            "rhods_test_jupyterlab_sut_cluster_kubeconfig": sut_cluster_kubeconfig,
         }
+
         return RunAnsibleRole("rhods_test_jupyterlab", opts)
 
     @staticmethod
@@ -54,7 +77,7 @@ class RHODS:
         return RunAnsibleRole("rhods_undeploy_ods")
 
     @staticmethod
-    def deploy_ldap(username_prefix, username_count: int, secret_properties_file):
+    def deploy_ldap(idp_name, username_prefix, username_count: int, secret_properties_file, use_ocm=""):
         """
         Deploy OpenLDAP and LDAP Oauth
 
@@ -64,15 +87,19 @@ class RHODS:
         admin_password=adminpasswd
 
         Args:
-            username_prefix: Prefix for the creation of the users (suffix is 0..username_count)
-            username_count: Number of users to create.
-            secret_properties_file: Path of a file containing the properties of LDAP secrets.
+          idp_name: Name of the LDAP identity provider.
+          username_prefix: Prefix for the creation of the users (suffix is 0..username_count)
+          username_count: Number of users to create.
+          secret_properties_file: Path of a file containing the properties of LDAP secrets.
+          use_ocm: Optional. If set with a cluster name, use `ocm create idp` to deploy the LDAP identity provider.
         """
 
         opts = {
+            "rhods_deploy_ldap_idp_name": idp_name,
             "rhods_deploy_ldap_username_prefix": username_prefix,
             "rhods_deploy_ldap_username_count": username_count,
             "rhods_deploy_ldap_secret_properties": secret_properties_file,
+            "rhods_deploy_ldap_use_ocm": use_ocm,
         }
 
         return RunAnsibleRole("rhods_deploy_ldap", opts)

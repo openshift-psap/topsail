@@ -6,6 +6,15 @@
        -loperators.coreos.com/rhods-operator.openshift-operators
        --ignore-not-found
 
+- name: Get the RHODS CSV name
+  shell:
+    set -o pipefail;
+    oc get csv -n openshift-operators -oname | grep rhods-operator
+  register: rhods_csv_name_cmd
+
+- name: Delete the RHODS CSV
+  command: oc delete {{ rhods_csv_name_cmd.stdout }} -n openshift-operators
+
 - name: Delete RHODS namespaces
   command:
     oc delete ns {{ item }} --ignore-not-found

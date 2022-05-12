@@ -7,20 +7,26 @@ set -x
 
 sed  "s/#{JOB_COMPLETION_INDEX}/${JOB_COMPLETION_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
 
-FAKE=0
-if [[ $FAKE == 1 ]]; then
-    DEST="/tmp/ods-ci/test-output/ods-ci-$(date +"%Y-%M-%H_%T.%N")"
-    mkdir -p "$DEST"
-    touch "$DEST/FAKE_MODE"
-    echo "world" > "$DEST/hello"
-    FINISH=fake_mode
+export KUBECONFIG=/tmp/kube
+
+export K8S_API=$(yq e .OCP_API_URL /tmp/test-variables.yml)
+export USERNAME=$(yq e .TEST_USER.USERNAME /tmp/test-variables.yml)
+
+touch "$KUBECONFIG"
+# run this in a subshell to avoid printing the password in clear because of 'set -x'
+bash -ec "PASSWORD=\$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml); oc login --server=\$K8S_API --username=\$USERNAME --password=\$PASSWORD --insecure-skip-tls-verify"
+
+if ./run_robot_test.sh \
+    --skip-pip-install \
+    --test-variables-file /tmp/test-variables.yml \
+    --test-case "$TEST_CASE";
+then
+    FINISH=success
 else
-    ./run_robot_test.sh \
-        --skip-pip-install \
-        --test-variables-file /tmp/test-variables.yml \
-        --test-case "$TEST_CASE" && FINISH=success || FINISH=failure
+    FINISH=failure
 fi
-echo "$FINISH" /tmp/finish
+
+echo "$FINISH" > /tmp/finish
 
 export S3_HOST_BASE=minio.minio.svc.cluster.local:9000
 export S3_HOST_BUCKET=$S3_HOST_BASE
@@ -39,6 +45,4 @@ s3cmd put \
       --no-progress \
       --stats
 
-# always exit 0, we'll decide later if this is a success or a failure
-
-exit 0
+exit 0 # always exit 0, we'll decide later if this is a success or a failure
