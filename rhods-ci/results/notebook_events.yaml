@@ -1,0 +1,1171 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:46Z"
+  involvedObject:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: jupyterhub-nb-testuser0-pvc
+    namespace: rhods-notebooks
+    resourceVersion: "70512"
+    uid: 1ab7eb57-067b-429e-98f0-a12e468f8061
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:46Z"
+  message: waiting for first consumer to be created before binding
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:46Z"
+    name: jupyterhub-nb-testuser0-pvc.16ee5e9958a7a9b0
+    namespace: rhods-notebooks
+    resourceVersion: "70513"
+    uid: 43f3f3a2-f990-4622-bdee-a3adde0e0ae9
+  reason: WaitForFirstConsumer
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: persistentvolume-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:51Z"
+  involvedObject:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: jupyterhub-nb-testuser0-pvc
+    namespace: rhods-notebooks
+    resourceVersion: "70519"
+    uid: 1ab7eb57-067b-429e-98f0-a12e468f8061
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:51Z"
+  message: Successfully provisioned volume pvc-1ab7eb57-067b-429e-98f0-a12e468f8061
+    using kubernetes.io/aws-ebs
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:51Z"
+    name: jupyterhub-nb-testuser0-pvc.16ee5e9ab9b0eaeb
+    namespace: rhods-notebooks
+    resourceVersion: "70568"
+    uid: 5b2fbe4a-a3ee-4403-9acd-1c070192425d
+  reason: ProvisioningSucceeded
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: persistentvolume-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:52Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser0
+    namespace: rhods-notebooks
+    resourceVersion: "70517"
+    uid: 80846f1f-fa05-47cf-8ac0-318e699f7481
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:52Z"
+  message: Successfully assigned rhods-notebooks/jupyterhub-nb-testuser0 to ip-10-0-149-169.ec2.internal
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:52Z"
+    name: jupyterhub-nb-testuser0.16ee5e9ad346b0f7
+    namespace: rhods-notebooks
+    resourceVersion: "70581"
+    uid: 171142df-cf57-471d-8ebe-5549572f51e8
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:55Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser0
+    namespace: rhods-notebooks
+    resourceVersion: "70580"
+    uid: 80846f1f-fa05-47cf-8ac0-318e699f7481
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:55Z"
+  message: 'AttachVolume.Attach succeeded for volume "pvc-1ab7eb57-067b-429e-98f0-a12e468f8061" '
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:55Z"
+    name: jupyterhub-nb-testuser0.16ee5e9b85fc4205
+    namespace: rhods-notebooks
+    resourceVersion: "70613"
+    uid: 6b68be39-5558-4d77-b3c9-64ff76f745f8
+  reason: SuccessfulAttachVolume
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: attachdetach-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:29:02Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser0
+    namespace: rhods-notebooks
+    resourceVersion: "70582"
+    uid: 80846f1f-fa05-47cf-8ac0-318e699f7481
+  kind: Event
+  lastTimestamp: "2022-05-12T13:29:02Z"
+  message: Add eth0 [10.128.2.23/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-12T13:29:02Z"
+    name: jupyterhub-nb-testuser0.16ee5e9d1513538b
+    namespace: rhods-notebooks
+    resourceVersion: "70660"
+    uid: a2738c86-e696-428c-a73b-004aae5d5c6e
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:29:02Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser0
+    namespace: rhods-notebooks
+    resourceVersion: "70580"
+    uid: 80846f1f-fa05-47cf-8ac0-318e699f7481
+  kind: Event
+  lastTimestamp: "2022-05-12T13:29:02Z"
+  message: Pulling image "image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/s2i-generic-data-science-notebook:py3.8-1"
+  metadata:
+    creationTimestamp: "2022-05-12T13:29:02Z"
+    name: jupyterhub-nb-testuser0.16ee5e9d1a60d9e3
+    namespace: rhods-notebooks
+    resourceVersion: "70662"
+    uid: c2c6531e-c9d6-419c-bb41-b57345b87457
+  reason: Pulling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-149-169.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:30:18Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser0
+    namespace: rhods-notebooks
+    resourceVersion: "70580"
+    uid: 80846f1f-fa05-47cf-8ac0-318e699f7481
+  kind: Event
+  lastTimestamp: "2022-05-12T13:30:18Z"
+  message: Successfully pulled image "image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/s2i-generic-data-science-notebook:py3.8-1"
+    in 1m16.717346279s
+  metadata:
+    creationTimestamp: "2022-05-12T13:30:18Z"
+    name: jupyterhub-nb-testuser0.16ee5eaef716dea5
+    namespace: rhods-notebooks
+    resourceVersion: "71327"
+    uid: a23e74da-d7ca-445c-8faf-10564b687d36
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-149-169.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:30:18Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser0
+    namespace: rhods-notebooks
+    resourceVersion: "70580"
+    uid: 80846f1f-fa05-47cf-8ac0-318e699f7481
+  kind: Event
+  lastTimestamp: "2022-05-12T13:30:18Z"
+  message: Created container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:30:18Z"
+    name: jupyterhub-nb-testuser0.16ee5eaeff5e2332
+    namespace: rhods-notebooks
+    resourceVersion: "71331"
+    uid: 94ec4678-fecd-4b14-a792-67faa7feed7f
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-149-169.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:30:19Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser0
+    namespace: rhods-notebooks
+    resourceVersion: "70580"
+    uid: 80846f1f-fa05-47cf-8ac0-318e699f7481
+  kind: Event
+  lastTimestamp: "2022-05-12T13:30:19Z"
+  message: Started container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:30:19Z"
+    name: jupyterhub-nb-testuser0.16ee5eaf010010f1
+    namespace: rhods-notebooks
+    resourceVersion: "71335"
+    uid: 9cccaa70-da7c-40a9-b28c-c4430346d7fa
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-149-169.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 2
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:33:44Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser0
+    namespace: rhods-notebooks
+    resourceVersion: "70580"
+    uid: 80846f1f-fa05-47cf-8ac0-318e699f7481
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:47Z"
+  message: Stopping container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:33:44Z"
+    name: jupyterhub-nb-testuser0.16ee5edee88e3176
+    namespace: rhods-notebooks
+    resourceVersion: "73176"
+    uid: 2cd53049-08db-4ca1-94b5-bbf027204ba2
+  reason: Killing
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-149-169.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:29:24Z"
+  involvedObject:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: jupyterhub-nb-testuser2-pvc
+    namespace: rhods-notebooks
+    resourceVersion: "70829"
+    uid: 6a3d88a6-b295-4956-bcbf-b6d4b12b7773
+  kind: Event
+  lastTimestamp: "2022-05-12T13:29:24Z"
+  message: waiting for first consumer to be created before binding
+  metadata:
+    creationTimestamp: "2022-05-12T13:29:24Z"
+    name: jupyterhub-nb-testuser2-pvc.16ee5ea2460291e6
+    namespace: rhods-notebooks
+    resourceVersion: "70830"
+    uid: 0542c539-7a51-46ec-96a8-a34e625f08be
+  reason: WaitForFirstConsumer
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: persistentvolume-controller
+  type: Normal
+- apiVersion: v1
+  count: 17
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:29:26Z"
+  involvedObject:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: jupyterhub-nb-testuser2-pvc
+    namespace: rhods-notebooks
+    resourceVersion: "70829"
+    uid: 6a3d88a6-b295-4956-bcbf-b6d4b12b7773
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:26Z"
+  message: waiting for pod jupyterhub-nb-testuser2 to be scheduled
+  metadata:
+    creationTimestamp: "2022-05-12T13:29:26Z"
+    name: jupyterhub-nb-testuser2-pvc.16ee5ea2ac0b4fde
+    namespace: rhods-notebooks
+    resourceVersion: "73001"
+    uid: 57084475-b662-4c04-b6e4-3de0e52d73af
+  reason: WaitForPodScheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: persistentvolume-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:33:41Z"
+  involvedObject:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: jupyterhub-nb-testuser2-pvc
+    namespace: rhods-notebooks
+    resourceVersion: "73069"
+    uid: 6a3d88a6-b295-4956-bcbf-b6d4b12b7773
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:41Z"
+  message: Successfully provisioned volume pvc-6a3d88a6-b295-4956-bcbf-b6d4b12b7773
+    using kubernetes.io/aws-ebs
+  metadata:
+    creationTimestamp: "2022-05-12T13:33:41Z"
+    name: jupyterhub-nb-testuser2-pvc.16ee5ede307ae465
+    namespace: rhods-notebooks
+    resourceVersion: "73117"
+    uid: ce0a0271-e5e5-45c1-afd8-15656ea77076
+  reason: ProvisioningSucceeded
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: persistentvolume-controller
+  type: Normal
+- apiVersion: v1
+  count: 7
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:29:24Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser2
+    namespace: rhods-notebooks
+    resourceVersion: "70832"
+    uid: f6f336bf-0f55-46b4-bb73-83ed56b1e374
+  kind: Event
+  lastTimestamp: "2022-05-12T13:32:58Z"
+  message: '0/6 nodes are available: 2 Insufficient cpu, 3 Insufficient memory, 3
+    node(s) had taint {node-role.kubernetes.io/master: }, that the pod didn''t tolerate.'
+  metadata:
+    creationTimestamp: "2022-05-12T13:29:24Z"
+    name: jupyterhub-nb-testuser2.16ee5ea25966a748
+    namespace: rhods-notebooks
+    resourceVersion: "72770"
+    uid: e23dbac5-f776-4f0a-96cb-216682bf6962
+  reason: FailedScheduling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Warning
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:33:42Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser2
+    namespace: rhods-notebooks
+    resourceVersion: "70834"
+    uid: f6f336bf-0f55-46b4-bb73-83ed56b1e374
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:42Z"
+  message: Successfully assigned rhods-notebooks/jupyterhub-nb-testuser2 to ip-10-0-139-54.ec2.internal
+  metadata:
+    creationTimestamp: "2022-05-12T13:33:42Z"
+    name: jupyterhub-nb-testuser2.16ee5ede4b9b8b57
+    namespace: rhods-notebooks
+    resourceVersion: "73129"
+    uid: 3749ecf7-567e-44fb-b134-76a91900e9e0
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:33:45Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser2
+    namespace: rhods-notebooks
+    resourceVersion: "73128"
+    uid: f6f336bf-0f55-46b4-bb73-83ed56b1e374
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:45Z"
+  message: 'AttachVolume.Attach succeeded for volume "pvc-6a3d88a6-b295-4956-bcbf-b6d4b12b7773" '
+  metadata:
+    creationTimestamp: "2022-05-12T13:33:45Z"
+    name: jupyterhub-nb-testuser2.16ee5edf00d6d7c7
+    namespace: rhods-notebooks
+    resourceVersion: "73154"
+    uid: 041f77a1-d05a-48ce-9208-7afc48e5a184
+  reason: SuccessfulAttachVolume
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: attachdetach-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:33:48Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser2
+    namespace: rhods-notebooks
+    resourceVersion: "73130"
+    uid: f6f336bf-0f55-46b4-bb73-83ed56b1e374
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:48Z"
+  message: Add eth0 [10.129.2.26/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-12T13:33:48Z"
+    name: jupyterhub-nb-testuser2.16ee5edfe33f9d76
+    namespace: rhods-notebooks
+    resourceVersion: "73186"
+    uid: 5dc10819-2de1-485d-afaa-e4d2c4fbdb6d
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:33:49Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser2
+    namespace: rhods-notebooks
+    resourceVersion: "73128"
+    uid: f6f336bf-0f55-46b4-bb73-83ed56b1e374
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:49Z"
+  message: Container image "image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/s2i-generic-data-science-notebook:py3.8-1"
+    already present on machine
+  metadata:
+    creationTimestamp: "2022-05-12T13:33:49Z"
+    name: jupyterhub-nb-testuser2.16ee5edfe58b0245
+    namespace: rhods-notebooks
+    resourceVersion: "73188"
+    uid: 2738982e-51a4-4487-bd89-b2bb490f64da
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-139-54.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:33:49Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser2
+    namespace: rhods-notebooks
+    resourceVersion: "73128"
+    uid: f6f336bf-0f55-46b4-bb73-83ed56b1e374
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:49Z"
+  message: Created container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:33:49Z"
+    name: jupyterhub-nb-testuser2.16ee5edfedc0a696
+    namespace: rhods-notebooks
+    resourceVersion: "73191"
+    uid: a3e3ccdc-122e-4815-8a93-8b20cb8ab165
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-139-54.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:33:49Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser2
+    namespace: rhods-notebooks
+    resourceVersion: "73128"
+    uid: f6f336bf-0f55-46b4-bb73-83ed56b1e374
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:49Z"
+  message: Started container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:33:49Z"
+    name: jupyterhub-nb-testuser2.16ee5edfeef25535
+    namespace: rhods-notebooks
+    resourceVersion: "73192"
+    uid: 53289cc5-5e49-4f53-9a2d-d13894deabd3
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-139-54.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:37:04Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser2
+    namespace: rhods-notebooks
+    resourceVersion: "73128"
+    uid: f6f336bf-0f55-46b4-bb73-83ed56b1e374
+  kind: Event
+  lastTimestamp: "2022-05-12T13:37:04Z"
+  message: Stopping container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:37:04Z"
+    name: jupyterhub-nb-testuser2.16ee5f0d721ee34d
+    namespace: rhods-notebooks
+    resourceVersion: "74780"
+    uid: 23ca180d-f2c4-43d6-9502-18628a05c270
+  reason: Killing
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-139-54.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:46Z"
+  involvedObject:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: jupyterhub-nb-testuser3-pvc
+    namespace: rhods-notebooks
+    resourceVersion: "70520"
+    uid: a07947a1-6436-4a0e-b942-1b7e9d3a895f
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:46Z"
+  message: waiting for first consumer to be created before binding
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:46Z"
+    name: jupyterhub-nb-testuser3-pvc.16ee5e9974d5392b
+    namespace: rhods-notebooks
+    resourceVersion: "70521"
+    uid: 8c80b4ee-fa38-4fb6-ba17-d7c9f6b073b3
+  reason: WaitForFirstConsumer
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: persistentvolume-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:52Z"
+  involvedObject:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: jupyterhub-nb-testuser3-pvc
+    namespace: rhods-notebooks
+    resourceVersion: "70524"
+    uid: a07947a1-6436-4a0e-b942-1b7e9d3a895f
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:52Z"
+  message: Successfully provisioned volume pvc-a07947a1-6436-4a0e-b942-1b7e9d3a895f
+    using kubernetes.io/aws-ebs
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:52Z"
+    name: jupyterhub-nb-testuser3-pvc.16ee5e9ace661c0f
+    namespace: rhods-notebooks
+    resourceVersion: "70576"
+    uid: 0ce8d4fb-4160-4e31-9ec7-57f47cadada1
+  reason: ProvisioningSucceeded
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: persistentvolume-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:52Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser3
+    namespace: rhods-notebooks
+    resourceVersion: "70522"
+    uid: d65aca13-e114-477f-acb7-3fadb8bee264
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:52Z"
+  message: Successfully assigned rhods-notebooks/jupyterhub-nb-testuser3 to ip-10-0-139-54.ec2.internal
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:52Z"
+    name: jupyterhub-nb-testuser3.16ee5e9ae9715ebe
+    namespace: rhods-notebooks
+    resourceVersion: "70587"
+    uid: 872e41aa-7ff4-4300-943c-bef943ede589
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:55Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser3
+    namespace: rhods-notebooks
+    resourceVersion: "70586"
+    uid: d65aca13-e114-477f-acb7-3fadb8bee264
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:55Z"
+  message: 'AttachVolume.Attach succeeded for volume "pvc-a07947a1-6436-4a0e-b942-1b7e9d3a895f" '
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:55Z"
+    name: jupyterhub-nb-testuser3.16ee5e9b9fc5c085
+    namespace: rhods-notebooks
+    resourceVersion: "70620"
+    uid: 8131a741-3d66-4cf0-b090-1b9bd8f54cc6
+  reason: SuccessfulAttachVolume
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: attachdetach-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:29:02Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser3
+    namespace: rhods-notebooks
+    resourceVersion: "70588"
+    uid: d65aca13-e114-477f-acb7-3fadb8bee264
+  kind: Event
+  lastTimestamp: "2022-05-12T13:29:02Z"
+  message: Add eth0 [10.129.2.24/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-12T13:29:02Z"
+    name: jupyterhub-nb-testuser3.16ee5e9d1c1df202
+    namespace: rhods-notebooks
+    resourceVersion: "70663"
+    uid: f4882cd4-5240-4d47-bc6e-a0e32bc385b9
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:29:02Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser3
+    namespace: rhods-notebooks
+    resourceVersion: "70586"
+    uid: d65aca13-e114-477f-acb7-3fadb8bee264
+  kind: Event
+  lastTimestamp: "2022-05-12T13:29:02Z"
+  message: Pulling image "image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/s2i-generic-data-science-notebook:py3.8-1"
+  metadata:
+    creationTimestamp: "2022-05-12T13:29:02Z"
+    name: jupyterhub-nb-testuser3.16ee5e9d1e1b5ee5
+    namespace: rhods-notebooks
+    resourceVersion: "70665"
+    uid: 3e941980-d979-4bb7-925f-06656650e1ad
+  reason: Pulling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-139-54.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:30:01Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser3
+    namespace: rhods-notebooks
+    resourceVersion: "70586"
+    uid: d65aca13-e114-477f-acb7-3fadb8bee264
+  kind: Event
+  lastTimestamp: "2022-05-12T13:30:01Z"
+  message: Successfully pulled image "image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/s2i-generic-data-science-notebook:py3.8-1"
+    in 59.563404618s
+  metadata:
+    creationTimestamp: "2022-05-12T13:30:01Z"
+    name: jupyterhub-nb-testuser3.16ee5eaafc5d09e5
+    namespace: rhods-notebooks
+    resourceVersion: "71153"
+    uid: d8c2ac1c-e1cb-4fc3-9f89-0e24dfa710b2
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-139-54.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:30:02Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser3
+    namespace: rhods-notebooks
+    resourceVersion: "70586"
+    uid: d65aca13-e114-477f-acb7-3fadb8bee264
+  kind: Event
+  lastTimestamp: "2022-05-12T13:30:02Z"
+  message: Created container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:30:02Z"
+    name: jupyterhub-nb-testuser3.16ee5eab110c2a35
+    namespace: rhods-notebooks
+    resourceVersion: "71157"
+    uid: 0cc149fa-a361-4505-ad03-58f94f2f58c2
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-139-54.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:30:02Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser3
+    namespace: rhods-notebooks
+    resourceVersion: "70586"
+    uid: d65aca13-e114-477f-acb7-3fadb8bee264
+  kind: Event
+  lastTimestamp: "2022-05-12T13:30:02Z"
+  message: Started container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:30:02Z"
+    name: jupyterhub-nb-testuser3.16ee5eab1578e483
+    namespace: rhods-notebooks
+    resourceVersion: "71158"
+    uid: 4be26e1a-11dd-499d-9d99-52932374e132
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-139-54.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:33:34Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser3
+    namespace: rhods-notebooks
+    resourceVersion: "70586"
+    uid: d65aca13-e114-477f-acb7-3fadb8bee264
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:34Z"
+  message: Stopping container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:33:34Z"
+    name: jupyterhub-nb-testuser3.16ee5edc94c2f756
+    namespace: rhods-notebooks
+    resourceVersion: "73059"
+    uid: 86e17033-1569-4d0c-bf40-04341050b3a4
+  reason: Killing
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-139-54.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:44Z"
+  involvedObject:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: jupyterhub-nb-testuser4-pvc
+    namespace: rhods-notebooks
+    resourceVersion: "70493"
+    uid: 46016d6f-7318-463d-99b8-c5177ce8b7f5
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:44Z"
+  message: waiting for first consumer to be created before binding
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:44Z"
+    name: jupyterhub-nb-testuser4-pvc.16ee5e990179a833
+    namespace: rhods-notebooks
+    resourceVersion: "70494"
+    uid: 607c8471-2352-4f57-870e-35ab2554e7de
+  reason: WaitForFirstConsumer
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: persistentvolume-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:50Z"
+  involvedObject:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: jupyterhub-nb-testuser4-pvc
+    namespace: rhods-notebooks
+    resourceVersion: "70499"
+    uid: 46016d6f-7318-463d-99b8-c5177ce8b7f5
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:50Z"
+  message: Successfully provisioned volume pvc-46016d6f-7318-463d-99b8-c5177ce8b7f5
+    using kubernetes.io/aws-ebs
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:50Z"
+    name: jupyterhub-nb-testuser4-pvc.16ee5e9a58f62a1f
+    namespace: rhods-notebooks
+    resourceVersion: "70549"
+    uid: 45dc9b93-fcac-466e-808e-eefba40f997d
+  reason: ProvisioningSucceeded
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: persistentvolume-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:50Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser4
+    namespace: rhods-notebooks
+    resourceVersion: "70497"
+    uid: baed2cab-1d3e-4838-a305-38fb19b051c6
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:50Z"
+  message: Successfully assigned rhods-notebooks/jupyterhub-nb-testuser4 to ip-10-0-175-50.ec2.internal
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:50Z"
+    name: jupyterhub-nb-testuser4.16ee5e9a76dc3439
+    namespace: rhods-notebooks
+    resourceVersion: "70556"
+    uid: dea27233-50c2-4e2d-b71f-60c3f0981545
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:28:53Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser4
+    namespace: rhods-notebooks
+    resourceVersion: "70555"
+    uid: baed2cab-1d3e-4838-a305-38fb19b051c6
+  kind: Event
+  lastTimestamp: "2022-05-12T13:28:53Z"
+  message: 'AttachVolume.Attach succeeded for volume "pvc-46016d6f-7318-463d-99b8-c5177ce8b7f5" '
+  metadata:
+    creationTimestamp: "2022-05-12T13:28:53Z"
+    name: jupyterhub-nb-testuser4.16ee5e9b24746a65
+    namespace: rhods-notebooks
+    resourceVersion: "70599"
+    uid: 6b08607c-d92a-444b-a308-0b81f964d4d7
+  reason: SuccessfulAttachVolume
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: attachdetach-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:29:02Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: jupyterhub-nb-testuser4
+    namespace: rhods-notebooks
+    resourceVersion: "70557"
+    uid: baed2cab-1d3e-4838-a305-38fb19b051c6
+  kind: Event
+  lastTimestamp: "2022-05-12T13:29:02Z"
+  message: Add eth0 [10.131.0.31/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-12T13:29:02Z"
+    name: jupyterhub-nb-testuser4.16ee5e9d3124a5e6
+    namespace: rhods-notebooks
+    resourceVersion: "70669"
+    uid: dfd0b71d-7649-47fa-a343-9cbdfaa6921b
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:29:02Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser4
+    namespace: rhods-notebooks
+    resourceVersion: "70555"
+    uid: baed2cab-1d3e-4838-a305-38fb19b051c6
+  kind: Event
+  lastTimestamp: "2022-05-12T13:29:02Z"
+  message: Pulling image "image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/s2i-generic-data-science-notebook:py3.8-1"
+  metadata:
+    creationTimestamp: "2022-05-12T13:29:02Z"
+    name: jupyterhub-nb-testuser4.16ee5e9d331d7ff4
+    namespace: rhods-notebooks
+    resourceVersion: "70671"
+    uid: ece7aa6b-b648-4fc6-bb67-35005d347a6c
+  reason: Pulling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-50.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:30:22Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser4
+    namespace: rhods-notebooks
+    resourceVersion: "70555"
+    uid: baed2cab-1d3e-4838-a305-38fb19b051c6
+  kind: Event
+  lastTimestamp: "2022-05-12T13:30:22Z"
+  message: Successfully pulled image "image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/s2i-generic-data-science-notebook:py3.8-1"
+    in 1m20.004774666s
+  metadata:
+    creationTimestamp: "2022-05-12T13:30:22Z"
+    name: jupyterhub-nb-testuser4.16ee5eafd3c5a98b
+    namespace: rhods-notebooks
+    resourceVersion: "71383"
+    uid: 82b6c581-1a4e-41bd-a69e-8aa6dbd6f5ca
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-50.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:30:22Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser4
+    namespace: rhods-notebooks
+    resourceVersion: "70555"
+    uid: baed2cab-1d3e-4838-a305-38fb19b051c6
+  kind: Event
+  lastTimestamp: "2022-05-12T13:30:22Z"
+  message: Created container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:30:22Z"
+    name: jupyterhub-nb-testuser4.16ee5eafdca8e29b
+    namespace: rhods-notebooks
+    resourceVersion: "71386"
+    uid: 192d2428-aa32-4048-bc8a-a8734fb0ae10
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-50.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:30:22Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser4
+    namespace: rhods-notebooks
+    resourceVersion: "70555"
+    uid: baed2cab-1d3e-4838-a305-38fb19b051c6
+  kind: Event
+  lastTimestamp: "2022-05-12T13:30:22Z"
+  message: Started container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:30:22Z"
+    name: jupyterhub-nb-testuser4.16ee5eafde2ea898
+    namespace: rhods-notebooks
+    resourceVersion: "71387"
+    uid: 6a0ee829-67fa-42f6-8b12-87970614fa2a
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-50.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:33:49Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{notebook}
+    kind: Pod
+    name: jupyterhub-nb-testuser4
+    namespace: rhods-notebooks
+    resourceVersion: "70555"
+    uid: baed2cab-1d3e-4838-a305-38fb19b051c6
+  kind: Event
+  lastTimestamp: "2022-05-12T13:33:49Z"
+  message: Stopping container notebook
+  metadata:
+    creationTimestamp: "2022-05-12T13:33:49Z"
+    name: jupyterhub-nb-testuser4.16ee5edff270ab0b
+    namespace: rhods-notebooks
+    resourceVersion: "73196"
+    uid: 487dcafc-e726-4d64-b11b-748440ec5e4a
+  reason: Killing
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-50.ec2.internal
+  type: Normal
+- apiVersion: v1
+  count: 18
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:23:21Z"
+  involvedObject:
+    apiVersion: kfdef.apps.kubeflow.org/v1
+    kind: KfDef
+    name: rhods-notebooks
+    namespace: rhods-notebooks
+    resourceVersion: "59196"
+    uid: 401a001b-f24a-4cef-8b05-c3444eba12a0
+  kind: Event
+  lastTimestamp: "2022-05-12T13:37:17Z"
+  message: KfDef instance rhods-notebooks created and deployed successfully
+  metadata:
+    creationTimestamp: "2022-05-12T13:23:21Z"
+    name: rhods-notebooks.16ee5e4de454fb1c
+    namespace: rhods-notebooks
+    resourceVersion: "74904"
+    uid: 6c30d5b4-d9f1-42d5-b175-ea5e07ddb8ba
+  reason: KfDefCreationSuccessful
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kfdef-controller
+  type: Normal
+- apiVersion: v1
+  count: 55
+  eventTime: null
+  firstTimestamp: "2022-05-12T13:18:15Z"
+  involvedObject:
+    apiVersion: kfdef.apps.kubeflow.org/v1
+    kind: KfDef
+    name: rhods-osd-config
+    namespace: rhods-notebooks
+    resourceVersion: "59169"
+    uid: dfc09d30-90e5-4e0f-b4a9-c56f3eef685a
+  kind: Event
+  lastTimestamp: "2022-05-12T13:39:04Z"
+  message: KfDef instance rhods-osd-config created and deployed successfully
+  metadata:
+    creationTimestamp: "2022-05-12T13:18:15Z"
+    name: rhods-osd-config.16ee5e068b07c366
+    namespace: rhods-notebooks
+    resourceVersion: "75792"
+    uid: a2ba6768-b137-40f3-b5a7-ab7a6cb0774c
+  reason: KfDefCreationSuccessful
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kfdef-controller
+  type: Normal
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""

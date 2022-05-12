@@ -1,0 +1,80 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    batch.kubernetes.io/job-tracking: ""
+  creationTimestamp: "2022-05-12T13:27:08Z"
+  generation: 1
+  labels:
+    deployment: ods-ci
+  name: ods-ci
+  namespace: loadtest
+  resourceVersion: "76094"
+  uid: 08d8f1eb-0987-4869-8fbc-9c540942fd56
+spec:
+  activeDeadlineSeconds: 18000
+  backoffLimit: 0
+  completionMode: Indexed
+  completions: 5
+  parallelism: 5
+  selector:
+    matchLabels:
+      controller-uid: 08d8f1eb-0987-4869-8fbc-9c540942fd56
+  suspend: false
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        controller-uid: 08d8f1eb-0987-4869-8fbc-9c540942fd56
+        job-name: ods-ci
+      name: ods-ci-loadtest
+    spec:
+      containers:
+      - command:
+        - bash
+        - /mnt/rhods-jupyterlab-entrypoint/entrypoint.sh
+        env:
+        - name: TEST_CASE
+          value: tests/Tests/500__jupyterhub/test-jupyterlab-cpu-stresstest.robot
+        image: image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest
+        imagePullPolicy: Always
+        name: ods-ci
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /mnt/ods-ci-test-variables
+          name: ods-ci-test-variables
+        - mountPath: /mnt/s3-config
+          name: s3cmd-config
+        - mountPath: /mnt/rhods-jupyterlab-entrypoint
+          name: rhods-jupyterlab-entrypoint
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: ods-ci-test-variables
+        secret:
+          defaultMode: 420
+          secretName: ods-ci-test-variables
+      - configMap:
+          defaultMode: 420
+          name: s3cmd-config
+        name: s3cmd-config
+      - configMap:
+          defaultMode: 420
+          name: rhods-jupyterlab-entrypoint
+        name: rhods-jupyterlab-entrypoint
+status:
+  completedIndexes: 0-4
+  completionTime: "2022-05-12T13:39:46Z"
+  conditions:
+  - lastProbeTime: "2022-05-12T13:39:46Z"
+    lastTransitionTime: "2022-05-12T13:39:46Z"
+    status: "True"
+    type: Complete
+  startTime: "2022-05-12T13:27:08Z"
+  succeeded: 5
+  uncountedTerminatedPods: {}
