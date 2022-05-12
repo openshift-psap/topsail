@@ -20,21 +20,32 @@
     rhods_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_test_namespace }}/{{ rhods_test_istag }}
     rhods_notebook_namespace: rhods-notebooks
 
-- name: Get JupyterHub hostname
-  command: oc get route/jupyterhub -n redhat-ods-applications -ojsonpath={.spec.host}
-  register: jupyterhub_hostname_cmd
+- name: Set system-under-test == driver-cluster if no system-under-test (SUT) is provided
+  set_fact:
+    sut_cluster_kubeconfig: "{{ rhods_test_jupyterlab_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
 
-- name: Get RHODS dashboard address
-  command: oc get route/rhods-dashboard -n redhat-ods-applications -ojsonpath={.spec.host}
-  register: rhods_dashboard_hostname_cmd
+- name: Fetch RHODS endpoints from the SUT cluster
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  block:
+  - name: Test the connectivity of the SUT cluster
+    command: oc whoami --show-console
 
-- name: Get OCP console URL
-  command: oc whoami --show-console
-  register: oc_console_url_cmd
+  - name: Get JupyterHub hostname (SUT cluster)
+    command: oc get route/jupyterhub -n redhat-ods-applications -ojsonpath={.spec.host}
+    register: jupyterhub_hostname_cmd
 
-- name: Get OCP API URL
-  command: oc config view --minify -o jsonpath='{.clusters[0].cluster.server}'
-  register: oc_api_url_cmd
+  - name: Get RHODS dashboard address (SUT cluster)
+    command: oc get route/rhods-dashboard -n redhat-ods-applications -ojsonpath={.spec.host}
+    register: rhods_dashboard_hostname_cmd
+
+  - name: Get OCP console URL (SUT cluster)
+    command: oc whoami --show-console
+    register: oc_console_url_cmd
+
+  - name: Get OCP API URL (SUT cluster)
+    command: oc config view --minify -o jsonpath='{.clusters[0].cluster.server}'
+    register: oc_api_url_cmd
 
 - name: Get the ODS-CI sample var file
   shell:
@@ -49,8 +60,10 @@
   register: rhods_version_cmd
 
 - name: Apply the ODS-CI template
-  shell:
+  shell: |
     set -o pipefail;
+    set -e;
+
     export OCP_CONSOLE_URL="{{ oc_console_url_cmd.stdout }}";
     export OCP_API_URL="{{ oc_api_url_cmd.stdout }}";
     export ODH_DASHBOARD_URL="https://{{ rhods_dashboard_hostname_cmd.stdout }}";

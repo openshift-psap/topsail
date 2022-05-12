@@ -47,7 +47,7 @@ class RHODS:
         return RunAnsibleRole("ocm_deploy_addon", opt)
 
     @staticmethod
-    def test_jupyterlab(idp_name, username_prefix, user_count: int, secret_properties_file):
+    def test_jupyterlab(idp_name, username_prefix, user_count: int, secret_properties_file, sut_cluster_kubeconfig=""):
         """
         Test RHODS JupyterLab notebooks
 
@@ -55,14 +55,17 @@ class RHODS:
           idp_name: Name of the identity provider to use.
           user_count: Number of users to run in parallel
           secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'deploy_ldap' command)
-
+          sut_cluster_kubeconfig: Optional. Path of the system-under-test cluster's Kubeconfig. If provided, the RHODS endpoints will be looked up in this cluster.
         """
+
         opts = {
             "rhods_test_jupyterlab_idp_name": idp_name,
             "rhods_test_jupyterlab_username_prefix": username_prefix,
             "rhods_test_jupyterlab_user_count": user_count,
             "rhods_test_jupyterlab_secret_properties": secret_properties_file,
+            "rhods_test_jupyterlab_sut_cluster_kubeconfig": sut_cluster_kubeconfig,
         }
+
         return RunAnsibleRole("rhods_test_jupyterlab", opts)
 
     @staticmethod
