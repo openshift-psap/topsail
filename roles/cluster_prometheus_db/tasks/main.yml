@@ -1,0 +1,8 @@
+---
+- name: Reset prometheus database
+  include_tasks: reset.yml
+  when: cluster_prometheus_db_mode == "reset"
+
+- name: Dump prometheus database
+  include_tasks: dump.yml
+  when: cluster_prometheus_db_mode == "dump"

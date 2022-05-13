@@ -1,0 +1,8 @@
+---
+- name: Get Prometheus Pod name
+  command: oc get pods -l{{ cluster_prometheus_db_label }} -n {{ cluster_prometheus_db_namespace }} -oname
+  register: prometheus_pod_name_cmd
+  failed_when: not prometheus_pod_name_cmd.stdout
+
+- name: Delete Prometheus Pod
+  command: oc delete {{ prometheus_pod_name_cmd.stdout }} -n {{ cluster_prometheus_db_namespace }}

@@ -161,3 +161,43 @@ class Cluster:
         }
 
         return RunAnsibleRole("cluster_deploy_minio_s3_server", opts)
+
+    @staticmethod
+    def reset_prometheus_db(label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring"):
+        """
+        Resets Prometheus database, by destroying its Pod.
+
+        By default, target OpenShift Prometheus Pod.
+
+        Args:
+          label: Optional. Label to use to identify Prometheus Pod.
+          namespace: Optional. Namespace where to search Promtheus Pod.
+        """
+
+        opts = {
+            "cluster_prometheus_db_mode": "reset",
+            "cluster_prometheus_db_label": label,
+            "cluster_prometheus_db_namespace": namespace,
+        }
+
+        return RunAnsibleRole("cluster_prometheus_db", opts)
+
+    @staticmethod
+    def dump_prometheus_db(label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring"):
+        """
+        Dump Prometheus database into a file
+
+                By default, target OpenShift Prometheus Pod.
+
+        Args:
+          label: Optional. Label to use to identify Prometheus Pod.
+          namespace: Optional. Namespace where to search Promtheus Pod.
+        """
+
+        opts = {
+            "cluster_prometheus_db_mode": "dump",
+            "cluster_prometheus_db_label": label,
+            "cluster_prometheus_db_namespace": namespace,
+        }
+
+        return RunAnsibleRole("cluster_prometheus_db", opts)
