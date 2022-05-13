@@ -137,6 +137,7 @@ class Cluster:
     def deploy_aws_efs():
         """
         Deploy AWS EFS CSI driver and configure AWS accordingly.
+
         Assumes that AWS (credentials, Ansible module, Python module) is properly configured in the system.
         """
         return RunAnsibleRole("cluster_deploy_aws_efs", {})
@@ -151,7 +152,7 @@ class Cluster:
         user_password=passwd
         admin_password=adminpasswd
 
-        Args
+        Args:
             secret_properties_file: Path of a file containing the properties of S3 secrets.
         """
 
