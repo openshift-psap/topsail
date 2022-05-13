@@ -79,6 +79,8 @@ prepare_driver_cluster() {
                      --dockerfile-path="build/Dockerfile"
 
     ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
+
+    ./run_toolbox.py cluster reset_prometheus_db
 }
 
 prepare_sutest_cluster() {
@@ -93,6 +95,9 @@ prepare_sutest_cluster() {
     ./run_toolbox.py rhods deploy_ods "$ODS_CATALOG_VERSION" "$ODS_CATALOG_IMAGE_VERSION"
 
     oc_adm_groups_new_rhods_users "$ODS_CI_USER_GROUP" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS"
+
+    ./run_toolbox.py cluster reset_prometheus_db
+    ./run_toolbox.py cluster reset_prometheus_db --label="deployment=prometheus" --namespace=redhat-ods-monitoring
 }
 
 prepare_driver_cluster
@@ -105,3 +110,7 @@ switch_cluster "driver"
                  "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
                  "$S3_LDAP_PROPS" \
                  --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST"
+
+switch_cluster "sutest"
+./run_toolbox.py cluster dump_prometheus_db
+# ./run_toolbox.py cluster dump_prometheus_db --label="deployment=prometheus" --namespace=redhat-ods-monitoring # not working yet, RHODS Prometheus Pod is crashing
