@@ -5,52 +5,19 @@ import datetime
 from collections import defaultdict
 
 import matrix_benchmarking.store as store
+import matrix_benchmarking.store.simple as store_simple
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 
 EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
-def parse_notebook_events(results, dirname):
-    results.notebook_time = defaultdict(types.SimpleNamespace)
-    results.notebook_start_time = datetime.datetime.now()
+def _rewrite_settings(settings_dict):
+    return settings_dict
 
-    with open(dirname / "notebook_events.yaml") as f:
-        events = yaml.safe_load(f)
+def _parse_job(results, filename):
 
-    for ev in events["items"]:
-        if ev["involvedObject"]["kind"] != "Pod": continue
-        if ev["involvedObject"]["namespace"] != "rhods-notebooks": continue
-
-        podname = ev["involvedObject"]["name"]
-        reason = ev.get("reason")
-        time = ev.get("eventTime")
-        fmt = EVT_TIME_FMT
-        if not time:
-            time = ev["lastTimestamp"]
-            fmt = TIME_FMT
-
-        eventTime = datetime.datetime.strptime(time, fmt)
-
-        MAPPING_REASON_NAME = {
-            "Scheduled": "creation_time",
-            "AddedInterface": "pulling",
-            "Pulled": "pulled",
-            "Started": "started",
-            "Killing": "terminated",
-        }
-
-        evt_name = MAPPING_REASON_NAME.get(reason)
-
-        if evt_name and eventTime:
-            results.notebook_start_time = min([results.notebook_start_time, eventTime])
-
-            results.notebook_time[podname].__dict__[evt_name] = eventTime
-
-def parse_execution_times(results, dirname):
-    results.pod_time = {}
-
-    with open(dirname / "tester_job.yaml") as f:
+    with open(filename) as f:
         job = yaml.safe_load(f)
 
     results.job_creation_time = \
@@ -62,51 +29,130 @@ def parse_execution_times(results, dirname):
             job["status"]["completionTime"],
             TIME_FMT)
 
-    with open(dirname / "tester_pods.yaml") as f:
+
+def _parse_pod_event_times(filename, namespace=None, hostnames=None):
+    event_times = defaultdict(types.SimpleNamespace)
+
+    with open(filename) as f:
+        events = yaml.safe_load(f)
+
+    for ev in events["items"]:
+        if namespace and ev["involvedObject"]["namespace"] != namespace: continue
+
+        if ev["involvedObject"]["kind"] == "PersistentVolumeClaim":
+            podname = ev["involvedObject"]["name"].strip("-pvc")
+            appears_time = event_times[podname].__dict__.get("appears_time")
+            str_time = ev["firstTimestamp"]
+            event_time = datetime.datetime.strptime(str_time,  TIME_FMT)
+
+            if not appears_time or event_time < appears_time:
+                event_times[podname].appears_time = event_time
+
+        elif ev["involvedObject"]["kind"] != "Pod":
+            continue
+
+        podname = ev["involvedObject"]["name"]
+
+        if podname.endswith("-build"): continue
+        if podname.endswith("-debug"): continue
+
+        reason = ev.get("reason")
+        time = ev.get("eventTime")
+        fmt = EVT_TIME_FMT
+        if not time:
+            time = ev["lastTimestamp"]
+            fmt = TIME_FMT
+
+        event_time = datetime.datetime.strptime(time, fmt)
+
+        MAPPING_REASON_NAME = {
+            "Scheduled": "scheduled",
+            "AddedInterface": "pulling",
+            "Pulled": "pulled",
+            "Started": "started",
+            "Killing": "terminated",
+        }
+
+        evt_name = MAPPING_REASON_NAME.get(reason)
+
+        if not (evt_name and event_time):
+            continue
+
+        event_times[podname].__dict__[evt_name] = event_time
+
+        if hostnames is not None and reason == "Started":
+            hostnames[podname] = ev["source"]["host"]
+
+    return event_times
+
+
+def _parse_pod_times(filename):
+    pod_times = defaultdict(types.SimpleNamespace)
+    with open(filename) as f:
         podlist = yaml.safe_load(f)
 
     for pod in podlist["items"]:
         podname = pod["metadata"]["name"]
-        results.pod_time[podname] = types.SimpleNamespace()
 
-        results.pod_time[podname].creation_time = \
+        if podname.endswith("-build"): continue
+        if podname.endswith("-debug"): continue
+
+        pod_times[podname] = types.SimpleNamespace()
+
+        pod_times[podname].creation_time = \
             datetime.datetime.strptime(
                 pod["metadata"]["creationTimestamp"],
                 TIME_FMT)
-        results.pod_time[podname].start_time = \
+        pod_times[podname].start_time = \
             datetime.datetime.strptime(
                 pod["status"]["startTime"],
                 TIME_FMT)
 
         if pod["status"]["containerStatuses"][0]["state"]["terminated"]:
-            results.pod_time[podname].container_started = \
+            pod_times[podname].container_started = \
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["terminated"]["startedAt"],
                     TIME_FMT)
 
-            results.pod_time[podname].container_finished = \
+            pod_times[podname].container_finished = \
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["terminated"]["finishedAt"],
                     TIME_FMT)
 
         elif pod["status"]["containerStatuses"][0]["state"]["running"]:
-            results.pod_time[podname].container_running_since = \
+            pod_times[podname].container_running_since = \
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["running"]["startedAt"],
                     TIME_FMT)
 
         else:
+            print("Unknown containerStatuses ...")
             import pdb;pdb.set_trace()
+            pass
 
-    pass
+    return pod_times
 
-def parse_data():
-    results_dir = pathlib.Path(".") / cli_args.kwargs["results_dirname"]
-
-    settings = {"expe": "test", "value": "true"}
+def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace()
 
-    parse_execution_times(results, results_dir)
-    parse_notebook_events(results, results_dir)
+    _parse_job(results, dirname / "tester_job.yaml")
 
-    store.add_to_matrix(settings, None, results, None)
+    results.pod_times = _parse_pod_times(dirname / "tester_pods.yaml")
+    results.event_times = defaultdict(types.SimpleNamespace)
+    results.notebook_hostnames = notebook_hostnames = {}
+    results.testpod_hostnames = testpod_hostnames = {}
+
+    results.event_times |= _parse_pod_event_times(dirname / "notebook_events.yaml", "rhods-notebooks", notebook_hostnames)
+    results.event_times |= _parse_pod_event_times(dirname / "tester_events.yaml", "loadtest", testpod_hostnames)
+
+    results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci")]
+    results.notebook_pods = [k for k in results.event_times.keys() if k.startswith("jupyterhub-nb")]
+
+    store.add_to_matrix(import_settings, None, results, None)
+
+def parse_data():
+    # delegate the parsing to the simple_store
+    store.register_custom_rewrite_settings(_rewrite_settings)
+    store_simple.register_custom_parse_results(_parse_directory)
+
+    return store_simple.parse_data()
