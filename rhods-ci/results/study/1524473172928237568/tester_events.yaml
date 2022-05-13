@@ -1,0 +1,1539 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:23Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-0-4tvgp
+    namespace: loadtest
+    resourceVersion: "68514"
+    uid: f3556c38-8b5f-470b-800b-49fb07f07409
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:23Z"
+  message: Successfully assigned loadtest/ods-ci-0-4tvgp to ip-10-0-175-230.us-west-1.compute.internal
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:23Z"
+    name: ods-ci-0-4tvgp.16ee26dce781f6fb
+    namespace: loadtest
+    resourceVersion: "68517"
+    uid: 7f9b1da7-9da8-40fb-bd76-ecae2b59ee76
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-0-4tvgp
+    namespace: loadtest
+    resourceVersion: "68520"
+    uid: f3556c38-8b5f-470b-800b-49fb07f07409
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Add eth0 [10.129.2.20/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-0-4tvgp.16ee26dd51b512a3
+    namespace: loadtest
+    resourceVersion: "68559"
+    uid: 3f916154-f17a-4e21-abb5-e35db2d0a1e2
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-0-4tvgp
+    namespace: loadtest
+    resourceVersion: "68515"
+    uid: f3556c38-8b5f-470b-800b-49fb07f07409
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Pulling image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest"
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-0-4tvgp.16ee26dd5346fbd6
+    namespace: loadtest
+    resourceVersion: "68562"
+    uid: 54c98492-b4d7-4424-8b90-66c45f11b5d3
+  reason: Pulling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-0-4tvgp
+    namespace: loadtest
+    resourceVersion: "68515"
+    uid: f3556c38-8b5f-470b-800b-49fb07f07409
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Successfully pulled image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest"
+    in 413.407486ms
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-0-4tvgp.16ee26dd6beb7164
+    namespace: loadtest
+    resourceVersion: "68577"
+    uid: 4ee5c4d5-0630-4964-a64f-4a75791fb7ae
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:26Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-0-4tvgp
+    namespace: loadtest
+    resourceVersion: "68515"
+    uid: f3556c38-8b5f-470b-800b-49fb07f07409
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:26Z"
+  message: Created container ods-ci
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:26Z"
+    name: ods-ci-0-4tvgp.16ee26dd81f6010c
+    namespace: loadtest
+    resourceVersion: "68589"
+    uid: 0a1b779c-a8bc-4980-81eb-7323cfbcadcc
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:26Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-0-4tvgp
+    namespace: loadtest
+    resourceVersion: "68515"
+    uid: f3556c38-8b5f-470b-800b-49fb07f07409
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:26Z"
+  message: Started container ods-ci
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:26Z"
+    name: ods-ci-0-4tvgp.16ee26dd848d2957
+    namespace: loadtest
+    resourceVersion: "68603"
+    uid: fe7a981c-fa44-48da-bb40-08d10ca2bef9
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:23Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-1-brw2w
+    namespace: loadtest
+    resourceVersion: "68519"
+    uid: 1810692f-ac9e-4d49-b0e7-d16b84bc9912
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:23Z"
+  message: Successfully assigned loadtest/ods-ci-1-brw2w to ip-10-0-175-230.us-west-1.compute.internal
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:23Z"
+    name: ods-ci-1-brw2w.16ee26dce903a70f
+    namespace: loadtest
+    resourceVersion: "68526"
+    uid: 54d0fdd0-e44a-4615-99e5-e66a233dac1f
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-1-brw2w
+    namespace: loadtest
+    resourceVersion: "68534"
+    uid: 1810692f-ac9e-4d49-b0e7-d16b84bc9912
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Add eth0 [10.129.2.22/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-1-brw2w.16ee26dd518f1b59
+    namespace: loadtest
+    resourceVersion: "68558"
+    uid: e1f2da74-6ede-4118-bb55-fff3dc1d8808
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-1-brw2w
+    namespace: loadtest
+    resourceVersion: "68523"
+    uid: 1810692f-ac9e-4d49-b0e7-d16b84bc9912
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Pulling image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest"
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-1-brw2w.16ee26dd535fd04e
+    namespace: loadtest
+    resourceVersion: "68563"
+    uid: 77c9fe26-e443-4734-bed5-2c64fe2b1e1f
+  reason: Pulling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-1-brw2w
+    namespace: loadtest
+    resourceVersion: "68523"
+    uid: 1810692f-ac9e-4d49-b0e7-d16b84bc9912
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Successfully pulled image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest"
+    in 421.037053ms
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-1-brw2w.16ee26dd6c787674
+    namespace: loadtest
+    resourceVersion: "68578"
+    uid: fe5ea1c3-d51d-4dc5-89a6-6b3b9dc150bb
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:26Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-1-brw2w
+    namespace: loadtest
+    resourceVersion: "68523"
+    uid: 1810692f-ac9e-4d49-b0e7-d16b84bc9912
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:26Z"
+  message: Created container ods-ci
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:26Z"
+    name: ods-ci-1-brw2w.16ee26dd80a3607f
+    namespace: loadtest
+    resourceVersion: "68587"
+    uid: 87e444a7-cf7e-451e-babe-3c46797176b5
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:26Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-1-brw2w
+    namespace: loadtest
+    resourceVersion: "68523"
+    uid: 1810692f-ac9e-4d49-b0e7-d16b84bc9912
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:26Z"
+  message: Started container ods-ci
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:26Z"
+    name: ods-ci-1-brw2w.16ee26dd82b5e822
+    namespace: loadtest
+    resourceVersion: "68590"
+    uid: 3ad6c824-7e74-4ea1-9d46-009c0ba49036
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:27Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48206"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:27Z"
+  message: Successfully assigned loadtest/ods-ci-1-build to ip-10-0-175-230.us-west-1.compute.internal
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:27Z"
+    name: ods-ci-1-build.16ee243f452d9dc0
+    namespace: loadtest
+    resourceVersion: "48211"
+    uid: 6b5c352b-9e3d-4133-bb01-18898a8fb1f7
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:29Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48213"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:29Z"
+  message: Add eth0 [10.129.2.9/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:29Z"
+    name: ods-ci-1-build.16ee243fb7001f12
+    namespace: loadtest
+    resourceVersion: "48222"
+    uid: 7bd51ae2-1dba-4699-afb1-60aa02e9328f
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:29Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.initContainers{git-clone}
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48209"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:29Z"
+  message: Pulling image "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c4a9891276fbe5d0a69d2182863ee76e8a50dac5e2ef7d464cb39236b72ed1ef"
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:29Z"
+    name: ods-ci-1-build.16ee243fb8e74b27
+    namespace: loadtest
+    resourceVersion: "48225"
+    uid: 2c1dab6e-88fb-49e5-b633-a7b6924ce747
+  reason: Pulling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:39Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.initContainers{git-clone}
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48209"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:39Z"
+  message: Successfully pulled image "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c4a9891276fbe5d0a69d2182863ee76e8a50dac5e2ef7d464cb39236b72ed1ef"
+    in 9.749780823s
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:39Z"
+    name: ods-ci-1-build.16ee2441fe097478
+    namespace: loadtest
+    resourceVersion: "48281"
+    uid: 59bfbe4d-2c6d-4bbd-925f-807b00fb66fc
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:39Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.initContainers{git-clone}
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48209"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:39Z"
+  message: Created container git-clone
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:39Z"
+    name: ods-ci-1-build.16ee24420558f52a
+    namespace: loadtest
+    resourceVersion: "48282"
+    uid: b1e8ed64-f86d-4e57-8633-20023a5d081c
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:39Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.initContainers{git-clone}
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48209"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:39Z"
+  message: Started container git-clone
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:39Z"
+    name: ods-ci-1-build.16ee24420663f149
+    namespace: loadtest
+    resourceVersion: "48283"
+    uid: ccbf4805-4b70-4336-9162-56d5596840aa
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:46Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.initContainers{manage-dockerfile}
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48209"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:46Z"
+  message: Container image "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c4a9891276fbe5d0a69d2182863ee76e8a50dac5e2ef7d464cb39236b72ed1ef"
+    already present on machine
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:46Z"
+    name: ods-ci-1-build.16ee24439811363e
+    namespace: loadtest
+    resourceVersion: "48319"
+    uid: a6bd5fc9-4806-4b5e-9002-578d48f4d042
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:46Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.initContainers{manage-dockerfile}
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48209"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:46Z"
+  message: Created container manage-dockerfile
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:46Z"
+    name: ods-ci-1-build.16ee24439f7085fb
+    namespace: loadtest
+    resourceVersion: "48323"
+    uid: 12c392a0-f898-4c8b-b3db-b597275243d5
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:46Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.initContainers{manage-dockerfile}
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48209"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:46Z"
+  message: Started container manage-dockerfile
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:46Z"
+    name: ods-ci-1-build.16ee2443a08608da
+    namespace: loadtest
+    resourceVersion: "48324"
+    uid: fb01eebb-a957-4776-8a74-e94904e23e19
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:47Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{docker-build}
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48209"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:47Z"
+  message: Container image "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c4a9891276fbe5d0a69d2182863ee76e8a50dac5e2ef7d464cb39236b72ed1ef"
+    already present on machine
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:47Z"
+    name: ods-ci-1-build.16ee2443d3ebfb11
+    namespace: loadtest
+    resourceVersion: "48331"
+    uid: 8c36f2af-a99f-4d5b-bb8f-08ce5ff6f7fe
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:47Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{docker-build}
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48209"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:47Z"
+  message: Created container docker-build
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:47Z"
+    name: ods-ci-1-build.16ee2443da1a6106
+    namespace: loadtest
+    resourceVersion: "48333"
+    uid: c7471f77-d075-43c5-9d40-f0b1ac735c0c
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:47Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{docker-build}
+    kind: Pod
+    name: ods-ci-1-build
+    namespace: loadtest
+    resourceVersion: "48209"
+    uid: a56b4aa1-cbdb-4e60-b30b-8886ac2dec12
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:47Z"
+  message: Started container docker-build
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:47Z"
+    name: ods-ci-1-build.16ee2443db5a0c19
+    namespace: loadtest
+    resourceVersion: "48334"
+    uid: b917b81d-5f4d-48c7-a9af-d684b7c10ae0
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:39:40Z"
+  involvedObject:
+    apiVersion: build.openshift.io/v1
+    kind: Build
+    name: ods-ci-1
+    namespace: loadtest
+    resourceVersion: "48288"
+    uid: 653d4051-aeb4-4393-94b4-863b8bee5761
+  kind: Event
+  lastTimestamp: "2022-05-11T19:39:40Z"
+  message: Build loadtest/ods-ci-1 is now running
+  metadata:
+    creationTimestamp: "2022-05-11T19:39:40Z"
+    name: ods-ci-1.16ee24423392e3df
+    namespace: loadtest
+    resourceVersion: "48289"
+    uid: c5f49da0-e82f-494c-a1be-5b7aad19de31
+  reason: BuildStarted
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: build-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T19:42:53Z"
+  involvedObject:
+    apiVersion: build.openshift.io/v1
+    kind: Build
+    name: ods-ci-1
+    namespace: loadtest
+    resourceVersion: "49516"
+    uid: 653d4051-aeb4-4393-94b4-863b8bee5761
+  kind: Event
+  lastTimestamp: "2022-05-11T19:42:53Z"
+  message: Build loadtest/ods-ci-1 completed successfully
+  metadata:
+    creationTimestamp: "2022-05-11T19:42:53Z"
+    name: ods-ci-1.16ee246f4c20c16a
+    namespace: loadtest
+    resourceVersion: "49517"
+    uid: df61e26f-e71e-49bf-9f0d-40e4f2d62d95
+  reason: BuildCompleted
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: build-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:23Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-2-28l64
+    namespace: loadtest
+    resourceVersion: "68518"
+    uid: 05b08b2a-eeaf-4fec-93b8-54538c447567
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:23Z"
+  message: Successfully assigned loadtest/ods-ci-2-28l64 to ip-10-0-175-230.us-west-1.compute.internal
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:23Z"
+    name: ods-ci-2-28l64.16ee26dce89a5bb0
+    namespace: loadtest
+    resourceVersion: "68524"
+    uid: c501980f-4ee6-40a5-a1f3-df3255185ce8
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-2-28l64
+    namespace: loadtest
+    resourceVersion: "68527"
+    uid: 05b08b2a-eeaf-4fec-93b8-54538c447567
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Add eth0 [10.129.2.21/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-2-28l64.16ee26dd458f062b
+    namespace: loadtest
+    resourceVersion: "68555"
+    uid: 4a88dcc6-7c01-4630-b03c-eb7879dc6991
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-2-28l64
+    namespace: loadtest
+    resourceVersion: "68521"
+    uid: 05b08b2a-eeaf-4fec-93b8-54538c447567
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Pulling image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest"
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-2-28l64.16ee26dd4af1407d
+    namespace: loadtest
+    resourceVersion: "68557"
+    uid: edf8cba7-070a-446f-ac9a-ed00c5ccf62f
+  reason: Pulling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-2-28l64
+    namespace: loadtest
+    resourceVersion: "68521"
+    uid: 05b08b2a-eeaf-4fec-93b8-54538c447567
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Successfully pulled image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest"
+    in 565.197474ms
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-2-28l64.16ee26dd6ca19e95
+    namespace: loadtest
+    resourceVersion: "68580"
+    uid: 581b7d85-293f-469e-aa45-251dfe185413
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:26Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-2-28l64
+    namespace: loadtest
+    resourceVersion: "68521"
+    uid: 05b08b2a-eeaf-4fec-93b8-54538c447567
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:26Z"
+  message: Created container ods-ci
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:26Z"
+    name: ods-ci-2-28l64.16ee26dd82c202d8
+    namespace: loadtest
+    resourceVersion: "68591"
+    uid: 6c6681a8-6e77-4105-8849-7eaf6446e8a6
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:26Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-2-28l64
+    namespace: loadtest
+    resourceVersion: "68521"
+    uid: 05b08b2a-eeaf-4fec-93b8-54538c447567
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:26Z"
+  message: Started container ods-ci
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:26Z"
+    name: ods-ci-2-28l64.16ee26dd857336e5
+    namespace: loadtest
+    resourceVersion: "68607"
+    uid: 259aef4c-4a80-4cb2-b27f-d9488563c46e
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:23Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-3-6lhc5
+    namespace: loadtest
+    resourceVersion: "68528"
+    uid: 4e93e52a-eb32-4505-a5f0-8e9f786a6c54
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:23Z"
+  message: Successfully assigned loadtest/ods-ci-3-6lhc5 to ip-10-0-175-230.us-west-1.compute.internal
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:23Z"
+    name: ods-ci-3-6lhc5.16ee26dcea4bd2f3
+    namespace: loadtest
+    resourceVersion: "68535"
+    uid: aaba8c8a-60ae-4375-8c29-3e314960088c
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-3-6lhc5
+    namespace: loadtest
+    resourceVersion: "68538"
+    uid: 4e93e52a-eb32-4505-a5f0-8e9f786a6c54
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Add eth0 [10.129.2.23/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-3-6lhc5.16ee26dd6a19ce97
+    namespace: loadtest
+    resourceVersion: "68573"
+    uid: 29b9ff3a-1813-44c9-9951-79fdd3fc298a
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-3-6lhc5
+    namespace: loadtest
+    resourceVersion: "68530"
+    uid: 4e93e52a-eb32-4505-a5f0-8e9f786a6c54
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Pulling image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest"
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-3-6lhc5.16ee26dd6df7997e
+    namespace: loadtest
+    resourceVersion: "68581"
+    uid: 799d3c0c-08c0-424b-b88d-3297323b5cc1
+  reason: Pulling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-3-6lhc5
+    namespace: loadtest
+    resourceVersion: "68530"
+    uid: 4e93e52a-eb32-4505-a5f0-8e9f786a6c54
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Successfully pulled image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest"
+    in 73.098076ms
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-3-6lhc5.16ee26dd7253314b
+    namespace: loadtest
+    resourceVersion: "68582"
+    uid: 2f756201-0d00-48ad-ae29-ff649c0703f8
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:26Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-3-6lhc5
+    namespace: loadtest
+    resourceVersion: "68530"
+    uid: 4e93e52a-eb32-4505-a5f0-8e9f786a6c54
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:26Z"
+  message: Created container ods-ci
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:26Z"
+    name: ods-ci-3-6lhc5.16ee26dd83f1ab41
+    namespace: loadtest
+    resourceVersion: "68596"
+    uid: f98cf8c9-86ec-447e-a23f-a04e8b853701
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:26Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-3-6lhc5
+    namespace: loadtest
+    resourceVersion: "68530"
+    uid: 4e93e52a-eb32-4505-a5f0-8e9f786a6c54
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:26Z"
+  message: Started container ods-ci
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:27Z"
+    name: ods-ci-3-6lhc5.16ee26dd879658a9
+    namespace: loadtest
+    resourceVersion: "68612"
+    uid: 86485156-c76e-4caa-a2a6-5e47207a039d
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:23Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-4-fjqq9
+    namespace: loadtest
+    resourceVersion: "68529"
+    uid: 8859fdbf-902f-4545-aff1-383f160b268b
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:23Z"
+  message: Successfully assigned loadtest/ods-ci-4-fjqq9 to ip-10-0-175-230.us-west-1.compute.internal
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:23Z"
+    name: ods-ci-4-fjqq9.16ee26dcea503013
+    namespace: loadtest
+    resourceVersion: "68537"
+    uid: 35a499ad-5991-427d-8812-b2cb734f473c
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-ci-4-fjqq9
+    namespace: loadtest
+    resourceVersion: "68540"
+    uid: 8859fdbf-902f-4545-aff1-383f160b268b
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Add eth0 [10.129.2.24/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-4-fjqq9.16ee26dd6023dfaa
+    namespace: loadtest
+    resourceVersion: "68568"
+    uid: fce890e8-03bb-4b18-bc85-d6b968cadf82
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-4-fjqq9
+    namespace: loadtest
+    resourceVersion: "68531"
+    uid: 8859fdbf-902f-4545-aff1-383f160b268b
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Pulling image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest"
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-4-fjqq9.16ee26dd628d8f70
+    namespace: loadtest
+    resourceVersion: "68571"
+    uid: 61d67f27-b913-4e6f-a5a0-9830e440464a
+  reason: Pulling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:25Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-4-fjqq9
+    namespace: loadtest
+    resourceVersion: "68531"
+    uid: 8859fdbf-902f-4545-aff1-383f160b268b
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:25Z"
+  message: Successfully pulled image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci:latest"
+    in 304.904018ms
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:25Z"
+    name: ods-ci-4-fjqq9.16ee26dd74ba526e
+    namespace: loadtest
+    resourceVersion: "68583"
+    uid: ff319987-6a70-4b9a-ab6a-a8d33b227243
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:26Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-4-fjqq9
+    namespace: loadtest
+    resourceVersion: "68531"
+    uid: 8859fdbf-902f-4545-aff1-383f160b268b
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:26Z"
+  message: Created container ods-ci
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:26Z"
+    name: ods-ci-4-fjqq9.16ee26dd83270693
+    namespace: loadtest
+    resourceVersion: "68592"
+    uid: 0b373ccc-2b25-4633-9fc6-0b3722d06acd
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:26Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{ods-ci}
+    kind: Pod
+    name: ods-ci-4-fjqq9
+    namespace: loadtest
+    resourceVersion: "68531"
+    uid: 8859fdbf-902f-4545-aff1-383f160b268b
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:26Z"
+  message: Started container ods-ci
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:26Z"
+    name: ods-ci-4-fjqq9.16ee26dd85fc42a7
+    namespace: loadtest
+    resourceVersion: "68608"
+    uid: 67c726c3-1525-44c4-be16-1242e39454dd
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:23Z"
+  involvedObject:
+    apiVersion: batch/v1
+    kind: Job
+    name: ods-ci
+    namespace: loadtest
+    resourceVersion: "68513"
+    uid: cc1f3cda-dbdd-40da-a100-c5cead3249bb
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:23Z"
+  message: 'Created pod: ods-ci-0-4tvgp'
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:23Z"
+    name: ods-ci.16ee26dce7235d30
+    namespace: loadtest
+    resourceVersion: "68516"
+    uid: ab9661d0-5644-4a60-b562-51a55eb81e16
+  reason: SuccessfulCreate
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: job-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:23Z"
+  involvedObject:
+    apiVersion: batch/v1
+    kind: Job
+    name: ods-ci
+    namespace: loadtest
+    resourceVersion: "68513"
+    uid: cc1f3cda-dbdd-40da-a100-c5cead3249bb
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:23Z"
+  message: 'Created pod: ods-ci-2-28l64'
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:23Z"
+    name: ods-ci.16ee26dce8173adc
+    namespace: loadtest
+    resourceVersion: "68522"
+    uid: a25c6252-6794-40d2-a470-10ce61a1cedc
+  reason: SuccessfulCreate
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: job-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:23Z"
+  involvedObject:
+    apiVersion: batch/v1
+    kind: Job
+    name: ods-ci
+    namespace: loadtest
+    resourceVersion: "68513"
+    uid: cc1f3cda-dbdd-40da-a100-c5cead3249bb
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:23Z"
+  message: 'Created pod: ods-ci-1-brw2w'
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:23Z"
+    name: ods-ci.16ee26dce8991473
+    namespace: loadtest
+    resourceVersion: "68525"
+    uid: 07956400-9cb7-44e9-98e0-5921dab04cfb
+  reason: SuccessfulCreate
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: job-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:23Z"
+  involvedObject:
+    apiVersion: batch/v1
+    kind: Job
+    name: ods-ci
+    namespace: loadtest
+    resourceVersion: "68513"
+    uid: cc1f3cda-dbdd-40da-a100-c5cead3249bb
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:23Z"
+  message: 'Created pod: ods-ci-3-6lhc5'
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:23Z"
+    name: ods-ci.16ee26dce9e98960
+    namespace: loadtest
+    resourceVersion: "68532"
+    uid: eee129f5-b090-4fbc-b0ce-5eb982bd8bc9
+  reason: SuccessfulCreate
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: job-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:23Z"
+  involvedObject:
+    apiVersion: batch/v1
+    kind: Job
+    name: ods-ci
+    namespace: loadtest
+    resourceVersion: "68513"
+    uid: cc1f3cda-dbdd-40da-a100-c5cead3249bb
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:23Z"
+  message: 'Created pod: ods-ci-4-fjqq9'
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:23Z"
+    name: ods-ci.16ee26dce9ecb150
+    namespace: loadtest
+    resourceVersion: "68536"
+    uid: 31d66606-b402-4ca3-b6c2-7429a8d72a11
+  reason: SuccessfulCreate
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: job-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:41:10Z"
+  involvedObject:
+    apiVersion: batch/v1
+    kind: Job
+    name: ods-ci
+    namespace: loadtest
+    resourceVersion: "75629"
+    uid: cc1f3cda-dbdd-40da-a100-c5cead3249bb
+  kind: Event
+  lastTimestamp: "2022-05-11T20:41:10Z"
+  message: Job completed
+  metadata:
+    creationTimestamp: "2022-05-11T20:41:10Z"
+    name: ods-ci.16ee279d78c11694
+    namespace: loadtest
+    resourceVersion: "75631"
+    uid: 28c98f15-296c-412f-b5be-8c9aaa76948d
+  reason: Completed
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: job-controller
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:26:39Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-cilatest-debug
+    namespace: loadtest
+    resourceVersion: "68114"
+    uid: 6145e93b-1554-48fe-b5be-185a56dd936d
+  kind: Event
+  lastTimestamp: "2022-05-11T20:26:39Z"
+  message: Successfully assigned loadtest/ods-cilatest-debug to ip-10-0-175-230.us-west-1.compute.internal
+  metadata:
+    creationTimestamp: "2022-05-11T20:26:39Z"
+    name: ods-cilatest-debug.16ee26d2af925de1
+    namespace: loadtest
+    resourceVersion: "68116"
+    uid: 2ccc345f-7bd5-42ce-b8af-d8605b7d1164
+  reason: Scheduled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: default-scheduler
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:26:41Z"
+  involvedObject:
+    apiVersion: v1
+    kind: Pod
+    name: ods-cilatest-debug
+    namespace: loadtest
+    resourceVersion: "68117"
+    uid: 6145e93b-1554-48fe-b5be-185a56dd936d
+  kind: Event
+  lastTimestamp: "2022-05-11T20:26:41Z"
+  message: Add eth0 [10.129.2.19/23] from openshift-sdn
+  metadata:
+    creationTimestamp: "2022-05-11T20:26:41Z"
+    name: ods-cilatest-debug.16ee26d3158141d1
+    namespace: loadtest
+    resourceVersion: "68137"
+    uid: ffce4c59-b6a5-4e89-90e1-5b07015b0692
+  reason: AddedInterface
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: multus
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:26:41Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{container-00}
+    kind: Pod
+    name: ods-cilatest-debug
+    namespace: loadtest
+    resourceVersion: "68115"
+    uid: 6145e93b-1554-48fe-b5be-185a56dd936d
+  kind: Event
+  lastTimestamp: "2022-05-11T20:26:41Z"
+  message: Pulling image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci@sha256:8e5b26709c7a79ee4e69f2ce86348e60bf63249ceeddd24ecfab81cec3e6136d"
+  metadata:
+    creationTimestamp: "2022-05-11T20:26:41Z"
+    name: ods-cilatest-debug.16ee26d317a8e01f
+    namespace: loadtest
+    resourceVersion: "68139"
+    uid: 4f41989f-545c-46ca-8957-f56fd8ba4755
+  reason: Pulling
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:15Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{container-00}
+    kind: Pod
+    name: ods-cilatest-debug
+    namespace: loadtest
+    resourceVersion: "68115"
+    uid: 6145e93b-1554-48fe-b5be-185a56dd936d
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:15Z"
+  message: Successfully pulled image "image-registry.openshift-image-registry.svc:5000/loadtest/ods-ci@sha256:8e5b26709c7a79ee4e69f2ce86348e60bf63249ceeddd24ecfab81cec3e6136d"
+    in 34.543565163s
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:15Z"
+    name: ods-cilatest-debug.16ee26db229e24b3
+    namespace: loadtest
+    resourceVersion: "68447"
+    uid: 2a21df30-97a6-427e-92b7-475ef7cca7a8
+  reason: Pulled
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:16Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{container-00}
+    kind: Pod
+    name: ods-cilatest-debug
+    namespace: loadtest
+    resourceVersion: "68115"
+    uid: 6145e93b-1554-48fe-b5be-185a56dd936d
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:16Z"
+  message: Created container container-00
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:16Z"
+    name: ods-cilatest-debug.16ee26db2a7b1a5c
+    namespace: loadtest
+    resourceVersion: "68450"
+    uid: 29620cf3-b790-49ce-aa9a-7b83338b1f23
+  reason: Created
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+- apiVersion: v1
+  count: 1
+  eventTime: null
+  firstTimestamp: "2022-05-11T20:27:16Z"
+  involvedObject:
+    apiVersion: v1
+    fieldPath: spec.containers{container-00}
+    kind: Pod
+    name: ods-cilatest-debug
+    namespace: loadtest
+    resourceVersion: "68115"
+    uid: 6145e93b-1554-48fe-b5be-185a56dd936d
+  kind: Event
+  lastTimestamp: "2022-05-11T20:27:16Z"
+  message: Started container container-00
+  metadata:
+    creationTimestamp: "2022-05-11T20:27:16Z"
+    name: ods-cilatest-debug.16ee26db4a199cf6
+    namespace: loadtest
+    resourceVersion: "68458"
+    uid: f4ec750b-3595-4217-8b48-e4d106dfdf17
+  reason: Started
+  reportingComponent: ""
+  reportingInstance: ""
+  source:
+    component: kubelet
+    host: ip-10-0-175-230.us-west-1.compute.internal
+  type: Normal
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
