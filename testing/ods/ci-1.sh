@@ -137,4 +137,4 @@ switch_cluster "driver"
 
 switch_cluster "sutest"
 ./run_toolbox.py cluster dump_prometheus_db
-# ./run_toolbox.py cluster dump_prometheus_db --label="deployment=prometheus" --namespace=redhat-ods-monitoring # not working yet, RHODS Prometheus Pod is crashing
+./run_toolbox.py cluster dump_prometheus_db --label="deployment=prometheus" --namespace=redhat-ods-monitoring
