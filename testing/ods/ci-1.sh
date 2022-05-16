@@ -64,13 +64,26 @@ oc_adm_groups_new_rhods_users() {
 }
 
 # ---
+all_pids=()
+
+run_in_bg() {
+    "$@" &
+    all_pids+=("$!")
+}
+
+wait_bg_processes() {
+    echo "Waiting for the background processes '${all_pids[@]}' to terminate ..."
+    for pid in ${all_pids[@]}; do
+        wait $pid # this syntax honors the `set -e` flag
+    done
+}
 
 prepare_driver_cluster() {
     switch_cluster "driver"
 
     oc create namespace "$ODS_CI_TEST_NAMESPACE"
 
-    ./run_toolbox.py utils build_push_image \
+    run_in_bg ./run_toolbox.py utils build_push_image \
                      "${ODS_CI_IMAGESTREAM}" "$ODS_CI_TAG" \
                      --namespace="$ODS_CI_TEST_NAMESPACE" \
                      --git-repo="$ODS_CI_REPO" \
@@ -78,9 +91,7 @@ prepare_driver_cluster() {
                      --context-dir="/" \
                      --dockerfile-path="build/Dockerfile"
 
-    ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
-
-    ./run_toolbox.py cluster reset_prometheus_db
+    run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 }
 
 prepare_sutest_cluster() {
@@ -89,19 +100,29 @@ prepare_sutest_cluster() {
     # no need to add machines, there's already 2 workers in the CI cluster
     #./run_toolbox.py cluster set-scale m5.xlarge 2
 
-    ./run_toolbox.py rhods deploy_ldap "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS"
+    run_in_bg ./run_toolbox.py rhods deploy_ldap "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS"
 
     echo "Deploying ODS $ODS_CATALOG_IMAGE_VERSION (from $ODS_CATALOG_VERSION)"
-    ./run_toolbox.py rhods deploy_ods "$ODS_CATALOG_VERSION" "$ODS_CATALOG_IMAGE_VERSION"
+    run_in_bg ./run_toolbox.py rhods deploy_ods "$ODS_CATALOG_VERSION" "$ODS_CATALOG_IMAGE_VERSION"
 
     oc_adm_groups_new_rhods_users "$ODS_CI_USER_GROUP" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS"
+}
 
+reset_prometheus() {
+    switch_cluster "driver"
+    ./run_toolbox.py cluster reset_prometheus_db
+
+    switch_cluster "sutest"
     ./run_toolbox.py cluster reset_prometheus_db
     ./run_toolbox.py cluster reset_prometheus_db --label="deployment=prometheus" --namespace=redhat-ods-monitoring
 }
 
 prepare_driver_cluster
 prepare_sutest_cluster
+
+wait_bg_processes
+
+reset_prometheus
 
 switch_cluster "driver"
 
