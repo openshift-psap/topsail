@@ -64,24 +64,27 @@ oc_adm_groups_new_rhods_users() {
 }
 
 # ---
-all_pids=()
+i=0
+wait_list=()
 
 run_in_bg() {
     "$@" &
-    all_pids+=("$!")
+    echo "Adding '$!' to the wait-list '${wait_list[@]}' ..."
+    wait_list+=("$!")
 }
 
 wait_bg_processes() {
-    echo "Waiting for the background processes '${all_pids[@]}' to terminate ..."
-    for pid in ${all_pids[@]}; do
+    echo "Waiting for the background processes '${wait_list[@]}' to terminate ..."
+    for pid in ${wait_list[@]}; do
         wait $pid # this syntax honors the `set -e` flag
     done
+    echo "All the processes are done!"
 }
 
 prepare_driver_cluster() {
     switch_cluster "driver"
 
-    oc create namespace "$ODS_CI_TEST_NAMESPACE"
+    oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
 
     run_in_bg ./run_toolbox.py utils build_push_image \
                      "${ODS_CI_IMAGESTREAM}" "$ODS_CI_TAG" \
