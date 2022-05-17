@@ -71,12 +71,20 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None):
             "Pulled": "pulled",
             "Started": "started",
             "Killing": "terminated",
+            "FailedScheduling": "failedScheduling",
         }
 
         evt_name = MAPPING_REASON_NAME.get(reason)
 
         if not (evt_name and event_time):
             continue
+
+
+        if evt_name == "failedScheduling":
+            start = datetime.datetime.strptime(ev["firstTimestamp"], fmt)
+            event_times[podname].failedScheduling = [start, event_time, ev["message"]]
+            continue
+
 
         event_times[podname].__dict__[evt_name] = event_time
 
