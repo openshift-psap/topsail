@@ -3,17 +3,20 @@ import pathlib
 import yaml
 import datetime
 from collections import defaultdict
+import xmltodict
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 
-EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
-TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
+K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
+K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
+ROBOT_TIME_FMT = "%Y%m%d %H:%M:%S.%f"
 
 def _rewrite_settings(settings_dict):
     return settings_dict
+
 
 def _parse_job(results, filename):
 
@@ -23,11 +26,11 @@ def _parse_job(results, filename):
     results.job_creation_time = \
         datetime.datetime.strptime(
             job["status"]["startTime"],
-            TIME_FMT)
+            K8S_TIME_FMT)
     results.job_completion_time = \
         datetime.datetime.strptime(
             job["status"]["completionTime"],
-            TIME_FMT)
+            K8S_TIME_FMT)
 
 
 def _parse_pod_event_times(filename, namespace=None, hostnames=None):
@@ -43,7 +46,7 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None):
             podname = ev["involvedObject"]["name"].strip("-pvc")
             appears_time = event_times[podname].__dict__.get("appears_time")
             str_time = ev["firstTimestamp"]
-            event_time = datetime.datetime.strptime(str_time,  TIME_FMT)
+            event_time = datetime.datetime.strptime(str_time,  K8S_TIME_FMT)
 
             if not appears_time or event_time < appears_time:
                 event_times[podname].appears_time = event_time
@@ -58,10 +61,10 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None):
 
         reason = ev.get("reason")
         time = ev.get("eventTime")
-        fmt = EVT_TIME_FMT
+        fmt = K8S_EVT_TIME_FMT
         if not time:
             time = ev["lastTimestamp"]
-            fmt = TIME_FMT
+            fmt = K8S_TIME_FMT
 
         event_time = datetime.datetime.strptime(time, fmt)
 
@@ -110,28 +113,28 @@ def _parse_pod_times(filename):
         pod_times[podname].creation_time = \
             datetime.datetime.strptime(
                 pod["metadata"]["creationTimestamp"],
-                TIME_FMT)
+                K8S_TIME_FMT)
         pod_times[podname].start_time = \
             datetime.datetime.strptime(
                 pod["status"]["startTime"],
-                TIME_FMT)
+                K8S_TIME_FMT)
 
         if pod["status"]["containerStatuses"][0]["state"]["terminated"]:
             pod_times[podname].container_started = \
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["terminated"]["startedAt"],
-                    TIME_FMT)
+                    K8S_TIME_FMT)
 
             pod_times[podname].container_finished = \
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["terminated"]["finishedAt"],
-                    TIME_FMT)
+                    K8S_TIME_FMT)
 
         elif pod["status"]["containerStatuses"][0]["state"]["running"]:
             pod_times[podname].container_running_since = \
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["running"]["startedAt"],
-                    TIME_FMT)
+                    K8S_TIME_FMT)
 
         else:
             print("Unknown containerStatuses ...")
@@ -139,6 +142,22 @@ def _parse_pod_times(filename):
             pass
 
     return pod_times
+
+
+def _parse_ods_ci_output_xml(filename):
+    ods_ci_times = {}
+
+    with open(filename) as f:
+        output_dict = xmltodict.parse(f.read())
+
+    for test in output_dict["robot"]["suite"]["test"]:
+        ods_ci_times[test["@name"]] = test_times = types.SimpleNamespace()
+
+        test_times.start = datetime.datetime.strptime(test["status"]["@starttime"], ROBOT_TIME_FMT)
+        test_times.finish = datetime.datetime.strptime(test["status"]["@endtime"], ROBOT_TIME_FMT)
+        test_times.status = test["status"]["@status"]
+
+    return ods_ci_times
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace()
@@ -155,6 +174,14 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci")]
     results.notebook_pods = [k for k in results.event_times.keys() if k.startswith("jupyterhub-nb")]
+
+
+    results.ods_ci_output = {}
+    for test_pod in results.test_pods:
+        ods_ci_dirname = test_pod.rpartition("-")[0]
+        output_file = dirname / "ods-ci" / ods_ci_dirname / "output.xml"
+        if not output_file.is_file(): continue
+        results.ods_ci_output[test_pod] = _parse_ods_ci_output_xml(output_file)
 
     store.add_to_matrix(import_settings, None, results, None)
 

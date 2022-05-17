@@ -31,16 +31,19 @@ class Timeline():
         if sum(1 for _ in common.Matrix.all_records(params, param_lists)) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
-        def get_text(start_evt, finish_evt, start, finish):
+        def get_text(what, start_evt, finish_evt, start, finish):
             duration_s = (finish - start).total_seconds()
 
             if duration_s < 120:
-                duration = f"{duration_s:.0f} seconds"
+                duration = f"{duration_s:.1f} seconds"
             else:
                 duration_min = duration_s / 60
                 duration = f"{duration_min:.1f} minutes"
 
-            return f"FROM: {start_evt}<br>TO: {finish_evt}<br>{duration}"
+            if finish_evt:
+                return f"{what}<br>FROM: {start_evt} ({start})<br>TO: {finish_evt} ({finish})<br>{duration}"
+            else:
+                return f"{what}<br>{start_evt}<br>{duration}"
 
         data = []
         for entry in common.Matrix.all_records(params, param_lists):
@@ -81,71 +84,117 @@ class Timeline():
                         Finish=kwargs["Finish"],
                         LineName=get_line_name(user_idx),
                         Opacity=0.5,
-                        LineWidth=50,
+                        LineWidth=80,
                         LineSortIndex=kwargs["Finish"],
                     )
 
-                    defaults["Text"] = get_text(start_evt, finish_evt, defaults["Start"], defaults["Finish"])
+                    defaults["Text"] = get_text(LegendName,
+                                                start_evt, finish_evt,
+                                                defaults["Start"], defaults["Finish"])
 
                     return defaults | kwargs
 
-                data.append(generate_data("01. Test pod scheduling",
-                                          "Job creation", "Pod scheduled",
-                                          Finish=event_times.scheduled,
-                                          Start=entry.results.job_creation_time,))
-                data.append(generate_data("02. Test pod preparation",
-                                          "Pod scheduled", "pulling image",
-                                          Finish=event_times.pulling))
-                data.append(generate_data("03. Test pod image pull",
-                                          "Pod pulling image", "image pulled",
-                                          Finish=event_times.pulled))
-                data.append(generate_data("04. Test pod initialization",
-                                          "Pod image pulled", "container started",
-                                          Finish=pod_times.container_started))
-                data.append(generate_data("05. Test Execution",
-                                          "Container started", "container finished",
-                                          Finish=pod_times.container_finished))
+                data.append(generate_data(
+                    "01. Test pod scheduling",
+                    "Job creation", "Pod scheduled",
+                    Finish=event_times.scheduled,
+                    Start=entry.results.job_creation_time,))
+                data.append(generate_data(
+                    "02. Test pod preparation",
+                    "Pod scheduled", "pulling image",
+                    Finish=event_times.pulling))
+                data.append(generate_data(
+                    "03. Test pod image pull",
+                    "Pod pulling image", "image pulled",
+                    Finish=event_times.pulled))
+                data.append(generate_data(
+                    "04. Test pod initialization",
+                    "Pod image pulled", "container started",
+                    Finish=pod_times.container_started))
+                data.append(generate_data(
+                    "05. Test Execution",
+                    "Container started", "container finished",
+                    Finish=pod_times.container_finished))
 
                 info[user_idx]["test_container_started"] = pod_times.container_started
 
 
-        for entry in common.Matrix.all_records(params, param_lists):
+            data_length_before_ods_ci = len(data)
+
+            for testpod_name, ods_ci_output in entry.results.ods_ci_output.items():
+                user_idx = int(testpod_name.split("-")[2])
+
+                for test_idx, (test_name, test_times) in enumerate(ods_ci_output.items()):
+                    def generate_data(LegendName, status, **kwargs):
+                        defaults = dict(
+                            LegendName=LegendName,
+                            LegendGroup="ODS-CI",
+                            Start=kwargs.get("Start") or data[-1]["Finish"],
+                            Finish=kwargs["Finish"],
+                            LineName=get_line_name(user_idx),
+                            Opacity=0.9,
+                            LineWidth=50,
+                            LineSortIndex=kwargs["Finish"],
+                        )
+
+                        defaults["Text"] = get_text(LegendName,
+                                                    f"Test result: {status}", None,
+                                                    defaults["Start"], defaults["Finish"])
+
+                        return defaults | kwargs
+
+                    data.append(generate_data(
+                        f"ODS - {test_idx} - {test_name}",
+                        test_times.status,
+                        Start=test_times.start,
+                        Finish=test_times.finish,
+                    ))
+
             for notebook_name in entry.results.notebook_pods:
                 user_idx = int(notebook_name.replace("jupyterhub-nb-testuser", ""))
 
                 pod_times = entry.results.pod_times[notebook_name]
                 event_times = entry.results.event_times[notebook_name]
 
-                def generate_data(task_name, start_evt, finish_evt, **kwargs):
+                def generate_data(LegendName, start_evt, finish_evt, **kwargs):
                     defaults = dict(
                         Start=kwargs.get("Start") or data[-1]["Finish"],
                         Finish=kwargs["Finish"],
-                        LegendName=task_name,
+                        LegendName=LegendName,
                         LegendGroup="Notebook",
                         Opacity=1,
                         LineName=get_line_name(user_idx),
-                        LineWidth=100,
+                        LineWidth=30,
                         LineSortIndex=kwargs["Finish"],
                     )
 
-                    defaults["Text"] = get_text(start_evt, finish_evt, defaults["Start"], defaults["Finish"])
+                    defaults["Text"] = get_text(LegendName,
+                                                start_evt, finish_evt,
+                                                defaults["Start"], defaults["Finish"])
 
                     return defaults | kwargs
 
-                data.append(
+                data.insert(data_length_before_ods_ci,
                     generate_data(
                         "10. ODS-CI Test initialization",
                         "Test container started", "Notebook pod appeared",
                         Start=info[user_idx]["test_container_started"],
                         Finish=event_times.appears_time,
-                        LineWidth=60,
-                        LegendGroup="ODS CI"
+                        LineWidth=50,
+                        Opacity=0.8,
+                        LegendGroup="ODS CI",
+                        Text=get_text("ODS-CI initialization",
+                                      "Test container started",
+                                      "Notebook Pod appears",
+                                      info[user_idx]["test_container_started"],
+                                      event_times.appears_time)
                     )
                 )
 
                 data.append(generate_data(
                     "20. Notebook scheduling",
                     "Notebook pod appeared", "scheduled",
+                    Start=event_times.appears_time,
                     Finish=event_times.scheduled))
                 data.append(generate_data(
                     "21. Notebook preparation",
@@ -166,15 +215,32 @@ class Timeline():
 
                 if "failedScheduling" in event_times.__dict__:
                     data.append(generate_data(
-                        "Warnings",
+                        "K8s Warnings",
                         "Failed Scheduling", event_times.failedScheduling[2],
                         Start=event_times.failedScheduling[0],
                         Finish=event_times.failedScheduling[1],
                         LineColor="Red",
-                        LineWidth=80,
+                        LineWidth=20,
                         Opacity=0.9,
                     ))
 
+            for notebook_name in entry.results.notebook_hostnames.keys():
+                user_idx = int(notebook_name.replace("jupyterhub-nb-testuser", ""))
+                rhods_node = rhods_nodes[user_idx]
+
+                LineName = get_line_name(user_idx)
+
+                data.insert(0, dict(
+                    LegendName=rhods_node,
+                    Start=entry.results.job_creation_time - datetime.timedelta(minutes=1),
+                    Finish=entry.results.job_completion_time + datetime.timedelta(minutes=1),
+                    LineName=LineName,
+                    LineWidth=25,
+                    Opacity=0.2,
+                    Text=rhods_node,
+                    LegendGroup="Nodes",
+                    SkipFromMinMaxDate=True,
+                ))
 
         data.insert(0, dict(
             LegendName="Test job lifespan",
@@ -203,36 +269,52 @@ class Timeline():
         for legend_name in df["LegendName"].unique():
             rows = df[df["LegendName"] == legend_name]
 
+            def get_optional_scalar(column_name):
+                return None if rows[column_name].isnull().values[0] \
+                    else rows[column_name].values[0]
+
             x = []
             y = []
             text = []
             for row in range(len(rows)):
                 line_idx = ordered_lines.index(rows["LineName"].values[row])
-
+                txt = rows["Text"].values[0]
                 get_ts = lambda name: datetime.datetime.fromtimestamp(int(rows[name].values[row].astype(datetime.datetime))/1000000000)
-                x += [get_ts("Start"), get_ts("Finish"), None]
-                y += [line_idx, line_idx, None]
-                # The None value tells Plotly not to connect this pair ^^^ with the next one
 
-            def get_optional_scalar(column_name):
-                return None if rows[column_name].isnull().values[0] \
-                    else rows[column_name].values[0]
+                current_ts = get_ts("Start")
+                while current_ts < get_ts("Finish"):
+                    x += [current_ts]
+                    y += [line_idx]
+                    text += [txt]
+                    current_ts += datetime.timedelta(minutes=1)
+                    if get_optional_scalar("SkipFromMinMaxDate"):
+                        break
+
+                x += [get_ts("Finish"), None]
+                y += [line_idx, None]
+                text += [txt, None]
+
+                # The None values above tells Plotly not to draw a line between an event and the next one
 
             plot_opt = dict(
                 line_width = get_optional_scalar("LineWidth"),
                 opacity = get_optional_scalar("Opacity"),
                 line_color = get_optional_scalar("LineColor"),
                 legendgroup = get_optional_scalar("LegendGroup"),
-                text = get_optional_scalar("Text"),
             )
 
             plots += [go.Scatter(
                 name=legend_name,
                 x=x, y=y,
+                text=text,
                 mode="lines",
                 hoverlabel={'namelength' :-1},
                 **plot_opt,
+                hovertemplate='%{text}<extra></extra>'
             )]
+
+            if get_optional_scalar("SkipFromMinMaxDate"):
+                continue
 
             min_date = [min(min_date + [_x for _x in x if _x])]
             max_date = [max(max_date + [_x for _x in x if _x])]
@@ -248,5 +330,7 @@ class Timeline():
         fig.update_layout(yaxis_range=[len(ordered_lines) - 1 + y_shift, 0 - y_shift]) # range reverted here
         fig.update_layout(xaxis_title="Timeline (by date)")
         fig.update_yaxes(tickmode='array', ticktext=ordered_lines, tickvals=list(range(len(ordered_lines))))
+
+        fig.update_xaxes(showspikes=True, spikecolor="green", spikesnap="cursor", spikemode="across")
 
         return fig, ""
