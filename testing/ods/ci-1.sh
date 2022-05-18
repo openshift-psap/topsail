@@ -49,8 +49,6 @@ switch_cluster() {
 }
 # ---
 
-export
-
 oc_adm_groups_new_rhods_users() {
     group=$1
     shift
