@@ -253,16 +253,10 @@
        "test -d /data/mybucket/ods-ci || exit 0 ; find /data/mybucket/ods-ci -name '*.png' -delete"
 
 - name: Extract the ODS-CI test artifacts from the Minio S3 container
-  command:
-    oc cp -n minio -c ubi8
-       "{{ minio_podname_cmd.stdout }}:/data/mybucket/ods-ci"
-       "{{ artifact_extra_logs_dir }}/ods-ci"
-  register: extract_s3_logs
-  retries: 5
-  delay: 5
-  until: extract_s3_logs.rc == 0
-  failed_when: false
-  when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
+  shell:
+    oc -n minio -c ubi8 exec "{{ minio_podname_cmd.stdout }}"
+       -- tar cvzf - -C  /data/mybucket/ods-ci .
+       > "{{ artifact_extra_logs_dir }}/ods-ci.tgz"
 
 - name: Test if the RHODS test job crashed
   command:
