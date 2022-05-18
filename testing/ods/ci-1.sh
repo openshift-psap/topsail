@@ -127,11 +127,18 @@ reset_prometheus
 
 switch_cluster "driver"
 
+if [[ "$ODS_CI_NB_USERS" -le 5 ]]; then
+    collect=all
+else
+    collect=no-image
+fi
+
 ./run_toolbox.py rhods test_jupyterlab \
                  "$LDAP_IDP_NAME" \
                  "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
                  "$S3_LDAP_PROPS" \
-                 --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST"
+                 --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
+                 --artifacts-collected=$collect
 
 switch_cluster "sutest"
 ./run_toolbox.py cluster dump_prometheus_db
