@@ -19,7 +19,7 @@ ODS_CI_REF="multiuser"
 ODS_CI_IMAGESTREAM="ods-ci"
 ODS_CI_TAG="latest"
 
-ODS_CI_NB_USERS=5
+ODS_CI_NB_USERS=10
 ODS_CI_USER_PREFIX=testuser
 
 ODS_CI_USER_GROUP=rhods-users
@@ -98,8 +98,7 @@ prepare_driver_cluster() {
 prepare_sutest_cluster() {
     switch_cluster "sutest"
 
-    # no need to add machines, there's already 2 workers in the CI cluster
-    #./run_toolbox.py cluster set-scale m5.xlarge 2
+    ./run_toolbox.py cluster set-scale m5.xlarge 5 --force
 
     run_in_bg ./run_toolbox.py rhods deploy_ldap "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS"
 
