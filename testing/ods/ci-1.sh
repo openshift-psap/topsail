@@ -56,6 +56,8 @@ oc_adm_groups_new_rhods_users() {
     shift
     nb_users=$1
 
+    oc delete groups.user.openshift.io/rhods-users --ignore-not-found
+
     echo "Adding $nb_users user with prefix '$user_prefix' in the group '$group' ..."
     users=$(for i in $(seq 0 $nb_users); do echo ${user_prefix}$i; done)
     oc adm groups new $group $(echo $users)
