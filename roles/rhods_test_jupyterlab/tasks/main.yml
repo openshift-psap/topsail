@@ -227,6 +227,8 @@
   failed_when: false
 
 - name: Get the events of the notebook namespace
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   shell:
     oc get ev -oyaml
        -n {{ rhods_notebook_namespace }}
