@@ -131,7 +131,6 @@
        "--from-file=entrypoint.sh={{ rhods_test_jupyterlab_entrypoint }}"
        -n {{ rhods_test_namespace }}
 
-
 - name: Empty the Minio S3 stoage
   shell:
     oc -c minio -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
@@ -143,6 +142,18 @@
        -f "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
        --ignore-not-found
        -n {{ rhods_test_namespace }}
+
+- name: Delete the events of the tester namespace
+  command:
+    oc delete ev -n {{ rhods_test_namespace }} --all
+  failed_when: false
+
+- name: Delete the events of the notebook namespace
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  command:
+    oc delete ev -n {{ rhods_notebook_namespace }} --all
+  failed_when: false
 
 - name: Create the RHODS test job
   command:
