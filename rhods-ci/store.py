@@ -4,11 +4,13 @@ import yaml
 import datetime
 from collections import defaultdict
 import xmltodict
+import logging
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
+import matrix_benchmarking.store.prom_db as store_prom_db
 
 K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
@@ -17,6 +19,19 @@ ROBOT_TIME_FMT = "%Y%m%d %H:%M:%S.%f"
 def _rewrite_settings(settings_dict):
     return settings_dict
 
+
+SUTEST_METRICS = [
+    "pod:container_cpu_usage:sum",
+    "rate(container_cpu_usage_seconds_total[60y])",
+]
+
+DRIVER_METRICS = [
+    "pod:container_cpu_usage:sum",
+    "rate(container_cpu_usage_seconds_total[60y])",
+]
+
+RHODS_METRICS = [
+]
 
 def _parse_job(results, filename):
 
@@ -159,6 +174,25 @@ def _parse_ods_ci_output_xml(filename):
 
     return ods_ci_times
 
+
+def _extract_metrics(dirname):
+    METRICS = {
+        "sutest": ("sutest_prometheus.tgz", SUTEST_METRICS),
+        "driver": ("driver_prometheus.tgz", DRIVER_METRICS),
+        "rhods":  ("rhods_prometheus.tgz", RHODS_METRICS),
+    }
+
+    results_metrics = {}
+    for name, (filename_tgz, metrics) in METRICS.items():
+        try:
+            results_metrics[name] = store_prom_db.extract_metrics(dirname / filename_tgz, metrics, dirname,
+                                                                  filename_prefix=f"{name}_")
+        except FileNotFoundError:
+            logging.warning(f"No {filename_tgz} in '{dirname}'.")
+
+    return results_metrics
+
+
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace()
 
@@ -175,6 +209,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci")]
     results.notebook_pods = [k for k in results.event_times.keys() if k.startswith("jupyterhub-nb")]
 
+    results.metrics = _extract_metrics(dirname)
 
     results.ods_ci_output = {}
     for test_pod in results.test_pods:
