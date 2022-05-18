@@ -8,7 +8,7 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 def register():
-    Timeline("Timeline")
+    Timeline("Simple Timeline")
 
 class Timeline():
     def __init__(self, name):

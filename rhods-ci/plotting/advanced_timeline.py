@@ -9,7 +9,7 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 def register():
-    Timeline("Timeline2")
+    Timeline("Timeline")
 
 class Timeline():
     def __init__(self, name):
@@ -25,7 +25,6 @@ class Timeline():
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
 
         all_XY = defaultdict(dict)
-        info = defaultdict(dict)
         user_count = 0
 
         if sum(1 for _ in common.Matrix.all_records(params, param_lists)) != 1:
@@ -74,7 +73,10 @@ class Timeline():
                 user_idx = int(testpod_name.split("-")[2])
 
                 pod_times = entry.results.pod_times[testpod_name]
+
                 event_times = entry.results.event_times[testpod_name]
+
+                if not pod_times.__dict__: continue
 
                 def generate_data(LegendName, start_evt, finish_evt, **kwargs):
                     defaults = dict(
@@ -116,8 +118,6 @@ class Timeline():
                     "Container started", "container finished",
                     Finish=pod_times.container_finished))
 
-                info[user_idx]["test_container_started"] = pod_times.container_started
-
 
             data_length_before_ods_ci = len(data)
 
@@ -138,7 +138,7 @@ class Timeline():
                         )
 
                         defaults["Text"] = get_text(LegendName,
-                                                    f"Test result: {status}", None,
+                                                    f"Test result: {status}<br>FROM: {defaults['Start']}<br>TO: {defaults['Finish']}", None,
                                                     defaults["Start"], defaults["Finish"])
 
                         return defaults | kwargs
@@ -155,6 +155,8 @@ class Timeline():
 
                 pod_times = entry.results.pod_times[notebook_name]
                 event_times = entry.results.event_times[notebook_name]
+
+                appears_time = min([v for v in event_times.__dict__.values() if isinstance(v, datetime.datetime)])
 
                 def generate_data(LegendName, start_evt, finish_evt, **kwargs):
                     defaults = dict(
@@ -174,27 +176,10 @@ class Timeline():
 
                     return defaults | kwargs
 
-                data.insert(data_length_before_ods_ci,
-                    generate_data(
-                        "10. ODS-CI Test initialization",
-                        "Test container started", "Notebook pod appeared",
-                        Start=info[user_idx]["test_container_started"],
-                        Finish=event_times.appears_time,
-                        LineWidth=50,
-                        Opacity=0.8,
-                        LegendGroup="ODS CI",
-                        Text=get_text("ODS-CI initialization",
-                                      "Test container started",
-                                      "Notebook Pod appears",
-                                      info[user_idx]["test_container_started"],
-                                      event_times.appears_time)
-                    )
-                )
-
                 data.append(generate_data(
                     "20. Notebook scheduling",
                     "Notebook pod appeared", "scheduled",
-                    Start=event_times.appears_time,
+                    Start=appears_time,
                     Finish=event_times.scheduled))
                 data.append(generate_data(
                     "21. Notebook preparation",
@@ -270,7 +255,7 @@ class Timeline():
             rows = df[df["LegendName"] == legend_name]
 
             def get_optional_scalar(column_name):
-                return None if rows[column_name].isnull().values[0] \
+                return None if (column_name not in rows or rows[column_name].isnull().values[0]) \
                     else rows[column_name].values[0]
 
             x = []
@@ -278,7 +263,8 @@ class Timeline():
             text = []
             for row in range(len(rows)):
                 line_idx = ordered_lines.index(rows["LineName"].values[row])
-                txt = rows["Text"].values[0]
+                txt = rows["Text"].values[row]
+
                 get_ts = lambda name: datetime.datetime.fromtimestamp(int(rows[name].values[row].astype(datetime.datetime))/1000000000)
 
                 current_ts = get_ts("Start")
@@ -295,9 +281,8 @@ class Timeline():
                 text += [txt, None]
 
                 # The None values above tells Plotly not to draw a line between an event and the next one
-
             plot_opt = dict(
-                line_width = get_optional_scalar("LineWidth"),
+                line_width = get_optional_scalar("LineWidth") / 2,
                 opacity = get_optional_scalar("Opacity"),
                 line_color = get_optional_scalar("LineColor"),
                 legendgroup = get_optional_scalar("LegendGroup"),

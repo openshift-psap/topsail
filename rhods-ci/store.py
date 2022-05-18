@@ -57,16 +57,7 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None):
     for ev in events["items"]:
         if namespace and ev["involvedObject"]["namespace"] != namespace: continue
 
-        if ev["involvedObject"]["kind"] == "PersistentVolumeClaim":
-            podname = ev["involvedObject"]["name"].strip("-pvc")
-            appears_time = event_times[podname].__dict__.get("appears_time")
-            str_time = ev["firstTimestamp"]
-            event_time = datetime.datetime.strptime(str_time,  K8S_TIME_FMT)
-
-            if not appears_time or event_time < appears_time:
-                event_times[podname].appears_time = event_time
-
-        elif ev["involvedObject"]["kind"] != "Pod":
+        if ev["involvedObject"]["kind"] != "Pod":
             continue
 
         podname = ev["involvedObject"]["name"]
@@ -99,8 +90,14 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None):
 
 
         if evt_name == "failedScheduling":
-            start = datetime.datetime.strptime(ev["firstTimestamp"], fmt)
-            event_times[podname].failedScheduling = [start, event_time, ev["message"]]
+            if "count" in ev:
+                start = datetime.datetime.strptime(ev["firstTimestamp"], fmt)
+                end = event_time
+            else:
+                start = event_time
+                end = event_time + datetime.timedelta(minutes=1)
+
+            event_times[podname].failedScheduling = [start, end, ev["message"]]
             continue
 
 
