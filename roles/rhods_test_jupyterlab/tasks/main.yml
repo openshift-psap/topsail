@@ -47,6 +47,21 @@
     command: oc config view --minify -o jsonpath='{.clusters[0].cluster.server}'
     register: oc_api_url_cmd
 
+- name: Get the list of worker nodes
+  command:
+    oc get nodes
+           -lnode-role.kubernetes.io/worker
+           -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+  register: worker_nodenames
+
+- name: Prefetch the ODS-CI image on all the worker nodes (in parallel)
+  command:
+    oc debug istag/{{ rhods_test_istag }} \
+             -n {{ rhods_test_namespace }} \
+             --node-name="{{ item }}" \
+             -- echo "Image prefetched on node/{{ item }}"
+  loop: "{{ worker_nodenames.stdout_lines }}"
+
 - name: Get the ODS-CI sample var file
   shell:
     oc debug istag/{{ rhods_test_istag }}
