@@ -222,21 +222,34 @@
        > "{{ artifact_extra_logs_dir }}/notebook_events.yaml"
   failed_when: false
 
+- name: Get Minio Pod name
+  command: oc get pod -lapp=minio -n minio -ojsonpath={.items[0].metadata.name}
+  register: minio_podname_cmd
+
+- name: Create the ODS-CI artifacts destination directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/ods-ci"
+    state: directory
+    mode: '0755'
+  when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
+
+- name: Remove the images from ODS-CI artifacts on the Minio server
+  when:  'rhods_test_jupyterlab_artifacts_collected == "no-image"'
+  command: # do not crash if the 'ods-ci' directory does not exist
+    oc -n minio -c ubi8 rsh "{{ minio_podname_cmd.stdout }}" bash -c \
+       "test -d /data/mybucket/ods-ci || exit 0 ; find /data/mybucket/ods-ci -name '*.png' -delete"
+
 - name: Extract the ODS-CI test artifacts from the Minio S3 container
-  shell:
-    DEST_DIR="{{ artifact_extra_logs_dir }}/ods-ci/";
-    MINIO_PODNAME=$(oc get pod -lapp=minio -n minio -ojsonpath={.items[0].metadata.name});
-    mkdir -p "$DEST_DIR";
-    oc cp
-       -n minio
-       -c ubi8
-       "$MINIO_PODNAME:/data/mybucket/ods-ci"
-       "$DEST_DIR"
+  command:
+    oc cp -n minio -c ubi8
+       "{{ minio_podname_cmd.stdout }}:/data/mybucket/ods-ci"
+       "{{ artifact_extra_logs_dir }}/ods-ci"
   register: extract_s3_logs
   retries: 5
   delay: 5
   until: extract_s3_logs.rc == 0
   failed_when: false
+  when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
 
 - name: Test if the RHODS test job crashed
   command:
