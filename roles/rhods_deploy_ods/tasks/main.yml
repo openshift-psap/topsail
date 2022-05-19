@@ -73,12 +73,22 @@
   command: oc get route/jupyterhub -n redhat-ods-applications -ojsonpath={.spec.host}
   register: jupyterlab_hostname_cmd
 
-- name: Wait for JupyterLab to be ready
-  command:
-    curl -Ssf --insecure https://{{ jupyterlab_hostname_cmd.stdout }}
-  args:
-    warn: false # don't warn about using curl here
-  register: wait_jupyterlab
-  until: wait_jupyterlab.rc == 0
-  retries: 40
-  delay: 60
+- block:
+  - name: Wait for JupyterLab to be ready
+    shell:
+      set -o pipefail;
+      curl -Ssf --insecure --verbose https://{{ jupyterlab_hostname_cmd.stdout }} |& grep '< HTTP/1'
+    args:
+      warn: false # don't warn about using curl here
+    register: wait_jupyterlab
+    until: '"302 Found" in wait_jupyterlab.stdout'
+    retries: 40
+    delay: 60
+  rescue:
+  - name: Capture JupiterHub curl output
+    command:
+      curl -Ssf --insecure --verbose https://{{ jupyterlab_hostname_cmd.stdout }}
+    args:
+      warn: false # don't warn about using curl here
+  - name: fail
+    fail: msg="JupiterHub didn't get ready"
