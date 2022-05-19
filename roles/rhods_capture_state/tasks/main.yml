@@ -1,0 +1,38 @@
+---
+- name: Capture the content of the {{ namespace }} namespace
+  include_tasks: capture_namespace.yml
+  loop:
+  - redhat-ods-monitoring
+  - redhat-ods-applications
+  - redhat-ods-operator
+  loop_control:
+    loop_var: namespace
+
+- name: Get the RHODS operator pod status
+  shell:
+    oc get pod -A -lname=rhods-operator > "{{ artifact_extra_logs_dir }}/rhods_operator.status"
+
+- name: Get the RHODS operator pod yaml
+  shell:
+    oc get pod -A -lname=rhods-operator -oyaml > "{{ artifact_extra_logs_dir }}/rhods_operator.yaml"
+
+- name: Get the RHODS operator namespace
+  command: oc get -f "{{ artifact_extra_logs_dir }}/rhods_operator.yaml" -ojsonpath={.metadata.namespace}
+  register: rhods_operator_ns_cmd
+
+- name: Get the RHODS operator pod yaml
+  shell:
+    oc logs $(oc get pod -A -lname=rhods-operator -oname) -n "{{ rhods_operator_ns_cmd.stdout }}"
+        > "{{ artifact_extra_logs_dir }}/rhods_operator.log"
+
+- name: Get the cluster nodes status
+  shell:
+    oc get nodes > "{{ artifact_extra_logs_dir }}/nodes.status"
+
+- name: Get the cluster nodes yaml
+  shell:
+    oc get nodes -oyaml > "{{ artifact_extra_logs_dir }}/nodes.yaml"
+
+- name: Get the cluster machines status
+  shell:
+    oc get machines -n  openshift-machine-api > "{{ artifact_extra_logs_dir }}/machines.status"

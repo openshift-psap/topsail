@@ -121,3 +121,11 @@ class RHODS:
         """
 
         return RunAnsibleRole("rhods_undeploy_ldap")
+
+    @staticmethod
+    def capture_state():
+        """
+        Capture information about the cluster and the RHODS deployment
+        """
+
+        return RunAnsibleRole("rhods_capture_state")
