@@ -5,6 +5,10 @@ set -o pipefail
 set -o nounset
 set -x
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+source $THIS_DIR/../prow/_logging.sh
+
 #PSAP_ODS_SECRET_PATH="/var/run/psap-ods-secret-1"
 PSAP_ODS_SECRET_PATH="/var/run/psap-entitlement-secret"
 S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
@@ -97,7 +101,21 @@ prepare_driver_cluster() {
     run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 }
 
-prepare_sutest_cluster() {
+prepare_osd_sutest_cluster() {
+    switch_cluster "sutest"
+
+    CLUSTER_NAME=$(oc whoami --show-console | cut -d. -f3)
+    echo "OSD cluster name is $CLUSTER_NAME"
+
+    if [[ $((ocm describe cluster $CLUSTER_NAME --json || true) | jq -r .state) != "ready" ]]; then
+        echo "OCM cluster $CLUSTER_NAME isn't ready ..."
+        exit 1
+    fi
+
+    run_in_bg ./run_toolbox.py rhods deploy_ldap "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" --use_ocm=
+}
+
+prepare_ocp_sutest_cluster() {
     switch_cluster "sutest"
 
     ./run_toolbox.py cluster set-scale m5.xlarge 5 --force
@@ -119,8 +137,22 @@ reset_prometheus() {
     ./run_toolbox.py cluster reset_prometheus_db --label="deployment=prometheus" --namespace=redhat-ods-monitoring
 }
 
+collect_sutest() {
+    switch_cluster "sutest"
+    ./run_toolbox.py rhods capture_state > /dev/null
+}
+
+finalizers+=("collect_sutest")
+
 prepare_driver_cluster
-prepare_sutest_cluster
+
+switch_cluster "sutest"
+SUTEST_IS_OSD=$(oc get ns/openshift-config-manageda -oname --ignore-not-found)
+if [[ "$SUTEST_IS_OSD" ]]; then
+    prepare_osd_sutest_cluster
+else
+    prepare_ocp_sutest_cluster
+fi
 
 wait_bg_processes
 
