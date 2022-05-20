@@ -123,6 +123,34 @@ class RHODS:
         return RunAnsibleRole("rhods_undeploy_ldap")
 
     @staticmethod
+    def reset_prometheus_db():
+        """
+        Resets RHODS Prometheus database, by destroying its Pod.
+        """
+
+        opts = {
+            "cluster_prometheus_db_mode": "reset",
+            "cluster_prometheus_db_label": "deployment=prometheus",
+            "cluster_prometheus_db_namespace": "redhat-ods-monitoring",
+        }
+
+        return RunAnsibleRole("cluster_prometheus_db", opts)
+
+    @staticmethod
+    def dump_prometheus_db():
+        """
+        Dump Prometheus database into a file
+        """
+
+        opts = {
+            "cluster_prometheus_db_mode": "dump",
+            "cluster_prometheus_db_label": "deployment=prometheus",
+            "cluster_prometheus_db_namespace": "redhat-ods-monitoring",
+        }
+
+        return RunAnsibleRole("cluster_prometheus_db", opts)
+
+    @staticmethod
     def capture_state():
         """
         Capture information about the cluster and the RHODS deployment
