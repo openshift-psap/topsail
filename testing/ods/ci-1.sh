@@ -134,7 +134,7 @@ reset_prometheus() {
 
     switch_cluster "sutest"
     ./run_toolbox.py cluster reset_prometheus_db
-    ./run_toolbox.py cluster reset_prometheus_db --label="deployment=prometheus" --namespace=redhat-ods-monitoring
+    ./run_toolbox.py rhods reset_prometheus_db
 }
 
 collect_sutest() {
@@ -175,4 +175,4 @@ fi
 
 switch_cluster "sutest"
 ./run_toolbox.py cluster dump_prometheus_db
-./run_toolbox.py cluster dump_prometheus_db --label="deployment=prometheus" --namespace=redhat-ods-monitoring
+./run_toolbox.py rhods dump_prometheus_db
