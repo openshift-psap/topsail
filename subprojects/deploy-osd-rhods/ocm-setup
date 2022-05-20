@@ -1,0 +1,153 @@
+#! /bin/bash
+
+set -x
+set -e
+
+CLUSTER_NAME="${1:-}"
+shift || true
+ENV_FILE="${1:-}"
+shift || true
+
+
+KUBEADMIN_NAME=${KUBEADMIN_NAME:-kubeadmin}
+KUBEADMIN_GROUP=${KUBEADMIN_GROUP:-cluster-admins}
+HTACCESS_IDP_NAME=${HTACESS_IDP_NAME:-htpasswd}
+
+AWS_REGION=${AWS_REGION:-us-east-1}
+
+OSD_CLUSTER_VERSION=${ODS_CLUSTER_VERSION:-4.9.31}
+
+RHODS_MACHINEPOOL_NAME=${RHODS_MACHINEPOOL_NAME:-default}
+RHODS_MACHINEPOOL_REPLICAS=${RHODS_MACHINEPOOL_REPLICAS:-7}
+CI_ARTIFACTS=${CI_ARTIFACTS:-$(realpath ../..)}
+
+if [[ -z "$CLUSTER_NAME" || -z "$ENV_FILE" ]]; then
+    cat <<EOF
+Usage: $0 CLUSTER_NAME ENV_FILE CI_ARTIFACTS
+
+Flags:
+  CLUSTER_NAME: name of the ODS cluster to create
+  ENV_FILE: file that will be sourced to populate the secret variables. See next section.
+
+Env-file:
+  KUBECONFIG: must point to an empty file. Will be populated with the kube credentials to access to the cluster.
+  KUBEADMIN_PASS: password of the default kubeadmin user.
+  AWS_ACCOUNT_ID
+  AWS_ACCESS_KEY
+  AWS_SECRET_KEY: Credentials to access AWS.
+
+Optional env:
+  KUBEADMIN_NAME:  name of the kubeadmin user to create (default: $KUBEADMIN_NAME)
+  KUBEADMIN_GROUP: name of the group in which the kubeadmin user should be added (default: $KUBEADMIN_GROUP)
+  HTACESS_IDP_NAME: name of the HTACCESS identity provider
+
+  AWS_REGION: AWS region in which the cluster will be created (default: $AWS_REGION)
+
+  RHODS_MACHINEPOOL_NAME: name of the machinepool that will be scaled up (default: $RHODS_MACHINEPOOL_NAME)
+  RHODS_MACHINEPOOL_REPLICAS: number of replicas that will be requested in the machine pool (default: $RHODS_MACHINEPOOL_REPLICAS)
+  CI_ARTIFACTS: path to 'ci-artifact' base directory, to install RHODS addon (default: $CI_ARTIFACTS)
+
+  OSD_CLUSTER_VERSION: version of the cluster to deploy (default: $ODS_CLUSTER_VERSION)
+EOF
+    exit 1
+fi
+
+if [[ ! -e "$KUBECONFIG" ]]; then
+    echo "KUBECONFIG file doesn't exist."
+    exit 1
+fi
+
+if [[ $(cat "$KUBECONFIG" | wc -c) != 0 ]]; then
+    echo "KUBECONFIG file isn't empty."
+    exit 1
+fi
+
+source "$ENV_FILE"
+
+MANDATORY_ENV="CLUSTER_NAME KUBEADMIN_PASS AWS_ACCOUNT_ID AWS_ACCESS_KEY AWS_SECRET_KEY"
+
+for name in $MANDATORY_ENV; do
+    if [[ -z "${!name}" ]]; then
+        echo "ERROR: $name is empty."
+        exit 1
+    fi
+done
+
+# 1. create the cluster if it doesn't exist
+
+if ! ocm describe cluster $CLUSTER_NAME 2> /dev/null; then
+   ocm create cluster $CLUSTER_NAME \
+       --version $OSD_CLUSTER_VERSION \
+       --region $AWS_REGION \
+       --ccs \
+       --aws-account-id $AWS_ACCOUNT_ID \
+       --aws-access-key-id $AWS_ACCESS_KEY \
+       --aws-secret-access-key $AWS_SECRET_KEY
+   echo "Cluster created. Waiting for it to be ready ..."
+else
+    echo "Cluster already exists."
+fi
+
+# 2. wait for it to be ready
+
+previous_state=
+state=not-read
+while true; do
+  state=$(ocm describe cluster $CLUSTER_NAME --json | jq -r .state)
+
+  if [[ "$state" == "ready" ]]; then
+    echo "$(date) Cluster is ready"
+    break
+  fi
+
+  if [[ "$state" != "$previous_state" ]]; then
+    echo ""
+    echo "$(date) $state ..."
+    previous_state=$state
+  else
+    echo -n "."
+  fi
+  sleep 30
+done
+
+# 3. create a `htpasswd` identity provider
+
+ocm delete idp --cluster=$CLUSTER_NAME $HTACCESS_IDP_NAME 2>/dev/null || true # delete, it case it already existed
+
+ocm create idp --cluster=$CLUSTER_NAME \
+    --type htpasswd --name $HTACCESS_IDP_NAME \
+    --username $KUBEADMIN_NAME \
+    --password "$KUBEADMIN_PASS"
+
+# 4. create a user with `cluster-admins` privileges
+
+ocm delete user --cluster=$CLUSTER_NAME \
+                $KUBEADMIN_NAME \
+                --group="$KUBEADMIN_GROUP" 2>/dev/null || true # delete in case it already existed
+
+ocm create user --cluster=$CLUSTER_NAME \
+                $KUBEADMIN_NAME \
+                --group="$KUBEADMIN_GROUP"
+
+# 5. `oc login` into the cluster
+
+API_URL=$(ocm describe cluster $CLUSTER_NAME --json | jq -r .api.url)
+
+RETRIES=10
+DELAY=30
+while ! oc login $API_URL --username=$KUBEADMIN_NAME --password=$KUBEADMIN_PASS --insecure-skip-tls-verify; do
+    RETRIES=$(($RETRIES - 1))
+    if [[ $RETRIES == 0 ]]; then
+        echo "Failed to login into the cluster ..."
+        exit 1
+    fi
+    sleep $DELAY
+done
+
+# 6. scale up the cluster with 7 nodes (to meet RHODS requirements)
+
+ocm edit machinepool --cluster=$CLUSTER_NAME $RHODS_MACHINEPOOL_NAME --replicas=$RHODS_MACHINEPOOL_REPLICAS
+
+# 7. install RHODS (ci-artifacts role)
+
+(cd $CI_ARTIFACTS && ./run_toolbox.py rhods deploy_addon ${CLUSTER_NAME})

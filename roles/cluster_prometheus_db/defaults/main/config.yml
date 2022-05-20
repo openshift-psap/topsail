@@ -1,0 +1,4 @@
+---
+cluster_prometheus_db_mode: # dump or reset
+cluster_prometheus_db_label: app.kubernetes.io/component=prometheus
+cluster_prometheus_db_namespace: openshift-monitoring

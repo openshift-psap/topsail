@@ -47,6 +47,21 @@
     command: oc config view --minify -o jsonpath='{.clusters[0].cluster.server}'
     register: oc_api_url_cmd
 
+- name: Get the list of worker nodes
+  command:
+    oc get nodes
+           -lnode-role.kubernetes.io/worker
+           -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+  register: worker_nodenames
+
+- name: Prefetch the ODS-CI image on all the worker nodes (in parallel)
+  command:
+    oc debug istag/{{ rhods_test_istag }} \
+             -n {{ rhods_test_namespace }} \
+             --node-name="{{ item }}" \
+             -- echo "Image prefetched on node/{{ item }}"
+  loop: "{{ worker_nodenames.stdout_lines }}"
+
 - name: Get the ODS-CI sample var file
   shell:
     oc debug istag/{{ rhods_test_istag }}
@@ -116,7 +131,6 @@
        "--from-file=entrypoint.sh={{ rhods_test_jupyterlab_entrypoint }}"
        -n {{ rhods_test_namespace }}
 
-
 - name: Empty the Minio S3 stoage
   shell:
     oc -c minio -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
@@ -128,6 +142,18 @@
        -f "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
        --ignore-not-found
        -n {{ rhods_test_namespace }}
+
+- name: Delete the events of the tester namespace
+  command:
+    oc delete ev -n {{ rhods_test_namespace }} --all
+  failed_when: false
+
+- name: Delete the events of the notebook namespace
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  command:
+    oc delete ev -n {{ rhods_notebook_namespace }} --all
+  failed_when: false
 
 - name: Create the RHODS test job
   command:
@@ -201,27 +227,36 @@
   failed_when: false
 
 - name: Get the events of the notebook namespace
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   shell:
     oc get ev -oyaml
        -n {{ rhods_notebook_namespace }}
        > "{{ artifact_extra_logs_dir }}/notebook_events.yaml"
   failed_when: false
 
+- name: Get Minio Pod name
+  command: oc get pod -lapp=minio -n minio -ojsonpath={.items[0].metadata.name}
+  register: minio_podname_cmd
+
+- name: Create the ODS-CI artifacts destination directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/ods-ci"
+    state: directory
+    mode: '0755'
+  when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
+
+- name: Remove the images from ODS-CI artifacts on the Minio server
+  when:  'rhods_test_jupyterlab_artifacts_collected == "no-image"'
+  command: # do not crash if the 'ods-ci' directory does not exist
+    oc -n minio -c ubi8 rsh "{{ minio_podname_cmd.stdout }}" bash -c \
+       "test -d /data/mybucket/ods-ci || exit 0 ; find /data/mybucket/ods-ci -name '*.png' -delete"
+
 - name: Extract the ODS-CI test artifacts from the Minio S3 container
   shell:
-    DEST_DIR="{{ artifact_extra_logs_dir }}/ods-ci/";
-    MINIO_PODNAME=$(oc get pod -lapp=minio -n minio -ojsonpath={.items[0].metadata.name});
-    mkdir -p "$DEST_DIR";
-    oc cp
-       -n minio
-       -c ubi8
-       "$MINIO_PODNAME:/data/mybucket/ods-ci"
-       "$DEST_DIR"
-  register: extract_s3_logs
-  retries: 5
-  delay: 5
-  until: extract_s3_logs.rc == 0
-  failed_when: false
+    oc -n minio -c ubi8 exec "{{ minio_podname_cmd.stdout }}"
+       -- tar cvzf - -C  /data/mybucket/ods-ci .
+       > "{{ artifact_extra_logs_dir }}/ods-ci.tgz"
 
 - name: Test if the RHODS test job crashed
   command:

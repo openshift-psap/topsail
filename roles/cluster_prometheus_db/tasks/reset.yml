@@ -1,0 +1,31 @@
+---
+- name: Get Prometheus Pod name
+  command: oc get pods -l{{ cluster_prometheus_db_label }} -n {{ cluster_prometheus_db_namespace }} -oname
+  register: prometheus_pod_name_cmd
+  failed_when: not prometheus_pod_name_cmd.stdout
+
+- name: Delete Prometheus Pod (openshift-monitoring only)
+  command: oc delete {{ prometheus_pod_name_cmd.stdout }} -n {{ cluster_prometheus_db_namespace }}
+  when: 'cluster_prometheus_db_namespace == "openshift-monitoring"'
+
+- name: Delete Prometheus Pod and PVC (redhat-ods-monitoring only)
+  command: oc delete pvc/prometheus-data {{ prometheus_pod_name_cmd.stdout }} -n {{ cluster_prometheus_db_namespace }}
+  when: 'cluster_prometheus_db_namespace == "redhat-ods-monitoring"'
+
+- name: Recreate Prometheus PVC (redhat-ods-monitoring only)
+  shell: |
+    set -o pipefail;
+    cat << EOF | oc apply -f- -n redhat-ods-monitoring
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: prometheus-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: gp2
+    EOF
+  when: 'cluster_prometheus_db_namespace == "redhat-ods-monitoring"'
