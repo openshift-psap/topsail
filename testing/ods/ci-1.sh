@@ -139,7 +139,8 @@ reset_prometheus() {
 
 collect_sutest() {
     switch_cluster "sutest"
-    ./run_toolbox.py rhods capture_state > /dev/null
+    ./run_toolbox.py rhods capture_state > /dev/null || true
+    ./run_toolbox.py capture_environment > /dev/null || true
 }
 
 finalizers+=("collect_sutest")
