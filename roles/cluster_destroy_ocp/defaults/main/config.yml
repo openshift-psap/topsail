@@ -1,0 +1,4 @@
+cluster_destroy_ocp_openshift_installer:
+cluster_destroy_ocp_region:
+cluster_destroy_ocp_tag:
+cluster_destroy_ocp_value: owned
