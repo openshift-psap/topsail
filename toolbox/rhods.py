@@ -87,6 +87,14 @@ class RHODS:
         return RunAnsibleRole("rhods_undeploy_ods")
 
     @staticmethod
+    def cleanup_aws():
+        """
+        Cleanup AWS from RHODS dangling resources
+        """
+
+        return RunAnsibleRole("rhods_cleanup_aws")
+
+    @staticmethod
     def deploy_ldap(idp_name, username_prefix, username_count: int, secret_properties_file, use_ocm=""):
         """
         Deploy OpenLDAP and LDAP Oauth
