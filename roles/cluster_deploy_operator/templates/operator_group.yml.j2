@@ -5,5 +5,7 @@ metadata:
   name: {{ cluster_deploy_operator_manifest_name }}-operator-group
   namespace: {{ cluster_deploy_operator_namespace }}
 spec:
+{% if not cluster_deploy_operator_all_namespaces | bool %}
   targetNamespaces:
   - {{ cluster_deploy_operator_namespace }}
+{% endif %}
