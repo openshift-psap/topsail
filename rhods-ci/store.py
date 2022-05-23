@@ -80,7 +80,8 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None):
             "Pulled": "pulled",
             "Started": "started",
             "Killing": "terminated",
-            "FailedScheduling": "failedScheduling",
+            "FailedScheduling": "failed",
+            "Failed": "failed"
         }
 
         evt_name = MAPPING_REASON_NAME.get(reason)
@@ -88,16 +89,20 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None):
         if not (evt_name and event_time):
             continue
 
-
-        if evt_name == "failedScheduling":
+        if evt_name == "failed":
             if "count" in ev:
                 start = datetime.datetime.strptime(ev["firstTimestamp"], fmt)
                 end = event_time
+                if start == end:
+                    end += datetime.timedelta(seconds=10)
             else:
                 start = event_time
-                end = event_time + datetime.timedelta(minutes=1)
+                end = event_time + datetime.timedelta(seconds=10)
 
-            event_times[podname].failedScheduling = [start, end, ev["message"]]
+            if "warnings" not in event_times[podname].__dict__:
+                event_times[podname].__dict__["warnings"] = []
+
+            event_times[podname].__dict__["warnings"].append([reason, start, end, ev["message"]])
             continue
 
 
@@ -162,7 +167,10 @@ def _parse_ods_ci_output_xml(filename):
     with open(filename) as f:
         output_dict = xmltodict.parse(f.read())
 
-    for test in output_dict["robot"]["suite"]["test"]:
+    tests = output_dict["robot"]["suite"]["test"]
+    if not isinstance(tests, list): tests = [tests]
+
+    for test in tests:
         ods_ci_times[test["@name"]] = test_times = types.SimpleNamespace()
 
         test_times.start = datetime.datetime.strptime(test["status"]["@starttime"], ROBOT_TIME_FMT)

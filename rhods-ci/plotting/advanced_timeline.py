@@ -62,10 +62,13 @@ class Timeline():
                 rhods_nodes[user_idx] = f"RHODS node #{rhods_nodes_index(nodename)}"
 
             def get_line_name(user_idx):
-                user_name = f"User #{user_idx}"
+                line_name = [
+                    f"User #{user_idx}",
+                    test_nodes[user_idx],
+                ]
 
-                test_node = test_nodes[user_idx]
-                rhods_node = rhods_nodes.get(user_idx, "<no RHODS node>")
+                if rhods_nodes:
+                    line_name += [rhods_nodes.get(user_idx, "<no RHODS node>")]
 
                 return user_name + "<br>" + test_node + "<br>" + rhods_node
 
@@ -118,6 +121,16 @@ class Timeline():
                     "Container started", "container finished",
                     Finish=pod_times.container_finished))
 
+                for reason, start, end, msg in event_times.__dict__.get("warnings", []):
+                    data.append(generate_data(
+                        "Test-pod K8s Warnings",
+                        reason, msg,
+                        Start=start,
+                        Finish=end,
+                        LineColor="Red",
+                        LineWidth=20,
+                        Opacity=0.9,
+                    ))
 
             data_length_before_ods_ci = len(data)
 
@@ -198,12 +211,14 @@ class Timeline():
                     "Notebook container started", "container terminated",
                     Finish=event_times.terminated))
 
-                if "failedScheduling" in event_times.__dict__:
+
+
+                for reason, start, end, msg in event_times.__dict__.get("warnings", []):
                     data.append(generate_data(
-                        "K8s Warnings",
-                        "Failed Scheduling", event_times.failedScheduling[2],
-                        Start=event_times.failedScheduling[0],
-                        Finish=event_times.failedScheduling[1],
+                        "Notebook K8s Warnings",
+                        reason, msg,
+                        Start=start,
+                        Finish=end,
                         LineColor="Red",
                         LineWidth=20,
                         Opacity=0.9,
@@ -282,7 +297,7 @@ class Timeline():
 
                 # The None values above tells Plotly not to draw a line between an event and the next one
             plot_opt = dict(
-                line_width = get_optional_scalar("LineWidth") / 2,
+                line_width = get_optional_scalar("LineWidth") / 4,
                 opacity = get_optional_scalar("Opacity"),
                 line_color = get_optional_scalar("LineColor"),
                 legendgroup = get_optional_scalar("LegendGroup"),
