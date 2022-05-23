@@ -8,20 +8,20 @@
 - name: Create the LDAP secret resource
   command: oc delete -f "{{ rhods_deploy_ldap_secret_template }}" --ignore-not-found
 
+- name: Set a dummy IDP name
+  set_fact:
+    rhods_deploy_ldap_idp_name: dummy
+
 - name: Apply the Oauth template
   template:
     src: "{{ rhods_deploy_ldap_oauth }}"
     dest: "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
     mode: 0400
 
-- name: Set a dummy IDP name
-  set_fact:
-    rhods_deploy_ldap_idp_name: dummy
-
 - name: Delete the LDAP Oauth resource
   shell:
     set -o pipefail;
-    oc get -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml | yq 'del(.spec.identityProviders)' | oc apply -f-
+    oc get -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -ojson | jq 'del(.spec.identityProviders)' | oc apply -f-
 
 - name: Delete the ldap namespace
   command:
