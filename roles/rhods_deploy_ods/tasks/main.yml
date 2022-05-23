@@ -51,7 +51,7 @@
   vars:
     cluster_deploy_operator_catalog: addon-managed-odh-catalog
     cluster_deploy_operator_manifest_name: rhods-operator
-    cluster_deploy_operator_namespace: openshift-operators
+    cluster_deploy_operator_namespace: redhat-ods-operator
     cluster_deploy_operator_channel: beta
     cluster_deploy_operator_all_namespaces: "True"
 
