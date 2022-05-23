@@ -79,12 +79,21 @@ class RHODS:
         return RunAnsibleRole("rhods_test_jupyterlab", opts)
 
     @staticmethod
-    def undeploy_ods():
+    def undeploy_ods(namespace="redhat-ods-operator", force: bool = False):
         """
         Undeploy ODS operator
+
+        args:
+          namespace: Optional. Namespace where ODS was installed.
+          force: Optional. Force delete the RHODS namespaces.
         """
 
-        return RunAnsibleRole("rhods_undeploy_ods")
+        opts = {
+            "rhods_undeploy_ods_namespace": namespace,
+            "rhods_undeploy_ods_force": force,
+        }
+
+        return RunAnsibleRole("rhods_undeploy_ods", opts)
 
     @staticmethod
     def cleanup_aws():
