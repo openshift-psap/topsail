@@ -112,7 +112,10 @@ prepare_osd_sutest_cluster() {
         exit 1
     fi
 
-    run_in_bg ./run_toolbox.py rhods deploy_ldap "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" --use_ocm=
+    run_in_bg ./run_toolbox.py rhods deploy_ldap \
+              "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" \
+              --use_ocm= \
+              --wait
 }
 
 prepare_ocp_sutest_cluster() {
