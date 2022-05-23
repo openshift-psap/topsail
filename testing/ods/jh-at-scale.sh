@@ -85,6 +85,14 @@ wait_bg_processes() {
     echo "All the processes are done!"
 }
 
+kill_bg_processes() {
+    echo "Killing the background processes '${wait_list[@]}' still running ..."
+    for pid in ${wait_list[@]}; do
+        kill -9 $pid || true
+    done
+    echo "All the processes have been terminated."
+}
+
 prepare_driver_cluster() {
     switch_cluster "driver"
 
@@ -146,6 +154,7 @@ collect_sutest() {
     ./run_toolbox.py cluster capture_environment > /dev/null || true
 }
 
+finalizers+=("kill_bg_processes")
 finalizers+=("collect_sutest")
 
 prepare_driver_cluster
