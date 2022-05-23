@@ -38,7 +38,7 @@ spec:
         command: ['bash', '/mnt/rhods-jupyterlab-entrypoint/entrypoint.sh']
         env:
         - name: TEST_CASE
-          value: "tests/Tests/500__jupyterhub/test-jupyterlab-cpu-stresstest.robot"
+          value: "tests/Tests/{{ rhods_test_jupyterlab_ods_ci_test_case }}"
         volumeMounts:
         - name: ods-ci-test-variables
           mountPath: /mnt/ods-ci-test-variables
