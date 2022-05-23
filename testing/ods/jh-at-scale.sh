@@ -98,7 +98,7 @@ prepare_driver_cluster() {
 
     oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
 
-    run_in_bg ./run_toolbox.py utils build_push_image \
+    ./run_toolbox.py utils build_push_image \
                      "${ODS_CI_IMAGESTREAM}" "$ODS_CI_TAG" \
                      --namespace="$ODS_CI_TEST_NAMESPACE" \
                      --git-repo="$ODS_CI_REPO" \
@@ -106,7 +106,7 @@ prepare_driver_cluster() {
                      --context-dir="/" \
                      --dockerfile-path="build/Dockerfile"
 
-    run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
+    ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 }
 
 prepare_osd_sutest_cluster() {
@@ -120,7 +120,7 @@ prepare_osd_sutest_cluster() {
         exit 1
     fi
 
-    run_in_bg ./run_toolbox.py rhods deploy_ldap \
+    ./run_toolbox.py rhods deploy_ldap \
               "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" \
               --use_ocm= \
               --wait
