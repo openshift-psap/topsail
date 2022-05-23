@@ -47,6 +47,11 @@
     command: oc config view --minify -o jsonpath='{.clusters[0].cluster.server}'
     register: oc_api_url_cmd
 
+  - name: Get the RHODS version
+    shell:
+      oc get csv -n redhat-ods-operator -ojsonpath={.items[0].spec.version}
+    register: rhods_version_cmd
+
 - name: Get the list of worker nodes
   command:
     oc get nodes
@@ -67,12 +72,6 @@
     oc debug istag/{{ rhods_test_istag }}
        -n {{ rhods_test_namespace }}
        -- cat test-variables.yml.template > /tmp/test-variables.yml.template
-
-- name: Get the RHODS version
-  shell:
-    set -o pipefail;
-    oc get csv -n redhat-ods-operator | grep "rhods-operator" | awk '{print $1}' | sed 's/rhods-operator.//'
-  register: rhods_version_cmd
 
 - name: Apply the ODS-CI template
   shell: |
