@@ -258,6 +258,15 @@
        -- tar cvzf - -C  /data/mybucket/ods-ci .
        > "{{ artifact_extra_logs_dir }}/ods-ci.tgz"
 
+- name: Generate MatrixBenchmark files
+  shell: |
+    (test -z "$(oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_test_namespace }})" && echo 0 || echo 1) >  "{{ artifact_extra_logs_dir }}/exit_code"
+    cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
+    date=$(date +%Y-%m-%d_%H:%M:%S)
+    test={{ rhods_test_jupyterlab_ods_ci_test_case }}
+    user_count={{ rhods_test_jupyterlab_user_count }}
+    EOF
+
 - name: Test if the RHODS test job crashed
   command:
     oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_test_namespace }}
