@@ -104,7 +104,7 @@ class RHODS:
         return RunAnsibleRole("rhods_cleanup_aws")
 
     @staticmethod
-    def deploy_ldap(idp_name, username_prefix, username_count: int, secret_properties_file, use_ocm=""):
+    def deploy_ldap(idp_name, username_prefix, username_count: int, secret_properties_file, use_ocm="", wait=False):
         """
         Deploy OpenLDAP and LDAP Oauth
 
@@ -119,6 +119,7 @@ class RHODS:
           username_count: Number of users to create.
           secret_properties_file: Path of a file containing the properties of LDAP secrets.
           use_ocm: Optional. If set with a cluster name, use `ocm create idp` to deploy the LDAP identity provider.
+          wait: Optional. If True, waits for the first user (0) to be able to login into the cluster.
         """
 
         opts = {
@@ -127,6 +128,7 @@ class RHODS:
             "rhods_deploy_ldap_username_count": username_count,
             "rhods_deploy_ldap_secret_properties": secret_properties_file,
             "rhods_deploy_ldap_use_ocm": use_ocm,
+            "rhods_deploy_ldap_wait": wait,
         }
 
         return RunAnsibleRole("rhods_deploy_ldap", opts)
