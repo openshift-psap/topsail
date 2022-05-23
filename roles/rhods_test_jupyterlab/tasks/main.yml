@@ -248,7 +248,8 @@
 
 - name: Remove the images from ODS-CI artifacts on the Minio server
   when:  'rhods_test_jupyterlab_artifacts_collected == "no-image"'
-  command: # do not crash if the 'ods-ci' directory does not exist
+  # do not crash if the 'ods-ci' directory does not exist
+  command:
     oc -n minio -c ubi8 rsh "{{ minio_podname_cmd.stdout }}" bash -c \
        "test -d /data/mybucket/ods-ci || exit 0 ; find /data/mybucket/ods-ci -name '*.png' -delete"
 
