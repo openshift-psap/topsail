@@ -1,0 +1,88 @@
+---
+- name: Fail if the kubeconfig file is not empty
+  shell:
+    set -o pipefail;
+    test $(cat "{{ cluster_deploy_osd_kubeconfig }}" | wc -c) == 0
+
+- name: Ensure that the secret file '{{ cluster_deploy_osd_secret_file }}' exists
+  stat:
+    path: "{{ cluster_deploy_osd_secret_file }}"
+
+- name: Test if the cluster already exists
+  command: ocm describe cluster "{{ cluster_deploy_osd_cluster_name }}"
+  register: cluster_exists
+  failed_when: false
+
+- name: Create the cluster
+  when: "cluster_exists.rc != 0"
+  shell:
+    source "{{ cluster_deploy_osd_secret_file }}";
+    ocm create cluster {{ cluster_deploy_osd_cluster_name }}
+       --version {{ cluster_deploy_osd_version }}
+       --region {{ cluster_deploy_osd_region }}
+       --ccs
+       --aws-account-id $AWS_ACCOUNT_ID
+       --aws-access-key-id $AWS_ACCESS_KEY
+       --aws-secret-access-key $AWS_SECRET_KEY
+       --compute-machine-type {{ cluster_deploy_osd_compute_machine_type }}
+       --compute-nodes {{ cluster_deploy_osd_compute_nodes }}
+
+- name: Wait for the cluster to be ready
+  shell:
+    set -o pipefail;
+    ocm describe cluster {{ cluster_deploy_osd_cluster_name }} --json | jq -r .state
+  register: ocm_wait_cluster
+  retries: 60
+  delay: 60
+  until: '"ready" in ocm_wait_cluster.stdout'
+
+- name: Delete the htpasswd IDP if it exists
+  command:
+    ocm delete idp
+        --cluster={{ cluster_deploy_osd_cluster_name }}
+        {{ cluster_deploy_osd_htaccess_idp_name }}
+  failed_when: false
+
+- name: Create the htpasswd IDP
+  shell:
+    source "{{ cluster_deploy_osd_secret_file }}";
+    ocm create idp --cluster={{ cluster_deploy_osd_cluster_name }}
+        --type htpasswd
+        --name {{ cluster_deploy_osd_htaccess_idp_name }}
+        --username {{ cluster_deploy_osd_kubeadmin_name }}
+        --password "$KUBEADMIN_PASS"
+
+- name: Delete the kubeadmin user if it exists
+  command:
+    ocm delete user
+        --cluster={{ cluster_deploy_osd_cluster_name }}
+         {{ cluster_deploy_osd_htaccess_idp_name }}
+        --group="{{ cluster_deploy_osd_kubeadmin_group }}"
+  failed_when: false
+
+- name: Create the kubeadmin user
+  command:
+    ocm create user
+        --cluster={{ cluster_deploy_osd_cluster_name }}
+         {{ cluster_deploy_osd_htaccess_idp_name }}
+        --group="{{ cluster_deploy_osd_kubeadmin_group }}"
+
+- name: Get the API URL
+  shell:
+    set -o pipefail;
+    ocm describe cluster {{ cluster_deploy_osd_cluster_name }} --json | jq -r .api.url
+  register: api_url_cmd
+
+- name: Login into openshift as kubeadmin
+  shell:
+    source "{{ cluster_deploy_osd_secret_file }}";
+    oc login "{{ api_url_cmd.stdout }}"
+             --username={{ cluster_deploy_osd_kubeadmin_name }}
+             --password="$KUBEADMIN_PASS"
+             --insecure-skip-tls-verify
+  register: oc_login
+  delay: 30
+  retries: 20
+  until: oc_login.rc == 0
+  environment:
+    KUBECONFIG: "{{ cluster_deploy_osd_kubeconfig }}"

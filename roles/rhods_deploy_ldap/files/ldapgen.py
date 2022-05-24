@@ -127,6 +127,7 @@ export rhods_ldap_adminpassword64="{adminpassword64}"
 export rhods_ldap_users64="{users64}"
 export rhods_ldap_passwords64="{passwords64}"\
 
+export rhods_ldap_password={args.user_password}
 export rhods_ldap_adminuser="{args.admin_user}"
 export rhods_ldap_adminpassword="{args.admin_password}"
 """)

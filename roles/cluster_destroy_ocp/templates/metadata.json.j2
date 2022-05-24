@@ -1,0 +1,14 @@
+{
+  "clusterName": "clusterName",
+  "clusterID": "clusterId",
+  "infraID": "infraID",
+  "aws": {
+    "region": "{{ cluster_destroy_ocp_region }}",
+    "identifier": [
+      {
+        "{{ cluster_destroy_ocp_tag }}": "{{ cluster_destroy_ocp_value }}"
+      }
+    ],
+    "clusterDomain": "clusterDomain"
+  }
+}

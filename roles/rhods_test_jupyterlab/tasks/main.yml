@@ -47,6 +47,11 @@
     command: oc config view --minify -o jsonpath='{.clusters[0].cluster.server}'
     register: oc_api_url_cmd
 
+  - name: Get the RHODS version
+    shell:
+      oc get csv -n redhat-ods-operator -ojsonpath={.items[0].spec.version}
+    register: rhods_version_cmd
+
 - name: Get the list of worker nodes
   command:
     oc get nodes
@@ -67,12 +72,6 @@
     oc debug istag/{{ rhods_test_istag }}
        -n {{ rhods_test_namespace }}
        -- cat test-variables.yml.template > /tmp/test-variables.yml.template
-
-- name: Get the RHODS version
-  shell:
-    set -o pipefail;
-    oc get csv -n redhat-ods-operator | grep "rhods-operator" | awk '{print $1}' | sed 's/rhods-operator.//'
-  register: rhods_version_cmd
 
 - name: Apply the ODS-CI template
   shell: |
@@ -248,7 +247,8 @@
 
 - name: Remove the images from ODS-CI artifacts on the Minio server
   when:  'rhods_test_jupyterlab_artifacts_collected == "no-image"'
-  command: # do not crash if the 'ods-ci' directory does not exist
+  # do not crash if the 'ods-ci' directory does not exist
+  command:
     oc -n minio -c ubi8 rsh "{{ minio_podname_cmd.stdout }}" bash -c \
        "test -d /data/mybucket/ods-ci || exit 0 ; find /data/mybucket/ods-ci -name '*.png' -delete"
 
@@ -257,6 +257,15 @@
     oc -n minio -c ubi8 exec "{{ minio_podname_cmd.stdout }}"
        -- tar cvzf - -C  /data/mybucket/ods-ci .
        > "{{ artifact_extra_logs_dir }}/ods-ci.tgz"
+
+- name: Generate MatrixBenchmark files
+  shell: |
+    (test -z "$(oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_test_namespace }})" && echo 0 || echo 1) >  "{{ artifact_extra_logs_dir }}/exit_code"
+    cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
+    date=$(date +%Y-%m-%d_%H:%M:%S)
+    test={{ rhods_test_jupyterlab_ods_ci_test_case }}
+    user_count={{ rhods_test_jupyterlab_user_count }}
+    EOF
 
 - name: Test if the RHODS test job crashed
   command:

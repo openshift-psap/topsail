@@ -25,17 +25,27 @@
 
 - name: Create dummy secrets
   shell: |
-     oc create secret generic redhat-rhods-deadmanssnitch -n redhat-ods-monitoring \
-               --from-literal="SNITCH_URL=https://nosnch.in/c2354d53d2"
-     oc create secret generic redhat-rhods-pagerduty -n redhat-ods-monitoring \
-               --from-literal=PAGERDUTY_KEY=not-a-key
-     oc create secret generic addon-managed-odh-parameters -n redhat-ods-operator \
-               --from-literal=notification-email=not-an-email@local.host
-     oc create secret generic redhat-rhods-smtp -n redhat-ods-monitoring \
+    set -o pipefail
+    oc create secret generic redhat-rhods-deadmanssnitch -n redhat-ods-monitoring \
+               --from-literal="SNITCH_URL=https://nosnch.in/c2354d53d2" \
+               -oyaml --dry-run=client \
+               | oc apply -f-
+    oc create secret generic redhat-rhods-pagerduty -n redhat-ods-monitoring \
+               --from-literal=PAGERDUTY_KEY=not-a-key \
+               -oyaml --dry-run=client \
+               | oc apply -f-
+    oc create secret generic addon-managed-odh-parameters -n redhat-ods-operator \
+               --from-literal=notification-email=not-an-email@local.host \
+               -oyaml --dry-run=client \
+               | oc apply -f-
+    oc create secret generic redhat-rhods-smtp -n redhat-ods-monitoring \
                --from-literal=host=dummy.svc \
                --from-literal=port=1234 \
                --from-literal=username=USERNAME \
-               --from-literal=password=PASSWORD
+               --from-literal=password=PASSWORD \
+               -oyaml --dry-run=client \
+               | oc apply -f-
+
 
 - name: Test if the RHODS operator is installed
   command:
@@ -51,7 +61,7 @@
   vars:
     cluster_deploy_operator_catalog: addon-managed-odh-catalog
     cluster_deploy_operator_manifest_name: rhods-operator
-    cluster_deploy_operator_namespace: openshift-operators
+    cluster_deploy_operator_namespace: redhat-ods-operator
     cluster_deploy_operator_channel: beta
     cluster_deploy_operator_all_namespaces: "True"
 

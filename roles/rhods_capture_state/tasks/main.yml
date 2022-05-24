@@ -24,6 +24,8 @@
   shell:
     oc logs $(oc get pod -A -lname=rhods-operator -oname) -n "{{ rhods_operator_ns_cmd.stdout }}"
         > "{{ artifact_extra_logs_dir }}/rhods_operator.log"
+  when: rhods_operator_ns_cmd | length > 0
+  failed_when: false
 
 - name: Get the cluster nodes status
   shell:

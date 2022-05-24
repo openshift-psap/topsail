@@ -85,12 +85,20 @@ wait_bg_processes() {
     echo "All the processes are done!"
 }
 
+kill_bg_processes() {
+    echo "Killing the background processes '${wait_list[@]}' still running ..."
+    for pid in ${wait_list[@]}; do
+        kill -9 $pid || true
+    done
+    echo "All the processes have been terminated."
+}
+
 prepare_driver_cluster() {
     switch_cluster "driver"
 
     oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
 
-    run_in_bg ./run_toolbox.py utils build_push_image \
+    ./run_toolbox.py utils build_push_image \
                      "${ODS_CI_IMAGESTREAM}" "$ODS_CI_TAG" \
                      --namespace="$ODS_CI_TEST_NAMESPACE" \
                      --git-repo="$ODS_CI_REPO" \
@@ -98,7 +106,7 @@ prepare_driver_cluster() {
                      --context-dir="/" \
                      --dockerfile-path="build/Dockerfile"
 
-    run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
+    ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 }
 
 prepare_osd_sutest_cluster() {
@@ -112,7 +120,10 @@ prepare_osd_sutest_cluster() {
         exit 1
     fi
 
-    run_in_bg ./run_toolbox.py rhods deploy_ldap "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" --use_ocm=
+    ./run_toolbox.py rhods deploy_ldap \
+              "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" \
+              --use_ocm= \
+              --wait
 }
 
 prepare_ocp_sutest_cluster() {
@@ -139,10 +150,17 @@ reset_prometheus() {
 
 collect_sutest() {
     switch_cluster "sutest"
-    ./run_toolbox.py rhods capture_state > /dev/null
+    ./run_toolbox.py rhods capture_state > /dev/null || true
+    ./run_toolbox.py cluster capture_environment > /dev/null || true
 }
 
+undeploy_rhods() {
+    ./run_toolbox.py rhods undeploy_ods --force=False
+}
+
+finalizers+=("kill_bg_processes")
 finalizers+=("collect_sutest")
+finalizers+=("undeploy_rhods")
 
 prepare_driver_cluster
 

@@ -2,18 +2,25 @@
 - name: Delete the RHODS operator subscription
   command:
      oc delete subscription.operators.coreos.com
-       -n openshift-operators
-       -loperators.coreos.com/rhods-operator.openshift-operators
+       -n {{ rhods_undeploy_ods_namespace }}
+       -loperators.coreos.com/rhods-operator.{{ rhods_undeploy_ods_namespace }}
        --ignore-not-found
 
 - name: Get the RHODS CSV name
   shell:
     set -o pipefail;
-    oc get csv -n openshift-operators -oname | grep rhods-operator
+    oc get csv -n {{ rhods_undeploy_ods_namespace }} -oname | grep rhods-operator
   register: rhods_csv_name_cmd
 
 - name: Delete the RHODS CSV
-  command: oc delete {{ rhods_csv_name_cmd.stdout }} -n openshift-operators
+  command: oc delete {{ rhods_csv_name_cmd.stdout }} -n {{ rhods_undeploy_ods_namespace }}
+
+- name: Delete RHODS catalog if it does not exist
+  command:
+    oc delete
+       CatalogSource/addon-managed-odh-catalog
+       -n openshift-marketplace
+       --ignore-not-found
 
 - name: Delete RHODS namespaces
   command:
@@ -22,10 +29,4 @@
   - redhat-ods-operator
   - redhat-ods-applications
   - redhat-ods-monitoring
-
-- name: Delete RHODS catalog if it does not exist
-  command:
-    oc delete
-       CatalogSource/addon-managed-odh-catalog
-       -n openshift-marketplace
-       --ignore-not-found
+  when: rhods_undeploy_ods_force | bool

@@ -201,3 +201,79 @@ class Cluster:
         }
 
         return RunAnsibleRole("cluster_prometheus_db", opts)
+
+    @staticmethod
+    def destroy_ocp(region, tag, value="owned", openshift_installer=None):
+        """
+        Destroy an OpenShift cluster
+
+        Args:
+          region: The AWS region where the cluster lives.
+          label: The resource tag key.
+          value: The resource tag value. Default: 'owned'.
+          openshift_installer: The path to the `openshift-installer` to use to destroy the cluster. Default: pick it up from the `deploy-cluster` subproject.
+        """
+
+        opt = {
+            cluster_destroy_ocp_region: region,
+            cluster_destroy_ocp_tag: tag,
+            cluster_destroy_ocp_value: value,
+            cluster_destroy_ocp_openshift_installer: openshift_installer,
+        }
+
+        return RunAnsibleRole("cluster_destroy_ocp", opt)
+
+    @staticmethod
+    def deploy_osd(cluster_name, secret_file, kubeconfig,
+                   version="4.9.31",
+                   region="us-east-1",
+                   kubeadmin_name="kubeadmin",
+                   kubeadmin_group="cluster-admins",
+                   htaccess_idp_name="htpasswd",
+                   compute_machine_type="m5.xlarge",
+                   compute_nodes : int = 2,
+                   ):
+        """
+        Deploy an OpenShift Dedicated cluster.
+
+        Secret_file:
+          KUBEADMIN_PASS: password of the default kubeadmin user.
+          AWS_ACCOUNT_ID
+          AWS_ACCESS_KEY
+          AWS_SECRET_KEY: Credentials to access AWS.
+
+        Args:
+          cluster_name: The name to give to the cluster.
+          secret_file: The file containing the cluster creation credentials.
+          kubeconfig: The KUBECONFIG file to populate with the access to the cluster.
+        """
+
+        opts = dict(
+            cluster_deploy_osd_cluster_name=cluster_name,
+            cluster_deploy_osd_secret_file=secret_file,
+            cluster_deploy_osd_version=version,
+            cluster_deploy_osd_region=region,
+            cluster_deploy_osd_kubeconfig=kubeconfig,
+            cluster_deploy_osd_kubeadmin_name=kubeadmin_name,
+            cluster_deploy_osd_kubeadmin_group=kubeadmin_group,
+            cluster_deploy_osd_htaccess_idp_name=htaccess_idp_name,
+            cluster_deploy_osd_compute_machine_type=compute_machine_type,
+            cluster_deploy_osd_compute_nodes=compute_nodes,
+        )
+
+        return RunAnsibleRole("cluster_deploy_osd", opts)
+
+    @staticmethod
+    def destroy_osd(cluster_name):
+        """
+        Destroy an OpenShift Dedicated cluster.
+
+        Args:
+          cluster_name: The name of the cluster to destroy.
+        """
+
+        opts = dict(
+            cluster_destroy_osd_cluster_name=cluster_name,
+        )
+
+        return RunAnsibleRole("cluster_destroy_osd", opts)

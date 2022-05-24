@@ -1,0 +1,17 @@
+---
+- name: Fail if cluster_destroy_osd_cluster_name is undefined
+  fail: msg="Bailing out. This role requires 'cluster_destroy_osd_cluster_name'"
+  when: not cluster_destroy_osd_cluster_name
+
+- name: Check ocm whoami
+  command: ocm whoami
+
+- name: Get the cluster ID
+  shell:
+    set -o pipefail;
+    ocm describe cluster {{ cluster_destroy_osd_cluster_name }} --json | jq -r .id
+  register: cluster_id_cmd
+
+- name: Destroy the OSD cluster
+  command:
+    ocm delete cluster {{ cluster_id_cmd.stdout }}

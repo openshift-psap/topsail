@@ -180,7 +180,6 @@
   debug: msg="starting_csv is {{ starting_csv }}"
 
 - name: Create the namespace, if it did not exist
-  when: not cluster_deploy_operator_all_namespaces | bool
   block:
   - name: Instantiate the Namespace template
     template:
@@ -204,7 +203,6 @@
       oc label ns/{{ cluster_deploy_operator_namespace }} openshift.io/cluster-monitoring=true
 
 - name: Create the OperatorGroup for deploying in a dedicated namespace
-  when: not cluster_deploy_operator_all_namespaces | bool
   block:
   - name: Instantiate the OperatorGroup template
     template:
