@@ -154,8 +154,13 @@ collect_sutest() {
     ./run_toolbox.py cluster capture_environment > /dev/null || true
 }
 
+undeploy_rhods() {
+    ./run_toolbox.py rhods undeploy_ods --force=False
+}
+
 finalizers+=("kill_bg_processes")
 finalizers+=("collect_sutest")
+finalizers+=("undeploy_rhods")
 
 prepare_driver_cluster
 
