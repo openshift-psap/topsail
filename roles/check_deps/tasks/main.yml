@@ -13,7 +13,9 @@
     state: directory
     mode: '0755'
 
-- block:
+- name: Test the cluster connectivity
+  when: check_deps_needs_cluster
+  block:
   - name: Fetch 'openshift_release' value and check dependencies
     # see the 'fail' message below before modifying this command,
     # it verifies that the main dependencies are met.
@@ -23,6 +25,7 @@
       | jq --raw-output '.openshiftVersion'
     register: ocp_version
     failed_when: ocp_version.stdout == 'null' or ocp_version.stdout == ""
+
   rescue:
   - name: Fail because of a dependency issue
     fail:
@@ -38,21 +41,27 @@
     set -eo pipefail;
     echo "{{ ocp_version.stdout }}" | tr '.' '\n' | head -2
   register: ocp_major_minor_version
+  when: check_deps_needs_cluster
 
 - name: Store openshift major and minor version
   set_fact:
     openshift_release_major: "{{ ocp_major_minor_version.stdout[0] }}"
     openshift_release_minor: "{{ ocp_major_minor_version.stdout[2] }}"
+  when: check_deps_needs_cluster
 
 - name: 'Store openshift_release={{ ocp_version.stdout }}'
   set_fact:
     openshift_release: "{{ openshift_release_major }}.{{ openshift_release_minor }}"
+  when: check_deps_needs_cluster
 
 - name: Store openshift major and minor version
   debug: msg="openshift_release_major='{{ openshift_release_major }}', openshift_release_minor='{{ openshift_release_minor }}'"
+  when: check_deps_needs_cluster
 
 - name: Get the address of the console (debug)
   command: oc whoami --show-console
+  when: check_deps_needs_cluster
 
 - name: Get the cluster username (debug)
   command: oc whoami
+  when: check_deps_needs_cluster
