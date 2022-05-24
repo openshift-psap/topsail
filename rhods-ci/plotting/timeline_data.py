@@ -17,12 +17,14 @@ def get_text(what, start_evt, finish_evt, start, finish):
         return f"{what}<br>{start_evt}<br>{duration}"
 
 
-def generate(entry):
-    entry_results = rhodsci_store._generate_timeline_results(entry, user_count=100) \
+def generate(entry, cfg):
+    user_count = cfg.get("timeline.users", 20)
+
+    entry_results = rhodsci_store._generate_timeline_results(entry, user_count) \
         if entry.settings.expe == "theoretical" \
            else entry.results
 
-    user_count = len(entry_results.test_pods)
+    user_count = len(entry_results.test_pods) or len(entry_results.notebook_pods)
     test_nodes = {}
     rhods_nodes = {}
 
@@ -40,14 +42,14 @@ def generate(entry):
     def get_line_name(user_idx):
         line_name = [
             f"User #{user_idx:2d}",
-            test_nodes[user_idx],
+            #test_nodes[user_idx],
         ]
 
-        if rhods_nodes:
-            line_name += [rhods_nodes.get(user_idx, "<no RHODS node>")]
+        #if rhods_nodes: line_name += [rhods_nodes.get(user_idx, "<no RHODS node>")]
 
-        # return "<br>".join(line_name)
-        return " | ".join(line_name)
+
+        return "<br>".join(line_name)
+        #return " | ".join(line_name)
 
     data = []
 
@@ -188,7 +190,6 @@ def generate(entry):
             "24. Notebook execution",
             "Notebook container started", "container terminated",
             Finish=event_times.terminated))
-
 
 
         for reason, start, end, msg in event_times.__dict__.get("warnings", []):

@@ -35,7 +35,7 @@ class Timeline():
 
         data = []
         for entry in common.Matrix.all_records(params, param_lists):
-            user_count, data, line_sort_name = timeline_data.generate(entry)
+            user_count, data, line_sort_name = timeline_data.generate(entry, cfg)
 
         _df = pd.DataFrame(data)
         df = _df[_df["LegendGroup"] != "Nodes"]

@@ -33,7 +33,7 @@ class Timeline():
         data = []
         line_sort_name = ""
         for entry in common.Matrix.all_records(settings, setting_lists):
-            user_count, data, line_sort_name = timeline_data.generate(entry)
+            user_count, data, line_sort_name = timeline_data.generate(entry, cfg)
 
         # ---
 
