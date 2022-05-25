@@ -5,6 +5,10 @@ set -o pipefail
 set -o nounset
 set -x
 
+echo "TEST DISABLED UNTIL RHODS IS INSTALLED IN THE OSD CLUSTER"
+
+exit 0
+
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 source $THIS_DIR/../prow/_logging.sh
