@@ -1,17 +1,19 @@
 #! /bin/bash
 
-set -o pipefail
-set -o errexit
-set -o nounset
+#set -o pipefail
+#set -o errexit
+#set -o nounset
 
 create_cluster() {
-    echo "Create cluster"
-    echo "ODS-Cluster $(date)" > /tmp/ODS_KUBECONFIG
+    echo "Create cluster ($SHARED_DIR)"
+    echo "ODS-Cluster $(date)" > /$SHARED_DIR/ODS_KUBECONFIG || true
+    ls $SHARED_DIR
 }
 
 destroy_cluster() {
-    echo "Destroy cluster"
-    cat /tmp/ODS_KUBECONFIG || true
+    echo "Destroy cluster ($SHARED_DIR)"
+    cat /$SHARED_DIR/ODS_KUBECONFIG || true
+    ls $SHARED_DIR
 }
 
 # ---
@@ -23,6 +25,8 @@ fi
 
 action="$1"
 shift
+
+set -x
 
 case ${action} in
     "create")
