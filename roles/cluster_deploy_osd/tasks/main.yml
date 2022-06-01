@@ -64,7 +64,7 @@
   command:
     ocm create user
         --cluster={{ cluster_deploy_osd_cluster_name }}
-         {{ cluster_deploy_osd_htaccess_idp_name }}
+        {{ cluster_deploy_osd_kubeadmin_name }}
         --group="{{ cluster_deploy_osd_kubeadmin_group }}"
 
 - name: Get the API URL
