@@ -82,18 +82,16 @@ class RHODS:
         return RunAnsibleRole("rhods_test_jupyterlab", opts)
 
     @staticmethod
-    def undeploy_ods(namespace="redhat-ods-operator", force: bool = False):
+    def undeploy_ods(namespace="redhat-ods-operator", wait: bool = True):
         """
         Undeploy ODS operator
 
         args:
-          namespace: Optional. Namespace where ODS was installed.
-          force: Optional. Force delete the RHODS namespaces.
+          wait: Optional. Wait for the operator full deletion.
         """
 
         opts = {
-            "rhods_undeploy_ods_namespace": namespace,
-            "rhods_undeploy_ods_force": force,
+            "rhods_undeploy_ods_wait": wait,
         }
 
         return RunAnsibleRole("rhods_undeploy_ods", opts)
