@@ -225,7 +225,7 @@ class Cluster:
 
     @staticmethod
     def create_osd(cluster_name, secret_file, kubeconfig,
-                   version="4.9.31",
+                   version="4.10.15",
                    region="us-east-1",
                    kubeadmin_name="kubeadmin",
                    kubeadmin_group="cluster-admins",
