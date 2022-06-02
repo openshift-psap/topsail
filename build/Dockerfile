@@ -12,7 +12,7 @@ RUN yum install -y --quiet \
 		glibc-langpack-en \
 		go git make jq vim wget rsync time gettext \
 		python3 python3-devel python3-pip python3-setuptools && \
-	python3 -m pip install --no-cache-dir --upgrade setuptools pip wheel && \
+	python3 -m pip install --no-cache-dir --quiet --upgrade setuptools pip wheel && \
 	yum clean all && \
 	rm -rf $HOME/.cache && \
 	rm -rf /var/cache/yum
@@ -25,7 +25,7 @@ RUN curl --silent ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 # Install dependencies: `ocm`
 ARG OCM_CLI_VERSION=v0.1.60
 ARG OCM_CLI_URL=https://github.com/openshift-online/ocm-cli/releases/download/${OCM_CLI_VERSION}/ocm-linux-amd64
-RUN curl -L ${OCM_CLI_URL} --output /usr/local/bin/ocm
+RUN curl --silent -L ${OCM_CLI_URL} --output /usr/local/bin/ocm
 RUN chmod +x /usr/local/bin/ocm
 
 # Install dependencies: `helm`
@@ -61,8 +61,8 @@ ENV USER_NAME=psap-ci-runner \
 COPY . ${HOME}/
 
 # Install Python requirements
-RUN python3 -m pip install --no-cache-dir -r ${HOME}/requirements.txt && \
-    python3 -m pip install --no-cache-dir -r ${HOME}/subprojects/wdm/requirements.txt
+RUN python3 -m pip install --quiet --no-cache-dir -r ${HOME}/requirements.txt && \
+    python3 -m pip install --quiet --no-cache-dir -r ${HOME}/subprojects/wdm/requirements.txt
 
 # Prepare the CI `run` entrypoint
 RUN echo -e '#!/usr/bin/env bash \n\
