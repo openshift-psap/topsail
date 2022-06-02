@@ -82,7 +82,7 @@
              --insecure-skip-tls-verify
   register: oc_login
   delay: 30
-  retries: 20
+  retries: 40
   until: oc_login.rc == 0
   environment:
     KUBECONFIG: "{{ cluster_create_osd_kubeconfig }}"
