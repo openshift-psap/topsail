@@ -130,10 +130,11 @@
        "--from-file=entrypoint.sh={{ rhods_test_jupyterlab_entrypoint }}"
        -n {{ rhods_test_namespace }}
 
-- name: Empty the Minio S3 stoage
+- name: Empty the Minio S3 bucket
   shell:
-    oc -c minio -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-       rm -rf /data/mybucket/ods-ci
+    oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
+    mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force
+  failed_when: false
 
 - name: Delete the RHODS tester job, if it exists
   command:
@@ -238,26 +239,20 @@
   command: oc get pod -lapp=minio -n minio -ojsonpath={.items[0].metadata.name}
   register: minio_podname_cmd
 
-- name: Create the ODS-CI artifacts destination directory
-  file:
-    path: "{{ artifact_extra_logs_dir }}/ods-ci"
-    state: directory
-    mode: '0755'
+- name: Export the data out of the S3 bucket
+  command:
+    oc -n minio -c mc exec "{{ minio_podname_cmd.stdout }}"
+       -- bash -c 'mkdir /artifacts/to_export && mc --config-dir /tmp cp minio/mybucket/ /artifacts/to_export --recursive'
   when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
 
-- name: Remove the images from ODS-CI artifacts on the Minio server
-  when:  'rhods_test_jupyterlab_artifacts_collected == "no-image"'
-  # do not crash if the 'ods-ci' directory does not exist
-  command:
-    oc -n minio -c ubi8 rsh "{{ minio_podname_cmd.stdout }}" bash -c \
-       "test -d /data/mybucket/ods-ci || exit 0 ; find /data/mybucket/ods-ci -name '*.png' -delete"
-  failed_when: false
-
 - name: Extract the ODS-CI test artifacts from the Minio S3 container
-  shell:
-    oc -n minio -c ubi8 exec "{{ minio_podname_cmd.stdout }}"
-       -- tar cvzf - -C  /data/mybucket/ods-ci .
-       > "{{ artifact_extra_logs_dir }}/ods-ci.tgz"
+  shell: |
+    set -o pipefail
+
+    oc -n minio -c ubi8 exec "{{ minio_podname_cmd.stdout }}" \
+       -- tar cvzf - -C /artifacts/to_export/ . \
+       | tar xzf - -C "{{ artifact_extra_logs_dir }}"
+  when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
 
 - name: Generate MatrixBenchmark files
   shell: |

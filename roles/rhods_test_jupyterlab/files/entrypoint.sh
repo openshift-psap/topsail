@@ -7,6 +7,8 @@ set -x
 
 sed  "s/#{JOB_COMPLETION_INDEX}/${JOB_COMPLETION_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
 
+echo "Artifacts retention mode: $ARTIFACTS_COLLECTED"
+
 export KUBECONFIG=/tmp/kube
 
 export K8S_API=$(yq e .OCP_API_URL /tmp/test-variables.yml)
@@ -37,6 +39,16 @@ export S3_ACCESS_KEY=minio
 # run this in a subshell to avoid printing the password in clear because of 'set -x'
 bash -ec "eval \$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml | awk '{ print \"export S3_SECRET_KEY=\" \$1 }'); cat /mnt/s3-config/s3cfg | envsubst > ~/.s3cfg"
 
+retcode=0 # always exit 0, we'll decide later if this is a success or a failure
+
+if [[ "$ARTIFACTS_COLLECTED" == "none" ]]; then
+    exit $retcode
+fi
+
+if [[ "$ARTIFACTS_COLLECTED" == "no-image" ]]; then
+    find /tmp/ods-ci/test-output -name '*.png' -delete
+fi
+
 s3cmd put \
       /tmp/finish /tmp/ods-ci/test-output/*/* \
       s3://mybucket/ods-ci/$HOSTNAME/ \
@@ -45,4 +57,4 @@ s3cmd put \
       --no-progress \
       --stats
 
-exit 0 # always exit 0, we'll decide later if this is a success or a failure
+exit $retcode

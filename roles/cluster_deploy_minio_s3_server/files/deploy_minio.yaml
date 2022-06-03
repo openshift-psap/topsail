@@ -17,6 +17,8 @@ spec:
       volumes:
       - name: data-dir
         emptyDir: {}
+      - name: artifacts-dir
+        emptyDir: {}
       containers:
       - name: minio
         image: quay.io/minio/minio:latest
@@ -46,11 +48,14 @@ spec:
         image: registry.access.redhat.com/ubi8:latest
         command: [sleep, +inf]
         volumeMounts:
-        - name: data-dir
-          mountPath: /data
+        - name: artifacts-dir
+          mountPath: /artifacts
       - name: mc
         image: quay.io/minio/mc:latest
         command: [bash, -cxe]
+        volumeMounts:
+        - name: artifacts-dir
+          mountPath: /artifacts
         args:
         - |
            echo "Waiting for Minio server to launch ..."
