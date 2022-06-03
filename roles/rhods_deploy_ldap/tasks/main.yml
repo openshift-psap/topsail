@@ -122,8 +122,8 @@
 
       export rhods_deploy_ldap_idp_name="{{ rhods_deploy_ldap_idp_name }}"
       url="https://api.openshift.com/api/clusters_mgmt/v1/clusters/{{ cluster_id_cmd.stdout }}/identity_providers";
-      body=$(cat "{{ rhods_deploy_ldap_ocm_idp }}" | envsubst);
-      echo ocm post "$url" --body <(echo "$body")
+      cat "{{ rhods_deploy_ldap_ocm_idp }}" | envsubst > /tmp/idp.json
+      ocm post "$url" --body /tmp/idp.json
 
 - name: Get the API URL
   command: oc whoami --show-server
