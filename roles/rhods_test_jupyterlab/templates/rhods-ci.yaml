@@ -46,6 +46,13 @@ spec:
           mountPath: /mnt/s3-config
         - name: rhods-jupyterlab-entrypoint
           mountPath: /mnt/rhods-jupyterlab-entrypoint
+          resources:
+            requests:
+              memory: 400M
+              cpu: 0.2
+            limits:
+              memory: 500M
+              cpu: 0.2
       restartPolicy: Never
       volumes:
       - name: ods-ci-test-variables
