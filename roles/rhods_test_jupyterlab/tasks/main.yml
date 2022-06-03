@@ -251,6 +251,7 @@
   command:
     oc -n minio -c ubi8 rsh "{{ minio_podname_cmd.stdout }}" bash -c \
        "test -d /data/mybucket/ods-ci || exit 0 ; find /data/mybucket/ods-ci -name '*.png' -delete"
+  failed_when: false
 
 - name: Extract the ODS-CI test artifacts from the Minio S3 container
   shell:

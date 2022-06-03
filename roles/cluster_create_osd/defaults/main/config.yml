@@ -1,0 +1,10 @@
+cluster_create_osd_cluster_name:
+cluster_create_osd_secret_file:
+cluster_create_osd_kubeconfig:
+cluster_create_osd_region: "us-east-1"
+cluster_create_osd_version: "4.10.15"
+cluster_create_osd_kubeadmin_name: kubeadmin
+cluster_create_osd_kubeadmin_group: cluster-admins
+cluster_create_osd_htaccess_idp_name: htpasswd
+cluster_create_osd_compute_machine_type: m5.xlarge
+cluster_create_osd_compute_nodes: 2

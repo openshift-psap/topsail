@@ -1,2 +1,1 @@
-rhods_undeploy_ods_namespace: redhat-ods-operator
-rhods_undeploy_ods_force: false
+rhods_undeploy_ods_wait: true
