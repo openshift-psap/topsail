@@ -39,6 +39,8 @@ spec:
         env:
         - name: TEST_CASE
           value: "tests/Tests/{{ rhods_test_jupyterlab_ods_ci_test_case }}"
+        - name: ARTIFACTS_COLLECTED
+          value: "{{ rhods_test_jupyterlab_artifacts_collected }}"
         volumeMounts:
         - name: ods-ci-test-variables
           mountPath: /mnt/ods-ci-test-variables
