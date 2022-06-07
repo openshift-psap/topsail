@@ -109,6 +109,8 @@ prepare_driver_cluster() {
 prepare_sutest_cluster() {
     osd_cluster_name=$1
 
+    switch_sutest_cluster
+
     if [[ "$osd_cluster_name" ]]; then
         prepare_osd_sutest_cluster "$osd_cluster_name"
     else
@@ -120,19 +122,17 @@ prepare_sutest_cluster() {
 
         prepare_ocp_sutest_cluster
     fi
-}
-
-prepare_osd_sutest_cluster() {
-    osd_cluster_name=$1
-
-    switch_sutest_cluster
-
-    run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name"
 
     run_in_bg ./run_toolbox.py rhods deploy_ldap \
               "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" \
               --use_ocm="$osd_cluster_name" \
               --wait
+}
+
+prepare_osd_sutest_cluster() {
+    osd_cluster_name=$1
+
+    run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name"
 }
 
 prepare_ocp_sutest_cluster() {
@@ -145,6 +145,12 @@ prepare_ocp_sutest_cluster() {
     echo "Deploying ODS $ODS_CATALOG_IMAGE_VERSION (from $ODS_CATALOG_VERSION)"
 
     run_in_bg ./run_toolbox.py rhods deploy_ods "$ODS_CATALOG_VERSION" "$ODS_CATALOG_IMAGE_VERSION"
+}
+
+wait_rhods_launch() {
+    switch_sutest_cluster
+
+    ./run_toolbox.py rhods wait_ods
 }
 
 reset_prometheus() {
@@ -186,6 +192,8 @@ run_multi_cluster() {
 
     wait_bg_processes
 
+    wait_rhods_launch
+
     reset_prometheus
 
     switch_driver_cluster
@@ -215,6 +223,8 @@ run_prepare_local_cluster() {
     prepare_sutest_cluster
 
     wait_bg_processes
+
+    wait_rhods_launch
 }
 
 # ---
