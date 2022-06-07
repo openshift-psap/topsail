@@ -41,6 +41,7 @@ bash -ec "PASSWORD=\$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml); oc logi
 if ./run_robot_test.sh \
     --skip-pip-install \
     --test-variables-file /tmp/test-variables.yml \
+    --skip-oclogin true \
     --test-case "$TEST_CASE";
 then
     FINISH=success
