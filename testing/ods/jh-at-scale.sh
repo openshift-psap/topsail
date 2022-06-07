@@ -11,8 +11,6 @@ source "$THIS_DIR/../prow/_logging.sh"
 
 source "$THIS_DIR/common.sh"
 
-# simulate two clusters
-
 KUBECONFIG_DRIVER="$KUBECONFIG" # cluster driving the test
 KUBECONFIG_SUTEST="/tmp/kubeconfig_sutest" # system under test
 
@@ -38,21 +36,6 @@ switch_cluster() {
         echo "Requested to switch to an unknown cluster '$cluster', exiting."
         exit 1
     fi
-}
-# ---
-
-oc_adm_groups_new_rhods_users() {
-    group=$1
-    shift
-    user_prefix=$1
-    shift
-    nb_users=$1
-
-    oc delete groups.user.openshift.io/rhods-users --ignore-not-found
-
-    echo "Adding $nb_users user with prefix '$user_prefix' in the group '$group' ..."
-    users=$(for i in $(seq 0 $nb_users); do echo ${user_prefix}$i; done)
-    oc adm groups new $group $(echo $users)
 }
 
 # ---
@@ -162,8 +145,6 @@ prepare_ocp_sutest_cluster() {
     echo "Deploying ODS $ODS_CATALOG_IMAGE_VERSION (from $ODS_CATALOG_VERSION)"
 
     run_in_bg ./run_toolbox.py rhods deploy_ods "$ODS_CATALOG_VERSION" "$ODS_CATALOG_IMAGE_VERSION"
-
-    oc_adm_groups_new_rhods_users "$ODS_CI_USER_GROUP" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS"
 }
 
 reset_prometheus() {
