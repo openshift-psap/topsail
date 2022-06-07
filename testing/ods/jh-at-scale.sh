@@ -192,36 +192,68 @@ delete_rhods_postgres() {
     fi
 }
 
-finalizers+=("kill_bg_processes")
-finalizers+=("collect_sutest")
-finalizers+=("delete_rhods_postgres")
+run_multi_cluster() {
+    finalizers+=("kill_bg_processes")
+    finalizers+=("collect_sutest")
+    finalizers+=("delete_rhods_postgres")
 
+    OSD_CLUSTER_NAME=$(get_osd_cluster_name)
+    connect_sutest_cluster "$OSD_CLUSTER_NAME"
 
-OSD_CLUSTER_NAME=$(get_osd_cluster_name)
-connect_sutest_cluster "$OSD_CLUSTER_NAME"
+    prepare_sutest_cluster "$OSD_CLUSTER_NAME"
+    prepare_driver_cluster
 
-prepare_sutest_cluster "$OSD_CLUSTER_NAME"
-prepare_driver_cluster
+    wait_bg_processes
 
-wait_bg_processes
+    reset_prometheus
 
-reset_prometheus
+    switch_driver_cluster
 
-switch_driver_cluster
+    if [[ "$ODS_CI_NB_USERS" -le 5 ]]; then
+        collect=all
+    else
+        collect=no-image
+    fi
 
-if [[ "$ODS_CI_NB_USERS" -le 5 ]]; then
-    collect=all
-else
-    collect=no-image
-fi
+    ./run_toolbox.py rhods test_jupyterlab \
+                     "$LDAP_IDP_NAME" \
+                     "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
+                     "$S3_LDAP_PROPS" \
+                     --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
+                     --artifacts-collected=$collect
 
-./run_toolbox.py rhods test_jupyterlab \
-                 "$LDAP_IDP_NAME" \
-                 "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
-                 "$S3_LDAP_PROPS" \
-                 --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
-                 --artifacts-collected=$collect
+    switch_sutest_cluster
+    ./run_toolbox.py cluster dump_prometheus_db
+    ./run_toolbox.py rhods dump_prometheus_db
+}
 
-switch_sutest_cluster
-./run_toolbox.py cluster dump_prometheus_db
-./run_toolbox.py rhods dump_prometheus_db
+run_prepare_local_cluster() {
+    KUBECONFIG_SUTEST="$KUBECONFIG_DRIVER"
+
+    prepare_driver_cluster
+    prepare_sutest_cluster
+
+    wait_bg_processes
+}
+
+# ---
+
+action=${1:-run_multi_cluster}
+
+case ${action} in
+    "run_multi_cluster")
+        run_multi_cluster "$@"
+        exit 0
+        ;;
+    "run_prepare_local_cluster")
+        run_prepare_local_cluster
+        exit 0
+        ;;
+    "source")
+        # file is being sourced by another script
+        ;;
+    *)
+        echo "FATAL: Unknown action: ${action}" "$@"
+        exit 1
+        ;;
+esac
