@@ -72,6 +72,9 @@
     set -o pipefail;
     ocm describe cluster {{ cluster_create_osd_cluster_name }} --json | jq -r .api.url
   register: api_url_cmd
+  delay: 30
+  retries: 10
+  until: 'api_url_cmd.stdout and "null" not in api_url_cmd.stdout_lines'
 
 - name: Login into openshift as kubeadmin
   shell:
