@@ -25,7 +25,7 @@ if [[ -z "${PULL_NUMBER:-}" ]]; then
    exit 1
 fi
 
-body="$(curl -sSf "https://api.github.com/repos/openshift-psap/ci-artifacts/pulls/$PULL_NUMBER" | jq -r .body)"
+body="$(curl -sSf "https://api.github.com/repos/openshift-psap/ci-artifacts/pulls/$PULL_NUMBER" | jq -r .body | tr -d '\r')"
 
 if [[ -z "${body:-}" ]]; then
    echo "ERROR: pull request 'body' is empty ..."
