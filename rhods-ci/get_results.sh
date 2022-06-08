@@ -14,11 +14,11 @@ dt=$(date "+%F %H:%M" -d @$(echo "$timestamp" | cut -b-10))
 dest="results/$EXPE_NAME/$timestamp"
 if [[ -d "$dest" ]]; then
     echo "Destination '$dest' ($dt) already exists."
-    exit 0
+    #exit 0
 fi
 
 echo "Download from PR #$PR: $dt"
-mkdir "$dest"
+mkdir "$dest" -p
 cd "$dest"
 
 results_url="$BASE_URL/$timestamp/artifacts/test-pr/test-pr/artifacts/ods_ci-1/004__rhods__test_jupyterlab"
@@ -27,9 +27,11 @@ for what in tester_pods.yaml tester_job.yaml tester_events.yaml notebook_events.
   echo "Downloading $dest/$what ..."
   rm -f "$what"
   wget --quiet "$results_url/$what"
-  cat <<EOF > settings
+done
+
+cat <<EOF > settings
 date=$dt
 pr=$PR
 EOF
-  echo "0" > exit_code
-done
+echo "0" > exit_code
+echo "$results_url" > link
