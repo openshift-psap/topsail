@@ -36,6 +36,7 @@ ocm_login() {
       set -o nounset
 
       OCM_TOKEN=$(cat "$PSAP_ODS_SECRET_PATH/ocm.token" | grep "^${OCM_ENV}=" | cut -d= -f2-)
+      echo "Login in $OCM_ENV with token length=$(echo "$OCM_TOKEN" | wc -c)"
       exec ocm login --token="$OCM_TOKEN" --url="$OCM_ENV"
       '
 }
