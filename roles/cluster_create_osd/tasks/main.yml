@@ -89,3 +89,13 @@
   until: oc_login.rc == 0
   environment:
     KUBECONFIG: "{{ cluster_create_osd_kubeconfig }}"
+
+- name: Wait for the cluster to be ready (clusterversion/version)
+  command:
+    oc get clusterversion/version -oname
+  register: oc_clusterversion
+  delay: 30
+  retries: 40
+  until: oc_clusterversion.rc == 0
+  environment:
+    KUBECONFIG: "{{ cluster_create_osd_kubeconfig }}"
