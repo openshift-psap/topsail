@@ -132,6 +132,25 @@ prepare_sutest_cluster() {
 prepare_osd_sutest_cluster() {
     osd_cluster_name=$1
 
+    if [[ "$OCM_ENV" == "staging" ]]; then
+        echo "Workaround for https://issues.redhat.com/browse/RHODS-4182"
+        MISSING_SECRET_NAMESPACE=redhat-ods-monitoring
+
+        oc create ns "$MISSING_SECRET_NAMESPACE" \
+           --dry-run=client \
+           -oyaml \
+            | oc apply -f-
+
+        oc create secret generic redhat-rhods-smtp \
+           -n "$MISSING_SECRET_NAMESPACE" \
+           --from-literal=host= \
+           --from-literal=username= \
+           --from-literal=password= \
+           --from-literal=port= \
+           --from-literal=tls=
+    fi
+
+
     run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name"
 }
 
