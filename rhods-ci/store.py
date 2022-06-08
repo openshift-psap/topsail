@@ -27,7 +27,7 @@ SUTEST_METRICS = [
 
 DRIVER_METRICS = [
     "pod:container_cpu_usage:sum",
-    "rate(container_cpu_usage_seconds_total[60y])",
+    "container_memory_rss",
 ]
 
 RHODS_METRICS = [
@@ -225,16 +225,17 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     store.add_to_matrix(import_settings, None, results, None)
 
+NOTEBOOK_REQUESTS = dict(
+    test_pod=types.SimpleNamespace(cpu=0.2, memory=0.4),
+    default=types.SimpleNamespace(cpu=1, memory=4),
+    small=types.SimpleNamespace(cpu=1,   memory=8),
+    medium=types.SimpleNamespace(cpu=3,  memory=24),
+)
 
 def _generate_pod_event_times(user_count, instance_count, container_size, instance_cpu, instance_memory):
     event_times = defaultdict(types.SimpleNamespace)
     notebook_hostnames = {}
 
-    NOTEBOOK_REQUESTS = dict(
-        default=types.SimpleNamespace(cpu=1, memory=4),
-        small=types.SimpleNamespace(cpu=1,   memory=8),
-        medium=types.SimpleNamespace(cpu=3,  memory=24),
-    )
 
     POD_CREATION = 5
     PULL_TIME_COLD = 120
@@ -267,12 +268,14 @@ def _generate_pod_event_times(user_count, instance_count, container_size, instan
 
     notebook_rq = NOTEBOOK_REQUESTS[container_size]
     print(f"{user_count} users using {instance_count} x {{ {instance_cpu} CPUS ; {instance_memory} GB of RAM }} instances, requesting {notebook_rq.cpu} CPUs & {notebook_rq.memory} GB of RAM per notebook")
-    current_time = datetime.datetime.now()
+
+    job_creation_time = current_time = datetime.datetime.now()
 
     execution_round = 0
     while users:
         users_scheduled = []
         current_end = None
+
         for user_idx in users:
             podname = f"jupyterhub-nb-testuser{user_idx}"
             if "warnings" not in event_times[podname].__dict__:
@@ -304,14 +307,23 @@ def _generate_pod_event_times(user_count, instance_count, container_size, instan
         for user_idx in users_scheduled:
             users.remove(user_idx)
 
+        if users and not users_scheduled:
+            print("No user could be scheduled :(")
+            break
+
         execution_round += 1
         current_time = current_end
         reset_nodes()
 
-    return event_times, notebook_hostnames
+    job_completion_time = current_time
+
+    return event_times, notebook_hostnames, job_creation_time, job_completion_time, execution_round
 
 
-def _generate_timeline_results(entry, user_count):
+def _generate_timeline_results(entry, user_count, instance_count=None):
+    if instance_count is None:
+        instance_count = entry.import_settings["instance_count"]
+
     results = types.SimpleNamespace()
 
     results.testpod_hostnames = {f"ods-ci-{idx}": "Node 0" for idx in range(user_count)}
@@ -327,11 +339,17 @@ def _generate_timeline_results(entry, user_count):
     results.job_creation_time = datetime.datetime.now()
     results.job_completion_time = datetime.datetime.now() + datetime.timedelta(minutes=5)
 
-    results.event_times, results.notebook_hostnames = \
-        _generate_pod_event_times(user_count,
-                                  entry.import_settings["instance_count"],
-                                  "default",
-                                  entry.results.vcpu, entry.results.ram)
+
+    times = _generate_pod_event_times(user_count,
+                                      instance_count,
+                                      "default",
+                                      entry.results.cpu, entry.results.memory)
+
+    results.event_times, \
+        results.notebook_hostnames, \
+        results.job_creation_time, \
+        results.job_completion_time, \
+        results.execution_round  = times
 
     results.notebook_pods = list(results.event_times.keys())
 
@@ -339,22 +357,31 @@ def _generate_timeline_results(entry, user_count):
 
 
 def _populate_theoretical_data():
+    if "theoretical" not in cli_args.experiment_filters.get("expe", ["theoretical"]):
+        return
+
+    for pod_size in NOTEBOOK_REQUESTS:
+        common.Matrix.settings["notebook_size"].add(pod_size)
+
+    group = None
     with open("data/machines") as f:
         for _line in f.readlines():
             line = _line.strip()
+            if line.startswith("# "):
+                group = line.strip("# ")
+
             if not line or line.startswith("#"): continue
 
-            instance, vcpu, ram, price, *accel = line.split(", ")
+            instance, cpu, memory, price, *accel = line.split(", ")
 
             results = types.SimpleNamespace()
-            results.vcpu = int(vcpu.split()[0])
-            results.ram = int(ram.split()[0])
+            results.cpu = int(cpu.split()[0])
+            results.memory = int(memory.split()[0])
             results.price = float(price[1:])
-
+            results.group = group
             import_settings = {
                 "expe": "theoretical",
                 "instance": instance,
-                "instance_count": 2,
             }
 
             store.add_to_matrix(import_settings, None, results, None)
