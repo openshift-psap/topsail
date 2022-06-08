@@ -35,3 +35,8 @@ def register():
                        get_metrics=get_metrics("sutest"),
                        filter_metrics=filter_sutest_metrics,
                        as_timestamp=True)
+
+    plotting_prom.Plot("container_memory_rss", "Test Pod memory usage",
+                       get_metrics=get_metrics("driver"),
+                       filter_metrics=filter_driver_metrics,
+                       as_timestamp=True)
