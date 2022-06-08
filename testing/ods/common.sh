@@ -1,6 +1,6 @@
 PSAP_ODS_SECRET_PATH="/var/run/psap-ods-secret-1"
 
-OCM_ENV=staging
+OCM_ENV=staging # The valid aliases are 'production', 'staging', 'integration'
 
 S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 
