@@ -132,26 +132,33 @@ prepare_sutest_cluster() {
 prepare_osd_sutest_cluster() {
     osd_cluster_name=$1
 
-    if [[ "$OCM_ENV" == "staging" ]]; then
-        echo "Workaround for https://issues.redhat.com/browse/RHODS-4182"
-        MISSING_SECRET_NAMESPACE=redhat-ods-monitoring
+    if [[ "$OSD_USE_ODS_CATALOG" == 1 ]]; then
+        echo "Deploying RHODS $ODS_QE_CATALOG_IMAGE_TAG (from $ODS_QE_CATALOG_IMAGE)"
 
-        oc create ns "$MISSING_SECRET_NAMESPACE" \
-           --dry-run=client \
-           -oyaml \
-            | oc apply -f-
+        run_in_bg ./run_toolbox.py rhods deploy_ods \
+                  "$ODS_QE_CATALOG_IMAGE" "$ODS_QE_CATALOG_IMAGE_TAG"
+    else
 
-        oc create secret generic redhat-rhods-smtp \
-           -n "$MISSING_SECRET_NAMESPACE" \
-           --from-literal=host= \
-           --from-literal=username= \
-           --from-literal=password= \
-           --from-literal=port= \
-           --from-literal=tls=
+        if [[ "$OCM_ENV" == "staging" ]]; then
+            echo "Workaround for https://issues.redhat.com/browse/RHODS-4182"
+            MISSING_SECRET_NAMESPACE=redhat-ods-monitoring
+
+            oc create ns "$MISSING_SECRET_NAMESPACE" \
+               --dry-run=client \
+               -oyaml \
+                | oc apply -f-
+
+            oc create secret generic redhat-rhods-smtp \
+               -n "$MISSING_SECRET_NAMESPACE" \
+               --from-literal=host= \
+               --from-literal=username= \
+               --from-literal=password= \
+               --from-literal=port= \
+               --from-literal=tls=
+        fi
+
+        run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name"
     fi
-
-
-    run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name"
 }
 
 prepare_ocp_sutest_cluster() {
@@ -161,9 +168,10 @@ prepare_ocp_sutest_cluster() {
 
     run_in_bg ./run_toolbox.py rhods deploy_ldap "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS"
 
-    echo "Deploying ODS $ODS_CATALOG_IMAGE_VERSION (from $ODS_CATALOG_VERSION)"
+    echo "Deploying RHODS $ODS_QE_CATALOG_IMAGE_TAG (from $ODS_QE_CATALOG_IMAGE)"
 
-    run_in_bg ./run_toolbox.py rhods deploy_ods "$ODS_CATALOG_VERSION" "$ODS_CATALOG_IMAGE_VERSION"
+    run_in_bg ./run_toolbox.py rhods deploy_ods \
+              "$ODS_QE_CATALOG_IMAGE" "$ODS_QE_CATALOG_IMAGE_TAG"
 }
 
 wait_rhods_launch() {

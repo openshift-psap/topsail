@@ -4,8 +4,12 @@ OCM_ENV=staging # The valid aliases are 'production', 'staging', 'integration'
 
 S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 
-ODS_CATALOG_VERSION="quay.io/modh/qe-catalog-source"
-ODS_CATALOG_IMAGE_VERSION="v1100-6"
+# if 1, use the ODS_QE_CATALOG_IMAGE OLM catalog.
+# Otherwise, install RHODS from OCM addon.
+OSD_USE_ODS_CATALOG=1
+
+ODS_QE_CATALOG_IMAGE="quay.io/modh/qe-catalog-source"
+ODS_QE_CATALOG_IMAGE_TAG="v1100-6"
 
 ODS_CI_TEST_NAMESPACE=loadtest
 ODS_CI_REPO="https://github.com/openshift-psap/ods-ci.git"
