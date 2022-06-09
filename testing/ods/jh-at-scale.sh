@@ -11,8 +11,6 @@ source "$THIS_DIR/../prow/_logging.sh"
 
 source "$THIS_DIR/common.sh"
 
-# simulate two clusters
-
 KUBECONFIG_DRIVER="$KUBECONFIG" # cluster driving the test
 KUBECONFIG_SUTEST="/tmp/kubeconfig_sutest" # system under test
 
@@ -38,21 +36,6 @@ switch_cluster() {
         echo "Requested to switch to an unknown cluster '$cluster', exiting."
         exit 1
     fi
-}
-# ---
-
-oc_adm_groups_new_rhods_users() {
-    group=$1
-    shift
-    user_prefix=$1
-    shift
-    nb_users=$1
-
-    oc delete groups.user.openshift.io/rhods-users --ignore-not-found
-
-    echo "Adding $nb_users user with prefix '$user_prefix' in the group '$group' ..."
-    users=$(for i in $(seq 0 $nb_users); do echo ${user_prefix}$i; done)
-    oc adm groups new $group $(echo $users)
 }
 
 # ---
@@ -126,28 +109,49 @@ prepare_driver_cluster() {
 prepare_sutest_cluster() {
     osd_cluster_name=$1
 
+    switch_sutest_cluster
+
     if [[ "$osd_cluster_name" ]]; then
         prepare_osd_sutest_cluster "$osd_cluster_name"
     else
-       echo "FATAL: Deployment on OCP currently disabled (hardcoded). "
-       echo "Remove this we it is safe to deploy on OCP with guarantee not to leak any AWS resources."
-       exit 1
+        if [[ "${INSIDE_CI_IMAGE}" ]]; then
+            echo "FATAL: Deployment on OCP currently disabled (hardcoded). "
+            echo "Remove this we it is safe to deploy on OCP with guarantee not to leak any AWS resources."
+            exit 1
+        fi
 
-       prepare_ocp_sutest_cluster
+        prepare_ocp_sutest_cluster
     fi
-}
-
-prepare_osd_sutest_cluster() {
-    osd_cluster_name=$1
-
-    switch_sutest_cluster
-
-    run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name"
 
     run_in_bg ./run_toolbox.py rhods deploy_ldap \
               "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" \
               --use_ocm="$osd_cluster_name" \
               --wait
+}
+
+prepare_osd_sutest_cluster() {
+    osd_cluster_name=$1
+
+    if [[ "$OCM_ENV" == "staging" ]]; then
+        echo "Workaround for https://issues.redhat.com/browse/RHODS-4182"
+        MISSING_SECRET_NAMESPACE=redhat-ods-monitoring
+
+        oc create ns "$MISSING_SECRET_NAMESPACE" \
+           --dry-run=client \
+           -oyaml \
+            | oc apply -f-
+
+        oc create secret generic redhat-rhods-smtp \
+           -n "$MISSING_SECRET_NAMESPACE" \
+           --from-literal=host= \
+           --from-literal=username= \
+           --from-literal=password= \
+           --from-literal=port= \
+           --from-literal=tls=
+    fi
+
+
+    run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name"
 }
 
 prepare_ocp_sutest_cluster() {
@@ -160,8 +164,12 @@ prepare_ocp_sutest_cluster() {
     echo "Deploying ODS $ODS_CATALOG_IMAGE_VERSION (from $ODS_CATALOG_VERSION)"
 
     run_in_bg ./run_toolbox.py rhods deploy_ods "$ODS_CATALOG_VERSION" "$ODS_CATALOG_IMAGE_VERSION"
+}
 
-    oc_adm_groups_new_rhods_users "$ODS_CI_USER_GROUP" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS"
+wait_rhods_launch() {
+    switch_sutest_cluster
+
+    ./run_toolbox.py rhods wait_ods
 }
 
 reset_prometheus() {
@@ -190,36 +198,72 @@ delete_rhods_postgres() {
     fi
 }
 
-finalizers+=("kill_bg_processes")
-finalizers+=("collect_sutest")
-finalizers+=("delete_rhods_postgres")
+run_multi_cluster() {
+    finalizers+=("kill_bg_processes")
+    finalizers+=("collect_sutest")
+    finalizers+=("delete_rhods_postgres")
 
+    OSD_CLUSTER_NAME=$(get_osd_cluster_name)
+    connect_sutest_cluster "$OSD_CLUSTER_NAME"
 
-OSD_CLUSTER_NAME=$(get_osd_cluster_name)
-connect_sutest_cluster "$OSD_CLUSTER_NAME"
+    prepare_sutest_cluster "$OSD_CLUSTER_NAME"
+    prepare_driver_cluster
 
-prepare_sutest_cluster "$OSD_CLUSTER_NAME"
-prepare_driver_cluster
+    wait_bg_processes
 
-wait_bg_processes
+    wait_rhods_launch
 
-reset_prometheus
+    reset_prometheus
 
-switch_driver_cluster
+    switch_driver_cluster
 
-if [[ "$ODS_CI_NB_USERS" -le 5 ]]; then
-    collect=all
-else
-    collect=no-image
-fi
+    if [[ "$ODS_CI_NB_USERS" -le 5 ]]; then
+        collect=all
+    else
+        collect=no-image
+    fi
 
-./run_toolbox.py rhods test_jupyterlab \
-                 "$LDAP_IDP_NAME" \
-                 "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
-                 "$S3_LDAP_PROPS" \
-                 --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
-                 --artifacts-collected=$collect
+    ./run_toolbox.py rhods test_jupyterlab \
+                     "$LDAP_IDP_NAME" \
+                     "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
+                     "$S3_LDAP_PROPS" \
+                     --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
+                     --artifacts-collected=$collect
 
-switch_sutest_cluster
-./run_toolbox.py cluster dump_prometheus_db
-./run_toolbox.py rhods dump_prometheus_db
+    switch_sutest_cluster
+    ./run_toolbox.py cluster dump_prometheus_db
+    ./run_toolbox.py rhods dump_prometheus_db
+}
+
+run_prepare_local_cluster() {
+    KUBECONFIG_SUTEST="$KUBECONFIG_DRIVER"
+
+    prepare_driver_cluster
+    prepare_sutest_cluster
+
+    wait_bg_processes
+
+    wait_rhods_launch
+}
+
+# ---
+
+action=${1:-run_multi_cluster}
+
+case ${action} in
+    "run_multi_cluster")
+        run_multi_cluster "$@"
+        exit 0
+        ;;
+    "run_prepare_local_cluster")
+        run_prepare_local_cluster
+        exit 0
+        ;;
+    "source")
+        # file is being sourced by another script
+        ;;
+    *)
+        echo "FATAL: Unknown action: ${action}" "$@"
+        exit 1
+        ;;
+esac

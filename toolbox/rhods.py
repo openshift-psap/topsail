@@ -29,6 +29,14 @@ class RHODS:
         return RunAnsibleRole("rhods_deploy_ods", opts)
 
     @staticmethod
+    def wait_ods():
+        """
+        Wait for ODS to finish its deployment
+        """
+
+        return RunAnsibleRole("rhods_wait_ods")
+
+    @staticmethod
     def deploy_addon(cluster_name, wait_for_ready_state=True):
         """
         Installs the RHODS OCM addon

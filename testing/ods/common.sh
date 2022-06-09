@@ -1,6 +1,6 @@
 PSAP_ODS_SECRET_PATH="/var/run/psap-ods-secret-1"
 
-OCM_ENV=staging
+OCM_ENV=staging # The valid aliases are 'production', 'staging', 'integration'
 
 S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 
@@ -16,8 +16,6 @@ ODS_CI_TAG="latest"
 
 ODS_CI_NB_USERS=10
 ODS_CI_USER_PREFIX=testuser
-
-ODS_CI_USER_GROUP=rhods-users
 
 LDAP_IDP_NAME=RHODS_CI_LDAP
 
@@ -38,6 +36,7 @@ ocm_login() {
       set -o nounset
 
       OCM_TOKEN=$(cat "$PSAP_ODS_SECRET_PATH/ocm.token" | grep "^${OCM_ENV}=" | cut -d= -f2-)
+      echo "Login in $OCM_ENV with token length=$(echo "$OCM_TOKEN" | wc -c)"
       exec ocm login --token="$OCM_TOKEN" --url="$OCM_ENV"
       '
 }
