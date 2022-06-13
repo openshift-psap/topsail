@@ -75,7 +75,7 @@ def collect_instances(region=None):
             instances_ignored_from_list += 1
             continue
 
-        if info.get("Cluster ID", None) in IGNORE_CLUSTERS:
+        if info.get("Cluster ID", "").split("/")[-1] in IGNORE_CLUSTERS:
             instances_ignored_from_list += 1
             continue
 
