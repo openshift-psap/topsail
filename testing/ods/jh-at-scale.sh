@@ -8,7 +8,7 @@ set -x
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 source "$THIS_DIR/../prow/_logging.sh"
-
+source "$THIS_DIR/process_ctrl.sh"
 source "$THIS_DIR/common.sh"
 
 KUBECONFIG_DRIVER="$KUBECONFIG" # cluster driving the test
@@ -36,32 +36,6 @@ switch_cluster() {
         echo "Requested to switch to an unknown cluster '$cluster', exiting."
         exit 1
     fi
-}
-
-# ---
-i=0
-wait_list=()
-
-run_in_bg() {
-    "$@" &
-    echo "Adding '$!' to the wait-list '${wait_list[@]}' ..."
-    wait_list+=("$!")
-}
-
-wait_bg_processes() {
-    echo "Waiting for the background processes '${wait_list[@]}' to terminate ..."
-    for pid in ${wait_list[@]}; do
-        wait $pid # this syntax honors the `set -e` flag
-    done
-    echo "All the processes are done!"
-}
-
-kill_bg_processes() {
-    echo "Killing the background processes '${wait_list[@]}' still running ..."
-    for pid in ${wait_list[@]}; do
-        kill -9 $pid || true
-    done
-    echo "All the processes have been terminated."
 }
 
 # ---
@@ -95,7 +69,7 @@ prepare_driver_cluster() {
 
     oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
 
-    run_in_bg ./run_toolbox.py utils build_push_image \
+    process_ctrl::run_in_bg ./run_toolbox.py utils build_push_image \
                      "${ODS_CI_IMAGESTREAM}" "$ODS_CI_TAG" \
                      --namespace="$ODS_CI_TEST_NAMESPACE" \
                      --git-repo="$ODS_CI_REPO" \
@@ -103,7 +77,7 @@ prepare_driver_cluster() {
                      --context-dir="/" \
                      --dockerfile-path="build/Dockerfile"
 
-    run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
+    process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 }
 
 prepare_sutest_cluster() {
@@ -123,7 +97,7 @@ prepare_sutest_cluster() {
         prepare_ocp_sutest_cluster
     fi
 
-    run_in_bg ./run_toolbox.py rhods deploy_ldap \
+    process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_ldap \
               "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" \
               --use_ocm="$osd_cluster_name" \
               --wait
@@ -157,7 +131,7 @@ prepare_osd_sutest_cluster() {
                --from-literal=tls=
         fi
 
-        run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name"
+        process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name"
     fi
 }
 
@@ -166,12 +140,12 @@ prepare_ocp_sutest_cluster() {
 
     ./run_toolbox.py cluster set-scale m5.xlarge 5 --force
 
-    run_in_bg ./run_toolbox.py rhods deploy_ldap "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS"
+    process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_ldap "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS"
 
     echo "Deploying RHODS $ODS_QE_CATALOG_IMAGE_TAG (from $ODS_QE_CATALOG_IMAGE)"
 
-    run_in_bg ./run_toolbox.py rhods deploy_ods \
-              "$ODS_QE_CATALOG_IMAGE" "$ODS_QE_CATALOG_IMAGE_TAG"
+    process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_ods \
+                            "$ODS_QE_CATALOG_IMAGE" "$ODS_QE_CATALOG_IMAGE_TAG"
 }
 
 wait_rhods_launch() {
@@ -207,7 +181,7 @@ delete_rhods_postgres() {
 }
 
 run_multi_cluster() {
-    finalizers+=("kill_bg_processes")
+    finalizers+=("process_ctrl::kill_bg_processes")
     finalizers+=("collect_sutest")
     finalizers+=("delete_rhods_postgres")
 
@@ -217,7 +191,7 @@ run_multi_cluster() {
     prepare_sutest_cluster "$OSD_CLUSTER_NAME"
     prepare_driver_cluster
 
-    wait_bg_processes
+    process_ctrl::wait_bg_processes
 
     wait_rhods_launch
 
@@ -249,7 +223,7 @@ run_prepare_local_cluster() {
     prepare_driver_cluster
     prepare_sutest_cluster
 
-    wait_bg_processes
+    process_ctrl::wait_bg_processes
 
     wait_rhods_launch
 }
