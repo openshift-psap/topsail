@@ -6,7 +6,7 @@ ${OPENSHIFT_INSTALLER}:
 	@echo "WARNING: Installer v${OCP_VERSION} not found: ${OPENSHIFT_INSTALLER}"
 	@echo "Downloading it from: "
 	mkdir -p $$(dirname  "${OPENSHIFT_INSTALLER}")
-	wget "${OPENSHIFT_INSTALLER_URL}" && set -x \
+	wget --quiet "${OPENSHIFT_INSTALLER_URL}" && set -x \
 	&& tar xzf openshift-install-linux-${OCP_VERSION}.tar.gz openshift-install \
 	&& mv openshift-install "${OPENSHIFT_INSTALLER}" \
 	&& rm openshift-install-linux-${OCP_VERSION}.tar.gz
