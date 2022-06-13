@@ -11,17 +11,21 @@ source "$THIS_DIR/common.sh"
 # ---
 
 create_cluster() {
-    CLUSTER_NAME="${CLUSTER_NAME_PREFIX}$(date +%y%m%d%H%M)"
-    echo "Create cluster $CLUSTER_NAME..."
-    echo "$CLUSTER_NAME" > "$SHARED_DIR/osd_cluster_name"
+    cluster=$1
 
-    touch "$SHARED_DIR/kubeconfig"
+    cluster_name="${CLUSTER_NAME_PREFIX}$(date +%y%m%d%H%M)"
+    echo "Create cluster $cluster_name..."
+    echo "$cluster_name" > "$SHARED_DIR/${cluster}_osd_cluster_name"
+
+    KUBECONFIG="$SHARED_DIR/${cluster}_kubeconfig"
+    touch "$KUBECONFIG"
 
     ocm_login
+
     ./run_toolbox.py cluster create_osd \
-                     "$CLUSTER_NAME" \
+                     "$cluster_name" \
                      "$PSAP_ODS_SECRET_PATH/create_osd_cluster.password" \
-                     "$SHARED_DIR/kubeconfig" \
+                     "$KUBECONFIG" \
                      --compute_machine_type="$OSD_COMPUTE_MACHINE_TYPE" \
                      --compute_nodes="$OSD_COMPUTE_NODES" \
                      --version="$OSD_VERSION" \
@@ -29,7 +33,9 @@ create_cluster() {
 }
 
 destroy_cluster() {
-    cluster_name=$(get_osd_cluster_name)
+    cluster=$1
+
+    cluster_name=$(get_osd_cluster_name "$cluster")
     if [[ -z "$cluster_name" ]]; then
         echo "No OSD cluster to destroy ..."
         exit 0

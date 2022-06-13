@@ -30,6 +30,13 @@ OSD_COMPUTE_NODES=7
 OSD_VERSION=4.10.15
 OSD_REGION=us-west-2
 
+OCP_VERSION=4.10.15
+OCP_REGION=us-west-2
+OCP_MASTER_MACHINE_TYPE=m5.xlarge
+OCP_WORKER_MACHINE_TYPE=m5.xlarge
+OCP_WORKER_NODES=7
+OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
+
 ocm_login() {
     export OCM_ENV
     export PSAP_ODS_SECRET_PATH
@@ -68,8 +75,10 @@ ocm_cluster_is_ready() {
 }
 
 get_osd_cluster_name() {
-    if [[ ! -f "$SHARED_DIR/osd_cluster_name" ]]; then
+    cluster=$1
+
+    if [[ ! -f "$SHARED_DIR/${cluster}_osd_cluster_name" ]]; then
         return
     fi
-    cat "$SHARED_DIR/osd_cluster_name"
+    cat "$SHARED_DIR/${cluster}_osd_cluster_name"
 }
