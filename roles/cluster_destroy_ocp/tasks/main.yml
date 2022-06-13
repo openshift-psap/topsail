@@ -5,28 +5,36 @@
 
 - name: Fail if the tag value is empty
   fail: msg="Tag value is empty"
-  when: not cluster_destroy_ocp_value
+  when: not cluster_destroy_ocp_tag_value
 
 - name: Fail if the region is empty
   fail: msg="region is empty"
   when: not cluster_destroy_ocp_region
 
-- name: Create openshift-installer metadata.json
+- name: Create openshift-install metadata.json
   template:
     src: "{{ cluster_destroy_ocp_metadata_json }}"
     dest: "{{ artifact_extra_logs_dir }}/metadata.json"
     mode: 0400
 
-- name: Get the path of the openshift-installer
-  when: not openshift_installer
-  shell:
-    set -o pipefail;
-    ls subprojects/deploy-cluster/utils/installers/*/openshift-install | head -1
-  register: openshift_installer_cmd
+- name: Show metadata.json (debug)
+  command:
+    cat "{{ artifact_extra_logs_dir }}/metadata.json"
 
-- name: Trigger openshift-installer cluster deletion
+- name: Get the path of the openshift-install
+  shell: |
+    set -o pipefail;
+    installer=$(which "{{ cluster_destroy_ocp_openshift_install }}" 2>/dev/null)
+    if [[ "$installer" ]]; then
+      echo "$installer"
+      exit 0
+    fi
+    ls subprojects/deploy-cluster/utils/installers/*/openshift-install | head -1
+  register: openshift_install_cmd
+
+- name: Trigger openshift-install cluster deletion
   command: |
-    {{ cluster_destroy_ocp_openshift_installer | default(openshift_installer_cmd) }}
+    {{ openshift_install_cmd.stdout }}
       destroy cluster
         --dir "{{ artifact_extra_logs_dir }}"
         --log-level=debug
