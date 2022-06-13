@@ -13,6 +13,18 @@ resource_ec2 = boto3.resource('ec2')
 
 clusters = defaultdict(list)
 
+IGNORE_NODES = [
+    "Liquan-rhel82-jumphost",
+    "walid-rhel82-jumphost1",
+    "Lena-jumphost-rhel-8.2",
+    "walid-arm64-rhel82-jumphost",
+    "walid-arm64-jumphost",
+]
+
+IGNORE_CLUSTERS = [
+    "walid4107p-2wx7t"
+]
+
 def collect_instances(region=None):
     print(f"Looking at the {region} region ...")
 
@@ -25,6 +37,8 @@ def collect_instances(region=None):
     instance_count = 0
     instances_stopped = 0
     instances_ignored_too_young = 0
+    instances_ignored_from_list = 0
+    instances_ignored_terminated = 0
     for instance in regional_resource_ec2.instances.all():
         age = (now - instance.launch_time).days
         instance_count += 1
@@ -34,6 +48,10 @@ def collect_instances(region=None):
             continue
 
         state = instance.state['Name']
+
+        if state == "terminated":
+            instances_ignored_terminated += 1
+            continue
 
         if state == "stopped":
             instances_stopped += 1
@@ -53,12 +71,22 @@ def collect_instances(region=None):
             if tag["Value"] == "owned":
                 info["Cluster ID"] = tag["Key"]
 
+        if info["Name"] in IGNORE_NODES:
+            instances_ignored_from_list += 1
+            continue
+
+        if info.get("Cluster ID", None) in IGNORE_CLUSTERS:
+            instances_ignored_from_list += 1
+            continue
+
         clusters[info.get("Cluster ID")].append(info)
     if not instance_count: return
     print(f"""\
 {instance_count=}
 {instances_stopped=}
+{instances_ignored_terminated=}
 {instances_ignored_too_young=}
+{instances_ignored_from_list=}
     """)
 
 def get_all_regions():
