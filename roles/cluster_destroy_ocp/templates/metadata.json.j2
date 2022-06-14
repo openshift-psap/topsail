@@ -6,7 +6,7 @@
     "region": "{{ cluster_destroy_ocp_region }}",
     "identifier": [
       {
-        "{{ cluster_destroy_ocp_tag }}": "{{ cluster_destroy_ocp_value }}"
+        "kubernetes.io/cluster/{{ cluster_destroy_ocp_tag }}": "{{ cluster_destroy_ocp_tag_value }}"
       }
     ],
     "clusterDomain": "clusterDomain"
