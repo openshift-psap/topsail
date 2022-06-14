@@ -83,4 +83,4 @@ class Entitlement:
             "entitlement_test_and_wait": "yes"
         }
 
-        return RunAnsibleRole("entitlement_wait", opts)
+        return RunAnsibleRole("entitlement_test_wait_deployment", opts)
