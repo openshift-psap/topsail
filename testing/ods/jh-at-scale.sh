@@ -136,7 +136,7 @@ prepare_osd_sutest_cluster() {
                --from-literal=tls=
         fi
 
-        process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name"
+        process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name" "$ODS_ADDON_EMAIL_ADDRESS"
     fi
 }
 
