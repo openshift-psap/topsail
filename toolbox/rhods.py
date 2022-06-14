@@ -37,19 +37,23 @@ class RHODS:
         return RunAnsibleRole("rhods_wait_ods")
 
     @staticmethod
-    def deploy_addon(cluster_name, wait_for_ready_state=True):
+    def deploy_addon(cluster_name, notification_email, wait_for_ready_state=True):
         """
         Installs the RHODS OCM addon
 
         Args:
-            cluster_name: The name of the cluster where RHODS should be deployed.
-            wait_for_ready_state: Optional. If true (default), will cause the role to wait until addon reports ready state. (Can time out)
+          cluster_name: The name of the cluster where RHODS should be deployed.
+          notification_email: The email to register for RHODS addon deployment.
+          wait_for_ready_state: Optional. If true (default), will cause the role to wait until addon reports ready state. (Can time out)
         """
+
+        addon_parameters = '[{"id":"notification-email","value":"'+notification_email+'"}]'
 
         opt = {
             "ocm_deploy_addon_id": "managed-odh",
             "ocm_deploy_addon_cluster_name": cluster_name,
             "ocm_deploy_addon_wait_for_ready_state": wait_for_ready_state,
+            "ocm_deploy_addon_parameters": addon_parameters,
         }
 
         return RunAnsibleRole("ocm_deploy_addon", opt)
