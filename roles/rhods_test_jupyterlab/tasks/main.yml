@@ -176,6 +176,12 @@
     oc delete ev -n {{ rhods_notebook_namespace }} --all
   failed_when: false
 
+- name: Name the namespace privileged
+  command:
+    oc adm policy add-scc-to-user privileged
+       -z default
+       -n {{ rhods_test_namespace }}
+
 - name: Create the RHODS test job
   command:
     oc create
