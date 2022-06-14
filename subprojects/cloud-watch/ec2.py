@@ -41,6 +41,7 @@ def collect_instances(region=None):
     instances_ignored_terminated = 0
     for instance in regional_resource_ec2.instances.all():
         age = (now - instance.launch_time).days
+        age_hr = (now - instance.launch_time).seconds / 60 / 60
         instance_count += 1
 
         if age < IGNORE_LESS_THAN_DAYS:
@@ -64,6 +65,9 @@ def collect_instances(region=None):
             "Region": region,
             "Name": "<not defined>",
         }
+
+        if age < 1:
+            info["Age"] += f" ({age_hr:.1f} hours)"
 
         for tag in instance.tags or {}:
             if tag["Key"] == "Name":
