@@ -54,7 +54,7 @@ RUN sed -i 's|roles/|/opt/ci-artifacts/roles/|' /etc/ansible/ansible.cfg \
 # Set up the runner user
 ENV USER_NAME=psap-ci-runner \
     USER=psap-ci-runner \
-    HOME=/opt/ci-artifacts/src/ \
+    HOME=/opt/ci-artifacts/src \
     ANSIBLE_CONFIG="/etc/ansible/ansible.cfg" \
     INSIDE_CI_IMAGE="y"
 
