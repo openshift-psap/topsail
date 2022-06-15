@@ -25,7 +25,7 @@ RUN curl --silent ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 # Install dependencies: `ocm`
 ARG OCM_CLI_VERSION=v0.1.63
 ARG OCM_CLI_URL=https://github.com/openshift-online/ocm-cli/releases/download/${OCM_CLI_VERSION}/ocm-linux-amd64
-RUN curl --silent -L ${OCM_CLI_URL} --output /usr/local/bin/ocm
+RUN wget --quiet ${OCM_CLI_URL} -O /usr/local/bin/ocm
 RUN file /usr/local/bin/ocm | tee /dev/stderr | grep ELF -q # ensure that the file is an ELF binary
 RUN chmod +x /usr/local/bin/ocm
 
