@@ -29,7 +29,12 @@ create_ocp_cluster() {
 
     prepare_deploy_cluster_subproject
 
-    cluster_name="${CLUSTER_NAME_PREFIX}-$(date +%Y%m%d-%Hh%M)"
+    cluster_name="${CLUSTER_NAME_PREFIX}"
+    if [[ "${PULL_NUMBER:-}" ]]; then
+        cluster_name="${cluster_name}-pr${PULL_NUMBER}-${BUILD_ID}"
+    else
+        cluster_name="${cluster_name}-$(date +%Y%m%d-%Hh%M)"
+    fi
 
     yq -yi '.compute[0].replicas='$OCP_WORKER_NODES utils/install-config.yaml
     yq -yi '.compute[0].platform.aws.type = "'$OCP_WORKER_MACHINE_TYPE'"' utils/install-config.yaml
@@ -113,7 +118,7 @@ destroy_ocp_cluster() {
 
     prepare_deploy_cluster_subproject
 
-    destoy_dir="/tmp/${cluster}_destroy"
+    destroy_dir="/tmp/${cluster}_destroy"
     mkdir "$destroy_dir"
 
     cp "${SHARED_DIR}/${cluster}_metadata.json" "${destroy_dir}/metadata.json"
@@ -172,7 +177,7 @@ case ${action} in
         exit 0
         ;;
     "destroy")
-        destroy_clusters "@"
+        destroy_clusters "$@"
         exit 0
         ;;
     *)

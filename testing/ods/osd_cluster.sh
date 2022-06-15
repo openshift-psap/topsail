@@ -71,7 +71,7 @@ case ${action} in
         exit 0
         ;;
     "destroy")
-        destroy_cluster "@"
+        destroy_cluster "$@"
         exit 0
         ;;
     *)
