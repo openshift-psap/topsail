@@ -10,7 +10,7 @@ LABEL 	io.k8s.display-name="OpenShift PSAP CI artifacts" \
 # Install openshift-ansible RPMs and some debugging tools
 RUN yum install -y --quiet \
 		glibc-langpack-en \
-		go git make jq vim wget rsync time gettext file \
+		go git make jq vim wget rsync time gettext \
 		python3 python3-devel python3-pip python3-setuptools && \
 	python3 -m pip install --no-cache-dir --quiet --upgrade setuptools pip wheel && \
 	yum clean all && \
@@ -23,10 +23,9 @@ ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp
 RUN curl --silent ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 
 # Install dependencies: `ocm`
-ARG OCM_CLI_VERSION=v0.1.63
+ARG OCM_CLI_VERSION=v0.1.60
 ARG OCM_CLI_URL=https://github.com/openshift-online/ocm-cli/releases/download/${OCM_CLI_VERSION}/ocm-linux-amd64
-RUN wget --quiet ${OCM_CLI_URL} -O /usr/local/bin/ocm
-RUN file /usr/local/bin/ocm | tee /dev/stderr | grep ELF -q # ensure that the file is an ELF binary
+RUN curl --silent -L ${OCM_CLI_URL} --output /usr/local/bin/ocm
 RUN chmod +x /usr/local/bin/ocm
 
 # Install dependencies: `helm`
@@ -55,7 +54,7 @@ RUN sed -i 's|roles/|/opt/ci-artifacts/roles/|' /etc/ansible/ansible.cfg \
 # Set up the runner user
 ENV USER_NAME=psap-ci-runner \
     USER=psap-ci-runner \
-    HOME=/opt/ci-artifacts/src \
+    HOME=/opt/ci-artifacts/src/ \
     ANSIBLE_CONFIG="/etc/ansible/ansible.cfg" \
     INSIDE_CI_IMAGE="y"
 
