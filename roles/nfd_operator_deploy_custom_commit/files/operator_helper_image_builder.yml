@@ -25,7 +25,7 @@ spec:
       # The containers created by this image also come with a
       # Buildah development environment in /root/buildah.
       #
-      FROM registry.fedoraproject.org/fedora:latest
+      FROM registry.fedoraproject.org/fedora:35
       ENV GOPATH=/root/buildah
 
       # Install the software required to build Buildah.
@@ -85,7 +85,7 @@ spec:
     dockerStrategy:
       from:
         kind: DockerImage
-        name: registry.fedoraproject.org/fedora:latest
+        name: registry.fedoraproject.org/fedora:35
     type: Docker
   triggers:
   - type: ConfigChange
