@@ -128,14 +128,17 @@
   command:
     oc create cm rhods-jupyterlab-entrypoint
        "--from-file=entrypoint.sh={{ rhods_test_jupyterlab_entrypoint }}"
+       "--from-file=artifacts-exporter.sh={{ rhods_test_jupyterlab_s3_artifacts_exporter_sidecar }}"
        -n {{ rhods_test_namespace }}
 
 - name: Empty the Minio S3 bucket
-  shell:
+  shell: |
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-    mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force;
+       mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force;
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-    rm -rf /artifacts/to_export
+       rm -rf /artifacts/to_export
+    oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
+       mc --config-dir /tmp cp /etc/os-release minio/mybucket; # without it, cp may fail if the bucket is empty
   failed_when: false
 
 - name: Delete the RHODS tester job, if it exists
@@ -210,10 +213,14 @@
   register: pod_names_cmd
 
 - name: Get the logs of the tester Pod
-  shell:
-    oc logs {{ item }}
-       -n {{ rhods_test_namespace }}
-       > "{{ artifact_extra_logs_dir }}/tester_pod_$(basename "{{ item }}").log"
+  shell: |
+    for container in artifacts-exporter ods-ci; do
+      oc logs {{ item }} \
+         -c "$container" \
+         -n {{ rhods_test_namespace }} \
+         > "{{ artifact_extra_logs_dir }}/tester_pod__$(basename "{{ item }}")__${container}.log";
+    done
+
   loop: "{{ pod_names_cmd.stdout_lines }}"
   failed_when: false
 
@@ -254,7 +261,7 @@
 - name: Export the data out of the S3 bucket
   command:
     oc -n minio -c mc exec "{{ minio_podname_cmd.stdout }}"
-       -- bash -c 'mkdir /artifacts/to_export && mc --config-dir /tmp cp minio/mybucket/ /artifacts/to_export --recursive'
+       -- bash -c 'mkdir -p /artifacts/to_export && mc --config-dir /tmp cp minio/mybucket/ /artifacts/to_export --recursive'
   when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
 
 - name: Extract the ODS-CI test artifacts from the Minio S3 container

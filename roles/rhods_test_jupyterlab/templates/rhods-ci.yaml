@@ -39,22 +39,42 @@ spec:
         env:
         - name: TEST_CASE
           value: "tests/Tests/{{ rhods_test_jupyterlab_ods_ci_test_case }}"
-        - name: ARTIFACTS_COLLECTED
-          value: "{{ rhods_test_jupyterlab_artifacts_collected }}"
+        - name: ARTIFACTS_DIR
+          value: /mnt/shared-dir/ods-ci
         volumeMounts:
+        - name: shared-dir
+          mountPath: /mnt/shared-dir
         - name: ods-ci-test-variables
           mountPath: /mnt/ods-ci-test-variables
-        - name: s3cmd-config
-          mountPath: /mnt/s3-config
         - name: rhods-jupyterlab-entrypoint
           mountPath: /mnt/rhods-jupyterlab-entrypoint
-          resources:
+        resources:
             requests:
               memory: 400M
               cpu: 0.2
             limits:
               memory: 500M
               cpu: 0.2
+      - image: "quay.io/centos/centos:stream8"
+        name: artifacts-exporter
+        command: ['bash', '/mnt/rhods-jupyterlab-entrypoint/artifacts-exporter.sh']
+        env:
+        - name: ARTIFACTS_COLLECTED
+          value: "{{ rhods_test_jupyterlab_artifacts_collected }}"
+        - name: ARTIFACTS_DIR
+          value: /mnt/shared-dir/ods-ci
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        volumeMounts:
+        - name: s3cmd-config
+          mountPath: /mnt/s3-config
+        - name: shared-dir
+          mountPath: /mnt/shared-dir
+        - name: ods-ci-test-variables
+          mountPath: /mnt/ods-ci-test-variables
+        - name: rhods-jupyterlab-entrypoint
+          mountPath: /mnt/rhods-jupyterlab-entrypoint
       restartPolicy: Never
       volumes:
       - name: ods-ci-test-variables
@@ -66,3 +86,5 @@ spec:
       - name: rhods-jupyterlab-entrypoint
         configMap:
           name: rhods-jupyterlab-entrypoint
+      - name: shared-dir
+        emptyDir: {}
