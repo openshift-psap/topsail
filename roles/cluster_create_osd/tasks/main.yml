@@ -92,7 +92,7 @@
 
 - name: Wait for the cluster to be ready (clusterversion/version)
   command:
-    oc get clusterversion/version -oname
+    oc get clusterversion/version
   register: oc_clusterversion
   delay: 30
   retries: 40
