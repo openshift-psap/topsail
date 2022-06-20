@@ -133,7 +133,9 @@
 - name: Empty the Minio S3 bucket
   shell:
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-    mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force
+    mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force;
+    oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
+    rm -rf /artifacts/to_export
   failed_when: false
 
 - name: Delete the RHODS tester job, if it exists
