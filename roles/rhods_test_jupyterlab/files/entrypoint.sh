@@ -38,18 +38,17 @@ touch "$KUBECONFIG"
 # run this in a subshell to avoid printing the password in clear because of 'set -x'
 bash -ec "PASSWORD=\$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml); oc login --server=\$K8S_API --username=\$USERNAME --password=\$PASSWORD --insecure-skip-tls-verify"
 
-if ./run_robot_test.sh \
+test_exit_code=0
+bash -x ./run_robot_test.sh \
     --skip-pip-install \
     --test-variables-file /tmp/test-variables.yml \
     --skip-oclogin true \
-    --test-case "$TEST_CASE";
-then
-    FINISH=success
-else
-    FINISH=failure
-fi
+    --test-case "$TEST_CASE" \
+    || test_exit_code=$?
 
-echo "$FINISH" > /tmp/finish
+echo "$test_exit_code" > /tmp/test_exit_code
+
+echo "Test finished with $test_exit_code errors."
 
 retcode=0 # always exit 0, we'll decide later if this is a success or a failure
 
@@ -62,7 +61,7 @@ if [[ "$ARTIFACTS_COLLECTED" == "no-image" ]]; then
 fi
 
 s3cmd put \
-      /tmp/finish /tmp/ods-ci/test-output/*/* \
+      /tmp/test_edit_code /tmp/ods-ci/test-output/*/* \
       s3://mybucket/ods-ci/$HOSTNAME/ \
       --recursive \
       --no-preserve \
