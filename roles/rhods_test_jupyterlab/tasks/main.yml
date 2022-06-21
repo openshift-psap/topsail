@@ -71,7 +71,7 @@
   shell:
     oc debug istag/{{ rhods_test_istag }}
        -n {{ rhods_test_namespace }}
-       -- cat test-variables.yml.template > /tmp/test-variables.yml.template
+       -- cat test-variables.yml.model > /tmp/test-variables.yml.model
 
 - name: Apply the ODS-CI template
   shell: |
@@ -88,12 +88,28 @@
     export TEST_USER_PASSWORD="PASSWORD_WILL_BE_HERE";
 
     export RHODS_VERSION="{{ rhods_version_cmd.stdout }}";
-    cat /tmp/test-variables.yml.template | envsubst \
-        > {{ artifact_extra_logs_dir }}/test-variables_safe.yml;
+
+    TEST_VAR_SAFE={{ artifact_extra_logs_dir }}/test-variables_safe.yml
+    TEST_VAR_FULL=/tmp/test-variables.yml
+    cp /tmp/test-variables.yml.model "$TEST_VAR_SAFE"
+
+    yq e -i .OCP_CONSOLE_URL=\"${OCP_CONSOLE_URL}\" "$TEST_VAR_SAFE"
+    yq e -i .OCP_API_URL=\"${OCP_API_URL}\" "$TEST_VAR_SAFE"
+    yq e -i .ODH_DASHBOARD_URL=\"${ODH_DASHBOARD_URL}\" "$TEST_VAR_SAFE"
+    yq e -i .RHODS_VERSION=\"${RHODS_VERSION}\" "$TEST_VAR_SAFE"
+    yq e -i .TEST_USER.AUTH_TYPE=\"${TEST_USER_AUTH_TYPE}\" "$TEST_VAR_SAFE"
+    yq e -i .TEST_USER.USERNAME=\"${TEST_USER_USERNAME}\" "$TEST_VAR_SAFE"
+
+    yq e -i .BROWSER.NAME=\"headlesschrome\" "$TEST_VAR_SAFE"
+
+    BROWSER_OPTIONS="add_argument('--ignore-certificate-errors');add_argument('window-size=1920,1024');add_argument('--disable-dev-shm-usage');add_argument('--no-sandbox')"
+    yq e -i ".BROWSER.OPTIONS=\"$BROWSER_OPTIONS\"" "$TEST_VAR_SAFE"
+
+    cp "$TEST_VAR_SAFE" "$TEST_VAR_FULL"
 
     export TEST_USER_PASSWORD="$(cat "{{ rhods_test_jupyterlab_secret_properties }}" | grep '^user_password=' | cut -d= -f2)";
 
-    cat /tmp/test-variables.yml.template | envsubst > /tmp/test-variables.yml;
+    yq e -i .TEST_USER.PASSWORD=\"${TEST_USER_PASSWORD}\" "$TEST_VAR_FULL"
 
 - name: Delete the ODS-CI secret, it it exists
   command:
