@@ -176,6 +176,7 @@ case ${action} in
         exit 0
         ;;
     "destroy")
+        set +o errexit
         destroy_clusters "$@"
         exit 0
         ;;
