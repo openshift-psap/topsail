@@ -62,7 +62,7 @@ class RHODS:
     def test_jupyterlab(idp_name, username_prefix, user_count: int,
                         secret_properties_file, sut_cluster_kubeconfig="",
                         artifacts_collected="all",
-                        ods_ci_test_case="500__jupyterhub/test-jupyterlab-cpu-stresstest.robot"):
+                        ods_ci_test_case="500__jupyterhub/test-jupyterlab-psap-simplenotebook.robot"):
         """
         Test RHODS JupyterLab notebooks
 
