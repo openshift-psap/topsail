@@ -181,6 +181,16 @@
   delay: 40
   until: not wait_rhods_test_job.stdout
 
+# ---
+
+- name: Cleanup the notebooks Pods and PVCs
+  # (the Pods are destroyed anyway when the ods-ci test succeeds)
+  shell: |
+    oc delete pod --all -n rhods-notebooks
+    oc delete pvc --all -n rhods-notebooks
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+
 - name: Get the status of the tester Pods
   shell:
     oc get pods -ljob-name=ods-ci
