@@ -140,9 +140,6 @@ prepare_ocp_sutest_cluster() {
 
     ./run_toolbox.py cluster set-scale m5.xlarge 5 --force
 
-    process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_ldap \
-                            "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS"
-
     echo "Deploying RHODS $ODS_QE_CATALOG_IMAGE_TAG (from $ODS_QE_CATALOG_IMAGE)"
 
     process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_ods \

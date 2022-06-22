@@ -21,7 +21,7 @@ spec:
         emptyDir: {}
       containers:
       - name: minio
-        image: quay.io/minio/minio:latest
+        image: quay.io/minio/minio:RELEASE.2022-05-08T23-50-31Z
         args:
         - server
         - /data
@@ -51,7 +51,7 @@ spec:
         - name: artifacts-dir
           mountPath: /artifacts
       - name: mc
-        image: quay.io/minio/mc:latest
+        image: quay.io/minio/mc:RELEASE.2022-05-09T04-08-26Z
         command: [bash, -cxe]
         volumeMounts:
         - name: artifacts-dir

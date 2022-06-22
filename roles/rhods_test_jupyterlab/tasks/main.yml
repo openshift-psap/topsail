@@ -133,7 +133,9 @@
 - name: Empty the Minio S3 bucket
   shell:
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-    mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force
+    mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force;
+    oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
+    rm -rf /artifacts/to_export
   failed_when: false
 
 - name: Delete the RHODS tester job, if it exists
@@ -178,6 +180,16 @@
   retries: 60
   delay: 40
   until: not wait_rhods_test_job.stdout
+
+# ---
+
+- name: Cleanup the notebooks Pods and PVCs
+  # (the Pods are destroyed anyway when the ods-ci test succeeds)
+  shell: |
+    oc delete pod --all -n rhods-notebooks
+    oc delete pvc --all -n rhods-notebooks
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
 
 - name: Get the status of the tester Pods
   shell:
