@@ -5,7 +5,23 @@ set -o pipefail
 set -o nounset
 set -x
 
-sed "s/#{JOB_COMPLETION_INDEX}/${JOB_COMPLETION_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
+do_oc_login() {
+    export KUBECONFIG=/tmp/kube
+
+    export K8S_API=$(yq e .OCP_API_URL /tmp/test-variables.yml)
+    export USERNAME=$(yq e .TEST_USER.USERNAME /tmp/test-variables.yml)
+
+    touch "$KUBECONFIG"
+    # run this in a subshell to avoid printing the password in clear because of 'set -x'
+    bash -ec "PASSWORD=\$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml); oc login --server=\$K8S_API --username=\$USERNAME --password=\$PASSWORD --insecure-skip-tls-verify"
+}
+
+sed "s/#{JOB_COMPLETION_INDEX}/${JOB_COMPLETION_INDEX:-1}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
+
+# This isn't necessary for the testing, Keep it until
+# `run_robot_test.sh` initialization stops complaining when we provide
+# no KUBECONFIG.
+do_oc_login
 
 if [[ -z "{ARTIFACTS_DIR:-}" ]]; then
     ARTIFACTS_DIR=/tmp/ods-ci
@@ -14,10 +30,6 @@ fi
 mkdir -p "${ARTIFACTS_DIR}"
 
 trap "touch $ARTIFACTS_DIR/test_exit_code" EXIT
-
-touch "$KUBECONFIG"
-# run this in a subshell to avoid printing the password in clear because of 'set -x'
-bash -ec "PASSWORD=\$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml); oc login --server=\$K8S_API --username=\$USERNAME --password=\$PASSWORD --insecure-skip-tls-verify"
 
 test_exit_code=0
 bash -x ./run_robot_test.sh \
