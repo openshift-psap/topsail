@@ -221,7 +221,7 @@ run_multi_cluster() {
 
 run_prepare_local_cluster() {
     prepare_driver_cluster
-    prepare_sutest_cluster ""
+    prepare_sutest_cluster "$(get_osd_cluster_name "sutest")"
 
     process_ctrl::wait_bg_processes
 
