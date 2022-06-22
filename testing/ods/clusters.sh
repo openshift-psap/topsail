@@ -169,10 +169,9 @@ shift
 
 set -x
 
-finalizers+=("process_ctrl::kill_bg_processes")
-
 case ${action} in
     "create")
+        finalizers+=("process_ctrl::kill_bg_processes")
         create_clusters "$@"
         exit 0
         ;;
