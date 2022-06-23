@@ -39,10 +39,12 @@ spec:
         name: ods-ci
         command: ['bash', '/mnt/rhods-jupyterlab-entrypoint/entrypoint.sh']
         env:
-        - name: TEST_CASE
+        - name: RUN_ROBOT_TEST_CASE
           value: "tests/Tests/{{ rhods_test_jupyterlab_ods_ci_test_case }}"
         - name: ARTIFACTS_DIR
           value: /mnt/shared-dir/ods-ci
+        - name: RUN_ROBOT_EXCLUDE_TAGS
+          value: "{{ rhods_test_jupyterlab_artifacts_exclude_tags }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir
@@ -51,12 +53,12 @@ spec:
         - name: rhods-jupyterlab-entrypoint
           mountPath: /mnt/rhods-jupyterlab-entrypoint
         resources:
-            requests:
-              memory: 400M
-              cpu: 0.2
-            limits:
-              memory: 500M
-              cpu: 0.2
+          requests:
+            memory: 400M
+            cpu: 0.2
+          limits:
+            memory: 500M
+            cpu: 0.2
       - image: "quay.io/centos/centos:stream8"
         name: artifacts-exporter
         command: ['bash', '/mnt/rhods-jupyterlab-entrypoint/artifacts-exporter.sh']

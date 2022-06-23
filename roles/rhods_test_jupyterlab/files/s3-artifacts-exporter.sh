@@ -16,13 +16,6 @@ configure_s3() {
 
     # run this in a subshell to avoid printing the password in clear because of 'set -x'
     bash -ec "eval \$(yq e .TEST_USER.PASSWORD /mnt/ods-ci-test-variables/test-variables.yml | awk '{ print \"export S3_SECRET_KEY=\" \$1 }'); cat /mnt/s3-config/s3cfg | envsubst > ~/.s3cfg"
-
-    date > /tmp/started
-
-    s3cmd put /tmp/started \
-          "s3://$S3_BUCKET_NAME/ods-ci/$HOSTNAME/" \
-          --no-preserve \
-          --no-progress
 }
 
 echo "Artifacts retention mode: $ARTIFACTS_COLLECTED"
@@ -42,13 +35,15 @@ chmod +x /usr/bin/yq
 
 set +x
 
-echo "$(date) Waiting for '${ARTIFACTS_DIR}/test_exit_code' to appear ..."
+echo "$(date) Waiting for '${ARTIFACTS_DIR}/test.exit_code' to appear ..."
 
-while ! [[ -f "${ARTIFACTS_DIR}/test_exit_code" ]]; do
+while ! [[ -f "${ARTIFACTS_DIR}/test.exit_code" ]]; do
     sleep 15
 done
 
-set +x
+echo "$(date) '${ARTIFACTS_DIR}/test.exit_code' appeared."
+
+set -x
 
 if [[ "$ARTIFACTS_COLLECTED" == "no-image" ]]; then
     find "${ARTIFACTS_DIR}" -name '*.png' -delete > dev/null
@@ -57,7 +52,9 @@ fi
 configure_s3
 
 s3cmd put \
-      "${ARTIFACTS_DIR}/test_edit_code" "${ARTIFACTS_DIR}" \
+      "${ARTIFACTS_DIR}/test.exit_code" \
+      "${ARTIFACTS_DIR}/test.log" \
+      "${ARTIFACTS_DIR}"/ods-ci-*/* \
       "s3://$S3_BUCKET_NAME/ods-ci/$HOSTNAME/" \
       --recursive --no-preserve --no-progress --stats
 
