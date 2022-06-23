@@ -1,4 +1,10 @@
-PSAP_ODS_SECRET_PATH="/var/run/psap-ods-secret-1"
+if [[ -z "${PSAP_ODS_SECRET_PATH:-}" ]]; then
+    echo "ERROR: the PSAP_ODS_SECRET_PATH was not provided"
+    false # can't exit here
+elif [[ ! -d "$PSAP_ODS_SECRET_PATH" ]]; then
+    echo "ERROR: the PSAP_ODS_SECRET_PATH does not point to a valid directory"
+    false # can't exit here
+fi
 
 OCM_ENV=staging # The valid aliases are 'production', 'staging', 'integration'
 
