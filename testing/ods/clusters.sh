@@ -168,6 +168,7 @@ fi
 
 shift
 shift
+exit 0 #
 
 set -x
 
