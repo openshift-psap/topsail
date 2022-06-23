@@ -23,3 +23,21 @@ process_ctrl::kill_bg_processes() {
     echo "All the processes have been terminated."
     process_ctrl__wait_list=()
 }
+
+process_ctrl::retry() {
+    total_retries=$1
+    shift
+    retry_delay=$1
+    shift
+
+    retries_left=$total_retries
+    while [[ $retries_left != 0 ]]; do
+        if "$@";
+        then
+            return
+        fi
+        echo "Try $(($total_retries - $retries_left + 1))/$total_retries failed. " "$@"
+        retries_left=$(($retries_left - 1))
+        sleep $retry_delay
+    done
+}
