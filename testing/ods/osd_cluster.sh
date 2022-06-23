@@ -13,7 +13,13 @@ source "$THIS_DIR/common.sh"
 create_cluster() {
     cluster=$1
 
-    cluster_name="${CLUSTER_NAME_PREFIX}$(date +%y%m%d%H%M)"
+    cluster_name="${CLUSTER_NAME_PREFIX}"
+    if [[ "${PULL_NUMBER:-}" ]]; then
+        cluster_name="${cluster_name}${PULL_NUMBER}-$(date %Hh%M)"
+    else
+        cluster_name="${cluster_name}$(date +%y%m%d%H%M)"
+    fi
+
     echo "Create cluster $cluster_name..."
     echo "$cluster_name" > "$SHARED_DIR/${cluster}_osd_cluster_name"
 
