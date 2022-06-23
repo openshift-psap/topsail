@@ -93,12 +93,6 @@ prepare_sutest_cluster() {
     if [[ "$osd_cluster_name" ]]; then
         prepare_osd_sutest_cluster "$osd_cluster_name"
     else
-        if [[ "${INSIDE_CI_IMAGE:-}" ]]; then
-            echo "FATAL: Deployment on OCP currently disabled (hardcoded). "
-            echo "Remove this we it is safe to deploy on OCP with guarantee not to leak any AWS resources."
-            exit 1
-        fi
-
         prepare_ocp_sutest_cluster
     fi
 
