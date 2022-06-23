@@ -160,11 +160,13 @@ if [ -z "${SHARED_DIR:-}" ]; then
 fi
 
 action="${1:-}"
-if [ -z "${action}" ]; then
-    echo "FATAL: $0 expects at least 1 argument ..."
+mode="${2:-}"
+if [[ -z "${action}" || -z "${action}" ]]; then
+    echo "FATAL: $0 expects 2 arguments (action mode) ..."
     exit 1
 fi
 
+shift
 shift
 
 set -x
@@ -172,16 +174,16 @@ set -x
 case ${action} in
     "create")
         finalizers+=("process_ctrl::kill_bg_processes")
-        create_clusters "$@"
+        create_clusters "$mode" "$@"
         exit 0
         ;;
     "destroy")
         set +o errexit
-        destroy_clusters "$@"
+        destroy_clusters "$mode" "$@"
         exit 0
         ;;
     *)
-        echo "FATAL: Unknown action: ${action}" "$@"
+        echo "FATAL: Unknown action: $action $mode" "$@"
         exit 1
         ;;
 esac
