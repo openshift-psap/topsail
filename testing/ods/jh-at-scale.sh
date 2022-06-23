@@ -31,14 +31,14 @@ switch_driver_cluster() {
 }
 
 switch_cluster() {
-    cluster="$1"
-    echo "Switching to the '$cluster' cluster"
-    if [[ "$cluster" == "$DRIVER_CLUSTER" ]]; then
+    cluster_role="$1"
+    echo "Switching to the '$cluster_role' cluster"
+    if [[ "$cluster_role" == "$DRIVER_CLUSTER" ]]; then
         export KUBECONFIG=$KUBECONFIG_DRIVER
-    elif [[ "$cluster" == "$SUTEST_CLUSTER" ]]; then
+    elif [[ "$cluster_role" == "$SUTEST_CLUSTER" ]]; then
         export KUBECONFIG=$KUBECONFIG_SUTEST
     else
-        echo "Requested to switch to an unknown cluster '$cluster', exiting."
+        echo "Requested to switch to an unknown cluster '$cluster_role', exiting."
         exit 1
     fi
 }
@@ -143,8 +143,6 @@ prepare_osd_sutest_cluster() {
 prepare_ocp_sutest_cluster() {
     switch_sutest_cluster
 
-    ./run_toolbox.py cluster set-scale m5.xlarge 5 --force
-
     echo "Deploying RHODS $ODS_QE_CATALOG_IMAGE_TAG (from $ODS_QE_CATALOG_IMAGE)"
 
     process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_ods \
@@ -244,6 +242,10 @@ action=${1:-run_multi_cluster}
 
 case ${action} in
     "run_multi_cluster")
+        if [ -z "${SHARED_DIR:-}" ]; then
+            echo "FATAL: multi-stage test \$SHARED_DIR not set ..."
+            exit 1
+        fi
         run_multi_cluster "$@"
         exit 0
         ;;

@@ -86,10 +86,7 @@ ocm_cluster_is_ready() {
 }
 
 get_osd_cluster_name() {
-    cluster=$1
+    cluster_role=$1
 
-    if [[ ! -f "$SHARED_DIR/${cluster}_osd_cluster_name" ]]; then
-        return
-    fi
-    cat "$SHARED_DIR/${cluster}_osd_cluster_name"
+    cat "$SHARED_DIR/osd_${cluster_role}_cluster_name" 2>/dev/null || true
 }
