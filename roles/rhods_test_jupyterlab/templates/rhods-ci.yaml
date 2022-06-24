@@ -40,7 +40,7 @@ spec:
         command: ['bash', '/mnt/rhods-jupyterlab-entrypoint/entrypoint.sh']
         env:
         - name: RUN_ROBOT_TEST_CASE
-          value: "tests/Tests/{{ rhods_test_jupyterlab_ods_ci_test_case }}"
+          value: "{{ rhods_test_jupyterlab_ods_ci_test_case }}"
         - name: ARTIFACTS_DIR
           value: /mnt/shared-dir/ods-ci
         - name: RUN_ROBOT_EXCLUDE_TAGS

@@ -145,6 +145,7 @@
     oc create cm rhods-jupyterlab-entrypoint
        "--from-file=entrypoint.sh={{ rhods_test_jupyterlab_entrypoint }}"
        "--from-file=artifacts-exporter.sh={{ rhods_test_jupyterlab_s3_artifacts_exporter_sidecar }}"
+       "--from-file={{ rhods_test_jupyterlab_test_case_directory }}/{{ rhods_test_jupyterlab_ods_ci_test_case }}"
        -n {{ rhods_test_namespace }}
 
 - name: Empty the Minio S3 bucket
