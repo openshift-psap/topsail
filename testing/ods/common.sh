@@ -27,6 +27,11 @@ ODS_CI_TAG="latest"
 ODS_CI_NB_USERS=10
 ODS_CI_USER_PREFIX=testuser
 
+if [[ "$OSD_USE_ODS_CATALOG" == "0" ]]; then
+    # deploying from the addon. Get the email address from the secret vault.
+    ODS_ADDON_EMAIL_ADDRESS=$(cat "$PSAP_ODS_SECRET_PATH/addon.email")
+fi
+
 LDAP_IDP_NAME=RHODS_CI_LDAP
 
 CLUSTER_NAME_PREFIX=odsci
