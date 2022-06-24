@@ -16,6 +16,12 @@ do_oc_login() {
     bash -ec "PASSWORD=\$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml); oc login --server=\$K8S_API --username=\$USERNAME --password=\$PASSWORD --insecure-skip-tls-verify"
 }
 
+if [[ -z "{ARTIFACTS_DIR:-}" ]]; then
+    ARTIFACTS_DIR=/tmp/ods-ci
+fi
+
+trap "touch $ARTIFACTS_DIR/test.exit_code" EXIT
+
 sed "s/#{JOB_COMPLETION_INDEX}/${JOB_COMPLETION_INDEX:-1}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
 
 cp "/mnt/rhods-jupyterlab-entrypoint/$RUN_ROBOT_TEST_CASE" .
@@ -25,13 +31,7 @@ cp "/mnt/rhods-jupyterlab-entrypoint/$RUN_ROBOT_TEST_CASE" .
 # no KUBECONFIG.
 do_oc_login
 
-if [[ -z "{ARTIFACTS_DIR:-}" ]]; then
-    ARTIFACTS_DIR=/tmp/ods-ci
-fi
-
 mkdir -p "${ARTIFACTS_DIR}"
-
-trap "touch $ARTIFACTS_DIR/test.exit_code" EXIT
 
 test_exit_code=0
 (bash -x ./run_robot_test.sh \
