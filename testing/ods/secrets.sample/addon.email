@@ -1,0 +1,6 @@
+# This file is used in `common.sh` to populate ODS_ADDON_EMAIL_ADDRESS
+# ODS_ADDON_EMAIL_ADDRESS is used in jh-at-scale.sh to run
+# - ./run_toolbox.py rhods deploy_addon "$osd_cluster_name" "$ODS_ADDON_EMAIL_ADDRESS"
+
+# An email address is required to install RHODS addon.
+# The file should contain *only* the email address.
