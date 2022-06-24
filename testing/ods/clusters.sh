@@ -45,9 +45,11 @@ capture_gather_extra() {
 finalize_cluster() {
     cluster_role=$1
 
+    delete_rhods_postgres "$cluster_role" & # Delete the postgres database while gathering the extra data
+
     capture_gather_extra "$cluster_role"
 
-    delete_rhods_postgres "$cluster_role"
+    wait
 }
 
 destroy_cluster() {
