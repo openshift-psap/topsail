@@ -17,15 +17,14 @@
   when: "cluster_exists.rc != 0"
   shell:
     source "{{ cluster_create_osd_secret_file }}";
-    ocm create cluster {{ cluster_create_osd_cluster_name }}
-       --version {{ cluster_create_osd_version }}
-       --region {{ cluster_create_osd_region }}
+    ocm create cluster "{{ cluster_create_osd_cluster_name }}"
+       --version "{{ cluster_create_osd_version }}"
+       --region "{{ cluster_create_osd_region }}"
        --ccs
-       --aws-account-id $AWS_ACCOUNT_ID
-       --aws-access-key-id $AWS_ACCESS_KEY
-       --aws-secret-access-key $AWS_SECRET_KEY
-       --compute-machine-type {{ cluster_create_osd_compute_machine_type }}
-       --compute-nodes {{ cluster_create_osd_compute_nodes }}
+       --aws-account-id "$AWS_ACCOUNT_ID"
+       --aws-access-key-id "$AWS_ACCESS_KEY"
+       --aws-secret-access-key "$AWS_SECRET_KEY"
+       --compute-machine-type "{{ cluster_create_osd_compute_machine_type }}"
 
 - name: Wait for the cluster to be ready
   shell:
@@ -90,12 +89,49 @@
   environment:
     KUBECONFIG: "{{ cluster_create_osd_kubeconfig }}"
 
-- name: Wait for the cluster to be ready (clusterversion/version)
+- name: Wait for the cluster to be fully ready
+  block:
+  - name: Wait for the OSD cluster to be ready (job/osd-cluster-ready)
+    command:
+      oc get job/osd-cluster-ready -n openshift-monitoring -ojsonpath={.status.succeeded}
+    register: osd_cluster_ready_succeeded
+    delay: 30
+    retries: 90
+    until: 'osd_cluster_ready_succeeded.stdout == "1"'
+    environment:
+      KUBECONFIG: "{{ cluster_create_osd_kubeconfig }}"
+
+  always:
+  - name: Capture the state of the osd-cluster-ready job
+    shell: |
+      oc logs job/osd-cluster-ready -n openshift-monitoring > "{{ artifact_extra_logs_dir }}/osd-cluster-ready.log"
+      oc get job/osd-cluster-ready -n openshift-monitoring > "{{ artifact_extra_logs_dir }}/osd-cluster-ready.status"
+    failed_when: false
+
+  - name: Capture the state of the MachineConfigPools
+    shell:
+      oc get mcp > "{{ artifact_extra_logs_dir }}/mcp.status"
+
+  - name: Capture the state of the Nodes
+    shell:
+      oc get nodes > "{{ artifact_extra_logs_dir }}/nodes.status"
+
+- name: Set the desired worker node count
   command:
-    oc get clusterversion/version
-  register: oc_clusterversion
+    ocm edit machinepool
+             {{ cluster_create_osd_machinepool_name }}
+             --cluster={{ cluster_create_osd_cluster_name }}
+             --replicas={{ cluster_create_osd_compute_nodes }}
+
+- name: Wait for the desired worker node count
+  shell: |
+    set -o pipefail
+    nodes=$(oc get nodes -l node-role.kubernetes.io/worker=,node-role.kubernetes.io/infra!=)
+    echo "$nodes" | nl 1>&2 # for observation
+    node_count=$(echo "$nodes" | grep "Ready" | wc -l)
+    echo "$node_count nodes are ready"
+    test "$node_count" == "{{ cluster_create_osd_compute_nodes }}"
+  register: osd_node_count
   delay: 30
   retries: 40
-  until: oc_clusterversion.rc == 0
-  environment:
-    KUBECONFIG: "{{ cluster_create_osd_kubeconfig }}"
+  until: osd_node_count.rc == 0

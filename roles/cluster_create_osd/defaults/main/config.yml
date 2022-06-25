@@ -8,3 +8,4 @@ cluster_create_osd_kubeadmin_group: cluster-admins
 cluster_create_osd_htaccess_idp_name: htpasswd
 cluster_create_osd_compute_machine_type: m5.xlarge
 cluster_create_osd_compute_nodes: 2
+cluster_create_osd_machinepool_name: default
