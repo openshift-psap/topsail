@@ -12,7 +12,7 @@ S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 
 # if 1, use the ODS_QE_CATALOG_IMAGE OLM catalog.
 # Otherwise, install RHODS from OCM addon.
-OSD_USE_ODS_CATALOG=1
+OSD_USE_ODS_CATALOG=${OSD_USE_ODS_CATALOG:-1}
 
 ODS_QE_CATALOG_IMAGE="quay.io/modh/qe-catalog-source"
 ODS_QE_CATALOG_IMAGE_TAG="v1100-6"
