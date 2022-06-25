@@ -71,29 +71,45 @@
   shell:
     oc debug istag/{{ rhods_test_istag }}
        -n {{ rhods_test_namespace }}
-       -- cat test-variables.yml.template > /tmp/test-variables.yml.template
+       -- cat test-variables.yml.model > /tmp/test-variables.yml.model
 
 - name: Apply the ODS-CI template
   shell: |
     set -o pipefail;
     set -e;
 
-    export OCP_CONSOLE_URL="{{ oc_console_url_cmd.stdout }}";
-    export OCP_API_URL="{{ oc_api_url_cmd.stdout }}";
-    export ODH_DASHBOARD_URL="https://{{ rhods_dashboard_hostname_cmd.stdout }}";
+    OCP_CONSOLE_URL="{{ oc_console_url_cmd.stdout }}";
+    OCP_API_URL="{{ oc_api_url_cmd.stdout }}";
+    ODH_DASHBOARD_URL="https://{{ rhods_dashboard_hostname_cmd.stdout }}";
 
-    export TEST_USER_AUTH_TYPE="{{ rhods_test_jupyterlab_idp_name }}";
-    export TEST_USER_USERNAME="{{ rhods_test_jupyterlab_username_prefix }}#{JOB_COMPLETION_INDEX}";
+    TEST_USER_AUTH_TYPE="{{ rhods_test_jupyterlab_idp_name }}";
+    TEST_USER_USERNAME="{{ rhods_test_jupyterlab_username_prefix }}#{JOB_COMPLETION_INDEX}";
 
     export TEST_USER_PASSWORD="PASSWORD_WILL_BE_HERE";
 
-    export RHODS_VERSION="{{ rhods_version_cmd.stdout }}";
-    cat /tmp/test-variables.yml.template | envsubst \
-        > {{ artifact_extra_logs_dir }}/test-variables_safe.yml;
+    RHODS_VERSION="{{ rhods_version_cmd.stdout }}";
 
-    export TEST_USER_PASSWORD="$(cat "{{ rhods_test_jupyterlab_secret_properties }}" | grep '^user_password=' | cut -d= -f2)";
+    BROWSER_OPTIONS="add_argument('--ignore-certificate-errors');add_argument('window-size=1920,1024');add_argument('--disable-dev-shm-usage');add_argument('--no-sandbox')"
 
-    cat /tmp/test-variables.yml.template | envsubst > /tmp/test-variables.yml;
+    TEST_VAR_SAFE={{ artifact_extra_logs_dir }}/test-variables_safe.yml
+    TEST_VAR_FULL=/tmp/test-variables.yml
+
+    cat /tmp/test-variables.yml.model | \
+      yq -y .OCP_CONSOLE_URL=\"${OCP_CONSOLE_URL}\" | \
+      yq -y .OCP_API_URL=\"${OCP_API_URL}\" | \
+      yq -y .ODH_DASHBOARD_URL=\"${ODH_DASHBOARD_URL}\" | \
+      yq -y .RHODS_VERSION=\"${RHODS_VERSION}\" | \
+      yq -y .TEST_USER.AUTH_TYPE=\"${TEST_USER_AUTH_TYPE}\" | \
+      yq -y .TEST_USER.USERNAME=\"${TEST_USER_USERNAME}\" | \
+      yq -y .BROWSER.NAME=\"headlesschrome\" | \
+      yq -y ".BROWSER.OPTIONS=\"$BROWSER_OPTIONS\"" \
+        > "$TEST_VAR_SAFE"
+
+    cp "$TEST_VAR_SAFE" "$TEST_VAR_FULL"
+
+    TEST_USER_PASSWORD="$(cat "{{ rhods_test_jupyterlab_secret_properties }}" | grep '^user_password=' | cut -d= -f2)";
+
+    yq -yi .TEST_USER.PASSWORD=\"${TEST_USER_PASSWORD}\" "$TEST_VAR_FULL"
 
 - name: Delete the ODS-CI secret, it it exists
   command:
@@ -128,14 +144,18 @@
   command:
     oc create cm rhods-jupyterlab-entrypoint
        "--from-file=entrypoint.sh={{ rhods_test_jupyterlab_entrypoint }}"
+       "--from-file=artifacts-exporter.sh={{ rhods_test_jupyterlab_s3_artifacts_exporter_sidecar }}"
+       "--from-file={{ rhods_test_jupyterlab_test_case_directory }}/{{ rhods_test_jupyterlab_ods_ci_test_case }}"
        -n {{ rhods_test_namespace }}
 
 - name: Empty the Minio S3 bucket
-  shell:
+  shell: |
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-    mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force;
+       mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force;
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-    rm -rf /artifacts/to_export
+       rm -rf /artifacts/to_export
+    oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
+       mc --config-dir /tmp cp /etc/os-release minio/mybucket; # without it, cp may fail if the bucket is empty
   failed_when: false
 
 - name: Delete the RHODS tester job, if it exists
@@ -156,6 +176,12 @@
   command:
     oc delete ev -n {{ rhods_notebook_namespace }} --all
   failed_when: false
+
+- name: Name the namespace privileged
+  command:
+    oc adm policy add-scc-to-user privileged
+       -z default
+       -n {{ rhods_test_namespace }}
 
 - name: Create the RHODS test job
   command:
@@ -210,10 +236,14 @@
   register: pod_names_cmd
 
 - name: Get the logs of the tester Pod
-  shell:
-    oc logs {{ item }}
-       -n {{ rhods_test_namespace }}
-       > "{{ artifact_extra_logs_dir }}/tester_pod_$(basename "{{ item }}").log"
+  shell: |
+    for container in artifacts-exporter ods-ci; do
+      oc logs {{ item }} \
+         -c "$container" \
+         -n {{ rhods_test_namespace }} \
+         > "{{ artifact_extra_logs_dir }}/tester_pod__$(basename "{{ item }}")__${container}.log";
+    done
+
   loop: "{{ pod_names_cmd.stdout_lines }}"
   failed_when: false
 
@@ -254,7 +284,7 @@
 - name: Export the data out of the S3 bucket
   command:
     oc -n minio -c mc exec "{{ minio_podname_cmd.stdout }}"
-       -- bash -c 'mkdir /artifacts/to_export && mc --config-dir /tmp cp minio/mybucket/ /artifacts/to_export --recursive'
+       -- bash -c 'mkdir -p /artifacts/to_export && mc --config-dir /tmp cp minio/mybucket/ /artifacts/to_export --recursive'
   when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
 
 - name: Extract the ODS-CI test artifacts from the Minio S3 container
@@ -274,6 +304,21 @@
     test={{ rhods_test_jupyterlab_ods_ci_test_case }}
     user_count={{ rhods_test_jupyterlab_user_count }}
     EOF
+
+- name: Show the artifacts directory
+  debug: msg="The test artifacts have been stored in {{ artifact_extra_logs_dir }}"
+
+- name: Count successful tests
+  shell:
+    set -o pipefail;
+    cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep '^0$' | wc -l
+  failed_when: false
+
+- name: Count failed tests
+  shell:
+    set -o pipefail;
+    cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep -v '^0$' | wc -l
+  failed_when: false
 
 - name: Test if the RHODS test job crashed
   command:

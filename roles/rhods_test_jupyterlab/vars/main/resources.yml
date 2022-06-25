@@ -1,3 +1,5 @@
 ---
 rhods_test_jupyterlab_job: "roles/rhods_test_jupyterlab/templates/rhods-ci.yaml"
 rhods_test_jupyterlab_entrypoint: "roles/rhods_test_jupyterlab/files/entrypoint.sh"
+rhods_test_jupyterlab_s3_artifacts_exporter_sidecar: "roles/rhods_test_jupyterlab/files/s3-artifacts-exporter.sh"
+rhods_test_jupyterlab_test_case_directory: "roles/rhods_test_jupyterlab/files/ods-ci"

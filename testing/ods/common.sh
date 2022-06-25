@@ -19,7 +19,7 @@ ODS_QE_CATALOG_IMAGE_TAG="v1100-6"
 
 ODS_CI_TEST_NAMESPACE=loadtest
 ODS_CI_REPO="https://github.com/openshift-psap/ods-ci.git"
-ODS_CI_REF="multiuser"
+ODS_CI_REF="jh-at-scale"
 
 ODS_CI_IMAGESTREAM="ods-ci"
 ODS_CI_TAG="latest"
