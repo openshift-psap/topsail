@@ -11,19 +11,19 @@ source "$THIS_DIR/common.sh"
 # ---
 
 create_cluster() {
-    cluster=$1
+    cluster_role=$1
 
     cluster_name="${CLUSTER_NAME_PREFIX}"
     if [[ "${PULL_NUMBER:-}" ]]; then
-        cluster_name="${cluster_name}${PULL_NUMBER}-$(date %Hh%M)"
+        cluster_name="${cluster_name}${PULL_NUMBER}-$(date +%Hh%M)"
     else
         cluster_name="${cluster_name}$(date +%y%m%d%H%M)"
     fi
 
     echo "Create cluster $cluster_name..."
-    echo "$cluster_name" > "$SHARED_DIR/${cluster}_osd_cluster_name"
+    echo "$cluster_name" > "$SHARED_DIR/osd_${cluster_role}_cluster_name"
 
-    KUBECONFIG="$SHARED_DIR/${cluster}_kubeconfig"
+    KUBECONFIG="$SHARED_DIR/${cluster_role}_kubeconfig"
     touch "$KUBECONFIG"
 
     ocm_login
@@ -39,9 +39,9 @@ create_cluster() {
 }
 
 destroy_cluster() {
-    cluster=$1
+    cluster_role=$1
 
-    cluster_name=$(get_osd_cluster_name "$cluster")
+    cluster_name=$(get_osd_cluster_name "$cluster_role")
     if [[ -z "$cluster_name" ]]; then
         echo "No OSD cluster to destroy ..."
         exit 0
@@ -62,10 +62,9 @@ fi
 
 action="${1:-}"
 if [ -z "${action}" ]; then
-    echo "FATAL: $0 expects at least 1 argument ..."
+    echo "FATAL: $0 expects 2 arguments: (create|destoy) CLUSTER_ROLE"
     exit 1
 fi
-
 
 shift
 
@@ -77,6 +76,7 @@ case ${action} in
         exit 0
         ;;
     "destroy")
+        set +o errexit
         destroy_cluster "$@"
         exit 0
         ;;
