@@ -1,0 +1,83 @@
+#! /usr/bin/env python3
+
+import types
+import os, sys
+import pathlib
+import math
+
+MACHINES_FILE = pathlib.Path(os.path.dirname(os.path.realpath(__file__))) / "machines"
+NOTEBOOK_FILE = pathlib.Path(os.path.dirname(os.path.realpath(__file__))) / "notebook_sizes"
+
+def parse_machines():
+    machines = {}
+    with open(MACHINES_FILE) as f:
+        for _line in f.readlines():
+            line = _line.strip()
+            if line.startswith("# "):
+                group = line.strip("# ")
+
+            if not line or line.startswith("#"): continue
+
+            instance, cpu, memory, price, *accel = line.split(", ")
+
+            entry = types.SimpleNamespace()
+            entry.cpu = int(cpu.split()[0])
+            entry.memory = int(memory.split()[0])
+            entry.price = float(price[1:])
+            entry.group = group
+            entry.name = instance
+
+            machines[entry.name] = entry
+    return machines
+
+def parse_notebook_sizes():
+    notebooks = {}
+    with open(NOTEBOOK_FILE) as f:
+        for _line in f.readlines():
+            line = " ".join(_line.strip().split())
+
+            if not line or line.startswith("#"): continue
+
+            entry = types.SimpleNamespace()
+            entry.name, _cpu, _memory = line.split(", ")
+            entry.cpu = float(_cpu.split("=")[1])
+            entry.memory = float(_memory.split("=")[1])
+
+            notebooks[entry.name] = entry
+    return notebooks
+
+RESERVED_CPU = 1.1
+RESERVED_MEM = 2.1
+
+def main():
+    notebook_size_name, machine_type, _user_count = sys.argv[1:]
+
+
+    machines = parse_machines()
+    notebooks = parse_notebook_sizes()
+
+    user_count = int(_user_count)
+    notebook_size = notebooks[notebook_size_name]
+    machine_size = machines[machine_type]
+
+    total_cpu_count = notebook_size.cpu * user_count
+    total_memory_count = notebook_size.memory * user_count
+
+    machine_count_cpu = total_cpu_count / (machine_size.cpu - RESERVED_CPU)
+    machine_count_memory = total_memory_count / (machine_size.memory - RESERVED_MEM)
+    print(f"Reseved cpu={RESERVED_CPU}, mem={RESERVED_MEM}")
+    print(f"{machine_type} machine: {machine_size}")
+    print(f"{notebook_size_name} notebooks: {notebook_size}")
+
+    print(f"Memory requirement: {machine_count_memory:.1f} x {machine_type}")
+    print(f"CPU requirement:    {machine_count_cpu:.1f} x {machine_type}")
+
+    machine_exact_count = max([machine_count_cpu, machine_count_memory])
+    machine_count = math.ceil(machine_exact_count)
+
+    print(f"Running {user_count}x {notebook_size_name} requires {machine_count}x {machine_type} machines")
+
+    return machine_count
+
+if __name__ == "__main__":
+    sys.exit(main())

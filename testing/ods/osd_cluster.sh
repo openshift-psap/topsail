@@ -28,12 +28,15 @@ create_cluster() {
 
     ocm_login
 
+    compute_nodes_type=$(get_compute_node_type "$cluster_role")
+    compute_nodes_count=$(get_compute_node_count "$cluster_role" osd "$compute_nodes_type")
+
     ./run_toolbox.py cluster create_osd \
                      "$cluster_name" \
                      "$PSAP_ODS_SECRET_PATH/create_osd_cluster.password" \
                      "$KUBECONFIG" \
-                     --compute_machine_type="$OSD_COMPUTE_MACHINE_TYPE" \
-                     --compute_nodes="$OSD_COMPUTE_NODES" \
+                     --compute_machine_type="$compute_node_type" \
+                     --compute_nodes="$compute_nodes_count" \
                      --version="$OSD_VERSION" \
                      --region="$OSD_REGION"
 }

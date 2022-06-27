@@ -1,0 +1,49 @@
+# General purpose
+
+m5.xlarge, 4 vCPU, 16 GiB RAM, $0.096
+m5.2xlarge, 8 vCPU, 32 GiB RAM, $0.384
+m5.4xlarge, 16 vCPU, 64 GiB RAM, $0.768
+m5.8xlarge, 32 vCPU, 128 GiB RAM, $1.536
+m5.12xlarge, 48 vCPU, 192 GiB RAM, $2.304
+m5.16xlarge, 64 vCPU, 256 GiB RAM, $3.072
+m5.24xlarge, 96 vCPU, 384 GiB RAM, $4.608
+
+# Memory optimized
+r5.xlarge, 4 vCPU, 32 GiB RAM, $0.252
+r6i.xlarge, 4 vCPU, 32 GiB RAM, $0.252
+z1d.xlarge, 4 vCPU, 32 GiB RAM, $0.372
+r5.2xlarge, 8 vCPU, 64 GiB RAM, $0.504
+r6i.2xlarge, 8 vCPU, 64 GiB RAM, $0.504
+z1d.2xlarge, 8 vCPU, 64 GiB RAM, $0.744
+z1d.3xlarge, 12 vCPU, 96 GiB RAM, $1.116
+r5.4xlarge, 16 vCPU, 128 GiB RAM, $1.008
+r6i.4xlarge, 16 vCPU, 128 GiB RAM, $1.008
+z1d.6xlarge, 24 vCPU, 192 GiB RAM, $2.232
+r5.8xlarge, 32 vCPU, 256 GiB RAM, $2.016
+r6i.8xlarge, 32 vCPU, 256 GiB RAM, $2.016
+r5.12xlarge, 48 vCPU, 384 GiB RAM, $3.024
+r6i.12xlarge, 48 vCPU, 384 GiB RAM, $3.024
+z1d.12xlarge, 48 vCPU, 384 GiB RAM, $4.464
+r5.16xlarge, 64 vCPU, 512 GiB RAM, $4.032
+r6i.16xlarge, 64 vCPU, 512 GiB RAM, $4.032
+r5.24xlarge, 96 vCPU, 768 GiB RAM, $6.048
+r6i.24xlarge, 96 vCPU, 768 GiB RAM, $6.048
+r6i.32xlarge, 128 vCPU, 1000 GiB RAM, $8.064
+
+# Compute optimized
+c5.xlarge, 4 vCPU, 8 GiB RAM, $0.17
+c5.2xlarge, 8 vCPU, 16 GiB RAM, $0.34
+c5.4xlarge, 16 vCPU, 32 GiB RAM, $0.68
+c5.9xlarge, 36 vCPU, 72 GiB RAM, $1.53
+c5.12xlarge, 48 vCPU, 96 GiB RAM, $2.04
+c5.18xlarge, 72 vCPU, 144 GiB RAM, $3.06
+c5.24xlarge, 96 vCPU, 192 GiB RAM, $4.08
+
+# Accelated computing
+#g4dn.xlarge, 4 vCPU, 16 GiB RAM, $0.526, 1 GPU
+g4dn.2xlarge, 8 vCPU, 32 GiB RAM, $0.752, 1 GPU
+g4dn.4xlarge, 16 vCPU, 64 GiB RAM, $1.204, 1 GPU
+g4dn.12xlarge, 48 vCPU, 192 GiB RAM, $3.912, 4 GPU
+#p3.2xlarge, 8 vCPU, 61 GiB RAM, $3.06, 1 GPU
+#p3.8xlarge, 32 vCPU, 244 GiB RAM, $12.24, 4 GPU
+#p3.16xlarge, 64 vCPU, 488 GiB RAM, $24.48, 8 GPU

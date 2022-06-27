@@ -24,8 +24,10 @@ ODS_CI_REF="jh-at-scale"
 ODS_CI_IMAGESTREAM="ods-ci"
 ODS_CI_TAG="latest"
 
-ODS_CI_NB_USERS=10
+ODS_CI_NB_USERS=15
 ODS_CI_USER_PREFIX=testuser
+ODS_NOTEBOOK_SIZE=small # needs to match what the ROBOT test-case requests
+ODS_NOTEBOOK_SIZE_TEST_POD="test_pod" # shouldn't change
 
 if [[ "$OSD_USE_ODS_CATALOG" == "0" ]]; then
     # deploying from the addon. Get the email address from the secret vault.
@@ -36,8 +38,6 @@ LDAP_IDP_NAME=RHODS_CI_LDAP
 
 CLUSTER_NAME_PREFIX=odsci
 
-OSD_COMPUTE_MACHINE_TYPE=m5.xlarge
-OSD_COMPUTE_NODES=7
 OSD_VERSION=4.10.15
 OSD_REGION=us-west-2
 
@@ -45,8 +45,16 @@ OCP_VERSION=4.10.15
 OCP_REGION=us-west-2
 OCP_MASTER_MACHINE_TYPE=m5.xlarge
 OCP_WORKER_MACHINE_TYPE=m5.xlarge
+
 OCP_WORKER_NODES=7
 OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
+
+# Shouldn't be the same than OCP worker nodes.
+
+SUTEST_COMPUTE_MACHINE_TYPE=m5.2xlarge
+DRIVER_COMPUTE_MACHINE_TYPE=m5.2xlarge
+
+FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
 
 ocm_login() {
     export OCM_ENV
@@ -89,4 +97,43 @@ get_osd_cluster_name() {
     cluster_role=$1
 
     cat "$SHARED_DIR/osd_${cluster_role}_cluster_name" 2>/dev/null || true
+}
+
+get_notebook_size() {
+    cluster_role=$1
+
+    if [[ "$cluster_role" == "sutest" ]]; then
+        echo "$ODS_NOTEBOOK_SIZE"
+    else
+        echo "$ODS_NOTEBOOK_SIZE_TEST_POD"
+    fi
+}
+
+get_compute_node_count() {
+    cluster_role=$1
+    shift
+    cluster_type=$1
+    shift
+    instance_type=$1
+    shift
+
+    notebook_size_name=$(get_notebook_size "$cluster_role")
+    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$notebook_size_name' '$instance_type' '$ODS_CI_NB_USERS' >&2; echo \$?")
+
+    if [[ "$size" == 0 ]]; then
+        echo "ERROR: couldn't determine the number of nodes to request ..." >&2
+        false
+    fi
+
+    echo "$size"
+}
+
+get_compute_node_type() {
+    cluster_role=$1
+
+    if [[ "$cluster_role" == "sutest" ]]; then
+        echo "$SUTEST_COMPUTE_MACHINE_TYPE"
+    else
+        echo "$DRIVER_COMPUTE_MACHINE_TYPE"
+    fi
 }
