@@ -2,14 +2,18 @@ process_ctrl__wait_list=()
 
 process_ctrl::run_in_bg() {
     "$@" &
-    echo "Adding '$!' to the wait-list '${process_ctrl__wait_list[@]}' ..."
+    echo "Adding '$!' ($@) to the wait-list '${process_ctrl__wait_list[@]}' ..."
     process_ctrl__wait_list+=("$!")
 }
 
 process_ctrl::wait_bg_processes() {
     echo "Waiting for the background processes '${process_ctrl__wait_list[@]}' to terminate ..."
     for pid in ${process_ctrl__wait_list[@]}; do
-        wait $pid # this syntax honors the `set -e` flag
+        if ! wait $pid # this syntax honors the `set -e` flag
+        then
+            echo "Process $pid failed :( retcode=$?"
+            false
+        fi
     done
     echo "All the processes are done!"
     process_ctrl__wait_list=()
