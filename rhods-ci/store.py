@@ -182,9 +182,9 @@ def _parse_ods_ci_output_xml(filename):
 
 def _extract_metrics(dirname):
     METRICS = {
-        "sutest": ("sutest_prometheus.tgz", SUTEST_METRICS),
-        "driver": ("driver_prometheus.tgz", DRIVER_METRICS),
-        "rhods":  ("rhods_prometheus.tgz", RHODS_METRICS),
+        "sutest": ("prometheus_sutest.tgz", SUTEST_METRICS),
+        "driver": ("prometheus_driver.tgz", DRIVER_METRICS),
+        "rhods":  ("prometheus_rhods.tgz", RHODS_METRICS),
     }
 
     results_metrics = {}
