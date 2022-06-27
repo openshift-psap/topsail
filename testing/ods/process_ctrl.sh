@@ -30,14 +30,19 @@ process_ctrl::retry() {
     retry_delay=$1
     shift
 
+    tries=0
     retries_left=$total_retries
     while [[ $retries_left != 0 ]]; do
+        tries=$(($tries + 1))
         if "$@";
         then
+            echo "$@" "succeeded at the $tries/$total_retries try."
             return
         fi
         echo "Try $(($total_retries - $retries_left + 1))/$total_retries failed. " "$@"
         retries_left=$(($retries_left - 1))
         sleep $retry_delay
     done
+    echo "$@" "failed after $tries tries..."
+    false
 }
