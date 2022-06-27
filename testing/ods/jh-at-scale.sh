@@ -41,6 +41,7 @@ switch_cluster() {
         echo "Requested to switch to an unknown cluster '$cluster_role', exiting."
         exit 1
     fi
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
 }
 
 # ---
