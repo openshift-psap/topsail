@@ -322,6 +322,11 @@
     cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep -v '^0$' | wc -l
   failed_when: false
 
+- name: Show failed tests
+  shell:
+    grep  -v '^0$' "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code
+  failed_when: false
+
 - name: Test if the RHODS test job crashed
   command:
     oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_test_namespace }}
