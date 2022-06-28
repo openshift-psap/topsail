@@ -170,11 +170,13 @@
     oc delete ev -n {{ rhods_test_namespace }} --all
   failed_when: false
 
-- name: Delete the events of the notebook namespace
+- name: Delete the events, pods and PVC of the notebook namespace
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  command:
-    oc delete ev -n {{ rhods_notebook_namespace }} --all
+  command: |
+    oc delete pod --all -n  {{ rhods_notebook_namespace }}
+    oc delete pvc --all -n {{ rhods_notebook_namespace }}
+    oc delete ev --all -n {{ rhods_notebook_namespace }}
   failed_when: false
 
 - name: Name the namespace privileged
@@ -212,8 +214,8 @@
 - name: Cleanup the notebooks Pods and PVCs
   # (the Pods are destroyed anyway when the ods-ci test succeeds)
   shell: |
-    oc delete pod --all -n rhods-notebooks
-    oc delete pvc --all -n rhods-notebooks
+    oc delete pod --all -n {{ rhods_notebook_namespace }}
+    oc delete pvc --all -n {{ rhods_notebook_namespace }}
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
 
