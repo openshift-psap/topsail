@@ -202,7 +202,7 @@ run_multi_cluster() {
     if [[ "$ODS_CI_NB_USERS" -le 5 ]]; then
         collect=all
     else
-        collect=no-image
+        collect=no-image-except-if-failed
     fi
 
     ./run_toolbox.py rhods test_jupyterlab \
