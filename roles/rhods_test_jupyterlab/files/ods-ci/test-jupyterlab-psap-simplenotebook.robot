@@ -39,7 +39,7 @@ Can Login to Jupyterhub
 Can Spawn Notebook
   [Tags]  Notebook
   Fix Spawner Status
-  Spawn Notebook With Arguments  image=s2i-generic-data-science-notebook  size=Small  spawner_timeout=5 minutes
+  Spawn Notebook With Arguments  image=s2i-generic-data-science-notebook  size=Default  spawner_timeout=5 minutes
 
 Git Clone the PSAP notebooks
   [Tags]  Notebook
