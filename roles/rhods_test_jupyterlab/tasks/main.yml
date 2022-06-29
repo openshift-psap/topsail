@@ -315,6 +315,7 @@
     set -o pipefail;
     cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep '^0$' | wc -l
   failed_when: false
+  register: success_count_cmd
 
 - name: Count failed tests
   shell:
@@ -325,6 +326,15 @@
 - name: Show failed tests
   shell:
     grep  -v '^0$' "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code
+  failed_when: false
+  register: failed_tests_cmd
+
+- name: Save the success count and failed tests
+  shell: |
+    echo "{{ success_count_cmd.stdout }}/{{ rhods_test_jupyterlab_user_count }}" \
+         > "{{ artifact_extra_logs_dir }}/success_count"
+    echo "{{ failed_tests_cmd.stdout }}" \
+         > "{{ artifact_extra_logs_dir }}/failed_tests"
   failed_when: false
 
 - name: Test if the RHODS test job crashed
