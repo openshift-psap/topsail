@@ -54,10 +54,10 @@ spec:
           mountPath: /mnt/rhods-jupyterlab-entrypoint
         resources:
           requests:
-            memory: 400M
+            memory: 750M
             cpu: 0.2
           limits:
-            memory: 500M
+            memory: 750M
             cpu: 0.2
       - image: "quay.io/centos/centos:stream8"
         name: artifacts-exporter
