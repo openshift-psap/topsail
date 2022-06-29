@@ -95,7 +95,11 @@ create_cluster() {
        "$KUBECONFIG"
 
     cd "$HOME"
-    ./run_toolbox.py cluster set-scale $OCP_WORKER_MACHINE_TYPE $OCP_WORKER_NODES --force
+
+    compute_nodes_type=$(get_compute_node_type "$cluster_role")
+    compute_nodes_count=$(get_compute_node_count "$cluster_role" ocp "$compute_nodes_type")
+
+    ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count"
 
     # save_install_artifacts executed here
 }
