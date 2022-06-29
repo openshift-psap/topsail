@@ -128,6 +128,7 @@ def run_ansible_role(role_name, opts: dict = dict()):
     sys.stdout.flush()
     sys.stderr.flush()
 
+    ret = -1
     try:
         run_result = subprocess.run(cmd, env=env, check=False)
         ret = run_result.returncode
@@ -140,5 +141,12 @@ def run_ansible_role(role_name, opts: dict = dict()):
             os.remove(tmp_play_file.name)
         except FileNotFoundError:
             pass # play file was removed, ignore
+
+        with open(artifact_extra_logs_dir / "exit_code", "w") as f:
+            print(f"{ret}", file=f)
+
+        if ret != 0:
+            with open(artifact_extra_logs_dir / "FAILURE", "w") as f:
+                print(f"{ret}", file=f)
 
     raise SystemExit(ret)
