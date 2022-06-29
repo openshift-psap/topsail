@@ -213,6 +213,7 @@ run_multi_cluster() {
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected=$collect
 
+    set +e # we do not wait to fail passed this point
 
     dump_prometheus_dbs
 }
