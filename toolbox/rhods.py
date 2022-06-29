@@ -185,6 +185,8 @@ class RHODS:
             "cluster_prometheus_db_mode": "dump",
             "cluster_prometheus_db_label": "deployment=prometheus",
             "cluster_prometheus_db_namespace": "redhat-ods-monitoring",
+            "cluster_prometheus_db_directory": "/prometheus/data",
+
         }
 
         return RunAnsibleRole("cluster_prometheus_db", opts)
