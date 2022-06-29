@@ -22,7 +22,12 @@ def filter_sutest_metrics(metrics):
 
 
 def get_metrics(name):
-    return lambda entry, metric: entry.results.metrics[name][metric]
+    def _get_metrics(entry, metric):
+        try:
+            return entry.results.metrics[name][metric]
+        except KeyError:
+            return []
+    return _get_metrics
 
 
 def register():
