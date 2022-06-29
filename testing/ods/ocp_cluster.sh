@@ -3,6 +3,8 @@
 set -o pipefail
 set -o errexit
 set -o nounset
+set -o errtrace
+set -x
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "$THIS_DIR/common.sh"
