@@ -1,6 +1,8 @@
 # https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-linux.tar.gz"
 # https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp-dev-preview/pre-release/openshift-install-linux.tar.gz"
 
+SHELL=/usr/bin/env bash -o pipefail
+
 has_installer: ${OPENSHIFT_INSTALLER}
 ${OPENSHIFT_INSTALLER}:
 	@echo "WARNING: Installer v${OCP_VERSION} not found: ${OPENSHIFT_INSTALLER}"
