@@ -77,8 +77,8 @@ create_cluster() {
         fi
     }
 
-    # ensure that the cluster's 'metadata.json' is always copied to the SHARED_DIR
-    trap save_install_artifacts EXIT
+    # ensure that the cluster's 'metadata.json' is copied to the SHARED_DIR even in case of errors
+    trap save_install_artifacts EXIT SIGTERM SIGINT
 
     make cluster \
          OCP_VERSION="${OCP_VERSION}" \
