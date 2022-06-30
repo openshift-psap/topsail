@@ -9,6 +9,7 @@ from . import advanced_timeline
 from . import prom
 from . import completion
 from . import report
+from . import mapping
 
 def register():
     simple_timeline.register()
@@ -16,3 +17,4 @@ def register():
     prom.register()
     completion.register()
     report.register()
+    mapping.register()
