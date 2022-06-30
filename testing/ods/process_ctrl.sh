@@ -9,9 +9,11 @@ process_ctrl::run_in_bg() {
 process_ctrl::wait_bg_processes() {
     echo "Waiting for the background processes '${process_ctrl__wait_list[@]}' to terminate ..."
     for pid in ${process_ctrl__wait_list[@]}; do
-        if ! wait $pid # this syntax honors the `set -e` flag
+        retcode=0
+        wait $pid || retcode=$? # this syntax honors the `set -e` flag
+        if [[ "$retcode" != "0" ]];
         then
-            echo "Process $pid failed :( retcode=$?"
+            echo "Process $pid failed :( retcode=$retcode"
             false
         fi
     done

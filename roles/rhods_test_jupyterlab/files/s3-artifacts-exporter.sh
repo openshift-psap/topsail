@@ -45,7 +45,13 @@ echo "$(date) '${ARTIFACTS_DIR}/test.exit_code' appeared."
 
 set -x
 
-if [[ "$ARTIFACTS_COLLECTED" == "no-image" ]]; then
+test_failed=$(cat ${ARTIFACTS_DIR}/test.exit_code)
+
+delete_image=0
+[[ "$ARTIFACTS_COLLECTED" == "no-image" ]] && delete_image=1
+[[ "$ARTIFACTS_COLLECTED" == "no-image-except-if-failed" && "$test_failed" == 0 ]] && delete_image=1
+
+if [[ "$delete_image" == 1 ]]; then
     find "${ARTIFACTS_DIR}" -name '*.png' -delete > dev/null
 fi
 

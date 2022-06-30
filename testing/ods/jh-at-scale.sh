@@ -3,6 +3,7 @@
 set -o errexit
 set -o pipefail
 set -o nounset
+set -o errtrace
 set -x
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -202,7 +203,7 @@ run_multi_cluster() {
     if [[ "$ODS_CI_NB_USERS" -le 5 ]]; then
         collect=all
     else
-        collect=no-image
+        collect=no-image-except-if-failed
     fi
 
     ./run_toolbox.py rhods test_jupyterlab \
@@ -212,6 +213,7 @@ run_multi_cluster() {
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected=$collect
 
+    set +e # we do not wait to fail passed this point
 
     dump_prometheus_dbs
 }

@@ -170,11 +170,13 @@
     oc delete ev -n {{ rhods_test_namespace }} --all
   failed_when: false
 
-- name: Delete the events of the notebook namespace
+- name: Delete the events, pods and PVC of the notebook namespace
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  command:
-    oc delete ev -n {{ rhods_notebook_namespace }} --all
+  command: |
+    oc delete pod --all -n  {{ rhods_notebook_namespace }}
+    oc delete pvc --all -n {{ rhods_notebook_namespace }}
+    oc delete ev --all -n {{ rhods_notebook_namespace }}
   failed_when: false
 
 - name: Name the namespace privileged
@@ -212,8 +214,8 @@
 - name: Cleanup the notebooks Pods and PVCs
   # (the Pods are destroyed anyway when the ods-ci test succeeds)
   shell: |
-    oc delete pod --all -n rhods-notebooks
-    oc delete pvc --all -n rhods-notebooks
+    oc delete pod --all -n {{ rhods_notebook_namespace }}
+    oc delete pvc --all -n {{ rhods_notebook_namespace }}
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
 
@@ -313,11 +315,26 @@
     set -o pipefail;
     cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep '^0$' | wc -l
   failed_when: false
+  register: success_count_cmd
 
 - name: Count failed tests
   shell:
     set -o pipefail;
     cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep -v '^0$' | wc -l
+  failed_when: false
+
+- name: Show failed tests
+  shell:
+    grep  -v '^0$' "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code
+  failed_when: false
+  register: failed_tests_cmd
+
+- name: Save the success count and failed tests
+  shell: |
+    echo "{{ success_count_cmd.stdout }}/{{ rhods_test_jupyterlab_user_count }}" \
+         > "{{ artifact_extra_logs_dir }}/success_count"
+    echo "{{ failed_tests_cmd.stdout }}" \
+         > "{{ artifact_extra_logs_dir }}/failed_tests"
   failed_when: false
 
 - name: Test if the RHODS test job crashed
