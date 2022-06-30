@@ -82,7 +82,7 @@
 
 - name: Get the description of the download Pod (debug)
   shell:
-    oc logs pod/coco-dataset-downloader
+    oc describe pod/coco-dataset-downloader
        -n {{ benchmarking_namespace }}
        > {{ artifact_extra_logs_dir }}/pod_downloader.desc
   failed_when: false

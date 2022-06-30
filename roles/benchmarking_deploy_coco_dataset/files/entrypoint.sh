@@ -37,7 +37,7 @@ if [[ -n "${CRED_FILE}" ]]; then
         check=$((ls -1q "${STORAGE_DIR}/$key" 2>/dev/null || true) | wc -l)
         if [[ $check != "${EXPECTED_NUMBER_OF_FILES["$key"]}" ]]; then
             rm -rf "${STORAGE_DIR}/$key"
-            aws s3 cp "s3://psap-coco-bucket/$key/" "${STORAGE_DIR}/$key" --profile=cocobucket --recursive
+            aws s3 cp "s3://psap-coco-bucket/$key/" "${STORAGE_DIR}/$key" --profile=cocobucket --recursive --quiet
         fi
     done
 else
