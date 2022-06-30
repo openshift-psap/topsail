@@ -46,7 +46,6 @@ OCP_REGION=us-west-2
 OCP_MASTER_MACHINE_TYPE=m5.xlarge
 OCP_WORKER_MACHINE_TYPE=m5.xlarge
 
-OCP_WORKER_NODES=7
 OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
 
 # Shouldn't be the same than OCP worker nodes.
