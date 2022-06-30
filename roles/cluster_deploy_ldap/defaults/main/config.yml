@@ -1,0 +1,8 @@
+cluster_deploy_ldap_secret_properties: ""
+cluster_deploy_ldap_username_prefix: ""
+cluster_deploy_ldap_username_count: ""
+cluster_deploy_ldap_admin_user: "admin"
+cluster_deploy_ldap_idp_name: ""
+cluster_deploy_ldap_use_ocm: ""
+cluster_deploy_ldap_use_rosa: ""
+cluster_deploy_ldap_wait: "False"

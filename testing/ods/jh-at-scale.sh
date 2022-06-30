@@ -98,7 +98,7 @@ prepare_sutest_cluster() {
         prepare_ocp_sutest_cluster
     fi
 
-    process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_ldap \
+    process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_ldap \
               "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" \
               --use_ocm="$osd_cluster_name" \
               --wait

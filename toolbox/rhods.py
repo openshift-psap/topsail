@@ -124,47 +124,6 @@ class RHODS:
         return RunAnsibleRole("rhods_cleanup_aws")
 
     @staticmethod
-    def deploy_ldap(idp_name, username_prefix, username_count: int, secret_properties_file,
-                    use_ocm="", use_rosa="", wait=False):
-        """
-        Deploy OpenLDAP and LDAP Oauth
-
-        Example of secret properties file:
-
-        user_password=passwd
-        admin_password=adminpasswd
-
-        Args:
-          idp_name: Name of the LDAP identity provider.
-          username_prefix: Prefix for the creation of the users (suffix is 0..username_count)
-          username_count: Number of users to create.
-          secret_properties_file: Path of a file containing the properties of LDAP secrets.
-          use_ocm: Optional. If set with a cluster name, use `ocm create idp` to deploy the LDAP identity provider.
-          use_rosa: Optional. If set with a cluster name, use `rosa create idp` to deploy the LDAP identity provider.
-          wait: Optional. If True, waits for the first user (0) to be able to login into the cluster.
-        """
-
-        opts = {
-            "rhods_deploy_ldap_idp_name": idp_name,
-            "rhods_deploy_ldap_username_prefix": username_prefix,
-            "rhods_deploy_ldap_username_count": username_count,
-            "rhods_deploy_ldap_secret_properties": secret_properties_file,
-            "rhods_deploy_ldap_use_ocm": use_ocm,
-            "rhods_deploy_ldap_use_rosa": use_rosa,
-            "rhods_deploy_ldap_wait": wait,
-        }
-
-        return RunAnsibleRole("rhods_deploy_ldap", opts)
-
-    @staticmethod
-    def undeploy_ldap():
-        """
-        Undeploy OpenLDAP and LDAP Oauth
-        """
-
-        return RunAnsibleRole("rhods_undeploy_ldap")
-
-    @staticmethod
     def reset_prometheus_db():
         """
         Resets RHODS Prometheus database, by destroying its Pod.
