@@ -10,6 +10,7 @@ from . import prom
 from . import completion
 from . import report
 from . import mapping
+from . import spawntime
 
 def register():
     simple_timeline.register()
@@ -18,3 +19,4 @@ def register():
     completion.register()
     report.register()
     mapping.register()
+    spawntime.register()
