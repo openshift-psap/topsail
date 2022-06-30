@@ -182,18 +182,22 @@ def _parse_ods_ci_output_xml(filename):
 
 def _extract_metrics(dirname):
     METRICS = {
-        "sutest": ("prometheus_sutest.tgz", SUTEST_METRICS),
-        "driver": ("prometheus_driver.tgz", DRIVER_METRICS),
-        "rhods":  ("prometheus_rhods.tgz", RHODS_METRICS),
+        "sutest": ("*__sutest_cluster__dump_prometheus_db/prometheus.t*", SUTEST_METRICS),
+        "driver": ("*__driver_cluster__dump_prometheus_db/prometheus.t*", DRIVER_METRICS),
+        "rhods":  ("*__sutest_rhods__dump_prometheus_db/prometheus.t*", RHODS_METRICS),
     }
 
     results_metrics = {}
-    for name, (filename_tgz, metrics) in METRICS.items():
+    for name, (tarball_glob, metrics) in METRICS.items():
         try:
-            results_metrics[name] = store_prom_db.extract_metrics(dirname / filename_tgz, metrics, dirname,
-                                                                  filename_prefix=f"{name}_")
-        except FileNotFoundError:
-            logging.warning(f"No {filename_tgz} in '{dirname}'.")
+            prom_tarball = list(dirname.parent.glob(tarball_glob))[0]
+        except IndexError:
+            logging.warning(f"No {tarball_glob} in '{dirname.parent}'.")
+            continue
+
+        results_metrics[name] = store_prom_db.extract_metrics(prom_tarball, metrics, dirname,
+                                                              filename_prefix=f"{name}_")
+
 
     return results_metrics
 
