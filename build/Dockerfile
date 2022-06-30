@@ -37,6 +37,11 @@ ARG HELM_VERSION=v3.5.1
 ARG HELM_URL=https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
 RUN curl --silent ${HELM_URL} | tar xfz - -C /usr/local/bin --strip-components 1 linux-amd64/helm
 
+# Install dependencies: `rosa`
+ARG ROSA_VERSION=latest
+ARG ROSA_URL=https://mirror.openshift.com/pub/openshift-v4/clients/rosa/${ROSA_VERSION}/rosa-linux.tar.gz
+RUN curl --silent ${ROSA_URL} | tar xfz - -C /usr/local/bin
+
 # Install dependencies: `operator-sdk`
 ARG OPERATOR_SDK_VERSION=v1.6.2
 ARG OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}
