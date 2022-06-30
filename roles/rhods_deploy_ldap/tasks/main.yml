@@ -23,6 +23,10 @@
   when: rhods_deploy_ldap_use_ocm | length > 0
   command: ocm describe cluster "{{ rhods_deploy_ldap_use_ocm }}"
 
+- name: Ensure that ROSA is properly connected
+  when: rhods_deploy_ldap_use_rosa | length > 0
+  command: rosa describe cluster --cluster="{{ rhods_deploy_ldap_use_rosa }}"
+
 - name: Prepare python command 1
   set_fact:
     py_secret_generator_cmd: >-
@@ -68,6 +72,18 @@
     dest: "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
     mode: 0400
 
+- name: Get LDAP URL
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
+        -ojsonpath={.spec.identityProviders[0].ldap.url}
+  register: ldap_url_cmd
+
+- name: Get LDAP Bind DN
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
+       -ojsonpath={.spec.identityProviders[0].ldap.bindDN}
+  register: ldap_bindDN_cmd
+
 - name: Deploy on OCP
   when: not rhods_deploy_ldap_use_ocm
   block:
@@ -79,21 +95,25 @@
   - name: Create the LDAP Oauth resource
     command: oc replace -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
 
-- name: Deploy on OSD
+- name: Deploy on ROSA
+  when: rhods_deploy_ldap_use_rosa | length > 0
+  block:
+  - name: Create the IDP resource
+    shell: |
+      set -o pipefail;
+      {{ py_secret_generator }}
+      rosa create idp \
+          --type ldap \
+          --cluster "{{ rhods_deploy_ldap_use_rosa }}" \
+          --name "{{ rhods_deploy_ldap_idp_name }}" \
+          --url "{{ ldap_url_cmd.stdout }}" \
+          --bind-dn "{{ ldap_bindDN_cmd.stdout }}" \
+          --bind-password $(echo "$rhods_ldap_adminpassword") \
+          --insecure
+
+- name: Deploy on OCM
   when: rhods_deploy_ldap_use_ocm | length > 0
   block:
-  - name: Get LDAP URL
-    command:
-      oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
-         -ojsonpath={.spec.identityProviders[0].ldap.url}
-    register: ldap_url_cmd
-
-  - name: Get LDAP Bind DN
-    command:
-      oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
-         -ojsonpath={.spec.identityProviders[0].ldap.bindDN}
-    register: ldap_bindDN_cmd
-
   - name: Create the IDP resource
     when: false # keeping it disabled until https://github.com/openshift-online/ocm-cli/issues/385 is resolved
     shell: |
