@@ -114,6 +114,18 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None):
     return event_times
 
 
+def _parse_node_info(filename):
+    node_info = defaultdict(types.SimpleNamespace)
+    with open(filename) as f:
+        nodeList = yaml.safe_load(f)
+
+    for node in nodeList["items"]:
+        node_name = node["metadata"]["name"]
+
+        node_info[node_name].instance_type = node["metadata"]["labels"]["node.kubernetes.io/instance-type"]
+    return node_info
+
+
 def _parse_pod_times(filename):
     pod_times = defaultdict(types.SimpleNamespace)
     with open(filename) as f:
@@ -207,6 +219,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     _parse_job(results, dirname / "tester_job.yaml")
 
+    results.nodes_info = _parse_node_info(list(dirname.parent.glob("*__sutest_rhods__capture_state"))[0] / "nodes.yaml")
     results.pod_times = _parse_pod_times(dirname / "tester_pods.yaml")
     results.event_times = defaultdict(types.SimpleNamespace)
     results.notebook_hostnames = notebook_hostnames = {}
