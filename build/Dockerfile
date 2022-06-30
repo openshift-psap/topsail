@@ -11,11 +11,15 @@ LABEL 	io.k8s.display-name="OpenShift PSAP CI artifacts" \
 RUN yum install -y --quiet \
 		glibc-langpack-en \
 		go git make jq vim wget rsync time gettext \
-		python3.9 python3-pip python3-setuptools && \
-	python3 -m pip install --no-cache-dir --quiet --upgrade setuptools pip wheel && \
+		python3.9 python3-pip python3-setuptools python3-virtualenv && \
 	yum clean all && \
 	rm -rf $HOME/.cache && \
 	rm -rf /var/cache/yum
+
+ENV VIRTUAL_ENV=/opt/venv
+RUN virtualenv -p /usr/bin/python3.9 $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN pip install --upgrade pip
 
 # Install dependencies: `oc`
 ARG OCP_CLI_VERSION=latest
@@ -32,7 +36,6 @@ RUN chmod +x /usr/local/bin/ocm
 ARG HELM_VERSION=v3.5.1
 ARG HELM_URL=https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
 RUN curl --silent ${HELM_URL} | tar xfz - -C /usr/local/bin --strip-components 1 linux-amd64/helm
-
 
 # Install dependencies: `operator-sdk`
 ARG OPERATOR_SDK_VERSION=v1.6.2
@@ -61,8 +64,8 @@ ENV USER_NAME=psap-ci-runner \
 COPY . ${HOME}/
 
 # Install Python requirements
-RUN python3 -m pip install --quiet --no-cache-dir -r ${HOME}/requirements.txt && \
-    python3 -m pip install --quiet --no-cache-dir -r ${HOME}/subprojects/wdm/requirements.txt
+RUN pip install --quiet --no-cache-dir -r ${HOME}/requirements.txt && \
+    pip install --quiet --no-cache-dir -r ${HOME}/subprojects/wdm/requirements.txt
 
 # Prepare the CI `run` entrypoint
 RUN echo -e '#!/usr/bin/env bash \n\
