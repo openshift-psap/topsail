@@ -80,12 +80,6 @@ Run the PSAP jh-at-scale Simple Notebook
   Should Not Match  ${output}  ERROR*
   Capture Page Screenshot
 
-
-Clean up the files and folders we created
-  [Tags]  Notebook  End Sequence
-  Add and Run JupyterLab Code Cell in Active Notebook  !rm -rf ~/*
-  Capture Page Screenshot
-
 Can Close Notebook when done
   [Tags]  Notebook  End Sequence
   Stop JupyterLab Notebook Server
