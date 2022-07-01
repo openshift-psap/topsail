@@ -41,6 +41,13 @@ create_cluster() {
                      --compute_nodes="$compute_nodes_count" \
                      --version="$OSD_VERSION" \
                      --region="$OSD_REGION"
+
+    if [[ "$cluster_role" == "sutest" && "$ENABLE_AUTOSCALER" ]]; then
+        MACHINEPOOL_NAME=default
+
+        ocm edit machinepool "$MACHINEPOOL_NAME" --cluster "$cluster_name" \
+            --enable-autoscaling --min-replicas=2 --max-replicas=150
+    fi
 }
 
 destroy_cluster() {
