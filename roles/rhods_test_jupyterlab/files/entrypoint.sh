@@ -13,11 +13,14 @@ do_oc_login() {
 
     touch "$KUBECONFIG"
     retries=5
+    tries=1
     while true; do
         # run this in a subshell to avoid printing the password in clear because of 'set -x'
         if bash -ec "PASSWORD=\$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml); oc login --server=\$K8S_API --username=\$USERNAME --password=\$PASSWORD --insecure-skip-tls-verify"; then
+            echo "$tries"> "$ARTIFACTS_DIR/oc_login.tries"
             break
         fi
+        tries=$(($tries + 1))
         retries=$(($retries - 1))
         [[ $retries == 0 ]] && return 1
         sleep 10
