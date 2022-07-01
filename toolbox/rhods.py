@@ -89,7 +89,7 @@ class RHODS:
             "rhods_test_jupyterlab_sut_cluster_kubeconfig": sut_cluster_kubeconfig,
             "rhods_test_jupyterlab_artifacts_collected": artifacts_collected,
             "rhods_test_jupyterlab_ods_ci_test_case": ods_ci_test_case,
-            "rhods_test_jupyterlab_ods_ci_exclude_tags": ods_ci_exclude_tags
+            "rhods_test_jupyterlab_ods_ci_exclude_tags": ods_ci_exclude_tags,
         }
 
         ARTIFACTS_COLLECTED_VALUES = ("all", "none", "no-image", "no-image-except-if-failed")

@@ -44,7 +44,7 @@ spec:
         - name: ARTIFACTS_DIR
           value: /mnt/shared-dir/ods-ci
         - name: RUN_ROBOT_EXCLUDE_TAGS
-          value: "{{ rhods_test_jupyterlab_artifacts_exclude_tags }}"
+          value: "{{ rhods_test_jupyterlab_ods_ci_exclude_tags }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir

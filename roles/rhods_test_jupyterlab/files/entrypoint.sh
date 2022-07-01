@@ -12,13 +12,26 @@ do_oc_login() {
     export USERNAME=$(yq e .TEST_USER.USERNAME /tmp/test-variables.yml)
 
     touch "$KUBECONFIG"
-    # run this in a subshell to avoid printing the password in clear because of 'set -x'
-    bash -ec "PASSWORD=\$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml); oc login --server=\$K8S_API --username=\$USERNAME --password=\$PASSWORD --insecure-skip-tls-verify"
+    retries=5
+    tries=1
+    while true; do
+        # run this in a subshell to avoid printing the password in clear because of 'set -x'
+        if bash -ec "PASSWORD=\$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml); oc login --server=\$K8S_API --username=\$USERNAME --password=\$PASSWORD --insecure-skip-tls-verify"; then
+            echo "$tries"> "$ARTIFACTS_DIR/oc_login.tries"
+            break
+        fi
+        tries=$(($tries + 1))
+        retries=$(($retries - 1))
+        [[ $retries == 0 ]] && return 1
+        sleep 10
+    done
 }
 
 if [[ -z "{ARTIFACTS_DIR:-}" ]]; then
     ARTIFACTS_DIR=/tmp/ods-ci
 fi
+
+mkdir -p "${ARTIFACTS_DIR}"
 
 trap "touch $ARTIFACTS_DIR/test.exit_code" EXIT
 
@@ -30,8 +43,6 @@ cp "/mnt/rhods-jupyterlab-entrypoint/$RUN_ROBOT_TEST_CASE" .
 # `run_robot_test.sh` initialization stops complaining when we provide
 # no KUBECONFIG.
 do_oc_login
-
-mkdir -p "${ARTIFACTS_DIR}"
 
 test_exit_code=0
 (bash -x ./run_robot_test.sh \

@@ -46,7 +46,6 @@ OCP_REGION=us-west-2
 OCP_MASTER_MACHINE_TYPE=m5.xlarge
 OCP_WORKER_MACHINE_TYPE=m5.xlarge
 
-OCP_WORKER_NODES=7
 OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
 
 # Shouldn't be the same than OCP worker nodes.
@@ -54,7 +53,8 @@ OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
 SUTEST_COMPUTE_MACHINE_TYPE=m5.2xlarge
 DRIVER_COMPUTE_MACHINE_TYPE=m5.2xlarge
 
-FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
+SUTEST_FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
+DRIVER_FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
 
 ocm_login() {
     export OCM_ENV
@@ -116,6 +116,14 @@ get_compute_node_count() {
     shift
     instance_type=$1
     shift
+
+    if [[ "$cluster_role" == "sutest" && "$SUTEST_FORCE_COMPUTE_NODES_COUNT" ]]; then
+        echo "$SUTEST_FORCE_COMPUTE_NODES_COUNT"
+        return
+    elif [[ "$cluster_role" == "driver" && "$DRIVER_FORCE_COMPUTE_NODES_COUNT" ]]; then
+        echo "$DRIVER_FORCE_COMPUTE_NODES_COUNT"
+        return
+    fi
 
     notebook_size_name=$(get_notebook_size "$cluster_role")
     size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$notebook_size_name' '$instance_type' '$ODS_CI_NB_USERS' >&2; echo \$?")

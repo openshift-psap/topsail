@@ -208,6 +208,7 @@
   retries: 60
   delay: 40
   until: not wait_rhods_test_job.stdout
+  failed_when: false
 
 # ---
 
@@ -218,24 +219,28 @@
     oc delete pvc --all -n {{ rhods_notebook_namespace }}
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  ignore_errors: yes
 
 - name: Get the status of the tester Pods
   shell:
     oc get pods -ljob-name=ods-ci
        -n {{ rhods_test_namespace }}
         > "{{ artifact_extra_logs_dir }}/tester_pods.status"
+  ignore_errors: yes
 
 - name: Get the status of the tester Job
   shell:
     oc get job/ods-ci
        -n {{ rhods_test_namespace }}
         > "{{ artifact_extra_logs_dir }}/tester_job.status"
+  ignore_errors: yes
 
 - name: Get the names of the tester_pods
   command:
     oc get pods -oname -ljob-name=ods-ci
        -n {{ rhods_test_namespace }}
   register: pod_names_cmd
+  ignore_errors: yes
 
 - name: Get the logs of the tester Pod
   shell: |
@@ -247,28 +252,28 @@
     done
 
   loop: "{{ pod_names_cmd.stdout_lines }}"
-  failed_when: false
+  ignore_errors: yes
 
 - name: Get the yaml of the tester Pods
   shell:
     oc get pods -ljob-name=ods-ci -oyaml
        -n {{ rhods_test_namespace }}
        > "{{ artifact_extra_logs_dir }}/tester_pods.yaml"
-  failed_when: false
+  ignore_errors: yes
 
 - name: Get the yaml of the tester Job
   shell:
     oc get job/ods-ci -oyaml
        -n {{ rhods_test_namespace }}
        > "{{ artifact_extra_logs_dir }}/tester_job.yaml"
-  failed_when: false
+  ignore_errors: yes
 
 - name: Get the events of the tester namespace
   shell:
     oc get ev -oyaml
        -n {{ rhods_test_namespace }}
        > "{{ artifact_extra_logs_dir }}/tester_events.yaml"
-  failed_when: false
+  ignore_errors: yes
 
 - name: Get the events of the notebook namespace
   environment:
@@ -277,17 +282,19 @@
     oc get ev -oyaml
        -n {{ rhods_notebook_namespace }}
        > "{{ artifact_extra_logs_dir }}/notebook_events.yaml"
-  failed_when: false
+  ignore_errors: yes
 
 - name: Get Minio Pod name
   command: oc get pod -lapp=minio -n minio -ojsonpath={.items[0].metadata.name}
   register: minio_podname_cmd
+  ignore_errors: yes
 
 - name: Export the data out of the S3 bucket
   command:
     oc -n minio -c mc exec "{{ minio_podname_cmd.stdout }}"
        -- bash -c 'mkdir -p /artifacts/to_export && mc --config-dir /tmp cp minio/mybucket/ /artifacts/to_export --recursive'
   when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
+  ignore_errors: yes
 
 - name: Extract the ODS-CI test artifacts from the Minio S3 container
   shell: |
@@ -297,6 +304,7 @@
        -- tar cvzf - -C /artifacts/to_export/ . \
        | tar xzf - -C "{{ artifact_extra_logs_dir }}"
   when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
+  ignore_errors: yes
 
 - name: Generate MatrixBenchmark files
   shell: |
@@ -306,6 +314,7 @@
     test={{ rhods_test_jupyterlab_ods_ci_test_case }}
     user_count={{ rhods_test_jupyterlab_user_count }}
     EOF
+  ignore_errors: yes
 
 - name: Show the artifacts directory
   debug: msg="The test artifacts have been stored in {{ artifact_extra_logs_dir }}"
@@ -314,19 +323,19 @@
   shell:
     set -o pipefail;
     cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep '^0$' | wc -l
-  failed_when: false
   register: success_count_cmd
+  ignore_errors: yes
 
 - name: Count failed tests
   shell:
     set -o pipefail;
     cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep -v '^0$' | wc -l
-  failed_when: false
+  ignore_errors: yes
 
 - name: Show failed tests
   shell:
     grep  -v '^0$' "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code
-  failed_when: false
+  ignore_errors: yes
   register: failed_tests_cmd
 
 - name: Save the success count and failed tests
@@ -335,7 +344,7 @@
          > "{{ artifact_extra_logs_dir }}/success_count"
     echo "{{ failed_tests_cmd.stdout }}" \
          > "{{ artifact_extra_logs_dir }}/failed_tests"
-  failed_when: false
+  ignore_errors: yes
 
 - name: Test if the RHODS test job crashed
   command:
