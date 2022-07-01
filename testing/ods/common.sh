@@ -48,6 +48,8 @@ OCP_WORKER_MACHINE_TYPE=m5.xlarge
 
 OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
 
+ENABLE_AUTOSCALER=0
+
 # Shouldn't be the same than OCP worker nodes.
 
 SUTEST_COMPUTE_MACHINE_TYPE=m5.2xlarge
@@ -120,8 +122,13 @@ get_compute_node_count() {
     if [[ "$cluster_role" == "sutest" && "$SUTEST_FORCE_COMPUTE_NODES_COUNT" ]]; then
         echo "$SUTEST_FORCE_COMPUTE_NODES_COUNT"
         return
+
     elif [[ "$cluster_role" == "driver" && "$DRIVER_FORCE_COMPUTE_NODES_COUNT" ]]; then
         echo "$DRIVER_FORCE_COMPUTE_NODES_COUNT"
+        return
+
+    elif [[ "$cluster_role" == "sutest" && "$ENABLE_AUTOSCALER" ]]; then
+        echo 2
         return
     fi
 

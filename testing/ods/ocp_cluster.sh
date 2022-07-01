@@ -97,7 +97,6 @@ create_cluster() {
     cp "${install_dir}/auth/kubeadmin-password" \
        "${SHARED_DIR}/${cluster_role}_kubeadmin-password"
 
-
     export KUBECONFIG="${SHARED_DIR}/${cluster_role}_kubeconfig"
 
     cp "${install_dir}/auth/kubeconfig" \
@@ -109,6 +108,14 @@ create_cluster() {
     compute_nodes_count=$(get_compute_node_count "$cluster_role" ocp "$compute_nodes_type")
 
     ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count"
+
+    if [[ "$cluster_role" == "sutest" && "$ENABLE_AUTOSCALER" ]]; then
+        machineset_name=$(oc get machinesets -n openshift-machine-api -oname | grep $(echo "$SUTEST_COMPUTE_MACHINE_TYPE" | sed 's/\./-/g' ) | cut -d/ -f2)
+        oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
+        cat testing/ods/autoscaling/machineautoscaler.yaml \
+            | sed "s/MACHINESET_NAME/$machineset_name/" \
+            | oc apply -f-
+    fi
 
     save_install_artifacts success
 }
