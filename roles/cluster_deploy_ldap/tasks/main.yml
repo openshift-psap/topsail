@@ -5,32 +5,36 @@
 
 - name: Ensure that the secret properties file exists
   stat:
-    path: "{{ rhods_deploy_ldap_secret_properties }}"
+    path: "{{ cluster_deploy_ldap_secret_properties }}"
 
 - name: Ensure that the username prefix is set
   fail: msg="username prefix isn't set"
-  when: not rhods_deploy_ldap_username_prefix
+  when: not cluster_deploy_ldap_username_prefix
 
 - name: Ensure that the username count is set
   fail: msg="username count isn't set"
-  when: rhods_deploy_ldap_username_count | int < 0
+  when: cluster_deploy_ldap_username_count | int < 0
 
 - name: Ensure that the LDAP IDP name is set
   fail: msg="LDAP IDP name isn't set"
-  when: not rhods_deploy_ldap_idp_name
+  when: not cluster_deploy_ldap_idp_name
 
 - name: Ensure that OCM is properly connected
-  when: rhods_deploy_ldap_use_ocm | length > 0
-  command: ocm describe cluster "{{ rhods_deploy_ldap_use_ocm }}"
+  when: cluster_deploy_ldap_use_ocm | length > 0
+  command: ocm describe cluster "{{ cluster_deploy_ldap_use_ocm }}"
+
+- name: Ensure that ROSA is properly connected
+  when: cluster_deploy_ldap_use_rosa | length > 0
+  command: rosa describe cluster --cluster="{{ cluster_deploy_ldap_use_rosa }}"
 
 - name: Prepare python command 1
   set_fact:
     py_secret_generator_cmd: >-
-      python3 "{{ rhods_deploy_ldap_secret_generator }}" \
-              --secret_props "{{ rhods_deploy_ldap_secret_properties }}" \
-              --prefix "{{ rhods_deploy_ldap_username_prefix }}" \
-              --nbusers "{{ rhods_deploy_ldap_username_count }}" \
-              --admin_user "{{ rhods_deploy_ldap_admin_user }}"
+      python3 "{{ cluster_deploy_ldap_secret_generator }}" \
+              --secret_props "{{ cluster_deploy_ldap_secret_properties }}" \
+              --prefix "{{ cluster_deploy_ldap_username_prefix }}" \
+              --nbusers "{{ cluster_deploy_ldap_username_count }}" \
+              --admin_user "{{ cluster_deploy_ldap_admin_user }}"
 
 - name: Ensure that the Python command works in test mode
   shell: |
@@ -46,7 +50,7 @@
   shell:
     set -o pipefail;
     {{ py_secret_generator }}
-    test "$rhods_ldap_adminuser" == "admin"
+    test "$cluster_ldap_adminuser" == "admin"
 
 - name: Create the LDAP namespace
   shell:
@@ -57,43 +61,59 @@
   shell:
     set -o pipefail;
     {{ py_secret_generator }}
-    cat "{{ rhods_deploy_ldap_secret_template }}" | envsubst | oc apply -f-
+    cat "{{ cluster_deploy_ldap_secret_template }}" | envsubst | oc apply -f-
 
 - name: Apply the LDAP resources
-  command: oc apply -f "{{ rhods_deploy_ldap_resources }}"
+  command: oc apply -f "{{ cluster_deploy_ldap_resources }}"
 
 - name: Apply the Oauth template
   template:
-    src: "{{ rhods_deploy_ldap_oauth }}"
+    src: "{{ cluster_deploy_ldap_oauth }}"
     dest: "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
     mode: 0400
 
+- name: Get LDAP URL
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
+        -ojsonpath={.spec.identityProviders[0].ldap.url}
+  register: ldap_url_cmd
+
+- name: Get LDAP Bind DN
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
+       -ojsonpath={.spec.identityProviders[0].ldap.bindDN}
+  register: ldap_bindDN_cmd
+
 - name: Deploy on OCP
-  when: not rhods_deploy_ldap_use_ocm
+  when: not cluster_deploy_ldap_use_ocm
   block:
   - name: Create the LDAP binding secret
     shell:
       set -o pipefail;
       {{ py_secret_generator }}
-      cat "{{ rhods_deploy_ldap_bind_secret_template }}" | envsubst | oc apply -f-
+      cat "{{ cluster_deploy_ldap_bind_secret_template }}" | envsubst | oc apply -f-
   - name: Create the LDAP Oauth resource
     command: oc replace -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
 
-- name: Deploy on OSD
-  when: rhods_deploy_ldap_use_ocm | length > 0
+- name: Deploy on ROSA
+  when: cluster_deploy_ldap_use_rosa | length > 0
   block:
-  - name: Get LDAP URL
-    command:
-      oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
-         -ojsonpath={.spec.identityProviders[0].ldap.url}
-    register: ldap_url_cmd
+  - name: Create the IDP resource
+    shell: |
+      set -o pipefail;
+      {{ py_secret_generator }}
+      rosa create idp \
+          --type ldap \
+          --cluster "{{ cluster_deploy_ldap_use_rosa }}" \
+          --name "{{ cluster_deploy_ldap_idp_name }}" \
+          --url "{{ ldap_url_cmd.stdout }}" \
+          --bind-dn "{{ ldap_bindDN_cmd.stdout }}" \
+          --bind-password $(echo "$cluster_ldap_adminpassword") \
+          --insecure
 
-  - name: Get LDAP Bind DN
-    command:
-      oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
-         -ojsonpath={.spec.identityProviders[0].ldap.bindDN}
-    register: ldap_bindDN_cmd
-
+- name: Deploy on OCM
+  when: cluster_deploy_ldap_use_ocm | length > 0
+  block:
   - name: Create the IDP resource
     when: false # keeping it disabled until https://github.com/openshift-online/ocm-cli/issues/385 is resolved
     shell: |
@@ -101,18 +121,18 @@
       {{ py_secret_generator }}
       ocm create idp \
           --type ldap \
-          --cluster "{{ rhods_deploy_ldap_use_ocm }}" \
-          --name "{{ rhods_deploy_ldap_idp_name }}" \
+          --cluster "{{ cluster_deploy_ldap_use_ocm }}" \
+          --name "{{ cluster_deploy_ldap_idp_name }}" \
           --url "{{ ldap_url_cmd.stdout }}" \
           --bind-dn "{{ ldap_bindDN_cmd.stdout }}" \
-          --bind-password $(echo "$rhods_ldap_adminpassword")
+          --bind-password $(echo "$cluster_ldap_adminpassword")
           # need to add --insecure here, when available in `ocm`.
 
   # Workaround until `ocm` supports the --insecure flag
 
   - name: Get the cluster ID
     shell:
-      ocm describe cluster "{{ rhods_deploy_ldap_use_ocm }}" --json | jq .id -r
+      ocm describe cluster "{{ cluster_deploy_ldap_use_ocm }}" --json | jq .id -r
     register: cluster_id_cmd
 
   - name: Create the IDP resource manually
@@ -120,9 +140,9 @@
       set -o pipefail;
       {{ py_secret_generator }}
 
-      export rhods_deploy_ldap_idp_name="{{ rhods_deploy_ldap_idp_name }}"
+      export cluster_deploy_ldap_idp_name="{{ cluster_deploy_ldap_idp_name }}"
       url="https://api.openshift.com/api/clusters_mgmt/v1/clusters/{{ cluster_id_cmd.stdout }}/identity_providers";
-      cat "{{ rhods_deploy_ldap_ocm_idp }}" | envsubst > /tmp/idp.json
+      cat "{{ cluster_deploy_ldap_ocm_idp }}" | envsubst > /tmp/idp.json
       ocm post "$url" --body /tmp/idp.json
 
 - name: Get the API URL
@@ -130,18 +150,18 @@
   register: api_url_cmd
 
 - name: Create the temporary kubeconfig file
-  when: rhods_deploy_ldap_wait | bool
+  when: cluster_deploy_ldap_wait | bool
   ansible.builtin.file:
     path: /tmp/user_kubeconfig
     state: touch
 
 - name: Wait for the authentication to work
-  when: rhods_deploy_ldap_wait | bool
+  when: cluster_deploy_ldap_wait | bool
   shell: |
     {{ py_secret_generator }}
     oc login "{{ api_url_cmd.stdout }}" \
-             --username={{ rhods_deploy_ldap_username_prefix }}0 \
-             --password=$rhods_ldap_password \
+             --username={{ cluster_deploy_ldap_username_prefix }}0 \
+             --password=$cluster_ldap_password \
              --insecure-skip-tls-verify
   environment:
     KUBECONFIG: /tmp/user_kubeconfig
@@ -151,7 +171,7 @@
   until: oc_login.rc == 0
 
 - name: Delete the temporary kubeconfig file
-  when: rhods_deploy_ldap_wait | bool
+  when: cluster_deploy_ldap_wait | bool
   ansible.builtin.file:
     path: /tmp/user_kubeconfig
     state: absent

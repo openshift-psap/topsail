@@ -15,9 +15,9 @@
       ]
     },
     "bind_dn": "cn=admin,dc=example,dc=org",
-    "bind_password": "$rhods_ldap_adminpassword"
+    "bind_password": "$cluster_ldap_adminpassword"
   },
   "mapping_method": "claim",
-  "name": "$rhods_deploy_ldap_idp_name",
+  "name": "$cluster_deploy_ldap_idp_name",
   "type": "LDAPIdentityProvider"
 }
