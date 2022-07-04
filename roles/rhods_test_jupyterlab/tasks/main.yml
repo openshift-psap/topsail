@@ -244,12 +244,10 @@
 
 - name: Get the logs of the tester Pod
   shell: |
-    for container in artifacts-exporter ods-ci; do
-      oc logs {{ item }} \
-         -c "$container" \
+    oc logs {{ item }} \
+         -c ods-ci \
          -n {{ rhods_test_namespace }} \
-         > "{{ artifact_extra_logs_dir }}/tester_pod__$(basename "{{ item }}")__${container}.log";
-    done
+         > "{{ artifact_extra_logs_dir }}/tester_pod__$(basename "{{ item }}").log";
 
   loop: "{{ pod_names_cmd.stdout_lines }}"
   ignore_errors: yes
