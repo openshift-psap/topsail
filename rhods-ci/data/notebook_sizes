@@ -1,0 +1,5 @@
+# name, cpu (float), memory (float, in GB)
+test_pod, cpu=0.2, memory=0.75
+default,  cpu=1,   memory=4
+small,    cpu=1,   memory=8
+medium,   cpu=3,   memory=24
