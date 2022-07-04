@@ -333,18 +333,19 @@
   ignore_errors: yes
 
 - name: Show failed tests
-  shell:
-    grep  -v '^0$' "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code
+  shell: |
+    for f in "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.log; do
+      echo -e "\n===\n$f\n---"
+      egrep 'FAIL|WARN' $f | grep -v "^| FAIL|"
+      echo "--> $(cat $(dirname "$f")/test.exit_code)"
+      echo "==="
+    done > "{{ artifact_extra_logs_dir }}"/failed_tests
   ignore_errors: yes
-  register: failed_tests_cmd
 
 - name: Save the success count and failed tests
-  shell: |
-    echo "{{ success_count_cmd.stdout }}/{{ rhods_test_jupyterlab_user_count }}" \
+  shell:
+    echo "{{ success_count_cmd.stdout }}/{{ rhods_test_jupyterlab_user_count }}"
          > "{{ artifact_extra_logs_dir }}/success_count"
-    echo "{{ failed_tests_cmd.stdout }}" \
-         > "{{ artifact_extra_logs_dir }}/failed_tests"
-  ignore_errors: yes
 
 - name: Test if the RHODS test job crashed
   command:
