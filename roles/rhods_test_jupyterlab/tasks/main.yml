@@ -153,7 +153,7 @@
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
        mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force;
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-       rm -rf /artifacts/to_export
+       rm -rf /artifacts/to_export  > /dev/null
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
        mc --config-dir /tmp cp /etc/os-release minio/mybucket; # without it, cp may fail if the bucket is empty
   failed_when: false
@@ -166,8 +166,8 @@
        -n {{ rhods_test_namespace }}
 
 - name: Delete the events of the tester namespace
-  command:
-    oc delete ev -n {{ rhods_test_namespace }} --all
+  shell:
+    oc delete ev -n {{ rhods_test_namespace }} --all > /dev/null
   failed_when: false
 
 - name: Delete the events, pods and PVC of the notebook namespace
