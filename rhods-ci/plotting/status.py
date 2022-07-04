@@ -12,9 +12,18 @@ from . import timeline_data
 def register():
     StatusDistribution("Test status distribution")
     ExecutionDistribution("Execution time distribution")
+    ExecutionDistribution("Execution time distribution", show_progress=True)
+    ExecutionDistribution("Execution time distribution", with_failed=True)
 
 class ExecutionDistribution():
-    def __init__(self, name):
+    def __init__(self, name, show_progress=False, with_failed=False):
+        self.show_progress = show_progress
+        self.with_failed = with_failed
+        if self.with_failed:
+            name += "- with_failed"
+        if self.show_progress:
+            name += "- show_progress"
+
         self.name = name
         self.id_name = name
 
@@ -34,8 +43,8 @@ class ExecutionDistribution():
         for entry in common.Matrix.all_records(settings, setting_lists):
             break
 
-        show_progress = cfg.get("show_progress", False)
-        with_failed = cfg.get("with_failed", False)
+        show_progress = self.show_progress or cfg.get("show_progress", False)
+        with_failed = self.with_failed or cfg.get("with_failed", False)
 
         if show_progress:
             with_failed = True
