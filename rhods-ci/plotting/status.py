@@ -20,9 +20,9 @@ class ExecutionDistribution():
         self.show_progress = show_progress
         self.with_failed = with_failed
         if self.with_failed:
-            name += "- with_failed"
+            name += " - with_failed"
         if self.show_progress:
-            name += "- show_progress"
+            name += " - show_progress"
 
         self.name = name
         self.id_name = name
