@@ -102,8 +102,12 @@ class MappingDistribution():
         user_count = 0
         data = []
         line_sort_name = ""
+        df = None
         for entry in common.Matrix.all_records(settings, setting_lists):
             df = pd.DataFrame(generate_data(entry, cfg, self.is_notebook))
+
+        if df.empty:
+            return None, "Nothing to plot (no data)"
 
         fig = px.bar(df, x="NodeName", y="Count", color="UserIndex",
                      title=f"Distribution of the {'Notebook' if self.is_notebook else 'Test'} Pods on the nodes")
