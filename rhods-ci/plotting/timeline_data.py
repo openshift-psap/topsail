@@ -129,6 +129,7 @@ def generate(entry, cfg):
                     Opacity=0.9,
                     LineWidth=50,
                     LineSortIndex=kwargs["Finish"],
+                    Status=status,
                 )
 
                 defaults["Text"] = get_text(LegendName,
