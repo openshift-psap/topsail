@@ -29,6 +29,7 @@ prepare_deploy_cluster_subproject() {
 
 create_cluster() {
     cluster_role=$1
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="ocp_${cluster_role}_"
 
     # ---
 
@@ -113,6 +114,8 @@ create_cluster() {
 
 destroy_cluster() {
     cluster_role=$1
+
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="ocp_${cluster_role}_"
 
     destroy_dir="/tmp/ocp_${cluster_role}_destroy"
     mkdir "$destroy_dir"
