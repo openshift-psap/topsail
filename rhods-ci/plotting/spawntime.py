@@ -34,12 +34,16 @@ class SpawnTime():
             user_count, data_timeline, line_sort_name = timeline_data.generate(entry, cfg)
 
         data = []
+
+        keep_failed = cfg.get("keep_failed", False)
+
         for line in data_timeline:
             if line["LegendGroup"] != "ODS-CI": continue
 
             hide = cfg.get("hide", None)
             if isinstance(hide, int):
                 if f"User #{hide:2d}" == line["LineName"]: continue
+
             elif isinstance(hide, str):
                 skip = False
                 for hide_idx in hide.split(","):
@@ -48,13 +52,23 @@ class SpawnTime():
                 if skip: continue
 
             line_data = line.copy()
-            line_data["Length"] = (line_data["Finish"] - line_data["Start"]).total_seconds() / 60
+            if keep_failed or line_data["Status"] == "PASS":
+                line_data["Length"] = (line_data["Finish"] - line_data["Start"]).total_seconds()
+            else:
+                line_data["Length"] = 0
+
             line_data["Test step"] = line_data["LegendName"]
+
+            failures = entry.results.ods_ci_user_test_status[line_data["LineName"]]
+
+            if failures:
+                line_data["LineName"] = f"<b>{line_data['LineName']}</b>"
+
             data.append(line_data)
 
         df = pd.DataFrame(data)
         fig = px.area(df, y="LineName", x="Length", color="Test step")
-        fig.update_layout(xaxis_title="Timeline (in minutes)")
+        fig.update_layout(xaxis_title="Timeline (in seconds)")
         fig.update_layout(yaxis_title="")
 
         return fig, ""
