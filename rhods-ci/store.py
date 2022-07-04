@@ -172,6 +172,9 @@ def _parse_pod_times(filename):
 
     return pod_times
 
+def _parse_ods_ci_exit_code(filename):
+    with open(filename) as f:
+        return int(f.read())
 
 def _parse_ods_ci_output_xml(filename):
     ods_ci_times = {}
@@ -219,27 +222,38 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     _parse_job(results, dirname / "tester_job.yaml")
 
+    print("_parse_node_info")
     results.nodes_info = _parse_node_info(list(dirname.parent.glob("*__sutest_rhods__capture_state"))[0] / "nodes.yaml")
+    print("_parse_pod_times (tester)")
     results.pod_times = _parse_pod_times(dirname / "tester_pods.yaml")
     results.event_times = defaultdict(types.SimpleNamespace)
     results.notebook_hostnames = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
 
+    print("_parse_pod_events (notebook)")
     results.event_times |= _parse_pod_event_times(dirname / "notebook_events.yaml", "rhods-notebooks", notebook_hostnames)
+    print("_parse_pod_events (tester)")
     results.event_times |= _parse_pod_event_times(dirname / "tester_events.yaml", "loadtest", testpod_hostnames)
 
     results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci")]
     results.notebook_pods = [k for k in results.event_times.keys() if k.startswith("jupyterhub-nb")]
-
+    print("_extract_metrics")
     results.metrics = _extract_metrics(dirname)
 
     results.ods_ci_output = {}
+    results.ods_ci_exit_code = {}
+    results.ods_ci_user_test_status = {}
+    print("_parse_ods_ci_output_xml")
     for test_pod in results.test_pods:
         ods_ci_dirname = test_pod.rpartition("-")[0]
-        output_file = dirname / "ods-ci" / ods_ci_dirname / "output.xml"
-        if not output_file.is_file(): continue
-        results.ods_ci_output[test_pod] = _parse_ods_ci_output_xml(output_file)
+        output_dir = dirname / "ods-ci" / ods_ci_dirname
 
+        results.ods_ci_output[test_pod] = _parse_ods_ci_output_xml(output_dir / "output.xml")
+        results.ods_ci_exit_code[test_pod] = _parse_ods_ci_exit_code(output_dir / "test.exit_code")
+
+        user_idx = int(test_pod.split("-")[-2])
+        results.ods_ci_user_test_status[f"User #{int(user_idx):2d}"] = results.ods_ci_exit_code[test_pod]
+    print("done")
     store.add_to_matrix(import_settings, None, results, None)
 
 NOTEBOOK_REQUESTS = dict(
@@ -355,7 +369,6 @@ def _generate_timeline_results(entry, user_count, instance_count=None):
     results.test_pods = []
     results.job_creation_time = datetime.datetime.now()
     results.job_completion_time = datetime.datetime.now() + datetime.timedelta(minutes=5)
-
 
     times = _generate_pod_event_times(user_count,
                                       instance_count,
