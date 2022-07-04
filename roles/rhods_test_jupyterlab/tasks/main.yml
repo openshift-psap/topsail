@@ -301,7 +301,7 @@
     set -o pipefail
 
     oc -n minio -c ubi8 exec "{{ minio_podname_cmd.stdout }}" \
-       -- tar cvzf - -C /artifacts/to_export/ . \
+       -- tar czf - -C /artifacts/to_export/ . \
        | tar xzf - -C "{{ artifact_extra_logs_dir }}"
   when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
   ignore_errors: yes
