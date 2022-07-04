@@ -74,6 +74,8 @@ class MappingTimeline():
         line_sort_name = ""
         for entry in common.Matrix.all_records(settings, setting_lists):
             df = pd.DataFrame(generate_data(entry, cfg, self.is_notebook))
+        if df.empty:
+            return None, "Not data available ..."
 
         fig = px.timeline(df, x_start="PodStart", x_end="PodFinish", y="UserIndex", color="NodeIndex")
         fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
