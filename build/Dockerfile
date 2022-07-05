@@ -80,6 +80,12 @@ exec ${HOME}/testing/run "$@" \n\
 # Ensure directory permissions are properly set
 RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R
 
+# This should run after all the `pip` commands.  It is necessary so
+# that we can `pip install` from inside the image.
+RUN chgrp -R 0 "${VIRTUAL_ENV}" \
+ && chmod -R g=u "${VIRTUAL_ENV}"
+
+
 WORKDIR ${HOME}
 
 ENTRYPOINT ["bash"]
