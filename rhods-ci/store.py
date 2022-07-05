@@ -19,6 +19,10 @@ K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 ROBOT_TIME_FMT = "%Y%m%d %H:%M:%S.%f"
 
 def _rewrite_settings(settings_dict):
+    if "user-count" in settings_dict:
+        settings_dict["user_count"] = settings_dict["user-count"]
+        del settings_dict["user-count"]
+
     return settings_dict
 
 def _parse_job(results, filename):
