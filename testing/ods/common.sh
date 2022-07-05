@@ -26,7 +26,7 @@ ODS_CI_TAG="latest"
 
 ODS_CI_NB_USERS=15
 ODS_CI_USER_PREFIX=testuser
-ODS_NOTEBOOK_SIZE=small # needs to match what the ROBOT test-case requests
+ODS_NOTEBOOK_SIZE=default # needs to match what the ROBOT test-case requests
 ODS_NOTEBOOK_SIZE_TEST_POD="test_pod" # shouldn't change
 
 if [[ "$OSD_USE_ODS_CATALOG" == "0" ]]; then
