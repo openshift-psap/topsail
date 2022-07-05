@@ -11,7 +11,8 @@ from . import completion
 from . import report
 from . import mapping
 from . import spawntime
-from . import  status
+from . import status
+from . import launch_time
 
 def register():
     simple_timeline.register()
@@ -22,3 +23,4 @@ def register():
     mapping.register()
     spawntime.register()
     status.register()
+    launch_time.register()

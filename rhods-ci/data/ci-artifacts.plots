@@ -26,3 +26,5 @@ Test status distribution
 Execution time distribution
 Execution time distribution - show_progress
 Execution time distribution - with_failed
+Launch time distribution
+Test successes
