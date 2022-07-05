@@ -1,12 +1,31 @@
+Simple Timeline
 Timeline
-Notebook spawn time
-Pod/Node distribution: Notebook
-Pod/Node distribution: Test Pods
-Pod/Node timeline: Notebook
+Prom: sutest cluster memory capacity
+Prom: sutest cluster CPU capacity
+Prom: CPU usage namespace=rhods-notebooks
+Prom: memory usage namespace=rhods-notebooks
+Prom: CPU usage namespace=openldap, pod=openldap.*
+Prom: memory usage namespace=openldap, pod=openldap.*
+Prom: CPU usage namespace=redhat-ods-applications, pod=rhods-dashboard.*
+Prom: memory usage namespace=redhat-ods-applications, pod=rhods-dashboard.*
+Prom: CPU usage namespace=openshift-authentication, pod=oauth-openshift.*
+Prom: memory usage namespace=openshift-authentication, pod=oauth-openshift.*
+Prom: OAuth openshift_auth_basic_password_count openshift_auth_basic_password_count_result
+Prom: OAuth openshift_auth_form_password_count openshift_auth_form_password_count_result
+Prom: OAuth openshift_auth_password_total
+Prom: driver cluster memory capacity
+Prom: driver cluster CPU capacity
+Prom: CPU usage namespace=loadtest
+Prom: memory usage namespace=loadtest
+Price to completion
+Execution overview
+Price overview
 Pod/Node timeline: Test Pods
+Pod/Node timeline: Notebook
+Pod/Node distribution: Test Pods
+Pod/Node distribution: Notebook
+Notebook spawn time
+Test status distribution
+Execution time distribution
 Execution time distribution - show_progress
 Execution time distribution - with_failed
-Execution time distribution
-Prom: Test Pod memory usage
-Prom: Test Pod CPU usage
-Prom: Notebook Pod CPU usage

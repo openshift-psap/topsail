@@ -12,26 +12,14 @@ import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
+from .plotting import prom as rhods_plotting_prom
+
 K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 ROBOT_TIME_FMT = "%Y%m%d %H:%M:%S.%f"
 
 def _rewrite_settings(settings_dict):
     return settings_dict
-
-
-SUTEST_METRICS = [
-    "pod:container_cpu_usage:sum",
-    "rate(container_cpu_usage_seconds_total[60y])",
-]
-
-DRIVER_METRICS = [
-    "pod:container_cpu_usage:sum",
-    "container_memory_rss",
-]
-
-RHODS_METRICS = [
-]
 
 def _parse_job(results, filename):
 
@@ -197,9 +185,9 @@ def _parse_ods_ci_output_xml(filename):
 
 def _extract_metrics(dirname):
     METRICS = {
-        "sutest": ("*__sutest_cluster__dump_prometheus_db/prometheus.t*", SUTEST_METRICS),
-        "driver": ("*__driver_cluster__dump_prometheus_db/prometheus.t*", DRIVER_METRICS),
-        "rhods":  ("*__sutest_rhods__dump_prometheus_db/prometheus.t*", RHODS_METRICS),
+        "sutest": ("*__sutest_cluster__dump_prometheus_db/prometheus.t*", rhods_plotting_prom.get_sutest_metrics()),
+        "driver": ("*__driver_cluster__dump_prometheus_db/prometheus.t*", rhods_plotting_prom.get_driver_metrics()),
+        "rhods":  ("*__sutest_rhods__dump_prometheus_db/prometheus.t*", rhods_plotting_prom.get_rhods_metrics()),
     }
 
     results_metrics = {}
