@@ -80,6 +80,8 @@ create_cluster() {
         fi
 
         [[ "$status" != "success" ]] && exit 1
+
+        return 0
     }
 
     # ensure that the cluster's 'metadata.json' is copied to the SHARED_DIR even in case of errors
