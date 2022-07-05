@@ -17,9 +17,6 @@ Prom: driver cluster memory capacity
 Prom: driver cluster CPU capacity
 Prom: CPU usage namespace=loadtest
 Prom: memory usage namespace=loadtest
-Price to completion
-Execution overview
-Price overview
 Pod/Node timeline: Test Pods
 Pod/Node timeline: Notebook
 Pod/Node distribution: Test Pods
