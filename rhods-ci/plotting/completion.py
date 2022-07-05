@@ -34,6 +34,9 @@ class Completion():
         if "notebook_size" in ordered_vars:
             return {}, "Please select a notebook size"
 
+        if "notebook_size" not in settings:
+            return {}, "Cannot plot, 'notebook_size' setting not available."
+
         notebook_size = settings["notebook_size"]
         del settings["notebook_size"]
 
