@@ -31,6 +31,22 @@
 
 # ---
 
+- name: Store the OpenShift nodes
+  shell:
+    oc get nodes
+       > {{ artifact_extra_logs_dir }}/nodes.status;
+    oc get nodes -oyaml
+       > {{ artifact_extra_logs_dir }}/nodes.yaml;
+
+- name: Store the OpenShift machines
+  shell:
+    oc get machines -n openshift-machine-api
+       > {{ artifact_extra_logs_dir }}/machines.status;
+    oc get machines -n openshift-machine-api -oyaml
+       > {{ artifact_extra_logs_dir }}/machines.yaml;
+
+# ---
+
 - name: Fetch ci-artifact version from Git
   command:
     git describe HEAD --long --always

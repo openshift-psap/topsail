@@ -13,6 +13,8 @@ source "$THIS_DIR/common.sh"
 create_cluster() {
     cluster_role=$1
 
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="osd_${cluster_role}_"
+
     cluster_name="${CLUSTER_NAME_PREFIX}"
     if [[ "${PULL_NUMBER:-}" ]]; then
         cluster_name="${cluster_name}${PULL_NUMBER}-$(date +%Hh%M)"
@@ -43,6 +45,8 @@ create_cluster() {
 
 destroy_cluster() {
     cluster_role=$1
+
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="osd_${cluster_role}_"
 
     cluster_name=$(get_osd_cluster_name "$cluster_role")
     if [[ -z "$cluster_name" ]]; then

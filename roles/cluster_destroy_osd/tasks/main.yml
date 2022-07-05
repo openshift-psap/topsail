@@ -6,6 +6,13 @@
 - name: Check ocm whoami
   command: ocm whoami
 
+- name: Set the worker node count to 2
+  command:
+    ocm edit machinepool
+             {{ cluster_create_osd_machinepool_name }}
+             --cluster={{ cluster_create_osd_cluster_name }}
+             --replicas=2
+
 - name: Get the cluster ID
   shell:
     set -o pipefail;

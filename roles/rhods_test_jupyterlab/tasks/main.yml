@@ -153,7 +153,7 @@
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
        mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force;
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-       rm -rf /artifacts/to_export
+       rm -rf /artifacts/to_export  > /dev/null
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
        mc --config-dir /tmp cp /etc/os-release minio/mybucket; # without it, cp may fail if the bucket is empty
   failed_when: false
@@ -166,8 +166,8 @@
        -n {{ rhods_test_namespace }}
 
 - name: Delete the events of the tester namespace
-  command:
-    oc delete ev -n {{ rhods_test_namespace }} --all
+  shell:
+    oc delete ev -n {{ rhods_test_namespace }} --all > /dev/null
   failed_when: false
 
 - name: Delete the events, pods and PVC of the notebook namespace
@@ -301,7 +301,7 @@
     set -o pipefail
 
     oc -n minio -c ubi8 exec "{{ minio_podname_cmd.stdout }}" \
-       -- tar cvzf - -C /artifacts/to_export/ . \
+       -- tar czf - -C /artifacts/to_export/ . \
        | tar xzf - -C "{{ artifact_extra_logs_dir }}"
   when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
   ignore_errors: yes
@@ -311,8 +311,9 @@
     (test -z "$(oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_test_namespace }})" && echo 0 || echo 1) >  "{{ artifact_extra_logs_dir }}/exit_code"
     cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
     date=$(date +%Y-%m-%d_%H:%M:%S)
-    test={{ rhods_test_jupyterlab_ods_ci_test_case }}
-    user_count={{ rhods_test_jupyterlab_user_count }}
+    test-case={{ rhods_test_jupyterlab_ods_ci_test_case }}
+    exclude-tags={{ rhods_test_jupyterlab_ods_ci_exclude_tags }}
+    user-count={{ rhods_test_jupyterlab_user_count }}
     EOF
   ignore_errors: yes
 
@@ -333,18 +334,19 @@
   ignore_errors: yes
 
 - name: Show failed tests
-  shell:
-    grep  -v '^0$' "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code
+  shell: |
+    for f in "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.log; do
+      echo -e "\n===\n$f\n---"
+      egrep 'FAIL|WARN' $f | grep -v "^| FAIL|"
+      echo "--> $(cat $(dirname "$f")/test.exit_code)"
+      echo "==="
+    done > "{{ artifact_extra_logs_dir }}"/failed_tests
   ignore_errors: yes
-  register: failed_tests_cmd
 
 - name: Save the success count and failed tests
-  shell: |
-    echo "{{ success_count_cmd.stdout }}/{{ rhods_test_jupyterlab_user_count }}" \
+  shell:
+    echo "{{ success_count_cmd.stdout }}/{{ rhods_test_jupyterlab_user_count }}"
          > "{{ artifact_extra_logs_dir }}/success_count"
-    echo "{{ failed_tests_cmd.stdout }}" \
-         > "{{ artifact_extra_logs_dir }}/failed_tests"
-  ignore_errors: yes
 
 - name: Test if the RHODS test job crashed
   command:

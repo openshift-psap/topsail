@@ -29,6 +29,7 @@ prepare_deploy_cluster_subproject() {
 
 create_cluster() {
     cluster_role=$1
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="ocp_${cluster_role}_"
 
     # ---
 
@@ -65,6 +66,8 @@ create_cluster() {
     bash -ce 'sed "s|<SSH-KEY>|$(cat "$PSAP_ODS_SECRET_PATH/ssh-publickey")|" -i "'$install_dir_config'"'
 
     save_install_artifacts() {
+        status=$1
+
         cp "${install_dir}/metadata.json" \
            "${SHARED_DIR}/ocp_${cluster_role}_metadata.json" || echo "metadata.json not generated, ignoring."
 
@@ -75,10 +78,12 @@ create_cluster() {
 
             cp "$install_config" "${ARTIFACT_DIR}/ocp_${cluster_role}_install-config.yaml"
         fi
+
+        [[ "$status" != "success" ]] && exit 1
     }
 
     # ensure that the cluster's 'metadata.json' is copied to the SHARED_DIR even in case of errors
-    trap save_install_artifacts EXIT SIGTERM SIGINT
+    trap "save_install_artifacts error" ERR SIGTERM SIGINT
 
     make cluster \
          OCP_VERSION="${OCP_VERSION}" \
@@ -103,12 +108,14 @@ create_cluster() {
 
     ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count"
 
-    # save_install_artifacts executed here
+    save_install_artifacts success
 }
 
 
 destroy_cluster() {
     cluster_role=$1
+
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="ocp_${cluster_role}_"
 
     destroy_dir="/tmp/ocp_${cluster_role}_destroy"
     mkdir "$destroy_dir"
