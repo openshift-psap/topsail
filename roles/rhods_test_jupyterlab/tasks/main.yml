@@ -311,9 +311,9 @@
     (test -z "$(oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_test_namespace }})" && echo 0 || echo 1) >  "{{ artifact_extra_logs_dir }}/exit_code"
     cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
     date=$(date +%Y-%m-%d_%H:%M:%S)
-    test-case={{ rhods_test_jupyterlab_ods_ci_test_case }}
-    exclude-tags={{ rhods_test_jupyterlab_ods_ci_exclude_tags }}
-    user-count={{ rhods_test_jupyterlab_user_count }}
+    test_case={{ rhods_test_jupyterlab_ods_ci_test_case }}
+    exclude_tags={{ rhods_test_jupyterlab_ods_ci_exclude_tags }}
+    user_count={{ rhods_test_jupyterlab_user_count }}
     EOF
   ignore_errors: yes
 
