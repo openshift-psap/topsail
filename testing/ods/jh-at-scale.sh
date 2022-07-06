@@ -211,7 +211,8 @@ run_multi_cluster() {
                      "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
                      "$S3_LDAP_PROPS" \
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
-                     --artifacts-collected=$collect
+                     --artifacts-collected=$collect \
+                     --ods_sleep_factor="$ODS_SLEEP_FACTOR"
 
     set +e # we do not wait to fail passed this point
 
