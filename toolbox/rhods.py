@@ -62,6 +62,7 @@ class RHODS:
     def test_jupyterlab(idp_name, username_prefix, user_count: int,
                         secret_properties_file, sut_cluster_kubeconfig="",
                         artifacts_collected="all",
+                        ods_sleep_factor="1.0",
                         ods_ci_exclude_tags="None",
                         ods_ci_test_case="test-jupyterlab-psap-simplenotebook.robot"):
         """
@@ -77,6 +78,7 @@ class RHODS:
            - 'no-image': exclude the images (.png) from the artifacts collected.
            - 'no-image-except-if-failed': exclude the images, except if the test failed.
            - 'none': do not collect any ODS-CI artifact.
+          ods_sleep_factor: Optional. Delay to sleep between users. Default 1.0.
           ods_ci_test_case: Optional. ODS-CI test case to execute.
           ods_ci_exclude_tags: Optional. Tags to exclude in the ODS-CI test case.
         """
@@ -88,6 +90,7 @@ class RHODS:
             "rhods_test_jupyterlab_secret_properties": secret_properties_file,
             "rhods_test_jupyterlab_sut_cluster_kubeconfig": sut_cluster_kubeconfig,
             "rhods_test_jupyterlab_artifacts_collected": artifacts_collected,
+            "rhods_test_jupyterlab_ods_sleep_factor": ods_sleep_factor,
             "rhods_test_jupyterlab_ods_ci_test_case": ods_ci_test_case,
             "rhods_test_jupyterlab_ods_ci_exclude_tags": ods_ci_exclude_tags,
         }

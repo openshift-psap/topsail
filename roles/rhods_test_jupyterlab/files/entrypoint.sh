@@ -6,7 +6,6 @@ set -o nounset
 set -x
 
 JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-1}
-SLEEP_WAIT_FACTOR=${SLEEP_WAIT_FACTOR:-1}
 
 do_oc_login() {
     export KUBECONFIG=/tmp/kube
@@ -44,9 +43,9 @@ cp "/mnt/rhods-jupyterlab-entrypoint/$RUN_ROBOT_TEST_CASE" .
 
 # Sleep for a while to avoid DDoSing OAuth
 
-sleep_delay=$(python3 -c "print($JOB_COMPLETION_INDEX / $SLEEP_WAIT_FACTOR)")
+sleep_delay=$(python3 -c "print($JOB_COMPLETION_INDEX * $SLEEP_FACTOR)")
 
-echo "Waiting $sleep_delay seconds before starting (job index: $JOB_COMPLETION_INDEX, sleep wait factor: $SLEEP_WAIT_FACTOR)"
+echo "Waiting $sleep_delay seconds before starting (job index: $JOB_COMPLETION_INDEX, sleep factor: $SLEEP_FACTOR)"
 sleep "$sleep_delay"
 
 # This isn't necessary for the testing, Keep it until

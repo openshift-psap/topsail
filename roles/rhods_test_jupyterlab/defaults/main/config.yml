@@ -5,6 +5,7 @@ rhods_test_jupyterlab_secret_properties:
 rhods_test_jupyterlab_idp_name:
 rhods_test_jupyterlab_sut_cluster_kubeconfig:
 rhods_test_jupyterlab_artifacts_collected: all
+rhods_test_jupyterlab_ods_sleep_factor: 1.0
 rhods_test_jupyterlab_ods_ci_exclude_tags: None
 rhods_test_jupyterlab_ods_ci_test_case: test-jupyterlab-psap-simplenotebook.robot
 
