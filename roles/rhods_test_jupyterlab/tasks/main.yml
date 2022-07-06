@@ -301,6 +301,8 @@
     oc -n minio -c ubi8 exec "{{ minio_podname_cmd.stdout }}" \
        -- tar czf - -C /artifacts/to_export/ . \
        | tar xzf - -C "{{ artifact_extra_logs_dir }}"
+
+    rm -f "{{ artifact_extra_logs_dir }}/os-release"
   when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
   ignore_errors: yes
 
