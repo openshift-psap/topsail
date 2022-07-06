@@ -55,8 +55,8 @@ _get_data_from_pr() {
         base_url="https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/$PULL_NUMBER/pull-ci-openshift-psap-ci-artifacts-master-ods-jh-on-${cluster_type}"
 
         build=$(get_anchor_value "$MATBENCH_BUILD_ANCHOR")
-        if [[ -z "$matbench_build" ]]; then
-            build=$(curl --quiet -Ssf "${base_url}/latest-build.txt")
+        if [[ -z "$build" ]]; then
+            build=$(curl --silent -Ssf "${base_url}/latest-build.txt")
         fi
 
         matbench_url="${base_url}/${build}/artifacts/jh-on-${cluster_type}/test/artifacts/"
@@ -131,7 +131,7 @@ EOF
 }
 
 
-if [[ "$JOB_NAME_SAFE" == "ods-plot-jh-on-"* ]]; then
+if [[ "$JOB_NAME_SAFE" == "plot-jh-on-"* ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset
