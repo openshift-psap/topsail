@@ -71,7 +71,7 @@ def generate(entry, cfg):
                 LineName=get_line_name(user_idx),
                 Opacity=0.5,
                 LineWidth=80,
-                LineSortIndex=kwargs["Finish"],
+                LineSortIndex=user_idx,
             )
 
             defaults["Text"] = get_text(LegendName,
