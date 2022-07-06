@@ -137,7 +137,7 @@ if [[ "$JOB_NAME_SAFE" == "plot-jh-on-"* ]]; then
     set -o nounset
     set -x
 
-    cluster_type=$1
+    cluster_type=${1:-ocp}
 
     results_dir="$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
     mkdir -p "$results_dir"
