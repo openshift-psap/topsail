@@ -75,13 +75,6 @@ Run the PSAP jh-at-scale Simple Notebook
   Should Not Match  ${output}  ERROR*
   Capture Page Screenshot
 
-Can Close Notebook when done
-  [Tags]  Notebook  End Sequence
-  Stop JupyterLab Notebook Server
-  # Capture Page Screenshot
-  # Go To  ${ODH_DASHBOARD_URL}
-  Capture Page Screenshot
-
 *** Keywords ***
 
 Begin and Authenticate
