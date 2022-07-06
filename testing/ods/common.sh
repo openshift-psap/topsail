@@ -48,7 +48,8 @@ OCP_WORKER_MACHINE_TYPE=m5.xlarge
 
 OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
 
-ENABLE_AUTOSCALER=0
+# if not empty, enables auto-scaling in the sutest cluster
+ENABLE_AUTOSCALER=
 
 # Shouldn't be the same than OCP worker nodes.
 
