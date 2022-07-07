@@ -10,6 +10,9 @@ import boto3, botocore, botocore.errorfactory
 PREFERED_REGIONS = ["us-east-1", "us-east-2", "us-west-2", "eu-central-1"]
 now = datetime.datetime.now(datetime.timezone.utc)
 
+
+hosted_zones = defaultdict(list)
+hosted_zones_known = []
 class State():
     def __init__(self):
         self.clusters = set()
@@ -20,6 +23,7 @@ class State():
         self.db_instances = defaultdict(list)
         self.db_snapshots = defaultdict(list)
         self.security_groups = defaultdict(list)
+
 
         self.all_instances = {}
 
@@ -111,6 +115,24 @@ def wait_database_deletions():
         db_ids.remove(db_id)
         print(f"DB {db_id} deleted, {len(db_ids)} to go ...")
 
+def populate_hosted_zones(state):
+    if hosted_zones: return
+    count = 0
+    print("Collecting hosted zones ...")
+    zones = state.r53_client.list_hosted_zones()["HostedZones"]
+    for zone in zones:
+        zone_id = zone["Id"].split("/")[2]
+
+        tags = state.r53_client.list_tags_for_resource(ResourceId=zone_id, ResourceType="hostedzone")["ResourceTagSet"]["Tags"]
+        for tag in tags:
+            if tag["Key"].startswith("kubernetes.io/cluster/"):
+                cluster_id = tag["Key"].rpartition("/")[-1]
+            else: continue
+            count += 1
+            hosted_zones[cluster_id] = zone["Name"]
+            break
+
+    print(f"Found {count} zones with Cluster IDs")
 
 def process_region(region):
     global state
@@ -120,6 +142,7 @@ def process_region(region):
     my_config = botocore.config.Config(region_name=region)
     state.ec2_client = boto3.client("ec2", config=my_config)
     state.rds_client = boto3.client('rds', config=my_config)
+    state.r53_client = boto3.client("route53", config=my_config)
 
     populate(state.ec2_client.describe_vpcs()["Vpcs"], state.vpcs, "VpcId")
     populate(state.ec2_client.describe_vpc_peering_connections()["VpcPeeringConnections"], state.vpc_peering_connections, "VpcPeeringConnectionId")
@@ -129,6 +152,7 @@ def process_region(region):
     populate(state.rds_client.describe_db_instances()['DBInstances'], state.db_instances, "DBInstanceIdentifier")
 
     populate(state.rds_client.describe_db_snapshots()['DBSnapshots'], state.db_snapshots, "DBSnapshotIdentifier")
+    populate_hosted_zones(state)
 
     subnet_ids = dict()
     for cluster, cluster_subnets in state.subnets.items():
@@ -167,7 +191,15 @@ def process_region(region):
             instance_count += 1
 
         age_hr = (now - launch_time).total_seconds() / 60 / 60
-        print(f"Cluster {cluster} has {instance_count} ec2 instances (running for {age_hr:.1f} hours), skipping.")
+
+        hosted_zone = None
+        if cluster in hosted_zones:
+            hosted_zone = hosted_zones[cluster]
+            hosted_zones_known.append(hosted_zone)
+
+        cluster_name = hosted_zone or cluster
+
+        print(f"Cluster {cluster_name} has {instance_count} ec2 instances (running for {age_hr:.1f} hours), skipping.")
         state.clusters.remove(cluster)
 
     for cluster in state.clusters:
@@ -230,7 +262,6 @@ def process_region(region):
 
             print()
 
-
 def get_all_regions():
     if args.all_regions:
         return [region['RegionName'] for region in client_ec2.describe_regions()['Regions']]
@@ -255,6 +286,17 @@ def main():
 
         process_region(region)
 
+    first_unknown_zone = True
+    for cluster, zone in hosted_zones.items():
+        if zone in hosted_zones_known: continue
+        if first_unknown_zone:
+            first_unknown_zone = False
+            print("Zones unknown:")
+
+        print("-", cluster, zone)
+
+    if first_unknown_zone:
+        print("No unknown cluster Hosted Zone detected.")
 
 if __name__ == "__main__":
     main()

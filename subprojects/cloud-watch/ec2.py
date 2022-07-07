@@ -10,8 +10,10 @@ now = datetime.datetime.now(datetime.timezone.utc)
 
 client_ec2 = boto3.client('ec2')
 resource_ec2 = boto3.resource('ec2')
+r53_client = boto3.client("route53")
 
 clusters = defaultdict(list)
+cluster_zones = {}
 
 IGNORE_NODES = [
     "Liquan-rhel82-jumphost",
@@ -33,6 +35,20 @@ def collect_instances(region=None):
     else:
         my_config = botocore.config.Config(region_name=region)
         regional_resource_ec2 = boto3.resource("ec2", config=my_config)
+
+    zones = r53_client.list_hosted_zones()["HostedZones"]
+    for zone in zones:
+        zone_id = zone["Id"].split("/")[2]
+
+        tags = r53_client.list_tags_for_resource(ResourceId=zone_id, ResourceType="hostedzone")["ResourceTagSet"]["Tags"]
+        for tag in tags:
+            if tag["Key"].startswith("kubernetes.io/cluster/"):
+                cluster_id = tag["Key"].rpartition("/")[-1]
+            else: continue
+
+            cluster_zones[cluster_id] = zone["Name"].strip(".")
+            break
+
 
     instance_count = 0
     instances_stopped = 0
@@ -67,7 +83,10 @@ def collect_instances(region=None):
         }
 
         if age < 1:
-            info["Age"] += f" ({age_hr:.1f} hours)"
+            if age_hr < 1:
+                info["Age"] += f" ({age_hr*60:.0f} minutes)"
+            else:
+                info["Age"] += f" ({age_hr:.1f} hours)"
 
         for tag in instance.tags or {}:
             if tag["Key"] == "Name":
@@ -104,11 +123,13 @@ def print_clusters():
         if cluster_tag == "None":
             cluster_name = "Not part of a cluster"
             cluster_tag = None
+            hosted_zone = ""
         else:
             cluster_name = cluster_tag.rpartition("/")[-1]
+            hosted_zone = cluster_zones.get(cluster_name, "")
 
-        print(cluster_name)
-        print("="*len(cluster_name))
+        print(hosted_zone or cluster_name)
+        print("="*len(hosted_zone or cluster_name))
         first = True
         for cluster_instance in clusters[cluster_tag]:
 
@@ -117,8 +138,9 @@ def print_clusters():
                 cluster_instance.pop('Cluster ID')
                 cluster_instance['Name'] = cluster_instance['Name'].replace(f"{cluster_tag}-", "")
                 if first:
+                    if cluster_tag != "None":
+                        print("Cluster:", cluster_instance['Region'], cluster_name)
                     print("Age:", cluster_instance['Age'])
-                    print("Region:", cluster_instance['Region'])
 
             print(cluster_instance["ID"], cluster_instance["Type"], cluster_instance["State"], cluster_instance["Name"])
 
