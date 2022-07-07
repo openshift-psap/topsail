@@ -39,3 +39,6 @@ OPENSHIFT_INSTALLER_URL = "https://mirror.openshift.com/pub/openshift-v4/clients
 
 # unset to skip diff confirmation in 'config_base_install'
 DIFF_TOOL := meld
+
+# set to copy the cluster's metadata.json to a safe place before creating the cluster
+METADATA_JSON_DEST ?=

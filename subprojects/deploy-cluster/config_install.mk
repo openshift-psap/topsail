@@ -16,6 +16,8 @@ ${OPENSHIFT_INSTALLER}:
 
 manifest: has_installer
 	@[ -f "${CLUSTER_PATH}/install-config.yaml" ] && cp "${CLUSTER_PATH}"/install-config{,.back}.yaml || echo
+	"${OPENSHIFT_INSTALLER}" create ignition-configs --dir="${CLUSTER_PATH}" > /dev/null;
+	[[ "${METADATA_JSON_DEST}" ]] && cp "${CLUSTER_PATH}/metadata.json" "${METADATA_JSON_DEST}"
 	"${OPENSHIFT_INSTALLER}" create manifests --dir="${CLUSTER_PATH}" > /dev/null;
 
 install: has_installer
