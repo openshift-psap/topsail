@@ -46,6 +46,7 @@ cp "/mnt/rhods-jupyterlab-entrypoint/$RUN_ROBOT_TEST_CASE" .
 sleep_delay=$(python3 -c "print($JOB_COMPLETION_INDEX * $SLEEP_FACTOR)")
 
 echo "Waiting $sleep_delay seconds before starting (job index: $JOB_COMPLETION_INDEX, sleep factor: $SLEEP_FACTOR)"
+echo "$sleep_delay" > "${ARTIFACTS_DIR}/sleep_delay"
 sleep "$sleep_delay"
 
 # This isn't necessary for the testing, Keep it until
