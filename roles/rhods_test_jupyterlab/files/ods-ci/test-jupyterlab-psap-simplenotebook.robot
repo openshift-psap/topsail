@@ -23,12 +23,6 @@ ${NOTEBOOK_SPAWN_WAIT_TIME}    5 minutes
 Begin and Authenticate
   Begin and Authenticate
 
-Login to Jupyterhub
-  [Tags]  Jupyterhub
-
-  ${authorization_required} =    Is Service Account Authorization Required
-  Run Keyword If    ${authorization_required}    Authorize jupyterhub service account
-
 Spawn a Notebook
   [Tags]  Notebook
 
