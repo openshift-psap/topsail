@@ -180,9 +180,18 @@
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   command: |
-    oc delete pod --all -n  {{ rhods_notebook_namespace }}
-    oc delete pvc --all -n {{ rhods_notebook_namespace }}
-    oc delete ev --all -n {{ rhods_notebook_namespace }}
+    oc get pods -o wide -n {{ rhods_notebook_namespace }} | \
+      grep -i -E {{ rhods_test_jupyterlab_username_prefix }} | \
+      awk '{print $1}' | \
+      xargs oc delete pod
+    oc get pvc -o wide -n {{ rhods_notebook_namespace }} | \
+      grep -i -E {{ rhods_test_jupyterlab_username_prefix }} | \
+      awk '{print $1}' | \
+      xargs oc delete pvc
+    oc get ev -o wide -n {{ rhods_notebook_namespace }} | \
+      grep -i -E {{ rhods_test_jupyterlab_username_prefix }} | \
+      awk '{print $1}' | \
+      xargs oc delete ev
   failed_when: false
 
 - name: Name the namespace privileged
@@ -247,8 +256,14 @@
 - name: Cleanup the notebooks Pods and PVCs
   # (the Pods are destroyed anyway when the ods-ci test succeeds)
   shell: |
-    oc delete pod --all -n {{ rhods_notebook_namespace }}
-    oc delete pvc --all -n {{ rhods_notebook_namespace }}
+    oc get pods -o wide -n {{ rhods_notebook_namespace }} | \
+      grep -i -E {{ rhods_test_jupyterlab_username_prefix }} | \
+      awk '{print $1}' | \
+      xargs oc delete pod
+    oc get pvc -o wide -n {{ rhods_notebook_namespace }} | \
+      grep -i -E {{ rhods_test_jupyterlab_username_prefix }} | \
+      awk '{print $1}' | \
+      xargs oc delete pvc
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   ignore_errors: yes
