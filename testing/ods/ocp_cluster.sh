@@ -68,9 +68,6 @@ create_cluster() {
     save_install_artifacts() {
         status=$1
 
-        cp "${install_dir}/metadata.json" \
-           "${SHARED_DIR}/ocp_${cluster_role}_metadata.json" || echo "metadata.json not generated, ignoring."
-
         install_config="${install_dir}/install-config.back.yaml"
         if [[ -f "$install_config" ]]; then
             yq -yi 'del(.pullSecret)' "$install_config"
@@ -91,6 +88,7 @@ create_cluster() {
          OCP_VERSION="${OCP_VERSION}" \
          CLUSTER_PATH="${install_dir}" \
          CLUSTER_NAME="${cluster_name}" \
+         METADATA_JSON_DEST="${SHARED_DIR}/ocp_${cluster_role}_metadata.json" \
          DIFF_TOOL= \
         | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/ocp_${cluster_role}_install.log"
 
