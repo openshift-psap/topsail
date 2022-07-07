@@ -7,28 +7,6 @@ set -x
 
 JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-1}
 
-do_oc_login() {
-    export KUBECONFIG=/tmp/kube
-
-    export K8S_API=$(yq e .OCP_API_URL /tmp/test-variables.yml)
-    export USERNAME=$(yq e .TEST_USER.USERNAME /tmp/test-variables.yml)
-
-    touch "$KUBECONFIG"
-    retries=5
-    tries=1
-    while true; do
-        # run this in a subshell to avoid printing the password in clear because of 'set -x'
-        if bash -ec "PASSWORD=\$(yq e .TEST_USER.PASSWORD /tmp/test-variables.yml); oc login --server=\$K8S_API --username=\$USERNAME --password=\$PASSWORD --insecure-skip-tls-verify"; then
-            echo "$tries"> "$ARTIFACTS_DIR/oc_login.tries"
-            break
-        fi
-        tries=$(($tries + 1))
-        retries=$(($retries - 1))
-        [[ $retries == 0 ]] && return 1
-        sleep 10
-    done
-}
-
 if [[ -z "{ARTIFACTS_DIR:-}" ]]; then
     ARTIFACTS_DIR=/tmp/ods-ci
 fi
@@ -48,11 +26,6 @@ sleep_delay=$(python3 -c "print($JOB_COMPLETION_INDEX * $SLEEP_FACTOR)")
 echo "Waiting $sleep_delay seconds before starting (job index: $JOB_COMPLETION_INDEX, sleep factor: $SLEEP_FACTOR)"
 echo "$sleep_delay" > "${ARTIFACTS_DIR}/sleep_delay"
 sleep "$sleep_delay"
-
-# This isn't necessary for the testing, Keep it until
-# `run_robot_test.sh` initialization stops complaining when we provide
-# no KUBECONFIG.
-do_oc_login
 
 test_exit_code=0
 (bash -x ./run_robot_test.sh \
