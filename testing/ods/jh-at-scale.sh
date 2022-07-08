@@ -85,6 +85,8 @@ prepare_driver_cluster() {
                      --dockerfile-path="build/Dockerfile"
 
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
+
+    process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_nginx_server "$NGINX_NOTEBOOK_NAMESPACE" "$ODS_NOTEBOOK_DIR"
 }
 
 prepare_sutest_cluster() {
@@ -200,6 +202,10 @@ run_multi_cluster() {
 
     switch_driver_cluster
 
+    NGINX_SERVER_DIRNAME=cluster__deploy_nginx_server
+    nginx_server_dir=$(ls -d "$ARTIFACT_DIR"/*_"${NGINX_SERVER_DIRNAME}" | tail -1)
+    nginx_server=$(cat "${nginx_server_dir}/hostname")
+
     if [[ "$ODS_CI_NB_USERS" -le 5 ]]; then
         collect=all
     else
@@ -210,6 +216,7 @@ run_multi_cluster() {
                      "$LDAP_IDP_NAME" \
                      "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
                      "$S3_LDAP_PROPS" \
+                     "http://$nginx_server/$ODS_NOTEBOOK_NAME" \
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected=$collect \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR"

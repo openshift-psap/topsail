@@ -30,6 +30,10 @@ ODS_NOTEBOOK_SIZE=default # needs to match what the ROBOT test-case requests
 ODS_NOTEBOOK_SIZE_TEST_POD="test_pod" # shouldn't change
 ODS_SLEEP_FACTOR=1.0 # how long to wait between users.
 
+NGINX_NOTEBOOK_NAMESPACE=loadtest-notebooks
+ODS_NOTEBOOK_NAME=simple-notebook.ipynb
+ODS_NOTEBOOK_DIR=${THIS_DIR}/notebooks
+
 if [[ "$OSD_USE_ODS_CATALOG" == "0" ]]; then
     # deploying from the addon. Get the email address from the secret vault.
     ODS_ADDON_EMAIL_ADDRESS=$(cat "$PSAP_ODS_SECRET_PATH/addon.email")
