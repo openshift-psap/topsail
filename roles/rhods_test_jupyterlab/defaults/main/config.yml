@@ -7,7 +7,7 @@ rhods_test_jupyterlab_sut_cluster_kubeconfig:
 rhods_test_jupyterlab_artifacts_collected: all
 rhods_test_jupyterlab_ods_sleep_factor: 1.0
 rhods_test_jupyterlab_ods_ci_exclude_tags: None
-rhods_test_jupyterlab_ods_ci_test_case: test-jupyterlab-psap-simplenotebook.robot
+rhods_test_jupyterlab_ods_ci_test_case: test-jupyterlab-run-notebook.robot
 rhods_test_jupyterlab_notebook_url:
 
 rhods_test_namespace: loadtest

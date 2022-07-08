@@ -66,7 +66,7 @@ class RHODS:
                         artifacts_collected="all",
                         ods_sleep_factor="1.0",
                         ods_ci_exclude_tags="None",
-                        ods_ci_test_case="test-jupyterlab-psap-simplenotebook.robot"):
+                        ods_ci_test_case="test-jupyterlab-run-notebook.robot"):
         """
         Test RHODS JupyterLab notebooks
 
