@@ -52,7 +52,7 @@
   command:
     oc get deploy/minio-deployment
        -oyaml
-       -n minio
+       -n "{{ cluster_deploy_minio_s3_server_namespace }}"
        -ojsonpath={.status.readyReplicas}
   register: wait_minio_ready
   retries: 12
