@@ -155,15 +155,6 @@ wait_rhods_launch() {
     ./run_toolbox.py rhods wait_ods
 }
 
-reset_prometheus() {
-    switch_driver_cluster
-    ./run_toolbox.py cluster reset_prometheus_db
-
-    switch_sutest_cluster
-    ./run_toolbox.py cluster reset_prometheus_db
-    ./run_toolbox.py rhods reset_prometheus_db
-}
-
 capture_environment() {
     switch_sutest_cluster
     ./run_toolbox.py rhods capture_state > /dev/null || true
@@ -197,8 +188,6 @@ run_multi_cluster() {
     process_ctrl::wait_bg_processes
 
     wait_rhods_launch
-
-    reset_prometheus
 
     switch_driver_cluster
 
