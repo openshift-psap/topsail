@@ -24,6 +24,12 @@
   set_fact:
     sut_cluster_kubeconfig: "{{ rhods_test_jupyterlab_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
 
+- name: Fetch the notebook file (to validate the URL and store it)
+  get_url:
+    url: "{{ rhods_test_jupyterlab_notebook_url }}"
+    dest: "{{ artifact_extra_logs_dir }}/notebook.raw"
+    mode: '0440'
+
 - name: Fetch RHODS endpoints from the SUT cluster
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
