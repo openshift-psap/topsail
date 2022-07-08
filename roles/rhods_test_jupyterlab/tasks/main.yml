@@ -191,13 +191,39 @@
        -z default
        -n {{ rhods_test_namespace }}
 
+# ---
+
+- name: Cleanup the Prometheus databases of the sutest cluster
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  block:
+  - name: Cleanup the RHODS Prometheus database of the sutest cluster
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: reset
+      cluster_prometheus_db_label: deployment=prometheus
+      cluster_prometheus_db_namespace: redhat-ods-monitoring
+
+  - name: Cleanup the Prometheus database of the sutest cluster
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: reset
+
+- name: Cleanup the Prometheus database of the driver cluster
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: reset
+
+# ---
+
 - name: Create the RHODS test job
   command:
     oc create
        -f "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
        -n {{ rhods_test_namespace }}
-
-# ---
 
 - name: Wait for the RHODS tester job to start
   shell:
