@@ -182,7 +182,7 @@ class Cluster:
     @staticmethod
     def reset_prometheus_db(label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring"):
         """
-        Resets Prometheus database, by destroying its Pod.
+        Resets Prometheus database, by destroying its Pod
 
         By default, target OpenShift Prometheus Pod.
 
@@ -204,7 +204,7 @@ class Cluster:
         """
         Dump Prometheus database into a file
 
-                By default, target OpenShift Prometheus Pod.
+        By default, target OpenShift Prometheus Pod.
 
         Args:
           label: Optional. Label to use to identify Prometheus Pod.
