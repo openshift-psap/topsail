@@ -279,6 +279,15 @@
        > "{{ artifact_extra_logs_dir }}/tester_events.yaml"
   ignore_errors: yes
 
+- name: Get the Pods of the notebook namespace
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  shell:
+    oc get pods -oyaml
+       -n {{ rhods_notebook_namespace }}
+       > "{{ artifact_extra_logs_dir }}/notebook_pods.yaml"
+  ignore_errors: yes
+
 - name: Get the events of the notebook namespace
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
