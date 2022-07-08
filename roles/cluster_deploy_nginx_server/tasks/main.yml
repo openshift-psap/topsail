@@ -1,0 +1,92 @@
+---
+- name: Check that cluster_deploy_nginx_server_namespace is defined
+  fail: msg="Bailing out. This role requires 'cluster_deploy_nginx_server_namespace'"
+  when: not cluster_deploy_nginx_server_namespace
+
+- name: Check that cluster_deploy_nginx_server_directory is defined
+  fail: msg="Bailing out. This role requires 'cluster_deploy_nginx_server_directory'"
+  when: not cluster_deploy_nginx_server_directory
+
+- name: Get the stats of {{ cluster_deploy_nginx_server_directory }}
+  stat:
+    path: "{{ cluster_deploy_nginx_server_directory }}"
+  register: directory_stats
+
+- name: Fail if {{ cluster_deploy_nginx_server_directory }} is not a directory
+  fail: msg="'{{ cluster_deploy_nginx_server_directory }}' isn't a reachable directory."
+  when: not directory_stats.stat.exists or not directory_stats.stat.isdir
+
+- name: Create nginx namespace
+  shell:
+    set -o pipefail;
+    oc create ns "{{ cluster_deploy_nginx_server_namespace }}" -oyaml --dry-run=client | oc apply -f-
+
+- name: Delete nginx ConfigMaps, if they exist
+  command:
+    oc delete cm/nginx-content cm/nginx-config
+       --ignore-not-found
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+
+- name: Create nginx-content ConfigMap
+  command: # may fail silently if the directory is invalid
+    oc create cm nginx-content
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+       --from-file="{{ cluster_deploy_nginx_server_directory }}"
+
+- name: Create nginx-config ConfigMap
+  command:
+    oc create cm nginx-config
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+       --from-file=nginx.conf="{{ cluster_deploy_nginx_server_config_file }}"
+
+- name: Ensure that the ConfigMaps exist # may fail if the directory is invalid
+  shell:
+    set -o pipefail;
+    oc get cm nginx-content -ojson -n "{{ cluster_deploy_nginx_server_namespace }}"
+       | jq -r '.data | keys[]'
+
+- name: Delete nginx deployment, if it exists
+  command:
+    oc delete
+       -f "{{ cluster_deploy_nginx_server_deployment }}"
+       --ignore-not-found
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+
+- name: Create the nginx deployment
+  command:
+    oc create
+       -f "{{ cluster_deploy_nginx_server_deployment }}"
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+
+- name: Delete the nginx route, if it exists
+  command:
+    oc delete route/nginx
+       --ignore-not-found
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+
+- name: Create the nginx route
+  command:
+    oc expose svc/nginx
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+
+- name: Wait for the nginx deployment to be ready
+  command:
+    oc get deploy/nginx-deployment
+       -oyaml
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+       -ojsonpath={.status.readyReplicas}
+  register: wait_nginx_ready
+  retries: 12
+  delay: 10
+  until: wait_nginx_ready.stdout
+
+- name: Show the host of the nginx route
+  command:
+    oc get route/nginx -ojsonpath={.spec.host}
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+
+- name: Show and Save the host of the nginx route
+  shell: |
+    hostname=$(oc get route/nginx -ojsonpath={.spec.host} -n "{{ cluster_deploy_nginx_server_namespace }}")
+    echo "$hostname"
+    echo "$hostname" > "{{ artifact_extra_logs_dir }}/hostname"

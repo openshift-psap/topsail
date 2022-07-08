@@ -163,6 +163,23 @@ class Cluster:
         return RunAnsibleRole("cluster_deploy_minio_s3_server", opts)
 
     @staticmethod
+    def deploy_nginx_server(namespace, directory):
+        """
+        Deploy an NGINX HTTP server
+
+        Args:
+            namespace: namespace where the server will be deployed. Will be create if it doesn't exist.
+            directory: directrory containing the files to serve on the HTTP server.
+        """
+
+        opts = {
+            "cluster_deploy_nginx_server_namespace": namespace,
+            "cluster_deploy_nginx_server_directory": directory,
+        }
+
+        return RunAnsibleRole("cluster_deploy_nginx_server", opts)
+
+    @staticmethod
     def reset_prometheus_db(label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring"):
         """
         Resets Prometheus database, by destroying its Pod.
