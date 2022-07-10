@@ -179,10 +179,11 @@
 - name: Delete the events, pods and PVC of the notebook namespace
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  command: |
-    oc delete pod --all -n  {{ rhods_notebook_namespace }}
-    oc delete pvc --all -n {{ rhods_notebook_namespace }}
-    oc delete ev --all -n {{ rhods_notebook_namespace }}
+  shell:
+    set -o pipefail;
+    oc get pods,pvc,ev -oname -n {{ rhods_notebook_namespace }} | \
+      grep {{ rhods_test_jupyterlab_username_prefix }} | \
+      xargs oc delete pod -n {{ rhods_notebook_namespace }}
   failed_when: false
 
 - name: Name the namespace privileged
@@ -246,9 +247,11 @@
 
 - name: Cleanup the notebooks Pods and PVCs
   # (the Pods are destroyed anyway when the ods-ci test succeeds)
-  shell: |
-    oc delete pod --all -n {{ rhods_notebook_namespace }}
-    oc delete pvc --all -n {{ rhods_notebook_namespace }}
+  shell:
+    set -o pipefail;
+    oc get pods,pvc -oname -n {{ rhods_notebook_namespace }} |
+      grep {{ rhods_test_jupyterlab_username_prefix }} |
+      xargs oc delete -n  {{ rhods_notebook_namespace }}
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   ignore_errors: yes
