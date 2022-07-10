@@ -1,0 +1,3 @@
+---
+cluster_deploy_nginx_server_deployment: roles/cluster_deploy_nginx_server/files/deploy_nginx.yaml
+cluster_deploy_nginx_server_config_file: roles/cluster_deploy_nginx_server/files/nginx.conf

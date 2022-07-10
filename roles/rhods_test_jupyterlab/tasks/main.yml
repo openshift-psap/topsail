@@ -24,6 +24,12 @@
   set_fact:
     sut_cluster_kubeconfig: "{{ rhods_test_jupyterlab_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
 
+- name: Fetch the notebook file (to validate the URL and store it)
+  get_url:
+    url: "{{ rhods_test_jupyterlab_notebook_url }}"
+    dest: "{{ artifact_extra_logs_dir }}/notebook.raw"
+    mode: '0440'
+
 - name: Fetch RHODS endpoints from the SUT cluster
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
@@ -185,13 +191,39 @@
        -z default
        -n {{ rhods_test_namespace }}
 
+# ---
+
+- name: Cleanup the Prometheus databases of the sutest cluster
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  block:
+  - name: Cleanup the RHODS Prometheus database of the sutest cluster
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: reset
+      cluster_prometheus_db_label: deployment=prometheus
+      cluster_prometheus_db_namespace: redhat-ods-monitoring
+
+  - name: Cleanup the Prometheus database of the sutest cluster
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: reset
+
+- name: Cleanup the Prometheus database of the driver cluster
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: reset
+
+# ---
+
 - name: Create the RHODS test job
   command:
     oc create
        -f "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
        -n {{ rhods_test_namespace }}
-
-# ---
 
 - name: Wait for the RHODS tester job to start
   shell:
@@ -271,6 +303,15 @@
     oc get ev -oyaml
        -n {{ rhods_test_namespace }}
        > "{{ artifact_extra_logs_dir }}/tester_events.yaml"
+  ignore_errors: yes
+
+- name: Get the Pods of the notebook namespace
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  shell:
+    oc get pods -oyaml
+       -n {{ rhods_notebook_namespace }}
+       > "{{ artifact_extra_logs_dir }}/notebook_pods.yaml"
   ignore_errors: yes
 
 - name: Get the events of the notebook namespace
