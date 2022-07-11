@@ -13,9 +13,10 @@ ${NOTEBOOK_IMAGE_NAME}         s2i-generic-data-science-notebook
 ${NOTEBOOK_IMAGE_SIZE}         Default
 ${NOTEBOOK_SPAWN_WAIT_TIME}    5 minutes
 
-${NOTEBOOK_URL}       %{NOTEBOOK_URL}
-${NOTEBOOK_NAME}      notebook.ipynb
-
+${NOTEBOOK_URL}                %{NOTEBOOK_URL}
+${NOTEBOOK_NAME}               notebook.ipynb
+${NOTEBOOK_CLONE_WAIT_TIME}    30 seconds
+${NOTEBOOK_EXEC_WAIT_TIME}     5 minutes
 
 *** Keywords ***
 
@@ -54,22 +55,29 @@ Spawn a Notebook
   [Tags]  Spawn  Notebook
 
   Fix Spawner Status
-  Spawn Notebook With Arguments  image=s2i-generic-data-science-notebook  size=Default  spawner_timeout=${NOTEBOOK_SPAWN_WAIT_TIME}
+  Spawn Notebook With Arguments  image=${NOTEBOOK_IMAGE_NAME}  size=${NOTEBOOK_IMAGE_SIZE}  spawner_timeout=${NOTEBOOK_SPAWN_WAIT_TIME}
   Capture Page Screenshot
+
+  ${is_launcher_selected} =  Run Keyword And Return Status  JupyterLab Launcher Tab Is Selected
+  Run Keyword If  not ${is_launcher_selected}  Open JupyterLab Launcher
+  Capture Page Screenshot
+  Launch a new JupyterLab Document
+  Close Other JupyterLab Tabs
+  Run Cell And Check For Errors  !echo "Hello World"
+  Wait Until JupyterLab Code Cell Is Not Active  timeout=5
+  Capture Page Screenshot
+
 
 Load the Notebook
   [Tags]  Notebook
 
   ${is_launcher_selected} =  Run Keyword And Return Status  JupyterLab Launcher Tab Is Selected
-  Capture Page Screenshot
   Run Keyword If  not ${is_launcher_selected}  Open JupyterLab Launcher
   Capture Page Screenshot
   Launch a new JupyterLab Document
   Close Other JupyterLab Tabs
-  Capture Page Screenshot
   Run Cell And Check For Errors  !curl "${NOTEBOOK_URL}" > "${NOTEBOOK_NAME}"
-  Wait Until JupyterLab Code Cell Is Not Active  timeout=300
-
+  Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_CLONE_WAIT_TIME}
   Capture Page Screenshot
 
   Open With JupyterLab Menu  File  Open from Path…
@@ -86,5 +94,5 @@ Run the Notebook
   Open With JupyterLab Menu  Run  Run All Cells
   Capture Page Screenshot
 
-  Wait Until JupyterLab Code Cell Is Not Active  timeout=300
+  Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_EXEC_WAIT_TIME}
   Capture Page Screenshot
