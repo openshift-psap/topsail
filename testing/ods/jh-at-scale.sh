@@ -90,9 +90,9 @@ prepare_driver_cluster() {
 }
 
 prepare_sutest_cluster() {
-    osd_cluster_name=$1
-
     switch_sutest_cluster
+
+    osd_cluster_name=$(get_osd_cluster_name "sutest")
 
     if [[ "$osd_cluster_name" ]]; then
         prepare_osd_sutest_cluster "$osd_cluster_name"
@@ -175,20 +175,21 @@ dump_prometheus_dbs() {
     process_ctrl::wait_bg_processes
 }
 
-run_multi_cluster() {
-    finalizers+=("process_ctrl::kill_bg_processes")
-    finalizers+=("capture_environment")
-
+prepare_ci() {
     sutest_osd_cluster_name=$(get_osd_cluster_name "sutest")
     connect_sutest_cluster "$sutest_osd_cluster_name"
-    prepare_sutest_cluster "$sutest_osd_cluster_name"
+}
 
+prepare() {
+    prepare_sutest_cluster
     prepare_driver_cluster
 
     process_ctrl::wait_bg_processes
 
     wait_rhods_launch
+}
 
+run_jupyterlab_test() {
     switch_driver_cluster
 
     NGINX_SERVER_DIRNAME=cluster__deploy_nginx_server
@@ -209,7 +210,9 @@ run_multi_cluster() {
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected=$collect \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR"
+}
 
+finalize() {
     set +e # we do not wait to fail passed this point
 
     dump_prometheus_dbs
@@ -226,6 +229,8 @@ run_prepare_local_cluster() {
 
 # ---
 
+finalizers+=("process_ctrl::kill_bg_processes")
+
 switch_driver_cluster
 oc get clusterversion/version
 oc whoami --show-console
@@ -234,19 +239,24 @@ switch_sutest_cluster
 oc get clusterversion/version
 oc whoami --show-console
 
-action=${1:-run_multi_cluster}
+action=${1:-run_ci_e2e_test}
 
 case ${action} in
-    "run_multi_cluster")
+    "run_ci_e2e_test")
         if [ -z "${SHARED_DIR:-}" ]; then
             echo "FATAL: multi-stage test \$SHARED_DIR not set ..."
             exit 1
         fi
-        run_multi_cluster "$@"
+        finalizers+=("capture_environment")
+
+        prepare_ci
+        prepare
+        run_jupyterlab_test
+        finalize
         exit 0
         ;;
-    "run_prepare_local_cluster")
-        run_prepare_local_cluster "$@"
+    "prepare")
+        prepare
         exit 0
         ;;
     "source")
