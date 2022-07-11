@@ -104,7 +104,7 @@ ocm_cluster_is_ready() {
 get_osd_cluster_name() {
     cluster_role=$1
 
-    cat "$SHARED_DIR/osd_${cluster_role}_cluster_name" 2>/dev/null || true
+    cat "${SHARED_DIR:-}/osd_${cluster_role}_cluster_name" 2>/dev/null || true
 }
 
 get_notebook_size() {
