@@ -68,16 +68,18 @@ create_clusters() {
     if [[ "$cluster_type" == "osd" || "$cluster_type" == "ocp" ]]; then
         process_ctrl::run_in_bg "$THIS_DIR/${cluster_type}_cluster.sh" create "sutest"
 
+        process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "driver"
+
     elif [[ "$cluster_type" == "single" ]]; then
-        echo "INFO: launching a single cluster, creating a symlink for the sutest cluster"
-        ln -s "${SHARED_DIR}/driver_kubeconfig" "${SHARED_DIR}/sutest_kubeconfig"
+        process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "sutest"
+
+        echo "INFO: launching a single cluster, creating a symlink for the driver cluster"
+        ln -s "${SHARED_DIR}/sutest_kubeconfig" "${SHARED_DIR}/driver_kubeconfig"
 
     else
         echo "ERROR: invalid cluster type: '$cluster_type'"
         exit 1
     fi
-
-    process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "driver"
 
     process_ctrl::wait_bg_processes
 }
@@ -87,17 +89,16 @@ destroy_clusters() {
 
     if [[ "$cluster_type" == "osd" || "$cluster_type" == "ocp" ]]; then
         process_ctrl::run_in_bg destroy_cluster "$cluster_type" "sutest"
+        process_ctrl::run_in_bg destroy_cluster "ocp" "driver"
 
     elif [[ "$cluster_type" == "single" ]]; then
-        echo "INFO: only one cluster was created, nothing to destroy for the sutest cluster"
-
+        process_ctrl::run_in_bg destroy_cluster "ocp" "sutest"
+        echo "INFO: only one cluster was created, nothing to destroy for the driver cluster"
     else
         echo "ERROR: invalid cluster type: '$cluster_type'"
         # don't 'exit 1' in the destroy step,
-        # that would prevent the destruction of the driver cluster
+        # that would prevent the destruction of other clusters
     fi
-
-    process_ctrl::run_in_bg destroy_cluster "ocp" "driver"
 
     process_ctrl::wait_bg_processes
 }
