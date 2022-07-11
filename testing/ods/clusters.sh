@@ -160,7 +160,7 @@ shift || true
 cluster_type="${1:-}"
 shift || true
 
-if [[ -z "${action}" || -z "${action}" ]]; then
+if [[ -z "${action}" || -z "${cluster_type}" ]]; then
     echo "FATAL: $0 expects 2 arguments: (create|destroy) (ocp|osd|single)"
     exit 1
 fi
