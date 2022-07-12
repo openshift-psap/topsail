@@ -244,7 +244,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.ods_ci_exit_code[test_pod] = _parse_ods_ci_exit_code(output_dir / "test.exit_code")
 
         user_idx = int(test_pod.split("-")[-2])
-        results.ods_ci_user_test_status[f"User #{int(user_idx):2d}"] = results.ods_ci_exit_code[test_pod]
+        results.ods_ci_user_test_status[user_idx] = results.ods_ci_exit_code[test_pod]
     print("done")
     store.add_to_matrix(import_settings, None, results, None)
 
