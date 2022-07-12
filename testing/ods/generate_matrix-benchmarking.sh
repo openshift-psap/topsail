@@ -124,10 +124,11 @@ EOF
     _matbench parse
     _matbench visualize --generate="$generate_url" || true
 
-    mkdir "$ARTIFACT_DIR"/{png,html}
+    mkdir "$ARTIFACT_DIR"/figures_{png,html}
 
-    mv *.png "$ARTIFACT_DIR/png"
-    mv *.html "$ARTIFACT_DIR/html"
+    mv fig_*.png "$ARTIFACT_DIR/figures_png"
+    mv fig_*.html "$ARTIFACT_DIR/figures_html"
+    mv report_* "$ARTIFACT_DIR"
 }
 
 
