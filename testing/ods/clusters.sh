@@ -97,7 +97,9 @@ create_clusters() {
         KUBECONFIG_SUTEST="${SHARED_DIR}/sutest_kubeconfig" # system under test
 
         keep_cluster() {
-            echo "Keeping $KUBECONFIG cluster ..."
+            cluster_role=$1
+
+            echo "Keeping the $cluster_role cluster ..."
             export PSAP_ODS_SECRET_PATH
             oc create cm keep-cluster -n default --from-literal=keep=true
 
@@ -115,16 +117,18 @@ data:
   kubeadmin: "$B64_PASS_HASH"
 EOF
 '
+            oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
+            echo "oc login $(oc whoami --show-server) --username=kubeadmin" > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
         }
 
-        KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster
+        KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster driver
 
         # * 'osd' clusters already have their kubeadmin password
         # populated during the cluster bring up
         # * 'single' clusters already have been modified with the
         # keep_cluster call of the sutest cluster.
         if [[ "$cluster_type" == "ocp" ]]; then
-            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster
+            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster sutest
         fi
     fi
 }
