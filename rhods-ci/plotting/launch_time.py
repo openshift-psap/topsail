@@ -11,17 +11,17 @@ from . import timeline_data
 
 def register():
     LaunchTimeDistribution("Launch time distribution")
-    LaunchTimeDistribution("Test successes", success=True)
+    LaunchTimeDistribution("Step successes", show_successes=True)
 
 def generate_data(entry, cfg, is_notebook):
     test_nodes = {}
 
 
 class LaunchTimeDistribution():
-    def __init__(self, name, success=False):
+    def __init__(self, name, show_successes=False):
         self.name = name
         self.id_name = name
-        self.success = success
+        self.show_successes = show_successes
 
         table_stats.TableStats._register_stat(self)
         common.Matrix.settings["stats"].add(self.name)
@@ -45,6 +45,8 @@ class LaunchTimeDistribution():
         data = []
         for line in data_timeline:
             if line["LegendGroup"] != "ODS-CI": continue
+            if not self.show_successes:
+                if line["Status"] != "PASS": continue
 
             data.append(dict(
                 Event=line["LegendName"],
@@ -54,15 +56,17 @@ class LaunchTimeDistribution():
             ))
 
         df = pd.DataFrame(data)
-        if self.success:
+        if self.show_successes:
             fig = px.histogram(df, x="Event", y="Count", color="Event", pattern_shape="Status")
-            fig.update_layout(title=f"Launch time distribution for {user_count} users", title_x=0.5,)
-            fig.update_layout(yaxis_title="Launch date")
-            fig.update_layout(xaxis_title="")
-        else:
-            fig = px.box(df[df["Status"] == "PASS"], x="Event", y="Time", color="Event")
-            fig.update_layout(title=f"Launch time distribution for {user_count} users", title_x=0.5,)
+            fig.update_layout(title=f"Step successes for {user_count} users", title_x=0.5,)
             fig.update_layout(yaxis_title="Number of users")
             fig.update_layout(xaxis_title="")
+
+        else:
+            fig = px.box(df[df["Status"] == "PASS"], x="Event", y="Time", color="Event")
+            fig.update_layout(title=f"Start time distribution for {user_count} users", title_x=0.5,)
+            fig.update_layout(yaxis_title="Launch time")
+            fig.update_layout(xaxis_title="")
+
 
         return fig, ""

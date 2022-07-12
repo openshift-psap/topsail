@@ -114,7 +114,7 @@ def generate(entry, cfg):
     for testpod_name, ods_ci_output in entry_results.ods_ci_output.items():
         user_idx = int(testpod_name.split("-")[2])
 
-        for test_idx, (test_name, test_times) in enumerate(ods_ci_output.items()):
+        for step_idx, (step_name, step_times) in enumerate(ods_ci_output.items()):
             def generate_data(LegendName, status, **kwargs):
                 defaults = dict(
                     LegendName=LegendName,
@@ -136,10 +136,11 @@ def generate(entry, cfg):
                 return defaults | kwargs
 
             data.append(generate_data(
-                f"ODS - {test_idx} - {test_name}",
-                test_times.status,
-                Start=test_times.start,
-                Finish=test_times.finish,
+                f"ODS - {step_idx} - {step_name}",
+                step_times.status,
+                Start=step_times.start,
+                Finish=step_times.finish,
+                StepIdx=step_idx
             ))
 
     for notebook_name in entry_results.notebook_pods:

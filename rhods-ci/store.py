@@ -215,7 +215,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     _parse_job(results, dirname / "tester_job.yaml")
 
     print("_parse_node_info")
-    results.nodes_info = _parse_node_info(list(dirname.parent.glob("*__sutest_rhods__capture_state"))[0] / "nodes.yaml")
+    results.nodes_info = _parse_node_info(list(dirname.parent.glob("*__sutest_cluster__capture_environment"))[0] / "nodes.yaml")
+    results.nodes_info = _parse_node_info(list(dirname.parent.glob("*__driver_cluster__capture_environment"))[0] / "nodes.yaml")
+
     print("_parse_pod_times (tester)")
     results.pod_times = _parse_pod_times(dirname / "tester_pods.yaml")
     results.event_times = defaultdict(types.SimpleNamespace)

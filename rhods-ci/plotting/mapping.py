@@ -11,10 +11,10 @@ from . import timeline_data
 
 def register():
     MappingTimeline("Pod/Node timeline: Test Pods", is_notebook=False)
-    MappingTimeline("Pod/Node timeline: Notebook", is_notebook=True)
+    MappingTimeline("Pod/Node timeline: Notebooks", is_notebook=True)
 
     MappingDistribution("Pod/Node distribution: Test Pods", is_notebook=False)
-    MappingDistribution("Pod/Node distribution: Notebook", is_notebook=True)
+    MappingDistribution("Pod/Node distribution: Notebooks", is_notebook=True)
 
 def generate_data(entry, cfg, is_notebook):
     test_nodes = {}

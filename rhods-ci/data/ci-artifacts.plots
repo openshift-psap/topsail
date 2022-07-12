@@ -1,5 +1,8 @@
-Simple Timeline
-Timeline
+report: Timeline
+report: Pod-Node Mapping
+report: User Execution Overview
+report: Launch Time and Execution Time Distribution
+report: Step Successes
 Prom: sutest cluster memory capacity
 Prom: sutest cluster CPU capacity
 Prom: CPU usage namespace=rhods-notebooks
@@ -17,14 +20,3 @@ Prom: driver cluster memory capacity
 Prom: driver cluster CPU capacity
 Prom: CPU usage namespace=loadtest
 Prom: memory usage namespace=loadtest
-Pod/Node timeline: Test Pods
-Pod/Node timeline: Notebook
-Pod/Node distribution: Test Pods
-Pod/Node distribution: Notebook
-Notebook spawn time
-Test status distribution
-Execution time distribution
-Execution time distribution - show_progress
-Execution time distribution - with_failed
-Launch time distribution
-Test successes

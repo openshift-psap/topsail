@@ -35,18 +35,24 @@ class SpawnTime():
 
         data = []
 
-        keep_failed = cfg.get("keep_failed", False)
+        keep_failed_steps = cfg.get("keep_failed_steps", False)
+        hide_failed_users = cfg.get("hide_failed_users", False)
 
         for line in data_timeline:
             if line["LegendGroup"] != "ODS-CI": continue
+            failures = entry.results.ods_ci_user_test_status[line["UserIdx"]]
+            if failures and hide_failed_users: continue
 
             if line["LegendName"].startswith("ODS - 0 -"):
                 entry_data = line.copy()
 
-                entry_data["Test step"] = "0 - Initialization and delay"
+                entry_data["Test step"] = "Launch delay and initialization"
                 entry_data["Length"] = (entry_data["Start"] - entry.results.job_creation_time).total_seconds()
+                entry_data["StepIdx"] = -1
+                if failures:
+                    entry_data["LineName"] = f"<b>{entry_data['LineName']}</b>"
 
-                data.append(entry_data)
+                data.insert(0, entry_data)
 
             hide = cfg.get("hide", None)
             if isinstance(hide, int):
@@ -59,24 +65,28 @@ class SpawnTime():
                 if skip: continue
 
             line_data = line.copy()
-            if keep_failed or line_data["Status"] == "PASS":
+            if keep_failed_steps or line_data["Status"] == "PASS":
                 line_data["Length"] = (line_data["Finish"] - line_data["Start"]).total_seconds()
             else:
                 line_data["Length"] = 0
 
             line_data["Test step"] = line_data["LegendName"]
 
-            failures = entry.results.ods_ci_user_test_status[line["UserIdx"]]
-
             if failures:
                 line_data["LineName"] = f"<b>{line_data['LineName']}</b>"
 
             data.append(line_data)
 
-        df = pd.DataFrame(data).sort_values(by=['LineName', "Test step"], ascending=True)
+        df = pd.DataFrame(data).sort_values(by=['UserIdx', "StepIdx"], ascending=True)
 
         fig = px.area(df, y="LineName", x="Length", color="Test step")
         fig.update_layout(xaxis_title="Timeline (in seconds)")
         fig.update_layout(yaxis_title="")
-
+        fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
+        title = "Execution Time of the User Steps"
+        if keep_failed_steps:
+            title += " with the failed steps"
+        if hide_failed_users:
+            title += " without the failed users"
+        fig.update_layout(title=title, title_x=0.5,)
         return fig, ""
