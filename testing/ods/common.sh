@@ -71,6 +71,9 @@ DRIVER_FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determin
 # OSP/OSD cluster naming is handled differently in this job
 JOB_NAME_SAFE_GET_CLUSTER="get-cluster"
 
+# number of hours CI clusters are allowed to stay alive, before we clean them up
+CLUSTER_CLEANUP_DELAY=4
+
 ocm_login() {
     export OCM_ENV
     export PSAP_ODS_SECRET_PATH
