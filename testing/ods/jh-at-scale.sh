@@ -196,11 +196,7 @@ run_jupyterlab_test() {
     nginx_server_dir=$(ls -d "$ARTIFACT_DIR"/*_"${NGINX_SERVER_DIRNAME}" | tail -1)
     nginx_server=$(cat "${nginx_server_dir}/hostname")
 
-    if [[ "$ODS_CI_NB_USERS" -le 5 ]]; then
-        collect=all
-    else
-        collect=no-image-except-failed-and-zero
-    fi
+    ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
 
     ./run_toolbox.py rhods test_jupyterlab \
                      "$LDAP_IDP_NAME" \
@@ -208,7 +204,7 @@ run_jupyterlab_test() {
                      "$S3_LDAP_PROPS" \
                      "http://$nginx_server/$ODS_NOTEBOOK_NAME" \
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
-                     --artifacts-collected=$collect \
+                     --artifacts-collected="$ARTIFACTS_COLLECTED" \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR"
 }
 
