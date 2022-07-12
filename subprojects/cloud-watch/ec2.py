@@ -3,9 +3,10 @@ import datetime
 import boto3
 import botocore.config
 from collections import defaultdict
+import argparse
 
 IGNORE_LESS_THAN_DAYS = 0
-MY_REGIONS = ["us-east-2", "us-east-1", "us-west-2", "eu-central-1"]
+PREFERED_REGIONS = ["us-east-2", "us-east-1", "us-west-2", "eu-central-1"]
 now = datetime.datetime.now(datetime.timezone.utc)
 
 client_ec2 = boto3.client('ec2')
@@ -14,6 +15,7 @@ r53_client = boto3.client("route53")
 
 clusters = defaultdict(list)
 cluster_zones = {}
+clusters_to_list = []
 
 IGNORE_NODES = [
     "Liquan-rhel82-jumphost",
@@ -26,6 +28,8 @@ IGNORE_NODES = [
 IGNORE_CLUSTERS = [
     "walid4107p-2wx7t"
 ]
+
+args = None
 
 def collect_instances(region=None):
     print(f"Looking at the {region} region ...")
@@ -74,7 +78,7 @@ def collect_instances(region=None):
             instances_stopped += 1
 
         info = {
-            "ID": instance.id,
+            "ID": instance.id.split("/")[-1],
             "Type": instance.instance_type,
             "State": instance.state["Name"],
             "Age": f"{age} days",
@@ -98,11 +102,19 @@ def collect_instances(region=None):
             instances_ignored_from_list += 1
             continue
 
-        if info.get("Cluster ID", "").split("/")[-1] in IGNORE_CLUSTERS:
+        if info.get("Cluster ID", "") in IGNORE_CLUSTERS:
             instances_ignored_from_list += 1
             continue
 
+        if args.ci_prefix:
+            if not info["Name"].startswith(args.ci_prefix):
+                continue
+
+            if args.ci_list_older_than and age_hr < args.ci_list_older_than:
+                continue
+
         clusters[info.get("Cluster ID")].append(info)
+
     if not instance_count: return
     print(f"""\
 {instance_count=}
@@ -112,11 +124,15 @@ def collect_instances(region=None):
 {instances_ignored_from_list=}
     """)
 
-def get_all_regions():
-    if MY_REGIONS:
-        return MY_REGIONS
 
-    return [region['RegionName'] for region in client_ec2.describe_regions()['Regions']]
+def get_all_regions():
+    if args.all_regions:
+        return [region['RegionName'] for region in client_ec2.describe_regions()['Regions']]
+    elif args.regions:
+        return args.regions
+    else:
+        return PREFERED_REGIONS
+
 
 def print_clusters():
     for cluster_tag in reversed(sorted(map(str, clusters))):
@@ -142,18 +158,39 @@ def print_clusters():
                         print("Cluster:", cluster_instance['Region'], cluster_name)
                     print("Age:", cluster_instance['Age'])
 
+                    if args.ci_prefix and args.ci_list_older_than:
+                        if args.ci_list_file:
+                            with open(args.ci_list_file, "a") as out_f:
+                                print(f"{cluster_instance['Region']} {cluster_name}", file=out_f)
+
+                            print(f"WARNING: CI cluster {cluster_name} ({cluster_instance['Region']}) marked for deletion.")
+                        else:
+                            print(f"WARNING: CI cluster {cluster_name} ({cluster_instance['Region']}) is too old.")
+
             print(cluster_instance["ID"], cluster_instance["Type"], cluster_instance["State"], cluster_instance["Name"])
 
             if cluster_tag is None:
                 print("Age:", cluster_instance['Age'])
                 print("Region:", cluster_instance['Region'])
+
             first = False
         print()
 
 
 def main():
+    global args
+    parser = argparse.ArgumentParser(description='Cleaning up of RHODS-related zombie AWS resources.')
+    parser.add_argument('--all-regions', action='store_true', help='Go through all the AWS regions', default=False)
+    parser.add_argument('--regions', help='Go through the specified AWS regions', type=str, nargs='*')
+    parser.add_argument('--ci-prefix', help='Cluster name prefix to identify CI-generated clusters', type=str)
+    parser.add_argument('--ci-list-older-than', help='Mark CI clusters older than this age (in hours) for deletion', type=int)
+    parser.add_argument('--ci-list-file', help='Name of a file where the cluster to delete will be listed. Format: One "<region> <cluster_id>" per line.', type=str)
+    args = parser.parse_args()
+
     for region in get_all_regions():
+        print(f"Region: {region}")
         collect_instances(region)
+
     print_clusters()
 
 sys.exit(main())
