@@ -41,15 +41,10 @@ def generate(entry, cfg):
 
     def get_line_name(user_idx):
         line_name = [
-            f"User #{user_idx:2d}",
-            #test_nodes[user_idx],
+            f"User #{user_idx:03d}",
         ]
 
-        #if rhods_nodes: line_name += [rhods_nodes.get(user_idx, "<no RHODS node>")]
-
-
         return "<br>".join(line_name)
-        #return " | ".join(line_name)
 
     data = []
 
@@ -69,6 +64,7 @@ def generate(entry, cfg):
                 Start=kwargs.get("Start") or data[-1]["Finish"],
                 Finish=kwargs["Finish"],
                 LineName=get_line_name(user_idx),
+                UserIdx=user_idx,
                 Opacity=0.5,
                 LineWidth=80,
                 LineSortIndex=user_idx,
@@ -126,6 +122,7 @@ def generate(entry, cfg):
                     Start=kwargs.get("Start") or data[-1]["Finish"],
                     Finish=kwargs["Finish"],
                     LineName=get_line_name(user_idx),
+                    UserIdx=user_idx,
                     Opacity=0.9,
                     LineWidth=50,
                     LineSortIndex=kwargs["Finish"],
@@ -160,6 +157,7 @@ def generate(entry, cfg):
                 LegendGroup="Notebook",
                 Opacity=1,
                 LineName=get_line_name(user_idx),
+                UserIdx=user_idx,
                 LineWidth=30,
                 LineSortIndex=kwargs["Finish"],
             )
