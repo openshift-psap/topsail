@@ -40,6 +40,14 @@ class SpawnTime():
         for line in data_timeline:
             if line["LegendGroup"] != "ODS-CI": continue
 
+            if line["LegendName"].startswith("ODS - 0 -"):
+                entry_data = line.copy()
+
+                entry_data["Test step"] = "0 - Initialization and delay"
+                entry_data["Length"] = (entry_data["Start"] - entry.results.job_creation_time).total_seconds()
+
+                data.append(entry_data)
+
             hide = cfg.get("hide", None)
             if isinstance(hide, int):
                 if f"User #{hide:2d}" == line["LineName"]: continue
@@ -47,7 +55,6 @@ class SpawnTime():
             elif isinstance(hide, str):
                 skip = False
                 for hide_idx in hide.split(","):
-                    print(f"User #{int(hide_idx): 2d}", line["LineName"])
                     if f"User #{int(hide_idx):2d}" == line["LineName"]: skip = True
                 if skip: continue
 
@@ -59,14 +66,15 @@ class SpawnTime():
 
             line_data["Test step"] = line_data["LegendName"]
 
-            failures = entry.results.ods_ci_user_test_status[line_data["LineName"]]
+            failures = entry.results.ods_ci_user_test_status[line["UserIdx"]]
 
             if failures:
                 line_data["LineName"] = f"<b>{line_data['LineName']}</b>"
 
             data.append(line_data)
 
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(data).sort_values(by=['LineName', "Test step"], ascending=True)
+
         fig = px.area(df, y="LineName", x="Length", color="Test step")
         fig.update_layout(xaxis_title="Timeline (in seconds)")
         fig.update_layout(yaxis_title="")
