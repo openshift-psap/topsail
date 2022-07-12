@@ -16,7 +16,12 @@ create_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="osd_${cluster_role}_"
 
     cluster_name="${CLUSTER_NAME_PREFIX}"
-    if [[ "${PULL_NUMBER:-}" ]]; then
+
+    if [[ "${JOB_NAME_SAFE:-}" == "$JOB_NAME_SAFE_GET_CLUSTER" ]]; then
+        author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
+        cluster_name="${author}-$(date %m%d-%Hh%M)"
+
+    elif [[ "${PULL_NUMBER:-}" ]]; then
         cluster_name="${cluster_name}${PULL_NUMBER}-$(date +%Hh%M)"
     else
         cluster_name="${cluster_name}$(date +%y%m%d%H%M)"

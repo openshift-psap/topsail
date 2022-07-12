@@ -64,6 +64,9 @@ DRIVER_COMPUTE_MACHINE_TYPE=m5.2xlarge
 SUTEST_FORCE_COMPUTE_NODES_COUNT=2 # if empty, uses ods/sizing/sizing to determine the right number of machines
 DRIVER_FORCE_COMPUTE_NODES_COUNT=0 # if empty, uses ods/sizing/sizing to determine the right number of machines
 
+# OSP/OSD cluster naming is handled differently in this job
+JOB_NAME_SAFE_GET_CLUSTER="get-cluster"
+
 ocm_login() {
     export OCM_ENV
     export PSAP_ODS_SECRET_PATH

@@ -36,7 +36,11 @@ create_cluster() {
     cd subprojects/deploy-cluster/
 
     cluster_name="${CLUSTER_NAME_PREFIX}"
-    if [[ "${PULL_NUMBER:-}" ]]; then
+    if [[ "${JOB_NAME_SAFE:-}" == "$JOB_NAME_SAFE_GET_CLUSTER" ]]; then
+        author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
+        cluster_name="${author}-${cluster_role}-$(date +%Y%m%d-%Hh%M)"
+
+    elif [[ "${PULL_NUMBER:-}" ]]; then
         cluster_name="${cluster_name}-pr${PULL_NUMBER}-${cluster_role}-${BUILD_ID}"
     else
         cluster_name="${cluster_name}-${cluster_role}-$(date +%Hh%M)"
