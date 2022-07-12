@@ -57,7 +57,7 @@ destroy_cluster() {
     cluster_type=$1
     cluster_role=$2
 
-    export KUBECONFIG="${SHARED_DIR}/${cluster_type}_kubeconfig"
+    export KUBECONFIG="${SHARED_DIR}/${cluster_role}_kubeconfig"
     if oc get cm/keep-cluster -n default 2>/dev/null; then
         echo "INFO: keep-cluster CM found in the default namespace of the $cluster_type/$cluster_role, keep it."
         return
