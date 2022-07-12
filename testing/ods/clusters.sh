@@ -57,6 +57,12 @@ destroy_cluster() {
     cluster_type=$1
     cluster_role=$2
 
+    export KUBECONFIG="${SHARED_DIR}/${cluster_type}_kubeconfig"
+    if oc get cm/keep-cluster -n default 2>/dev/null; then
+        echo "INFO: keep-cluster CM found in the default namespace of the $cluster_type/$cluster_role, keep it."
+        return
+    fi
+
     finalize_cluster "$cluster_role"
 
     "$THIS_DIR/${cluster_type}_cluster.sh" destroy "$cluster_role"
@@ -64,22 +70,63 @@ destroy_cluster() {
 
 create_clusters() {
     cluster_type=$1
+    shift || truez
+    create_flag="${1:-}"
+    shift || true
 
     if [[ "$cluster_type" == "osd" || "$cluster_type" == "ocp" ]]; then
         process_ctrl::run_in_bg "$THIS_DIR/${cluster_type}_cluster.sh" create "sutest"
 
+        process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "driver"
+
     elif [[ "$cluster_type" == "single" ]]; then
-        echo "INFO: launching a single cluster, creating a symlink for the sutest cluster"
-        ln -s "${SHARED_DIR}/driver_kubeconfig" "${SHARED_DIR}/sutest_kubeconfig"
+        process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "sutest"
+
+        echo "INFO: launching a single cluster, creating a symlink for the driver cluster"
+        ln -s "${SHARED_DIR}/sutest_kubeconfig" "${SHARED_DIR}/driver_kubeconfig"
 
     else
         echo "ERROR: invalid cluster type: '$cluster_type'"
         exit 1
     fi
 
-    process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "driver"
-
     process_ctrl::wait_bg_processes
+
+    if [[ "$create_flag" == "keep" ]]; then
+        KUBECONFIG_DRIVER="${SHARED_DIR}/driver_kubeconfig" # cluster driving the test
+        KUBECONFIG_SUTEST="${SHARED_DIR}/sutest_kubeconfig" # system under test
+
+        keep_cluster() {
+            echo "Keeping $KUBECONFIG cluster ..."
+            export PSAP_ODS_SECRET_PATH
+            oc create cm keep-cluster -n default --from-literal=keep=true
+
+            bash -ceE '
+            source "$PSAP_ODS_SECRET_PATH/create_osd_cluster.password"
+            B64_PASS_HASH=$(cd subprojects/kube-password; go run . "$KUBEADMIN_PASS")
+            cat << EOF | oc apply -f-
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubeadmin
+  namespace: kube-system
+type: Opaque
+data:
+  kubeadmin: "$B64_PASS_HASH"
+EOF
+'
+        }
+
+        KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster
+
+        # * 'osd' clusters already have their kubeadmin password
+        # populated during the cluster bring up
+        # * 'single' clusters already have been modified with the
+        # keep_cluster call of the sutest cluster.
+        if [[ "$cluster_type" == "ocp" ]]; then
+            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster
+        fi
+    fi
 }
 
 destroy_clusters() {
@@ -87,17 +134,16 @@ destroy_clusters() {
 
     if [[ "$cluster_type" == "osd" || "$cluster_type" == "ocp" ]]; then
         process_ctrl::run_in_bg destroy_cluster "$cluster_type" "sutest"
+        process_ctrl::run_in_bg destroy_cluster "ocp" "driver"
 
     elif [[ "$cluster_type" == "single" ]]; then
-        echo "INFO: only one cluster was created, nothing to destroy for the sutest cluster"
-
+        process_ctrl::run_in_bg destroy_cluster "ocp" "sutest"
+        echo "INFO: only one cluster was created, nothing to destroy for the driver cluster"
     else
         echo "ERROR: invalid cluster type: '$cluster_type'"
         # don't 'exit 1' in the destroy step,
-        # that would prevent the destruction of the driver cluster
+        # that would prevent the destruction of other clusters
     fi
-
-    process_ctrl::run_in_bg destroy_cluster "ocp" "driver"
 
     process_ctrl::wait_bg_processes
 }
@@ -114,7 +160,7 @@ shift || true
 cluster_type="${1:-}"
 shift || true
 
-if [[ -z "${action}" || -z "${action}" ]]; then
+if [[ -z "${action}" || -z "${cluster_type}" ]]; then
     echo "FATAL: $0 expects 2 arguments: (create|destroy) (ocp|osd|single)"
     exit 1
 fi

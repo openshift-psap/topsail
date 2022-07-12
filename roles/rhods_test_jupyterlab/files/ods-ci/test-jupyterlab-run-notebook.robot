@@ -7,6 +7,8 @@ Library             DebugLibrary
 Library             JupyterLibrary
 Library             libs/Helpers.py
 
+Suite Teardown Tear Down
+
 *** Variables ***
 
 ${NOTEBOOK_IMAGE_NAME}         s2i-generic-data-science-notebook
@@ -25,6 +27,8 @@ Setup
   RHOSi Setup
   Open Browser  ${ODH_DASHBOARD_URL}  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}
 
+Tear Down
+  Close Browser
 
 *** Test Cases ***
 
