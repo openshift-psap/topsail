@@ -86,8 +86,15 @@ _download_data_from_url() {
 }
 
 _prepare_data_from_artifacts_dir() {
+    artifact_dir=$1
+
+    if ! ls "$artifact_dir"/*__driver_rhods__test_jupyterlab -d >/dev/null 2>&1; then
+        echo "FATAL: No result available, aborting."
+        exit 1
+    fi
+
     mkdir -p "$MATBENCH_RESULTS_DIR"
-    ln -s "$ARTIFACT_DIR" "$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
+    ln -s "$artifact_dir" "$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
 }
 
 generate_matbench::get_prometheus() {
@@ -150,11 +157,7 @@ if [[ "$JOB_NAME_SAFE" == "jh-on-"* ]]; then
 
     cluster_type=$(echo "$JOB_NAME_SAFE" | cut -d- -f3 )
 
-    if ! ls "$ARTIFACT_DIR"/*__driver_rhods__test_jupyterlab -d >/dev/null 2>&1; then
-        echo "WARNING: No result available, aborting."
-        exit 1
-    fi
-    _prepare_data_from_artifacts_dir
+    _prepare_data_from_artifacts_dir "$ARTIFACT_DIR/.."
 
     generate_matbench::get_prometheus
     generate_matbench::get_matrix_benchmarking
