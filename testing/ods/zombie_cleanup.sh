@@ -6,6 +6,8 @@ set -o nounset
 set -o errtrace
 set -x
 
+export PSAP_ODS_SECRET_PATH=/var/run/psap-ods-secret-1
+
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "$THIS_DIR/common.sh"
 
