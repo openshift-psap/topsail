@@ -226,9 +226,6 @@ run_jupyterlab_test() {
 
 capture_prometheus() {
     dump_prometheus_dbs
-
-    # Generate the visualization reports
-    ./testing/ods/generate_matrix-benchmarking.sh
 }
 
 sutest_cleanup() {

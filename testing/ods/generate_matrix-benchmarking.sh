@@ -85,6 +85,11 @@ _download_data_from_url() {
                              "$url")
 }
 
+_prepare_data_from_artifacts_dir() {
+    mkdir -p "$MATBENCH_RESULTS_DIR"
+    ln -s "$ARTIFACT_DIR" "$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
+}
+
 generate_matbench::get_prometheus() {
     PROMETHEUS_VERSION=2.36.0
     cd /tmp
@@ -131,8 +136,26 @@ EOF
     mv report_* "$ARTIFACT_DIR"
 }
 
+if [[ "$JOB_NAME_SAFE" == "jh-on-"* ]]; then
+    set -o errexit
+    set -o pipefail
+    set -o nounset
+    set -x
 
-if [[ "$JOB_NAME_SAFE" == "plot-jh-on-"* ]]; then
+    cluster_type=$(echo "$JOB_NAME_SAFE" | cut -d- -f3 )
+
+    if ! ls "$ARTIFACT_DIR"/*__driver_rhods__test_jupyterlab -d >/dev/null 2>&1; then
+        echo "WARNING: No result available, aborting."
+        exit 1
+    fi
+    _prepare_data_from_artifacts_dir
+
+    generate_matbench::get_prometheus
+    generate_matbench::get_matrix_benchmarking
+
+    generate_matbench::generate_plots
+
+elif [[ "$JOB_NAME_SAFE" == "plot-jh-on-"* ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset
