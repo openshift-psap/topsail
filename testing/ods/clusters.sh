@@ -57,7 +57,7 @@ destroy_cluster() {
     cluster_type=$1
     cluster_role=$2
 
-    export KUBECONFIG="${SHARED_DIR}/${cluster_type}_kubeconfig"
+    export KUBECONFIG="${SHARED_DIR}/${cluster_role}_kubeconfig"
     if oc get cm/keep-cluster -n default 2>/dev/null; then
         echo "INFO: keep-cluster CM found in the default namespace of the $cluster_type/$cluster_role, keep it."
         return
@@ -97,7 +97,9 @@ create_clusters() {
         KUBECONFIG_SUTEST="${SHARED_DIR}/sutest_kubeconfig" # system under test
 
         keep_cluster() {
-            echo "Keeping $KUBECONFIG cluster ..."
+            cluster_role=$1
+
+            echo "Keeping the $cluster_role cluster ..."
             export PSAP_ODS_SECRET_PATH
             oc create cm keep-cluster -n default --from-literal=keep=true
 
@@ -115,16 +117,24 @@ data:
   kubeadmin: "$B64_PASS_HASH"
 EOF
 '
+            oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
+            cat <<EOF > > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
+source "\$PSAP_ODS_SECRET_PATH/create_osd_cluster.password"
+oc login $(oc whoami --show-server) --insecure-skip-tls-verify --username=kubeadmin --password="\$KUBEADMIN_PASS"
+EOF
+            CLUSTER_TAG=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
+            echo "$OCP_REGION $CLUSTER_TAG" > "$ARTIFACT_DIR/${cluster_role}_cluster_tag"
         }
 
-        KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster
+
+        KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster driver
 
         # * 'osd' clusters already have their kubeadmin password
         # populated during the cluster bring up
         # * 'single' clusters already have been modified with the
         # keep_cluster call of the sutest cluster.
         if [[ "$cluster_type" == "ocp" ]]; then
-            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster
+            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster sutest
         fi
     fi
 }

@@ -16,7 +16,12 @@ create_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="osd_${cluster_role}_"
 
     cluster_name="${CLUSTER_NAME_PREFIX}"
-    if [[ "${PULL_NUMBER:-}" ]]; then
+
+    if [[ "${JOB_NAME_SAFE:-}" == "$JOB_NAME_SAFE_GET_CLUSTER" ]]; then
+        author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
+        cluster_name="${author}-$(date %m%d-%Hh%M)"
+
+    elif [[ "${PULL_NUMBER:-}" ]]; then
         cluster_name="${cluster_name}${PULL_NUMBER}-$(date +%Hh%M)"
     else
         cluster_name="${cluster_name}$(date +%y%m%d%H%M)"
@@ -33,6 +38,7 @@ create_cluster() {
     compute_nodes_type=$(get_compute_node_type "$cluster_role")
     compute_nodes_count=$(get_compute_node_count "$cluster_role" osd "$compute_nodes_type")
 
+    echo "$cluster_name" > "$ARTIFACT_DIR/${cluster_role}_osd_cluster.name"
     ./run_toolbox.py cluster create_osd \
                      "$cluster_name" \
                      "$PSAP_ODS_SECRET_PATH/create_osd_cluster.password" \
@@ -41,6 +47,7 @@ create_cluster() {
                      --compute_nodes="$compute_nodes_count" \
                      --version="$OSD_VERSION" \
                      --region="$OSD_REGION"
+    ocm describe cluster "$cluster_name" --json | jq .id -r > "$ARTIFACT_DIR/${cluster_role}_osd_cluster.id"
 
     if [[ "$cluster_role" == "sutest" && "$ENABLE_AUTOSCALER" ]]; then
         MACHINEPOOL_NAME=default
