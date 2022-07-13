@@ -118,7 +118,7 @@ data:
 EOF
 '
             oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
-            cat <<EOF > > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
+            cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
 source "\$PSAP_ODS_SECRET_PATH/create_osd_cluster.password"
 oc login $(oc whoami --show-server) --insecure-skip-tls-verify --username=kubeadmin --password="\$KUBEADMIN_PASS"
 EOF
