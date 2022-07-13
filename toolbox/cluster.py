@@ -329,12 +329,23 @@ class Cluster:
         return RunAnsibleRole("cluster_deploy_ldap", opts)
 
     @staticmethod
-    def undeploy_ldap():
+    def undeploy_ldap(idp_name, use_ocm="", use_rosa=""):
         """
         Undeploy OpenLDAP and LDAP Oauth
+
+        Args:
+          idp_name: Name of the LDAP identity provider.
+          use_ocm: Optional. If set with a cluster name, use `ocm delete idp` to delete the LDAP identity provider.
+          use_rosa: Optional. If set with a cluster name, use `rosa delete idp` to delete the LDAP identity provider.
         """
 
-        return RunAnsibleRole("cluster_undeploy_ldap")
+        opts = {
+            "cluster_deploy_ldap_idp_name": idp_name,
+            "cluster_deploy_ldap_use_ocm": use_ocm,
+            "cluster_deploy_ldap_use_rosa": use_rosa,
+        }
+
+        return RunAnsibleRole("cluster_undeploy_ldap", opts)
 
     @staticmethod
     def preload_image(name, image, namespace="default"):

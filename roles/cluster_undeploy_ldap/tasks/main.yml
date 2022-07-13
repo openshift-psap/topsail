@@ -19,6 +19,9 @@
     mode: 0400
 
 - name: Delete the LDAP Oauth resource
+  when:
+  - not cluster_undeploy_ldap_use_rosa
+  - not cluster_undeploy_ldap_use_ocm
   shell:
     set -o pipefail;
     oc get -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -ojson | jq 'del(.spec.identityProviders)' | oc apply -f-
@@ -26,3 +29,19 @@
 - name: Delete the ldap namespace
   command:
     oc delete namespace openldap --ignore-not-found
+
+- name: Undeploy on ROSA
+  when: cluster_undeploy_ldap_use_rosa | length > 0
+  block:
+  - name: Delete the IDP resource
+    command:
+      rosa delete idp "{{ cluster_undeploy_ldap_idp_name }}"
+          --cluster "{{ cluster_undeploy_ldap_use_rosa }}"
+
+- name: Undeploy on OCM
+  when: cluster_undeploy_ldap_use_ocm | length > 0
+  block:
+  - name: Delete the IDP resource
+    command:
+      ocm delete idp "{{ cluster_undeploy_ldap_idp_name }}"
+          --cluster "{{ cluster_undeploy_ldap_use_ocm }}"
