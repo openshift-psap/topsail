@@ -182,7 +182,7 @@ def generate(entry, cfg):
             if not hasattr(event_times, "pulling"): continue
             data.append(generate_data(
                 "21. Notebook preparation",
-                "Notebook pod cheduled", "image pulling",
+                "Notebook pod scheduled", "image pulling",
                 Finish=event_times.pulling))
             if not hasattr(event_times, "pulled"): continue
             data.append(generate_data(
