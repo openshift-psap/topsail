@@ -51,7 +51,7 @@ class Completion():
 
 
             time = 1 # hr
-            price = time * entry.results.price/60 * instance_count
+            price = time * entry.results.price * instance_count
 
             data.append(dict(instance=f"{entry.results.group} - {instance_count}x {entry.import_settings['instance']}",
                              price=price, time=time, instance_count=instance_count))

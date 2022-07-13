@@ -1,4 +1,5 @@
 import datetime
+import re
 
 from .. import store as rhodsci_store
 
@@ -36,7 +37,7 @@ def generate(entry, cfg):
         test_nodes[user_idx] = f"Test node #{test_nodes_index(nodename)}"
 
     for notebook_name, nodename in entry_results.notebook_hostnames.items():
-        user_idx = int(notebook_name.replace("jupyterhub-nb-testuser", ""))
+        user_idx = int(re.findall(r'[:letter:]*(\d+)$', notebook_name)[0])
         rhods_nodes[user_idx] = f"RHODS node #{rhods_nodes_index(nodename)}"
 
     def get_line_name(user_idx):
@@ -144,11 +145,12 @@ def generate(entry, cfg):
             ))
 
     for notebook_name in entry_results.notebook_pods:
-        user_idx = int(notebook_name.replace("jupyterhub-nb-testuser", ""))
+        user_idx = int(re.findall(r'[:letter:]*(\d+)$', notebook_name)[0])
 
         event_times = entry_results.event_times[notebook_name]
-
-        appears_time = min([v for v in event_times.__dict__.values() if isinstance(v, datetime.datetime)])
+        try: appears_time = min([v for v in event_times.__dict__.values() if isinstance(v, datetime.datetime)])
+        except ValueError: #min() arg is an empty sequence
+            appears_time = None
 
         def generate_data(LegendName, start_evt, finish_evt, **kwargs):
             defaults = dict(
@@ -169,27 +171,38 @@ def generate(entry, cfg):
 
             return defaults | kwargs
 
-        data.append(generate_data(
-            "20. Notebook scheduling",
-            "Notebook pod appeared", "scheduled",
-            Start=appears_time,
-            Finish=event_times.scheduled))
-        data.append(generate_data(
-            "21. Notebook preparation",
-            "Notebook pod cheduled", "image pulling",
-            Finish=event_times.pulling))
-        data.append(generate_data(
-            "22. Notebook image pull",
-            "Notebook image pulling", "image pulled",
-            Finish=event_times.pulled))
-        data.append(generate_data(
-            "23. Notebook initialization",
-            "Notebook image pulled", "container started",
-            Finish=event_times.started))
-        data.append(generate_data(
-            "24. Notebook execution",
-            "Notebook container started", "container terminated",
-            Finish=event_times.terminated))
+        for _ in [True]: # for the 'continue keyword'
+            if not appears_time: continue
+            if not hasattr(event_times, "scheduled"): continue
+            data.append(generate_data(
+                "20. Notebook scheduling",
+                "Notebook pod appeared", "scheduled",
+                Start=appears_time,
+                Finish=event_times.scheduled))
+            if not hasattr(event_times, "pulling"): continue
+            data.append(generate_data(
+                "21. Notebook preparation",
+                "Notebook pod cheduled", "image pulling",
+                Finish=event_times.pulling))
+            if not hasattr(event_times, "pulled"): continue
+            data.append(generate_data(
+                "22. Notebook image pull",
+                "Notebook image pulling", "image pulled",
+                Finish=event_times.pulled))
+            if not hasattr(event_times, "started"): continue
+            data.append(generate_data(
+                "23. Notebook initialization",
+                "Notebook image pulled", "container started",
+                Finish=event_times.started))
+
+
+            end = event_times.terminated if hasattr(event_times, "terminaned") \
+                else entry_results.job_completion_time
+
+            data.append(generate_data(
+                "24. Notebook execution",
+                "Notebook container started", "container terminated",
+                Finish=end))
 
 
         for reason, start, end, msg in event_times.__dict__.get("warnings", []):
@@ -204,7 +217,7 @@ def generate(entry, cfg):
             ))
 
     for notebook_name in entry_results.notebook_hostnames.keys():
-        user_idx = int(notebook_name.replace("jupyterhub-nb-testuser", ""))
+        user_idx = int(re.findall(r'[:letter:]*(\d+)$', notebook_name)[0])
         rhods_node = rhods_nodes[user_idx]
 
         LineName = get_line_name(user_idx)

@@ -1,4 +1,5 @@
 from collections import defaultdict
+import re
 
 import plotly.graph_objs as go
 import pandas as pd
@@ -31,20 +32,38 @@ def generate_data(entry, cfg, is_notebook):
 
     data = []
     for pod_name in pods:
-        user_idx = int(pod_name.replace("jupyterhub-nb-testuser", "") if is_notebook else pod_name.split("-")[2])
+        if is_notebook:
+            user_idx = int(re.findall(r'[:letter:]*(\d+)$', pod_name)[0])
+        else:
+            user_idx = int(pod_name.split("-")[2])
+
         event_times = entry_results.event_times[pod_name]
         pod_times = entry_results.pod_times[pod_name]
+        try:
+            hostname = hostnames[pod_name]
+        except KeyError:
+            data.append(dict(
+                UserIndex = f"User #{user_idx:03d}",
+                PodStart = entry_results.job_creation_time,
+                PodFinish = entry_results.job_completion_time,
+                NodeIndex = f"No node",
+                NodeName = f"No node",
+                Count=1,
+            ))
+            continue
 
-        hostname = hostnames[pod_name]
         shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "")
-        finish = event_times.terminated if is_notebook else pod_times.container_finished
+        try:
+            finish = event_times.terminated if is_notebook else pod_times.container_finished
+        except AttributeError: # object has no attribute 'terminated'
+            finish = entry_results.job_completion_time
         try:
             instance_type = entry.results.nodes_info[hostname].instance_type
         except AttributeError:
             instance_type = ""
 
         data.append(dict(
-            UserIndex = f"User {user_idx}",
+            UserIndex = f"User #{user_idx:03d}",
             PodStart = event_times.scheduled,
             PodFinish = finish,
             NodeIndex = f"Node {hostnames_index(hostname)}",
@@ -72,8 +91,10 @@ class MappingTimeline():
         user_count = 0
         data = []
         line_sort_name = ""
+
         for entry in common.Matrix.all_records(settings, setting_lists):
             df = pd.DataFrame(generate_data(entry, cfg, self.is_notebook))
+
         if df.empty:
             return None, "Not data available ..."
 

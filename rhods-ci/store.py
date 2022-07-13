@@ -5,6 +5,7 @@ import datetime
 from collections import defaultdict
 import xmltodict
 import logging
+import re
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
@@ -17,6 +18,8 @@ from .plotting import prom as rhods_plotting_prom
 K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 ROBOT_TIME_FMT = "%Y%m%d %H:%M:%S.%f"
+
+JUPYTERLAB_USER_RENAME_PREFIX = "jupyterhub-nb-user"
 
 def _rewrite_settings(settings_dict):
     if "user-count" in settings_dict:
@@ -40,7 +43,7 @@ def _parse_job(results, filename):
             K8S_TIME_FMT)
 
 
-def _parse_pod_event_times(filename, namespace=None, hostnames=None):
+def _parse_pod_event_times(filename, namespace=None, hostnames=None, is_notebook=False):
     event_times = defaultdict(types.SimpleNamespace)
 
     with open(filename) as f:
@@ -75,6 +78,9 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None):
             "FailedScheduling": "failed",
             "Failed": "failed"
         }
+        if is_notebook:
+            user_idx = int(re.findall(r'[:letter:]*(\d+)$', podname)[0])
+            podname = f"{JUPYTERLAB_USER_RENAME_PREFIX}{user_idx}"
 
         evt_name = MAPPING_REASON_NAME.get(reason)
 
@@ -225,12 +231,12 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.testpod_hostnames = testpod_hostnames = {}
 
     print("_parse_pod_events (notebook)")
-    results.event_times |= _parse_pod_event_times(dirname / "notebook_events.yaml", "rhods-notebooks", notebook_hostnames)
+    results.event_times |= _parse_pod_event_times(dirname / "notebook_events.yaml", "rhods-notebooks", notebook_hostnames, is_notebook=True)
     print("_parse_pod_events (tester)")
     results.event_times |= _parse_pod_event_times(dirname / "tester_events.yaml", "loadtest", testpod_hostnames)
 
     results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci")]
-    results.notebook_pods = [k for k in results.event_times.keys() if k.startswith("jupyterhub-nb")]
+    results.notebook_pods = [k for k in results.event_times.keys() if k.startswith(JUPYTERLAB_USER_RENAME_PREFIX)]
     print("_extract_metrics")
     results.metrics = _extract_metrics(dirname)
 
@@ -302,7 +308,7 @@ def _generate_pod_event_times(user_count, instance_count, container_size, instan
         current_end = None
 
         for user_idx in users:
-            podname = f"jupyterhub-nb-testuser{user_idx}"
+            podname = f"{JUPYTERLAB_USER_RENAME_PREFIX}{user_idx}"
             if "warnings" not in event_times[podname].__dict__:
                 event_times[podname].warnings = []
 
@@ -318,7 +324,7 @@ def _generate_pod_event_times(user_count, instance_count, container_size, instan
             if event_times[podname].warnings:
                 event_times[podname].warnings[-1][2] = current_time
 
-            notebook_hostnames[f"jupyterhub-nb-testuser{user_idx}"] = f"Node {node.idx}"
+            notebook_hostnames[user_idx] = f"Node {node.idx}"
 
             event_times[podname].scheduled = current_time
             add_time(event_times[podname], "scheduled", "pulling", POD_CREATION)
@@ -351,9 +357,8 @@ def _generate_timeline_results(entry, user_count, instance_count=None):
 
     results = types.SimpleNamespace()
 
-    results.testpod_hostnames = {f"ods-ci-{idx}": "Node 0" for idx in range(user_count)}
-
-    results.notebook_hostnames = {f"jupyterhub-nb-testuser{idx}": f"Node {idx}" for idx in range(user_count)}
+    results.testpod_hostnames = {user_idx: "Node {user_idx}" for user_idx in range(user_count)}
+    results.notebook_hostnames = {user_idx: f"Node {user_idx}" for user_idx in range(user_count)}
 
     results.pod_times = {}
     results.test_pods = []
