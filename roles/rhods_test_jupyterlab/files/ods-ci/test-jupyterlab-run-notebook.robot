@@ -7,7 +7,7 @@ Library             DebugLibrary
 Library             JupyterLibrary
 Library             libs/Helpers.py
 
-Suite Teardown Tear Down
+Suite Teardown  Tear Down
 
 *** Variables ***
 
