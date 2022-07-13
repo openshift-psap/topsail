@@ -227,7 +227,7 @@
   until: wait_rhods_test_job_start.stdout
 
 - name: Wait for the RHODS tester job to terminate
-  shell:
+  command:
     oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ rhods_test_namespace }}
   register: wait_rhods_test_job
   retries: 60
