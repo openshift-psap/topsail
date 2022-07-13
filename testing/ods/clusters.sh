@@ -118,8 +118,14 @@ data:
 EOF
 '
             oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
-            echo "oc login $(oc whoami --show-server) --username=kubeadmin" > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
+            cat <<EOF > > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
+source "\$PSAP_ODS_SECRET_PATH/create_osd_cluster.password"
+oc login $(oc whoami --show-server) --insecure-skip-tls-verify --username=kubeadmin --password="\$KUBEADMIN_PASS"
+EOF
+            CLUSTER_TAG=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
+            echo "$OCP_REGION $CLUSTER_TAG" > "$ARTIFACT_DIR/${cluster_role}_cluster_tag"
         }
+
 
         KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster driver
 
