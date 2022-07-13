@@ -226,6 +226,9 @@ run_jupyterlab_test() {
 
 capture_prometheus() {
     dump_prometheus_dbs
+
+    # Generate the visualization reports
+    ./testing/ods/generate_matrix-benchmarking.sh
 }
 
 sutest_cleanup() {
@@ -245,6 +248,11 @@ run_prepare_local_cluster() {
     process_ctrl::wait_bg_processes
 
     wait_rhods_launch
+}
+
+generate_plots() {
+    mkdir "$ARTIFACT_DIR/plotting"
+    ARTIFACT_DIR="$ARTIFACT_DIR/plotting" ./testing/ods/generate_matrix-benchmarking.sh > "$ARTIFACT_DIR/plotting/build-log.txt" 2>&1
 }
 
 # ---
@@ -269,6 +277,8 @@ case ${action} in
         fi
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
+        # Generate the visualization reports (must run after capture_environment)
+        finalizers+=("generate_plots")
 
         prepare_ci
         prepare
