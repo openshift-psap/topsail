@@ -1,0 +1,4 @@
+---
+cluster_preload_image_ds_name:
+cluster_preload_image_ds_namespace: "default"
+cluster_preload_image_ds_image:

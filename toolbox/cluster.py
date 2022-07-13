@@ -335,3 +335,22 @@ class Cluster:
         """
 
         return RunAnsibleRole("cluster_undeploy_ldap")
+
+    @staticmethod
+    def preload_image(name, image, namespace="default"):
+        """
+        Preload a container image on all the nodes of a cluster.
+
+        Args:
+          name: Name to give to the DaemonSet used for preloading the image.
+          image: Container image to preload on the nodes.
+          namespace: Optional. Namespace in which the DaemonSet will be created.
+        """
+
+        opts = {
+            "cluster_preload_image_ds_name": name,
+            "cluster_preload_image_ds_namespace": namespace,
+            "cluster_preload_image_ds_image": image,
+        }
+
+        return RunAnsibleRole("cluster_preload_image", opts)

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ cluster_preload_image_ds_name }}
+  namespace: {{ cluster_preload_image_ds_namespace }}
+spec:
+  selector:
+    matchLabels:
+      name: {{ cluster_preload_image_ds_name }}
+  template:
+    metadata:
+      labels:
+        name: {{ cluster_preload_image_ds_name }}
+    spec:
+      containers:
+      - name: preloader
+        image: {{ cluster_preload_image_ds_image }}
+        command:
+        - sleep
+        - +inf
