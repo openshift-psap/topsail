@@ -127,13 +127,19 @@ EOF
     generate_url="stats=$(echo -n "$stats_content" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
     _matbench parse
-    _matbench visualize --generate="$generate_url" || true
+    retcode=0
+    if ! _matbench visualize --generate="$generate_url"; then
+        echo "Visualization generation failed :("
+        retcode=1
+    fi
 
     mkdir "$ARTIFACT_DIR"/figures_{png,html}
 
-    mv fig_*.png "$ARTIFACT_DIR/figures_png"
-    mv fig_*.html "$ARTIFACT_DIR/figures_html"
-    mv report_* "$ARTIFACT_DIR"
+    mv fig_*.png "$ARTIFACT_DIR/figures_png" || true
+    mv fig_*.html "$ARTIFACT_DIR/figures_html" || true
+    mv report_* "$ARTIFACT_DIR" || true
+
+    return $retcode
 }
 
 if [[ "$JOB_NAME_SAFE" == "jh-on-"* ]]; then
