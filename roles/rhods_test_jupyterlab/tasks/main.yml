@@ -237,16 +237,61 @@
 
 # ---
 
-- name: Cleanup the notebooks Pods and PVCs
-  # (the Pods are destroyed anyway when the ods-ci test succeeds)
-  shell:
-    set -o pipefail;
-    oc get pods,pvc -oname -n {{ rhods_notebook_namespace }} |
-      grep {{ rhods_test_jupyterlab_username_prefix }} |
-      xargs oc delete -n  {{ rhods_notebook_namespace }}
+- name: Capture information about the notebook execution and clean them up
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  ignore_errors: yes
+  block:
+  - name: Get the definition of the notebook Pods
+    shell:
+      oc get pods -oyaml
+         -n {{ rhods_notebook_namespace }}
+         > "{{ artifact_extra_logs_dir }}/notebook_pods.yaml"
+    ignore_errors: yes
+
+  - name: Get the status of the notebook Pods
+    shell:
+      oc get pods -owide
+         -n {{ rhods_notebook_namespace }}
+          > "{{ artifact_extra_logs_dir }}/notebook_pods.status"
+    ignore_errors: yes
+
+  - name: Get the events of the notebook namespace
+    shell:
+      oc get ev -oyaml
+         -n {{ rhods_notebook_namespace }}
+         > "{{ artifact_extra_logs_dir }}/notebook_events.yaml"
+    ignore_errors: yes
+
+  - name: Get the name of the notebook Pods
+    shell:
+      set -o pipefail;
+      oc get pods -oname -n {{ rhods_notebook_namespace }} |
+         grep {{ rhods_test_jupyterlab_username_prefix }}
+    register: notebook_pod_names_cmd
+
+  - name: Create the notebook logs directory
+    file:
+      path: "{{ artifact_extra_logs_dir }}/notebook_logs"
+      state: directory
+      mode: '0755'
+
+  - name: Get the logs of the notebook Pods
+    shell: |
+      oc logs {{ item }} \
+         -n {{ rhods_notebook_namespace }} \
+         > "{{ artifact_extra_logs_dir }}/notebook_logs/$(basename "{{ item }}").log";
+    loop: "{{ notebook_pod_names_cmd.stdout_lines }}"
+    ignore_errors: yes
+
+  # ---
+
+  - name: Cleanup the notebooks Pods and PVCs
+    shell:
+      set -o pipefail;
+      oc get pods,pvc -oname -n {{ rhods_notebook_namespace }} |
+         grep {{ rhods_test_jupyterlab_username_prefix }} |
+         xargs oc delete -n {{ rhods_notebook_namespace }}
+    ignore_errors: yes
 
 - name: Get the status of the tester Pods
   shell:
@@ -298,24 +343,6 @@
     oc get ev -oyaml
        -n {{ rhods_test_namespace }}
        > "{{ artifact_extra_logs_dir }}/tester_events.yaml"
-  ignore_errors: yes
-
-- name: Get the Pods of the notebook namespace
-  environment:
-    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  shell:
-    oc get pods -oyaml
-       -n {{ rhods_notebook_namespace }}
-       > "{{ artifact_extra_logs_dir }}/notebook_pods.yaml"
-  ignore_errors: yes
-
-- name: Get the events of the notebook namespace
-  environment:
-    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  shell:
-    oc get ev -oyaml
-       -n {{ rhods_notebook_namespace }}
-       > "{{ artifact_extra_logs_dir }}/notebook_events.yaml"
   ignore_errors: yes
 
 - name: Get Minio Pod name
