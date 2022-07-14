@@ -1,0 +1,58 @@
+---
+- name: Apply the DaemonSet template
+  template:
+    src: "{{ cluster_preload_image_ds_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/preload_daemonset.yaml"
+    mode: 0400
+
+- name: Delete the DaemonSet, it it exists
+  command:
+    oc delete -f "{{ artifact_extra_logs_dir }}/preload_daemonset.yaml"
+       --ignore-not-found
+
+- name: Create the DaemonSet
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/preload_daemonset.yaml"
+
+- name: Preload the image
+  block:
+  - name: Get the number of desired Pods
+    command:
+      oc get ds/{{ cluster_preload_image_ds_name }}
+        '-ojsonpath={.status.desiredNumberScheduled}'
+        -n {{ cluster_preload_image_ds_namespace }}
+    register: desiredNumberScheduled_cmd
+
+# ---
+
+  - name: Wait for the pods to be scheduled
+    command:
+      oc get ds/{{ cluster_preload_image_ds_name }}
+         '-ojsonpath={.status.currentNumberScheduled}'
+         -n {{ cluster_preload_image_ds_namespace }}
+    register: currentNumberScheduled_cmd
+    retries: 3
+    delay: 15
+    until: currentNumberScheduled_cmd.stdout == desiredNumberScheduled_cmd.stdout
+
+  - name: Wait for the pods to be ready
+    command:
+      oc get ds/{{ cluster_preload_image_ds_name }}
+         '-ojsonpath={.status.numberReady}'
+         -n {{ cluster_preload_image_ds_namespace }}
+    register: numberReady_cmd
+    retries: 20
+    delay: 30
+    until: numberReady_cmd.stdout == desiredNumberScheduled_cmd.stdout
+
+  always:
+  - name: Wait for the image to be preloaded
+    shell:
+      oc get pods -l name={{ cluster_preload_image_ds_name }}
+         -owide
+         -n {{ cluster_preload_image_ds_namespace }}
+         > "{{ artifact_extra_logs_dir }}/pods.status"
+  - name: Delete the DaemonSet, it it exists
+    command:
+      oc delete -f "{{ artifact_extra_logs_dir }}/preload_daemonset.yaml"
+    failed_when: false

@@ -11,7 +11,7 @@ Suite Teardown  Tear Down
 
 *** Variables ***
 
-${NOTEBOOK_IMAGE_NAME}         s2i-generic-data-science-notebook
+${NOTEBOOK_IMAGE_NAME}         s2i-minimal-notebook
 ${NOTEBOOK_IMAGE_SIZE}         Default
 ${NOTEBOOK_SPAWN_WAIT_TIME}    5 minutes
 

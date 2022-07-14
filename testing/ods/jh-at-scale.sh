@@ -76,13 +76,21 @@ prepare_driver_cluster() {
 
     oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
 
-    process_ctrl::run_in_bg ./run_toolbox.py utils build_push_image \
-                     "${ODS_CI_IMAGESTREAM}" "$ODS_CI_TAG" \
-                     --namespace="$ODS_CI_TEST_NAMESPACE" \
-                     --git-repo="$ODS_CI_REPO" \
-                     --git-ref="$ODS_CI_REF" \
-                     --context-dir="/" \
-                     --dockerfile-path="build/Dockerfile"
+    build_and_preload_odsci_image() {
+        ./run_toolbox.py utils build_push_image \
+                         "$ODS_CI_IMAGESTREAM" "$ODS_CI_TAG" \
+                         --namespace="$ODS_CI_TEST_NAMESPACE" \
+                         --git-repo="$ODS_CI_REPO" \
+                         --git-ref="$ODS_CI_REF" \
+                         --context-dir="/" \
+                         --dockerfile-path="build/Dockerfile"
+
+        IMAGE="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_TAG"
+        ./run_toolbox.py cluster preload_image "ods-ci-image" "$IMAGE" \
+                         --namespace="$ODS_CI_TEST_NAMESPACE"
+    }
+
+    process_ctrl::run_in_bg build_and_preload_odsci_image
 
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 
@@ -153,6 +161,14 @@ wait_rhods_launch() {
     switch_sutest_cluster
 
     ./run_toolbox.py rhods wait_ods
+
+    NOTEBOOK_IMAGE="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$RHODS_NOTEBOOK_IMAGE_NAME:$RHODS_NOTEBOOK_IMAGE_TAG"
+
+    if [[ -z "$ENABLE_AUTOSCALER" ]]; then
+        # preload the image only if auto-scaling is disabled
+        ./run_toolbox.py cluster preload_image "$RHODS_NOTEBOOK_IMAGE_NAME" "$NOTEBOOK_IMAGE" \
+                         --namespace=rhods-notebooks
+    fi
 }
 
 capture_environment() {
