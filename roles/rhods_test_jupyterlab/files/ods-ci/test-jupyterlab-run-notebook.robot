@@ -13,7 +13,7 @@ Suite Teardown  Tear Down
 
 ${NOTEBOOK_IMAGE_NAME}         s2i-minimal-notebook
 ${NOTEBOOK_IMAGE_SIZE}         Default
-${NOTEBOOK_SPAWN_WAIT_TIME}    5 minutes
+${NOTEBOOK_SPAWN_WAIT_TIME}    15 minutes
 ${NOTEBOOK_SPAWN_RETRIES}      15
 
 ${NOTEBOOK_URL}                %{NOTEBOOK_URL}
