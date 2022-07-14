@@ -241,6 +241,12 @@
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   block:
+  - name: Get the description of the nodes
+    shell:
+      oc describe nodes
+          > "{{ artifact_extra_logs_dir }}/sutest_nodes.descr"
+    ignore_errors: yes
+
   - name: Get the definition of the notebook Pods
     shell:
       oc get pods -oyaml
