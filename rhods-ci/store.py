@@ -21,6 +21,8 @@ ROBOT_TIME_FMT = "%Y%m%d %H:%M:%S.%f"
 
 JUPYTERLAB_USER_RENAME_PREFIX = "jupyterhub-nb-user"
 
+TEST_USERNAME_PREFIX = "psapuser"
+
 def _rewrite_settings(settings_dict):
     if "user-count" in settings_dict:
         settings_dict["user_count"] = settings_dict["user-count"]
@@ -79,6 +81,8 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None, is_notebook
             "Failed": "failed"
         }
         if is_notebook:
+            if TEST_USERNAME_PREFIX not in podname: continue
+
             user_idx = int(re.findall(r'[:letter:]*(\d+)$', podname)[0])
             podname = f"{JUPYTERLAB_USER_RENAME_PREFIX}{user_idx}"
 
