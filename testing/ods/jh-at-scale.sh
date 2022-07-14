@@ -229,10 +229,6 @@ run_jupyterlab_test() {
     cp "$ARTIFACT_DIR"/*__driver_rhods__test_jupyterlab/{failed_tests,success_count} "$ARTIFACT_DIR" || true
 }
 
-capture_prometheus() {
-    dump_prometheus_dbs
-}
-
 sutest_cleanup() {
     switch_sutest_cluster
 
@@ -279,14 +275,15 @@ case ${action} in
         fi
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
-        # Generate the visualization reports (must run after capture_environment)
+        # Generate the visualization reports (must run after dump_prometheus_dbs and capture_environment)
         finalizers+=("generate_plots")
 
         prepare_ci
         prepare
         run_jupyterlab_test
-        dump_prometheus_dbs
 
+        set +e # we do not wait to fail passed this point
+        dump_prometheus_dbs
         exit 0
         ;;
     "prepare")
