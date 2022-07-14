@@ -372,10 +372,10 @@
 - name: Show failed tests
   shell: |
     for f in "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.log; do
-      echo -e "\n===\n$f\n---"
+      [[ "$(cat $(dirname "$f")/test.exit_code)" == 0 ]] && continue
+      echo -e "\n=== $f ==="
       egrep 'FAIL|WARN' $f | grep -v "^| FAIL|"
-      echo "--> $(cat $(dirname "$f")/test.exit_code)"
-      echo "==="
+      echo ""
     done > "{{ artifact_extra_logs_dir }}"/failed_tests
   ignore_errors: yes
 
