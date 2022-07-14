@@ -192,6 +192,8 @@ dump_prometheus_dbs() {
 }
 
 prepare_ci() {
+    cp "$THIS_DIR/common.sh" "$ARTIFACT_DIR" # save the settings of this run
+
     sutest_osd_cluster_name=$(get_osd_cluster_name "sutest")
     connect_sutest_cluster "$sutest_osd_cluster_name"
 }
@@ -222,6 +224,9 @@ run_jupyterlab_test() {
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected="$ARTIFACTS_COLLECTED" \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR"
+
+    # quick access to these files
+    cp "$ARTIFACT_DIR"/*__driver_rhods__test_jupyterlab/{failed_tests,success_count} "$ARTIFACT_DIR" || true
 }
 
 capture_prometheus() {
