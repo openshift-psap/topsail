@@ -192,6 +192,8 @@ dump_prometheus_dbs() {
 }
 
 prepare_ci() {
+    cp "$THIS_DIR/common.sh" "$ARTIFACT_DIR" # save the settings of this run
+
     sutest_osd_cluster_name=$(get_osd_cluster_name "sutest")
     connect_sutest_cluster "$sutest_osd_cluster_name"
 }
@@ -222,10 +224,9 @@ run_jupyterlab_test() {
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected="$ARTIFACTS_COLLECTED" \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR"
-}
 
-capture_prometheus() {
-    dump_prometheus_dbs
+    # quick access to these files
+    cp "$ARTIFACT_DIR"/*__driver_rhods__test_jupyterlab/{failed_tests,success_count} "$ARTIFACT_DIR" || true
 }
 
 sutest_cleanup() {
@@ -245,6 +246,11 @@ run_prepare_local_cluster() {
     process_ctrl::wait_bg_processes
 
     wait_rhods_launch
+}
+
+generate_plots() {
+    mkdir "$ARTIFACT_DIR/plotting"
+    ARTIFACT_DIR="$ARTIFACT_DIR/plotting" ./testing/ods/generate_matrix-benchmarking.sh > "$ARTIFACT_DIR/plotting/build-log.txt" 2>&1
 }
 
 # ---
@@ -269,12 +275,15 @@ case ${action} in
         fi
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
+        # Generate the visualization reports (must run after dump_prometheus_dbs and capture_environment)
+        finalizers+=("generate_plots")
 
         prepare_ci
         prepare
         run_jupyterlab_test
-        dump_prometheus_dbs
 
+        set +e # we do not wait to fail passed this point
+        dump_prometheus_dbs
         exit 0
         ;;
     "prepare")
