@@ -35,17 +35,17 @@ chmod +x /usr/bin/yq
 
 set +x
 
-echo "$(date) Waiting for '${ARTIFACTS_DIR}/test.exit_code' to appear ..."
+echo "$(date) Waiting for '${ARTIFACT_DIR}/test.exit_code' to appear ..."
 
-while ! [[ -f "${ARTIFACTS_DIR}/test.exit_code" ]]; do
+while ! [[ -f "${ARTIFACT_DIR}/test.exit_code" ]]; do
     sleep 15
 done
 
-echo "$(date) '${ARTIFACTS_DIR}/test.exit_code' appeared."
+echo "$(date) '${ARTIFACT_DIR}/test.exit_code' appeared."
 
 set -x
 
-test_failed=$(cat ${ARTIFACTS_DIR}/test.exit_code)
+test_failed=$(cat ${ARTIFACT_DIR}/test.exit_code)
 
 delete_image=0
 [[ "$ARTIFACTS_COLLECTED" == "no-image" ]] && delete_image=1
@@ -53,15 +53,15 @@ delete_image=0
 [[ "$ARTIFACTS_COLLECTED" == "no-image-except-failed-and-zero" && "${JOB_COMPLETION_INDEX:-0}" == 0 ]] && delete_image=0
 
 if [[ "$delete_image" == 1 ]]; then
-    find "${ARTIFACTS_DIR}" -name '*.png' -delete > dev/null
+    find "${ARTIFACT_DIR}" -name '*.png' -delete > dev/null
 fi
 
 configure_s3
 
 s3cmd put \
-      "${ARTIFACTS_DIR}/test.exit_code" \
-      "${ARTIFACTS_DIR}/test.log" \
-      "${ARTIFACTS_DIR}"/ods-ci-*/* \
+      "${ARTIFACT_DIR}/test.exit_code" \
+      "${ARTIFACT_DIR}/test.log" \
+      "${ARTIFACT_DIR}"/ods-ci-*/* \
       "s3://$S3_BUCKET_NAME/ods-ci/$HOSTNAME/" \
       --recursive --no-preserve --no-progress --stats
 
