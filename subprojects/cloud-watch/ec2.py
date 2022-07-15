@@ -9,8 +9,6 @@ IGNORE_LESS_THAN_DAYS = 0
 PREFERED_REGIONS = ["us-east-2", "us-east-1", "us-west-2", "eu-central-1"]
 now = datetime.datetime.now(datetime.timezone.utc)
 
-client_ec2 = boto3.client('ec2')
-resource_ec2 = boto3.resource('ec2')
 r53_client = boto3.client("route53")
 
 clusters = defaultdict(list)
@@ -35,7 +33,7 @@ def collect_instances(region=None):
     print(f"Looking at the {region} region ...")
 
     if region is None:
-        regional_resource_ec2 = resource_ec2
+        regional_resource_ec2 = boto3.resource('ec2')
     else:
         my_config = botocore.config.Config(region_name=region)
         regional_resource_ec2 = boto3.resource("ec2", config=my_config)
@@ -96,7 +94,7 @@ def collect_instances(region=None):
             if tag["Key"] == "Name":
                 info["Name"] = tag["Value"]
             if tag["Value"] == "owned":
-                info["Cluster ID"] = tag["Key"]
+                info["Cluster ID"] = tag["Key"].split("/")[-1]
 
         if info["Name"] in IGNORE_NODES:
             instances_ignored_from_list += 1
@@ -127,6 +125,7 @@ def collect_instances(region=None):
 
 def get_all_regions():
     if args.all_regions:
+        client_ec2 = boto3.client('ec2', PREFERED_REGIONS[0])
         return [region['RegionName'] for region in client_ec2.describe_regions()['Regions']]
     elif args.regions:
         return args.regions

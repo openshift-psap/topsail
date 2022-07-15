@@ -76,6 +76,10 @@ def populate(aws_entries, tracking_dict, key):
                 cluster_id = tag["Value"]
             else:
                 continue
+
+            if args.ci_prefix and not cluster_id.startswith(args.ci_prefix):
+                continue
+
             count += 1
             state.clusters.add(cluster_id)
             tracking_dict[cluster_id].append(entry[key])
@@ -127,7 +131,12 @@ def populate_hosted_zones(state):
         for tag in tags:
             if tag["Key"].startswith("kubernetes.io/cluster/"):
                 cluster_id = tag["Key"].rpartition("/")[-1]
-            else: continue
+            else:
+                continue
+
+            if args.ci_prefix and not cluster_id.startswith(args.ci_prefix):
+                continue
+
             count += 1
             hosted_zones[cluster_id] = zone["Name"]
             break
@@ -218,6 +227,21 @@ def process_region(region):
 
         if ignore:
             state.clusters.remove(cluster)
+            continue
+
+        instance_ids = []
+        for resa in instances["Reservations"]:
+            instance = resa["Instances"][0]
+            instance_ids.append(instance["InstanceId"])
+
+        msg = f"Terminating the cluster instances ... ({', '.join(instance_ids)})"
+        if not args.delete:
+            print("DRY_RUN:", msg)
+            continue
+
+        print(msg)
+        state.ec2_client.terminate_instances(InstanceIds=instance_ids)
+
 
     for cluster in state.clusters:
         print()
