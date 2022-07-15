@@ -162,9 +162,11 @@ wait_rhods_launch() {
 
     ./run_toolbox.py rhods wait_ods
 
-    NOTEBOOK_IMAGE="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$RHODS_NOTEBOOK_IMAGE_NAME:$RHODS_NOTEBOOK_IMAGE_TAG"
-
     if [[ -z "$ENABLE_AUTOSCALER" ]]; then
+        rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
+                                       | cut -d/ -f2 | grep "$RHODS_NOTEBOOK_IMAGE_NAME" | cut -d: -f2)
+
+        NOTEBOOK_IMAGE="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$RHODS_NOTEBOOK_IMAGE_NAME:$rhods_notebook_image_tag"
         # preload the image only if auto-scaling is disabled
         ./run_toolbox.py cluster preload_image "$RHODS_NOTEBOOK_IMAGE_NAME" "$NOTEBOOK_IMAGE" \
                          --namespace=rhods-notebooks
