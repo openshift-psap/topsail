@@ -29,14 +29,19 @@
     path: /tmp/htpasswd
     state: absent
 
-- name: Apply the Oauth template
+- name: Apply the OAuth template
   template:
     src: "{{ cluster_create_htpasswd_user_oauth }}"
-    dest: "{{ artifact_extra_logs_dir }}/001_oauth_htpasswd.yaml"
+    dest: "{{ artifact_extra_logs_dir }}/oauth_htpasswd.yaml"
     mode: 0400
 
-- name: Create the htpasswd Oauth resource
-  command: oc replace -f "{{ artifact_extra_logs_dir }}/001_oauth_htpasswd.yaml"
+- name: Append the htpasswd OAuth identity provider
+  shell:
+    set -o pipefail;
+    oc get OAuth/cluster -ojson
+       | jq --argjson idp "$(yq . "{{ artifact_extra_logs_dir }}/oauth_htpasswd.yaml" -c)"
+            '.spec.identityProviders[.spec.identityProviders|length] |= $idp'
+       | oc apply -f-
 
 - name: Delete the group, if it exists
   command:
