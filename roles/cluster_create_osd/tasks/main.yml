@@ -121,7 +121,7 @@
     ocm edit machinepool
              {{ cluster_create_osd_machinepool_name }}
              --cluster={{ cluster_create_osd_cluster_name }}
-             --replicas={{ cluster_create_osd_compute_nodes }}
+             --replicas={{ [2, cluster_create_osd_compute_nodes|int] |max }}
 
 - name: Wait for the desired worker node count
   shell: |
@@ -130,7 +130,7 @@
     echo "$nodes" | nl 1>&2 # for observation
     node_count=$(echo "$nodes" | grep "Ready" | wc -l)
     echo "$node_count nodes are ready"
-    test "$node_count" == "{{ cluster_create_osd_compute_nodes }}"
+    test "$node_count" -ge "{{ cluster_create_osd_compute_nodes }}"
   register: osd_node_count
   delay: 30
   retries: 40

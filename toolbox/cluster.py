@@ -263,6 +263,7 @@ class Cluster:
           cluster_name: The name to give to the cluster.
           secret_file: The file containing the cluster creation credentials.
           kubeconfig: The KUBECONFIG file to populate with the access to the cluster.
+          compute_nodes: The number of compute nodes to create. A minimum of 2 is required by OSD.
         """
 
         opts = dict(
