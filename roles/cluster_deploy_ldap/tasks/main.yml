@@ -69,19 +69,17 @@
 - name: Apply the Oauth template
   template:
     src: "{{ cluster_deploy_ldap_oauth }}"
-    dest: "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
+    dest: "{{ artifact_extra_logs_dir }}/oauth_ldap.yaml"
     mode: 0400
 
 - name: Get LDAP URL
   command:
-    oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
-        -ojsonpath={.spec.identityProviders[0].ldap.url}
+    yq .ldap.url "{{ artifact_extra_logs_dir }}/oauth_ldap.yaml"
   register: ldap_url_cmd
 
 - name: Get LDAP Bind DN
   command:
-    oc create -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml" -oyaml --dry-run=client
-       -ojsonpath={.spec.identityProviders[0].ldap.bindDN}
+    yq .ldap.bindDN "{{ artifact_extra_logs_dir }}/oauth_ldap.yaml"
   register: ldap_bindDN_cmd
 
 - name: Deploy on OCP
@@ -92,8 +90,14 @@
       set -o pipefail;
       {{ py_secret_generator }}
       cat "{{ cluster_deploy_ldap_bind_secret_template }}" | envsubst | oc apply -f-
-  - name: Create the LDAP Oauth resource
-    command: oc replace -f "{{ artifact_extra_logs_dir }}/001_oauth_ldap.yml"
+
+  - name: Append the LDAP OAuth identity provider
+    shell:
+      set -o pipefail;
+      oc get OAuth/cluster -ojson
+         | jq --argjson idp "$(yq . "{{ artifact_extra_logs_dir }}/oauth_ldap.yaml" -c)"
+              '.spec.identityProviders[.spec.identityProviders|length] |= $idp'
+         | oc apply -f-
 
 - name: Deploy on ROSA
   when: cluster_deploy_ldap_use_rosa | length > 0
