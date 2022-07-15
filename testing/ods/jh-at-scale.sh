@@ -236,7 +236,7 @@ sutest_cleanup() {
     osd_cluster_name=$(get_osd_cluster_name "sutest")
 
     ./run_toolbox.py cluster undeploy_ldap \
-                     "$LDAP_IDP_NAME"
+                     "$LDAP_IDP_NAME" \
                      --use_ocm="$osd_cluster_name"
 }
 
