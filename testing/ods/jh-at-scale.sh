@@ -223,7 +223,8 @@ run_jupyterlab_test() {
                      "http://$nginx_server/$ODS_NOTEBOOK_NAME" \
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected="$ARTIFACTS_COLLECTED" \
-                     --ods_sleep_factor="$ODS_SLEEP_FACTOR"
+                     --ods_sleep_factor="$ODS_SLEEP_FACTOR" \
+                     --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS"
 
     # quick access to these files
     cp "$ARTIFACT_DIR"/*__driver_rhods__test_jupyterlab/{failed_tests,success_count} "$ARTIFACT_DIR" || true

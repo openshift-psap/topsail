@@ -36,6 +36,7 @@ ODS_SLEEP_FACTOR=1.0 # how long to wait between users.
 NGINX_NOTEBOOK_NAMESPACE=loadtest-notebooks
 ODS_NOTEBOOK_NAME=simple-notebook.ipynb
 ODS_NOTEBOOK_DIR=${THIS_DIR}/notebooks
+ODS_EXCLUDE_TAGS=None
 
 if [[ "$OSD_USE_ODS_CATALOG" == "0" ]]; then
     # deploying from the addon. Get the email address from the secret vault.
