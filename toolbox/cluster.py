@@ -366,3 +366,31 @@ class Cluster:
         }
 
         return RunAnsibleRole("cluster_preload_image", opts)
+
+    @staticmethod
+    def create_htpasswd_adminuser(username, passwordfile, wait=False):
+        """
+        Create an htpasswd admin user.
+
+        Will remove any other existing OAuth.
+
+        Example of password file:
+        password=my-strong-password
+
+        Args:
+          username: Username of the htpasswd user.
+          passwordfile: Password file where the user's password is stored. Will be sourced.
+          wait: Optional. If True, waits for the user to be able to login into the cluster.
+        """
+
+        opts = {
+            "cluster_create_htpasswd_user_username": username,
+            "cluster_create_htpasswd_user_passwordfile": passwordfile,
+            "cluster_create_htpasswd_user_groupname": "local-admins",
+            "cluster_create_htpasswd_user_role": "cluster-admin",
+            "cluster_create_htpasswd_user_groupname": "local-admins",
+            "cluster_create_htpasswd_user_wait": wait,
+
+        }
+
+        return RunAnsibleRole("cluster_create_htpasswd_user", opts)
