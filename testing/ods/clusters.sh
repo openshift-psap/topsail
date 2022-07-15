@@ -103,24 +103,13 @@ create_clusters() {
             export PSAP_ODS_SECRET_PATH
             oc create cm keep-cluster -n default --from-literal=keep=true
 
-            bash -ceE '
-            source "$PSAP_ODS_SECRET_PATH/create_osd_cluster.password"
-            B64_PASS_HASH=$(cd subprojects/kube-password; go run . "$KUBEADMIN_PASS")
-            cat << EOF | oc apply -f-
-apiVersion: v1
-kind: Secret
-metadata:
-  name: kubeadmin
-  namespace: kube-system
-type: Opaque
-data:
-  kubeadmin: "$B64_PASS_HASH"
-EOF
-'
+            pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
+            ./run_toolbox.py cluster create_htpasswd_user "$pr_author" "$PSAP_ODS_SECRET_PATH/get_cluster.password"
+
             oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
             cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
-source "\$PSAP_ODS_SECRET_PATH/create_osd_cluster.password"
-oc login $(oc whoami --show-server) --insecure-skip-tls-verify --username=kubeadmin --password="\$KUBEADMIN_PASS"
+source "\$PSAP_ODS_SECRET_PATH/get_cluster.password"
+oc login $(oc whoami --show-server) --insecure-skip-tls-verify --username=$pr_author --password="\$password"
 EOF
             CLUSTER_TAG=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
             echo "$OCP_REGION $CLUSTER_TAG" > "$ARTIFACT_DIR/${cluster_role}_cluster_tag"
