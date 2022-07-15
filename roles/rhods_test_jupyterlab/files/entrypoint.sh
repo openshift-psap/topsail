@@ -35,6 +35,7 @@ test_exit_code=0
     --test-artifact-dir "$ARTIFACTS_DIR" \
     --test-case "$RUN_ROBOT_TEST_CASE" \
     --exclude "$RUN_ROBOT_EXCLUDE_TAGS" \
+    --extra-robot-args "--exitonfailure" \
     |& tee "${ARTIFACTS_DIR}/test.log") || test_exit_code=$?
 
 # /!\ the creation of this file triggers the export of the logs
