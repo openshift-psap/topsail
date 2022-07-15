@@ -224,10 +224,18 @@ run_jupyterlab_test() {
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR"
 }
 
-finalize() {
-    set +e # we do not wait to fail passed this point
-
+capture_prometheus() {
     dump_prometheus_dbs
+}
+
+sutest_cleanup() {
+    switch_sutest_cluster
+
+    osd_cluster_name=$(get_osd_cluster_name "sutest")
+
+    ./run_toolbox.py cluster undeploy_ldap \
+                     "$LDAP_IDP_NAME"
+                     --use_ocm="$osd_cluster_name"
 }
 
 run_prepare_local_cluster() {
@@ -260,11 +268,13 @@ case ${action} in
             exit 1
         fi
         finalizers+=("capture_environment")
+        finalizers+=("sutest_cleanup")
 
         prepare_ci
         prepare
         run_jupyterlab_test
-        finalize
+        dump_prometheus_dbs
+
         exit 0
         ;;
     "prepare")

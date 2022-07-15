@@ -1,0 +1,3 @@
+cluster_undeploy_ldap_idp_name: ""
+cluster_undeploy_ldap_use_ocm: ""
+cluster_undeploy_ldap_use_rosa: ""
