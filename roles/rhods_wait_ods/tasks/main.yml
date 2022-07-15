@@ -13,7 +13,6 @@
   retries: 40
   delay: 60
 
-
 - name: Get JupyterLab route host
   command: oc get route/jupyterhub -n redhat-ods-applications -ojsonpath={.spec.host}
   register: jupyterlab_hostname_cmd
@@ -36,4 +35,15 @@
     args:
       warn: false # don't warn about using curl here
   - name: fail
-    fail: msg="JupiterHub didn't get ready"
+    fail: msg="JupyterHub didn't get ready"
+
+- name: Wait for RHODS images to be loaded
+  shell:
+    set -o pipefail;
+    oc get istag -n redhat-ods-applications -oname
+       | cut -d/ -f2 | grep "{{ item }}"
+  register: has_rhods_image
+  until: has_rhods_image.rc == 0
+  retries: 40
+  delay: 60
+  loop: "{{ rhods_wait_ods_images.split(',') }}"

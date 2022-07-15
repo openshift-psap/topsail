@@ -18,7 +18,6 @@ ODS_QE_CATALOG_IMAGE="quay.io/modh/qe-catalog-source"
 ODS_QE_CATALOG_IMAGE_TAG="v1121-1"
 
 RHODS_NOTEBOOK_IMAGE_NAME=s2i-minimal-notebook
-RHODS_NOTEBOOK_IMAGE_TAG=py3.8-v1.12.1-1
 
 ODS_CI_TEST_NAMESPACE=loadtest
 ODS_CI_REPO="https://github.com/openshift-psap/ods-ci.git"
