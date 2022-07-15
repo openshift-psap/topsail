@@ -70,7 +70,8 @@ COPY . ${HOME}/
 
 # Install Python requirements
 RUN pip install --quiet --no-cache-dir -r ${HOME}/requirements.txt && \
-    pip install --quiet --no-cache-dir -r ${HOME}/subprojects/wdm/requirements.txt
+    pip install --quiet --no-cache-dir -r ${HOME}/subprojects/wdm/requirements.txt \
+    pip install --quiet --no-cache-dir -r ${HOME}/subprojects/cloud-watch/requirements.txt
 
 # Prepare the CI `run` entrypoint
 RUN echo -e '#!/usr/bin/env bash \n\

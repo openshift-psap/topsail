@@ -79,7 +79,7 @@ def populate(aws_entries, tracking_dict, key):
             count += 1
             state.clusters.add(cluster_id)
             tracking_dict[cluster_id].append(entry[key])
-
+            print(f"- {entry[key]} ({cluster_id})")
             state.all_instances[entry[key]] = entry
             break
 
@@ -199,8 +199,25 @@ def process_region(region):
 
         cluster_name = hosted_zone or cluster
 
-        print(f"Cluster {cluster_name} has {instance_count} ec2 instances (running for {age_hr:.1f} hours), skipping.")
-        state.clusters.remove(cluster)
+        ignore = False
+        if args.ci_prefix:
+            if not cluster_name.startswith(args.ci_prefix):
+                print(f"Ignore cluster {cluster_name} (not starting with '{args.ci_prefix}' CI prefix).")
+                ignore = True
+            elif args.ci_delete_older_than and age_hr < args.ci_delete_older_than:
+                print(f"Ignore cluster {cluster_name} (age={age_hr:.1f} hours,"
+                      f" not older than {args.ci_delete_older_than} hours).")
+                ignore = True
+            else:
+                print(f"Cleanup cluster {cluster_name} (age={age_hr:.1f} hours,"
+                      f" older than {args.ci_delete_older_than} hours).")
+        else:
+            print(f"Ignore cluster {cluster_name}: has {instance_count} ec2 instances"
+                  f" (running for {age_hr:.1f} hours).")
+            ignore = True
+
+        if ignore:
+            state.clusters.remove(cluster)
 
     for cluster in state.clusters:
         print()
@@ -277,6 +294,8 @@ def main():
     parser.add_argument('--delete', action='store_true', help='Perform the deletion of the zombie resources', default=False)
     parser.add_argument('--all-regions', action='store_true', help='Go through all the AWS regions', default=False)
     parser.add_argument('--regions', help='Go through the specified AWS regions', type=str, nargs='*')
+    parser.add_argument('--ci-prefix', help='Cluster name prefix to identify CI-generated clusters', type=str)
+    parser.add_argument('--ci-delete-older-than', help='Mark CI clusters older than this age (in hours) for deletion', type=int)
 
     args = parser.parse_args()
 
