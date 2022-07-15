@@ -77,6 +77,9 @@ class SpawnTime():
 
             data.append(line_data)
 
+        if not data:
+            return {}, "No data available"
+
         df = pd.DataFrame(data).sort_values(by=['UserIdx', "StepIdx"], ascending=True)
 
         fig = px.area(df, y="LineName", x="Length", color="Test step")
