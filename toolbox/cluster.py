@@ -341,9 +341,9 @@ class Cluster:
         """
 
         opts = {
-            "cluster_deploy_ldap_idp_name": idp_name,
-            "cluster_deploy_ldap_use_ocm": use_ocm,
-            "cluster_deploy_ldap_use_rosa": use_rosa,
+            "cluster_undeploy_ldap_idp_name": idp_name,
+            "cluster_undeploy_ldap_use_ocm": use_ocm,
+            "cluster_undeploy_ldap_use_rosa": use_rosa,
         }
 
         return RunAnsibleRole("cluster_undeploy_ldap", opts)
