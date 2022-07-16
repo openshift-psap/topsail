@@ -1,0 +1,6 @@
+name: "{{ cluster_create_htpasswd_user_htpasswd_idp_name }}"
+mappingMethod: claim
+type: HTPasswd
+htpasswd:
+  fileData:
+     name: "{{ cluster_create_htpasswd_user_secret_name }}"

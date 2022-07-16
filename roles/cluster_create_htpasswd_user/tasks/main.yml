@@ -1,0 +1,97 @@
+---
+- name: Ensure that the username is set
+  fail: msg="username isn't set"
+  when: not cluster_create_htpasswd_user_username
+
+- name: Ensure that the password file is set
+  fail: msg="password file isn't set"
+  when: not cluster_create_htpasswd_user_passwordfile
+
+- name: Create the htpasswd file
+  shell:
+    source "{{ cluster_create_htpasswd_user_passwordfile }}";
+    htpasswd -c -B -b /tmp/htpasswd "{{ cluster_create_htpasswd_user_username }}" "$password"
+
+- name: Delete the htpasswd secret, it it exists
+  command:
+    oc delete secret "{{ cluster_create_htpasswd_user_secret_name }}"
+       -n openshift-config
+       --ignore-not-found
+
+- name: Create the htpasswd secret
+  command:
+    oc create secret generic "{{ cluster_create_htpasswd_user_secret_name }}"
+       --from-file=htpasswd=/tmp/htpasswd
+       -n openshift-config
+
+- name: Delete the htpasswd file
+  ansible.builtin.file:
+    path: /tmp/htpasswd
+    state: absent
+
+- name: Apply the OAuth template
+  template:
+    src: "{{ cluster_create_htpasswd_user_oauth }}"
+    dest: "{{ artifact_extra_logs_dir }}/oauth_htpasswd.yaml"
+    mode: 0400
+
+- name: Append the htpasswd OAuth identity provider
+  shell:
+    set -o pipefail;
+    oc get OAuth/cluster -ojson
+       | jq --argjson idp "$(yq . "{{ artifact_extra_logs_dir }}/oauth_htpasswd.yaml" -c)"
+            '.spec.identityProviders[.spec.identityProviders|length] |= $idp'
+       | oc apply -f-
+
+- name: Delete the group, if it exists
+  command:
+    oc delete group "{{ cluster_create_htpasswd_user_groupname }}"
+       --ignore-not-found
+
+- name: Create a new group
+  command: oc adm groups new "{{ cluster_create_htpasswd_user_groupname }}"
+
+- name: Add a role to the group
+  command:
+    oc adm policy add-cluster-role-to-group
+       "{{ cluster_create_htpasswd_user_role }}"
+       "{{ cluster_create_htpasswd_user_groupname }}"
+
+- name: Add the user to the group
+  command:
+    oc adm groups add-users
+       "{{ cluster_create_htpasswd_user_groupname }}"
+       "{{ cluster_create_htpasswd_user_username }}"
+
+# ---
+
+- name: Get the API URL
+  command: oc whoami --show-server
+  register: api_url_cmd
+
+- name: Create the temporary kubeconfig file
+  when: cluster_create_htpasswd_user_wait | bool
+  ansible.builtin.file:
+    path: /tmp/user_kubeconfig
+    state: touch
+
+- name: Wait for the authentication to work
+  when: cluster_create_htpasswd_user_wait | bool
+  shell: |
+    source "{{ cluster_create_htpasswd_user_passwordfile }}";
+    oc login "{{ api_url_cmd.stdout }}" \
+             --username={{ cluster_create_htpasswd_user_username }} \
+             --password=$password \
+             --insecure-skip-tls-verify
+  environment:
+    KUBECONFIG: /tmp/user_kubeconfig
+  register: oc_login
+  delay: 30
+  retries: 20
+  until: oc_login.rc == 0
+
+- name: Delete the temporary kubeconfig file
+  when: cluster_create_htpasswd_user_wait | bool
+  ansible.builtin.file:
+    path: /tmp/user_kubeconfig
+    state: absent

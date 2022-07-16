@@ -237,9 +237,13 @@ sutest_cleanup() {
 
     osd_cluster_name=$(get_osd_cluster_name "sutest")
 
-    ./run_toolbox.py cluster undeploy_ldap \
-                     "$LDAP_IDP_NAME" \
-                     --use_ocm="$osd_cluster_name"
+    if oc get cm/keep-cluster -n default 2>/dev/null; then
+        echo "INFO: cm/keep-cluster found, not undeploying LDAP."
+    else
+        ./run_toolbox.py cluster undeploy_ldap \
+                         "$LDAP_IDP_NAME" \
+                         --use_ocm="$osd_cluster_name"
+    fi
 }
 
 run_prepare_local_cluster() {

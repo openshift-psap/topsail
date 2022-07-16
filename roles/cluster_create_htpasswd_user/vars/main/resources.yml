@@ -1,0 +1,2 @@
+---
+cluster_create_htpasswd_user_oauth: "roles/cluster_create_htpasswd_user/templates/oauth.yml.j2"
