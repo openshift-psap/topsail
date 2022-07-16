@@ -274,6 +274,8 @@
       oc get pods -oname -n {{ rhods_notebook_namespace }} |
          grep {{ rhods_test_jupyterlab_username_prefix }}
     register: notebook_pod_names_cmd
+    # there may be no notebook Pod
+    failed_when: false
 
   - name: Create the notebook logs directory
     file:
