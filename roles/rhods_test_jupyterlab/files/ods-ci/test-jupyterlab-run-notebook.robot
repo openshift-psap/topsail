@@ -14,7 +14,8 @@ Suite Teardown  Tear Down
 ${NOTEBOOK_IMAGE_NAME}         s2i-minimal-notebook
 ${NOTEBOOK_IMAGE_SIZE}         Default
 ${NOTEBOOK_SPAWN_WAIT_TIME}    15 minutes
-${NOTEBOOK_SPAWN_RETRIES}      15
+${NOTEBOOK_SPAWN_RETRIES}      45
+${NOTEBOOK_SPAWN_RETRY_DELAY}  20 seconds
 
 ${NOTEBOOK_URL}                %{NOTEBOOK_URL}
 ${NOTEBOOK_NAME}               notebook.ipynb
@@ -60,7 +61,7 @@ Spawn a Notebook
   [Tags]  Spawn  Notebook
 
   Fix Spawner Status
-  Spawn Notebook With Arguments  image=${NOTEBOOK_IMAGE_NAME}  size=${NOTEBOOK_IMAGE_SIZE}  spawner_timeout=${NOTEBOOK_SPAWN_WAIT_TIME}  retries=${NOTEBOOK_SPAWN_RETRIES}
+  Spawn Notebook With Arguments  image=${NOTEBOOK_IMAGE_NAME}  size=${NOTEBOOK_IMAGE_SIZE}  spawner_timeout=${NOTEBOOK_SPAWN_WAIT_TIME}  retries=${NOTEBOOK_SPAWN_RETRIES}  retries_delay=${NOTEBOOK_SPAWN_RETRY_DELAY}
   Capture Page Screenshot
 
   ${is_launcher_selected} =  Run Keyword And Return Status  JupyterLab Launcher Tab Is Selected
