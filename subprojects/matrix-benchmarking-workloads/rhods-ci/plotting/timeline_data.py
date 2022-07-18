@@ -248,6 +248,7 @@ def generate(entry, cfg):
             Start=entry_results.job_creation_time - datetime.timedelta(minutes=1),
             Finish=entry_results.job_completion_time + datetime.timedelta(minutes=1),
             LineName=LineName,
+            UserIdx=user_idx,
             LineWidth=25,
             Opacity=0.2,
             Text=rhods_node,
