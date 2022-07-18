@@ -104,7 +104,7 @@ create_clusters() {
             oc create cm keep-cluster -n default --from-literal=keep=true
 
             pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
-            ./run_toolbox.py cluster create_htpasswd_user "$pr_author" "$PSAP_ODS_SECRET_PATH/get_cluster.password"
+            ./run_toolbox.py cluster create_htpasswd_adminuser "$pr_author" "$PSAP_ODS_SECRET_PATH/get_cluster.password"
 
             oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
             cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
@@ -112,7 +112,8 @@ source "\$PSAP_ODS_SECRET_PATH/get_cluster.password"
 oc login $(oc whoami --show-server) --insecure-skip-tls-verify --username=$pr_author --password="\$password"
 EOF
             CLUSTER_TAG=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
-            echo "$OCP_REGION $CLUSTER_TAG" > "$ARTIFACT_DIR/${cluster_role}_cluster_tag"
+            echo "$CLUSTER_TAG" > "$ARTIFACT_DIR/${cluster_role}_cluster_tag"
+            echo "./run_toolbox.py cluster destroy_ocp $OCP_REGION $CLUSTER_TAG" > "$ARTIFACT_DIR/${cluster_role}_destroy_cluster.cmd"
         }
 
 

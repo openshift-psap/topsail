@@ -10,7 +10,7 @@ LABEL 	io.k8s.display-name="OpenShift PSAP CI artifacts" \
 # Install openshift-ansible RPMs and some debugging tools
 RUN yum install -y --quiet \
 		glibc-langpack-en \
-		go git make jq vim wget rsync time gettext \
+		go git make jq vim wget rsync time gettext httpd-tools \
 		python3.9 python3-pip python3-setuptools python3-virtualenv && \
 	yum clean all && \
 	rm -rf $HOME/.cache && \
