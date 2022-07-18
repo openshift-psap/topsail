@@ -113,7 +113,10 @@ oc login $(oc whoami --show-server) --insecure-skip-tls-verify --username=$pr_au
 EOF
             CLUSTER_TAG=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
             echo "$CLUSTER_TAG" > "$ARTIFACT_DIR/${cluster_role}_cluster_tag"
-            echo "./run_toolbox.py cluster destroy_ocp $OCP_REGION $CLUSTER_TAG" > "$ARTIFACT_DIR/${cluster_role}_destroy_cluster.cmd"
+            cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_destroy_cluster.cmd"
+oc delete postgres/jupyterhub-db-rds -n redhat-ods-applications --ignore-not-found
+./run_toolbox.py cluster destroy_ocp $OCP_REGION $CLUSTER_TAG
+EOF
         }
 
 
