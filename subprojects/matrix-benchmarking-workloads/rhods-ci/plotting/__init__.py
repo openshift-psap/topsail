@@ -13,6 +13,7 @@ from . import mapping
 from . import spawntime
 from . import status
 from . import launch_time
+from . import error_report
 
 def register():
     simple_timeline.register()
@@ -24,3 +25,4 @@ def register():
     spawntime.register()
     status.register()
     launch_time.register()
+    error_report.register()

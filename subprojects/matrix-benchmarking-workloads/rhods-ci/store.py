@@ -6,6 +6,7 @@ from collections import defaultdict
 import xmltodict
 import logging
 import re
+import os
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
@@ -175,11 +176,19 @@ def _parse_pod_times(filename):
     return pod_times
 
 def _parse_ods_ci_exit_code(filename):
+    if not filename.exists():
+        logging.error(f"_parse_ods_ci_exit_code: '{filename}' doesn't exist ...")
+        return
+
     with open(filename) as f:
         return int(f.read())
 
 def _parse_ods_ci_output_xml(filename):
     ods_ci_times = {}
+
+    if not filename.exists():
+        logging.error(f"_parse_ods_ci_output_xml: '{filename}' doesn't exist ...")
+        return
 
     with open(filename) as f:
         output_dict = xmltodict.parse(f.read())
@@ -222,7 +231,11 @@ def _extract_metrics(dirname):
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace()
 
-    _parse_job(results, dirname / "tester_job.yaml")
+    results.location = dirname
+    results.source_url = None
+    if os.getenv("JOB_NAME_SAFE", "").startswith("plot-jh-on-"):
+        with open(pathlib.Path(os.getenv("ARTIFACT_DIR")) / "source_url") as f:
+            results.source_url = f.read().strip()
 
     print("_parse_node_info")
     results.nodes_info = _parse_node_info(list(dirname.parent.glob("*__sutest_cluster__capture_environment"))[0] / "nodes.yaml")
