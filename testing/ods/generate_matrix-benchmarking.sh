@@ -1,5 +1,7 @@
 #! /bin/bash
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 MATBENCH_EXPE_NAME=rhods-ci
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 MATBENCH_RESULTS_DIR="/tmp/matrix_benchmarking_results"
@@ -13,13 +15,16 @@ generate_matbench::get_matrix_benchmarking() {
 
     cd matrix_benchmarking
     rm workloads/ -rf
-    git clone https://github.com/kpouget/matrix-benchmarking-workloads -b rhods --depth 1 workloads
 
-    cd workloads/rhods-ci/
+    MATBENCH_WORKLOAD_NAME=rhods-ci
+    mkdir workloads/
+    cd workloads/
+    ln -s "$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD_NAME"
+
+    cd "$MATBENCH_WORKLOAD_NAME"
     pip install --quiet --requirement requirements.txt
 
     mkdir -p /tmp/bin
-
     ln -s /tmp/matrix-benchmarking/bin/matbench /tmp/bin
 }
 

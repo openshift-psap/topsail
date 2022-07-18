@@ -6,6 +6,7 @@ from collections import defaultdict
 import xmltodict
 import logging
 import re
+import os
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
@@ -39,11 +40,14 @@ def _parse_job(results, filename):
         datetime.datetime.strptime(
             job["status"]["startTime"],
             K8S_TIME_FMT)
-    results.job_completion_time = \
-        datetime.datetime.strptime(
-            job["status"]["completionTime"],
-            K8S_TIME_FMT)
 
+    if job["status"].get("completionTime"):
+        results.job_completion_time = \
+            datetime.datetime.strptime(
+                job["status"]["completionTime"],
+                K8S_TIME_FMT)
+    else:
+        results.job_completion_time = results.job_creation_time + datetime.timedelta(hours=1)
 
 def _parse_pod_event_times(filename, namespace=None, hostnames=None, is_notebook=False):
     event_times = defaultdict(types.SimpleNamespace)
@@ -128,16 +132,22 @@ def _parse_node_info(filename):
     return node_info
 
 
-def _parse_pod_times(filename):
+def _parse_pod_times(filename, is_notebook=False):
     pod_times = defaultdict(types.SimpleNamespace)
     with open(filename) as f:
         podlist = yaml.safe_load(f)
-
+    all_events = []
     for pod in podlist["items"]:
         podname = pod["metadata"]["name"]
 
         if podname.endswith("-build"): continue
         if podname.endswith("-debug"): continue
+
+        if is_notebook:
+            if TEST_USERNAME_PREFIX not in podname: continue
+
+            user_idx = int(re.findall(r'[:letter:]*(\d+)$', podname)[0])
+            podname = f"{JUPYTERLAB_USER_RENAME_PREFIX}{user_idx}"
 
         pod_times[podname] = types.SimpleNamespace()
 
@@ -150,7 +160,7 @@ def _parse_pod_times(filename):
                 pod["status"]["startTime"],
                 K8S_TIME_FMT)
 
-        if pod["status"]["containerStatuses"][0]["state"]["terminated"]:
+        if pod["status"]["containerStatuses"][0]["state"].get("terminated"):
             pod_times[podname].container_started = \
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["terminated"]["startedAt"],
@@ -175,11 +185,19 @@ def _parse_pod_times(filename):
     return pod_times
 
 def _parse_ods_ci_exit_code(filename):
+    if not filename.exists():
+        logging.error(f"_parse_ods_ci_exit_code: '{filename}' doesn't exist ...")
+        return
+
     with open(filename) as f:
         return int(f.read())
 
 def _parse_ods_ci_output_xml(filename):
     ods_ci_times = {}
+
+    if not filename.exists():
+        logging.error(f"_parse_ods_ci_output_xml: '{filename}' doesn't exist ...")
+        return {}
 
     with open(filename) as f:
         output_dict = xmltodict.parse(f.read())
@@ -222,23 +240,34 @@ def _extract_metrics(dirname):
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace()
 
+    results.location = dirname
+    results.source_url = None
+    if os.getenv("JOB_NAME_SAFE", "").startswith("plot-jh-on-"):
+        with open(pathlib.Path(os.getenv("ARTIFACT_DIR")) / "source_url") as f:
+            results.source_url = f.read().strip()
+
     _parse_job(results, dirname / "tester_job.yaml")
 
     print("_parse_node_info")
-    results.nodes_info = _parse_node_info(list(dirname.parent.glob("*__sutest_cluster__capture_environment"))[0] / "nodes.yaml")
-    results.nodes_info = _parse_node_info(list(dirname.parent.glob("*__driver_cluster__capture_environment"))[0] / "nodes.yaml")
+    results.nodes_info = defaultdict(types.SimpleNamespace)
+    results.nodes_info |= _parse_node_info(list(dirname.parent.glob("*__sutest_cluster__capture_environment"))[0] / "nodes.yaml")
+    results.nodes_info |= _parse_node_info(list(dirname.parent.glob("*__driver_cluster__capture_environment"))[0] / "nodes.yaml")
 
     print("_parse_pod_times (tester)")
-    results.pod_times = _parse_pod_times(dirname / "tester_pods.yaml")
+    results.pod_times = {}
+    results.pod_times |= _parse_pod_times(dirname / "tester_pods.yaml")
+    print("_parse_pod_times (notebooks)")
+    results.pod_times |= _parse_pod_times(dirname / "notebook_pods.yaml", is_notebook=True)
+
     results.event_times = defaultdict(types.SimpleNamespace)
     results.notebook_hostnames = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
 
-    print("_parse_pod_events (notebook)")
+    print("_parse_pod_events (notebooks)")
+
     results.event_times |= _parse_pod_event_times(dirname / "notebook_events.yaml", "rhods-notebooks", notebook_hostnames, is_notebook=True)
     print("_parse_pod_events (tester)")
     results.event_times |= _parse_pod_event_times(dirname / "tester_events.yaml", "loadtest", testpod_hostnames)
-
     results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci")]
     results.notebook_pods = [k for k in results.event_times.keys() if k.startswith(JUPYTERLAB_USER_RENAME_PREFIX)]
     print("_extract_metrics")
@@ -257,7 +286,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
         user_idx = int(test_pod.split("-")[-2])
         results.ods_ci_user_test_status[user_idx] = results.ods_ci_exit_code[test_pod]
-    print("done")
+
     store.add_to_matrix(import_settings, None, results, None)
 
 NOTEBOOK_REQUESTS = dict(

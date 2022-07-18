@@ -40,10 +40,10 @@ class Timeline():
         _df = pd.DataFrame(data)
         df = _df[_df["LegendGroup"] != "Nodes"]
 
-        fig = px.timeline(df, x_start="Start", x_end="Finish", y="LineName", color="LegendName")
+        fig = px.timeline(df, x_start="Start", x_end="Finish", y="UserIdx", color="LegendName")
         fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
         fig.update_layout(barmode='stack', title=f"Execution timeline of {user_count} users launching a notebook ", title_x=0.5,)
-        fig.update_layout(yaxis_title="")
+        fig.update_layout(yaxis_title="User Index")
         fig.update_layout(xaxis_title="Timeline (by date)")
 
         return fig, ""
