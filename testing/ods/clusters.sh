@@ -104,7 +104,7 @@ create_clusters() {
             oc create cm keep-cluster -n default --from-literal=keep=true
 
             pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
-            ./run_toolbox.py cluster create_htpasswd_user "$pr_author" "$PSAP_ODS_SECRET_PATH/get_cluster.password"
+            ./run_toolbox.py cluster create_htpasswd_adminuser "$pr_author" "$PSAP_ODS_SECRET_PATH/get_cluster.password"
 
             oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
             cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
