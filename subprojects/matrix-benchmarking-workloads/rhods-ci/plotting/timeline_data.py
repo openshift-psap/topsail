@@ -4,7 +4,10 @@ import re
 from .. import store as rhodsci_store
 
 def get_text(what, start_evt, finish_evt, start, finish):
-    duration_s = (finish - start).total_seconds()
+    if finish and start:
+        duration_s = (finish - start).total_seconds()
+    else:
+        duration_s = 0
 
     if duration_s < 120:
         duration = f"{duration_s:.1f} seconds"
@@ -77,28 +80,6 @@ def generate(entry, cfg):
 
             return defaults | kwargs
 
-        data.append(generate_data(
-            "01. Test pod scheduling",
-            "Job creation", "Pod scheduled",
-            Finish=event_times.scheduled,
-            Start=entry_results.job_creation_time,))
-        data.append(generate_data(
-            "02. Test pod preparation",
-            "Pod scheduled", "pulling image",
-            Finish=event_times.pulling))
-        data.append(generate_data(
-            "03. Test pod image pull",
-            "Pod pulling image", "image pulled",
-            Finish=event_times.pulled))
-        data.append(generate_data(
-            "04. Test pod initialization",
-            "Pod image pulled", "container started",
-            Finish=pod_times.container_started))
-        data.append(generate_data(
-            "05. Test Execution",
-            "Container started", "container finished",
-            Finish=pod_times.container_finished))
-
         for reason, start, end, msg in event_times.__dict__.get("warnings", []):
             data.append(generate_data(
                 "Test-pod K8s Warnings",
@@ -109,6 +90,38 @@ def generate(entry, cfg):
                 LineWidth=20,
                 Opacity=0.9,
             ))
+
+        if not hasattr(event_times, "scheduled"): continue
+        data.append(generate_data(
+            "01. Test pod scheduling",
+            "Job creation", "Pod scheduled",
+            Finish=event_times.scheduled,
+            Start=entry_results.job_creation_time,))
+
+        if not hasattr(event_times, "pulling"): continue
+        data.append(generate_data(
+            "02. Test pod preparation",
+            "Pod scheduled", "pulling image",
+            Finish=event_times.pulling))
+
+        if not hasattr(event_times, "pulled"): continue
+        data.append(generate_data(
+            "03. Test pod image pull",
+            "Pod pulling image", "image pulled",
+            Finish=event_times.pulled))
+
+        if not hasattr(pod_times, "container_started"): continue
+        data.append(generate_data(
+            "04. Test pod initialization",
+            "Pod image pulled", "container started",
+            Finish=pod_times.container_started))
+
+        if not hasattr(pod_times, "container_finished"): continue
+        data.append(generate_data(
+            "05. Test Execution",
+            "Container started", "container finished",
+            Finish=pod_times.container_finished))
+
 
     data_length_before_ods_ci = len(data)
 
@@ -196,7 +209,7 @@ def generate(entry, cfg):
                 Finish=event_times.started))
 
 
-            end = event_times.terminated if hasattr(event_times, "terminaned") \
+            end = event_times.terminated if hasattr(event_times, "terminated") \
                 else entry_results.job_completion_time
 
             data.append(generate_data(
@@ -221,6 +234,8 @@ def generate(entry, cfg):
         rhods_node = rhods_nodes[user_idx]
 
         LineName = get_line_name(user_idx)
+
+        if not entry_results.job_completion_time: continue
 
         data.insert(0, dict(
             LegendName=rhods_node,

@@ -40,11 +40,14 @@ def _parse_job(results, filename):
         datetime.datetime.strptime(
             job["status"]["startTime"],
             K8S_TIME_FMT)
-    results.job_completion_time = \
-        datetime.datetime.strptime(
-            job["status"]["completionTime"],
-            K8S_TIME_FMT)
 
+    if job["status"].get("completionTime"):
+        results.job_completion_time = \
+            datetime.datetime.strptime(
+                job["status"]["completionTime"],
+                K8S_TIME_FMT)
+    else:
+        results.job_completion_time = results.job_creation_time + datetime.timedelta(hours=1)
 
 def _parse_pod_event_times(filename, namespace=None, hostnames=None, is_notebook=False):
     event_times = defaultdict(types.SimpleNamespace)
@@ -133,7 +136,7 @@ def _parse_pod_times(filename):
     pod_times = defaultdict(types.SimpleNamespace)
     with open(filename) as f:
         podlist = yaml.safe_load(f)
-
+    all_events = []
     for pod in podlist["items"]:
         podname = pod["metadata"]["name"]
 
@@ -151,7 +154,7 @@ def _parse_pod_times(filename):
                 pod["status"]["startTime"],
                 K8S_TIME_FMT)
 
-        if pod["status"]["containerStatuses"][0]["state"]["terminated"]:
+        if pod["status"]["containerStatuses"][0]["state"].get("terminated"):
             pod_times[podname].container_started = \
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["terminated"]["startedAt"],
@@ -188,7 +191,7 @@ def _parse_ods_ci_output_xml(filename):
 
     if not filename.exists():
         logging.error(f"_parse_ods_ci_output_xml: '{filename}' doesn't exist ...")
-        return
+        return {}
 
     with open(filename) as f:
         output_dict = xmltodict.parse(f.read())
@@ -236,6 +239,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     if os.getenv("JOB_NAME_SAFE", "").startswith("plot-jh-on-"):
         with open(pathlib.Path(os.getenv("ARTIFACT_DIR")) / "source_url") as f:
             results.source_url = f.read().strip()
+
+    _parse_job(results, dirname / "tester_job.yaml")
 
     print("_parse_node_info")
     results.nodes_info = _parse_node_info(list(dirname.parent.glob("*__sutest_cluster__capture_environment"))[0] / "nodes.yaml")

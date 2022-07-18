@@ -61,8 +61,11 @@ class Timeline():
             for row in range(len(rows)):
                 line_idx = ordered_lines.index(rows["LineName"].values[row])
                 txt = rows["Text"].values[row]
-
                 get_ts = lambda name: datetime.datetime.fromtimestamp(int(rows[name].values[row].astype(datetime.datetime))/1000000000)
+                try:
+                    get_ts("Finish")
+                except TypeError: # finish event missing
+                    continue
 
                 current_ts = get_ts("Start")
                 while current_ts < get_ts("Finish"):

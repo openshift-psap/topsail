@@ -8,8 +8,6 @@ import plotly.express as px
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
-from . import timeline_data
-
 def register():
     MappingTimeline("Pod/Node timeline: Test Pods", is_notebook=False)
     MappingTimeline("Pod/Node timeline: Notebooks", is_notebook=True)
