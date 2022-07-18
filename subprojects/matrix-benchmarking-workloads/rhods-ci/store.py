@@ -132,7 +132,7 @@ def _parse_node_info(filename):
     return node_info
 
 
-def _parse_pod_times(filename):
+def _parse_pod_times(filename, is_notebook=False):
     pod_times = defaultdict(types.SimpleNamespace)
     with open(filename) as f:
         podlist = yaml.safe_load(f)
@@ -142,6 +142,12 @@ def _parse_pod_times(filename):
 
         if podname.endswith("-build"): continue
         if podname.endswith("-debug"): continue
+
+        if is_notebook:
+            if TEST_USERNAME_PREFIX not in podname: continue
+
+            user_idx = int(re.findall(r'[:letter:]*(\d+)$', podname)[0])
+            podname = f"{JUPYTERLAB_USER_RENAME_PREFIX}{user_idx}"
 
         pod_times[podname] = types.SimpleNamespace()
 
@@ -248,16 +254,20 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.nodes_info |= _parse_node_info(list(dirname.parent.glob("*__driver_cluster__capture_environment"))[0] / "nodes.yaml")
 
     print("_parse_pod_times (tester)")
-    results.pod_times = _parse_pod_times(dirname / "tester_pods.yaml")
+    results.pod_times = {}
+    results.pod_times |= _parse_pod_times(dirname / "tester_pods.yaml")
+    print("_parse_pod_times (notebooks)")
+    results.pod_times |= _parse_pod_times(dirname / "notebook_pods.yaml", is_notebook=True)
+
     results.event_times = defaultdict(types.SimpleNamespace)
     results.notebook_hostnames = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
 
-    print("_parse_pod_events (notebook)")
+    print("_parse_pod_events (notebooks)")
+
     results.event_times |= _parse_pod_event_times(dirname / "notebook_events.yaml", "rhods-notebooks", notebook_hostnames, is_notebook=True)
     print("_parse_pod_events (tester)")
     results.event_times |= _parse_pod_event_times(dirname / "tester_events.yaml", "loadtest", testpod_hostnames)
-
     results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci")]
     results.notebook_pods = [k for k in results.event_times.keys() if k.startswith(JUPYTERLAB_USER_RENAME_PREFIX)]
     print("_extract_metrics")
@@ -276,7 +286,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
         user_idx = int(test_pod.split("-")[-2])
         results.ods_ci_user_test_status[user_idx] = results.ods_ci_exit_code[test_pod]
-    print("done")
+
     store.add_to_matrix(import_settings, None, results, None)
 
 NOTEBOOK_REQUESTS = dict(

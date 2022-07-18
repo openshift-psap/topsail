@@ -160,10 +160,16 @@ def generate(entry, cfg):
     for notebook_name in entry_results.notebook_pods:
         user_idx = int(re.findall(r'[:letter:]*(\d+)$', notebook_name)[0])
 
+
         event_times = entry_results.event_times[notebook_name]
-        try: appears_time = min([v for v in event_times.__dict__.values() if isinstance(v, datetime.datetime)])
-        except ValueError: #min() arg is an empty sequence
-            appears_time = None
+        pod_times = entry_results.pod_times.get(notebook_name)
+        if pod_times:
+            appears_time = pod_times.creation_time
+        else:
+            try:
+                appears_time = min([v for v in event_times.__dict__.values() if isinstance(v, datetime.datetime)])
+            except ValueError: #min() arg is an empty sequence
+                appears_time = None
 
         def generate_data(LegendName, start_evt, finish_evt, **kwargs):
             defaults = dict(
