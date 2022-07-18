@@ -1,0 +1,2 @@
+prometheus_api_client
+xmltodict
