@@ -63,27 +63,31 @@ class ErrorReport():
             else:
                 raise ValueError(f"Unexpected value for 'entry.results.link_flag' env var: '{entry.results.link_flag}'")
 
-        content = []
         total_users = 0
         failed_users = 0
-        failed_steps = defaultdict(int)
+        failed_steps = defaultdict(list)
         REFERENCE_USER_IDX = 0
+
+        reference_content = None
         for podname, exit_code in entry.results.ods_ci_exit_code.items():
+            content = []
+
             total_users += 1
 
             user_idx = int(podname.split("-")[2])
-            if exit_code == 0 and user_idx != REFERENCE_USER_IDX: continue
+            if exit_code == 0:
+                if user_idx != REFERENCE_USER_IDX: continue
 
-            content.append(html.H2(f"User #{user_idx}"))
-
-            if exit_code == 0 and user_idx == REFERENCE_USER_IDX:
                 user_dir = entry.results.location / "ods-ci" / f"ods-ci-{user_idx}"
                 robot_log_path = user_dir / "log.html"
                 content.append(html.Ul([
                     html.Li([html.A("ODS-CI logs", target="_blank", href=link(robot_log_path)), " (reference run)"]),
                 ]))
+
+                reference_content = content
                 continue
 
+            content.append(html.H3(f"User #{user_idx}"))
             failed_users += 1
 
             ods_ci_output = entry.results.ods_ci_output[podname]
@@ -91,12 +95,12 @@ class ErrorReport():
                 content.append(html.Ul([
                     html.Li([f'No report available :/'])
                 ]))
-                failed_steps["Terminate in time"] += 1
+                failed_steps["Terminate in time"].append(content)
                 continue
 
             for step_idx, (step_name, step_info) in enumerate(ods_ci_output.items()):
                 if step_info.status != "FAIL": continue
-                failed_steps[step_name] += 1
+                failed_steps[step_name].append(content)
 
                 user_dir = entry.results.location / "ods-ci" / f"ods-ci-{user_idx}"
                 robot_log_path = user_dir / "log.html"
@@ -122,14 +126,23 @@ class ErrorReport():
 
         steps = html.Ul(
             list(
-                [html.Li([f"{cnt} users failed the step ", html.Code(step_name)])
-                 for step_name, cnt in failed_steps.items()]
+                [html.Li([f"{len(contents)} users failed the step ", html.Code(step_name)])
+                 for step_name, contents in failed_steps.items()]
             )
 
         )
         header += [html.Ul(
-            [html.Li(f"{failed_users}/{total_users} users failed:")]
+            [html.Li(f"{failed_users}/{total_users} users failed:" if failed_users else "No user failed.")]
             + [steps]
         )]
 
-        return None, header + content
+        if reference_content:
+            header.append(html.H2("Reference run"))
+            header += reference_content
+
+        for step_name, contents in failed_steps.items():
+            header.append(html.H2(f"Failed step: {step_name} x {len(contents)}"))
+            for content in contents:
+                header += content
+
+        return None, header
