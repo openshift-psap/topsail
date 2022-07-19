@@ -113,7 +113,7 @@ class ErrorReport():
                 if last_screenshot_path:
                     content += [html.A(html.Img(src=link(last_screenshot_path),
                                                 width=1024,
-                                                style="border: 2px solid #555; border-radius: 25px;"),
+                                                style={"border": "2px solid #555", "border-radius": "25px"}),
                                        target="_blank", href=link(last_screenshot_path))]
                 else:
                     content += [html.I("No screenshot available.")]
