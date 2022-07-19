@@ -35,8 +35,11 @@ def generate_data(entry, cfg, is_notebook):
         else:
             user_idx = int(pod_name.split("-")[2])
 
+        try: pod_times = entry_results.pod_times[pod_name]
+        except KeyError: continue
+
         event_times = entry_results.event_times[pod_name]
-        pod_times = entry_results.pod_times[pod_name]
+
         try:
             hostname = hostnames[pod_name]
         except KeyError:
