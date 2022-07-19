@@ -206,6 +206,9 @@ def _parse_ods_ci_output_xml(filename):
     if not isinstance(tests, list): tests = [tests]
 
     for test in tests:
+        if test["status"].get("#text") == 'Failure occurred and exit-on-failure mode is in use.':
+            continue
+
         ods_ci_times[test["@name"]] = test_times = types.SimpleNamespace()
 
         test_times.start = datetime.datetime.strptime(test["status"]["@starttime"], ROBOT_TIME_FMT)
