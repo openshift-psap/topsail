@@ -7,6 +7,7 @@ import xmltodict
 import logging
 import re
 import os
+import json
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
@@ -34,7 +35,7 @@ def _rewrite_settings(settings_dict):
     return settings_dict
 
 
-def _parse_env():
+def _parse_env(filename):
     from_env = types.SimpleNamespace()
 
     if not cli_args.kwargs.get("generate"):
@@ -62,6 +63,28 @@ def _parse_env():
             from_env.link_flag = "running-without-the-test"
         else:
             raise ValueError(f"Unexpected value for 'JOB_NAME_SAFE' env var: '{job_name}'")
+
+    from_env.pr = None
+    with open(filename) as f:
+        for line in f.readlines():
+            k, _, v = line.strip().partition("=")
+            if k != "JOB_SPEC": continue
+
+            job_spec = json.loads(v)
+
+            from_env.pr = pr = types.SimpleNamespace()
+            pr.link = job_spec["refs"]["pulls"][0]["link"]
+            pr.number = job_spec["refs"]["pulls"][0]["number"]
+            pr.diff_link = "".join([
+                job_spec["refs"]["repo_link"], "/compare/",
+                job_spec["refs"]["base_sha"] + ".." + job_spec["refs"]["pulls"][0]["sha"]
+            ])
+            pr.name = "".join([
+                job_spec["refs"]["org"], "/", job_spec["refs"]["repo"], " ", f"#{pr.number}"
+            ])
+            pr.base_ref = job_spec["refs"]["base_ref"]
+
+            break
 
     return from_env
 
@@ -285,7 +308,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
             results.source_url = f.read().strip()
 
     _parse_job(results, dirname / "tester_job.yaml")
-    results.from_env = _parse_env()
+    results.from_env = _parse_env(dirname / "_ansible.env")
 
     print("_parse_node_info")
     results.nodes_info = defaultdict(types.SimpleNamespace)

@@ -34,6 +34,19 @@ class ErrorReport():
         header += [html.P("This report shows the list of users who failed the test, with a link to their execution report and the last screenshot taken by the Robot.")]
         header += [html.H1("Error Report")]
 
+        info = []
+        if entry.results.from_env.pr:
+            pr = entry.results.from_env.pr
+            info += [html.Li(["PR ", html.A(pr.name, href=pr.link, target="_blank")])]
+            info += [html.Li(["Diff against ", html.A(pr.base_ref, href=pr.diff_link, target="_blank"), " (when this test ran)"])]
+
+        if entry.results.from_env.link_flag == "running-with-the-test":
+            info += [html.Li(html.A("Results artifacts",
+                                    href="..", target="_blank"))]
+        elif entry.results.from_env.link_flag == "running-without-the-test":
+            info += [html.Li(html.A("Results artifacts",
+                                    href=entry.results.source_url, target="_blank"))]
+
         if entry.results.from_env.link_flag == "interactive" :
             # running in interactive mode
             def link(path):
@@ -55,9 +68,6 @@ class ErrorReport():
 
             elif entry.results.from_env.link_flag == "running-without-the-test":
                 # running independently of the test
-                # we need to know where the test artifacts are stored
-                if entry.results.source_url is None:
-                    raise ValueError(f"'source_url' value not available for {entry.results.location} ...")
 
                 link = lambda path: f"{entry.results.source_url}/{path.relative_to(entry.results.location.parent)}"
             else:
@@ -132,7 +142,8 @@ class ErrorReport():
 
         )
         header += [html.Ul(
-            [html.Li(f"{failed_users}/{total_users} users failed:" if failed_users else "No user failed.")]
+            info
+            + [html.Li(f"{failed_users}/{total_users} users failed:" if failed_users else "No user failed.")]
             + [steps]
         )]
 
