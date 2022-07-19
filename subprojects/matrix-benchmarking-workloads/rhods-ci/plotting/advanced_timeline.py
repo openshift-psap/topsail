@@ -60,7 +60,7 @@ class Timeline():
             text = []
             for row in range(len(rows)):
                 line_idx = ordered_lines.index(rows["LineName"].values[row])
-                txt = rows["Text"].values[row]
+                txt = rows["LineName"].values[row] + "<br>" + rows["Text"].values[row]
                 get_ts = lambda name: datetime.datetime.fromtimestamp(int(rows[name].values[row].astype(datetime.datetime))/1000000000)
                 try:
                     get_ts("Finish")
@@ -114,7 +114,7 @@ class Timeline():
         fig.update_layout(xaxis_range=[min_date[0] - x_shift, max_date[0] + x_shift])
         fig.update_layout(yaxis_range=[len(ordered_lines) - 1 + y_shift, 0 - y_shift]) # range reverted here
         fig.update_layout(xaxis_title="Timeline (by date)")
-        fig.update_yaxes(tickmode='array', ticktext=ordered_lines, tickvals=list(range(len(ordered_lines))))
+        fig.update_layout(yaxis_title="User Index")
 
         fig.update_xaxes(showspikes=True, spikecolor="green", spikesnap="cursor", spikemode="across")
 
