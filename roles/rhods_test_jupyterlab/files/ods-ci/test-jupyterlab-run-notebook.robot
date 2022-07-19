@@ -64,16 +64,6 @@ Spawn a Notebook
   Spawn Notebook With Arguments  image=${NOTEBOOK_IMAGE_NAME}  size=${NOTEBOOK_IMAGE_SIZE}  spawner_timeout=${NOTEBOOK_SPAWN_WAIT_TIME}  retries=${NOTEBOOK_SPAWN_RETRIES}  retries_delay=${NOTEBOOK_SPAWN_RETRY_DELAY}
   Capture Page Screenshot
 
-  ${is_launcher_selected} =  Run Keyword And Return Status  JupyterLab Launcher Tab Is Selected
-  Run Keyword If  not ${is_launcher_selected}  Open JupyterLab Launcher
-  Capture Page Screenshot
-  Launch a new JupyterLab Document
-  Close Other JupyterLab Tabs
-  Run Cell And Check For Errors  !echo "Hello World"
-  Wait Until JupyterLab Code Cell Is Not Active  timeout=5
-  Capture Page Screenshot
-
-
 Load the Notebook
   [Tags]  Notebook
 
