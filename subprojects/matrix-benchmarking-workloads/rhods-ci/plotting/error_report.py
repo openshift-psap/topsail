@@ -2,6 +2,7 @@ import copy
 import re
 from collections import defaultdict
 import os
+import base64
 
 from dash import html
 from dash import dcc
@@ -33,18 +34,34 @@ class ErrorReport():
         header += [html.P("This report shows the list of users who failed the test, with a link to their execution report and the last screenshot taken by the Robot.")]
         header += [html.H1("Error Report")]
 
+        if entry.results.from_env.link_flag == "interactive" :
+            # running in interactive mode
+            def link(path):
+                if path.suffix != ".png":
+                    return f"file://{path}"
 
-        job_name = os.getenv("JOB_NAME_SAFE", None)
-        if not job_name:
-            link = lambda path: f"file://{path}"
-        elif job_name.startswith("jh-on-"):
-            link = lambda path: str(".." / path.relative_to(entry.results.location.parent))
-        elif job_name.startswith("plot-jh-on-"):
-            if entry.results.source_url is None:
-                raise ValueError(f"'source_url' value not available for {entry.results.location} ...")
-            link = lambda path: entry.results.source_url + "/" + str(path.relative_to(entry.results.location.parent))
+                with open (path, "rb") as f:
+                    encoded_image = base64.b64encode(f.read()).decode("ascii")
+                return f"data:image/png;base64,{encoded_image}"
+
         else:
-            raise ValueError(f"Unexpected value for 'JOB_NAME_SAFE' env var: '{job_name}'")
+            if entry.results.from_env.link_flag == "running-locally":
+                # not running in the CI
+                link = lambda path: f"file://{path}"
+
+            elif entry.results.from_env.link_flag == "running-with-the-test":
+                # running right after the test
+                link = lambda path: str(".." / path.relative_to(entry.results.location.parent))
+
+            elif entry.results.from_env.link_flag == "running-without-the-test":
+                # running independently of the test
+                # we need to know where the test artifacts are stored
+                if entry.results.source_url is None:
+                    raise ValueError(f"'source_url' value not available for {entry.results.location} ...")
+
+                link = lambda path: f"{entry.results.source_url}/{path.relative_to(entry.results.location.parent)}"
+            else:
+                raise ValueError(f"Unexpected value for 'entry.results.link_flag' env var: '{entry.results.link_flag}'")
 
         content = []
         total_users = 0

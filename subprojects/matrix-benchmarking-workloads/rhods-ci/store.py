@@ -14,6 +14,8 @@ import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
+import matrix_benchmarking.cli_args as cli_args
+
 from .plotting import prom as rhods_plotting_prom
 
 K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -30,6 +32,39 @@ def _rewrite_settings(settings_dict):
         del settings_dict["user-count"]
 
     return settings_dict
+
+
+def _parse_env():
+    from_env = types.SimpleNamespace()
+
+    if not cli_args.kwargs.get("generate"):
+        # running in interactive mode
+
+        from_env.link_flag = "interactive"
+    else:
+        # running in generate mode
+
+        # This must be parsed from the process env (not the file), to
+        # properly generate the error report links to the image.
+        job_name = os.getenv("JOB_NAME_SAFE")
+
+        if not job_name:
+            # not running in the CI
+
+            from_env.link_flag = "running-locally"
+        elif job_name.startswith("jh-on-"):
+            # running right after the test
+
+            from_env.link_flag = "running-with-the-test"
+        elif job_name.startswith("plot-jh-on-"):
+            # running independently of the test
+
+            from_env.link_flag = "running-without-the-test"
+        else:
+            raise ValueError(f"Unexpected value for 'JOB_NAME_SAFE' env var: '{job_name}'")
+
+    return from_env
+
 
 def _parse_job(results, filename):
 
@@ -250,6 +285,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
             results.source_url = f.read().strip()
 
     _parse_job(results, dirname / "tester_job.yaml")
+    results.from_env = _parse_env()
 
     print("_parse_node_info")
     results.nodes_info = defaultdict(types.SimpleNamespace)
