@@ -7,12 +7,15 @@ import xmltodict
 import logging
 import re
 import os
+import json
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
+
+import matrix_benchmarking.cli_args as cli_args
 
 from .plotting import prom as rhods_plotting_prom
 
@@ -30,6 +33,61 @@ def _rewrite_settings(settings_dict):
         del settings_dict["user-count"]
 
     return settings_dict
+
+
+def _parse_env(filename):
+    from_env = types.SimpleNamespace()
+
+    if not cli_args.kwargs.get("generate"):
+        # running in interactive mode
+
+        from_env.link_flag = "interactive"
+    else:
+        # running in generate mode
+
+        # This must be parsed from the process env (not the file), to
+        # properly generate the error report links to the image.
+        job_name = os.getenv("JOB_NAME_SAFE")
+
+        if not job_name:
+            # not running in the CI
+
+            from_env.link_flag = "running-locally"
+        elif job_name.startswith("jh-on-"):
+            # running right after the test
+
+            from_env.link_flag = "running-with-the-test"
+        elif job_name.startswith("plot-jh-on-"):
+            # running independently of the test
+
+            from_env.link_flag = "running-without-the-test"
+        else:
+            raise ValueError(f"Unexpected value for 'JOB_NAME_SAFE' env var: '{job_name}'")
+
+    from_env.pr = None
+    with open(filename) as f:
+        for line in f.readlines():
+            k, _, v = line.strip().partition("=")
+            if k != "JOB_SPEC": continue
+
+            job_spec = json.loads(v)
+
+            from_env.pr = pr = types.SimpleNamespace()
+            pr.link = job_spec["refs"]["pulls"][0]["link"]
+            pr.number = job_spec["refs"]["pulls"][0]["number"]
+            pr.diff_link = "".join([
+                job_spec["refs"]["repo_link"], "/compare/",
+                job_spec["refs"]["base_sha"] + ".." + job_spec["refs"]["pulls"][0]["sha"]
+            ])
+            pr.name = "".join([
+                job_spec["refs"]["org"], "/", job_spec["refs"]["repo"], " ", f"#{pr.number}"
+            ])
+            pr.base_ref = job_spec["refs"]["base_ref"]
+
+            break
+
+    return from_env
+
 
 def _parse_job(results, filename):
 
@@ -206,6 +264,9 @@ def _parse_ods_ci_output_xml(filename):
     if not isinstance(tests, list): tests = [tests]
 
     for test in tests:
+        if test["status"].get("#text") == 'Failure occurred and exit-on-failure mode is in use.':
+            continue
+
         ods_ci_times[test["@name"]] = test_times = types.SimpleNamespace()
 
         test_times.start = datetime.datetime.strptime(test["status"]["@starttime"], ROBOT_TIME_FMT)
@@ -247,6 +308,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
             results.source_url = f.read().strip()
 
     _parse_job(results, dirname / "tester_job.yaml")
+    results.from_env = _parse_env(dirname / "_ansible.env")
 
     print("_parse_node_info")
     results.nodes_info = defaultdict(types.SimpleNamespace)
