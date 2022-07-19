@@ -72,7 +72,7 @@ Load the Notebook
   Capture Page Screenshot
   Launch a new JupyterLab Document
   Close Other JupyterLab Tabs
-  Run Cell And Check For Errors  !curl "${NOTEBOOK_URL}" > "${NOTEBOOK_NAME}"
+  Run Cell And Check For Errors  !curl "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
   Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_CLONE_WAIT_TIME}
   Capture Page Screenshot
 
