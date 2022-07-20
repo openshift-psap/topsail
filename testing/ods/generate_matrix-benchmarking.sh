@@ -6,11 +6,17 @@ MATBENCH_EXPE_NAME=rhods-ci
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 MATBENCH_RESULTS_DIR="/tmp/matrix_benchmarking_results"
 
+# https://github.com/openshift-psap/matrix-benchmarking
+MATRIX_BENCHMARKING_COMMIT=cab6a32bc45e65586f64e593170dee82716f2f00
+
 generate_matbench::get_matrix_benchmarking() {
     cd /tmp
     git clone https://github.com/openshift-psap/matrix-benchmarking --depth 1
-
     cd matrix-benchmarking/
+    git fetch --depth=1 origin "$MATRIX_BENCHMARKING_COMMIT"
+    git checkout "$MATRIX_BENCHMARKING_COMMIT"
+    git show --quiet
+
     pip install --quiet --requirement requirements.txt
 
     cd matrix_benchmarking
