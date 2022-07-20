@@ -6,6 +6,7 @@ Resource            tests/Resources/Page/ODH/JupyterHub/JupyterLabLauncher.robot
 Library             DebugLibrary
 Library             JupyterLibrary
 Library             libs/Helpers.py
+Library             SeleniumLibrary
 
 Suite Teardown  Tear Down
 
@@ -22,14 +23,22 @@ ${NOTEBOOK_NAME}               notebook.ipynb
 ${NOTEBOOK_CLONE_WAIT_TIME}    30 seconds
 ${NOTEBOOK_EXEC_WAIT_TIME}     5 minutes
 
+&{browser logging capability}    browser=ALL
+&{capabilities}    browserName=chrome    version=${EMPTY}    platform=ANY    goog:loggingPrefs=${browser logging capability}
+
 *** Keywords ***
 
 Setup
   Set Library Search Order  SeleniumLibrary
   RHOSi Setup
-  Open Browser  ${ODH_DASHBOARD_URL}  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}
+  Open Browser  ${ODH_DASHBOARD_URL}  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}  desired_capabilities=${capabilities}
 
 Tear Down
+  ${browser log entries}=    Get Browser Console Log Entries
+  Log    ${browser log entries}
+  ${browser log entries str}=   Convert To String  ${browser log entries}
+  Create File  ${OUTPUTDIR}/browser_log_entries.yaml  ${browser log entries str}
+
   Close Browser
 
 *** Test Cases ***
@@ -64,16 +73,6 @@ Spawn a Notebook
   Spawn Notebook With Arguments  image=${NOTEBOOK_IMAGE_NAME}  size=${NOTEBOOK_IMAGE_SIZE}  spawner_timeout=${NOTEBOOK_SPAWN_WAIT_TIME}  retries=${NOTEBOOK_SPAWN_RETRIES}  retries_delay=${NOTEBOOK_SPAWN_RETRY_DELAY}
   Capture Page Screenshot
 
-  ${is_launcher_selected} =  Run Keyword And Return Status  JupyterLab Launcher Tab Is Selected
-  Run Keyword If  not ${is_launcher_selected}  Open JupyterLab Launcher
-  Capture Page Screenshot
-  Launch a new JupyterLab Document
-  Close Other JupyterLab Tabs
-  Run Cell And Check For Errors  !echo "Hello World"
-  Wait Until JupyterLab Code Cell Is Not Active  timeout=5
-  Capture Page Screenshot
-
-
 Load the Notebook
   [Tags]  Notebook
 
@@ -82,7 +81,7 @@ Load the Notebook
   Capture Page Screenshot
   Launch a new JupyterLab Document
   Close Other JupyterLab Tabs
-  Run Cell And Check For Errors  !curl "${NOTEBOOK_URL}" > "${NOTEBOOK_NAME}"
+  Run Cell And Check For Errors  !curl "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
   Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_CLONE_WAIT_TIME}
   Capture Page Screenshot
 
@@ -102,3 +101,10 @@ Run the Notebook
 
   Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_EXEC_WAIT_TIME}
   Capture Page Screenshot
+
+*** Keywords ***
+Get Browser Console Log Entries
+    ${selenium}=    Get Library Instance    SeleniumLibrary
+    ${webdriver}=    Set Variable     ${selenium._drivers.active_drivers}[0]
+    ${log entries}=    Evaluate    $webdriver.get_log('browser')
+    [Return]    ${log entries}
