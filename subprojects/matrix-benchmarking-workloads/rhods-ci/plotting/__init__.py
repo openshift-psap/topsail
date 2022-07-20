@@ -14,6 +14,7 @@ from . import spawntime
 from . import status
 from . import launch_time
 from . import error_report
+from . import prom_report
 
 def register():
     simple_timeline.register()
@@ -26,3 +27,4 @@ def register():
     status.register()
     launch_time.register()
     error_report.register()
+    prom_report.register()

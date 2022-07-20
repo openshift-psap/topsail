@@ -3,7 +3,6 @@ import copy
 from dash import html
 from dash import dcc
 
-from matrix_benchmarking.common import Matrix
 import matrix_benchmarking.plotting.table_stats as table_stats
 
 def register():
