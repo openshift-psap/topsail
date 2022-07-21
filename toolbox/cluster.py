@@ -220,20 +220,23 @@ class Cluster:
         return RunAnsibleRole("cluster_prometheus_db", opts)
 
     @staticmethod
-    def destroy_ocp(region, tag, tag_value="owned", openshift_install="openshift-install"):
+    def destroy_ocp(region="", tag="", confirm=False, tag_value="owned", openshift_install="openshift-install"):
         """
         Destroy an OpenShift cluster
 
         Args:
-          region: The AWS region where the cluster lives.
-          label: The resource tag key.
+          region: Optional. The AWS region where the cluster lives. If empty and --confirm is passed, look up from the cluster.
+          label: Optional. The resource tag key. If empty and --confirm is passed, look up from the cluster.
+          confirm: If the region/label are not set, and --confirm is passed, destroy the current cluster.
           tag_value: Optional. The resource tag value. Default: 'owned'.
           openshift_install: Optional. The path to the `openshift-install` to use to destroy the cluster. If empty, pick it up from the `deploy-cluster` subproject. Default: 'openshift-installer'
         """
 
+
         opt = {
             "cluster_destroy_ocp_region": region,
             "cluster_destroy_ocp_tag": tag,
+            "cluster_destroy_ocp_confirm": confirm,
             "cluster_destroy_ocp_tag_value": tag_value,
             "cluster_destroy_ocp_openshift_install": openshift_install,
         }

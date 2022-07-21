@@ -1,4 +1,5 @@
 cluster_destroy_ocp_openshift_install: openshift-install
 cluster_destroy_ocp_region:
 cluster_destroy_ocp_tag:
+cluster_destroy_ocp_confirm: false
 cluster_destroy_ocp_tag_value: owned

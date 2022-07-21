@@ -1,15 +1,37 @@
 ---
 - name: Fail if the tag key is empty
-  fail: msg="Tag key is empty"
-  when: not cluster_destroy_ocp_tag
+  fail: msg="Tag cannot be empty, or pass the --confirm flag."
+  when:
+  - not cluster_destroy_ocp_tag
+  - not cluster_destroy_ocp_confirm|bool
 
 - name: Fail if the tag value is empty
   fail: msg="Tag value is empty"
   when: not cluster_destroy_ocp_tag_value
 
 - name: Fail if the region is empty
-  fail: msg="region is empty"
+  fail: msg="region cannot be empty, or pass the --confirm flag."
+  when:
+  - not cluster_destroy_ocp_region
+  - not cluster_destroy_ocp_confirm|bool
+
+- name: Get the cluster region
   when: not cluster_destroy_ocp_region
+  command: oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.placement.region}
+  register: cluster_region_cmd
+
+- name: Get the cluster tag
+  when: not cluster_destroy_ocp_tag
+  shell:
+    set -o pipefail;
+    oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} \
+        | cut -d/ -f3
+  register: cluster_tag_cmd
+
+- name: Set the cluster tag and region
+  set_fact:
+    cluster_tag: "{{ cluster_destroy_ocp_tag | default(cluster_tag_cmd.stdout, true) }}"
+    cluster_region: "{{ cluster_destroy_ocp_region | default(cluster_region_cmd.stdout, true) }}"
 
 - name: Create openshift-install metadata.json
   template:

@@ -3,10 +3,10 @@
   "clusterID": "clusterId",
   "infraID": "infraID",
   "aws": {
-    "region": "{{ cluster_destroy_ocp_region }}",
+    "region": "{{ cluster_region }}",
     "identifier": [
       {
-        "kubernetes.io/cluster/{{ cluster_destroy_ocp_tag }}": "{{ cluster_destroy_ocp_tag_value }}"
+        "kubernetes.io/cluster/{{ cluster_tag }}": "{{ cluster_destroy_ocp_tag_value }}"
       }
     ],
     "clusterDomain": "clusterDomain"
