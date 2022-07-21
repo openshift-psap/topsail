@@ -137,7 +137,6 @@ EOF
         (cd  "$workload_dir"; matbench "$@")
     }
 
-
     stats_content="$(cat "$workload_dir/data/ci-artifacts.plots")"
 
     echo "$stats_content"
@@ -146,7 +145,8 @@ EOF
 
     _matbench parse
     retcode=0
-    if ! _matbench visualize --generate="$generate_url"; then
+    VISU_LOG_FILE="$ARTIFACT_DIR/matbench_visualize.log"
+    if ! _matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
         echo "Visualization generation failed :("
         retcode=1
     fi
@@ -156,6 +156,11 @@ EOF
     mv fig_*.png "$ARTIFACT_DIR/figures_png" || true
     mv fig_*.html "$ARTIFACT_DIR/figures_html" || true
     mv report_* "$ARTIFACT_DIR" || true
+
+    if grep -q "^ERROR" "$VISU_LOG_FILE"; then
+        echo "An error happened during the report generation, aborting."
+        exit 1
+    fi
 
     return $retcode
 }
