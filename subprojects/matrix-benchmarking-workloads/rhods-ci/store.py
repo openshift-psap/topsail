@@ -291,9 +291,7 @@ def _extract_metrics(dirname):
             logging.warning(f"No {tarball_glob} in '{dirname.parent}'.")
             continue
 
-        results_metrics[name] = store_prom_db.extract_metrics(prom_tarball, metrics, dirname,
-                                                              filename_prefix=f"{name}_")
-
+        results_metrics[name] = store_prom_db.extract_metrics(prom_tarball, metrics, dirname)
 
     return results_metrics
 
