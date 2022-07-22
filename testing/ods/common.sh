@@ -17,7 +17,7 @@ OSD_USE_ODS_CATALOG=${OSD_USE_ODS_CATALOG:-0}
 ODS_QE_CATALOG_IMAGE="quay.io/modh/qe-catalog-source"
 ODS_QE_CATALOG_IMAGE_TAG="latest"
 
-RHODS_NOTEBOOK_IMAGE_NAME=s2i-minimal-notebook
+RHODS_NOTEBOOK_IMAGE_NAME=s2i-generic-data-science-notebook
 
 ODS_CI_TEST_NAMESPACE=loadtest
 ODS_CI_REPO="https://github.com/openshift-psap/ods-ci.git"
