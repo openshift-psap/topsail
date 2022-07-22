@@ -78,6 +78,11 @@ prechecks() {
     # store `ci-artifacts` version in use
     (git describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/ci_artifact.git_version
 
+    if [[ "${PULL_NUMBER:-}" ]]; then
+        curl -sSf "https://api.github.com/repos/openshift-psap/ci-artifacts/pulls/$PULL_NUMBER" -o "${ARTIFACT_DIR}/pull_request.json"
+        curl -sSf "https://api.github.com/repos/openshift-psap/ci-artifacts/issues/420/comments" -o "${ARTIFACT_DIR}/pull_request-comments.json"
+    fi
+
     # check that the OCP cluster can be reached
     ocp_version=$(oc version -o json | jq --raw-output '.openshiftVersion' || true)
     if [[ -z "$ocp_version" ]]; then
