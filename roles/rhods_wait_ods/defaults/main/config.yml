@@ -1,3 +1,3 @@
 ---
 # comma separated list of RHODS images to wait for
-rhods_wait_ods_images: "s2i-minimal-notebook,s2i-generic-data-science-notebook"
+rhods_wait_ods_images: "s2i-minimal-notebook,s2i-generic-data-science-notebook,tensorflow,pytorch"
