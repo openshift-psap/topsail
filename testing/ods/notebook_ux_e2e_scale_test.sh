@@ -187,10 +187,21 @@ prepare_ocp_sutest_deploy_rhods() {
         process_ctrl::retry 5 3m \
             ./run_toolbox.py rhods deploy_ods \
                 "$ODS_QE_CATALOG_IMAGE" "$ODS_QE_CATALOG_IMAGE_TAG"
+
+    if ! oc get group/dezdicated-admins >/dev/null 2>/dev/null; then
+        echo "Create the dedicated-admins group"
+        oc adm groups new dedicated-admins
+        oc adm policy add-cluster-role-to-group cluster-admin dedicated-admins
+    fi
 }
 
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
+    oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"enabled":true}}}' -n redhat-ods-applications
+    oc delete pod -l app.kubernetes.io/part-of=rhods-dashboard,app=rhods-dashboard  -n redhat-ods-applications
+
+    oc adm groups new dedicated-admins
+    oc adm policy add-cluster-role-to-group cluster-admin dedicated-admins
 
     ./run_toolbox.py rhods wait_ods
 
