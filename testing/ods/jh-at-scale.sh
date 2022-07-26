@@ -239,7 +239,8 @@ run_jupyterlab_test() {
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected="$ARTIFACTS_COLLECTED" \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR" \
-                     --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS"
+                     --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS" \
+                     --ods_ci_artifacts_exporter_istag="$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG"
 
     # quick access to these files
     cp "$ARTIFACT_DIR"/*__driver_rhods__test_jupyterlab/{failed_tests,success_count} "$ARTIFACT_DIR" || true
