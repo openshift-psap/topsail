@@ -14,7 +14,13 @@
        --dry-run=client
        -oyaml
     | tee "{{ artifact_extra_logs_dir }}/001_imagestream.yml"
-    | oc apply -f- -n "{{ utils_build_push_image_namespace }}"
+    | oc create
+         -f-
+         -n "{{ utils_build_push_image_namespace }}"
+  # Will fail if the imagestream already exists. Ignore it.  Cannot
+  # use 'oc apply' above, as we don't want to erase the imagestream
+  # content.
+  failed_when: false
 
 - name: Check if the image is already built
   command:

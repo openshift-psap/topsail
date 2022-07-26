@@ -4,7 +4,7 @@ kind: BuildConfig
 metadata:
   labels:
     app: ci-artifacts
-  name: {{ utils_build_push_image_local_name }}
+  name: {{ utils_build_push_image_local_name }}-{{ utils_build_push_image_tag }}
 spec:
   output:
     to:
