@@ -323,6 +323,10 @@ def main():
 
     args = parser.parse_args()
 
+    if args.delete and not args.ci_delete_older_than:
+        print("ERROR: refusing to run in delete mode without 'ci-delete-older-than' flag.")
+        return 1
+
     for region in get_all_regions():
         print()
         print(f"### Region {region}")
@@ -342,4 +346,4 @@ def main():
         print("No unknown cluster Hosted Zone detected.")
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
