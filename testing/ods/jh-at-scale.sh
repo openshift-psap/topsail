@@ -242,7 +242,7 @@ sutest_cleanup() {
     else
         ./run_toolbox.py cluster undeploy_ldap \
                          "$LDAP_IDP_NAME" \
-                         --use_ocm="$osd_cluster_name"
+                         --use_ocm="$osd_cluster_name" > /dev/null
     fi
 }
 
