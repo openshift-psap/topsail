@@ -13,7 +13,8 @@ configure_s3() {
 
     export S3_ACCESS_KEY=minio
     # S3_SECRET_KEY: set below
-
+    export HOME=/tmp/s3cmd
+    mkdir -p "$HOME"
     # run this in a subshell to avoid printing the password in clear because of 'set -x'
     bash -ec "eval \$(yq e .TEST_USER.PASSWORD /mnt/ods-ci-test-variables/test-variables.yml | awk '{ print \"export S3_SECRET_KEY=\" \$1 }'); cat /mnt/s3-config/s3cfg | envsubst > ~/.s3cfg"
 }
@@ -25,13 +26,6 @@ retcode=0 # always exit 0, we'll decide later if this is a success or a failure
 if [[ "$ARTIFACTS_COLLECTED" == "none" ]]; then
     exit $retcode
 fi
-
-dnf -y --quiet install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-dnf install -y --quiet s3cmd gettext
-dnf clean all
-
-curl --silent -L https://github.com/mikefarah/yq/releases/download/v4.25.1/yq_linux_amd64 -o /usr/bin/yq
-chmod +x /usr/bin/yq
 
 set +x
 
