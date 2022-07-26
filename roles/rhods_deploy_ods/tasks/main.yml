@@ -64,3 +64,14 @@
     cluster_deploy_operator_namespace: redhat-ods-operator
     cluster_deploy_operator_channel: beta
     cluster_deploy_operator_all_namespaces: "True"
+
+- name: Fill the imagestreams with dummy (ubi) images
+  loop: [minimal-gpu, nvidia-cuda-11.4.2, pytorch, tensorflow]
+  command:
+    oc tag
+       registry.access.redhat.com/ubi8/ubi
+       {{ item }}:ubi
+       -n redhat-ods-applications
+
+- name: Delete the RHODS builds
+  command: oc delete builds --all  -n redhat-ods-applications
