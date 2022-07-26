@@ -64,10 +64,14 @@ def _parse_env(filename):
         else:
             raise ValueError(f"Unexpected value for 'JOB_NAME_SAFE' env var: '{job_name}'")
 
+    from_env.env = {}
     from_env.pr = None
     with open(filename) as f:
         for line in f.readlines():
             k, _, v = line.strip().partition("=")
+
+            from_env.env[k] = v
+
             if k != "JOB_SPEC": continue
 
             job_spec = json.loads(v)
@@ -84,9 +88,28 @@ def _parse_env(filename):
             ])
             pr.base_ref = job_spec["refs"]["base_ref"]
 
-            break
-
     return from_env
+
+
+def _parse_pr(filename):
+    with open(filename) as f:
+        return json.load(f)
+
+
+def _parse_rhods_info(base_dirname):
+    rhods_info = types.SimpleNamespace()
+
+    with open(list(base_dirname.glob("*__sutest_rhods__capture_state"))[0] / "rhods_operator.yaml") as f:
+        content = f.read()
+        content = content.replace("2021-00-16T00:00:00Z", "2021-12-16T00:00:00Z")
+        rhods_operator_yaml = yaml.safe_load(content)
+
+        rhods_info.version = rhods_operator_yaml["items"][0]["metadata"]["annotations"]["containerImage"].split(":")[1]
+
+
+    with open(list(base_dirname.glob("*__sutest_cluster__capture_environment"))[0] / "ocp.version") as f:
+        rhods_info.ocp_version = f.read().strip()
+    return rhods_info
 
 
 def _parse_job(results, filename):
@@ -185,8 +208,9 @@ def _parse_node_info(filename):
 
     for node in nodeList["items"]:
         node_name = node["metadata"]["name"]
-
+        node_info[node_name].managed = "managed.openshift.com/customlabels" in node["metadata"]["annotations"]
         node_info[node_name].instance_type = node["metadata"]["labels"]["node.kubernetes.io/instance-type"]
+
     return node_info
 
 
@@ -307,6 +331,10 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     _parse_job(results, dirname / "tester_job.yaml")
     results.from_env = _parse_env(dirname / "_ansible.env")
+
+    results.from_pr = _parse_pr(dirname.parent / "pull_request.json")
+
+    results.rhods_info = _parse_rhods_info(dirname.parent)
 
     print("_parse_node_info")
     results.nodes_info = defaultdict(types.SimpleNamespace)

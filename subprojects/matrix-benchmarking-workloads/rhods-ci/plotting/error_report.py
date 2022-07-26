@@ -37,8 +37,9 @@ class ErrorReport():
         info = []
         if entry.results.from_env.pr:
             pr = entry.results.from_env.pr
-            info += [html.Li(["PR ", html.A(pr.name, href=pr.link, target="_blank")])]
-            info += [html.Li(["Diff against ", html.A(pr.base_ref, href=pr.diff_link, target="_blank"), " (when this test ran)"])]
+            info += [html.Li(["PR ", html.A(pr.name, href=pr.link, target="_blank"), html.B(entry.results.from_pr["title"])])]
+            info += [html.Ul(html.Li(html.Code(entry.results.from_pr["body"].replace("\n", "<br>"))))]
+            info += [html.Li(["Test diff against ", html.A(html.Code(pr.base_ref), href=pr.diff_link, target="_blank")])]
 
         if entry.results.from_env.link_flag == "running-with-the-test":
             info += [html.Li(html.A("Results artifacts",
@@ -47,6 +48,12 @@ class ErrorReport():
             info += [html.Li(html.A("Results artifacts",
                                     href=entry.results.source_url, target="_blank"))]
 
+        info += [html.Li(["RHODS ", html.Code(entry.results.rhods_info.version)])]
+
+        info += [html.Li(["Test job: ", html.Code(entry.results.from_env.env.get("JOB_NAME_SAFE", "no job defined"))])]
+        managed = list(entry.results.nodes_info.values())[0].managed
+        ocp_version = entry.results.rhods_info.ocp_version
+        info += [html.Li(["Running on ", "OpenShift Dedicated" if managed else "OCP", f" v{ocp_version}"])]
         if entry.results.from_env.link_flag == "interactive" :
             # running in interactive mode
             def link(path):
