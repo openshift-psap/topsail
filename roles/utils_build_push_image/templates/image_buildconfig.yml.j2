@@ -26,10 +26,12 @@ spec:
     type: Docker
     dockerStrategy:
       dockerfilePath: {{ utils_build_push_image_dockerfile_path }}
-{% elif dockerfile.stdout|length %}
+{% elif dockerfile_content_cmd.stdout|length %}
   source:
     dockerfile: |
-{{ dockerfile.stdout | indent(6, True) }}
+{{ dockerfile_content_cmd.stdout | indent(6, True) }}
+  strategy:
+    type: Docker
 {% endif %}
   triggers:
     - type: ConfigChange
