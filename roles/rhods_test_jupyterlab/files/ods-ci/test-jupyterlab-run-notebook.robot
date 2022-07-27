@@ -101,6 +101,13 @@ Run the Notebook
 
   Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_EXEC_WAIT_TIME}
   Capture Page Screenshot
+  ${has_errors}  ${error}=  Run Keyword And Ignore Error  Get JupyterLab Code Cell Error Text
+
+  IF  '${has_errors}' == 'PASS'
+      Log  ${error}
+      Fail  "Error detected during the execution of the notebook:\n${error}"
+  END
+
 
 *** Keywords ***
 Get Browser Console Log Entries
