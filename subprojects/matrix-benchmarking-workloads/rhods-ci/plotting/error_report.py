@@ -150,7 +150,7 @@ class ErrorReport():
         )
         header += [html.Ul(
             info
-            + [html.Li(f"{failed_users}/{total_users} users failed:" if failed_users else "No user failed.")]
+            + [html.Li(f"{failed_users}/{total_users} users failed:" if failed_users else f"None of the {total_users} users failed.")]
             + [steps]
         )]
 
