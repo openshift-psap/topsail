@@ -1,0 +1,3 @@
+[submodule "subprojects/matrix-benchmarking"]
+	path = subprojects/matrix-benchmarking
+	url = https://github.com/openshift-psap/matrix-benchmarking
