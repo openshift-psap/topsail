@@ -78,6 +78,9 @@ RUN echo -e '#!/usr/bin/env bash \n\
 exec ${HOME}/testing/run "$@" \n\
 ' > /usr/local/bin/run; chmod ugo+x /usr/local/bin/run
 
+# Prepare the CI `matbench`
+RUN ln -s ${HOME}/subprojects/matrix-benchmarking/bin/matbench /usr/local/bin/
+
 # Ensure directory permissions are properly set
 RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R
 
