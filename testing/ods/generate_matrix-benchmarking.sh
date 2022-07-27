@@ -6,32 +6,15 @@ MATBENCH_EXPE_NAME=rhods-ci
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 MATBENCH_RESULTS_DIR="/tmp/matrix_benchmarking_results"
 
-# https://github.com/openshift-psap/matrix-benchmarking
-MATRIX_BENCHMARKING_COMMIT=cab6a32bc45e65586f64e593170dee82716f2f00
+WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/rhods-ci"
+WORKLOAD_RUN_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking/workloads/rhods-ci"
 
-generate_matbench::get_matrix_benchmarking() {
-    cd /tmp
-    git clone https://github.com/openshift-psap/matrix-benchmarking --depth 1
-    cd matrix-benchmarking/
-    git fetch --depth=1 origin "$MATRIX_BENCHMARKING_COMMIT"
-    git checkout "$MATRIX_BENCHMARKING_COMMIT"
-    git show --quiet
+generate_matbench::prepare_matrix_benchmarking() {
+    rm -f "$WORKLOAD_RUN_DIR"
+    ln -s "$WORKLOAD_STORAGE_DIR" "$WORKLOAD_RUN_DIR"
 
-    pip install --quiet --requirement requirements.txt
-
-    cd matrix_benchmarking
-    rm workloads/ -rf
-
-    MATBENCH_WORKLOAD_NAME=rhods-ci
-    mkdir workloads/
-    cd workloads/
-    ln -s "$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD_NAME"
-
-    cd "$MATBENCH_WORKLOAD_NAME"
-    pip install --quiet --requirement requirements.txt
-
-    mkdir -p /tmp/bin
-    ln -s /tmp/matrix-benchmarking/bin/matbench /tmp/bin
+    pip install --quiet --requirement "$THIS_DIR/../../subprojects/matrix-benchmarking/requirements.txt"
+    pip install --quiet --requirement "$WORKLOAD_STORAGE_DIR/requirements.txt"
 }
 
 _get_data_from_pr() {
@@ -116,36 +99,33 @@ generate_matbench::get_prometheus() {
     mkdir -p /tmp/bin
     ln -s "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/bin
     ln -s "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
+    export PATH=$PATH:/tmp/bin
 }
 
 generate_matbench::generate_plots() {
-    workload_dir=/tmp/matrix-benchmarking/workloads/rhods-ci
+    ln -s /tmp/prometheus.yml "$WORKLOAD_STORAGE_DIR"
 
-    ln -s /tmp/prometheus.yml "$workload_dir"
-
-    export PATH="/tmp/bin:$PATH"
-    python3 --version
-
-    cat > "$workload_dir/.env" <<EOF
+    cat > "$WORKLOAD_STORAGE_DIR/.env" <<EOF
 MATBENCH_RESULTS_DIRNAME=$MATBENCH_RESULTS_DIR
 MATBENCH_FILTERS=expe=$MATBENCH_EXPE_NAME
 EOF
 
-    cat "$workload_dir/.env"
+    cat "$WORKLOAD_STORAGE_DIR/.env"
 
     _matbench() {
-        (cd  "$workload_dir"; matbench "$@")
+        (cd "$WORKLOAD_RUN_DIR"; matbench "$@")
     }
 
-    stats_content="$(cat "$workload_dir/data/ci-artifacts.plots")"
+    stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/ci-artifacts.plots")"
 
     echo "$stats_content"
 
     generate_url="stats=$(echo -n "$stats_content" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
     _matbench parse
+
     retcode=0
-    VISU_LOG_FILE="$ARTIFACT_DIR/matbench_visualize.log"
+    VISU_LOG_FILE="$ARTIFACT_DIR/_matbench_visualize.log"
     if ! _matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
         echo "Visualization generation failed :("
         retcode=1
@@ -153,9 +133,9 @@ EOF
 
     mkdir "$ARTIFACT_DIR"/figures_{png,html}
 
-    mv fig_*.png "$ARTIFACT_DIR/figures_png" || true
-    mv fig_*.html "$ARTIFACT_DIR/figures_html" || true
-    mv report_* "$ARTIFACT_DIR" || true
+    mv "$WORKLOAD_STORAGE_DIR"/fig_*.png "$ARTIFACT_DIR/figures_png" || true
+    mv "$WORKLOAD_STORAGE_DIR"/fig_*.html "$ARTIFACT_DIR/figures_html" || true
+    mv "$WORKLOAD_STORAGE_DIR"/report_* "$ARTIFACT_DIR" || true
 
     if grep -q "^ERROR" "$VISU_LOG_FILE"; then
         echo "An error happened during the report generation, aborting."
@@ -165,7 +145,17 @@ EOF
     return $retcode
 }
 
-if [[ "$JOB_NAME_SAFE" == "jh-on-"* ]]; then
+action=${1:-}
+
+if [[ "$action" == "prepare_matbench" ]]; then
+    set -o errexit
+    set -o pipefail
+    set -o nounset
+    set -x
+
+    generate_matbench::prepare_matrix_benchmarking
+
+elif [[ "$JOB_NAME_SAFE" == "jh-on-"* ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset
@@ -176,7 +166,7 @@ if [[ "$JOB_NAME_SAFE" == "jh-on-"* ]]; then
     _prepare_data_from_artifacts_dir "$ARTIFACT_DIR/.."
 
     generate_matbench::get_prometheus
-    generate_matbench::get_matrix_benchmarking
+    generate_matbench::prepare_matrix_benchmarking
 
     generate_matbench::generate_plots
 
@@ -198,7 +188,7 @@ elif [[ "$JOB_NAME_SAFE" == "plot-jh-on-"* ]]; then
     _get_data_from_pr "$cluster_type" "$results_dir"
 
     generate_matbench::get_prometheus
-    generate_matbench::get_matrix_benchmarking
+    generate_matbench::prepare_matrix_benchmarking
 
     generate_matbench::generate_plots
 fi
