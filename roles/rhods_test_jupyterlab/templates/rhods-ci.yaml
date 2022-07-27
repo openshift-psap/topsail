@@ -49,6 +49,8 @@ spec:
           value: "{{ rhods_test_jupyterlab_ods_sleep_factor }}"
         - name: NOTEBOOK_URL
           value: "{{ rhods_test_jupyterlab_notebook_url }}"
+        - name: NOTEBOOK_IMAGE_NAME
+          value: "{{ rhods_test_jupyterlab_ods_ci_notebook_image_name }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir

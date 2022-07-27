@@ -68,7 +68,9 @@ class RHODS:
                         ods_ci_exclude_tags="None",
                         ods_ci_test_case="test-jupyterlab-run-notebook.robot",
                         ods_ci_artifacts_exporter_istag="ods-ci:artifacts_exporter",
+                        ods_ci_notebook_image_name="s2i-generic-data-science-notebook",
                         ):
+
         """
         Test RHODS JupyterLab notebooks
 
@@ -88,6 +90,7 @@ class RHODS:
           ods_ci_test_case: Optional. ODS-CI test case to execute.
           ods_ci_exclude_tags: Optional. Tags to exclude in the ODS-CI test case.
           ods_ci_artifacts_exporter_istag: Optional. Imagestream tag of the ODS-CI artifacts exporter side-car container.
+          ods_ci_notebook_image_name: Optional. Name of the RHODS image to use when launching the notebooks.
         """
 
         opts = {
@@ -102,7 +105,7 @@ class RHODS:
             "rhods_test_jupyterlab_ods_ci_test_case": ods_ci_test_case,
             "rhods_test_jupyterlab_ods_ci_exclude_tags": ods_ci_exclude_tags,
             "rhods_test_jupyterlab_ods_ci_artifacts_exporter_istag": ods_ci_artifacts_exporter_istag,
-
+            "rhods_test_jupyterlab_ods_ci_notebook_image_name": ods_ci_notebook_image_name,
         }
 
         ARTIFACTS_COLLECTED_VALUES = ("all", "none", "no-image", "no-image-except-failed", "no-image-except-failed-and-zero")
