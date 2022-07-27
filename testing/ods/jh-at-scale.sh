@@ -229,15 +229,13 @@ run_jupyterlab_test() {
     nginx_server_dir=$(ls -d "$ARTIFACT_DIR"/*_"${NGINX_SERVER_DIRNAME}" | tail -1)
     nginx_server=$(cat "${nginx_server_dir}/hostname")
 
-    ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
-
     ./run_toolbox.py rhods test_jupyterlab \
                      "$LDAP_IDP_NAME" \
                      "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
                      "$S3_LDAP_PROPS" \
                      "http://$nginx_server/$ODS_NOTEBOOK_NAME" \
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
-                     --artifacts-collected="$ARTIFACTS_COLLECTED" \
+                     --artifacts-collected="$ODS_CI_ARTIFACTS_COLLECTED" \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR" \
                      --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS" \
                      --ods_ci_artifacts_exporter_istag="$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
