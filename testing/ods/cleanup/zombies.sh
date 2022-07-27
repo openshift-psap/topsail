@@ -31,7 +31,7 @@ do
             --ci-list-file "$DELETE_FILE" |& tee -a "$ARTIFACT_DIR/scan-ec2-instances.$region.log"
 done
 
-cluster_count=$(wc -l "$DELETE_FILE")
+cluster_count=$(cat "$DELETE_FILE" | wc -l)
 echo "Found  $cluster_count clusters to delete:"
 cat "$DELETE_FILE"
 
