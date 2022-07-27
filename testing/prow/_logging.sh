@@ -1,5 +1,16 @@
 #! /usr/bin/env bash
 
+_flake() {
+    fname="$1"
+    msg="$2"
+
+    DEST_DIR="${ARTIFACT_DIR}/_FLAKE/"
+    mkdir -p "$DEST_DIR"
+    echo "$msg" > "${DEST_DIR}/$fname"
+
+    echo "FLAKE: $msg"
+}
+
 _info() {
     fname="$1"
     msg="$2"
