@@ -322,6 +322,16 @@ case ${action} in
         prepare
         exit 0
         ;;
+    "install_rhods")
+	prepare_sutest_install_rhods
+	process_ctrl::wait_bg_processes
+	exit 0
+	;;
+    "install_ldap")
+	prepare_sutest_install_ldap
+	process_ctrl::wait_bg_processes
+	exit 0
+	;;
     "source")
         # file is being sourced by another script
         ;;
