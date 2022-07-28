@@ -327,35 +327,35 @@ case ${action} in
         exit 0
         ;;
     "install_rhods")
-	prepare_sutest_install_rhods
-	process_ctrl::wait_bg_processes
-	exit 0
-	;;
+        prepare_sutest_install_rhods
+        process_ctrl::wait_bg_processes
+        exit 0
+        ;;
     "install_ldap")
-	prepare_sutest_install_ldap
-	process_ctrl::wait_bg_processes
-	exit 0
-	;;
+        prepare_sutest_install_ldap
+        process_ctrl::wait_bg_processes
+        exit 0
+        ;;
     "uninstall_ldap")
-	sutest_cleanup_ldap
-	exit 0
-	;;
+        sutest_cleanup_ldap
+        exit 0
+        ;;
     "prepare_driver_cluster")
-	prepare_driver_cluster
-	process_ctrl::wait_bg_processes
-	exit 0
-	;;
+        prepare_driver_cluster
+        process_ctrl::wait_bg_processes
+        exit 0
+        ;;
     "run_jupyterlab_test")
-	run_jupyterlab_test
+        run_jupyterlab_test
         dump_prometheus_dbs
         capture_environment
         exit 0
         ;;
     "generate_plots")
-	export ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
-	mkdir -p "$ARTIFACT_DIR"
-	exec ./testing/ods/generate_matrix-benchmarking.sh generate_plots
-	;;
+        export ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
+        mkdir -p "$ARTIFACT_DIR"
+        exec ./testing/ods/generate_matrix-benchmarking.sh generate_plots
+        ;;
     "source")
         # file is being sourced by another script
         ;;
