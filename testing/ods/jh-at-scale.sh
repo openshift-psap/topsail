@@ -341,6 +341,11 @@ case ${action} in
 	sutest_cleanup_ldap
 	exit 0
 	;;
+    "prepare_driver_cluster")
+	prepare_driver_cluster
+	process_ctrl::wait_bg_processes
+	exit 0
+	;;
     "source")
         # file is being sourced by another script
         ;;
