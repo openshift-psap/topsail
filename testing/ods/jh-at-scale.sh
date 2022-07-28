@@ -238,6 +238,9 @@ run_jupyterlab_test() {
     switch_driver_cluster
 
     NGINX_SERVER_DIRNAME=cluster__deploy_nginx_server
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        ARTIFACT_DIR=$(ls -d /tmp/ci-artifacts_* | tail -1)
+    fi
     nginx_server_dir=$(ls -d "$ARTIFACT_DIR"/*_"${NGINX_SERVER_DIRNAME}" | tail -1)
     nginx_server=$(cat "${nginx_server_dir}/hostname")
 
