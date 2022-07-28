@@ -87,6 +87,7 @@ _prepare_data_from_artifacts_dir() {
         exit 1
     fi
 
+    rm -f "$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
     mkdir -p "$MATBENCH_RESULTS_DIR"
     ln -s "$artifact_dir" "$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
 }
@@ -97,13 +98,13 @@ generate_matbench::get_prometheus() {
     wget --quiet "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz" -O/tmp/prometheus.tar.gz
     tar xf "/tmp/prometheus.tar.gz" -C /tmp
     mkdir -p /tmp/bin
-    ln -s "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/bin
-    ln -s "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
+    ln -sf "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/bin
+    ln -sf "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
     export PATH=$PATH:/tmp/bin
 }
 
 generate_matbench::generate_plots() {
-    ln -s /tmp/prometheus.yml "$WORKLOAD_STORAGE_DIR"
+    ln -sf /tmp/prometheus.yml "$WORKLOAD_STORAGE_DIR"
 
     cat > "$WORKLOAD_STORAGE_DIR/.env" <<EOF
 MATBENCH_RESULTS_DIRNAME=$MATBENCH_RESULTS_DIR
@@ -154,6 +155,18 @@ if [[ "$action" == "prepare_matbench" ]]; then
     set -x
 
     generate_matbench::prepare_matrix_benchmarking
+
+elif [[ "$action" == "generate_plots" ]]; then
+    set -o errexit
+    set -o pipefail
+    set -o nounset
+    set -x
+
+    _prepare_data_from_artifacts_dir "$ARTIFACT_DIR/.."
+
+    generate_matbench::prepare_matrix_benchmarking
+    generate_matbench::get_prometheus
+    generate_matbench::generate_plots
 
 elif [[ "$JOB_NAME_SAFE" == "jh-on-"* ]]; then
     set -o errexit
