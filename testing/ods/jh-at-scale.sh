@@ -237,18 +237,14 @@ prepare() {
 run_jupyterlab_test() {
     switch_driver_cluster
 
-    NGINX_SERVER_DIRNAME=cluster__deploy_nginx_server
-    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        ARTIFACT_DIR=$(ls -d /tmp/ci-artifacts_* | tail -1)
-    fi
-    nginx_server_dir=$(ls -d "$ARTIFACT_DIR"/*_"${NGINX_SERVER_DIRNAME}" | tail -1)
-    nginx_server=$(cat "${nginx_server_dir}/hostname")
+    NGINX_SERVER="nginx-$NGINX_NOTEBOOK_NAMESPACE"
+    nginx_hostname=$(oc whoami --show-server | sed "s/api/$NGINX_SERVER.apps/g" | awk -F ":" '{print $2}' | sed s,//,,g)
 
     ./run_toolbox.py rhods test_jupyterlab \
                      "$LDAP_IDP_NAME" \
                      "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
                      "$S3_LDAP_PROPS" \
-                     "http://$nginx_server/$ODS_NOTEBOOK_NAME" \
+                     "http://$nginx_hostname/$ODS_NOTEBOOK_NAME" \
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected="$ODS_CI_ARTIFACTS_COLLECTED" \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR" \
@@ -349,6 +345,12 @@ case ${action} in
 	process_ctrl::wait_bg_processes
 	exit 0
 	;;
+    "run_jupyterlab_test")
+	run_jupyterlab_test
+        dump_prometheus_dbs
+        capture_environment
+        exit 0
+        ;;
     "source")
         # file is being sourced by another script
         ;;
