@@ -14,6 +14,13 @@ S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 # Otherwise, install RHODS from OCM addon.
 OSD_USE_ODS_CATALOG=${OSD_USE_ODS_CATALOG:-0}
 
+# If the value is set, consider SUTEST to be running on OSD and
+# use this cluster name to configure LDAP and RHODS
+# Notes
+# * KEEP EMPTY IF SUTEST IS NOT ON OSD
+# * KEEP EMPTY ON CI, OSD OR OCP ALIKE
+OSD_CLUSTER_NAME=
+
 ODS_QE_CATALOG_IMAGE="quay.io/modh/qe-catalog-source"
 ODS_QE_CATALOG_IMAGE_TAG="latest"
 
@@ -116,6 +123,11 @@ ocm_cluster_is_ready() {
 
 get_osd_cluster_name() {
     cluster_role=$1
+
+    if [[ "${OSD_CLUSTER_NAME}" ]]; then
+	echo "$OSD_CLUSTER_NAME"
+	return
+    fi
 
     cat "${SHARED_DIR:-}/osd_${cluster_role}_cluster_name" 2>/dev/null || true
 }
