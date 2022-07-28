@@ -66,7 +66,9 @@ class RHODS:
                         artifacts_collected="all",
                         ods_sleep_factor="1.0",
                         ods_ci_exclude_tags="None",
-                        ods_ci_test_case="test-jupyterlab-run-notebook.robot"):
+                        ods_ci_test_case="test-jupyterlab-run-notebook.robot",
+                        ods_ci_artifacts_exporter_istag="ods-ci:artifacts_exporter",
+                        ):
         """
         Test RHODS JupyterLab notebooks
 
@@ -85,6 +87,7 @@ class RHODS:
           ods_sleep_factor: Optional. Delay to sleep between users. Default 1.0.
           ods_ci_test_case: Optional. ODS-CI test case to execute.
           ods_ci_exclude_tags: Optional. Tags to exclude in the ODS-CI test case.
+          ods_ci_artifacts_exporter_istag: Optional. Imagestream tag of the ODS-CI artifacts exporter side-car container.
         """
 
         opts = {
@@ -98,6 +101,8 @@ class RHODS:
             "rhods_test_jupyterlab_ods_sleep_factor": ods_sleep_factor,
             "rhods_test_jupyterlab_ods_ci_test_case": ods_ci_test_case,
             "rhods_test_jupyterlab_ods_ci_exclude_tags": ods_ci_exclude_tags,
+            "rhods_test_jupyterlab_ods_ci_artifacts_exporter_istag": ods_ci_artifacts_exporter_istag,
+
         }
 
         ARTIFACTS_COLLECTED_VALUES = ("all", "none", "no-image", "no-image-except-failed", "no-image-except-failed-and-zero")

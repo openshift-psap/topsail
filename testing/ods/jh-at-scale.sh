@@ -85,12 +85,25 @@ prepare_driver_cluster() {
                          --context-dir="/" \
                          --dockerfile-path="build/Dockerfile"
 
-        IMAGE="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_TAG"
-        ./run_toolbox.py cluster preload_image "ods-ci-image" "$IMAGE" \
+        ods_ci_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_TAG"
+        ./run_toolbox.py cluster preload_image "ods-ci-image" "$ods_ci_image" \
+                         --namespace="$ODS_CI_TEST_NAMESPACE"
+    }
+
+    build_and_preload_artifacts_exporter_image() {
+        ./run_toolbox.py utils build_push_image \
+                         "$ODS_CI_IMAGESTREAM" "$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
+                         --namespace="$ODS_CI_TEST_NAMESPACE" \
+                         --context-dir="/" \
+                         --dockerfile-path="$ODS_CI_ARTIFACTS_EXPORTER_DOCKERFILE"
+
+        artifacts_exporter_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG"
+        ./run_toolbox.py cluster preload_image "ods-ci-artifacts-exporter-image" "$artifacts_exporter_image" \
                          --namespace="$ODS_CI_TEST_NAMESPACE"
     }
 
     process_ctrl::run_in_bg build_and_preload_odsci_image
+    process_ctrl::run_in_bg build_and_preload_artifacts_exporter_image
 
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 
@@ -226,7 +239,8 @@ run_jupyterlab_test() {
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected="$ARTIFACTS_COLLECTED" \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR" \
-                     --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS"
+                     --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS" \
+                     --ods_ci_artifacts_exporter_istag="$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG"
 
     # quick access to these files
     cp "$ARTIFACT_DIR"/*__driver_rhods__test_jupyterlab/{failed_tests,success_count} "$ARTIFACT_DIR" || true

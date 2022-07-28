@@ -25,6 +25,8 @@ ODS_CI_REF="jh-at-scale"
 
 ODS_CI_IMAGESTREAM="ods-ci"
 ODS_CI_TAG="latest"
+ODS_CI_ARTIFACTS_EXPORTER_TAG="artifacts-exporter"
+ODS_CI_ARTIFACTS_EXPORTER_DOCKERFILE="testing/ods/images/Containerfile.s3_artifacts_exporter"
 
 ODS_CI_NB_USERS=5
 ODS_CI_USER_PREFIX=psapuser

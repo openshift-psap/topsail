@@ -63,7 +63,7 @@ spec:
           limits:
             memory: 750M
             cpu: 0.2
-      - image: "quay.io/centos/centos:stream8"
+      - image: "{{ rhods_artifacts_exporter_image }}"
         name: artifacts-exporter
         command: ['bash', '/mnt/rhods-jupyterlab-entrypoint/artifacts-exporter.sh']
         env:
@@ -71,9 +71,6 @@ spec:
           value: "{{ rhods_test_jupyterlab_artifacts_collected }}"
         - name: ARTIFACT_DIR
           value: /mnt/shared-dir/ods-ci
-        securityContext:
-          privileged: true
-          runAsUser: 0
         volumeMounts:
         - name: s3cmd-config
           mountPath: /mnt/s3-config
