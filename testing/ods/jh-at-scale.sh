@@ -259,6 +259,11 @@ run_jupyterlab_test() {
 
 sutest_cleanup() {
     switch_sutest_cluster
+    sutest_cleanup_ldap
+}
+
+sutest_cleanup_ldap() {
+    switch_sutest_cluster
 
     osd_cluster_name=$(get_osd_cluster_name "sutest")
 
@@ -330,6 +335,10 @@ case ${action} in
     "install_ldap")
 	prepare_sutest_install_ldap
 	process_ctrl::wait_bg_processes
+	exit 0
+	;;
+    "uninstall_ldap")
+	sutest_cleanup_ldap
 	exit 0
 	;;
     "source")
