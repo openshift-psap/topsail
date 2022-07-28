@@ -110,21 +110,33 @@ prepare_driver_cluster() {
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_nginx_server "$NGINX_NOTEBOOK_NAMESPACE" "$ODS_NOTEBOOK_DIR"
 }
 
-prepare_sutest_cluster() {
+prepare_sutest_install_rhods() {
     switch_sutest_cluster
 
     osd_cluster_name=$(get_osd_cluster_name "sutest")
 
     if [[ "$osd_cluster_name" ]]; then
-        prepare_osd_sutest_cluster "$osd_cluster_name"
+        prepare_osd_sutest_install_rhods "$osd_cluster_name"
     else
-        prepare_ocp_sutest_cluster
+        prepare_ocp_sutest_install_rhods
     fi
+}
+
+prepare_sutest_install_ldap() {
+    switch_sutest_cluster
+
+    osd_cluster_name=$(get_osd_cluster_name "sutest")
 
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_ldap \
               "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" "$S3_LDAP_PROPS" \
               --use_ocm="$osd_cluster_name" \
               --wait
+}
+
+prepare_sutest_cluster() {
+    switch_sutest_cluster
+    prepare_sutest_install_rhods
+    prepare_sutest_install_ldap
 }
 
 prepare_osd_sutest_cluster() {
