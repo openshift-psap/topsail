@@ -92,8 +92,11 @@ def _parse_env(filename):
 
 
 def _parse_pr(filename):
-    with open(filename) as f:
-        return json.load(f)
+    try:
+        with open(filename) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
 
 
 def _parse_rhods_info(base_dirname):
