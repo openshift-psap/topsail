@@ -139,7 +139,7 @@ prepare_sutest_cluster() {
     prepare_sutest_install_ldap
 }
 
-prepare_osd_sutest_cluster() {
+prepare_osd_sutest_install_rhods() {
     osd_cluster_name=$1
 
     if [[ "$OSD_USE_ODS_CATALOG" == 1 ]]; then
@@ -171,7 +171,7 @@ prepare_osd_sutest_cluster() {
     fi
 }
 
-prepare_ocp_sutest_cluster() {
+prepare_ocp_sutest_install_rhods() {
     switch_sutest_cluster
 
     echo "Deploying RHODS $ODS_QE_CATALOG_IMAGE_TAG (from $ODS_QE_CATALOG_IMAGE)"
