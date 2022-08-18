@@ -35,6 +35,9 @@ ODS_CI_TAG="latest"
 ODS_CI_ARTIFACTS_EXPORTER_TAG="artifacts-exporter"
 ODS_CI_ARTIFACTS_EXPORTER_DOCKERFILE="testing/ods/images/Containerfile.s3_artifacts_exporter"
 
+LDAP_IDP_NAME=RHODS_CI_LDAP
+LDAP_NB_USERS=1000
+
 ODS_CI_NB_USERS=5
 ODS_CI_USER_PREFIX=psapuser
 ODS_NOTEBOOK_SIZE=default # needs to match what the ROBOT test-case requests
@@ -51,8 +54,6 @@ if [[ "$OSD_USE_ODS_CATALOG" == "0" ]]; then
     # deploying from the addon. Get the email address from the secret vault.
     ODS_ADDON_EMAIL_ADDRESS=$(cat "$PSAP_ODS_SECRET_PATH/addon.email")
 fi
-
-LDAP_IDP_NAME=RHODS_CI_LDAP
 
 CLUSTER_NAME_PREFIX=odsci
 
