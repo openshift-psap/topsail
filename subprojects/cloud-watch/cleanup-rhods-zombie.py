@@ -69,11 +69,16 @@ def populate(aws_entries, tracking_dict, key):
         if "TagList" in entry and "Tags" not in entry:
             entry["Tags"] = entry["TagList"]
 
+        if not entry.get("Tags"):
+            entry["Tags"] = [dict(Key="empty", Value=True)]
+
         for tag in entry.get("Tags", []):
             if tag["Key"].startswith("kubernetes.io/cluster/"):
                 cluster_id = tag["Key"].rpartition("/")[-1]
             elif tag["Key"] == "integreatly.org/clusterID":
                 cluster_id = tag["Value"]
+            elif tag["Key"] == "empty" and tag["Value"]:
+                cluster_id = f"{entry[key]}--tags-missing"
             else:
                 continue
 
@@ -298,10 +303,10 @@ def process_region(region):
                     print(e)
 
 
-            if what == "db_instances" and args.delete:
-                wait_database_deletions()
+        if what == "db_instances" and args.delete:
+            wait_database_deletions()
 
-            print()
+        print()
 
 def get_all_regions():
     if args.all_regions:
