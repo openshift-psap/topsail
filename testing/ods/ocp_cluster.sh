@@ -40,6 +40,7 @@ create_cluster() {
         author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
         cluster_name="${author}-${cluster_role}-$(date +%Y%m%d-%Hh%M)"
 
+        export AWS_DEFAULT_PROFILE="${author}_ci-artifact"
     elif [[ "${PULL_NUMBER:-}" ]]; then
         cluster_name="${cluster_name}-pr${PULL_NUMBER}-${cluster_role}-${BUILD_ID}"
     else
