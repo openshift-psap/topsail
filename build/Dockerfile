@@ -21,26 +21,28 @@ RUN virtualenv -p /usr/bin/python3.9 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install --upgrade pip
 
+ARG CURL_OPTIONS="--silent --location --fail --show-error"
+
 # Install dependencies: `oc`
 ARG OCP_CLI_VERSION=latest
 ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
-RUN curl --silent --location --fail --show-error ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
+RUN curl ${CURL_OPTIONS} ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 
 # Install dependencies: `ocm`
 ARG OCM_CLI_VERSION=v0.1.63
 ARG OCM_CLI_URL=https://github.com/openshift-online/ocm-cli/releases/download/${OCM_CLI_VERSION}/ocm-linux-amd64
-RUN curl --silent -L ${OCM_CLI_URL} --output /usr/local/bin/ocm
+RUN curl ${CURL_OPTIONS} ${OCM_CLI_URL} --output /usr/local/bin/ocm
 RUN chmod +x /usr/local/bin/ocm
 
 # Install dependencies: `helm`
 ARG HELM_VERSION=v3.5.1
 ARG HELM_URL=https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
-RUN curl --silent ${HELM_URL} | tar xfz - -C /usr/local/bin --strip-components 1 linux-amd64/helm
+RUN curl ${CURL_OPTIONS} ${HELM_URL} | tar xfz - -C /usr/local/bin --strip-components 1 linux-amd64/helm
 
 # Install dependencies: `rosa`
 ARG ROSA_VERSION=latest
 ARG ROSA_URL=https://mirror.openshift.com/pub/openshift-v4/clients/rosa/${ROSA_VERSION}/rosa-linux.tar.gz
-RUN curl --silent ${ROSA_URL} | tar xfz - -C /usr/local/bin
+RUN curl ${CURL_OPTIONS} ${ROSA_URL} | tar xfz - -C /usr/local/bin
 
 # Install dependencies: `operator-sdk`
 ARG OPERATOR_SDK_VERSION=v1.6.2
