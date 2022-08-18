@@ -30,7 +30,7 @@ prepare_deploy_cluster_subproject() {
 create_cluster() {
     cluster_role=$1
     export ARTIFACT_TOOLBOX_NAME_PREFIX="ocp_${cluster_role}_"
-
+    export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
     # ---
 
     cd subprojects/deploy-cluster/
@@ -45,6 +45,9 @@ create_cluster() {
     else
         cluster_name="${cluster_name}-${cluster_role}-$(date +%Hh%M)"
     fi
+
+    export AWS_PROFILE=$AWS_DEFAULT_PROFILE
+    echo "Using AWS_[DEFAULT_]PROFILE=$AWS_DEFAULT_PROFILE"
 
     install_dir="/tmp/ocp_${cluster_role}_installer"
     rm -rf "$install_dir"
