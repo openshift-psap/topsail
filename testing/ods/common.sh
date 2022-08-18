@@ -38,17 +38,17 @@ ODS_CI_ARTIFACTS_EXPORTER_DOCKERFILE="testing/ods/images/Containerfile.s3_artifa
 LDAP_IDP_NAME=RHODS_CI_LDAP
 LDAP_NB_USERS=1000
 
-ODS_CI_NB_USERS=5
+ODS_CI_NB_USERS=${ODS_CI_NB_USERS:-5} # number of users to simulate
 ODS_CI_USER_PREFIX=psapuser
 ODS_NOTEBOOK_SIZE=default # needs to match what the ROBOT test-case requests
 ODS_NOTEBOOK_SIZE_TEST_POD="test_pod" # shouldn't change
-ODS_SLEEP_FACTOR=1.0 # how long to wait between users.
+ODS_SLEEP_FACTOR=${ODS_SLEEP_FACTOR:-1.0} # how long to wait between user starts.
 ODS_CI_ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
 
 NGINX_NOTEBOOK_NAMESPACE=loadtest-notebooks
 ODS_NOTEBOOK_NAME=simple-notebook.ipynb
 ODS_NOTEBOOK_DIR=${THIS_DIR}/notebooks
-ODS_EXCLUDE_TAGS=None
+ODS_EXCLUDE_TAGS=${ODS_EXCLUDE_TAGS:-None} # tags to exclude when running the robot test case
 
 if [[ "$OSD_USE_ODS_CATALOG" == "0" ]]; then
     # deploying from the addon. Get the email address from the secret vault.
