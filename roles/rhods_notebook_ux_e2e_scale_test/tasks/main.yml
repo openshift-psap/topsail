@@ -38,10 +38,6 @@
   - name: Test the connectivity of the SUT cluster
     command: oc whoami --show-console
 
-  - name: Get JupyterHub hostname (SUT cluster)
-    command: oc get route/jupyterhub -n redhat-ods-applications -ojsonpath={.spec.host}
-    register: jupyterhub_hostname_cmd
-
   - name: Get RHODS dashboard address (SUT cluster)
     command: oc get route/rhods-dashboard -n redhat-ods-applications -ojsonpath={.spec.host}
     register: rhods_dashboard_hostname_cmd
