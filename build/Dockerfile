@@ -24,7 +24,7 @@ RUN pip install --upgrade pip
 # Install dependencies: `oc`
 ARG OCP_CLI_VERSION=latest
 ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
-RUN curl --silent ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
+RUN curl --silent --location --fail --show-error ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 
 # Install dependencies: `ocm`
 ARG OCM_CLI_VERSION=v0.1.63
