@@ -303,10 +303,10 @@ def process_region(region):
                     print(e)
 
 
-            if what == "db_instances" and args.delete:
-                wait_database_deletions()
+        if what == "db_instances" and args.delete:
+            wait_database_deletions()
 
-            print()
+        print()
 
 def get_all_regions():
     if args.all_regions:
