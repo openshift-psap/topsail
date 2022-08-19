@@ -110,19 +110,19 @@ prepare_driver_cluster() {
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_nginx_server "$NGINX_NOTEBOOK_NAMESPACE" "$ODS_NOTEBOOK_DIR"
 }
 
-prepare_sutest_install_rhods() {
+prepare_sutest_deploy_rhods() {
     switch_sutest_cluster
 
     osd_cluster_name=$(get_osd_cluster_name "sutest")
 
     if [[ "$osd_cluster_name" ]]; then
-        prepare_osd_sutest_install_rhods "$osd_cluster_name"
+        prepare_osd_sutest_deploy_rhods "$osd_cluster_name"
     else
-        prepare_ocp_sutest_install_rhods
+        prepare_ocp_sutest_deploy_rhods
     fi
 }
 
-prepare_sutest_install_ldap() {
+prepare_sutest_deploy_ldap() {
     switch_sutest_cluster
 
     osd_cluster_name=$(get_osd_cluster_name "sutest")
@@ -135,11 +135,11 @@ prepare_sutest_install_ldap() {
 
 prepare_sutest_cluster() {
     switch_sutest_cluster
-    prepare_sutest_install_rhods
-    prepare_sutest_install_ldap
+    prepare_sutest_deploy_rhods
+    prepare_sutest_deploy_ldap
 }
 
-prepare_osd_sutest_install_rhods() {
+prepare_osd_sutest_deploy_rhods() {
     osd_cluster_name=$1
 
     if [[ "$OSD_USE_ODS_CATALOG" == 1 ]]; then
@@ -171,7 +171,7 @@ prepare_osd_sutest_install_rhods() {
     fi
 }
 
-prepare_ocp_sutest_install_rhods() {
+prepare_ocp_sutest_deploy_rhods() {
     switch_sutest_cluster
 
     echo "Deploying RHODS $ODS_QE_CATALOG_IMAGE_TAG (from $ODS_QE_CATALOG_IMAGE)"
@@ -326,17 +326,17 @@ case ${action} in
         prepare
         exit 0
         ;;
-    "install_rhods")
-        prepare_sutest_install_rhods
+    "deploy_rhods")
+        prepare_sutest_deploy_rhods
         process_ctrl::wait_bg_processes
         exit 0
         ;;
-    "install_ldap")
-        prepare_sutest_install_ldap
+    "deploy_ldap")
+        prepare_sutest_deploy_ldap
         process_ctrl::wait_bg_processes
         exit 0
         ;;
-    "uninstall_ldap")
+    "undeploy_ldap")
         sutest_cleanup_ldap
         exit 0
         ;;
