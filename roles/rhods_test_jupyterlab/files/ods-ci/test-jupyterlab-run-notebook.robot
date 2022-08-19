@@ -30,7 +30,6 @@ ${NOTEBOOK_EXEC_WAIT_TIME}     5 minutes
 
 Setup
   Set Library Search Order  SeleniumLibrary
-  RHOSi Setup
   Open Browser  ${ODH_DASHBOARD_URL}  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}  desired_capabilities=${capabilities}
 
 Tear Down
