@@ -140,6 +140,9 @@ destroy_cluster() {
 
     cd subprojects/deploy-cluster/
 
+    export AWS_PROFILE=${AWS_PROFILE:-ci-artifact}
+    export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
+
     make uninstall \
          OCP_VERSION="${OCP_VERSION}" \
          CLUSTER_PATH="${destroy_dir}" \
