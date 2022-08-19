@@ -6,7 +6,6 @@ set -o nounset
 set -o errtrace
 set -x
 
-export AWS_PROFILE=${AWS_PROFILE:-ci-artifact}
 export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
