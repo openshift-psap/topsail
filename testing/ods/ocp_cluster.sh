@@ -30,7 +30,7 @@ prepare_deploy_cluster_subproject() {
 create_cluster() {
     cluster_role=$1
     export ARTIFACT_TOOLBOX_NAME_PREFIX="ocp_${cluster_role}_"
-
+    export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
     # ---
 
     cd subprojects/deploy-cluster/
@@ -40,11 +40,15 @@ create_cluster() {
         author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
         cluster_name="${author}-${cluster_role}-$(date +%Y%m%d-%Hh%M)"
 
+        export AWS_DEFAULT_PROFILE="${author}_ci-artifact"
     elif [[ "${PULL_NUMBER:-}" ]]; then
         cluster_name="${cluster_name}-pr${PULL_NUMBER}-${cluster_role}-${BUILD_ID}"
     else
         cluster_name="${cluster_name}-${cluster_role}-$(date +%Hh%M)"
     fi
+
+    export AWS_PROFILE=$AWS_DEFAULT_PROFILE
+    echo "Using AWS_[DEFAULT_]PROFILE=$AWS_DEFAULT_PROFILE"
 
     install_dir="/tmp/ocp_${cluster_role}_installer"
     rm -rf "$install_dir"
