@@ -6,12 +6,19 @@ set -o nounset
 set -o errtrace
 set -x
 
-export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
+if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
+    export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
+    export AWS_SHARED_CREDENTIALS_FILE="${PSAP_ODS_SECRET_PATH:-}/.awscred"
+    export AWS_CONFIG_FILE=/tmp/awccfg
+
+    cat <<EOF > $AWS_CONFIG_FILE
+[$AWS_DEFAULT_PROFILE]
+output=text
+EOF
+fi
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "$THIS_DIR/../common.sh"
-
-export AWS_SHARED_CREDENTIALS_FILE="${PSAP_ODS_SECRET_PATH:-}/.awscred"
 
 DELETE_FILE="$ARTIFACT_DIR/clusters_to_delete"
 

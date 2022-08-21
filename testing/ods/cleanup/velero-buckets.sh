@@ -6,8 +6,15 @@ set -o nounset
 set -o errtrace
 set -x
 
-export PSAP_ODS_SECRET_PATH=/var/run/psap-ods-secret-1
+if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
+    export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
+    export AWS_SHARED_CREDENTIALS_FILE="${PSAP_ODS_SECRET_PATH:-}/.awscred"
+    export AWS_CONFIG_FILE=/tmp/awccfg
 
-export AWS_SHARED_CREDENTIALS_FILE="${PSAP_ODS_SECRET_PATH:-}/.awscred"
+    cat <<EOF > $AWS_CONFIG_FILE
+[$AWS_DEFAULT_PROFILE]
+output=text
+EOF
+fi
 
-python3 ./subprojects/cloud-watch/cleanup-velero-buckets.py --delete
+exec python3 ./subprojects/cloud-watch/cleanup-velero-buckets.py --delete
