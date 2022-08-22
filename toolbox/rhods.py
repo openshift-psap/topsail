@@ -67,7 +67,7 @@ class RHODS:
                         ods_sleep_factor="1.0",
                         ods_ci_exclude_tags="None",
                         ods_ci_test_case="test-jupyterlab-run-notebook.robot",
-                        ods_ci_artifacts_exporter_istag="ods-ci:artifacts_exporter",
+                        ods_ci_artifacts_exporter_istag="ods-ci:artifacts-exporter",
                         ods_ci_notebook_image_name="s2i-generic-data-science-notebook",
                         ):
 
