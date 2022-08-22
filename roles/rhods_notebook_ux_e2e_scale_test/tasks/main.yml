@@ -399,14 +399,14 @@
 - name: Count successful tests
   shell:
     set -o pipefail;
-    cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep '^0$' | wc -l
+    (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep '^0$' || true) | wc -l
   register: success_count_cmd
   ignore_errors: yes
 
 - name: Count failed tests
   shell:
     set -o pipefail;
-    cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep -v '^0$' | wc -l
+    (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep -v '^0$' || true) | wc -l
   ignore_errors: yes
 
 - name: Show failed tests
