@@ -1,0 +1,5 @@
+---
+rhods_notebook_ux_e2e_scale_test_job: "roles/rhods_notebook_ux_e2e_scale_test/templates/ods-ci_job.yaml"
+rhods_notebook_ux_e2e_scale_test_entrypoint: "roles/rhods_notebook_ux_e2e_scale_test/files/entrypoint.sh"
+rhods_notebook_ux_e2e_scale_test_s3_artifacts_exporter_sidecar: "roles/rhods_notebook_ux_e2e_scale_test/files/s3-artifacts-exporter.sh"
+rhods_notebook_ux_e2e_scale_test_test_case_directory: "roles/rhods_notebook_ux_e2e_scale_test/files/ods-ci"

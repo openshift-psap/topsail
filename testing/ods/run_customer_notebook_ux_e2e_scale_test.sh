@@ -14,7 +14,7 @@ set -x
 # export ODS_CI_NB_USERS=10 # number of users to simulate
 # export ODS_SLEEP_FACTOR=1 # how long to wait between user starts, in seconds
 
-BASE_ARTIFACT_DIR=/tmp/rhods_scale_test
+BASE_ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/rhods_scale_test}
 mkdir -p "$BASE_ARTIFACT_DIR"
 
 if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
@@ -36,15 +36,15 @@ export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/preparation"
 
 # 1.0 Deploy RHODS in the sutest cluster
 
-testing/ods/jh-at-scale.sh deploy_rhods
+testing/ods/notebook_ux_e2e_scale_test.sh deploy_rhods
 
 # 1.1 Deploy LDAP in the sutest cluster
 
-testing/ods/jh-at-scale.sh deploy_ldap
+testing/ods/notebook_ux_e2e_scale_test.sh deploy_ldap
 
 # 1.2 Prepare the driver cluster
 
-testing/ods/jh-at-scale.sh prepare_driver_cluster
+testing/ods/notebook_ux_e2e_scale_test.sh prepare_driver_cluster
 
 #
 # 2. Run the tests in a dedicated ARTIFACT_DIR directory
@@ -56,8 +56,8 @@ export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/test_1"
 export ODS_CI_NB_USERS=4
 export ODS_SLEEP_FACTOR=2
 
-testing/ods/jh-at-scale.sh run_jupyterlab_test
-testing/ods/jh-at-scale.sh generate_plots
+testing/ods/notebook_ux_e2e_scale_test.sh run_test
+testing/ods/notebook_ux_e2e_scale_test.sh generate_plots
 
 # 2.2 Run the second test
 
@@ -65,8 +65,8 @@ export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/test_2"
 export ODS_CI_NB_USERS=3
 export ODS_SLEEP_FACTOR=1
 
-testing/ods/jh-at-scale.sh run_jupyterlab_test
-testing/ods/jh-at-scale.sh generate_plots
+testing/ods/notebook_ux_e2e_scale_test.sh run_test
+testing/ods/notebook_ux_e2e_scale_test.sh generate_plots
 
 #
 # 3. Cleanup the RHODS cluster
@@ -74,4 +74,4 @@ testing/ods/jh-at-scale.sh generate_plots
 
 # 3.1 Undeploy LDAP in the sutest cluster
 
-testing/ods/jh-at-scale.sh undeploy_ldap
+testing/ods/notebook_ux_e2e_scale_test.sh undeploy_ldap

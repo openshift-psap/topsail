@@ -17,7 +17,7 @@ trap "touch $ARTIFACT_DIR/test.exit_code" EXIT
 
 sed "s/#{JOB_COMPLETION_INDEX}/${JOB_COMPLETION_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
 
-cp "/mnt/rhods-jupyterlab-entrypoint/$RUN_ROBOT_TEST_CASE" .
+cp "/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/$RUN_ROBOT_TEST_CASE" .
 
 # Sleep for a while to avoid DDoSing OAuth
 

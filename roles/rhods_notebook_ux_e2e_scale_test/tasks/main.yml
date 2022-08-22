@@ -1,33 +1,33 @@
 ---
 - name: Ensure that the secret properties file exists
   stat:
-    path: "{{ rhods_test_jupyterlab_secret_properties }}"
+    path: "{{ rhods_notebook_ux_e2e_scale_test_secret_properties }}"
 
 - name: Ensure that the user count is set
   fail: msg="user count isn't set"
-  when: rhods_test_jupyterlab_user_count | int < 0
+  when: rhods_notebook_ux_e2e_scale_test_user_count | int < 0
 
 - name: Ensure that the IDP name is set
   fail: msg="idp name isn't set"
-  when: not rhods_test_jupyterlab_idp_name
+  when: not rhods_notebook_ux_e2e_scale_test_idp_name
 
 - name: Ensure that the username prefix is set
   fail: msg="username prefix isn't set"
-  when: not rhods_test_jupyterlab_username_prefix
+  when: not rhods_notebook_ux_e2e_scale_test_username_prefix
 
 - name: Define the test environments
   set_fact:
-    rhods_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_test_namespace }}/{{ rhods_test_istag }}
-    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_test_namespace }}/{{ rhods_test_jupyterlab_ods_ci_artifacts_exporter_istag }}
+    rhods_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_ux_e2e_scale_test_namespace }}/{{ rhods_notebook_ux_e2e_scale_test_istag }}
+    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_ux_e2e_scale_test_namespace }}/{{ rhods_notebook_ux_e2e_scale_test_ods_ci_artifacts_exporter_istag }}
     rhods_notebook_namespace: rhods-notebooks
 
 - name: Set system-under-test == driver-cluster if no system-under-test (SUT) is provided
   set_fact:
-    sut_cluster_kubeconfig: "{{ rhods_test_jupyterlab_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
+    sut_cluster_kubeconfig: "{{ rhods_notebook_ux_e2e_scale_test_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
 
 - name: Fetch the notebook file (to validate the URL and store it)
   get_url:
-    url: "{{ rhods_test_jupyterlab_notebook_url }}"
+    url: "{{ rhods_notebook_ux_e2e_scale_test_notebook_url }}"
     dest: "{{ artifact_extra_logs_dir }}/notebook.raw"
     mode: '0440'
 
@@ -68,8 +68,8 @@
 
 - name: Get the ODS-CI sample var file
   shell:
-    oc debug istag/{{ rhods_test_istag }}
-       -n {{ rhods_test_namespace }}
+    oc debug istag/{{ rhods_notebook_ux_e2e_scale_test_istag }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
        -- cat test-variables.yml.model > /tmp/test-variables.yml.model
 
 - name: Apply the ODS-CI template
@@ -81,8 +81,8 @@
     OCP_API_URL="{{ oc_api_url_cmd.stdout }}";
     ODH_DASHBOARD_URL="https://{{ rhods_dashboard_hostname_cmd.stdout }}";
 
-    TEST_USER_AUTH_TYPE="{{ rhods_test_jupyterlab_idp_name }}";
-    TEST_USER_USERNAME="{{ rhods_test_jupyterlab_username_prefix }}#{JOB_COMPLETION_INDEX}";
+    TEST_USER_AUTH_TYPE="{{ rhods_notebook_ux_e2e_scale_test_idp_name }}";
+    TEST_USER_USERNAME="{{ rhods_notebook_ux_e2e_scale_test_username_prefix }}#{JOB_COMPLETION_INDEX}";
 
     export TEST_USER_PASSWORD="PASSWORD_WILL_BE_HERE";
 
@@ -106,21 +106,21 @@
 
     cp "$TEST_VAR_SAFE" "$TEST_VAR_FULL"
 
-    TEST_USER_PASSWORD="$(cat "{{ rhods_test_jupyterlab_secret_properties }}" | grep '^user_password=' | cut -d= -f2)";
+    TEST_USER_PASSWORD="$(cat "{{ rhods_notebook_ux_e2e_scale_test_secret_properties }}" | grep '^user_password=' | cut -d= -f2)";
 
     yq -yi .TEST_USER.PASSWORD=\"${TEST_USER_PASSWORD}\" "$TEST_VAR_FULL"
 
 - name: Delete the ODS-CI secret, it it exists
   command:
     oc delete secret ods-ci-test-variables
-       -n {{ rhods_test_namespace }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
        --ignore-not-found
 
 - name: Create the ODS-CI secret
   command:
     oc create secret generic ods-ci-test-variables
        --from-file test-variables.yml=/tmp/test-variables.yml
-       -n {{ rhods_test_namespace }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
 
 - name: Delete the ODS-CI secret file
   file:
@@ -129,23 +129,23 @@
 
 - name: Instantiate the RHODS tester job template
   template:
-    src: "{{ rhods_test_jupyterlab_job }}"
-    dest: "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
+    src: "{{ rhods_notebook_ux_e2e_scale_test_job }}"
+    dest: "{{ artifact_extra_logs_dir }}/000_rhods_notebook_ux_e2e_scale_test.yaml"
     mode: 0400
 
 - name: Delete the RHODS test entrypoint, if it exists
   command:
-    oc delete cm/rhods-jupyterlab-entrypoint
-       -n {{ rhods_test_namespace }}
+    oc delete cm/rhods-notebook-ux-e2e-scale-test-entrypoint
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
        --ignore-not-found
 
 - name: Create the RHODS test entrypoint
   command:
-    oc create cm rhods-jupyterlab-entrypoint
-       "--from-file=entrypoint.sh={{ rhods_test_jupyterlab_entrypoint }}"
-       "--from-file=artifacts-exporter.sh={{ rhods_test_jupyterlab_s3_artifacts_exporter_sidecar }}"
-       "--from-file={{ rhods_test_jupyterlab_test_case_directory }}/{{ rhods_test_jupyterlab_ods_ci_test_case }}"
-       -n {{ rhods_test_namespace }}
+    oc create cm rhods-notebook-ux-e2e-scale-test-entrypoint
+       "--from-file=entrypoint.sh={{ rhods_notebook_ux_e2e_scale_test_entrypoint }}"
+       "--from-file=artifacts-exporter.sh={{ rhods_notebook_ux_e2e_scale_test_s3_artifacts_exporter_sidecar }}"
+       "--from-file={{ rhods_notebook_ux_e2e_scale_test_test_case_directory }}/{{ rhods_notebook_ux_e2e_scale_test_ods_ci_test_case }}"
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
 
 - name: Empty the Minio S3 bucket
   shell: |
@@ -160,13 +160,13 @@
 - name: Delete the RHODS tester job, if it exists
   command:
     oc delete
-       -f "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
+       -f "{{ artifact_extra_logs_dir }}/000_rhods_notebook_ux_e2e_scale_test.yaml"
        --ignore-not-found
-       -n {{ rhods_test_namespace }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
 
 - name: Delete the events of the tester namespace
   shell:
-    oc delete ev -n {{ rhods_test_namespace }} --all > /dev/null
+    oc delete ev -n {{ rhods_notebook_ux_e2e_scale_test_namespace }} --all > /dev/null
   failed_when: false
 
 - name: Delete the events, pods and PVC of the notebook namespace
@@ -175,7 +175,7 @@
   shell:
     set -o pipefail;
     oc get pods,pvc,ev -oname -n {{ rhods_notebook_namespace }} | \
-      grep {{ rhods_test_jupyterlab_username_prefix }} | \
+      grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }} | \
       xargs oc delete pod -n {{ rhods_notebook_namespace }}
   failed_when: false
 
@@ -183,7 +183,7 @@
   command:
     oc adm policy add-scc-to-user privileged
        -z default
-       -n {{ rhods_test_namespace }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
 
 # ---
 
@@ -216,12 +216,12 @@
 - name: Create the RHODS test job
   command:
     oc create
-       -f "{{ artifact_extra_logs_dir }}/000_rhods_test_jupyterlab.yaml"
-       -n {{ rhods_test_namespace }}
+       -f "{{ artifact_extra_logs_dir }}/000_rhods_notebook_ux_e2e_scale_test.yaml"
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
 
 - name: Wait for the RHODS tester job to start
   shell:
-    oc get jobs/ods-ci -ojsonpath={.status.startTime} -n {{ rhods_test_namespace }}
+    oc get jobs/ods-ci -ojsonpath={.status.startTime} -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
   register: wait_rhods_test_job_start
   retries: 12
   delay: 5
@@ -229,7 +229,7 @@
 
 - name: Wait for the RHODS tester job to terminate
   command:
-    oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ rhods_test_namespace }}
+    oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
   register: wait_rhods_test_job
   retries: 60
   delay: 40
@@ -273,7 +273,7 @@
     shell:
       set -o pipefail;
       oc get pods -oname -n {{ rhods_notebook_namespace }} |
-         grep {{ rhods_test_jupyterlab_username_prefix }}
+         grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }}
     register: notebook_pod_names_cmd
     # there may be no notebook Pod
     failed_when: false
@@ -298,28 +298,28 @@
     shell:
       set -o pipefail;
       oc get pods,pvc -oname -n {{ rhods_notebook_namespace }} |
-         grep {{ rhods_test_jupyterlab_username_prefix }} |
+         grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }} |
          xargs oc delete -n {{ rhods_notebook_namespace }}
     ignore_errors: yes
 
 - name: Get the status of the tester Pods
   shell:
     oc get pods -ljob-name=ods-ci
-       -n {{ rhods_test_namespace }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
         > "{{ artifact_extra_logs_dir }}/tester_pods.status"
   ignore_errors: yes
 
 - name: Get the status of the tester Job
   shell:
     oc get job/ods-ci
-       -n {{ rhods_test_namespace }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
         > "{{ artifact_extra_logs_dir }}/tester_job.status"
   ignore_errors: yes
 
 - name: Get the names of the tester_pods
   command:
     oc get pods -oname -ljob-name=ods-ci
-       -n {{ rhods_test_namespace }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
   register: pod_names_cmd
   ignore_errors: yes
 
@@ -332,7 +332,7 @@
 - name: Get the logs of the tester Pod
   shell: |
     oc logs {{ item }} -c ods-ci \
-         -n {{ rhods_test_namespace }} \
+         -n {{ rhods_notebook_ux_e2e_scale_test_namespace }} \
          > "{{ artifact_extra_logs_dir }}/tester_pod_logs/$(basename "{{ item }}").log";
   loop: "{{ pod_names_cmd.stdout_lines }}"
   ignore_errors: yes
@@ -340,21 +340,21 @@
 - name: Get the yaml of the tester Pods
   shell:
     oc get pods -ljob-name=ods-ci -oyaml
-       -n {{ rhods_test_namespace }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
        > "{{ artifact_extra_logs_dir }}/tester_pods.yaml"
   ignore_errors: yes
 
 - name: Get the yaml of the tester Job
   shell:
     oc get job/ods-ci -oyaml
-       -n {{ rhods_test_namespace }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
        > "{{ artifact_extra_logs_dir }}/tester_job.yaml"
   ignore_errors: yes
 
 - name: Get the events of the tester namespace
   shell:
     oc get ev -oyaml
-       -n {{ rhods_test_namespace }}
+       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
        > "{{ artifact_extra_logs_dir }}/tester_events.yaml"
   ignore_errors: yes
 
@@ -367,7 +367,7 @@
   command:
     oc -n minio -c mc exec "{{ minio_podname_cmd.stdout }}"
        -- bash -c 'mkdir -p /artifacts/to_export && mc --config-dir /tmp cp minio/mybucket/ /artifacts/to_export --recursive'
-  when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
+  when: 'rhods_notebook_ux_e2e_scale_test_artifacts_collected != "none"'
   ignore_errors: yes
 
 - name: Extract the ODS-CI test artifacts from the Minio S3 container
@@ -379,17 +379,17 @@
        | tar xzf - -C "{{ artifact_extra_logs_dir }}"
 
     rm -f "{{ artifact_extra_logs_dir }}/os-release"
-  when: 'rhods_test_jupyterlab_artifacts_collected != "none"'
+  when: 'rhods_notebook_ux_e2e_scale_test_artifacts_collected != "none"'
   ignore_errors: yes
 
 - name: Generate MatrixBenchmark files
   shell: |
-    (test -z "$(oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_test_namespace }})" && echo 0 || echo 1) >  "{{ artifact_extra_logs_dir }}/exit_code"
+    (test -z "$(oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_notebook_ux_e2e_scale_test_namespace }})" && echo 0 || echo 1) >  "{{ artifact_extra_logs_dir }}/exit_code"
     cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
     date=$(date +%Y-%m-%d_%H:%M:%S)
-    test_case={{ rhods_test_jupyterlab_ods_ci_test_case }}
-    exclude_tags={{ rhods_test_jupyterlab_ods_ci_exclude_tags }}
-    user_count={{ rhods_test_jupyterlab_user_count }}
+    test_case={{ rhods_notebook_ux_e2e_scale_test_ods_ci_test_case }}
+    exclude_tags={{ rhods_notebook_ux_e2e_scale_test_ods_ci_exclude_tags }}
+    user_count={{ rhods_notebook_ux_e2e_scale_test_user_count }}
     EOF
   ignore_errors: yes
 
@@ -421,11 +421,11 @@
 
 - name: Save the success count and failed tests
   shell:
-    echo "{{ success_count_cmd.stdout }}/{{ rhods_test_jupyterlab_user_count }}"
+    echo "{{ success_count_cmd.stdout }}/{{ rhods_notebook_ux_e2e_scale_test_user_count }}"
          > "{{ artifact_extra_logs_dir }}/success_count"
 
 - name: Test if the RHODS test job crashed
   command:
-    oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_test_namespace }}
+    oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
   register: check_rhods_test_job
   failed_when: check_rhods_test_job.stdout | length > 0

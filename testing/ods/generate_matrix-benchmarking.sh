@@ -82,7 +82,7 @@ _download_data_from_url() {
 _prepare_data_from_artifacts_dir() {
     artifact_dir=$1
 
-    if ! ls "$artifact_dir"/*__driver_rhods__test_jupyterlab -d >/dev/null 2>&1; then
+    if ! ls "$artifact_dir"/*__driver_rhods__notebook_ux_e2e_scale_test -d >/dev/null 2>&1; then
         echo "FATAL: No result available, aborting."
         exit 1
     fi
@@ -168,7 +168,7 @@ elif [[ "$action" == "generate_plots" ]]; then
     generate_matbench::get_prometheus
     generate_matbench::generate_plots
 
-elif [[ "$JOB_NAME_SAFE" == "jh-on-"* ]]; then
+elif [[ "$JOB_NAME_SAFE" == "nb-ux-on-"* ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset
@@ -183,7 +183,7 @@ elif [[ "$JOB_NAME_SAFE" == "jh-on-"* ]]; then
 
     generate_matbench::generate_plots
 
-elif [[ "$JOB_NAME_SAFE" == "plot-jh-on-"* ]]; then
+elif [[ "$JOB_NAME_SAFE" == "plot-nb-ux-on-"* ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset

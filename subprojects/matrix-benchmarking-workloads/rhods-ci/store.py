@@ -23,7 +23,7 @@ K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 ROBOT_TIME_FMT = "%Y%m%d %H:%M:%S.%f"
 
-JUPYTERLAB_USER_RENAME_PREFIX = "jupyterhub-nb-user"
+JUPYTER_USER_RENAME_PREFIX = "jupyterhub-nb-user"
 
 TEST_USERNAME_PREFIX = "psapuser"
 
@@ -172,7 +172,7 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None, is_notebook
             if TEST_USERNAME_PREFIX not in podname: continue
 
             user_idx = int(re.findall(r'[:letter:]*(\d+)$', podname)[0])
-            podname = f"{JUPYTERLAB_USER_RENAME_PREFIX}{user_idx}"
+            podname = f"{JUPYTER_USER_RENAME_PREFIX}{user_idx}"
 
         evt_name = MAPPING_REASON_NAME.get(reason)
 
@@ -232,7 +232,7 @@ def _parse_pod_times(filename, is_notebook=False):
             if TEST_USERNAME_PREFIX not in podname: continue
 
             user_idx = int(re.findall(r'[:letter:]*(\d+)$', podname)[0])
-            podname = f"{JUPYTERLAB_USER_RENAME_PREFIX}{user_idx}"
+            podname = f"{JUPYTER_USER_RENAME_PREFIX}{user_idx}"
 
         pod_times[podname] = types.SimpleNamespace()
 
@@ -360,7 +360,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     print("_parse_pod_events (tester)")
     results.event_times |= _parse_pod_event_times(dirname / "tester_events.yaml", "loadtest", testpod_hostnames)
     results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci")]
-    results.notebook_pods = [k for k in results.event_times.keys() if k.startswith(JUPYTERLAB_USER_RENAME_PREFIX)]
+    results.notebook_pods = [k for k in results.event_times.keys() if k.startswith(JUPYTER_USER_RENAME_PREFIX)]
     print("_extract_metrics")
     results.metrics = _extract_metrics(dirname)
 
@@ -432,7 +432,7 @@ def _generate_pod_event_times(user_count, instance_count, container_size, instan
         current_end = None
 
         for user_idx in users:
-            podname = f"{JUPYTERLAB_USER_RENAME_PREFIX}{user_idx}"
+            podname = f"{JUPYTER_USER_RENAME_PREFIX}{user_idx}"
             if "warnings" not in event_times[podname].__dict__:
                 event_times[podname].warnings = []
 

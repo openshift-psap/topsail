@@ -234,13 +234,13 @@ prepare() {
     wait_rhods_launch
 }
 
-run_jupyterlab_test() {
+run_test() {
     switch_driver_cluster
 
     NGINX_SERVER="nginx-$NGINX_NOTEBOOK_NAMESPACE"
     nginx_hostname=$(oc whoami --show-server | sed "s/api/$NGINX_SERVER.apps/g" | awk -F ":" '{print $2}' | sed s,//,,g)
 
-    ./run_toolbox.py rhods test_jupyterlab \
+    ./run_toolbox.py rhods notebook_ux_e2e_scale_test \
                      "$LDAP_IDP_NAME" \
                      "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
                      "$S3_LDAP_PROPS" \
@@ -253,7 +253,7 @@ run_jupyterlab_test() {
                      --ods_ci_notebook_image_name="$RHODS_NOTEBOOK_IMAGE_NAME"
 
     # quick access to these files
-    cp "$ARTIFACT_DIR"/*__driver_rhods__test_jupyterlab/{failed_tests,success_count} "$ARTIFACT_DIR" || true
+    cp "$ARTIFACT_DIR"/*__driver_rhods__user_scale_test_notebooks_e2e/{failed_tests,success_count} "$ARTIFACT_DIR" || true
 }
 
 sutest_cleanup() {
@@ -316,7 +316,7 @@ case ${action} in
 
         prepare_ci
         prepare
-        run_jupyterlab_test
+        run_user_scale_test_notebooks_e2e
 
         set +e # we do not wait to fail passed this point
         dump_prometheus_dbs
@@ -345,8 +345,8 @@ case ${action} in
         process_ctrl::wait_bg_processes
         exit 0
         ;;
-    "run_jupyterlab_test")
-        run_jupyterlab_test
+    "run_test")
+        run_test
         dump_prometheus_dbs
         capture_environment
         exit 0

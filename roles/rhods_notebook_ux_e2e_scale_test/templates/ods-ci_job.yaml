@@ -22,8 +22,8 @@ metadata:
     deployment: ods-ci
   name: ods-ci
 spec:
-  parallelism: {{ rhods_test_jupyterlab_user_count }}
-  completions: {{ rhods_test_jupyterlab_user_count }}
+  parallelism: {{ rhods_notebook_ux_e2e_scale_test_user_count }}
+  completions: {{ rhods_notebook_ux_e2e_scale_test_user_count }}
   activeDeadlineSeconds: 18000
   backoffLimit: 0
   completionMode: Indexed
@@ -37,27 +37,27 @@ spec:
       - image: "{{ rhods_test_image }}"
         imagePullPolicy: Always
         name: ods-ci
-        command: ['bash', '/mnt/rhods-jupyterlab-entrypoint/entrypoint.sh']
+        command: ['bash', '/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/entrypoint.sh']
         env:
         - name: RUN_ROBOT_TEST_CASE
-          value: "{{ rhods_test_jupyterlab_ods_ci_test_case }}"
+          value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_test_case }}"
         - name: ARTIFACT_DIR
           value: /mnt/shared-dir/ods-ci
         - name: RUN_ROBOT_EXCLUDE_TAGS
-          value: "{{ rhods_test_jupyterlab_ods_ci_exclude_tags }}"
+          value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_exclude_tags }}"
         - name: SLEEP_FACTOR
-          value: "{{ rhods_test_jupyterlab_ods_sleep_factor }}"
+          value: "{{ rhods_notebook_ux_e2e_scale_test_ods_sleep_factor }}"
         - name: NOTEBOOK_URL
-          value: "{{ rhods_test_jupyterlab_notebook_url }}"
+          value: "{{ rhods_notebook_ux_e2e_scale_test_notebook_url }}"
         - name: NOTEBOOK_IMAGE_NAME
-          value: "{{ rhods_test_jupyterlab_ods_ci_notebook_image_name }}"
+          value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_image_name }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir
         - name: ods-ci-test-variables
           mountPath: /mnt/ods-ci-test-variables
-        - name: rhods-jupyterlab-entrypoint
-          mountPath: /mnt/rhods-jupyterlab-entrypoint
+        - name: rhods-notebook-ux-e2e-scale-test-entrypoint
+          mountPath: /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint
         resources:
           requests:
             memory: 750M
@@ -67,10 +67,10 @@ spec:
             cpu: 0.2
       - image: "{{ rhods_artifacts_exporter_image }}"
         name: artifacts-exporter
-        command: ['bash', '/mnt/rhods-jupyterlab-entrypoint/artifacts-exporter.sh']
+        command: ['bash', '/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/artifacts-exporter.sh']
         env:
         - name: ARTIFACTS_COLLECTED
-          value: "{{ rhods_test_jupyterlab_artifacts_collected }}"
+          value: "{{ rhods_notebook_ux_e2e_scale_test_artifacts_collected }}"
         - name: ARTIFACT_DIR
           value: /mnt/shared-dir/ods-ci
         volumeMounts:
@@ -80,8 +80,8 @@ spec:
           mountPath: /mnt/shared-dir
         - name: ods-ci-test-variables
           mountPath: /mnt/ods-ci-test-variables
-        - name: rhods-jupyterlab-entrypoint
-          mountPath: /mnt/rhods-jupyterlab-entrypoint
+        - name: rhods-notebook-ux-e2e-scale-test-entrypoint
+          mountPath: /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint
       restartPolicy: Never
       volumes:
       - name: ods-ci-test-variables
@@ -90,8 +90,8 @@ spec:
       - name: s3cmd-config
         configMap:
           name: s3cmd-config
-      - name: rhods-jupyterlab-entrypoint
+      - name: rhods-notebook-ux-e2e-scale-test-entrypoint
         configMap:
-          name: rhods-jupyterlab-entrypoint
+          name: rhods-notebook-ux-e2e-scale-test-entrypoint
       - name: shared-dir
         emptyDir: {}
