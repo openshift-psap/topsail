@@ -200,7 +200,7 @@ class Cluster:
         return RunAnsibleRole("cluster_prometheus_db", opts)
 
     @staticmethod
-    def dump_prometheus_db(label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring"):
+    def dump_prometheus_db(label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring", name_prefix="prometheus"):
         """
         Dump Prometheus database into a file
 
@@ -209,12 +209,14 @@ class Cluster:
         Args:
           label: Optional. Label to use to identify Prometheus Pod.
           namespace: Optional. Namespace where to search Promtheus Pod.
+          name_prefix: Optional. Name prefix for the archive that will be stored.
         """
 
         opts = {
             "cluster_prometheus_db_mode": "dump",
             "cluster_prometheus_db_label": label,
             "cluster_prometheus_db_namespace": namespace,
+            "cluster_prometheus_db_dump_name_prefix": name_prefix,
         }
 
         return RunAnsibleRole("cluster_prometheus_db", opts)

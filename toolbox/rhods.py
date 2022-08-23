@@ -155,9 +155,12 @@ class RHODS:
         return RunAnsibleRole("cluster_prometheus_db", opts)
 
     @staticmethod
-    def dump_prometheus_db():
+    def dump_prometheus_db(name_prefix="prometheus"):
         """
         Dump Prometheus database into a file
+
+        Args:
+          name_prefix: Optional. Name prefix for the archive that will be stored.
         """
 
         opts = {
@@ -165,7 +168,7 @@ class RHODS:
             "cluster_prometheus_db_label": "deployment=prometheus",
             "cluster_prometheus_db_namespace": "redhat-ods-monitoring",
             "cluster_prometheus_db_directory": "/prometheus/data",
-
+            "cluster_prometheus_db_dump_name_prefix": name_prefix,
         }
 
         return RunAnsibleRole("cluster_prometheus_db", opts)
