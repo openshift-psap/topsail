@@ -177,7 +177,7 @@
     oc get pods,pvc,ev -oname -n {{ rhods_notebook_namespace }} | \
       grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }} | \
       xargs --no-run-if-empty
-            oc delete pod -n {{ rhods_notebook_namespace }}
+            oc delete -n {{ rhods_notebook_namespace }}
   failed_when: false
 
 - name: Name the namespace privileged
