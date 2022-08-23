@@ -546,6 +546,8 @@ def parse_data():
     store.register_custom_rewrite_settings(_rewrite_settings)
     store_simple.register_custom_parse_results(_parse_directory)
 
-    _populate_theoretical_data()
+    if "theoretical" in cli_args.experiment_filters.get("expe", []):
+        from . import store_theoretical
+        store_theoretical._populate_theoretical_data()
 
     return store_simple.parse_data()
