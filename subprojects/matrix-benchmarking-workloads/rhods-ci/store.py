@@ -99,19 +99,20 @@ def _parse_pr(filename):
         return None
 
 
-def _parse_rhods_info(base_dirname):
+def _parse_rhods_info(dirname):
     rhods_info = types.SimpleNamespace()
 
-    with open(list(base_dirname.glob("*__sutest_rhods__capture_state"))[0] / "rhods_operator.yaml") as f:
+    with open(dirname / "artifacts-sutest" / "rhods_operator.yaml") as f:
         content = f.read()
         content = content.replace("2021-00-16T00:00:00Z", "2021-12-16T00:00:00Z")
         rhods_operator_yaml = yaml.safe_load(content)
 
         rhods_info.version = rhods_operator_yaml["items"][0]["metadata"]["annotations"]["containerImage"].split(":")[1]
 
+    with open(dirname / "artifacts-sutest" / "ocp_version.yml") as f:
+        ocp_version_yaml = yaml.safe_load(f)
+        rhods_info.ocp_version = ocp_version_yaml["openshiftVersion"]
 
-    with open(list(base_dirname.glob("*__sutest_cluster__capture_environment"))[0] / "ocp.version") as f:
-        rhods_info.ocp_version = f.read().strip()
     return rhods_info
 
 
@@ -305,15 +306,15 @@ def _parse_ods_ci_output_xml(filename):
 
 def _extract_metrics(dirname):
     METRICS = {
-        "sutest": ("*__sutest_cluster__dump_prometheus_db/prometheus.t*", rhods_plotting_prom.get_sutest_metrics()),
-        "driver": ("*__driver_cluster__dump_prometheus_db/prometheus.t*", rhods_plotting_prom.get_driver_metrics()),
-        "rhods":  ("*__sutest_rhods__dump_prometheus_db/prometheus.t*", rhods_plotting_prom.get_rhods_metrics()),
+        "sutest": ("artifacts-sutest/prometheus_ocp.t*", rhods_plotting_prom.get_sutest_metrics()),
+        "driver": ("artifacts-driver/prometheus_ocp.t*", rhods_plotting_prom.get_driver_metrics()),
+        "rhods":  ("artifacts-sutest/prometheus_rhods.t*", rhods_plotting_prom.get_rhods_metrics()),
     }
 
     results_metrics = {}
     for name, (tarball_glob, metrics) in METRICS.items():
         try:
-            prom_tarball = list(dirname.parent.glob(tarball_glob))[0]
+            prom_tarball = list(dirname.glob(tarball_glob))[0]
         except IndexError:
             logging.warning(f"No {tarball_glob} in '{dirname.parent}'.")
             continue
@@ -332,23 +333,23 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         with open(pathlib.Path(os.getenv("ARTIFACT_DIR")) / "source_url") as f:
             results.source_url = f.read().strip()
 
-    _parse_job(results, dirname / "tester_job.yaml")
+    _parse_job(results, dirname / "artifacts-driver" / "tester_job.yaml")
     results.from_env = _parse_env(dirname / "_ansible.env")
 
     results.from_pr = _parse_pr(dirname.parent / "pull_request.json")
 
-    results.rhods_info = _parse_rhods_info(dirname.parent)
+    results.rhods_info = _parse_rhods_info(dirname)
 
     print("_parse_node_info")
     results.nodes_info = defaultdict(types.SimpleNamespace)
-    results.nodes_info |= _parse_node_info(list(dirname.parent.glob("*__sutest_cluster__capture_environment"))[0] / "nodes.yaml")
-    results.nodes_info |= _parse_node_info(list(dirname.parent.glob("*__driver_cluster__capture_environment"))[0] / "nodes.yaml")
+    results.nodes_info |= _parse_node_info(dirname / "artifacts-driver" / "nodes.yaml")
+    results.nodes_info |= _parse_node_info(dirname / "artifacts-sutest" / "nodes.yaml")
 
     print("_parse_pod_times (tester)")
     results.pod_times = {}
-    results.pod_times |= _parse_pod_times(dirname / "tester_pods.yaml")
+    results.pod_times |= _parse_pod_times(dirname / "artifacts-driver" / "tester_pods.yaml")
     print("_parse_pod_times (notebooks)")
-    results.pod_times |= _parse_pod_times(dirname / "notebook_pods.yaml", is_notebook=True)
+    results.pod_times |= _parse_pod_times(dirname / "artifacts-sutest" / "notebook_pods.yaml", is_notebook=True)
 
     results.event_times = defaultdict(types.SimpleNamespace)
     results.notebook_hostnames = notebook_hostnames = {}
@@ -356,9 +357,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     print("_parse_pod_events (notebooks)")
 
-    results.event_times |= _parse_pod_event_times(dirname / "notebook_events.yaml", "rhods-notebooks", notebook_hostnames, is_notebook=True)
+    results.event_times |= _parse_pod_event_times(dirname / "artifacts-sutest" / "notebook_events.yaml", "rhods-notebooks", notebook_hostnames, is_notebook=True)
     print("_parse_pod_events (tester)")
-    results.event_times |= _parse_pod_event_times(dirname / "tester_events.yaml", "loadtest", testpod_hostnames)
+    results.event_times |= _parse_pod_event_times(dirname / "artifacts-driver" / "tester_events.yaml", "loadtest", testpod_hostnames)
     results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci")]
     results.notebook_pods = [k for k in results.event_times.keys() if k.startswith(JUPYTER_USER_RENAME_PREFIX)]
     print("_extract_metrics")
