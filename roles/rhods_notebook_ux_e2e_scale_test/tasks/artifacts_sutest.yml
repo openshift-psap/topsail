@@ -1,0 +1,68 @@
+- name: Create the sutest artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts-sutest/"
+    state: directory
+    mode: '0755'
+
+- name: Capture the artifacts of the sutest cluster
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  block:
+  - name: Get the definition of the notebook Pods
+    shell:
+      oc get pods -oyaml
+         -n {{ rhods_notebook_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_pods.yaml"
+    ignore_errors: yes
+
+  - name: Get the status of the notebook Pods
+    shell:
+      oc get pods -owide
+         -n {{ rhods_notebook_namespace }}
+          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_pods.status"
+    ignore_errors: yes
+
+  - name: Get the events of the notebook namespace
+    shell:
+      oc get ev -oyaml
+         -n {{ rhods_notebook_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_events.yaml"
+    ignore_errors: yes
+
+  - name: Get the RHODS operator pod yaml
+    shell:
+      oc get pod -A -lname=rhods-operator -oyaml > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods_operator.yaml"
+    ignore_errors: yes
+
+  - name: Store OpenShift YAML version
+    shell:
+      oc version -oyaml > "{{ artifact_extra_logs_dir }}/artifacts-sutest/ocp_version.yml"
+    ignore_errors: yes
+
+  - name: Store the Cluster nodes
+    shell:
+      oc get nodes -oyaml > "{{ artifact_extra_logs_dir }}/artifacts-sutest/nodes.yaml"
+    ignore_errors: yes
+
+  - name: Get the description of the nodes
+    shell:
+      oc describe nodes
+          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/nodes.descr"
+    ignore_errors: yes
+
+  - name: Get the OpenShift Prometheus database
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: dump
+      cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_ocp
+
+  - name: Get the RHODS Prometheus database
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: dump
+      cluster_prometheus_db_label: deployment=prometheus
+      cluster_prometheus_db_namespace: redhat-ods-monitoring
+      cluster_prometheus_db_directory: /prometheus/data
+      cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_rhods

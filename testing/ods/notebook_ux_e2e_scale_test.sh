@@ -207,17 +207,6 @@ capture_environment() {
     ./run_toolbox.py cluster capture_environment > /dev/null || true
 }
 
-dump_prometheus_dbs() {
-    switch_sutest_cluster
-    process_ctrl::run_in_bg ./run_toolbox.py cluster dump_prometheus_db
-    process_ctrl::run_in_bg ./run_toolbox.py rhods dump_prometheus_db
-
-    switch_driver_cluster
-    process_ctrl::run_in_bg ./run_toolbox.py cluster dump_prometheus_db
-
-    process_ctrl::wait_bg_processes
-}
-
 prepare_ci() {
     cp "$THIS_DIR/common.sh" "$ARTIFACT_DIR" # save the settings of this run
 
@@ -251,9 +240,6 @@ run_test() {
                      --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS" \
                      --ods_ci_artifacts_exporter_istag="$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
                      --ods_ci_notebook_image_name="$RHODS_NOTEBOOK_IMAGE_NAME"
-
-    # quick access to these files
-    cp "$ARTIFACT_DIR"/*__driver_rhods__user_scale_test_notebooks_e2e/{failed_tests,success_count} "$ARTIFACT_DIR" || true
 }
 
 sutest_cleanup() {
@@ -311,15 +297,14 @@ case ${action} in
         fi
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
-        # Generate the visualization reports (must run after dump_prometheus_dbs and capture_environment)
-        finalizers+=("generate_plots")
 
         prepare_ci
         prepare
-        run_user_scale_test_notebooks_e2e
+        run_test
+        # quick access to these files
+        cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" || true
 
-        set +e # we do not wait to fail passed this point
-        dump_prometheus_dbs
+        generate_plots
         exit 0
         ;;
     "prepare")
@@ -347,8 +332,7 @@ case ${action} in
         ;;
     "run_test")
         run_test
-        dump_prometheus_dbs
-        capture_environment
+
         exit 0
         ;;
     "generate_plots")
