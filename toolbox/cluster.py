@@ -169,7 +169,7 @@ class Cluster:
 
         Args:
             namespace: namespace where the server will be deployed. Will be create if it doesn't exist.
-            directory: directrory containing the files to serve on the HTTP server.
+            directory: directory containing the files to serve on the HTTP server.
         """
 
         opts = {
