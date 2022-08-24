@@ -37,6 +37,7 @@ export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/preparation"
 # 1.0 Deploy RHODS in the sutest cluster
 
 testing/ods/notebook_ux_e2e_scale_test.sh deploy_rhods
+testing/ods/notebook_ux_e2e_scale_test.sh wait_rhods
 
 # 1.1 Deploy LDAP in the sutest cluster
 

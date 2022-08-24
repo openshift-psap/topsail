@@ -187,7 +187,7 @@ prepare_ocp_sutest_deploy_rhods() {
                 "$ODS_QE_CATALOG_IMAGE" "$ODS_QE_CATALOG_IMAGE_TAG"
 }
 
-wait_rhods_launch() {
+sutest_wait_rhods_launch() {
     switch_sutest_cluster
 
     ./run_toolbox.py rhods wait_ods
@@ -225,7 +225,7 @@ prepare() {
 
     process_ctrl::wait_bg_processes
 
-    wait_rhods_launch
+    sutest_wait_rhods_launch
 }
 
 run_test() {
@@ -272,7 +272,7 @@ run_prepare_local_cluster() {
 
     process_ctrl::wait_bg_processes
 
-    wait_rhods_launch
+    sutest_wait_rhods_launch
 }
 
 generate_plots() {
@@ -318,6 +318,11 @@ case ${action} in
         ;;
     "deploy_rhods")
         prepare_sutest_deploy_rhods
+        process_ctrl::wait_bg_processes
+        exit 0
+        ;;
+    "wait_rhods")
+        sutest_wait_rhods_launch
         process_ctrl::wait_bg_processes
         exit 0
         ;;
