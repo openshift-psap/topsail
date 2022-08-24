@@ -180,6 +180,21 @@ class Cluster:
         return RunAnsibleRole("cluster_deploy_nginx_server", opts)
 
     @staticmethod
+    def deploy_redis_server(namespace):
+        """
+        Deploy a redis server
+
+        Args:
+            namespace: namespace where the server will be deployed. Will be create if it doesn't exist.
+        """
+
+        opts = {
+            "cluster_deploy_redis_server_namespace": namespace,
+        }
+
+        return RunAnsibleRole("cluster_deploy_redis_server", opts)
+
+    @staticmethod
     def reset_prometheus_db(label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring"):
         """
         Resets Prometheus database, by destroying its Pod
