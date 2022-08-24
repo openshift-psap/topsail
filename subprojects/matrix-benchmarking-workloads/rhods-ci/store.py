@@ -360,7 +360,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.event_times |= _parse_pod_event_times(dirname / "artifacts-sutest" / "notebook_events.yaml", "rhods-notebooks", notebook_hostnames, is_notebook=True)
     print("_parse_pod_events (tester)")
     results.event_times |= _parse_pod_event_times(dirname / "artifacts-driver" / "tester_events.yaml", "loadtest", testpod_hostnames)
-    results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci")]
+    results.test_pods = [k for k in results.event_times.keys() if k.startswith("ods-ci") and not "image" in k]
     results.notebook_pods = [k for k in results.event_times.keys() if k.startswith(JUPYTER_USER_RENAME_PREFIX)]
     print("_extract_metrics")
     results.metrics = _extract_metrics(dirname)
