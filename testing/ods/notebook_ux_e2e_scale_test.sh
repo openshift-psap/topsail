@@ -233,7 +233,7 @@ prepare() {
 run_test() {
     switch_driver_cluster
 
-    REDIS_SERVER="redis.${STATESIGNAL_REDIS_NAMESPACE}.svc:6379"
+    REDIS_SERVER="redis.${STATESIGNAL_REDIS_NAMESPACE}.svc"
 
     NGINX_SERVER="nginx-$NGINX_NOTEBOOK_NAMESPACE"
     nginx_hostname=$(oc whoami --show-server | sed "s/api/$NGINX_SERVER.apps/g" | awk -F ":" '{print $2}' | sed s,//,,g)
@@ -349,6 +349,7 @@ case ${action} in
         run_test
         generate_plots
         exit 0
+        ;;
     "run_test")
         run_test
         exit 0
