@@ -45,6 +45,7 @@ ODS_NOTEBOOK_SIZE_TEST_POD="test_pod" # shouldn't change
 ODS_SLEEP_FACTOR=${ODS_SLEEP_FACTOR:-1.0} # how long to wait between user starts.
 ODS_CI_ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
 
+STATESIGNAL_REDIS_NAMESPACE=loadtest-redis
 NGINX_NOTEBOOK_NAMESPACE=loadtest-notebooks
 ODS_NOTEBOOK_NAME=simple-notebook.ipynb
 ODS_NOTEBOOK_DIR=${THIS_DIR}/notebooks

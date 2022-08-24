@@ -113,6 +113,8 @@ prepare_driver_cluster() {
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_nginx_server "$NGINX_NOTEBOOK_NAMESPACE" "$ODS_NOTEBOOK_DIR"
+
+    process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_redis_server "$STATESIGNAL_REDIS_NAMESPACE"
 }
 
 prepare_sutest_deploy_rhods() {
@@ -231,6 +233,8 @@ prepare() {
 run_test() {
     switch_driver_cluster
 
+    REDIS_SERVER="redis.${STATESIGNAL_REDIS_NAMESPACE}.svc:6379"
+
     NGINX_SERVER="nginx-$NGINX_NOTEBOOK_NAMESPACE"
     nginx_hostname=$(oc whoami --show-server | sed "s/api/$NGINX_SERVER.apps/g" | awk -F ":" '{print $2}' | sed s,//,,g)
 
@@ -244,7 +248,8 @@ run_test() {
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR" \
                      --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS" \
                      --ods_ci_artifacts_exporter_istag="$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
-                     --ods_ci_notebook_image_name="$RHODS_NOTEBOOK_IMAGE_NAME"
+                     --ods_ci_notebook_image_name="$RHODS_NOTEBOOK_IMAGE_NAME" \
+                     --state_signal_redis_server="${REDIS_SERVER}"
 }
 
 sutest_cleanup() {
