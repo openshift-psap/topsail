@@ -69,6 +69,7 @@ class RHODS:
                                    ods_ci_scale_test_case="notebook_ux_e2e_test.robot",
                                    ods_ci_artifacts_exporter_istag="ods-ci:artifacts-exporter",
                                    ods_ci_notebook_image_name="s2i-generic-data-science-notebook",
+                                   state_signal_redis_server="",
                                    ):
 
         """
@@ -91,7 +92,7 @@ class RHODS:
           ods_ci_exclude_tags: Optional. Tags to exclude in the ODS-CI test case.
           ods_ci_artifacts_exporter_istag: Optional. Imagestream tag of the ODS-CI artifacts exporter side-car container.
           ods_ci_notebook_image_name: Optional. Name of the RHODS image to use when launching the notebooks.
-
+          state_signal_redis_server: Optional. Hostname and port of the Redis server for StateSignal synchronization (for the synchronization of the beginning of the user simulation)
         """
 
         opts = {
@@ -107,6 +108,7 @@ class RHODS:
             "rhods_notebook_ux_e2e_scale_test_ods_ci_exclude_tags": ods_ci_exclude_tags,
             "rhods_notebook_ux_e2e_scale_test_ods_ci_artifacts_exporter_istag": ods_ci_artifacts_exporter_istag,
             "rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_image_name": ods_ci_notebook_image_name,
+            "rhods_notebook_ux_e2e_scale_test_state_signal_redis_server": state_signal_redis_server,
         }
 
         ARTIFACTS_COLLECTED_VALUES = ("all", "none", "no-image", "no-image-except-failed", "no-image-except-failed-and-zero")

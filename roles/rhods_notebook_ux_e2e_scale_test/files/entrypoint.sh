@@ -5,7 +5,9 @@ set -o pipefail
 set -o nounset
 set -x
 
-JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-1}
+JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-0}
+STATE_SIGNAL_BARRIER=/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/state-signal_barrier.py
+STATE_SIGNAL_DELAY=120 # delay for all the Pods to reach the entry barrier
 
 if [[ -z "{ARTIFACT_DIR:-}" ]]; then
     ARTIFACT_DIR=/tmp/ods-ci
@@ -18,6 +20,16 @@ trap "touch $ARTIFACT_DIR/test.exit_code" EXIT
 sed "s/#{JOB_COMPLETION_INDEX}/${JOB_COMPLETION_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
 
 cp "/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/$RUN_ROBOT_TEST_CASE" .
+
+# Use StateSignal-barrier to wait for all the Pods to be ready
+
+python3 -m pip --no-cache-dir install state-signals==0.5.2 --user
+echo "Running with user $JOB_COMPLETION_INDEX / $USER_COUNT"
+if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
+    python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" --exporter "$USER_COUNT" --delay "$STATE_SIGNAL_DELAY" &
+fi
+
+time python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" # fails if the all Pods don't reach the barrier in time
 
 # Sleep for a while to avoid DDoSing OAuth
 
