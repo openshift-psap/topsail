@@ -137,6 +137,7 @@ EOF
     mv "$WORKLOAD_STORAGE_DIR"/fig_*.png "$ARTIFACT_DIR/figures_png" || true
     mv "$WORKLOAD_STORAGE_DIR"/fig_*.html "$ARTIFACT_DIR/figures_html" || true
     mv "$WORKLOAD_STORAGE_DIR"/report_* "$ARTIFACT_DIR" || true
+    mv "$WORKLOAD_STORAGE_DIR"/reports_* "$ARTIFACT_DIR" || true
 
     if grep -q "^ERROR" "$VISU_LOG_FILE"; then
         echo "An error happened during the report generation, aborting."
