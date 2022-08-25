@@ -91,13 +91,20 @@
       {{ py_secret_generator }}
       cat "{{ cluster_deploy_ldap_bind_secret_template }}" | envsubst | oc apply -f-
 
-  - name: Append the LDAP OAuth identity provider
+  - name: Get the list of identity providers
+    command:
+      oc get OAuth/cluster -ojsonpath='{range .spec.identityProviders[*]}{.name}{"\n"}{end}'
+    register:
+      oauth_idp_names_cmd
+
+  - name: Append the LDAP OAuth identity provider, if not already set
     shell:
       set -o pipefail;
       oc get OAuth/cluster -ojson
          | jq --argjson idp "$(yq . "{{ artifact_extra_logs_dir }}/oauth_ldap.yaml" -c)"
               '.spec.identityProviders[.spec.identityProviders|length] |= $idp'
          | oc apply -f-
+    when: cluster_deploy_ldap_idp_name not in oauth_idp_names_cmd.stdout
 
 - name: Deploy on ROSA
   when: cluster_deploy_ldap_use_rosa | length > 0

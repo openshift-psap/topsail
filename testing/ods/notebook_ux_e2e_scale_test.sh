@@ -77,7 +77,8 @@ prepare_driver_cluster() {
     oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
 
     build_and_preload_odsci_image() {
-        ./run_toolbox.py utils build_push_image \
+        ARTIFACT_TOOLBOX_NAME_SUFFIX=_odsci \
+            ./run_toolbox.py utils build_push_image \
                          "$ODS_CI_IMAGESTREAM" "$ODS_CI_TAG" \
                          --namespace="$ODS_CI_TEST_NAMESPACE" \
                          --git-repo="$ODS_CI_REPO" \
@@ -86,19 +87,23 @@ prepare_driver_cluster() {
                          --dockerfile-path="build/Dockerfile"
 
         ods_ci_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_TAG"
-        ./run_toolbox.py cluster preload_image "ods-ci-image" "$ods_ci_image" \
+        ARTIFACT_TOOLBOX_NAME_SUFFIX=_odsci \
+            ./run_toolbox.py cluster preload_image "ods-ci-image" "$ods_ci_image" \
                          --namespace="$ODS_CI_TEST_NAMESPACE"
     }
 
     build_and_preload_artifacts_exporter_image() {
-        ./run_toolbox.py utils build_push_image \
+        ARTIFACT_TOOLBOX_NAME_SUFFIX=_artifacts \
+            ./run_toolbox.py utils build_push_image \
                          "$ODS_CI_IMAGESTREAM" "$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
                          --namespace="$ODS_CI_TEST_NAMESPACE" \
                          --context-dir="/" \
                          --dockerfile-path="$ODS_CI_ARTIFACTS_EXPORTER_DOCKERFILE"
 
         artifacts_exporter_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG"
-        ./run_toolbox.py cluster preload_image "ods-ci-artifacts-exporter-image" "$artifacts_exporter_image" \
+
+        ARTIFACT_TOOLBOX_NAME_SUFFIX=_artifacts \
+            ./run_toolbox.py cluster preload_image "ods-ci-artifacts-exporter-image" "$artifacts_exporter_image" \
                          --namespace="$ODS_CI_TEST_NAMESPACE"
     }
 
@@ -110,19 +115,19 @@ prepare_driver_cluster() {
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_nginx_server "$NGINX_NOTEBOOK_NAMESPACE" "$ODS_NOTEBOOK_DIR"
 }
 
-prepare_sutest_install_rhods() {
+prepare_sutest_deploy_rhods() {
     switch_sutest_cluster
 
     osd_cluster_name=$(get_osd_cluster_name "sutest")
 
     if [[ "$osd_cluster_name" ]]; then
-        prepare_osd_sutest_install_rhods "$osd_cluster_name"
+        prepare_osd_sutest_deploy_rhods "$osd_cluster_name"
     else
-        prepare_ocp_sutest_install_rhods
+        prepare_ocp_sutest_deploy_rhods
     fi
 }
 
-prepare_sutest_install_ldap() {
+prepare_sutest_deploy_ldap() {
     switch_sutest_cluster
 
     osd_cluster_name=$(get_osd_cluster_name "sutest")
@@ -135,11 +140,11 @@ prepare_sutest_install_ldap() {
 
 prepare_sutest_cluster() {
     switch_sutest_cluster
-    prepare_sutest_install_rhods
-    prepare_sutest_install_ldap
+    prepare_sutest_deploy_rhods
+    prepare_sutest_deploy_ldap
 }
 
-prepare_osd_sutest_install_rhods() {
+prepare_osd_sutest_deploy_rhods() {
     osd_cluster_name=$1
 
     if [[ "$OSD_USE_ODS_CATALOG" == 1 ]]; then
@@ -171,7 +176,7 @@ prepare_osd_sutest_install_rhods() {
     fi
 }
 
-prepare_ocp_sutest_install_rhods() {
+prepare_ocp_sutest_deploy_rhods() {
     switch_sutest_cluster
 
     echo "Deploying RHODS $ODS_QE_CATALOG_IMAGE_TAG (from $ODS_QE_CATALOG_IMAGE)"
@@ -182,7 +187,7 @@ prepare_ocp_sutest_install_rhods() {
                 "$ODS_QE_CATALOG_IMAGE" "$ODS_QE_CATALOG_IMAGE_TAG"
 }
 
-wait_rhods_launch() {
+sutest_wait_rhods_launch() {
     switch_sutest_cluster
 
     ./run_toolbox.py rhods wait_ods
@@ -207,17 +212,6 @@ capture_environment() {
     ./run_toolbox.py cluster capture_environment > /dev/null || true
 }
 
-dump_prometheus_dbs() {
-    switch_sutest_cluster
-    process_ctrl::run_in_bg ./run_toolbox.py cluster dump_prometheus_db
-    process_ctrl::run_in_bg ./run_toolbox.py rhods dump_prometheus_db
-
-    switch_driver_cluster
-    process_ctrl::run_in_bg ./run_toolbox.py cluster dump_prometheus_db
-
-    process_ctrl::wait_bg_processes
-}
-
 prepare_ci() {
     cp "$THIS_DIR/common.sh" "$ARTIFACT_DIR" # save the settings of this run
 
@@ -231,16 +225,16 @@ prepare() {
 
     process_ctrl::wait_bg_processes
 
-    wait_rhods_launch
+    sutest_wait_rhods_launch
 }
 
-run_jupyterlab_test() {
+run_test() {
     switch_driver_cluster
 
     NGINX_SERVER="nginx-$NGINX_NOTEBOOK_NAMESPACE"
     nginx_hostname=$(oc whoami --show-server | sed "s/api/$NGINX_SERVER.apps/g" | awk -F ":" '{print $2}' | sed s,//,,g)
 
-    ./run_toolbox.py rhods test_jupyterlab \
+    ./run_toolbox.py rhods notebook_ux_e2e_scale_test \
                      "$LDAP_IDP_NAME" \
                      "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
                      "$S3_LDAP_PROPS" \
@@ -251,9 +245,6 @@ run_jupyterlab_test() {
                      --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS" \
                      --ods_ci_artifacts_exporter_istag="$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
                      --ods_ci_notebook_image_name="$RHODS_NOTEBOOK_IMAGE_NAME"
-
-    # quick access to these files
-    cp "$ARTIFACT_DIR"/*__driver_rhods__test_jupyterlab/{failed_tests,success_count} "$ARTIFACT_DIR" || true
 }
 
 sutest_cleanup() {
@@ -281,7 +272,7 @@ run_prepare_local_cluster() {
 
     process_ctrl::wait_bg_processes
 
-    wait_rhods_launch
+    sutest_wait_rhods_launch
 }
 
 generate_plots() {
@@ -311,32 +302,36 @@ case ${action} in
         fi
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
-        # Generate the visualization reports (must run after dump_prometheus_dbs and capture_environment)
-        finalizers+=("generate_plots")
 
         prepare_ci
         prepare
-        run_jupyterlab_test
+        run_test
+        # quick access to these files
+        cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" || true
 
-        set +e # we do not wait to fail passed this point
-        dump_prometheus_dbs
+        generate_plots
         exit 0
         ;;
     "prepare")
         prepare
         exit 0
         ;;
-    "install_rhods")
-        prepare_sutest_install_rhods
+    "deploy_rhods")
+        prepare_sutest_deploy_rhods
         process_ctrl::wait_bg_processes
         exit 0
         ;;
-    "install_ldap")
-        prepare_sutest_install_ldap
+    "wait_rhods")
+        sutest_wait_rhods_launch
         process_ctrl::wait_bg_processes
         exit 0
         ;;
-    "uninstall_ldap")
+    "deploy_ldap")
+        prepare_sutest_deploy_ldap
+        process_ctrl::wait_bg_processes
+        exit 0
+        ;;
+    "undeploy_ldap")
         sutest_cleanup_ldap
         exit 0
         ;;
@@ -345,16 +340,17 @@ case ${action} in
         process_ctrl::wait_bg_processes
         exit 0
         ;;
-    "run_jupyterlab_test")
-        run_jupyterlab_test
-        dump_prometheus_dbs
-        capture_environment
+    "run_test_and_plot")
+        run_test
+        generate_plots
+        exit 0
+    "run_test")
+        run_test
         exit 0
         ;;
     "generate_plots")
-        export ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
-        mkdir -p "$ARTIFACT_DIR"
-        exec ./testing/ods/generate_matrix-benchmarking.sh generate_plots
+        generate_plots
+        exit  0
         ;;
     "source")
         # file is being sourced by another script

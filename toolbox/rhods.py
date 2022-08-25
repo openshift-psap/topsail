@@ -59,20 +59,20 @@ class RHODS:
         return RunAnsibleRole("ocm_deploy_addon", opt)
 
     @staticmethod
-    def test_jupyterlab(idp_name, username_prefix, user_count: int,
-                        secret_properties_file,
-                        notebook_url,
-                        sut_cluster_kubeconfig="",
-                        artifacts_collected="all",
-                        ods_sleep_factor="1.0",
-                        ods_ci_exclude_tags="None",
-                        ods_ci_test_case="test-jupyterlab-run-notebook.robot",
-                        ods_ci_artifacts_exporter_istag="ods-ci:artifacts-exporter",
-                        ods_ci_notebook_image_name="s2i-generic-data-science-notebook",
-                        ):
+    def notebook_ux_e2e_scale_test(idp_name, username_prefix, user_count: int,
+                                   secret_properties_file,
+                                   notebook_url,
+                                   sut_cluster_kubeconfig="",
+                                   artifacts_collected="all",
+                                   ods_sleep_factor="1.0",
+                                   ods_ci_exclude_tags="None",
+                                   ods_ci_scale_test_case="notebook_ux_e2e_test.robot",
+                                   ods_ci_artifacts_exporter_istag="ods-ci:artifacts-exporter",
+                                   ods_ci_notebook_image_name="s2i-generic-data-science-notebook",
+                                   ):
 
         """
-        Test RHODS JupyterLab notebooks
+        End-to-end testing of RHODS notebook user experience at scale
 
         Args:
           idp_name: Name of the identity provider to use.
@@ -87,25 +87,26 @@ class RHODS:
            - 'no-image-except-failed-and-zero': exclude the images, except if the test failed or the job index is zero.
            - 'none': do not collect any ODS-CI artifact.
           ods_sleep_factor: Optional. Delay to sleep between users. Default 1.0.
-          ods_ci_test_case: Optional. ODS-CI test case to execute.
+          ods_ci_scale_test_case: Optional. ODS-CI test case to execute.
           ods_ci_exclude_tags: Optional. Tags to exclude in the ODS-CI test case.
           ods_ci_artifacts_exporter_istag: Optional. Imagestream tag of the ODS-CI artifacts exporter side-car container.
           ods_ci_notebook_image_name: Optional. Name of the RHODS image to use when launching the notebooks.
+
         """
 
         opts = {
-            "rhods_test_jupyterlab_idp_name": idp_name,
-            "rhods_test_jupyterlab_username_prefix": username_prefix,
-            "rhods_test_jupyterlab_user_count": user_count,
-            "rhods_test_jupyterlab_secret_properties": secret_properties_file,
-            "rhods_test_jupyterlab_notebook_url": notebook_url,
-            "rhods_test_jupyterlab_sut_cluster_kubeconfig": sut_cluster_kubeconfig,
-            "rhods_test_jupyterlab_artifacts_collected": artifacts_collected,
-            "rhods_test_jupyterlab_ods_sleep_factor": ods_sleep_factor,
-            "rhods_test_jupyterlab_ods_ci_test_case": ods_ci_test_case,
-            "rhods_test_jupyterlab_ods_ci_exclude_tags": ods_ci_exclude_tags,
-            "rhods_test_jupyterlab_ods_ci_artifacts_exporter_istag": ods_ci_artifacts_exporter_istag,
-            "rhods_test_jupyterlab_ods_ci_notebook_image_name": ods_ci_notebook_image_name,
+            "rhods_notebook_ux_e2e_scale_test_idp_name": idp_name,
+            "rhods_notebook_ux_e2e_scale_test_username_prefix": username_prefix,
+            "rhods_notebook_ux_e2e_scale_test_user_count": user_count,
+            "rhods_notebook_ux_e2e_scale_test_secret_properties": secret_properties_file,
+            "rhods_notebook_ux_e2e_scale_test_notebook_url": notebook_url,
+            "rhods_notebook_ux_e2e_scale_test_sut_cluster_kubeconfig": sut_cluster_kubeconfig,
+            "rhods_notebook_ux_e2e_scale_test_artifacts_collected": artifacts_collected,
+            "rhods_notebook_ux_e2e_scale_test_ods_sleep_factor": ods_sleep_factor,
+            "rhods_notebook_ux_e2e_scale_test_ods_ci_scale_test_case": ods_ci_scale_test_case,
+            "rhods_notebook_ux_e2e_scale_test_ods_ci_exclude_tags": ods_ci_exclude_tags,
+            "rhods_notebook_ux_e2e_scale_test_ods_ci_artifacts_exporter_istag": ods_ci_artifacts_exporter_istag,
+            "rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_image_name": ods_ci_notebook_image_name,
         }
 
         ARTIFACTS_COLLECTED_VALUES = ("all", "none", "no-image", "no-image-except-failed", "no-image-except-failed-and-zero")
@@ -114,7 +115,7 @@ class RHODS:
             sys.exit(1)
 
 
-        return RunAnsibleRole("rhods_test_jupyterlab", opts)
+        return RunAnsibleRole("rhods_notebook_ux_e2e_scale_test", opts)
 
     @staticmethod
     def undeploy_ods(namespace="redhat-ods-operator", wait: bool = True):
@@ -154,9 +155,12 @@ class RHODS:
         return RunAnsibleRole("cluster_prometheus_db", opts)
 
     @staticmethod
-    def dump_prometheus_db():
+    def dump_prometheus_db(name_prefix="prometheus"):
         """
         Dump Prometheus database into a file
+
+        Args:
+          name_prefix: Optional. Name prefix for the archive that will be stored.
         """
 
         opts = {
@@ -164,7 +168,7 @@ class RHODS:
             "cluster_prometheus_db_label": "deployment=prometheus",
             "cluster_prometheus_db_namespace": "redhat-ods-monitoring",
             "cluster_prometheus_db_directory": "/prometheus/data",
-
+            "cluster_prometheus_db_dump_name_prefix": name_prefix,
         }
 
         return RunAnsibleRole("cluster_prometheus_db", opts)

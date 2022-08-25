@@ -66,7 +66,8 @@ def run_ansible_role(role_name, opts: dict = dict()):
     if env.get("ARTIFACT_EXTRA_LOGS_DIR") is None:
         previous_extra_count = len(list(artifact_dir.glob("*__*")))
         prefix = env.get("ARTIFACT_TOOLBOX_NAME_PREFIX", "")
-        name = f"{previous_extra_count:03d}__{prefix}{env['ARTIFACT_DIRNAME']}"
+        suffix = env.get("ARTIFACT_TOOLBOX_NAME_SUFFIX", "")
+        name = f"{previous_extra_count:03d}__{prefix}{env['ARTIFACT_DIRNAME']}{suffix}"
 
         env["ARTIFACT_EXTRA_LOGS_DIR"] = str(Path(env["ARTIFACT_DIR"]) / name)
 
