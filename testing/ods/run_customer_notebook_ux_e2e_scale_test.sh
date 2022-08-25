@@ -57,8 +57,7 @@ export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/test_1"
 export ODS_CI_NB_USERS=4
 export ODS_SLEEP_FACTOR=2
 
-testing/ods/notebook_ux_e2e_scale_test.sh run_test
-testing/ods/notebook_ux_e2e_scale_test.sh generate_plots
+testing/ods/notebook_ux_e2e_scale_test.sh run_test_and_plot
 
 # 2.2 Run the second test
 
@@ -66,8 +65,7 @@ export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/test_2"
 export ODS_CI_NB_USERS=3
 export ODS_SLEEP_FACTOR=1
 
-testing/ods/notebook_ux_e2e_scale_test.sh run_test
-testing/ods/notebook_ux_e2e_scale_test.sh generate_plots
+testing/ods/notebook_ux_e2e_scale_test.sh run_test_and_plot
 
 #
 # 3. Cleanup the RHODS cluster

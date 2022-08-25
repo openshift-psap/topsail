@@ -340,15 +340,17 @@ case ${action} in
         process_ctrl::wait_bg_processes
         exit 0
         ;;
+    "run_test_and_plot")
+        run_test
+        generate_plots
+        exit 0
     "run_test")
         run_test
-
         exit 0
         ;;
     "generate_plots")
-        export ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
-        mkdir -p "$ARTIFACT_DIR"
-        exec ./testing/ods/generate_matrix-benchmarking.sh generate_plots
+        generate_plots
+        exit  0
         ;;
     "source")
         # file is being sourced by another script
