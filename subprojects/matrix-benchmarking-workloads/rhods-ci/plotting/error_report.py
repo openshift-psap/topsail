@@ -37,8 +37,16 @@ class ErrorReport():
         info = []
         if entry.results.from_env.pr:
             pr = entry.results.from_env.pr
-            info += [html.Li(["PR ", html.A(pr.name, href=pr.link, target="_blank"), html.B(entry.results.from_pr["title"])])]
-            info += [html.Ul(html.Li(html.Code(entry.results.from_pr["body"].replace("\n", "<br>"))))]
+            if entry.results.from_pr:
+                title = html.B(entry.results.from_pr["title"])
+                body = entry.results.from_pr["body"].replace("\n", "<br>")
+            else:
+                title = ""
+                body = ""
+
+            info += [html.Li(["PR ", html.A(pr.name, href=pr.link, target="_blank"), title])]
+            if body:
+                info += [html.Ul(html.Li(html.Code(body)))]
             info += [html.Li(["Test diff against ", html.A(html.Code(pr.base_ref), href=pr.diff_link, target="_blank")])]
 
         if entry.results.from_env.link_flag == "running-with-the-test":
