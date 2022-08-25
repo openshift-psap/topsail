@@ -47,6 +47,10 @@ testing/ods/notebook_ux_e2e_scale_test.sh deploy_ldap
 
 testing/ods/notebook_ux_e2e_scale_test.sh prepare_driver_cluster
 
+# 1.3 Prepare the laptop for generating the plots
+
+testing/ods/generate_matrix-benchmarking.sh prepare_matbench
+
 #
 # 2. Run the tests in a dedicated ARTIFACT_DIR directory
 #
@@ -70,6 +74,8 @@ testing/ods/notebook_ux_e2e_scale_test.sh run_test_and_plot
 #
 # 3. Cleanup the RHODS cluster
 #
+
+export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/preparation"
 
 # 3.1 Undeploy LDAP in the sutest cluster
 

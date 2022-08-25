@@ -132,7 +132,7 @@ EOF
         retcode=1
     fi
 
-    mkdir "$ARTIFACT_DIR"/figures_{png,html}
+    mkdir -p "$ARTIFACT_DIR"/figures_{png,html}
 
     mv "$WORKLOAD_STORAGE_DIR"/fig_*.png "$ARTIFACT_DIR/figures_png" || true
     mv "$WORKLOAD_STORAGE_DIR"/fig_*.html "$ARTIFACT_DIR/figures_html" || true
@@ -154,6 +154,7 @@ if [[ "$action" == "prepare_matbench" ]]; then
     set -o nounset
     set -x
 
+    generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking
 
 elif [[ "$action" == "generate_plots" ]]; then
@@ -164,8 +165,6 @@ elif [[ "$action" == "generate_plots" ]]; then
 
     _prepare_data_from_artifacts_dir "$ARTIFACT_DIR/.."
 
-    generate_matbench::prepare_matrix_benchmarking
-    generate_matbench::get_prometheus
     generate_matbench::generate_plots
 
 elif [[ "$JOB_NAME_SAFE" == "nb-ux-on-"* ]]; then
