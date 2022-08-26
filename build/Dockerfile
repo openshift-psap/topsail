@@ -7,50 +7,30 @@ LABEL 	io.k8s.display-name="OpenShift PSAP CI artifacts" \
  	name="ci-artifacts" \
 	url="https://github.com/openshift-psap/ci-artifacts"
 
-# Install openshift-ansible RPMs and some debugging tools
-RUN yum install -y --quiet \
-		glibc-langpack-en \
-		go git make jq vim wget rsync time gettext httpd-tools \
-		python3.9 python3-pip python3-setuptools python3-virtualenv && \
-	yum clean all && \
-	rm -rf $HOME/.cache && \
-	rm -rf /var/cache/yum
-
 ENV VIRTUAL_ENV=/opt/venv
-RUN virtualenv -p /usr/bin/python3.9 $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip install --upgrade pip
+
+RUN yum install -y --quiet \
+	        git jq vim wget rsync time gettext httpd-tools \
+		python3.9 python3-pip python3-setuptools python3-virtualenv \
+  && yum clean all \
+  && rm -rf $HOME/.cache && rm -rf /var/cache/yum \
+  && virtualenv -p /usr/bin/python3.9 $VIRTUAL_ENV \
+  && pip install --upgrade pip
+
+# Install dependencies: ocm, oc
 
 ARG CURL_OPTIONS="--silent --location --fail --show-error"
 
-# Install dependencies: `oc`
 ARG OCP_CLI_VERSION=latest
 ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
-RUN curl ${CURL_OPTIONS} ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 
-# Install dependencies: `ocm`
 ARG OCM_CLI_VERSION=v0.1.63
 ARG OCM_CLI_URL=https://github.com/openshift-online/ocm-cli/releases/download/${OCM_CLI_VERSION}/ocm-linux-amd64
-RUN curl ${CURL_OPTIONS} ${OCM_CLI_URL} --output /usr/local/bin/ocm
-RUN chmod +x /usr/local/bin/ocm
 
-# Install dependencies: `helm`
-ARG HELM_VERSION=v3.5.1
-ARG HELM_URL=https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
-RUN curl ${CURL_OPTIONS} ${HELM_URL} | tar xfz - -C /usr/local/bin --strip-components 1 linux-amd64/helm
-
-# Install dependencies: `rosa`
-ARG ROSA_VERSION=latest
-ARG ROSA_URL=https://mirror.openshift.com/pub/openshift-v4/clients/rosa/${ROSA_VERSION}/rosa-linux.tar.gz
-RUN curl ${CURL_OPTIONS} ${ROSA_URL} | tar xfz - -C /usr/local/bin
-
-# Install dependencies: `operator-sdk`
-ARG OPERATOR_SDK_VERSION=v1.6.2
-ARG OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}
-RUN cd /usr/local/bin \
- && curl --silent -LO ${OPERATOR_SDK_URL}/operator-sdk_linux_amd64 \
- && mv operator-sdk_linux_amd64 operator-sdk \
- && chmod +x operator-sdk
+# Install dependencies: ocm, oc
+RUN curl ${CURL_OPTIONS} https://people.redhat.com/~kpouget/22-08-26/openshift-client-linux.tar.gz | tar xfz - -C /usr/local/bin oc \
+ && curl ${CURL_OPTIONS} ${OCM_CLI_URL} --output /usr/local/bin/ocm && chmod +x /usr/local/bin/ocm
 
 # Set up Ansible
 RUN mkdir -p /etc/ansible \
@@ -76,19 +56,22 @@ RUN pip install --quiet --no-cache-dir -r ${HOME}/requirements.txt && \
     pip install --quiet --no-cache-dir -r ${HOME}/subprojects/cloud-watch/requirements.txt
 
 # Prepare the CI `run` entrypoint
-RUN echo -e '#!/usr/bin/env bash \n\
-exec ${HOME}/testing/run "$@" \n\
-' > /usr/local/bin/run; chmod ugo+x /usr/local/bin/run
 
 # Prepare the CI `matbench`
-RUN ln -s ${HOME}/subprojects/matrix-benchmarking/bin/matbench /usr/local/bin/
 
 # Ensure directory permissions are properly set
-RUN mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R
 
 # This should run after all the `pip` commands.  It is necessary so
 # that we can `pip install` from inside the image.
-RUN chgrp -R 0 "${VIRTUAL_ENV}" \
+
+RUN echo -e '#!/usr/bin/env bash \n\
+exec ${HOME}/testing/run "$@" \n\
+' > /usr/local/bin/run; chmod ugo+x /usr/local/bin/run \
+ \
+ && ln -s ${HOME}/subprojects/matrix-benchmarking/bin/matbench /usr/local/bin/ \
+ \
+ && mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R \
+ && chgrp -R 0 "${VIRTUAL_ENV}" \
  && chmod -R g=u "${VIRTUAL_ENV}"
 
 
