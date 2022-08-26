@@ -11,7 +11,7 @@ ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN yum install -y --quiet \
-	        git jq vim wget rsync time gettext httpd-tools \
+	        git jq vim wget rsync time gettext httpd-tools make \
 		python3.9 python3-pip python3-setuptools python3-virtualenv \
   && yum clean all \
   && rm -rf $HOME/.cache && rm -rf /var/cache/yum \
