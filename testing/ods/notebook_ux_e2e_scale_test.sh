@@ -13,8 +13,8 @@ source "$THIS_DIR/process_ctrl.sh"
 source "$THIS_DIR/common.sh"
 
 if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
-    KUBECONFIG_DRIVER="${SHARED_DIR}/driver_kubeconfig" # cluster driving the test
-    KUBECONFIG_SUTEST="${SHARED_DIR}/sutest_kubeconfig" # system under test
+    KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-${SHARED_DIR}/driver_kubeconfig}" # cluster driving the test
+    KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-${SHARED_DIR}/sutest_kubeconfig}" # system under test
 else
     KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-$KUBECONFIG}" # cluster driving the test
     KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-$KUBECONFIG}" # system under test
