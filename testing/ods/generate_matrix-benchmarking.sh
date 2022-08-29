@@ -168,7 +168,7 @@ elif [[ "$action" == "generate_plots" ]]; then
 
     generate_matbench::generate_plots
 
-elif [[ "$JOB_NAME_SAFE" == "nb-ux-on-"* ]]; then
+elif [[ "$JOB_NAME_SAFE" == "nb-ux-on-"* || "$JOB_NAME_SAFE" == get-cluster ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset
