@@ -253,8 +253,9 @@
   shell:
     set -o pipefail;
     oc get pods,pvc -oname -n {{ rhods_notebook_namespace }} |
-       grep {{ rhods_test_jupyterlab_username_prefix }} |
-       xargs oc delete -n {{ rhods_notebook_namespace }}
+       grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }} |
+       xargs --no-run-if-empty
+         oc delete -n {{ rhods_notebook_namespace }}
   ignore_errors: yes
 
 - name: Capture the driver cluster artifacts
