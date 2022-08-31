@@ -190,8 +190,8 @@ def get_sutest_metrics(register=False):
         {"Notebooks": dict(namespace="rhods-notebooks", container="notebook")},
         {"OpenLDAP": dict(namespace="openldap", pod="openldap.*")},
         {"RHODS Dashboard": dict(namespace="redhat-ods-applications", pod="rhods-dashboard.*", container="rhods-dashboard")},
-        {"RHODS Traefik Proxy": dict(namespace="redhat-ods-applications", pod="traefik-proxy.*", container="traefik-proxy")},
-        {"RHODS Jupyterhub": dict(namespace="redhat-ods-applications", pod="jupyterhub-1-.*", container="jupyterhub")},
+        {"KF Notebook Controller": dict(namespace="redhat-ods-applications", pod="notebook-controller-deployment.*")},
+        {"ODH Notebook Controller": dict(namespace="redhat-ods-applications", pod="odh-notebook-controller-manager.*")},
         {"OpenShift Authentication": dict(namespace="openshift-authentication", pod="oauth-openshift.*")},
     ]
     all_metrics = []
