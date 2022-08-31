@@ -53,7 +53,7 @@ def _parse_env(filename):
             # not running in the CI
 
             from_env.link_flag = "running-locally"
-        elif job_name.startswith("nb-ux-on-"):
+        elif job_name.startswith("nb-ux-on-") or job_name == "get-cluster":
             # running right after the test
 
             from_env.link_flag = "running-with-the-test"
