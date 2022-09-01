@@ -15,6 +15,20 @@
          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/all.status"
     ignore_errors: yes
 
+  - name: Get the status of the notebook resources
+    shell:
+      oc get notebooks
+         -n {{ rhods_notebook_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebooks.status"
+    ignore_errors: yes
+
+  - name: Get the definition of the notebook resources
+    shell:
+      oc get notebooks -oyaml
+         -n {{ rhods_notebook_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebooks.yaml"
+    ignore_errors: yes
+
   - name: Get the definition of the notebook Pods
     shell:
       oc get pods -oyaml
