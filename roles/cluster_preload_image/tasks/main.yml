@@ -46,12 +46,19 @@
     until: numberReady_cmd.stdout == desiredNumberScheduled_cmd.stdout
 
   always:
-  - name: Wait for the image to be preloaded
+  - name: Get the description of the preload Pods
+    shell:
+      oc describe pods -l name={{ cluster_preload_image_ds_name }}
+         -n {{ cluster_preload_image_ds_namespace }}
+         > "{{ artifact_extra_logs_dir }}/preload_pods.descr"
+
+  - name: Get the status of the preload Pods
     shell:
       oc get pods -l name={{ cluster_preload_image_ds_name }}
          -owide
          -n {{ cluster_preload_image_ds_namespace }}
-         > "{{ artifact_extra_logs_dir }}/pods.status"
+         > "{{ artifact_extra_logs_dir }}/preload_pods.status"
+
   - name: Delete the DaemonSet, it it exists
     command:
       oc delete -f "{{ artifact_extra_logs_dir }}/preload_daemonset.yaml"
