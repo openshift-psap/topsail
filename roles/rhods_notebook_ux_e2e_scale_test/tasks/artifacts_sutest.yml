@@ -8,6 +8,13 @@
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   block:
+  - name: Get the state of the all the resources
+    shell:
+      oc get all
+         -n {{ rhods_notebook_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/all.status"
+    ignore_errors: yes
+
   - name: Get the definition of the notebook Pods
     shell:
       oc get pods -oyaml
