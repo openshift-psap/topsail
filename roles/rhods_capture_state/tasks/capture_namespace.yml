@@ -4,7 +4,7 @@
     oc get all -n {{ namespace }}
        > {{ artifact_extra_logs_dir }}/{{ namespace }}_all.status
 
-- name: Get the Pod status of the pods
+- name: Get the status of the pods
   shell:
     oc get pods -n {{ namespace }}
        > {{ artifact_extra_logs_dir }}/{{ namespace }}_pods.status
@@ -39,3 +39,15 @@
     oc get pods -n {{ namespace }}
        -o=jsonpath='{range .items[*]}{"\n"}{.metadata.name}{":\t"}{range .spec.containers[*]}{.image}{" "}{end}{end}'
        > {{ artifact_extra_logs_dir }}/{{ namespace }}_images.list
+
+- name: Get the status of the Notebooks
+  shell:
+    oc get notebooks -n {{ namespace }}
+       > {{ artifact_extra_logs_dir }}/{{ namespace }}_notebooks.status
+  failed_when: false
+
+- name: Get the yaml of the Notebooks
+  shell:
+    oc get notebooks -n {{ namespace }} -oyaml
+       > {{ artifact_extra_logs_dir }}/{{ namespace }}_notebooks.yaml
+  failed_when: false
