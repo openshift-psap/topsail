@@ -282,7 +282,13 @@ run_prepare_local_cluster() {
 
 generate_plots() {
     mkdir "$ARTIFACT_DIR/plotting"
-    ARTIFACT_DIR="$ARTIFACT_DIR/plotting" ./testing/ods/generate_matrix-benchmarking.sh > "$ARTIFACT_DIR/plotting/build-log.txt" 2>&1
+    if ARTIFACT_DIR="$ARTIFACT_DIR/plotting" ./testing/ods/generate_matrix-benchmarking.sh > "$ARTIFACT_DIR/plotting/build-log.txt" 2>&1; then
+        echo "INFO: MatrixBenchmarkings plots successfully generated."
+    else
+        errcode=$?
+        echo "ERROR: MatrixBenchmarkings plots generated failed. See logs in \$ARTIFACT_DIR/plotting/build-log.txt"
+        return $errcode
+    fi
 }
 
 # ---
