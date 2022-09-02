@@ -241,10 +241,12 @@ def _parse_pod_times(filename, is_notebook=False):
             datetime.datetime.strptime(
                 pod["metadata"]["creationTimestamp"],
                 K8S_TIME_FMT)
-        pod_times[podname].start_time = \
-            datetime.datetime.strptime(
-                pod["status"]["startTime"],
-                K8S_TIME_FMT)
+        try:
+            pod_times[podname].start_time = \
+                datetime.datetime.strptime(
+                    pod["status"]["startTime"],
+                    K8S_TIME_FMT)
+        except KeyError: continue
 
         if pod["status"]["containerStatuses"][0]["state"].get("terminated"):
             pod_times[podname].container_started = \
