@@ -46,14 +46,15 @@ _get_data_from_pr() {
     matbench_url=$(get_anchor_value "$MATBENCH_URL_ANCHOR")
 
     if [[ -z "$matbench_url" ]]; then
-        base_url="https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/$PULL_NUMBER/pull-ci-openshift-psap-ci-artifacts-master-ods-jh-on-${cluster_type}"
+        TEST_BASE_NAME=nb-ux-on-
+        base_url="https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/$PULL_NUMBER/pull-ci-openshift-psap-ci-artifacts-master-ods-${TEST_BASE_NAME}${cluster_type}"
 
         build=$(get_anchor_value "$MATBENCH_BUILD_ANCHOR")
         if [[ -z "$build" ]]; then
             build=$(curl --silent -Ssf "${base_url}/latest-build.txt")
         fi
 
-        matbench_url="${base_url}/${build}/artifacts/jh-on-${cluster_type}/test/artifacts/"
+        matbench_url="${base_url}/${build}/artifacts/${TEST_BASE_NAME}${cluster_type}/test/artifacts/"
     fi
 
     echo "$matbench_url" > "${ARTIFACT_DIR}/source_url"
