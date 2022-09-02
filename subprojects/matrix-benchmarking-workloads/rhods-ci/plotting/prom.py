@@ -215,45 +215,6 @@ def get_driver_metrics(register=False):
     return all_metrics
 
 
-def _get_traefik_metrics(register=False):
-    def get_traefik_error_legend_name(metric_name, metric_metric):
-        group = "Entrypoint" if "entrypoint" in metric_name else "backend"
-        name = ", ".join([f"{k}={metric_metric[k]}" for k in ["instance", "code", "method"]])
-
-        return name, group
-
-    traefik_error_metrics = [
-        {"traefik_entrypoint_request_errors": 'traefik_entrypoint_requests_total{code!~"20.*",code!~"30.*"}'},
-        {"traefik_backend_request_errors": 'traefik_backend_requests_total{code!~"20.*",code!~"30.*"}'},
-    ]
-
-    backend_count_metrics = [
-        {"traefik_backend_server_up_sum": "sum(traefik_backend_server_up)"}
-    ]
-
-    if register:
-        plotting_prom.Plot(traefik_error_metrics,
-                           "RHODS: Traefik Errors",
-                           "Browser->Traefik (entrypoint) and Traefik->JupyterLab (backend)<br>Connection Errors",
-                           "Error count",
-                           get_metrics=get_metrics("rhods"),
-                           as_timestamp=True,
-                           get_legend_name=get_traefik_error_legend_name,
-                           )
-
-        plotting_prom.Plot(backend_count_metrics,
-                           "RHODS: Traefik Backends Connected",
-                           "Number of Traefik Backends Connected",
-                           "Server count",
-                           get_metrics=get_metrics("rhods"),
-                           as_timestamp=True,
-                           show_legend=False,
-                           )
-
-
-
-    return traefik_error_metrics + backend_count_metrics
-
 def _get_rhods_user_metrics(register=False):
     user_count_metrics = [
         "rhods_total_users", # Number of RHODS users
@@ -405,7 +366,6 @@ def _get_rhods_notebook_metrics(register=False):
 
 def get_rhods_metrics(register=False):
     return ([]
-            + _get_traefik_metrics(register)
             + _get_rhods_user_metrics(register)
             + _get_rhods_pod_resource_metrics(register)
             + _get_rhods_notebook_metrics(register)
