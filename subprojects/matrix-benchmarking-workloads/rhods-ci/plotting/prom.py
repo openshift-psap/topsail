@@ -187,7 +187,7 @@ def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
     container_labels = [
-        {"Notebooks": dict(namespace="rhods-notebooks", container="notebook")},
+        {"Notebooks": dict(namespace="rhods-notebooks", container="jupyter-nb-psapuser.*")},
         {"OpenLDAP": dict(namespace="openldap", pod="openldap.*")},
         {"RHODS Dashboard": dict(namespace="redhat-ods-applications", pod="rhods-dashboard.*", container="rhods-dashboard")},
         {"KF Notebook Controller": dict(namespace="redhat-ods-applications", pod="notebook-controller-deployment.*")},
@@ -330,31 +330,6 @@ def _get_rhods_notebook_metrics(register=False):
                            get_legend_name=get_reason_legend_name,
                            as_timestamp=True,
                            )
-        plotting_prom.Plot(notebook_servers_running_metrics,
-                           "RHODS: Notebooks Servers Running Count",
-                           None,
-                           "Servers connected",
-                           get_metrics=get_metrics("rhods"),
-                           as_timestamp=True,
-                           show_legend=False,
-                           )
-        plotting_prom.Plot(notebook_spawn_time_metrics,
-                           "RHODS: Time To Spawn the Notebook Servers",
-                           None,
-                           "time (in seconds)",
-                           get_metrics=get_metrics("rhods"),
-                           as_timestamp=True,
-                           get_legend_name=get_spawn_count_legend_name,
-                           ) # should be an histogram
-        plotting_prom.Plot(notebook_spawn_count_metrics,
-                           "RHODS: Number of Notebook Creation which Succeded/Failed",
-                           None,
-                           "notebook count",
-                           get_metrics=get_metrics("rhods"),
-                           as_timestamp=True,
-                           get_legend_name=get_spawn_count_legend_name,
-                           ) # should be an histogram
-
 
     return ([]
             + notebook_creation_delay_metrics
