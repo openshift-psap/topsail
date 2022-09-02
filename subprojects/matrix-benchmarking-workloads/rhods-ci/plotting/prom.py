@@ -309,7 +309,7 @@ def _get_rhods_notebook_metrics(register=False):
     ]
     notebook_spawn_count_metrics = [
         {"successful_notebook_spawn_count": 'sum by (status) (jupyterhub_server_spawn_duration_seconds_bucket{status="success"})'},
-        {"failed_notebook_spwan_count": 'sum by (status) (jupyterhub_server_spawn_duration_seconds_bucket{status!="success"})'},
+        {"failed_notebook_spawn_count": 'sum by (status) (jupyterhub_server_spawn_duration_seconds_bucket{status!="success"})'},
     ]
 
     def get_reason_legend_name(metric_name, metric_metric):
