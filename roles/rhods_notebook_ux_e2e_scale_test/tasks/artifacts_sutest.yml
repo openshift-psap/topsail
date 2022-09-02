@@ -8,6 +8,12 @@
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   block:
+  - name: Get the ODH Dashboard Config
+    shell:
+      oc get odhdashboardconfig/odh-dashboard-config -oyaml
+         -n redhat-ods-applications
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/odh-dashboard-config.yaml"
+
   - name: Get the state of the all the resources
     shell:
       oc get all
