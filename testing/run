@@ -39,6 +39,16 @@ prechecks() {
         echo "Using ARTIFACT_DIR=$ARTIFACT_DIR."
     fi
 
+    if [[ "${PULL_NUMBER:-}" ]]; then
+        DEST="${ARTIFACT_DIR}/variable_overrides"
+        "$THIS_DIR/pr_args.sh" "$DEST"
+        if [[ -f "$DEST" ]]; then
+            echo "Variables overriden from PR:"
+            cat "$DEST"
+            echo "---"
+        fi
+    fi
+
     if ! oc version; then
         if [[ -z "${KUBECONFIG}" ]]
         then
