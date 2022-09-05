@@ -187,10 +187,26 @@ prepare_ocp_sutest_deploy_rhods() {
         process_ctrl::retry 5 3m \
             ./run_toolbox.py rhods deploy_ods \
                 "$ODS_QE_CATALOG_IMAGE" "$ODS_QE_CATALOG_IMAGE_TAG"
+
+    if ! oc get group/dezdicated-admins >/dev/null 2>/dev/null; then
+        echo "Create the dedicated-admins group"
+        oc adm groups new dedicated-admins
+        oc adm policy add-cluster-role-to-group cluster-admin dedicated-admins
+    fi
 }
 
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
+    oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"enabled":true}}}' -n redhat-ods-applications
+    oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"pvcSize":"5Gi"}}}' -n redhat-ods-applications
+
+    oc get odhdashboardconfig/odh-dashboard-config -n redhat-ods-applications -ojson \
+        | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"1", "memory":"4Gi"}, "requests":{"cpu":"1", "memory":"4Gi"}}}]' \
+        | oc apply -f-
+    oc delete pod -l app.kubernetes.io/part-of=rhods-dashboard,app=rhods-dashboard  -n redhat-ods-applications
+
+    oc adm groups new dedicated-admins
+    oc adm policy add-cluster-role-to-group cluster-admin dedicated-admins
 
     ./run_toolbox.py rhods wait_ods
 
@@ -201,7 +217,7 @@ sutest_wait_rhods_launch() {
         NOTEBOOK_IMAGE="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$RHODS_NOTEBOOK_IMAGE_NAME:$rhods_notebook_image_tag"
         # preload the image only if auto-scaling is disabled
         ./run_toolbox.py cluster preload_image "$RHODS_NOTEBOOK_IMAGE_NAME" "$NOTEBOOK_IMAGE" \
-                         --namespace=rhods-notebooks
+                         --namespace=rhods-notebooks || true
     fi
 }
 
@@ -282,7 +298,13 @@ run_prepare_local_cluster() {
 
 generate_plots() {
     mkdir "$ARTIFACT_DIR/plotting"
-    ARTIFACT_DIR="$ARTIFACT_DIR/plotting" ./testing/ods/generate_matrix-benchmarking.sh > "$ARTIFACT_DIR/plotting/build-log.txt" 2>&1
+    if ARTIFACT_DIR="$ARTIFACT_DIR/plotting" ./testing/ods/generate_matrix-benchmarking.sh > "$ARTIFACT_DIR/plotting/build-log.txt" 2>&1; then
+        echo "INFO: MatrixBenchmarkings plots successfully generated."
+    else
+        errcode=$?
+        echo "ERROR: MatrixBenchmarkings plots generated failed. See logs in \$ARTIFACT_DIR/plotting/build-log.txt"
+        return $errcode
+    fi
 }
 
 # ---

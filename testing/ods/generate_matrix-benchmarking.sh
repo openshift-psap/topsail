@@ -46,14 +46,15 @@ _get_data_from_pr() {
     matbench_url=$(get_anchor_value "$MATBENCH_URL_ANCHOR")
 
     if [[ -z "$matbench_url" ]]; then
-        base_url="https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/$PULL_NUMBER/pull-ci-openshift-psap-ci-artifacts-master-ods-jh-on-${cluster_type}"
+        TEST_BASE_NAME=nb-ux-on-
+        base_url="https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/$PULL_NUMBER/pull-ci-openshift-psap-ci-artifacts-master-ods-${TEST_BASE_NAME}${cluster_type}"
 
         build=$(get_anchor_value "$MATBENCH_BUILD_ANCHOR")
         if [[ -z "$build" ]]; then
             build=$(curl --silent -Ssf "${base_url}/latest-build.txt")
         fi
 
-        matbench_url="${base_url}/${build}/artifacts/jh-on-${cluster_type}/test/artifacts/"
+        matbench_url="${base_url}/${build}/artifacts/${TEST_BASE_NAME}${cluster_type}/test/artifacts/"
     fi
 
     echo "$matbench_url" > "${ARTIFACT_DIR}/source_url"
@@ -139,7 +140,7 @@ EOF
     mv "$WORKLOAD_STORAGE_DIR"/report_* "$ARTIFACT_DIR" || true
     mv "$WORKLOAD_STORAGE_DIR"/reports_* "$ARTIFACT_DIR" || true
 
-    if grep -q "^ERROR" "$VISU_LOG_FILE"; then
+    if grep "^ERROR" "$VISU_LOG_FILE"; then
         echo "An error happened during the report generation, aborting."
         exit 1
     fi
@@ -168,7 +169,7 @@ elif [[ "$action" == "generate_plots" ]]; then
 
     generate_matbench::generate_plots
 
-elif [[ "$JOB_NAME_SAFE" == "nb-ux-on-"* ]]; then
+elif [[ "$JOB_NAME_SAFE" == "nb-ux-on-"* || "$JOB_NAME_SAFE" == get-cluster ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset

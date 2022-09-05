@@ -187,11 +187,11 @@ def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
     container_labels = [
-        {"Notebooks": dict(namespace="rhods-notebooks", container="notebook")},
+        {"Notebooks": dict(namespace="rhods-notebooks", container="jupyter-nb-psapuser.*")},
         {"OpenLDAP": dict(namespace="openldap", pod="openldap.*")},
         {"RHODS Dashboard": dict(namespace="redhat-ods-applications", pod="rhods-dashboard.*", container="rhods-dashboard")},
-        {"RHODS Traefik Proxy": dict(namespace="redhat-ods-applications", pod="traefik-proxy.*", container="traefik-proxy")},
-        {"RHODS Jupyterhub": dict(namespace="redhat-ods-applications", pod="jupyterhub-1-.*", container="jupyterhub")},
+        {"KF Notebook Controller": dict(namespace="redhat-ods-applications", pod="notebook-controller-deployment.*")},
+        {"ODH Notebook Controller": dict(namespace="redhat-ods-applications", pod="odh-notebook-controller-manager.*")},
         {"OpenShift Authentication": dict(namespace="openshift-authentication", pod="oauth-openshift.*")},
     ]
     all_metrics = []
@@ -214,45 +214,6 @@ def get_driver_metrics(register=False):
 
     return all_metrics
 
-
-def _get_traefik_metrics(register=False):
-    def get_traefik_error_legend_name(metric_name, metric_metric):
-        group = "Entrypoint" if "entrypoint" in metric_name else "backend"
-        name = ", ".join([f"{k}={metric_metric[k]}" for k in ["instance", "code", "method"]])
-
-        return name, group
-
-    traefik_error_metrics = [
-        {"traefik_entrypoint_request_errors": 'traefik_entrypoint_requests_total{code!~"20.*",code!~"30.*"}'},
-        {"traefik_backend_request_errors": 'traefik_backend_requests_total{code!~"20.*",code!~"30.*"}'},
-    ]
-
-    backend_count_metrics = [
-        {"traefik_backend_server_up_sum": "sum(traefik_backend_server_up)"}
-    ]
-
-    if register:
-        plotting_prom.Plot(traefik_error_metrics,
-                           "RHODS: Traefik Errors",
-                           "Browser->Traefik (entrypoint) and Traefik->JupyterLab (backend)<br>Connection Errors",
-                           "Error count",
-                           get_metrics=get_metrics("rhods"),
-                           as_timestamp=True,
-                           get_legend_name=get_traefik_error_legend_name,
-                           )
-
-        plotting_prom.Plot(backend_count_metrics,
-                           "RHODS: Traefik Backends Connected",
-                           "Number of Traefik Backends Connected",
-                           "Server count",
-                           get_metrics=get_metrics("rhods"),
-                           as_timestamp=True,
-                           show_legend=False,
-                           )
-
-
-
-    return traefik_error_metrics + backend_count_metrics
 
 def _get_rhods_user_metrics(register=False):
     user_count_metrics = [
@@ -348,7 +309,7 @@ def _get_rhods_notebook_metrics(register=False):
     ]
     notebook_spawn_count_metrics = [
         {"successful_notebook_spawn_count": 'sum by (status) (jupyterhub_server_spawn_duration_seconds_bucket{status="success"})'},
-        {"failed_notebook_spwan_count": 'sum by (status) (jupyterhub_server_spawn_duration_seconds_bucket{status!="success"})'},
+        {"failed_notebook_spawn_count": 'sum by (status) (jupyterhub_server_spawn_duration_seconds_bucket{status!="success"})'},
     ]
 
     def get_reason_legend_name(metric_name, metric_metric):
@@ -369,31 +330,6 @@ def _get_rhods_notebook_metrics(register=False):
                            get_legend_name=get_reason_legend_name,
                            as_timestamp=True,
                            )
-        plotting_prom.Plot(notebook_servers_running_metrics,
-                           "RHODS: Notebooks Servers Running Count",
-                           None,
-                           "Servers connected",
-                           get_metrics=get_metrics("rhods"),
-                           as_timestamp=True,
-                           show_legend=False,
-                           )
-        plotting_prom.Plot(notebook_spawn_time_metrics,
-                           "RHODS: Time To Spawn the Notebook Servers",
-                           None,
-                           "time (in seconds)",
-                           get_metrics=get_metrics("rhods"),
-                           as_timestamp=True,
-                           get_legend_name=get_spawn_count_legend_name,
-                           ) # should be an histogram
-        plotting_prom.Plot(notebook_spawn_count_metrics,
-                           "RHODS: Number of Notebook Creation which Succeded/Failed",
-                           None,
-                           "notebook count",
-                           get_metrics=get_metrics("rhods"),
-                           as_timestamp=True,
-                           get_legend_name=get_spawn_count_legend_name,
-                           ) # should be an histogram
-
 
     return ([]
             + notebook_creation_delay_metrics
@@ -405,7 +341,6 @@ def _get_rhods_notebook_metrics(register=False):
 
 def get_rhods_metrics(register=False):
     return ([]
-            + _get_traefik_metrics(register)
             + _get_rhods_user_metrics(register)
             + _get_rhods_pod_resource_metrics(register)
             + _get_rhods_notebook_metrics(register)

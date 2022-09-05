@@ -28,7 +28,7 @@ RHODS_NOTEBOOK_IMAGE_NAME=s2i-generic-data-science-notebook
 
 ODS_CI_TEST_NAMESPACE=loadtest
 ODS_CI_REPO="https://github.com/openshift-psap/ods-ci.git"
-ODS_CI_REF="jh-at-scale.v220822"
+ODS_CI_REF="jh-at-scale.v220901"
 
 ODS_CI_IMAGESTREAM="ods-ci"
 ODS_CI_TAG="latest"

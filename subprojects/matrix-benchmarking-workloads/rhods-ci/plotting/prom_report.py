@@ -42,7 +42,7 @@ class RhodsCpuMemoryReport():
         header += html.Br()
         header += html.Br()
 
-        for what in "Notebooks", "RHODS Dashboard", "RHODS Jupyterhub", "RHODS Traefik Proxy":
+        for what in "Notebooks", "RHODS Dashboard", "KF Notebook Controller", "ODH Notebook Controller":
             add_pod_cpu_mem_usage(header, what, args)
 
         return None, header
@@ -113,16 +113,11 @@ class RhodsReport():
         header += [html.P("These plots show an overview the RHODS metrics.")]
 
         plots = [
-            ("RHODS: Traefik Errors", ["This plot show the HTTP errors measured by Traefik-Proxy, between the Traefik and the JupyterLab server (", html.I("backend"), " group), and between the Browser and Traefik (", html.I("entrypoint"), " group), for the different HTTP methods.", html.Br(), "If there is no ", html.I("backend"), " error, there is an issue with the Traefik-Proxy configuration (known issue)."]),
-            ("RHODS: Traefik Backends Connected", "This plot shows the number of backends configured in Traefik-Proxy."),
             ("RHODS: User Count and Joining Rate", "This plot shows the number of RHODS users, and the rate of new user creations, per minute."),
-            ("RHODS: Notebooks Servers Running Count", "This plot shows the number of JupyterLab servers running, as exposed by JupyterHub."),
             ("RHODS: Pods CPU Usage", "This plot shows the CPU usage of the RHODS Pods, as exposed in RHODS prometheus. (May be incomplete.)"),
             ("RHODS: Pods Memory Usage", "This plot shows the memory usage (virtual and resident memory), as exposed in RHODS prometheus."),
             ("RHODS: Notebooks PVC Disk Usage", "This plot shows the disk usage of the user's PVCs, grouped by nodes."),
             ("RHODS: Reasons Why Notebooks Are Waiting", "This plot shows the number of Notebook Pods waiting for execution."),
-            ("RHODS: Time To Spawn the Notebook Servers", ["This plot shows the time the Notebook Pods took to launch. ", html.Br(), "Note that this is ", html.I("less than"), " grouping, so the highest categories include all the categories below."]),
-            ("RHODS: Number of Notebook Creation which Succeded/Failed", "This plot shows the number of Pods which succeeded or failed to spawn."),
         ]
 
         for (plot_name, description) in plots:

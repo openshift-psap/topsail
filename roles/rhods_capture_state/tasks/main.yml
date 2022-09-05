@@ -5,6 +5,7 @@
   - redhat-ods-monitoring
   - redhat-ods-applications
   - redhat-ods-operator
+  - rhods-notebooks
   loop_control:
     loop_var: namespace
 

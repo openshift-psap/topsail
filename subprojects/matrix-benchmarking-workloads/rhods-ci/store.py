@@ -26,6 +26,7 @@ ROBOT_TIME_FMT = "%Y%m%d %H:%M:%S.%f"
 JUPYTER_USER_RENAME_PREFIX = "jupyterhub-nb-user"
 
 TEST_USERNAME_PREFIX = "psapuser"
+JUPYTER_USER_IDX_REGEX = r'[:letter:]*(\d+)-0$'
 
 def _rewrite_settings(settings_dict):
     if "user-count" in settings_dict:
@@ -53,7 +54,7 @@ def _parse_env(filename):
             # not running in the CI
 
             from_env.link_flag = "running-locally"
-        elif job_name.startswith("nb-ux-on-"):
+        elif job_name.startswith("nb-ux-on-") or job_name == "get-cluster":
             # running right after the test
 
             from_env.link_flag = "running-with-the-test"
@@ -172,7 +173,7 @@ def _parse_pod_event_times(filename, namespace=None, hostnames=None, is_notebook
         if is_notebook:
             if TEST_USERNAME_PREFIX not in podname: continue
 
-            user_idx = int(re.findall(r'[:letter:]*(\d+)$', podname)[0])
+            user_idx = int(re.findall(JUPYTER_USER_IDX_REGEX, podname)[0])
             podname = f"{JUPYTER_USER_RENAME_PREFIX}{user_idx}"
 
         evt_name = MAPPING_REASON_NAME.get(reason)
@@ -232,7 +233,7 @@ def _parse_pod_times(filename, is_notebook=False):
         if is_notebook:
             if TEST_USERNAME_PREFIX not in podname: continue
 
-            user_idx = int(re.findall(r'[:letter:]*(\d+)$', podname)[0])
+            user_idx = int(re.findall(JUPYTER_USER_IDX_REGEX, podname)[0])
             podname = f"{JUPYTER_USER_RENAME_PREFIX}{user_idx}"
 
         pod_times[podname] = types.SimpleNamespace()
@@ -241,10 +242,12 @@ def _parse_pod_times(filename, is_notebook=False):
             datetime.datetime.strptime(
                 pod["metadata"]["creationTimestamp"],
                 K8S_TIME_FMT)
-        pod_times[podname].start_time = \
-            datetime.datetime.strptime(
-                pod["status"]["startTime"],
-                K8S_TIME_FMT)
+        try:
+            pod_times[podname].start_time = \
+                datetime.datetime.strptime(
+                    pod["status"]["startTime"],
+                    K8S_TIME_FMT)
+        except KeyError: continue
 
         if pod["status"]["containerStatuses"][0]["state"].get("terminated"):
             pod_times[podname].container_started = \

@@ -13,7 +13,7 @@ Suite Teardown  Tear Down
 *** Variables ***
 
 ${NOTEBOOK_IMAGE_NAME}         %{NOTEBOOK_IMAGE_NAME}
-${NOTEBOOK_IMAGE_SIZE}         Default
+${NOTEBOOK_IMAGE_SIZE}         default
 ${NOTEBOOK_SPAWN_WAIT_TIME}    15 minutes
 ${NOTEBOOK_SPAWN_RETRIES}      45
 ${NOTEBOOK_SPAWN_RETRY_DELAY}  20 seconds
@@ -33,6 +33,7 @@ Setup
   Open Browser  ${ODH_DASHBOARD_URL}  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}  desired_capabilities=${capabilities}
 
 Tear Down
+  Capture Page Screenshot
   ${browser log entries}=    Get Browser Console Log Entries
   Log    ${browser log entries}
   ${browser log entries str}=   Convert To String  ${browser log entries}
@@ -53,24 +54,34 @@ Go to RHODS Dashboard
   Wait for RHODS Dashboard to Load
   Capture Page Screenshot
 
-
-Go to JupyterHub
+Go to Jupyter
   [Tags]  Authenticate
 
-  Launch JupyterHub From RHODS Dashboard Link
-  Login To Jupyterhub  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
-  ${authorization_required} =  Is Service Account Authorization Required
-  Run Keyword If  ${authorization_required}  Authorize jupyterhub service account
-  Wait Until Page Contains Element    xpath://span[@id='jupyterhub-logo']
+  Launch Jupyter From RHODS Dashboard Link
+  Wait Until Page Contains  Start a notebook server
+  Wait Until Page Contains  Start server
   Capture Page Screenshot
 
 
 Spawn a Notebook
   [Tags]  Spawn  Notebook
 
-  Fix Spawner Status
-  Spawn Notebook With Arguments  image=${NOTEBOOK_IMAGE_NAME}  size=${NOTEBOOK_IMAGE_SIZE}  spawner_timeout=${NOTEBOOK_SPAWN_WAIT_TIME}  retries=${NOTEBOOK_SPAWN_RETRIES}  retries_delay=${NOTEBOOK_SPAWN_RETRY_DELAY}
+  Select Notebook Image  ${NOTEBOOK_IMAGE_NAME}
+  Select Container Size  ${NOTEBOOK_IMAGE_SIZE}
+
   Capture Page Screenshot
+
+  Spawn Notebook
+  Capture Page Screenshot
+
+
+Go to JupyterLab Page
+  [Tags]  Spawn  Notebook
+
+  Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
+  Wait Until Page Contains Element  xpath://img[@class="jp-Launcher-kernelIcon"]  timeout=60s
+  Capture Page Screenshot
+
 
 Load the Notebook
   [Tags]  Notebook
@@ -114,3 +125,14 @@ Get Browser Console Log Entries
     ${webdriver}=    Set Variable     ${selenium._drivers.active_drivers}[0]
     ${log entries}=    Evaluate    $webdriver.get_log('browser')
     [Return]    ${log entries}
+
+Login To JupyterLab
+   [Arguments]  ${ocp_user_name}  ${ocp_user_pw}  ${ocp_user_auth_type}
+
+   ${oauth_prompt_visible} =  Is OpenShift OAuth Login Prompt Visible
+   Run Keyword If  ${oauth_prompt_visible}  Click Button  Log in with OpenShift
+   ${login-required} =  Is OpenShift Login Visible
+   Run Keyword If  ${login-required}  Login To Openshift  ${ocp_user_name}  ${ocp_user_pw}  ${ocp_user_auth_type}
+   ${authorize_service_account} =  Is jupyter-nb-${TEST_USER.USERNAME} Service Account Authorization Required
+   # correct name not required/not working, not sure why
+   Run Keyword If  ${authorize_service_account}  Authorize rhods-dashboard service account

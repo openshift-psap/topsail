@@ -38,10 +38,6 @@
   - name: Test the connectivity of the SUT cluster
     command: oc whoami --show-console
 
-  - name: Get JupyterHub hostname (SUT cluster)
-    command: oc get route/jupyterhub -n redhat-ods-applications -ojsonpath={.spec.host}
-    register: jupyterhub_hostname_cmd
-
   - name: Get RHODS dashboard address (SUT cluster)
     command: oc get route/rhods-dashboard -n redhat-ods-applications -ojsonpath={.spec.host}
     register: rhods_dashboard_hostname_cmd
@@ -246,6 +242,17 @@
 
 - name: Capture the sutest cluster artifacts
   include_tasks: artifacts_sutest.yml
+
+- name: Cleanup the notebooks Pods and PVCs
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  shell:
+    set -o pipefail;
+    oc get notebooks -oname -n {{ rhods_notebook_namespace }} |
+       grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }} |
+       xargs --no-run-if-empty
+          oc delete -n {{ rhods_notebook_namespace }}
+  ignore_errors: yes
 
 - name: Cleanup the notebooks Pods and PVCs
   environment:
