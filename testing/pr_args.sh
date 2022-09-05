@@ -38,7 +38,7 @@ if [[ "$pos_args" ]]; then
 fi
 
 while read line; do
-    [[ $line != "/env "* ]] && continue
+    [[ $line != "/var "* ]] && continue
     [[ $line != *=* ]] && continue
 
     key=$(echo "$line" | cut -d" " -f2- | cut -d= -f1)
