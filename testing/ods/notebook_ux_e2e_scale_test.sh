@@ -197,16 +197,13 @@ prepare_ocp_sutest_deploy_rhods() {
 
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
-    oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"enabled":true}}}' -n redhat-ods-applications
+
     oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"pvcSize":"5Gi"}}}' -n redhat-ods-applications
 
     oc get odhdashboardconfig/odh-dashboard-config -n redhat-ods-applications -ojson \
         | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"1", "memory":"4Gi"}, "requests":{"cpu":"1", "memory":"4Gi"}}}]' \
         | oc apply -f-
     oc delete pod -l app.kubernetes.io/part-of=rhods-dashboard,app=rhods-dashboard  -n redhat-ods-applications
-
-    oc adm groups new dedicated-admins
-    oc adm policy add-cluster-role-to-group cluster-admin dedicated-admins
 
     ./run_toolbox.py rhods wait_ods
 
