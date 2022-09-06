@@ -68,7 +68,7 @@ prepare_sutest_cluster() {
     ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count"
 }
 
-prepare_sutest_cluster() {
+unprepare_sutest_cluster() {
     cluster_role=sutest
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
