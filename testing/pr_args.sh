@@ -1,4 +1,4 @@
-#! /bin/bash -xe
+#! /bin/bash
 
 set -o errexit
 set -o pipefail
