@@ -260,7 +260,7 @@ def _parse_pod_times(filename, is_notebook=False):
                     pod["status"]["containerStatuses"][0]["state"]["terminated"]["finishedAt"],
                     K8S_TIME_FMT)
 
-        elif pod["status"]["containerStatuses"][0]["state"]["running"]:
+        elif pod["status"]["containerStatuses"][0]["state"].get("running"):
             pod_times[podname].container_running_since = \
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["running"]["startedAt"],
@@ -268,7 +268,6 @@ def _parse_pod_times(filename, is_notebook=False):
 
         else:
             print("Unknown containerStatuses ...")
-            import pdb;pdb.set_trace()
             pass
 
     return pod_times

@@ -9,6 +9,12 @@ MATBENCH_RESULTS_DIR="/tmp/matrix_benchmarking_results"
 WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/rhods-ci"
 WORKLOAD_RUN_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking/workloads/rhods-ci"
 
+MATBENCH_DATA_URL=""
+
+if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; then
+    source "${ARTIFACT_DIR}/variable_overrides"
+fi
+
 generate_matbench::prepare_matrix_benchmarking() {
     rm -f "$WORKLOAD_RUN_DIR"
     ln -s "$WORKLOAD_STORAGE_DIR" "$WORKLOAD_RUN_DIR"
@@ -28,31 +34,13 @@ _get_data_from_pr() {
         exit 1
     fi
 
-    MATBENCH_URL_ANCHOR="matbench-data-url: "
-    MATBENCH_BUILD_ANCHOR="matbench-data-build: "
-
-    pr_body="$(curl -sSf "https://api.github.com/repos/openshift-psap/ci-artifacts/pulls/$PULL_NUMBER" | jq -r .body | tr -d '\r')"
-
-    get_anchor_value() {
-        anchor=$1
-        shift || true
-        default=${1:-}
-
-        value=$(echo "$pr_body" | { grep "$anchor" || true;} | cut -b$(echo "$anchor" | wc -c)-)
-
-        [[ "$value" ]] && echo "$value" || echo "$default"
-    }
-
-    matbench_url=$(get_anchor_value "$MATBENCH_URL_ANCHOR")
+    matbench_url=$MATBENCH_DATA_URL
 
     if [[ -z "$matbench_url" ]]; then
         TEST_BASE_NAME=nb-ux-on-
         base_url="https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/$PULL_NUMBER/pull-ci-openshift-psap-ci-artifacts-master-ods-${TEST_BASE_NAME}${cluster_type}"
 
-        build=$(get_anchor_value "$MATBENCH_BUILD_ANCHOR")
-        if [[ -z "$build" ]]; then
-            build=$(curl --silent -Ssf "${base_url}/latest-build.txt")
-        fi
+        build=$(curl --silent -Ssf "${base_url}/latest-build.txt")
 
         matbench_url="${base_url}/${build}/artifacts/${TEST_BASE_NAME}${cluster_type}/test/artifacts/"
     fi
