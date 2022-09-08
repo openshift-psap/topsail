@@ -35,7 +35,7 @@ create_cluster() {
 
     ocm_login
 
-    compute_nodes_type=$(get_compute_node_type "$cluster_role")
+    compute_nodes_type=$(get_compute_node_type "$cluster_role" osd)
     compute_nodes_count=$(get_compute_node_count "$cluster_role" osd "$compute_nodes_type")
 
     echo "$cluster_name" > "$ARTIFACT_DIR/${cluster_role}_osd_cluster.name"
