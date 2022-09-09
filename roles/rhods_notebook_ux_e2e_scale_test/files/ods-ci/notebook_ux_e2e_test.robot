@@ -71,7 +71,7 @@ Spawn a Notebook
 
   Capture Page Screenshot
 
-  Spawn Notebook
+  Custom Spawn Notebook
   Capture Page Screenshot
 
 
@@ -140,3 +140,12 @@ Login To JupyterLab
 Wait for Dashboard to Load
 
     Wait Until Page Contains  Launch your enabled applications
+
+# wait only 35s
+Custom Spawn Notebook
+    [Documentation]  Start the notebook pod spawn and wait ${spawner_timeout} seconds (DEFAULT: 600s)
+    [Arguments]  ${spawner_timeout}=600 seconds
+    Click Button  Start server
+    Wait Until Page Contains  Starting server  35s
+    Wait Until Element Is Visible  xpath://div[@role="progressbar"]
+    Wait Until Page Does Not Contain Element  xpath://div[@role="progressbar"]  ${spawner_timeout}
