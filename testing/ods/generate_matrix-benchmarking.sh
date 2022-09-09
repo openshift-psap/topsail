@@ -2,12 +2,13 @@
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+MATBENCH_WORKLOAD_NAME=rhods-ci
 MATBENCH_EXPE_NAME=rhods-ci
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 MATBENCH_RESULTS_DIR="/tmp/matrix_benchmarking_results"
 
-WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/rhods-ci"
-WORKLOAD_RUN_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking/workloads/rhods-ci"
+WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD_NAME"
+WORKLOAD_RUN_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking/workloads/$MATBENCH_WORKLOAD_NAME"
 
 MATBENCH_DATA_URL=""
 
@@ -70,11 +71,6 @@ _download_data_from_url() {
 
 _prepare_data_from_artifacts_dir() {
     artifact_dir=$1
-
-    if ! ls "$artifact_dir"/*__driver_rhods__notebook_ux_e2e_scale_test -d >/dev/null 2>&1; then
-        echo "FATAL: No result available, aborting."
-        exit 1
-    fi
 
     rm -f "$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
     mkdir -p "$MATBENCH_RESULTS_DIR"

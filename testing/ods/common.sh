@@ -63,9 +63,9 @@ OSD_REGION=us-west-2
 
 OCP_VERSION=4.10.15
 OCP_REGION=us-west-2
-OCP_MASTER_MACHINE_TYPE=m5.xlarge
-OCP_WORKER_MACHINE_TYPE=m5.xlarge
-OCP_WORKER_NODES_COUNT=5
+OCP_MASTER_MACHINE_TYPE=m6a.xlarge
+OCP_WORKER_MACHINE_TYPE=m6a.xlarge
+OCP_WORKER_NODES_COUNT=2
 
 OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
 
@@ -74,8 +74,9 @@ ENABLE_AUTOSCALER=
 
 # Shouldn't be the same than OCP worker nodes.
 
-SUTEST_COMPUTE_MACHINE_TYPE=m5.2xlarge
-DRIVER_COMPUTE_MACHINE_TYPE=m5.2xlarge
+DRIVER_COMPUTE_MACHINE_TYPE=m5a.2xlarge
+OSD_SUTEST_COMPUTE_MACHINE_TYPE=m5.2xlarge
+OCP_SUTEST_COMPUTE_MACHINE_TYPE=m5a.2xlarge
 
 SUTEST_FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
 DRIVER_FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
@@ -182,9 +183,15 @@ get_compute_node_count() {
 
 get_compute_node_type() {
     cluster_role=$1
+    shift
+    cluster_type=$1
 
     if [[ "$cluster_role" == "sutest" ]]; then
-        echo "$SUTEST_COMPUTE_MACHINE_TYPE"
+        if [[ "$cluster_type" == "ocp" ]]; then
+            echo "$OCP_SUTEST_COMPUTE_MACHINE_TYPE"
+        else
+            echo "$OSD_SUTEST_COMPUTE_MACHINE_TYPE"
+        fi
     else
         echo "$DRIVER_COMPUTE_MACHINE_TYPE"
     fi
