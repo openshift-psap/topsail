@@ -3,7 +3,6 @@ Resource            tests/Resources/ODS.robot
 Resource            tests/Resources/Common.robot
 Resource            tests/Resources/Page/ODH/JupyterHub/JupyterHubSpawner.robot
 Resource            tests/Resources/Page/ODH/JupyterHub/JupyterLabLauncher.robot
-Library             DebugLibrary
 Library             JupyterLibrary
 Library             libs/Helpers.py
 Library             SeleniumLibrary
