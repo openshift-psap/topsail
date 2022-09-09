@@ -51,7 +51,7 @@ Go to RHODS Dashboard
   [Tags]  Authenticate
 
   Login To RHODS Dashboard  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
-  Wait for RHODS Dashboard to Load
+  Wait for Dashboard to Load
   Capture Page Screenshot
 
 Go to Jupyter
@@ -136,3 +136,7 @@ Login To JupyterLab
    ${authorize_service_account} =  Is jupyter-nb-${TEST_USER.USERNAME} Service Account Authorization Required
    # correct name not required/not working, not sure why
    Run Keyword If  ${authorize_service_account}  Authorize rhods-dashboard service account
+
+Wait for Dashboard to Load
+
+    Wait Until Page Contains  Launch your enabled applications
