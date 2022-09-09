@@ -77,6 +77,7 @@ class RHODS:
 
         Args:
           idp_name: Name of the identity provider to use.
+          username_prefix: Prefix of the usernames to use to run the scale test.
           user_count: Number of users to run in parallel
           secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'deploy_ldap' command)
           notebook_url: URL from which the notebook will be downloaded.
