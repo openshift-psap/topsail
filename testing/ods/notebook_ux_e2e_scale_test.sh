@@ -195,17 +195,56 @@ prepare_ocp_sutest_deploy_rhods() {
     fi
 }
 
+sutest_customize_rhods_before_wait() {
+    if [[ "$CUSTOMIZE_RHODS_REMOVE_GPU_IMAGES" == 1 ]]; then
+        # Fill the imagestreams with dummy (ubi) images
+        for image in minimal-gpu nvidia-cuda-11.4.2 pytorch tensorflow; do
+            oc tag registry.access.redhat.com/ubi8/ubi "$image:ubi" -n redhat-ods-applications
+        done
+        # Delete the RHODS builds
+        oc delete builds --all  -n redhat-ods-applications
+    fi
+}
+
+sutest_customize_rhods_after_wait() {
+
+    if [[ "$CUSTOMIZE_RHODS_PVC_SIZE" ]]; then
+        oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"pvcSize":"'$CUSTOMIZE_RHODS_PVC_SIZE'"}}}' -n redhat-ods-applications
+    fi
+
+    if [[ "$CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE" == 1 ]]; then
+        # must be consistent with testing/ods/sizing/notebook_sizes
+        ODS_NOTEBOOK_CPU_SIZE=1
+        ODS_NOTEBOOK_MEMORY_SIZE=4Gi
+
+        oc get odhdashboardconfig/odh-dashboard-config -n redhat-ods-applications -ojson \
+            | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE'"}, "requests":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE'"}}}]' \
+            | oc apply -f-
+    fi
+
+    if [[ "$CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE" ]]; then
+        oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator
+        oc scale deploy/rhods-dashboard --replicas=0 -n redhat-ods-applications
+        oc set image deploy/rhods-dashboard "rhods-dashboard=$CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE" -n redhat-ods-applications
+        oc scale deploy/rhods-dashboard --replicas=2 -n redhat-ods-applications
+    fi
+}
+
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
 
-    oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"pvcSize":"5Gi"}}}' -n redhat-ods-applications
-
-    oc get odhdashboardconfig/odh-dashboard-config -n redhat-ods-applications -ojson \
-        | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"1", "memory":"4Gi"}, "requests":{"cpu":"1", "memory":"4Gi"}}}]' \
-        | oc apply -f-
-    oc delete pod -l app.kubernetes.io/part-of=rhods-dashboard,app=rhods-dashboard  -n redhat-ods-applications
+    if [[ "$CUSTOMIZE_RHODS" == 1 ]]; then
+        sutest_customize_rhods_before_wait
+    fi
 
     ./run_toolbox.py rhods wait_ods
+
+    if [[ "$CUSTOMIZE_RHODS" == 1 ]]; then
+        sutest_customize_rhods_after_wait
+
+        ./run_toolbox.py rhods wait_ods
+    fi
+
 
     if [[ -z "$ENABLE_AUTOSCALER" ]]; then
         rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
