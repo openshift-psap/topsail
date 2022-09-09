@@ -318,7 +318,7 @@ def _extract_metrics(dirname):
         try:
             prom_tarball = list(dirname.glob(tarball_glob))[0]
         except IndexError:
-            logging.warning(f"No {tarball_glob} in '{dirname.parent}'.")
+            logging.warning(f"No {tarball_glob} in '{dirname}'.")
             continue
 
         results_metrics[name] = store_prom_db.extract_metrics(prom_tarball, metrics, dirname)
