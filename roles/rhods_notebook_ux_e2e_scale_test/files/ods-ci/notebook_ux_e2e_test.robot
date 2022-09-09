@@ -12,6 +12,7 @@ Suite Teardown  Tear Down
 *** Variables ***
 
 ${NOTEBOOK_IMAGE_NAME}         %{NOTEBOOK_IMAGE_NAME}
+# needs to match ODS_NOTEBOOK_SIZE in testing/ods/notebook_ux_e2e_scale_test.sh
 ${NOTEBOOK_IMAGE_SIZE}         default
 ${NOTEBOOK_SPAWN_WAIT_TIME}    15 minutes
 ${NOTEBOOK_SPAWN_RETRIES}      45
