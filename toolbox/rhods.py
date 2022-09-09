@@ -120,6 +120,21 @@ class RHODS:
         return RunAnsibleRole("rhods_notebook_ux_e2e_scale_test", opts)
 
     @staticmethod
+    def cleanup_notebooks(username_prefix):
+        """
+        Clean up the resources created along with the notebooks, during the scale tests.
+
+        args:
+          username_prefix: Prefix of the usernames who created the resources.
+        """
+
+        opts = {
+            "rhods_cleanup_notebooks_username_prefix": username_prefix,
+        }
+
+        return RunAnsibleRole("rhods_cleanup_notebooks", opts)
+
+    @staticmethod
     def undeploy_ods(namespace="redhat-ods-operator", wait: bool = True):
         """
         Undeploy ODS operator

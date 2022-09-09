@@ -312,15 +312,19 @@ sutest_cleanup() {
 sutest_cleanup_ldap() {
     switch_sutest_cluster
 
-    osd_cluster_name=$(get_osd_cluster_name "sutest")
+    if ! ./run_toolbox.py rhods cleanup_notebooks "$ODS_CI_USER_PREFIX" > /dev/null; then
+        echo "WARNING: rhods notebook cleanup failed :("
+    fi
 
     if oc get cm/keep-cluster -n default 2>/dev/null; then
         echo "INFO: cm/keep-cluster found, not undeploying LDAP."
-    else
-        ./run_toolbox.py cluster undeploy_ldap \
-                         "$LDAP_IDP_NAME" \
-                         --use_ocm="$osd_cluster_name" > /dev/null
+        return
     fi
+
+    osd_cluster_name=$(get_osd_cluster_name "sutest")
+    ./run_toolbox.py cluster undeploy_ldap \
+                     "$LDAP_IDP_NAME" \
+                     --use_ocm="$osd_cluster_name" > /dev/null
 }
 
 run_prepare_local_cluster() {
