@@ -225,7 +225,8 @@ sutest_customize_rhods_after_wait() {
     if [[ "$CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE" ]]; then
         oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator
         oc scale deploy/rhods-dashboard --replicas=0 -n redhat-ods-applications
-        oc set image deploy/rhods-dashboard "rhods-dashboard=$CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE" -n redhat-ods-applications
+        oc set image deploy/rhods-dashboard -n redhat-ods-applications "rhods-dashboard=$CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE"
+        oc set probe deploy/rhods-dashboard -n redhat-ods-applications --remove --readiness --liveness
         oc scale deploy/rhods-dashboard --replicas=2 -n redhat-ods-applications
     fi
 }
