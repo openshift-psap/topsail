@@ -373,12 +373,25 @@ case ${action} in
 
         prepare_ci
         prepare
-        run_test
-        # quick access to these files
-        cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" || true
 
-        generate_plots
-        exit 0
+        failed=0
+        BASE_ARTIFACT_DIR=$ARTIFACT_DIR
+        for idx in $(seq $NOTEBOOK_TEST_RUNS); do
+            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/test_run_$idx"
+            mkdir -p "$ARTIFACT_DIR"
+            pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
+            [[ -f "$pr_file" ]] && cp "$pr_file" "$ARTIFACT_DIR"
+
+            run_test && failed=0 || failed=1
+            # quick access to these files
+            cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" || true
+            generate_plots
+            if [[ "$failed" == 1 ]]; then
+                break
+            fi
+        done
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR"
+        exit $failed
         ;;
     "prepare")
         prepare

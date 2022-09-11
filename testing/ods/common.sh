@@ -75,6 +75,9 @@ ODS_NOTEBOOK_NAME=simple-notebook.ipynb
 ODS_NOTEBOOK_DIR=${THIS_DIR}/notebooks
 ODS_EXCLUDE_TAGS=${ODS_EXCLUDE_TAGS:-None} # tags to exclude when running the robot test case
 
+# number of test runs to perform
+NOTEBOOK_TEST_RUNS=1
+
 if [[ "$OSD_USE_ODS_CATALOG" == "0" ]]; then
     # deploying from the addon. Get the email address from the secret vault.
     ODS_ADDON_EMAIL_ADDRESS=$(cat "$PSAP_ODS_SECRET_PATH/addon.email")
