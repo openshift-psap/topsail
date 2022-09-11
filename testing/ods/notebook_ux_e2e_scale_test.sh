@@ -254,7 +254,7 @@ sutest_wait_rhods_launch() {
         NOTEBOOK_IMAGE="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$RHODS_NOTEBOOK_IMAGE_NAME:$rhods_notebook_image_tag"
         # preload the image only if auto-scaling is disabled
         ./run_toolbox.py cluster preload_image "$RHODS_NOTEBOOK_IMAGE_NAME" "$NOTEBOOK_IMAGE" \
-                         --namespace=rhods-notebooks || true
+                         --namespace=redhat-ods-applications
     fi
 }
 
