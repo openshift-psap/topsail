@@ -49,11 +49,15 @@ Open the Browser
   [Tags]  Setup
   Setup
 
-
-Go to RHODS Dashboard
+Login to RHODS Dashboard
   [Tags]  Authenticate
 
   Login To RHODS Dashboard  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
+
+
+Go to RHODS Dashboard
+  [Tags]  Dashboard
+
   IF  '${DASHBOARD_NAME}' == 'RHODS'
     Wait for RHODS Dashboard to Load  timeout=60 seconds
   ELSE
@@ -63,7 +67,7 @@ Go to RHODS Dashboard
 
 
 Go to Jupyter Page
-  [Tags]  Authenticate
+  [Tags]  Dashboard
 
   Launch Jupyter From RHODS Dashboard Link
   Wait Until Page Contains  Start a notebook server  timeout=60 seconds
@@ -90,11 +94,16 @@ Wait for the Notebook Spawn
   Capture Page Screenshot
 
 
-Go to JupyterLab Page
+Login to JupyterLab Page
   [Tags]  Notebook  JupyterLab
 
   Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
-  Wait Until Page Contains Element  xpath://img[@class="jp-Launcher-kernelIcon"]  timeout=60s
+
+
+Go to JupyterLab Page
+  [Tags]  Notebook  JupyterLab
+
+  Wait Until Page Contains Element  xpath:${JL_TABBAR_CONTENT_XPATH}  timeout=60s
   Capture Page Screenshot
 
 
@@ -106,7 +115,7 @@ Load the Notebook
   Capture Page Screenshot
   Launch a new JupyterLab Document
   Close Other JupyterLab Tabs
-  Run Cell And Check For Errors  !curl "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
+  Run Cell And Check For Errors  !time curl "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
   Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_CLONE_WAIT_TIME}
   Capture Page Screenshot
 
