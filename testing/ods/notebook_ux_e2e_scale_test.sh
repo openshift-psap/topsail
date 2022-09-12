@@ -77,8 +77,7 @@ prepare_driver_cluster() {
     oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
 
     build_and_preload_odsci_image() {
-        ARTIFACT_TOOLBOX_NAME_SUFFIX=_odsci \
-            ./run_toolbox.py utils build_push_image \
+        ./run_toolbox.py utils build_push_image \
                          "$ODS_CI_IMAGESTREAM" "$ODS_CI_TAG" \
                          --namespace="$ODS_CI_TEST_NAMESPACE" \
                          --git-repo="$ODS_CI_REPO" \
@@ -87,14 +86,12 @@ prepare_driver_cluster() {
                          --dockerfile-path="build/Dockerfile"
 
         ods_ci_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_TAG"
-        ARTIFACT_TOOLBOX_NAME_SUFFIX=_odsci \
-            ./run_toolbox.py cluster preload_image "ods-ci-image" "$ods_ci_image" \
+        ./run_toolbox.py cluster preload_image "preload-ods-ci" "$ods_ci_image" \
                          --namespace="$ODS_CI_TEST_NAMESPACE"
     }
 
     build_and_preload_artifacts_exporter_image() {
-        ARTIFACT_TOOLBOX_NAME_SUFFIX=_artifacts \
-            ./run_toolbox.py utils build_push_image \
+        ./run_toolbox.py utils build_push_image \
                          "$ODS_CI_IMAGESTREAM" "$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
                          --namespace="$ODS_CI_TEST_NAMESPACE" \
                          --context-dir="/" \
@@ -102,8 +99,7 @@ prepare_driver_cluster() {
 
         artifacts_exporter_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG"
 
-        ARTIFACT_TOOLBOX_NAME_SUFFIX=_artifacts \
-            ./run_toolbox.py cluster preload_image "ods-ci-artifacts-exporter-image" "$artifacts_exporter_image" \
+        ./run_toolbox.py cluster preload_image "artifacts-exporter" "$artifacts_exporter_image" \
                          --namespace="$ODS_CI_TEST_NAMESPACE"
     }
 
@@ -253,7 +249,7 @@ sutest_wait_rhods_launch() {
 
         NOTEBOOK_IMAGE="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$RHODS_NOTEBOOK_IMAGE_NAME:$rhods_notebook_image_tag"
         # preload the image only if auto-scaling is disabled
-        ./run_toolbox.py cluster preload_image "$RHODS_NOTEBOOK_IMAGE_NAME" "$NOTEBOOK_IMAGE" \
+        ./run_toolbox.py cluster preload_image "notebook" "$NOTEBOOK_IMAGE" \
                          --namespace=redhat-ods-applications
     fi
 }
