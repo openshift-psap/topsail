@@ -9,6 +9,18 @@
   loop_control:
     loop_var: namespace
 
+- name: Get the status of the Notebooks
+  shell:
+    oc get notebooks -n rhods-notebooks
+       > "{{ artifact_extra_logs_dir }}/notebooks.status"
+  failed_when: false
+
+- name: Get the yaml of the Notebooks
+  shell:
+    oc get notebooks -n rhods-notebooks -oyaml
+       > "{{ artifact_extra_logs_dir }}/notebooks.yaml"
+  failed_when: false
+
 - name: Get the RHODS operator pod status
   shell:
     oc get pod -A -lname=rhods-operator > "{{ artifact_extra_logs_dir }}/rhods_operator.status"
