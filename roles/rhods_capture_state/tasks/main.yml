@@ -50,4 +50,4 @@
 
 - name: Get the cluster machines status
   shell:
-    oc get machines -n  openshift-machine-api > "{{ artifact_extra_logs_dir }}/machines.status"
+    oc get machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/machines.status"
