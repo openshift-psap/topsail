@@ -25,11 +25,19 @@ author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
 JOB_NAME_PREFIX=pull-ci-openshift-psap-ci-artifacts-master
 test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 
-last_user_test_comment=$(curl -sSf "$PR_COMMENTS_URL" \
+pr_json=$(curl -sSf "$PR_URL")
+pr_body=$(jq -r .body <<< "$pr_json")
+pr_comments=$(jq -r .comments <<< "$pr_json")
+COMMENTS_PER_PAGE=30 # default
+last_comment_page=$(($pr_comments / $COMMENTS_PER_PAGE))
+[[ $(($pr_comments % $COMMENTS_PER_PAGE)) != 0 ]] && last_comment_page=$(($last_comment_page + 1))
+
+
+
+last_user_test_comment=$(curl -sSf "$PR_COMMENTS_URL?page=$last_comment_page" \
                              | jq '.[] | select(.user.login == "'$author'") | .body' \
                              | grep "$test_name" \
                              | tail -1 | jq -r)
-pr_body=$(curl -sSf $PR_URL | jq -r .body)
 
 pos_args=$(echo "$last_user_test_comment" |
                grep "$test_name" | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
