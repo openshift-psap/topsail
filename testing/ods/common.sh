@@ -59,6 +59,10 @@ CUSTOMIZE_RHODS_PVC_SIZE=5Gi
 # see sutest_customize_rhods_after_wait for the limits/requests values
 CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE=1
 
+# only taken into account if CUSTOMIZE_RHODS=1
+# number of replicas to set to the Dashboard deployment
+CUSTOMIZE_RHODS_DASHBOARD_REPLICAS=5
+
 LDAP_IDP_NAME=RHODS_CI_LDAP
 LDAP_NB_USERS=1000
 
