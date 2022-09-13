@@ -55,6 +55,8 @@ spec:
           value: "{{ rhods_notebook_ux_e2e_scale_test_user_count }}"
         - name: REDIS_SERVER
           value: "{{ rhods_notebook_ux_e2e_scale_test_state_signal_redis_server }}"
+        - name: DASHBOARD_PRODUCT_NAME
+          value: "{{ rhods_dashboard_product_name }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir

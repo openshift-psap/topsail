@@ -11,7 +11,7 @@ Suite Teardown  Tear Down
 
 *** Variables ***
 
-${DASHBOARD_NAME}              ODH
+${DASHBOARD_PRODUCT_NAME}      "%{DASHBOARD_PRODUCT_NAME}"
 
 ${NOTEBOOK_IMAGE_NAME}         %{NOTEBOOK_IMAGE_NAME}
 # needs to match ODS_NOTEBOOK_SIZE in testing/ods/notebook_ux_e2e_scale_test.sh
@@ -58,11 +58,7 @@ Login to RHODS Dashboard
 Go to RHODS Dashboard
   [Tags]  Dashboard
 
-  IF  '${DASHBOARD_NAME}' == 'RHODS'
-    Wait for RHODS Dashboard to Load  timeout=60 seconds
-  ELSE
-    Wait for ODH Dashboard to Load  timeout=60 seconds
-  END
+  Wait For Condition  return document.title == ${DASHBOARD_PRODUCT_NAME}  timeout=60 seconds
   Capture Page Screenshot
 
 
@@ -162,10 +158,6 @@ Login To JupyterLab
    # correct name not required/not working, not sure why
    Run Keyword If  ${authorize_service_account}  Authorize rhods-dashboard service account
 
-Wait for ODH Dashboard to Load
-  [Arguments]  ${dashboard_title}="Open Data Hub"  ${timeout}=15 seconds
-
-  Wait For Condition  return document.title == ${dashboard_title}  timeout=${timeout}
 
 Trigger Notebook Spawn
   [Arguments]  ${modal_timeout}=60 seconds

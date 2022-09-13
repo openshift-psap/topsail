@@ -55,6 +55,18 @@
       oc get csv -n redhat-ods-operator -ojsonpath={.items[0].spec.version}
     register: rhods_version_cmd
 
+  - name: Get the Dashboard Product name (to distinguish RHODS from ODH)
+    command:
+      oc -c rhods-dashboard
+         -n redhat-ods-applications
+         rsh deploy/rhods-dashboard
+         bash -c "echo ${ODH_PRODUCT_NAME:-Open Data Hub}"
+    register: rhods_dashboard_product_name
+
+  - name: Save the Dashboard Product name
+    set_fact:
+      rhods_dashboard_product_name: "{{ rhods_dashboard_product_name.stdout }}"
+
 - name: Get the list of worker nodes
   command:
     oc get nodes
