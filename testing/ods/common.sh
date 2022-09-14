@@ -10,7 +10,7 @@ OCM_ENV=staging # The valid aliases are 'production', 'staging', 'integration'
 
 S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 
-# if 1, use the ODS_QE_CATALOG_IMAGE OLM catalog.
+# if 1, use the ODS_CATALOG_IMAGE OLM catalog.
 # Otherwise, install RHODS from OCM addon.
 OSD_USE_ODS_CATALOG=${OSD_USE_ODS_CATALOG:-1}
 
@@ -21,8 +21,8 @@ OSD_USE_ODS_CATALOG=${OSD_USE_ODS_CATALOG:-1}
 # * KEEP EMPTY ON CI, OSD OR OCP ALIKE
 OSD_CLUSTER_NAME=
 
-ODS_QE_CATALOG_IMAGE="quay.io/modh/qe-catalog-source"
-ODS_QE_CATALOG_IMAGE_TAG="latest"
+ODS_CATALOG_IMAGE="quay.io/modh/qe-catalog-source"
+ODS_CATALOG_IMAGE_TAG="latest"
 
 RHODS_NOTEBOOK_IMAGE_NAME=s2i-generic-data-science-notebook
 

@@ -146,10 +146,10 @@ prepare_osd_sutest_deploy_rhods() {
     osd_cluster_name=$1
 
     if [[ "$OSD_USE_ODS_CATALOG" == 1 ]]; then
-        echo "Deploying RHODS $ODS_QE_CATALOG_IMAGE_TAG (from $ODS_QE_CATALOG_IMAGE)"
+        echo "Deploying RHODS $ODS_CATALOG_IMAGE_TAG (from $ODS_CATALOG_IMAGE)"
 
         process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_ods \
-                  "$ODS_QE_CATALOG_IMAGE" "$ODS_QE_CATALOG_IMAGE_TAG"
+                  "$ODS_CATALOG_IMAGE" "$ODS_CATALOG_IMAGE_TAG"
     else
 
         if [[ "$OCM_ENV" == "staging" ]]; then
@@ -177,12 +177,12 @@ prepare_osd_sutest_deploy_rhods() {
 prepare_ocp_sutest_deploy_rhods() {
     switch_sutest_cluster
 
-    echo "Deploying RHODS $ODS_QE_CATALOG_IMAGE_TAG (from $ODS_QE_CATALOG_IMAGE)"
+    echo "Deploying RHODS $ODS_CATALOG_IMAGE_TAG (from $ODS_CATALOG_IMAGE)"
 
     process_ctrl::run_in_bg \
         process_ctrl::retry 5 3m \
             ./run_toolbox.py rhods deploy_ods \
-                "$ODS_QE_CATALOG_IMAGE" "$ODS_QE_CATALOG_IMAGE_TAG"
+                "$ODS_CATALOG_IMAGE" "$ODS_CATALOG_IMAGE_TAG"
 
     if ! oc get group/dezdicated-admins >/dev/null 2>/dev/null; then
         echo "Create the dedicated-admins group"
