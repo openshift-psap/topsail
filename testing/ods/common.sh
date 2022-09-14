@@ -59,7 +59,7 @@ CUSTOMIZE_RHODS_PVC_SIZE=5Gi
 # see sutest_customize_rhods_after_wait for the limits/requests values
 CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE=1
 
-# only taken into account if CUSTOMIZE_RHODS=1
+# only taken into account if CUSTOMIZE_RHODS=1 and CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE is set
 # number of replicas to set to the Dashboard deployment
 CUSTOMIZE_RHODS_DASHBOARD_REPLICAS=5
 
