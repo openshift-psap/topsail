@@ -77,8 +77,7 @@ prepare_driver_cluster() {
     oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
 
     build_and_preload_odsci_image() {
-        ARTIFACT_TOOLBOX_NAME_SUFFIX=_odsci \
-            ./run_toolbox.py utils build_push_image \
+        ./run_toolbox.py utils build_push_image \
                          "$ODS_CI_IMAGESTREAM" "$ODS_CI_TAG" \
                          --namespace="$ODS_CI_TEST_NAMESPACE" \
                          --git-repo="$ODS_CI_REPO" \
@@ -87,14 +86,12 @@ prepare_driver_cluster() {
                          --dockerfile-path="build/Dockerfile"
 
         ods_ci_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_TAG"
-        ARTIFACT_TOOLBOX_NAME_SUFFIX=_odsci \
-            ./run_toolbox.py cluster preload_image "ods-ci-image" "$ods_ci_image" \
+        ./run_toolbox.py cluster preload_image "preload-ods-ci" "$ods_ci_image" \
                          --namespace="$ODS_CI_TEST_NAMESPACE"
     }
 
     build_and_preload_artifacts_exporter_image() {
-        ARTIFACT_TOOLBOX_NAME_SUFFIX=_artifacts \
-            ./run_toolbox.py utils build_push_image \
+        ./run_toolbox.py utils build_push_image \
                          "$ODS_CI_IMAGESTREAM" "$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
                          --namespace="$ODS_CI_TEST_NAMESPACE" \
                          --context-dir="/" \
@@ -102,8 +99,7 @@ prepare_driver_cluster() {
 
         artifacts_exporter_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG"
 
-        ARTIFACT_TOOLBOX_NAME_SUFFIX=_artifacts \
-            ./run_toolbox.py cluster preload_image "ods-ci-artifacts-exporter-image" "$artifacts_exporter_image" \
+        ./run_toolbox.py cluster preload_image "artifacts-exporter" "$artifacts_exporter_image" \
                          --namespace="$ODS_CI_TEST_NAMESPACE"
     }
 
@@ -195,17 +191,57 @@ prepare_ocp_sutest_deploy_rhods() {
     fi
 }
 
+sutest_customize_rhods_before_wait() {
+    if [[ "$CUSTOMIZE_RHODS_REMOVE_GPU_IMAGES" == 1 ]]; then
+        # Fill the imagestreams with dummy (ubi) images
+        for image in minimal-gpu nvidia-cuda-11.4.2 pytorch tensorflow; do
+            oc tag registry.access.redhat.com/ubi8/ubi "$image:ubi" -n redhat-ods-applications
+        done
+        # Delete the RHODS builds
+        oc delete builds --all  -n redhat-ods-applications
+    fi
+}
+
+sutest_customize_rhods_after_wait() {
+
+    if [[ "$CUSTOMIZE_RHODS_PVC_SIZE" ]]; then
+        oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"pvcSize":"'$CUSTOMIZE_RHODS_PVC_SIZE'"}}}' -n redhat-ods-applications
+    fi
+
+    if [[ "$CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE" == 1 ]]; then
+        # must be consistent with testing/ods/sizing/notebook_sizes
+        ODS_NOTEBOOK_CPU_SIZE=1
+        ODS_NOTEBOOK_MEMORY_SIZE=4Gi
+
+        oc get odhdashboardconfig/odh-dashboard-config -n redhat-ods-applications -ojson \
+            | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE'"}, "requests":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE'"}}}]' \
+            | oc apply -f-
+    fi
+
+    if [[ "$CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE" ]]; then
+        oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator
+        oc scale deploy/rhods-dashboard --replicas=0 -n redhat-ods-applications
+        oc set image deploy/rhods-dashboard -n redhat-ods-applications "rhods-dashboard=$CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE"
+        oc set probe deploy/rhods-dashboard -n redhat-ods-applications --remove --readiness --liveness
+        oc scale deploy/rhods-dashboard --replicas=$CUSTOMIZE_RHODS_DASHBOARD_REPLICAS -n redhat-ods-applications
+    fi
+}
+
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
 
-    oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"pvcSize":"5Gi"}}}' -n redhat-ods-applications
-
-    oc get odhdashboardconfig/odh-dashboard-config -n redhat-ods-applications -ojson \
-        | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"1", "memory":"4Gi"}, "requests":{"cpu":"1", "memory":"4Gi"}}}]' \
-        | oc apply -f-
-    oc delete pod -l app.kubernetes.io/part-of=rhods-dashboard,app=rhods-dashboard  -n redhat-ods-applications
+    if [[ "$CUSTOMIZE_RHODS" == 1 ]]; then
+        sutest_customize_rhods_before_wait
+    fi
 
     ./run_toolbox.py rhods wait_ods
+
+    if [[ "$CUSTOMIZE_RHODS" == 1 ]]; then
+        sutest_customize_rhods_after_wait
+
+        ./run_toolbox.py rhods wait_ods
+    fi
+
 
     if [[ -z "$ENABLE_AUTOSCALER" ]]; then
         rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
@@ -213,8 +249,8 @@ sutest_wait_rhods_launch() {
 
         NOTEBOOK_IMAGE="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$RHODS_NOTEBOOK_IMAGE_NAME:$rhods_notebook_image_tag"
         # preload the image only if auto-scaling is disabled
-        ./run_toolbox.py cluster preload_image "$RHODS_NOTEBOOK_IMAGE_NAME" "$NOTEBOOK_IMAGE" \
-                         --namespace=rhods-notebooks || true
+        ./run_toolbox.py cluster preload_image "notebook" "$NOTEBOOK_IMAGE" \
+                         --namespace=redhat-ods-applications
     fi
 }
 
@@ -273,15 +309,19 @@ sutest_cleanup() {
 sutest_cleanup_ldap() {
     switch_sutest_cluster
 
-    osd_cluster_name=$(get_osd_cluster_name "sutest")
+    if ! ./run_toolbox.py rhods cleanup_notebooks "$ODS_CI_USER_PREFIX" > /dev/null; then
+        echo "WARNING: rhods notebook cleanup failed :("
+    fi
 
     if oc get cm/keep-cluster -n default 2>/dev/null; then
         echo "INFO: cm/keep-cluster found, not undeploying LDAP."
-    else
-        ./run_toolbox.py cluster undeploy_ldap \
-                         "$LDAP_IDP_NAME" \
-                         --use_ocm="$osd_cluster_name" > /dev/null
+        return
     fi
+
+    osd_cluster_name=$(get_osd_cluster_name "sutest")
+    ./run_toolbox.py cluster undeploy_ldap \
+                     "$LDAP_IDP_NAME" \
+                     --use_ocm="$osd_cluster_name" > /dev/null
 }
 
 run_prepare_local_cluster() {
@@ -329,12 +369,25 @@ case ${action} in
 
         prepare_ci
         prepare
-        run_test
-        # quick access to these files
-        cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" || true
 
-        generate_plots
-        exit 0
+        failed=0
+        BASE_ARTIFACT_DIR=$ARTIFACT_DIR
+        for idx in $(seq $NOTEBOOK_TEST_RUNS); do
+            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/test_run_$idx"
+            mkdir -p "$ARTIFACT_DIR"
+            pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
+            [[ -f "$pr_file" ]] && cp "$pr_file" "$ARTIFACT_DIR"
+
+            run_test && failed=0 || failed=1
+            # quick access to these files
+            cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" || true
+            generate_plots
+            if [[ "$failed" == 1 ]]; then
+                break
+            fi
+        done
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR"
+        exit $failed
         ;;
     "prepare")
         prepare

@@ -56,9 +56,10 @@
          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_events.yaml"
     ignore_errors: yes
 
-  - name: Get the RHODS operator pod yaml
+  - name: Get the RHODS version
     shell:
-      oc get pod -A -lname=rhods-operator -oyaml > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods_operator.yaml"
+      oc get csv -oname -n redhat-ods-operator | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods.version"
     ignore_errors: yes
 
   - name: Store OpenShift YAML version

@@ -103,12 +103,11 @@ def _parse_pr(filename):
 def _parse_rhods_info(dirname):
     rhods_info = types.SimpleNamespace()
 
-    with open(dirname / "artifacts-sutest" / "rhods_operator.yaml") as f:
-        content = f.read()
-        content = content.replace("2021-00-16T00:00:00Z", "2021-12-16T00:00:00Z")
-        rhods_operator_yaml = yaml.safe_load(content)
-
-        rhods_info.version = rhods_operator_yaml["items"][0]["metadata"]["annotations"]["containerImage"].split(":")[1]
+    try:
+        with open(dirname / "artifacts-sutest" / "rhods.version") as f:
+            rhods_info.version = f.read().strip()
+    except FileNotFoundError:
+        rhods_info.version = "not available"
 
     with open(dirname / "artifacts-sutest" / "ocp_version.yml") as f:
         ocp_version_yaml = yaml.safe_load(f)
@@ -318,7 +317,7 @@ def _extract_metrics(dirname):
         try:
             prom_tarball = list(dirname.glob(tarball_glob))[0]
         except IndexError:
-            logging.warning(f"No {tarball_glob} in '{dirname.parent}'.")
+            logging.warning(f"No {tarball_glob} in '{dirname}'.")
             continue
 
         results_metrics[name] = store_prom_db.extract_metrics(prom_tarball, metrics, dirname)

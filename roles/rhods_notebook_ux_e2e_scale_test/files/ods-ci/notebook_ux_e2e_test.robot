@@ -3,7 +3,6 @@ Resource            tests/Resources/ODS.robot
 Resource            tests/Resources/Common.robot
 Resource            tests/Resources/Page/ODH/JupyterHub/JupyterHubSpawner.robot
 Resource            tests/Resources/Page/ODH/JupyterHub/JupyterLabLauncher.robot
-Library             DebugLibrary
 Library             JupyterLibrary
 Library             libs/Helpers.py
 Library             SeleniumLibrary
@@ -12,7 +11,10 @@ Suite Teardown  Tear Down
 
 *** Variables ***
 
+${DASHBOARD_PRODUCT_NAME}      "%{DASHBOARD_PRODUCT_NAME}"
+
 ${NOTEBOOK_IMAGE_NAME}         %{NOTEBOOK_IMAGE_NAME}
+# needs to match ODS_NOTEBOOK_SIZE in testing/ods/notebook_ux_e2e_scale_test.sh
 ${NOTEBOOK_IMAGE_SIZE}         default
 ${NOTEBOOK_SPAWN_WAIT_TIME}    15 minutes
 ${NOTEBOOK_SPAWN_RETRIES}      45
@@ -47,51 +49,69 @@ Open the Browser
   [Tags]  Setup
   Setup
 
-Go to RHODS Dashboard
+Login to RHODS Dashboard
   [Tags]  Authenticate
 
   Login To RHODS Dashboard  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
-  Wait for RHODS Dashboard to Load
+
+
+Go to RHODS Dashboard
+  [Tags]  Dashboard
+
+  Wait For Condition  return document.title == ${DASHBOARD_PRODUCT_NAME}  timeout=60 seconds
   Capture Page Screenshot
 
-Go to Jupyter
-  [Tags]  Authenticate
+
+Go to Jupyter Page
+  [Tags]  Dashboard
 
   Launch Jupyter From RHODS Dashboard Link
-  Wait Until Page Contains  Start a notebook server
-  Wait Until Page Contains  Start server
+  Wait Until Page Contains  Start a notebook server  timeout=60 seconds
+  Wait Until Page Contains  Start server  timeout=60 seconds
   Capture Page Screenshot
-
-
-Spawn a Notebook
-  [Tags]  Spawn  Notebook
 
   Select Notebook Image  ${NOTEBOOK_IMAGE_NAME}
   Select Container Size  ${NOTEBOOK_IMAGE_SIZE}
 
   Capture Page Screenshot
 
-  Spawn Notebook
+
+Trigger the Notebook Spawn
+  [Tags]  Spawn  Notebook
+
+  Trigger Notebook Spawn
   Capture Page Screenshot
 
 
-Go to JupyterLab Page
+Wait for the Notebook Spawn
   [Tags]  Spawn  Notebook
 
+  Wait Notebook Spawn
+  Capture Page Screenshot
+
+
+Login to JupyterLab Page
+  [Tags]  Notebook  JupyterLab
+
   Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
-  Wait Until Page Contains Element  xpath://img[@class="jp-Launcher-kernelIcon"]  timeout=60s
+
+
+Go to JupyterLab Page
+  [Tags]  Notebook  JupyterLab
+
+  Wait Until Page Contains Element  xpath:${JL_TABBAR_CONTENT_XPATH}  timeout=60s
   Capture Page Screenshot
 
 
 Load the Notebook
-  [Tags]  Notebook
+  [Tags]  Notebook  JupyterLab
 
   ${is_launcher_selected} =  Run Keyword And Return Status  JupyterLab Launcher Tab Is Selected
   Run Keyword If  not ${is_launcher_selected}  Open JupyterLab Launcher
   Capture Page Screenshot
   Launch a new JupyterLab Document
   Close Other JupyterLab Tabs
-  Run Cell And Check For Errors  !curl "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
+  Run Cell And Check For Errors  !time curl "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
   Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_CLONE_WAIT_TIME}
   Capture Page Screenshot
 
@@ -120,6 +140,7 @@ Run the Notebook
 
 
 *** Keywords ***
+
 Get Browser Console Log Entries
     ${selenium}=    Get Library Instance    SeleniumLibrary
     ${webdriver}=    Set Variable     ${selenium._drivers.active_drivers}[0]
@@ -136,3 +157,17 @@ Login To JupyterLab
    ${authorize_service_account} =  Is jupyter-nb-${TEST_USER.USERNAME} Service Account Authorization Required
    # correct name not required/not working, not sure why
    Run Keyword If  ${authorize_service_account}  Authorize rhods-dashboard service account
+
+
+Trigger Notebook Spawn
+  [Arguments]  ${modal_timeout}=60 seconds
+
+  Click Button  Start server
+  Wait Until Page Contains  Starting server  ${modal_timeout}
+  Wait Until Element Is Visible  xpath://div[@role="progressbar"]
+
+
+Wait Notebook Spawn
+  [Arguments]  ${spawner_timeout}=600 seconds
+
+  Wait Until Page Does Not Contain Element  xpath://div[@role="progressbar"]  ${spawner_timeout}

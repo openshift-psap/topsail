@@ -1,4 +1,4 @@
-import sys
+import sys, os
 
 import secrets
 
@@ -79,6 +79,10 @@ class Utils:
         if not image_tag:
             image_tag = secrets.token_hex(4)
             print(f"Using '{image_tag}' as image tag.")
+
+        toolbox_name_suffix = os.environ.get("ARTIFACT_TOOLBOX_NAME_SUFFIX", "")
+        # use `{local_image_name}_{image_tag}` as first suffix in the directory name
+        os.environ["ARTIFACT_TOOLBOX_NAME_SUFFIX"] = f"_{local_image_name}_{image_tag}{toolbox_name_suffix}"
 
         opts = {
             "utils_build_push_image_local_name": local_image_name,

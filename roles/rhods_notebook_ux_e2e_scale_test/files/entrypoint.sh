@@ -29,8 +29,9 @@ if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
     python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" --exporter "$USER_COUNT" --delay "$STATE_SIGNAL_DELAY" &
 fi
 
+date
 time python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" # fails if the all Pods don't reach the barrier in time
-
+date
 # Sleep for a while to avoid DDoSing OAuth
 
 sleep_delay=$(python3 -c "print($JOB_COMPLETION_INDEX * $SLEEP_FACTOR)")
@@ -38,6 +39,7 @@ sleep_delay=$(python3 -c "print($JOB_COMPLETION_INDEX * $SLEEP_FACTOR)")
 echo "Waiting $sleep_delay seconds before starting (job index: $JOB_COMPLETION_INDEX, sleep factor: $SLEEP_FACTOR)"
 echo "$sleep_delay" > "${ARTIFACT_DIR}/sleep_delay"
 sleep "$sleep_delay"
+date
 
 test_exit_code=0
 (bash -x ./run_robot_test.sh \

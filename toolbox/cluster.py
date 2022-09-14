@@ -1,4 +1,4 @@
-import sys
+import sys, os
 
 from toolbox._common import RunAnsibleRole
 
@@ -378,6 +378,10 @@ class Cluster:
           image: Container image to preload on the nodes.
           namespace: Optional. Namespace in which the DaemonSet will be created.
         """
+
+        toolbox_name_suffix = os.environ.get("ARTIFACT_TOOLBOX_NAME_SUFFIX", "")
+        # use `name` as first suffix in the directory name
+        os.environ["ARTIFACT_TOOLBOX_NAME_SUFFIX"] = f"_{name}{toolbox_name_suffix}"
 
         opts = {
             "cluster_preload_image_ds_name": name,

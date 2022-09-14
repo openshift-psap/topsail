@@ -35,12 +35,40 @@ ODS_CI_TAG="latest"
 ODS_CI_ARTIFACTS_EXPORTER_TAG="artifacts-exporter"
 ODS_CI_ARTIFACTS_EXPORTER_DOCKERFILE="testing/ods/images/Containerfile.s3_artifacts_exporter"
 
+# if the value is different from 1, do not customize RHODS.
+# see sutest_customize_rhods in `notebook_ux_e2e_scale_test.sh`.
+CUSTOMIZE_RHODS=1
+
+# only taken into account if CUSTOMIZE_RHODS=1
+# if not empty, force the given image for the rhods-dashboard container
+# Mind that this requires stopping the rhods-operator.
+# ODH main image: quay.io/opendatahub/odh-dashboard:main
+CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE=
+CUSTOMIZE_RHODS_DASHBOARD_NAME=RHODS # must be ODH or RHODS, for ODS-CI to recognize the dashboard page
+
+# only taken into account if CUSTOMIZE_RHODS=1
+# if value is 1, remove the GPU images (to use less resources)
+CUSTOMIZE_RHODS_REMOVE_GPU_IMAGES=1
+
+# only taken into account if CUSTOMIZE_RHODS=1
+# if value is not empty, use the given PVC size
+CUSTOMIZE_RHODS_PVC_SIZE=5Gi
+
+# only taken into account if CUSTOMIZE_RHODS=1
+# if value is 1, define a custom notebook size named $ODS_NOTEBOOK_SIZE
+# see sutest_customize_rhods_after_wait for the limits/requests values
+CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE=1
+
+# only taken into account if CUSTOMIZE_RHODS=1
+# number of replicas to set to the Dashboard deployment
+CUSTOMIZE_RHODS_DASHBOARD_REPLICAS=5
+
 LDAP_IDP_NAME=RHODS_CI_LDAP
 LDAP_NB_USERS=1000
 
 ODS_CI_NB_USERS=${ODS_CI_NB_USERS:-5} # number of users to simulate
 ODS_CI_USER_PREFIX=psapuser
-ODS_NOTEBOOK_SIZE=default # needs to match what the ROBOT test-case requests
+ODS_NOTEBOOK_SIZE=default # needs to match `NOTEBOOK_IMAGE_SIZE` in roles/rhods_notebook_ux_e2e_scale_test/files/ods-ci/notebook_ux_e2e_test.robot
 ODS_NOTEBOOK_SIZE_TEST_POD="test_pod" # shouldn't change
 ODS_SLEEP_FACTOR=${ODS_SLEEP_FACTOR:-1.0} # how long to wait between user starts.
 ODS_CI_ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
@@ -50,6 +78,9 @@ NGINX_NOTEBOOK_NAMESPACE=loadtest-notebooks
 ODS_NOTEBOOK_NAME=simple-notebook.ipynb
 ODS_NOTEBOOK_DIR=${THIS_DIR}/notebooks
 ODS_EXCLUDE_TAGS=${ODS_EXCLUDE_TAGS:-None} # tags to exclude when running the robot test case
+
+# number of test runs to perform
+NOTEBOOK_TEST_RUNS=1
 
 if [[ "$OSD_USE_ODS_CATALOG" == "0" ]]; then
     # deploying from the addon. Get the email address from the secret vault.

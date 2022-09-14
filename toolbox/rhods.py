@@ -77,6 +77,7 @@ class RHODS:
 
         Args:
           idp_name: Name of the identity provider to use.
+          username_prefix: Prefix of the usernames to use to run the scale test.
           user_count: Number of users to run in parallel
           secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'deploy_ldap' command)
           notebook_url: URL from which the notebook will be downloaded.
@@ -118,6 +119,21 @@ class RHODS:
 
 
         return RunAnsibleRole("rhods_notebook_ux_e2e_scale_test", opts)
+
+    @staticmethod
+    def cleanup_notebooks(username_prefix):
+        """
+        Clean up the resources created along with the notebooks, during the scale tests.
+
+        args:
+          username_prefix: Prefix of the usernames who created the resources.
+        """
+
+        opts = {
+            "rhods_cleanup_notebooks_username_prefix": username_prefix,
+        }
+
+        return RunAnsibleRole("rhods_cleanup_notebooks", opts)
 
     @staticmethod
     def undeploy_ods(namespace="redhat-ods-operator", wait: bool = True):

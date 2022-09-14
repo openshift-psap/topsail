@@ -1,0 +1,23 @@
+---
+- name: Define the test environments
+  set_fact:
+    rhods_notebook_namespace: rhods-notebooks
+
+- name: Delete the notebook resources
+  shell:
+    set -o pipefail;
+    oc get {{ item }} -oname -n {{ rhods_notebook_namespace }} |
+      (grep {{ rhods_cleanup_notebooks_username_prefix }} || true) |
+        xargs --no-run-if-empty
+            oc delete -n {{ rhods_notebook_namespace }}
+  loop:
+  - notebooks
+  - roles
+  - rolebindings
+  - pvc
+  - configmap
+  - secrets
+
+- name: Delete the events the notebook namespace
+  command:
+    oc delete ev --all -n rhods-notebooks
