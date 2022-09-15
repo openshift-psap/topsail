@@ -202,7 +202,7 @@ get_compute_node_count() {
     fi
 
     notebook_size_name=$(get_notebook_size "$cluster_role")
-    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$notebook_size_name' '$instance_type' '$ODS_CI_NB_USERS' >&2; echo \$?")
+    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$notebook_size_name' '$instance_type' '$ODS_CI_NB_USERS' >&2 > '$ARTIFACT_DIR/${cluster_role}_${cluster_type}_sizing'; echo \$?")
 
     if [[ "$size" == 0 ]]; then
         echo "ERROR: couldn't determine the number of nodes to request ..." >&2
