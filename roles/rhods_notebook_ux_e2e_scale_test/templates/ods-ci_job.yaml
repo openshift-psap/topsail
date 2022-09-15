@@ -36,7 +36,7 @@ spec:
       containers:
       - image: "{{ rhods_test_image }}"
         imagePullPolicy: Always
-        name: ods-ci
+        name: main
         command: ['bash', '/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/entrypoint.sh']
         env:
         - name: RUN_ROBOT_TEST_CASE
@@ -78,7 +78,9 @@ spec:
         - name: ARTIFACTS_COLLECTED
           value: "{{ rhods_notebook_ux_e2e_scale_test_artifacts_collected }}"
         - name: ARTIFACT_DIR
-          value: /mnt/shared-dir/ods-ci
+          value: "/mnt/shared-dir/ods-ci"
+        - name: BUCKET_DEST_DIR
+          value: "ods-ci"
         volumeMounts:
         - name: s3cmd-config
           mountPath: /mnt/s3-config
