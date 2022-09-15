@@ -15,11 +15,18 @@
   fail: msg="username prefix isn't set"
   when: not rhods_notebook_ux_e2e_scale_test_username_prefix
 
+- name: Define the test namespace
+  set_fact:
+    tester_namespace: "{{ rhods_notebook_ux_e2e_scale_test_namespace }}"
+
 - name: Define the test environments
   set_fact:
-    rhods_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_ux_e2e_scale_test_namespace }}/{{ rhods_notebook_ux_e2e_scale_test_istag }}
-    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_ux_e2e_scale_test_namespace }}/{{ rhods_notebook_ux_e2e_scale_test_ods_ci_artifacts_exporter_istag }}
+    rhods_test_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_ux_e2e_scale_test_istag }}
+    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_ux_e2e_scale_test_ods_ci_artifacts_exporter_istag }}
     rhods_notebook_namespace: rhods-notebooks
+    tester_job_name: ods-ci
+    test_artifacts_collected: "{{ rhods_notebook_ux_e2e_scale_test_artifacts_collected }}"
+    capture_prom_db: yes
 
 - name: Set system-under-test == driver-cluster if no system-under-test (SUT) is provided
   set_fact:
@@ -67,17 +74,10 @@
     set_fact:
       rhods_dashboard_product_name: "{{ rhods_dashboard_product_name.stdout }}"
 
-- name: Get the list of worker nodes
-  command:
-    oc get nodes
-           -lnode-role.kubernetes.io/worker
-           -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-  register: worker_nodenames
-
 - name: Get the ODS-CI sample var file
   shell:
     oc debug istag/{{ rhods_notebook_ux_e2e_scale_test_istag }}
-       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+       -n {{ tester_namespace }}
        -- cat test-variables.yml.model > /tmp/test-variables.yml.model
 
 - name: Apply the ODS-CI template
@@ -121,14 +121,14 @@
 - name: Delete the ODS-CI secret, it it exists
   command:
     oc delete secret ods-ci-test-variables
-       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+       -n {{ tester_namespace }}
        --ignore-not-found
 
 - name: Create the ODS-CI secret
   command:
     oc create secret generic ods-ci-test-variables
        --from-file test-variables.yml=/tmp/test-variables.yml
-       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+       -n {{ tester_namespace }}
 
 - name: Delete the ODS-CI secret file
   file:
@@ -150,7 +150,7 @@
 - name: Delete the RHODS test entrypoint, if it exists
   command:
     oc delete cm/rhods-notebook-ux-e2e-scale-test-entrypoint
-       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+       -n {{ tester_namespace }}
        --ignore-not-found
 
 - name: Create the RHODS test entrypoint
@@ -160,12 +160,12 @@
        "--from-file=state-signal_barrier.py={{ rhods_notebook_ux_e2e_scale_test_state_signal_barrier }}"
        "--from-file=artifacts-exporter.sh={{ rhods_notebook_ux_e2e_scale_test_s3_artifacts_exporter_sidecar }}"
        "--from-file={{ rhods_notebook_ux_e2e_scale_test_test_case_directory }}/{{ rhods_notebook_ux_e2e_scale_test_ods_ci_test_case }}"
-       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+       -n {{ tester_namespace }}
 
 - name: Empty the Minio S3 bucket
   shell: |
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-       mc --config-dir /tmp rm minio/mybucket/ods-ci --recursive --force;
+       mc --config-dir /tmp rm minio/mybucket/ --recursive --force --quiet;
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
        rm -rf /artifacts/to_export  > /dev/null
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
@@ -177,11 +177,11 @@
     oc delete
        -f "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_ux_e2e_scale_test.yaml"
        --ignore-not-found
-       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+       -n {{ tester_namespace }}
 
 - name: Delete the events of the tester namespace
   shell:
-    oc delete ev -n {{ rhods_notebook_ux_e2e_scale_test_namespace }} --all > /dev/null
+    oc delete ev -n {{ tester_namespace }} --all > /dev/null
   failed_when: false
 
 - name: Terminate our notebooks, if they are still running
@@ -211,7 +211,7 @@
   command:
     oc adm policy add-scc-to-user privileged
        -z default
-       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+       -n {{ tester_namespace }}
 
 # ---
 
@@ -245,11 +245,11 @@
   command:
     oc create
        -f "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_ux_e2e_scale_test.yaml"
-       -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+       -n {{ tester_namespace }}
 
 - name: Wait for the RHODS tester job to start
   shell:
-    oc get jobs/ods-ci -ojsonpath={.status.startTime} -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+    oc get jobs/ods-ci -ojsonpath={.status.startTime} -n {{ tester_namespace }}
   register: wait_rhods_test_job_start
   retries: 12
   delay: 5
@@ -257,7 +257,7 @@
 
 - name: Wait for the RHODS tester job to terminate
   command:
-    oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+    oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ tester_namespace }}
   register: wait_rhods_test_job
   retries: 60
   delay: 40
@@ -291,7 +291,7 @@
 
 - name: Test if the RHODS test job crashed
   command:
-    oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_notebook_ux_e2e_scale_test_namespace }}
+    oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ tester_namespace }}
   register: check_rhods_test_job
   failed_when: check_rhods_test_job.stdout | length > 0
 

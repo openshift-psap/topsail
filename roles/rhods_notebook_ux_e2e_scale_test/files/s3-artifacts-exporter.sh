@@ -15,8 +15,13 @@ configure_s3() {
     # S3_SECRET_KEY: set below
     export HOME=/tmp/s3cmd
     mkdir -p "$HOME"
-    # run this in a subshell to avoid printing the password in clear because of 'set -x'
-    bash -ec "eval \$(yq e .TEST_USER.PASSWORD /mnt/ods-ci-test-variables/test-variables.yml | awk '{ print \"export S3_SECRET_KEY=\" \$1 }'); cat /mnt/s3-config/s3cfg | envsubst > ~/.s3cfg"
+    if [[ -f "${CREDS_FILE:-}" ]]; then
+        # run this in a subshell to avoid printing the password in clear because of 'set -x'
+        bash -ec 'source "'${CREDS_FILE}'"; export S3_SECRET_KEY=$user_password; cat /mnt/s3-config/s3cfg | envsubst > ~/.s3cfg'
+    else
+        # run this in a subshell to avoid printing the password in clear because of 'set -x'
+        bash -ec "eval \$(yq e .TEST_USER.PASSWORD /mnt/ods-ci-test-variables/test-variables.yml | awk '{ print \"export S3_SECRET_KEY=\" \$1 }'); cat /mnt/s3-config/s3cfg | envsubst > ~/.s3cfg"
+    fi
 }
 
 echo "Artifacts retention mode: $ARTIFACTS_COLLECTED"
@@ -52,11 +57,11 @@ fi
 
 configure_s3
 
+find "${ARTIFACT_DIR}"
+
 s3cmd put \
-      "${ARTIFACT_DIR}/test.exit_code" \
-      "${ARTIFACT_DIR}/test.log" \
-      "${ARTIFACT_DIR}"/ods-ci-*/* \
-      "s3://$S3_BUCKET_NAME/ods-ci/$HOSTNAME/" \
-      --recursive --no-preserve --no-progress --stats
+      "${ARTIFACT_DIR}"/* \
+      "s3://$S3_BUCKET_NAME/$BUCKET_DEST_DIR/$HOSTNAME/" \
+      --recursive --no-preserve --no-progress --stats --quiet
 
 exit $retcode

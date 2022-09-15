@@ -52,6 +52,8 @@ test_exit_code=0
     --extra-robot-args "--exitonfailure" \
     |& tee "${ARTIFACT_DIR}/test.log") || test_exit_code=$?
 
+mv "$ARTIFACT_DIR"/ods-ci-*/* "$ARTIFACT_DIR" || true
+
 # /!\ the creation of this file triggers the export of the logs
 echo "$test_exit_code" > "${ARTIFACT_DIR}/test.exit_code"
 
