@@ -179,11 +179,6 @@
        --ignore-not-found
        -n {{ tester_namespace }}
 
-- name: Delete the events of the tester namespace
-  shell:
-    oc delete ev -n {{ tester_namespace }} --all > /dev/null
-  failed_when: false
-
 - name: Terminate our notebooks, if they are still running
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
@@ -196,16 +191,6 @@
                kubeflow-resource-stopped=stopped-by-ci-artifacts
                -oname
                -n {{ rhods_notebook_namespace }}
-
-- name: Delete the events the notebook namespace
-  environment:
-    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  shell:
-    set -o pipefail;
-    oc get ev -oname -n {{ rhods_notebook_namespace }} |
-      (grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }} || true) |
-      xargs --no-run-if-empty
-            oc delete -n {{ rhods_notebook_namespace }}
 
 - name: Name the namespace privileged
   command:
