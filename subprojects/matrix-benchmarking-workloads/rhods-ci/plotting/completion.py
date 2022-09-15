@@ -10,9 +10,7 @@ import plotly.subplots
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
-from .. import store as rhodsci_store
-
-from . import timeline_data
+from ..store_theoretical import NOTEBOOK_REQUESTS
 
 def register():
     Completion("Price to completion")
@@ -40,8 +38,8 @@ class Completion():
         notebook_size = settings["notebook_size"]
         del settings["notebook_size"]
 
-        cpu_needed = rhodsci_store.NOTEBOOK_REQUESTS[notebook_size].cpu * user_count
-        memory_needed = rhodsci_store.NOTEBOOK_REQUESTS[notebook_size].memory * user_count
+        cpu_needed = NOTEBOOK_REQUESTS[notebook_size].cpu * user_count
+        memory_needed = NOTEBOOK_REQUESTS[notebook_size].memory * user_count
 
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):

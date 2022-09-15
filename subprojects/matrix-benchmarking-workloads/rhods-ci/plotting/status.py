@@ -7,8 +7,6 @@ import plotly.express as px
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
-from . import timeline_data
-
 def register():
     ExecutionDistribution("Execution time distribution")
 

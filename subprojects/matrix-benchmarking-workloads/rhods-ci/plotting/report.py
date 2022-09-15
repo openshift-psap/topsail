@@ -9,7 +9,6 @@ def register():
     PriceOverviewReport()
 
     UserExecutionOverviewReport()
-    TimelineReport()
     PodNodeMappingReport()
     LaunchAndExecTimeDistributionReport()
     StepSuccessesReport()
@@ -37,32 +36,6 @@ def Plot(name, args):
     stats = table_stats.TableStats.stats_by_name[name]
     return dcc.Graph(figure=stats.do_plot(*args)[0])
 
-class TimelineReport():
-    def __init__(self):
-        self.name = "report: Timeline"
-        self.id_name = self.name.lower().replace(" ", "_")
-        self.no_graph = True
-        self.is_report = True
-
-        table_stats.TableStats._register_stat(self)
-
-    def do_plot(self, *args):
-        header = []
-        header += [html.P("These plots show an overview of the test execution timeline.")]
-        header += [html.P("""They are often too dense to be easily interpreted, but by zooming and
-panning, they may provide useful information about the events that occured during the test.""")]
-
-        header += [html.H2("Full Timeline")]
-        header += [Plot("Timeline", args)]
-        header += ["This plot provides information about the timeline of the test Pods execution (in the driver cluster), the steps of the simulated users (ODS prefix) and the Notebook Pods execution."]
-        header += html.Br()
-        header += html.Br()
-
-        header += [html.H2("Simple Timeline")]
-        header += [Plot("Simple Timeline", args)]
-        header += ["This plot is based on a Plotly.Express plotting class. It contains almost the same information as the full timeline, but plotted in a simpler way. It may help looking at specific events that the full timeline would group together."]
-
-        return None, header
 
 class PodNodeMappingReport():
     def __init__(self):

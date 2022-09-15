@@ -23,8 +23,8 @@ def generate_data(entry, cfg, is_notebook):
         hostnames = entry_results.notebook_hostnames
         pods = entry_results.notebook_pods
     else:
-        pods = entry_results.test_pods
         hostnames = entry_results.testpod_hostnames
+        pods = entry_results.test_pods
 
     hostnames_index = list(hostnames.values()).index
 
@@ -37,8 +37,6 @@ def generate_data(entry, cfg, is_notebook):
 
         try: pod_times = entry_results.pod_times[pod_name]
         except KeyError: continue
-
-        event_times = entry_results.event_times[pod_name]
 
         try:
             hostname = hostnames[pod_name]
@@ -55,9 +53,10 @@ def generate_data(entry, cfg, is_notebook):
 
         shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "")
         try:
-            finish = event_times.terminated if is_notebook else pod_times.container_finished
-        except AttributeError: # object has no attribute 'terminated'
+            finish = pod_times.container_finished
+        except AttributeError:
             finish = entry_results.job_completion_time
+
         try:
             instance_type = entry.results.nodes_info[hostname].instance_type
         except AttributeError:
@@ -65,7 +64,7 @@ def generate_data(entry, cfg, is_notebook):
 
         data.append(dict(
             UserIndex = f"User #{user_idx:03d}",
-            PodStart = event_times.scheduled,
+            PodStart = pod_times.start_time,
             PodFinish = finish,
             NodeIndex = f"Node {hostnames_index(hostname)}",
             NodeName = f"Node {hostnames_index(hostname)}<br>{shortname}<br>{instance_type}",
