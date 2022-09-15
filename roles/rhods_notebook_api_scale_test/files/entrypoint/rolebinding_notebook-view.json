@@ -1,0 +1,23 @@
+{
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "RoleBinding",
+    "metadata": {
+        "creationTimestamp": "2022-09-13T12:30:39Z",
+        "name": "jupyter-nb-{user_name}-notebook-view",
+        "namespace": "rhods-notebooks",
+        "resourceVersion": "199292",
+        "uid": "cecb1184-4d7a-4889-affe-7abe44107696"
+    },
+    "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "jupyter-nb-{user_name}-notebook-view"
+    },
+    "subjects": [
+        {
+            "apiGroup": "rbac.authorization.k8s.io",
+            "kind": "User",
+            "name": "{user_name}"
+        }
+    ]
+}

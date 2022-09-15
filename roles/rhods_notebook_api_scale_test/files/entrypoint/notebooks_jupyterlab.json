@@ -1,0 +1,120 @@
+{
+  "apiVersion": "kubeflow.org/v1",
+  "kind": "Notebook",
+  "metadata": {
+    "labels": {
+      "app": "jupyter-nb-{user_name}",
+      "opendatahub.io/odh-managed": "true",
+      "opendatahub.io/user": "{user_name}"
+    },
+    "annotations": {
+      "notebooks.opendatahub.io/oauth-logout-url": "https://{dashboard_url}/notebookController/{user_name}/home",
+      "notebooks.opendatahub.io/last-size-selection": "default",
+      "notebooks.opendatahub.io/last-image-selection": "s2i-minimal-notebook",
+      "opendatahub.io/username": "{user_name}"
+    },
+    "name": "jupyter-nb-{user_name}",
+    "namespace": "rhods-notebooks"
+  },
+  "spec": {
+    "template": {
+      "spec": {
+        "affinity": {
+          "nodeAffinity": {
+            "preferredDuringSchedulingIgnoredDuringExecution": [
+              {
+                "preference": {
+                  "matchExpressions": [
+                    {
+                      "key": "nvidia.com/gpu.present",
+                      "operator": "NotIn",
+                      "values": [
+                        "true"
+                      ]
+                    }
+                  ]
+                },
+                "weight": 1
+              }
+            ]
+          }
+        },
+        "enableServiceLinks": false,
+        "containers": [
+          {
+            "image": "{notebook_image}",
+            "imagePullPolicy": "Always",
+            "workingDir": "/opt/app-root/src",
+            "name": "jupyter-nb-{user_name}",
+            "env": [
+              {
+                "name": "NOTEBOOK_ARGS",
+                "value": "--ServerApp.port=8888\n                  --ServerApp.token=''\n                  --ServerApp.password=''\n                  --ServerApp.base_url=/notebook/rhods-notebooks/jupyter-nb-{user_name}\n                  --ServerApp.quit_button=False\n                  --ServerApp.tornado_settings={\"user\":\"{user_name}\",\"hub_host\":\"https://{dashboard_url}\",\"hub_prefix\":\"/notebookController/{user_name}\"}"
+              },
+              {
+                "name": "JUPYTER_IMAGE",
+                "value": "{notebook_image}"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "4Gi"
+              },
+              "requests": {
+                "cpu": "1",
+                "memory": "4Gi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/opt/app-root/src",
+                "name": "jupyterhub-nb-{user_name}-pvc"
+              }
+            ],
+            "ports": [
+              {
+                "name": "notebook-port",
+                "containerPort": 8888,
+                "protocol": "TCP"
+              }
+            ],
+            "livenessProbe": {
+              "initialDelaySeconds": 10,
+              "periodSeconds": 5,
+              "timeoutSeconds": 1,
+              "successThreshold": 1,
+              "failureThreshold": 3,
+              "httpGet": {
+                "scheme": "HTTP",
+                "path": "/notebook/rhods-notebooks/jupyter-nb-{user_name}/api",
+                "port": "notebook-port"
+              }
+            },
+            "readinessProbe": {
+              "initialDelaySeconds": 10,
+              "periodSeconds": 5,
+              "timeoutSeconds": 1,
+              "successThreshold": 1,
+              "failureThreshold": 3,
+              "httpGet": {
+                "scheme": "HTTP",
+                "path": "/notebook/rhods-notebooks/jupyter-nb-{user_name}/api",
+                "port": "notebook-port"
+              }
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "jupyterhub-nb-{user_name}-pvc",
+            "persistentVolumeClaim": {
+              "claimName": "jupyterhub-nb-{user_name}-pvc"
+            }
+          }
+        ],
+        "tolerations": []
+      }
+    }
+  }
+}
