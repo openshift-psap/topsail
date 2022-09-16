@@ -13,23 +13,6 @@ source "$THIS_DIR/../prow/_logging.sh"
 
 # ---
 
-delete_rhods_postgres() {
-    cluster_role=$1
-    export KUBECONFIG="$SHARED_DIR/${cluster_role}_kubeconfig"
-
-    # Destroy Postgres database to avoid AWS leaks ...
-    # See https://issues.redhat.com/browse/MGDAPI-4118
-
-    if ! oc get postgres/jupyterhub-db-rds -n redhat-ods-applications 2>/dev/null; then
-        echo "INFO: No Postgres database available in the $cluster_role cluster, nothing to delete."
-        return
-    fi
-
-    if ! oc delete postgres/jupyterhub-db-rds -n redhat-ods-applications; then
-        echo "WARNING: Postgres database could not be deleted in the ..."
-    fi
-}
-
 capture_gather_extra() {
     cluster_role=$1
 
@@ -45,8 +28,6 @@ capture_gather_extra() {
 
 finalize_cluster() {
     cluster_role=$1
-
-    delete_rhods_postgres "$cluster_role" & # Delete the postgres database while gathering the extra data
 
     capture_gather_extra "$cluster_role"
 
@@ -114,7 +95,6 @@ EOF
             CLUSTER_TAG=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
             echo "$CLUSTER_TAG" > "$ARTIFACT_DIR/${cluster_role}_cluster_tag"
             cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_destroy_cluster.cmd"
-oc delete postgres/jupyterhub-db-rds -n redhat-ods-applications --ignore-not-found
 ./run_toolbox.py cluster destroy_ocp $OCP_REGION $CLUSTER_TAG
 EOF
         }

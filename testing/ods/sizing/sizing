@@ -49,6 +49,8 @@ def parse_notebook_sizes():
 RESERVED_CPU = 1.1
 RESERVED_MEM = 2.1
 
+EXTRA_USERS = 1.1 # count as if there was +10% of users
+
 def main():
     notebook_size_name, machine_type, _user_count = sys.argv[1:]
 
@@ -57,25 +59,29 @@ def main():
     notebooks = parse_notebook_sizes()
 
     user_count = int(_user_count)
+    user_count_with_extra = math.ceil(user_count * EXTRA_USERS)
     notebook_size = notebooks[notebook_size_name]
     machine_size = machines[machine_type]
 
-    total_cpu_count = notebook_size.cpu * user_count
-    total_memory_count = notebook_size.memory * user_count
+    print(f"Reserved cpu={RESERVED_CPU}, mem={RESERVED_MEM}, extra users={user_count_with_extra - user_count} ({EXTRA_USERS} factor)")
+    print(f"Machine type:  {machine_type} --> {machine_size}")
+    print(f"Notebook size: {notebook_size_name} --> {notebook_size}")
+    print()
+
+    total_cpu_count = notebook_size.cpu * user_count_with_extra
+    total_memory_count = notebook_size.memory * user_count_with_extra
 
     machine_count_cpu = total_cpu_count / (machine_size.cpu - RESERVED_CPU)
     machine_count_memory = total_memory_count / (machine_size.memory - RESERVED_MEM)
-    print(f"Reseved cpu={RESERVED_CPU}, mem={RESERVED_MEM}")
-    print(f"{machine_type} machine: {machine_size}")
-    print(f"{notebook_size_name} notebooks: {notebook_size}")
+
 
     print(f"Memory requirement: {machine_count_memory:.1f} x {machine_type}")
     print(f"CPU requirement:    {machine_count_cpu:.1f} x {machine_type}")
-
+    print()
     machine_exact_count = max([machine_count_cpu, machine_count_memory])
     machine_count = math.ceil(machine_exact_count)
 
-    print(f"Running {user_count}x {notebook_size_name} requires {machine_count}x {machine_type} machines")
+    print(f"Provisioning {machine_count} {machine_type} machines for running {user_count} users with the '{notebook_size_name}' notebook size")
 
     return machine_count
 

@@ -10,7 +10,7 @@ OCM_ENV=staging # The valid aliases are 'production', 'staging', 'integration'
 
 S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 
-# if 1, use the ODS_QE_CATALOG_IMAGE OLM catalog.
+# if 1, use the ODS_CATALOG_IMAGE OLM catalog.
 # Otherwise, install RHODS from OCM addon.
 OSD_USE_ODS_CATALOG=${OSD_USE_ODS_CATALOG:-1}
 
@@ -21,8 +21,8 @@ OSD_USE_ODS_CATALOG=${OSD_USE_ODS_CATALOG:-1}
 # * KEEP EMPTY ON CI, OSD OR OCP ALIKE
 OSD_CLUSTER_NAME=
 
-ODS_QE_CATALOG_IMAGE="quay.io/modh/qe-catalog-source"
-ODS_QE_CATALOG_IMAGE_TAG="latest"
+ODS_CATALOG_IMAGE="quay.io/modh/qe-catalog-source"
+ODS_CATALOG_IMAGE_TAG="latest"
 
 RHODS_NOTEBOOK_IMAGE_NAME=s2i-generic-data-science-notebook
 
@@ -59,7 +59,7 @@ CUSTOMIZE_RHODS_PVC_SIZE=5Gi
 # see sutest_customize_rhods_after_wait for the limits/requests values
 CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE=1
 
-# only taken into account if CUSTOMIZE_RHODS=1
+# only taken into account if CUSTOMIZE_RHODS=1 and CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE is set
 # number of replicas to set to the Dashboard deployment
 CUSTOMIZE_RHODS_DASHBOARD_REPLICAS=5
 
@@ -202,7 +202,7 @@ get_compute_node_count() {
     fi
 
     notebook_size_name=$(get_notebook_size "$cluster_role")
-    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$notebook_size_name' '$instance_type' '$ODS_CI_NB_USERS' >&2; echo \$?")
+    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$notebook_size_name' '$instance_type' '$ODS_CI_NB_USERS' >&2 > '$ARTIFACT_DIR/${cluster_role}_${cluster_type}_sizing'; echo \$?")
 
     if [[ "$size" == 0 ]]; then
         echo "ERROR: couldn't determine the number of nodes to request ..." >&2
