@@ -34,36 +34,51 @@ class ExecutionDistribution():
             break
 
         cfg__show_only_step = cfg.get("step", False)
+        cfg__time_to_reach_step = cfg.get("time_to_reach_step", False)
 
-        steps = []
         data = []
 
-        if cfg__show_only_step:
+        if cfg__show_only_step or cfg__time_to_reach_step:
             times_data = []
+
         for user_idx, ods_ci_output in entry.results.ods_ci_output.items():
+            if cfg__time_to_reach_step:
+                accumulated_timelength = 0
+
             for step_name, test_times in ods_ci_output.items():
                 if cfg__show_only_step and step_name != cfg__show_only_step:
                     continue
 
-                if step_name not in steps:
-                    steps.append(step_name)
-
                 if test_times.status != "PASS":
                     continue
 
-                step_index = steps.index(step_name)
+                timelength = (test_times.finish - test_times.start).total_seconds()
 
-                data.append(dict(user=1, step_name=step_name,
-                                 timelength=(test_times.finish - test_times.start).total_seconds()))
-                if cfg__show_only_step:
+                if cfg__time_to_reach_step:
+                    accumulated_timelength += timelength
+                    if step_name != cfg__time_to_reach_step:
+                        continue
+
+                    timelength = accumulated_timelength
+                    step_name = f"Time to reach {step_name}"
+
+                data.append(dict(user=1, step_name=step_name, timelength=timelength))
+
+                if cfg__show_only_step or cfg__time_to_reach_step:
                     times_data.append(data[-1]["timelength"])
+
+                if cfg__time_to_reach_step:
+                    break
+
+        if not data:
+            return None, "No data to plot ..."
 
         df = pd.DataFrame(data)
         fig = px.histogram(df, x="timelength",
                            y="user", color="step_name",
                            marginal="violin",
                            barmode="overlay",
-                           histnorm='probability density',
+                           #histnorm='probability density',
                            hover_data=df.columns)
         fig.update_layout(xaxis_title="Step timelength (in seconds)")
 
@@ -73,11 +88,17 @@ class ExecutionDistribution():
         if cfg__show_only_step:
             title += f"<br><b>{cfg__show_only_step}</b>"
             fig.layout.update(showlegend=False)
+        elif cfg__time_to_reach_step:
+            title += f"<br><b>Time to reach {cfg__time_to_reach_step}</b>"
+            fig.layout.update(showlegend=False)
+
         fig.update_layout(title=title, title_x=0.5)
 
-        if cfg__show_only_step:
+        if cfg__show_only_step or cfg__time_to_reach_step:
             q1, med, q3 = stats.quantiles(times_data)
-            msg = f"Q1 = {q1:.1f}s, median = {med:.1f}s, Q3 = {q3:.1f}s"
+            q90 = stats.quantiles(times_data, n=10)[8] # 90th percentile
+            msg = f"Q1 = {q1:.1f}s, median = {med:.1f}s, Q3 = {q3:.1f}s, 90th = {q90:.1f}s"
         else:
             msg = ""
+
         return fig, msg

@@ -143,18 +143,28 @@ class LaunchAndExecTimeDistributionReport():
         header += [html.H2("Start time distribution")]
         header += [Plot("Launch time distribution", args)]
         header += ["This plot provides information the start time of the different user steps. The failed steps are not taken into account."]
-        header += html.Br()
-        header += html.Br()
+        header += [html.Br()]
+        header += [html.Br()]
 
 
-        header += [html.H2("Execution time distribution")]
+        header += [html.H2("Overview of the Execution time distribution")]
         header += [Plot("Execution time distribution", args)]
         header += ["This plot provides information about the execution timelength for the different user steps. The failed steps are not taken into account."]
-        header += html.Br()
-        header += html.Br()
+        header += [html.Br()]
+        header += [html.Br()]
 
-        header += html.Br()
-        header += html.Br()
+        header += [html.H2("Execution time distribution for getting a usable Notebook")]
+
+        msg_p = []
+        header += [Plot("Execution time distribution",
+                        set_config(dict(time_to_reach_step="Go to JupyterLab Page"), args),
+                        msg_p,
+                        )]
+        header += [html.I(msg_p[0]), html.Br()]
+
+        header += ["This plot provides information about the execution timelength required to reach JupyterLab front page. The failed steps are not taken into account."]
+        header += [html.Br()]
+        header += [html.Br()]
 
 
         header += ["The plots below show the break down of the execution timelength for the different steps."]
@@ -171,6 +181,7 @@ class LaunchAndExecTimeDistributionReport():
 
         for step_name in step_names:
             if step_name == "Open the Browser": continue
+
             msg_p=[]
             header += [Plot("Execution time distribution",
                             set_config(dict(step=step_name), args),
