@@ -117,7 +117,7 @@ create_cluster() {
     ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count"
 
     if [[ "$cluster_role" == "sutest" && "$ENABLE_AUTOSCALER" ]]; then
-        machineset_name=$(oc get machinesets -n openshift-machine-api -oname | grep $(echo "$SUTEST_COMPUTE_MACHINE_TYPE" | sed 's/\./-/g' ) | cut -d/ -f2)
+        machineset_name=$(oc get machinesets -n openshift-machine-api -oname | grep $(echo "$OCP_SUTEST_COMPUTE_MACHINE_TYPE" | sed 's/\./-/g' ) | cut -d/ -f2)
         oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
         cat testing/ods/autoscaling/machineautoscaler.yaml \
             | sed "s/MACHINESET_NAME/$machineset_name/" \
