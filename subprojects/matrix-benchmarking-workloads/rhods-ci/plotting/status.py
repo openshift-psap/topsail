@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+import statistics as stats
+
 import plotly.graph_objs as go
 import pandas as pd
 import plotly.express as px
@@ -31,11 +33,18 @@ class ExecutionDistribution():
         for entry in common.Matrix.all_records(settings, setting_lists):
             break
 
+        cfg__show_only_step = cfg.get("step", False)
+
         steps = []
         data = []
-        for test_pod, ods_ci_output in entry.results.ods_ci_output.items():
-            user_idx = test_pod.split("-")[2]
+
+        if cfg__show_only_step:
+            times_data = []
+        for user_idx, ods_ci_output in entry.results.ods_ci_output.items():
             for step_name, test_times in ods_ci_output.items():
+                if cfg__show_only_step and step_name != cfg__show_only_step:
+                    continue
+
                 if step_name not in steps:
                     steps.append(step_name)
 
@@ -46,7 +55,8 @@ class ExecutionDistribution():
 
                 data.append(dict(user=1, step_name=step_name,
                                  timelength=(test_times.finish - test_times.start).total_seconds()))
-
+                if cfg__show_only_step:
+                    times_data.append(data[-1]["timelength"])
 
         df = pd.DataFrame(data)
         fig = px.histogram(df, x="timelength",
@@ -59,6 +69,15 @@ class ExecutionDistribution():
 
         user_count = entry.settings.user_count
 
-        fig.update_layout(title=f"Execution time distribution with {user_count} users", title_x=0.5)
+        title = f"Execution time distribution with {user_count} users"
+        if cfg__show_only_step:
+            title += f"<br><b>{cfg__show_only_step}</b>"
+            fig.layout.update(showlegend=False)
+        fig.update_layout(title=title, title_x=0.5)
 
-        return fig, ""
+        if cfg__show_only_step:
+            q1, med, q3 = stats.quantiles(times_data)
+            msg = f"Q1 = {q1:.1f}s, median = {med:.1f}s, Q3 = {q3:.1f}s"
+        else:
+            msg = ""
+        return fig, msg

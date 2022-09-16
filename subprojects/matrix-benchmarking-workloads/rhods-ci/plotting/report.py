@@ -4,6 +4,7 @@ from dash import html
 from dash import dcc
 
 import matrix_benchmarking.plotting.table_stats as table_stats
+import matrix_benchmarking.common as common
 
 def register():
     PriceOverviewReport()
@@ -32,9 +33,12 @@ def set_config(additional_cfg, args):
     cfg.d.update(additional_cfg)
     return list(args[:-1]) + [cfg]
 
-def Plot(name, args):
+def Plot(name, args, msg_p=None):
     stats = table_stats.TableStats.stats_by_name[name]
-    return dcc.Graph(figure=stats.do_plot(*args)[0])
+    fig, msg = stats.do_plot(*args)
+    if msg_p is not None: msg_p.append(msg)
+
+    return dcc.Graph(figure=fig)
 
 
 class PodNodeMappingReport():
@@ -132,8 +136,16 @@ class LaunchAndExecTimeDistributionReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, *args):
+
         header = []
         header += [html.P("These plots show the distribution of the user steps execution time and launch time.")]
+
+        header += [html.H2("Start time distribution")]
+        header += [Plot("Launch time distribution", args)]
+        header += ["This plot provides information the start time of the different user steps. The failed steps are not taken into account."]
+        header += html.Br()
+        header += html.Br()
+
 
         header += [html.H2("Execution time distribution")]
         header += [Plot("Execution time distribution", args)]
@@ -141,11 +153,30 @@ class LaunchAndExecTimeDistributionReport():
         header += html.Br()
         header += html.Br()
 
-        header += [html.H2("Start time distribution")]
-        header += [Plot("Launch time distribution", args)]
-        header += ["This plot provides information the start time of the different user steps. The failed steps are not taken into account."]
         header += html.Br()
         header += html.Br()
+
+
+        header += ["The plots below show the break down of the execution timelength for the different steps."]
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            break
+
+
+        step_names = []
+        for ods_ci_output in entry.results.ods_ci_output.values():
+            step_names = list(ods_ci_output.keys())
+            break
+
+        for step_name in step_names:
+            if step_name == "Open the Browser": continue
+            msg_p=[]
+            header += [Plot("Execution time distribution",
+                            set_config(dict(step=step_name), args),
+                            msg_p)]
+            header += [html.I(msg_p[0])]
+            header += [html.Br(), html.Br()]
 
         return None, header
 
