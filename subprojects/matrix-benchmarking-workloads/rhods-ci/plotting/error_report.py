@@ -39,7 +39,10 @@ class ErrorReport():
             pr = entry.results.from_env.pr
             if entry.results.from_pr:
                 title = html.B(entry.results.from_pr["title"])
-                body = entry.results.from_pr["body"].replace("\n", "<br>")
+                body = entry.results.from_pr["body"]
+                if not body: body = "(empty)" # will be None if the PR body is empty
+
+                body = body.replace("\n", "<br>")
             else:
                 title = ""
                 body = ""
@@ -94,12 +97,11 @@ class ErrorReport():
         REFERENCE_USER_IDX = 0
 
         reference_content = None
-        for podname, exit_code in entry.results.ods_ci_exit_code.items():
+        for user_idx, exit_code in entry.results.ods_ci_exit_code.items():
             content = []
 
             total_users += 1
 
-            user_idx = int(podname.split("-")[2])
             if exit_code == 0:
                 if user_idx != REFERENCE_USER_IDX: continue
 
@@ -115,7 +117,7 @@ class ErrorReport():
             content.append(html.H3(f"User #{user_idx}"))
             failed_users += 1
 
-            ods_ci_output = entry.results.ods_ci_output[podname]
+            ods_ci_output = entry.results.ods_ci_output[user_idx]
             if ods_ci_output is None:
                 content.append(html.Ul([
                     html.Li([f'No report available :/'])
@@ -135,7 +137,7 @@ class ErrorReport():
                 last_screenshot_path = images[-1] if images else None
 
                 content.append(html.Ul([
-                    html.Li([f'Failed at step', html.B(html.Code(f'"ODS - {step_idx} - {step_name}".'))]),
+                    html.Li([f'Failed at step ', html.B(html.Code(f'"ODS - {step_idx} - {step_name}".'))]),
                     html.Li(html.A("ODS-CI logs", target="_blank", href=link(robot_log_path))),
                 ]))
 

@@ -49,13 +49,6 @@
           > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_pods.status"
     ignore_errors: yes
 
-  - name: Get the events of the notebook namespace
-    shell:
-      oc get ev -oyaml
-         -n {{ rhods_notebook_namespace }}
-         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_events.yaml"
-    ignore_errors: yes
-
   - name: Get the RHODS version
     shell:
       oc get csv -oname -n redhat-ods-operator | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-

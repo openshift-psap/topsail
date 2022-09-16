@@ -7,8 +7,6 @@ import plotly.express as px
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
-from . import timeline_data
-
 def register():
     LaunchTimeDistribution("Launch time distribution")
     LaunchTimeDistribution("Step successes", show_successes=True)
@@ -35,25 +33,22 @@ class LaunchTimeDistribution():
         if  expe_cnt != 1:
             return {}, f"ERROR: only one experiment must be selected (found {expe_cnt})"
 
-        user_count = 0
-        data = []
-        line_sort_name = ""
-        df = None
         for entry in common.Matrix.all_records(settings, setting_lists):
-            user_count, data_timeline, line_sort_name = timeline_data.generate(entry, cfg)
+            results = entry.results
 
+        user_count = results.user_count
         data = []
-        for line in data_timeline:
-            if line["LegendGroup"] != "ODS-CI": continue
-            if not self.show_successes:
-                if line["Status"] != "PASS": continue
+        for pod_name, ods_ci_output in entry.results.ods_ci_output.items():
+            for step_name, step_status in ods_ci_output.items():
+                if not self.show_successes:
+                    if step_status.status != "PASS": continue
 
-            data.append(dict(
-                Event=line["LegendName"],
-                Time=line["Start"],
-                Count=1,
-                Status=line["Status"]
-            ))
+                data.append(dict(
+                    Event=step_name,
+                    Time=step_status.start,
+                    Count=1,
+                    Status=step_status.status
+                ))
 
         df = pd.DataFrame(data)
         if self.show_successes:

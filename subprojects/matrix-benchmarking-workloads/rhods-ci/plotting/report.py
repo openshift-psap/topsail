@@ -4,12 +4,12 @@ from dash import html
 from dash import dcc
 
 import matrix_benchmarking.plotting.table_stats as table_stats
+import matrix_benchmarking.common as common
 
 def register():
     PriceOverviewReport()
 
     UserExecutionOverviewReport()
-    TimelineReport()
     PodNodeMappingReport()
     LaunchAndExecTimeDistributionReport()
     StepSuccessesReport()
@@ -33,36 +33,13 @@ def set_config(additional_cfg, args):
     cfg.d.update(additional_cfg)
     return list(args[:-1]) + [cfg]
 
-def Plot(name, args):
+def Plot(name, args, msg_p=None):
     stats = table_stats.TableStats.stats_by_name[name]
-    return dcc.Graph(figure=stats.do_plot(*args)[0])
+    fig, msg = stats.do_plot(*args)
+    if msg_p is not None: msg_p.append(msg)
 
-class TimelineReport():
-    def __init__(self):
-        self.name = "report: Timeline"
-        self.id_name = self.name.lower().replace(" ", "_")
-        self.no_graph = True
-        self.is_report = True
+    return dcc.Graph(figure=fig)
 
-        table_stats.TableStats._register_stat(self)
-
-    def do_plot(self, *args):
-        header = []
-        header += [html.P("These plots show an overview of the test execution timeline.")]
-        header += [html.P("""They are often too dense to be easily interpreted, but by zooming and
-panning, they may provide useful information about the events that occured during the test.""")]
-
-        header += [html.H2("Full Timeline")]
-        header += [Plot("Timeline", args)]
-        header += ["This plot provides information about the timeline of the test Pods execution (in the driver cluster), the steps of the simulated users (ODS prefix) and the Notebook Pods execution."]
-        header += html.Br()
-        header += html.Br()
-
-        header += [html.H2("Simple Timeline")]
-        header += [Plot("Simple Timeline", args)]
-        header += ["This plot is based on a Plotly.Express plotting class. It contains almost the same information as the full timeline, but plotted in a simpler way. It may help looking at specific events that the full timeline would group together."]
-
-        return None, header
 
 class PodNodeMappingReport():
     def __init__(self):
@@ -159,8 +136,16 @@ class LaunchAndExecTimeDistributionReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, *args):
+
         header = []
         header += [html.P("These plots show the distribution of the user steps execution time and launch time.")]
+
+        header += [html.H2("Start time distribution")]
+        header += [Plot("Launch time distribution", args)]
+        header += ["This plot provides information the start time of the different user steps. The failed steps are not taken into account."]
+        header += html.Br()
+        header += html.Br()
+
 
         header += [html.H2("Execution time distribution")]
         header += [Plot("Execution time distribution", args)]
@@ -168,11 +153,30 @@ class LaunchAndExecTimeDistributionReport():
         header += html.Br()
         header += html.Br()
 
-        header += [html.H2("Start time distribution")]
-        header += [Plot("Launch time distribution", args)]
-        header += ["This plot provides information the start time of the different user steps. The failed steps are not taken into account."]
         header += html.Br()
         header += html.Br()
+
+
+        header += ["The plots below show the break down of the execution timelength for the different steps."]
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            break
+
+
+        step_names = []
+        for ods_ci_output in entry.results.ods_ci_output.values():
+            step_names = list(ods_ci_output.keys())
+            break
+
+        for step_name in step_names:
+            if step_name == "Open the Browser": continue
+            msg_p=[]
+            header += [Plot("Execution time distribution",
+                            set_config(dict(step=step_name), args),
+                            msg_p)]
+            header += [html.I(msg_p[0])]
+            header += [html.Br(), html.Br()]
 
         return None, header
 
