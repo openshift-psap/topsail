@@ -30,21 +30,21 @@ _get_data_from_pr() {
     results_dir=$1
     shift
 
-    if [[ -z "${PULL_NUMBER:-}" ]]; then
-        echo "ERROR: PULL_NUMBER not set :/"
+    VARIABLE_OVERRIDES_FILE="${ARTIFACT_DIR}/variable_overrides"
+
+    if [[ ! -f "$VARIABLE_OVERRIDES_FILE" ]]; then
+        echo "ERROR: _get_data_from_pr expects $VARIABLE_OVERRIDES_FILE to exit ..."
         exit 1
     fi
 
-    matbench_url=$MATBENCH_DATA_URL
+    source "$VARIABLE_OVERRIDES_FILE"
 
-    if [[ -z "$matbench_url" ]]; then
-        TEST_BASE_NAME=nb-ux-on-
-        base_url="https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/$PULL_NUMBER/pull-ci-openshift-psap-ci-artifacts-master-ods-${TEST_BASE_NAME}${cluster_type}"
-
-        build=$(curl --silent -Ssf "${base_url}/latest-build.txt")
-
-        matbench_url="${base_url}/${build}/artifacts/${TEST_BASE_NAME}${cluster_type}/test/artifacts/"
+    if [[ -z "$PR_POSITIONAL_ARGS" ]]; then
+        echo "ERROR: _get_data_from_pr expects $VARIABLE_OVERRIDES_FILE to contain PR_POSITIONAL_ARGS ..."
+        exit 1
     fi
+
+    matbench_url="$PR_POSITIONAL_ARGS"
 
     echo "$matbench_url" > "${ARTIFACT_DIR}/source_url"
 
