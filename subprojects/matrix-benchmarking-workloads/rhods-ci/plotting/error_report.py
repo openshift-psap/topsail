@@ -39,7 +39,10 @@ class ErrorReport():
             pr = entry.results.from_env.pr
             if entry.results.from_pr:
                 title = html.B(entry.results.from_pr["title"])
-                body = entry.results.from_pr["body"].replace("\n", "<br>")
+                body = entry.results.from_pr["body"]
+                if not body: body = "(empty)" # will be None if the PR body is empty
+
+                body = body.replace("\n", "<br>")
             else:
                 title = ""
                 body = ""
