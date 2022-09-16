@@ -4,7 +4,7 @@ import os, sys
 import pathlib
 import tarfile
 
-LOCUST_TEST_CMD = "cd $LOCUST_DIR; PYTHONUNBUFFERED=1 locust --timescale --headless \
+LOCUST_TEST_CMD = "cd $LOCUST_DIR; PYTHONUNBUFFERED=1 locust --headless \
     --csv $ARTIFACT_DIR/api_scale_test \
     --csv-full-history \
     --html $ARTIFACT_DIR/api_scale_test.html \
@@ -43,16 +43,16 @@ def main():
     if not os.system(LOCUST_REPORTER_CMD):
         print("WARNING: locust-reporter failed ...")
 
-    print("Telling Postgres to terminate ...")
-    with open(artifacts_directory / "postgres.terminate", "w") as out_f:
-        print("0", file=out_f)
+    # print("Telling Postgres to terminate ...")
+    # with open(artifacts_directory / "postgres.terminate", "w") as out_f:
+    #     print("0", file=out_f)
 
-    print("Waiting for Postgres to terminate")
-    while not (artifacts_directory / "postgres.terminated").exists():
-        time.sleep(1)
+    # print("Waiting for Postgres to terminate")
+    # while not (artifacts_directory / "postgres.terminated").exists():
+    #     time.sleep(1)
 
-    (artifacts_directory / "postgres.terminated").unlink()
-    (artifacts_directory / "postgres.terminate").unlink()
+    # (artifacts_directory / "postgres.terminated").unlink()
+    # (artifacts_directory / "postgres.terminate").unlink()
 
     print("Postgres terminated, all done.")
 
