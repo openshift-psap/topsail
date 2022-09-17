@@ -1,18 +1,21 @@
 ---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
 - name: Apply the RHODS catalog template
   template:
     src: "{{ rhods_install_ods_catalog }}"
-    dest: "{{ artifact_extra_logs_dir }}/000_rhods_catalog.yml"
+    dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_catalog.yml"
     mode: 0400
 
-- name: Test if the RHODS catalog is available
-  command: oc get -f "{{ artifact_extra_logs_dir }}/000_rhods_catalog.yml" -oname
-  failed_when: false
-  register: has_rhods_catalog_cmd
+- name: Delete the RHODS catalog if it exists
+  command: oc delete -f "{{ artifact_extra_logs_dir }}/src/000_rhods_catalog.yml" --ignore-not-found
 
-- name: Create RHODS catalog if it does not exist
-  when: has_rhods_catalog_cmd.rc != 0
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/000_rhods_catalog.yml"
+- name: Create RHODS catalog
+  command: oc create -f "{{ artifact_extra_logs_dir }}/src/000_rhods_catalog.yml"
 
 - name: Create RHODS namespaces
   shell:
