@@ -17,7 +17,3 @@
   - pvc
   - configmap
   - secrets
-
-- name: Delete the events the notebook namespace
-  command:
-    oc delete ev --all -n rhods-notebooks
