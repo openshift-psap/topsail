@@ -75,6 +75,8 @@ prepare_driver_cluster() {
     switch_cluster "driver"
 
     oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
+    oc annotate namespace/"$ODS_CI_TEST_NAMESPACE" --overwrite \
+       "openshift.io/node-selector=node.kubernetes.io/instance-type=$DRIVER_COMPUTE_MACHINE_TYPE"
 
     build_and_preload_odsci_image() {
         ./run_toolbox.py utils build_push_image \
@@ -252,6 +254,16 @@ sutest_wait_rhods_launch() {
         ./run_toolbox.py cluster preload_image "notebook" "$NOTEBOOK_IMAGE" \
                          --namespace=redhat-ods-applications
     fi
+
+    osd_cluster_name=$(get_osd_cluster_name "sutest")
+    if [[ "$osd_cluster_name" ]]; then
+        machine_type=$OSD_SUTEST_COMPUTE_MACHINE_TYPE
+    else
+        machine_type=$OCP_SUTEST_COMPUTE_MACHINE_TYPE
+    fi
+
+    oc annotate namespace/rhods-notebooks --overwrite \
+       "openshift.io/node-selector=node.kubernetes.io/instance-type=$machine_type"
 }
 
 capture_environment() {

@@ -22,7 +22,7 @@ ${NOTEBOOK_SPAWN_RETRY_DELAY}  20 seconds
 
 ${NOTEBOOK_URL}                %{NOTEBOOK_URL}
 ${NOTEBOOK_NAME}               notebook.ipynb
-${NOTEBOOK_CLONE_WAIT_TIME}    30 seconds
+${NOTEBOOK_CLONE_WAIT_TIME}    3 minutes
 ${NOTEBOOK_EXEC_WAIT_TIME}     5 minutes
 
 &{browser logging capability}    browser=ALL
