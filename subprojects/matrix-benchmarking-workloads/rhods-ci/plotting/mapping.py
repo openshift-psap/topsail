@@ -88,10 +88,7 @@ class MappingTimeline():
         if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
-        user_count = 0
-        data = []
-        line_sort_name = ""
-
+        df = None
         for entry in common.Matrix.all_records(settings, setting_lists):
             df = pd.DataFrame(generate_data(entry, cfg, self.is_notebook))
 
@@ -122,9 +119,6 @@ class MappingDistribution():
         if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
-        user_count = 0
-        data = []
-        line_sort_name = ""
         df = None
         for entry in common.Matrix.all_records(settings, setting_lists):
             df = pd.DataFrame(generate_data(entry, cfg, self.is_notebook))
@@ -135,7 +129,6 @@ class MappingDistribution():
         fig = px.bar(df, x="NodeName", y="Count", color="UserIndex",
                      title=f"Distribution of the {'Notebook' if self.is_notebook else 'Test'} Pods on the nodes")
 
-        #fig.update_layout(barmode='stack', title=f"Mapping of {'Notebook' if self.is_notebook else 'Test'} Pods on the nodes", title_x=0.5,)
         fig.update_layout(title_x=0.5,)
         fig.update_layout(xaxis_title="")
         fig.update_layout(yaxis_title="Pod count")
