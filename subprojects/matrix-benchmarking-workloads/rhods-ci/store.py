@@ -312,7 +312,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(output_dir / "output.xml")
         results.ods_ci_exit_code[user_id] = _parse_ods_ci_exit_code(output_dir / "test.exit_code")
 
-    results.user_count = import_settings["user_count"]
+    results.user_count = int(import_settings["user_count"])
 
     store.add_to_matrix(import_settings, None, results, None)
 
