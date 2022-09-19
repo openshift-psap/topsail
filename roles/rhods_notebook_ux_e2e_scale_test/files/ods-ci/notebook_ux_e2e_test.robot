@@ -59,6 +59,7 @@ Go to RHODS Dashboard
   [Tags]  Dashboard
 
   Wait For Condition  return document.title == ${DASHBOARD_PRODUCT_NAME}  timeout=60 seconds
+  Wait Until Page Contains  Launch application  timeout=60 seconds
   Capture Page Screenshot
 
 
@@ -76,16 +77,12 @@ Go to Jupyter Page
   Capture Page Screenshot
 
 
-Trigger the Notebook Spawn
-  [Tags]  Spawn  Notebook
-
-  Trigger Notebook Spawn
-  Capture Page Screenshot
-
-
 Wait for the Notebook Spawn
   [Tags]  Spawn  Notebook
 
+  Trigger Notebook Spawn
+  Click Element  xpath://span[@class="pf-c-expandable-section__toggle-text"]
+  Capture Page Screenshot
   Wait Notebook Spawn
   Capture Page Screenshot
 
@@ -106,10 +103,12 @@ Go to JupyterLab Page
 Load the Notebook
   [Tags]  Notebook  JupyterLab
 
+  Maybe Close Popup
   ${is_launcher_selected} =  Run Keyword And Return Status  JupyterLab Launcher Tab Is Selected
   Run Keyword If  not ${is_launcher_selected}  Open JupyterLab Launcher
   Capture Page Screenshot
   Launch a new JupyterLab Document
+  Maybe Close Popup
   Close Other JupyterLab Tabs
   Run Cell And Check For Errors  !time curl "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
   Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_CLONE_WAIT_TIME}
