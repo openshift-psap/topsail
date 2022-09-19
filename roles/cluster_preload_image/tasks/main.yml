@@ -33,7 +33,7 @@
     register: currentNumberScheduled_cmd
     retries: 3
     delay: 15
-    until: currentNumberScheduled_cmd.stdout == desiredNumberScheduled_cmd.stdout
+    until: currentNumberScheduled_cmd.stdout >= desiredNumberScheduled_cmd.stdout
 
   - name: Wait for the pods to be ready
     command:

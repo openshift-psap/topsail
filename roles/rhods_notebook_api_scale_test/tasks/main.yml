@@ -1,0 +1,226 @@
+---
+- name: Ensure that the secret properties file exists
+  stat:
+    path: "{{ rhods_notebook_api_scale_test_secret_properties }}"
+
+- name: Ensure that the user count is set
+  fail: msg="user count isn't set"
+  when: rhods_notebook_api_scale_test_user_count | int < 0
+
+- name: Ensure that the IDP name is set
+  fail: msg="idp name isn't set"
+  when: not rhods_notebook_api_scale_test_idp_name
+
+- name: Ensure that the username prefix is set
+  fail: msg="username prefix isn't set"
+  when: not rhods_notebook_api_scale_test_username_prefix
+
+- name: Set system-under-test == driver-cluster if no system-under-test (SUT) is provided
+  set_fact:
+    sut_cluster_kubeconfig: "{{ rhods_notebook_api_scale_test_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
+    rhods_api_scale_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_test_istag }}
+    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_artifacts_istag }}
+    rhods_notebook_namespace: rhods-notebooks
+    tester_job_name: api-scale-test
+    tester_namespace: "{{ rhods_notebook_api_scale_test_namespace }}"
+    test_artifacts_collected: all
+    capture_prom_db: yes
+
+- name: Fetch RHODS endpoints from the SUT cluster
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  block:
+  - name: Test the connectivity of the SUT cluster
+    command: oc whoami --show-console
+
+  - name: Get RHODS dashboard address (SUT cluster)
+    command: oc get route/rhods-dashboard -n redhat-ods-applications -ojsonpath={.spec.host}
+    register: rhods_dashboard_hostname_cmd
+
+  - name: Get the RHODS version
+    shell:
+      oc get csv -n redhat-ods-operator -ojsonpath={.items[0].spec.version}
+    register: rhods_version_cmd
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Instantiate the tester job template
+  template:
+    src: "{{ rhods_notebook_api_scale_test_job }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_api_scale_test.yaml"
+    mode: 0400
+
+- name: Delete the RHODS test entrypoint, if it exists
+  command:
+    oc delete cm/rhods-notebook-api-scale-test-entrypoint
+       -n {{ rhods_notebook_api_scale_test_namespace }}
+       --ignore-not-found
+
+- name: Create the RHODS test entrypoint
+  command:
+    oc create cm rhods-notebook-api-scale-test-entrypoint
+       "--from-file={{ rhods_notebook_api_scale_test_entrypoint_directory }}"
+       "--from-file=artifacts-exporter.sh={{ rhods_notebook_api_scale_test_s3_artifacts_exporter_sidecar }}"
+       "--from-file=timescale_schema.sql={{ rhods_notebook_api_scale_test_timescale_schema }}"
+       -n {{ rhods_notebook_api_scale_test_namespace }}
+
+- name: Delete the credentials secret file, if it exists
+  command:
+    oc delete secret rhods-scale-test-credentials
+           -n {{ rhods_notebook_api_scale_test_namespace }}
+           --ignore-not-found
+
+- name: Create the credentials secret file
+  command:
+    oc create secret generic rhods-scale-test-credentials
+       "--from-file=secret.properties={{ rhods_notebook_api_scale_test_secret_properties }}"
+       -n {{ rhods_notebook_api_scale_test_namespace }}
+
+- name: Delete the RHODS tester job, if it exists
+  command:
+    oc delete
+       -f "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_api_scale_test.yaml"
+       --ignore-not-found
+       -n {{ rhods_notebook_api_scale_test_namespace }}
+
+- name: Delete the events of the tester namespace
+  shell:
+    oc delete ev -n {{ rhods_notebook_api_scale_test_namespace }} --all > /dev/null
+  failed_when: false
+
+- name: Delete the events, pods and PVC of the notebook namespace
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  shell:
+    set -o pipefail;
+    oc get pods,pvc,ev -oname -n {{ rhods_notebook_namespace }} | \
+      grep {{ rhods_notebook_api_scale_test_username_prefix }} | \
+      xargs --no-run-if-empty
+            oc delete -n {{ rhods_notebook_namespace }}
+  failed_when: false
+
+- name: Name the namespace privileged
+  command:
+    oc adm policy add-scc-to-user privileged
+       -z default
+       -n {{ rhods_notebook_api_scale_test_namespace }}
+
+# ---
+
+- name: Cleanup the Prometheus databases of the sutest cluster
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  block:
+  - name: Cleanup the RHODS Prometheus database of the sutest cluster
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: reset
+      cluster_prometheus_db_label: deployment=prometheus
+      cluster_prometheus_db_namespace: redhat-ods-monitoring
+    when: capture_prom_db | bool
+
+  - name: Cleanup the Prometheus database of the sutest cluster
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: reset
+    when: capture_prom_db | bool
+
+- name: Cleanup the Prometheus database of the driver cluster
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: reset
+  when: capture_prom_db | bool
+
+- name: Empty the Minio S3 bucket
+  shell: |
+    oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
+       mc --config-dir /tmp rm minio/mybucket/ --recursive --force --quiet;
+    oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
+       rm -rf /artifacts/to_export  > /dev/null
+    oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
+       mc --config-dir /tmp cp /etc/os-release minio/mybucket; # without it, cp may fail if the bucket is empty
+  failed_when: false
+
+# ---
+
+- name: Create the RHODS test job
+  command:
+    oc create
+       -f "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_api_scale_test.yaml"
+       -n {{ rhods_notebook_api_scale_test_namespace }}
+
+- name: Wait for the RHODS tester job to start
+  shell:
+    oc get jobs/api-scale-test -ojsonpath={.status.startTime} -n {{ rhods_notebook_api_scale_test_namespace }}
+  register: wait_rhods_test_job_start
+  retries: 12
+  delay: 5
+  until: wait_rhods_test_job_start.stdout
+
+- name: Wait for the RHODS tester job to terminate
+  command:
+    oc get jobs/api-scale-test -ojsonpath={.status.active} -n {{ rhods_notebook_api_scale_test_namespace }}
+  register: wait_rhods_test_job
+  retries: 60
+  delay: 40
+  until: not wait_rhods_test_job.stdout
+  failed_when: false
+
+# ---
+
+- name: Capture the sutest cluster artifacts
+  include_tasks: artifacts_sutest.yml
+
+- name: Cleanup the notebooks Pods and PVCs
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  shell:
+    set -o pipefail;
+    oc get notebooks -oname -n {{ rhods_notebook_namespace }} |
+      (grep "{{ rhods_notebook_api_scale_test_username_prefix }}" || true) |
+       xargs --no-run-if-empty
+          oc delete -n {{ rhods_notebook_namespace }}
+  ignore_errors: yes
+
+- name: Cleanup the notebooks Pods and PVCs
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  shell:
+    set -o pipefail;
+    oc get pods,pvc -oname -n {{ rhods_notebook_namespace }} |
+       (grep "{{ rhods_notebook_api_scale_test_username_prefix }}" || true) |
+       xargs --no-run-if-empty
+         oc delete -n {{ rhods_notebook_namespace }}
+  ignore_errors: yes
+
+- name: Capture the driver cluster artifacts
+  include_tasks: artifacts_driver.yml
+
+- name: Show the artifacts directory
+  debug: msg="The test artifacts have been stored in {{ artifact_extra_logs_dir }}"
+
+- name: Generate MatrixBenchmark settings file
+  shell: |
+    cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
+    date=$(date +%Y-%m-%d_%H:%M:%S)
+    user_count={{ rhods_notebook_api_scale_test_user_count }}
+    EOF
+  ignore_errors: yes
+
+- name: Generate MatrixBenchmark exit code file
+  shell:
+    (test -z "$(oc get jobs/api-scale-test -ojsonpath={.status.failed} -n {{ rhods_notebook_api_scale_test_namespace }})" && echo 0 || echo 1) > "{{ artifact_extra_logs_dir }}/exit_code"
+  ignore_errors: yes
+
+- name: Test if the RHODS test job crashed
+  command:
+    oc get jobs/api-scale-test -ojsonpath={.status.failed} -n {{ rhods_notebook_api_scale_test_namespace }}
+  register: check_rhods_test_job
+  failed_when: check_rhods_test_job.stdout | length > 0

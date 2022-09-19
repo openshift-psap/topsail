@@ -50,6 +50,9 @@ class LaunchTimeDistribution():
                     Status=step_status.status
                 ))
 
+        if not data:
+            return None, "No data to plot ..."
+
         df = pd.DataFrame(data)
         if self.show_successes:
             fig = px.histogram(df, x="Event", y="Count", color="Event", pattern_shape="Status")

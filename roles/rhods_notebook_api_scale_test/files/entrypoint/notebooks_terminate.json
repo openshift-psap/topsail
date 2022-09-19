@@ -1,0 +1,7 @@
+{
+  "metadata": {
+    "annotations": {
+      "kubeflow-resource-stopped": "stopped by ci-artifacts"
+    }
+  }
+}

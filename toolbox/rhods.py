@@ -136,6 +136,48 @@ class RHODS:
         return RunAnsibleRole("rhods_cleanup_notebooks", opts)
 
     @staticmethod
+    def notebook_api_scale_test(idp_name,
+                                secret_properties_file,
+                                username_prefix,
+                                test_name,
+                                user_count: int,
+                                run_time="1m",
+                                spawn_rate="1",
+                                sut_cluster_kubeconfig="",
+                                notebook_image_name="s2i-generic-data-science-notebook",
+                                ):
+
+        """
+        End-to-end testing of RHODS notebook user experience at scale
+
+        Args:
+          idp_name: Name of the identity provider to use.
+          secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'deploy_ldap' command).
+          username_prefix: Prefix of the RHODS users.
+          test_name: Test to perform.
+          user_count: Number of users to run in parallel.
+          notebook_image_name: Optional. Name of the RHODS image to use when launching the notebooks.
+
+          run_time: Test run time (eg, 300s, 20m, 3h, 1h30m, etc.)
+          spawn_rate: Rate to spawn users at (users per second)
+          sut_cluster_kubeconfig: Optional. Path of the system-under-test cluster's Kubeconfig. If provided, the RHODS endpoints will be looked up in this cluster.
+        """
+
+        opts = {
+            "rhods_notebook_api_scale_test_idp_name": idp_name,
+            "rhods_notebook_api_scale_test_secret_properties": secret_properties_file,
+            "rhods_notebook_api_scale_test_username_prefix": username_prefix,
+            "rhods_notebook_api_scale_test_user_count": user_count,
+            "rhods_notebook_api_scale_test_test_name": test_name,
+            "rhods_notebook_api_scale_test_run_time": run_time,
+            "rhods_notebook_api_scale_test_spawn_rate": spawn_rate,
+            "rhods_notebook_api_scale_test_sut_cluster_kubeconfig": sut_cluster_kubeconfig,
+            "rhods_notebook_api_scale_test_ods_ci_notebook_image_name": notebook_image_name,
+        }
+
+        return RunAnsibleRole("rhods_notebook_api_scale_test", opts)
+
+    @staticmethod
     def undeploy_ods(namespace="redhat-ods-operator", wait: bool = True):
         """
         Undeploy ODS operator
