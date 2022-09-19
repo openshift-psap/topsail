@@ -35,7 +35,6 @@ Setup
   Open Browser  ${ODH_DASHBOARD_URL}  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}  desired_capabilities=${capabilities}
 
 Tear Down
-  Capture Page Screenshot
   ${browser log entries}=    Get Browser Console Log Entries
   Log    ${browser log entries}
   ${browser log entries str}=   Convert To String  ${browser log entries}
