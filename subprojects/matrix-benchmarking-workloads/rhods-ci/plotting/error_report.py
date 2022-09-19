@@ -53,16 +53,20 @@ class ErrorReport():
             for comment in (entry.results.pr_comments or [])[::-1]:
                 if comment["user"]["login"] != pr_author: continue
                 if not comment["body"]: continue
-                last_comment = comment["body"].replace("\n", "<br>")
+                last_comment_body = comment["body"].replace("\n", "<br>")
+                last_comment_date = comment["created_at"]
+                last_comment_found = True
                 break
             else:
-                last_comment = None
+                last_comment_found = False
+
 
             info += [html.Li(["PR ", html.A(pr.name, href=pr.link, target="_blank"), " ",title])]
             if body:
                 info += [html.Ul(html.Li(html.Code(body)))]
-            if last_comment:
-                info += [html.Ul(html.Li(["Test trigger: ", html.Code(last_comment)]))]
+            if last_comment_found:
+                info += [html.Ul(html.Li(["Trigger date: ", html.I(last_comment_date)]))]
+                info += [html.Ul(html.Li(["Test trigger: ", html.Code(last_comment_body)]))]
 
             info += [html.Li(["Test diff against ", html.A(html.Code(pr.base_ref), href=pr.diff_link, target="_blank")])]
 
@@ -108,6 +112,7 @@ class ErrorReport():
         total_users = 0
         failed_users = 0
         failed_steps = defaultdict(list)
+        failed_users_at_step = defaultdict(list)
         REFERENCE_USER_IDX = 0
 
         reference_content = None
@@ -137,11 +142,13 @@ class ErrorReport():
                     html.Li([f'No report available :/'])
                 ]))
                 failed_steps["Terminate in time"].append(content)
+
                 continue
 
             for step_idx, (step_name, step_info) in enumerate(ods_ci_output.items()):
                 if step_info.status != "FAIL": continue
                 failed_steps[step_name].append(content)
+                failed_users_at_step[step_name].append(user_idx)
 
                 user_dir = entry.results.location / "ods-ci" / f"ods-ci-{user_idx}"
                 robot_log_path = user_dir / "log.html"
@@ -167,7 +174,7 @@ class ErrorReport():
 
         steps = html.Ul(
             list(
-                [html.Li([f"{len(contents)} users failed the step ", html.Code(step_name)])
+                [html.Li([f"{len(contents)} users failed the step ", html.Code(step_name), " (", ", ".join(map(str, failed_users_at_step[step_name])), ")"])
                  for step_name, contents in failed_steps.items()]
             )
 
