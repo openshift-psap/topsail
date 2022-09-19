@@ -291,12 +291,8 @@ sutest_customize_rhods_after_wait() {
     fi
 
     if [[ "$CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE" == 1 ]]; then
-        # must be consistent with testing/ods/sizing/notebook_sizes
-        ODS_NOTEBOOK_CPU_SIZE=1
-        ODS_NOTEBOOK_MEMORY_SIZE=4Gi
-
         oc get odhdashboardconfig/odh-dashboard-config -n redhat-ods-applications -ojson \
-            | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE'"}, "requests":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE'"}}}]' \
+            | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE_GI'Gi"}, "requests":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE_GI'Gi"}}}]' \
             | oc apply -f-
     fi
 
