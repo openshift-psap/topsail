@@ -388,7 +388,10 @@ case ${action} in
             export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/test_run_$idx"
             mkdir -p "$ARTIFACT_DIR"
             pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
-            [[ -f "$pr_file" ]] && cp "$pr_file" "$ARTIFACT_DIR"
+            pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request.json
+            for f in "$pr_file" "$pr_comment_file"; do
+                [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
+            done
 
             run_test && failed=0 || failed=1
             # quick access to these files
