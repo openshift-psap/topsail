@@ -47,9 +47,23 @@ class ErrorReport():
                 title = ""
                 body = ""
 
-            info += [html.Li(["PR ", html.A(pr.name, href=pr.link, target="_blank"), title])]
+
+            pr_author = entry.results.from_pr["user"]["login"]
+
+            for comment in (entry.results.pr_comments or [])[::-1]:
+                if comment["user"]["login"] != pr_author: continue
+                if not comment["body"]: continue
+                last_comment = comment["body"].replace("\n", "<br>")
+                break
+            else:
+                last_comment = None
+
+            info += [html.Li(["PR ", html.A(pr.name, href=pr.link, target="_blank"), " ",title])]
             if body:
                 info += [html.Ul(html.Li(html.Code(body)))]
+            if last_comment:
+                info += [html.Ul(html.Li(["Test trigger: ", html.Code(last_comment)]))]
+
             info += [html.Li(["Test diff against ", html.A(html.Code(pr.base_ref), href=pr.diff_link, target="_blank")])]
 
         if entry.results.from_env.link_flag == "running-with-the-test":

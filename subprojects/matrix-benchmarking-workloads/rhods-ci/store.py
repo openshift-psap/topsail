@@ -88,9 +88,17 @@ def _parse_env(filename):
     return from_env
 
 
-def _parse_pr(filename):
+def _parse_pr(pr_file):
     try:
-        with open(filename) as f:
+        with open(pr_file) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+
+
+def _parse_pr_comments(pr_comments_file):
+    try:
+        with open(pr_comments_file) as f:
             return json.load(f)
     except FileNotFoundError:
         return None
@@ -266,6 +274,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.from_env = _parse_env(dirname / "_ansible.env")
 
     results.from_pr = _parse_pr(dirname.parent / "pull_request.json")
+    results.pr_comments = _parse_pr_comments(dirname.parent / "pull_request-comments.json",)
 
     results.rhods_info = _parse_rhods_info(dirname)
 
