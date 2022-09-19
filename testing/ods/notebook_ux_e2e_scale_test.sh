@@ -495,7 +495,7 @@ case ${action} in
             export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/test_run_$idx"
             mkdir -p "$ARTIFACT_DIR"
             pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
-            pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request.json
+            pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
             for f in "$pr_file" "$pr_comment_file"; do
                 [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
             done
