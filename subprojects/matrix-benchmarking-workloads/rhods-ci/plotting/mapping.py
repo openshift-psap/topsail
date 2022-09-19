@@ -15,7 +15,7 @@ def register():
     MappingDistribution("Pod/Node distribution: Test Pods", is_notebook=False)
     MappingDistribution("Pod/Node distribution: Notebooks", is_notebook=True)
 
-def generate_data(entry, cfg, is_notebook):
+def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
     test_nodes = {}
     entry_results = entry.results
 
@@ -29,6 +29,19 @@ def generate_data(entry, cfg, is_notebook):
     hostnames_index = list(hostnames.values()).index
 
     data = []
+
+    if force_order_by_user_idx:
+        for user_idx in range(entry.results.user_count):
+            data.append(dict(
+                UserIndex = f"User #{user_idx:03d}",
+                UserIdx = user_idx,
+                PodStart = entry_results.job_creation_time,
+                PodFinish = entry_results.job_creation_time,
+                NodeIndex = f"Not mapped",
+                NodeName = f"Not mapped",
+                Count=0,
+            ))
+
     for pod_name in pods:
         if is_notebook:
             user_idx = int(re.findall(r'[:letter:]*(\d+)$', pod_name)[0])
@@ -43,6 +56,7 @@ def generate_data(entry, cfg, is_notebook):
         except KeyError:
             data.append(dict(
                 UserIndex = f"User #{user_idx:03d}",
+                UserIdx = user_idx,
                 PodStart = entry_results.job_creation_time,
                 PodFinish = entry_results.job_completion_time,
                 NodeIndex = f"No node",
@@ -64,12 +78,14 @@ def generate_data(entry, cfg, is_notebook):
 
         data.append(dict(
             UserIndex = f"User #{user_idx:03d}",
+            UserIdx = user_idx,
             PodStart = pod_times.start_time,
             PodFinish = finish,
             NodeIndex = f"Node {hostnames_index(hostname)}",
             NodeName = f"Node {hostnames_index(hostname)}<br>{shortname}<br>{instance_type}",
             Count=1,
         ))
+
     return data
 
 class MappingTimeline():
@@ -88,9 +104,12 @@ class MappingTimeline():
         if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
+        cfg__force_order_by_user_idx = cfg.get("force_order_by_user_idx", False)
+
         df = None
         for entry in common.Matrix.all_records(settings, setting_lists):
-            df = pd.DataFrame(generate_data(entry, cfg, self.is_notebook))
+            df = pd.DataFrame(generate_data(entry, cfg, self.is_notebook,
+                                            force_order_by_user_idx=cfg__force_order_by_user_idx))
 
         if df.empty:
             return None, "Not data available ..."
@@ -126,7 +145,7 @@ class MappingDistribution():
         if df.empty:
             return None, "Nothing to plot (no data)"
 
-        fig = px.bar(df, x="NodeName", y="Count", color="UserIndex",
+        fig = px.bar(df, x="NodeName", y="Count", color="UserIdx",
                      title=f"Distribution of the {'Notebook' if self.is_notebook else 'Test'} Pods on the nodes")
 
         fig.update_layout(title_x=0.5,)

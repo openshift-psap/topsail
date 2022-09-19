@@ -61,7 +61,12 @@ class PodNodeMappingReport():
 
             header += [html.H2("Timeline")]
             header += [Plot(f"Pod/Node timeline: {what}", args)]
-            header += [html.P(f"This plot shows the timeline of {what} mapping on the cluster's nodes. It can help understanding when the Pods started and finished their execution, as well as which users ran on the same node.")]
+            header += [html.P(f"This plot shows the timeline of {what} mapping on the cluster's nodes, grouped by nodes. It can help understanding when the Pods started and finished their execution, as well as which users ran on the same node.")]
+
+            header += [Plot(f"Pod/Node timeline: {what}", set_config(dict(force_order_by_user_idx=True),
+                                                                         args))]
+            header += [html.P(f"This plot shows the timeline of {what} mapping on the cluster's nodes, ordered by user ID. It can help understanding when the Pods started and finished their execution, as well as which users ran on the same node.")]
+
             header += html.Br()
             header += html.Br()
 
