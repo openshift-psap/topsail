@@ -82,6 +82,11 @@ ODS_CI_ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
 STATESIGNAL_REDIS_NAMESPACE=loadtest-redis
 NGINX_NOTEBOOK_NAMESPACE=loadtest-notebooks
 ODS_NOTEBOOK_NAME=simple-notebook.ipynb
+
+ODS_NOTEBOOK_BENCHMARK_NAME=pyperf_bm_go.py
+ODS_NOTEBOOK_BENCHMARK_REPEAT=3
+ODS_NOTEBOOK_BENCHMARK_NUMBER=20 # around 10s
+
 ODS_NOTEBOOK_DIR=${THIS_DIR}/notebooks
 ODS_EXCLUDE_TAGS=${ODS_EXCLUDE_TAGS:-None} # tags to exclude when running the robot test case
 
