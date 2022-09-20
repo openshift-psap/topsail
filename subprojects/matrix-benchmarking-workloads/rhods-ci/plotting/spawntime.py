@@ -77,7 +77,7 @@ class SpawnTime():
                     entry_data["Step Duration"] = 0
 
                 entry_data["Step Name"] = f"{step_idx} - {step_name}"
-
+                entry_data["User Index"] = user_id
                 entry_data["User Name"] = f"User #{user_id}"
                 if failures:
                     entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
