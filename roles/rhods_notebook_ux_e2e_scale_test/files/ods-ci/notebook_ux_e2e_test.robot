@@ -14,6 +14,11 @@ Suite Teardown  Tear Down
 ${DASHBOARD_PRODUCT_NAME}      "%{DASHBOARD_PRODUCT_NAME}"
 
 ${NOTEBOOK_IMAGE_NAME}         %{NOTEBOOK_IMAGE_NAME}
+
+${NOTEBOOK_BENCHMARK_NAME}     %{NOTEBOOK_BENCHMARK_NAME}
+${NOTEBOOK_BENCHMARK_NUMBER}   %{NOTEBOOK_BENCHMARK_NUMBER}
+${NOTEBOOK_BENCHMARK_REPEAT}   %{NOTEBOOK_BENCHMARK_REPEAT}
+
 # needs to match ODS_NOTEBOOK_SIZE in testing/ods/notebook_ux_e2e_scale_test.sh
 ${NOTEBOOK_IMAGE_SIZE}         default
 ${NOTEBOOK_SPAWN_WAIT_TIME}    15 minutes
@@ -23,7 +28,7 @@ ${NOTEBOOK_SPAWN_RETRY_DELAY}  20 seconds
 ${NOTEBOOK_URL}                %{NOTEBOOK_URL}
 ${NOTEBOOK_NAME}               notebook.ipynb
 ${NOTEBOOK_CLONE_WAIT_TIME}    3 minutes
-${NOTEBOOK_EXEC_WAIT_TIME}     5 minutes
+${NOTEBOOK_EXEC_WAIT_TIME}     10 minutes
 
 &{browser logging capability}    browser=ALL
 &{capabilities}    browserName=chrome    version=${EMPTY}    platform=ANY    goog:loggingPrefs=${browser logging capability}
@@ -109,8 +114,12 @@ Load the Notebook
   Launch a new JupyterLab Document
   Maybe Close Popup
   Close Other JupyterLab Tabs
-  Run Cell And Check For Errors  !time curl "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
-  Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_CLONE_WAIT_TIME}
+  # shell command (with ! prefix) errors are ignored by JupyterLab
+  Add and Run JupyterLab Code Cell in Active Notebook  !time curl -Ssf "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
+  Add and Run JupyterLab Code Cell in Active Notebook  !time curl -Ssf "${NOTEBOOK_URL}/../${NOTEBOOK_BENCHMARK_NAME}" -O
+  Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_EXEC_WAIT_TIME}
+  Run Cell And Check For Errors  import pathlib; pathlib.Path("${NOTEBOOK_NAME}").stat()
+  Run Cell And Check For Errors  import pathlib; pathlib.Path("${NOTEBOOK_BENCHMARK_NAME}").stat()
   Capture Page Screenshot
 
   Open With JupyterLab Menu  File  Open from Path…
@@ -135,6 +144,16 @@ Run the Notebook
       Log  ${error}
       Fail  "Error detected during the execution of the notebook:\n${error}"
   END
+
+  Run Cell And Check For Errors  print(f"{datetime.datetime.now()} Running ...")
+  Run Cell And Check For Errors  REPEAT=${NOTEBOOK_BENCHMARK_REPEAT}; NUMBER=${NOTEBOOK_BENCHMARK_NUMBER}
+  Run Cell And Check For Errors  measures = run_benchmark(repeat=REPEAT, number=NUMBER)
+  Run Cell And Check For Errors  print(f"{datetime.datetime.now()} Done ...")
+  Run Cell And Check For Errors  print(f"The benchmark ran for {sum(measures):.2f} seconds")
+  ${measures} =  Run Cell And Get Output  import json; print(json.dumps(dict(benchmark="${NOTEBOOK_BENCHMARK_NAME}", repeat=REPEAT, number=NUMBER, measures=measures)))
+  Create File  ${OUTPUTDIR}/benchmark_measures.json  ${measures}
+
+  Capture Page Screenshot
 
 
 *** Keywords ***
