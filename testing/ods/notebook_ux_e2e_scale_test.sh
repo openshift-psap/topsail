@@ -74,6 +74,8 @@ connect_sutest_cluster() {
 prepare_driver_cluster() {
     switch_cluster "driver"
 
+    prepare_driver_scale_cluster
+
     oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
     oc annotate namespace/"$ODS_CI_TEST_NAMESPACE" --overwrite \
        "openshift.io/node-selector=node.kubernetes.io/instance-type=$DRIVER_COMPUTE_MACHINE_TYPE"
@@ -138,10 +140,74 @@ prepare_sutest_deploy_ldap() {
               --wait
 }
 
+prepare_driver_scale_cluster() {
+    cluster_role=driver
+
+    switch_cluster "$cluster_role"
+
+    osd_cluster_name=$(get_osd_cluster_name "$cluster_role")
+
+    cluster_type=$([[ "$osd_cluster_name" ]] && echo osd || echo ocp)
+    compute_nodes_type=$(get_compute_node_type "$cluster_role" "$cluster_type")
+    compute_nodes_count=$(get_compute_node_count "$cluster_role" "$cluster_type" "$compute_nodes_type")
+
+    if [[ "$osd_cluster_name" ]]; then
+        ocm create machinepool \
+            --cluster "$osd_cluster_name" \
+            --instance-type "$compute_nodes_type" \
+            "$DRIVER_MACHINE_POOL_NAME" \
+            --replicas "$compute_nodes_count"
+    else
+        ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count" \
+                         --name "$DRIVER_MACHINESET_NAME"
+    fi
+}
+
+prepare_sutest_scale_cluster() {
+    cluster_role=sutest
+
+    switch_cluster "$cluster_role"
+
+    osd_cluster_name=$(get_osd_cluster_name "$cluster_role")
+    cluster_type=$([[ "$osd_cluster_name" ]] && echo osd || echo ocp)
+    compute_nodes_type=$(get_compute_node_type "$cluster_role" "$cluster_type")
+    compute_nodes_count=$(get_compute_node_count "$cluster_role" "$cluster_type" "$compute_nodes_type")
+
+    if [[ "$osd_cluster_name" ]]; then
+        if [[ "$ENABLE_AUTOSCALER" ]]; then
+            specific_options=" \
+                --enable-autoscaling \
+                --min-replicas=2 \
+                --max-replicas=150 \
+                "
+        else
+            specific_options=" \
+                --replicas "$compute_nodes_count" \
+                "
+        fi
+        ocm create machinepool "$SUTEST_MACHINESET_NAME" \
+            --cluster "$osd_cluster_name" \
+            --instance-type "$compute_nodes_type" \
+            $specific_options
+    else
+        ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count" \
+                         --name "$SUTEST_MACHINESET_NAME"
+
+
+        if [[ "$ENABLE_AUTOSCALER" ]]; then
+            oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
+            cat testing/ods/autoscaling/machineautoscaler.yaml \
+                | sed "s/MACHINESET_NAME/$MACHINESET_NAME/" \
+                | oc apply -f-
+        fi
+    fi
+}
+
 prepare_sutest_cluster() {
     switch_sutest_cluster
     prepare_sutest_deploy_rhods
     prepare_sutest_deploy_ldap
+    prepare_sutest_scale_cluster
 }
 
 prepare_osd_sutest_deploy_rhods() {
@@ -283,8 +349,8 @@ prepare_ci() {
 }
 
 prepare() {
-    prepare_sutest_cluster
-    prepare_driver_cluster
+    process_ctrl::run_in_bg prepare_sutest_cluster
+    process_ctrl::run_in_bg prepare_driver_cluster
 
     process_ctrl::wait_bg_processes
 
@@ -313,9 +379,20 @@ run_test() {
                      --state_signal_redis_server="${REDIS_SERVER}"
 }
 
+driver_cleanup() {
+    oc delete machineset "$DRIVER_MACHINESET_NAME" -n openshift-machine-api
+}
+
 sutest_cleanup() {
     switch_sutest_cluster
     sutest_cleanup_ldap
+
+    osd_cluster_name=$(get_osd_cluster_name "$cluster_role")
+    if [[ "$osd_cluster_name" ]]; then
+        ocm delete machinepool "$SUTEST_MACHINESET_NAME"
+    else
+        oc delete machineset "$SUTEST_MACHINESET_NAME" -n openshift-machine-api
+    fi
 }
 
 sutest_cleanup_ldap() {
@@ -378,6 +455,7 @@ case ${action} in
         fi
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
+        finalizers+=("driver_cleanup")
 
         prepare_ci
         prepare

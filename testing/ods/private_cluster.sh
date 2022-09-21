@@ -26,10 +26,7 @@ prepare_driver_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_DRIVER
 
-    compute_nodes_type=$(get_compute_node_type "$cluster_role" ocp)
-    compute_nodes_count=$(get_compute_node_count "$cluster_role" ocp "$compute_nodes_type")
-
-    ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count"
+    ./run_toolbox.py cluster set-scale "$OCP_WORKER_MACHINE_TYPE" "$OCP_WORKER_NODES_COUNT"
 }
 
 connect_sutest_cluster() {
@@ -63,9 +60,7 @@ prepare_sutest_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_SUTEST
 
-    compute_nodes_type=$(get_compute_node_type "$cluster_role" ocp)
-    compute_nodes_count=$(get_compute_node_count "$cluster_role" ocp "$compute_nodes_type")
-    ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count"
+    # nothing to do at the moment
 }
 
 unprepare_sutest_cluster() {
@@ -74,9 +69,7 @@ unprepare_sutest_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_SUTEST
 
-    compute_nodes_type=$(get_compute_node_type "$cluster_role" ocp)
-
-    ./run_toolbox.py cluster set-scale "$compute_nodes_type" 0
+    # nothing to do at the moment
 }
 
 unprepare_driver_cluster() {
@@ -85,9 +78,8 @@ unprepare_driver_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_DRIVER
 
-    compute_nodes_type=$(get_compute_node_type "$cluster_role" ocp)
 
-    ./run_toolbox.py cluster set-scale "$compute_nodes_type" 0
+    # nothing to do at the moment
 }
 
 action="${1:-}"

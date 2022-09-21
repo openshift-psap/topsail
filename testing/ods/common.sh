@@ -103,7 +103,13 @@ OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
 # if not empty, enables auto-scaling in the sutest cluster
 ENABLE_AUTOSCALER=
 
-# Shouldn't be the same than OCP worker nodes.
+# these nodes are the worker nodes NOT hosting notebooks
+# they should be big enough to host RHODS operators
+
+OCP_WORKER_MACHINE_TYPE=m6a.xlarge
+OCP_WORKER_NODES_COUNT=3
+OSD_WORKER_NODES_TYPE=m6.xlarge
+OSD_WORKER_NODES_COUNT=3
 
 DRIVER_COMPUTE_MACHINE_TYPE=m5a.2xlarge
 OSD_SUTEST_COMPUTE_MACHINE_TYPE=m5.2xlarge
