@@ -57,6 +57,9 @@ spec:
           value: "{{ rhods_notebook_ux_e2e_scale_test_state_signal_redis_server }}"
         - name: DASHBOARD_PRODUCT_NAME
           value: "{{ rhods_dashboard_product_name }}"
+        - name: NOTEBOOK_SIZE_NAME
+          value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_size_name }}"
+
         - name: NOTEBOOK_BENCHMARK_NAME
           value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_benchmark_name }}"
         - name: NOTEBOOK_BENCHMARK_REPEAT

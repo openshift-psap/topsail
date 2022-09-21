@@ -391,6 +391,7 @@ run_test() {
                      --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS" \
                      --ods_ci_artifacts_exporter_istag="$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
                      --ods_ci_notebook_image_name="$RHODS_NOTEBOOK_IMAGE_NAME" \
+                     --ods_ci_notebook_size_name="$ODS_NOTEBOOK_SIZE" \
                      --ods_ci_notebook_benchmark_name="$ODS_NOTEBOOK_BENCHMARK_NAME" \
                      --ods_ci_notebook_benchmark_repeat="$ODS_NOTEBOOK_BENCHMARK_REPEAT" \
                      --ods_ci_notebook_benchmark_number="$ODS_NOTEBOOK_BENCHMARK_NUMBER" \

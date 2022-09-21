@@ -69,6 +69,7 @@ class RHODS:
                                    ods_ci_scale_test_case="notebook_ux_e2e_test.robot",
                                    ods_ci_artifacts_exporter_istag="ods-ci:artifacts-exporter",
                                    ods_ci_notebook_image_name="s2i-generic-data-science-notebook",
+                                   ods_ci_notebook_size_name="Small",
                                    ods_ci_notebook_benchmark_name="",
                                    ods_ci_notebook_benchmark_number="",
                                    ods_ci_notebook_benchmark_repeat="",

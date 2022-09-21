@@ -78,7 +78,7 @@ LDAP_NB_USERS=1000
 
 ODS_CI_NB_USERS=${ODS_CI_NB_USERS:-5} # number of users to simulate
 ODS_CI_USER_PREFIX=psapuser
-ODS_NOTEBOOK_SIZE=default # needs to match `NOTEBOOK_IMAGE_SIZE` in roles/rhods_notebook_ux_e2e_scale_test/files/ods-ci/notebook_ux_e2e_test.robot
+ODS_NOTEBOOK_SIZE=default # needs to match an existing notebook size in OdhDashboardConfig.spec.notebookSizes
 
 ODS_SLEEP_FACTOR=${ODS_SLEEP_FACTOR:-1.0} # how long to wait between user starts.
 ODS_CI_ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
