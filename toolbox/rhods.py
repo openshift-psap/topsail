@@ -145,6 +145,7 @@ class RHODS:
                                 spawn_rate="1",
                                 sut_cluster_kubeconfig="",
                                 notebook_image_name="s2i-generic-data-science-notebook",
+                                toleration_key="",
                                 ):
 
         """
@@ -161,6 +162,7 @@ class RHODS:
           run_time: Test run time (eg, 300s, 20m, 3h, 1h30m, etc.)
           spawn_rate: Rate to spawn users at (users per second)
           sut_cluster_kubeconfig: Optional. Path of the system-under-test cluster's Kubeconfig. If provided, the RHODS endpoints will be looked up in this cluster.
+          toleration_key: Optional. Toleration key to use for the test Pods.
         """
 
         opts = {
@@ -173,6 +175,7 @@ class RHODS:
             "rhods_notebook_api_scale_test_spawn_rate": spawn_rate,
             "rhods_notebook_api_scale_test_sut_cluster_kubeconfig": sut_cluster_kubeconfig,
             "rhods_notebook_api_scale_test_ods_ci_notebook_image_name": notebook_image_name,
+            "rhods_notebook_api_scale_test_toleration_key": toleration_key,
         }
 
         return RunAnsibleRole("rhods_notebook_api_scale_test", opts)
