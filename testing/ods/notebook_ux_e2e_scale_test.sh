@@ -401,6 +401,13 @@ run_test() {
 
 driver_cleanup() {
     oc delete machineset "$DRIVER_MACHINESET_NAME" -n openshift-machine-api
+
+    if [[ "$CLEANUP_DRIVER_NAMESPACES_ON_EXIT" == 1 ]]; then
+        oc delete namespace --ignore-not-found \
+           "$ODS_CI_TEST_NAMESPACE" \
+           "$STATESIGNAL_REDIS_NAMESPACE" \
+           "$NGINX_NOTEBOOK_NAMESPACE"
+    fi
 }
 
 sutest_cleanup() {

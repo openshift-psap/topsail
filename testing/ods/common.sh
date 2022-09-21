@@ -35,6 +35,9 @@ ODS_CI_TAG="latest"
 ODS_CI_ARTIFACTS_EXPORTER_TAG="artifacts-exporter"
 ODS_CI_ARTIFACTS_EXPORTER_DOCKERFILE="testing/ods/images/Containerfile.s3_artifacts_exporter"
 
+# if the value is different from 1, delete the test namespaces after the testing
+CLEANUP_DRIVER_NAMESPACES_ON_EXIT=0
+
 # if the value is different from 1, do not customize RHODS.
 # see sutest_customize_rhods in `notebook_ux_e2e_scale_test.sh`.
 CUSTOMIZE_RHODS=1
