@@ -62,7 +62,7 @@ Login to RHODS Dashboard
 Go to RHODS Dashboard
   [Tags]  Dashboard
 
-  Wait For Condition  return document.title == ${DASHBOARD_PRODUCT_NAME}  timeout=60 seconds
+  Wait For Condition  return document.title == ${DASHBOARD_PRODUCT_NAME}  timeout=3 minutes
   Wait Until Page Contains  Launch application  timeout=60 seconds
   Capture Page Screenshot
 
@@ -100,7 +100,7 @@ Login to JupyterLab Page
 Go to JupyterLab Page
   [Tags]  Notebook  JupyterLab
 
-  Wait Until Page Contains Element  xpath:${JL_TABBAR_CONTENT_XPATH}  timeout=60s
+  Wait Until Page Contains Element  xpath:${JL_TABBAR_CONTENT_XPATH}  timeout=3 minutes
   Capture Page Screenshot
 
 
