@@ -70,6 +70,7 @@ class RHODS:
                                    ods_ci_artifacts_exporter_istag="ods-ci:artifacts-exporter",
                                    ods_ci_notebook_image_name="s2i-generic-data-science-notebook",
                                    state_signal_redis_server="",
+                                   toleration_key="",
                                    ):
 
         """
@@ -94,6 +95,7 @@ class RHODS:
           ods_ci_artifacts_exporter_istag: Optional. Imagestream tag of the ODS-CI artifacts exporter side-car container.
           ods_ci_notebook_image_name: Optional. Name of the RHODS image to use when launching the notebooks.
           state_signal_redis_server: Optional. Hostname and port of the Redis server for StateSignal synchronization (for the synchronization of the beginning of the user simulation)
+          toleration_key: Optional. Toleration key to use for the test Pods.
         """
 
         opts = {
@@ -110,6 +112,7 @@ class RHODS:
             "rhods_notebook_ux_e2e_scale_test_ods_ci_artifacts_exporter_istag": ods_ci_artifacts_exporter_istag,
             "rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_image_name": ods_ci_notebook_image_name,
             "rhods_notebook_ux_e2e_scale_test_state_signal_redis_server": state_signal_redis_server,
+            "rhods_notebook_ux_e2e_scale_test_toleration_key": toleration_key,
         }
 
         ARTIFACTS_COLLECTED_VALUES = ("all", "none", "no-image", "no-image-except-failed", "no-image-except-failed-and-zero")
