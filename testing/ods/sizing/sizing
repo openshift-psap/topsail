@@ -46,8 +46,8 @@ def parse_notebook_sizes():
             notebooks[entry.name] = entry
     return notebooks
 
-RESERVED_CPU = 1.1
-RESERVED_MEM = 2.1
+RESERVED_CPU = 2
+RESERVED_MEM = 4
 
 EXTRA_USERS = 1.1 # count as if there was +10% of users
 
