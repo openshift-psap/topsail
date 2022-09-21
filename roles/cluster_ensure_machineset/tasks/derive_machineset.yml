@@ -31,6 +31,8 @@
     "{{ reconfigure_machineset }}
       {{ artifact_extra_logs_dir }}/source_machineset.json
       {{ machineset_instance_type }}
+      {{ machineset_name }}
+      {{ machineset_taint }}
       > {{ artifact_extra_logs_dir }}/new_machineset.json"
 
 - name: Get the name of the new MachineSet

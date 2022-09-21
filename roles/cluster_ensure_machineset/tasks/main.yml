@@ -2,7 +2,11 @@
 - name: "Check if the cluster already has a {{ machineset_instance_type }} machineset"
   shell:
     oc get machineset -n openshift-machine-api
-    -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")].metadata.name}'
+    {% if machineset_name | length > 0 %}
+      {{ machineset_name }} --ignore-not-found -ojsonpath={.metadata.name}
+    {% else %}
+      -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")].metadata.name}'
+    {% endif %}
   register: cluster_has_machineset
 
 - name: Cluster already has machineset with required type
