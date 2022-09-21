@@ -103,6 +103,18 @@ OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
 # if not empty, enables auto-scaling in the sutest cluster
 ENABLE_AUTOSCALER=
 
+SUTEST_MACHINESET_NAME=rhods-notebooks
+SUTEST_TAINT_KEY=only-$SUTEST_MACHINESET_NAME
+SUTEST_TAINT_VALUE=yes
+SUTEST_TAINT_EFFECT=NoSchedule
+SUTEST_NODE_SELECTOR="$SUTEST_TAINT_KEY: '$SUTEST_TAINT_VALUE'"
+
+DRIVER_MACHINESET_NAME=test-pods
+DRIVER_TAINT_KEY=only-$DRIVER_MACHINESET_NAME
+DRIVER_TAINT_VALUE=yes
+DRIVER_TAINT_EFFECT=NoSchedule
+DRIVER_NODE_SELECTOR="$DRIVER_TAINT_KEY: '$DRIVER_TAINT_VALUE'"
+
 # these nodes are the worker nodes NOT hosting notebooks
 # they should be big enough to host RHODS operators
 

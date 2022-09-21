@@ -77,8 +77,12 @@ prepare_driver_cluster() {
     prepare_driver_scale_cluster
 
     oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
+
     oc annotate namespace/"$ODS_CI_TEST_NAMESPACE" --overwrite \
-       "openshift.io/node-selector=node.kubernetes.io/instance-type=$DRIVER_COMPUTE_MACHINE_TYPE"
+       "openshift.io/node-selector=$DRIVER_TAINT_KEY=$DRIVER_TAINT_VALUE"
+    oc annotate namespace/"$ODS_CI_TEST_NAMESPACE" --overwrite \
+       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$DRIVER_TAINT_EFFECT'", "key": "'$DRIVER_TAINT_KEY'"}]'
+
 
     build_and_preload_odsci_image() {
         ./run_toolbox.py utils build_push_image \
@@ -91,7 +95,8 @@ prepare_driver_cluster() {
 
         ods_ci_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_TAG"
         ./run_toolbox.py cluster preload_image "preload-ods-ci" "$ods_ci_image" \
-                         --namespace="$ODS_CI_TEST_NAMESPACE"
+                         --namespace="$ODS_CI_TEST_NAMESPACE" \
+                         --node_selector="$DRIVER_NODE_SELECTOR"
     }
 
     build_and_preload_artifacts_exporter_image() {
@@ -104,7 +109,8 @@ prepare_driver_cluster() {
         artifacts_exporter_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG"
 
         ./run_toolbox.py cluster preload_image "artifacts-exporter" "$artifacts_exporter_image" \
-                         --namespace="$ODS_CI_TEST_NAMESPACE"
+                         --namespace="$ODS_CI_TEST_NAMESPACE" \
+                         --node_selector="$DRIVER_NODE_SELECTOR"
     }
 
     process_ctrl::run_in_bg build_and_preload_odsci_image
@@ -151,14 +157,17 @@ prepare_driver_scale_cluster() {
     compute_nodes_type=$(get_compute_node_type "$cluster_role" "$cluster_type")
     compute_nodes_count=$(get_compute_node_count "$cluster_role" "$cluster_type" "$compute_nodes_type")
 
+    taint="$DRIVER_TAINT_KEY=$DRIVER_TAINT_VALUE:$DRIVER_TAINT_EFFECT"
     if [[ "$osd_cluster_name" ]]; then
         ocm create machinepool \
             --cluster "$osd_cluster_name" \
             --instance-type "$compute_nodes_type" \
             "$DRIVER_MACHINE_POOL_NAME" \
-            --replicas "$compute_nodes_count"
+            --replicas "$compute_nodes_count" \
+            --taints "$taint"
     else
         ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count" \
+                         --taint "$taint" \
                          --name "$DRIVER_MACHINESET_NAME"
     fi
 }
@@ -173,6 +182,7 @@ prepare_sutest_scale_cluster() {
     compute_nodes_type=$(get_compute_node_type "$cluster_role" "$cluster_type")
     compute_nodes_count=$(get_compute_node_count "$cluster_role" "$cluster_type" "$compute_nodes_type")
 
+    taint="$SUTEST_TAINT_KEY=$SUTEST_TAINT_VALUE:$SUTEST_TAINT_EFFECT"
     if [[ "$osd_cluster_name" ]]; then
         if [[ "$ENABLE_AUTOSCALER" ]]; then
             specific_options=" \
@@ -188,9 +198,11 @@ prepare_sutest_scale_cluster() {
         ocm create machinepool "$SUTEST_MACHINESET_NAME" \
             --cluster "$osd_cluster_name" \
             --instance-type "$compute_nodes_type" \
+            --taints "$taint" \
             $specific_options
     else
         ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count" \
+                         --taint "$taint" \
                          --name "$SUTEST_MACHINESET_NAME"
 
 
@@ -272,6 +284,8 @@ sutest_customize_rhods_before_wait() {
 
 sutest_customize_rhods_after_wait() {
 
+    oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"notebookTolerationSettings": {"enabled": true, "key": "'$SUTEST_TAINT_KEY'"}}}}' -n redhat-ods-applications
+
     if [[ "$CUSTOMIZE_RHODS_PVC_SIZE" ]]; then
         oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"pvcSize":"'$CUSTOMIZE_RHODS_PVC_SIZE'"}}}' -n redhat-ods-applications
     fi
@@ -318,7 +332,10 @@ sutest_wait_rhods_launch() {
         NOTEBOOK_IMAGE="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$RHODS_NOTEBOOK_IMAGE_NAME:$rhods_notebook_image_tag"
         # preload the image only if auto-scaling is disabled
         ./run_toolbox.py cluster preload_image "notebook" "$NOTEBOOK_IMAGE" \
-                         --namespace=redhat-ods-applications
+                         --namespace=redhat-ods-applications \
+                         --node_selector="$DRIVER_NODE_SELECTOR" \
+                         --pod_toleration_key="$SUTEST_TAINT_KEY" \
+                         --pod_toleration_effect="$SUTEST_TAINT_EFFECT"
     fi
 
     osd_cluster_name=$(get_osd_cluster_name "sutest")
@@ -329,7 +346,9 @@ sutest_wait_rhods_launch() {
     fi
 
     oc annotate namespace/rhods-notebooks --overwrite \
-       "openshift.io/node-selector=node.kubernetes.io/instance-type=$machine_type"
+       "openshift.io/node-selector=$SUTEST_TAINT_KEY=$SUTEST_TAINT_VALUE"
+    oc annotate namespace/rhods-notebooks --overwrite \
+       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$SUTEST_TAINT_EFFECT'", "key": "'$SUTEST_TAINT_KEY'"}]'
 }
 
 capture_environment() {
@@ -376,7 +395,8 @@ run_test() {
                      --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS" \
                      --ods_ci_artifacts_exporter_istag="$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
                      --ods_ci_notebook_image_name="$RHODS_NOTEBOOK_IMAGE_NAME" \
-                     --state_signal_redis_server="${REDIS_SERVER}"
+                     --state_signal_redis_server="${REDIS_SERVER}" \
+                     --toleration_key="$DRIVER_TAINT_KEY"
 }
 
 driver_cleanup() {
