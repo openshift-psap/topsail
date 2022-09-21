@@ -66,7 +66,7 @@ class ErrorReport():
                 info += [html.Ul(html.Li(html.Code(body)))]
             if last_comment_found:
                 info += [html.Ul(html.Li(["Trigger date: ", html.I(last_comment_date)]))]
-                info += [html.Ul(html.Li(["Test trigger: ", html.Code(last_comment_body)]))]
+                info += [html.Ul(html.Li(["Trigger comment: ", html.Code(last_comment_body)]))]
 
             info += [html.Li(["Test diff against ", html.A(html.Code(pr.base_ref), href=pr.diff_link, target="_blank")])]
 
