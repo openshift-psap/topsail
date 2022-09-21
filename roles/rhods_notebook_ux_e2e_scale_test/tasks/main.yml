@@ -274,6 +274,15 @@
 - name: Show the artifacts directory
   debug: msg="The test artifacts have been stored in {{ artifact_extra_logs_dir }}"
 
+- name: Test if the Notebook Pods did not crash (reboot)
+  shell:
+    set -o pipefail;
+    oc get pods -n redhat-ods-applications -ojsonpath='{.items[*].status.containerStatuses[*].restartCount}'
+       | tr ' ' '\n'
+       | python -c "import sys; print(sum(int(l) for l in sys.stdin))"
+  register: check_pod_restart_count_cmd
+  failed_when: check_pod_restart_count_cmd.stdout != "0"
+
 - name: Test if the RHODS test job crashed
   command:
     oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ tester_namespace }}
