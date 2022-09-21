@@ -49,6 +49,13 @@
           > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_pods.status"
     ignore_errors: yes
 
+  - name: Get the description of the notebook Pods
+    shell:
+      oc describe pods
+         -n {{ rhods_notebook_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_pods.descr"
+    ignore_errors: yes
+
   - name: Get the name of the notebook Pods
     shell:
       set -o pipefail;
