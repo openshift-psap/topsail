@@ -61,9 +61,13 @@ CUSTOMIZE_RHODS_PVC_SIZE=5Gi
 # if value is 1, define a custom notebook size named $ODS_NOTEBOOK_SIZE
 # see sutest_customize_rhods_after_wait for the limits/requests values
 CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE=1
-# must be consistent with testing/ods/sizing/notebook_sizes
+
 ODS_NOTEBOOK_CPU_SIZE=1
 ODS_NOTEBOOK_MEMORY_SIZE_GI=4
+
+# must be consistent with roles/rhods_notebook_ux_e2e_scale_test/templates/ods-ci_job.yaml
+ODS_TESTPOD_CPU_SIZE=0.2
+ODS_TESTPOD_MEMORY_SIZE_GI=0.75
 
 # only taken into account if CUSTOMIZE_RHODS=1 and CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE is set
 # number of replicas to set to the Dashboard deployment
@@ -75,7 +79,7 @@ LDAP_NB_USERS=1000
 ODS_CI_NB_USERS=${ODS_CI_NB_USERS:-5} # number of users to simulate
 ODS_CI_USER_PREFIX=psapuser
 ODS_NOTEBOOK_SIZE=default # needs to match `NOTEBOOK_IMAGE_SIZE` in roles/rhods_notebook_ux_e2e_scale_test/files/ods-ci/notebook_ux_e2e_test.robot
-ODS_NOTEBOOK_SIZE_TEST_POD="test_pod" # shouldn't change
+
 ODS_SLEEP_FACTOR=${ODS_SLEEP_FACTOR:-1.0} # how long to wait between user starts.
 ODS_CI_ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
 
@@ -203,9 +207,9 @@ get_notebook_size() {
     cluster_role=$1
 
     if [[ "$cluster_role" == "sutest" ]]; then
-        echo "$ODS_NOTEBOOK_SIZE"
+        echo $ODS_NOTEBOOK_CPU_SIZE $ODS_NOTEBOOK_MEMORY_SIZE_GI
     else
-        echo "$ODS_NOTEBOOK_SIZE_TEST_POD"
+        echo $ODS_TESTPOD_CPU_SIZE $ODS_TESTPOD_MEMORY_SIZE_GI
     fi
 }
 
@@ -230,8 +234,8 @@ get_compute_node_count() {
         return
     fi
 
-    notebook_size_name=$(get_notebook_size "$cluster_role")
-    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$notebook_size_name' '$instance_type' '$ODS_CI_NB_USERS' >&2 > '${ARTIFACT_DIR:-/tmp}/${cluster_role}_${cluster_type}_sizing'; echo \$?")
+    notebook_size=$(get_notebook_size "$cluster_role")
+    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$instance_type' '$ODS_CI_NB_USERS' $notebook_size >&2 > '${ARTIFACT_DIR:-/tmp}/${cluster_role}_${cluster_type}_sizing'; echo \$?")
 
     if [[ "$size" == 0 ]]; then
         echo "ERROR: couldn't determine the number of nodes to request ..." >&2

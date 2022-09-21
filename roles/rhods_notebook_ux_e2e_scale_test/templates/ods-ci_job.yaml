@@ -71,6 +71,8 @@ spec:
         - name: rhods-notebook-ux-e2e-scale-test-entrypoint
           mountPath: /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint
         resources:
+          # must match ODS_TESTPOD_MEMORY_SIZE_GI and ODS_TESTPOD_CPU_SIZE
+          # in testing/ods/common.sh
           requests:
             memory: 750M
             cpu: 0.2

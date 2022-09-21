@@ -6,7 +6,6 @@ import pathlib
 import math
 
 MACHINES_FILE = pathlib.Path(os.path.dirname(os.path.realpath(__file__))) / "machines"
-NOTEBOOK_FILE = pathlib.Path(os.path.dirname(os.path.realpath(__file__))) / "notebook_sizes"
 
 def parse_machines():
     machines = {}
@@ -30,21 +29,6 @@ def parse_machines():
             machines[entry.name] = entry
     return machines
 
-def parse_notebook_sizes():
-    notebooks = {}
-    with open(NOTEBOOK_FILE) as f:
-        for _line in f.readlines():
-            line = " ".join(_line.strip().split())
-
-            if not line or line.startswith("#"): continue
-
-            entry = types.SimpleNamespace()
-            entry.name, _cpu, _memory = line.split(", ")
-            entry.cpu = float(_cpu.split("=")[1])
-            entry.memory = float(_memory.split("=")[1])
-
-            notebooks[entry.name] = entry
-    return notebooks
 
 RESERVED_CPU = 2
 RESERVED_MEM = 4
@@ -52,28 +36,26 @@ RESERVED_MEM = 4
 EXTRA_USERS = 1.1 # count as if there was +10% of users
 
 def main():
-    notebook_size_name, machine_type, _user_count = sys.argv[1:]
+    machine_type, _user_count, _cpu, _memory = sys.argv[1:]
 
 
     machines = parse_machines()
-    notebooks = parse_notebook_sizes()
 
     user_count = int(_user_count)
     user_count_with_extra = math.ceil(user_count * EXTRA_USERS)
-    notebook_size = notebooks[notebook_size_name]
+    notebook_size = {"cpu": float(_cpu), "memory":float(_memory)}
     machine_size = machines[machine_type]
 
     print(f"Reserved cpu={RESERVED_CPU}, mem={RESERVED_MEM}, extra users={user_count_with_extra - user_count} ({EXTRA_USERS} factor)")
     print(f"Machine type:  {machine_type} --> {machine_size}")
-    print(f"Notebook size: {notebook_size_name} --> {notebook_size}")
+    print(f"Notebook size: cpu={_cpu}, mem={_memory}Gi")
     print()
 
-    total_cpu_count = notebook_size.cpu * user_count_with_extra
-    total_memory_count = notebook_size.memory * user_count_with_extra
+    total_cpu_count = notebook_size["cpu"] * user_count_with_extra
+    total_memory_count = notebook_size["memory"] * user_count_with_extra
 
     machine_count_cpu = total_cpu_count / (machine_size.cpu - RESERVED_CPU)
     machine_count_memory = total_memory_count / (machine_size.memory - RESERVED_MEM)
-
 
     print(f"Memory requirement: {machine_count_memory:.1f} x {machine_type}")
     print(f"CPU requirement:    {machine_count_cpu:.1f} x {machine_type}")
@@ -81,7 +63,7 @@ def main():
     machine_exact_count = max([machine_count_cpu, machine_count_memory])
     machine_count = math.ceil(machine_exact_count)
 
-    print(f"Provisioning {machine_count} {machine_type} machines for running {user_count} users with the '{notebook_size_name}' notebook size")
+    print(f"Provisioning {machine_count} {machine_type} machines for running {user_count} users with the notebook size cpu={_cpu}, mem={_memory}")
 
     return machine_count
 
