@@ -127,4 +127,3 @@
       cluster_prometheus_db_directory: /prometheus/data
       cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_rhods
     when: capture_prom_db | bool
-
