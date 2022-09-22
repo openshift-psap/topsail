@@ -373,7 +373,9 @@ class Cluster:
         return RunAnsibleRole("cluster_undeploy_ldap", opts)
 
     @staticmethod
-    def preload_image(name, image, namespace="default"):
+    def preload_image(name, image, namespace="default",
+                      node_selector="",
+                      pod_toleration_key="", pod_toleration_effect=""):
         """
         Preload a container image on all the nodes of a cluster.
 
@@ -381,6 +383,9 @@ class Cluster:
           name: Name to give to the DaemonSet used for preloading the image.
           image: Container image to preload on the nodes.
           namespace: Optional. Namespace in which the DaemonSet will be created.
+          node_selector: Optional. NodeSelector to apply to the DaemonSet.
+          pod_toleration_key: Optional. Pod toleration to apply to the DaemonSet.
+          pod_toleration_effect: Optional. Pod toleration to apply to the DaemonSet.
         """
 
         toolbox_name_suffix = os.environ.get("ARTIFACT_TOOLBOX_NAME_SUFFIX", "")
@@ -391,6 +396,9 @@ class Cluster:
             "cluster_preload_image_ds_name": name,
             "cluster_preload_image_ds_namespace": namespace,
             "cluster_preload_image_ds_image": image,
+            "cluster_preload_image_node_selector": node_selector,
+            "cluster_preload_image_pod_toleration_key": pod_toleration_key,
+            "cluster_preload_image_pod_toleration_effect": pod_toleration_effect,
         }
 
         return RunAnsibleRole("cluster_preload_image", opts)

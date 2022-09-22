@@ -12,6 +12,16 @@ spec:
       labels:
         name: {{ cluster_preload_image_ds_name }}
     spec:
+{% if cluster_preload_image_node_selector|length %}
+      nodeSelector:
+        {{ cluster_preload_image_node_selector }}
+{% endif %}
+{% if cluster_preload_image_pod_toleration_key|length %}
+      tolerations:
+      - key: "{{ cluster_preload_image_pod_toleration_key }}"
+        operator: "Exists"
+        effect: "{{ cluster_preload_image_pod_toleration_effect }}"
+{% endif %}
       containers:
       - name: preloader
         image: {{ cluster_preload_image_ds_image }}
