@@ -197,9 +197,11 @@ def _parse_pod_times(filename, hostnames, is_notebook=False):
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["running"]["startedAt"],
                     K8S_TIME_FMT)
+        elif pod["status"]["containerStatuses"][0]["state"].get("waiting"):
+            pass
 
         else:
-            print("Unknown containerStatuses ...")
+            print("Unknown containerStatuses ...", pod["status"]["containerStatuses"][0])
             pass
 
         if hostnames is not None:
