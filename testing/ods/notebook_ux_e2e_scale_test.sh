@@ -480,6 +480,8 @@ case ${action} in
             echo "FATAL: multi-stage test \$SHARED_DIR not set ..."
             exit 1
         fi
+        BASE_ARTIFACT_DIR=$ARTIFACT_DIR
+        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR'") # go back to the main artifacts directory
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
         finalizers+=("driver_cleanup")
@@ -506,7 +508,7 @@ case ${action} in
                 break
             fi
         done
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR"
+
         exit $failed
         ;;
     "prepare")
