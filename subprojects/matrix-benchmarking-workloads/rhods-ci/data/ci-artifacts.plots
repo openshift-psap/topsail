@@ -2,7 +2,6 @@ report: Error report
 report: Pod-Node Mapping
 report: User Execution Overview
 report: Launch Time and Execution Time Distribution
-report: Step Successes
 report: RHODS Cluster CPU/Memory Usage
 report: Driver Cluster CPU/Memory Usage
 report: Authentication System
