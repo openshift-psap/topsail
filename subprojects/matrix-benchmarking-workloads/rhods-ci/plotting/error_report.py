@@ -49,8 +49,9 @@ class ErrorReport():
                 title = ""
                 body = ""
 
-
-            pr_author = entry.results.from_pr["user"]["login"]
+            pr_author= None
+            if entry.results.from_pr:
+                pr_author = entry.results.from_pr["user"]["login"]
 
             for comment in (entry.results.pr_comments or [])[::-1]:
                 if comment["user"]["login"] != pr_author: continue
