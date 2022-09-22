@@ -11,6 +11,8 @@ from matrix_benchmarking.common import Matrix
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+from . import report
+
 def register():
     ErrorReport()
 
@@ -195,6 +197,11 @@ class ErrorReport():
         if reference_content:
             header.append(html.H2("Reference run"))
             header += reference_content
+
+        args = ordered_vars, settings, setting_lists, variables, cfg
+        header += [html.H2("Step Successes")]
+        header += [report.Plot("Step successes", args)]
+        header += ["This plot shows the number of users who passed or failed each of the steps."]
 
         for step_name, contents in failed_steps.items():
             header.append(html.H2(f"Failed step: {step_name} x {len(contents)}"))
