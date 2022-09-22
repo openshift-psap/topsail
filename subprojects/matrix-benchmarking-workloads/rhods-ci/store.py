@@ -263,6 +263,13 @@ def _extract_metrics(dirname):
     return results_metrics
 
 
+def _parse_ods_ci_notebook_benchmark(fname):
+    try:
+        with open(fname) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace()
 
@@ -306,10 +313,10 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     print("_extract_metrics")
     results.metrics = _extract_metrics(dirname)
 
-    print("_parse_ods_ci_output_xml")
+    print("_parse_pod_results")
     results.ods_ci_output = {}
     results.ods_ci_exit_code = {}
-
+    results.ods_ci_notebook_benchmark = {}
     for test_pod in results.test_pods:
         ods_ci_dirname = test_pod.rpartition("-")[0]
         output_dir = dirname / "ods-ci" / ods_ci_dirname
@@ -317,6 +324,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         user_id = int(test_pod.split("-")[-2])
         results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(output_dir / "output.xml")
         results.ods_ci_exit_code[user_id] = _parse_ods_ci_exit_code(output_dir / "test.exit_code")
+        results.ods_ci_notebook_benchmark[user_id] = _parse_ods_ci_notebook_benchmark(output_dir / "benchmark_measures.json")
+
 
     results.user_count = int(import_settings["user_count"])
 
