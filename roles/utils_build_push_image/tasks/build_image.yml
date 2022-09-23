@@ -23,12 +23,12 @@
        -f "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
        -n "{{ utils_build_push_image_namespace }}"
        -ojsonpath={.metadata.name}
-  register: builconfig_name_cmd
+  register: buildconfig_name_cmd
 
 - name: Get the name of the build
   command:
     oc get builds
-       "-lbuildconfig={{ builconfig_name_cmd.stdout }}"
+       "-lbuildconfig={{ buildconfig_name_cmd.stdout }}"
        -oname
        -n "{{ utils_build_push_image_namespace }}"
   register: build_name_cmd
@@ -71,7 +71,7 @@
     shell:
       oc describe
          -n "{{ utils_build_push_image_namespace }}"
-         buildconfig/{{ builconfig_name_cmd.stdout }}
+         buildconfig/{{ buildconfig_name_cmd.stdout }}
          > {{ artifact_extra_logs_dir }}/image-build.descr
     failed_when: false
 
