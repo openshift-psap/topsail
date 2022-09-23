@@ -283,6 +283,10 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.nodes_info |= _parse_node_info(dirname / "artifacts-driver" / "nodes.yaml")
     results.nodes_info |= _parse_node_info(dirname / "artifacts-sutest" / "nodes.yaml")
 
+    results.odh_dashboard_config_file = dirname / "artifacts-sutest" / "odh-dashboard-config.yaml"
+    if not results.odh_dashboard_config_file.exists():
+        results.odh_dashboard_config_file = None
+
     results.notebook_pod_userid = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
 

@@ -70,12 +70,19 @@ class ErrorReport():
 
             info += [html.Li(["Test diff against ", html.A(html.Code(pr.base_ref), href=pr.diff_link, target="_blank")])]
 
+
         if entry.results.from_env.link_flag == "running-with-the-test":
-            info += [html.Li(html.A("Results artifacts",
-                                    href="..", target="_blank"))]
+            results_artifacts_href = ".."
         elif entry.results.from_env.link_flag == "running-without-the-test":
-            info += [html.Li(html.A("Results artifacts",
-                                    href=entry.results.source_url, target="_blank"))]
+            results_artifacts_href = entry.results.source_url
+        else:
+            results_artifacts_href = None
+
+        info += [html.Li(html.A("Results artifacts"+(": MISSING" if not results_artifacts_href else ""),
+                                href=results_artifacts_href, target="_blank"))]
+
+        info += [html.Ul(html.Li(html.A("Dashboard configuration"+(": MISSING" if not entry.results.odh_dashboard_config_file else ""),
+                                href=str(entry.results.odh_dashboard_config_file), target="_blank")))]
 
         info += [html.Li(["RHODS ", html.Code(entry.results.rhods_info.version)])]
 
