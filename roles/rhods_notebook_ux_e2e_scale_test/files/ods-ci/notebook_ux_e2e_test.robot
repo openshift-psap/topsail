@@ -6,6 +6,7 @@ Resource            tests/Resources/Page/ODH/JupyterHub/JupyterLabLauncher.robot
 Library             JupyterLibrary
 Library             libs/Helpers.py
 Library             SeleniumLibrary
+# Library             DebugLibrary # then use the 'Debug' keyword to set a breakpoint
 
 Suite Teardown  Tear Down
 
