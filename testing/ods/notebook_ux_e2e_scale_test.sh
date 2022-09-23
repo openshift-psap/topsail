@@ -442,7 +442,7 @@ sutest_cleanup_ldap() {
 
 run_prepare_local_cluster() {
     prepare_driver_cluster
-    prepare_sutest_cluster "$(get_osd_cluster_name "sutest")"
+    prepare_sutest_cluster
 
     process_ctrl::wait_bg_processes
 
