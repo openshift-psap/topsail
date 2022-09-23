@@ -23,14 +23,16 @@
        -f "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
        -n "{{ utils_build_push_image_namespace }}"
        -ojsonpath={.metadata.name}
-  register: builconfig_name_cmd
+  register: buildconfig_name_cmd
 
 - name: Get the name of the build
-  command:
+  shell:
+    set -o pipefail;
     oc get builds
-       "-lbuildconfig={{ builconfig_name_cmd.stdout }}"
+       "-lbuildconfig={{ buildconfig_name_cmd.stdout }}"
        -oname
        -n "{{ utils_build_push_image_namespace }}"
+       | cut -d"/" -f2
   register: build_name_cmd
   until: build_name_cmd.stdout | length != 0
   retries: 5
@@ -40,7 +42,7 @@
   block:
   - name: Wait for the Pod to start running
     command:
-      oc get "{{ build_name_cmd.stdout }}"
+      oc get "build/{{ build_name_cmd.stdout }}"
           -ojsonpath={.status.phase}
           -n "{{ utils_build_push_image_namespace }}"
     register: wait_pod_running
@@ -54,7 +56,7 @@
 
   - name: Wait for the image to be built
     command:
-      oc get "{{ build_name_cmd.stdout }}"
+      oc get "build/{{ build_name_cmd.stdout }}"
           -ojsonpath={.status.phase}
           -n "{{ utils_build_push_image_namespace }}"
     register: wait_img_build
@@ -67,17 +69,35 @@
     fail: msg="The image failed to build"
 
   always:
+  - name: Get the build Pod status (debug)
+    shell:
+      oc get pods
+         -l openshift.io/build.name={{ build_name_cmd.stdout }}
+         > {{ artifact_extra_logs_dir }}/pod.status
+
+  - name: Get the build Pod description (debug)
+    shell:
+      oc describe pods
+         -l openshift.io/build.name={{ build_name_cmd.stdout }}
+         > {{ artifact_extra_logs_dir }}/pod.desc
+
+  - name: Get the build Pod spec (debug)
+    shell:
+      oc get pods -oyaml
+         -l openshift.io/build.name={{ build_name_cmd.stdout }}
+         > {{ artifact_extra_logs_dir }}/pod.yaml
+
   - name: Get BuildConfig description (debug)
     shell:
       oc describe
          -n "{{ utils_build_push_image_namespace }}"
-         buildconfig/{{ builconfig_name_cmd.stdout }}
-         > {{ artifact_extra_logs_dir }}/image-build.descr
+         buildconfig/{{ buildconfig_name_cmd.stdout }}
+         > {{ artifact_extra_logs_dir }}/build.desc
     failed_when: false
 
   - name: Store the logs of image build (debug)
     shell:
-      oc logs {{ build_name_cmd.stdout }}
+      oc logs "build/{{ build_name_cmd.stdout }}"
         -n "{{ utils_build_push_image_namespace }}"
-        > {{ artifact_extra_logs_dir }}/image-build.log
+        > {{ artifact_extra_logs_dir }}/build.log
     failed_when: false

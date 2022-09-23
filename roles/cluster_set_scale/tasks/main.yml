@@ -7,7 +7,12 @@
 - name: Get current replicas of machinesets with type {{ machineset_instance_type }}
   command:
     oc get machineset -n openshift-machine-api
-    -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.spec.replicas}{"\n"}{end}'
+    {% if machineset_name | length > 0 %}
+      {{ machineset_name }} -o=jsonpath='{.spec.replicas}{"\n"}'
+    {% else %}
+      -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.spec.replicas}{"\n"}{end}'
+    {% endif %}
+
   register: machineset_replicas
 
 - name: Calculate sum of replicas of machinesets with type {{ machineset_instance_type }}
@@ -23,11 +28,17 @@
   block:
   - name: Get the names of existing worker machinesets with type {{ machineset_instance_type }}
     command:
-      oc get machineset -n openshift-machine-api -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.metadata.name}{"\n"}{end}'
+      oc get machineset -n openshift-machine-api
+      {% if machineset_name | length > 0 %}
+             "{{ machineset_name }}"
+             -ojsonpath={.metadata.name}
+      {% else %}
+         -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.metadata.name}{"\n"}{end}'
+      {% endif %}
     register: oc_get_machinesets
     failed_when: not oc_get_machinesets.stdout
 
-  - name: Don't downscale any machinesets other than the first one, unless the user used force
+  - name: Do not downscale any machinesets other than the first one, unless the user used force
     block:
     - name: Calculate sum of replicas of machinesets with type {{ machineset_instance_type }}, except for the first one
       set_fact:
@@ -67,9 +78,13 @@
     #    See https://docs.openshift.com/container-platform/4.7/rest_api/machine_apis/machineset-machine-openshift-io-v1beta1.html
     #    for more information.
     # 3. Perform some extra formatting for nicer logging
-    shell: >
+    shell: >-
       oc get machinesets -n openshift-machine-api \
-        -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}' \
+      {% if machineset_name | length > 0 %}
+             "{{ machineset_name }}" -ojson \
+      {% else %}
+              -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}' \
+      {% endif %}
       | jq 'if .status | has("availableReplicas") then . else . * {"status": {"availableReplicas": 0 }} end' \
       | jq 'select(.status.availableReplicas != .spec.replicas or .status.replicas != .spec.replicas)' \
       | jq '{

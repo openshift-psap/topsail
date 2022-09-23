@@ -8,7 +8,7 @@ class Cluster:
     Commands relating to cluster scaling, upgrading and environment capture
     """
     @staticmethod
-    def set_scale(instance_type, scale, base_machineset=None, force=False):
+    def set_scale(instance_type, scale, base_machineset=None, force=False, taint=None, name=None):
         """
         Ensures that the cluster has exactly `scale` nodes with instance_type `instance_type`
 
@@ -31,10 +31,14 @@ class Cluster:
             instance_type: The instance type to use, for example, g4dn.xlarge
             scale: The number of required nodes with given instance type
             base_machineset: Name of a machineset to use to derive the new one. Default: pickup the first machineset found in `oc get machinesets -n openshift-machine-api`.
+            taint: Taint to apply to the machineset.
+            name: Name to give to the new machineset.
         """
         opts = {
             "machineset_instance_type": instance_type,
             "scale": scale,
+            "machineset_taint": taint,
+            "machineset_name": name
         }
 
         if base_machineset is not None:
@@ -369,7 +373,9 @@ class Cluster:
         return RunAnsibleRole("cluster_undeploy_ldap", opts)
 
     @staticmethod
-    def preload_image(name, image, namespace="default"):
+    def preload_image(name, image, namespace="default",
+                      node_selector="",
+                      pod_toleration_key="", pod_toleration_effect=""):
         """
         Preload a container image on all the nodes of a cluster.
 
@@ -377,6 +383,9 @@ class Cluster:
           name: Name to give to the DaemonSet used for preloading the image.
           image: Container image to preload on the nodes.
           namespace: Optional. Namespace in which the DaemonSet will be created.
+          node_selector: Optional. NodeSelector to apply to the DaemonSet.
+          pod_toleration_key: Optional. Pod toleration to apply to the DaemonSet.
+          pod_toleration_effect: Optional. Pod toleration to apply to the DaemonSet.
         """
 
         toolbox_name_suffix = os.environ.get("ARTIFACT_TOOLBOX_NAME_SUFFIX", "")
@@ -387,6 +396,9 @@ class Cluster:
             "cluster_preload_image_ds_name": name,
             "cluster_preload_image_ds_namespace": namespace,
             "cluster_preload_image_ds_image": image,
+            "cluster_preload_image_node_selector": node_selector,
+            "cluster_preload_image_pod_toleration_key": pod_toleration_key,
+            "cluster_preload_image_pod_toleration_effect": pod_toleration_effect,
         }
 
         return RunAnsibleRole("cluster_preload_image", opts)

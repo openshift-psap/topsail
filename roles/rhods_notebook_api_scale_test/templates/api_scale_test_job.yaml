@@ -140,6 +140,12 @@ spec:
         - name: rhods-notebook-api-scale-test-entrypoint
           mountPath: /mnt/rhods-notebook-api-scale-test-entrypoint
       restartPolicy: Never
+{% if rhods_notebook_api_scale_test_toleration_key|length %}
+      tolerations:
+      - effect: NoSchedule
+        key: {{ rhods_notebook_api_scale_test_toleration_key }}
+        operator: Exists
+{% endif %}
       volumes:
       - name: rhods-scale-test-credentials
         secret:

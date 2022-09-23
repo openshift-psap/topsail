@@ -35,26 +35,17 @@ create_cluster() {
 
     ocm_login
 
-    compute_nodes_type=$(get_compute_node_type "$cluster_role" osd)
-    compute_nodes_count=$(get_compute_node_count "$cluster_role" osd "$compute_nodes_type")
-
     echo "$cluster_name" > "$ARTIFACT_DIR/${cluster_role}_osd_cluster.name"
     ./run_toolbox.py cluster create_osd \
                      "$cluster_name" \
                      "$PSAP_ODS_SECRET_PATH/create_osd_cluster.password" \
                      "$KUBECONFIG" \
-                     --compute_machine_type="$compute_nodes_type" \
-                     --compute_nodes="$compute_nodes_count" \
+                     --compute_machine_type="$OSD_WORKER_NODES_TYPE" \
+                     --compute_nodes="$OSD_WORKER_NODES_COUNT" \
                      --version="$OSD_VERSION" \
                      --region="$OSD_REGION"
+
     ocm describe cluster "$cluster_name" --json | jq .id -r > "$ARTIFACT_DIR/${cluster_role}_osd_cluster.id"
-
-    if [[ "$cluster_role" == "sutest" && "$ENABLE_AUTOSCALER" ]]; then
-        MACHINEPOOL_NAME=default
-
-        ocm edit machinepool "$MACHINEPOOL_NAME" --cluster "$cluster_name" \
-            --enable-autoscaling --min-replicas=2 --max-replicas=150
-    fi
 }
 
 destroy_cluster() {

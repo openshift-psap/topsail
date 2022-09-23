@@ -14,3 +14,4 @@ rhods_notebook_ux_e2e_scale_test_state_signal_redis_server:
 rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_image_name: s2i-generic-data-science-notebook
 rhods_notebook_ux_e2e_scale_test_namespace: loadtest
 rhods_notebook_ux_e2e_scale_test_istag: ods-ci:latest
+rhods_notebook_ux_e2e_scale_test_toleration_key:

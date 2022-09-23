@@ -91,6 +91,12 @@ spec:
         - name: rhods-notebook-ux-e2e-scale-test-entrypoint
           mountPath: /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint
       restartPolicy: Never
+{% if rhods_notebook_ux_e2e_scale_test_toleration_key|length %}
+      tolerations:
+      - effect: NoSchedule
+        key: {{ rhods_notebook_ux_e2e_scale_test_toleration_key }}
+        operator: Exists
+{% endif %}
       volumes:
       - name: ods-ci-test-variables
         secret:

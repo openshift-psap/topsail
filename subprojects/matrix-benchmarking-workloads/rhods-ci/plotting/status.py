@@ -29,7 +29,6 @@ class ExecutionDistribution():
         if cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
 
-        data_timeline = []
         for entry in common.Matrix.all_records(settings, setting_lists):
             break
 

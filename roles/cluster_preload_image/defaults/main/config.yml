@@ -2,3 +2,6 @@
 cluster_preload_image_ds_name:
 cluster_preload_image_ds_namespace: "default"
 cluster_preload_image_ds_image:
+cluster_preload_image_node_selector:
+cluster_preload_image_pod_toleration_key:
+cluster_preload_image_pod_toleration_effect:

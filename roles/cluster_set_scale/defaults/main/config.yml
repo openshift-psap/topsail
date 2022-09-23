@@ -17,3 +17,5 @@ scale: ""
 
 # See "scale" parameter description
 force_scale: false
+
+machineset_name:

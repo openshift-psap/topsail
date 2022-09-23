@@ -35,6 +35,9 @@ ODS_CI_TAG="latest"
 ODS_CI_ARTIFACTS_EXPORTER_TAG="artifacts-exporter"
 ODS_CI_ARTIFACTS_EXPORTER_DOCKERFILE="testing/ods/images/Containerfile.s3_artifacts_exporter"
 
+# if the value is different from 1, delete the test namespaces after the testing
+CLEANUP_DRIVER_NAMESPACES_ON_EXIT=0
+
 # if the value is different from 1, do not customize RHODS.
 # see sutest_customize_rhods in `notebook_ux_e2e_scale_test.sh`.
 CUSTOMIZE_RHODS=1
@@ -103,7 +106,25 @@ OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
 # if not empty, enables auto-scaling in the sutest cluster
 ENABLE_AUTOSCALER=
 
-# Shouldn't be the same than OCP worker nodes.
+SUTEST_MACHINESET_NAME=rhods-notebooks
+SUTEST_TAINT_KEY=only-$SUTEST_MACHINESET_NAME
+SUTEST_TAINT_VALUE=yes
+SUTEST_TAINT_EFFECT=NoSchedule
+SUTEST_NODE_SELECTOR="$SUTEST_TAINT_KEY: '$SUTEST_TAINT_VALUE'"
+
+DRIVER_MACHINESET_NAME=test-pods
+DRIVER_TAINT_KEY=only-$DRIVER_MACHINESET_NAME
+DRIVER_TAINT_VALUE=yes
+DRIVER_TAINT_EFFECT=NoSchedule
+DRIVER_NODE_SELECTOR="$DRIVER_TAINT_KEY: '$DRIVER_TAINT_VALUE'"
+
+# these nodes are the worker nodes NOT hosting notebooks
+# they should be big enough to host RHODS operators
+
+OCP_WORKER_MACHINE_TYPE=m6a.xlarge
+OCP_WORKER_NODES_COUNT=3
+OSD_WORKER_NODES_TYPE=m6.xlarge
+OSD_WORKER_NODES_COUNT=3
 
 DRIVER_COMPUTE_MACHINE_TYPE=m5a.2xlarge
 OSD_SUTEST_COMPUTE_MACHINE_TYPE=m5.2xlarge
@@ -202,7 +223,7 @@ get_compute_node_count() {
     fi
 
     notebook_size_name=$(get_notebook_size "$cluster_role")
-    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$notebook_size_name' '$instance_type' '$ODS_CI_NB_USERS' >&2 > '$ARTIFACT_DIR/${cluster_role}_${cluster_type}_sizing'; echo \$?")
+    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$notebook_size_name' '$instance_type' '$ODS_CI_NB_USERS' >&2 > '${ARTIFACT_DIR:-/tmp}/${cluster_role}_${cluster_type}_sizing'; echo \$?")
 
     if [[ "$size" == 0 ]]; then
         echo "ERROR: couldn't determine the number of nodes to request ..." >&2
