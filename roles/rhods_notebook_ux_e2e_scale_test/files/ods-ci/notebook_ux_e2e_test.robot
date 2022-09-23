@@ -37,6 +37,7 @@ ${NOTEBOOK_EXEC_WAIT_TIME}     10 minutes
 
 Setup
   Set Library Search Order  SeleniumLibrary
+  Initialize Global Variables
   Open Browser  ${ODH_DASHBOARD_URL}  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}  desired_capabilities=${capabilities}
 
 Tear Down
@@ -179,6 +180,12 @@ Login To JupyterLab
 Trigger Notebook Spawn
   [Arguments]  ${modal_timeout}=60 seconds
 
+  ${rhods_17_or_above}=  Is RHODS Version Greater Or Equal Than  1.17.0
+  IF  ${rhods_17_or_above} == True
+      ${notebook_browser_tab_preference}=  Set Variable  //input[@id="checkbox-notebook-browser-tab-preference"]
+      ${new_tab_checked}  Get Element Attribute  ${notebook_browser_tab_preference}  checked
+      Run Keyword If  "${new_tab_checked}" == "${None}"  Click Element  xpath:${notebook_browser_tab_preference}
+  END
   Click Button  Start server
   Wait Until Page Contains  Starting server  ${modal_timeout}
   Wait Until Element Is Visible  xpath://div[@role="progressbar"]
