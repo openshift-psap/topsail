@@ -400,6 +400,8 @@ run_test() {
 }
 
 driver_cleanup() {
+    switch_driver_cluster
+
     oc delete machineset "$DRIVER_MACHINESET_NAME" -n openshift-machine-api
 
     if [[ "$CLEANUP_DRIVER_NAMESPACES_ON_EXIT" == 1 ]]; then
