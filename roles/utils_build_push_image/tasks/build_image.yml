@@ -73,18 +73,21 @@
     shell:
       oc get pods
          -l openshift.io/build.name={{ build_name_cmd.stdout }}
+         -n "{{ utils_build_push_image_namespace }}"
          > {{ artifact_extra_logs_dir }}/pod.status
 
   - name: Get the build Pod description (debug)
     shell:
       oc describe pods
          -l openshift.io/build.name={{ build_name_cmd.stdout }}
+         -n "{{ utils_build_push_image_namespace }}"
          > {{ artifact_extra_logs_dir }}/pod.desc
 
   - name: Get the build Pod spec (debug)
     shell:
       oc get pods -oyaml
          -l openshift.io/build.name={{ build_name_cmd.stdout }}
+         -n "{{ utils_build_push_image_namespace }}"
          > {{ artifact_extra_logs_dir }}/pod.yaml
 
   - name: Get BuildConfig description (debug)
@@ -98,6 +101,7 @@
   - name: Store the logs of image build (debug)
     shell:
       oc logs "build/{{ build_name_cmd.stdout }}"
+        --all-containers --prefix
         -n "{{ utils_build_push_image_namespace }}"
         > {{ artifact_extra_logs_dir }}/build.log
     failed_when: false
