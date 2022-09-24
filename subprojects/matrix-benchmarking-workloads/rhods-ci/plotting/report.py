@@ -12,7 +12,6 @@ def register():
     UserExecutionOverviewReport()
     PodNodeMappingReport()
     LaunchAndExecTimeDistributionReport()
-    StepSuccessesReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -193,25 +192,5 @@ class LaunchAndExecTimeDistributionReport():
                             msg_p)]
             header += [html.I(msg_p[0])]
             header += [html.Br(), html.Br()]
-
-        return None, header
-
-class StepSuccessesReport():
-    def __init__(self):
-        self.name = "report: Step Successes"
-        self.id_name = self.name.lower().replace(" ", "_")
-        self.no_graph = True
-        self.is_report = True
-
-        table_stats.TableStats._register_stat(self)
-
-    def do_plot(self, *args):
-        header = []
-
-        header += [html.H2("Step Successes")]
-        header += [Plot("Step successes", args)]
-        header += ["This plot shows the number of users who passed or failed each of the steps."]
-        header += html.Br()
-        header += html.Br()
 
         return None, header

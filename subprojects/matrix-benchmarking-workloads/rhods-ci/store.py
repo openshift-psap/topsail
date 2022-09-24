@@ -197,9 +197,11 @@ def _parse_pod_times(filename, hostnames, is_notebook=False):
                 datetime.datetime.strptime(
                     pod["status"]["containerStatuses"][0]["state"]["running"]["startedAt"],
                     K8S_TIME_FMT)
+        elif pod["status"]["containerStatuses"][0]["state"].get("waiting"):
+            pass
 
         else:
-            print("Unknown containerStatuses ...")
+            print("Unknown containerStatuses ...", pod["status"]["containerStatuses"][0])
             pass
 
         if hostnames is not None:
@@ -261,6 +263,13 @@ def _extract_metrics(dirname):
     return results_metrics
 
 
+def _parse_ods_ci_notebook_benchmark(fname):
+    try:
+        with open(fname) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace()
 
@@ -283,9 +292,10 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.nodes_info |= _parse_node_info(dirname / "artifacts-driver" / "nodes.yaml")
     results.nodes_info |= _parse_node_info(dirname / "artifacts-sutest" / "nodes.yaml")
 
-    results.odh_dashboard_config_file = dirname / "artifacts-sutest" / "odh-dashboard-config.yaml"
-    if not results.odh_dashboard_config_file.exists():
-        results.odh_dashboard_config_file = None
+    odh_dashboard_config_path = dirname / "artifacts-sutest" / "odh-dashboard-config.yaml"
+    results.odh_dashboard_config_file = None
+    if odh_dashboard_config_path.exists():
+        results.odh_dashboard_config_file = str(odh_dashboard_config_path.relative_to(dirname.parent))
 
     results.notebook_pod_userid = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
@@ -304,10 +314,10 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     print("_extract_metrics")
     results.metrics = _extract_metrics(dirname)
 
-    print("_parse_ods_ci_output_xml")
+    print("_parse_pod_results")
     results.ods_ci_output = {}
     results.ods_ci_exit_code = {}
-
+    results.ods_ci_notebook_benchmark = {}
     for test_pod in results.test_pods:
         ods_ci_dirname = test_pod.rpartition("-")[0]
         output_dir = dirname / "ods-ci" / ods_ci_dirname
@@ -315,6 +325,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         user_id = int(test_pod.split("-")[-2])
         results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(output_dir / "output.xml")
         results.ods_ci_exit_code[user_id] = _parse_ods_ci_exit_code(output_dir / "test.exit_code")
+        results.ods_ci_notebook_benchmark[user_id] = _parse_ods_ci_notebook_benchmark(output_dir / "benchmark_measures.json")
+
 
     results.user_count = int(import_settings["user_count"])
 

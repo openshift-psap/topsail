@@ -291,12 +291,8 @@ sutest_customize_rhods_after_wait() {
     fi
 
     if [[ "$CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE" == 1 ]]; then
-        # must be consistent with testing/ods/sizing/notebook_sizes
-        ODS_NOTEBOOK_CPU_SIZE=1
-        ODS_NOTEBOOK_MEMORY_SIZE=4Gi
-
         oc get odhdashboardconfig/odh-dashboard-config -n redhat-ods-applications -ojson \
-            | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE'"}, "requests":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE'"}}}]' \
+            | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE_GI'Gi"}, "requests":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE_GI'Gi"}}}]' \
             | oc apply -f-
     fi
 
@@ -395,6 +391,10 @@ run_test() {
                      --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS" \
                      --ods_ci_artifacts_exporter_istag="$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
                      --ods_ci_notebook_image_name="$RHODS_NOTEBOOK_IMAGE_NAME" \
+                     --ods_ci_notebook_size_name="$ODS_NOTEBOOK_SIZE" \
+                     --ods_ci_notebook_benchmark_name="$ODS_NOTEBOOK_BENCHMARK_NAME" \
+                     --ods_ci_notebook_benchmark_repeat="$ODS_NOTEBOOK_BENCHMARK_REPEAT" \
+                     --ods_ci_notebook_benchmark_number="$ODS_NOTEBOOK_BENCHMARK_NUMBER" \
                      --state_signal_redis_server="${REDIS_SERVER}" \
                      --toleration_key="$DRIVER_TAINT_KEY"
 }
@@ -495,7 +495,7 @@ case ${action} in
             export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/test_run_$idx"
             mkdir -p "$ARTIFACT_DIR"
             pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
-            pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request.json
+            pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
             for f in "$pr_file" "$pr_comment_file"; do
                 [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
             done

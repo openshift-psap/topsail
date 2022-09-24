@@ -11,6 +11,8 @@ from matrix_benchmarking.common import Matrix
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+from . import report
+
 def register():
     ErrorReport()
 
@@ -47,8 +49,9 @@ class ErrorReport():
                 title = ""
                 body = ""
 
-
-            pr_author = entry.results.from_pr["user"]["login"]
+            pr_author= None
+            if entry.results.from_pr:
+                pr_author = entry.results.from_pr["user"]["login"]
 
             for comment in (entry.results.pr_comments or [])[::-1]:
                 if comment["user"]["login"] != pr_author: continue
@@ -66,7 +69,7 @@ class ErrorReport():
                 info += [html.Ul(html.Li(html.Code(body)))]
             if last_comment_found:
                 info += [html.Ul(html.Li(["Trigger date: ", html.I(last_comment_date)]))]
-                info += [html.Ul(html.Li(["Test trigger: ", html.Code(last_comment_body)]))]
+                info += [html.Ul(html.Li(["Trigger comment: ", html.Code(last_comment_body)]))]
 
             info += [html.Li(["Test diff against ", html.A(html.Code(pr.base_ref), href=pr.diff_link, target="_blank")])]
 
@@ -81,8 +84,12 @@ class ErrorReport():
         info += [html.Li(html.A("Results artifacts"+(": MISSING" if not results_artifacts_href else ""),
                                 href=results_artifacts_href, target="_blank"))]
 
-        info += [html.Ul(html.Li(html.A("Dashboard configuration"+(": MISSING" if not entry.results.odh_dashboard_config_file else ""),
-                                href=str(entry.results.odh_dashboard_config_file), target="_blank")))]
+        if entry.results.odh_dashboard_config_file and entry.results.source_url:
+            href = f"{entry.results.source_url}/{entry.results.odh_dashboard_config_file}"
+            info += [html.Ul(html.Li(html.A("Dashboard configuration", href=href, target="_blank")))]
+        else:
+            info += [html.Ul(html.Li("Dashboard configuration: MISSING"))]
+
 
         info += [html.Li(["RHODS ", html.Code(entry.results.rhods_info.version)])]
 
@@ -195,6 +202,11 @@ class ErrorReport():
         if reference_content:
             header.append(html.H2("Reference run"))
             header += reference_content
+
+        args = ordered_vars, settings, setting_lists, variables, cfg
+        header += [html.H2("Step Successes")]
+        header += [report.Plot("Step successes", args)]
+        header += ["This plot shows the number of users who passed or failed each of the steps."]
 
         for step_name, contents in failed_steps.items():
             header.append(html.H2(f"Failed step: {step_name} x {len(contents)}"))

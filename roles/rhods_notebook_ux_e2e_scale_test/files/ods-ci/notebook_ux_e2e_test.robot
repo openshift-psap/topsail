@@ -6,6 +6,7 @@ Resource            tests/Resources/Page/ODH/JupyterHub/JupyterLabLauncher.robot
 Library             JupyterLibrary
 Library             libs/Helpers.py
 Library             SeleniumLibrary
+# Library             DebugLibrary # then use the 'Debug' keyword to set a breakpoint
 
 Suite Teardown  Tear Down
 
@@ -14,8 +15,12 @@ Suite Teardown  Tear Down
 ${DASHBOARD_PRODUCT_NAME}      "%{DASHBOARD_PRODUCT_NAME}"
 
 ${NOTEBOOK_IMAGE_NAME}         %{NOTEBOOK_IMAGE_NAME}
-# needs to match ODS_NOTEBOOK_SIZE in testing/ods/notebook_ux_e2e_scale_test.sh
-${NOTEBOOK_IMAGE_SIZE}         default
+
+${NOTEBOOK_BENCHMARK_NAME}     %{NOTEBOOK_BENCHMARK_NAME}
+${NOTEBOOK_BENCHMARK_NUMBER}   %{NOTEBOOK_BENCHMARK_NUMBER}
+${NOTEBOOK_BENCHMARK_REPEAT}   %{NOTEBOOK_BENCHMARK_REPEAT}
+
+${NOTEBOOK_IMAGE_SIZE}         %{NOTEBOOK_SIZE_NAME}
 ${NOTEBOOK_SPAWN_WAIT_TIME}    15 minutes
 ${NOTEBOOK_SPAWN_RETRIES}      45
 ${NOTEBOOK_SPAWN_RETRY_DELAY}  20 seconds
@@ -23,7 +28,7 @@ ${NOTEBOOK_SPAWN_RETRY_DELAY}  20 seconds
 ${NOTEBOOK_URL}                %{NOTEBOOK_URL}
 ${NOTEBOOK_NAME}               notebook.ipynb
 ${NOTEBOOK_CLONE_WAIT_TIME}    3 minutes
-${NOTEBOOK_EXEC_WAIT_TIME}     5 minutes
+${NOTEBOOK_EXEC_WAIT_TIME}     10 minutes
 
 &{browser logging capability}    browser=ALL
 &{capabilities}    browserName=chrome    version=${EMPTY}    platform=ANY    goog:loggingPrefs=${browser logging capability}
@@ -32,10 +37,10 @@ ${NOTEBOOK_EXEC_WAIT_TIME}     5 minutes
 
 Setup
   Set Library Search Order  SeleniumLibrary
+  Initialize Global Variables
   Open Browser  ${ODH_DASHBOARD_URL}  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}  desired_capabilities=${capabilities}
 
 Tear Down
-  Capture Page Screenshot
   ${browser log entries}=    Get Browser Console Log Entries
   Log    ${browser log entries}
   ${browser log entries str}=   Convert To String  ${browser log entries}
@@ -58,7 +63,8 @@ Login to RHODS Dashboard
 Go to RHODS Dashboard
   [Tags]  Dashboard
 
-  Wait For Condition  return document.title == ${DASHBOARD_PRODUCT_NAME}  timeout=60 seconds
+  Wait For Condition  return document.title == ${DASHBOARD_PRODUCT_NAME}  timeout=3 minutes
+  Wait Until Page Contains  Launch application  timeout=60 seconds
   Capture Page Screenshot
 
 
@@ -76,16 +82,12 @@ Go to Jupyter Page
   Capture Page Screenshot
 
 
-Trigger the Notebook Spawn
-  [Tags]  Spawn  Notebook
-
-  Trigger Notebook Spawn
-  Capture Page Screenshot
-
-
 Wait for the Notebook Spawn
   [Tags]  Spawn  Notebook
 
+  Trigger Notebook Spawn
+  Click Element  xpath://span[@class="pf-c-expandable-section__toggle-text"]
+  Capture Page Screenshot
   Wait Notebook Spawn
   Capture Page Screenshot
 
@@ -99,20 +101,26 @@ Login to JupyterLab Page
 Go to JupyterLab Page
   [Tags]  Notebook  JupyterLab
 
-  Wait Until Page Contains Element  xpath:${JL_TABBAR_CONTENT_XPATH}  timeout=60s
+  Wait Until Page Contains Element  xpath:${JL_TABBAR_CONTENT_XPATH}  timeout=3 minutes
   Capture Page Screenshot
 
 
 Load the Notebook
   [Tags]  Notebook  JupyterLab
 
+  Maybe Close Popup
   ${is_launcher_selected} =  Run Keyword And Return Status  JupyterLab Launcher Tab Is Selected
   Run Keyword If  not ${is_launcher_selected}  Open JupyterLab Launcher
   Capture Page Screenshot
   Launch a new JupyterLab Document
+  Maybe Close Popup
   Close Other JupyterLab Tabs
-  Run Cell And Check For Errors  !time curl "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
-  Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_CLONE_WAIT_TIME}
+  # shell command (with ! prefix) errors are ignored by JupyterLab
+  Add and Run JupyterLab Code Cell in Active Notebook  !time curl -Ssf "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
+  Add and Run JupyterLab Code Cell in Active Notebook  !time curl -Ssf "${NOTEBOOK_URL}/../${NOTEBOOK_BENCHMARK_NAME}" -O
+  Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_EXEC_WAIT_TIME}
+  Run Cell And Check For Errors  import pathlib; pathlib.Path("${NOTEBOOK_NAME}").stat()
+  Run Cell And Check For Errors  import pathlib; pathlib.Path("${NOTEBOOK_BENCHMARK_NAME}").stat()
   Capture Page Screenshot
 
   Open With JupyterLab Menu  File  Open from Path…
@@ -138,6 +146,16 @@ Run the Notebook
       Fail  "Error detected during the execution of the notebook:\n${error}"
   END
 
+  Run Cell And Check For Errors  print(f"{datetime.datetime.now()} Running ...")
+  Run Cell And Check For Errors  REPEAT=${NOTEBOOK_BENCHMARK_REPEAT}; NUMBER=${NOTEBOOK_BENCHMARK_NUMBER}
+  Run Cell And Check For Errors  measures = run_benchmark(repeat=REPEAT, number=NUMBER)
+  Run Cell And Check For Errors  print(f"{datetime.datetime.now()} Done ...")
+  Run Cell And Check For Errors  print(f"The benchmark ran for {sum(measures):.2f} seconds")
+  ${measures} =  Run Cell And Get Output  import json; print(json.dumps(dict(benchmark="${NOTEBOOK_BENCHMARK_NAME}", repeat=REPEAT, number=NUMBER, measures=measures)))
+  Create File  ${OUTPUTDIR}/benchmark_measures.json  ${measures}
+
+  Capture Page Screenshot
+
 
 *** Keywords ***
 
@@ -162,6 +180,12 @@ Login To JupyterLab
 Trigger Notebook Spawn
   [Arguments]  ${modal_timeout}=60 seconds
 
+  ${rhods_17_or_above}=  Is RHODS Version Greater Or Equal Than  1.17.0
+  IF  ${rhods_17_or_above} == True
+      ${notebook_browser_tab_preference}=  Set Variable  //input[@id="checkbox-notebook-browser-tab-preference"]
+      ${new_tab_checked}  Get Element Attribute  ${notebook_browser_tab_preference}  checked
+      Run Keyword If  "${new_tab_checked}" == "${None}"  Click Element  xpath:${notebook_browser_tab_preference}
+  END
   Click Button  Start server
   Wait Until Page Contains  Starting server  ${modal_timeout}
   Wait Until Element Is Visible  xpath://div[@role="progressbar"]

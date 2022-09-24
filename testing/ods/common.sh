@@ -28,7 +28,7 @@ RHODS_NOTEBOOK_IMAGE_NAME=s2i-generic-data-science-notebook
 
 ODS_CI_TEST_NAMESPACE=loadtest
 ODS_CI_REPO="https://github.com/openshift-psap/ods-ci.git"
-ODS_CI_REF="jh-at-scale.v220901"
+ODS_CI_REF="jh-at-scale.v220923"
 
 ODS_CI_IMAGESTREAM="ods-ci"
 ODS_CI_TAG="latest"
@@ -62,6 +62,13 @@ CUSTOMIZE_RHODS_PVC_SIZE=5Gi
 # see sutest_customize_rhods_after_wait for the limits/requests values
 CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE=1
 
+ODS_NOTEBOOK_CPU_SIZE=1
+ODS_NOTEBOOK_MEMORY_SIZE_GI=4
+
+# must be consistent with roles/rhods_notebook_ux_e2e_scale_test/templates/ods-ci_job.yaml
+ODS_TESTPOD_CPU_SIZE=0.2
+ODS_TESTPOD_MEMORY_SIZE_GI=0.75
+
 # only taken into account if CUSTOMIZE_RHODS=1 and CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE is set
 # number of replicas to set to the Dashboard deployment
 CUSTOMIZE_RHODS_DASHBOARD_REPLICAS=5
@@ -71,14 +78,19 @@ LDAP_NB_USERS=1000
 
 ODS_CI_NB_USERS=${ODS_CI_NB_USERS:-5} # number of users to simulate
 ODS_CI_USER_PREFIX=psapuser
-ODS_NOTEBOOK_SIZE=default # needs to match `NOTEBOOK_IMAGE_SIZE` in roles/rhods_notebook_ux_e2e_scale_test/files/ods-ci/notebook_ux_e2e_test.robot
-ODS_NOTEBOOK_SIZE_TEST_POD="test_pod" # shouldn't change
+ODS_NOTEBOOK_SIZE=default # needs to match an existing notebook size in OdhDashboardConfig.spec.notebookSizes
+
 ODS_SLEEP_FACTOR=${ODS_SLEEP_FACTOR:-1.0} # how long to wait between user starts.
 ODS_CI_ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
 
 STATESIGNAL_REDIS_NAMESPACE=loadtest-redis
 NGINX_NOTEBOOK_NAMESPACE=loadtest-notebooks
 ODS_NOTEBOOK_NAME=simple-notebook.ipynb
+
+ODS_NOTEBOOK_BENCHMARK_NAME=pyperf_bm_go.py
+ODS_NOTEBOOK_BENCHMARK_REPEAT=3
+ODS_NOTEBOOK_BENCHMARK_NUMBER=20 # around 10s
+
 ODS_NOTEBOOK_DIR=${THIS_DIR}/notebooks
 ODS_EXCLUDE_TAGS=${ODS_EXCLUDE_TAGS:-None} # tags to exclude when running the robot test case
 
@@ -195,9 +207,9 @@ get_notebook_size() {
     cluster_role=$1
 
     if [[ "$cluster_role" == "sutest" ]]; then
-        echo "$ODS_NOTEBOOK_SIZE"
+        echo $ODS_NOTEBOOK_CPU_SIZE $ODS_NOTEBOOK_MEMORY_SIZE_GI
     else
-        echo "$ODS_NOTEBOOK_SIZE_TEST_POD"
+        echo $ODS_TESTPOD_CPU_SIZE $ODS_TESTPOD_MEMORY_SIZE_GI
     fi
 }
 
@@ -222,8 +234,8 @@ get_compute_node_count() {
         return
     fi
 
-    notebook_size_name=$(get_notebook_size "$cluster_role")
-    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$notebook_size_name' '$instance_type' '$ODS_CI_NB_USERS' >&2 > '${ARTIFACT_DIR:-/tmp}/${cluster_role}_${cluster_type}_sizing'; echo \$?")
+    notebook_size=$(get_notebook_size "$cluster_role")
+    size=$(bash -c "python3 $THIS_DIR/sizing/sizing '$instance_type' '$ODS_CI_NB_USERS' $notebook_size >&2 > '${ARTIFACT_DIR:-/tmp}/${cluster_role}_${cluster_type}_sizing'; echo \$?")
 
     if [[ "$size" == 0 ]]; then
         echo "ERROR: couldn't determine the number of nodes to request ..." >&2

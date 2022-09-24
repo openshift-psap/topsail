@@ -13,6 +13,7 @@ from . import status
 from . import launch_time
 from . import error_report
 from . import prom_report
+from . import notebook_performance
 
 def register():
     prom.register()
@@ -24,3 +25,4 @@ def register():
     launch_time.register()
     error_report.register()
     prom_report.register()
+    notebook_performance.register()

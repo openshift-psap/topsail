@@ -176,6 +176,12 @@
 - name: Store the version of the Operator that will be installed
   shell: echo "{{ starting_csv }}" > "{{ artifact_extra_logs_dir }}/operator_csv_name.txt"
 
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
 - name: "Create the Subscription"
   debug: msg="starting_csv is {{ starting_csv }}"
 
@@ -184,7 +190,7 @@
   - name: Instantiate the Namespace template
     template:
       src: "{{ cluster_deploy_operator_res_ns }}"
-      dest: "{{ artifact_extra_logs_dir }}/000_namespace.yml"
+      dest: "{{ artifact_extra_logs_dir }}/src/000_namespace.yml"
       mode: 0400
 
   - name: Check if the namespace exists
@@ -195,7 +201,7 @@
   - name: Create the namespace resource
     when: namespace_exists_cmd.rc == 1
     command:
-      oc create -f "{{ artifact_extra_logs_dir }}/000_namespace.yml"
+      oc create -f "{{ artifact_extra_logs_dir }}/src/000_namespace.yml"
 
   - name: Mark the namespace for monitoring, if requested
     when: cluster_deploy_operator_namespace_monitoring | bool
@@ -207,20 +213,20 @@
   - name: Instantiate the OperatorGroup template
     template:
       src: "{{ cluster_deploy_operator_res_group }}"
-      dest: "{{ artifact_extra_logs_dir }}/001_operator_group.yml"
+      dest: "{{ artifact_extra_logs_dir }}/src/001_operator_group.yml"
       mode: 0400
 
   - name: Instantiate the OperatorHub OperatorGroup resource
-    command: oc apply -f "{{ artifact_extra_logs_dir }}/001_operator_group.yml"
+    command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_operator_group.yml"
 
 - name: "Create the Subscription for {{ operator_csv_name }}"
   template:
     src: "{{ cluster_deploy_operator_res_sub }}"
-    dest: "{{ artifact_extra_logs_dir }}/002_sub.yml"
+    dest: "{{ artifact_extra_logs_dir }}/src/002_sub.yml"
     mode: 0400
 
 - name: Instantiate the Subscription
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/002_sub.yml"
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/002_sub.yml"
 
 - block:
   - name: Find the operator InstallPlan

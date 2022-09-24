@@ -68,7 +68,7 @@
 - name: Export the data out of the S3 bucket
   command:
     oc -n minio -c mc exec "{{ minio_podname_cmd.stdout }}"
-       -- bash -c 'mkdir -p /artifacts/to_export && mc --config-dir /tmp cp minio/mybucket/ /artifacts/to_export --recursive --quiet'
+       -- bash -c 'mkdir -p /artifacts/to_export && mc --config-dir /tmp cp minio/mybucket/ /artifacts/to_export --recursive --quiet > /dev/null'
   when: 'test_artifacts_collected != "none"'
   ignore_errors: yes
 

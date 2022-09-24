@@ -57,6 +57,15 @@ spec:
           value: "{{ rhods_notebook_ux_e2e_scale_test_state_signal_redis_server }}"
         - name: DASHBOARD_PRODUCT_NAME
           value: "{{ rhods_dashboard_product_name }}"
+        - name: NOTEBOOK_SIZE_NAME
+          value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_size_name }}"
+
+        - name: NOTEBOOK_BENCHMARK_NAME
+          value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_benchmark_name }}"
+        - name: NOTEBOOK_BENCHMARK_REPEAT
+          value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_benchmark_repeat }}"
+        - name: NOTEBOOK_BENCHMARK_NUMBER
+          value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_benchmark_number }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir
@@ -65,6 +74,8 @@ spec:
         - name: rhods-notebook-ux-e2e-scale-test-entrypoint
           mountPath: /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint
         resources:
+          # must match ODS_TESTPOD_MEMORY_SIZE_GI and ODS_TESTPOD_CPU_SIZE
+          # in testing/ods/common.sh
           requests:
             memory: 750M
             cpu: 0.2
