@@ -7,7 +7,7 @@ set -x
 
 JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-0}
 STATE_SIGNAL_BARRIER=/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/state-signal_barrier.py
-STATE_SIGNAL_DELAY=120 # delay for all the Pods to reach the entry barrier
+STATE_SIGNAL_DELAY=-1 # delay for all the Pods to reach the entry barrier
 
 if [[ -z "{ARTIFACT_DIR:-}" ]]; then
     ARTIFACT_DIR=/tmp/ods-ci
