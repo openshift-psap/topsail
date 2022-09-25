@@ -7,20 +7,20 @@
 - name: Create BuildConfig from template
   template:
     src: "{{ utils_image_buildconfig }}"
-    dest: "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
+    dest: "{{ artifact_extra_logs_dir }}/src/002_image_buildconfig.yml"
     mode: 0400
 
 - name: Delete old image BuildConfig if exists
   command:
     oc delete
-    -f "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
+    -f "{{ artifact_extra_logs_dir }}/src/002_image_buildconfig.yml"
     -n "{{ utils_build_push_image_namespace }}"
     --ignore-not-found
 
 - name: Apply image BuildConfig
   command:
     oc apply
-       -f "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
+       -f "{{ artifact_extra_logs_dir }}/src/002_image_buildconfig.yml"
        -n "{{ utils_build_push_image_namespace }}"
        -ojsonpath={.metadata.name}
   register: buildconfig_name_cmd

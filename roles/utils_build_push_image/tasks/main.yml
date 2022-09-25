@@ -1,10 +1,17 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
 - name: Create namespace for images if does not exist
   shell:
     set -o pipefail;
     oc create namespace "{{ utils_build_push_image_namespace }}"
        --dry-run=client
        -oyaml
-    | tee "{{ artifact_extra_logs_dir }}/000_namespace.yml"
+    | tee "{{ artifact_extra_logs_dir }}/src/000_namespace.yml"
     | oc apply -f-
 
 - name: Create the imagestream, if does not exist
@@ -13,7 +20,7 @@
     oc create imagestream "{{ utils_build_push_image_local_name }}"
        --dry-run=client
        -oyaml
-    | tee "{{ artifact_extra_logs_dir }}/001_imagestream.yml"
+    | tee "{{ artifact_extra_logs_dir }}/src/001_imagestream.yml"
     | oc create
          -f-
          -n "{{ utils_build_push_image_namespace }}"
