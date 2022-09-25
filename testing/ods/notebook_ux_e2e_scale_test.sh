@@ -364,8 +364,8 @@ prepare_ci() {
 }
 
 prepare() {
-    process_ctrl::run_in_bg prepare_sutest_cluster
-    process_ctrl::run_in_bg prepare_driver_cluster
+    prepare_sutest_cluster
+    prepare_driver_cluster
 
     process_ctrl::wait_bg_processes
 
