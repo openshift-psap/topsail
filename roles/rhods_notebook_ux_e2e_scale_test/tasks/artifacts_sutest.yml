@@ -56,37 +56,6 @@
          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_pods.descr"
     ignore_errors: yes
 
-  - name: Get the name of the notebook Pods
-    shell:
-      set -o pipefail;
-      oc get pods -oname -n {{ rhods_notebook_namespace }} |
-         grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }}
-    register: notebook_pod_names_cmd
-    # there may be no notebook Pod
-    failed_when: false
-
-  - name: Create the notebook logs directory
-    file:
-      path: "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_logs"
-      state: directory
-      mode: '0755'
-
-  - name: Get the logs of the notebook Pods
-    shell: |
-      oc logs {{ item }} --all-containers --prefix  \
-         -n {{ rhods_notebook_namespace }} \
-         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_logs/$(basename "{{ item }}").log";
-    loop: "{{ notebook_pod_names_cmd.stdout_lines }}"
-    ignore_errors: yes
-
-  - name: Get the previous logs of the notebook Pods
-    shell: |
-      oc logs {{ item }} --all-containers --prefix --previous \
-         -n {{ rhods_notebook_namespace }} \
-         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/notebook_logs/$(basename "{{ item }}")_previous.log";
-    loop: "{{ notebook_pod_names_cmd.stdout_lines }}"
-    ignore_errors: yes
-
   - name: Get the RHODS version
     shell:
       oc get csv -oname -n redhat-ods-operator | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
