@@ -17,6 +17,8 @@ mkdir -p "${ARTIFACT_DIR}"
 
 trap "touch $ARTIFACT_DIR/test.exit_code" EXIT
 
+echo "pod_started: $(date)" > "${ARTIFACT_DIR}/progress_ts.yaml"
+
 sed "s/#{JOB_COMPLETION_INDEX}/${JOB_COMPLETION_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
 
 cp "/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/$RUN_ROBOT_TEST_CASE" .
@@ -26,20 +28,21 @@ cp "/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/$RUN_ROBOT_TEST_CASE" .
 python3 -m pip --no-cache-dir install state-signals==0.5.2 --user
 echo "Running with user $JOB_COMPLETION_INDEX / $USER_COUNT"
 if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
+    echo "statesignal_started: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
     python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" --exporter "$USER_COUNT" --delay "$STATE_SIGNAL_DELAY" &
 fi
 
-date
-time python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" # fails if the all Pods don't reach the barrier in time
-date
+echo "statesignal_waiting: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
+python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" # fails if the all Pods don't reach the barrier in time
+echo "statesignal_done: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 # Sleep for a while to avoid DDoSing OAuth
 
 sleep_delay=$(python3 -c "print($JOB_COMPLETION_INDEX * $SLEEP_FACTOR)")
 
 echo "Waiting $sleep_delay seconds before starting (job index: $JOB_COMPLETION_INDEX, sleep factor: $SLEEP_FACTOR)"
-echo "$sleep_delay" > "${ARTIFACT_DIR}/sleep_delay"
+
 sleep "$sleep_delay"
-date
+echo "delay_done: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 
 test_exit_code=0
 (bash -x ./run_robot_test.sh \
@@ -58,5 +61,6 @@ mv "$ARTIFACT_DIR"/ods-ci-*/* "$ARTIFACT_DIR" || true
 echo "$test_exit_code" > "${ARTIFACT_DIR}/test.exit_code"
 
 echo "Test finished with $test_exit_code errors."
+echo "test_done: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 
 exit 0 # always exit 0, we'll decide later if this is a success or a failure
