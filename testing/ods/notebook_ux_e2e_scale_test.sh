@@ -474,7 +474,7 @@ case ${action} in
             exit 1
         fi
         BASE_ARTIFACT_DIR=$ARTIFACT_DIR
-        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR'") # go back to the main artifacts directory
+        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/cleanup'") # go back to the main artifacts directory
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
         finalizers+=("driver_cleanup")
