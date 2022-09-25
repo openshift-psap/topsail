@@ -442,15 +442,6 @@ sutest_cleanup_ldap() {
                      --use_ocm="$osd_cluster_name" > /dev/null
 }
 
-run_prepare_local_cluster() {
-    prepare_driver_cluster
-    prepare_sutest_cluster
-
-    process_ctrl::wait_bg_processes
-
-    sutest_wait_rhods_launch
-}
-
 generate_plots() {
     mkdir "$ARTIFACT_DIR/plotting"
     if ARTIFACT_DIR="$ARTIFACT_DIR/plotting" ./testing/ods/generate_matrix-benchmarking.sh > "$ARTIFACT_DIR/plotting/build-log.txt" 2>&1; then
