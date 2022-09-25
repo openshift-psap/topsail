@@ -33,7 +33,16 @@ if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
 fi
 
 echo "statesignal_waiting: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
-python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" # fails if the all Pods don't reach the barrier in time
+if ! python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER"; then # fails if the all Pods don't reach the barrier in time
+    echo "StateSignal syncrhonization failed :( (errcode=$?)"
+
+    # mark this test as failed
+    echo 1 > "$ARTIFACT_DIR/test.exit_code"
+
+    # exit the Pod successfully, so that all the Pod logs are retrieved.
+    # without this, we don't know why the 'fail' event was generated.
+    exit 0
+fi
 echo "statesignal_done: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 # Sleep for a while to avoid DDoSing OAuth
 
