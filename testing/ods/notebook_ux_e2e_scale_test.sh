@@ -491,6 +491,8 @@ case ${action} in
         prepare_ci
         prepare
 
+        process_ctrl::wait_bg_processes
+
         failed=0
         BASE_ARTIFACT_DIR=$ARTIFACT_DIR
         for idx in $(seq $NOTEBOOK_TEST_RUNS); do
