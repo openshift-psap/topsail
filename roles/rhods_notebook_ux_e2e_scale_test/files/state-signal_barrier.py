@@ -2,7 +2,7 @@
 import state_signals
 import argparse
 
-CONN_TIMEOUT = 10
+CONN_TIMEOUT = 60
 DEFAULT_WAIT_TIMEOUT = -1
 
 DEFAULT_REDIS_PORT = 6379
