@@ -264,7 +264,7 @@ prepare_ocp_sutest_deploy_rhods() {
             ./run_toolbox.py rhods deploy_ods \
                 "$ODS_CATALOG_IMAGE" "$ODS_CATALOG_IMAGE_TAG"
 
-    if ! oc get group/dezdicated-admins >/dev/null 2>/dev/null; then
+    if ! oc get group/dedicated-admins >/dev/null 2>/dev/null; then
         echo "Create the dedicated-admins group"
         oc adm groups new dedicated-admins
         oc adm policy add-cluster-role-to-group cluster-admin dedicated-admins
