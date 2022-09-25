@@ -90,12 +90,34 @@
          -n "{{ utils_build_push_image_namespace }}"
          > {{ artifact_extra_logs_dir }}/pod.yaml
 
-  - name: Get BuildConfig description (debug)
+  - name: Get the BuildConfig description (debug)
     shell:
       oc describe
          -n "{{ utils_build_push_image_namespace }}"
          buildconfig/{{ buildconfig_name_cmd.stdout }}
-         > {{ artifact_extra_logs_dir }}/build.desc
+         > {{ artifact_extra_logs_dir }}/buildconfig.desc
+    failed_when: false
+
+  - name: Get the BuildConfig definition (debug)
+    shell:
+      oc describe
+         -n "{{ utils_build_push_image_namespace }}"
+         buildconfig/{{ buildconfig_name_cmd.stdout }}
+         > {{ artifact_extra_logs_dir }}/buildconfig.yaml
+    failed_when: false
+
+  - name: Store the definition of image build (debug)
+    shell:
+      oc describe "build/{{ build_name_cmd.stdout }}"
+        -n "{{ utils_build_push_image_namespace }}"
+        > {{ artifact_extra_logs_dir }}/build.yaml
+    failed_when: false
+
+  - name: Store the description of image build (debug)
+    shell:
+      oc describe "build/{{ build_name_cmd.stdout }}"
+        -n "{{ utils_build_push_image_namespace }}"
+        > {{ artifact_extra_logs_dir }}/build.desc
     failed_when: false
 
   - name: Store the logs of image build (debug)
