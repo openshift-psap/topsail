@@ -12,6 +12,8 @@ def register():
     UserExecutionOverviewReport()
     PodNodeMappingReport()
     LaunchAndExecTimeDistributionReport()
+    NotebookPerformanceReport()
+
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -192,5 +194,36 @@ class LaunchAndExecTimeDistributionReport():
                             msg_p)]
             header += [html.I(msg_p[0])]
             header += [html.Br(), html.Br()]
+
+        return None, header
+
+
+class NotebookPerformanceReport():
+    def __init__(self):
+        self.name = "report: Notebook Performance"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.H2("Notebook Performance")]
+        msg_p = []
+        header += [Plot("Notebook Performance", set_config(dict(all_in_one=True), args), msg_p)]
+        header += [html.I(msg_p[0]), html.Br()]
+
+        header += ["This plot shows the distribution of the notebook performance benchmark results, for all of the simulated users."]
+        header += html.Br()
+        header += html.Br()
+
+        msg_p = []
+        header += [Plot("Notebook Performance", args, msg_p)]
+        header += [html.I(msg_p[0]), html.Br()]
+        header += ["This plot shows the distribution of the notebook performance benchmark results, for each of the simulated users."]
+
+        header += html.Br()
+        header += html.Br()
 
         return None, header
