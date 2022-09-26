@@ -66,6 +66,16 @@ test_exit_code=0
 
 mv "$ARTIFACT_DIR"/ods-ci-*/* "$ARTIFACT_DIR" || true
 
+if [[ "$test_exit_code" != 0 && "$USER_COUNT" -gt 100 && "$JOB_COMPLETION_INDEX" != 0 ]]; then
+    # test failed
+    # and user count > 100
+    # and user id != 0
+    # --> delete all the images but the last (sorted by natural number order)
+    for f in $(ls "$ARTIFACT_DIR"/selenium-screenshot -v1 | head -n -1); do
+        rm -f "$f"
+    done
+fi
+
 # /!\ the creation of this file triggers the export of the logs
 echo "$test_exit_code" > "${ARTIFACT_DIR}/test.exit_code"
 
