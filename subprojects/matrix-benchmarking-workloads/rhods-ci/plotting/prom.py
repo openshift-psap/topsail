@@ -276,10 +276,11 @@ def _get_rhods_pod_resource_metrics(register=False):
         plotting_prom.Plot(pod_mem_usage_metrics,
                            "RHODS: Pods Memory Usage",
                            None,
-                           "Memory usage (in bytes)",
+                           "Memory usage (in Gi)",
                            get_metrics=get_metrics("rhods"),
                            as_timestamp=True,
                            get_legend_name=get_resource_legend_name,
+                           y_divisor=1024*1024*1024,
                            )
 
         plotting_prom.Plot(pod_disk_usage_metrics,
