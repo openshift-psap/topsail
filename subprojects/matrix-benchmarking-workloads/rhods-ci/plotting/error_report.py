@@ -84,8 +84,8 @@ class ErrorReport():
         info += [html.Li(html.A("Results artifacts"+(": MISSING" if not results_artifacts_href else ""),
                                 href=results_artifacts_href, target="_blank"))]
 
-        if entry.results.odh_dashboard_config_file and entry.results.source_url:
-            href = f"{entry.results.source_url}/{entry.results.odh_dashboard_config_file}"
+        if results_artifacts_href and entry.results.odh_dashboard_config_file:
+            href = f"{results_artifacts_href}/{entry.results.odh_dashboard_config_file}"
             info += [html.Ul(html.Li(html.A("Dashboard configuration", href=href, target="_blank")))]
         else:
             info += [html.Ul(html.Li("Dashboard configuration: MISSING"))]
