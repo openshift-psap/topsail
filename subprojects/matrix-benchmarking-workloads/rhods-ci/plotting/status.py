@@ -75,9 +75,8 @@ class ExecutionDistribution():
         df = pd.DataFrame(data)
         fig = px.histogram(df, x="timelength",
                            y="user", color="step_name",
-                           marginal="violin",
+                           marginal="box",
                            barmode="overlay",
-                           #histnorm='probability density',
                            hover_data=df.columns)
         fig.update_layout(xaxis_title="Step timelength (in seconds)")
 
