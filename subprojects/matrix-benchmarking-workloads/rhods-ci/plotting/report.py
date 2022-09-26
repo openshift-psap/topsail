@@ -7,8 +7,7 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 def register():
-    PriceOverviewReport()
-
+    PriceEstimationReport()
     UserExecutionOverviewReport()
     PodNodeMappingReport()
     LaunchAndExecTimeDistributionReport()
@@ -104,9 +103,9 @@ class UserExecutionOverviewReport():
 
         return None, header
 
-class PriceOverviewReport():
+class PriceEstimationReport():
     def __init__(self):
-        self.name = "Price overview"
+        self.name = "report: Price Estimation"
         self.id_name = self.name.lower().replace(" ", "_")
         self.no_graph = True
         self.is_report = True
@@ -115,22 +114,36 @@ class PriceOverviewReport():
 
     def do_plot(self, *args):
         ordered_vars, settings, setting_lists, variables, cfg = args
+        cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+        if cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
 
-        timeline = table_stats.TableStats.stats_by_name['Price to completion']
-        if "notebook_size" in ordered_vars:
-            ordered_vars.remove("notebook_size")
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            break
 
-        report = []
-        for notebook_size in variables.get("notebook_size", [settings["notebook_size"]]):
-            additional_settings = dict(
-                notebook_size=notebook_size
-            )
-            report += [html.H2(f"Price for size={notebook_size}")]
+        header = []
 
-            report += [dcc.Graph(figure=timeline.do_plot(*set_vars(additional_settings, *args))[0])]
+        def add_price(user_count):
+            nonlocal header
+            header += [html.H2(f"Price to completion for {user_count} users")]
+            if user_count == entry.results.user_count:
+                header += [html.I("(current configuration)"), html.Br()]
 
+            for mode in ["notebooks", "test_pods"]:
+                header += [Plot("Price to completion",
+                                set_config(dict(mode=mode, user_count=user_count), args))]
 
-        return None, report
+                header += [f"This plot shows an estimation of the price and number of machines required to run {user_count} {mode.replace('_', ' ')} simultaneously, for difference AWS instance types."]
+                header += [html.Br()]
+                header += [html.Br()]
+
+        add_price(entry.results.user_count)
+
+        for user_count in [5, 100, 300]:
+            if user_count == entry.results.user_count: continue # don't show it twice
+            add_price(user_count)
+
+        return None, header
 
 class LaunchAndExecTimeDistributionReport():
     def __init__(self):

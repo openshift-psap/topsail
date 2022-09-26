@@ -17,6 +17,8 @@ import matrix_benchmarking.store.prom_db as store_prom_db
 
 import matrix_benchmarking.cli_args as cli_args
 
+from . import k8s_quantity
+from . import store_theoretical
 from .plotting import prom as rhods_plotting_prom
 
 K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -120,23 +122,44 @@ def _parse_rhods_info(dirname):
     return rhods_info
 
 
-def _parse_job(results, filename):
+def _parse_tester_job(filename):
+    job_info = types.SimpleNamespace()
 
     with open(filename) as f:
         job = yaml.safe_load(f)
 
-    results.job_creation_time = \
+    job_info.creation_time = \
         datetime.datetime.strptime(
             job["status"]["startTime"],
             K8S_TIME_FMT)
 
     if job["status"].get("completionTime"):
-        results.job_completion_time = \
+        job_info.completion_time = \
             datetime.datetime.strptime(
                 job["status"]["completionTime"],
                 K8S_TIME_FMT)
     else:
-        results.job_completion_time = results.job_creation_time + datetime.timedelta(hours=1)
+        job_info.completion_time = results.job_creation_time + datetime.timedelta(hours=1)
+
+    if job["spec"]["template"]["spec"]["containers"][0]["name"] != "main":
+        raise ValueError("Expected to find the 'main' container in position 0")
+
+    job_info.env = {}
+    for env in  job["spec"]["template"]["spec"]["containers"][0]["env"]:
+        name = env["name"]
+        value = env.get("value")
+        if not value: continue
+
+        job_info.env[name] = value
+
+    job_info.request = types.SimpleNamespace()
+    rq = job["spec"]["template"]["spec"]["containers"][0]["resources"]["requests"]
+
+    job_info.request.cpu = float(k8s_quantity.parse_quantity(rq["cpu"]))
+    job_info.request.mem = float(k8s_quantity.parse_quantity(rq["memory"]) / 1024 / 1024 / 1024)
+
+    return job_info
+
 
 def _parse_node_info(filename):
     node_info = defaultdict(types.SimpleNamespace)
@@ -149,6 +172,31 @@ def _parse_node_info(filename):
         node_info[node_name].instance_type = node["metadata"]["labels"]["node.kubernetes.io/instance-type"]
 
     return node_info
+
+
+def _parse_odh_dashboard_config(base_dirname, filename, notebook_size_name):
+    data = types.SimpleNamespace()
+
+    data.path = None
+    if not filename.exists():
+        return data
+
+    data.path = str(filename.relative_to(base_dirname.parent))
+
+    with open(filename) as f:
+        data.content = yaml.safe_load(f)
+
+    data.notebook_size_name = notebook_size_name
+    data.notebook_size_mem = None
+    data.notebook_size_cpu = None
+
+    for notebook_size in data.content["spec"]["notebookSizes"]:
+        if notebook_size["name"] != data.notebook_size_name: continue
+
+        data.notebook_size_mem = float(k8s_quantity.parse_quantity(notebook_size["resources"]["requests"]["memory"]) / 1024 / 1024 / 1024)
+        data.notebook_size_cpu = float(k8s_quantity.parse_quantity(notebook_size["resources"]["requests"]["cpu"]))
+
+    return data
 
 
 def _parse_pod_times(filename, hostnames, is_notebook=False):
@@ -279,7 +327,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         with open(pathlib.Path(os.getenv("ARTIFACT_DIR")) / "source_url") as f:
             results.source_url = f.read().strip()
 
-    _parse_job(results, dirname / "artifacts-driver" / "tester_job.yaml")
+    results.tester_job = _parse_tester_job(dirname / "artifacts-driver" / "tester_job.yaml")
     results.from_env = _parse_env(dirname / "_ansible.env")
 
     results.from_pr = _parse_pr(dirname.parent / "pull_request.json")
@@ -287,15 +335,14 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.rhods_info = _parse_rhods_info(dirname)
 
+    print("_parse_odh_dashboard_config")
+    notebook_size_name = results.tester_job.env.get("NOTEBOOK_SIZE_NAME")
+    results.odh_dashboard_config = _parse_odh_dashboard_config(dirname, dirname / "artifacts-sutest" / "odh-dashboard-config.yaml", notebook_size_name)
+
     print("_parse_node_info")
     results.nodes_info = defaultdict(types.SimpleNamespace)
     results.nodes_info |= _parse_node_info(dirname / "artifacts-driver" / "nodes.yaml")
     results.nodes_info |= _parse_node_info(dirname / "artifacts-sutest" / "nodes.yaml")
-
-    odh_dashboard_config_path = dirname / "artifacts-sutest" / "odh-dashboard-config.yaml"
-    results.odh_dashboard_config_file = None
-    if odh_dashboard_config_path.exists():
-        results.odh_dashboard_config_file = str(odh_dashboard_config_path.relative_to(dirname.parent))
 
     results.notebook_pod_userid = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
@@ -330,15 +377,13 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.user_count = int(import_settings["user_count"])
 
+    results.possible_machines = store_theoretical.get_possible_machines()
+
     store.add_to_matrix(import_settings, None, results, None)
 
 def parse_data():
     # delegate the parsing to the simple_store
     store.register_custom_rewrite_settings(_rewrite_settings)
     store_simple.register_custom_parse_results(_parse_directory)
-
-    if "theoretical" in cli_args.experiment_filters.get("expe", []):
-        from . import store_theoretical
-        store_theoretical._populate_theoretical_data()
 
     return store_simple.parse_data()

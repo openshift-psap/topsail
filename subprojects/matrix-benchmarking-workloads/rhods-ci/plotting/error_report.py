@@ -71,7 +71,8 @@ class ErrorReport():
                 info += [html.Ul(html.Li(["Trigger date: ", html.I(last_comment_date)]))]
                 info += [html.Ul(html.Li(["Trigger comment: ", html.Code(last_comment_body)]))]
 
-            info += [html.Li(["Test diff against ", html.A(html.Code(pr.base_ref), href=pr.diff_link, target="_blank")])]
+            info += [html.Li(html.A(["Diff against ", html.Code(pr.base_ref)],
+                                    href=pr.diff_link, target="_blank"))]
 
 
         if entry.results.from_env.link_flag == "running-with-the-test":

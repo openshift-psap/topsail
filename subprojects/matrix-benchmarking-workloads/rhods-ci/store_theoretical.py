@@ -1,18 +1,17 @@
+import pathlib
 import types
 
-NOTEBOOK_REQUESTS = dict(
-    test_pod=types.SimpleNamespace(cpu=0.2, memory=0.4),
-    default=types.SimpleNamespace(cpu=1, memory=4),
-    small=types.SimpleNamespace(cpu=1,   memory=8),
-    medium=types.SimpleNamespace(cpu=3,  memory=24),
-)
+possible_machines_cache = None
 
-def _populate_theoretical_data():
-    for pod_size in NOTEBOOK_REQUESTS:
-        common.Matrix.settings["notebook_size"].add(pod_size)
+def get_possible_machines():
+    global possible_machines_cache
+    if possible_machines_cache is not None:
+        return possible_machines_cache
+
+    data = possible_machines_cache = []
 
     group = None
-    with open("data/machines") as f:
+    with open(pathlib.Path(__file__).parent / "data" / "machines") as f:
         for _line in f.readlines():
             line = _line.strip()
             if line.startswith("# "):
@@ -20,16 +19,16 @@ def _populate_theoretical_data():
 
             if not line or line.startswith("#"): continue
 
-            instance, cpu, memory, price, *accel = line.split(", ")
+            instance_name, cpu, memory, price, *accel = line.split(", ")
 
-            results = types.SimpleNamespace()
-            results.cpu = int(cpu.split()[0])
-            results.memory = int(memory.split()[0])
-            results.price = float(price[1:])
-            results.group = group
-            import_settings = {
-                "expe": "theoretical",
-                "instance": instance,
-            }
+            data_entry = types.SimpleNamespace()
+            data_entry.instance_name = instance_name
+            data_entry.cpu = int(cpu.split()[0])
+            data_entry.memory = int(memory.split()[0])
+            data_entry.price = float(price[1:])
+            data_entry.accel = accel
+            data_entry.group = group
 
-            store.add_to_matrix(import_settings, None, results, None)
+            data.append(data_entry)
+
+    return data
