@@ -402,7 +402,7 @@ run_test() {
 driver_cleanup() {
     switch_driver_cluster
 
-    oc delete machineset "$DRIVER_MACHINESET_NAME" -n openshift-machine-api
+    ./run_toolbox.py cluster set-scale not-used 0 --name "$DRIVER_MACHINESET_NAME"
 
     if [[ "$CLEANUP_DRIVER_NAMESPACES_ON_EXIT" == 1 ]]; then
         oc delete namespace --ignore-not-found \
@@ -420,7 +420,7 @@ sutest_cleanup() {
     if [[ "$osd_cluster_name" ]]; then
         ocm delete machinepool "$SUTEST_MACHINESET_NAME"
     else
-        oc delete machineset "$SUTEST_MACHINESET_NAME" -n openshift-machine-api
+        ./run_toolbox.py cluster set-scale not-used 0 --name "$SUTEST_MACHINESET_NAME"
     fi
 }
 
@@ -474,11 +474,12 @@ case ${action} in
             exit 1
         fi
         BASE_ARTIFACT_DIR=$ARTIFACT_DIR
-        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/cleanup'") # go back to the main artifacts directory
+        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
         finalizers+=("driver_cleanup")
 
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare"
         prepare_ci
         prepare
 
@@ -487,7 +488,7 @@ case ${action} in
         failed=0
         BASE_ARTIFACT_DIR=$ARTIFACT_DIR
         for idx in $(seq $NOTEBOOK_TEST_RUNS); do
-            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/test_run_$idx"
+            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run_$idx"
             mkdir -p "$ARTIFACT_DIR"
             pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
             pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json

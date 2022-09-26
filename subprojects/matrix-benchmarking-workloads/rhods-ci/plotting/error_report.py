@@ -71,7 +71,8 @@ class ErrorReport():
                 info += [html.Ul(html.Li(["Trigger date: ", html.I(last_comment_date)]))]
                 info += [html.Ul(html.Li(["Trigger comment: ", html.Code(last_comment_body)]))]
 
-            info += [html.Li(["Test diff against ", html.A(html.Code(pr.base_ref), href=pr.diff_link, target="_blank")])]
+            info += [html.Li(html.A(["Diff against ", html.Code(pr.base_ref)],
+                                    href=pr.diff_link, target="_blank"))]
 
 
         if entry.results.from_env.link_flag == "running-with-the-test":
@@ -81,15 +82,17 @@ class ErrorReport():
         else:
             results_artifacts_href = None
 
-        info += [html.Li(html.A("Results artifacts"+(": MISSING" if not results_artifacts_href else ""),
-                                href=results_artifacts_href, target="_blank"))]
+        if results_artifacts_href:
+            info += [html.Li(html.A("Results artifacts", href=results_artifacts_href, target="_blank"))]
 
-        if entry.results.odh_dashboard_config_file and entry.results.source_url:
-            href = f"{entry.results.source_url}/{entry.results.odh_dashboard_config_file}"
-            info += [html.Ul(html.Li(html.A("Dashboard configuration", href=href, target="_blank")))]
+            if entry.results.odh_dashboard_config.path:
+                href = f"{results_artifacts_href}/{entry.results.odh_dashboard_config.path}"
+                info += [html.Ul(html.Li(html.A("Dashboard configuration", href=href, target="_blank")))]
+            else:
+                info += [html.Ul(html.Li("Dashboard configuration: MISSING"))]
         else:
-            info += [html.Ul(html.Li("Dashboard configuration: MISSING"))]
-
+            info += [html.Li("Results artifacts: NOT AVAILABLE")]
+            info += [html.Ul(html.Li("Dashboard configuration: NOT AVAILABLE"))]
 
         info += [html.Li(["RHODS ", html.Code(entry.results.rhods_info.version)])]
 

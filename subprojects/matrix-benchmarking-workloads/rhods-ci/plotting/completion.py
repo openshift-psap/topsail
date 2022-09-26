@@ -10,8 +10,6 @@ import plotly.subplots
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
-from ..store_theoretical import NOTEBOOK_REQUESTS
-
 def register():
     Completion("Price to completion")
 
@@ -27,43 +25,68 @@ class Completion():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        user_count = cfg.get("timeline.users", 20)
+        cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+        if cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
 
-        if "notebook_size" in ordered_vars:
-            return {}, "Please select a notebook size"
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            break
 
-        if "notebook_size" not in settings:
-            return {}, "Cannot plot, 'notebook_size' setting not available."
+        user_count = cfg.get("user_count", entry.results.user_count)
 
-        notebook_size = settings["notebook_size"]
-        del settings["notebook_size"]
+        mode = cfg.get("mode", None)
 
-        cpu_needed = NOTEBOOK_REQUESTS[notebook_size].cpu * user_count
-        memory_needed = NOTEBOOK_REQUESTS[notebook_size].memory * user_count
+        if mode == "notebooks":
+            rq_cpu = entry.results.odh_dashboard_config.notebook_size_cpu
+            rq_mem = entry.results.odh_dashboard_config.notebook_size_mem
+        elif mode == "test_pods":
+            rq_cpu = entry.results.tester_job.request.cpu
+            rq_mem = entry.results.tester_job.request.mem
+        else:
+            mode = "pods"
+            rq_cpu = cfg.get("notebook_cpu", 1)
+            rq_mem = cfg.get("notebook_mem", 1)
+
+        cpu_needed = rq_cpu * user_count
+        memory_needed = rq_mem * user_count
+
+        machines_in_use = set()
+        for hostname in entry.results.notebook_hostnames.values():
+            machines_in_use.add(entry.results.nodes_info[hostname].instance_type)
 
         data = []
-        for entry in common.Matrix.all_records(settings, setting_lists):
-
-            instance_count = max([math.ceil(memory_needed / entry.results.memory),
-                                  math.ceil(cpu_needed / entry.results.cpu)])
-
+        for machine_entry in entry.results.possible_machines:
+            instance_count = max([math.ceil(memory_needed / machine_entry.memory),
+                                  math.ceil(cpu_needed / machine_entry.cpu)])
 
             time = 1 # hr
-            price = time * entry.results.price * instance_count
+            price = time * machine_entry.price * instance_count
 
-            data.append(dict(instance=f"{entry.results.group} - {instance_count}x {entry.import_settings['instance']}",
-                             price=price, time=time, instance_count=instance_count))
+            machine_in_use = machine_entry.instance_name in machines_in_use
+
+            data.append(dict(instance=f"{instance_count} x {machine_entry.instance_name} ({machine_entry.group})",
+                             price=price, time=time, instance_count=instance_count, machine_in_use=machine_in_use))
+
         if not data:
             return {}, "no entry could be found ..."
 
         df = pd.DataFrame(data)
         fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]])
         for legend_name in ["price"]:
-
+            df_in_use = df[df["machine_in_use"] == True]
+            df_not_in_use = df[df["machine_in_use"] == False]
             fig.add_trace(
                 go.Bar(
                     name="Instance count",
-                    x=df["instance"], y=df["instance_count"],
+                    x=df_not_in_use["instance"], y=df_not_in_use["instance_count"],
+                    hoverlabel={'namelength' :-1},
+                    opacity=0.5,
+                    ), secondary_y=True)
+
+            fig.add_trace(
+                go.Bar(
+                    name="Instance count (used in this run)",
+                    x=df_in_use["instance"], y=df_in_use["instance_count"],
                     hoverlabel={'namelength' :-1},
                     opacity=0.5,
                     ), secondary_y=True)
@@ -79,6 +102,6 @@ class Completion():
 
         fig.update_yaxes(title_text="<b>Price to completion</b> (in $ per hour, lower is better)")
         fig.update_yaxes(title_text="Number of instances required", secondary_y=True)
-        fig.update_layout(title=f"Price per instance type<br>to run {user_count} {notebook_size} notebooks",
+        fig.update_layout(title=f"Price per instance type<br>to run {user_count} {mode.replace('_', ' ')}<br>with cpu={rq_cpu}, mem={rq_mem:.2f}Gi",
                           title_x=0.5)
         return fig, ""

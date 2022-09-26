@@ -206,7 +206,7 @@ def get_driver_metrics(register=False):
     cluster_role = "driver"
 
     container_labels = [
-        {"Test Pods": dict(namespace="loadtest", container="ods-ci")},
+        {"Test Pods": dict(namespace="loadtest", container="main")},
     ]
     all_metrics = []
     all_metrics += _get_cluster_mem_cpu(cluster_role, register)
@@ -276,19 +276,21 @@ def _get_rhods_pod_resource_metrics(register=False):
         plotting_prom.Plot(pod_mem_usage_metrics,
                            "RHODS: Pods Memory Usage",
                            None,
-                           "Memory usage (in bytes)",
+                           "Memory usage (in Gi)",
                            get_metrics=get_metrics("rhods"),
                            as_timestamp=True,
                            get_legend_name=get_resource_legend_name,
+                           y_divisor=1024*1024*1024,
                            )
 
         plotting_prom.Plot(pod_disk_usage_metrics,
                            "RHODS: Notebooks PVC Disk Usage",
                            None,
-                           "PVC disk usage (in bytes)",
+                           "PVC disk usage (in Gi)",
                            get_metrics=get_metrics("rhods"),
                            get_legend_name=get_disk_usage_legend_name,
                            as_timestamp=True,
+                           y_divisor=1024*1024,
                            )
 
     return (pod_cpu_usage_metrics

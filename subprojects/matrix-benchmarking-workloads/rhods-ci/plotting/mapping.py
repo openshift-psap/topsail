@@ -35,8 +35,8 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
             data.append(dict(
                 UserIndex = f"User #{user_idx:03d}",
                 UserIdx = user_idx,
-                PodStart = entry_results.job_creation_time,
-                PodFinish = entry_results.job_creation_time,
+                PodStart = entry_results.tester_job.creation_time,
+                PodFinish = entry_results.tester_job.creation_time,
                 NodeIndex = f"Not mapped",
                 NodeName = f"Not mapped",
                 Count=0,
@@ -57,8 +57,8 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
             data.append(dict(
                 UserIndex = f"User #{user_idx:03d}",
                 UserIdx = user_idx,
-                PodStart = entry_results.job_creation_time,
-                PodFinish = entry_results.job_completion_time,
+                PodStart = entry_results.tester_job.creation_time,
+                PodFinish = entry_results.tester_job.completion_time,
                 NodeIndex = f"No node",
                 NodeName = f"No node",
                 Count=1,
@@ -69,7 +69,7 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
         try:
             finish = pod_times.container_finished
         except AttributeError:
-            finish = entry_results.job_completion_time
+            finish = entry_results.tester_job.completion_time
 
         try:
             instance_type = entry.results.nodes_info[hostname].instance_type

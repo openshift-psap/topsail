@@ -49,7 +49,7 @@ class SpawnTime():
                     entry_data = {}
 
                     entry_data["Step Name"] = "Launch delay and initialization"
-                    entry_data["Step Duration"] = (step_start - entry.results.job_creation_time).total_seconds()
+                    entry_data["Step Duration"] = (step_start - entry.results.tester_job.creation_time).total_seconds()
                     entry_data["Step Index"] = -1
                     entry_data["User Index"] = user_id
                     entry_data["User Name"] = f"User #{user_id}"

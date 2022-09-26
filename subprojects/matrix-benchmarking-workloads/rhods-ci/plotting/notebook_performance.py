@@ -33,17 +33,52 @@ class NotebookPerformance():
         for entry in common.Matrix.all_records(settings, setting_lists):
             break
 
-        group_labels = ["all"]
-        hist_data = [[]]
+
+        cfg__show_all_in_one = cfg.get("all_in_one", False)
+
+        data = []
+        if cfg__show_all_in_one:
+            times_data = []
+
         for user_idx, ods_ci_notebook_benchmark in entry.results.ods_ci_notebook_benchmark.items():
             if not ods_ci_notebook_benchmark: continue
 
-            #group_labels.append(f"User #{user_idx:03d}")
-            hist_data[0] += ods_ci_notebook_benchmark["measures"]
+            measures = ods_ci_notebook_benchmark["measures"]
 
-        if not hist_data[0]:
-            hist_data[0] += [0, 1, 2] # create_distplot crashes if there is no data at all
+            user_name = "All the users" if cfg__show_all_in_one else f"User #{user_idx}"
 
-        # Create distplot with custom bin_size
-        fig = ff.create_distplot(hist_data, group_labels, bin_size=.03)
-        return fig, ""
+            for measure in ods_ci_notebook_benchmark["measures"]:
+                data.append(dict(user=1, user_name=user_name, measure=measure))
+
+                if cfg__show_all_in_one:
+                    times_data.append(measure)
+
+        if not data:
+            return None, "No data to plot ..."
+
+        df = pd.DataFrame(data)
+        fig = px.histogram(df, x="measure",
+                           y="user", color="user_name",
+                           marginal="box",
+                           barmode="overlay",
+                           hover_data=df.columns)
+        fig.update_layout(xaxis_title="Benchmark time (in seconds)")
+
+        user_count = entry.settings.user_count
+
+        title = f"Notebook Performance distribution with {user_count} users"
+
+        if cfg__show_all_in_one:
+            title += f"<br><b>All the users</b>"
+            fig.layout.update(showlegend=False)
+
+        fig.update_layout(title=title, title_x=0.5)
+
+        if cfg__show_all_in_one:
+            q1, med, q3 = stats.quantiles(times_data)
+            q90 = stats.quantiles(times_data, n=10)[8] # 90th percentile
+            msg = f"Q1 = {q1:.1f}s, median = {med:.1f}s, Q3 = {q3:.1f}s, 90th = {q90:.1f}s"
+        else:
+            msg = ""
+
+        return fig, msg
