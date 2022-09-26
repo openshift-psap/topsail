@@ -7,20 +7,20 @@
 - name: Create BuildConfig from template
   template:
     src: "{{ utils_image_buildconfig }}"
-    dest: "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
+    dest: "{{ artifact_extra_logs_dir }}/src/002_image_buildconfig.yml"
     mode: 0400
 
 - name: Delete old image BuildConfig if exists
   command:
     oc delete
-    -f "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
+    -f "{{ artifact_extra_logs_dir }}/src/002_image_buildconfig.yml"
     -n "{{ utils_build_push_image_namespace }}"
     --ignore-not-found
 
 - name: Apply image BuildConfig
   command:
     oc apply
-       -f "{{ artifact_extra_logs_dir }}/002_image_buildconfig.yml"
+       -f "{{ artifact_extra_logs_dir }}/src/002_image_buildconfig.yml"
        -n "{{ utils_build_push_image_namespace }}"
        -ojsonpath={.metadata.name}
   register: buildconfig_name_cmd
@@ -90,12 +90,34 @@
          -n "{{ utils_build_push_image_namespace }}"
          > {{ artifact_extra_logs_dir }}/pod.yaml
 
-  - name: Get BuildConfig description (debug)
+  - name: Get the BuildConfig description (debug)
     shell:
       oc describe
          -n "{{ utils_build_push_image_namespace }}"
          buildconfig/{{ buildconfig_name_cmd.stdout }}
-         > {{ artifact_extra_logs_dir }}/build.desc
+         > {{ artifact_extra_logs_dir }}/buildconfig.desc
+    failed_when: false
+
+  - name: Get the BuildConfig definition (debug)
+    shell:
+      oc describe
+         -n "{{ utils_build_push_image_namespace }}"
+         buildconfig/{{ buildconfig_name_cmd.stdout }}
+         > {{ artifact_extra_logs_dir }}/buildconfig.yaml
+    failed_when: false
+
+  - name: Store the definition of image build (debug)
+    shell:
+      oc describe "build/{{ build_name_cmd.stdout }}"
+        -n "{{ utils_build_push_image_namespace }}"
+        > {{ artifact_extra_logs_dir }}/build.yaml
+    failed_when: false
+
+  - name: Store the description of image build (debug)
+    shell:
+      oc describe "build/{{ build_name_cmd.stdout }}"
+        -n "{{ utils_build_push_image_namespace }}"
+        > {{ artifact_extra_logs_dir }}/build.desc
     failed_when: false
 
   - name: Store the logs of image build (debug)

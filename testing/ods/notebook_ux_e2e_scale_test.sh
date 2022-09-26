@@ -264,7 +264,7 @@ prepare_ocp_sutest_deploy_rhods() {
             ./run_toolbox.py rhods deploy_ods \
                 "$ODS_CATALOG_IMAGE" "$ODS_CATALOG_IMAGE_TAG"
 
-    if ! oc get group/dezdicated-admins >/dev/null 2>/dev/null; then
+    if ! oc get group/dedicated-admins >/dev/null 2>/dev/null; then
         echo "Create the dedicated-admins group"
         oc adm groups new dedicated-admins
         oc adm policy add-cluster-role-to-group cluster-admin dedicated-admins
@@ -364,8 +364,8 @@ prepare_ci() {
 }
 
 prepare() {
-    process_ctrl::run_in_bg prepare_sutest_cluster
-    process_ctrl::run_in_bg prepare_driver_cluster
+    prepare_sutest_cluster
+    prepare_driver_cluster
 
     process_ctrl::wait_bg_processes
 
@@ -400,6 +400,8 @@ run_test() {
 }
 
 driver_cleanup() {
+    switch_driver_cluster
+
     oc delete machineset "$DRIVER_MACHINESET_NAME" -n openshift-machine-api
 
     if [[ "$CLEANUP_DRIVER_NAMESPACES_ON_EXIT" == 1 ]]; then
@@ -440,15 +442,6 @@ sutest_cleanup_ldap() {
                      --use_ocm="$osd_cluster_name" > /dev/null
 }
 
-run_prepare_local_cluster() {
-    prepare_driver_cluster
-    prepare_sutest_cluster
-
-    process_ctrl::wait_bg_processes
-
-    sutest_wait_rhods_launch
-}
-
 generate_plots() {
     mkdir "$ARTIFACT_DIR/plotting"
     if ARTIFACT_DIR="$ARTIFACT_DIR/plotting" ./testing/ods/generate_matrix-benchmarking.sh > "$ARTIFACT_DIR/plotting/build-log.txt" 2>&1; then
@@ -481,13 +474,15 @@ case ${action} in
             exit 1
         fi
         BASE_ARTIFACT_DIR=$ARTIFACT_DIR
-        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR'") # go back to the main artifacts directory
+        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/cleanup'") # go back to the main artifacts directory
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
         finalizers+=("driver_cleanup")
 
         prepare_ci
         prepare
+
+        process_ctrl::wait_bg_processes
 
         failed=0
         BASE_ARTIFACT_DIR=$ARTIFACT_DIR
