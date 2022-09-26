@@ -474,11 +474,12 @@ case ${action} in
             exit 1
         fi
         BASE_ARTIFACT_DIR=$ARTIFACT_DIR
-        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/cleanup'") # go back to the main artifacts directory
+        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
         finalizers+=("driver_cleanup")
 
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare"
         prepare_ci
         prepare
 
@@ -487,7 +488,7 @@ case ${action} in
         failed=0
         BASE_ARTIFACT_DIR=$ARTIFACT_DIR
         for idx in $(seq $NOTEBOOK_TEST_RUNS); do
-            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/test_run_$idx"
+            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run_$idx"
             mkdir -p "$ARTIFACT_DIR"
             pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
             pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
