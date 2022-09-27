@@ -35,8 +35,30 @@ class SpawnTime():
         keep_failed_steps = cfg.get("keep_failed_steps", False)
         hide_failed_users = cfg.get("hide_failed_users", False)
 
+        for user_id, ods_ci_progress in entry.results.ods_ci_progress.items():
+            failures = entry.results.ods_ci_exit_code[user_id]
+            if failures and hide_failed_users: continue
+
+            previous_checkpoint_time = entry.results.tester_job.creation_time
+            for checkpoint_idx, (checkpoint_name, checkpoint_time) in enumerate(ods_ci_progress.items()):
+                if checkpoint_name == "test_done": continue
+
+                timelength = (checkpoint_time - previous_checkpoint_time).total_seconds()
+
+                entry_data = {}
+
+                entry_data["Step Name"] = checkpoint_name
+                entry_data["Step Duration"] = timelength
+                entry_data["Step Index"] = checkpoint_idx
+                entry_data["User Index"] = user_id
+                entry_data["User Name"] = f"User #{user_id}"
+                if failures:
+                    entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
+                data.insert(0, entry_data)
+
+                previous_checkpoint_time = checkpoint_time
+
         for user_id, ods_ci_output in entry.results.ods_ci_output.items():
-            first_step = True
             for step_idx, (step_name, step_status) in enumerate(ods_ci_output.items()):
 
                 failures = entry.results.ods_ci_exit_code[user_id]
@@ -44,19 +66,6 @@ class SpawnTime():
 
                 step_start = step_status.start
                 step_finish = step_status.finish
-                if first_step:
-                    first_step = False
-                    entry_data = {}
-
-                    entry_data["Step Name"] = "Launch delay and initialization"
-                    entry_data["Step Duration"] = (step_start - entry.results.tester_job.creation_time).total_seconds()
-                    entry_data["Step Index"] = -1
-                    entry_data["User Index"] = user_id
-                    entry_data["User Name"] = f"User #{user_id}"
-                    if failures:
-                        entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
-
-                    data.insert(0, entry_data)
 
                 hide = cfg.get("hide", None)
                 if isinstance(hide, int):
@@ -67,15 +76,15 @@ class SpawnTime():
                     for hide_idx in hide.split(","):
                         if int(hide_idx) == user_id:
                             skip = True
+                            break
                     if skip: continue
 
                 entry_data = {}
+                entry_data["Step Duration"] = (step_finish - step_start).total_seconds() \
+                    if keep_failed_steps or step_status.status == "PASS" \
+                       else 0
 
-                if keep_failed_steps or step_status.status == "PASS":
-                    entry_data["Step Duration"] = (step_finish - step_start).total_seconds()
-                else:
-                    entry_data["Step Duration"] = 0
-
+                entry_data["Step Index"] = 100 + step_idx
                 entry_data["Step Name"] = f"{step_idx} - {step_name}"
                 entry_data["User Index"] = user_id
                 entry_data["User Name"] = f"User #{user_id}"
