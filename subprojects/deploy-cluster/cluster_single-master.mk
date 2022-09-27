@@ -15,7 +15,7 @@ cluster_light: cluster_single-master_entitled
 # ---
 
 config_single-master:
-	yq e -i '.controlPlane.replicas=1' "${CLUSTER_PATH}/install-config.yaml"
+	yq -yi '.controlPlane.replicas=1' "${CLUSTER_PATH}/install-config.yaml"
 
 manifest_single-master:
 	cp -v "${SINGLE_MASTER_MANIFESTS}" "${SINGLE_MASTER_DST}"
