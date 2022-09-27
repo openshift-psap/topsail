@@ -12,7 +12,7 @@ def register():
     PodNodeMappingReport()
     LaunchAndExecTimeDistributionReport()
     NotebookPerformanceReport()
-
+    MastersReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -238,5 +238,41 @@ class NotebookPerformanceReport():
 
         header += html.Br()
         header += html.Br()
+
+        return None, header
+
+
+class MastersReport():
+    def __init__(self):
+        self.name = "report: Master Nodes Load"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.H1("Master Nodes Load")]
+
+        for cluster_role in ["sutest", "driver"]:
+            header += [html.H1(f"{cluster_role.title()} cluster")]
+
+            header += ["These plots shows the CPU and memory usage of the Kubernetes API Server and ETCD, running on the Master nodes of the cluster."]
+
+            for pod_name in ["ApiServer", "ETCD"]:
+                header += [html.H2(f"{pod_name} subsystem")]
+
+                for what in ["CPU", "Mem"]:
+                    header += [Plot(f"Prom: {cluster_role.title()} {pod_name}: {what} usage", args)]
+                    header += html.Br()
+                    header += html.Br()
+            if cluster_role != "sutest": continue
+
+            header += [html.H2(f"API Server HTTP return codes")]
+            for what in ["successes", "client errors", "server errors"]:
+                header += [Plot(f"Prom: {cluster_role.title()} API Server Requests ({what})", args)]
+                header += html.Br()
+                header += html.Br()
 
         return None, header

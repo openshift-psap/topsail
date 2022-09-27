@@ -321,6 +321,7 @@ def _parse_ods_ci_notebook_benchmark(fname):
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace()
 
+    results.user_count = int(import_settings["user_count"])
     results.location = dirname
     results.source_url = None
     if os.getenv("JOB_NAME_SAFE", "").startswith("plot-nb-ux-on-"):
