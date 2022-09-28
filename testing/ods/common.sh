@@ -6,6 +6,11 @@ elif [[ ! -d "$PSAP_ODS_SECRET_PATH" ]]; then
     false # can't exit here
 fi
 
+if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; then
+    # source before everything else, to allow if/then/else below based on PR-defined variables
+    source "${ARTIFACT_DIR}/variable_overrides"
+fi
+
 OCM_ENV=staging # The valid aliases are 'production', 'staging', 'integration'
 
 S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
