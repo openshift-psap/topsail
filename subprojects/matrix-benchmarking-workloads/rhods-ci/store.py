@@ -24,6 +24,7 @@ from .plotting import prom as rhods_plotting_prom
 K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 ROBOT_TIME_FMT = "%Y%m%d %H:%M:%S.%f"
+SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 
 JUPYTER_USER_RENAME_PREFIX = "jupyterhub-nb-user"
 
@@ -318,9 +319,24 @@ def _parse_ods_ci_notebook_benchmark(fname):
     except FileNotFoundError:
         return None
 
+
+def _parse_ods_ci_progress(fname):
+    try:
+        with open(fname) as f:
+            progress = yaml.safe_load(f)
+    except FileNotFoundError:
+        return {}
+
+    for key, date_str in progress.items():
+        progress[key] = datetime.datetime.strptime(date_str, SHELL_DATE_TIME_FMT)
+
+    return progress
+
+
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace()
 
+    results.user_count = int(import_settings["user_count"])
     results.location = dirname
     results.source_url = None
     if os.getenv("JOB_NAME_SAFE", "").startswith("plot-nb-ux-on-"):
@@ -365,6 +381,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.ods_ci_output = {}
     results.ods_ci_exit_code = {}
     results.ods_ci_notebook_benchmark = {}
+    results.ods_ci_progress = {}
     for test_pod in results.test_pods:
         ods_ci_dirname = test_pod.rpartition("-")[0]
         output_dir = dirname / "ods-ci" / ods_ci_dirname
@@ -373,7 +390,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(output_dir / "output.xml")
         results.ods_ci_exit_code[user_id] = _parse_ods_ci_exit_code(output_dir / "test.exit_code")
         results.ods_ci_notebook_benchmark[user_id] = _parse_ods_ci_notebook_benchmark(output_dir / "benchmark_measures.json")
-
+        results.ods_ci_progress[user_id] = _parse_ods_ci_progress(output_dir / "progress_ts.yaml")
 
     results.user_count = int(import_settings["user_count"])
 

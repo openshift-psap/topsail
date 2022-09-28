@@ -131,6 +131,45 @@ def _get_container_mem_cpu(cluster_role, register, label_sets):
 
     return all_metrics
 
+
+def _get_master(cluster_role, register):
+    all_metrics = []
+    all_metrics += _get_container_mem_cpu(cluster_role, register, [{f"{cluster_role.title()} ApiServer": dict(namespace="openshift-kube-apiserver", pod="kube-apiserver-ip-.*")}])
+    all_metrics += _get_container_mem_cpu(cluster_role, register, [{f"{cluster_role.title()} ETCD": dict(namespace="openshift-etcd", pod="etcd-ip-.*")}])
+
+    return all_metrics
+
+def _get_apiserver_errcodes(cluster_role, register):
+    all_metrics = []
+
+    apiserver_request_metrics = [
+        {f"{cluster_role.title()} API Server Requests (successes)": 'sum by (code) (increase(apiserver_request_total{code=~"2.."}[20m]))'},
+        {f"{cluster_role.title()} API Server Requests (client errors)": 'sum by (code) (increase(apiserver_request_total{code=~"4.."}[20m]))'},
+        {f"{cluster_role.title()} API Server Requests (server errors)": 'sum by (code) (increase(apiserver_request_total{code=~"5.."}[20m]))'},
+    ]
+
+    all_metrics += apiserver_request_metrics
+
+    def get_apiserver_request_metrics_legend_name(metric_name, metric_metric):
+        return f"code={metric_metric['code']}", None
+
+
+    if register:
+        for metric in apiserver_request_metrics:
+            name, rq = list(metric.items())[0]
+            plotting_prom.Plot({name: rq},
+                               f"Prom: {name}",
+                               None,
+                               "Count",
+                               get_metrics=get_metrics(cluster_role),
+                               get_legend_name=get_apiserver_request_metrics_legend_name,
+                               show_queries_in_title=True,
+                               show_legend=True,
+                               as_timestamp=True)
+
+    return all_metrics
+
+
 def _get_authentication(cluster_role, register):
     basic_auth_metrics = [
         {"openshift_auth_basic_password_count": "sum (openshift_auth_basic_password_count)"},
@@ -198,6 +237,8 @@ def get_sutest_metrics(register=False):
     all_metrics += _get_cluster_mem_cpu(cluster_role, register)
     all_metrics += _get_container_mem_cpu(cluster_role, register, container_labels)
     all_metrics += _get_authentication(cluster_role, register)
+    all_metrics += _get_master(cluster_role, register)
+    all_metrics += _get_apiserver_errcodes(cluster_role, register)
 
     return all_metrics
 
@@ -211,6 +252,7 @@ def get_driver_metrics(register=False):
     all_metrics = []
     all_metrics += _get_cluster_mem_cpu(cluster_role, register)
     all_metrics += _get_container_mem_cpu(cluster_role, register, container_labels)
+    all_metrics += _get_master(cluster_role, register)
 
     return all_metrics
 

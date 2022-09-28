@@ -145,6 +145,9 @@ class MappingDistribution():
         if df.empty:
             return None, "Nothing to plot (no data)"
 
+        # sort by UserIndex to improve readability
+        df = df.sort_values(by=["UserIndex"])
+
         fig = px.bar(df, x="NodeName", y="Count", color="UserIdx",
                      title=f"Distribution of the {'Notebook' if self.is_notebook else 'Test'} Pods on the nodes")
 
