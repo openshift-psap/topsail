@@ -155,6 +155,11 @@ if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; t
     source "${ARTIFACT_DIR}/variable_overrides"
 fi
 
+if [[ "$ODS_CI_NB_USERS" -gt 120 ]]; then
+    OCP_MASTER_MACHINE_TYPE=m5a.2xlarge
+    OCP_INFRA_MACHINE_TYPE=r5a.xlarge
+fi
+
 ocm_login() {
     export OCM_ENV
     export PSAP_ODS_SECRET_PATH
