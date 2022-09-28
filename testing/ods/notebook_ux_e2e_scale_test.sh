@@ -480,13 +480,13 @@ case ${action} in
         finalizers+=("driver_cleanup")
 
         export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare"
+        mkdir -p "$ARTIFACT_DIR"
         prepare_ci
         prepare
 
         process_ctrl::wait_bg_processes
 
         failed=0
-        BASE_ARTIFACT_DIR=$ARTIFACT_DIR
         for idx in $(seq $NOTEBOOK_TEST_RUNS); do
             export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run_$idx"
             mkdir -p "$ARTIFACT_DIR"
