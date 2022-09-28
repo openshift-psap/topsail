@@ -17,7 +17,7 @@ S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 
 # if 1, use the ODS_CATALOG_IMAGE OLM catalog.
 # Otherwise, install RHODS from OCM addon.
-OSD_USE_ODS_CATALOG=${OSD_USE_ODS_CATALOG:-1}
+OSD_USE_ODS_CATALOG=1
 
 # If the value is set, consider SUTEST to be running on OSD and
 # use this cluster name to configure LDAP and RHODS
@@ -82,10 +82,10 @@ CUSTOMIZE_RHODS_DASHBOARD_REPLICAS=5
 LDAP_IDP_NAME=RHODS_CI_LDAP
 LDAP_NB_USERS=1000
 
-ODS_CI_NB_USERS=${ODS_CI_NB_USERS:-5} # number of users to simulate
+ODS_CI_NB_USERS=5 # number of users to simulate
 ODS_CI_USER_PREFIX=psapuser
 
-ODS_SLEEP_FACTOR=${ODS_SLEEP_FACTOR:-1.0} # how long to wait between user starts.
+ODS_SLEEP_FACTOR=1.0 # how long to wait between user starts.
 ODS_CI_ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
 
 STATESIGNAL_REDIS_NAMESPACE=loadtest-redis
@@ -97,7 +97,7 @@ ODS_NOTEBOOK_BENCHMARK_REPEAT=3
 ODS_NOTEBOOK_BENCHMARK_NUMBER=20 # around 10s
 
 ODS_NOTEBOOK_DIR=${THIS_DIR}/notebooks
-ODS_EXCLUDE_TAGS=${ODS_EXCLUDE_TAGS:-None} # tags to exclude when running the robot test case
+ODS_EXCLUDE_TAGS=None # tags to exclude when running the robot test case
 
 # number of test runs to perform
 NOTEBOOK_TEST_RUNS=1
