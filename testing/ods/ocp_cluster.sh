@@ -59,8 +59,8 @@ create_cluster() {
     cat utils/install-config.yaml | \
         yq -y '.metadata.name = "'$cluster_name'"' | \
         yq -y '.baseDomain = "'$OCP_BASE_DOMAIN'"' | \
-        yq -y '.compute[0].platform.aws.type = "'$OCP_WORKER_MACHINE_TYPE'"' | \
-        yq -y '.compute[0].replicas = '$OCP_WORKER_NODES_COUNT | \
+        yq -y '.compute[0].platform.aws.type = "'$OCP_INFRA_MACHINE_TYPE'"' | \
+        yq -y '.compute[0].replicas = '$OCP_INFRA_NODES_COUNT | \
         yq -y '.controlPlane.platform.aws.type = "'$OCP_MASTER_MACHINE_TYPE'"' | \
         yq -y '.platform.aws.region = "'$OCP_REGION'"' \
            > "$install_dir_config"

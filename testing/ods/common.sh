@@ -6,13 +6,18 @@ elif [[ ! -d "$PSAP_ODS_SECRET_PATH" ]]; then
     false # can't exit here
 fi
 
+if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; then
+    # source before everything else, to allow if/then/else below based on PR-defined variables
+    source "${ARTIFACT_DIR}/variable_overrides"
+fi
+
 OCM_ENV=staging # The valid aliases are 'production', 'staging', 'integration'
 
 S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 
 # if 1, use the ODS_CATALOG_IMAGE OLM catalog.
 # Otherwise, install RHODS from OCM addon.
-OSD_USE_ODS_CATALOG=${OSD_USE_ODS_CATALOG:-1}
+OSD_USE_ODS_CATALOG=1
 
 # If the value is set, consider SUTEST to be running on OSD and
 # use this cluster name to configure LDAP and RHODS
@@ -77,10 +82,10 @@ CUSTOMIZE_RHODS_DASHBOARD_REPLICAS=5
 LDAP_IDP_NAME=RHODS_CI_LDAP
 LDAP_NB_USERS=1000
 
-ODS_CI_NB_USERS=${ODS_CI_NB_USERS:-5} # number of users to simulate
+ODS_CI_NB_USERS=5 # number of users to simulate
 ODS_CI_USER_PREFIX=psapuser
 
-ODS_SLEEP_FACTOR=${ODS_SLEEP_FACTOR:-1.0} # how long to wait between user starts.
+ODS_SLEEP_FACTOR=1.0 # how long to wait between user starts.
 ODS_CI_ARTIFACTS_COLLECTED=no-image-except-failed-and-zero
 
 STATESIGNAL_REDIS_NAMESPACE=loadtest-redis
@@ -92,7 +97,7 @@ ODS_NOTEBOOK_BENCHMARK_REPEAT=3
 ODS_NOTEBOOK_BENCHMARK_NUMBER=20 # around 10s
 
 ODS_NOTEBOOK_DIR=${THIS_DIR}/notebooks
-ODS_EXCLUDE_TAGS=${ODS_EXCLUDE_TAGS:-None} # tags to exclude when running the robot test case
+ODS_EXCLUDE_TAGS=None # tags to exclude when running the robot test case
 
 # number of test runs to perform
 NOTEBOOK_TEST_RUNS=1
@@ -107,11 +112,14 @@ CLUSTER_NAME_PREFIX=odsci
 OSD_VERSION=4.10.15
 OSD_REGION=us-west-2
 
+OSD_WORKER_NODES_TYPE=m6.xlarge
+OSD_WORKER_NODES_COUNT=3
+
 OCP_VERSION=4.10.15
 OCP_REGION=us-west-2
 OCP_MASTER_MACHINE_TYPE=m6a.xlarge
-OCP_WORKER_MACHINE_TYPE=m6a.xlarge
-OCP_WORKER_NODES_COUNT=2
+OCP_INFRA_MACHINE_TYPE=m6a.xlarge
+OCP_INFRA_NODES_COUNT=2
 
 OCP_BASE_DOMAIN=psap.aws.rhperfscale.org
 
@@ -130,14 +138,6 @@ DRIVER_TAINT_VALUE=yes
 DRIVER_TAINT_EFFECT=NoSchedule
 DRIVER_NODE_SELECTOR="$DRIVER_TAINT_KEY: '$DRIVER_TAINT_VALUE'"
 
-# these nodes are the worker nodes NOT hosting notebooks
-# they should be big enough to host RHODS operators
-
-OCP_WORKER_MACHINE_TYPE=m6a.xlarge
-OCP_WORKER_NODES_COUNT=3
-OSD_WORKER_NODES_TYPE=m6.xlarge
-OSD_WORKER_NODES_COUNT=3
-
 DRIVER_COMPUTE_MACHINE_TYPE=m5a.2xlarge
 OSD_SUTEST_COMPUTE_MACHINE_TYPE=m5.2xlarge
 OCP_SUTEST_COMPUTE_MACHINE_TYPE=m5a.2xlarge
@@ -153,6 +153,11 @@ CLUSTER_CLEANUP_DELAY=4
 
 if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; then
     source "${ARTIFACT_DIR}/variable_overrides"
+fi
+
+if [[ "$ODS_CI_NB_USERS" -gt 120 ]]; then
+    OCP_MASTER_MACHINE_TYPE=m5a.2xlarge
+    OCP_INFRA_MACHINE_TYPE=r5a.xlarge
 fi
 
 ocm_login() {

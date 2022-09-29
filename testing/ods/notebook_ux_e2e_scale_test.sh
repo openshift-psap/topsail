@@ -488,7 +488,7 @@ case ${action} in
 
         failed=0
         for idx in $(seq $NOTEBOOK_TEST_RUNS); do
-            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run_$idx"
+            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
             mkdir -p "$ARTIFACT_DIR"
             pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
             pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
