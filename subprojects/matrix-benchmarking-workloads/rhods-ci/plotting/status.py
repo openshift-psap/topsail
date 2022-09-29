@@ -5,6 +5,7 @@ import statistics as stats
 import plotly.graph_objs as go
 import pandas as pd
 import plotly.express as px
+from dash import html
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
@@ -92,11 +93,20 @@ class ExecutionDistribution():
 
         fig.update_layout(title=title, title_x=0.5)
 
+        msg= []
         if cfg__show_only_step or cfg__time_to_reach_step:
             q1, med, q3 = stats.quantiles(times_data)
             q90 = stats.quantiles(times_data, n=10)[8] # 90th percentile
-            msg = f"Q1 = {q1:.1f}s, median = {med:.1f}s, Q3 = {q3:.1f}s, 90th = {q90:.1f}s"
-        else:
-            msg = ""
+
+            msg.append(f"25% of the users got their notebook in less than {q1/60:.1f} minutes [Q1]")
+            msg.append(html.Br())
+            msg.append(f"50% of the users got their notebook in less than {med/60:.1f} minutes (+ {med-q1:.0f}s) [median]")
+            msg.append(html.Br())
+            msg.append(f"75% of the users got their notebook in less than {q3/60:.1f} minutes (+ {q3-med:.0f}s) [Q3]")
+            msg.append(html.Br())
+            msg.append(f"90% of the users got their notebook in less than {q90/60:.1f} minutes (+ {q90-q3:.0f}s) [90th quantile]")
+            msg.append(html.Br())
+            msg.append(f"There are {q3 - q1:.0f} seconds between Q1 and Q3.")
+            msg.append(html.Br())
 
         return fig, msg

@@ -3,6 +3,7 @@ from collections import defaultdict
 import plotly.graph_objs as go
 import pandas as pd
 import plotly.express as px
+from dash import html
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
@@ -66,5 +67,19 @@ class LaunchTimeDistribution():
             fig.update_layout(yaxis_title="Launch time")
             fig.update_layout(xaxis_title="")
 
+        msg = []
+        for idx, step_name in enumerate(entry.results.ods_ci_output[pod_name]):
+            step_times = df[df["Event"] == step_name]["Time"]
+            step_start_time = min(df[df["Event"] == step_name]["Time"])
 
-        return fig, ""
+            total_time = (step_times.quantile(1) - step_start_time).total_seconds() / 60 # 100%
+            mid_80 = (step_times.quantile(0.90) - step_times.quantile(0.10)).total_seconds() / 60 # 10% <-> 90%
+            mid_50 = (step_times.quantile(0.75) - step_times.quantile(0.25)).total_seconds() / 60 # 25% <-> 75%
+
+            msg.append(f"All the users started the step {idx} within {total_time:.1f} minutes, ")
+            msg.append(f"80% within {mid_80:.1f} minutes, ")
+            msg.append(f"50% within {mid_50:.1f} minutes. ")
+            msg.append(html.B(step_name))
+            msg.append(html.Br())
+
+        return fig, msg

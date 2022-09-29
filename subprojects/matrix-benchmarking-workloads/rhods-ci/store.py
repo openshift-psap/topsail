@@ -83,6 +83,10 @@ def _parse_env(filename):
                 job_spec["refs"]["repo_link"], "/compare/",
                 job_spec["refs"]["base_sha"] + ".." + job_spec["refs"]["pulls"][0]["sha"]
             ])
+            pr.base_link = "".join([
+                job_spec["refs"]["repo_link"], "/tree/",
+                job_spec["refs"]["base_sha"]
+            ])
             pr.name = "".join([
                 job_spec["refs"]["org"], "/", job_spec["refs"]["repo"], " ", f"#{pr.number}"
             ])
@@ -115,10 +119,6 @@ def _parse_rhods_info(dirname):
             rhods_info.version = f.read().strip()
     except FileNotFoundError:
         rhods_info.version = "not available"
-
-    with open(dirname / "artifacts-sutest" / "ocp_version.yml") as f:
-        ocp_version_yaml = yaml.safe_load(f)
-        rhods_info.ocp_version = ocp_version_yaml["openshiftVersion"]
 
     return rhods_info
 
@@ -162,17 +162,26 @@ def _parse_tester_job(filename):
     return job_info
 
 
-def _parse_node_info(filename):
-    node_info = defaultdict(types.SimpleNamespace)
+def _parse_nodes_info(filename, sutest_cluster=False):
+    nodes_info = {}
     with open(filename) as f:
         nodeList = yaml.safe_load(f)
 
     for node in nodeList["items"]:
         node_name = node["metadata"]["name"]
-        node_info[node_name].managed = "managed.openshift.com/customlabels" in node["metadata"]["annotations"]
-        node_info[node_name].instance_type = node["metadata"]["labels"]["node.kubernetes.io/instance-type"]
+        node_info = nodes_info[node_name] = types.SimpleNamespace()
 
-    return node_info
+        node_info.sutest_cluster = sutest_cluster
+        node_info.managed = "managed.openshift.com/customlabels" in node["metadata"]["annotations"]
+        node_info.instance_type = node["metadata"]["labels"]["node.kubernetes.io/instance-type"]
+
+        node_info.master = "node-role.kubernetes.io/master" in node["metadata"]["labels"]
+        node_info.notebooks_only = node["metadata"]["labels"].get("only-rhods-notebooks") == "yes"
+
+        node_info.infra = "node-role.kubernetes.io/worker" in node["metadata"]["labels"] \
+            if not node_info.master and not node_info.notebooks_only else False
+
+    return nodes_info
 
 
 def _parse_odh_dashboard_config(base_dirname, filename, notebook_size_name):
@@ -332,6 +341,22 @@ def _parse_ods_ci_progress(fname):
 
     return progress
 
+def _extract_rhods_cluster_info(nodes_info):
+    rhods_cluster_info = types.SimpleNamespace()
+
+    rhods_cluster_info.node_count = [node_info for node_info in nodes_info.values() \
+                                     if node_info.sutest_cluster]
+    rhods_cluster_info.masters = [node_info for node_info in nodes_info.values() \
+                                  if node_info.sutest_cluster and node_info.master]
+
+    rhods_cluster_info.infra = [node_info for node_info in nodes_info.values() \
+                                  if node_info.sutest_cluster and node_info.infra]
+
+    rhods_cluster_info.compute = [node_info for node_info in nodes_info.values() \
+                                  if node_info.sutest_cluster and node_info.notebooks_only]
+
+    return rhods_cluster_info
+
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace()
@@ -355,10 +380,14 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     notebook_size_name = results.tester_job.env.get("NOTEBOOK_SIZE_NAME")
     results.odh_dashboard_config = _parse_odh_dashboard_config(dirname, dirname / "artifacts-sutest" / "odh-dashboard-config.yaml", notebook_size_name)
 
-    print("_parse_node_info")
+    print("_parse_nodes_info")
     results.nodes_info = defaultdict(types.SimpleNamespace)
-    results.nodes_info |= _parse_node_info(dirname / "artifacts-driver" / "nodes.yaml")
-    results.nodes_info |= _parse_node_info(dirname / "artifacts-sutest" / "nodes.yaml")
+    results.nodes_info |= _parse_nodes_info(dirname / "artifacts-driver" / "nodes.yaml")
+    results.nodes_info |= _parse_nodes_info(dirname / "artifacts-sutest" / "nodes.yaml", sutest_cluster=True)
+
+    with open(dirname / "artifacts-sutest" / "ocp_version.yml") as f:
+        ocp_version_yaml = yaml.safe_load(f)
+        results.sutest_ocp_version = ocp_version_yaml["openshiftVersion"]
 
     results.notebook_pod_userid = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
@@ -371,6 +400,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.pod_times |= _parse_pod_times(dirname / "artifacts-driver" / "tester_pods.yaml", testpod_hostnames)
     print("_parse_pod_times (notebooks)")
     results.pod_times |= _parse_pod_times(dirname / "artifacts-sutest" / "notebook_pods.yaml", notebook_hostnames, is_notebook=True)
+
+    results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
 
     results.test_pods = [k for k in results.pod_times.keys() if k.startswith("ods-ci") and not "image" in k]
     results.notebook_pods = [k for k in results.pod_times.keys() if k.startswith(JUPYTER_USER_RENAME_PREFIX)]
