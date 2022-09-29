@@ -148,11 +148,26 @@ def _get_apiserver_errcodes(cluster_role, register):
         {f"{cluster_role.title()} API Server Requests (server errors)": 'sum by (code) (increase(apiserver_request_total{code=~"5.."}[20m]))'},
     ]
 
+    apiserver_request_duration_metrics = [{f"{cluster_role.title()} API Server {verb} Requests duration":
+                                           f'histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{{apiserver="kube-apiserver", verb="{verb}", subresource!="log"}}[2m])) by (resource,subresource,le)) > 0'}
+                                          for verb in ["GET", "PUT", "LIST", "PATCH"]
+    ]
+
     all_metrics += apiserver_request_metrics
+    all_metrics += apiserver_request_duration_metrics
 
     def get_apiserver_request_metrics_legend_name(metric_name, metric_metric):
         return f"code={metric_metric['code']}", None
 
+    def get_apiserver_request_duration_metrics_legend_name(metric_name, metric_metric):
+        try:
+            res = metric_metric['resource']
+        except KeyError:
+            return str(metric_metric), None
+
+        if metric_metric.get('subresource'):
+            res += f"/{metric_metric['subresource']}"
+        return res, None
 
     if register:
         for metric in apiserver_request_metrics:
@@ -163,6 +178,18 @@ def _get_apiserver_errcodes(cluster_role, register):
                                "Count",
                                get_metrics=get_metrics(cluster_role),
                                get_legend_name=get_apiserver_request_metrics_legend_name,
+                               show_queries_in_title=True,
+                               show_legend=True,
+                               as_timestamp=True)
+
+        for metric in apiserver_request_duration_metrics:
+            name, rq = list(metric.items())[0]
+            plotting_prom.Plot({name: rq},
+                               f"Prom: {name}",
+                               None,
+                               "Count",
+                               get_metrics=get_metrics(cluster_role),
+                               get_legend_name=get_apiserver_request_duration_metrics_legend_name,
                                show_queries_in_title=True,
                                show_legend=True,
                                as_timestamp=True)
