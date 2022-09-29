@@ -102,7 +102,7 @@ def _get_test_setup(entry):
 
     setup_info += [html.Li("Test configuration")]
     setup_info += [html.Ul(html.Li(["User count: ", html.Code(entry.results.tester_job.env["USER_COUNT"])]))]
-    setup_info += [html.Ul(html.Li(["User startup delay: ", html.Code(entry.results.tester_job.env["SLEEP_FACTOR"])]))]
+    setup_info += [html.Ul(html.Li(["User startup delay: ", html.Code(entry.results.tester_job.env["SLEEP_FACTOR"], " seconds")]))]
 
     managed = list(entry.results.rhods_cluster_info.masters)[0].managed
     sutest_ocp_version = entry.results.sutest_ocp_version
