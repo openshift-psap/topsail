@@ -132,6 +132,38 @@ def _get_container_mem_cpu(cluster_role, register, label_sets):
     return all_metrics
 
 
+def _get_master_nodes_cpu_usage(cluster_role, register):
+    all_metrics = [
+        {f"{cluster_role.title()} Master Node CPU usage" : 'sum(irate(node_cpu_seconds_total[2m])) by (mode, instance) '},
+        {f"{cluster_role.title()} Master Node CPU idle" : 'sum(irate(node_cpu_seconds_total{mode="idle"}[2m])) by (mode, instance) '},
+    ]
+
+    def get_legend_name(metric_name, metric_metric):
+        return metric_metric['mode'], metric_metric['instance']
+
+    def filter_metrics(entry, metrics):
+        master_nodes = [node.name for node in entry.results.rhods_cluster_info.masters]
+        for metric in metrics:
+            if metric["metric"]["instance"] not in master_nodes:
+                continue
+            yield metric
+
+    if register:
+        for metric in all_metrics:
+            name, rq = list(metric.items())[0]
+            plotting_prom.Plot({name: rq},
+                               f"Prom: {name}",
+                               None,
+                               "Count",
+                               get_metrics=get_metrics(cluster_role),
+                               filter_metrics=filter_metrics,
+                               get_legend_name=get_legend_name,
+                               show_queries_in_title=True,
+                               show_legend=True,
+                               as_timestamp=True)
+
+    return all_metrics
+
 def _get_master(cluster_role, register):
     all_metrics = []
     all_metrics += _get_container_mem_cpu(cluster_role, register, [{f"{cluster_role.title()} ApiServer": dict(namespace="openshift-kube-apiserver", pod="kube-apiserver-ip-.*")}])
@@ -266,6 +298,7 @@ def get_sutest_metrics(register=False):
     all_metrics += _get_authentication(cluster_role, register)
     all_metrics += _get_master(cluster_role, register)
     all_metrics += _get_apiserver_errcodes(cluster_role, register)
+    all_metrics += _get_master_nodes_cpu_usage(cluster_role, register)
 
     return all_metrics
 

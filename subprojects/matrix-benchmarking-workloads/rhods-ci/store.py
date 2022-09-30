@@ -171,6 +171,7 @@ def _parse_nodes_info(filename, sutest_cluster=False):
         node_name = node["metadata"]["name"]
         node_info = nodes_info[node_name] = types.SimpleNamespace()
 
+        node_info.name = node_name
         node_info.sutest_cluster = sutest_cluster
         node_info.managed = "managed.openshift.com/customlabels" in node["metadata"]["annotations"]
         node_info.instance_type = node["metadata"]["labels"]["node.kubernetes.io/instance-type"]

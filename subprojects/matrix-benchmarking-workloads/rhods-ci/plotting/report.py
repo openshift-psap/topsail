@@ -270,6 +270,23 @@ class MastersReport():
 
             if cluster_role != "sutest": continue
 
+            header += [html.H2(f"CPU usage")]
+
+            header += ["These plots shows the CPU usage of the master nodes.",
+                       html.Br(),
+                       "The first plot show all the available modes, while the second one shows only the idle time (higher is better).",
+                       html.Br(),
+                       "The Y scale is arbitrary, but the highest values indicate '~100% of the time'."
+                       ]
+
+            header += [Plot(f"Prom: {cluster_role.title()} Master Node CPU usage", args)]
+            header += html.Br()
+            header += html.Br()
+
+            header += [Plot(f"Prom: {cluster_role.title()} Master Node CPU idle", args)]
+            header += html.Br()
+            header += html.Br()
+
             header += [html.H2(f"APIServer requests duration")]
             for verb in ["LIST", "GET", "PUT", "PATCH"]:
                 header += [Plot(f"Prom: {cluster_role.title()} API Server {verb} Requests duration", args)]
