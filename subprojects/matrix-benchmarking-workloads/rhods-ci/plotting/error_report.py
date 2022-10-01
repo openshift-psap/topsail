@@ -107,12 +107,19 @@ def _get_test_setup(entry):
     managed = list(entry.results.rhods_cluster_info.masters)[0].managed
     sutest_ocp_version = entry.results.sutest_ocp_version
     setup_info += [html.Li(["RHODS ", html.Code(entry.results.rhods_info.version), " running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
-    setup_info += [html.Ul([
+
+
+    nodes_info = [
         html.Li([f"Total of {len(entry.results.rhods_cluster_info.node_count)} nodes in the cluster"]),
         html.Li([f"{len(entry.results.rhods_cluster_info.masters)} ", html.Code(list(entry.results.rhods_cluster_info.masters)[0].instance_type), " master nodes"]),
         html.Li([f"{len(entry.results.rhods_cluster_info.infra)} ", html.Code(list(entry.results.rhods_cluster_info.infra)[0].instance_type), " infra nodes"]),
+    ]
+    try:
         html.Li([f"{len(entry.results.rhods_cluster_info.compute)} ", html.Code(list(entry.results.rhods_cluster_info.compute)[0].instance_type), " compute nodes"]),
-    ])]
+    except IndexError:
+        nodes_info += [html.Li([f"0 compute nodes"])]
+
+    setup_info += [html.Ul(nodes_info)]
 
     total_users = entry.results.user_count
     success_users = sum(1 for exit_code in entry.results.ods_ci_exit_code.values() if exit_code == 0)
