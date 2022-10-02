@@ -276,7 +276,7 @@ class MastersReport():
                        html.Br(),
                        "The first plot show all the available modes, while the second one shows only the idle time (higher is better).",
                        html.Br(),
-                       "The Y scale is arbitrary, but the highest values indicate '~100% of the time'."
+                       "The Y scale is arbitrary, but for a given node, the sum of all the modes at a given time indicate 100% of the CPU."
                        ]
 
             header += [Plot(f"Prom: {cluster_role.title()} Master Node CPU usage", args)]
