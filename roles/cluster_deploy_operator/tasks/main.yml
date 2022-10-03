@@ -133,7 +133,7 @@
     when: cluster_deploy_operator_channel | default('', true) | length != 0
     fail: msg="Use the rescue block"
 
-  - name: Store the channel name just computed
+  - name: Store the channel name just computed ({{ operator_channel_cmd.stdout }})
     set_fact:
       operator_channel: "{{ operator_channel_cmd.stdout }}"
   rescue:
@@ -211,12 +211,14 @@
 - name: Create the OperatorGroup for deploying in a dedicated namespace
   block:
   - name: Instantiate the OperatorGroup template
+    when: not cluster_deploy_operator_all_namespaces | bool
     template:
       src: "{{ cluster_deploy_operator_res_group }}"
       dest: "{{ artifact_extra_logs_dir }}/src/001_operator_group.yml"
       mode: 0400
 
   - name: Instantiate the OperatorHub OperatorGroup resource
+    when: not cluster_deploy_operator_all_namespaces | bool
     command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_operator_group.yml"
 
 - name: "Create the Subscription for {{ operator_csv_name }}"

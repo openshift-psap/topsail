@@ -5,7 +5,7 @@ metadata:
   name: "{{ cluster_deploy_operator_manifest_name }}"
   namespace: "{{ cluster_deploy_operator_namespace }}"
 spec:
-  channel: "{{ cluster_deploy_operator_channel }}"
+  channel: "{{ operator_channel }}"
   installPlanApproval: "{{ cluster_deploy_operator_installplan_approval }}"
   name: "{{ cluster_deploy_operator_manifest_name }}"
   source: "{{ cluster_deploy_operator_catalog }}"
