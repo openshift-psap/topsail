@@ -133,7 +133,7 @@
     when: cluster_deploy_operator_channel | default('', true) | length != 0
     fail: msg="Use the rescue block"
 
-  - name: Store the channel name just computed
+  - name: Store the channel name just computed ({{ operator_channel_cmd.stdout }})
     set_fact:
       operator_channel: "{{ operator_channel_cmd.stdout }}"
   rescue:
