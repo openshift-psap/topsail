@@ -13,7 +13,7 @@ if [[ -z "$DEST" ]]; then
 fi
 
 if [[ -z "${PULL_NUMBER:-}" ]]; then
-    echo "ERROR: no PR_NUMBER available ..."
+    echo "ERROR: no PULL_NUMBER available ..."
     exit 1
 fi
 
@@ -22,7 +22,7 @@ PR_COMMENTS_URL="https://api.github.com/repos/openshift-psap/ci-artifacts/issues
 
 author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
 
-JOB_NAME_PREFIX=pull-ci-openshift-psap-ci-artifacts-master
+JOB_NAME_PREFIX=pull-ci-openshift-psap-ci-artifacts-main
 test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 
 pr_json=$(curl -sSf "$PR_URL")
@@ -36,11 +36,15 @@ last_comment_page=$(($pr_comments / $COMMENTS_PER_PAGE))
 
 last_user_test_comment=$(curl -sSf "$PR_COMMENTS_URL?page=$last_comment_page" \
                              | jq '.[] | select(.user.login == "'$author'") | .body' \
-                             | grep "$test_name" \
+                             | (grep "$test_name" || true) \
                              | tail -1 | jq -r)
 
+if [[ -z "$last_user_test_comment" ]]; then
+    echo "WARNING: last comment of author '$author' could not be found ..."
+fi
+
 pos_args=$(echo "$last_user_test_comment" |
-               grep "$test_name" | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
+               (grep "$test_name" || true) | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
 if [[ "$pos_args" ]]; then
     echo "PR_POSITIONAL_ARGS='$pos_args'" >> "$DEST"
 fi
