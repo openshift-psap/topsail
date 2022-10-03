@@ -92,6 +92,8 @@ def _parse_env(filename):
             ])
             pr.base_ref = job_spec["refs"]["base_ref"]
 
+    from_env.single_cluster = "single" in from_env.env["JOB_NAME_SAFE"]
+
     return from_env
 
 
@@ -178,9 +180,11 @@ def _parse_nodes_info(filename, sutest_cluster=False):
 
         node_info.master = "node-role.kubernetes.io/master" in node["metadata"]["labels"]
         node_info.notebooks_only = node["metadata"]["labels"].get("only-rhods-notebooks") == "yes"
-
-        node_info.infra = "node-role.kubernetes.io/worker" in node["metadata"]["labels"] \
-            if not node_info.master and not node_info.notebooks_only else False
+        node_info.test_pods_only = node["metadata"]["labels"].get("only-test-pods") == "yes"
+        node_info.infra = \
+            not node_info.master and \
+            not node_info.notebooks_only and \
+            not node_info.test_pods_only
 
     return nodes_info
 
@@ -347,14 +351,18 @@ def _extract_rhods_cluster_info(nodes_info):
 
     rhods_cluster_info.node_count = [node_info for node_info in nodes_info.values() \
                                      if node_info.sutest_cluster]
-    rhods_cluster_info.masters = [node_info for node_info in nodes_info.values() \
+
+    rhods_cluster_info.master = [node_info for node_info in nodes_info.values() \
                                   if node_info.sutest_cluster and node_info.master]
 
     rhods_cluster_info.infra = [node_info for node_info in nodes_info.values() \
                                   if node_info.sutest_cluster and node_info.infra]
 
-    rhods_cluster_info.compute = [node_info for node_info in nodes_info.values() \
-                                  if node_info.sutest_cluster and node_info.notebooks_only]
+    rhods_cluster_info.notebooks_only = [node_info for node_info in nodes_info.values() \
+                                         if node_info.sutest_cluster and node_info.notebooks_only]
+
+    rhods_cluster_info.test_pods_only = [node_info for node_info in nodes_info.values() \
+                                         if node_info.sutest_cluster and node_info.test_pods_only]
 
     return rhods_cluster_info
 
