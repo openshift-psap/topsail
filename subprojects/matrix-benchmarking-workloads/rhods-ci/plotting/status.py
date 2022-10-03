@@ -93,8 +93,8 @@ class ExecutionDistribution():
 
         fig.update_layout(title=title, title_x=0.5)
 
-        msg= []
-        if cfg__show_only_step or cfg__time_to_reach_step:
+        msg = []
+        if (cfg__show_only_step or cfg__time_to_reach_step) and len(times_data) >= 2:
             q1, med, q3 = stats.quantiles(times_data)
             q90 = stats.quantiles(times_data, n=10)[8] # 90th percentile
 
