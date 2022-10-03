@@ -118,6 +118,7 @@ postchecks() {
     shift
 
     if [[ "$reason" == ERR ]]; then
+        find "$ARTIFACT_DIR" -name FAILURE -exec cat {} \; > "$ARTIFACT_DIR/FAILURE"
         touch "$ARTIFACT_DIR/FAILURE"
 
         if ! oc version >/dev/null 2>&1; then

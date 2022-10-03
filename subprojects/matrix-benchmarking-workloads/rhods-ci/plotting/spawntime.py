@@ -41,7 +41,7 @@ class SpawnTime():
 
             previous_checkpoint_time = entry.results.tester_job.creation_time
             for checkpoint_idx, (checkpoint_name, checkpoint_time) in enumerate(ods_ci_progress.items()):
-                if checkpoint_name == "test_done": continue
+                if checkpoint_name == "test_execution": continue
 
                 timelength = (checkpoint_time - previous_checkpoint_time).total_seconds()
 

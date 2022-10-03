@@ -267,7 +267,31 @@ class MastersReport():
                     header += [Plot(f"Prom: {cluster_role.title()} {pod_name}: {what} usage", args)]
                     header += html.Br()
                     header += html.Br()
+
             if cluster_role != "sutest": continue
+
+            header += [html.H2(f"CPU usage")]
+
+            header += ["These plots shows the CPU usage of the master nodes.",
+                       html.Br(),
+                       "The first plot show all the available modes, while the second one shows only the idle time (higher is better).",
+                       html.Br(),
+                       "The Y scale is arbitrary, but for a given node, the sum of all the modes at a given time indicate 100% of the CPU."
+                       ]
+
+            header += [Plot(f"Prom: {cluster_role.title()} Master Node CPU usage", args)]
+            header += html.Br()
+            header += html.Br()
+
+            header += [Plot(f"Prom: {cluster_role.title()} Master Node CPU idle", args)]
+            header += html.Br()
+            header += html.Br()
+
+            header += [html.H2(f"APIServer requests duration")]
+            for verb in ["LIST", "GET", "PUT", "PATCH"]:
+                header += [Plot(f"Prom: {cluster_role.title()} API Server {verb} Requests duration", args)]
+                header += html.Br()
+                header += html.Br()
 
             header += [html.H2(f"API Server HTTP return codes")]
             for what in ["successes", "client errors", "server errors"]:

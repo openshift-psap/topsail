@@ -132,6 +132,38 @@ def _get_container_mem_cpu(cluster_role, register, label_sets):
     return all_metrics
 
 
+def _get_master_nodes_cpu_usage(cluster_role, register):
+    all_metrics = [
+        {f"{cluster_role.title()} Master Node CPU usage" : 'sum(irate(node_cpu_seconds_total[2m])) by (mode, instance) '},
+        {f"{cluster_role.title()} Master Node CPU idle" : 'sum(irate(node_cpu_seconds_total{mode="idle"}[2m])) by (mode, instance) '},
+    ]
+
+    def get_legend_name(metric_name, metric_metric):
+        return metric_metric['mode'], metric_metric['instance']
+
+    def filter_metrics(entry, metrics):
+        master_nodes = [node.name for node in entry.results.rhods_cluster_info.masters]
+        for metric in metrics:
+            if metric["metric"]["instance"] not in master_nodes:
+                continue
+            yield metric
+
+    if register:
+        for metric in all_metrics:
+            name, rq = list(metric.items())[0]
+            plotting_prom.Plot({name: rq},
+                               f"Prom: {name}",
+                               None,
+                               "Count",
+                               get_metrics=get_metrics(cluster_role),
+                               filter_metrics=filter_metrics,
+                               get_legend_name=get_legend_name,
+                               show_queries_in_title=True,
+                               show_legend=True,
+                               as_timestamp=True)
+
+    return all_metrics
+
 def _get_master(cluster_role, register):
     all_metrics = []
     all_metrics += _get_container_mem_cpu(cluster_role, register, [{f"{cluster_role.title()} ApiServer": dict(namespace="openshift-kube-apiserver", pod="kube-apiserver-ip-.*")}])
@@ -143,16 +175,31 @@ def _get_apiserver_errcodes(cluster_role, register):
     all_metrics = []
 
     apiserver_request_metrics = [
-        {f"{cluster_role.title()} API Server Requests (successes)": 'sum by (code) (increase(apiserver_request_total{code=~"2.."}[20m]))'},
-        {f"{cluster_role.title()} API Server Requests (client errors)": 'sum by (code) (increase(apiserver_request_total{code=~"4.."}[20m]))'},
-        {f"{cluster_role.title()} API Server Requests (server errors)": 'sum by (code) (increase(apiserver_request_total{code=~"5.."}[20m]))'},
+        {f"{cluster_role.title()} API Server Requests (successes)": 'sum by (code) (increase(apiserver_request_total{code=~"2.."}[2m]))'},
+        {f"{cluster_role.title()} API Server Requests (client errors)": 'sum by (code) (increase(apiserver_request_total{code=~"4.."}[2m]))'},
+        {f"{cluster_role.title()} API Server Requests (server errors)": 'sum by (code) (increase(apiserver_request_total{code=~"5.."}[2m]))'},
+    ]
+
+    apiserver_request_duration_metrics = [{f"{cluster_role.title()} API Server {verb} Requests duration":
+                                           f'histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{{apiserver="kube-apiserver", verb="{verb}", subresource!="log"}}[2m])) by (resource,subresource,le)) > 0'}
+                                          for verb in ["GET", "PUT", "LIST", "PATCH"]
     ]
 
     all_metrics += apiserver_request_metrics
+    all_metrics += apiserver_request_duration_metrics
 
     def get_apiserver_request_metrics_legend_name(metric_name, metric_metric):
         return f"code={metric_metric['code']}", None
 
+    def get_apiserver_request_duration_metrics_legend_name(metric_name, metric_metric):
+        try:
+            res = metric_metric['resource']
+        except KeyError:
+            return str(metric_metric), None
+
+        if metric_metric.get('subresource'):
+            res += f"/{metric_metric['subresource']}"
+        return res, None
 
     if register:
         for metric in apiserver_request_metrics:
@@ -163,6 +210,18 @@ def _get_apiserver_errcodes(cluster_role, register):
                                "Count",
                                get_metrics=get_metrics(cluster_role),
                                get_legend_name=get_apiserver_request_metrics_legend_name,
+                               show_queries_in_title=True,
+                               show_legend=True,
+                               as_timestamp=True)
+
+        for metric in apiserver_request_duration_metrics:
+            name, rq = list(metric.items())[0]
+            plotting_prom.Plot({name: rq},
+                               f"Prom: {name}",
+                               None,
+                               "Count",
+                               get_metrics=get_metrics(cluster_role),
+                               get_legend_name=get_apiserver_request_duration_metrics_legend_name,
                                show_queries_in_title=True,
                                show_legend=True,
                                as_timestamp=True)
@@ -239,6 +298,7 @@ def get_sutest_metrics(register=False):
     all_metrics += _get_authentication(cluster_role, register)
     all_metrics += _get_master(cluster_role, register)
     all_metrics += _get_apiserver_errcodes(cluster_role, register)
+    all_metrics += _get_master_nodes_cpu_usage(cluster_role, register)
 
     return all_metrics
 
