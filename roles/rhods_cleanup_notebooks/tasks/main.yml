@@ -6,7 +6,7 @@
 - name: Delete the notebook resources
   shell:
     set -o pipefail;
-    oc get {{ item }} -oname -n {{ rhods_notebook_namespace }} |
+    (oc get {{ item }} -oname -n {{ rhods_notebook_namespace }} || true) |
       (grep {{ rhods_cleanup_notebooks_username_prefix }} || true) |
         xargs --no-run-if-empty
             oc delete -n {{ rhods_notebook_namespace }}
