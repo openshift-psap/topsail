@@ -486,7 +486,8 @@ case ${action} in
 
         process_ctrl::wait_bg_processes
 
-        failed=0
+        test_failed=0
+        plot_failed=0
         for idx in $(seq "$NOTEBOOK_TEST_RUNS"); do
             export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
             mkdir -p "$ARTIFACT_DIR"
@@ -511,16 +512,18 @@ ODS_NOTEBOOK_BENCHMARK_NUMBER=$ODS_NOTEBOOK_BENCHMARK_NUMBER
 EOF
             fi
 
-            run_test && failed=0 || failed=1
+            run_test && test_failed=0 || test_failed=1
             # quick access to these files
             cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" || true
-            generate_plots
-            if [[ "$failed" == 1 ]]; then
+            generate_plots || plot_failed=1
+            if [[ "$test_failed" == 1 ]]; then
                 break
             fi
         done
-
-        exit $failed
+        if [[ "$plot_failed" == 1 ]]; then
+            exit "$plot_failed"
+        fi
+        exit $test_failed
         ;;
     "prepare")
         prepare
