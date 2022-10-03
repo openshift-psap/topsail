@@ -490,14 +490,11 @@ case ${action} in
         plot_failed=0
         for idx in $(seq "$NOTEBOOK_TEST_RUNS"); do
             export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
-            mkdir -p "$ARTIFACT_DIR"
-            pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
-            pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
-            for f in "$pr_file" "$pr_comment_file"; do
-                [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
-            done
 
             if [[ $idx == "$NOTEBOOK_TEST_RUNS" && "$LAST_NOTEBOOK_TEST_RUN_IS_SINGLE" == 1 ]]; then
+                ARTIFACT_DIR="${ARTIFACT_DIR}_single_user"
+
+                mkdir -p "$ARTIFACT_DIR"
                 ODS_CI_NB_USERS=1
                 ODS_NOTEBOOK_CPU_SIZE=2
                 ODS_NOTEBOOK_MEMORY_SIZE_GI=4
@@ -511,6 +508,13 @@ ODS_NOTEBOOK_BENCHMARK_REPEAT=$ODS_NOTEBOOK_BENCHMARK_REPEAT
 ODS_NOTEBOOK_BENCHMARK_NUMBER=$ODS_NOTEBOOK_BENCHMARK_NUMBER
 EOF
             fi
+
+            mkdir -p "$ARTIFACT_DIR"
+            pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
+            pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
+            for f in "$pr_file" "$pr_comment_file"; do
+                [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
+            done
 
             run_test && test_failed=0 || test_failed=1
             # quick access to these files
