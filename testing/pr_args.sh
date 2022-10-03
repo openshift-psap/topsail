@@ -22,7 +22,7 @@ PR_COMMENTS_URL="https://api.github.com/repos/openshift-psap/ci-artifacts/issues
 
 author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
 
-JOB_NAME_PREFIX=pull-ci-openshift-psap-ci-artifacts-master
+JOB_NAME_PREFIX=pull-ci-openshift-psap-ci-artifacts-main
 test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 
 pr_json=$(curl -sSf "$PR_URL")
