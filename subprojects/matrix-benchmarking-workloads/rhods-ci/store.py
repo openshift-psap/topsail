@@ -214,14 +214,13 @@ def _parse_odh_dashboard_config(base_dirname, filename, notebook_size_name):
     return data
 
 
-def _parse_pod_times(filename, hostnames, is_notebook=False):
+def _parse_pod_times(metrics, hostnames, is_notebook=False):
     pod_times = defaultdict(types.SimpleNamespace)
-    with open(filename) as f:
-        podlist = yaml.safe_load(f)
 
-    for pod in podlist["items"]:
-        podname = pod["metadata"]["name"]
+    for metric in metrics:
+        if "node" not in metric["metric"]: continue
 
+        podname = metric["metric"]["pod"]
         if podname.endswith("-build"): continue
         if podname.endswith("-debug"): continue
 
@@ -233,42 +232,12 @@ def _parse_pod_times(filename, hostnames, is_notebook=False):
 
         pod_times[podname] = types.SimpleNamespace()
 
-        pod_times[podname].creation_time = \
-            datetime.datetime.strptime(
-                pod["metadata"]["creationTimestamp"],
-                K8S_TIME_FMT)
-        try:
-            pod_times[podname].start_time = \
-                datetime.datetime.strptime(
-                    pod["status"]["startTime"],
-                    K8S_TIME_FMT)
-        except KeyError: continue
+        pod_times[podname].start_time = datetime.datetime.fromtimestamp(metric["values"][0][0])
 
-        if pod["status"]["containerStatuses"][0]["state"].get("terminated"):
-            pod_times[podname].container_started = \
-                datetime.datetime.strptime(
-                    pod["status"]["containerStatuses"][0]["state"]["terminated"]["startedAt"],
-                    K8S_TIME_FMT)
-
-            pod_times[podname].container_finished = \
-                datetime.datetime.strptime(
-                    pod["status"]["containerStatuses"][0]["state"]["terminated"]["finishedAt"],
-                    K8S_TIME_FMT)
-
-        elif pod["status"]["containerStatuses"][0]["state"].get("running"):
-            pod_times[podname].container_running_since = \
-                datetime.datetime.strptime(
-                    pod["status"]["containerStatuses"][0]["state"]["running"]["startedAt"],
-                    K8S_TIME_FMT)
-        elif pod["status"]["containerStatuses"][0]["state"].get("waiting"):
-            pass
-
-        else:
-            print("Unknown containerStatuses ...", pod["status"]["containerStatuses"][0])
-            pass
+        pod_times[podname].container_finished = datetime.datetime.fromtimestamp(metric["values"][-1][0])
 
         if hostnames is not None:
-            hostnames[podname] = pod["spec"]["nodeName"]
+            hostnames[podname] = metric["metric"]["node"]
 
     return pod_times
 
@@ -398,6 +367,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         ocp_version_yaml = yaml.safe_load(f)
         results.sutest_ocp_version = ocp_version_yaml["openshiftVersion"]
 
+    print("_extract_metrics")
+    results.metrics = _extract_metrics(dirname)
+
     results.notebook_pod_userid = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
 
@@ -406,16 +378,19 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     print("_parse_pod_times (tester)")
     results.pod_times = {}
 
-    results.pod_times |= _parse_pod_times(dirname / "artifacts-driver" / "tester_pods.yaml", testpod_hostnames)
-    print("_parse_pod_times (notebooks)")
-    results.pod_times |= _parse_pod_times(dirname / "artifacts-sutest" / "notebook_pods.yaml", notebook_hostnames, is_notebook=True)
 
+    print("_parse_pod_times (notebooks)")
+
+    results.pod_times |= _parse_pod_times(
+        results.metrics["sutest"]["sutest__container_cpu_requests__namespace=rhods-notebooks_container=jupyter-nb-psapuser.*"],
+        notebook_hostnames, is_notebook=True)
+    results.pod_times |= _parse_pod_times(
+        results.metrics["driver"]["driver__container_cpu_requests__namespace=loadtest_container=main"],
+        testpod_hostnames)
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
 
     results.test_pods = [k for k in results.pod_times.keys() if k.startswith("ods-ci") and not "image" in k]
     results.notebook_pods = [k for k in results.pod_times.keys() if k.startswith(JUPYTER_USER_RENAME_PREFIX)]
-    print("_extract_metrics")
-    results.metrics = _extract_metrics(dirname)
 
     print("_parse_pod_results")
     results.ods_ci_output = {}
