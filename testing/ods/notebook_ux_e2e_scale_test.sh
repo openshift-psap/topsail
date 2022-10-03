@@ -402,7 +402,7 @@ run_test() {
 driver_cleanup() {
     switch_driver_cluster
 
-    ./run_toolbox.py cluster set-scale not-used 0 --name "$DRIVER_MACHINESET_NAME"
+    ./run_toolbox.py cluster set-scale not-used 0 --name "$DRIVER_MACHINESET_NAME" > /dev/null
 
     if [[ "$CLEANUP_DRIVER_NAMESPACES_ON_EXIT" == 1 ]]; then
         oc delete namespace --ignore-not-found \
@@ -420,7 +420,7 @@ sutest_cleanup() {
     if [[ "$osd_cluster_name" ]]; then
         ocm delete machinepool "$SUTEST_MACHINESET_NAME"
     else
-        ./run_toolbox.py cluster set-scale not-used 0 --name "$SUTEST_MACHINESET_NAME"
+        ./run_toolbox.py cluster set-scale not-used 0 --name "$SUTEST_MACHINESET_NAME" > /dev/null
     fi
 }
 
