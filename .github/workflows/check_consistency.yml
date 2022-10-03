@@ -2,7 +2,7 @@ name: Check the consistency of the repository
 
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
 
 jobs:
   build:
