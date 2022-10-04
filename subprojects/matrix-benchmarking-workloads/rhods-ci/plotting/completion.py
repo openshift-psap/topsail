@@ -52,7 +52,12 @@ class Completion():
 
         machines_in_use = set()
         for hostname in entry.results.notebook_hostnames.values():
-            machines_in_use.add(entry.results.nodes_info[hostname].instance_type)
+            try:
+                machines_in_use.add(entry.results.nodes_info[hostname].instance_type)
+            except KeyError as e:
+                print(f"WARNING: {hostname} not found ...")
+            except AttributeError as e:
+                print(f"WARNING: {e} ...")
 
         data = []
         for machine_entry in entry.results.possible_machines:
