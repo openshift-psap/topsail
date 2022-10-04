@@ -341,13 +341,6 @@ sutest_wait_rhods_launch() {
                          --pod_toleration_effect="$SUTEST_TAINT_EFFECT"
     fi
 
-    osd_cluster_name=$(get_osd_cluster_name "sutest")
-    if [[ "$osd_cluster_name" ]]; then
-        machine_type=$OSD_SUTEST_COMPUTE_MACHINE_TYPE
-    else
-        machine_type=$OCP_SUTEST_COMPUTE_MACHINE_TYPE
-    fi
-
     oc annotate namespace/rhods-notebooks --overwrite \
        "openshift.io/node-selector=$SUTEST_TAINT_KEY=$SUTEST_TAINT_VALUE"
     oc annotate namespace/rhods-notebooks --overwrite \
