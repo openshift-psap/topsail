@@ -37,8 +37,8 @@ class Completion():
         mode = cfg.get("mode", None)
 
         if mode == "notebooks":
-            rq_cpu = entry.results.odh_dashboard_config.notebook_size_cpu
-            rq_mem = entry.results.odh_dashboard_config.notebook_size_mem
+            rq_cpu = entry.results.odh_dashboard_config.notebook_request_size_cpu
+            rq_mem = entry.results.odh_dashboard_config.notebook_request_size_mem
         elif mode == "test_pods":
             rq_cpu = entry.results.tester_job.request.cpu
             rq_mem = entry.results.tester_job.request.mem

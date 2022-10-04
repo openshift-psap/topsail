@@ -190,28 +190,31 @@ def _parse_nodes_info(filename, sutest_cluster=False):
 
 
 def _parse_odh_dashboard_config(base_dirname, filename, notebook_size_name):
-    data = types.SimpleNamespace()
+    odh_dashboard_config = types.SimpleNamespace()
 
-    data.path = None
+    odh_dashboard_config.path = None
     if not filename.exists():
-        return data
+        return odh_dashboard_config
 
-    data.path = str(filename.relative_to(base_dirname.parent))
+    odh_dashboard_config.path = str(filename.relative_to(base_dirname.parent))
 
     with open(filename) as f:
-        data.content = yaml.safe_load(f)
+        odh_dashboard_config.content = yaml.safe_load(f)
 
-    data.notebook_size_name = notebook_size_name
-    data.notebook_size_mem = None
-    data.notebook_size_cpu = None
+    odh_dashboard_config.notebook_size_name = notebook_size_name
+    odh_dashboard_config.notebook_size_mem = None
+    odh_dashboard_config.notebook_size_cpu = None
 
-    for notebook_size in data.content["spec"]["notebookSizes"]:
-        if notebook_size["name"] != data.notebook_size_name: continue
+    for notebook_size in odh_dashboard_config.content["spec"]["notebookSizes"]:
+        if notebook_size["name"] != odh_dashboard_config.notebook_size_name: continue
 
-        data.notebook_size_mem = float(k8s_quantity.parse_quantity(notebook_size["resources"]["requests"]["memory"]) / 1024 / 1024 / 1024)
-        data.notebook_size_cpu = float(k8s_quantity.parse_quantity(notebook_size["resources"]["requests"]["cpu"]))
+        odh_dashboard_config.notebook_request_size_mem = float(k8s_quantity.parse_quantity(notebook_size["resources"]["requests"]["memory"]) / 1024 / 1024 / 1024)
+        odh_dashboard_config.notebook_request_size_cpu = float(k8s_quantity.parse_quantity(notebook_size["resources"]["requests"]["cpu"]))
 
-    return data
+        odh_dashboard_config.notebook_limit_size_mem = float(k8s_quantity.parse_quantity(notebook_size["resources"]["limits"]["memory"]) / 1024 / 1024 / 1024)
+        odh_dashboard_config.notebook_limit_size_cpu = float(k8s_quantity.parse_quantity(notebook_size["resources"]["limits"]["cpu"]))
+
+    return odh_dashboard_config
 
 
 def _parse_pod_times(metrics, hostnames, is_notebook=False):
