@@ -83,7 +83,7 @@ Go to Jupyter Page
 
 
 Wait for the Notebook Spawn
-  [Tags]  Spawn  Notebook
+  [Tags]  Notebook  Spawn
 
   Trigger Notebook Spawn
   Click Element  xpath://span[@class="pf-c-expandable-section__toggle-text"]
@@ -93,20 +93,20 @@ Wait for the Notebook Spawn
 
 
 Login to JupyterLab Page
-  [Tags]  Notebook  JupyterLab
+  [Tags]  Notebook  Spawn
 
   Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
 
 
 Go to JupyterLab Page
-  [Tags]  Notebook  JupyterLab
+  [Tags]  Notebook  Spawn
 
   Wait Until Page Contains Element  xpath:${JL_TABBAR_CONTENT_XPATH}  timeout=3 minutes
   Capture Page Screenshot
 
 
 Load the Notebook
-  [Tags]  Notebook  JupyterLab
+  [Tags]  Notebook  Run
 
   Maybe Close Popup
   ${is_launcher_selected} =  Run Keyword And Return Status  JupyterLab Launcher Tab Is Selected
@@ -132,7 +132,7 @@ Load the Notebook
 
 
 Run the Notebook
-  [Tags]  Notebook
+  [Tags]  Notebook  Run
 
   Open With JupyterLab Menu  Run  Run All Cells
   Capture Page Screenshot
