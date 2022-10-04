@@ -70,12 +70,12 @@ CUSTOMIZE_RHODS_PVC_SIZE=5Gi
 # if value is 1, define a custom notebook size named $ODS_NOTEBOOK_SIZE
 # see sutest_customize_rhods_after_wait for the limits/requests values
 CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE=1
-
+ODS_NOTEBOOK_SIZE=Tiny # needs to match an existing notebook size in OdhDashboardConfig.spec.notebookSizes
 ODS_NOTEBOOK_CPU_SIZE=1
 ODS_NOTEBOOK_MEMORY_SIZE_GI=4
 
 # must be consistent with roles/rhods_notebook_ux_e2e_scale_test/templates/ods-ci_job.yaml
-ODS_NOTEBOOK_SIZE=Tiny # needs to match an existing notebook size in OdhDashboardConfig.spec.notebookSizes
+
 ODS_TESTPOD_CPU_SIZE=0.2
 ODS_TESTPOD_MEMORY_SIZE_GI=0.75
 
