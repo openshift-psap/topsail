@@ -402,7 +402,7 @@ run_test() {
 driver_cleanup() {
     switch_driver_cluster
 
-    ./run_toolbox.py cluster set-scale not-used 0 --name "$DRIVER_MACHINESET_NAME"
+    ./run_toolbox.py cluster set-scale not-used 0 --name "$DRIVER_MACHINESET_NAME" > /dev/null
 
     if [[ "$CLEANUP_DRIVER_NAMESPACES_ON_EXIT" == 1 ]]; then
         oc delete namespace --ignore-not-found \
@@ -420,7 +420,7 @@ sutest_cleanup() {
     if [[ "$osd_cluster_name" ]]; then
         ocm delete machinepool "$SUTEST_MACHINESET_NAME"
     else
-        ./run_toolbox.py cluster set-scale not-used 0 --name "$SUTEST_MACHINESET_NAME"
+        ./run_toolbox.py cluster set-scale not-used 0 --name "$SUTEST_MACHINESET_NAME" > /dev/null
     fi
 }
 
@@ -486,9 +486,29 @@ case ${action} in
 
         process_ctrl::wait_bg_processes
 
-        failed=0
-        for idx in $(seq $NOTEBOOK_TEST_RUNS); do
+        test_failed=0
+        plot_failed=0
+        for idx in $(seq "$NOTEBOOK_TEST_RUNS"); do
             export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
+
+            if [[ $idx == "$NOTEBOOK_TEST_RUNS" && "$LAST_NOTEBOOK_TEST_RUN_IS_SINGLE" == 1 ]]; then
+                ARTIFACT_DIR="${ARTIFACT_DIR}_single_user"
+
+                mkdir -p "$ARTIFACT_DIR"
+                ODS_CI_NB_USERS=1
+                ODS_NOTEBOOK_CPU_SIZE=2
+                ODS_NOTEBOOK_MEMORY_SIZE_GI=4
+                ODS_NOTEBOOK_BENCHMARK_REPEAT=4
+                ODS_NOTEBOOK_BENCHMARK_NUMBER=50 # around 30s
+                cat > "$ARTIFACT_DIR/last_run" <<EOF
+ODS_CI_NB_USERS=$ODS_CI_NB_USERS
+ODS_NOTEBOOK_CPU_SIZE=$ODS_NOTEBOOK_CPU_SIZE
+ODS_NOTEBOOK_MEMORY_SIZE_GI=$ODS_NOTEBOOK_MEMORY_SIZE_GI
+ODS_NOTEBOOK_BENCHMARK_REPEAT=$ODS_NOTEBOOK_BENCHMARK_REPEAT
+ODS_NOTEBOOK_BENCHMARK_NUMBER=$ODS_NOTEBOOK_BENCHMARK_NUMBER
+EOF
+            fi
+
             mkdir -p "$ARTIFACT_DIR"
             pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
             pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
@@ -496,16 +516,18 @@ case ${action} in
                 [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
             done
 
-            run_test && failed=0 || failed=1
+            run_test && test_failed=0 || test_failed=1
             # quick access to these files
             cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" || true
-            generate_plots
-            if [[ "$failed" == 1 ]]; then
+            generate_plots || plot_failed=1
+            if [[ "$test_failed" == 1 ]]; then
                 break
             fi
         done
-
-        exit $failed
+        if [[ "$plot_failed" == 1 ]]; then
+            exit "$plot_failed"
+        fi
+        exit $test_failed
         ;;
     "prepare")
         prepare

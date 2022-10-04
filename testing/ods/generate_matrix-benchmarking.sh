@@ -126,6 +126,7 @@ EOF
 
     if grep "^ERROR" "$VISU_LOG_FILE"; then
         echo "An error happened during the report generation, aborting."
+        grep "^ERROR" "$VISU_LOG_FILE" > "$ARTIFACT_DIR"/FAILURE
         exit 1
     fi
 

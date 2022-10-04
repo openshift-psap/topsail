@@ -6,6 +6,7 @@ import plotly.graph_objs as go
 import pandas as pd
 import plotly.express as px
 import plotly.figure_factory as ff
+from dash import html
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
@@ -34,10 +35,15 @@ class NotebookPerformance():
             break
 
 
+        only_one_user = entry.results.user_count == 1
+
         cfg__show_all_in_one = cfg.get("all_in_one", False)
+        # (long forms for readability)
+        cfg__show_user_details = cfg.get("user_details", True if only_one_user else False)
+        cfg__stacked = cfg.get("stacked", True if only_one_user else False)
 
         data = []
-        if cfg__show_all_in_one:
+        if cfg__show_all_in_one or cfg__show_user_details:
             times_data = []
 
         for user_idx, ods_ci_notebook_benchmark in entry.results.ods_ci_notebook_benchmark.items():
@@ -47,10 +53,11 @@ class NotebookPerformance():
 
             user_name = "All the users" if cfg__show_all_in_one else f"User #{user_idx}"
 
-            for measure in ods_ci_notebook_benchmark["measures"]:
-                data.append(dict(user=1, user_name=user_name, measure=measure))
+            for measure_idx, measure in enumerate(ods_ci_notebook_benchmark["measures"]):
+                data.append(dict(user=1, user_name=user_name + (f"/{measure_idx}" if cfg__show_user_details else ""),
+                                 measure=measure))
 
-                if cfg__show_all_in_one:
+                if cfg__show_all_in_one or cfg__show_user_details:
                     times_data.append(measure)
 
         if not data:
@@ -74,11 +81,44 @@ class NotebookPerformance():
 
         fig.update_layout(title=title, title_x=0.5)
 
-        if cfg__show_all_in_one:
+        if cfg__stacked:
+            fig.update_layout(barmode='stack')
+
+        msg = []
+        if cfg__show_all_in_one or cfg__show_user_details:
+            q0 = min(times_data)
+            q100 = max(times_data)
             q1, med, q3 = stats.quantiles(times_data)
             q90 = stats.quantiles(times_data, n=10)[8] # 90th percentile
-            msg = f"Q1 = {q1:.1f}s, median = {med:.1f}s, Q3 = {q3:.1f}s, 90th = {q90:.1f}s"
-        else:
-            msg = ""
+
+            msg.append(f"25% of the measurements ran in less than {q1:.2f} seconds [Q1]")
+            msg.append(html.Br())
+            msg.append(f"50% of the measurements ran in less than {med:.2f} seconds (+ {med-q1:.2f}s) [median]")
+            msg.append(html.Br())
+            msg.append(f"75% of the measurements ran in less than {q3:.2f} seconds (+ {q3-med:.2f}s) [Q3]")
+            msg.append(html.Br())
+            msg.append(f"90% of the measurements ran less than {q90:.2f} seconds (+ {q90-q3:.2f}s) [90th quantile]")
+            msg.append(html.Br())
+            msg.append(f"There are {len(times_data)} measurements.")
+            msg.append(html.Br())
+            msg.append(f"The median measurement time is {med:.2f} seconds.")
+            msg.append(html.Br())
+            q3_q1 = q3 - q1
+            msg.append(f"There are {q3_q1:.2f} seconds between Q1 and Q3 ({q3_q1/med*100:.1f}% of the median).")
+            msg.append(html.Br())
+            q100_q0 = q100 - q0
+            msg.append(f"There are {q100 - q0:.2f} seconds between min and max ({q100_q0/med*100:.1f}% of the median).")
+            msg.append(html.Br())
+            try:
+                machine_type = entry.results.rhods_cluster_info.notebooks_only[0].instance_type
+            except KeyError:
+                machine_type = "not available"
+
+            msg += ["The notebook machine instance type is ", html.Code(machine_type)]
+            msg.append(html.Br())
+            rq = f"mem={entry.results.odh_dashboard_config.notebook_request_size_mem}Gi and cpu={entry.results.odh_dashboard_config.notebook_request_size_cpu}"
+            lt = f"mem={entry.results.odh_dashboard_config.notebook_limit_size_mem}Gi and cpu={entry.results.odh_dashboard_config.notebook_limit_size_cpu}"
+            msg.append(f"The notebook requested {rq}, limited to {lt}.")
+            msg.append(html.Br())
 
         return fig, msg

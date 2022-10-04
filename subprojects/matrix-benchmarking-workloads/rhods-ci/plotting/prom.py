@@ -142,7 +142,7 @@ def _get_master_nodes_cpu_usage(cluster_role, register):
         return metric_metric['mode'], metric_metric['instance']
 
     def filter_metrics(entry, metrics):
-        master_nodes = [node.name for node in entry.results.rhods_cluster_info.masters]
+        master_nodes = [node.name for node in entry.results.rhods_cluster_info.master]
         for metric in metrics:
             if metric["metric"]["instance"] not in master_nodes:
                 continue

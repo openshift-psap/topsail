@@ -74,7 +74,7 @@ def _get_test_setup(entry):
             setup_info += [html.Ul(html.Li(["PR body: ", html.Code(body)]))]
         if last_comment_found:
             setup_info += [html.Ul(html.Li(["Trigger comment: ", html.Code(last_comment_body)]))]
-            setup_info += [html.Ul(html.Li(["Trigger timestamp: ", html.I(last_comment_date.replace("T", " ").replace("Z", ""))]))]
+            setup_info += [html.Ul(html.Li(["Trigger timestamp: ", html.Code(last_comment_date.replace("T", " ").replace("Z", ""))]))]
 
         setup_info += [html.Li([html.A("Diff", href=pr.diff_link, target="_blank"),
                                 " against ",
@@ -100,24 +100,31 @@ def _get_test_setup(entry):
         setup_info += [html.Li("Results artifacts: NOT AVAILABLE")]
         setup_info += [html.Ul(html.Li("Dashboard configuration: NOT AVAILABLE"))]
 
-    setup_info += [html.Li("Test configuration")]
-    setup_info += [html.Ul(html.Li(["User count: ", html.Code(entry.results.tester_job.env["USER_COUNT"])]))]
-    setup_info += [html.Ul(html.Li(["User startup delay: ", html.Code(entry.results.tester_job.env["SLEEP_FACTOR"], " seconds")]))]
+    setup_info += [html.Li("Test configuration:")]
+    setup_info += [html.Ul(html.Li([html.Code(entry.results.tester_job.env["USER_COUNT"]), " users starting with a delay of ", html.Code(entry.results.tester_job.env["SLEEP_FACTOR"]), " seconds"]))]
 
-    managed = list(entry.results.rhods_cluster_info.masters)[0].managed
+    managed = list(entry.results.rhods_cluster_info.master)[0].managed
     sutest_ocp_version = entry.results.sutest_ocp_version
-    setup_info += [html.Li(["RHODS ", html.Code(entry.results.rhods_info.version), " running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
-
+    setup_info += [html.Li([html.B("RHODS "), html.B(html.Code(entry.results.rhods_info.version)), " running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
 
     nodes_info = [
         html.Li([f"Total of {len(entry.results.rhods_cluster_info.node_count)} nodes in the cluster"]),
-        html.Li([f"{len(entry.results.rhods_cluster_info.masters)} ", html.Code(list(entry.results.rhods_cluster_info.masters)[0].instance_type), " master nodes"]),
-        html.Li([f"{len(entry.results.rhods_cluster_info.infra)} ", html.Code(list(entry.results.rhods_cluster_info.infra)[0].instance_type), " infra nodes"]),
     ]
-    try:
-        html.Li([f"{len(entry.results.rhods_cluster_info.compute)} ", html.Code(list(entry.results.rhods_cluster_info.compute)[0].instance_type), " compute nodes"]),
-    except IndexError:
-        nodes_info += [html.Li([f"0 compute nodes"])]
+
+    for purpose in ["master", "infra", "notebooks_only", "test_pods_only"]:
+        nodes = entry.results.rhods_cluster_info.__dict__.get(purpose)
+
+        if not nodes and purpose == "test_pods_only": continue
+
+        nodes_info_li = [f"{len(nodes)} ", html.Code(list(nodes)[0].instance_type), f" {purpose} nodes"] \
+            if nodes else f"0 {purpose} nodes"
+
+        nodes_info += [html.Li(nodes_info_li)]
+
+
+    nodes_info += [html.Li(["Test pods running on "] +
+                           (["the ", html.I("same")] if entry.results.from_env.single_cluster else \
+                            [html.I("another")])+[" cluster"])]
 
     setup_info += [html.Ul(nodes_info)]
 

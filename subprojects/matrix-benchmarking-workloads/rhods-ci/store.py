@@ -92,6 +92,8 @@ def _parse_env(filename):
             ])
             pr.base_ref = job_spec["refs"]["base_ref"]
 
+    from_env.single_cluster = "single" in from_env.env["JOB_NAME_SAFE"]
+
     return from_env
 
 
@@ -178,46 +180,50 @@ def _parse_nodes_info(filename, sutest_cluster=False):
 
         node_info.master = "node-role.kubernetes.io/master" in node["metadata"]["labels"]
         node_info.notebooks_only = node["metadata"]["labels"].get("only-rhods-notebooks") == "yes"
-
-        node_info.infra = "node-role.kubernetes.io/worker" in node["metadata"]["labels"] \
-            if not node_info.master and not node_info.notebooks_only else False
+        node_info.test_pods_only = node["metadata"]["labels"].get("only-test-pods") == "yes"
+        node_info.infra = \
+            not node_info.master and \
+            not node_info.notebooks_only and \
+            not node_info.test_pods_only
 
     return nodes_info
 
 
 def _parse_odh_dashboard_config(base_dirname, filename, notebook_size_name):
-    data = types.SimpleNamespace()
+    odh_dashboard_config = types.SimpleNamespace()
 
-    data.path = None
+    odh_dashboard_config.path = None
     if not filename.exists():
-        return data
+        return odh_dashboard_config
 
-    data.path = str(filename.relative_to(base_dirname.parent))
+    odh_dashboard_config.path = str(filename.relative_to(base_dirname.parent))
 
     with open(filename) as f:
-        data.content = yaml.safe_load(f)
+        odh_dashboard_config.content = yaml.safe_load(f)
 
-    data.notebook_size_name = notebook_size_name
-    data.notebook_size_mem = None
-    data.notebook_size_cpu = None
+    odh_dashboard_config.notebook_size_name = notebook_size_name
+    odh_dashboard_config.notebook_size_mem = None
+    odh_dashboard_config.notebook_size_cpu = None
 
-    for notebook_size in data.content["spec"]["notebookSizes"]:
-        if notebook_size["name"] != data.notebook_size_name: continue
+    for notebook_size in odh_dashboard_config.content["spec"]["notebookSizes"]:
+        if notebook_size["name"] != odh_dashboard_config.notebook_size_name: continue
 
-        data.notebook_size_mem = float(k8s_quantity.parse_quantity(notebook_size["resources"]["requests"]["memory"]) / 1024 / 1024 / 1024)
-        data.notebook_size_cpu = float(k8s_quantity.parse_quantity(notebook_size["resources"]["requests"]["cpu"]))
+        odh_dashboard_config.notebook_request_size_mem = float(k8s_quantity.parse_quantity(notebook_size["resources"]["requests"]["memory"]) / 1024 / 1024 / 1024)
+        odh_dashboard_config.notebook_request_size_cpu = float(k8s_quantity.parse_quantity(notebook_size["resources"]["requests"]["cpu"]))
 
-    return data
+        odh_dashboard_config.notebook_limit_size_mem = float(k8s_quantity.parse_quantity(notebook_size["resources"]["limits"]["memory"]) / 1024 / 1024 / 1024)
+        odh_dashboard_config.notebook_limit_size_cpu = float(k8s_quantity.parse_quantity(notebook_size["resources"]["limits"]["cpu"]))
+
+    return odh_dashboard_config
 
 
-def _parse_pod_times(filename, hostnames, is_notebook=False):
+def _parse_pod_times(metrics, hostnames, is_notebook=False):
     pod_times = defaultdict(types.SimpleNamespace)
-    with open(filename) as f:
-        podlist = yaml.safe_load(f)
 
-    for pod in podlist["items"]:
-        podname = pod["metadata"]["name"]
+    for metric in metrics:
+        if "node" not in metric["metric"]: continue
 
+        podname = metric["metric"]["pod"]
         if podname.endswith("-build"): continue
         if podname.endswith("-debug"): continue
 
@@ -229,42 +235,12 @@ def _parse_pod_times(filename, hostnames, is_notebook=False):
 
         pod_times[podname] = types.SimpleNamespace()
 
-        pod_times[podname].creation_time = \
-            datetime.datetime.strptime(
-                pod["metadata"]["creationTimestamp"],
-                K8S_TIME_FMT)
-        try:
-            pod_times[podname].start_time = \
-                datetime.datetime.strptime(
-                    pod["status"]["startTime"],
-                    K8S_TIME_FMT)
-        except KeyError: continue
+        pod_times[podname].start_time = datetime.datetime.fromtimestamp(metric["values"][0][0])
 
-        if pod["status"]["containerStatuses"][0]["state"].get("terminated"):
-            pod_times[podname].container_started = \
-                datetime.datetime.strptime(
-                    pod["status"]["containerStatuses"][0]["state"]["terminated"]["startedAt"],
-                    K8S_TIME_FMT)
-
-            pod_times[podname].container_finished = \
-                datetime.datetime.strptime(
-                    pod["status"]["containerStatuses"][0]["state"]["terminated"]["finishedAt"],
-                    K8S_TIME_FMT)
-
-        elif pod["status"]["containerStatuses"][0]["state"].get("running"):
-            pod_times[podname].container_running_since = \
-                datetime.datetime.strptime(
-                    pod["status"]["containerStatuses"][0]["state"]["running"]["startedAt"],
-                    K8S_TIME_FMT)
-        elif pod["status"]["containerStatuses"][0]["state"].get("waiting"):
-            pass
-
-        else:
-            print("Unknown containerStatuses ...", pod["status"]["containerStatuses"][0])
-            pass
+        pod_times[podname].container_finished = datetime.datetime.fromtimestamp(metric["values"][-1][0])
 
         if hostnames is not None:
-            hostnames[podname] = pod["spec"]["nodeName"]
+            hostnames[podname] = metric["metric"]["node"]
 
     return pod_times
 
@@ -347,14 +323,18 @@ def _extract_rhods_cluster_info(nodes_info):
 
     rhods_cluster_info.node_count = [node_info for node_info in nodes_info.values() \
                                      if node_info.sutest_cluster]
-    rhods_cluster_info.masters = [node_info for node_info in nodes_info.values() \
+
+    rhods_cluster_info.master = [node_info for node_info in nodes_info.values() \
                                   if node_info.sutest_cluster and node_info.master]
 
     rhods_cluster_info.infra = [node_info for node_info in nodes_info.values() \
                                   if node_info.sutest_cluster and node_info.infra]
 
-    rhods_cluster_info.compute = [node_info for node_info in nodes_info.values() \
-                                  if node_info.sutest_cluster and node_info.notebooks_only]
+    rhods_cluster_info.notebooks_only = [node_info for node_info in nodes_info.values() \
+                                         if node_info.sutest_cluster and node_info.notebooks_only]
+
+    rhods_cluster_info.test_pods_only = [node_info for node_info in nodes_info.values() \
+                                         if node_info.sutest_cluster and node_info.test_pods_only]
 
     return rhods_cluster_info
 
@@ -390,6 +370,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         ocp_version_yaml = yaml.safe_load(f)
         results.sutest_ocp_version = ocp_version_yaml["openshiftVersion"]
 
+    print("_extract_metrics")
+    results.metrics = _extract_metrics(dirname)
+
     results.notebook_pod_userid = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
 
@@ -398,16 +381,19 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     print("_parse_pod_times (tester)")
     results.pod_times = {}
 
-    results.pod_times |= _parse_pod_times(dirname / "artifacts-driver" / "tester_pods.yaml", testpod_hostnames)
-    print("_parse_pod_times (notebooks)")
-    results.pod_times |= _parse_pod_times(dirname / "artifacts-sutest" / "notebook_pods.yaml", notebook_hostnames, is_notebook=True)
 
+    print("_parse_pod_times (notebooks)")
+
+    results.pod_times |= _parse_pod_times(
+        results.metrics["sutest"]["sutest__container_cpu_requests__namespace=rhods-notebooks_container=jupyter-nb-psapuser.*"],
+        notebook_hostnames, is_notebook=True)
+    results.pod_times |= _parse_pod_times(
+        results.metrics["driver"]["driver__container_cpu_requests__namespace=loadtest_container=main"],
+        testpod_hostnames)
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
 
     results.test_pods = [k for k in results.pod_times.keys() if k.startswith("ods-ci") and not "image" in k]
     results.notebook_pods = [k for k in results.pod_times.keys() if k.startswith(JUPYTER_USER_RENAME_PREFIX)]
-    print("_extract_metrics")
-    results.metrics = _extract_metrics(dirname)
 
     print("_parse_pod_results")
     results.ods_ci_output = {}

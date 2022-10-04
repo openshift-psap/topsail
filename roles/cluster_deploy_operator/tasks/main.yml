@@ -209,16 +209,15 @@
       oc label ns/{{ cluster_deploy_operator_namespace }} openshift.io/cluster-monitoring=true
 
 - name: Create the OperatorGroup for deploying in a dedicated namespace
+  when: cluster_deploy_operator_namespace != "openshift-operators"
   block:
   - name: Instantiate the OperatorGroup template
-    when: not cluster_deploy_operator_all_namespaces | bool
     template:
       src: "{{ cluster_deploy_operator_res_group }}"
       dest: "{{ artifact_extra_logs_dir }}/src/001_operator_group.yml"
       mode: 0400
 
   - name: Instantiate the OperatorHub OperatorGroup resource
-    when: not cluster_deploy_operator_all_namespaces | bool
     command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_operator_group.yml"
 
 - name: "Create the Subscription for {{ operator_csv_name }}"
