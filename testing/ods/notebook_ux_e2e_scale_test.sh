@@ -140,10 +140,17 @@ prepare_sutest_deploy_ldap() {
 
     osd_cluster_name=$(get_osd_cluster_name "sutest")
 
+    if [[ -z "$osd_cluster_name" ]]; then
+        use_managed=""
+    elif [[ "$(get_cluster_is_rosa "sutest")" ]]; then
+        use_managed="--use_rosa=$osd_cluster_name"
+    else
+        use_managed="--use_ocm=$osd_cluster_name"
+    fi
+
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_ldap \
               "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$LDAP_NB_USERS" "$S3_LDAP_PROPS" \
-              --use_ocm="$osd_cluster_name" \
-              --wait
+              $use_managed --wait
 }
 
 prepare_driver_scale_cluster() {
