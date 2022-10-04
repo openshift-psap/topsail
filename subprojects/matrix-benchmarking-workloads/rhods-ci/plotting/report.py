@@ -221,20 +221,31 @@ class NotebookPerformanceReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
         header = []
         header += [html.H2("Notebook Performance")]
-        msg_p = []
-        header += [Plot("Notebook Performance", set_config(dict(all_in_one=True), args), msg_p)]
-        header += [html.I(msg_p[0]), html.Br()]
 
-        header += ["This plot shows the distribution of the notebook performance benchmark results, for all of the simulated users."]
-        header += html.Br()
-        header += html.Br()
+        if settings["user_count"] == "1":
+            msg_p = []
+            header += [Plot("Notebook Performance",
+                            set_config(dict(user_details=1, stacked=1), args),
+                            msg_p)]
+            header += [html.I(msg_p[0]), html.Br()]
+            header += ["This plot shows the distribution of the notebook performance benchmark results, when a single notebook is running on the node."]
 
-        msg_p = []
-        header += [Plot("Notebook Performance", args, msg_p)]
-        header += [html.I(msg_p[0]), html.Br()]
-        header += ["This plot shows the distribution of the notebook performance benchmark results, for each of the simulated users."]
+        else:
+            msg_p = []
+            header += [Plot("Notebook Performance", set_config(dict(all_in_one=True), args), msg_p)]
+            header += [html.I(msg_p[0]), html.Br()]
+            header += ["This plot shows the distribution of the notebook performance benchmark results, for all of the simulated users."]
+            header += html.Br()
+            header += html.Br()
+
+            msg_p = []
+            header += [Plot("Notebook Performance", args, msg_p)]
+            header += [html.I(msg_p[0]), html.Br()]
+            header += ["This plot shows the distribution of the notebook performance benchmark results, for each of the simulated users."]
 
         header += html.Br()
         header += html.Br()
