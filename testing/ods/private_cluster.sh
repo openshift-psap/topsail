@@ -26,7 +26,7 @@ prepare_driver_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_DRIVER
 
-    ./run_toolbox.py cluster set-scale "$OCP_INFRA_MACHINE_TYPE" "$OCP_INFRA_NODES_COUNT"
+    # nothing to do at the moment
 }
 
 connect_sutest_cluster() {
