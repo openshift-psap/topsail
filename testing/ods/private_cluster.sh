@@ -26,7 +26,7 @@ prepare_driver_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_DRIVER
 
-    ./run_toolbox.py cluster set-scale "$OCP_INFRA_MACHINE_TYPE" "$OCP_INFRA_NODES_COUNT"
+    # nothing to do at the moment
 }
 
 connect_sutest_cluster() {
@@ -60,7 +60,11 @@ prepare_sutest_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_SUTEST
 
-    # nothing to do at the moment
+    oc delete events --all --wait=false -n rhods-notebooks || true
+
+    for kind in notebooks secrets cm; do
+        oc get "$kind" -oname -n rhods-notebooks | grep "$ODS_CI_USER_PREFIX" | xargs -r oc delete || true
+    done
 }
 
 unprepare_sutest_cluster() {
