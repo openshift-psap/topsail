@@ -292,7 +292,9 @@
 - name: Test if all the test jobs failed
   shell:
     set -o pipefail;
-    (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep '^0$' || true) | wc -l
+    (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code || true)
+      | (grep '^0$' || true)
+      | wc -l
   register: success_count_cmd
   failed_when: success_count_cmd.stdout == "0"
 
