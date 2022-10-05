@@ -519,7 +519,7 @@ EOF
 
             run_test && test_failed=0 || test_failed=1
             # quick access to these files
-            cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" || true
+            cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null || true
             generate_plots || plot_failed=1
             if [[ "$test_failed" == 1 ]]; then
                 break
