@@ -1,5 +1,6 @@
 ---
 rhods_notebook_ux_e2e_scale_test_user_count:
+rhods_notebook_ux_e2e_scale_test_user_index_offset: 0
 rhods_notebook_ux_e2e_scale_test_username_prefix:
 rhods_notebook_ux_e2e_scale_test_secret_properties:
 rhods_notebook_ux_e2e_scale_test_idp_name:

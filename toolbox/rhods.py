@@ -62,6 +62,7 @@ class RHODS:
     def notebook_ux_e2e_scale_test(idp_name, username_prefix, user_count: int,
                                    secret_properties_file,
                                    notebook_url,
+                                   user_index_offset: int = 0,
                                    sut_cluster_kubeconfig="",
                                    artifacts_collected="all",
                                    ods_sleep_factor="1.0",
@@ -83,7 +84,8 @@ class RHODS:
         Args:
           idp_name: Name of the identity provider to use.
           username_prefix: Prefix of the usernames to use to run the scale test.
-          user_count: Number of users to run in parallel
+          user_count: Number of users to run in parallel.
+          user_index_offset: Offset to add to the user index to compute the user name.
           secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'deploy_ldap' command)
           notebook_url: URL from which the notebook will be downloaded.
           sut_cluster_kubeconfig: Optional. Path of the system-under-test cluster's Kubeconfig. If provided, the RHODS endpoints will be looked up in this cluster.
@@ -110,6 +112,7 @@ class RHODS:
             "rhods_notebook_ux_e2e_scale_test_idp_name": idp_name,
             "rhods_notebook_ux_e2e_scale_test_username_prefix": username_prefix,
             "rhods_notebook_ux_e2e_scale_test_user_count": user_count,
+            "rhods_notebook_ux_e2e_scale_test_user_index_offset": user_index_offset,
             "rhods_notebook_ux_e2e_scale_test_secret_properties": secret_properties_file,
             "rhods_notebook_ux_e2e_scale_test_notebook_url": notebook_url,
             "rhods_notebook_ux_e2e_scale_test_sut_cluster_kubeconfig": sut_cluster_kubeconfig,

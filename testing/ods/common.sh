@@ -88,6 +88,7 @@ LDAP_NB_USERS=1000
 
 ODS_CI_NB_USERS=5 # number of users to simulate
 ODS_CI_USER_PREFIX=psapuser
+ODS_CI_USER_INDEX_OFFSET=0 # offset to add to the Pod user index
 
 ODS_SLEEP_FACTOR=1.0 # how long to wait between user starts.
 ODS_CI_ARTIFACTS_COLLECTED=no-image-except-failed-and-zero

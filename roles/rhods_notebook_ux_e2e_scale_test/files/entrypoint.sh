@@ -19,7 +19,9 @@ trap "touch $ARTIFACT_DIR/test.exit_code" EXIT
 
 echo "pod_starting: $(date)" > "${ARTIFACT_DIR}/progress_ts.yaml"
 
-sed "s/#{JOB_COMPLETION_INDEX}/${JOB_COMPLETION_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
+USER_INDEX=$(($USER_INDEX_OFFSET + $JOB_COMPLETION_INDEX))
+
+sed "s/#{USER_INDEX}/${USER_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
 
 cp "/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/$RUN_ROBOT_TEST_CASE" .
 

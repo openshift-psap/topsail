@@ -385,6 +385,7 @@ run_test() {
                      "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
                      "$S3_LDAP_PROPS" \
                      "http://$nginx_hostname/$ODS_NOTEBOOK_NAME" \
+                     --user_index_offset="$ODS_CI_USER_INDEX_OFFSET"  \
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected="$ODS_CI_ARTIFACTS_COLLECTED" \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR" \
@@ -518,7 +519,7 @@ EOF
 
             run_test && test_failed=0 || test_failed=1
             # quick access to these files
-            cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" || true
+            cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null || true
             generate_plots || plot_failed=1
             if [[ "$test_failed" == 1 ]]; then
                 break
