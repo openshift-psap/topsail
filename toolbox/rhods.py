@@ -112,7 +112,7 @@ class RHODS:
             "rhods_notebook_ux_e2e_scale_test_idp_name": idp_name,
             "rhods_notebook_ux_e2e_scale_test_username_prefix": username_prefix,
             "rhods_notebook_ux_e2e_scale_test_user_count": user_count,
-            "rhods_notebook_ux_e2e_scale_test_user_start_offset": user_start_offset,
+            "rhods_notebook_ux_e2e_scale_test_user_index_offset": user_index_offset,
             "rhods_notebook_ux_e2e_scale_test_secret_properties": secret_properties_file,
             "rhods_notebook_ux_e2e_scale_test_notebook_url": notebook_url,
             "rhods_notebook_ux_e2e_scale_test_sut_cluster_kubeconfig": sut_cluster_kubeconfig,

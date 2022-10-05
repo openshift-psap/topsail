@@ -385,6 +385,7 @@ run_test() {
                      "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
                      "$S3_LDAP_PROPS" \
                      "http://$nginx_hostname/$ODS_NOTEBOOK_NAME" \
+                     --user_index_offset="$ODS_CI_USER_INDEX_OFFSET"  \
                      --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
                      --artifacts-collected="$ODS_CI_ARTIFACTS_COLLECTED" \
                      --ods_sleep_factor="$ODS_SLEEP_FACTOR" \
