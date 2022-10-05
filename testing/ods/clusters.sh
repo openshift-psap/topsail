@@ -73,6 +73,10 @@ create_clusters() {
 
     process_ctrl::wait_bg_processes
 
+    # cluster that will be available right away when going to the debug tab of the test pod
+    DEFAULT_CLUSTER=driver
+    ln -s "${SHARED_DIR}/${DEFAULT_CLUSTER}_kubeconfig" "${SHARED_DIR}/kubeconfig"
+
     if [[ "$create_flag" == "keep" ]]; then
         KUBECONFIG_DRIVER="${SHARED_DIR}/driver_kubeconfig" # cluster driving the test
         KUBECONFIG_SUTEST="${SHARED_DIR}/sutest_kubeconfig" # system under test
