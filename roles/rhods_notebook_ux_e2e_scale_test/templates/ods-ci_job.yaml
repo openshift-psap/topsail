@@ -53,6 +53,8 @@ spec:
           value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_image_name }}"
         - name: USER_COUNT
           value: "{{ rhods_notebook_ux_e2e_scale_test_user_count }}"
+        - name: USER_INDEX_OFFSET
+          value: "{{ rhods_notebook_ux_e2e_scale_test_user_index_offset }}"
         - name: REDIS_SERVER
           value: "{{ rhods_notebook_ux_e2e_scale_test_state_signal_redis_server }}"
         - name: DASHBOARD_PRODUCT_NAME

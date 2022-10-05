@@ -90,7 +90,7 @@
     ODH_DASHBOARD_URL="https://{{ rhods_dashboard_hostname_cmd.stdout }}";
 
     TEST_USER_AUTH_TYPE="{{ rhods_notebook_ux_e2e_scale_test_idp_name }}";
-    TEST_USER_USERNAME="{{ rhods_notebook_ux_e2e_scale_test_username_prefix }}#{JOB_COMPLETION_INDEX}";
+    TEST_USER_USERNAME="{{ rhods_notebook_ux_e2e_scale_test_username_prefix }}#{USER_INDEX}";
 
     export TEST_USER_PASSWORD="PASSWORD_WILL_BE_HERE";
 
