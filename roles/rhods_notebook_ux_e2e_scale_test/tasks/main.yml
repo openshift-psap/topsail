@@ -244,8 +244,8 @@
   command:
     oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ tester_namespace }}
   register: wait_rhods_test_job
-  retries: 60
-  delay: 40
+  retries: 90
+  delay: 60
   until: not wait_rhods_test_job.stdout
   failed_when: false
 
