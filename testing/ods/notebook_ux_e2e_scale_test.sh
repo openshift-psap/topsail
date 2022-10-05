@@ -216,7 +216,7 @@ prepare_sutest_scale_cluster() {
         if [[ "$ENABLE_AUTOSCALER" ]]; then
             oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
             cat testing/ods/autoscaling/machineautoscaler.yaml \
-                | sed "s/MACHINESET_NAME/$MACHINESET_NAME/" \
+                | sed "s/MACHINESET_NAME/$SUTEST_MACHINESET_NAME/" \
                 | oc apply -f-
         fi
     fi
