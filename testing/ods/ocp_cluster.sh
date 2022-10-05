@@ -19,6 +19,11 @@ prepare_deploy_cluster_subproject() {
     cp utils/config.mk{.sample,}
     cp utils/install-config.yaml{.sample,}
 
+    mkdir -p "/opt/ci-artifacts/src/subprojects/deploy-cluster/utils/installers/$OCP_VERSION"
+    wget --quiet "https://people.redhat.com/~kpouget/22-10-05/openshift-install-linux-$OCP_VERSION.tar.gz"
+    tar xzf "openshift-install-linux-$OCP_VERSION.tar.gz" openshift-install
+    mv openshift-install "/opt/ci-artifacts/src/subprojects/deploy-cluster/utils/installers/$OCP_VERSION/openshift-install"
+    rm "openshift-install-linux-$OCP_VERSION.tar.gz"
     make has_installer OCP_VERSION="${OCP_VERSION}"
 
     if [[ ! -f ${AWS_SHARED_CREDENTIALS_FILE} ]]; then
