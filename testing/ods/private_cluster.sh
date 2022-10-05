@@ -78,7 +78,6 @@ unprepare_driver_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_DRIVER
 
-
     # nothing to do at the moment
 }
 

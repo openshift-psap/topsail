@@ -19,12 +19,16 @@ S3_LDAP_PROPS="${PSAP_ODS_SECRET_PATH}/s3_ldap.passwords"
 # Otherwise, install RHODS from OCM addon.
 OSD_USE_ODS_CATALOG=1
 
-# If the value is set, consider SUTEST to be running on OSD and
-# use this cluster name to configure LDAP and RHODS
-# Notes
+# If the value is set, consider SUTEST to be running on OSD or ROSA,
+# and use this cluster name to configure LDAP and RHODS
+# Note:
 # * KEEP EMPTY IF SUTEST IS NOT ON OSD
 # * KEEP EMPTY ON CI, OSD OR OCP ALIKE
 OSD_CLUSTER_NAME=
+
+# If the value is set, consider SUTEST to be running on ROSA
+# * KEEP EMPTY ON CI
+OSD_CLUSTER_IS_ROSA=
 
 ODS_CATALOG_IMAGE="quay.io/modh/qe-catalog-source"
 ODS_CATALOG_IMAGE_TAG="latest"
@@ -66,12 +70,12 @@ CUSTOMIZE_RHODS_PVC_SIZE=5Gi
 # if value is 1, define a custom notebook size named $ODS_NOTEBOOK_SIZE
 # see sutest_customize_rhods_after_wait for the limits/requests values
 CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE=1
-
+ODS_NOTEBOOK_SIZE=Tiny # needs to match an existing notebook size in OdhDashboardConfig.spec.notebookSizes
 ODS_NOTEBOOK_CPU_SIZE=1
 ODS_NOTEBOOK_MEMORY_SIZE_GI=4
 
 # must be consistent with roles/rhods_notebook_ux_e2e_scale_test/templates/ods-ci_job.yaml
-ODS_NOTEBOOK_SIZE=Tiny # needs to match an existing notebook size in OdhDashboardConfig.spec.notebookSizes
+
 ODS_TESTPOD_CPU_SIZE=0.2
 ODS_TESTPOD_MEMORY_SIZE_GI=0.75
 
@@ -213,6 +217,17 @@ get_osd_cluster_name() {
     fi
 
     cat "${SHARED_DIR:-}/osd_${cluster_role}_cluster_name" 2>/dev/null || true
+}
+
+get_cluster_is_rosa() {
+    cluster_role=$1
+
+    if [[ "${OSD_CLUSTER_IS_ROSA}" ]]; then
+        echo "$OSD_CLUSTER_IS_ROSA"
+        return
+    fi
+
+    cat "${SHARED_DIR:-}/osd_${cluster_role}_cluster_is_rosa" 2>/dev/null || true
 }
 
 get_notebook_size() {
