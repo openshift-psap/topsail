@@ -217,32 +217,68 @@ def _parse_odh_dashboard_config(base_dirname, filename, notebook_size_name):
     return odh_dashboard_config
 
 
-def _parse_pod_times(metrics, hostnames, is_notebook=False):
+def _parse_pod_times(filename, hostnames, is_notebook=False):
     pod_times = defaultdict(types.SimpleNamespace)
 
-    for metric in metrics:
-        if "node" not in metric["metric"]: continue
+    in_metadata = False
+    in_spec = False
+    podname = None
+    fmt = f'"{K8S_TIME_FMT}"'
 
-        podname = metric["metric"]["pod"]
-        if podname.endswith("-build"): continue
-        if podname.endswith("-debug"): continue
+    with open(filename) as f:
+        for line in f.readlines():
+            if line == "  metadata:\n":
+                in_metadata = True
+                in_status = False
+                in_spec = False
+                podname = None
+                continue
 
-        if is_notebook:
-            if TEST_USERNAME_PREFIX not in podname: continue
+            elif line == "  spec:\n":
+                in_metadata = False
+                in_spec = True
+                in_status = False
+                continue
 
-            user_idx = int(re.findall(JUPYTER_USER_IDX_REGEX, podname)[0])
-            podname = f"{JUPYTER_USER_RENAME_PREFIX}{user_idx}"
+            elif line == "  status:\n":
+                in_metadata = False
+                in_spec = False
+                in_status = True
+                continue
 
-        pod_times[podname] = types.SimpleNamespace()
+            if in_metadata and line.startswith("    name:"):
+                _podname = line.strip().split(": ")[1]
+                if _podname.endswith("-build"): continue
+                if _podname.endswith("-debug"): continue
 
-        pod_times[podname].start_time = datetime.datetime.fromtimestamp(metric["values"][0][0])
+                if is_notebook:
+                    if TEST_USERNAME_PREFIX not in _podname:
+                        continue
 
-        pod_times[podname].container_finished = datetime.datetime.fromtimestamp(metric["values"][-1][0])
+                    user_idx = int(re.findall(JUPYTER_USER_IDX_REGEX, _podname)[0])
+                    _podname = f"{JUPYTER_USER_RENAME_PREFIX}{user_idx}"
+                podname = _podname
 
-        if hostnames is not None:
-            hostnames[podname] = metric["metric"]["node"]
+            if podname is None: continue
+
+            if in_spec and line.startswith("    nodeName:"):
+                hostnames[podname] = line.strip().partition(": ")[-1]
+
+            elif in_status and "startTime:" in line:
+                pod_times[podname].start_time = \
+                    datetime.datetime.strptime(
+                        line.strip().partition(": ")[-1],
+                        fmt)
+
+            elif in_status and "finishedAt:" in line:
+                # this will keep the *last* finish date
+                pod_times[podname].container_finished = \
+                    datetime.datetime.strptime(
+                        line.strip().partition(": ")[-1],
+                        fmt)
 
     return pod_times
+
 
 def _parse_ods_ci_exit_code(filename):
     if not filename.exists():
@@ -378,18 +414,13 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.notebook_hostnames = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
-    print("_parse_pod_times (tester)")
     results.pod_times = {}
 
-
+    print("_parse_pod_times (tester)")
+    results.pod_times |= _parse_pod_times(dirname / "artifacts-driver" / "tester_pods.yaml", testpod_hostnames)
     print("_parse_pod_times (notebooks)")
+    results.pod_times |= _parse_pod_times(dirname / "artifacts-sutest" / "notebook_pods.yaml", notebook_hostnames, is_notebook=True)
 
-    results.pod_times |= _parse_pod_times(
-        results.metrics["sutest"]["sutest__container_cpu_requests__namespace=rhods-notebooks_container=jupyter-nb-psapuser.*"],
-        notebook_hostnames, is_notebook=True)
-    results.pod_times |= _parse_pod_times(
-        results.metrics["driver"]["driver__container_cpu_requests__namespace=loadtest_container=main"],
-        testpod_hostnames)
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
 
     results.test_pods = [k for k in results.pod_times.keys() if k.startswith("ods-ci") and not "image" in k]
