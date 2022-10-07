@@ -48,7 +48,7 @@ ODS_CI_ARTIFACTS_EXPORTER_DOCKERFILE="testing/ods/images/Containerfile.s3_artifa
 CLEANUP_DRIVER_NAMESPACES_ON_EXIT=0
 
 # if the value is different from 1, do not customize RHODS.
-# see sutest_customize_rhods in `notebook_ux_e2e_scale_test.sh`.
+# see sutest_customize_rhods in `notebook_scale_test.sh`.
 CUSTOMIZE_RHODS=1
 
 # only taken into account if CUSTOMIZE_RHODS=1
@@ -74,7 +74,7 @@ ODS_NOTEBOOK_SIZE=Tiny # needs to match an existing notebook size in OdhDashboar
 ODS_NOTEBOOK_CPU_SIZE=1
 ODS_NOTEBOOK_MEMORY_SIZE_GI=4
 
-# must be consistent with roles/rhods_notebook_ux_e2e_scale_test/templates/ods-ci_job.yaml
+# must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
 
 ODS_TESTPOD_CPU_SIZE=0.2
 ODS_TESTPOD_MEMORY_SIZE_GI=0.75

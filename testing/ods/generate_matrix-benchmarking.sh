@@ -25,8 +25,6 @@ generate_matbench::prepare_matrix_benchmarking() {
 }
 
 _get_data_from_pr() {
-    cluster_type=$1
-    shift;
     results_dir=$1
     shift
 
@@ -154,13 +152,11 @@ elif [[ "$action" == "generate_plots" ]]; then
 
     generate_matbench::generate_plots
 
-elif [[ "$JOB_NAME_SAFE" == "nb-ux-on-"* || "$JOB_NAME_SAFE" == get-cluster ]]; then
+elif [[ "$JOB_NAME_SAFE" == "nb-on-"* || "$JOB_NAME_SAFE" == get-cluster ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset
     set -x
-
-    cluster_type=$(echo "$JOB_NAME_SAFE" | cut -d- -f3 )
 
     _prepare_data_from_artifacts_dir "$ARTIFACT_DIR/.."
 
@@ -169,22 +165,16 @@ elif [[ "$JOB_NAME_SAFE" == "nb-ux-on-"* || "$JOB_NAME_SAFE" == get-cluster ]]; 
 
     generate_matbench::generate_plots
 
-elif [[ "$JOB_NAME_SAFE" == "plot-nb-ux-on-"* ]]; then
+elif [[ "$JOB_NAME_SAFE" == "plot-nb-on-"* ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset
     set -x
 
-    cluster_type=${1:-}
-    if [[ -z "$cluster_type" ]]; then
-        echo "ERROR: a cluster_type argument must be provided."
-        exit 1
-    fi
-
     results_dir="$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
     mkdir -p "$results_dir"
 
-    _get_data_from_pr "$cluster_type" "$results_dir"
+    _get_data_from_pr "$results_dir"
 
     generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking

@@ -45,24 +45,23 @@ fi
 
 prepare_driver_cluster() {
     process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" prepare_driver_cluster
-    "$THIS_DIR/notebook_ux_e2e_scale_test.sh" prepare_driver_cluster
+    "$THIS_DIR/notebook_scale_test.sh" prepare_driver_cluster
 }
 
 action=${1:-}
 
 "$THIS_DIR/private_cluster.sh" connect_sutest_cluster
 
-if [[ "$action" != "run" ]]; then
+if [[ "$action" == "prepare" ]]; then
     process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" prepare_sutest_cluster
     process_ctrl::run_in_bg prepare_driver_cluster
 
     process_ctrl::wait_bg_processes
+else
+    "$THIS_DIR/notebook_scale_test.sh" run_test_and_plot
 
-fi
-
-"$THIS_DIR/notebook_ux_e2e_scale_test.sh" run_test_and_plot
-
-if [[ "$action" != "run" ]]; then
-    process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" unprepare_sutest_cluster
-    process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" unprepare_driver_cluster
+    if [[ "$action" != "run" ]]; then
+        process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" unprepare_sutest_cluster
+        process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" unprepare_driver_cluster
+    fi
 fi

@@ -53,16 +53,16 @@ def _parse_env(filename):
             # not running in the CI
 
             from_env.link_flag = "running-locally"
-        elif job_name.startswith("nb-ux-on-") or job_name == "get-cluster":
+        elif job_name.startswith("nb-on-") or job_name == "nb-get-cluster":
             # running right after the test
 
             from_env.link_flag = "running-with-the-test"
-        elif job_name.startswith("plot-nb-ux-on-"):
+        elif job_name.startswith("nb-plot"):
             # running independently of the test
 
             from_env.link_flag = "running-without-the-test"
         else:
-            raise ValueError(f"Unexpected value for 'JOB_NAME_SAFE' env var: '{job_name}'")
+            from_env.link_flag = "unknown"
 
     from_env.env = {}
     from_env.pr = None
@@ -381,7 +381,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.user_count = int(import_settings["user_count"])
     results.location = dirname
     results.source_url = None
-    if os.getenv("JOB_NAME_SAFE", "").startswith("plot-nb-ux-on-"):
+    if os.getenv("JOB_NAME_SAFE", "") == "nb-plot"):
         with open(pathlib.Path(os.getenv("ARTIFACT_DIR")) / "source_url") as f:
             results.source_url = f.read().strip()
 

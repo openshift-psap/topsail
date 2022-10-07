@@ -469,7 +469,13 @@ oc whoami --show-console
 action=${1:-run_ci_e2e_test}
 
 case ${action} in
-    "run_ci_e2e_test")
+    "prepare_ci")
+        prepare_ci
+        prepare
+
+        process_ctrl::wait_bg_processes
+        ;;
+    "run_ci_test")
         if [ -z "${SHARED_DIR:-}" ]; then
             echo "FATAL: multi-stage test \$SHARED_DIR not set ..."
             exit 1
@@ -479,13 +485,6 @@ case ${action} in
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
         finalizers+=("driver_cleanup")
-
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare"
-        mkdir -p "$ARTIFACT_DIR"
-        prepare_ci
-        prepare
-
-        process_ctrl::wait_bg_processes
 
         test_failed=0
         plot_failed=0
@@ -570,6 +569,10 @@ EOF
     "generate_plots")
         generate_plots
         exit  0
+        ;;
+    "prepare_matbench")
+        ./testing/ods/generate_matrix-benchmarking.sh prepare_matbench
+        exit 0
         ;;
     "source")
         # file is being sourced by another script

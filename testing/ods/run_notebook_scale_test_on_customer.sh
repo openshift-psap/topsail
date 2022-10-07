@@ -36,20 +36,20 @@ export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/preparation"
 
 # 1.0 Deploy RHODS in the sutest cluster
 
-testing/ods/notebook_ux_e2e_scale_test.sh deploy_rhods
-testing/ods/notebook_ux_e2e_scale_test.sh wait_rhods
+testing/ods/notebook_scale_test.sh deploy_rhods
+testing/ods/notebook_scale_test.sh wait_rhods
 
 # 1.1 Deploy LDAP in the sutest cluster
 
-testing/ods/notebook_ux_e2e_scale_test.sh deploy_ldap
+testing/ods/notebook_scale_test.sh deploy_ldap
 
 # 1.2 Prepare the driver cluster
 
-testing/ods/notebook_ux_e2e_scale_test.sh prepare_driver_cluster
+testing/ods/notebook_scale_test.sh prepare_driver_cluster
 
 # 1.3 Prepare the laptop for generating the plots
 
-testing/ods/generate_matrix-benchmarking.sh prepare_matbench
+testing/ods/notebook_scale_test.sh prepare_matbench
 
 #
 # 2. Run the tests in a dedicated ARTIFACT_DIR directory
@@ -61,7 +61,7 @@ export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/test_1"
 export ODS_CI_NB_USERS=4
 export ODS_SLEEP_FACTOR=2
 
-testing/ods/notebook_ux_e2e_scale_test.sh run_test_and_plot
+testing/ods/notebook_scale_test.sh run_test_and_plot
 
 # 2.2 Run the second test
 
@@ -69,7 +69,8 @@ export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/test_2"
 export ODS_CI_NB_USERS=3
 export ODS_SLEEP_FACTOR=1
 
-testing/ods/notebook_ux_e2e_scale_test.sh run_test_and_plot
+testing/ods/notebook_scale_test.sh run_test
+testing/ods/notebook_scale_test.sh generate_plots
 
 #
 # 3. Cleanup the RHODS cluster
@@ -79,4 +80,4 @@ export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/preparation"
 
 # 3.1 Undeploy LDAP in the sutest cluster
 
-testing/ods/notebook_ux_e2e_scale_test.sh undeploy_ldap
+testing/ods/notebook_scale_test.sh undeploy_ldap
