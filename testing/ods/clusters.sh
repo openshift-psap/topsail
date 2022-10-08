@@ -7,9 +7,12 @@ set -o errtrace
 set -x
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source "$THIS_DIR/common.sh"
+
 source "$THIS_DIR/process_ctrl.sh"
-source "$THIS_DIR/../prow/_logging.sh"
+source "$THIS_DIR/../_logging.sh"
+source "$THIS_DIR/config_common.sh"
+source "$THIS_DIR/config_clusters.sh"
+source "$THIS_DIR/cluster_helpers.sh"
 
 # ---
 
@@ -74,8 +77,7 @@ create_clusters() {
     process_ctrl::wait_bg_processes
 
     # cluster that will be available right away when going to the debug tab of the test pod
-    DEFAULT_CLUSTER=driver
-    ln -s "${SHARED_DIR}/${DEFAULT_CLUSTER}_kubeconfig" "${SHARED_DIR}/kubeconfig"
+    ln -s "${SHARED_DIR}/${CI_DEFAULT_CLUSTER}_kubeconfig" "${SHARED_DIR}/kubeconfig"
 
     if [[ "$create_flag" == "keep" ]]; then
         KUBECONFIG_DRIVER="${SHARED_DIR}/driver_kubeconfig" # cluster driving the test

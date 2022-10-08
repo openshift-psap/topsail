@@ -7,7 +7,10 @@ set -o errtrace
 set -x
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source "$THIS_DIR/common.sh"
+
+source "$THIS_DIR/config_common.sh"
+source "$THIS_DIR/config_clusters.sh"
+source "$THIS_DIR/cluster_helpers.sh"
 
 # ---
 
@@ -34,14 +37,14 @@ prepare_deploy_cluster_subproject() {
 
 create_cluster() {
     cluster_role=$1
-    export ARTIFACT_TOOLBOX_NAME_PREFIX="ocp_${cluster_role}_"
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_ocp_"
     export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
     # ---
 
     cd subprojects/deploy-cluster/
 
     cluster_name="${CLUSTER_NAME_PREFIX}"
-    if [[ "${JOB_NAME_SAFE:-}" == "$JOB_NAME_SAFE_GET_CLUSTER" ]]; then
+    if [[ "${JOB_NAME_SAFE:-}" == *"$JOB_NAME_SAFE_GET_CLUSTER_SUFFIX" ]]; then
         author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
         cluster_name="${author}-${cluster_role}-$(date +%Y%m%d-%Hh%M)"
 
@@ -55,7 +58,7 @@ create_cluster() {
     export AWS_PROFILE=$AWS_DEFAULT_PROFILE
     echo "Using AWS_[DEFAULT_]PROFILE=$AWS_DEFAULT_PROFILE"
 
-    install_dir="/tmp/ocp_${cluster_role}_installer"
+    install_dir="/tmp/${cluster_role}_ocp_installer"
     rm -rf "$install_dir"
     mkdir -p "$install_dir"
 
@@ -87,7 +90,7 @@ create_cluster() {
             yq -yi 'del(.pullSecret)' "$install_config"
             yq -yi 'del(.sshKey)' "$install_config"
 
-            cp "$install_config" "${ARTIFACT_DIR}/ocp_${cluster_role}_install-config.yaml"
+            cp "$install_config" "${ARTIFACT_DIR}/${cluster_role}_ocp_install-config.yaml"
         fi
 
         [[ "$status" != "success" ]] && exit 1
@@ -102,9 +105,9 @@ create_cluster() {
          OCP_VERSION="${OCP_VERSION}" \
          CLUSTER_PATH="${install_dir}" \
          CLUSTER_NAME="${cluster_name}" \
-         METADATA_JSON_DEST="${SHARED_DIR}/ocp_${cluster_role}_metadata.json" \
+         METADATA_JSON_DEST="${SHARED_DIR}/${cluster_role}_ocp_metadata.json" \
          DIFF_TOOL= \
-        | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/ocp_${cluster_role}_install.log"
+        | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/${cluster_role}_ocp_install.log"
 
     cp "${install_dir}/auth/kubeadmin-password" \
        "${SHARED_DIR}/${cluster_role}_kubeadmin-password"
@@ -123,12 +126,12 @@ create_cluster() {
 destroy_cluster() {
     cluster_role=$1
 
-    export ARTIFACT_TOOLBOX_NAME_PREFIX="ocp_${cluster_role}_"
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_ocp_"
 
-    destroy_dir="/tmp/ocp_${cluster_role}_destroy"
+    destroy_dir="/tmp/${cluster_role}_ocp_destroy"
     mkdir "$destroy_dir"
 
-    cp "${SHARED_DIR}/ocp_${cluster_role}_metadata.json" "${destroy_dir}/metadata.json"
+    cp "${SHARED_DIR}/${cluster_role}_ocp_metadata.json" "${destroy_dir}/metadata.json"
 
     cd subprojects/deploy-cluster/
 
@@ -138,7 +141,7 @@ destroy_cluster() {
     make uninstall \
          OCP_VERSION="${OCP_VERSION}" \
          CLUSTER_PATH="${destroy_dir}" \
-         >"${ARTIFACT_DIR}/ocp_${cluster_role}_destroy.log" \
+         >"${ARTIFACT_DIR}/${cluster_role}_ocp_destroy.log" \
          2>&1
 }
 

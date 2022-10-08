@@ -381,7 +381,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.user_count = int(import_settings["user_count"])
     results.location = dirname
     results.source_url = None
-    if os.getenv("JOB_NAME_SAFE", "") == "nb-plot"):
+    if os.getenv("JOB_NAME_SAFE", "") == "nb-plot":
         with open(pathlib.Path(os.getenv("ARTIFACT_DIR")) / "source_url") as f:
             results.source_url = f.read().strip()
 

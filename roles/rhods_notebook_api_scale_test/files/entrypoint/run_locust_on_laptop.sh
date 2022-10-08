@@ -3,7 +3,7 @@
 source ~/openshift/ci-artifacts/testing/ods/common.sh
 
 export ODH_DASHBOARD_URL=https://$(oc get route -n redhat-ods-applications rhods-dashboard -ojsonpath={.spec.host})
-export TEST_USERS_USERNAME_PREFIX=$ODS_CI_USER_PREFIX
+export TEST_USERS_USERNAME_PREFIX=$LDAP_USER_PREFIX
 export TEST_USERS_IDP_NAME=$LDAP_IDP_NAME
 export CREDS_FILE=$S3_LDAP_PROPS
 export NOTEBOOK_IMAGE_NAME=$RHODS_NOTEBOOK_IMAGE_NAME

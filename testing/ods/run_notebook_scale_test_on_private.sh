@@ -7,9 +7,12 @@ set -o errtrace
 set -x
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source "$THIS_DIR/common.sh"
+
 source "$THIS_DIR/process_ctrl.sh"
-source "$THIS_DIR/../prow/_logging.sh"
+source "$THIS_DIR/../_logging.sh"
+source "$THIS_DIR/config_common.sh"
+source "$THIS_DIR/config_clusters.sh"
+source "$THIS_DIR/cluster_helpers.sh"
 
 export KUBECONFIG_DRIVER=$KUBECONFIG
 export KUBECONFIG_SUTEST=/tmp/sutest_kubeconfig

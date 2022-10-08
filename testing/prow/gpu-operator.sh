@@ -7,7 +7,7 @@ set -o nounset
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd ${THIS_DIR}/../..
 
-source ${THIS_DIR}/_logging.sh
+source "${THIS_DIR}/../_logging.sh"
 
 prepare_cluster_for_gpu_operator() {
     ./run_toolbox.py cluster capture_environment
