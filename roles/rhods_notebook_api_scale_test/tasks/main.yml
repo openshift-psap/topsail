@@ -65,7 +65,6 @@
     oc create cm rhods-notebook-api-scale-test-entrypoint
        "--from-file={{ rhods_notebook_api_scale_test_entrypoint_directory }}"
        "--from-file=artifacts-exporter.sh={{ rhods_notebook_api_scale_test_s3_artifacts_exporter_sidecar }}"
-       "--from-file=timescale_schema.sql={{ rhods_notebook_api_scale_test_timescale_schema }}"
        -n {{ rhods_notebook_api_scale_test_namespace }}
 
 - name: Delete the credentials secret file, if it exists
