@@ -1,22 +1,28 @@
 #! /bin/bash
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+THIS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
 
-MATBENCH_WORKLOAD_NAME=rhods-ci
-MATBENCH_EXPE_NAME=rhods-ci
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
-MATBENCH_RESULTS_DIR="/tmp/matrix_benchmarking_results"
-
-WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD_NAME"
-WORKLOAD_RUN_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking/workloads/$MATBENCH_WORKLOAD_NAME"
 
 MATBENCH_DATA_URL=""
+
+source "$THIS_DIR/config_load_overrides.sh"
+
+export MATBENCH_WORKLOAD=rhods-notebooks-ux
 
 if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; then
     source "${ARTIFACT_DIR}/variable_overrides"
 fi
 
+if [[ -z "${MATBENCH_WORKLOAD:-}" ]]; then
+    echo "ERROR: $0 expects 'MATBENCH_WORKLOAD' to be set ..."
+    exit 1
+fi
+
 generate_matbench::prepare_matrix_benchmarking() {
+    WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
+    WORKLOAD_RUN_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking/workloads/$MATBENCH_WORKLOAD"
+
     rm -f "$WORKLOAD_RUN_DIR"
     ln -s "$WORKLOAD_STORAGE_DIR" "$WORKLOAD_RUN_DIR"
 
@@ -25,28 +31,22 @@ generate_matbench::prepare_matrix_benchmarking() {
 }
 
 _get_data_from_pr() {
-    results_dir=$1
-    shift
-
-    VARIABLE_OVERRIDES_FILE="${ARTIFACT_DIR}/variable_overrides"
-
-    if [[ ! -f "$VARIABLE_OVERRIDES_FILE" ]]; then
-        echo "ERROR: _get_data_from_pr expects $VARIABLE_OVERRIDES_FILE to exit ..."
+    MATBENCH_DATA_URL=${PR_POSITIONAL_ARGS:-$MATBENCH_DATA_URL}
+    if [[ -z "${MATBENCH_DATA_URL}" ]]; then
+        echo "ERROR: _get_data_from_pr expects PR_POSITIONAL_ARGS or MATBENCH_DATA_URL to be set ..."
         exit 1
     fi
 
-    source "$VARIABLE_OVERRIDES_FILE"
-
-    if [[ -z "$PR_POSITIONAL_ARGS" ]]; then
-        echo "ERROR: _get_data_from_pr expects $VARIABLE_OVERRIDES_FILE to contain PR_POSITIONAL_ARGS ..."
-        exit 1
+    if [[ -z "$MATBENCH_RESULTS_DIRNAME" ]]; then
+        echo "ERROR: _get_data_from_pr expects MATBENCH_RESULTS_DIRNAME to be set ..."
     fi
 
-    matbench_url="$PR_POSITIONAL_ARGS"
+    echo "$MATBENCH_DATA_URL" > "${ARTIFACT_DIR}/source_url"
 
-    echo "$matbench_url" > "${ARTIFACT_DIR}/source_url"
+    results_dir="$MATBENCH_RESULTS_DIRNAME/expe"
+    mkdir -p "$results_dir"
 
-    _download_data_from_url "$results_dir" "$matbench_url"
+    _download_data_from_url "$results_dir" "$MATBENCH_DATA_URL"
 }
 
 _download_data_from_url() {
@@ -62,20 +62,23 @@ _download_data_from_url() {
     mkdir -p "$results_dir"
 
     dl_dir=$(echo "$url" | cut -d/ -f4-)
-    (cd "$results_dir"; wget --recursive --no-host-directories --no-parent --execute robots=off --quiet \
-                             --cut-dirs=$(echo "${dl_dir}" | tr -cd / | wc -c) \
-                             "$url")
-}
 
-_prepare_data_from_artifacts_dir() {
-    artifact_dir=$1
-
-    rm -f "$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
-    mkdir -p "$MATBENCH_RESULTS_DIR"
-    ln -s "$artifact_dir" "$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
+    wget "$url" \
+         --directory-prefix "$results_dir" \
+         --cut-dirs=$(echo "${dl_dir}" | tr -cd / | wc -c) \
+         --recursive \
+         --no-host-directories \
+         --no-parent \
+         --execute robots=off \
+         --quiet
 }
 
 generate_matbench::get_prometheus() {
+    export PATH=$PATH:/tmp/bin
+    if which prometheus 2>/dev/null; then
+       echo "Prometheus already available."
+       return
+    fi
     PROMETHEUS_VERSION=2.36.0
     cd /tmp
     wget --quiet "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz" -O/tmp/prometheus.tar.gz
@@ -83,22 +86,12 @@ generate_matbench::get_prometheus() {
     mkdir -p /tmp/bin
     ln -sf "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/bin
     ln -sf "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
-    export PATH=$PATH:/tmp/bin
 }
 
 generate_matbench::generate_plots() {
-    ln -sf /tmp/prometheus.yml "$WORKLOAD_STORAGE_DIR"
-
-    cat > "$WORKLOAD_STORAGE_DIR/.env" <<EOF
-MATBENCH_RESULTS_DIRNAME=$MATBENCH_RESULTS_DIR
-MATBENCH_FILTERS=expe=$MATBENCH_EXPE_NAME
-EOF
-
-    cat "$WORKLOAD_STORAGE_DIR/.env"
-
-    _matbench() {
-        (cd "$WORKLOAD_RUN_DIR"; matbench "$@")
-    }
+    if [[ -z "$MATBENCH_RESULTS_DIRNAME" ]]; then
+        echo "ERROR: expected MATBENCH_RESULTS_DIRNAME to be set ..."
+    fi
 
     stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/ci-artifacts.plots")"
 
@@ -106,21 +99,22 @@ EOF
 
     generate_url="stats=$(echo -n "$stats_content" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
-    _matbench parse
+    cd "$ARTIFACT_DIR"
+    ln -sf /tmp/prometheus.yml "."
+
+    matbench parse
 
     retcode=0
     VISU_LOG_FILE="$ARTIFACT_DIR/_matbench_visualize.log"
-    if ! _matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
+    if ! matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
         echo "Visualization generation failed :("
         retcode=1
     fi
+    rm -f ./prometheus.yml
 
-    mkdir -p "$ARTIFACT_DIR"/figures_{png,html}
-
-    mv "$WORKLOAD_STORAGE_DIR"/fig_*.png "$ARTIFACT_DIR/figures_png" || true
-    mv "$WORKLOAD_STORAGE_DIR"/fig_*.html "$ARTIFACT_DIR/figures_html" || true
-    mv "$WORKLOAD_STORAGE_DIR"/report_* "$ARTIFACT_DIR" || true
-    mv "$WORKLOAD_STORAGE_DIR"/reports_* "$ARTIFACT_DIR" || true
+    mkdir -p figures_{png,html}
+    mv fig_*.png "figures_png" 2>/dev/null || true
+    mv fig_*.html "figures_html" 2>/dev/null || true
 
     if grep "^ERROR" "$VISU_LOG_FILE"; then
         echo "An error happened during the report generation, aborting."
@@ -148,36 +142,42 @@ elif [[ "$action" == "generate_plots" ]]; then
     set -o nounset
     set -x
 
-    _prepare_data_from_artifacts_dir "$ARTIFACT_DIR/.."
-
     generate_matbench::generate_plots
 
-elif [[ "$JOB_NAME_SAFE" == "nb-on-"* || "$JOB_NAME_SAFE" == get-cluster ]]; then
+elif [[ "$action" == "from_dir" ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset
     set -x
 
-    _prepare_data_from_artifacts_dir "$ARTIFACT_DIR/.."
+    dir=${2:-}
+
+    if [[ -z "$dir" ]]; then
+        echo "ERROR: no directory provided in 'from_dir' mode ..."
+        exit 1
+    fi
+    export MATBENCH_RESULTS_DIRNAME="$dir"
 
     generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking
 
     generate_matbench::generate_plots
 
-elif [[ "$JOB_NAME_SAFE" == "plot-nb-on-"* ]]; then
+elif [[ "$action" == "from_pr_args" || "$JOB_NAME_SAFE" == "nb-plot" ]]; then
     set -o errexit
     set -o pipefail
     set -o nounset
     set -x
 
-    results_dir="$MATBENCH_RESULTS_DIR/$MATBENCH_EXPE_NAME"
-    mkdir -p "$results_dir"
-
-    _get_data_from_pr "$results_dir"
+    export MATBENCH_RESULTS_DIRNAME="/tmp/matrix_benchmarking_results"
+    _get_data_from_pr
 
     generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking
 
     generate_matbench::generate_plots
+
+else
+    echo "ERROR: unknown action='$action' (JOB_NAME_SAFE='$JOB_NAME_SAFE')"
+    exit 1
 fi

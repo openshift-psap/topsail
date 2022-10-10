@@ -424,8 +424,14 @@ sutest_cleanup_ldap() {
 }
 
 generate_plots() {
-    mkdir "$ARTIFACT_DIR/plotting"
-    if ARTIFACT_DIR="$ARTIFACT_DIR/plotting" ./testing/ods/generate_matrix-benchmarking.sh > "$ARTIFACT_DIR/plotting/build-log.txt" 2>&1; then
+    BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
+    PLOT_ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
+    mkdir "$PLOT_ARTIFACT_DIR"
+    if ARTIFACT_DIR="$PLOT_ARTIFACT_DIR" \
+                   ./testing/ods/generate_matrix-benchmarking.sh \
+                   from_dir "$BASE_ARTIFACT_DIR" \
+                       > "$PLOTS_ARTIFACT_DIR/build-log.txt" 2>&1;
+    then
         echo "INFO: MatrixBenchmarkings plots successfully generated."
     else
         errcode=$?
@@ -548,6 +554,10 @@ EOF
         ;;
     "generate_plots")
         generate_plots
+        exit  0
+    "generate_plots_from_pr_args")
+        ./testing/ods/generate_matrix-benchmarking.sh from_pr_args
+
         exit  0
         ;;
     "prepare_matbench")
