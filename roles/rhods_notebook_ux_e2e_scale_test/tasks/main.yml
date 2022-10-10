@@ -165,7 +165,7 @@
 - name: Empty the Minio S3 bucket
   shell: |
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
-       mc --config-dir /tmp rm minio/mybucket/ --recursive --force --quiet;
+       mc --config-dir /tmp rm minio/mybucket/ --recursive --force --quiet >/dev/null;
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
        rm -rf /artifacts/to_export  > /dev/null
     oc -c mc -n minio rsh $(oc get pod -lapp=minio -n minio -oname) \
@@ -191,6 +191,7 @@
                kubeflow-resource-stopped=stopped-by-ci-artifacts
                -oname
                -n {{ rhods_notebook_namespace }}
+               > /dev/null
 
 - name: Name the namespace privileged
   command:
