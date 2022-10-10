@@ -15,6 +15,7 @@ source "$THIS_DIR/config_common.sh"
 source "$THIS_DIR/config_clusters.sh"
 source "$THIS_DIR/config_rhods.sh"
 source "$THIS_DIR/config_notebook_ux.sh"
+source "$THIS_DIR/config_load_overrides.sh"
 
 source "$THIS_DIR/cluster_helpers.sh"
 
@@ -424,13 +425,13 @@ sutest_cleanup_ldap() {
 }
 
 generate_plots() {
-    BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
+    local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
     PLOT_ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
     mkdir "$PLOT_ARTIFACT_DIR"
     if ARTIFACT_DIR="$PLOT_ARTIFACT_DIR" \
                    ./testing/ods/generate_matrix-benchmarking.sh \
                    from_dir "$BASE_ARTIFACT_DIR" \
-                       > "$PLOTS_ARTIFACT_DIR/build-log.txt" 2>&1;
+                       > "$PLOT_ARTIFACT_DIR/build-log.txt" 2>&1;
     then
         echo "INFO: MatrixBenchmarkings plots successfully generated."
     else
@@ -444,13 +445,18 @@ generate_plots() {
 
 finalizers+=("process_ctrl::kill_bg_processes")
 
-switch_driver_cluster
-oc get clusterversion/version
-oc whoami --show-console
+if [[ "${PR_POSITIONAL_ARGS:-}" == "customer" ]]; then
+    case ${action} in
+        "prepare_ci")
+            exec "$THIS_DIR/run_notebook_scale_test_on_customer.sh" prepare
+            ;;
+        "test_ci")
+            exec "$THIS_DIR/run_notebook_scale_test_on_customer.sh" test
+            ;;
+    esac
 
-switch_sutest_cluster
-oc get clusterversion/version
-oc whoami --show-console
+    exit 1
+fi
 
 action=${1:-run_ci_e2e_test}
 
@@ -461,12 +467,12 @@ case ${action} in
 
         process_ctrl::wait_bg_processes
         ;;
-    "run_ci_test")
+    "test_ci")
         if [ -z "${SHARED_DIR:-}" ]; then
             echo "FATAL: multi-stage test \$SHARED_DIR not set ..."
             exit 1
         fi
-        BASE_ARTIFACT_DIR=$ARTIFACT_DIR
+        local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
         finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
         finalizers+=("capture_environment")
         finalizers+=("sutest_cleanup")
@@ -555,13 +561,13 @@ EOF
     "generate_plots")
         generate_plots
         exit  0
+        ;;
     "generate_plots_from_pr_args")
-        ./testing/ods/generate_matrix-benchmarking.sh from_pr_args
-
+        testing/ods/generate_matrix-benchmarking.sh from_pr_args
         exit  0
         ;;
     "prepare_matbench")
-        ./testing/ods/generate_matrix-benchmarking.sh prepare_matbench
+        testing/ods/generate_matrix-benchmarking.sh prepare_matbench
         exit 0
         ;;
     "source")

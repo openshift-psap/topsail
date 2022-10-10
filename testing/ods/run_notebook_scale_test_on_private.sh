@@ -12,6 +12,8 @@ source "$THIS_DIR/process_ctrl.sh"
 source "$THIS_DIR/../_logging.sh"
 source "$THIS_DIR/config_common.sh"
 source "$THIS_DIR/config_clusters.sh"
+source "$THIS_DIR/config_load_overrides.sh"
+
 source "$THIS_DIR/cluster_helpers.sh"
 
 export KUBECONFIG_DRIVER=$KUBECONFIG

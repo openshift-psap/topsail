@@ -12,6 +12,8 @@ source "$THIS_DIR/process_ctrl.sh"
 source "$THIS_DIR/../_logging.sh"
 source "$THIS_DIR/config_common.sh"
 source "$THIS_DIR/config_clusters.sh"
+source "$THIS_DIR/config_load_overrides.sh"
+
 source "$THIS_DIR/cluster_helpers.sh"
 
 # ---
@@ -145,30 +147,38 @@ if [ -z "${SHARED_DIR:-}" ]; then
 fi
 
 action="${1:-}"
-shift || true
-cluster_type="${1:-}"
-shift || true
+shift
 
-if [[ -z "${action}" || -z "${cluster_type}" ]]; then
-    echo "FATAL: $0 expects 2 arguments: (create|destroy) (ocp|osd|single)"
+cluster_type="${CI_DEFAULT_CLUSTER_TYPE:-$PR_POSITIONAL_ARGS}"
+
+if [[ -z "cluster_type" ]]; then
+    echo "ERROR: cluster type not found in ODS_CLUSTER_TYPE or PR_POSITIONAL_ARGS"
     exit 1
 fi
 
-set -x
+create_flag=""
 
+if [[ "$cluster_type" == "customer" ]]; then
+    cluster_type="single"
+elif [[ "$cluster_type" == "get-cluster" ]]; then
+    cluster_type="single"
+    create_flag="keep"
+fi
+
+set -x
 case ${action} in
     "create")
         finalizers+=("process_ctrl::kill_bg_processes")
         "$THIS_DIR/ocp_cluster.sh" prepare
 
-        create_clusters "$cluster_type" "$@"
+        create_clusters "$cluster_type" "$create_flag"
         exit 0
         ;;
     "destroy")
         set +o errexit
         "$THIS_DIR/ocp_cluster.sh" prepare
 
-        destroy_clusters "$cluster_type" "$@"
+        destroy_clusters "$cluster_type"
         exit 0
         ;;
     *)

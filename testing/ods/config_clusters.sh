@@ -58,3 +58,6 @@ CI_DEFAULT_CLUSTER=driver
 
 # number of hours CI clusters are allowed to stay alive, before we clean them up
 CLUSTER_CLEANUP_DELAY=4
+
+# value can be single, ocp, osd
+CI_DEFAULT_CLUSTER_TYPE=single
