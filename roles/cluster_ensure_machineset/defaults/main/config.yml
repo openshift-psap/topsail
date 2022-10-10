@@ -4,3 +4,5 @@ machineset_instance_type: "g4dn.xlarge"
 
 machineset_name:
 machineset_taint:
+
+cluster_ensure_machineset_base_machineset:

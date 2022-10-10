@@ -7,9 +7,14 @@ set -o errtrace
 set -x
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source "$THIS_DIR/common.sh"
+
 source "$THIS_DIR/process_ctrl.sh"
-source "$THIS_DIR/../prow/_logging.sh"
+source "$THIS_DIR/../_logging.sh"
+source "$THIS_DIR/config_common.sh"
+source "$THIS_DIR/config_clusters.sh"
+source "$THIS_DIR/config_load_overrides.sh"
+
+source "$THIS_DIR/cluster_helpers.sh"
 
 export KUBECONFIG_DRIVER=$KUBECONFIG
 export KUBECONFIG_SUTEST=/tmp/sutest_kubeconfig
@@ -45,24 +50,23 @@ fi
 
 prepare_driver_cluster() {
     process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" prepare_driver_cluster
-    "$THIS_DIR/notebook_ux_e2e_scale_test.sh" prepare_driver_cluster
+    "$THIS_DIR/notebook_scale_test.sh" prepare_driver_cluster
 }
 
 action=${1:-}
 
 "$THIS_DIR/private_cluster.sh" connect_sutest_cluster
 
-if [[ "$action" != "run" ]]; then
+if [[ "$action" == "prepare" ]]; then
     process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" prepare_sutest_cluster
     process_ctrl::run_in_bg prepare_driver_cluster
 
     process_ctrl::wait_bg_processes
+else
+    "$THIS_DIR/notebook_scale_test.sh" run_test_and_plot
 
-fi
-
-"$THIS_DIR/notebook_ux_e2e_scale_test.sh" run_test_and_plot
-
-if [[ "$action" != "run" ]]; then
-    process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" unprepare_sutest_cluster
-    process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" unprepare_driver_cluster
+    if [[ "$action" != "run" ]]; then
+        process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" unprepare_sutest_cluster
+        process_ctrl::run_in_bg "$THIS_DIR/private_cluster.sh" unprepare_driver_cluster
+    fi
 fi

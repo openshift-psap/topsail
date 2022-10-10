@@ -1,9 +1,11 @@
-#!/bin/bash -x
+#!/bin/bash
 
 json_input=$(cat ${1})
 instance_type=${2}
 machinesetname=${3}
 taint=${4}
+
+set -x
 
 if [[ -z "$machinesetname" ]]; then
     # Compute the machine set name

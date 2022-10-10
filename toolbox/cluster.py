@@ -8,7 +8,7 @@ class Cluster:
     Commands relating to cluster scaling, upgrading and environment capture
     """
     @staticmethod
-    def set_scale(instance_type, scale, base_machineset=None, force=False, taint=None, name=None):
+    def set_scale(instance_type, scale, base_machineset="", force=False, taint="", name=""):
         """
         Ensures that the cluster has exactly `scale` nodes with instance_type `instance_type`
 
@@ -38,14 +38,10 @@ class Cluster:
             "machineset_instance_type": instance_type,
             "scale": scale,
             "machineset_taint": taint,
-            "machineset_name": name
+            "machineset_name": name,
+            "cluster_ensure_machineset_base_machineset": base_machineset,
+            "force_scale": force,
         }
-
-        if base_machineset is not None:
-            opts["base_machineset"] = base_machineset
-
-        if force:
-            opts["force_scale"] = "true"
 
         return RunAnsibleRole("cluster_set_scale", opts)
 

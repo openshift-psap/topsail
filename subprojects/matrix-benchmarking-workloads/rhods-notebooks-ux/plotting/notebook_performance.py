@@ -110,9 +110,12 @@ class NotebookPerformance():
             msg.append(f"There are {q100 - q0:.2f} seconds between min and max ({q100_q0/med*100:.1f}% of the median).")
             msg.append(html.Br())
             try:
-                machine_type = entry.results.rhods_cluster_info.notebooks_only[0].instance_type
-            except KeyError:
-                machine_type = "not available"
+                if not entry.results.rhods_cluster_info.compute:
+                    machine_type = "not available (no compute node?)"
+                else:
+                    machine_type = entry.results.rhods_cluster_info.compute[0].instance_type
+            except Exception as e:
+                machine_type = f"not available ({e})"
 
             msg += ["The notebook machine instance type is ", html.Code(machine_type)]
             msg.append(html.Br())

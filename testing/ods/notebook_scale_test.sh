@@ -8,9 +8,16 @@ set -x
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-source "$THIS_DIR/../prow/_logging.sh"
+source "$THIS_DIR/../_logging.sh"
 source "$THIS_DIR/process_ctrl.sh"
-source "$THIS_DIR/common.sh"
+
+source "$THIS_DIR/config_common.sh"
+source "$THIS_DIR/config_clusters.sh"
+source "$THIS_DIR/config_rhods.sh"
+source "$THIS_DIR/config_notebook_ux.sh"
+source "$THIS_DIR/config_load_overrides.sh"
+
+source "$THIS_DIR/cluster_helpers.sh"
 
 if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
     KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-${SHARED_DIR}/driver_kubeconfig}" # cluster driving the test
@@ -46,30 +53,6 @@ switch_cluster() {
 }
 
 # ---
-
-connect_sutest_cluster() {
-    osd_cluster_name=$1
-
-    touch "$KUBECONFIG_SUTEST"
-
-    switch_sutest_cluster
-
-    if [[ "$osd_cluster_name" ]]; then
-        echo "OSD cluster name is $osd_cluster_name"
-
-        ocm_login
-
-        if ! ocm_cluster_is_ready "$osd_cluster_name"
-        then
-            echo "OCM cluster '$osd_cluster_name' isn't ready ..."
-            exit 1
-        fi
-
-        ocm_oc_login "$osd_cluster_name"
-    fi
-
-    oc get clusterversion
-}
 
 prepare_driver_cluster() {
     switch_cluster "driver"
@@ -126,7 +109,7 @@ prepare_driver_cluster() {
 prepare_sutest_deploy_rhods() {
     switch_sutest_cluster
 
-    osd_cluster_name=$(get_osd_cluster_name "sutest")
+    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "sutest")
 
     if [[ "$osd_cluster_name" ]]; then
         prepare_osd_sutest_deploy_rhods "$osd_cluster_name"
@@ -138,18 +121,18 @@ prepare_sutest_deploy_rhods() {
 prepare_sutest_deploy_ldap() {
     switch_sutest_cluster
 
-    osd_cluster_name=$(get_osd_cluster_name "sutest")
+    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "sutest")
 
     if [[ -z "$osd_cluster_name" ]]; then
         use_managed=""
-    elif [[ "$(get_cluster_is_rosa "sutest")" ]]; then
+    elif [[ "$(cluster_helpers::get_cluster_is_rosa "sutest")" ]]; then
         use_managed="--use_rosa=$osd_cluster_name"
     else
         use_managed="--use_ocm=$osd_cluster_name"
     fi
 
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_ldap \
-              "$LDAP_IDP_NAME" "$ODS_CI_USER_PREFIX" "$LDAP_NB_USERS" "$S3_LDAP_PROPS" \
+              "$LDAP_IDP_NAME" "$LDAP_USER_PREFIX" "$LDAP_NB_USERS" "$S3_LDAP_PROPS" \
               $use_managed --wait
 }
 
@@ -158,11 +141,11 @@ prepare_driver_scale_cluster() {
 
     switch_cluster "$cluster_role"
 
-    osd_cluster_name=$(get_osd_cluster_name "$cluster_role")
+    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "$cluster_role")
 
     cluster_type=$([[ "$osd_cluster_name" ]] && echo osd || echo ocp)
-    compute_nodes_type=$(get_compute_node_type "$cluster_role" "$cluster_type")
-    compute_nodes_count=$(get_compute_node_count "$cluster_role" "$cluster_type" "$compute_nodes_type")
+    compute_nodes_type=$(cluster_helpers::get_compute_node_type "$cluster_role" "$cluster_type")
+    compute_nodes_count=$(cluster_helpers::get_compute_node_count "$cluster_role" "$cluster_type" "$compute_nodes_type")
 
     taint="$DRIVER_TAINT_KEY=$DRIVER_TAINT_VALUE:$DRIVER_TAINT_EFFECT"
     if [[ "$osd_cluster_name" ]]; then
@@ -184,14 +167,14 @@ prepare_sutest_scale_cluster() {
 
     switch_cluster "$cluster_role"
 
-    osd_cluster_name=$(get_osd_cluster_name "$cluster_role")
+    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "$cluster_role")
     cluster_type=$([[ "$osd_cluster_name" ]] && echo osd || echo ocp)
-    compute_nodes_type=$(get_compute_node_type "$cluster_role" "$cluster_type")
-    compute_nodes_count=$(get_compute_node_count "$cluster_role" "$cluster_type" "$compute_nodes_type")
+    compute_nodes_type=$(cluster_helpers::get_compute_node_type "$cluster_role" "$cluster_type")
+    compute_nodes_count=$(cluster_helpers::get_compute_node_count "$cluster_role" "$cluster_type" "$compute_nodes_type")
 
     taint="$SUTEST_TAINT_KEY=$SUTEST_TAINT_VALUE:$SUTEST_TAINT_EFFECT"
     if [[ "$osd_cluster_name" ]]; then
-        if [[ "$ENABLE_AUTOSCALER" ]]; then
+        if [[ "$SUTEST_ENABLE_AUTOSCALER" ]]; then
             specific_options=" \
                 --enable-autoscaling \
                 --min-replicas=2 \
@@ -213,7 +196,7 @@ prepare_sutest_scale_cluster() {
                          --name "$SUTEST_MACHINESET_NAME"
 
 
-        if [[ "$ENABLE_AUTOSCALER" ]]; then
+        if [[ "$SUTEST_ENABLE_AUTOSCALER" ]]; then
             oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
             cat testing/ods/autoscaling/machineautoscaler.yaml \
                 | sed "s/MACHINESET_NAME/$SUTEST_MACHINESET_NAME/" \
@@ -328,7 +311,7 @@ sutest_wait_rhods_launch() {
     fi
 
 
-    if [[ -z "$ENABLE_AUTOSCALER" ]]; then
+    if [[ -z "$SUTEST_ENABLE_AUTOSCALER" ]]; then
         rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
                                        | cut -d/ -f2 | grep "$RHODS_NOTEBOOK_IMAGE_NAME" | cut -d: -f2)
 
@@ -357,10 +340,8 @@ capture_environment() {
 }
 
 prepare_ci() {
-    cp "$THIS_DIR/common.sh" "$ARTIFACT_DIR" # save the settings of this run
-
-    sutest_osd_cluster_name=$(get_osd_cluster_name "sutest")
-    connect_sutest_cluster "$sutest_osd_cluster_name"
+    sutest_osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "sutest")
+    cluster_helpers::connect_sutest_cluster "$sutest_osd_cluster_name"
 }
 
 prepare() {
@@ -382,7 +363,7 @@ run_test() {
 
     ./run_toolbox.py rhods notebook_ux_e2e_scale_test \
                      "$LDAP_IDP_NAME" \
-                     "$ODS_CI_USER_PREFIX" "$ODS_CI_NB_USERS" \
+                     "$LDAP_USER_PREFIX" "$ODS_CI_NB_USERS" \
                      "$S3_LDAP_PROPS" \
                      "http://$nginx_hostname/$ODS_NOTEBOOK_NAME" \
                      --user_index_offset="$ODS_CI_USER_INDEX_OFFSET"  \
@@ -417,7 +398,7 @@ sutest_cleanup() {
     switch_sutest_cluster
     sutest_cleanup_ldap
 
-    osd_cluster_name=$(get_osd_cluster_name "$cluster_role")
+    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "$cluster_role")
     if [[ "$osd_cluster_name" ]]; then
         ocm delete machinepool "$SUTEST_MACHINESET_NAME"
     else
@@ -428,7 +409,7 @@ sutest_cleanup() {
 sutest_cleanup_ldap() {
     switch_sutest_cluster
 
-    if ! ./run_toolbox.py rhods cleanup_notebooks "$ODS_CI_USER_PREFIX" > /dev/null; then
+    if ! ./run_toolbox.py rhods cleanup_notebooks "$LDAP_USER_PREFIX" > /dev/null; then
         echo "WARNING: rhods notebook cleanup failed :("
     fi
 
@@ -437,15 +418,21 @@ sutest_cleanup_ldap() {
         return
     fi
 
-    osd_cluster_name=$(get_osd_cluster_name "sutest")
+    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "sutest")
     ./run_toolbox.py cluster undeploy_ldap \
                      "$LDAP_IDP_NAME" \
                      --use_ocm="$osd_cluster_name" > /dev/null
 }
 
 generate_plots() {
-    mkdir "$ARTIFACT_DIR/plotting"
-    if ARTIFACT_DIR="$ARTIFACT_DIR/plotting" ./testing/ods/generate_matrix-benchmarking.sh > "$ARTIFACT_DIR/plotting/build-log.txt" 2>&1; then
+    local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
+    PLOT_ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
+    mkdir "$PLOT_ARTIFACT_DIR"
+    if ARTIFACT_DIR="$PLOT_ARTIFACT_DIR" \
+                   ./testing/ods/generate_matrix-benchmarking.sh \
+                   from_dir "$BASE_ARTIFACT_DIR" \
+                       > "$PLOT_ARTIFACT_DIR/build-log.txt" 2>&1;
+    then
         echo "INFO: MatrixBenchmarkings plots successfully generated."
     else
         errcode=$?
@@ -458,34 +445,38 @@ generate_plots() {
 
 finalizers+=("process_ctrl::kill_bg_processes")
 
-switch_driver_cluster
-oc get clusterversion/version
-oc whoami --show-console
+if [[ "${PR_POSITIONAL_ARGS:-}" == "customer" ]]; then
+    case ${action} in
+        "prepare_ci")
+            exec "$THIS_DIR/run_notebook_scale_test_on_customer.sh" prepare
+            ;;
+        "test_ci")
+            exec "$THIS_DIR/run_notebook_scale_test_on_customer.sh" test
+            ;;
+    esac
 
-switch_sutest_cluster
-oc get clusterversion/version
-oc whoami --show-console
+    exit 1
+fi
 
 action=${1:-run_ci_e2e_test}
 
 case ${action} in
-    "run_ci_e2e_test")
-        if [ -z "${SHARED_DIR:-}" ]; then
-            echo "FATAL: multi-stage test \$SHARED_DIR not set ..."
-            exit 1
-        fi
-        BASE_ARTIFACT_DIR=$ARTIFACT_DIR
-        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
-        finalizers+=("capture_environment")
-        finalizers+=("sutest_cleanup")
-        finalizers+=("driver_cleanup")
-
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare"
-        mkdir -p "$ARTIFACT_DIR"
+    "prepare_ci")
         prepare_ci
         prepare
 
         process_ctrl::wait_bg_processes
+        ;;
+    "test_ci")
+        if [ -z "${SHARED_DIR:-}" ]; then
+            echo "FATAL: multi-stage test \$SHARED_DIR not set ..."
+            exit 1
+        fi
+        local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
+        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
+        finalizers+=("capture_environment")
+        finalizers+=("sutest_cleanup")
+        finalizers+=("driver_cleanup")
 
         test_failed=0
         plot_failed=0
@@ -570,6 +561,14 @@ EOF
     "generate_plots")
         generate_plots
         exit  0
+        ;;
+    "generate_plots_from_pr_args")
+        testing/ods/generate_matrix-benchmarking.sh from_pr_args
+        exit  0
+        ;;
+    "prepare_matbench")
+        testing/ods/generate_matrix-benchmarking.sh prepare_matbench
+        exit 0
         ;;
     "source")
         # file is being sourced by another script

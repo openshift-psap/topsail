@@ -38,6 +38,7 @@ def _rewrite_settings(settings_dict):
 def _parse_env(filename):
     from_env = types.SimpleNamespace()
 
+    from_env.link_flag = "unknown"
     if not cli_args.kwargs.get("generate"):
         # running in interactive mode
 
@@ -53,16 +54,14 @@ def _parse_env(filename):
             # not running in the CI
 
             from_env.link_flag = "running-locally"
-        elif job_name.startswith("nb-ux-on-") or job_name == "get-cluster":
+        elif job_name == "notebooks" or job_name.startswith("notebooks-on-"):
             # running right after the test
 
             from_env.link_flag = "running-with-the-test"
-        elif job_name.startswith("plot-nb-ux-on-"):
+        elif job_name == "plot-notebooks":
             # running independently of the test
 
             from_env.link_flag = "running-without-the-test"
-        else:
-            raise ValueError(f"Unexpected value for 'JOB_NAME_SAFE' env var: '{job_name}'")
 
     from_env.env = {}
     from_env.pr = None
@@ -179,11 +178,12 @@ def _parse_nodes_info(filename, sutest_cluster=False):
         node_info.instance_type = node["metadata"]["labels"]["node.kubernetes.io/instance-type"]
 
         node_info.master = "node-role.kubernetes.io/master" in node["metadata"]["labels"]
-        node_info.notebooks_only = node["metadata"]["labels"].get("only-rhods-notebooks") == "yes"
+        node_info.compute = node["metadata"]["labels"].get("only-rhods-compute-pods") == "yes"
+
         node_info.test_pods_only = node["metadata"]["labels"].get("only-test-pods") == "yes"
         node_info.infra = \
             not node_info.master and \
-            not node_info.notebooks_only and \
+            not node_info.compute and \
             not node_info.test_pods_only
 
     return nodes_info
@@ -361,13 +361,13 @@ def _extract_rhods_cluster_info(nodes_info):
                                      if node_info.sutest_cluster]
 
     rhods_cluster_info.master = [node_info for node_info in nodes_info.values() \
-                                  if node_info.sutest_cluster and node_info.master]
+                                 if node_info.sutest_cluster and node_info.master]
 
     rhods_cluster_info.infra = [node_info for node_info in nodes_info.values() \
-                                  if node_info.sutest_cluster and node_info.infra]
+                                if node_info.sutest_cluster and node_info.infra]
 
-    rhods_cluster_info.notebooks_only = [node_info for node_info in nodes_info.values() \
-                                         if node_info.sutest_cluster and node_info.notebooks_only]
+    rhods_cluster_info.compute = [node_info for node_info in nodes_info.values() \
+                                  if node_info.sutest_cluster and node_info.compute]
 
     rhods_cluster_info.test_pods_only = [node_info for node_info in nodes_info.values() \
                                          if node_info.sutest_cluster and node_info.test_pods_only]
@@ -381,7 +381,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.user_count = int(import_settings["user_count"])
     results.location = dirname
     results.source_url = None
-    if os.getenv("JOB_NAME_SAFE", "").startswith("plot-nb-ux-on-"):
+    if os.getenv("JOB_NAME_SAFE", "") == "nb-plot":
         with open(pathlib.Path(os.getenv("ARTIFACT_DIR")) / "source_url") as f:
             results.source_url = f.read().strip()
 
@@ -445,7 +445,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.possible_machines = store_theoretical.get_possible_machines()
 
-    store.add_to_matrix(import_settings, None, results, None)
+    store.add_to_matrix(import_settings, dirname, results, None)
 
 def parse_data():
     # delegate the parsing to the simple_store

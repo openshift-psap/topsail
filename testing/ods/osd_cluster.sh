@@ -6,18 +6,20 @@ set -o nounset
 set -o errtrace
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source "$THIS_DIR/common.sh"
+source "$THIS_DIR/config_common.sh"
+source "$THIS_DIR/config_clusters.sh"
+source "$THIS_DIR/cluster_helpers.sh"
 
 # ---
 
 create_cluster() {
     cluster_role=$1
 
-    export ARTIFACT_TOOLBOX_NAME_PREFIX="osd_${cluster_role}_"
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_osd_"
 
     cluster_name="${CLUSTER_NAME_PREFIX}"
 
-    if [[ "${JOB_NAME_SAFE:-}" == "$JOB_NAME_SAFE_GET_CLUSTER" ]]; then
+    if [[ "${JOB_NAME_SAFE:-}" == *"$JOB_NAME_SAFE_GET_CLUSTER_SUFFIX" ]]; then
         author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
         cluster_name="${author}-$(date %m%d-%Hh%M)"
 
@@ -28,12 +30,12 @@ create_cluster() {
     fi
 
     echo "Create cluster $cluster_name..."
-    echo "$cluster_name" > "$SHARED_DIR/osd_${cluster_role}_cluster_name"
+    echo "$cluster_name" > "$SHARED_DIR/${cluster_role}_osd_cluster_name"
 
     KUBECONFIG="$SHARED_DIR/${cluster_role}_kubeconfig"
     touch "$KUBECONFIG"
 
-    ocm_login
+    cluster_helpers::ocm_login
 
     echo "$cluster_name" > "$ARTIFACT_DIR/${cluster_role}_osd_cluster.name"
     ./run_toolbox.py cluster create_osd \
@@ -51,7 +53,7 @@ create_cluster() {
 destroy_cluster() {
     cluster_role=$1
 
-    export ARTIFACT_TOOLBOX_NAME_PREFIX="osd_${cluster_role}_"
+    export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_osd_"
 
     cluster_name=$(get_osd_cluster_name "$cluster_role")
     if [[ -z "$cluster_name" ]]; then
@@ -59,7 +61,7 @@ destroy_cluster() {
         exit 0
     fi
 
-    ocm_login
+    cluster_helpers::ocm_login
     ./run_toolbox.py cluster destroy_osd "$cluster_name"
 
     echo "Deletion of cluster '$cluster_name' successfully requested."
