@@ -111,7 +111,7 @@ def _get_test_setup(entry):
         html.Li([f"Total of {len(entry.results.rhods_cluster_info.node_count)} nodes in the cluster"]),
     ]
 
-    for purpose in ["master", "infra", "notebooks_only", "test_pods_only"]:
+    for purpose in ["master", "infra", "rhods_compute", "test_pods_only"]:
         nodes = entry.results.rhods_cluster_info.__dict__.get(purpose)
 
         if not nodes and purpose == "test_pods_only": continue

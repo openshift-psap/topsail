@@ -24,6 +24,8 @@
        -n {{ tester_namespace }}
   register: pod_names_cmd
   ignore_errors: yes
+  # mute to reduce the log length
+  no_log: true
 
 - name: Create the test Pod logs directory
   file:
@@ -38,6 +40,8 @@
          > "{{ artifact_extra_logs_dir }}/artifacts-driver/tester_pod_logs/$(basename "{{ item }}").log";
   loop: "{{ pod_names_cmd.stdout_lines }}"
   ignore_errors: yes
+  # mute to reduce the log length
+  no_log: true
 
 - name: Get the yaml of the tester Pods
   shell:

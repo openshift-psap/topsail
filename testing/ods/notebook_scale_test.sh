@@ -319,7 +319,7 @@ sutest_wait_rhods_launch() {
         # preload the image only if auto-scaling is disabled
         ./run_toolbox.py cluster preload_image "notebook" "$NOTEBOOK_IMAGE" \
                          --namespace=redhat-ods-applications \
-                         --node_selector="$DRIVER_NODE_SELECTOR" \
+                         --node_selector="$SUTEST_NODE_SELECTOR" \
                          --pod_toleration_key="$SUTEST_TAINT_KEY" \
                          --pod_toleration_effect="$SUTEST_TAINT_EFFECT"
     fi
@@ -441,6 +441,61 @@ generate_plots() {
     fi
 }
 
+test_ci() {
+    if [ -z "${SHARED_DIR:-}" ]; then
+        echo "FATAL: multi-stage test \$SHARED_DIR not set ..."
+        exit 1
+    fi
+    local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
+    finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
+    finalizers+=("capture_environment")
+    finalizers+=("sutest_cleanup")
+    finalizers+=("driver_cleanup")
+
+    test_failed=0
+    plot_failed=0
+    for idx in $(seq "$NOTEBOOK_TEST_RUNS"); do
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
+
+        if [[ $idx == "$NOTEBOOK_TEST_RUNS" && "$LAST_NOTEBOOK_TEST_RUN_IS_SINGLE" == 1 ]]; then
+            ARTIFACT_DIR="${ARTIFACT_DIR}_single_user"
+
+            mkdir -p "$ARTIFACT_DIR"
+            ODS_CI_NB_USERS=1
+            ODS_NOTEBOOK_CPU_SIZE=2
+            ODS_NOTEBOOK_MEMORY_SIZE_GI=4
+            ODS_NOTEBOOK_BENCHMARK_REPEAT=4
+            ODS_NOTEBOOK_BENCHMARK_NUMBER=50 # around 30s
+            cat > "$ARTIFACT_DIR/last_run" <<EOF
+ODS_CI_NB_USERS=$ODS_CI_NB_USERS
+ODS_NOTEBOOK_CPU_SIZE=$ODS_NOTEBOOK_CPU_SIZE
+ODS_NOTEBOOK_MEMORY_SIZE_GI=$ODS_NOTEBOOK_MEMORY_SIZE_GI
+ODS_NOTEBOOK_BENCHMARK_REPEAT=$ODS_NOTEBOOK_BENCHMARK_REPEAT
+ODS_NOTEBOOK_BENCHMARK_NUMBER=$ODS_NOTEBOOK_BENCHMARK_NUMBER
+EOF
+        fi
+
+        mkdir -p "$ARTIFACT_DIR"
+        pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
+        pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
+        for f in "$pr_file" "$pr_comment_file"; do
+            [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
+        done
+
+        run_test && test_failed=0 || test_failed=1
+        # quick access to these files
+        cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null || true
+        generate_plots || plot_failed=1
+        if [[ "$test_failed" == 1 ]]; then
+            break
+        fi
+    done
+    if [[ "$plot_failed" == 1 ]]; then
+        exit "$plot_failed"
+    fi
+    return $test_failed
+}
+
 # ---
 
 finalizers+=("process_ctrl::kill_bg_processes")
@@ -468,58 +523,8 @@ case ${action} in
         process_ctrl::wait_bg_processes
         ;;
     "test_ci")
-        if [ -z "${SHARED_DIR:-}" ]; then
-            echo "FATAL: multi-stage test \$SHARED_DIR not set ..."
-            exit 1
-        fi
-        local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
-        finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
-        finalizers+=("capture_environment")
-        finalizers+=("sutest_cleanup")
-        finalizers+=("driver_cleanup")
-
-        test_failed=0
-        plot_failed=0
-        for idx in $(seq "$NOTEBOOK_TEST_RUNS"); do
-            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
-
-            if [[ $idx == "$NOTEBOOK_TEST_RUNS" && "$LAST_NOTEBOOK_TEST_RUN_IS_SINGLE" == 1 ]]; then
-                ARTIFACT_DIR="${ARTIFACT_DIR}_single_user"
-
-                mkdir -p "$ARTIFACT_DIR"
-                ODS_CI_NB_USERS=1
-                ODS_NOTEBOOK_CPU_SIZE=2
-                ODS_NOTEBOOK_MEMORY_SIZE_GI=4
-                ODS_NOTEBOOK_BENCHMARK_REPEAT=4
-                ODS_NOTEBOOK_BENCHMARK_NUMBER=50 # around 30s
-                cat > "$ARTIFACT_DIR/last_run" <<EOF
-ODS_CI_NB_USERS=$ODS_CI_NB_USERS
-ODS_NOTEBOOK_CPU_SIZE=$ODS_NOTEBOOK_CPU_SIZE
-ODS_NOTEBOOK_MEMORY_SIZE_GI=$ODS_NOTEBOOK_MEMORY_SIZE_GI
-ODS_NOTEBOOK_BENCHMARK_REPEAT=$ODS_NOTEBOOK_BENCHMARK_REPEAT
-ODS_NOTEBOOK_BENCHMARK_NUMBER=$ODS_NOTEBOOK_BENCHMARK_NUMBER
-EOF
-            fi
-
-            mkdir -p "$ARTIFACT_DIR"
-            pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
-            pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
-            for f in "$pr_file" "$pr_comment_file"; do
-                [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
-            done
-
-            run_test && test_failed=0 || test_failed=1
-            # quick access to these files
-            cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null || true
-            generate_plots || plot_failed=1
-            if [[ "$test_failed" == 1 ]]; then
-                break
-            fi
-        done
-        if [[ "$plot_failed" == 1 ]]; then
-            exit "$plot_failed"
-        fi
-        exit $test_failed
+        test_ci
+        exit 0
         ;;
     "prepare")
         prepare
