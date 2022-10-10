@@ -28,14 +28,6 @@ CUSTOMIZE_RHODS_REMOVE_GPU_IMAGES=1
 # if value is not empty, use the given PVC size
 CUSTOMIZE_RHODS_PVC_SIZE=5Gi
 
-# only taken into account if CUSTOMIZE_RHODS=1
-# if value is 1, define a custom notebook size named $ODS_NOTEBOOK_SIZE
-# see sutest_customize_rhods_after_wait for the limits/requests values
-CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE=1
-ODS_NOTEBOOK_SIZE=Tiny # needs to match an existing notebook size in OdhDashboardConfig.spec.notebookSizes
-ODS_NOTEBOOK_CPU_SIZE=1
-ODS_NOTEBOOK_MEMORY_SIZE_GI=4
-
 # only taken into account if CUSTOMIZE_RHODS=1 and CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE is set
 # number of replicas to set to the Dashboard deployment
 CUSTOMIZE_RHODS_DASHBOARD_REPLICAS=5
