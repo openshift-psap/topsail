@@ -319,7 +319,7 @@ sutest_wait_rhods_launch() {
         # preload the image only if auto-scaling is disabled
         ./run_toolbox.py cluster preload_image "notebook" "$NOTEBOOK_IMAGE" \
                          --namespace=redhat-ods-applications \
-                         --node_selector="$DRIVER_NODE_SELECTOR" \
+                         --node_selector="$SUTEST_NODE_SELECTOR" \
                          --pod_toleration_key="$SUTEST_TAINT_KEY" \
                          --pod_toleration_effect="$SUTEST_TAINT_EFFECT"
     fi
