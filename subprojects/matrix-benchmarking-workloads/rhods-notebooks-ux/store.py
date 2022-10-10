@@ -178,12 +178,12 @@ def _parse_nodes_info(filename, sutest_cluster=False):
         node_info.instance_type = node["metadata"]["labels"]["node.kubernetes.io/instance-type"]
 
         node_info.master = "node-role.kubernetes.io/master" in node["metadata"]["labels"]
-        node_info.compute = node["metadata"]["labels"].get("only-rhods-compute-pods") == "yes"
+        node_info.rhods_compute = node["metadata"]["labels"].get("only-rhods-compute-pods") == "yes"
 
         node_info.test_pods_only = node["metadata"]["labels"].get("only-test-pods") == "yes"
         node_info.infra = \
             not node_info.master and \
-            not node_info.compute and \
+            not node_info.rhods_compute and \
             not node_info.test_pods_only
 
     return nodes_info
@@ -366,8 +366,8 @@ def _extract_rhods_cluster_info(nodes_info):
     rhods_cluster_info.infra = [node_info for node_info in nodes_info.values() \
                                 if node_info.sutest_cluster and node_info.infra]
 
-    rhods_cluster_info.compute = [node_info for node_info in nodes_info.values() \
-                                  if node_info.sutest_cluster and node_info.compute]
+    rhods_cluster_info.rhods_compute = [node_info for node_info in nodes_info.values() \
+                                  if node_info.sutest_cluster and node_info.rhods_compute]
 
     rhods_cluster_info.test_pods_only = [node_info for node_info in nodes_info.values() \
                                          if node_info.sutest_cluster and node_info.test_pods_only]
