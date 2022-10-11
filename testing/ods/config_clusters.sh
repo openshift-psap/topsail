@@ -50,9 +50,6 @@ OCP_SUTEST_COMPUTE_MACHINE_TYPE=m5a.2xlarge
 SUTEST_FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
 DRIVER_FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
 
-# OSP/OSD cluster naming is handled differently in this job
-JOB_NAME_SAFE_GET_CLUSTER_SUFFIX="get-cluster"
-
 # cluster that will be available right away when going to the debug tab of the test pod in the CI cluster
 CI_DEFAULT_CLUSTER=driver
 

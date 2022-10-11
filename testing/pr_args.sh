@@ -47,6 +47,10 @@ pos_args=$(echo "$last_user_test_comment" |
                (grep "$test_name" || true) | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
 if [[ "$pos_args" ]]; then
     echo "PR_POSITIONAL_ARGS='$pos_args'" >> "$DEST"
+    i=0
+    for pos_arg in $pos_args; do
+        echo "PR_POSITIONAL_ARG_$i='$pos_arg'" >> "$DEST"
+    done
 fi
 
 while read line; do

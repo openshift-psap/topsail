@@ -79,7 +79,10 @@ prepare_driver_cluster() {
         ods_ci_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_TAG"
         ./run_toolbox.py cluster preload_image "preload-ods-ci" "$ods_ci_image" \
                          --namespace="$ODS_CI_TEST_NAMESPACE" \
-                         --node_selector="$DRIVER_NODE_SELECTOR"
+                         --node_selector_key="$DRIVER_TAINT_KEY" \
+                         --node_selector_value="$DRIVER_TAINT_VALUE" \
+                         --pod_toleration_key="$DRIVER_TAINT_KEY" \
+                         --pod_toleration_effect="$DRIVER_TAINT_EFFECT"
     }
 
     build_and_preload_artifacts_exporter_image() {
@@ -93,7 +96,10 @@ prepare_driver_cluster() {
 
         ./run_toolbox.py cluster preload_image "artifacts-exporter" "$artifacts_exporter_image" \
                          --namespace="$ODS_CI_TEST_NAMESPACE" \
-                         --node_selector="$DRIVER_NODE_SELECTOR"
+                         --node_selector_key="$DRIVER_TAINT_KEY" \
+                         --node_selector_value="$DRIVER_TAINT_VALUE" \
+                         --pod_toleration_key="$DRIVER_TAINT_KEY" \
+                         --pod_toleration_effect="$DRIVER_TAINT_EFFECT"
     }
 
     process_ctrl::run_in_bg build_and_preload_odsci_image
@@ -319,7 +325,8 @@ sutest_wait_rhods_launch() {
         # preload the image only if auto-scaling is disabled
         ./run_toolbox.py cluster preload_image "notebook" "$NOTEBOOK_IMAGE" \
                          --namespace=redhat-ods-applications \
-                         --node_selector="$SUTEST_NODE_SELECTOR" \
+                         --node_selector_key="$SUTEST_TAINT_KEY" \
+                         --node_selector_value="$SUTEST_TAINT_VALUE" \
                          --pod_toleration_key="$SUTEST_TAINT_KEY" \
                          --pod_toleration_effect="$SUTEST_TAINT_EFFECT"
     fi
@@ -518,6 +525,7 @@ action=${1:-run_ci_e2e_test}
 case ${action} in
     "prepare_ci")
         prepare_ci
+        trap "set +e; sutest_cleanup; driver_cleanup" ERR
         prepare
 
         process_ctrl::wait_bg_processes
