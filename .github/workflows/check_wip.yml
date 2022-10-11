@@ -1,0 +1,15 @@
+name: Check that there is no WIP commit in the PR
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check that there is no WIP commit in the PR
+        run: ./run_toolbox.py repo validate_no_wip
