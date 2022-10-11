@@ -1,10 +1,11 @@
-from toolbox._common import RunAnsibleRole
+from toolbox._common import RunAnsibleRole, AnsibleRole
 
 class NTO:
     """
     Commands for NTO related tasks
     """
     @staticmethod
+    @AnsibleRole("nto_run_e2e_test")
     def run_e2e_test(
             git_repo,
             git_ref,
@@ -21,4 +22,4 @@ class NTO:
             "nto_git_ref": git_ref,
         }
 
-        return RunAnsibleRole("nto_run_e2e_test", opts)
+        return RunAnsibleRole(opts)

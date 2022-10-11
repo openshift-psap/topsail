@@ -1,4 +1,4 @@
-from toolbox._common import RunAnsibleRole
+from toolbox._common import RunAnsibleRole, AnsibleRole
 
 
 class Benchmarking:
@@ -7,6 +7,7 @@ class Benchmarking:
     """
 
     @staticmethod
+    @AnsibleRole("benchmarking_deploy_coco_dataset")
     def download_coco_dataset(node_hostname, namespace="default", pvc_name=None, storage_dir=None, s3_cred=None):
         """
         Downloads the COCO dataset into a PVC of the cluster
@@ -26,7 +27,7 @@ class Benchmarking:
             print(
                 f"Using '{pvc_name}' as PVC name."
             )
-        
+
         if storage_dir is not None:
             opts["benchmarking_coco_dataset_storage_dir"] = storage_dir
             print(
@@ -39,9 +40,10 @@ class Benchmarking:
                 f"Using '{s3_cred}' as s3 credentials."
             )
 
-        return RunAnsibleRole("benchmarking_deploy_coco_dataset", opts)
+        return RunAnsibleRole(opts)
 
     @staticmethod
+    @AnsibleRole("benchmarking_run_mlperf_ssd")
     def run_mlperf_ssd(node_hostname, namespace="default", pvc_name=None, epochs=None, threshold=None):
         """
         Run NVIDIA MLPerf SSD Detection training benchmark.
@@ -80,4 +82,4 @@ class Benchmarking:
                 print("ERROR: threshold must be of type float")
                 exit(1)
 
-        return RunAnsibleRole("benchmarking_run_mlperf_ssd", opts)
+        return RunAnsibleRole(opts)

@@ -1,4 +1,4 @@
-from toolbox._common import RunAnsibleRole
+from toolbox._common import RunAnsibleRole, AnsibleRole
 
 
 class NFDOperator:
@@ -6,6 +6,7 @@ class NFDOperator:
     Commands for deploying, building and testing the NFD operator in various ways
     """
     @staticmethod
+    @AnsibleRole("nfd_operator_deploy_custom_commit")
     def deploy_from_commit(git_repo, git_ref, image_tag=None):
         """
         Deploys the NFD operator from the given git commit
@@ -23,9 +24,10 @@ class NFDOperator:
         if image_tag is not None:
             opts["nfd_operator_image_tag"] = image_tag
 
-        return RunAnsibleRole("nfd_operator_deploy_custom_commit", opts)
+        return RunAnsibleRole(opts)
 
     @staticmethod
+    @AnsibleRole("cluster_deploy_operator")
     def deploy_from_operatorhub(channel=None):
         """
         Deploys the GPU Operator from OperatorHub
@@ -43,11 +45,12 @@ class NFDOperator:
         if channel is not None:
             opts["cluster_deploy_operator_channel"] = channel
 
-        return RunAnsibleRole("cluster_deploy_operator", opts)
+        return RunAnsibleRole(opts)
 
     @staticmethod
+    @AnsibleRole("nfd_operator_undeploy_from_operatorhub")
     def undeploy_from_operatorhub():
         """
         Undeploys an NFD-operator that was deployed from OperatorHub
         """
-        return RunAnsibleRole("nfd_operator_undeploy_from_operatorhub")
+        return RunAnsibleRole()
