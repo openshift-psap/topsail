@@ -1,0 +1,17 @@
+name: Check that there is no WIP commit in the PR
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check that there is no WIP commit in the PR
+        run: bash toolbox/repo_scripts/validate_no_wip.sh

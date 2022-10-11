@@ -14,7 +14,7 @@ ci_banner() {
     echo "===> $0 $@ <=="
 
     echo ""
-    git show --quiet --oneline HEAD $(git log --pretty=%P -n 1 HEAD || true) || echo "Could not access git history ..."
+    git show --quiet --oneline ${PULL_BASE_SHA:-}..${PULL_PULL_SHA:-} || echo "Could not access git history ..."
     echo
 }
 

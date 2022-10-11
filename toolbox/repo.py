@@ -1,3 +1,5 @@
+import os
+
 from toolbox.repo_scripts.validate_role_files import main as role_files_main
 from toolbox.repo_scripts.validate_role_vars_used import main as role_vars_used_main
 
@@ -22,3 +24,10 @@ class Repo:
         """
         exit(role_vars_used_main())
 
+    @staticmethod
+    def validate_no_wip():
+        """
+        Ensures that none of the commits have the WIP flag in their
+        message title.
+        """
+        exit(os.system("toolbox/repo_scripts/validate_no_wip.sh"))

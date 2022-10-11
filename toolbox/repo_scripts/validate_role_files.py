@@ -21,17 +21,18 @@ def validate_role_vars_files(yaml_doc):
 
     for key, value in yaml_doc.items():
         try:
-
             if not value.startswith(FILE_PREFIX):
+                print()
                 print(f"{key}: {value} --> not starting with '{FILE_PREFIX}', ignoring.")
                 continue
         except AttributeError: # value.startswith
+            print()
             print(f"{key}: --> no a string, ignoring.")
             continue
 
         if not pathlib.Path(value).exists():
             errors += 1
-
+            print()
             print(f"ERROR: {key}: {value} --> not found")
             continue
 
@@ -42,23 +43,25 @@ def validate_role_vars_files(yaml_doc):
 def traverse_role_vars():
     errors = 0
     for filename in TOP_DIR.glob(ROLES_VARS_GLOB):
-        print()
-        print("###", filename.relative_to(TOP_DIR))
+        msg = ["", f"### {filename.relative_to(TOP_DIR)}"]
+
         with open(filename) as f:
             try:
                 yaml_doc = yaml.safe_load(f)
             except yaml.YAMLError as e:
-                print(f"--> invalid YAML file ({e})")
+                msg.append(f"--> invalid YAML file ({e})")
                 continue
 
         if yaml_doc is None:
-            print(f"--> empty file")
+            msg.append(f"--> empty file")
             continue
 
         file_errors = validate_role_vars_files(yaml_doc)
         errors += file_errors
 
-        print(f"--> found {file_errors} error{'s' if file_errors > 1 else ''} in {filename.relative_to(TOP_DIR)}")
+        msg.append(f"--> found {file_errors} error{'s' if file_errors > 1 else ''} in {filename.relative_to(TOP_DIR)}")
+        if file_errors:
+            print("\n".join(msg))
 
     return errors
 
