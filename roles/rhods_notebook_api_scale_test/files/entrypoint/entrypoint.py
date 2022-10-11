@@ -40,21 +40,10 @@ def main():
     print(LOCUST_TEST_CMD)
     test_retcode = os.system(LOCUST_TEST_CMD) != 0
 
+    if test_retcode: return test_retcode
+
     if not os.system(LOCUST_REPORTER_CMD):
         print("WARNING: locust-reporter failed ...")
-
-    # print("Telling Postgres to terminate ...")
-    # with open(artifacts_directory / "postgres.terminate", "w") as out_f:
-    #     print("0", file=out_f)
-
-    # print("Waiting for Postgres to terminate")
-    # while not (artifacts_directory / "postgres.terminated").exists():
-    #     time.sleep(1)
-
-    # (artifacts_directory / "postgres.terminated").unlink()
-    # (artifacts_directory / "postgres.terminate").unlink()
-
-    print("Postgres terminated, all done.")
 
     return 0
 

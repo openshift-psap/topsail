@@ -42,17 +42,7 @@ spec:
         command: [bash, -ce]
         args:
         - |
-          trap "touch $ARTIFACT_DIR/{test.exit_code,postgres.terminate}" ERR
           mkdir -p "$ARTIFACT_DIR"
-
-          # while ! psql -h localhost -U $PGUSER --quiet -c '\l' > /dev/null 2>/dev/null; do
-          #   echo "Timescaledb not ready ..."
-          #   sleep 1
-          # done
-          # echo "Timescaledb is oneline"
-          # psql -h localhost -U "$PGUSER" --quiet < "$TIMESCALE_SCHEMA_SQL"
-          # echo "Locust-Plugins schema loaded in the TimescaleDB."
-
           python3 -u /mnt/rhods-notebook-api-scale-test-entrypoint/entrypoint.py
         env:
         - name: ARTIFACT_DIR
@@ -67,10 +57,6 @@ spec:
           value: "https://{{ rhods_dashboard_hostname_cmd.stdout }}"
         - name: CREDS_FILE
           value: "/mnt/rhods-scale-test-credentials/secret.properties"
-        - name: PGUSER
-          value: "postgres"
-        # - name: TIMESCALE_SCHEMA_SQL
-        #   value: "/mnt/rhods-notebook-api-scale-test-entrypoint/timescale_schema.sql"
         - name: API_SCALE_TEST_NAME
           value: "{{ rhods_notebook_api_scale_test_test_name }}"
         - name: NOTEBOOK_IMAGE_NAME
@@ -92,32 +78,6 @@ spec:
           mountPath: /mnt/rhods-notebook-api-scale-test-entrypoint
         - name: rhods-scale-test-credentials
           mountPath: /mnt/rhods-scale-test-credentials
-      # - image: quay.io/openshift-psap/timescaledb:2.8.0-pg13-oss
-      #   name: timescaledb
-      #   command: [bash, -ce]
-      #   args:
-      #   - |
-      #     docker-entrypoint.sh postgres &
-      #     echo "Waiting for termination order ..."
-      #     while ! [[ -f /var/lib/postgresql/api-scale-test/postgres.terminate ]]; do
-      #       sleep 1
-      #     done
-      #     echo "Termination order received, dumping the database ..."
-      #     pg_dump -U "$POSTGRES_USER" --column-inserts > /var/lib/postgresql/api-scale-test/postgres.sql
-      #     echo "Dumping finished, stopping the database ..."
-      #     pg_ctl stop
-      #     touch /var/lib/postgresql/api-scale-test/postgres.terminated
-      #     echo "All done"
-      #   env:
-      #   - name: POSTGRES_USER
-      #     value: postgres
-      #   - name: POSTGRES_PASSWORD
-      #     value: not-a-password # pod-private DB
-      #   - name: TIMESCALEDB_TELEMETRY
-      #     value: "off"
-      #   volumeMounts:
-      #   - name: shared-dir
-      #     mountPath: /var/lib/postgresql/
       - image: "{{ rhods_artifacts_exporter_image }}"
         name: artifacts-exporter
         command: ['bash', '/mnt/rhods-notebook-api-scale-test-entrypoint/artifacts-exporter.sh']

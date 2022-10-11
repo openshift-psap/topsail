@@ -1,33 +1,38 @@
-process_ctrl__wait_list=()
+unset process_ctrl__wait_list
+declare -A process_ctrl__wait_list
 
 process_ctrl::run_in_bg() {
     "$@" &
-    echo "Adding '$!' ($@) to the wait-list '${process_ctrl__wait_list[@]}' ..."
-    process_ctrl__wait_list+=("$!")
+    pid=$!
+    echo "Adding '$*' to the wait-list ... (pid=$pid)"
+    process_ctrl__wait_list[$pid]="$*"
 }
 
 process_ctrl::wait_bg_processes() {
-    echo "Waiting for the background processes '${process_ctrl__wait_list[@]}' to terminate ..."
-    for pid in ${process_ctrl__wait_list[@]}; do
-        retcode=0
-        wait $pid || retcode=$? # this syntax honors the `set -e` flag
+    echo "Waiting for the background processes '${!process_ctrl__wait_list[@]}' to terminate ..."
+    while [[ "${#process_ctrl__wait_list[@]}" -ne 0 ]]; do
+        wait -ppid -n ${!process_ctrl__wait_list[@]} && retcode=0 || retcode=$?
+        command="${process_ctrl__wait_list[$pid]}"
+        unset process_ctrl__wait_list[$pid]
         if [[ "$retcode" != "0" ]];
         then
-            echo "Process $pid failed :( retcode=$retcode"
-            false
+            echo "Background process '$command' failed :( retcode=$retcode pid=$pid"
+            return $retcode
+        else
+            echo "Background process '$command' is finished successfully :)"
         fi
     done
     echo "All the processes are done!"
-    process_ctrl__wait_list=()
 }
 
 process_ctrl::kill_bg_processes() {
-    echo "Killing the background processes '${process_ctrl__wait_list[@]}' still running ..."
-    for pid in ${process_ctrl__wait_list[@]}; do
+    echo "Killing the background processes still running ..."
+    for pid in ${!process_ctrl__wait_list[@]}; do
+        echo "- ${process_ctrl__wait_list[$pid]} (pid=$pid)"
         kill -TERM $pid 2>/dev/null || true
+        unset process_ctrl__wait_list[$pid]
     done
     echo "All the processes have been terminated."
-    process_ctrl__wait_list=()
 }
 
 process_ctrl::retry() {

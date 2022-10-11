@@ -15,6 +15,7 @@ source "$THIS_DIR/config_common.sh"
 source "$THIS_DIR/config_clusters.sh"
 source "$THIS_DIR/config_rhods.sh"
 source "$THIS_DIR/config_notebook_ux.sh"
+source "$THIS_DIR/config_notebook_api.sh"
 source "$THIS_DIR/config_load_overrides.sh"
 
 source "$THIS_DIR/cluster_helpers.sh"
@@ -102,8 +103,22 @@ prepare_driver_cluster() {
                          --pod_toleration_effect="$DRIVER_TAINT_EFFECT"
     }
 
+    build_and_preload_api_scale_test_image() {
+        ./run_toolbox.py utils build_push_image \
+                         "$ODS_CI_IMAGESTREAM" "$API_SCALE_TEST_IMAGE_TAG" \
+                         --namespace="$ODS_CI_TEST_NAMESPACE" \
+                         --context-dir="/" \
+                         --dockerfile-path="$API_SCALE_TEST_DOCKERFILE"
+
+        artifacts_exporter_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG"
+
+        ./run_toolbox.py cluster preload_image "api-scale-test-image" "$artifacts_exporter_image" \
+                         --namespace="$ODS_CI_TEST_NAMESPACE"
+    }
+
     process_ctrl::run_in_bg build_and_preload_odsci_image
     process_ctrl::run_in_bg build_and_preload_artifacts_exporter_image
+    process_ctrl::run_in_bg build_and_preload_api_scale_test_image
 
     process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
 
@@ -360,7 +375,7 @@ prepare() {
     sutest_wait_rhods_launch
 }
 
-run_test() {
+run_user_level_test() {
     switch_driver_cluster
 
     REDIS_SERVER="redis.${STATESIGNAL_REDIS_NAMESPACE}.svc"
@@ -386,6 +401,46 @@ run_test() {
                      --ods_ci_notebook_benchmark_number="$ODS_NOTEBOOK_BENCHMARK_NUMBER" \
                      --state_signal_redis_server="${REDIS_SERVER}" \
                      --toleration_key="$DRIVER_TAINT_KEY"
+}
+
+run_user_level_tests() {
+    test_failed=0
+    plot_failed=0
+    for idx in $(seq "$NOTEBOOK_TEST_RUNS"); do
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
+
+        mkdir -p "$ARTIFACT_DIR"
+        pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
+        pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
+        for f in "$pr_file" "$pr_comment_file"; do
+            [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
+        done
+
+        run_user_level_test && test_failed=0 || test_failed=1
+        # quick access to these files
+        cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null || true
+        generate_plots || plot_failed=1
+        if [[ "$test_failed" == 1 ]]; then
+            break
+        fi
+    done
+
+    if [[ "$plot_failed" == 1 ]]; then
+        return "$plot_failed"
+    fi
+
+    return "$test_failed"
+
+}
+
+run_api_level_test() {
+    switch_driver_cluster
+    ./run_toolbox.py rhods notebook_api_scale_test \
+                     "$LDAP_IDP_NAME" "$S3_LDAP_PROPS" "$LDAP_USER_PREFIX" \
+                     --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
+                     --test-name all \
+                     --user-count "$ODS_CI_NB_USERS" \
+                     --run-time "$API_SCALE_TEST_RUN_TIME"
 }
 
 driver_cleanup() {
@@ -459,48 +514,26 @@ test_ci() {
     finalizers+=("sutest_cleanup")
     finalizers+=("driver_cleanup")
 
-    test_failed=0
-    plot_failed=0
-    for idx in $(seq "$NOTEBOOK_TEST_RUNS"); do
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
-
-        if [[ $idx == "$NOTEBOOK_TEST_RUNS" && "$LAST_NOTEBOOK_TEST_RUN_IS_SINGLE" == 1 ]]; then
-            ARTIFACT_DIR="${ARTIFACT_DIR}_single_user"
-
-            mkdir -p "$ARTIFACT_DIR"
-            ODS_CI_NB_USERS=1
-            ODS_NOTEBOOK_CPU_SIZE=2
-            ODS_NOTEBOOK_MEMORY_SIZE_GI=4
-            ODS_NOTEBOOK_BENCHMARK_REPEAT=4
-            ODS_NOTEBOOK_BENCHMARK_NUMBER=50 # around 30s
-            cat > "$ARTIFACT_DIR/last_run" <<EOF
-ODS_CI_NB_USERS=$ODS_CI_NB_USERS
-ODS_NOTEBOOK_CPU_SIZE=$ODS_NOTEBOOK_CPU_SIZE
-ODS_NOTEBOOK_MEMORY_SIZE_GI=$ODS_NOTEBOOK_MEMORY_SIZE_GI
-ODS_NOTEBOOK_BENCHMARK_REPEAT=$ODS_NOTEBOOK_BENCHMARK_REPEAT
-ODS_NOTEBOOK_BENCHMARK_NUMBER=$ODS_NOTEBOOK_BENCHMARK_NUMBER
-EOF
-        fi
-
-        mkdir -p "$ARTIFACT_DIR"
-        pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
-        pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
-        for f in "$pr_file" "$pr_comment_file"; do
-            [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
-        done
-
-        run_test && test_failed=0 || test_failed=1
-        # quick access to these files
-        cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null || true
-        generate_plots || plot_failed=1
-        if [[ "$test_failed" == 1 ]]; then
-            break
-        fi
-    done
-    if [[ "$plot_failed" == 1 ]]; then
-        exit "$plot_failed"
+    if [[ "$NOTEBOOK_TEST_FLAVOR" == "user-level" ]]; then
+        run_user_level_tests
+    elif [[ "$NOTEBOOK_TEST_FLAVOR" == "api-level" ]]; then
+        run_api_level_test
+    else
+        echo "Unknown test flavor: $NOTEBOOK_TEST_FLAVOR"
+        exit 1
     fi
-    return $test_failed
+
+}
+
+run_one_test() {
+    if [[ "$NOTEBOOK_TEST_FLAVOR" == "user-level" ]]; then
+        run_user_level_test
+    elif [[ "$NOTEBOOK_TEST_FLAVOR" == "api-level" ]]; then
+        run_api_level_test
+    else
+        echo "Unknown test flavor: $NOTEBOOK_TEST_FLAVOR"
+        exit 1
+    fi
 }
 
 # ---
@@ -520,7 +553,7 @@ if [[ "${PR_POSITIONAL_ARGS:-}" == "customer" ]]; then
     exit 1
 fi
 
-action=${1:-run_ci_e2e_test}
+action=${1:-}
 
 case ${action} in
     "prepare_ci")
@@ -529,6 +562,7 @@ case ${action} in
         prepare
 
         process_ctrl::wait_bg_processes
+        exit 0
         ;;
     "test_ci")
         test_ci
@@ -563,12 +597,12 @@ case ${action} in
         exit 0
         ;;
     "run_test_and_plot")
-        run_test
+        run_one_test
         generate_plots
         exit 0
         ;;
     "run_test")
-        run_test
+        run_one_test
         exit 0
         ;;
     "generate_plots")

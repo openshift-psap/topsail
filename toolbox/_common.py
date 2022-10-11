@@ -69,10 +69,6 @@ def run_ansible_role(role_name, opts: dict = dict()):
 
     if env.get("ARTIFACT_DIR") is None:
         env["ARTIFACT_DIR"] = f"/tmp/ci-artifacts_{time.strftime('%Y%m%d')}"
-        print(f"Using '{env['ARTIFACT_DIR']}' to store the test artifacts (default value for ARTIFACT_DIR).")
-    else:
-        print(f"Using '{env['ARTIFACT_DIR']}' to store the test artifacts.")
-    opts["artifact_dir"] = env["ARTIFACT_DIR"]
 
     env["ARTIFACT_DIRNAME"] = '__'.join(sys.argv[1:3])
 
@@ -89,6 +85,12 @@ def run_ansible_role(role_name, opts: dict = dict()):
 
     artifact_extra_logs_dir = Path(env["ARTIFACT_EXTRA_LOGS_DIR"])
     artifact_extra_logs_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(artifact_extra_logs_dir / "_ansible.opts", "w") as f:
+        print(yaml.dump({role_name: opts}), file=f)
+
+    print(f"Using '{env['ARTIFACT_DIR']}' to store the test artifacts.")
+    opts["artifact_dir"] = env["ARTIFACT_DIR"]
 
     print(f"Using '{artifact_extra_logs_dir}' to store extra log files.")
     opts["artifact_extra_logs_dir"] = str(artifact_extra_logs_dir)

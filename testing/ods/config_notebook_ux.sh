@@ -1,5 +1,8 @@
 RHODS_NOTEBOOK_IMAGE_NAME=s2i-generic-data-science-notebook
 
+# can be 'user-level' or 'api-level'
+NOTEBOOK_TEST_FLAVOR=user-level
+
 ODS_CI_TEST_NAMESPACE=loadtest
 ODS_CI_REPO="https://github.com/openshift-psap/ods-ci.git"
 ODS_CI_REF="jh-at-scale.v220923"
@@ -40,9 +43,6 @@ ODS_EXCLUDE_TAGS=None # tags to exclude when running the robot test case
 
 # number of test runs to perform
 NOTEBOOK_TEST_RUNS=2
-
-# if 1, the last test run will have only 1 user (for the notebook performance)
-LAST_NOTEBOOK_TEST_RUN_IS_SINGLE=1
 
 # name of the MatrixBenchmarking workload plugin to use for plotting
 export MATBENCH_WORKLOAD=rhods-notebooks-ux
