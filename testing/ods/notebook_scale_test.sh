@@ -464,24 +464,6 @@ test_ci() {
     for idx in $(seq "$NOTEBOOK_TEST_RUNS"); do
         export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
 
-        if [[ $idx == "$NOTEBOOK_TEST_RUNS" && "$LAST_NOTEBOOK_TEST_RUN_IS_SINGLE" == 1 ]]; then
-            ARTIFACT_DIR="${ARTIFACT_DIR}_single_user"
-
-            mkdir -p "$ARTIFACT_DIR"
-            ODS_CI_NB_USERS=1
-            ODS_NOTEBOOK_CPU_SIZE=2
-            ODS_NOTEBOOK_MEMORY_SIZE_GI=4
-            ODS_NOTEBOOK_BENCHMARK_REPEAT=4
-            ODS_NOTEBOOK_BENCHMARK_NUMBER=50 # around 30s
-            cat > "$ARTIFACT_DIR/last_run" <<EOF
-ODS_CI_NB_USERS=$ODS_CI_NB_USERS
-ODS_NOTEBOOK_CPU_SIZE=$ODS_NOTEBOOK_CPU_SIZE
-ODS_NOTEBOOK_MEMORY_SIZE_GI=$ODS_NOTEBOOK_MEMORY_SIZE_GI
-ODS_NOTEBOOK_BENCHMARK_REPEAT=$ODS_NOTEBOOK_BENCHMARK_REPEAT
-ODS_NOTEBOOK_BENCHMARK_NUMBER=$ODS_NOTEBOOK_BENCHMARK_NUMBER
-EOF
-        fi
-
         mkdir -p "$ARTIFACT_DIR"
         pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
         pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json

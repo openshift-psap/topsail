@@ -41,9 +41,6 @@ ODS_EXCLUDE_TAGS=None # tags to exclude when running the robot test case
 # number of test runs to perform
 NOTEBOOK_TEST_RUNS=2
 
-# if 1, the last test run will have only 1 user (for the notebook performance)
-LAST_NOTEBOOK_TEST_RUN_IS_SINGLE=1
-
 # name of the MatrixBenchmarking workload plugin to use for plotting
 export MATBENCH_WORKLOAD=rhods-notebooks-ux
 
