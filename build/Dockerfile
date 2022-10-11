@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi
+FROM registry.access.redhat.com/ubi9/ubi
 
 MAINTAINER OpenShift PSAP Team <openshift-psap@redhat.com>
 
@@ -12,8 +12,9 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN yum install -y --quiet \
 	        git jq vim wget rsync time gettext httpd-tools make \
-		python3.9 python3-pip python3-setuptools python3-virtualenv \
+		python3.9 python3-pip python3-setuptools \
   && yum clean all \
+  && pip install virtualenv \
   && rm -rf $HOME/.cache && rm -rf /var/cache/yum \
   && virtualenv -p /usr/bin/python3.9 $VIRTUAL_ENV \
   && pip install --upgrade pip
