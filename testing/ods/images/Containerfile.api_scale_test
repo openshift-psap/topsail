@@ -4,7 +4,6 @@ RUN dnf -y --quiet install https://dl.fedoraproject.org/pub/epel/epel-release-la
  && dnf install -y --quiet \
     s3cmd gettext \
     python39 python3-virtualenv \
-    postgresql \
  && dnf clean all
 
 RUN curl --silent -L https://github.com/mikefarah/yq/releases/download/v4.25.1/yq_linux_amd64 -o /usr/bin/yq \

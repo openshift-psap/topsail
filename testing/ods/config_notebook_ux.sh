@@ -1,5 +1,8 @@
 RHODS_NOTEBOOK_IMAGE_NAME=s2i-generic-data-science-notebook
 
+# can be 'user-level' or 'api-level'
+NOTEBOOK_TEST_FLAVOR=user-level
+
 ODS_CI_TEST_NAMESPACE=loadtest
 ODS_CI_REPO="https://github.com/openshift-psap/ods-ci.git"
 ODS_CI_REF="jh-at-scale.v220923"
