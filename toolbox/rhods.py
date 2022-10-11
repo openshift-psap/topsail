@@ -1,6 +1,6 @@
 import sys
 
-from toolbox._common import RunAnsibleRole
+from toolbox._common import RunAnsibleRole, AnsibleRole
 
 
 ODS_CATALOG_IMAGE_DEFAULT = "quay.io/modh/qe-catalog-source"
@@ -11,6 +11,7 @@ class RHODS:
     """
 
     @staticmethod
+    @AnsibleRole("rhods_deploy_ods")
     def deploy_ods(catalog_image=ODS_CATALOG_IMAGE_DEFAULT,
                    version=ODS_CATALOG_IMAGE_VERSION_DEFAULT):
         """
@@ -26,17 +27,19 @@ class RHODS:
             "rhods_deploy_ods_catalog_image_tag": version,
         }
 
-        return RunAnsibleRole("rhods_deploy_ods", opts)
+        return RunAnsibleRole(opts)
 
     @staticmethod
+    @AnsibleRole("rhods_wait_ods")
     def wait_ods():
         """
         Wait for ODS to finish its deployment
         """
 
-        return RunAnsibleRole("rhods_wait_ods")
+        return RunAnsibleRole()
 
     @staticmethod
+    @AnsibleRole("ocm_deploy_addon")
     def deploy_addon(cluster_name, notification_email, wait_for_ready_state=True):
         """
         Installs the RHODS OCM addon
@@ -56,9 +59,10 @@ class RHODS:
             "ocm_deploy_addon_parameters": addon_parameters,
         }
 
-        return RunAnsibleRole("ocm_deploy_addon", opt)
+        return RunAnsibleRole(opt)
 
     @staticmethod
+    @AnsibleRole("rhods_notebook_ux_e2e_scale_test")
     def notebook_ux_e2e_scale_test(idp_name, username_prefix, user_count: int,
                                    secret_properties_file,
                                    notebook_url,
@@ -136,9 +140,10 @@ class RHODS:
             sys.exit(1)
 
 
-        return RunAnsibleRole("rhods_notebook_ux_e2e_scale_test", opts)
+        return RunAnsibleRole(opts)
 
     @staticmethod
+    @AnsibleRole("rhods_cleanup_notebooks")
     def cleanup_notebooks(username_prefix):
         """
         Clean up the resources created along with the notebooks, during the scale tests.
@@ -151,9 +156,10 @@ class RHODS:
             "rhods_cleanup_notebooks_username_prefix": username_prefix,
         }
 
-        return RunAnsibleRole("rhods_cleanup_notebooks", opts)
+        return RunAnsibleRole(opts)
 
     @staticmethod
+    @AnsibleRole("rhods_notebook_api_scale_test")
     def notebook_api_scale_test(idp_name,
                                 secret_properties_file,
                                 username_prefix,
@@ -196,9 +202,10 @@ class RHODS:
             "rhods_notebook_api_scale_test_toleration_key": toleration_key,
         }
 
-        return RunAnsibleRole("rhods_notebook_api_scale_test", opts)
+        return RunAnsibleRole(opts)
 
     @staticmethod
+    @AnsibleRole("rhods_undeploy_ods")
     def undeploy_ods(namespace="redhat-ods-operator", wait: bool = True):
         """
         Undeploy ODS operator
@@ -211,17 +218,19 @@ class RHODS:
             "rhods_undeploy_ods_wait": wait,
         }
 
-        return RunAnsibleRole("rhods_undeploy_ods", opts)
+        return RunAnsibleRole(opts)
 
     @staticmethod
+    @AnsibleRole("rhods_cleanup_aws")
     def cleanup_aws():
         """
         Cleanup AWS from RHODS dangling resources
         """
 
-        return RunAnsibleRole("rhods_cleanup_aws")
+        return RunAnsibleRole()
 
     @staticmethod
+    @AnsibleRole("cluster_prometheus_db")
     def reset_prometheus_db():
         """
         Resets RHODS Prometheus database, by destroying its Pod.
@@ -233,9 +242,10 @@ class RHODS:
             "cluster_prometheus_db_namespace": "redhat-ods-monitoring",
         }
 
-        return RunAnsibleRole("cluster_prometheus_db", opts)
+        return RunAnsibleRole(opts)
 
     @staticmethod
+    @AnsibleRole("cluster_prometheus_db")
     def dump_prometheus_db(name_prefix="prometheus"):
         """
         Dump Prometheus database into a file
@@ -252,12 +262,13 @@ class RHODS:
             "cluster_prometheus_db_dump_name_prefix": name_prefix,
         }
 
-        return RunAnsibleRole("cluster_prometheus_db", opts)
+        return RunAnsibleRole(opts)
 
     @staticmethod
+    @AnsibleRole("rhods_capture_state")
     def capture_state():
         """
         Capture information about the cluster and the RHODS deployment
         """
 
-        return RunAnsibleRole("rhods_capture_state")
+        return RunAnsibleRole()

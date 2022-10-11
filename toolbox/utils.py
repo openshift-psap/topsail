@@ -2,7 +2,7 @@ import sys, os
 
 import secrets
 
-from toolbox._common import RunAnsibleRole
+from toolbox._common import RunAnsibleRole, AnsibleRole
 
 
 class Utils:
@@ -11,6 +11,7 @@ class Utils:
     """
 
     @staticmethod
+    @AnsibleRole("utils_build_push_image")
     def build_push_image(
         local_image_name,
         image_tag="",
@@ -101,4 +102,4 @@ class Utils:
             "utils_build_push_image_memory": memory,
         }
 
-        return RunAnsibleRole("utils_build_push_image", opts)
+        return RunAnsibleRole(opts)

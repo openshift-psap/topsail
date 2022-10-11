@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 import yaml
 import tempfile
+import functools
 
 top_dir = Path(__file__).resolve().parent.parent
 
@@ -25,18 +26,33 @@ class RunAnsibleRole:
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     """
-    def __init__(self, playbook_name, opts: dict = None):
+    def __init__(self, opts: dict = None):
         if opts is None:
             opts = {}
-
-        self.playbook_name = playbook_name
         self.opts = opts
+        self.role_name = None
 
     def __str__(self):
         return ""
 
     def _run(self):
-        run_ansible_role(self.playbook_name, self.opts)
+        if not self.role_name:
+            raise RuntimeError("Role not set :/")
+
+        run_ansible_role(self.role_name, self.opts)
+
+def AnsibleRole(role_name):
+    def decorator(fct):
+        @functools.wraps(fct)
+        def call_fct(*args, **kwargs):
+            run_ansible_role = fct(*args, **kwargs)
+            run_ansible_role.role_name = role_name
+            return run_ansible_role
+
+        return call_fct
+
+    return decorator
+
 
 
 def flatten(lst):
