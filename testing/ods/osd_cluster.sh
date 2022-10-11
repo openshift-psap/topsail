@@ -14,12 +14,13 @@ source "$THIS_DIR/cluster_helpers.sh"
 
 create_cluster() {
     cluster_role=$1
+    create_flag=$2
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_osd_"
 
     cluster_name="${CLUSTER_NAME_PREFIX}"
 
-    if [[ "${JOB_NAME_SAFE:-}" == *"$JOB_NAME_SAFE_GET_CLUSTER_SUFFIX" ]]; then
+    if [[ "$create_flag" == "keep" ]]; then
         author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
         cluster_name="${author}-$(date %m%d-%Hh%M)"
 

@@ -56,17 +56,17 @@ destroy_cluster() {
 
 create_clusters() {
     cluster_type=$1
-    shift || truez
+    shift
     create_flag="${1:-}"
     shift || true
 
     if [[ "$cluster_type" == "osd" || "$cluster_type" == "ocp" ]]; then
-        process_ctrl::run_in_bg "$THIS_DIR/${cluster_type}_cluster.sh" create "sutest"
+        process_ctrl::run_in_bg "$THIS_DIR/${cluster_type}_cluster.sh" create "sutest" "$create_flag"
 
-        process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "driver"
+        process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "driver" "$create_flag"
 
     elif [[ "$cluster_type" == "single" ]]; then
-        process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "sutest"
+        process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "sutest" "$create_flag"
 
         echo "INFO: launching a single cluster, creating a symlink for the driver cluster"
         ln -s "${SHARED_DIR}/sutest_kubeconfig" "${SHARED_DIR}/driver_kubeconfig"
@@ -149,20 +149,14 @@ fi
 action="${1:-}"
 shift
 
-cluster_type="${CI_DEFAULT_CLUSTER_TYPE:-$PR_POSITIONAL_ARGS}"
+cluster_type="${PR_POSITIONAL_ARG1:-$CI_DEFAULT_CLUSTER_TYPE}"
+create_flag="${PR_POSITIONAL_ARG2:-}"
 
 if [[ -z "cluster_type" ]]; then
     echo "ERROR: cluster type not found in ODS_CLUSTER_TYPE or PR_POSITIONAL_ARGS"
     exit 1
-fi
-
-create_flag=""
-
-if [[ "$cluster_type" == "customer" ]]; then
+elif [[ "$cluster_type" == "customer" ]]; then
     cluster_type="single"
-elif [[ "$cluster_type" == "get-cluster" ]]; then
-    cluster_type="single"
-    create_flag="keep"
 fi
 
 set -x
