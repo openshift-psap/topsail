@@ -54,29 +54,29 @@ def validate_role_vars_used(filename, yaml_doc):
 def traverse_role_vars_defaults():
     errors = 0
     for filename in itertools.chain(TOP_DIR.glob(ROLES_VARS_GLOB), TOP_DIR.glob(ROLES_DEFAULTS_GLOB)):
-        print()
-
-        print("###", filename.relative_to(TOP_DIR))
+        msg = ["", f"### {filename.relative_to(TOP_DIR)}"]
 
         if filename.is_symlink():
-            print(f"--> is a symlink, don't check.")
+            msg.append(f"--> is a symlink, don't check.")
             continue
 
         with open(filename) as f:
             try:
                 yaml_doc = yaml.safe_load(f)
             except yaml.YAMLError as e:
-                print(f"--> invalid YAML file ({e})")
+                msg.append(f"--> invalid YAML file ({e})")
                 continue
 
         if yaml_doc is None:
-            print(f"--> empty file")
+            msg.append(f"--> empty file")
             continue
 
         file_errors = validate_role_vars_used(filename, yaml_doc)
         errors += file_errors
 
-        print(f"--> found {file_errors} error{'s' if file_errors > 1 else ''} in {filename.relative_to(TOP_DIR)}")
+        msg.append(f"--> found {file_errors} error{'s' if file_errors > 1 else ''} in {filename.relative_to(TOP_DIR)}")
+        if file_errors:
+            print("\n".join(msg))
 
     return errors
 
