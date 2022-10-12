@@ -26,6 +26,7 @@ export LOCUST_RUN_TIME=5m
 #export LOCUST_ITERATIONS=1
 
 export LOCUST_LOCUSTFILE=$PWD/locustfile.py
+export REUSE_COOKIES=1
 
 DEBUG_MODE=${DEBUG_MODE:-1}
 if [[ "$DEBUG_MODE" == 1 ]]; then
