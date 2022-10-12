@@ -8,6 +8,7 @@ import logging
 import re
 import os
 import json
+import fnmatch
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
@@ -31,11 +32,45 @@ JUPYTER_USER_RENAME_PREFIX = "jupyterhub-nb-user"
 TEST_USERNAME_PREFIX = "psapuser"
 JUPYTER_USER_IDX_REGEX = r'[:letter:]*(\d+)-0$'
 
+THIS_DIR = pathlib.Path(__file__).resolve().parent
+INTERESTING_FILES = None
+
+def check_interesting_file(base_dirname, filename, not_interesting=False, do_check=False):
+    fullpath_filename = base_dirname / filename
+
+    def do_return():
+        return True if do_check else fullpath_filename
+
+    if not_interesting:
+        return do_return()
+
+    if not INTERESTING_FILES:
+        raise RuntimeError("INTERESTING_FILES not loaded :/")
+
+    if fullpath_filename.name in ("settings", "exit_code"):
+        return do_return()
+
+    if str(filename) in INTERESTING_FILES:
+        return do_return()
+
+    for interesting_file in INTERESTING_FILES:
+        if "*" not in interesting_file: continue
+
+        if fnmatch.filter([str(filename)], interesting_file):
+            return fullpath_filename
+
+    if do_check:
+        return False
+
+    logging.warning("File '{filename}' not part of the intesting file list :/")
+    return do_return()
+
+
 def _rewrite_settings(settings_dict):
     return settings_dict
 
 
-def _parse_env(filename):
+def _parse_env(dirname):
     from_env = types.SimpleNamespace()
 
     from_env.link_flag = "unknown"
@@ -65,7 +100,7 @@ def _parse_env(filename):
 
     from_env.env = {}
     from_env.pr = None
-    with open(filename) as f:
+    with open(check_interesting_file(dirname, "_ansible.env")) as f:
         for line in f.readlines():
             k, _, v = line.strip().partition("=")
 
@@ -93,20 +128,26 @@ def _parse_env(filename):
 
     from_env.single_cluster = "single" in from_env.env["JOB_NAME_SAFE"]
 
+    if from_env.link_flag == "running-without-the-test":
+        with open(check_interesting_file(dirname, "source_url", not_interesting=True)) as f:
+            from_env.source_url = f.read().strip()
+    else:
+        from_env.source_url = None
+
     return from_env
 
 
-def _parse_pr(pr_file):
+def _parse_pr(dirname):
     try:
-        with open(pr_file) as f:
+        with open(check_interesting_file(dirname.parent, "pull_request.json", not_interesting=True)) as f:
             return json.load(f)
     except FileNotFoundError:
         return None
 
 
-def _parse_pr_comments(pr_comments_file):
+def _parse_pr_comments(dirname):
     try:
-        with open(pr_comments_file) as f:
+        with open(check_interesting_file(dirname.parent, "pull_request-comments.json", not_interesting=True)) as f:
             return json.load(f)
     except FileNotFoundError:
         return None
@@ -116,7 +157,7 @@ def _parse_rhods_info(dirname):
     rhods_info = types.SimpleNamespace()
 
     try:
-        with open(dirname / "artifacts-sutest" / "rhods.version") as f:
+        with open(check_interesting_file(dirname, pathlib.Path("artifacts-sutest") / "rhods.version")) as f:
             rhods_info.version = f.read().strip()
     except FileNotFoundError:
         rhods_info.version = "not available"
@@ -124,10 +165,10 @@ def _parse_rhods_info(dirname):
     return rhods_info
 
 
-def _parse_tester_job(filename):
+def _parse_tester_job(dirname):
     job_info = types.SimpleNamespace()
 
-    with open(filename) as f:
+    with open(check_interesting_file(dirname, pathlib.Path("artifacts-driver") / "tester_job.yaml")) as f:
         job = yaml.safe_load(f)
 
     job_info.creation_time = \
@@ -163,9 +204,10 @@ def _parse_tester_job(filename):
     return job_info
 
 
-def _parse_nodes_info(filename, sutest_cluster=False):
+def _parse_nodes_info(dirname, sutest_cluster=False):
     nodes_info = {}
-    with open(filename) as f:
+    filename = pathlib.Path("artifacts-sutest" if sutest_cluster else "artifacts-driver") / "nodes.yaml"
+    with open(check_interesting_file(dirname, filename)) as f:
         nodeList = yaml.safe_load(f)
 
     for node in nodeList["items"]:
@@ -189,18 +231,18 @@ def _parse_nodes_info(filename, sutest_cluster=False):
     return nodes_info
 
 
-def _parse_odh_dashboard_config(base_dirname, filename, notebook_size_name):
+def _parse_odh_dashboard_config(dirname, notebook_size_name):
     odh_dashboard_config = types.SimpleNamespace()
-
     odh_dashboard_config.path = None
-    if not filename.exists():
+
+    filename = pathlib.Path("artifacts-sutest") / "odh-dashboard-config.yaml"
+    try:
+        with open(check_interesting_file(dirname, filename)) as f:
+            odh_dashboard_config.content = yaml.safe_load(f)
+    except FileNotFoundError:
         return odh_dashboard_config
 
-    odh_dashboard_config.path = str(filename.relative_to(base_dirname.parent))
-
-    with open(filename) as f:
-        odh_dashboard_config.content = yaml.safe_load(f)
-
+    odh_dashboard_config.path = str((dirname / filename).relative_to(dirname.parent))
     odh_dashboard_config.notebook_size_name = notebook_size_name
     odh_dashboard_config.notebook_size_mem = None
     odh_dashboard_config.notebook_size_cpu = None
@@ -217,7 +259,12 @@ def _parse_odh_dashboard_config(base_dirname, filename, notebook_size_name):
     return odh_dashboard_config
 
 
-def _parse_pod_times(filename, hostnames, is_notebook=False):
+def _parse_pod_times(dirname, hostnames, is_notebook=False):
+    if is_notebook:
+        filename = pathlib.Path("artifacts-sutest") / "notebook_pods.yaml"
+    else:
+        filename = pathlib.Path("artifacts-driver") / "tester_pods.yaml"
+
     pod_times = defaultdict(types.SimpleNamespace)
 
     in_metadata = False
@@ -225,7 +272,7 @@ def _parse_pod_times(filename, hostnames, is_notebook=False):
     podname = None
     fmt = f'"{K8S_TIME_FMT}"'
 
-    with open(filename) as f:
+    with open(check_interesting_file(dirname, filename)) as f:
         for line in f.readlines():
             if line == "  metadata:\n":
                 in_metadata = True
@@ -280,24 +327,48 @@ def _parse_pod_times(filename, hostnames, is_notebook=False):
     return pod_times
 
 
-def _parse_ods_ci_exit_code(filename):
-    if not filename.exists():
+def _extract_metrics(dirname):
+    METRICS = {
+        "sutest": ("artifacts-sutest/prometheus_ocp.t*", rhods_plotting_prom.get_sutest_metrics()),
+        "driver": ("artifacts-driver/prometheus_ocp.t*", rhods_plotting_prom.get_driver_metrics()),
+        "rhods":  ("artifacts-sutest/prometheus_rhods.t*", rhods_plotting_prom.get_rhods_metrics()),
+    }
+
+    results_metrics = {}
+    for name, (tarball_glob, metrics) in METRICS.items():
+        try:
+            prom_tarball = list(dirname.glob(tarball_glob))[0]
+        except IndexError:
+            logging.warning(f"No {tarball_glob} in '{dirname}'.")
+            continue
+
+        check_interesting_file(dirname, prom_tarball.relative_to(dirname))
+        results_metrics[name] = store_prom_db.extract_metrics(prom_tarball, metrics, dirname)
+
+    return results_metrics
+
+
+def _parse_ods_ci_exit_code(dirname, output_dir):
+    filename = output_dir / "test.exit_code"
+
+    try:
+        with open(check_interesting_file(dirname, filename)) as f:
+            return int(f.read())
+    except FileNotFoundError:
         logging.error(f"_parse_ods_ci_exit_code: '{filename}' doesn't exist ...")
         return
 
-    with open(filename) as f:
-        return int(f.read())
+def _parse_ods_ci_output_xml(dirname, output_dir):
+    filename = output_dir / "output.xml"
 
-def _parse_ods_ci_output_xml(filename):
-    ods_ci_times = {}
-
-    if not filename.exists():
-        logging.error(f"_parse_ods_ci_output_xml: '{filename}' doesn't exist ...")
+    try:
+        with open(check_interesting_file(dirname, filename)) as f:
+            output_dict = xmltodict.parse(f.read())
+    except FileNotFoundError:
+        logging.error(f"_parse_ods_ci_output_xml: '{dirname / filename}' doesn't exist ...")
         return {}
 
-    with open(filename) as f:
-        output_dict = xmltodict.parse(f.read())
-
+    ods_ci_times = {}
     tests = output_dict["robot"]["suite"]["test"]
     if not isinstance(tests, list): tests = [tests]
 
@@ -314,37 +385,19 @@ def _parse_ods_ci_output_xml(filename):
     return ods_ci_times
 
 
-def _extract_metrics(dirname):
-    METRICS = {
-        "sutest": ("artifacts-sutest/prometheus_ocp.t*", rhods_plotting_prom.get_sutest_metrics()),
-        "driver": ("artifacts-driver/prometheus_ocp.t*", rhods_plotting_prom.get_driver_metrics()),
-        "rhods":  ("artifacts-sutest/prometheus_rhods.t*", rhods_plotting_prom.get_rhods_metrics()),
-    }
-
-    results_metrics = {}
-    for name, (tarball_glob, metrics) in METRICS.items():
-        try:
-            prom_tarball = list(dirname.glob(tarball_glob))[0]
-        except IndexError:
-            logging.warning(f"No {tarball_glob} in '{dirname}'.")
-            continue
-
-        results_metrics[name] = store_prom_db.extract_metrics(prom_tarball, metrics, dirname)
-
-    return results_metrics
-
-
-def _parse_ods_ci_notebook_benchmark(fname):
+def _parse_ods_ci_notebook_benchmark(dirname, output_dir):
+    filename = output_dir / "benchmark_measures.json"
     try:
-        with open(fname) as f:
+        with open(check_interesting_file(dirname, filename)) as f:
             return json.load(f)
     except FileNotFoundError:
         return None
 
 
-def _parse_ods_ci_progress(fname):
+def _parse_ods_ci_progress(dirname, output_dir):
+    filename = output_dir / "progress_ts.yaml"
     try:
-        with open(fname) as f:
+        with open(check_interesting_file(dirname, filename)) as f:
             progress = yaml.safe_load(f)
     except FileNotFoundError:
         return {}
@@ -380,29 +433,25 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.user_count = int(import_settings["user_count"])
     results.location = dirname
-    results.source_url = None
-    if os.getenv("JOB_NAME_SAFE", "") == "nb-plot":
-        with open(pathlib.Path(os.getenv("ARTIFACT_DIR")) / "source_url") as f:
-            results.source_url = f.read().strip()
 
-    results.tester_job = _parse_tester_job(dirname / "artifacts-driver" / "tester_job.yaml")
-    results.from_env = _parse_env(dirname / "_ansible.env")
+    results.tester_job = _parse_tester_job(dirname)
+    results.from_env = _parse_env(dirname)
 
-    results.from_pr = _parse_pr(dirname.parent / "pull_request.json")
-    results.pr_comments = _parse_pr_comments(dirname.parent / "pull_request-comments.json",)
+    results.from_pr = _parse_pr(dirname)
+    results.pr_comments = _parse_pr_comments(dirname)
 
     results.rhods_info = _parse_rhods_info(dirname)
 
     print("_parse_odh_dashboard_config")
     notebook_size_name = results.tester_job.env.get("NOTEBOOK_SIZE_NAME")
-    results.odh_dashboard_config = _parse_odh_dashboard_config(dirname, dirname / "artifacts-sutest" / "odh-dashboard-config.yaml", notebook_size_name)
+    results.odh_dashboard_config = _parse_odh_dashboard_config(dirname, notebook_size_name)
 
     print("_parse_nodes_info")
     results.nodes_info = defaultdict(types.SimpleNamespace)
-    results.nodes_info |= _parse_nodes_info(dirname / "artifacts-driver" / "nodes.yaml")
-    results.nodes_info |= _parse_nodes_info(dirname / "artifacts-sutest" / "nodes.yaml", sutest_cluster=True)
+    results.nodes_info |= _parse_nodes_info(dirname)
+    results.nodes_info |= _parse_nodes_info(dirname, sutest_cluster=True)
 
-    with open(dirname / "artifacts-sutest" / "ocp_version.yml") as f:
+    with open(check_interesting_file(dirname, pathlib.Path("artifacts-sutest") / "ocp_version.yml")) as f:
         ocp_version_yaml = yaml.safe_load(f)
         results.sutest_ocp_version = ocp_version_yaml["openshiftVersion"]
 
@@ -417,9 +466,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.pod_times = {}
 
     print("_parse_pod_times (tester)")
-    results.pod_times |= _parse_pod_times(dirname / "artifacts-driver" / "tester_pods.yaml", testpod_hostnames)
+    results.pod_times |= _parse_pod_times(dirname, testpod_hostnames)
     print("_parse_pod_times (notebooks)")
-    results.pod_times |= _parse_pod_times(dirname / "artifacts-sutest" / "notebook_pods.yaml", notebook_hostnames, is_notebook=True)
+    results.pod_times |= _parse_pod_times(dirname, notebook_hostnames, is_notebook=True)
 
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
 
@@ -433,13 +482,13 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.ods_ci_progress = {}
     for test_pod in results.test_pods:
         ods_ci_dirname = test_pod.rpartition("-")[0]
-        output_dir = dirname / "ods-ci" / ods_ci_dirname
+        output_dir = pathlib.Path("ods-ci") / ods_ci_dirname
 
         user_id = int(test_pod.split("-")[-2])
-        results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(output_dir / "output.xml")
-        results.ods_ci_exit_code[user_id] = _parse_ods_ci_exit_code(output_dir / "test.exit_code")
-        results.ods_ci_notebook_benchmark[user_id] = _parse_ods_ci_notebook_benchmark(output_dir / "benchmark_measures.json")
-        results.ods_ci_progress[user_id] = _parse_ods_ci_progress(output_dir / "progress_ts.yaml")
+        results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(dirname, output_dir)
+        results.ods_ci_exit_code[user_id] = _parse_ods_ci_exit_code(dirname, output_dir)
+        results.ods_ci_notebook_benchmark[user_id] = _parse_ods_ci_notebook_benchmark(dirname, output_dir)
+        results.ods_ci_progress[user_id] = _parse_ods_ci_progress(dirname, output_dir)
 
     results.user_count = int(import_settings["user_count"])
 
@@ -447,7 +496,23 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     store.add_to_matrix(import_settings, dirname, results, None)
 
+
+def load_interesting_files():
+    global INTERESTING_FILES
+    if INTERESTING_FILES:
+        raise RuntimeError("INTERESTING_FILES already loaded :/")
+
+    INTERESTING_FILES = []
+    with open(THIS_DIR / "data" / "interesting_files") as f:
+        for line in f.readlines():
+            if not line: continue
+            if line.startswith("#"): continue
+            if "#" in line: line = line.partition("#")[0]
+
+            INTERESTING_FILES.append(line.strip())
+
 def parse_data():
+    load_interesting_files()
     # delegate the parsing to the simple_store
     store.register_custom_rewrite_settings(_rewrite_settings)
     store_simple.register_custom_parse_results(_parse_directory)
