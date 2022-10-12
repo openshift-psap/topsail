@@ -97,7 +97,7 @@ def _get_test_setup(entry):
         else:
             setup_info += [html.Ul(html.Li("Dashboard configuration: MISSING"))]
     else:
-        setup_info += [html.Li("Results artifacts: NOT AVAILABLE")]
+        setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE (link_flag={entry.results.from_env.link_flag})")]
         setup_info += [html.Ul(html.Li("Dashboard configuration: NOT AVAILABLE"))]
 
     setup_info += [html.Li("Test configuration:")]
