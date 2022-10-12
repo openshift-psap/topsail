@@ -151,14 +151,18 @@ fi
 action="${1:-}"
 shift
 
-cluster_type="${PR_POSITIONAL_ARG1:-$CI_DEFAULT_CLUSTER_TYPE}"
-create_flag="${PR_POSITIONAL_ARG2:-}"
+cluster_type="${PR_POSITIONAL_ARG_0:-$CI_DEFAULT_CLUSTER_TYPE}"
+create_flag="${PR_POSITIONAL_ARG_1:-}"
 
 if [[ -z "cluster_type" ]]; then
     echo "ERROR: cluster type not found in ODS_CLUSTER_TYPE or PR_POSITIONAL_ARGS"
     exit 1
+elif [[ "$cluster_type" == "keep" ]]; then
+    cluster_type="$CI_DEFAULT_CLUSTER_TYPE"
+    create_flag="keep"
 elif [[ "$cluster_type" == "customer" ]]; then
     cluster_type="single"
+
 fi
 
 set -x
