@@ -48,7 +48,11 @@ _download_data_from_url() {
     url=$1
     shift
 
-    matbench download --url-file <(echo "expe/from_pr $url")
+    if [[ "$url" == "https"* ]]; then
+        matbench download --url-file <(echo "expe/from_pr $url")
+    else
+        matbench download --url-file "$HOME/$url"
+    fi
 }
 
 generate_matbench::get_prometheus() {
