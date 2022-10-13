@@ -63,7 +63,7 @@ def check_interesting_file(base_dirname, filename, not_interesting=False, do_che
     if do_check:
         return False
 
-    logging.warning("File '{filename}' not part of the intesting file list :/")
+    logging.warning(f"File '{filename}' not part of the intesting file list :/")
     return do_return()
 
 
