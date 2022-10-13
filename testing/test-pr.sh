@@ -22,6 +22,11 @@ if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; t
     source "${ARTIFACT_DIR}/variable_overrides"
 fi
 
+if [[ -z "${PR_POSITIONAL_ARGS:-}" ]]; then
+    echo "ERROR: PR_POSITIONAL_ARGS must be set ..."
+    exit 1
+fi
+
 testpath=$PR_POSITIONAL_ARGS
 
 if [[ -z "$testpath" ]]; then
