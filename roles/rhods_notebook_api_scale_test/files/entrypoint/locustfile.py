@@ -31,7 +31,7 @@ env.NAMESPACE = "rhods-notebooks"
 env.NOTEBOOK_IMAGE_NAME = os.getenv("NOTEBOOK_IMAGE_NAME")
 env.NOTEBOOK_SIZE_NAME = os.getenv("NOTEBOOK_SIZE_NAME")
 env.USER_INDEX_OFFSET = int(os.getenv("USER_INDEX_OFFSET", 0))
-env.SAVE_COOKIES = True
+env.REUSE_COOKIES = os.getenv("REUSE_COOKIES", False) == "1"
 env.DO_NOT_STOP_NOTEBOOK = False
 
 # Other env variables:
@@ -73,7 +73,7 @@ class NotebookUser(HttpUser):
     def on_start(self):
         print(f"Running user #{self.user_name}")
 
-        if env.SAVE_COOKIES:
+        if env.REUSE_COOKIES:
             try:
                 with open(f"cookies.{self.user_id}.pickle", "rb") as f:
                     self.client.cookies.update(pickle.load(f))
@@ -84,7 +84,7 @@ class NotebookUser(HttpUser):
             print("Failed to go to RHODS dashboard")
             return False
 
-        if env.SAVE_COOKIES:
+        if env.REUSE_COOKIES:
             with open(f"cookies.{self.user_id}.pickle", "wb") as f:
                 pickle.dump(self.client.cookies, f)
 
