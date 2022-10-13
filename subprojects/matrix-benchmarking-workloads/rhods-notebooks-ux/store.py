@@ -9,6 +9,7 @@ import re
 import os
 import json
 import fnmatch
+import pickle
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
@@ -429,6 +430,13 @@ def _extract_rhods_cluster_info(nodes_info):
 
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
+    try:
+        with open(check_interesting_file(dirname, "cache.pickle"), "rb") as f:
+            results = pickle.load(f)
+        store.add_to_matrix(import_settings, dirname, results, None)
+        return
+    except FileNotFoundError: pass
+
     results = types.SimpleNamespace()
 
     results.user_count = int(import_settings["user_count"])
@@ -496,6 +504,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     store.add_to_matrix(import_settings, dirname, results, None)
 
+    with open(dirname / "cache.pickle", "wb") as f:
+        pickle.dump(results, f)
+
 
 def load_interesting_files():
     global INTERESTING_FILES
@@ -510,6 +521,7 @@ def load_interesting_files():
             if "#" in line: line = line.partition("#")[0]
 
             INTERESTING_FILES.append(line.strip())
+
 
 def parse_data():
     load_interesting_files()
