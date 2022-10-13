@@ -44,6 +44,11 @@ Tear Down
   ${browser log entries str}=   Convert To String  ${browser log entries}
   Create File  ${OUTPUTDIR}/browser_log_entries.yaml  ${browser log entries str}
 
+  Capture Page Screenshot  final_screenshot.png
+
+  ${final_url}=   Get Location
+  Create File  ${OUTPUTDIR}/final_url.txt  ${final_url}
+
   Close Browser
 
 *** Test Cases ***

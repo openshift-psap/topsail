@@ -33,7 +33,7 @@ def _get_artifacts_base_url(entry):
     elif entry.results.from_env.link_flag == "running-without-the-test":
         # running independently of the test
 
-        artifacts_link = lambda path: f"{entry.results.source_url}/{path.relative_to(entry.results.location.parent)}"
+        artifacts_link = lambda path: f"{entry.results.from_env.source_url}/{path.relative_to(entry.results.location.parent)}"
     else:
         raise ValueError(f"Unexpected value for 'entry.results.link_flag' env var: '{entry.results.link_flag}'")
 
@@ -84,7 +84,7 @@ def _get_test_setup(entry):
     if entry.results.from_env.link_flag == "running-with-the-test":
         results_artifacts_href = ".."
     elif entry.results.from_env.link_flag == "running-without-the-test":
-        results_artifacts_href = entry.results.source_url
+        results_artifacts_href = entry.results.from_env.source_url
     else:
         results_artifacts_href = None
 
@@ -97,7 +97,7 @@ def _get_test_setup(entry):
         else:
             setup_info += [html.Ul(html.Li("Dashboard configuration: MISSING"))]
     else:
-        setup_info += [html.Li("Results artifacts: NOT AVAILABLE")]
+        setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE (link_flag={entry.results.from_env.link_flag})")]
         setup_info += [html.Ul(html.Li("Dashboard configuration: NOT AVAILABLE"))]
 
     setup_info += [html.Li("Test configuration:")]

@@ -41,36 +41,14 @@ _get_data_from_pr() {
         echo "ERROR: _get_data_from_pr expects MATBENCH_RESULTS_DIRNAME to be set ..."
     fi
 
-    echo "$MATBENCH_DATA_URL" > "${ARTIFACT_DIR}/source_url"
-
-    results_dir="$MATBENCH_RESULTS_DIRNAME/expe"
-    mkdir -p "$results_dir"
-
-    _download_data_from_url "$results_dir" "$MATBENCH_DATA_URL"
+    _download_data_from_url "$MATBENCH_DATA_URL"
 }
 
 _download_data_from_url() {
-    results_dir=$1
-    shift
     url=$1
     shift
 
-    if [[ "${url: -1}" != "/" ]]; then
-        url="${url}/"
-    fi
-
-    mkdir -p "$results_dir"
-
-    dl_dir=$(echo "$url" | cut -d/ -f4-)
-
-    wget "$url" \
-         --directory-prefix "$results_dir" \
-         --cut-dirs=$(echo "${dl_dir}" | tr -cd / | wc -c) \
-         --recursive \
-         --no-host-directories \
-         --no-parent \
-         --execute robots=off \
-         --quiet
+    matbench download --url-file <(echo "expe/from_pr $url")
 }
 
 generate_matbench::get_prometheus() {
@@ -169,11 +147,11 @@ elif [[ "$action" == "from_pr_args" || "$JOB_NAME_SAFE" == "nb-plot" ]]; then
     set -o nounset
     set -x
 
-    export MATBENCH_RESULTS_DIRNAME="/tmp/matrix_benchmarking_results"
-    _get_data_from_pr
-
     generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking
+
+    export MATBENCH_RESULTS_DIRNAME="/tmp/matrix_benchmarking_results"
+    _get_data_from_pr
 
     generate_matbench::generate_plots
 
