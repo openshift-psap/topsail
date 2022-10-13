@@ -8,12 +8,10 @@ from dash import html
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+
 def register():
     LaunchTimeDistribution("Launch time distribution")
     LaunchTimeDistribution("Step successes", show_successes=True)
-
-def generate_data(entry, cfg, is_notebook):
-    test_nodes = {}
 
 
 class LaunchTimeDistribution():

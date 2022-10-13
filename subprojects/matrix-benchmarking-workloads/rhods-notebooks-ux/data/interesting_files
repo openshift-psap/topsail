@@ -1,3 +1,5 @@
+cache.pickle
+
 _ansible.env
 
 artifacts-sutest/rhods.version

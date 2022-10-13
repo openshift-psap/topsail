@@ -25,7 +25,7 @@ class SpawnTime():
 
         expe_cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
         if expe_cnt != 1:
-            return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
+            return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
 
         for entry in common.Matrix.all_records(settings, setting_lists):
             results = entry.results
