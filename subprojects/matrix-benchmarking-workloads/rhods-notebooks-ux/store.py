@@ -71,6 +71,17 @@ def _rewrite_settings(settings_dict):
     return settings_dict
 
 
+def ignore_file_not_found(fn):
+    def decorator(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except FileNotFoundError as e:
+            logging.warning(f"{fn.__name__}: FileNotFoundError: {e}")
+            return None
+
+    return decorator
+
+@ignore_file_not_found
 def _parse_env(dirname):
     from_env = types.SimpleNamespace()
 
@@ -138,34 +149,29 @@ def _parse_env(dirname):
     return from_env
 
 
+@ignore_file_not_found
 def _parse_pr(dirname):
-    try:
-        with open(check_interesting_file(dirname.parent, "pull_request.json", not_interesting=True)) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return None
+    with open(check_interesting_file(dirname.parent, "pull_request.json", not_interesting=True)) as f:
+        return json.load(f)
 
 
+@ignore_file_not_found
 def _parse_pr_comments(dirname):
-    try:
-        with open(check_interesting_file(dirname.parent, "pull_request-comments.json", not_interesting=True)) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return None
+    with open(check_interesting_file(dirname.parent, "pull_request-comments.json", not_interesting=True)) as f:
+        return json.load(f)
 
 
+@ignore_file_not_found
 def _parse_rhods_info(dirname):
     rhods_info = types.SimpleNamespace()
 
-    try:
-        with open(check_interesting_file(dirname, pathlib.Path("artifacts-sutest") / "rhods.version")) as f:
-            rhods_info.version = f.read().strip()
-    except FileNotFoundError:
-        rhods_info.version = "not available"
+    with open(check_interesting_file(dirname, pathlib.Path("artifacts-sutest") / "rhods.version")) as f:
+        rhods_info.version = f.read().strip()
 
     return rhods_info
 
 
+@ignore_file_not_found
 def _parse_tester_job(dirname):
     job_info = types.SimpleNamespace()
 
@@ -205,6 +211,7 @@ def _parse_tester_job(dirname):
     return job_info
 
 
+@ignore_file_not_found
 def _parse_nodes_info(dirname, sutest_cluster=False):
     nodes_info = {}
     filename = pathlib.Path("artifacts-sutest" if sutest_cluster else "artifacts-driver") / "nodes.yaml"
@@ -232,16 +239,14 @@ def _parse_nodes_info(dirname, sutest_cluster=False):
     return nodes_info
 
 
+@ignore_file_not_found
 def _parse_odh_dashboard_config(dirname, notebook_size_name):
     odh_dashboard_config = types.SimpleNamespace()
     odh_dashboard_config.path = None
 
     filename = pathlib.Path("artifacts-sutest") / "odh-dashboard-config.yaml"
-    try:
-        with open(check_interesting_file(dirname, filename)) as f:
-            odh_dashboard_config.content = yaml.safe_load(f)
-    except FileNotFoundError:
-        return odh_dashboard_config
+    with open(check_interesting_file(dirname, filename)) as f:
+        odh_dashboard_config.content = yaml.safe_load(f)
 
     odh_dashboard_config.path = str((dirname / filename).relative_to(dirname.parent))
     odh_dashboard_config.notebook_size_name = notebook_size_name
@@ -260,6 +265,7 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
     return odh_dashboard_config
 
 
+@ignore_file_not_found
 def _parse_pod_times(dirname, hostnames, is_notebook=False):
     if is_notebook:
         filename = pathlib.Path("artifacts-sutest") / "notebook_pods.yaml"
@@ -349,25 +355,20 @@ def _extract_metrics(dirname):
     return results_metrics
 
 
+@ignore_file_not_found
 def _parse_ods_ci_exit_code(dirname, output_dir):
     filename = output_dir / "test.exit_code"
 
-    try:
-        with open(check_interesting_file(dirname, filename)) as f:
-            return int(f.read())
-    except FileNotFoundError:
-        logging.error(f"_parse_ods_ci_exit_code: '{filename}' doesn't exist ...")
-        return
+    with open(check_interesting_file(dirname, filename)) as f:
+        return int(f.read())
 
+
+@ignore_file_not_found
 def _parse_ods_ci_output_xml(dirname, output_dir):
     filename = output_dir / "output.xml"
 
-    try:
-        with open(check_interesting_file(dirname, filename)) as f:
-            output_dict = xmltodict.parse(f.read())
-    except FileNotFoundError:
-        logging.error(f"_parse_ods_ci_output_xml: '{dirname / filename}' doesn't exist ...")
-        return {}
+    with open(check_interesting_file(dirname, filename)) as f:
+        output_dict = xmltodict.parse(f.read())
 
     ods_ci_times = {}
     tests = output_dict["robot"]["suite"]["test"]
@@ -386,27 +387,30 @@ def _parse_ods_ci_output_xml(dirname, output_dir):
     return ods_ci_times
 
 
+@ignore_file_not_found
 def _parse_ods_ci_notebook_benchmark(dirname, output_dir):
     filename = output_dir / "benchmark_measures.json"
-    try:
-        with open(check_interesting_file(dirname, filename)) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return None
+    with open(check_interesting_file(dirname, filename)) as f:
+        return json.load(f)
 
 
+@ignore_file_not_found
 def _parse_ods_ci_progress(dirname, output_dir):
     filename = output_dir / "progress_ts.yaml"
-    try:
-        with open(check_interesting_file(dirname, filename)) as f:
-            progress = yaml.safe_load(f)
-    except FileNotFoundError:
-        return {}
+    with open(check_interesting_file(dirname, filename)) as f:
+        progress = yaml.safe_load(f)
 
     for key, date_str in progress.items():
         progress[key] = datetime.datetime.strptime(date_str, SHELL_DATE_TIME_FMT)
 
     return progress
+
+@ignore_file_not_found
+def _parse_ocp_version(dirname):
+    with open(check_interesting_file(dirname, pathlib.Path("artifacts-sutest") / "ocp_version.yml")) as f:
+        sutest_ocp_version_yaml = yaml.safe_load(f)
+
+    return sutest_ocp_version_yaml["openshiftVersion"]
 
 def _extract_rhods_cluster_info(nodes_info):
     rhods_cluster_info = types.SimpleNamespace()
@@ -435,11 +439,12 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
             results = pickle.load(f)
         store.add_to_matrix(import_settings, dirname, results, None)
         return
-    except FileNotFoundError: pass
+    except FileNotFoundError:
+        pass # Cache file doesn't exit, ignore and parse
 
     results = types.SimpleNamespace()
 
-    results.user_count = int(import_settings["user_count"])
+    results.user_count = int(import_settings.get("user_count", 0))
     results.location = dirname
 
     results.tester_job = _parse_tester_job(dirname)
@@ -451,17 +456,16 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.rhods_info = _parse_rhods_info(dirname)
 
     print("_parse_odh_dashboard_config")
-    notebook_size_name = results.tester_job.env.get("NOTEBOOK_SIZE_NAME")
+
+    notebook_size_name = results.tester_job.env.get("NOTEBOOK_SIZE_NAME") if results.tester_job else None
     results.odh_dashboard_config = _parse_odh_dashboard_config(dirname, notebook_size_name)
 
     print("_parse_nodes_info")
     results.nodes_info = defaultdict(types.SimpleNamespace)
-    results.nodes_info |= _parse_nodes_info(dirname)
-    results.nodes_info |= _parse_nodes_info(dirname, sutest_cluster=True)
+    results.nodes_info |= _parse_nodes_info(dirname) or {}
+    results.nodes_info |= _parse_nodes_info(dirname, sutest_cluster=True) or {}
 
-    with open(check_interesting_file(dirname, pathlib.Path("artifacts-sutest") / "ocp_version.yml")) as f:
-        ocp_version_yaml = yaml.safe_load(f)
-        results.sutest_ocp_version = ocp_version_yaml["openshiftVersion"]
+    results.sutest_ocp_version = _parse_ocp_version(dirname)
 
     print("_extract_metrics")
     results.metrics = _extract_metrics(dirname)
@@ -474,9 +478,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.pod_times = {}
 
     print("_parse_pod_times (tester)")
-    results.pod_times |= _parse_pod_times(dirname, testpod_hostnames)
+    results.pod_times |= _parse_pod_times(dirname, testpod_hostnames) or {}
     print("_parse_pod_times (notebooks)")
-    results.pod_times |= _parse_pod_times(dirname, notebook_hostnames, is_notebook=True)
+    results.pod_times |= _parse_pod_times(dirname, notebook_hostnames, is_notebook=True) or {}
 
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
 
@@ -498,7 +502,6 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.ods_ci_notebook_benchmark[user_id] = _parse_ods_ci_notebook_benchmark(dirname, output_dir)
         results.ods_ci_progress[user_id] = _parse_ods_ci_progress(dirname, output_dir)
 
-    results.user_count = int(import_settings["user_count"])
 
     results.possible_machines = store_theoretical.get_possible_machines()
 
