@@ -34,37 +34,60 @@ TEST_USERNAME_PREFIX = "psapuser"
 JUPYTER_USER_IDX_REGEX = r'[:letter:]*(\d+)-0$'
 
 THIS_DIR = pathlib.Path(__file__).resolve().parent
-INTERESTING_FILES = None
 
-def check_interesting_file(base_dirname, filename, not_interesting=False, do_check=False):
-    fullpath_filename = base_dirname / filename
+CACHE_FILENAME = "cache.pickle"
 
-    def do_return():
-        return True if do_check else fullpath_filename
+IMPORTANT_FILES = [
+    "_ansible.env"
 
-    if not_interesting:
-        return do_return()
+    "artifacts-sutest/rhods.version",
+    "artifacts-sutest/odh-dashboard-config.yaml",
+    "artifacts-sutest/nodes.yaml",
+    "artifacts-sutest/ocp_version.yml",
+    "artifacts-sutest/prometheus_ocp.t*",
+    "artifacts-sutest/prometheus_rhods.t*",
+    "artifacts-sutest/notebook_pods.yaml",
 
-    if not INTERESTING_FILES:
-        raise RuntimeError("INTERESTING_FILES not loaded :/")
+    "artifacts-driver/nodes.yaml",
+    "artifacts-driver/prometheus_ocp.t*",
+    "artifacts-driver/tester_pods.yaml",
+    "artifacts-driver/tester_job.yaml",
+    "ods-ci/ods-ci-*/output.xml",
+    "ods-ci/ods-ci-*/test.exit_code",
+    "ods-ci/ods-ci-*/benchmark_measures.json",
+    "ods-ci/ods-ci-*/progress_ts.yaml",
+    "ods-ci/ods-ci-*/final_screenshot.png",
+    "ods-ci/ods-ci-*/log.html",
+]
 
-    if fullpath_filename.name in ("settings", "exit_code"):
-        return do_return()
 
-    if str(filename) in INTERESTING_FILES:
-        return do_return()
 
-    for interesting_file in INTERESTING_FILES:
-        if "*" not in interesting_file: continue
+def is_mandatory_file(filename):
+    return filename.name in ("settings", "exit_code")
 
-        if fnmatch.filter([str(filename)], interesting_file):
-            return fullpath_filename
 
-    if do_check:
-        return False
+def is_important_file(filename):
+    if str(filename) in IMPORTANT_FILES:
+        return True
 
-    logging.warning(f"File '{filename}' not part of the intesting file list :/")
-    return do_return()
+    for important_file in IMPORTANT_FILES:
+        if "*" not in important_file: continue
+
+        if fnmatch.filter([str(filename)], important_file):
+            return True
+
+    return False
+
+
+def is_cache_file(filename):
+    return filename.name == CACHE_FILENAME
+
+
+def register_important_file(base_dirname, filename):
+    if not is_important_file(filename):
+        logging.warning(f"File '{filename}' not part of the intesting file list :/")
+
+    return base_dirname / filename
 
 
 def _rewrite_settings(settings_dict):
@@ -112,7 +135,7 @@ def _parse_env(dirname):
 
     from_env.env = {}
     from_env.pr = None
-    with open(check_interesting_file(dirname, "_ansible.env")) as f:
+    with open(register_important_file(dirname, "_ansible.env")) as f:
         for line in f.readlines():
             k, _, v = line.strip().partition("=")
 
@@ -141,7 +164,7 @@ def _parse_env(dirname):
     from_env.single_cluster = "single" in from_env.env["JOB_NAME_SAFE"]
 
     if from_env.link_flag == "running-without-the-test":
-        with open(check_interesting_file(dirname, "source_url", not_interesting=True)) as f:
+        with open(dirname / "source_url") as f: # not an important file
             from_env.source_url = f.read().strip()
     else:
         from_env.source_url = None
@@ -151,13 +174,13 @@ def _parse_env(dirname):
 
 @ignore_file_not_found
 def _parse_pr(dirname):
-    with open(check_interesting_file(dirname.parent, "pull_request.json", not_interesting=True)) as f:
+    with open(dirname.parent / "pull_request.json") as f: # not an important file
         return json.load(f)
 
 
 @ignore_file_not_found
 def _parse_pr_comments(dirname):
-    with open(check_interesting_file(dirname.parent, "pull_request-comments.json", not_interesting=True)) as f:
+    with open(dirname.parent / "pull_request-comments.json") as f: # not an important file
         return json.load(f)
 
 
@@ -165,7 +188,7 @@ def _parse_pr_comments(dirname):
 def _parse_rhods_info(dirname):
     rhods_info = types.SimpleNamespace()
 
-    with open(check_interesting_file(dirname, pathlib.Path("artifacts-sutest") / "rhods.version")) as f:
+    with open(register_important_file(dirname, pathlib.Path("artifacts-sutest") / "rhods.version")) as f:
         rhods_info.version = f.read().strip()
 
     return rhods_info
@@ -175,7 +198,7 @@ def _parse_rhods_info(dirname):
 def _parse_tester_job(dirname):
     job_info = types.SimpleNamespace()
 
-    with open(check_interesting_file(dirname, pathlib.Path("artifacts-driver") / "tester_job.yaml")) as f:
+    with open(register_important_file(dirname, pathlib.Path("artifacts-driver") / "tester_job.yaml")) as f:
         job = yaml.safe_load(f)
 
     job_info.creation_time = \
@@ -215,7 +238,7 @@ def _parse_tester_job(dirname):
 def _parse_nodes_info(dirname, sutest_cluster=False):
     nodes_info = {}
     filename = pathlib.Path("artifacts-sutest" if sutest_cluster else "artifacts-driver") / "nodes.yaml"
-    with open(check_interesting_file(dirname, filename)) as f:
+    with open(register_important_file(dirname, filename)) as f:
         nodeList = yaml.safe_load(f)
 
     for node in nodeList["items"]:
@@ -245,7 +268,7 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
     odh_dashboard_config.path = None
 
     filename = pathlib.Path("artifacts-sutest") / "odh-dashboard-config.yaml"
-    with open(check_interesting_file(dirname, filename)) as f:
+    with open(register_important_file(dirname, filename)) as f:
         odh_dashboard_config.content = yaml.safe_load(f)
 
     odh_dashboard_config.path = str((dirname / filename).relative_to(dirname.parent))
@@ -279,7 +302,7 @@ def _parse_pod_times(dirname, hostnames, is_notebook=False):
     podname = None
     fmt = f'"{K8S_TIME_FMT}"'
 
-    with open(check_interesting_file(dirname, filename)) as f:
+    with open(register_important_file(dirname, filename)) as f:
         for line in f.readlines():
             if line == "  metadata:\n":
                 in_metadata = True
@@ -349,7 +372,7 @@ def _extract_metrics(dirname):
             logging.warning(f"No {tarball_glob} in '{dirname}'.")
             continue
 
-        check_interesting_file(dirname, prom_tarball.relative_to(dirname))
+        register_important_file(dirname, prom_tarball.relative_to(dirname))
         results_metrics[name] = store_prom_db.extract_metrics(prom_tarball, metrics, dirname)
 
     return results_metrics
@@ -359,7 +382,7 @@ def _extract_metrics(dirname):
 def _parse_ods_ci_exit_code(dirname, output_dir):
     filename = output_dir / "test.exit_code"
 
-    with open(check_interesting_file(dirname, filename)) as f:
+    with open(register_important_file(dirname, filename)) as f:
         return int(f.read())
 
 
@@ -367,7 +390,7 @@ def _parse_ods_ci_exit_code(dirname, output_dir):
 def _parse_ods_ci_output_xml(dirname, output_dir):
     filename = output_dir / "output.xml"
 
-    with open(check_interesting_file(dirname, filename)) as f:
+    with open(register_important_file(dirname, filename)) as f:
         output_dict = xmltodict.parse(f.read())
 
     ods_ci_times = {}
@@ -390,14 +413,14 @@ def _parse_ods_ci_output_xml(dirname, output_dir):
 @ignore_file_not_found
 def _parse_ods_ci_notebook_benchmark(dirname, output_dir):
     filename = output_dir / "benchmark_measures.json"
-    with open(check_interesting_file(dirname, filename)) as f:
+    with open(register_important_file(dirname, filename)) as f:
         return json.load(f)
 
 
 @ignore_file_not_found
 def _parse_ods_ci_progress(dirname, output_dir):
     filename = output_dir / "progress_ts.yaml"
-    with open(check_interesting_file(dirname, filename)) as f:
+    with open(register_important_file(dirname, filename)) as f:
         progress = yaml.safe_load(f)
 
     for key, date_str in progress.items():
@@ -407,7 +430,7 @@ def _parse_ods_ci_progress(dirname, output_dir):
 
 @ignore_file_not_found
 def _parse_ocp_version(dirname):
-    with open(check_interesting_file(dirname, pathlib.Path("artifacts-sutest") / "ocp_version.yml")) as f:
+    with open(register_important_file(dirname, pathlib.Path("artifacts-sutest") / "ocp_version.yml")) as f:
         sutest_ocp_version_yaml = yaml.safe_load(f)
 
     return sutest_ocp_version_yaml["openshiftVersion"]
@@ -435,7 +458,7 @@ def _extract_rhods_cluster_info(nodes_info):
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     try:
-        with open(check_interesting_file(dirname, "cache.pickle"), "rb") as f:
+        with open(dirname / CACHE_FILENAME, "rb") as f:
             results = pickle.load(f)
         store.add_to_matrix(import_settings, dirname, results, None)
         return
@@ -507,27 +530,11 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     store.add_to_matrix(import_settings, dirname, results, None)
 
-    with open(dirname / "cache.pickle", "wb") as f:
+    with open(dirname / CACHE_FILENAME, "wb") as f:
         pickle.dump(results, f)
 
 
-def load_interesting_files():
-    global INTERESTING_FILES
-    if INTERESTING_FILES:
-        raise RuntimeError("INTERESTING_FILES already loaded :/")
-
-    INTERESTING_FILES = []
-    with open(THIS_DIR / "data" / "interesting_files") as f:
-        for line in f.readlines():
-            if not line: continue
-            if line.startswith("#"): continue
-            if "#" in line: line = line.partition("#")[0]
-
-            INTERESTING_FILES.append(line.strip())
-
-
 def parse_data():
-    load_interesting_files()
     # delegate the parsing to the simple_store
     store.register_custom_rewrite_settings(_rewrite_settings)
     store_simple.register_custom_parse_results(_parse_directory)
