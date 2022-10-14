@@ -4,11 +4,11 @@ THIS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 
-MATBENCH_DATA_URL=""
-
 source "$THIS_DIR/config_load_overrides.sh"
 
 export MATBENCH_WORKLOAD=rhods-notebooks-ux
+
+WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
 
 if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; then
     source "${ARTIFACT_DIR}/variable_overrides"
@@ -20,7 +20,6 @@ if [[ -z "${MATBENCH_WORKLOAD:-}" ]]; then
 fi
 
 generate_matbench::prepare_matrix_benchmarking() {
-    WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
     WORKLOAD_RUN_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking/workloads/$MATBENCH_WORKLOAD"
 
     rm -f "$WORKLOAD_RUN_DIR"
@@ -81,6 +80,7 @@ generate_matbench::generate_plots() {
 
     generate_url="stats=$(echo -n "$stats_content" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
+    mkdir -p "$ARTIFACT_DIR"
     cd "$ARTIFACT_DIR"
     ln -sf /tmp/prometheus.yml "."
 
