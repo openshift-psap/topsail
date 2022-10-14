@@ -48,9 +48,9 @@ _download_data_from_url() {
     shift
 
     if [[ "$url" == "https"* ]]; then
-        matbench download --url-file <(echo "expe/from_pr $url")
+        matbench download --do-download --url-file <(echo "expe/from_pr $url")
     else
-        matbench download --url-file "$HOME/$url"
+        matbench download --do-download --url-file "$HOME/$url"
     fi
 }
 
