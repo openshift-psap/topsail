@@ -74,7 +74,7 @@ generate_matbench::generate_plots() {
         echo "ERROR: expected MATBENCH_RESULTS_DIRNAME to be set ..."
     fi
 
-    stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/ci-artifacts.plots")"
+    stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/ci-artifacts.plots" | cut -d'#' -f1 | grep -v '^$')"
 
     echo "$stats_content"
 
