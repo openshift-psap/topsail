@@ -6,9 +6,8 @@ class Benchmarking:
     Commands related to benchmarking tasks
     """
 
-    @staticmethod
     @AnsibleRole("benchmarking_deploy_coco_dataset")
-    def download_coco_dataset(node_hostname, namespace="default", pvc_name=None, storage_dir=None, s3_cred=None):
+    def download_coco_dataset(self, node_hostname, namespace="default", pvc_name=None, storage_dir=None, s3_cred=None):
         """
         Downloads the COCO dataset into a PVC of the cluster
 
@@ -42,9 +41,8 @@ class Benchmarking:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("benchmarking_run_mlperf_ssd")
-    def run_mlperf_ssd(node_hostname, namespace="default", pvc_name=None, epochs=None, threshold=None):
+    def run_mlperf_ssd(self, node_hostname, namespace="default", pvc_name=None, epochs=None, threshold=None):
         """
         Run NVIDIA MLPerf SSD Detection training benchmark.
 

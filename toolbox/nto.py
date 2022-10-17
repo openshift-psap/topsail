@@ -4,9 +4,9 @@ class NTO:
     """
     Commands for NTO related tasks
     """
-    @staticmethod
     @AnsibleRole("nto_run_e2e_test")
     def run_e2e_test(
+            self,
             git_repo,
             git_ref,
     ):

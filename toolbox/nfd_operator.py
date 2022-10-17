@@ -5,9 +5,8 @@ class NFDOperator:
     """
     Commands for deploying, building and testing the NFD operator in various ways
     """
-    @staticmethod
     @AnsibleRole("nfd_operator_deploy_custom_commit")
-    def deploy_from_commit(git_repo, git_ref, image_tag=None):
+    def deploy_from_commit(self, git_repo, git_ref, image_tag=None):
         """
         Deploys the NFD operator from the given git commit
 
@@ -26,9 +25,8 @@ class NFDOperator:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_deploy_operator")
-    def deploy_from_operatorhub(channel=None):
+    def deploy_from_operatorhub(self, channel=None):
         """
         Deploys the GPU Operator from OperatorHub
 
@@ -47,9 +45,8 @@ class NFDOperator:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("nfd_operator_undeploy_from_operatorhub")
-    def undeploy_from_operatorhub():
+    def undeploy_from_operatorhub(self):
         """
         Undeploys an NFD-operator that was deployed from OperatorHub
         """

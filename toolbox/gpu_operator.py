@@ -9,18 +9,16 @@ class GPUOperator:
     Commands for deploying, building and testing the GPU operator in various ways
     """
 
-    @staticmethod
     @AnsibleRole("gpu_operator_deploy_from_operatorhub")
-    def deploy_cluster_policy():
+    def deploy_cluster_policy(self):
         """
         Creates the ClusterPolicy from the OLM ClusterServiceVersion
         """
         print("Creating the ClusterPolicy from the CSV")
         return RunAnsibleRole({"gpu_operator_deploy_from": "pre-deployed"})
 
-    @staticmethod
     @AnsibleRole("gpu_operator_deploy_from_operatorhub")
-    def deploy_from_bundle(bundle, namespace="nvidia-gpu-operator"):
+    def deploy_from_bundle(self, bundle, namespace="nvidia-gpu-operator"):
         """
         Deploys the GPU Operator from a bundle
 
@@ -38,9 +36,8 @@ class GPUOperator:
         opts["deploy_bundle_image"] = bundle
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_deploy_operator")
-    def deploy_from_operatorhub(namespace="nvidia-gpu-operator", version=None, channel=None, installPlan="Manual"):
+    def deploy_from_operatorhub(self, namespace="nvidia-gpu-operator", version=None, channel=None, installPlan="Manual"):
         """
         Deploys the GPU operator from OperatorHub
 
@@ -92,9 +89,8 @@ class GPUOperator:
         print("Deploying the GPU Operator from OperatorHub.")
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("gpu_operator_run_gpu-burn")
-    def run_gpu_burn(runtime=None):
+    def run_gpu_burn(self, runtime=None):
         """
         Runs the GPU burn on the cluster
 
@@ -108,34 +104,30 @@ class GPUOperator:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("gpu_operator_undeploy_from_operatorhub")
-    def undeploy_from_operatorhub():
+    def undeploy_from_operatorhub(self):
         """
         Undeploys a GPU-operator that was deployed from OperatorHub
         """
 
         return RunAnsibleRole()
 
-    @staticmethod
     @AnsibleRole("gpu_operator_wait_deployment")
-    def wait_deployment():
+    def wait_deployment(self):
         """
         Waits for the GPU operator to deploy
         """
         return RunAnsibleRole()
 
-    @staticmethod
     @AnsibleRole("gpu_operator_capture_deployment_state")
-    def capture_deployment_state():
+    def capture_deployment_state(self):
         """
         Captures the GPU operator deployment state
         """
         return RunAnsibleRole()
 
-    @staticmethod
     @AnsibleRole("gpu_operator_get_csv_version")
-    def get_csv_version():
+    def get_csv_version(self):
         """
         Get the version of the GPU Operator currently installed from OLM
         Stores the version in the 'ARTIFACT_EXTRA_LOGS_DIR' artifacts directory.

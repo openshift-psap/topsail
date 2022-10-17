@@ -5,9 +5,8 @@ class Entitlement:
     """
     Commands relating to deployment and testing of entitlement files
     """
-    @staticmethod
     @AnsibleRole("entitlement_deploy")
-    def deploy(pem, pem_ca=None):
+    def deploy(self, pem, pem_ca=None):
         """
         Deploys a cluster-wide entitlement key & RHSM config file
         (and optionally a YUM repo certificate) with the help of
@@ -24,9 +23,8 @@ class Entitlement:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("entitlement_test_in_cluster")
-    def test_in_cluster(pem_key):
+    def test_in_cluster(self, pem_key):
         """
         Tests a given PEM entitlement key on a cluster
 
@@ -35,9 +33,8 @@ class Entitlement:
         """
         return RunAnsibleRole({"entitlement_pem": pem_key})
 
-    @staticmethod
     @AnsibleRole("entitlement_test_in_podman")
-    def test_in_podman(pem_key):
+    def test_in_podman(self, pem_key):
         """
         Tests a given PEM entitlement key using a podman container
 
@@ -46,9 +43,8 @@ class Entitlement:
         """
         return RunAnsibleRole({"entitlement_pem": pem_key})
 
-    @staticmethod
     @AnsibleRole("entitlement_test_wait_deployment")
-    def test_cluster(no_inspect=False):
+    def test_cluster(self, no_inspect=False):
         """
         Tests the cluster entitlement
 
@@ -64,25 +60,22 @@ class Entitlement:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("entitlement_inspect")
-    def inspect():
+    def inspect(self):
         """
         Inspects the cluster entitlement
         """
         return RunAnsibleRole()
 
-    @staticmethod
     @AnsibleRole("entitlement_undeploy")
-    def undeploy():
+    def undeploy(self):
         """
         Undeploys entitlement from cluster
         """
         return RunAnsibleRole()
 
-    @staticmethod
     @AnsibleRole("entitlement_test_wait_deployment")
-    def wait():
+    def wait(self):
         """
         Waits for entitlement to be deployed
         """

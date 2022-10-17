@@ -18,6 +18,7 @@ from toolbox.benchmarking import Benchmarking
 from toolbox.utils import Utils
 from toolbox.nto import NTO
 from toolbox.rhods import RHODS
+from toolbox.from_config import FromConfig
 
 
 class Toolbox:
@@ -42,7 +43,7 @@ class Toolbox:
         self.utils = Utils
         self.nto = NTO
         self.rhods = RHODS
-
+        self.from_config = FromConfig.run
 
 def main(no_exit=False):
     # Print help rather than opening a pager

@@ -10,19 +10,19 @@ class Utils:
     General-purpose command(s) independent of and usable by any tool
     """
 
-    @staticmethod
     @AnsibleRole("utils_build_push_image")
     def build_push_image(
-        local_image_name,
-        image_tag="",
-        namespace="ci-artifacts",
-        remote_repo="",
-        remote_auth_file="",
-        git_repo="",
-        git_ref="",
-        dockerfile_path="Dockerfile",
-        context_dir="/",
-        memory=""
+            self,
+            local_image_name,
+            image_tag="",
+            namespace="ci-artifacts",
+            remote_repo="",
+            remote_auth_file="",
+            git_repo="",
+            git_ref="",
+            dockerfile_path="Dockerfile",
+            context_dir="/",
+            memory=""
     ):
         """
         Build and publish an image to quay using either a Dockerfile or

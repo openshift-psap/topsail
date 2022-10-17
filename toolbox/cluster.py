@@ -7,9 +7,9 @@ class Cluster:
     """
     Commands relating to cluster scaling, upgrading and environment capture
     """
-    @staticmethod
+
     @AnsibleRole("cluster_set_scale")
-    def set_scale(instance_type, scale, base_machineset="", force=False, taint="", name=""):
+    def set_scale(self, instance_type, scale, base_machineset="", force=False, taint="", name=""):
         """
         Ensures that the cluster has exactly `scale` nodes with instance_type `instance_type`
 
@@ -46,9 +46,8 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_upgrade_to_image")
-    def upgrade_to_image(image):
+    def upgrade_to_image(self, image):
         """
         Upgrades the cluster to the given image
 
@@ -57,9 +56,8 @@ class Cluster:
         """
         return RunAnsibleRole({"cluster_upgrade_image": image})
 
-    @staticmethod
     @AnsibleRole("cluster_capture_environment")
-    def capture_environment():
+    def capture_environment(self):
         """
         Captures the cluster environment
 
@@ -69,9 +67,8 @@ class Cluster:
         return RunAnsibleRole()
 
 
-    @staticmethod
     @AnsibleRole("cluster_deploy_operator")
-    def deploy_operator(catalog, manifest_name, namespace, version=None, channel=None, install_plan="Manual", deploy_cr=False, ns_monitoring=False):
+    def deploy_operator(self, catalog, manifest_name, namespace, version=None, channel=None, install_plan="Manual", deploy_cr=False, ns_monitoring=False):
         """
         Deploy an operator from OperatorHub catalog entry.
 
@@ -137,9 +134,8 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_deploy_aws_efs")
-    def deploy_aws_efs():
+    def deploy_aws_efs(self):
         """
         Deploy AWS EFS CSI driver and configure AWS accordingly.
 
@@ -147,9 +143,8 @@ class Cluster:
         """
         return RunAnsibleRole({})
 
-    @staticmethod
     @AnsibleRole("cluster_deploy_minio_s3_server")
-    def deploy_minio_s3_server(secret_properties_file):
+    def deploy_minio_s3_server(self, secret_properties_file):
         """
         Deploy Minio S3 server
 
@@ -168,9 +163,8 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_deploy_nginx_server")
-    def deploy_nginx_server(namespace, directory):
+    def deploy_nginx_server(self, namespace, directory):
         """
         Deploy an NGINX HTTP server
 
@@ -186,9 +180,8 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_deploy_redis_server")
-    def deploy_redis_server(namespace):
+    def deploy_redis_server(self, namespace):
         """
         Deploy a redis server
 
@@ -202,9 +195,8 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_prometheus_db")
-    def reset_prometheus_db(label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring"):
+    def reset_prometheus_db(self, label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring"):
         """
         Resets Prometheus database, by destroying its Pod
 
@@ -223,9 +215,8 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_prometheus_db")
-    def dump_prometheus_db(label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring", name_prefix="prometheus"):
+    def dump_prometheus_db(self, label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring", name_prefix="prometheus"):
         """
         Dump Prometheus database into a file
 
@@ -246,9 +237,8 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_destroy_ocp")
-    def destroy_ocp(region="", tag="", confirm=False, tag_value="owned", openshift_install="openshift-install"):
+    def destroy_ocp(self, region="", tag="", confirm=False, tag_value="owned", openshift_install="openshift-install"):
         """
         Destroy an OpenShift cluster
 
@@ -271,9 +261,9 @@ class Cluster:
 
         return RunAnsibleRole(opt)
 
-    @staticmethod
     @AnsibleRole("cluster_create_osd")
-    def create_osd(cluster_name, secret_file, kubeconfig,
+    def create_osd(self,
+                   cluster_name, secret_file, kubeconfig,
                    version="4.10.15",
                    region="us-east-1",
                    kubeadmin_name="kubeadmin",
@@ -313,9 +303,8 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_destroy_osd")
-    def destroy_osd(cluster_name):
+    def destroy_osd(self, cluster_name):
         """
         Destroy an OpenShift Dedicated cluster.
 
@@ -329,7 +318,6 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_deploy_ldap")
     def deploy_ldap(self,
                     idp_name, username_prefix, username_count: int, secret_properties_file,
@@ -368,7 +356,6 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_undeploy_ldap")
     def undeploy_ldap(self, idp_name,
                       use_ocm=False, use_rosa=False,
@@ -393,9 +380,9 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_preload_image")
-    def preload_image(name, image, namespace="default",
+    def preload_image(self,
+                      name, image, namespace="default",
                       node_selector_key="", node_selector_value="",
                       pod_toleration_key="", pod_toleration_effect=""):
         """
@@ -427,9 +414,8 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
-    @staticmethod
     @AnsibleRole("cluster_create_htpasswd_user")
-    def create_htpasswd_adminuser(username, passwordfile, wait=False):
+    def create_htpasswd_adminuser(self, username, passwordfile, wait=False):
         """
         Create an htpasswd admin user.
 
