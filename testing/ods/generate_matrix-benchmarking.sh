@@ -70,7 +70,7 @@ generate_matbench::get_prometheus() {
 }
 
 generate_matbench::generate_plots() {
-    if [[ -z "$MATBENCH_RESULTS_DIRNAME" ]]; then
+    if [[ -z "${MATBENCH_RESULTS_DIRNAME:-}" ]]; then
         echo "ERROR: expected MATBENCH_RESULTS_DIRNAME to be set ..."
     fi
 
