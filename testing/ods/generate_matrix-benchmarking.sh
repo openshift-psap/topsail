@@ -5,83 +5,64 @@ set -o pipefail
 set -o nounset
 set -x
 
-THIS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
+TESTING_ODS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
+
+source "$TESTING_ODS_DIR/configure.sh"
+bash "$TESTING_ODS_DIR/configure_overrides.sh"
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 
-MATBENCH_WORKLOAD=rhods-notebooks-ux
-MATBENCH_GENERATE_LIST=notebooks_scale_test
-MATBENCH_GENERATE_FILTERS=
-MATBENCH_MODE='prefer_cache'
-MATBENCH_DATA_URL=
+set_config_from_pr_arg 0 "matbench.preset"
 
-# if not empty, copy the results downloaded by `matbench download` into the artifacts directory
-SAVE_MATBENCH_DOWNLOAD=
-
-if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; then
-    source "${ARTIFACT_DIR}/variable_overrides"
+matbench_preset=$(get_config matbench.preset)
+if [[ "$matbench_preset" == "notebooks_scale_tests_comparison" ]]; then
+    set_config matbench.generate.list_file "$matbench_preset"
+    set_config matbench.generate.filters_file "$matbench_preset"
+    set_config matbench.download.url_file "subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/${matbench_preset}.url"
+elif [[ "$matbench_preset" == "notebook_perf_comparison" ]]; then
+    set_config matbench.generate.list_file "$matbench_preset"
+    set_config matbench.download.url_file "subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/${matbench_preset}.url"
+elif [[ "$matbench_preset" == "https://"* ]]; then
+    set_config matbench.download.url "$matbench_preset"
 fi
 
-if [[ "${PR_POSITIONAL_ARGS:-}" == "notebooks_scale_tests_comparison" ]]; then
-    preset=${PR_POSITIONAL_ARGS:-}
-    MATBENCH_GENERATE_LIST=$preset
-    MATBENCH_GENERATE_FILTERS=$preset
-    PR_POSITIONAL_ARGS=subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/$preset.url
-    PR_POSITIONAL_ARG_0=$PR_POSITIONAL_ARGS
-fi
+export MATBENCH_WORKLOAD=$(get_config matbench.workload)
 
-if [[ "${PR_POSITIONAL_ARGS:-}" == "notebook_perf_comparison" ]]; then
-    preset=${PR_POSITIONAL_ARGS:-}
-    MATBENCH_GENERATE_LIST=$preset
-    PR_POSITIONAL_ARGS=subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/$preset.url
-    PR_POSITIONAL_ARG_0=$PR_POSITIONAL_ARGS
-fi
 
-export MATBENCH_MODE
-export MATBENCH_WORKLOAD
-
-WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
-
-if [[ -z "${MATBENCH_WORKLOAD:-}" ]]; then
-    echo "ERROR: $0 expects 'MATBENCH_WORKLOAD' to be set ..."
-    exit 1
-fi
+WORKLOAD_STORAGE_DIR="$TESTING_ODS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
 
 generate_matbench::prepare_matrix_benchmarking() {
-    WORKLOAD_RUN_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking/workloads/$MATBENCH_WORKLOAD"
+    WORKLOAD_RUN_DIR="$TESTING_ODS_DIR/../../subprojects/matrix-benchmarking/workloads/$MATBENCH_WORKLOAD"
 
     rm -f "$WORKLOAD_RUN_DIR"
     ln -s "$WORKLOAD_STORAGE_DIR" "$WORKLOAD_RUN_DIR"
 
-    pip install --quiet --requirement "$THIS_DIR/../../subprojects/matrix-benchmarking/requirements.txt"
+    pip install --quiet --requirement "$TESTING_ODS_DIR/../../subprojects/matrix-benchmarking/requirements.txt"
     pip install --quiet --requirement "$WORKLOAD_STORAGE_DIR/requirements.txt"
 }
 
 _get_data_from_pr() {
-    MATBENCH_DATA_URL=${PR_POSITIONAL_ARGS:-$MATBENCH_DATA_URL}
-    if [[ -z "${MATBENCH_DATA_URL}" ]]; then
-        echo "ERROR: _get_data_from_pr expects PR_POSITIONAL_ARGS or MATBENCH_DATA_URL to be set ..."
-        exit 1
-    fi
-
     if [[ -z "$MATBENCH_RESULTS_DIRNAME" ]]; then
         echo "ERROR: _get_data_from_pr expects MATBENCH_RESULTS_DIRNAME to be set ..."
     fi
 
-    _download_data_from_url "$MATBENCH_DATA_URL"
-}
+    MATBENCH_URL=$(get_config matbench.download.url)
+    MATBENCH_URL_FILE=$(get_config matbench.download.url_file)
 
-_download_data_from_url() {
-    url=$1
-    shift
+    if [[ "$MATBENCH_URL" != null ]]; then
+        export MATBENCH_URL
 
-    if [[ "$url" == "https"* ]]; then
-        echo "$url" > "$ARTIFACT_DIR/source_url"
-        matbench download --do-download --url "$url" |& tee >"$ARTIFACT_DIR/_matbench_download.log"
+        echo "$MATBENCH_URL" > "$ARTIFACT_DIR/source_url"
+    elif [[ "$MATBENCH_URL_FILE" != null ]]; then
+        export MATBENCH_URL_FILE
+
+        cp "$HOME/$MATBENCH_URL_FILE" "$ARTIFACT_DIR/source_url"
     else
-        cp "$HOME/$url" "$ARTIFACT_DIR/source_url"
-        matbench download --do-download --url-file "$HOME/$url" |& tee > "$ARTIFACT_DIR/_matbench_download.log"
+        _error "matbench.download.url or matbench.download.url_file must be specified"
     fi
+    export MATBENCH_MODE=$(get_config matbench.download.mode)
+
+    matbench download --do-download |& tee > "$ARTIFACT_DIR/_matbench_download.log"
 }
 
 generate_matbench::get_prometheus() {
@@ -104,12 +85,14 @@ generate_matbench::generate_plots() {
         echo "ERROR: expected MATBENCH_RESULTS_DIRNAME to be set ..."
     fi
 
-    echo "Generating from ${MATBENCH_GENERATE_LIST} ..."
-    stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${MATBENCH_GENERATE_LIST}.plots" | cut -d'#' -f1 | grep -v '^$')"
+    generate_list=$(get_config matbench.generate.list_file)
+    echo "Generating from ${generate_list} ..."
+    stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${generate_list}.plots" | cut -d'#' -f1 | grep -v '^$')"
 
     NO_FILTER="no-filter"
-    if [[ "$MATBENCH_GENERATE_FILTERS" ]]; then
-        filters_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${MATBENCH_GENERATE_FILTERS}.filters" | cut -d'#' -f1 | (grep -v '^$' || true))"
+    filters_file=$(get_config matbench.generate.filters_file)
+    if [[ "$filters_file" != null ]]; then
+        filters_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${filters_file}.filters" | cut -d'#' -f1 | (grep -v '^$' || true))"
     else
         filters_content="$NO_FILTER"
     fi
@@ -122,7 +105,7 @@ generate_matbench::generate_plots() {
         return 1
     fi
 
-    if [[ "$SAVE_MATBENCH_DOWNLOAD" ]]; then
+    if test_config matbench.download.save_to_artifacts; then
         cp -rv "$MATBENCH_RESULTS_DIRNAME" "$ARTIFACT_DIR"
     fi
 
@@ -180,7 +163,7 @@ elif [[ "$action" == "from_dir" ]]; then
 
     generate_matbench::generate_plots
 
-elif [[ "$action" == "from_pr_args" || "$JOB_NAME_SAFE" == "nb-plot" ]]; then
+elif [[ "$action" == "from_pr_args" ]]; then
     generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking
 

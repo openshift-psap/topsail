@@ -1,0 +1,140 @@
+secrets:
+  dir:
+    name: null
+    env_key: PSAP_ODS_SECRET_PATH
+  s3_ldap_password_file: s3_ldap.passwords
+  keep_cluster_password_file: get_cluster.password
+clusters:
+  create:
+    type: single # can be: single, ocp, managed
+    keep: false
+    name_prefix: odsci
+    sutest_already_exists:
+      hostname: null
+      username: null
+    ocm:
+      version: 4.10.15
+      region: us-west-2
+      workers:
+        type: m6.xlarge
+        count: 2
+      compute:
+        type: m5.2xlarge
+    ocp:
+      base_domain: psap.aws.rhperfscale.org
+      version: 4.10.15
+      region: us-west-2
+      control_plane:
+        type: m6a.xlarge
+      workers:
+        type: m6a.xlarge
+        count: 2
+      compute:
+        type: m5a.2xlarge
+
+  cleanup:
+    max_age: 4 #hours
+
+  sutest:
+    is_managed: false
+    managed:
+      is_rosa: false
+      is_ocm: false
+      env: staging
+      name: null
+    compute:
+      autoscaling:
+        enabled: false
+      machineset:
+        name: rhods-compute-pods
+        count: null
+        taint:
+          key: only-rhods-compute-pods
+          value: "yes"
+          effect: NoSchedule
+
+  driver:
+    compute:
+      machineset:
+        name: test-pods
+        count: null
+        taint:
+          key: only-test-pods
+          value: "yes"
+          effect: NoSchedule
+
+ldap:
+  idp_name: RHODS_CI_LDAP
+  users:
+    count: 1000
+    prefix: psapuser
+
+cluster:
+  auto-scaler:
+    enabled: false
+
+rhods:
+  deploy_from_catalog: true
+  catalog:
+    image: quay.io/modh/qe-catalog-source
+    tag: latest
+  addon:
+    # only necessary/set when rhods.deploy_from_catalog is true
+    email: SET_AT_RUNTIME
+  notebooks:
+    customize:
+      enabled: true
+      pvc_size: 5Gi
+      notebook_size:
+        enabled: true
+        name: &notebook_size_name Tiny
+        cpu: 1
+        mem_gi: 4
+      remove_gpu_images: true
+
+tests:
+  notebooks:
+    repeat: 2 # number of test repetition to perform
+    users:
+      count: 5 # number of users to simulate
+      start_offset: 0 # offset to add to the Pod user index
+      sleep_factor: 1.0 # how long to wait between user starts, multiplied by the user index
+    flavor_to_run: user-level
+    namespace: notebooks-scale-test
+    imagestream_name: scale-test
+    artifacts_collected: no-screenshot-except-zero
+    notebook:
+      size_name: *notebook_size_name
+      image_name: s2i-generic-data-science-notebook
+    ods_ci:
+      image:
+        repo: https://github.com/openshift-psap/ods-ci.git
+        ref: jh-at-scale.v220923
+      excluded_tags: None # tags to exclude when running the robot test case
+    test_pods:
+      # must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
+      size:
+        cpu: 0.2
+        mem_gi: 0.75
+    ipynb:
+      uploaded_directory: testing/ods/notebooks
+      notebook_filename: simple-notebook.ipynb
+    benchmark:
+      name: pyperf_bm_go.py
+      number: 20
+      repeat: 3
+    # if enable, delete the test namespaces after the testing
+    cleanup_driver_on_exit: true
+
+matbench:
+  preset: # can be: reference
+  workload: rhods-notebooks-ux
+  generate:
+    list_file: notebooks_scale_test
+    filters_file:
+  download:
+    mode: prefer_cache
+    url:
+    url_file:
+    # if true, copy the results downloaded by `matbench download` into the artifacts directory
+    save_to_artifacts: false

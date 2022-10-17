@@ -6,18 +6,28 @@ set -o nounset
 set -o errtrace
 set -x
 
+source "$TESTING_ODS_DIR/../_logging.sh"
+source "$TESTING_ODS_DIR/configure.sh"
+
 #
 # Configuration the test and the environment
 #
-
-# export OSD_CLUSTER_NAME=<osd cluster name> # OCM name of the cluster, empty if OCP
-# export ODS_CI_NB_USERS=10 # number of users to simulate
-# export ODS_SLEEP_FACTOR=1 # how long to wait between user starts, in seconds
 
 BASE_ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/rhods_scale_test}
 mkdir -p "$BASE_ARTIFACT_DIR"
 
 if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
+    if [[ "${CONFIG_DEST_DIR:-}" ]]; then
+        echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
+
+    elif [[ "${SHARED_DIR:-}" ]]; then
+        echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
+        CONFIG_DEST_DIR=$SHARED_DIR
+
+    else
+        _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
+    fi
+
     KUBECONFIG_DRIVER="${SHARED_DIR}/driver_kubeconfig" # cluster driving the test
     KUBECONFIG_SUTEST="${SHARED_DIR}/sutest_kubeconfig" # system under test
 else
@@ -33,57 +43,63 @@ export KUBECONFIG_SUTEST
 export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/preparation"
 
 action=${1:-}
-if [[ "action" == "prepare" ]]; then
-    # 1. Configure the clusters
+case ${action} in
+    "prepare")
+        # 1. Configure the clusters
 
-    # 1.0 Deploy RHODS in the sutest cluster
+        # 1.0 Deploy RHODS in the sutest cluster
 
-    testing/ods/notebook_scale_test.sh deploy_rhods
-    testing/ods/notebook_scale_test.sh wait_rhods
+        testing/ods/notebook_scale_test.sh deploy_rhods
+        testing/ods/notebook_scale_test.sh wait_rhods
 
-    # 1.1 Deploy LDAP in the sutest cluster
+        # 1.1 Deploy LDAP in the sutest cluster
 
-    testing/ods/notebook_scale_test.sh deploy_ldap
+        testing/ods/notebook_scale_test.sh deploy_ldap
 
-    # 1.2 Prepare the driver cluster
+        # 1.2 Prepare the driver cluster
 
-    testing/ods/notebook_scale_test.sh prepare_driver_cluster
+        testing/ods/notebook_scale_test.sh prepare_driver_cluster
 
-    # 1.3 Prepare the laptop for generating the plots
+        # 1.3 Prepare the laptop for generating the plots
 
-    testing/ods/notebook_scale_test.sh prepare_matbench
-elif [[ "$action" == "test" ]]; then
-    #
-    # 2. Run the tests in a dedicated ARTIFACT_DIR directory
-    #
+        testing/ods/notebook_scale_test.sh prepare_matbench
+        exit 0
+        ;;
+    "test")
+        #
+        # 2. Run the tests in a dedicated ARTIFACT_DIR directory
+        #
 
-    # 2.1 Run the first test
+        # 2.1 Run the first test
 
-    export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/test_1"
-    export ODS_CI_NB_USERS=4
-    export ODS_SLEEP_FACTOR=2
+        export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/test_1"
 
-    testing/ods/notebook_scale_test.sh run_test_and_plot
+        set_config tests.notebooks.users.count 4
+        set_config tests.notebooks.users.sleep_factor 2 # seconds
 
-    # 2.2 Run the second test
+        testing/ods/notebook_scale_test.sh run_test_and_plot
 
-    export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/test_2"
-    export ODS_CI_NB_USERS=3
-    export ODS_SLEEP_FACTOR=1
+        # 2.2 Run the second test
 
-    testing/ods/notebook_scale_test.sh run_test
-    testing/ods/notebook_scale_test.sh generate_plots
+        export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/test_2"
+        set_config tests.notebooks.users.count 3
+        set_config tests.notebooks.users.sleep_factor 1 # seconds
 
-    #
-    # 3. Cleanup the RHODS cluster
-    #
+        testing/ods/notebook_scale_test.sh run_test
+        testing/ods/notebook_scale_test.sh generate_plots
 
-    export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/preparation"
+        #
+        # 3. Cleanup the RHODS cluster
+        #
 
-    # 3.1 Undeploy LDAP in the sutest cluster
+        export ARTIFACT_DIR="${BASE_ARTIFACT_DIR}/preparation"
 
-    testing/ods/notebook_scale_test.sh undeploy_ldap
-else
-    echo "$0: unknown action '$action'"
-    exit 1
-fi
+        # 3.1 Undeploy LDAP in the sutest cluster
+
+        testing/ods/notebook_scale_test.sh undeploy_ldap
+        ;;
+    *)
+        _error "$0: unknown action '$action'"
+        exit 1
+        ;;
+esac

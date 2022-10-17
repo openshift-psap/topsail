@@ -6,33 +6,34 @@ set -o nounset
 set -o errtrace
 set -x
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-source "$THIS_DIR/process_ctrl.sh"
-source "$THIS_DIR/../_logging.sh"
-source "$THIS_DIR/config_common.sh"
-source "$THIS_DIR/config_clusters.sh"
-source "$THIS_DIR/config_load_overrides.sh"
-
-source "$THIS_DIR/cluster_helpers.sh"
+source "$TESTING_ODS_DIR/../process_ctrl.sh"
+source "$TESTING_ODS_DIR/../_logging.sh"
+source "$TESTING_ODS_DIR/configure.sh"
+source "$TESTING_ODS_DIR/cluster_helpers.sh"
 
 # ---
 
-capture_gather_extra() {
-    cluster_role=$1
+CLUSTER_TYPE_KEY=clusters.create.type
 
-    base_artifact_dir=$ARTIFACT_DIR
+set_config_from_pr_arg 0 "$CLUSTER_TYPE_KEY"
+
+capture_gather_extra() {
+    local cluster_role=$1
+
+    local base_artifact_dir=$ARTIFACT_DIR
 
     export ARTIFACT_DIR=$base_artifact_dir/${cluster_role}__gather-extra
-    export KUBECONFIG=$SHARED_DIR/${cluster_role}_kubeconfig
+    export KUBECONFIG=$CONFIG_DEST_DIR/${cluster_role}_kubeconfig
 
-    "$THIS_DIR"/../gather-extra.sh > "$base_artifact_dir/${cluster_role}__gather-extra.log" 2>&1 || true
+    "$TESTING_ODS_DIR"/../gather-extra.sh > "$base_artifact_dir/${cluster_role}__gather-extra.log" 2>&1 || true
 
     export ARTIFACT_DIR=$base_artifact_dir
 }
 
 finalize_cluster() {
-    cluster_role=$1
+    local cluster_role=$1
 
     capture_gather_extra "$cluster_role"
 
@@ -40,150 +41,163 @@ finalize_cluster() {
 }
 
 destroy_cluster() {
-    cluster_type=$1
-    cluster_role=$2
+    cluster_role=$1
 
-    export KUBECONFIG="${SHARED_DIR}/${cluster_role}_kubeconfig"
+    cluster_type=$(get_config clusters.create.type)
+    if [[ "$cluster_type" == single && "$cluster_role" == driver ]]; then
+        echo "Nothing to do to destroy the driver cluster in single mode."
+        return
+    fi
+
+    export KUBECONFIG="${CONFIG_DEST_DIR}/${cluster_role}_kubeconfig"
     if oc get cm/keep-cluster -n default 2>/dev/null; then
-        echo "INFO: keep-cluster CM found in the default namespace of the $cluster_type/$cluster_role, keep it."
+        _info "keep-cluster CM found in the default namespace of the $cluster_type/$cluster_role, keep it."
         return
     fi
 
     finalize_cluster "$cluster_role"
 
-    "$THIS_DIR/${cluster_type}_cluster.sh" destroy "$cluster_role"
+    if [[ "$cluster_role" == driver ]]; then
+        "$TESTING_ODS_DIR/ocp_cluster.sh" destroy "$cluster_role"
+
+    elif ! test_config clusters.sutest.is_managed; then
+        "$TESTING_ODS_DIR/ocp_cluster.sh" destroy "$cluster_role"
+    else
+        if test_config clusters.managed.is_ocm; then
+            "$TESTING_ODS_DIR/osd_cluster.sh" destroy "$cluster_role"
+        elif test_config clusters.managed.is_rosa; then
+            _error "cannot destroy ROSA clusters"
+        else
+            _error "cluster type must be OCM or ROSA"
+        fi
+    fi
 }
 
 create_clusters() {
-    cluster_type=$1
-    shift
-    create_flag="${1:-}"
-    shift || true
+    local cluster_type=$(get_config clusters.create.type)
 
-    if [[ "$cluster_type" == "osd" || "$cluster_type" == "ocp" ]]; then
-        process_ctrl::run_in_bg "$THIS_DIR/${cluster_type}_cluster.sh" create "sutest" "$create_flag"
+    if [[ "$cluster_type" == managed || "$cluster_type" == ocp ]]; then
+        if [[ "$cluster_type" == ocp ]]; then
+            process_ctrl::run_in_bg "$TESTING_ODS_DIR/ocp_cluster.sh" create sutest
 
-        process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "driver" "$create_flag"
+        elif test_config clusters.managed.is_ocm; then
+            process_ctrl::run_in_bg "$TESTING_ODS_DIR/osd_cluster.sh" create sutest
 
-    elif [[ "$cluster_type" == "single" ]]; then
-        process_ctrl::run_in_bg "$THIS_DIR/ocp_cluster.sh" create "sutest" "$create_flag"
+        elif test_config clusters.managed.is_rosa; then
+            _error "cannot create rosa clusters ..."
 
-        echo "INFO: launching a single cluster, creating a symlink for the driver cluster"
-        ln -s "${SHARED_DIR}/sutest_kubeconfig" "${SHARED_DIR}/driver_kubeconfig"
+        else
+            _error "managed cluster type must be OCM (or ROSA [unsupported]) ..."
+        fi
+        process_ctrl::run_in_bg "$TESTING_ODS_DIR/ocp_cluster.sh" create driver
+
+    elif [[ "$cluster_type" == single ]]; then
+        process_ctrl::run_in_bg "$TESTING_ODS_DIR/ocp_cluster.sh" create sutest
+
+        echo "Launching a single cluster, creating a symlink for the driver cluster"
+        ln -s "${CONFIG_DEST_DIR}/sutest_kubeconfig" "${CONFIG_DEST_DIR}/driver_kubeconfig"
 
     else
-        echo "ERROR: invalid cluster type: '$cluster_type'"
-        exit 1
+        _error "invalid cluster type: '$cluster_type'"
     fi
 
     process_ctrl::wait_bg_processes
 
     # cluster that will be available right away when going to the debug tab of the test pod
-    CI_KUBECONFIG=${SHARED_DIR}/kubeconfig
-    if [[ ! -e "$CI_KUBECONFIG" ]]; then
-        ln -s "${SHARED_DIR}/${CI_DEFAULT_CLUSTER}_kubeconfig" "$CI_KUBECONFIG"
+    local ci_kubeconfig=${CONFIG_DEST_DIR}/kubeconfig
+    if [[ ! -e "$ci_kubeconfig" ]]; then
+        ln -s "${CONFIG_DEST_DIR}/driver_kubeconfig" "$ci_kubeconfig"
     fi
 
-    if [[ "$create_flag" == "keep" ]]; then
-        KUBECONFIG_DRIVER="${SHARED_DIR}/driver_kubeconfig" # cluster driving the test
-        KUBECONFIG_SUTEST="${SHARED_DIR}/sutest_kubeconfig" # system under test
+    if test_config clusters.create.keep; then
+        local KUBECONFIG_DRIVER="${CONFIG_DEST_DIR}/driver_kubeconfig" # cluster driving the test
+        local KUBECONFIG_SUTEST="${CONFIG_DEST_DIR}/sutest_kubeconfig" # system under test
 
         keep_cluster() {
-            cluster_role=$1
+            local cluster_role=$1
+            local cluster_region=$2
 
             echo "Keeping the $cluster_role cluster ..."
-            export PSAP_ODS_SECRET_PATH
             oc create cm keep-cluster -n default --from-literal=keep=true
 
-            pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
-            ./run_toolbox.py cluster create_htpasswd_adminuser "$pr_author" "$PSAP_ODS_SECRET_PATH/get_cluster.password"
+            local pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
+            local keep_cluster_password_file="$PSAP_ODS_SECRET_PATH/$(get_config secrets.keep_cluster_password_file)"
+            ./run_toolbox.py cluster create_htpasswd_adminuser "$pr_author" "$password_file"
 
             oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
             cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
 source "\$PSAP_ODS_SECRET_PATH/get_cluster.password"
 oc login $(oc whoami --show-server) --insecure-skip-tls-verify --username=$pr_author --password="\$password"
 EOF
-            CLUSTER_TAG=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
-            echo "$CLUSTER_TAG" > "$ARTIFACT_DIR/${cluster_role}_cluster_tag"
+
+            local cluster_tag=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
+
             cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_destroy_cluster.cmd"
-./run_toolbox.py cluster destroy_ocp $OCP_REGION $CLUSTER_TAG
+./run_toolbox.py cluster destroy_ocp $cluster_region $cluster_tag
 EOF
         }
 
 
-        KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster driver
+        KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster driver "$(get_config clusters.ocp.region)"
 
         # * 'osd' clusters already have their kubeadmin password
         # populated during the cluster bring up
         # * 'single' clusters already have been modified with the
         # keep_cluster call of the sutest cluster.
         if [[ "$cluster_type" == "ocp" ]]; then
-            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster sutest
+            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster sutest "$(get_config clusters.ocp.region)"
         fi
     fi
 }
 
 destroy_clusters() {
-    cluster_type=$1
-
-    if [[ "$cluster_type" == "osd" || "$cluster_type" == "ocp" ]]; then
-        process_ctrl::run_in_bg destroy_cluster "$cluster_type" "sutest"
-        process_ctrl::run_in_bg destroy_cluster "ocp" "driver"
-
-    elif [[ "$cluster_type" == "single" ]]; then
-        process_ctrl::run_in_bg destroy_cluster "ocp" "sutest"
-        echo "INFO: only one cluster was created, nothing to destroy for the driver cluster"
-    else
-        echo "ERROR: invalid cluster type: '$cluster_type'"
-        # don't 'exit 1' in the destroy step,
-        # that would prevent the destruction of other clusters
-    fi
+    process_ctrl::run_in_bg destroy_cluster sutest
+    process_ctrl::run_in_bg destroy_cluster driver
 
     process_ctrl::wait_bg_processes
 }
 
 # ---
 
-if [ -z "${SHARED_DIR:-}" ]; then
-    echo "FATAL: multi-stage test storage directory \$SHARED_DIR not set ..."
-    exit 1
+if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+    _error "artifacts storage directory ARTIFACT_DIR not set ..."
+fi
+
+if [[ "${CONFIG_DEST_DIR:-}" ]]; then
+    echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
+
+elif [[ "${SHARED_DIR:-}" ]]; then
+    echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
+    CONFIG_DEST_DIR=$SHARED_DIR
+
+else
+    _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
 fi
 
 action="${1:-}"
-shift
-
-cluster_type="${PR_POSITIONAL_ARG_0:-$CI_DEFAULT_CLUSTER_TYPE}"
-create_flag="${PR_POSITIONAL_ARG_1:-}"
-
-if [[ -z "cluster_type" ]]; then
-    echo "ERROR: cluster type not found in ODS_CLUSTER_TYPE or PR_POSITIONAL_ARGS"
-    exit 1
-elif [[ "$cluster_type" == "keep" ]]; then
-    cluster_type="$CI_DEFAULT_CLUSTER_TYPE"
-    create_flag="keep"
-elif [[ "$cluster_type" == "customer" ]]; then
-    cluster_type="single"
-
-fi
 
 set -x
 case ${action} in
     "create")
         finalizers+=("process_ctrl::kill_bg_processes")
-        "$THIS_DIR/ocp_cluster.sh" prepare
+        "$TESTING_ODS_DIR/ci_init_configure.sh"
 
-        create_clusters "$cluster_type" "$create_flag"
+        "$TESTING_ODS_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
+
+        create_clusters
         exit 0
         ;;
     "destroy")
-        set +o errexit
-        "$THIS_DIR/ocp_cluster.sh" prepare
+        set +o errexit # do not exit on error when destroying the resources
 
-        destroy_clusters "$cluster_type"
+        "$TESTING_ODS_DIR/ci_init_configure.sh"
+
+        "$TESTING_ODS_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
+
+        destroy_clusters
         exit 0
         ;;
     *)
-        echo "FATAL: Unknown action: $action $cluster_type" "$@"
-        exit 1
+        _error "Unknown action '$action'"
         ;;
 esac

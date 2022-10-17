@@ -1,0 +1,143 @@
+{% set scale_test_imagestream = "image-registry.openshift-image-registry.svc:5000/"+ tests.notebooks.namespace +"/"+ tests.notebooks.imagestream_name %}
+
+{% set secrets_location = secrets.dir.name | or_env(secrets.dir.env_key) %}
+{% set s3_ldap_password_location = secrets_location + "/" + secrets.s3_ldap_password_file %}
+
+__aliases:
+  driver_preload_image: &driver_preload_image
+    node_selector_key: {{ clusters.driver.compute.machineset.taint.key }}
+    node_selector_value: "{{ clusters.driver.compute.machineset.taint.value }}"
+    pod_toleration_effect: {{ clusters.driver.compute.machineset.taint.effect }}
+    pod_toleration_key: {{ clusters.driver.compute.machineset.taint.key }}
+
+cluster deploy_ldap:
+  idp_name: {{ ldap.idp_name }}
+  secret_properties_file: {{ s3_ldap_password_location }}
+  username_count: {{ ldap.users.count }}
+  username_prefix: {{ ldap.users.prefix }}
+  use_ocm: {{ clusters.sutest.managed.is_ocm }}
+  use_rosa: {{ clusters.sutest.managed.is_rosa }}
+  cluster_name: {{ clusters.sutest.managed.name }}
+
+rhods deploy_ods:
+  catalog_image: {{ rhods.catalog.image }}
+  version: {{ rhods.catalog.tag }}
+
+sutest/cluster set_scale:
+  instance_type: {{ clusters.create.ocp.compute.type }}
+  name: {{ clusters.sutest.compute.machineset.name }}
+  taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
+  scale: SET_AT_RUNTIME
+
+driver/cluster set_scale:
+  instance_type: {{ clusters.create.ocp.compute.type }}
+  name: {{ clusters.driver.compute.machineset.name }}
+  taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
+  scale: SET_AT_RUNTIME
+
+
+utils build_push_image/artifacts-exporter:
+  namespace: {{ tests.notebooks.namespace }}
+  dockerfile_path: testing/ods/images/Containerfile.s3_artifacts_exporter
+{% set artifacts_exporter_istag = "artifacts-exporter" %}
+  image_tag: {{ artifacts_exporter_istag }}
+  local_image_name: {{ tests.notebooks.imagestream_name }}
+
+cluster preload_image/artifacts-exporter:
+  namespace: {{ tests.notebooks.namespace }}
+  name: {{ artifacts_exporter_istag }}
+  image: {{ scale_test_imagestream }}:{{ artifacts_exporter_istag }}
+  <<: *driver_preload_image
+
+utils build_push_image/api-scale-test:
+  namespace: {{ tests.notebooks.namespace }}
+  dockerfile_path: testing/ods/images/Containerfile.api_scale_test
+{% set api_scale_test_istag = "api-scale-test" %}
+  image_tag: {{ api_scale_test_istag }}
+  local_image_name: {{ tests.notebooks.imagestream_name }}
+
+cluster preload_image/api-scale-test:
+  namespace: {{ tests.notebooks.namespace }}
+  name: {{ api_scale_test_istag }}
+  image: {{ scale_test_imagestream }}:{{ api_scale_test_istag }}
+  <<: *driver_preload_image
+
+
+utils build_push_image/user-scale-test:
+  namespace: {{ tests.notebooks.namespace }}
+  git_repo: {{ tests.notebooks.ods_ci.image.repo }}
+  git_ref: {{ tests.notebooks.ods_ci.image.ref }}
+  dockerfile_path: build/Dockerfile
+{% set user_scale_test_istag = "user-scale-test" %}
+  image_tag: {{ user_scale_test_istag }}
+  local_image_name: {{ tests.notebooks.imagestream_name }}
+
+cluster preload_image/user-scale-test:
+  namespace: {{ tests.notebooks.namespace }}
+  name: {{ user_scale_test_istag }}
+  image: {{ scale_test_imagestream }}:{{ user_scale_test_istag }}
+  <<: *driver_preload_image
+
+
+cluster preload_image/notebook:
+  namespace: redhat-ods-applications
+  image: SET_AT_RUNTIME
+  node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
+  node_selector_value: "{{ clusters.sutest.compute.machineset.taint.value }}"
+  pod_toleration_effect: {{ clusters.sutest.compute.machineset.taint.effect }}
+  pod_toleration_key: "{{ clusters.sutest.compute.machineset.taint.key }}"
+
+cluster deploy_redis_server:
+{% set redis_namespace = tests.notebooks.namespace %}
+{% set redis_internal_address = "redis."+redis_namespace+".svc" %}
+  namespace: {{ redis_namespace }}
+
+
+cluster deploy_minio_s3_server:
+  secret_properties_file: {{ s3_ldap_password_location }}
+
+cluster deploy_nginx_server:
+{% set nginx_namespace = "nginx-"+tests.notebooks.namespace %}
+  namespace: {{ tests.notebooks.namespace }}
+  directory: {{ tests.notebooks.ipynb.uploaded_directory }}
+  __server_name: {{ nginx_namespace }}
+
+
+rhods notebook_ux_e2e_scale_test:
+  artifacts_collected: {{ tests.notebooks.artifacts_collected }}
+  idp_name: {{ ldap.idp_name }}
+  ods_ci_artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_istag }}"
+  ods_ci_exclude_tags: {{ tests.notebooks.ods_ci.excluded_tags }}
+  ods_ci_notebook_benchmark_name: {{ tests.notebooks.benchmark.name }}
+  ods_ci_notebook_benchmark_number: {{ tests.notebooks.benchmark.number }}
+  ods_ci_notebook_benchmark_repeat: {{ tests.notebooks.benchmark.repeat }}
+  ods_ci_notebook_image_name: {{ tests.notebooks.notebook.image_name }}
+  ods_ci_notebook_size_name: {{ tests.notebooks.notebook.size_name }}
+  ods_ci_scale_test_case: notebook_ux_e2e_test.robot
+  ods_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
+  secret_properties_file: {{ s3_ldap_password_location }}
+  state_signal_redis_server: {{ redis_internal_address }}
+  toleration_key: {{ clusters.driver.compute.machineset.taint.key }}
+  user_count: {{ tests.notebooks.users.count }}
+  user_index_offset: {{ tests.notebooks.users.start_offset }}
+  username_prefix: {{ ldap.users.prefix }}
+  notebook_url: SET_AT_RUNTIME # set at runtime
+
+sutest/cluster set_scale/cleanup:
+  instance_type: not-used
+  name: {{ clusters.sutest.compute.machineset.name }}
+  scale: 0
+
+driver/cluster set_scale/cleanup:
+  instance_type: not-used
+  name: {{ clusters.driver.compute.machineset.name }}
+  scale: 0
+
+rhods cleanup_notebooks:
+  username_prefix: {{ ldap.users.prefix }}
+
+cluster undeploy_ldap:
+  idp_name: {{ ldap.idp_name }}
+  use_ocm: {{ clusters.sutest.managed.is_ocm }}
+  use_rosa: {{ clusters.sutest.managed.is_rosa }}
+  cluster_name: {{ clusters.sutest.managed.name }}

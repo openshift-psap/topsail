@@ -6,27 +6,30 @@ set -o nounset
 set -o errtrace
 set -x
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-source "$THIS_DIR/../_logging.sh"
-source "$THIS_DIR/process_ctrl.sh"
+if [ -z "${ARTIFACT_DIR:-}" ]; then
+    if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
+        echo "ARTIFACT_DIR not set, cannot proceed without inside the image."
+        false
+    fi
 
-source "$THIS_DIR/config_common.sh"
-source "$THIS_DIR/config_clusters.sh"
-source "$THIS_DIR/config_rhods.sh"
-source "$THIS_DIR/config_notebook_ux.sh"
-source "$THIS_DIR/config_notebook_api.sh"
-source "$THIS_DIR/config_load_overrides.sh"
+    export ARTIFACT_DIR="/tmp/ci-artifacts_$(date +%Y%m%d)"
+    mkdir -p "$ARTIFACT_DIR"
 
-source "$THIS_DIR/cluster_helpers.sh"
-
-if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
-    KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-${SHARED_DIR}/driver_kubeconfig}" # cluster driving the test
-    KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-${SHARED_DIR}/sutest_kubeconfig}" # system under test
+    echo "Using ARTIFACT_DIR=$ARTIFACT_DIR as default artifacts directory."
 else
-    KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-$KUBECONFIG}" # cluster driving the test
-    KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-$KUBECONFIG}" # system under test
+    echo "Using ARTIFACT_DIR=$ARTIFACT_DIR."
 fi
+
+source "$TESTING_ODS_DIR/../_logging.sh"
+source "$TESTING_ODS_DIR/../process_ctrl.sh"
+source "$TESTING_ODS_DIR/configure.sh"
+source "$TESTING_ODS_DIR/cluster_helpers.sh"
+
+KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-$KUBECONFIG}" # cluster driving the test
+KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-$KUBECONFIG}" # system under test
+
 
 DRIVER_CLUSTER=driver
 SUTEST_CLUSTER=sutest
@@ -40,7 +43,7 @@ switch_driver_cluster() {
 }
 
 switch_cluster() {
-    cluster_role="$1"
+    local cluster_role="$1"
     echo "Switching to the '$cluster_role' cluster"
     if [[ "$cluster_role" == "$DRIVER_CLUSTER" ]]; then
         export KUBECONFIG=$KUBECONFIG_DRIVER
@@ -56,84 +59,53 @@ switch_cluster() {
 # ---
 
 prepare_driver_cluster() {
-    switch_cluster "driver"
+    switch_cluster driver
 
     prepare_driver_scale_cluster
 
-    oc create namespace "$ODS_CI_TEST_NAMESPACE" -oyaml --dry-run=client | oc apply -f-
+    local loadtest_namespace=$(get_config tests.notebooks.namespace)
 
-    oc annotate namespace/"$ODS_CI_TEST_NAMESPACE" --overwrite \
-       "openshift.io/node-selector=$DRIVER_TAINT_KEY=$DRIVER_TAINT_VALUE"
-    oc annotate namespace/"$ODS_CI_TEST_NAMESPACE" --overwrite \
-       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$DRIVER_TAINT_EFFECT'", "key": "'$DRIVER_TAINT_KEY'"}]'
+    oc create namespace "$loadtest_namespace" -oyaml --dry-run=client | oc apply -f-
+
+    local driver_taint_key=$(get_config clusters.driver.compute.machineset.taint.key)
+    local driver_taint_value=$(get_config clusters.driver.compute.machineset.taint.value)
+    local driver_taint_effect=$(get_config clusters.driver.compute.machineset.taint.effect)
+    oc annotate namespace/"$loadtest_namespace" --overwrite \
+       "openshift.io/node-selector=$driver_taint_key=$driver_taint_value"
+    oc annotate namespace/"$loadtest_namespace" --overwrite \
+       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$driver_taint_effect'", "key": "'$driver_taint_key'"}]'
 
 
-    build_and_preload_odsci_image() {
-        ./run_toolbox.py utils build_push_image \
-                         "$ODS_CI_IMAGESTREAM" "$ODS_CI_TAG" \
-                         --namespace="$ODS_CI_TEST_NAMESPACE" \
-                         --git-repo="$ODS_CI_REPO" \
-                         --git-ref="$ODS_CI_REF" \
-                         --context-dir="/" \
-                         --dockerfile-path="build/Dockerfile"
-
-        ods_ci_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_TAG"
-        ./run_toolbox.py cluster preload_image "preload-ods-ci" "$ods_ci_image" \
-                         --namespace="$ODS_CI_TEST_NAMESPACE" \
-                         --node_selector_key="$DRIVER_TAINT_KEY" \
-                         --node_selector_value="$DRIVER_TAINT_VALUE" \
-                         --pod_toleration_key="$DRIVER_TAINT_KEY" \
-                         --pod_toleration_effect="$DRIVER_TAINT_EFFECT"
+    build_and_preload_user_scale_test_image() {
+        ./run_toolbox.py from_config utils build_push_image --suffix user-scale-test
+        ./run_toolbox.py from_config cluster preload_image --suffix user-scale-test
     }
 
     build_and_preload_artifacts_exporter_image() {
-        ./run_toolbox.py utils build_push_image \
-                         "$ODS_CI_IMAGESTREAM" "$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
-                         --namespace="$ODS_CI_TEST_NAMESPACE" \
-                         --context-dir="/" \
-                         --dockerfile-path="$ODS_CI_ARTIFACTS_EXPORTER_DOCKERFILE"
-
-        artifacts_exporter_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG"
-
-        ./run_toolbox.py cluster preload_image "artifacts-exporter" "$artifacts_exporter_image" \
-                         --namespace="$ODS_CI_TEST_NAMESPACE" \
-                         --node_selector_key="$DRIVER_TAINT_KEY" \
-                         --node_selector_value="$DRIVER_TAINT_VALUE" \
-                         --pod_toleration_key="$DRIVER_TAINT_KEY" \
-                         --pod_toleration_effect="$DRIVER_TAINT_EFFECT"
+        ./run_toolbox.py from_config utils build_push_image --suffix artifacts-exporter
+        ./run_toolbox.py from_config cluster preload_image --suffix artifacts-exporter
     }
 
     build_and_preload_api_scale_test_image() {
-        ./run_toolbox.py utils build_push_image \
-                         "$ODS_CI_IMAGESTREAM" "$API_SCALE_TEST_IMAGE_TAG" \
-                         --namespace="$ODS_CI_TEST_NAMESPACE" \
-                         --context-dir="/" \
-                         --dockerfile-path="$API_SCALE_TEST_DOCKERFILE"
-
-        artifacts_exporter_image="image-registry.openshift-image-registry.svc:5000/$ODS_CI_TEST_NAMESPACE/$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG"
-
-        ./run_toolbox.py cluster preload_image "api-scale-test-image" "$artifacts_exporter_image" \
-                         --namespace="$ODS_CI_TEST_NAMESPACE"
+        ./run_toolbox.py from_config utils build_push_image --suffix api-scale-test
+        ./run_toolbox.py from_config cluster preload_image --suffix api-scale-test
     }
 
-    process_ctrl::run_in_bg build_and_preload_odsci_image
+    process_ctrl::run_in_bg build_and_preload_user_scale_test_image
     process_ctrl::run_in_bg build_and_preload_artifacts_exporter_image
     process_ctrl::run_in_bg build_and_preload_api_scale_test_image
 
-    process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_minio_s3_server "$S3_LDAP_PROPS"
+    process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_minio_s3_server
+    process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_nginx_server
 
-    process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_nginx_server "$NGINX_NOTEBOOK_NAMESPACE" "$ODS_NOTEBOOK_DIR"
-
-    process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_redis_server "$STATESIGNAL_REDIS_NAMESPACE"
+    process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_redis_server
 }
 
 prepare_sutest_deploy_rhods() {
     switch_sutest_cluster
 
-    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "sutest")
-
-    if [[ "$osd_cluster_name" ]]; then
-        prepare_osd_sutest_deploy_rhods "$osd_cluster_name"
+    if test_config clusters.sutest.is_managed; then
+        prepare_managed_sutest_deploy_rhods
     else
         prepare_ocp_sutest_deploy_rhods
     fi
@@ -142,85 +114,91 @@ prepare_sutest_deploy_rhods() {
 prepare_sutest_deploy_ldap() {
     switch_sutest_cluster
 
-    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "sutest")
-
-    if [[ -z "$osd_cluster_name" ]]; then
-        use_managed=""
-    elif [[ "$(cluster_helpers::get_cluster_is_rosa "sutest")" ]]; then
-        use_managed="--use_rosa=$osd_cluster_name"
-    else
-        use_managed="--use_ocm=$osd_cluster_name"
-    fi
-
-    process_ctrl::run_in_bg ./run_toolbox.py cluster deploy_ldap \
-              "$LDAP_IDP_NAME" "$LDAP_USER_PREFIX" "$LDAP_NB_USERS" "$S3_LDAP_PROPS" \
-              $use_managed --wait
+    process_ctrl::run_in_bg \
+        ./run_toolbox.py from_config cluster deploy_ldap
 }
 
 prepare_driver_scale_cluster() {
-    cluster_role=driver
+    switch_driver_cluster
 
-    switch_cluster "$cluster_role"
+    local compute_nodes_count=$(get_config clusters.driver.compute.machineset.count)
+    if [[ "$compute_nodes_count" == "null" ]]; then
+        compute_nodes_count=$(cluster_helpers::get_compute_node_count driver)
+    fi
 
-    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "$cluster_role")
+    local driver_taint_key=$(get_config clusters.driver.compute.machineset.taint.key)
+    local driver_taint_value=$(get_config clusters.driver.compute.machineset.taint.value)
+    local driver_taint_effect=$(get_config clusters.driver.compute.machineset.taint.effect)
+    local driver_taint="$driver_taint_key=$driver_taint_value:$driver_taint_effect"
 
-    cluster_type=$([[ "$osd_cluster_name" ]] && echo osd || echo ocp)
-    compute_nodes_type=$(cluster_helpers::get_compute_node_type "$cluster_role" "$cluster_type")
-    compute_nodes_count=$(cluster_helpers::get_compute_node_count "$cluster_role" "$cluster_type" "$compute_nodes_type")
+    if test_config clusters.sutest.is_managed; then
+        local managed_cluster_name=$(get_config clusters.sutest.managed.name)
+        local machinepool_name=$(get_config clusters.driver.compute.machineset_name)
 
-    taint="$DRIVER_TAINT_KEY=$DRIVER_TAINT_VALUE:$DRIVER_TAINT_EFFECT"
-    if [[ "$osd_cluster_name" ]]; then
-        ocm create machinepool \
-            --cluster "$osd_cluster_name" \
-            --instance-type "$compute_nodes_type" \
-            "$DRIVER_MACHINE_POOL_NAME" \
-            --replicas "$compute_nodes_count" \
-            --taints "$taint"
+        if test_config clusters.sutest.managed.is_ocm; then
+            local compute_nodes_type=$(get_config clusters.create.ocm.compute.type)
+            ocm create machinepool \
+                --cluster "$managed_cluster_name" \
+                --instance-type "$compute_nodes_type" \
+                "$machinepool_name" \
+                --replicas "$compute_nodes_count" \
+                --taints "$driver_taint"
+        elif test_config clusters.sutest.managed.is_rosa; then
+            _error "prepare_driver_scale_cluster not supported with ROSA"
+        fi
     else
-        ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count" \
-                         --taint "$taint" \
-                         --name "$DRIVER_MACHINESET_NAME"
+        ./run_toolbox.py from_config cluster set_scale --prefix="driver" \
+                         --extra "{scale: $compute_nodes_count}"
     fi
 }
 
 prepare_sutest_scale_cluster() {
-    cluster_role=sutest
+    local cluster_role=sutest
 
-    switch_cluster "$cluster_role"
+    switch_sutest_cluster
 
-    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "$cluster_role")
-    cluster_type=$([[ "$osd_cluster_name" ]] && echo osd || echo ocp)
-    compute_nodes_type=$(cluster_helpers::get_compute_node_type "$cluster_role" "$cluster_type")
-    compute_nodes_count=$(cluster_helpers::get_compute_node_count "$cluster_role" "$cluster_type" "$compute_nodes_type")
+    local compute_nodes_count=$(get_config clusters.sutest.compute.machineset.count)
+    if [[ "$compute_nodes_count" == "null" ]]; then
+        compute_nodes_count=$(cluster_helpers::get_compute_node_count sutest)
+    fi
 
-    taint="$SUTEST_TAINT_KEY=$SUTEST_TAINT_VALUE:$SUTEST_TAINT_EFFECT"
-    if [[ "$osd_cluster_name" ]]; then
-        if [[ "$SUTEST_ENABLE_AUTOSCALER" ]]; then
-            specific_options=" \
+    local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
+    local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
+    local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
+    local sutest_taint="$sutest_taint_key=$sutest_taint_value:$sutest_taint_effect"
+    if test_config clusters.sutest.is_managed; then
+        if test_config clusters.sutest.compute.autoscaling.enable; then
+            local specific_options=" \
                 --enable-autoscaling \
                 --min-replicas=2 \
-                --max-replicas=150 \
+                --max-replicas=20 \
                 "
         else
-            specific_options=" \
+            local specific_options=" \
                 --replicas "$compute_nodes_count" \
                 "
         fi
-        ocm create machinepool "$SUTEST_MACHINESET_NAME" \
-            --cluster "$osd_cluster_name" \
-            --instance-type "$compute_nodes_type" \
-            --taints "$taint" \
-            $specific_options
+        local managed_cluster_name=$(get_config clusters.sutest.managed.name)
+        if test_config clusters.sutest.managed.is_ocm; then
+            local compute_nodes_type=$(get_config clusters.create.ocm.compute.type)
+            ocm create machinepool "$(get_config clusters.sutest.compute.machineset_name)" \
+                --cluster "$managed_cluster_name" \
+                --instance-type "$compute_nodes_type" \
+                --taints "$sutest_taint" \
+                $specific_options
+        elif test_config clusters.sutest.managed.is_rosa; then
+            _error "prepare_sutest_scale_cluster not supported with rosa"
+        fi
     else
-        ./run_toolbox.py cluster set-scale "$compute_nodes_type" "$compute_nodes_count" \
-                         --taint "$taint" \
-                         --name "$SUTEST_MACHINESET_NAME"
+        ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
+                         --extra "{scale: $compute_nodes_count}"
 
-
-        if [[ "$SUTEST_ENABLE_AUTOSCALER" ]]; then
+        if test_config clusters.sutest.compute.autoscaling.enabled; then
             oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
+
+            local machineset_name=$(get_config clusters.sutest.machineset_name)
             cat testing/ods/autoscaling/machineautoscaler.yaml \
-                | sed "s/MACHINESET_NAME/$SUTEST_MACHINESET_NAME/" \
+                | sed "s/MACHINESET_NAME/$machineset_name/" \
                 | oc apply -f-
         fi
     fi
@@ -233,47 +211,27 @@ prepare_sutest_cluster() {
     prepare_sutest_scale_cluster
 }
 
-prepare_osd_sutest_deploy_rhods() {
-    osd_cluster_name=$1
-
-    if [[ "$OSD_USE_ODS_CATALOG" == 1 ]]; then
-        echo "Deploying RHODS $ODS_CATALOG_IMAGE_TAG (from $ODS_CATALOG_IMAGE)"
-
-        process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_ods \
-                  "$ODS_CATALOG_IMAGE" "$ODS_CATALOG_IMAGE_TAG"
+prepare_managed_sutest_deploy_rhods() {
+    if test_config rhods.deploy_from_catalog; then
+        process_ctrl::run_in_bg \
+            ./run_toolbox.py from_config rhods deploy_ods
     else
-
-        if [[ "$OCM_ENV" == "staging" ]]; then
-            echo "Workaround for https://issues.redhat.com/browse/RHODS-4182"
-            MISSING_SECRET_NAMESPACE=redhat-ods-monitoring
-
-            oc create ns "$MISSING_SECRET_NAMESPACE" \
-               --dry-run=client \
-               -oyaml \
-                | oc apply -f-
-
-            oc create secret generic redhat-rhods-smtp \
-               -n "$MISSING_SECRET_NAMESPACE" \
-               --from-literal=host= \
-               --from-literal=username= \
-               --from-literal=password= \
-               --from-literal=port= \
-               --from-literal=tls=
+        if test_config clusters.sutest.managed.is_rosa; then
+            _error "prepare_managed_sutest_deploy_rhods not supported on ROSA when 'rhods.deploy_from_catalog' is set."
         fi
-
-        process_ctrl::run_in_bg ./run_toolbox.py rhods deploy_addon "$osd_cluster_name" "$ODS_ADDON_EMAIL_ADDRESS"
+        local managed_cluster_name=$(get_config clusters.sutest.managed.name)
+        local email=$(get_config rhods.addon.email)
+        process_ctrl::run_in_bg \
+            ./run_toolbox.py from_config rhods deploy_addon "$managed_cluster_name" "$email"
     fi
 }
 
 prepare_ocp_sutest_deploy_rhods() {
     switch_sutest_cluster
 
-    echo "Deploying RHODS $ODS_CATALOG_IMAGE_TAG (from $ODS_CATALOG_IMAGE)"
-
     process_ctrl::run_in_bg \
         process_ctrl::retry 5 3m \
-            ./run_toolbox.py rhods deploy_ods \
-                "$ODS_CATALOG_IMAGE" "$ODS_CATALOG_IMAGE_TAG"
+            ./run_toolbox.py from_config rhods deploy_ods
 
     if ! oc get group/dedicated-admins >/dev/null 2>/dev/null; then
         echo "Create the dedicated-admins group"
@@ -283,7 +241,7 @@ prepare_ocp_sutest_deploy_rhods() {
 }
 
 sutest_customize_rhods_before_wait() {
-    if [[ "$CUSTOMIZE_RHODS_REMOVE_GPU_IMAGES" == 1 ]]; then
+    if test_config rhods.notebooks.customize.remove_gpu_images; then
         # Fill the imagestreams with dummy (ubi) images
         for image in minimal-gpu nvidia-cuda-11.4.2 pytorch tensorflow; do
             oc tag registry.access.redhat.com/ubi8/ubi "$image:ubi" -n redhat-ods-applications
@@ -294,62 +252,64 @@ sutest_customize_rhods_before_wait() {
 }
 
 sutest_customize_rhods_after_wait() {
+    local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
+    oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"notebookTolerationSettings": {"enabled": true, "key": "'$sutest_taint_key'"}}}}' -n redhat-ods-applications
 
-    oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"notebookTolerationSettings": {"enabled": true, "key": "'$SUTEST_TAINT_KEY'"}}}}' -n redhat-ods-applications
-
-    if [[ "$CUSTOMIZE_RHODS_PVC_SIZE" ]]; then
-        oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"pvcSize":"'$CUSTOMIZE_RHODS_PVC_SIZE'"}}}' -n redhat-ods-applications
+    local pvc_size=$(get_config rhods.notebooks.customize.pvc_size)
+    if [[ "$pvc_size" ]]; then
+        oc patch odhdashboardconfig odh-dashboard-config --type=merge -p '{"spec":{"notebookController":{"pvcSize":"'$pvc_size'"}}}' -n redhat-ods-applications
     fi
 
-    if [[ "$CUSTOMIZE_RHODS_USE_CUSTOM_NOTEBOOK_SIZE" == 1 ]]; then
+    local NB_SIZE_CONFIG_KEY=rhods.notebooks.customize.notebook_size
+    if test_config "$NB_SIZE_CONFIG_KEY.enabled" ]]; then
+        local name=$(get_config $NB_SIZE_CONFIG_KEY.name)
+        local cpu=$(get_config $NB_SIZE_CONFIG_KEY.cpu)
+        local mem=$(get_config $NB_SIZE_CONFIG_KEY.mem_gi)
+
         oc get odhdashboardconfig/odh-dashboard-config -n redhat-ods-applications -ojson \
-            | jq '.spec.notebookSizes = [{"name": "'$ODS_NOTEBOOK_SIZE'", "resources": { "limits":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE_GI'Gi"}, "requests":{"cpu":"'$ODS_NOTEBOOK_CPU_SIZE'", "memory":"'$ODS_NOTEBOOK_MEMORY_SIZE_GI'Gi"}}}]' \
+            | jq '.spec.notebookSizes = [{"name": "'$name'", "resources": { "limits":{"cpu":"'$cpu'", "memory":"'$mem'Gi"}, "requests":{"cpu":"'$cpu'", "memory":"'$mem'Gi"}}}]' \
             | oc apply -f-
     fi
 
-    if [[ "$CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE" ]]; then
-        oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator
-        oc scale deploy/rhods-dashboard --replicas=0 -n redhat-ods-applications
-        oc set image deploy/rhods-dashboard -n redhat-ods-applications "rhods-dashboard=$CUSTOMIZE_RHODS_DASHBOARD_FORCED_IMAGE"
-        oc set probe deploy/rhods-dashboard -n redhat-ods-applications --remove --readiness --liveness
-        oc scale deploy/rhods-dashboard --replicas=$CUSTOMIZE_RHODS_DASHBOARD_REPLICAS -n redhat-ods-applications
-    fi
 }
 
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
 
-    if [[ "$CUSTOMIZE_RHODS" == 1 ]]; then
+    local customize_key=rhods.notebooks.customize.enabled
+
+    if test_config "$customize_key"; then
         sutest_customize_rhods_before_wait
     fi
 
     ./run_toolbox.py rhods wait_ods
 
-    if [[ "$CUSTOMIZE_RHODS" == 1 ]]; then
+    if test_config "$customize_key"; then
         sutest_customize_rhods_after_wait
 
         ./run_toolbox.py rhods wait_ods
     fi
 
 
-    if [[ -z "$SUTEST_ENABLE_AUTOSCALER" ]]; then
-        rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
-                                       | cut -d/ -f2 | grep "$RHODS_NOTEBOOK_IMAGE_NAME" | cut -d: -f2)
+    if test_config clusters.sutest.compute.autoscaling.enable; then
+        local rhods_notebook_image_name=$(get_config tests.notebooks.notebook.image_name)
+        local rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
+                                       | cut -d/ -f2 | grep "$rhods_notebook_image_name" | cut -d: -f2)
 
-        NOTEBOOK_IMAGE="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$RHODS_NOTEBOOK_IMAGE_NAME:$rhods_notebook_image_tag"
         # preload the image only if auto-scaling is disabled
-        ./run_toolbox.py cluster preload_image "notebook" "$NOTEBOOK_IMAGE" \
-                         --namespace=redhat-ods-applications \
-                         --node_selector_key="$SUTEST_TAINT_KEY" \
-                         --node_selector_value="$SUTEST_TAINT_VALUE" \
-                         --pod_toleration_key="$SUTEST_TAINT_KEY" \
-                         --pod_toleration_effect="$SUTEST_TAINT_EFFECT"
+        notebook_image="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$rhods_notebook_image_name:$rhods_notebook_image_tag"
+        ./run_toolbox.py from_config cluster preload_image --suffix "notebook" \
+                         --extra "{image:'$notebook_image'}"
     fi
 
+    local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
+    local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
+    local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
+
     oc annotate namespace/rhods-notebooks --overwrite \
-       "openshift.io/node-selector=$SUTEST_TAINT_KEY=$SUTEST_TAINT_VALUE"
+       "openshift.io/node-selector=$sutest_taint_key=$sutest_taint_value"
     oc annotate namespace/rhods-notebooks --overwrite \
-       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$SUTEST_TAINT_EFFECT'", "key": "'$SUTEST_TAINT_KEY'"}]'
+       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
 }
 
 capture_environment() {
@@ -362,8 +322,7 @@ capture_environment() {
 }
 
 prepare_ci() {
-    sutest_osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "sutest")
-    cluster_helpers::connect_sutest_cluster "$sutest_osd_cluster_name"
+    cluster_helpers::connect_sutest_cluster
 }
 
 prepare() {
@@ -378,40 +337,27 @@ prepare() {
 run_user_level_test() {
     switch_driver_cluster
 
-    REDIS_SERVER="redis.${STATESIGNAL_REDIS_NAMESPACE}.svc"
+    local nginx_server=$(get_command_arg __server_name cluster deploy_nginx_server)
+    local nginx_hostname=$(oc whoami --show-server | sed "s/api/$nginx_server.apps/g" | awk -F ":" '{print $2}' | sed s,//,,g)
 
-    NGINX_SERVER="nginx-$NGINX_NOTEBOOK_NAMESPACE"
-    nginx_hostname=$(oc whoami --show-server | sed "s/api/$NGINX_SERVER.apps/g" | awk -F ":" '{print $2}' | sed s,//,,g)
-
-    ./run_toolbox.py rhods notebook_ux_e2e_scale_test \
-                     "$LDAP_IDP_NAME" \
-                     "$LDAP_USER_PREFIX" "$ODS_CI_NB_USERS" \
-                     "$S3_LDAP_PROPS" \
-                     "http://$nginx_hostname/$ODS_NOTEBOOK_NAME" \
-                     --user_index_offset="$ODS_CI_USER_INDEX_OFFSET"  \
-                     --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
-                     --artifacts-collected="$ODS_CI_ARTIFACTS_COLLECTED" \
-                     --ods_sleep_factor="$ODS_SLEEP_FACTOR" \
-                     --ods_ci_exclude_tags="$ODS_EXCLUDE_TAGS" \
-                     --ods_ci_artifacts_exporter_istag="$ODS_CI_IMAGESTREAM:$ODS_CI_ARTIFACTS_EXPORTER_TAG" \
-                     --ods_ci_notebook_image_name="$RHODS_NOTEBOOK_IMAGE_NAME" \
-                     --ods_ci_notebook_size_name="$ODS_NOTEBOOK_SIZE" \
-                     --ods_ci_notebook_benchmark_name="$ODS_NOTEBOOK_BENCHMARK_NAME" \
-                     --ods_ci_notebook_benchmark_repeat="$ODS_NOTEBOOK_BENCHMARK_REPEAT" \
-                     --ods_ci_notebook_benchmark_number="$ODS_NOTEBOOK_BENCHMARK_NUMBER" \
-                     --state_signal_redis_server="${REDIS_SERVER}" \
-                     --toleration_key="$DRIVER_TAINT_KEY"
+    local notebook_name=$(get_config tests.notebooks.ipynb.notebook_filename)
+    local notebook_url="http://$nginx_hostname/$notebook_name"
+    ./run_toolbox.py from_config rhods notebook_ux_e2e_scale_test \
+                     --extra "{notebook_url: '$notebook_url', sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}"
 }
 
 run_user_level_tests() {
-    test_failed=0
-    plot_failed=0
-    for idx in $(seq "$NOTEBOOK_TEST_RUNS"); do
+    local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
+
+    local test_failed=0
+    local plot_failed=0
+    local test_runs=$(get_config tests.notebooks.repeat)
+    for idx in $(seq "$test_runs"); do
         export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
 
         mkdir -p "$ARTIFACT_DIR"
-        pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
-        pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
+        local pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
+        local pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
         for f in "$pr_file" "$pr_comment_file"; do
             [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
         done
@@ -435,24 +381,23 @@ run_user_level_tests() {
 
 run_api_level_test() {
     switch_driver_cluster
-    ./run_toolbox.py rhods notebook_api_scale_test \
-                     "$LDAP_IDP_NAME" "$S3_LDAP_PROPS" "$LDAP_USER_PREFIX" \
-                     --sut_cluster_kubeconfig="$KUBECONFIG_SUTEST" \
-                     --test-name all \
-                     --user-count "$ODS_CI_NB_USERS" \
-                     --run-time "$API_SCALE_TEST_RUN_TIME"
+    ./run_toolbox.py from_config rhods notebook_api_scale_test
 }
 
 driver_cleanup() {
     switch_driver_cluster
 
-    ./run_toolbox.py cluster set-scale not-used 0 --name "$DRIVER_MACHINESET_NAME" > /dev/null
+    ./run_toolbox.py from_config cluster set_scale --prefix "driver" --suffix "cleanup" > /dev/null
 
-    if [[ "$CLEANUP_DRIVER_NAMESPACES_ON_EXIT" == 1 ]]; then
+    if test_config tests.notebooks.cleanup_driver_on_exit; then
+
+        ods_ci_test_namespace=$(get_config tests.notebooks.namespace)
+        statesignal_redis_namespace=$(get_command_arg namespace cluster deploy_redis_server)
+        nginx_notebook_namespace=$(get_command_arg namespace cluster deploy_nginx_server)
         oc delete namespace --ignore-not-found \
-           "$ODS_CI_TEST_NAMESPACE" \
-           "$STATESIGNAL_REDIS_NAMESPACE" \
-           "$NGINX_NOTEBOOK_NAMESPACE"
+           "$ods_ci_test_namespace" \
+           "$statesignal_redis_namespace" \
+           "$nginx_notebook_namespace"
     fi
 }
 
@@ -460,79 +405,98 @@ sutest_cleanup() {
     switch_sutest_cluster
     sutest_cleanup_ldap
 
-    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "$cluster_role")
-    if [[ "$osd_cluster_name" ]]; then
-        ocm delete machinepool "$SUTEST_MACHINESET_NAME"
+    if test_config clusters.sutest.is_managed; then
+        local managed_cluster_name=$(get_config clusters.sutest.managed.name)
+        local sutest_machineset_name=$(get_config clusters.sutest.compute.machineset.name)
+
+        if test_config clusters.sutest.managed.is_ocm; then
+            ocm delete machinepool "$sutest_machineset_name" --cluster "$managed_cluster_name"
+        elif test_config clusters.sutest.managed.is_rosa; then
+            rosa delete machinepool "$sutest_machineset_name" --cluster "$managed_cluster_name"
+        else
+            _error "sutest_cleanup: managed cluster must be OCM or ROSA ..."
+        fi
     else
-        ./run_toolbox.py cluster set-scale not-used 0 --name "$SUTEST_MACHINESET_NAME" > /dev/null
+        ./run_toolbox.py from_config cluster set_scale --prefix "sutest" --suffix "cleanup" > /dev/null
     fi
 }
 
 sutest_cleanup_ldap() {
     switch_sutest_cluster
 
-    if ! ./run_toolbox.py rhods cleanup_notebooks "$LDAP_USER_PREFIX" > /dev/null; then
-        echo "WARNING: rhods notebook cleanup failed :("
+    if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
+        _warning "rhods notebook cleanup failed :("
     fi
 
     if oc get cm/keep-cluster -n default 2>/dev/null; then
-        echo "INFO: cm/keep-cluster found, not undeploying LDAP."
+        _info "cm/keep-cluster found, not undeploying LDAP."
         return
     fi
 
-    osd_cluster_name=$(cluster_helpers::get_osd_cluster_name "sutest")
-    ./run_toolbox.py cluster undeploy_ldap \
-                     "$LDAP_IDP_NAME" \
-                     --use_ocm="$osd_cluster_name" > /dev/null
+    ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
 }
 
 generate_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
-    PLOT_ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
+    local PLOT_ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
     mkdir "$PLOT_ARTIFACT_DIR"
     if ARTIFACT_DIR="$PLOT_ARTIFACT_DIR" \
                    ./testing/ods/generate_matrix-benchmarking.sh \
                    from_dir "$BASE_ARTIFACT_DIR" \
                        > "$PLOT_ARTIFACT_DIR/build-log.txt" 2>&1;
     then
-        echo "INFO: MatrixBenchmarkings plots successfully generated."
+        echo "MatrixBenchmarkings plots successfully generated."
     else
-        errcode=$?
-        echo "ERROR: MatrixBenchmarkings plots generated failed. See logs in \$ARTIFACT_DIR/plotting/build-log.txt"
+        local errcode=$?
+        _warning "MatrixBenchmarkings plots generated failed. See logs in \$ARTIFACT_DIR/plotting/build-log.txt"
         return $errcode
     fi
 }
 
-test_ci() {
-    if [ -z "${SHARED_DIR:-}" ]; then
-        echo "FATAL: multi-stage test \$SHARED_DIR not set ..."
-        exit 1
+connect_ci() {
+    "$TESTING_ODS_DIR/ci_init_configure.sh"
+
+    if [[ "${CONFIG_DEST_DIR:-}" ]]; then
+        echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
+
+    elif [[ "${SHARED_DIR:-}" ]]; then
+        echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
+        CONFIG_DEST_DIR=$SHARED_DIR
+
+    else
+        _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
     fi
+
+    KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-${CONFIG_DEST_DIR}/driver_kubeconfig}" # cluster driving the test
+    KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-${CONFIG_DEST_DIR}/sutest_kubeconfig}" # system under test
+}
+
+test_ci() {
     local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
+
     finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
     finalizers+=("capture_environment")
     finalizers+=("sutest_cleanup")
     finalizers+=("driver_cleanup")
 
-    if [[ "$NOTEBOOK_TEST_FLAVOR" == "user-level" ]]; then
+    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    if [[ "$test_flavor" == "user-level" ]]; then
         run_user_level_tests
-    elif [[ "$NOTEBOOK_TEST_FLAVOR" == "api-level" ]]; then
+    elif [[ "$test_flavor" == "api-level" ]]; then
         run_api_level_test
     else
-        echo "Unknown test flavor: $NOTEBOOK_TEST_FLAVOR"
-        exit 1
+        _error "Unknown test flavor: $test_flavor"
     fi
-
 }
 
 run_one_test() {
-    if [[ "$NOTEBOOK_TEST_FLAVOR" == "user-level" ]]; then
+    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    if [[ "$test_flavor" == "user-level" ]]; then
         run_user_level_test
-    elif [[ "$NOTEBOOK_TEST_FLAVOR" == "api-level" ]]; then
+    elif [[ "$test_flavor" == "api-level" ]]; then
         run_api_level_test
     else
-        echo "Unknown test flavor: $NOTEBOOK_TEST_FLAVOR"
-        exit 1
+        _error "Unknown test flavor: $test_flavor"
     fi
 }
 
@@ -540,13 +504,13 @@ run_one_test() {
 
 finalizers+=("process_ctrl::kill_bg_processes")
 
-if [[ "${PR_POSITIONAL_ARGS:-}" == "customer" ]]; then
+if [[ "$(get_config clusters.create.type)" == "customer" ]]; then
     case ${action} in
         "prepare_ci")
-            exec "$THIS_DIR/run_notebook_scale_test_on_customer.sh" prepare
+            exec "$TESTING_ODS_DIR/run_notebook_scale_test_on_customer.sh" prepare
             ;;
         "test_ci")
-            exec "$THIS_DIR/run_notebook_scale_test_on_customer.sh" test
+            exec "$TESTING_ODS_DIR/run_notebook_scale_test_on_customer.sh" test
             ;;
     esac
 
@@ -557,6 +521,8 @@ action=${1:-}
 
 case ${action} in
     "prepare_ci")
+        connect_ci
+
         prepare_ci
         trap "set +e; sutest_cleanup; driver_cleanup; exit 1" ERR
         prepare
@@ -565,6 +531,8 @@ case ${action} in
         exit 0
         ;;
     "test_ci")
+        connect_ci
+
         test_ci
         exit 0
         ;;
@@ -621,7 +589,6 @@ case ${action} in
         # file is being sourced by another script
         ;;
     *)
-        echo "FATAL: Unknown action: ${action}" "$@"
-        exit 1
+        _error "unknown action: ${action}" "$@"
         ;;
 esac

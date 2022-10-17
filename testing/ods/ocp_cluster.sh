@@ -6,22 +6,21 @@ set -o nounset
 set -o errtrace
 set -x
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-source "$THIS_DIR/config_common.sh"
-source "$THIS_DIR/config_clusters.sh"
-source "$THIS_DIR/config_load_overrides.sh"
-source "$THIS_DIR/cluster_helpers.sh"
+source "$TESTING_ODS_DIR/../_logging.sh"
+source "$TESTING_ODS_DIR/configure.sh"
+source "$TESTING_ODS_DIR/cluster_helpers.sh"
 
 # ---
 
 export AWS_SHARED_CREDENTIALS_FILE="${PSAP_ODS_SECRET_PATH:-}/.awscred"
 
 prepare_deploy_cluster_subproject() {
-    cd subprojects/deploy-cluster/
+    cp subprojects/deploy-cluster/utils/config.mk{.sample,}
+    cp subprojects/deploy-cluster/utils/install-config.yaml{.sample,}
 
-    cp utils/config.mk{.sample,}
-    cp utils/install-config.yaml{.sample,}
+    local ocp_version=$(get_config clusters.create.ocp.version)
 
     local DOWNLOAD_OCP_INSTALLER_FROM_PRIVATE=
     if [[ "$DOWNLOAD_OCP_INSTALLER_FROM_PRIVATE" ]]; then
@@ -32,27 +31,26 @@ prepare_deploy_cluster_subproject() {
         rm "openshift-install-linux-$ocp_version.tar.gz"
     fi
 
-    make has_installer OCP_VERSION="${OCP_VERSION}"
+    (cd subprojects/deploy-cluster/;
+     make has_installer \
+          OCP_VERSION="${ocp_version}"
+    )
 
     if [[ ! -f ${AWS_SHARED_CREDENTIALS_FILE} ]]; then
-        echo "ERROR: AWS credentials file not found in the vault ..."
-        false
+        _error "AWS credentials file not found in the vault ..."
     fi
 }
 
 create_cluster() {
-    cluster_role=$1
-    create_flag=$2
+    local cluster_role=$1
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_ocp_"
     export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
     # ---
 
-    cd subprojects/deploy-cluster/
-
-    cluster_name="${CLUSTER_NAME_PREFIX}"
-    if [[ "$create_flag" == "keep" ]]; then
-        author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
+    local cluster_name="$(get_config clusters.create.name_prefix)"
+    if test_config clusters.create.keep; then
+        local author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
         cluster_name="${author}-${cluster_role}-$(date +%Y%m%d-%Hh%M)"
 
         export AWS_DEFAULT_PROFILE="${author}_ci-artifact"
@@ -65,19 +63,19 @@ create_cluster() {
     export AWS_PROFILE=$AWS_DEFAULT_PROFILE
     echo "Using AWS_[DEFAULT_]PROFILE=$AWS_DEFAULT_PROFILE"
 
-    install_dir="/tmp/${cluster_role}_ocp_installer"
+    local install_dir="/tmp/${cluster_role}_ocp_installer"
     rm -rf "$install_dir"
     mkdir -p "$install_dir"
 
-    install_dir_config="${install_dir}/install-config.yaml"
+    local install_dir_config="${install_dir}/install-config.yaml"
 
-    cat utils/install-config.yaml | \
+    cat subprojects/deploy-cluster/utils/install-config.yaml | \
         yq -y '.metadata.name = "'$cluster_name'"' | \
-        yq -y '.baseDomain = "'$OCP_BASE_DOMAIN'"' | \
-        yq -y '.compute[0].platform.aws.type = "'$OCP_INFRA_MACHINE_TYPE'"' | \
-        yq -y '.compute[0].replicas = '$OCP_INFRA_NODES_COUNT | \
-        yq -y '.controlPlane.platform.aws.type = "'$OCP_MASTER_MACHINE_TYPE'"' | \
-        yq -y '.platform.aws.region = "'$OCP_REGION'"' \
+        yq -y '.baseDomain = "'$(get_config clusters.create.ocp.base_domain)'"' | \
+        yq -y '.compute[0].platform.aws.type = "'$(get_config clusters.create.ocp.workers.type)'"' | \
+        yq -y '.compute[0].replicas = '$(get_config clusters.create.ocp.workers.count) | \
+        yq -y '.controlPlane.platform.aws.type = "'$(get_config clusters.create.ocp.control_plane.type)'"' | \
+        yq -y '.platform.aws.region = "'$(get_config clusters.create.ocp.region)'"' \
            > "$install_dir_config"
 
     export PSAP_ODS_SECRET_PATH
@@ -90,9 +88,9 @@ create_cluster() {
     bash -ce 'sed "s|<SSH-KEY>|$(cat "$PSAP_ODS_SECRET_PATH/ssh-publickey")|" -i "'$install_dir_config'"'
 
     save_install_artifacts() {
-        status=$1
+        local status=$1
 
-        install_config="${install_dir}/install-config.back.yaml"
+        local install_config="${install_dir}/install-config.back.yaml"
         if [[ -f "$install_config" ]]; then
             yq -yi 'del(.pullSecret)' "$install_config"
             yq -yi 'del(.sshKey)' "$install_config"
@@ -100,94 +98,99 @@ create_cluster() {
             cp "$install_config" "${ARTIFACT_DIR}/${cluster_role}_ocp_install-config.yaml"
         fi
 
-        [[ "$status" != "success" ]] && exit 1
+        if [[ "$status" != "success" ]]; then
+            _error "$cluster_role OCP cluster creation failed ..."
+        fi
 
         return 0
     }
 
-    # ensure that the cluster's 'metadata.json' is copied to the SHARED_DIR even in case of errors
+    # ensure that the cluster's 'metadata.json' is copied
+    # to the CONFIG_DEST_DIR even in case of errors
     trap "save_install_artifacts error" ERR SIGTERM SIGINT
 
-    make cluster \
-         OCP_VERSION="${OCP_VERSION}" \
-         CLUSTER_PATH="${install_dir}" \
-         CLUSTER_NAME="${cluster_name}" \
-         METADATA_JSON_DEST="${SHARED_DIR}/${cluster_role}_ocp_metadata.json" \
-         DIFF_TOOL= \
-        | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/${cluster_role}_ocp_install.log"
+    (cd subprojects/deploy-cluster/;
+     make cluster \
+          OCP_VERSION="$(get_config clusters.create.ocp.version)" \
+          CLUSTER_PATH="${install_dir}" \
+          CLUSTER_NAME="${cluster_name}" \
+          METADATA_JSON_DEST="${CONFIG_DEST_DIR}/${cluster_role}_ocp_metadata.json" \
+          DIFF_TOOL= \
+         | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/${cluster_role}_ocp_install.log"
+    )
 
     cp "${install_dir}/auth/kubeadmin-password" \
-       "${SHARED_DIR}/${cluster_role}_kubeadmin-password"
+       "${CONFIG_DEST_DIR}/${cluster_role}_kubeadmin-password"
 
-    export KUBECONFIG="${SHARED_DIR}/${cluster_role}_kubeconfig"
+    export KUBECONFIG="${CONFIG_DEST_DIR}/${cluster_role}_kubeconfig"
 
     cp "${install_dir}/auth/kubeconfig" \
        "$KUBECONFIG"
-
-    cd "$HOME"
 
     save_install_artifacts success
 }
 
 
 destroy_cluster() {
-    cluster_role=$1
+    local cluster_role=$1
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_ocp_"
 
-    destroy_dir="/tmp/${cluster_role}_ocp_destroy"
+    local destroy_dir="/tmp/${cluster_role}_ocp_destroy"
     mkdir "$destroy_dir"
 
-    cp "${SHARED_DIR}/${cluster_role}_ocp_metadata.json" "${destroy_dir}/metadata.json"
-
-    cd subprojects/deploy-cluster/
+    if ! cp "${CONFIG_DEST_DIR}/${cluster_role}_ocp_metadata.json" "${destroy_dir}/metadata.json"; then
+        _error "Could not destroy the OCP $cluster_role cluster: cannot prepare the metadata.json file ..."
+    fi
 
     export AWS_PROFILE=${AWS_PROFILE:-ci-artifact}
     export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
 
-    make uninstall \
-         OCP_VERSION="${OCP_VERSION}" \
-         CLUSTER_PATH="${destroy_dir}" \
-         >"${ARTIFACT_DIR}/${cluster_role}_ocp_destroy.log" \
-         2>&1
+    (cd subprojects/deploy-cluster/;
+     make uninstall \
+          OCP_VERSION="$(get_config clusters.create.ocp.version)" \
+          CLUSTER_PATH="${destroy_dir}" \
+          >"${ARTIFACT_DIR}/${cluster_role}_ocp_destroy.log" \
+          2>&1
+    )
 }
 
-if [[ -z "${SHARED_DIR:-}" ]]; then
-    echo "FATAL: multi-stage test directory SHARED_DIR not set ..."
-    exit 1
-fi
+# ---
 
 if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-    echo "FATAL: artifacts storage directory ARTIFACT_DIR not set ..."
-    exit 1
+    _error "artifacts storage directory ARTIFACT_DIR not set ..."
+fi
+
+if [[ "${CONFIG_DEST_DIR:-}" ]]; then
+    echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
+
+elif [[ "${SHARED_DIR:-}" ]]; then
+    echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
+    CONFIG_DEST_DIR=$SHARED_DIR
+else
+    _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
 fi
 
 action="${1:-}"
-if [[ -z "${action}" ]]; then
-    echo "FATAL: $0 expects 2 arguments: (create|destoy) CLUSTER_ROLE"
-    exit 1
-fi
-
-shift
+cluster_role=${2:-}
 
 set -x
 
 case ${action} in
-    "prepare")
-        prepare_deploy_cluster_subproject "$@"
+    "prepare_deploy_cluster_subproject")
+        prepare_deploy_cluster_subproject
         exit 0
         ;;
     "create")
-        create_cluster "$@"
+        create_cluster "$cluster_role"
         exit 0
         ;;
     "destroy")
         set +o errexit
-        destroy_cluster "$@"
+        destroy_cluster "$cluster_role"
         exit 0
         ;;
     *)
-        echo "FATAL: Unknown action: ${action}" "$@"
-        exit 1
+        _error "Unknown action: ${action} $cluster_role"
         ;;
 esac

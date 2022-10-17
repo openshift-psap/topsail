@@ -17,26 +17,25 @@ output=text
 EOF
 fi
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_ODS_CLEANUP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-source "$THIS_DIR/config_common.sh"
-source "$THIS_DIR/config_clusters.sh"
+source "$TESTING_ODS_DIR/configure.sh"
 
 DELETE_FILE="$ARTIFACT_DIR/clusters_to_delete"
 
 touch "$DELETE_FILE"
-for region in $((echo $OCP_REGION; echo $OSD_REGION) | uniq);
+for region in $((get_config clusters.create.ocp.region; get_config clusters.create.ocp.region) | uniq);
 do
     python3 ./subprojects/cloud-watch/cleanup-rhods-zombie.py \
             --regions "$region" \
-            --ci-prefix "$CLUSTER_NAME_PREFIX" \
-            --ci-delete-older-than "$CLUSTER_CLEANUP_DELAY" \
+            --ci-prefix "$(get_config clusters.create.name_prefix)" \
+            --ci-delete-older-than "$(get_config clusters.cleanup.max_age)" \
             --delete |& tee -a "$ARTIFACT_DIR/cleanup-rhods-zombie_1.$region.log"
 
     python3 ./subprojects/cloud-watch/ec2.py \
             --regions "$region" \
-            --ci-prefix "$CLUSTER_NAME_PREFIX" \
-            --ci-list-older-than "$CLUSTER_CLEANUP_DELAY" \
+            --ci-prefix "$(get_config clusters.create.name_prefix)" \
+            --ci-list-older-than "$(get_config clusters.cleanup.max_age)" \
             --ci-list-file "$DELETE_FILE" |& tee -a "$ARTIFACT_DIR/scan-ec2-instances.$region.log"
 done
 
@@ -56,8 +55,8 @@ for region in $((echo $OCP_REGION; echo $OSD_REGION) | uniq);
 do
     python3 ./subprojects/cloud-watch/cleanup-rhods-zombie.py \
             --regions "$region" \
-            --ci-prefix "$CLUSTER_NAME_PREFIX" \
-            --ci-delete-older-than "$CLUSTER_CLEANUP_DELAY" \
+            --ci-prefix "$(get_config clusters.create.name_prefix)" \
+            --ci-list-older-than "$(get_config clusters.cleanup.max_age)" \
             --delete |& tee -a "$ARTIFACT_DIR/cleanup-rhods-zombie_2.$region.log"
 done
 

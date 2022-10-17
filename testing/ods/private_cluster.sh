@@ -6,26 +6,20 @@ set -o nounset
 set -o errtrace
 set -x
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source "$THIS_DIR/process_ctrl.sh"
-source "$THIS_DIR/config_common.sh"
-source "$THIS_DIR/config_clusters.sh"
-source "$THIS_DIR/config_load_overrides.sh"
+TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source "$TESTING_ODS_DIR/../_logging.sh"
+source "$TESTING_ODS_DIR/process_ctrl.sh"
+source "$TESTING_ODS_DIR/config_common.sh"
+source "$TESTING_ODS_DIR/config_clusters.sh"
+source "$TESTING_ODS_DIR/config_load_overrides.sh"
 
-source "$THIS_DIR/cluster_helpers.sh"
+source "$TESTING_ODS_DIR/cluster_helpers.sh"
 
-if [[ -z "${KUBECONFIG_DRIVER:-}" ]]; then
-    echo "ERROR: KUBECONFIG_DRIVER must be set"
-    exit 1
-fi
-
-if [[ -z "${KUBECONFIG_SUTEST:-}" ]]; then
-    echo "ERROR: KUBECONFIG_SUTEST must be set"
-    exit 1
-fi
+HOSTNAME_KEY=clusters.create.sutest.already_exists.hostname
+USERNAME_KEY=clusters.create.sutest_already_exists.username
 
 prepare_driver_cluster() {
-    cluster_role=driver
+    local cluster_role=driver
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_DRIVER
@@ -34,14 +28,14 @@ prepare_driver_cluster() {
 }
 
 connect_sutest_cluster() {
-    if [[ -z "${SUTEST_CLUSTER_NAME:-}" ]]; then
-        echo "ERROR: SUTEST_CLUSTER_NAME must be set with the base name of the private cluster"
-        exit 1
+    local cluster_hostname=$(get_config "$HOSTNAME_KEY")
+    if [[ -z "$cluster_hostname" ]]; then
+        _error "$HOSTNAME_KEY must be set with the hostname of the private cluster, or with the PR argument 0"
     fi
 
-    if [[ -z "${SUTEST_CLUSTER_USER_NAME:-}" ]]; then
-        echo "ERROR: SUTEST_CLUSTER_USER_NAME must be set with the username to use to log into the private cluster"
-        exit 1
+    local cluster_username=$(get_config "$USERNAME_KEY")
+    if [[ -z "$cluster_username" ]]; then
+        _error "$USERNAME_KEY must be set with the username to use to log into the private cluster, or with the PR argument 1"
     fi
 
     rm -f "$KUBECONFIG_SUTEST"
@@ -51,22 +45,24 @@ connect_sutest_cluster() {
 
     bash -ce '
       source "$PSAP_ODS_SECRET_PATH/get_cluster.password"
-      oc login https://api.'$SUTEST_CLUSTER_NAME':6443 \
+      oc login https://api.'$cluster_hostname':6443 \
          --insecure-skip-tls-verify \
-         --username='$SUTEST_CLUSTER_USER_NAME' \
+         --username='$cluster_username' \
          --password="$password"
      '
 }
 
 prepare_sutest_cluster() {
-    cluster_role=sutest
+    local cluster_role=sutest
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_SUTEST
+
+    # nothing to do at the moment
 }
 
 unprepare_sutest_cluster() {
-    cluster_role=sutest
+    local cluster_role=sutest
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_SUTEST
@@ -75,7 +71,7 @@ unprepare_sutest_cluster() {
 }
 
 unprepare_driver_cluster() {
-    cluster_role=driver
+    local cluster_role=driver
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
     export KUBECONFIG=$KUBECONFIG_DRIVER
@@ -83,13 +79,20 @@ unprepare_driver_cluster() {
     # nothing to do at the moment
 }
 
-action="${1:-}"
-if [[ -z "${action}" ]]; then
-    echo "FATAL: $0 expects 2 arguments: (create|destoy) CLUSTER_ROLE"
+if [[ -z "${KUBECONFIG_DRIVER:-}" ]]; then
+    _error "KUBECONFIG_DRIVER must be set"
+fi
+
+if [[ -z "${KUBECONFIG_SUTEST:-}" ]]; then
+    _error "KUBECONFIG_SUTEST must be set"
+fi
+
+if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+    _error "artifacts storage directory ARTIFACT_DIR not set ..."
     exit 1
 fi
 
-shift
+action="${1:-}"
 
 set -x
 
@@ -115,7 +118,7 @@ case ${action} in
         exit 0
         ;;
     *)
-        echo "FATAL: Unknown action: ${action}" "$@"
+        echo "FATAL: Unknown action: ${action}"
         exit 1
         ;;
 esac
