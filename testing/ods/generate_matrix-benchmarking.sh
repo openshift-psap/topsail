@@ -6,16 +6,22 @@ ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 
 MATBENCH_WORKLOAD=rhods-notebooks-ux
 MATBENCH_GENERATE_LIST=notebooks_scale_test
-
-source "$THIS_DIR/config_load_overrides.sh"
-
-export MATBENCH_WORKLOAD
-
-WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
+MATBENCH_GENERATE_FILTERS=
 
 if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; then
     source "${ARTIFACT_DIR}/variable_overrides"
 fi
+
+if [[ "${PR_POSITIONAL_ARGS:-}" == "reference" ]]; then
+    MATBENCH_GENERATE_LIST=reference_comparison
+    MATBENCH_GENERATE_FILTERS=reference_comparison
+    PR_POSITIONAL_ARGS=subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/references.url
+    PR_POSITIONAL_ARG_0=$PR_POSITIONAL_ARGS
+fi
+
+export MATBENCH_WORKLOAD
+
+WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
 
 if [[ -z "${MATBENCH_WORKLOAD:-}" ]]; then
     echo "ERROR: $0 expects 'MATBENCH_WORKLOAD' to be set ..."
