@@ -38,7 +38,7 @@ THIS_DIR = pathlib.Path(__file__).resolve().parent
 CACHE_FILENAME = "cache.pickle"
 
 IMPORTANT_FILES = [
-    "_ansible.env"
+    "_ansible.env",
 
     "artifacts-sutest/rhods.version",
     "artifacts-sutest/odh-dashboard-config.yaml",
@@ -85,7 +85,7 @@ def is_cache_file(filename):
 
 def register_important_file(base_dirname, filename):
     if not is_important_file(filename):
-        logging.warning(f"File '{filename}' not part of the intesting file list :/")
+        logging.warning(f"File '{filename}' not part of the important file list :/")
 
     return base_dirname / filename
 
@@ -104,34 +104,45 @@ def ignore_file_not_found(fn):
 
     return decorator
 
+
+def _parse_local_env(dirname):
+    from_local_env = types.SimpleNamespace()
+
+    from_local_env.artifacts_basedir = None
+    from_local_env.source_url = None
+    from_local_env.is_interactive = False
+    if not cli_args.kwargs.get("generate"):
+        # running in interactive mode
+        from_local_env.is_interactive = True
+        return from_local_env
+
+    # running in generate mode
+
+    # This must be parsed from the process env (not the file), to
+    # properly generate the error report links to the image.
+    job_name = os.getenv("JOB_NAME_SAFE")
+
+    if not job_name or job_name == "plot-notebooks":
+        # not running in the CI / running independently of the test
+        try:
+            with open(dirname / "source_url") as f: # not an important file
+                from_local_env.source_url = f.read().strip()
+
+            from_local_env.artifacts_basedir = pathlib.Path(from_local_env.source_url)
+        except FileNotFoundError:
+            from_local_env.source_url = "file-not-found"
+
+    elif job_name == "notebooks" or job_name.startswith("notebooks-on-"):
+        # running right after the test
+
+        from_local_env.artifacts_basedir = pathlib.Path("..")
+
+    return from_local_env
+
+
 @ignore_file_not_found
 def _parse_env(dirname):
     from_env = types.SimpleNamespace()
-
-    from_env.link_flag = "unknown"
-    if not cli_args.kwargs.get("generate"):
-        # running in interactive mode
-
-        from_env.link_flag = "interactive"
-    else:
-        # running in generate mode
-
-        # This must be parsed from the process env (not the file), to
-        # properly generate the error report links to the image.
-        job_name = os.getenv("JOB_NAME_SAFE")
-
-        if not job_name:
-            # not running in the CI
-
-            from_env.link_flag = "running-locally"
-        elif job_name == "notebooks" or job_name.startswith("notebooks-on-"):
-            # running right after the test
-
-            from_env.link_flag = "running-with-the-test"
-        elif job_name == "plot-notebooks":
-            # running independently of the test
-
-            from_env.link_flag = "running-without-the-test"
 
     from_env.env = {}
     from_env.pr = None
@@ -162,12 +173,6 @@ def _parse_env(dirname):
             pr.base_ref = job_spec["refs"]["base_ref"]
 
     from_env.single_cluster = "single" in from_env.env["JOB_NAME_SAFE"]
-
-    if from_env.link_flag == "running-without-the-test":
-        with open(dirname / "source_url") as f: # not an important file
-            from_env.source_url = f.read().strip()
-    else:
-        from_env.source_url = None
 
     return from_env
 
@@ -271,7 +276,7 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
     with open(register_important_file(dirname, filename)) as f:
         odh_dashboard_config.content = yaml.safe_load(f)
 
-    odh_dashboard_config.path = str((dirname / filename).relative_to(dirname.parent))
+    odh_dashboard_config.path = str(filename)
     odh_dashboard_config.notebook_size_name = notebook_size_name
     odh_dashboard_config.notebook_size_mem = None
     odh_dashboard_config.notebook_size_cpu = None
@@ -460,12 +465,17 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     try:
         with open(dirname / CACHE_FILENAME, "rb") as f:
             results = pickle.load(f)
+
+        results.from_local_env = _parse_local_env(dirname)
+
         store.add_to_matrix(import_settings, dirname, results, None)
         return
     except FileNotFoundError:
         pass # Cache file doesn't exit, ignore and parse
 
     results = types.SimpleNamespace()
+
+    results.from_local_env = _parse_local_env(dirname)
 
     results.user_count = int(import_settings.get("user_count", 0))
     results.location = dirname
