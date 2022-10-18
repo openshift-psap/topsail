@@ -86,34 +86,50 @@ generate_matbench::generate_plots() {
     echo "Generating from ${MATBENCH_GENERATE_LIST} ..."
     stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${MATBENCH_GENERATE_LIST}.plots" | cut -d'#' -f1 | grep -v '^$')"
 
-    echo "$stats_content"
+    NO_FILTER="no-filter"
+    if [[ "$MATBENCH_GENERATE_FILTERS" ]]; then
+        filters_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${MATBENCH_GENERATE_FILTERS}.filters" | cut -d'#' -f1 | grep -v '^$')"
+    else
+        filters_content="$NO_FILTER"
+    fi
 
     generate_url="stats=$(echo -n "$stats_content" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
-    mkdir -p "$ARTIFACT_DIR"
-    cd "$ARTIFACT_DIR"
     ln -sf /tmp/prometheus.yml "."
-
-    matbench parse |& tee > "$ARTIFACT_DIR/_matbench_parse.log"
-
-    retcode=0
-    VISU_LOG_FILE="$ARTIFACT_DIR/_matbench_visualize.log"
-    if ! matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
-        echo "Visualization generation failed :("
-        retcode=1
+    if ! matbench parse |& tee > "$ARTIFACT_DIR/_matbench_parse.log"; then
+        echo "An error happened during the parsing of the results (or no results were available), aborting."
+        return 1
     fi
     rm -f ./prometheus.yml
 
-    mkdir -p figures_{png,html}
-    mv fig_*.png "figures_png" 2>/dev/null || true
-    mv fig_*.html "figures_html" 2>/dev/null || true
+    retcode=0
+    for filters in $filters_content; do
+        if [[ "$filters" == "$NO_FILTER" ]]; then
+            filters=""
+        fi
+        mkdir -p "$ARTIFACT_DIR/$filters"
+        cd "$ARTIFACT_DIR/$filters"
 
-    if grep "^ERROR" "$VISU_LOG_FILE"; then
-        echo "An error happened during the report generation, aborting."
-        grep "^ERROR" "$VISU_LOG_FILE" > "$ARTIFACT_DIR"/FAILURE
-        exit 1
-    fi
+        VISU_LOG_FILE="$ARTIFACT_DIR/$filters/_matbench_visualize.log"
 
+        export MATBENCH_FILTERS="$filters"
+        if ! matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
+            echo "Visualization generation failed :("
+            retcode=1
+        fi
+        if grep "^ERROR" "$VISU_LOG_FILE"; then
+            echo "An error happened during the report generation, aborting."
+            grep "^ERROR" "$VISU_LOG_FILE" > "$ARTIFACT_DIR"/FAILURE
+            retcode=1
+        fi
+        unset MATBENCH_FILTERS
+
+        mkdir -p figures_{png,html}
+        mv fig_*.png "figures_png" 2>/dev/null || true
+        mv fig_*.html "figures_html" 2>/dev/null || true
+    done
+
+    cd "$ARTIFACT_DIR"
     return $retcode
 }
 
