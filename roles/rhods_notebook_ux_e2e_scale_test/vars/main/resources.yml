@@ -4,3 +4,4 @@ rhods_notebook_ux_e2e_scale_test_entrypoint: "roles/rhods_notebook_ux_e2e_scale_
 rhods_notebook_ux_e2e_scale_test_state_signal_barrier: "roles/rhods_notebook_ux_e2e_scale_test/files/state-signal_barrier.py"
 rhods_notebook_ux_e2e_scale_test_s3_artifacts_exporter_sidecar: "roles/rhods_notebook_ux_e2e_scale_test/files/s3-artifacts-exporter.sh"
 rhods_notebook_ux_e2e_scale_test_test_case_directory: "roles/rhods_notebook_ux_e2e_scale_test/files/ods-ci"
+rhods_notebook_ux_e2e_scale_test_artifacts_version: 2022-10-18
