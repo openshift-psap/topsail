@@ -79,8 +79,9 @@ create_clusters() {
     process_ctrl::wait_bg_processes
 
     # cluster that will be available right away when going to the debug tab of the test pod
-    if [[ ! -e "$KUBECONFIG" ]]; then
-        ln -s "${SHARED_DIR}/${CI_DEFAULT_CLUSTER}_kubeconfig" "$KUBECONFIG"
+    CI_KUBECONFIG=${SHARED_DIR}/kubeconfig
+    if [[ ! -e "$CI_KUBECONFIG" ]]; then
+        ln -s "${SHARED_DIR}/${CI_DEFAULT_CLUSTER}_kubeconfig" "$CI_KUBECONFIG"
     fi
 
     if [[ "$create_flag" == "keep" ]]; then
