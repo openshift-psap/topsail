@@ -57,9 +57,9 @@ _download_data_from_url() {
     shift
 
     if [[ "$url" == "https"* ]]; then
-        matbench download --do-download --url-file <(echo "expe/from_pr $url")
+        matbench download --do-download --url "$url" |& tee >"$ARTIFACT_DIR/_matbench_download.log"
     else
-        matbench download --do-download --url-file "$HOME/$url"
+        matbench download --do-download --url-file "$HOME/$url" |& tee > "$ARTIFACT_DIR/_matbench_download.log"
     fi
 }
 
@@ -94,7 +94,7 @@ generate_matbench::generate_plots() {
     cd "$ARTIFACT_DIR"
     ln -sf /tmp/prometheus.yml "."
 
-    matbench parse
+    matbench parse |& tee > "$ARTIFACT_DIR/_matbench_parse.log"
 
     retcode=0
     VISU_LOG_FILE="$ARTIFACT_DIR/_matbench_visualize.log"
