@@ -12,6 +12,10 @@ ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 MATBENCH_WORKLOAD=rhods-notebooks-ux
 MATBENCH_GENERATE_LIST=notebooks_scale_test
 MATBENCH_GENERATE_FILTERS=
+MATBENCH_MODE='prefer_cache'
+
+# if not empty, copy the results downloaded by `matbench download` into the artifacts directory
+SAVE_MATBENCH_DOWNLOAD=
 
 if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; then
     source "${ARTIFACT_DIR}/variable_overrides"
@@ -24,6 +28,7 @@ if [[ "${PR_POSITIONAL_ARGS:-}" == "reference" ]]; then
     PR_POSITIONAL_ARG_0=$PR_POSITIONAL_ARGS
 fi
 
+export MATBENCH_MODE
 export MATBENCH_WORKLOAD
 
 WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
@@ -106,6 +111,10 @@ generate_matbench::generate_plots() {
         return 1
     fi
     rm -f ./prometheus.yml
+
+    if [[ "$SAVE_MATBENCH_DOWNLOAD" ]]; then
+        cp -rv "$MATBENCH_RESULTS_DIRNAME" "$ARTIFACT_DIR"
+    fi
 
     retcode=0
     for filters in $filters_content; do
