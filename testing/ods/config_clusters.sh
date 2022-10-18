@@ -37,6 +37,12 @@ SUTEST_TAINT_VALUE=yes
 SUTEST_TAINT_EFFECT=NoSchedule
 SUTEST_NODE_SELECTOR="$SUTEST_TAINT_KEY=$SUTEST_TAINT_VALUE"
 
+OSD_SUTEST_COMPUTE_MACHINE_TYPE=m5.2xlarge
+OCP_SUTEST_COMPUTE_MACHINE_TYPE=m5a.2xlarge
+
+SUTEST_FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
+
+
 DRIVER_MACHINESET_NAME=test-pods
 DRIVER_TAINT_KEY=only-$DRIVER_MACHINESET_NAME
 DRIVER_TAINT_VALUE=yes
@@ -44,10 +50,7 @@ DRIVER_TAINT_EFFECT=NoSchedule
 DRIVER_NODE_SELECTOR="$DRIVER_TAINT_KEY=$DRIVER_TAINT_VALUE"
 
 DRIVER_COMPUTE_MACHINE_TYPE=m5a.2xlarge
-OSD_SUTEST_COMPUTE_MACHINE_TYPE=m5.2xlarge
-OCP_SUTEST_COMPUTE_MACHINE_TYPE=m5a.2xlarge
 
-SUTEST_FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
 DRIVER_FORCE_COMPUTE_NODES_COUNT= # if empty, uses ods/sizing/sizing to determine the right number of machines
 
 # cluster that will be available right away when going to the debug tab of the test pod in the CI cluster

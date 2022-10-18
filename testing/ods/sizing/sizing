@@ -71,4 +71,8 @@ def main():
     return machine_count
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main()) # returns the number of nodes required
+    except Exception as e:
+        print(f"ERROR: '{' '.join(sys.argv)}' failed: {e.__class__.__name__}: {e}")
+        sys.exit(0) # 0 means that an error occured

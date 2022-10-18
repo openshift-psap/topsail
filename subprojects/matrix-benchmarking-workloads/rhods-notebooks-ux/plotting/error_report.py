@@ -208,7 +208,10 @@ class ErrorReport():
                 robot_log_path = user_dir / "log.html"
 
                 images = list(user_dir.glob("*.png"))
-                images.sort(key=lambda f: int(re.findall(r"selenium-screenshot-([0-9]*).png", f.name)[0]))
+                try:
+                    images.sort(key=lambda f: int(re.findall(r"selenium-screenshot-([0-9]*).png", f.name)[0]))
+                except IndexError: pass # no sorting if no image is available
+
                 last_screenshot_path = images[-1] if images else None
 
                 content.append(html.Ul([
