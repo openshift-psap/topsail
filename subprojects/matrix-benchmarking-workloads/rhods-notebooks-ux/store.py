@@ -61,6 +61,9 @@ IMPORTANT_FILES = [
 ]
 
 
+ARTIFACTS_VERSION = "2022-10-18"
+PARSER_VERSION = "2022-10-18"
+
 
 def is_mandatory_file(filename):
     return filename.name in ("settings", "exit_code")
@@ -104,6 +107,12 @@ def ignore_file_not_found(fn):
 
     return decorator
 
+@ignore_file_not_found
+def _parse_artifacts_version(dirname):
+    with open(dirname / "artifacts_version") as f:
+        artifacts_version = f.read().strip()
+
+    return artifacts_version
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -466,14 +475,32 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         with open(dirname / CACHE_FILENAME, "rb") as f:
             results = pickle.load(f)
 
+        cache_version = getattr(results, "parser_version", None)
+        if cache_version != PARSER_VERSION:
+            raise ValueError(cache_version)
         results.from_local_env = _parse_local_env(dirname)
 
         store.add_to_matrix(import_settings, dirname, results, None)
         return
+    except ValueError as e:
+        cache_version = e.args[0]
+        if not cache_version:
+            logging.warning("Cache file does not have a version, ignoring.")
+        else:
+            logging.warning(f"Cache file version '{cache_version}' does not match the parser version '{PARSER}', ignoring.")
     except FileNotFoundError:
         pass # Cache file doesn't exit, ignore and parse
 
     results = types.SimpleNamespace()
+
+    results.parser_version = PARSER_VERSION
+    results.artifacts_version = _parse_artifacts_version(dirname)
+
+    if results.artifacts_version != ARTIFACTS_VERSION:
+        if not results.artifacts_version:
+            logging.warning("Artifacts does not have a version...")
+        else:
+            logging.warning("Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
     results.from_local_env = _parse_local_env(dirname)
 
