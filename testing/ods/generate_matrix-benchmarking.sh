@@ -1,5 +1,10 @@
 #! /bin/bash
 
+set -o errexit
+set -o pipefail
+set -o nounset
+set -x
+
 THIS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
@@ -136,28 +141,13 @@ generate_matbench::generate_plots() {
 action=${1:-}
 
 if [[ "$action" == "prepare_matbench" ]]; then
-    set -o errexit
-    set -o pipefail
-    set -o nounset
-    set -x
-
     generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking
 
 elif [[ "$action" == "generate_plots" ]]; then
-    set -o errexit
-    set -o pipefail
-    set -o nounset
-    set -x
-
     generate_matbench::generate_plots
 
 elif [[ "$action" == "from_dir" ]]; then
-    set -o errexit
-    set -o pipefail
-    set -o nounset
-    set -x
-
     dir=${2:-}
 
     if [[ -z "$dir" ]]; then
@@ -172,11 +162,6 @@ elif [[ "$action" == "from_dir" ]]; then
     generate_matbench::generate_plots
 
 elif [[ "$action" == "from_pr_args" || "$JOB_NAME_SAFE" == "nb-plot" ]]; then
-    set -o errexit
-    set -o pipefail
-    set -o nounset
-    set -x
-
     generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking
 
