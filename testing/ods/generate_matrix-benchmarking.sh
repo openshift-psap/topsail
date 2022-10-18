@@ -4,9 +4,12 @@ THIS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 
+MATBENCH_WORKLOAD=rhods-notebooks-ux
+MATBENCH_GENERATE_LIST=notebooks_scale_test
+
 source "$THIS_DIR/config_load_overrides.sh"
 
-export MATBENCH_WORKLOAD=rhods-notebooks-ux
+export MATBENCH_WORKLOAD
 
 WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
 
@@ -74,7 +77,8 @@ generate_matbench::generate_plots() {
         echo "ERROR: expected MATBENCH_RESULTS_DIRNAME to be set ..."
     fi
 
-    stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/ci-artifacts.plots" | cut -d'#' -f1 | grep -v '^$')"
+    echo "Generating from ${MATBENCH_GENERATE_LIST} ..."
+    stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${MATBENCH_GENERATE_LIST}.plots" | cut -d'#' -f1 | grep -v '^$')"
 
     echo "$stats_content"
 
