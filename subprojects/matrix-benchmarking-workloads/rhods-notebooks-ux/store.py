@@ -94,6 +94,9 @@ def register_important_file(base_dirname, filename):
 
 
 def _rewrite_settings(settings_dict):
+    try: del settings_dict["date"]
+    except KeyError: pass
+
     return settings_dict
 
 
