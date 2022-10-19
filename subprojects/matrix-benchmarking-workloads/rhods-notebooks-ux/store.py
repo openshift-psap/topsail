@@ -474,6 +474,7 @@ def _extract_rhods_cluster_info(nodes_info):
 
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
+    has_cache = False
     try:
         with open(dirname / CACHE_FILENAME, "rb") as f:
             results = pickle.load(f)
@@ -481,18 +482,23 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         cache_version = getattr(results, "parser_version", None)
         if cache_version != PARSER_VERSION:
             raise ValueError(cache_version)
-        results.from_local_env = _parse_local_env(dirname)
 
-        store.add_to_matrix(import_settings, dirname, results, None)
-        return
+        has_cache = True
     except ValueError as e:
         cache_version = e.args[0]
         if not cache_version:
             logging.warning("Cache file does not have a version, ignoring.")
         else:
-            logging.warning(f"Cache file version '{cache_version}' does not match the parser version '{PARSER}', ignoring.")
+            logging.warning(f"Cache file version '{cache_version}' does not match the parser version '{PARSER_VERSION}', ignoring.")
     except FileNotFoundError:
         pass # Cache file doesn't exit, ignore and parse
+
+    if has_cache:
+        results.from_local_env = _parse_local_env(dirname)
+        store.add_to_matrix(import_settings, dirname, results, None)
+
+        return
+
 
     results = types.SimpleNamespace()
 
