@@ -86,7 +86,7 @@ generate_matbench::get_prometheus() {
     tar xf "/tmp/prometheus.tar.gz" -C /tmp
     mkdir -p /tmp/bin
     ln -sf "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/bin
-    ln -sf "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
+    cp "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
 }
 
 generate_matbench::generate_plots() {
@@ -106,12 +106,11 @@ generate_matbench::generate_plots() {
 
     generate_url="stats=$(echo -n "$stats_content" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
-    ln -sf /tmp/prometheus.yml "."
+    cp -f /tmp/prometheus.yml "." || true
     if ! matbench parse |& tee > "$ARTIFACT_DIR/_matbench_parse.log"; then
         echo "An error happened during the parsing of the results (or no results were available), aborting."
         return 1
     fi
-    rm -f ./prometheus.yml
 
     if [[ "$SAVE_MATBENCH_DOWNLOAD" ]]; then
         cp -rv "$MATBENCH_RESULTS_DIRNAME" "$ARTIFACT_DIR"
