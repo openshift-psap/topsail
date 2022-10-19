@@ -13,6 +13,7 @@ MATBENCH_WORKLOAD=rhods-notebooks-ux
 MATBENCH_GENERATE_LIST=notebooks_scale_test
 MATBENCH_GENERATE_FILTERS=
 MATBENCH_MODE='prefer_cache'
+MATBENCH_DATA_URL=
 
 # if not empty, copy the results downloaded by `matbench download` into the artifacts directory
 SAVE_MATBENCH_DOWNLOAD=
