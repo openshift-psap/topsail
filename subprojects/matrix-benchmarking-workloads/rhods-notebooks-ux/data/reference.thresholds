@@ -1,0 +1,2 @@
+mode=reference, run=1, *, launch_time_90=240, launch_time_75=225, test_successes=100
+mode=reference, run=2, *, launch_time_90=170, launch_time_75=167, test_successes=100
