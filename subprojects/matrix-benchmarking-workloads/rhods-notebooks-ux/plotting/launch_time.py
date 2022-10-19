@@ -29,28 +29,57 @@ class LaunchTimeDistribution():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         expe_cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
 
-        if  expe_cnt != 1:
-            return {}, f"ERROR: only one experiment must be selected (found {expe_cnt})"
+        cfg__all_in_one = cfg.get("all_in_one", False)
+        cfg__show_only_step = cfg.get("show_only_step", False)
 
+        if expe_cnt != 1 and not cfg__all_in_one:
+            return {}, f"ERROR: only one experiment must be selected (found {expe_cnt}), or pass the all_in_one config flag."
+
+        user_counts = []
+
+        data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
             results = entry.results
+            entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
 
-        user_count = results.user_count
-        data = []
-        for pod_name, ods_ci_output in entry.results.ods_ci_output.items():
-            for step_name, step_status in ods_ci_output.items():
-                if not self.show_successes:
-                    if step_status.status != "PASS": continue
+            if variables: entry_name = f"<br>{entry_name}"
 
+            user_counts.append(results.user_count)
+
+            if cfg__all_in_one:
+                success_users = sum(1 for exit_code in entry.results.ods_ci_exit_code.values() if exit_code == 0)
+                failed_users = results.user_count - success_users
                 data.append(dict(
-                    Event=step_name,
-                    Time=step_status.start,
-                    Count=1,
-                    Status=step_status.status
+                        Event=entry_name,
+                        Count=success_users,
+                        Status="PASS"
                 ))
+                if failed_users:
+                    data.append(dict(
+                        Event=entry_name,
+                        Count=failed_users,
+                        Status="FAIL"
+                ))
+                continue
+
+            for pod_name, ods_ci_output in entry.results.ods_ci_output.items():
+                for step_name, step_status in ods_ci_output.items():
+                    if not self.show_successes and step_status.status != "PASS":
+                        continue
+                    if cfg__show_only_step and cfg__show_only_step != step_name:
+                        continue
+
+                    data.append(dict(
+                        Event=step_name + entry_name,
+                        Time=step_status.start,
+                        Count=1,
+                        Status=step_status.status
+                    ))
 
         if not data:
             return None, "No data to plot ..."
+
+        user_count = ", ".join(user_counts)
 
         df = pd.DataFrame(data)
         if self.show_successes:
@@ -64,6 +93,9 @@ class LaunchTimeDistribution():
             fig.update_layout(title=f"Start time distribution for {user_count} users", title_x=0.5,)
             fig.update_layout(yaxis_title="Launch time")
             fig.update_layout(xaxis_title="")
+
+        if cfg__all_in_one:
+            return fig, None
 
         msg = []
         for idx, step_name in enumerate(entry.results.ods_ci_output[pod_name]):
