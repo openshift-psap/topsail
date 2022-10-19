@@ -1,2 +1,2 @@
-mode=reference, run=1, *, launch_time_90=240, launch_time_75=225, test_successes=100
-mode=reference, run=2, *, launch_time_90=170, launch_time_75=167, test_successes=100
+mode=reference, run=1, *, launch_time_90=240, launch_time_75=225, test_successes=100, rhods_dashboard_cpu_usage=0.75, prom_overview_prom_sutest_api_server_requests_server_errors=0,prom_overview_prom_sutest_master_node_cpu_idle=50%
+mode=reference, run=2, *, launch_time_90=170, launch_time_75=167, test_successes=100, rhods_dashboard_cpu_usage=0.75, prom_overview_prom_sutest_api_server_requests_server_errors=0,prom_overview_prom_sutest_master_node_cpu_idle=50%
