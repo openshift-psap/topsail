@@ -141,7 +141,7 @@ def _parse_local_env(dirname):
             with open(dirname / "source_url") as f: # not an important file
                 from_local_env.source_url = f.read().strip()
 
-            from_local_env.artifacts_basedir = pathlib.Path(from_local_env.source_url)
+            from_local_env.artifacts_basedir = pathlib.Path(from_local_env.source_url.replace("https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/", "/"))
         except FileNotFoundError:
             from_local_env.source_url = "file-not-found"
 
