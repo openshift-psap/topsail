@@ -21,6 +21,7 @@ import matrix_benchmarking.cli_args as cli_args
 
 from . import k8s_quantity
 from . import store_theoretical
+from . import store_thresholds
 from .plotting import prom as rhods_plotting_prom
 
 K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -495,6 +496,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     if has_cache:
         results.from_local_env = _parse_local_env(dirname)
+        results.thresholds = store_thresholds.get_thresholds(import_settings)
         store.add_to_matrix(import_settings, dirname, results, None)
 
         return
@@ -511,6 +513,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         else:
             logging.warning("Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
+    results.thresholds = store_thresholds.get_thresholds(import_settings)
     results.from_local_env = _parse_local_env(dirname)
 
     results.user_count = int(import_settings.get("user_count", 0))
