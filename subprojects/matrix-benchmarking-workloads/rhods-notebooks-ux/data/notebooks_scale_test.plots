@@ -10,3 +10,4 @@ report: Master Nodes Load
 report: RHODS metrics
 report: Notebook Performance
 report: Price Estimation
+multi: Notebook Spawn Time
