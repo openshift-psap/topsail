@@ -123,11 +123,13 @@ def _get_container_mem_cpu(cluster_role, register, label_sets):
         container = labels.get("container", "all")
 
         plotting_prom_cpu_memory.Plot(cpu, f"{plot_name}: CPU usage",
-                           get_metrics=get_metrics(cluster_role),
-                           as_timestamp=True, container_name=container)
+                                      get_metrics=get_metrics(cluster_role),
+                                      as_timestamp=True, container_name=container,
+                                      )
         plotting_prom_cpu_memory.Plot(mem, f"{plot_name}: Mem usage",
-                           get_metrics=get_metrics(cluster_role),
-                           as_timestamp=True, is_memory=True)
+                                      get_metrics=get_metrics(cluster_role),
+                                      as_timestamp=True, is_memory=True,
+                                      )
 
     return all_metrics
 
