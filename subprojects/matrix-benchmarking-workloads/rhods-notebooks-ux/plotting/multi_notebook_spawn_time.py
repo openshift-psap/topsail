@@ -43,12 +43,31 @@ class MultiNotebookSpawnTime():
                         continue
 
                     break
+
                 data.append(dict(Version=entry.location.name,
+                                 LaunchTime90Threshold=entry.results.thresholds.get("launch_time_90", None),
+                                 LaunchTime75Threshold=entry.results.thresholds.get("launch_time_75", None),
                                  Time=accumulated_timelength))
+
+        if not data:
+            return None, "No data found :/"
 
         df = pd.DataFrame(data).sort_values(by=["Version"])
 
         fig = px.box(df, x="Version", y="Time", color="Version")
+
+        if 'LaunchTime75Threshold' in df and not df['LaunchTime75Threshold'].isnull().all():
+            fig.add_scatter(name="75% launch-time threshold",
+                            x=df['Version'], y=df['LaunchTime75Threshold'], mode='lines+markers',
+                            marker=dict(color='red', size=15, symbol="triangle-down"),
+                            line=dict(color='black', width=3, dash='dot'))
+
+        if 'LaunchTime90Threshold' in df and not df['LaunchTime90Threshold'].isnull().all():
+            fig.add_scatter(name="90% launch-time threshold",
+                            x=df['Version'], y=df['LaunchTime90Threshold'], mode='lines+markers',
+                            marker=dict(color='red', size=15, symbol="triangle-down"),
+                            line=dict(color='brown', width=3, dash='dot'))
+
         fig.update_layout(title=f"Time to launch the notebooks", title_x=0.5,)
         fig.update_layout(yaxis_title="Launch time")
         fig.update_layout(xaxis_title="")
