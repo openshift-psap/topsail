@@ -95,6 +95,7 @@ def _get_cluster_mem_cpu(cluster_role, register):
                                       get_metrics=get_metrics(cluster_role),
                                       as_timestamp=True,
                                       is_cluster=True,
+                                      is_memory=True,
                                       )
 
         plotting_prom_cpu_memory.Plot(cluster_cpu, f"{cluster_role} cluster CPU usage",
