@@ -31,7 +31,6 @@
 - name: Generate MatrixBenchmark settings file
   shell: |
     cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
-    date=$(date +%Y-%m-%d_%H:%M:%S)
     test_case={{ rhods_notebook_ux_e2e_scale_test_ods_ci_test_case }}
     exclude_tags={{ rhods_notebook_ux_e2e_scale_test_ods_ci_exclude_tags }}
     user_count={{ rhods_notebook_ux_e2e_scale_test_user_count }}
