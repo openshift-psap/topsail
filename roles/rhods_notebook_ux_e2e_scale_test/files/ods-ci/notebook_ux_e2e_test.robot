@@ -26,7 +26,7 @@ ${NOTEBOOK_SPAWN_WAIT_TIME}    20 minutes
 ${NOTEBOOK_URL}                %{NOTEBOOK_URL}
 ${NOTEBOOK_NAME}               notebook.ipynb
 ${NOTEBOOK_CLONE_WAIT_TIME}    3 minutes
-${NOTEBOOK_EXEC_WAIT_TIME}     10 minutes
+${NOTEBOOK_EXEC_WAIT_TIME}     15 minutes
 
 &{browser logging capability}    browser=ALL
 &{capabilities}    browserName=chrome    version=${EMPTY}    platform=ANY    goog:loggingPrefs=${browser logging capability}
@@ -122,7 +122,7 @@ Load the Notebook
   # shell command (with ! prefix) errors are ignored by JupyterLab
   Add and Run JupyterLab Code Cell in Active Notebook  !time curl -Ssf "${NOTEBOOK_URL}" -o "${NOTEBOOK_NAME}"
   Add and Run JupyterLab Code Cell in Active Notebook  !time curl -Ssf "${NOTEBOOK_URL}/../${NOTEBOOK_BENCHMARK_NAME}" -O
-  Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_EXEC_WAIT_TIME}
+  Wait Until JupyterLab Code Cell Is Not Active  timeout=${NOTEBOOK_CLONE_WAIT_TIME}
   Run Cell And Check For Errors  import pathlib; pathlib.Path("${NOTEBOOK_NAME}").stat()
   Run Cell And Check For Errors  import pathlib; pathlib.Path("${NOTEBOOK_BENCHMARK_NAME}").stat()
   Capture Page Screenshot
@@ -152,7 +152,7 @@ Run the Notebook
 
   Run Cell And Check For Errors  print(f"{datetime.datetime.now()} Running ...")
   Run Cell And Check For Errors  REPEAT=${NOTEBOOK_BENCHMARK_REPEAT}; NUMBER=${NOTEBOOK_BENCHMARK_NUMBER}
-  Run Cell And Check For Errors  measures = run_benchmark(repeat=REPEAT, number=NUMBER)
+  Run Cell And Check For Errors  measures = run_benchmark(repeat=REPEAT, number=NUMBER)  timeout=${NOTEBOOK_EXEC_WAIT_TIME}
   Run Cell And Check For Errors  print(f"{datetime.datetime.now()} Done ...")
   Run Cell And Check For Errors  print(f"The benchmark ran for {sum(measures):.2f} seconds")
   ${measures} =  Run Cell And Get Output  import json; print(json.dumps(dict(benchmark="${NOTEBOOK_BENCHMARK_NAME}", repeat=REPEAT, number=NUMBER, measures=measures)))
@@ -199,3 +199,12 @@ Wait Notebook Spawn
   [Arguments]  ${spawner_timeout}=600 seconds
 
   Wait Until Page Does Not Contain Element  xpath://div[@role="progressbar"]  ${spawner_timeout}
+
+
+Run Cell And Check For Errors
+  [Arguments]  ${input}  ${timeout}=120 seconds
+
+  Add and Run JupyterLab Code Cell in Active Notebook  ${input}
+  Wait Until JupyterLab Code Cell Is Not Active  ${timeout}
+  ${output} =  Get Text  (//div[contains(@class,"jp-OutputArea-output")])[last()]
+  Should Not Match  ${output}  ERROR*

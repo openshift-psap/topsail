@@ -1,18 +1,37 @@
 #! /bin/bash
 
+set -o errexit
+set -o pipefail
+set -o nounset
+set -x
+
 THIS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 
-source "$THIS_DIR/config_load_overrides.sh"
+MATBENCH_WORKLOAD=rhods-notebooks-ux
+MATBENCH_GENERATE_LIST=notebooks_scale_test
+MATBENCH_GENERATE_FILTERS=
+MATBENCH_MODE='prefer_cache'
 
-export MATBENCH_WORKLOAD=rhods-notebooks-ux
-
-WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
+# if not empty, copy the results downloaded by `matbench download` into the artifacts directory
+SAVE_MATBENCH_DOWNLOAD=
 
 if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; then
     source "${ARTIFACT_DIR}/variable_overrides"
 fi
+
+if [[ "${PR_POSITIONAL_ARGS:-}" == "reference" ]]; then
+    MATBENCH_GENERATE_LIST=reference_comparison
+    MATBENCH_GENERATE_FILTERS=reference_comparison
+    PR_POSITIONAL_ARGS=subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/references.url
+    PR_POSITIONAL_ARG_0=$PR_POSITIONAL_ARGS
+fi
+
+export MATBENCH_MODE
+export MATBENCH_WORKLOAD
+
+WORKLOAD_STORAGE_DIR="$THIS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
 
 if [[ -z "${MATBENCH_WORKLOAD:-}" ]]; then
     echo "ERROR: $0 expects 'MATBENCH_WORKLOAD' to be set ..."
@@ -48,9 +67,9 @@ _download_data_from_url() {
     shift
 
     if [[ "$url" == "https"* ]]; then
-        matbench download --do-download --url-file <(echo "expe/from_pr $url")
+        matbench download --do-download --url "$url" |& tee >"$ARTIFACT_DIR/_matbench_download.log"
     else
-        matbench download --do-download --url-file "$HOME/$url"
+        matbench download --do-download --url-file "$HOME/$url" |& tee > "$ARTIFACT_DIR/_matbench_download.log"
     fi
 }
 
@@ -70,68 +89,74 @@ generate_matbench::get_prometheus() {
 }
 
 generate_matbench::generate_plots() {
-    if [[ -z "$MATBENCH_RESULTS_DIRNAME" ]]; then
+    if [[ -z "${MATBENCH_RESULTS_DIRNAME:-}" ]]; then
         echo "ERROR: expected MATBENCH_RESULTS_DIRNAME to be set ..."
     fi
 
-    stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/ci-artifacts.plots" | cut -d'#' -f1 | grep -v '^$')"
+    echo "Generating from ${MATBENCH_GENERATE_LIST} ..."
+    stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${MATBENCH_GENERATE_LIST}.plots" | cut -d'#' -f1 | grep -v '^$')"
 
-    echo "$stats_content"
+    NO_FILTER="no-filter"
+    if [[ "$MATBENCH_GENERATE_FILTERS" ]]; then
+        filters_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${MATBENCH_GENERATE_FILTERS}.filters" | cut -d'#' -f1 | grep -v '^$')"
+    else
+        filters_content="$NO_FILTER"
+    fi
 
     generate_url="stats=$(echo -n "$stats_content" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
-    mkdir -p "$ARTIFACT_DIR"
-    cd "$ARTIFACT_DIR"
     ln -sf /tmp/prometheus.yml "."
-
-    matbench parse
-
-    retcode=0
-    VISU_LOG_FILE="$ARTIFACT_DIR/_matbench_visualize.log"
-    if ! matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
-        echo "Visualization generation failed :("
-        retcode=1
+    if ! matbench parse |& tee > "$ARTIFACT_DIR/_matbench_parse.log"; then
+        echo "An error happened during the parsing of the results (or no results were available), aborting."
+        return 1
     fi
     rm -f ./prometheus.yml
 
-    mkdir -p figures_{png,html}
-    mv fig_*.png "figures_png" 2>/dev/null || true
-    mv fig_*.html "figures_html" 2>/dev/null || true
-
-    if grep "^ERROR" "$VISU_LOG_FILE"; then
-        echo "An error happened during the report generation, aborting."
-        grep "^ERROR" "$VISU_LOG_FILE" > "$ARTIFACT_DIR"/FAILURE
-        exit 1
+    if [[ "$SAVE_MATBENCH_DOWNLOAD" ]]; then
+        cp -rv "$MATBENCH_RESULTS_DIRNAME" "$ARTIFACT_DIR"
     fi
 
+    retcode=0
+    for filters in $filters_content; do
+        if [[ "$filters" == "$NO_FILTER" ]]; then
+            filters=""
+        fi
+        mkdir -p "$ARTIFACT_DIR/$filters"
+        cd "$ARTIFACT_DIR/$filters"
+
+        VISU_LOG_FILE="$ARTIFACT_DIR/$filters/_matbench_visualize.log"
+
+        export MATBENCH_FILTERS="$filters"
+        if ! matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
+            echo "Visualization generation failed :("
+            retcode=1
+        fi
+        if grep "^ERROR" "$VISU_LOG_FILE"; then
+            echo "An error happened during the report generation, aborting."
+            grep "^ERROR" "$VISU_LOG_FILE" > "$ARTIFACT_DIR"/FAILURE
+            retcode=1
+        fi
+        unset MATBENCH_FILTERS
+
+        mkdir -p figures_{png,html}
+        mv fig_*.png "figures_png" 2>/dev/null || true
+        mv fig_*.html "figures_html" 2>/dev/null || true
+    done
+
+    cd "$ARTIFACT_DIR"
     return $retcode
 }
 
 action=${1:-}
 
 if [[ "$action" == "prepare_matbench" ]]; then
-    set -o errexit
-    set -o pipefail
-    set -o nounset
-    set -x
-
     generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking
 
 elif [[ "$action" == "generate_plots" ]]; then
-    set -o errexit
-    set -o pipefail
-    set -o nounset
-    set -x
-
     generate_matbench::generate_plots
 
 elif [[ "$action" == "from_dir" ]]; then
-    set -o errexit
-    set -o pipefail
-    set -o nounset
-    set -x
-
     dir=${2:-}
 
     if [[ -z "$dir" ]]; then
@@ -146,11 +171,6 @@ elif [[ "$action" == "from_dir" ]]; then
     generate_matbench::generate_plots
 
 elif [[ "$action" == "from_pr_args" || "$JOB_NAME_SAFE" == "nb-plot" ]]; then
-    set -o errexit
-    set -o pipefail
-    set -o nounset
-    set -x
-
     generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking
 

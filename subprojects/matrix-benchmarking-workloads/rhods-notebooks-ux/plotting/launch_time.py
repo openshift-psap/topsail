@@ -68,7 +68,13 @@ class LaunchTimeDistribution():
         msg = []
         for idx, step_name in enumerate(entry.results.ods_ci_output[pod_name]):
             step_times = df[df["Event"] == step_name]["Time"]
-            step_start_time = min(df[df["Event"] == step_name]["Time"])
+
+            if step_times.empty:
+                msg.append(f"No result for step {idx}/{step_name}.")
+                msg.append(html.Br())
+                continue
+
+            step_start_time = min(step_times)
 
             total_time = (step_times.quantile(1) - step_start_time).total_seconds() / 60 # 100%
             mid_80 = (step_times.quantile(0.90) - step_times.quantile(0.10)).total_seconds() / 60 # 10% <-> 90%

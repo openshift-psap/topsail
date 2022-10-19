@@ -17,29 +17,6 @@ def register():
     ErrorReport()
 
 
-def _get_artifacts_base_url(entry):
-    if entry.results.from_env.link_flag == "interactive" :
-        # running in interactive mode
-        artifacts_link = None
-
-    elif entry.results.from_env.link_flag == "running-locally":
-        # not running in the CI
-        artifacts_link = lambda path: f"file://{path}"
-
-    elif entry.results.from_env.link_flag == "running-with-the-test":
-        # running right after the test
-        artifacts_link = lambda path: str(".." / path.relative_to(entry.results.location.parent))
-
-    elif entry.results.from_env.link_flag == "running-without-the-test":
-        # running independently of the test
-
-        artifacts_link = lambda path: f"{entry.results.from_env.source_url}/{path.relative_to(entry.results.location.parent)}"
-    else:
-        raise ValueError(f"Unexpected value for 'entry.results.link_flag' env var: '{entry.results.link_flag}'")
-
-    return artifacts_link
-
-
 def _get_test_setup(entry):
     setup_info = []
     if entry.results.from_env.pr:
@@ -80,24 +57,18 @@ def _get_test_setup(entry):
                                 " against ",
                                 html.A(html.Code(pr.base_ref), href=pr.base_link, target="_blank")])]
 
+    artifacts_basedir = entry.results.from_local_env.artifacts_basedir
 
-    if entry.results.from_env.link_flag == "running-with-the-test":
-        results_artifacts_href = ".."
-    elif entry.results.from_env.link_flag == "running-without-the-test":
-        results_artifacts_href = entry.results.from_env.source_url
-    else:
-        results_artifacts_href = None
-
-    if results_artifacts_href:
-        setup_info += [html.Li(html.A("Results artifacts", href=results_artifacts_href, target="_blank"))]
+    if artifacts_basedir:
+        setup_info += [html.Li(html.A("Results artifacts", href=artifacts_basedir, target="_blank"))]
 
         if entry.results.odh_dashboard_config.path:
-            href = f"{results_artifacts_href}/{entry.results.odh_dashboard_config.path}"
+            href = artifacts_basedir / entry.results.odh_dashboard_config.path
             setup_info += [html.Ul(html.Li(html.A("Dashboard configuration", href=href, target="_blank")))]
         else:
             setup_info += [html.Ul(html.Li("Dashboard configuration: MISSING"))]
     else:
-        setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE (link_flag={entry.results.from_env.link_flag})")]
+        setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE ({entry.results.from_local_env.source_url})")]
         setup_info += [html.Ul(html.Li("Dashboard configuration: NOT AVAILABLE"))]
 
     setup_info += [html.Li("Test configuration:")]
@@ -157,16 +128,17 @@ class ErrorReport():
 
         setup_info = _get_test_setup(entry)
 
-        artifacts_link = _get_artifacts_base_url(entry)
-        if artifacts_link is None:
+        if entry.results.from_local_env.is_interactive:
             # running in interactive mode
             def artifacts_link(path):
                 if path.suffix != ".png":
-                    return f"file://{path}"
+                    return f"file://{entry.results.from_local_env.artifacts_basedir / path}"
 
                 with open (path, "rb") as f:
                     encoded_image = base64.b64encode(f.read()).decode("ascii")
                 return f"data:image/png;base64,{encoded_image}"
+        else:
+            artifacts_link = lambda path: entry.results.from_local_env.artifacts_basedir / path
 
         failed_steps = defaultdict(list)
         failed_users_at_step = defaultdict(list)
@@ -207,12 +179,7 @@ class ErrorReport():
                 user_dir = entry.results.location / "ods-ci" / f"ods-ci-{user_idx}"
                 robot_log_path = user_dir / "log.html"
 
-                images = list(user_dir.glob("*.png"))
-                try:
-                    images.sort(key=lambda f: int(re.findall(r"selenium-screenshot-([0-9]*).png", f.name)[0]))
-                except IndexError: pass # no sorting if no image is available
-
-                last_screenshot_path = images[-1] if images else None
+                last_screenshot_path = (user_dir / "final_screenshot.png").relative_to(entry.results.location)
 
                 content.append(html.Ul([
                     html.Li([f'Failed at step ', html.B(html.Code(f'"ODS - {step_idx} - {step_name}".'))]),

@@ -31,7 +31,7 @@ ARG OCM_CLI_URL=https://github.com/openshift-online/ocm-cli/releases/download/${
 
 # Install dependencies: ocm, oc
 RUN curl ${CURL_OPTIONS} https://people.redhat.com/~kpouget/22-08-26/openshift-client-linux.tar.gz | tar xfz - -C /usr/local/bin oc \
- && curl ${CURL_OPTIONS} ${OCM_CLI_URL} --output /usr/local/bin/ocm && chmod +x /usr/local/bin/ocm
+ && curl ${CURL_OPTIONS} https://people.redhat.com/~kpouget/22-10-05/ocm-linux-amd64 --output /usr/local/bin/ocm && chmod +x /usr/local/bin/ocm
 
 # Set up Ansible
 RUN mkdir -p /etc/ansible \
