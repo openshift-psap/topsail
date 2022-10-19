@@ -120,13 +120,19 @@ class LaunchTimeDistribution():
 
             step_start_time = min(step_times)
 
-            total_time = (step_times.quantile(1) - step_start_time).total_seconds() / 60 # 100%
-            mid_80 = (step_times.quantile(0.90) - step_times.quantile(0.10)).total_seconds() / 60 # 10% <-> 90%
-            mid_50 = (step_times.quantile(0.75) - step_times.quantile(0.25)).total_seconds() / 60 # 25% <-> 75%
+            total_time = (step_times.quantile(1) - step_start_time).total_seconds() # 100%
+            mid_80 = (step_times.quantile(0.90) - step_times.quantile(0.10)).total_seconds() # 10% <-> 90%
+            mid_50 = (step_times.quantile(0.75) - step_times.quantile(0.25)).total_seconds() # 25% <-> 75%
 
-            msg.append(f"All the users started the step {idx} within {total_time:.1f} minutes, ")
-            msg.append(f"80% within {mid_80:.1f} minutes, ")
-            msg.append(f"50% within {mid_50:.1f} minutes. ")
+            def time(sec):
+                if sec <= 120:
+                    return f"{sec:.0f} seconds"
+                else:
+                    return f"{sec/60:.1f} minutes"
+
+            msg.append(f"All the users started the step {idx} within {time(total_time)}, ")
+            msg.append(f"80% within {time(mid_80)}, ")
+            msg.append(f"50% within {time(mid_50)}. ")
             msg.append(html.B(step_name))
             msg.append(html.Br())
 
