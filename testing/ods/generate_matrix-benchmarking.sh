@@ -68,8 +68,10 @@ _download_data_from_url() {
     shift
 
     if [[ "$url" == "https"* ]]; then
+        echo "$url" > "$ARTIFACT_DIR/source_url"
         matbench download --do-download --url "$url" |& tee >"$ARTIFACT_DIR/_matbench_download.log"
     else
+        cp "$HOME/$url" "$ARTIFACT_DIR/source_url"
         matbench download --do-download --url-file "$HOME/$url" |& tee > "$ARTIFACT_DIR/_matbench_download.log"
     fi
 }
