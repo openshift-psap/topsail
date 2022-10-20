@@ -17,12 +17,12 @@ if [[ -z "${PULL_NUMBER:-}" ]]; then
     exit 1
 fi
 
-PR_URL="https://api.github.com/repos/openshift-psap/ci-artifacts/pulls/$PULL_NUMBER"
-PR_COMMENTS_URL="https://api.github.com/repos/openshift-psap/ci-artifacts/issues/$PULL_NUMBER/comments"
+PR_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PULL_NUMBER"
+PR_COMMENTS_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PULL_NUMBER/comments"
 
 author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
 
-JOB_NAME_PREFIX=pull-ci-openshift-psap-ci-artifacts-main
+JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-${PULL_BASE_REF}
 test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 
 pr_json=$(curl -sSf "$PR_URL")
