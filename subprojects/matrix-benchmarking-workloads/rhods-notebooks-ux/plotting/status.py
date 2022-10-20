@@ -98,15 +98,21 @@ class ExecutionDistribution():
             q1, med, q3 = stats.quantiles(times_data)
             q90 = stats.quantiles(times_data, n=10)[8] # 90th percentile
 
-            msg.append(f"25% of the users got their notebook in less than {q1/60:.1f} minutes [Q1]")
+            def time(sec):
+                if sec <= 120:
+                    return f"{sec:.0f} seconds"
+                else:
+                    return f"{sec/60:.1f} minutes"
+
+            msg.append(f"25% of the users got their notebook in less than {time(q1)} [Q1]")
             msg.append(html.Br())
-            msg.append(f"50% of the users got their notebook in less than {med/60:.1f} minutes (+ {med-q1:.0f}s) [median]")
+            msg.append(f"50% of the users got their notebook in less than {time(med)} (+ {time(med-q1)}) [median]")
             msg.append(html.Br())
-            msg.append(f"75% of the users got their notebook in less than {q3/60:.1f} minutes (+ {q3-med:.0f}s) [Q3]")
+            msg.append(f"75% of the users got their notebook in less than {time(q3)} (+ {time(q3-med)}) [Q3]")
             msg.append(html.Br())
-            msg.append(f"90% of the users got their notebook in less than {q90/60:.1f} minutes (+ {q90-q3:.0f}s) [90th quantile]")
+            msg.append(f"90% of the users got their notebook in less than {time(q90)} (+ {time(q90-q3)}) [90th quantile]")
             msg.append(html.Br())
-            msg.append(f"There are {q3 - q1:.0f} seconds between Q1 and Q3.")
+            msg.append(f"There are {time(q3 - q1)} between Q1 and Q3.")
             msg.append(html.Br())
 
         return fig, msg

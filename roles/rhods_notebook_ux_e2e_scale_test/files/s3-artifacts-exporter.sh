@@ -46,13 +46,14 @@ set -x
 
 test_failed=$(cat ${ARTIFACT_DIR}/test.exit_code)
 
-delete_image=0
-[[ "$ARTIFACTS_COLLECTED" == "no-image" ]] && delete_image=1
-[[ "$ARTIFACTS_COLLECTED" == "no-image-except-failed"* && "$test_failed" == 0 ]] && delete_image=1
-[[ "$ARTIFACTS_COLLECTED" == "no-image-except-failed-and-zero" && "${JOB_COMPLETION_INDEX:-0}" == 0 ]] && delete_image=0
+delete_screenshots=0
+[[ "$ARTIFACTS_COLLECTED" == "no-screenshot" ]] && delete_screenshots=1
+[[ "$ARTIFACTS_COLLECTED" == "no-screenshot-except-zero" && "${JOB_COMPLETION_INDEX:-0}" == 0 ]] && delete_screenshots=0
+[[ "$ARTIFACTS_COLLECTED" == "no-screenshot-except-failed"* && "$test_failed" == 0 ]] && delete_screenshots=1
+[[ "$ARTIFACTS_COLLECTED" == "no-screenshot-except-failed-and-zero" && "${JOB_COMPLETION_INDEX:-0}" == 0 ]] && delete_screenshots=0
 
-if [[ "$delete_image" == 1 ]]; then
-    find "${ARTIFACT_DIR}" -name '*.png' -delete > dev/null
+if [[ "$delete_screenshots" == 1 ]]; then
+    find "${ARTIFACT_DIR}" -name 'selenium-screenshot-*.png' -delete > dev/null
 fi
 
 configure_s3
