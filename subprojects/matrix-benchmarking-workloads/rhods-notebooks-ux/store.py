@@ -98,6 +98,9 @@ def _rewrite_settings(settings_dict):
     try: del settings_dict["date"]
     except KeyError: pass
 
+    try: del settings_dict["check_thresholds"]
+    except KeyError: pass
+
     return settings_dict
 
 
@@ -480,6 +483,9 @@ def _parse_always(results, dirname, import_settings):
     results.from_local_env = _parse_local_env(dirname)
     results.thresholds = store_thresholds.get_thresholds(import_settings)
 
+    results.check_thresholds = import_settings.get("check_thresholds", "no") == "yes"
+    if results.check_thresholds:
+        logging.info(f"Check thresholds set for {dirname}")
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     has_cache = False
