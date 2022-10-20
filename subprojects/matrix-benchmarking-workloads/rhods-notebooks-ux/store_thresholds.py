@@ -16,6 +16,8 @@ def _parse_thresholds():
             data += [row for row in csv.reader(f)]
 
     for properties in data:
+        if not properties: continue # empty line
+
         threshold_settings = {}
         threshold_values = {}
         thresholds_cache.append([threshold_settings, threshold_values])
@@ -33,7 +35,7 @@ def _parse_thresholds():
             current_bucket[prop_key] = prop_value
 
         if not threshold_values:
-            raise ValueError(f"Found no threshold value in '{row}'")
+            raise ValueError(f"Found no threshold value in '{properties}'")
 
 
 def get_thresholds(entry_settings):
