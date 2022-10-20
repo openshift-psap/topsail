@@ -474,6 +474,13 @@ def _extract_rhods_cluster_info(nodes_info):
     return rhods_cluster_info
 
 
+def _parse_always(results, dirname, import_settings):
+    # parsed even when reloading from the cache file
+
+    results.from_local_env = _parse_local_env(dirname)
+    results.thresholds = store_thresholds.get_thresholds(import_settings)
+
+
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     has_cache = False
     try:
@@ -495,8 +502,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         pass # Cache file doesn't exit, ignore and parse
 
     if has_cache:
-        results.from_local_env = _parse_local_env(dirname)
-        results.thresholds = store_thresholds.get_thresholds(import_settings)
+        _parse_always(results, dirname, import_settings)
+
         store.add_to_matrix(import_settings, dirname, results, None)
 
         return
@@ -513,8 +520,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         else:
             logging.warning("Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
-    results.thresholds = store_thresholds.get_thresholds(import_settings)
-    results.from_local_env = _parse_local_env(dirname)
+    _parse_always(results, dirname, import_settings)
 
     results.user_count = int(import_settings.get("user_count", 0))
     results.location = dirname
