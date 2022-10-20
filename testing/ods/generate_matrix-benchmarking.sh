@@ -101,7 +101,7 @@ generate_matbench::generate_plots() {
 
     NO_FILTER="no-filter"
     if [[ "$MATBENCH_GENERATE_FILTERS" ]]; then
-        filters_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${MATBENCH_GENERATE_FILTERS}.filters" | cut -d'#' -f1 | grep -v '^$')"
+        filters_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${MATBENCH_GENERATE_FILTERS}.filters" | cut -d'#' -f1 | (grep -v '^$' || true))"
     else
         filters_content="$NO_FILTER"
     fi
