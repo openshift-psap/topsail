@@ -177,7 +177,7 @@ class ErrorReport():
                 failed_users_at_step[step_name].append(user_idx)
 
                 user_dir = entry.results.location / "ods-ci" / f"ods-ci-{user_idx}"
-                robot_log_path = user_dir / "log.html"
+                robot_log_path = (user_dir / "log.html").relative_to(entry.results.location)
 
                 last_screenshot_path = (user_dir / "final_screenshot.png").relative_to(entry.results.location)
 
