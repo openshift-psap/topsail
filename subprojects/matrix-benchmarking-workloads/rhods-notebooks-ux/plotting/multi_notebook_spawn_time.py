@@ -26,9 +26,18 @@ class MultiNotebookSpawnTime():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg__time_to_reach_step = cfg.get("time_to_reach_step", "Go to JupyterLab Page")
+        threshold_status_keys = set()
 
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
+            entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+
+            try: check_thresholds = entry.results.check_thresholds
+            except AttributeError: check_thresholds = False
+
+            if check_thresholds:
+                threshold_status_keys.add(entry_name)
+
             for user_idx, ods_ci_output in entry.results.ods_ci_output.items():
                 accumulated_timelength = 0
 
@@ -44,9 +53,11 @@ class MultiNotebookSpawnTime():
 
                     break
 
-                data.append(dict(Version=entry.location.name,
-                                 LaunchTime90Threshold=entry.results.thresholds.get("launch_time_90", None),
-                                 LaunchTime75Threshold=entry.results.thresholds.get("launch_time_75", None),
+                thr90 = int(entry.results.thresholds.get("launch_time_90", 0)) or None
+                thr75 = int(entry.results.thresholds.get("launch_time_75", 0)) or None
+                data.append(dict(Version=entry_name,
+                                 LaunchTime90Threshold=thr90,
+                                 LaunchTime75Threshold=thr75,
                                  Time=accumulated_timelength))
 
         if not data:
@@ -67,9 +78,36 @@ class MultiNotebookSpawnTime():
                             x=df['Version'], y=df['LaunchTime90Threshold'], mode='lines+markers',
                             marker=dict(color='red', size=15, symbol="triangle-down"),
                             line=dict(color='brown', width=3, dash='dot'))
+        msg = []
+        for entry_name in threshold_status_keys:
+            res = df[df["Version"] == entry_name]
+            if res.empty:
+                msg.append(html.B(f"{entry_name}: no data ..."))
+                msg.append(html.Br())
+                continue
+
+            threshold_90 = float(res["LaunchTime90Threshold"].values[0])
+            value_90 = res["Time"].quantile(0.90)
+            test90_passed = value_90 <= threshold_90
+
+            threshold_75 = float(res["LaunchTime75Threshold"].values[0])
+            value_75 = res["Time"].quantile(0.75)
+            test75_passed = value_75 <= threshold_75
+
+            status = [test90_passed, test75_passed]
+            test_passed = all(status)
+            success_count = len([s for s in status if s])
+            msg += [html.B(entry_name), ": ", html.B("PASSED" if test_passed else "FAILED"), f" ({success_count}/{len(status)} success{'es' if success_count > 1 else ''})"]
+            if not test_passed:
+                if not test90_passed:
+                    msg.append(html.Ul(html.Li(f"FAIL: {value_90:.0f} seconds < launch_time_90={threshold_90:.0f} seconds")))
+                if not test75_passed:
+                    msg.append(html.Ul(html.Li(f"FAIL: {value_75:.0f} seconds < launch_time_75={threshold_75:.0f} seconds")))
+            else:
+                msg.append(html.Br())
 
         fig.update_layout(title=f"Time to launch the notebooks", title_x=0.5,)
         fig.update_layout(yaxis_title="Launch time")
         fig.update_layout(xaxis_title="")
 
-        return fig, ""
+        return fig, msg
