@@ -41,6 +41,22 @@ def Plot(name, args, msg_p=None):
     return dcc.Graph(figure=fig)
 
 
+def Plot_and_Text(name, args):
+    msg_p = []
+
+    data = [Plot(name, args, msg_p)]
+
+    if msg_p[0]:
+        data.append(
+            html.Div(
+                msg_p[0],
+                style={"border-radius": "5px",
+                       "padding": "0.5em",
+                       "background-color": "lightgray",
+                       }))
+
+    return data
+
 class PodNodeMappingReport():
     def __init__(self):
         self.name = "report: Pod-Node Mapping"
@@ -160,26 +176,22 @@ class LaunchAndExecTimeDistributionReport():
         header += [html.P("These plots show the distribution of the user steps execution time and launch time.")]
 
         header += [html.H2("Start time distribution")]
-        header += [Plot("Launch time distribution", args)]
+        header += Plot_and_Text("Launch time distribution", args)
         header += ["This plot provides information the start time of the different user steps. The failed steps are not taken into account."]
         header += [html.Br()]
         header += [html.Br()]
 
 
         header += [html.H2("Overview of the Execution time distribution")]
-        header += [Plot("Execution time distribution", args)]
+        header += Plot_and_Text("Execution time distribution", args)
         header += ["This plot provides information about the execution timelength for the different user steps. The failed steps are not taken into account."]
         header += [html.Br()]
         header += [html.Br()]
 
         header += [html.H2("Execution time distribution for getting a usable Notebook")]
 
-        msg_p = []
-        header += [Plot("Execution time distribution",
-                        set_config(dict(time_to_reach_step="Go to JupyterLab Page"), args),
-                        msg_p,
-                        )]
-        header += [html.I(msg_p[0]), html.Br()]
+        header += Plot_and_Text("Execution time distribution",
+                                set_config(dict(time_to_reach_step="Go to JupyterLab Page"), args))
 
         header += ["This plot provides information about the execution timelength required to reach JupyterLab front page. The failed steps are not taken into account."]
         header += [html.Br()]
@@ -201,12 +213,8 @@ class LaunchAndExecTimeDistributionReport():
         for step_name in step_names:
             if step_name == "Open the Browser": continue
 
-            msg_p=[]
-            header += [Plot("Execution time distribution",
-                            set_config(dict(step=step_name), args),
-                            msg_p)]
-            header += [html.I(msg_p[0])]
-            header += [html.Br(), html.Br()]
+            header += Plot_and_Text("Execution time distribution",
+                            set_config(dict(step=step_name), args))
 
         return None, header
 
@@ -228,23 +236,18 @@ class NotebookPerformanceReport():
 
         if settings["user_count"] == "1":
             msg_p = []
-            header += [Plot("Notebook Performance",
-                            set_config(dict(user_details=1, stacked=1), args),
-                            msg_p)]
-            header += [html.I(msg_p[0]), html.Br()]
+            header += Plot_and_Text("Notebook Performance",
+                                    set_config(dict(user_details=1, stacked=1), args))
+
             header += ["This plot shows the distribution of the notebook performance benchmark results, when a single notebook is running on the node."]
 
         else:
-            msg_p = []
-            header += [Plot("Notebook Performance", set_config(dict(all_in_one=True), args), msg_p)]
-            header += [html.I(msg_p[0]), html.Br()]
+            header += Plot_and_Text("Notebook Performance", set_config(dict(all_in_one=True), args))
             header += ["This plot shows the distribution of the notebook performance benchmark results, for all of the simulated users."]
             header += html.Br()
             header += html.Br()
 
-            msg_p = []
-            header += [Plot("Notebook Performance", args, msg_p)]
-            header += [html.I(msg_p[0]), html.Br()]
+            header += Plot_and_Text("Notebook Performance", args)
             header += ["This plot shows the distribution of the notebook performance benchmark results, for each of the simulated users."]
 
         header += html.Br()
@@ -275,7 +278,7 @@ class MastersReport():
                 header += [html.H2(f"{pod_name} subsystem")]
 
                 for what in ["CPU", "Mem"]:
-                    header += [Plot(f"Prom: {cluster_role.title()} {pod_name}: {what} usage", args)]
+                    header += Plot_and_Text(f"Prom: {cluster_role.title()} {pod_name}: {what} usage", args)
                     header += html.Br()
                     header += html.Br()
 
@@ -290,23 +293,23 @@ class MastersReport():
                        "The Y scale is arbitrary, but for a given node, the sum of all the modes at a given time indicate 100% of the CPU."
                        ]
 
-            header += [Plot(f"Prom: {cluster_role.title()} Master Node CPU usage", args)]
+            header += Plot_and_Text(f"Prom: {cluster_role.title()} Master Node CPU usage", args)
             header += html.Br()
             header += html.Br()
 
-            header += [Plot(f"Prom: {cluster_role.title()} Master Node CPU idle", args)]
+            header += Plot_and_Text(f"Prom: {cluster_role.title()} Master Node CPU idle", args)
             header += html.Br()
             header += html.Br()
 
             header += [html.H2(f"APIServer requests duration")]
             for verb in ["LIST", "GET", "PUT", "PATCH"]:
-                header += [Plot(f"Prom: {cluster_role.title()} API Server {verb} Requests duration", args)]
+                header += Plot_and_Text(f"Prom: {cluster_role.title()} API Server {verb} Requests duration", args)
                 header += html.Br()
                 header += html.Br()
 
             header += [html.H2(f"API Server HTTP return codes")]
             for what in ["successes", "client errors", "server errors"]:
-                header += [Plot(f"Prom: {cluster_role.title()} API Server Requests ({what})", args)]
+                header += Plot_and_Text(f"Prom: {cluster_role.title()} API Server Requests ({what})", args)
                 header += html.Br()
                 header += html.Br()
 
