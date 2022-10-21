@@ -98,13 +98,15 @@ class MultiNotebookSpawnTime():
             test_passed = all(status)
             success_count = len([s for s in status if s])
             msg += [html.B(entry_name), ": ", html.B("PASSED" if test_passed else "FAILED"), f" ({success_count}/{len(status)} success{'es' if success_count > 1 else ''})"]
-            if not test_passed:
-                if not test90_passed:
-                    msg.append(html.Ul(html.Li(f"FAIL: {value_90:.0f} seconds < launch_time_90={threshold_90:.0f} seconds")))
-                if not test75_passed:
-                    msg.append(html.Ul(html.Li(f"FAIL: {value_75:.0f} seconds < launch_time_75={threshold_75:.0f} seconds")))
+            if test90_passed:
+                msg.append(html.Ul(html.Li(f"PASS: {value_90:.0f} seconds <= launch_time_90={threshold_90:.0f} seconds")))
             else:
-                msg.append(html.Br())
+                msg.append(html.Ul(html.Li(f"FAIL: {value_90:.0f} seconds > launch_time_90={threshold_90:.0f} seconds")))
+
+            if test75_passed:
+                msg.append(html.Ul(html.Li(f"PASS: {value_75:.0f} seconds <= launch_time_75={threshold_75:.0f} seconds")))
+            else:
+                msg.append(html.Ul(html.Li(f"FAIL: {value_75:.0f} seconds > launch_time_75={threshold_75:.0f} seconds")))
 
         fig.update_layout(title=f"Time to launch the notebooks", title_x=0.5,)
         fig.update_layout(yaxis_title="Launch time")
