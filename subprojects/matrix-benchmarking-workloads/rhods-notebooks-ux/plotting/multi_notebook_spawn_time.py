@@ -79,6 +79,9 @@ class MultiNotebookSpawnTime():
                             marker=dict(color='red', size=15, symbol="triangle-down"),
                             line=dict(color='brown', width=3, dash='dot'))
         msg = []
+        if threshold_status_keys:
+            msg.append(html.H3("Time to launch the notebooks"))
+
         for entry_name in threshold_status_keys:
             res = df[df["Version"] == entry_name]
             if res.empty:

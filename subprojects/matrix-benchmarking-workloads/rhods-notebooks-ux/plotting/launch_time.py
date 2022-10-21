@@ -139,6 +139,9 @@ class LaunchTimeDistribution():
             msg.append(html.B(step_name))
             msg.append(html.Br())
 
+        if threshold_status_keys:
+            msg.append(html.H4(("Test" if cfg__all_in_one else "Step") + f" successes for {user_count} users"))
+
         for legend_name in threshold_status_keys:
             res_ = df[df["Event"] == legend_name]
             res = res_[res_["Status"] == "PASS"]
