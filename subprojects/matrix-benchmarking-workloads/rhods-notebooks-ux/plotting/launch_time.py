@@ -36,13 +36,15 @@ class LaunchTimeDistribution():
             return {}, f"ERROR: only one experiment must be selected (found {expe_cnt}), or pass the all_in_one config flag."
 
         user_counts = set()
+        threshold_status_keys = set()
 
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
             results = entry.results
             entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
 
-            if variables: entry_name = f"<br>{entry_name}"
+            try: check_thresholds = entry.results.check_thresholds
+            except AttributeError: check_thresholds = False
 
             user_counts.add(results.user_count)
 
@@ -53,14 +55,18 @@ class LaunchTimeDistribution():
                     Event=entry_name,
                     Count=success_users,
                     Status="PASS",
-                    Threshold=entry.results.thresholds.get("test_successes"),
+                    Threshold=int(entry.results.thresholds.get("test_successes")),
                 ))
+
+                if check_thresholds:
+                    threshold_status_keys.add(entry_name)
+
                 if failed_users:
                     data.append(dict(
                         Event=entry_name,
                         Count=failed_users,
                         Status="FAIL",
-                        Threshold=entry.results.thresholds.get("test_successes"),
+                        Threshold=int(entry.results.thresholds.get("test_successes")),
                 ))
                 continue
 
@@ -88,7 +94,7 @@ class LaunchTimeDistribution():
             fig = px.histogram(df, x="Event", y="Count", color="Event", pattern_shape="Status")
 
             if "Threshold" in df and not df['Threshold'].isnull().all():
-                fig.add_scatter(name="Success threshold",
+                fig.add_scatter(name="Pass threshold",
                                 x=df['Event'], y=df['Threshold'], mode='lines+markers',
                                 marker=dict(color='red', size=15, symbol="triangle-up"),
                                 line=dict(color='black', width=3, dash='dot'))
@@ -106,11 +112,8 @@ class LaunchTimeDistribution():
             fig.update_layout(yaxis_title="Launch time")
             fig.update_layout(xaxis_title="")
 
-        if cfg__all_in_one:
-            return fig, None
-
         msg = []
-        for idx, step_name in enumerate(entry.results.ods_ci_output[pod_name]):
+        for idx, step_name in enumerate(entry.results.ods_ci_output[pod_name] if not cfg__all_in_one else []):
             step_times = df[df["Event"] == step_name]["Time"]
 
             if step_times.empty:
@@ -135,5 +138,25 @@ class LaunchTimeDistribution():
             msg.append(f"50% within {time(mid_50)}. ")
             msg.append(html.B(step_name))
             msg.append(html.Br())
+
+        if threshold_status_keys:
+            msg.append(html.H4(("Test" if cfg__all_in_one else "Step") + f" successes for {user_count} users"))
+
+        for legend_name in threshold_status_keys:
+            res_ = df[df["Event"] == legend_name]
+            res = res_[res_["Status"] == "PASS"]
+            if len(res) != 1:
+                logging.warning(f"Expected only one row for evaluating the threshold of '{legend_name}', got {len(res)} ...")
+            pass_count = res["Count"].values[0]
+            threshold = res["Threshold"].values[0]
+
+            test_passed = pass_count >= threshold
+
+            msg += [html.B(legend_name), ": ", html.B("PASSED" if test_passed else "FAILED"), f" ({'1' if test_passed else '0'}/1 success)"]
+            if test_passed:
+                msg.append(html.Ul(html.Li(f"PASS: {pass_count} >= threshold={threshold} successes")))
+            else:
+                msg.append(html.Ul(html.Li(f"FAIL: {pass_count} < threshold={threshold} successes")))
+
 
         return fig, msg
