@@ -487,8 +487,8 @@ def _parse_always(results, dirname, import_settings):
     if results.check_thresholds:
         logging.info(f"Check thresholds set for {dirname}")
 
-def _parse_directory(fn_add_to_matrix, dirname, import_settings):
-    has_cache = False
+
+def load_cache(dirname):
     try:
         with open(dirname / CACHE_FILENAME, "rb") as f:
             results = pickle.load(f)
@@ -497,17 +497,26 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         if cache_version != PARSER_VERSION:
             raise ValueError(cache_version)
 
-        has_cache = True
     except ValueError as e:
         cache_version = e.args[0]
         if not cache_version:
             logging.warning("Cache file does not have a version, ignoring.")
         else:
             logging.warning(f"Cache file version '{cache_version}' does not match the parser version '{PARSER_VERSION}', ignoring.")
-    except FileNotFoundError:
-        pass # Cache file doesn't exit, ignore and parse
 
-    if has_cache:
+        result = None
+
+    return results
+
+
+def _parse_directory(fn_add_to_matrix, dirname, import_settings):
+
+    try:
+        results = load_cache(dirname)
+    except FileNotFoundError:
+        results = None # Cache file doesn't exit, ignore and parse the artifacts
+
+    if results:
         _parse_always(results, dirname, import_settings)
 
         store.add_to_matrix(import_settings, dirname, results, None)
