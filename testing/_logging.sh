@@ -1,45 +1,51 @@
 #! /usr/bin/env bash
 
+if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+    echo "ERROR: ARTIFACT_DIR must be defined ..."
+    false
+fi
+
 _flake() {
-    fname="$1"
-    msg="$2"
+    msg="$1"
+    fname="${2:-msg}"
 
     DEST_DIR="${ARTIFACT_DIR}/_FLAKE/"
     mkdir -p "$DEST_DIR"
-    echo "$msg" > "${DEST_DIR}/$fname"
+    echo "$msg" >> "${DEST_DIR}/$fname"
 
     echo "FLAKE: $msg"
 }
 
 _info() {
-    fname="$1"
-    msg="$2"
+    msg="$1"
+    fname="${2:-msg}"
 
     DEST_DIR="${ARTIFACT_DIR}/_INFO/"
     mkdir -p "$DEST_DIR"
-    echo "$msg" > "${DEST_DIR}/$fname"
+    echo "$msg" >> "${DEST_DIR}/$fname"
 
     echo "INFO: $msg"
 }
 
 _error() {
-    fname="$1"
-    msg="$2"
+    msg="$1"
+    fname="${2:-msg}"
 
     DEST_DIR="${ARTIFACT_DIR}/_ERROR/"
     mkdir -p "$DEST_DIR"
-    echo "$msg" > "${DEST_DIR}/$fname"
+    echo "$msg" >> "${DEST_DIR}/$fname"
 
     echo "ERROR: $msg"
+    return 1
 }
 
 _warning() {
-    fname="$1"
-    msg="$2"
+    msg="$1"
+    fname="${2:-msg}"
 
     DEST_DIR="${ARTIFACT_DIR}/_WARNING/"
     mkdir -p "$DEST_DIR"
-    echo "$msg" > "${DEST_DIR}/$fname"
+    echo "$msg" >> "${DEST_DIR}/$fname"
 
     echo "WARNING: $msg"
 }
