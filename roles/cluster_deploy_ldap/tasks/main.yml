@@ -20,12 +20,12 @@
   when: not cluster_deploy_ldap_idp_name
 
 - name: Ensure that OCM is properly connected
-  when: cluster_deploy_ldap_use_ocm | length > 0
-  command: ocm describe cluster "{{ cluster_deploy_ldap_use_ocm }}"
+  when: cluster_deploy_ldap_use_ocm | bool
+  command: ocm describe cluster "{{ cluster_deploy_ldap_cluster_name }}"
 
 - name: Ensure that ROSA is properly connected
-  when: cluster_deploy_ldap_use_rosa | length > 0
-  command: rosa describe cluster --cluster="{{ cluster_deploy_ldap_use_rosa }}"
+  when: cluster_deploy_ldap_use_rosa | bool
+  command: rosa describe cluster --cluster="{{ cluster_deploy_ldap_cluster_name }}"
 
 - name: Prepare python command 1
   set_fact:
@@ -107,7 +107,7 @@
     when: cluster_deploy_ldap_idp_name not in oauth_idp_names_cmd.stdout
 
 - name: Deploy on ROSA
-  when: cluster_deploy_ldap_use_rosa | length > 0
+  when: cluster_deploy_ldap_use_rosa | bool
   block:
   - name: Create the IDP resource
     shell: |
@@ -115,7 +115,7 @@
       {{ py_secret_generator }}
       rosa create idp \
           --type ldap \
-          --cluster "{{ cluster_deploy_ldap_use_rosa }}" \
+          --cluster "{{ cluster_deploy_ldap_cluster_name }}" \
           --name "{{ cluster_deploy_ldap_idp_name }}" \
           --url "{{ ldap_url_cmd.stdout }}" \
           --bind-dn "{{ ldap_bindDN_cmd.stdout }}" \
@@ -123,7 +123,7 @@
           --insecure
 
 - name: Deploy on OCM
-  when: cluster_deploy_ldap_use_ocm | length > 0
+  when: cluster_deploy_ldap_use_ocm | bool
   block:
   - name: Create the IDP resource
     when: false # keeping it disabled until https://github.com/openshift-online/ocm-cli/issues/385 is resolved
@@ -132,7 +132,7 @@
       {{ py_secret_generator }}
       ocm create idp \
           --type ldap \
-          --cluster "{{ cluster_deploy_ldap_use_ocm }}" \
+          --cluster "{{ cluster_deploy_ldap_cluster_name }}" \
           --name "{{ cluster_deploy_ldap_idp_name }}" \
           --url "{{ ldap_url_cmd.stdout }}" \
           --bind-dn "{{ ldap_bindDN_cmd.stdout }}" \
@@ -143,7 +143,7 @@
 
   - name: Get the cluster ID
     shell:
-      ocm describe cluster "{{ cluster_deploy_ldap_use_ocm }}" --json | jq .id -r
+      ocm describe cluster "{{ cluster_deploy_ldap_cluster_name }}" --json | jq .id -r
     register: cluster_id_cmd
 
   - name: Create the IDP resource manually

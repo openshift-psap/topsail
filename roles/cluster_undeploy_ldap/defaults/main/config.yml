@@ -1,3 +1,4 @@
 cluster_undeploy_ldap_idp_name: ""
-cluster_undeploy_ldap_use_ocm: ""
-cluster_undeploy_ldap_use_rosa: ""
+cluster_undeploy_ldap_use_ocm: false
+cluster_undeploy_ldap_use_rosa: false
+cluster_undeploy_ldap_cluster_name: false

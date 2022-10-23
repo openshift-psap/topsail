@@ -331,8 +331,11 @@ class Cluster:
 
     @staticmethod
     @AnsibleRole("cluster_deploy_ldap")
-    def deploy_ldap(idp_name, username_prefix, username_count: int, secret_properties_file,
-                    use_ocm="", use_rosa="", wait=False):
+    def deploy_ldap(self,
+                    idp_name, username_prefix, username_count: int, secret_properties_file,
+                    use_ocm=False, use_rosa=False,
+                    cluster_name=None,
+                    wait=False):
         """
         Deploy OpenLDAP and LDAP Oauth
 
@@ -346,8 +349,9 @@ class Cluster:
           username_prefix: Prefix for the creation of the users (suffix is 0..username_count)
           username_count: Number of users to create.
           secret_properties_file: Path of a file containing the properties of LDAP secrets.
-          use_ocm: Optional. If set with a cluster name, use `ocm create idp` to deploy the LDAP identity provider.
-          use_rosa: Optional. If set with a cluster name, use `rosa create idp` to deploy the LDAP identity provider.
+          use_ocm: Optional. If true, use `ocm create idp` to deploy the LDAP identity provider.
+          use_rosa: Optional. If true, use `rosa create idp` to deploy the LDAP identity provider.
+          cluster_name: Optional. Cluster to use when using OCM or ROSA.
           wait: Optional. If True, waits for the first user (0) to be able to login into the cluster.
         """
 
@@ -358,6 +362,7 @@ class Cluster:
             "cluster_deploy_ldap_secret_properties": secret_properties_file,
             "cluster_deploy_ldap_use_ocm": use_ocm,
             "cluster_deploy_ldap_use_rosa": use_rosa,
+            "cluster_deploy_ldap_cluster_name": cluster_name,
             "cluster_deploy_ldap_wait": wait,
         }
 
@@ -365,20 +370,25 @@ class Cluster:
 
     @staticmethod
     @AnsibleRole("cluster_undeploy_ldap")
-    def undeploy_ldap(idp_name, use_ocm="", use_rosa=""):
+    def undeploy_ldap(self, idp_name,
+                      use_ocm=False, use_rosa=False,
+                      cluster_name=None,
+                      ):
         """
         Undeploy OpenLDAP and LDAP Oauth
 
         Args:
           idp_name: Name of the LDAP identity provider.
-          use_ocm: Optional. If set with a cluster name, use `ocm delete idp` to delete the LDAP identity provider.
-          use_rosa: Optional. If set with a cluster name, use `rosa delete idp` to delete the LDAP identity provider.
+          use_ocm: Optional. If true, use `ocm delete idp` to delete the LDAP identity provider.
+          use_rosa: Optional. If true, use `rosa delete idp` to delete the LDAP identity provider.
+          cluster_name: Optional. Cluster to use when using OCM or ROSA.
         """
 
         opts = {
             "cluster_undeploy_ldap_idp_name": idp_name,
             "cluster_undeploy_ldap_use_ocm": use_ocm,
             "cluster_undeploy_ldap_use_rosa": use_rosa,
+            "cluster_deploy_ldap_cluster_name": cluster_name,
         }
 
         return RunAnsibleRole(opts)

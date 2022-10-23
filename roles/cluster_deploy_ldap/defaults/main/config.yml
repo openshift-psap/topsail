@@ -3,6 +3,7 @@ cluster_deploy_ldap_username_prefix: ""
 cluster_deploy_ldap_username_count: ""
 cluster_deploy_ldap_admin_user: "admin"
 cluster_deploy_ldap_idp_name: ""
-cluster_deploy_ldap_use_ocm: ""
-cluster_deploy_ldap_use_rosa: ""
-cluster_deploy_ldap_wait: "False"
+cluster_deploy_ldap_use_ocm: false
+cluster_deploy_ldap_use_rosa: false
+cluster_deploy_ldap_wait: false
+cluster_deploy_ldap_cluster_name: null

@@ -23,17 +23,17 @@
     oc delete namespace openldap --ignore-not-found
 
 - name: Undeploy on ROSA
-  when: cluster_undeploy_ldap_use_rosa | length > 0
+  when: cluster_undeploy_ldap_use_rosa | bool
   block:
   - name: Delete the IDP resource
     command:
       rosa delete idp "{{ cluster_undeploy_ldap_idp_name }}"
-          --cluster "{{ cluster_undeploy_ldap_use_rosa }}"
+          --cluster "{{ cluster_undeploy_ldap_cluster_name }}"
 
 - name: Undeploy on OCM
-  when: cluster_undeploy_ldap_use_ocm | length > 0
+  when: cluster_undeploy_ldap_use_ocm | bool
   block:
   - name: Delete the IDP resource
     command:
       ocm delete idp "{{ cluster_undeploy_ldap_idp_name }}"
-          --cluster "{{ cluster_undeploy_ldap_use_ocm }}"
+          --cluster "{{ cluster_undeploy_ldap_cluster_name }}"
