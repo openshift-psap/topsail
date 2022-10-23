@@ -1,8 +1,8 @@
 # See meta/main.yml for a list of dependency roles that will be executed prior to this role
 ---
 - name: Ensure parameters have been set
-  fail: msg="Bailing out. This role requires 'machineset_instance_type' and 'scale' to be defined"
-  when: not machineset_instance_type or not scale
+  fail: msg="Bailing out. This role requires 'machineset_instance_type' to be defined"
+  when: not machineset_instance_type
 
 - name: Get current replicas of machinesets with type {{ machineset_instance_type }}
   command:
