@@ -29,7 +29,7 @@ process_ctrl::kill_bg_processes() {
     echo "Killing the background processes still running ..."
     for pid in ${!process_ctrl__wait_list[@]}; do
         echo "- ${process_ctrl__wait_list[$pid]} (pid=$pid)"
-        kill -TERM $pid 2>/dev/null || true
+        kill -KILL $pid 2>/dev/null || true
         unset process_ctrl__wait_list[$pid]
     done
     echo "All the processes have been terminated."
