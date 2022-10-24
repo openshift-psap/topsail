@@ -29,6 +29,12 @@ if [[ "${PR_POSITIONAL_ARGS:-}" == "reference" ]]; then
     PR_POSITIONAL_ARG_0=$PR_POSITIONAL_ARGS
 fi
 
+if [[ "${PR_POSITIONAL_ARGS:-}" == "notebook_perf_comparison" ]]; then
+    MATBENCH_GENERATE_LIST=notebook_perf_comparison
+    PR_POSITIONAL_ARGS=subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/notebook_perf_comparison.url
+    PR_POSITIONAL_ARG_0=$PR_POSITIONAL_ARGS
+fi
+
 export MATBENCH_MODE
 export MATBENCH_WORKLOAD
 
