@@ -10,6 +10,7 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 source "$THIS_DIR/config_common.sh"
 source "$THIS_DIR/config_clusters.sh"
+source "$THIS_DIR/config_load_overrides.sh"
 source "$THIS_DIR/cluster_helpers.sh"
 
 # ---
