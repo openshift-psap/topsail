@@ -151,7 +151,7 @@ def _parse_local_env(dirname):
     elif job_name == "notebooks" or job_name.startswith("notebooks-on-"):
         # running right after the test
 
-        from_local_env.artifacts_basedir = pathlib.Path("..")
+        from_local_env.artifacts_basedir = pathlib.Path("..") / dirname.name
 
     return from_local_env
 
