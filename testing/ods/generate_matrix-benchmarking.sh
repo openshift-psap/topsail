@@ -31,8 +31,9 @@ if [[ "${PR_POSITIONAL_ARGS:-}" == "notebooks_scale_tests_comparison" ]]; then
 fi
 
 if [[ "${PR_POSITIONAL_ARGS:-}" == "notebook_perf_comparison" ]]; then
-    MATBENCH_GENERATE_LIST=notebook_perf_comparison
-    PR_POSITIONAL_ARGS=subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/notebook_perf_comparison.url
+    preset=${PR_POSITIONAL_ARGS:-}
+    MATBENCH_GENERATE_LIST=$preset
+    PR_POSITIONAL_ARGS=subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/$preset.url
     PR_POSITIONAL_ARG_0=$PR_POSITIONAL_ARGS
 fi
 
