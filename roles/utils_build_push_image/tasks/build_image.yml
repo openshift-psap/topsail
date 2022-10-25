@@ -108,7 +108,7 @@
 
   - name: Store the definition of image build (debug)
     shell:
-      oc describe "build/{{ build_name_cmd.stdout }}"
+      oc get -oyaml "build/{{ build_name_cmd.stdout }}"
         -n "{{ utils_build_push_image_namespace }}"
         > {{ artifact_extra_logs_dir }}/build.yaml
     failed_when: false
