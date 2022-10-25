@@ -59,20 +59,3 @@ _expected_fail() {
     last_toolbox_dir=$(ls ${ARTIFACT_DIR}/*__* -d | tail -1)
     echo "$1" > ${last_toolbox_dir}/EXPECTED_FAIL
 }
-
-run_finalizers() {
-    [ ${#finalizers[@]} -eq 0 ] && return
-    set +x
-
-    echo "Running exit finalizers ..."
-    for finalizer in "${finalizers[@]}"
-    do
-        echo "Running finalizer '$finalizer' ..."
-        eval $finalizer
-    done
-}
-
-if [[ ! -v finalizers ]]; then
-    finalizers=()
-    trap run_finalizers EXIT
-fi

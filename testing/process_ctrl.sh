@@ -57,3 +57,20 @@ process_ctrl::retry() {
     echo "$@" "failed after $tries tries..."
     false
 }
+
+process_ctrl::run_finalizers() {
+    [ ${#finalizers[@]} -eq 0 ] && return
+    set +x
+
+    echo "Running exit finalizers ..."
+    for finalizer in "${finalizers[@]}"
+    do
+        echo "Running finalizer '$finalizer' ..."
+        eval $finalizer
+    done
+}
+
+if [[ ! -v process_ctrl::finalizers ]]; then
+    finalizers=()
+    trap run_finalizers EXIT
+fi
