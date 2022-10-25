@@ -22,10 +22,11 @@ if [[ "${ARTIFACT_DIR:-}" ]] && [[ -f "${ARTIFACT_DIR}/variable_overrides" ]]; t
     source "${ARTIFACT_DIR}/variable_overrides"
 fi
 
-if [[ "${PR_POSITIONAL_ARGS:-}" == "reference" ]]; then
-    MATBENCH_GENERATE_LIST=reference_comparison
-    MATBENCH_GENERATE_FILTERS=reference_comparison
-    PR_POSITIONAL_ARGS=subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/references.url
+if [[ "${PR_POSITIONAL_ARGS:-}" == "notebooks_scale_tests_comparison" ]]; then
+    preset=${PR_POSITIONAL_ARGS:-}
+    MATBENCH_GENERATE_LIST=$preset
+    MATBENCH_GENERATE_FILTERS=$preset
+    PR_POSITIONAL_ARGS=subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/$preset.url
     PR_POSITIONAL_ARG_0=$PR_POSITIONAL_ARGS
 fi
 
