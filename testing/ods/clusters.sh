@@ -179,7 +179,7 @@ action="${1:-}"
 set -x
 case ${action} in
     "create")
-        finalizers+=("process_ctrl::kill_bg_processes")
+        process_ctrl__finalizers+=("process_ctrl::kill_bg_processes")
         "$TESTING_ODS_DIR/ci_init_configure.sh"
 
         "$TESTING_ODS_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject

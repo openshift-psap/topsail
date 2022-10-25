@@ -59,11 +59,11 @@ process_ctrl::retry() {
 }
 
 process_ctrl::run_finalizers() {
-    [ ${#finalizers[@]} -eq 0 ] && return
+    [ ${#process_ctrl__finalizers[@]} -eq 0 ] && return
     set +x
 
     echo "Running exit finalizers ..."
-    for finalizer in "${finalizers[@]}"
+    for finalizer in "${process_ctrl__finalizers[@]}"
     do
         echo "Running finalizer '$finalizer' ..."
         eval $finalizer
@@ -71,6 +71,6 @@ process_ctrl::run_finalizers() {
 }
 
 if [[ ! -v process_ctrl::finalizers ]]; then
-    finalizers=()
-    trap run_finalizers EXIT
+    process_ctrl__finalizers=()
+    trap process_ctrl::run_finalizers EXIT
 fi

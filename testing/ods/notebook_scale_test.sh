@@ -457,10 +457,10 @@ generate_plots() {
 connect_ci() {
     local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
 
-    finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
-    finalizers+=("capture_environment")
-    finalizers+=("sutest_cleanup")
-    finalizers+=("driver_cleanup")
+    process_ctrl__finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
+    process_ctrl__finalizers+=("capture_environment")
+    process_ctrl__finalizers+=("sutest_cleanup")
+    process_ctrl__finalizers+=("driver_cleanup")
 
     "$TESTING_ODS_DIR/ci_init_configure.sh"
 
@@ -504,7 +504,7 @@ run_one_test() {
 
 # ---
 
-finalizers+=("process_ctrl::kill_bg_processes")
+process_ctrl__finalizers+=("process_ctrl::kill_bg_processes")
 
 if [[ "$(get_config clusters.create.type)" == "customer" ]]; then
     case ${action} in
