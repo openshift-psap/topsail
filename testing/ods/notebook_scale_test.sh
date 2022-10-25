@@ -323,6 +323,7 @@ capture_environment() {
 
 prepare_ci() {
     cluster_helpers::connect_sutest_cluster
+    trap "set +e; sutest_cleanup; driver_cleanup; exit 1" ERR
 }
 
 prepare() {
@@ -454,6 +455,13 @@ generate_plots() {
 }
 
 connect_ci() {
+    local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
+
+    finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
+    finalizers+=("capture_environment")
+    finalizers+=("sutest_cleanup")
+    finalizers+=("driver_cleanup")
+
     "$TESTING_ODS_DIR/ci_init_configure.sh"
 
     if [[ "${CONFIG_DEST_DIR:-}" ]]; then
@@ -472,12 +480,6 @@ connect_ci() {
 }
 
 test_ci() {
-    local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
-
-    finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
-    finalizers+=("capture_environment")
-    finalizers+=("sutest_cleanup")
-    finalizers+=("driver_cleanup")
 
     local test_flavor=$(get_config tests.notebooks.flavor_to_run)
     if [[ "$test_flavor" == "user-level" ]]; then
@@ -524,7 +526,7 @@ case ${action} in
         connect_ci
 
         prepare_ci
-        trap "set +e; sutest_cleanup; driver_cleanup; exit 1" ERR
+
         prepare
 
         process_ctrl::wait_bg_processes
