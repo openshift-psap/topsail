@@ -12,9 +12,9 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 def register():
-    NotebookPerformance("Notebook Performance Comparison")
+    PythonPerformance("Notebook Python Performance Comparison")
 
-class NotebookPerformance():
+class PythonPerformance():
     def __init__(self, name):
         self.name = name
         self.id_name = name
@@ -37,7 +37,7 @@ class NotebookPerformance():
             if check_thresholds:
                 threshold_status_keys.add(entry_name)
 
-            threshold = float(entry.results.thresholds.get("threshold", 0)) or None
+            threshold = float(entry.results.thresholds.get("py_perf_threshold", 0)) or None
 
             for user_idx, ods_ci_notebook_benchmark in entry.results.ods_ci_notebook_benchmark.items():
                 if not ods_ci_notebook_benchmark: continue

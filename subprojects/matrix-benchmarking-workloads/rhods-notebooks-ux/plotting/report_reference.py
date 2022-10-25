@@ -49,3 +49,24 @@ class NotebooksScaleTestComparisonReport():
         header += html.Br()
 
         return None, header
+
+class NotebooksPerformanceComparisonReport():
+    def __init__(self):
+        self.name = "report: Notebooks Performance Comparison"
+        self.id_name = self.name.lower().replace("/", "-")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.P("These plots show a comparison between notebook performance tests.")]
+
+        # Python Performance
+        header += [html.H2("Python Performance")]
+        header += report.Plot_and_Text("Notebook Python Performance Comparison", args)
+        header += ["This plot shows a Python compute performance indicator comparison. Lower is better."]
+        header += html.Br()
+
+        return None, header

@@ -1,1 +1,1 @@
-mode=reference, *, threshold=14.45
+mode=reference, *, py_perf_threshold=14.45
