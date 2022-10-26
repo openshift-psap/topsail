@@ -77,7 +77,8 @@ prepare_driver_cluster() {
 
 
     build_and_preload_user_scale_test_image() {
-        ./run_toolbox.py from_config utils build_push_image --suffix user-scale-test
+        process_ctrl::retry 5 30s \
+                            ./run_toolbox.py from_config utils build_push_image --suffix user-scale-test
         ./run_toolbox.py from_config cluster preload_image --suffix user-scale-test
     }
 
