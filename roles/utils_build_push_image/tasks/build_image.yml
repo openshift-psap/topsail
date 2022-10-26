@@ -60,13 +60,17 @@
           -ojsonpath={.status.phase}
           -n "{{ utils_build_push_image_namespace }}"
     register: wait_img_build
-    until: "'Complete' in wait_img_build.stdout or 'Failed' in wait_img_build.stdout"
+    until: "'Complete' in wait_img_build.stdout or 'Failed' in wait_img_build.stdout or 'Error' in wait_img_build.stdout"
     retries: 40
     delay: 30
 
   - name: Fail if the image failed to be built
     when: "'Failed' in wait_img_build.stdout"
     fail: msg="The image failed to build"
+
+  - name: Fail if an error occued
+    when: "'Error' in wait_img_build.stdout"
+    fail: msg="An error occured"
 
   always:
   - name: Get the build Pod status (debug)
