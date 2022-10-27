@@ -558,7 +558,7 @@ action=${1:-}
 case ${action} in
     "prepare_ci")
         prepare_ci
-        trap "set +e; sutest_cleanup; driver_cleanup" ERR
+        trap "set +e; sutest_cleanup; driver_cleanup; exit 1" ERR
         prepare
 
         process_ctrl::wait_bg_processes
