@@ -456,13 +456,6 @@ generate_plots() {
 }
 
 connect_ci() {
-    local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
-
-    process_ctrl__finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
-    process_ctrl__finalizers+=("capture_environment")
-    process_ctrl__finalizers+=("sutest_cleanup")
-    process_ctrl__finalizers+=("driver_cleanup")
-
     "$TESTING_ODS_DIR/ci_init_configure.sh"
 
     if [[ "${CONFIG_DEST_DIR:-}" ]]; then
@@ -535,6 +528,12 @@ case ${action} in
         ;;
     "test_ci")
         connect_ci
+        local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
+
+        process_ctrl__finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
+        process_ctrl__finalizers+=("capture_environment")
+        process_ctrl__finalizers+=("sutest_cleanup")
+        process_ctrl__finalizers+=("driver_cleanup")
 
         test_ci
         exit 0
