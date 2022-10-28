@@ -53,7 +53,7 @@ class NotebookPerformance():
 
             user_name = "All the users" if cfg__show_all_in_one else f"User #{user_idx}"
 
-            for measure_idx, measure in enumerate(ods_ci_notebook_benchmark["measures"]):
+            for measure_idx, measure in enumerate(measures):
                 data.append(dict(user=1, user_name=user_name + (f"/{measure_idx}" if cfg__show_user_details else ""),
                                  measure=measure))
 

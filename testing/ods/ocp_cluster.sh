@@ -10,6 +10,7 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 source "$THIS_DIR/config_common.sh"
 source "$THIS_DIR/config_clusters.sh"
+source "$THIS_DIR/config_load_overrides.sh"
 source "$THIS_DIR/cluster_helpers.sh"
 
 # ---
@@ -22,11 +23,15 @@ prepare_deploy_cluster_subproject() {
     cp utils/config.mk{.sample,}
     cp utils/install-config.yaml{.sample,}
 
-    mkdir -p "/opt/ci-artifacts/src/subprojects/deploy-cluster/utils/installers/$OCP_VERSION"
-    wget --quiet "https://people.redhat.com/~kpouget/22-10-05/openshift-install-linux-$OCP_VERSION.tar.gz"
-    tar xzf "openshift-install-linux-$OCP_VERSION.tar.gz" openshift-install
-    mv openshift-install "/opt/ci-artifacts/src/subprojects/deploy-cluster/utils/installers/$OCP_VERSION/openshift-install"
-    rm "openshift-install-linux-$OCP_VERSION.tar.gz"
+    local DOWNLOAD_OCP_INSTALLER_FROM_PRIVATE=
+    if [[ "$DOWNLOAD_OCP_INSTALLER_FROM_PRIVATE" ]]; then
+        mkdir -p "/opt/ci-artifacts/src/subprojects/deploy-cluster/utils/installers/$ocp_version"
+        wget --quiet "https://people.redhat.com/~kpouget/22-10-05/openshift-install-linux-$ocp_version.tar.gz"
+        tar xzf "openshift-install-linux-$ocp_version.tar.gz" openshift-install
+        mv openshift-install "/opt/ci-artifacts/src/subprojects/deploy-cluster/utils/installers/$ocp_version/openshift-install"
+        rm "openshift-install-linux-$ocp_version.tar.gz"
+    fi
+
     make has_installer OCP_VERSION="${OCP_VERSION}"
 
     if [[ ! -f ${AWS_SHARED_CREDENTIALS_FILE} ]]; then
