@@ -498,99 +498,103 @@ run_one_test() {
 
 # ---
 
-process_ctrl__finalizers+=("process_ctrl::kill_bg_processes")
+main() {
+    process_ctrl__finalizers+=("process_ctrl::kill_bg_processes")
 
-if [[ "$(get_config clusters.create.type)" == "customer" ]]; then
+    if [[ "$(get_config clusters.create.type)" == "customer" ]]; then
+        case ${action} in
+            "prepare_ci")
+                exec "$TESTING_ODS_DIR/run_notebook_scale_test_on_customer.sh" prepare
+                ;;
+            "test_ci")
+                exec "$TESTING_ODS_DIR/run_notebook_scale_test_on_customer.sh" test
+                ;;
+        esac
+
+        return 1
+    fi
+
+    action=${1:-}
+
     case ${action} in
         "prepare_ci")
-            exec "$TESTING_ODS_DIR/run_notebook_scale_test_on_customer.sh" prepare
+            connect_ci
+
+            prepare_ci
+
+            prepare
+
+            process_ctrl::wait_bg_processes
+            return 0
             ;;
         "test_ci")
-            exec "$TESTING_ODS_DIR/run_notebook_scale_test_on_customer.sh" test
+            connect_ci
+            local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
+
+            process_ctrl__finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
+            process_ctrl__finalizers+=("capture_environment")
+            process_ctrl__finalizers+=("sutest_cleanup")
+            process_ctrl__finalizers+=("driver_cleanup")
+
+            test_ci
+            return 0
+            ;;
+        "prepare")
+            prepare
+            return 0
+            ;;
+        "deploy_rhods")
+            prepare_sutest_deploy_rhods
+            process_ctrl::wait_bg_processes
+            return 0
+            ;;
+        "wait_rhods")
+            sutest_wait_rhods_launch
+            process_ctrl::wait_bg_processes
+            return 0
+            ;;
+        "deploy_ldap")
+            prepare_sutest_deploy_ldap
+            process_ctrl::wait_bg_processes
+            return 0
+            ;;
+        "undeploy_ldap")
+            sutest_cleanup_ldap
+            return 0
+            ;;
+        "prepare_driver_cluster")
+            prepare_driver_cluster
+            process_ctrl::wait_bg_processes
+            return 0
+            ;;
+        "run_test_and_plot")
+            run_one_test
+            generate_plots
+            return 0
+            ;;
+        "run_test")
+            run_one_test
+            return 0
+            ;;
+        "generate_plots")
+            generate_plots
+            return  0
+            ;;
+        "generate_plots_from_pr_args")
+            testing/ods/generate_matrix-benchmarking.sh from_pr_args
+            return  0
+            ;;
+        "prepare_matbench")
+            testing/ods/generate_matrix-benchmarking.sh prepare_matbench
+            return 0
+            ;;
+        "source")
+            # file is being sourced by another script
+            ;;
+        *)
+            _error "unknown action: ${action}" "$@"
             ;;
     esac
+}
 
-    exit 1
-fi
-
-action=${1:-}
-
-case ${action} in
-    "prepare_ci")
-        connect_ci
-
-        prepare_ci
-
-        prepare
-
-        process_ctrl::wait_bg_processes
-        exit 0
-        ;;
-    "test_ci")
-        connect_ci
-        local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
-
-        process_ctrl__finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
-        process_ctrl__finalizers+=("capture_environment")
-        process_ctrl__finalizers+=("sutest_cleanup")
-        process_ctrl__finalizers+=("driver_cleanup")
-
-        test_ci
-        exit 0
-        ;;
-    "prepare")
-        prepare
-        exit 0
-        ;;
-    "deploy_rhods")
-        prepare_sutest_deploy_rhods
-        process_ctrl::wait_bg_processes
-        exit 0
-        ;;
-    "wait_rhods")
-        sutest_wait_rhods_launch
-        process_ctrl::wait_bg_processes
-        exit 0
-        ;;
-    "deploy_ldap")
-        prepare_sutest_deploy_ldap
-        process_ctrl::wait_bg_processes
-        exit 0
-        ;;
-    "undeploy_ldap")
-        sutest_cleanup_ldap
-        exit 0
-        ;;
-    "prepare_driver_cluster")
-        prepare_driver_cluster
-        process_ctrl::wait_bg_processes
-        exit 0
-        ;;
-    "run_test_and_plot")
-        run_one_test
-        generate_plots
-        exit 0
-        ;;
-    "run_test")
-        run_one_test
-        exit 0
-        ;;
-    "generate_plots")
-        generate_plots
-        exit  0
-        ;;
-    "generate_plots_from_pr_args")
-        testing/ods/generate_matrix-benchmarking.sh from_pr_args
-        exit  0
-        ;;
-    "prepare_matbench")
-        testing/ods/generate_matrix-benchmarking.sh prepare_matbench
-        exit 0
-        ;;
-    "source")
-        # file is being sourced by another script
-        ;;
-    *)
-        _error "unknown action: ${action}" "$@"
-        ;;
-esac
+main "$@"
