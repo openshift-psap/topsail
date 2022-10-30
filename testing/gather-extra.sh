@@ -31,6 +31,7 @@ OC="oc --insecure-skip-tls-verify --request-timeout=5s"
 echo "Gathering artifacts ..."
 mkdir -p ${ARTIFACT_DIR}/pods ${ARTIFACT_DIR}/nodes ${ARTIFACT_DIR}/metrics ${ARTIFACT_DIR}/bootstrap ${ARTIFACT_DIR}/network ${ARTIFACT_DIR}/oc_cmds ${ARTIFACT_DIR}/internal
 
+$OC get nodes -o jsonpath --template '{range .items[*]}{.metadata.name}{"\n"}{end}' > /tmp/nodes
 $OC get pods --all-namespaces --template '{{ range .items }}{{ $name := .metadata.name }}{{ $ns := .metadata.namespace }}{{ range .spec.containers }}-n {{ $ns }} {{ $name }} -c {{ .name }}{{ "\n" }}{{ end }}{{ range .spec.initContainers }}-n {{ $ns }} {{ $name }} -c {{ .name }}{{ "\n" }}{{ end }}{{ end }}' > ${ARTIFACT_DIR}/internal/containers
 
 queue ${ARTIFACT_DIR}/config-resources.json $OC get apiserver.config.openshift.io authentication.config.openshift.io build.config.openshift.io console.config.openshift.io dns.config.openshift.io featuregate.config.openshift.io image.config.openshift.io infrastructure.config.openshift.io ingress.config.openshift.io network.config.openshift.io oauth.config.openshift.io project.config.openshift.io scheduler.config.openshift.io -o json
@@ -93,6 +94,39 @@ queue ${ARTIFACT_DIR}/subscriptions.json $OC get subscriptions --all-namespaces 
 queue ${ARTIFACT_DIR}/oc_cmds/subscriptions $OC get subscriptions --all-namespaces
 queue ${ARTIFACT_DIR}/clusterserviceversions.json $OC get clusterserviceversions --all-namespaces -o json
 queue ${ARTIFACT_DIR}/oc_cmds/clusterserviceversions $OC get clusterserviceversions --all-namespaces
+
+
+# gather nodes first in parallel since they may contain the most relevant debugging info
+while IFS= read -r i; do
+  mkdir -p ${ARTIFACT_DIR}/nodes/$i
+  queue ${ARTIFACT_DIR}/nodes/$i/heap oc --insecure-skip-tls-verify get --request-timeout=20s --raw /api/v1/nodes/$i/proxy/debug/pprof/heap
+  FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/journal.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false
+  FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/journal-previous.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false --boot=-1
+  FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/audit.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false --path=audit/audit.log
+done < /tmp/nodes
+
+echo "INFO: gathering the audit logs for each master"
+paths=(openshift-apiserver kube-apiserver oauth-apiserver etcd)
+for path in "${paths[@]}" ; do
+  output_dir="${ARTIFACT_DIR}/audit_logs/$path"
+  mkdir -p "$output_dir"
+
+  # Skip downloading of .terminating and .lock files.
+  oc adm node-logs --role=master --path="$path" | \
+    grep -v ".terminating" | \
+    grep -v ".lock" | \
+  tee "${output_dir}.audit_logs_listing"
+
+  # The ${output_dir}.audit_logs_listing file contains lines with the node and filename
+  # separated by a space.
+  while IFS= read -r item; do
+    node=$(echo $item |cut -d ' ' -f 1)
+    fname=$(echo $item |cut -d ' ' -f 2)
+    echo "INFO: Queueing download/gzip of ${path}/${fname} from ${node}";
+    echo "INFO:   gziping to ${output_dir}/${node}-${fname}.gz";
+    FILTER=gzip queue ${output_dir}/${node}-${fname}.gz oc --insecure-skip-tls-verify adm node-logs ${node} --path=${path}/${fname}
+  done < ${output_dir}.audit_logs_listing
+done
 
 while IFS= read -r i; do
   file="$( echo "$i" | cut -d ' ' -f 2,3,5 | tr -s ' ' '_' )"
