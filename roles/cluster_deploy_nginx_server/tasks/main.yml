@@ -16,6 +16,11 @@
   fail: msg="'{{ cluster_deploy_nginx_server_directory }}' isn't a reachable directory."
   when: not directory_stats.stat.exists or not directory_stats.stat.isdir
 
+- name: Store the listing of the server directory (debug)
+  shell:
+    find "{{ cluster_deploy_nginx_server_directory }}"
+      > "{{ artifact_extra_logs_dir }}/server_files"
+
 - name: Create nginx namespace
   shell:
     set -o pipefail;
