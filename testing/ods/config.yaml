@@ -16,7 +16,7 @@ clusters:
       version: 4.10.15
       region: us-west-2
       workers:
-        type: m6.xlarge
+        type: m5.2xlarge
         count: 2
       compute:
         type: m5.2xlarge
