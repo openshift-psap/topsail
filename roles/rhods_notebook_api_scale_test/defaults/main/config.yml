@@ -7,7 +7,7 @@ rhods_notebook_api_scale_test_run_time: 1m
 rhods_notebook_api_scale_test_spawn_rate: 1
 rhods_notebook_api_scale_test_sut_cluster_kubeconfig:
 rhods_notebook_api_scale_test_istag: ods-ci:api-scale-test
-rhods_notebook_api_scale_test_namespace: loadtest
+rhods_notebook_api_scale_test_namespace: notebooks-scale-test
 rhods_notebook_api_scale_artifacts_istag: ods-ci:artifacts-exporter
 rhods_notebook_api_scale_test_ods_ci_notebook_image_name: s2i-generic-data-science-notebook
 rhods_notebook_api_scale_test_toleration_key:
