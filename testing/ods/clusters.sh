@@ -18,6 +18,7 @@ source "$TESTING_ODS_DIR/cluster_helpers.sh"
 CLUSTER_TYPE_KEY=clusters.create.type
 
 set_config_from_pr_arg 0 "$CLUSTER_TYPE_KEY"
+set_config_from_pr_arg 1 --optional "clusters.create.keep"
 
 capture_gather_extra() {
     local cluster_role=$1
