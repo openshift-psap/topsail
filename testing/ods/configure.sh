@@ -36,11 +36,21 @@ set_config() {
 }
 
 set_config_from_pr_arg() {
+    optional=${1:-}
+    warn_missing=1
+    if [[ "$optional" == "--optional" ]]; then
+        warn_missing=0
+        shift
+    fi
+
     local arg_idx=${1:-}
     local config_key=${2:-}
 
     if [[ -z "$arg_idx" ]]; then
-        _warning "set_config_from_pr_ar '$arg_idx' '$config_key': arg_idx missing"
+        if [[ "$warn_missing" == 1 ]]; then
+            _warning "set_config_from_pr_ar '$arg_idx' '$config_key': arg_idx missing"
+        fi
+
         return
     fi
 
