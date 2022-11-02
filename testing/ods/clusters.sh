@@ -50,13 +50,13 @@ destroy_cluster() {
         return
     fi
 
+    finalize_cluster "$cluster_role"
+
     export KUBECONFIG="${CONFIG_DEST_DIR}/${cluster_role}_kubeconfig"
     if oc get cm/keep-cluster -n default 2>/dev/null; then
         _info "keep-cluster CM found in the default namespace of the $cluster_type/$cluster_role, keep it."
         return
     fi
-
-    finalize_cluster "$cluster_role"
 
     if [[ "$cluster_role" == driver ]]; then
         "$TESTING_ODS_DIR/ocp_cluster.sh" destroy "$cluster_role"
