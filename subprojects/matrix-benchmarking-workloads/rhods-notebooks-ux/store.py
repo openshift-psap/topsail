@@ -500,9 +500,9 @@ def load_cache(dirname):
     except ValueError as e:
         cache_version = e.args[0]
         if not cache_version:
-            logging.warning("Cache file does not have a version, ignoring.")
+            logging.warning(f"Cache file '{dirname / CACHE_FILENAME}' does not have a version, ignoring.")
         else:
-            logging.warning(f"Cache file version '{cache_version}' does not match the parser version '{PARSER_VERSION}', ignoring.")
+            logging.warning(f"Cache file '{dirname / CACHE_FILENAME}' version '{cache_version}' does not match the parser version '{PARSER_VERSION}', ignoring.")
 
         result = None
 
