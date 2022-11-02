@@ -36,15 +36,14 @@ set_config() {
 }
 
 set_config_from_pr_arg() {
-    optional=${1:-}
-    warn_missing=1
-    if [[ "$optional" == "--optional" ]]; then
-        warn_missing=0
-        shift
-    fi
-
     local arg_idx=${1:-}
     local config_key=${2:-}
+    local optional=${3:-}
+
+    local warn_missing=1
+    if [[ "$optional" == "--optional" ]]; then
+        warn_missing=0
+    fi
 
     if [[ -z "$arg_idx" ]]; then
         if [[ "$warn_missing" == 1 ]]; then

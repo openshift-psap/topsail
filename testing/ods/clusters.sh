@@ -15,10 +15,15 @@ source "$TESTING_ODS_DIR/cluster_helpers.sh"
 
 # ---
 
-CLUSTER_TYPE_KEY=clusters.create.type
+prepare_args_from_pr() {
+    CLUSTER_TYPE_KEY=clusters.create.type
 
-set_config_from_pr_arg 0 "$CLUSTER_TYPE_KEY"
-set_config_from_pr_arg 1 --optional "clusters.create.keep"
+    set_config_from_pr_arg 0 "$CLUSTER_TYPE_KEY"
+    set_config_from_pr_arg 1 "clusters.create.keep" --optional
+    if "$(get_config clusters.create.keep)" == keep; then
+        set_config clusters.create.keep true
+    fi
+}
 
 capture_gather_extra() {
     local cluster_role=$1
@@ -42,9 +47,9 @@ finalize_cluster() {
 }
 
 destroy_cluster() {
-    cluster_role=$1
+    local cluster_role=$1
 
-    cluster_type=$(get_config clusters.create.type)
+    local cluster_type=$(get_config clusters.create.type)
     if [[ "$cluster_type" == single && "$cluster_role" == driver ]]; then
         echo "Nothing to do to destroy the driver cluster in single mode."
         return
@@ -160,45 +165,51 @@ destroy_clusters() {
 
 # ---
 
-if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-    _error "artifacts storage directory ARTIFACT_DIR not set ..."
-fi
+main() {
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        _error "artifacts storage directory ARTIFACT_DIR not set ..."
+    fi
 
-if [[ "${CONFIG_DEST_DIR:-}" ]]; then
-    echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
+    if [[ "${CONFIG_DEST_DIR:-}" ]]; then
+        echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
 
-elif [[ "${SHARED_DIR:-}" ]]; then
-    echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
-    CONFIG_DEST_DIR=$SHARED_DIR
+    elif [[ "${SHARED_DIR:-}" ]]; then
+        echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
+        CONFIG_DEST_DIR=$SHARED_DIR
 
-else
-    _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
-fi
+    else
+        _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
+    fi
 
-action="${1:-}"
+    local action="${1:-}"
 
-set -x
-case ${action} in
-    "create")
-        process_ctrl__finalizers+=("process_ctrl::kill_bg_processes")
-        "$TESTING_ODS_DIR/ci_init_configure.sh"
+    set -x
+    case ${action} in
+        "create")
+            process_ctrl__finalizers+=("process_ctrl::kill_bg_processes")
+            "$TESTING_ODS_DIR/ci_init_configure.sh"
+            prepare_args_from_pr
 
-        "$TESTING_ODS_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
+            "$TESTING_ODS_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
 
-        create_clusters
-        exit 0
-        ;;
-    "destroy")
-        set +o errexit # do not exit on error when destroying the resources
+            create_clusters
+            exit 0
+            ;;
+        "destroy")
+            set +o errexit # do not exit on error when destroying the resources
 
-        "$TESTING_ODS_DIR/ci_init_configure.sh"
+            "$TESTING_ODS_DIR/ci_init_configure.sh"
+            prepare_args_from_pr
 
-        "$TESTING_ODS_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
+            "$TESTING_ODS_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
 
-        destroy_clusters
-        exit 0
-        ;;
-    *)
-        _error "Unknown action '$action'"
-        ;;
-esac
+            destroy_clusters
+            exit 0
+            ;;
+        *)
+            _error "Unknown action '$action'"
+            ;;
+    esac
+}
+
+main "$@"
