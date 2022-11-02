@@ -84,6 +84,18 @@
   retries: 20
   delay: 30
   until: wait_nginx_ready.stdout
+  failed_when: false
+
+- name: Get the status of the Deployment and Pod
+  shell:
+    oc get deploy/nginx-deployment
+       -owide
+       -n "{{ cluster_deploy_nginx_server_namespace }}" > "{{ artifact_extra_logs_dir }}/deployment.status";
+    oc get pods -l app=nginx
+       -owide
+       -n "{{ cluster_deploy_nginx_server_namespace }}" > "{{ artifact_extra_logs_dir }}/pod.status";
+    oc describe pods -l app=nginx
+       -n "{{ cluster_deploy_nginx_server_namespace }}" > "{{ artifact_extra_logs_dir }}/pod.descr";
 
 - name: Show the host of the nginx route
   command:
@@ -95,3 +107,11 @@
     hostname=$(oc get route/nginx -ojsonpath={.spec.host} -n "{{ cluster_deploy_nginx_server_namespace }}")
     echo "$hostname"
     echo "$hostname" > "{{ artifact_extra_logs_dir }}/hostname"
+
+- name: Fail if the nginx deployment is not ready
+  command:
+    oc get deploy/nginx-deployment
+       -oyaml
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+       -ojsonpath={.status.readyReplicas}
+  failed_when: not wait_nginx_ready.stdout
