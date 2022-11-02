@@ -15,20 +15,6 @@
     oc get clusterversion/version -oyaml
        > {{ artifact_extra_logs_dir }}/ocp_clusterversion.yml
 
-- name: Store the OpenShift nodes
-  shell:
-    oc get nodes
-       > {{ artifact_extra_logs_dir }}/nodes.status;
-    oc get nodes -oyaml
-       > {{ artifact_extra_logs_dir }}/nodes.yaml;
-
-- name: Store the OpenShift machines
-  shell:
-    oc get machines -n openshift-machine-api
-       > {{ artifact_extra_logs_dir }}/machines.status;
-    oc get machines -n openshift-machine-api -oyaml
-       > {{ artifact_extra_logs_dir }}/machines.yaml;
-
 # ---
 
 - name: Store the OpenShift nodes
