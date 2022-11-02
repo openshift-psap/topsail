@@ -389,9 +389,17 @@ run_api_level_test() {
 driver_cleanup() {
     switch_driver_cluster
 
+    local user_count=$(get_config tests.notebooks.users.count)
+
+    skip_threshold=$(get_config tests.notebooks.cleanup.skip_if_le_than_users)
+    if [[ "$user_count" -le "$skip_threshold" ]]; then
+        _info "Skip cluster cleanup (less that $skip_threshold users)"
+        return
+    fi
+
     ./run_toolbox.py from_config cluster set_scale --prefix "driver" --suffix "cleanup" > /dev/null
 
-    if test_config tests.notebooks.cleanup_driver_on_exit; then
+    if test_config tests.notebooks.cleanup.cleanup_driver_on_exit; then
 
         ods_ci_test_namespace=$(get_config tests.notebooks.namespace)
         statesignal_redis_namespace=$(get_command_arg namespace cluster deploy_redis_server)
@@ -406,6 +414,13 @@ driver_cleanup() {
 sutest_cleanup() {
     switch_sutest_cluster
     sutest_cleanup_ldap
+
+    skip_threshold=$(get_config tests.notebooks.cleanup.skip_if_le_than_users)
+    user_count=$(get_config tests.notebooks.users.count)
+    if [[ "$user_count" -le "$skip_threshold" ]]; then
+        _info "Skip cluster cleanup (less that $skip_threshold users)"
+        return
+    fi
 
     if test_config clusters.sutest.is_managed; then
         local managed_cluster_name=$(get_config clusters.sutest.managed.name)

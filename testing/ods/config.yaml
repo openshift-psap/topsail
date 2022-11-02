@@ -123,8 +123,10 @@ tests:
       name: pyperf_bm_go.py
       number: 20
       repeat: 3
-    # if enable, delete the test namespaces after the testing
-    cleanup_driver_on_exit: true
+    cleanup:
+      # if enable, delete the test namespaces after the testing
+      cleanup_driver_on_exit: true
+      skip_if_le_than_users: 5
 
 matbench:
   preset: # can be: reference
