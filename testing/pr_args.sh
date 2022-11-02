@@ -50,6 +50,7 @@ if [[ "$pos_args" ]]; then
     i=0
     for pos_arg in $pos_args; do
         echo "PR_POSITIONAL_ARG_$i='$pos_arg'" >> "$DEST"
+        i=$((i + 1))
     done
 fi
 
