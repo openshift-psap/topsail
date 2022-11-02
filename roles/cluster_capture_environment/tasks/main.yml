@@ -19,14 +19,14 @@
 
 - name: Store the OpenShift nodes
   shell:
-    oc get nodes
+    oc get nodes -owide
        > {{ artifact_extra_logs_dir }}/nodes.status;
     oc get nodes -oyaml
        > {{ artifact_extra_logs_dir }}/nodes.yaml;
 
 - name: Store the OpenShift machines
   shell:
-    oc get machines -n openshift-machine-api
+    oc get machines -n openshift-machine-api -owide
        > {{ artifact_extra_logs_dir }}/machines.status;
     oc get machines -n openshift-machine-api -oyaml
        > {{ artifact_extra_logs_dir }}/machines.yaml;
