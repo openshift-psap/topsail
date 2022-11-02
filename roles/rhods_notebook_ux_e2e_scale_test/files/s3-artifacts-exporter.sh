@@ -47,10 +47,16 @@ set -x
 test_failed=$(cat ${ARTIFACT_DIR}/test.exit_code)
 
 delete_screenshots=0
-[[ "$ARTIFACTS_COLLECTED" == "no-screenshot" ]] && delete_screenshots=1
-[[ "$ARTIFACTS_COLLECTED" == "no-screenshot-except-zero" && "${JOB_COMPLETION_INDEX:-0}" == 0 ]] && delete_screenshots=0
-[[ "$ARTIFACTS_COLLECTED" == "no-screenshot-except-failed"* && "$test_failed" == 0 ]] && delete_screenshots=1
-[[ "$ARTIFACTS_COLLECTED" == "no-screenshot-except-failed-and-zero" && "${JOB_COMPLETION_INDEX:-0}" == 0 ]] && delete_screenshots=0
+
+if [[ "$ARTIFACTS_COLLECTED" == "no-screenshot"* ]]; then
+    delete_screenshots=1
+
+    # no-screenshot-except-zero or no-screenshot-except-failed-and-zero
+    [[ "$ARTIFACTS_COLLECTED" == *"-zero" && "${JOB_COMPLETION_INDEX:-0}" == 0 ]] && delete_screenshots=0
+
+    # no-screenshot-except-failed or no-screenshot-except-failed-and-zero
+    [[ "$ARTIFACTS_COLLECTED" == *"-failed"* && "$test_failed" == 1 ]] && delete_screenshots=0
+fi
 
 if [[ "$delete_screenshots" == 1 ]]; then
     find "${ARTIFACT_DIR}" -name 'selenium-screenshot-*.png' -delete > dev/null
