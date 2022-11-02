@@ -81,8 +81,8 @@
        -n "{{ cluster_deploy_nginx_server_namespace }}"
        -ojsonpath={.status.readyReplicas}
   register: wait_nginx_ready
-  retries: 12
-  delay: 10
+  retries: 20
+  delay: 30
   until: wait_nginx_ready.stdout
 
 - name: Show the host of the nginx route
