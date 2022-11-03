@@ -50,12 +50,15 @@ class LaunchTimeDistribution():
 
             if cfg__all_in_one:
                 success_users = sum(1 for exit_code in entry.results.ods_ci_exit_code.values() if exit_code == 0)
+
                 failed_users = results.user_count - success_users
+                threshold = int(entry.results.thresholds.get("test_successes", 0)) or None
+
                 data.append(dict(
                     Event=entry_name,
                     Count=success_users,
                     Status="PASS",
-                    Threshold=int(entry.results.thresholds.get("test_successes")),
+                    Threshold=threshold,
                 ))
 
                 if check_thresholds:
@@ -66,7 +69,7 @@ class LaunchTimeDistribution():
                         Event=entry_name,
                         Count=failed_users,
                         Status="FAIL",
-                        Threshold=int(entry.results.thresholds.get("test_successes")),
+                        Threshold=threshold,
                 ))
                 continue
 
@@ -88,7 +91,7 @@ class LaunchTimeDistribution():
             return None, "No data to plot ..."
 
         user_count = ", ".join(map(str, user_counts))
-
+        has_thresholds = False
         df = pd.DataFrame(data)
         if self.show_successes:
             fig = px.histogram(df, x="Event", y="Count", color="Event", pattern_shape="Status")
@@ -98,7 +101,7 @@ class LaunchTimeDistribution():
                                 x=df['Event'], y=df['Threshold'], mode='lines+markers',
                                 marker=dict(color='red', size=15, symbol="triangle-up"),
                                 line=dict(color='black', width=3, dash='dot'))
-
+                has_thresholds = True
 
             fig.update_layout(title=("Test" if cfg__all_in_one else "Step")
                               + f" successes for {user_count} users", title_x=0.5,)
@@ -139,8 +142,10 @@ class LaunchTimeDistribution():
             msg.append(html.B(step_name))
             msg.append(html.Br())
 
-        if threshold_status_keys:
+        if has_thresholds:
             msg.append(html.H4(("Test" if cfg__all_in_one else "Step") + f" successes for {user_count} users"))
+        else:
+            threshold_status_keys = []
 
         for legend_name in threshold_status_keys:
             res_ = df[df["Event"] == legend_name]
