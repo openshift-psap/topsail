@@ -485,7 +485,13 @@ def _parse_always(results, dirname, import_settings):
 
     results.check_thresholds = import_settings.get("check_thresholds", "no") == "yes"
     if results.check_thresholds:
-        logging.info(f"Check thresholds set for {dirname}")
+        if results.thresholds:
+            logging.info(f"Check thresholds set for {dirname}")
+            logging.info(f"Thresholds: {results.thresholds}")
+        else:
+            logging.error(f"Check thresholds set for {dirname}, but no threshold available {import_settings} :/")
+            logging.info(f"Import settings: {import_settings}")
+
 
 
 def load_cache(dirname):
