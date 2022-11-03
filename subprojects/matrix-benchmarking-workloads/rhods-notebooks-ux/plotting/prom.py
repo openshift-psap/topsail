@@ -163,6 +163,7 @@ def _get_master_nodes_cpu_usage(cluster_role, register):
                                get_legend_name=get_legend_name,
                                show_queries_in_title=True,
                                show_legend=True,
+                               higher_better=True if "CPU idle" in name else False,
                                as_timestamp=True)
 
     return all_metrics
