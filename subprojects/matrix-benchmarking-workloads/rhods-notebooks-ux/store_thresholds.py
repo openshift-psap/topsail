@@ -33,7 +33,7 @@ def get_thresholds(entry_settings):
 
     for threshold_settings, threshold_values in thresholds_cache:
         for threshold_setting_key, threshold_setting_value in threshold_settings.items():
-            if not str(entry_settings.get(threshold_setting_key)) == threshold_setting_value:
+            if not str(entry_settings.get(threshold_setting_key)) == str(threshold_setting_value):
                 break
         else: # no incompatible settings found, save the threshold
             entry_thresholds.update(threshold_values)
