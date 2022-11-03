@@ -28,7 +28,7 @@ set_config() {
     key=$1
     value=$2
 
-    yq --yaml-roundtrip --in-place --arg value "$value" ".$key = \$value" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
+    yq --yaml-roundtrip --in-place --argjson value "$(echo "$value" | yq)" ".$key = \$value" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
 
     if [[ "${ARTIFACT_DIR:-}" ]]; then
         cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "${ARTIFACT_DIR}"

@@ -3,6 +3,7 @@ import re
 from collections import defaultdict
 import os
 import base64
+import pathlib
 
 from dash import html
 from dash import dcc
@@ -151,8 +152,7 @@ class ErrorReport():
             if exit_code == 0:
                 if user_idx != REFERENCE_USER_IDX: continue
 
-                user_dir = entry.results.location / "ods-ci" / f"ods-ci-{user_idx}"
-                robot_log_path = user_dir / "log.html"
+                robot_log_path = pathlib.Path("ods-ci") / f"ods-ci-{user_idx}" / "log.html"
                 content.append(html.Ul([
                     html.Li([html.A("ODS-CI logs", target="_blank", href=artifacts_link(robot_log_path)), " (reference run)"]),
                 ]))
@@ -176,10 +176,10 @@ class ErrorReport():
                 failed_steps[step_name].append(content)
                 failed_users_at_step[step_name].append(user_idx)
 
-                user_dir = entry.results.location / "ods-ci" / f"ods-ci-{user_idx}"
-                robot_log_path = (user_dir / "log.html").relative_to(entry.results.location)
+                user_dir = pathlib.Path("ods-ci") / f"ods-ci-{user_idx}"
+                robot_log_path = user_dir / "log.html"
 
-                last_screenshot_path = (user_dir / "final_screenshot.png").relative_to(entry.results.location)
+                last_screenshot_path = user_dir / "final_screenshot.png"
 
                 content.append(html.Ul([
                     html.Li([f'Failed at step ', html.B(html.Code(f'"ODS - {step_idx} - {step_name}".'))]),

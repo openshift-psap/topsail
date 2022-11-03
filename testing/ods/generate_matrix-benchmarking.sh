@@ -12,24 +12,25 @@ bash "$TESTING_ODS_DIR/configure_overrides.sh"
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 
+export MATBENCH_WORKLOAD=$(get_config matbench.workload)
+WORKLOAD_STORAGE_DIR="$TESTING_ODS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
+
 set_config_from_pr_arg 0 "matbench.preset"
 
 matbench_preset=$(get_config matbench.preset)
-if [[ "$matbench_preset" == "notebooks_scale_tests_comparison" ]]; then
-    set_config matbench.generate.list_file "$matbench_preset"
-    set_config matbench.generate.filters_file "$matbench_preset"
-    set_config matbench.download.url_file "subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/${matbench_preset}.url"
-elif [[ "$matbench_preset" == "notebook_perf_comparison" ]]; then
-    set_config matbench.generate.list_file "$matbench_preset"
-    set_config matbench.download.url_file "subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/${matbench_preset}.url"
-elif [[ "$matbench_preset" == "https://"* ]]; then
+
+if [[ "$matbench_preset" == "https://"* ]]; then
     set_config matbench.download.url "$matbench_preset"
+else
+    set_config matbench.config_file "${matbench_preset}.yaml"
+    set_config matbench.download.url_file "${WORKLOAD_STORAGE_DIR}/data/${matbench_preset}.yaml"
 fi
 
-export MATBENCH_WORKLOAD=$(get_config matbench.workload)
+get_matbench_config() {
+    CI_ARTIFACTS_FROM_CONFIG_FILE=$TESTING_ODS_DIR/../../subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/$(get_config matbench.config_file) \
+        get_config "$@"
+}
 
-
-WORKLOAD_STORAGE_DIR="$TESTING_ODS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
 
 generate_matbench::prepare_matrix_benchmarking() {
     WORKLOAD_RUN_DIR="$TESTING_ODS_DIR/../../subprojects/matrix-benchmarking/workloads/$MATBENCH_WORKLOAD"
@@ -56,7 +57,7 @@ _get_data_from_pr() {
     elif [[ "$MATBENCH_URL_FILE" != null ]]; then
         export MATBENCH_URL_FILE
 
-        cp "$HOME/$MATBENCH_URL_FILE" "$ARTIFACT_DIR/source_url"
+        cp "$MATBENCH_URL_FILE" "$ARTIFACT_DIR/source_url"
     else
         _error "matbench.download.url or matbench.download.url_file must be specified"
     fi
@@ -85,19 +86,22 @@ generate_matbench::generate_plots() {
         echo "ERROR: expected MATBENCH_RESULTS_DIRNAME to be set ..."
     fi
 
-    generate_list=$(get_config matbench.generate.list_file)
-    echo "Generating from ${generate_list} ..."
-    stats_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${generate_list}.plots" | cut -d'#' -f1 | grep -v '^$')"
-
-    NO_FILTER="no-filter"
-    filters_file=$(get_config matbench.generate.filters_file)
-    if [[ "$filters_file" != null ]]; then
-        filters_content="$(cat "$WORKLOAD_STORAGE_DIR/data/${filters_file}.filters" | cut -d'#' -f1 | (grep -v '^$' || true))"
-    else
-        filters_content="$NO_FILTER"
+    if [[ "$(get_matbench_config visualize.generate)" == null ]]; then
+        _error "Could not find the list of plots to generate ..."
     fi
 
-    generate_url="stats=$(echo -n "$stats_content" | tr '\n' '&' | sed 's/&/&stats=/g')"
+    generate_list=$(get_matbench_config visualize.generate[])
+
+    filters=$(get_matbench_config visualize.filters)
+    if [[ "$filters" != null ]]; then
+        filters="$(get_matbench_config visualize.filters[])"
+    else
+        filters="null"
+    fi
+
+    export MATBENCH_RHODS_NOTEBOOKS_UX_CONFIG=$(get_config matbench.config_file)
+
+    generate_url="stats=$(echo -n "$generate_list" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
     cp -f /tmp/prometheus.yml "." || true
     if ! matbench parse |& tee > "$ARTIFACT_DIR/_matbench_parse.log"; then
@@ -110,16 +114,17 @@ generate_matbench::generate_plots() {
     fi
 
     retcode=0
-    for filters in $filters_content; do
-        if [[ "$filters" == "$NO_FILTER" ]]; then
-            filters=""
+    for filters_to_apply in $filters; do
+        if [[ "$filters_to_apply" == "null" ]]; then
+            filters_to_apply=""
         fi
-        mkdir -p "$ARTIFACT_DIR/$filters"
-        cd "$ARTIFACT_DIR/$filters"
 
-        VISU_LOG_FILE="$ARTIFACT_DIR/$filters/_matbench_visualize.log"
+        mkdir -p "$ARTIFACT_DIR/$filters_to_apply"
+        cd "$ARTIFACT_DIR/$filters_to_apply"
 
-        export MATBENCH_FILTERS="$filters"
+        VISU_LOG_FILE="$ARTIFACT_DIR/$filters_to_apply/_matbench_visualize.log"
+
+        export MATBENCH_FILTERS="$filters_to_apply"
         if ! matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
             echo "Visualization generation failed :("
             retcode=1

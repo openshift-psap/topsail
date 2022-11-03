@@ -55,6 +55,7 @@ class MultiNotebookSpawnTime():
 
                 thr90 = int(entry.results.thresholds.get("launch_time_90", 0)) or None
                 thr75 = int(entry.results.thresholds.get("launch_time_75", 0)) or None
+
                 data.append(dict(Version=entry_name,
                                  LaunchTime90Threshold=thr90,
                                  LaunchTime75Threshold=thr75,
@@ -66,21 +67,27 @@ class MultiNotebookSpawnTime():
         df = pd.DataFrame(data).sort_values(by=["Version"])
 
         fig = px.box(df, x="Version", y="Time", color="Version")
+        has_thresholds = False
 
         if 'LaunchTime75Threshold' in df and not df['LaunchTime75Threshold'].isnull().all():
             fig.add_scatter(name="75% launch-time threshold",
                             x=df['Version'], y=df['LaunchTime75Threshold'], mode='lines+markers',
                             marker=dict(color='red', size=15, symbol="triangle-down"),
                             line=dict(color='black', width=3, dash='dot'))
+            has_thresholds = True
 
         if 'LaunchTime90Threshold' in df and not df['LaunchTime90Threshold'].isnull().all():
             fig.add_scatter(name="90% launch-time threshold",
                             x=df['Version'], y=df['LaunchTime90Threshold'], mode='lines+markers',
                             marker=dict(color='red', size=15, symbol="triangle-down"),
                             line=dict(color='brown', width=3, dash='dot'))
+            has_thresholds = True
+
         msg = []
-        if threshold_status_keys:
+        if has_thresholds:
             msg.append(html.H3("Time to launch the notebooks"))
+        else:
+            threshold_status_keys = []
 
         for entry_name in threshold_status_keys:
             res = df[df["Version"] == entry_name]
@@ -89,11 +96,11 @@ class MultiNotebookSpawnTime():
                 msg.append(html.Br())
                 continue
 
-            threshold_90 = float(res["LaunchTime90Threshold"].values[0])
+            threshold_90 = float(res["LaunchTime90Threshold"].values[0] or 0) or None
             value_90 = res["Time"].quantile(0.90)
             test90_passed = value_90 <= threshold_90
 
-            threshold_75 = float(res["LaunchTime75Threshold"].values[0])
+            threshold_75 = float(res["LaunchTime75Threshold"].values[0] or 0) or None
             value_75 = res["Time"].quantile(0.75)
             test75_passed = value_75 <= threshold_75
 
