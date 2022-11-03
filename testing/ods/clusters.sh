@@ -128,7 +128,7 @@ create_clusters() {
 
             local pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
             local keep_cluster_password_file="$PSAP_ODS_SECRET_PATH/$(get_config secrets.keep_cluster_password_file)"
-            ./run_toolbox.py cluster create_htpasswd_adminuser "$pr_author" "$password_file"
+            ./run_toolbox.py cluster create_htpasswd_adminuser "$pr_author" "$keep_cluster_password_file"
 
             oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
             cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
