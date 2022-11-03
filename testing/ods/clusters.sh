@@ -16,11 +16,11 @@ source "$TESTING_ODS_DIR/cluster_helpers.sh"
 # ---
 
 prepare_args_from_pr() {
-    CLUSTER_TYPE_KEY=clusters.create.type
 
-    set_config_from_pr_arg 0 "$CLUSTER_TYPE_KEY"
+    set_config_from_pr_arg 0 "clusters.create.type"
     set_config_from_pr_arg 1 "clusters.create.keep" --optional
-    if "$(get_config clusters.create.keep)" == keep; then
+
+    if [[ "$(get_config clusters.create.keep)" == keep ]]; then
         set_config clusters.create.keep true
     fi
 }
