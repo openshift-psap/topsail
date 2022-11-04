@@ -21,7 +21,11 @@ fi
 
 matbench_preset=$(get_config matbench.preset)
 
-if [[ "$matbench_preset" == "https://"* ]]; then
+if [[ "$matbench_preset" == null ]]; then
+    # no preset defined
+    true
+
+elif [[ "$matbench_preset" == "https://"* ]]; then
     set_config matbench.download.url "$matbench_preset"
 else
     set_config matbench.config_file "${matbench_preset}.yaml"
