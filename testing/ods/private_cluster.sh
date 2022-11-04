@@ -8,11 +8,8 @@ set -x
 
 TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "$TESTING_ODS_DIR/../_logging.sh"
-source "$TESTING_ODS_DIR/process_ctrl.sh"
-source "$TESTING_ODS_DIR/config_common.sh"
-source "$TESTING_ODS_DIR/config_clusters.sh"
-source "$TESTING_ODS_DIR/config_load_overrides.sh"
-
+source "$TESTING_ODS_DIR/../process_ctrl.sh"
+source "$TESTING_ODS_DIR/configure.sh"
 source "$TESTING_ODS_DIR/cluster_helpers.sh"
 
 HOSTNAME_KEY=clusters.create.sutest.already_exists.hostname
@@ -29,13 +26,13 @@ prepare_driver_cluster() {
 
 connect_sutest_cluster() {
     local cluster_hostname=$(get_config "$HOSTNAME_KEY")
-    if [[ -z "$cluster_hostname" ]]; then
-        _error "$HOSTNAME_KEY must be set with the hostname of the private cluster, or with the PR argument 0"
+    if [[ "$cluster_hostname" == null ]]; then
+        _error "$HOSTNAME_KEY must be set with the hostname of the private cluster, or with the PR argument 1."
     fi
 
     local cluster_username=$(get_config "$USERNAME_KEY")
-    if [[ -z "$cluster_username" ]]; then
-        _error "$USERNAME_KEY must be set with the username to use to log into the private cluster, or with the PR argument 1"
+    if [[ "$cluster_username" == null ]]; then
+        _error "$USERNAME_KEY must be set with the username to use to log into the private cluster, or with the PR argument 2."
     fi
 
     rm -f "$KUBECONFIG_SUTEST"
@@ -79,46 +76,50 @@ unprepare_driver_cluster() {
     # nothing to do at the moment
 }
 
-if [[ -z "${KUBECONFIG_DRIVER:-}" ]]; then
-    _error "KUBECONFIG_DRIVER must be set"
-fi
+main() {
+    if [[ -z "${KUBECONFIG_DRIVER:-}" ]]; then
+        _error "KUBECONFIG_DRIVER must be set"
+    fi
 
-if [[ -z "${KUBECONFIG_SUTEST:-}" ]]; then
-    _error "KUBECONFIG_SUTEST must be set"
-fi
+    if [[ -z "${KUBECONFIG_SUTEST:-}" ]]; then
+        _error "KUBECONFIG_SUTEST must be set"
+    fi
 
-if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-    _error "artifacts storage directory ARTIFACT_DIR not set ..."
-    exit 1
-fi
-
-action="${1:-}"
-
-set -x
-
-case ${action} in
-    "connect_sutest_cluster")
-        connect_sutest_cluster
-        exit 0
-        ;;
-    "prepare_sutest_cluster")
-        prepare_sutest_cluster
-        exit 0
-        ;;
-    "prepare_driver_cluster")
-        prepare_driver_cluster
-        exit 0
-        ;;
-    "unprepare_sutest_cluster")
-        unprepare_sutest_cluster
-        exit 0
-        ;;
-    "unprepare_driver_cluster")
-        unprepare_driver_cluster
-        exit 0
-        ;;
-    *)
-        echo "FATAL: Unknown action: ${action}"
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        _error "artifacts storage directory ARTIFACT_DIR not set ..."
         exit 1
-        ;;
-esac
+    fi
+
+    local action="${1:-}"
+
+    set -x
+
+    case ${action} in
+        "connect_sutest_cluster")
+            connect_sutest_cluster
+            exit 0
+            ;;
+        "prepare_sutest_cluster")
+            prepare_sutest_cluster
+            exit 0
+            ;;
+        "prepare_driver_cluster")
+            prepare_driver_cluster
+            exit 0
+            ;;
+        "unprepare_sutest_cluster")
+            unprepare_sutest_cluster
+            exit 0
+            ;;
+        "unprepare_driver_cluster")
+            unprepare_driver_cluster
+            exit 0
+            ;;
+        *)
+            echo "FATAL: Unknown action: ${action}"
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
