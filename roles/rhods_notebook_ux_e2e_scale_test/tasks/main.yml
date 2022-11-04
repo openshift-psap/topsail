@@ -272,8 +272,8 @@
       xargs --no-run-if-empty --replace
             oc annotate {} --overwrite
                kubeflow-resource-stopped=stopped-by-ci-artifacts
-               -oname
                -n {{ rhods_notebook_namespace }}
+               -oname > /dev/null
 
 - name: Capture the driver cluster artifacts
   include_tasks: artifacts_driver.yml
