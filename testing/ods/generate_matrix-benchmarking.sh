@@ -15,7 +15,7 @@ ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 export MATBENCH_WORKLOAD=$(get_config matbench.workload)
 WORKLOAD_STORAGE_DIR="$TESTING_ODS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
 
-set_config_from_pr_arg 0 "matbench.preset"
+set_config_from_pr_arg 1 "matbench.preset"
 
 matbench_preset=$(get_config matbench.preset)
 

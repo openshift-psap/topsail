@@ -22,8 +22,8 @@ export KUBECONFIG_SUTEST=/tmp/sutest_kubeconfig
 HOSTNAME_KEY=clusters.create.sutest.already_exists.hostname
 USERNAME_KEY=clusters.create.sutest_already_exists.username
 
-set_config_from_pr_arg 0 "$HOSTNAME_KEY"
-set_config_from_pr_arg 1 "$USERNAME_KEY"
+set_config_from_pr_arg 1 "$HOSTNAME_KEY"
+set_config_from_pr_arg 2 "$USERNAME_KEY"
 
 cluster_hostname=$(get_config "$HOSTNAME_KEY")
 if [[ -z "$cluster_hostname" ]]; then
