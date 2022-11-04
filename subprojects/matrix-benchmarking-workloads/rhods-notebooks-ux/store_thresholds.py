@@ -22,6 +22,10 @@ def _parse_thresholds():
     with open(fname) as f:
         data = yaml.safe_load(f)
 
+    if not data.get("visualize") or not data["visualize"].get("thresholds"):
+        logging.info(f"No threshold found in {filename}")
+        return
+
     for entry in data["visualize"]["thresholds"]:
         thresholds_cache.append([entry["settings_selector"], entry["thresholds"]])
 

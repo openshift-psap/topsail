@@ -17,8 +17,8 @@ source "$TESTING_ODS_DIR/cluster_helpers.sh"
 
 prepare_args_from_pr() {
 
-    set_config_from_pr_arg 0 "clusters.create.type"
-    set_config_from_pr_arg 1 "clusters.create.keep" --optional
+    set_config_from_pr_arg 1 "clusters.create.type"
+    set_config_from_pr_arg 2 "clusters.create.keep" --optional
 
     if [[ "$(get_config clusters.create.keep)" == keep ]]; then
         set_config clusters.create.keep true
@@ -128,7 +128,7 @@ create_clusters() {
 
             local pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
             local keep_cluster_password_file="$PSAP_ODS_SECRET_PATH/$(get_config secrets.keep_cluster_password_file)"
-            ./run_toolbox.py cluster create_htpasswd_adminuser "$pr_author" "$password_file"
+            ./run_toolbox.py cluster create_htpasswd_adminuser "$pr_author" "$keep_cluster_password_file"
 
             oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
             cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"

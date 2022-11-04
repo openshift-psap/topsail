@@ -25,8 +25,12 @@ get_config() {
 }
 
 set_config() {
-    key=$1
-    value=$2
+    key=${1:-}
+    value=${2:-}
+
+    if [[ -z "$key" || -z "$value" ]]; then
+        error "set_config key value are both mandatory"
+    fi
 
     yq --yaml-roundtrip --in-place --argjson value "$(echo "$value" | yq)" ".$key = \$value" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
 
@@ -47,14 +51,14 @@ set_config_from_pr_arg() {
 
     if [[ -z "$arg_idx" ]]; then
         if [[ "$warn_missing" == 1 ]]; then
-            _warning "set_config_from_pr_ar '$arg_idx' '$config_key': arg_idx missing"
+            _error "set_config_from_pr_ar '$arg_idx' '$config_key': arg_idx missing"
         fi
 
         return
     fi
 
     if [[ -z "$config_key" ]]; then
-        _warning "set_config_from_pr_ar '$arg_idx' '$config_key': config_key missing"
+        _error "set_config_from_pr_ar '$arg_idx' '$config_key': config_key missing"
         return
     fi
 

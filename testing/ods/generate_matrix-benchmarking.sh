@@ -15,11 +15,17 @@ ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 export MATBENCH_WORKLOAD=$(get_config matbench.workload)
 WORKLOAD_STORAGE_DIR="$TESTING_ODS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
 
-set_config_from_pr_arg 0 "matbench.preset"
+if [[ "$(get_config PR_POSITIONAL_ARG_0)" == ods-plot-* ]]; then
+    set_config_from_pr_arg 1 "matbench.preset"
+fi
 
 matbench_preset=$(get_config matbench.preset)
 
-if [[ "$matbench_preset" == "https://"* ]]; then
+if [[ "$matbench_preset" == null ]]; then
+    # no preset defined
+    true
+
+elif [[ "$matbench_preset" == "https://"* ]]; then
     set_config matbench.download.url "$matbench_preset"
 else
     set_config matbench.config_file "${matbench_preset}.yaml"
