@@ -98,7 +98,7 @@ tests:
     users:
       count: 5 # number of users to simulate
       start_offset: 0 # offset to add to the Pod user index
-      sleep_factor: 1.0 # how long to wait between user starts, multiplied by the user index
+      sleep_factor: 5.0 # how long to wait between user starts, multiplied by the user index
     flavor_to_run: user-level
     namespace: notebooks-scale-test
     imagestream_name: scale-test
