@@ -16,13 +16,20 @@ source "$TESTING_ODS_DIR/cluster_helpers.sh"
 # ---
 
 prepare_args_from_pr() {
-
-    set_config_from_pr_arg 1 "clusters.create.type"
-    set_config_from_pr_arg 2 "clusters.create.keep" --optional
+    set_config_from_pr_arg 1 clusters.create.type
+    set_config_from_pr_arg 2 clusters.create.keep --optional
 
     if [[ "$(get_config clusters.create.keep)" == keep ]]; then
         set_config clusters.create.keep true
     fi
+
+    cluster_type=$(get_config "clusters.create.type")
+    if [[ "$cluster_type" == osd ]]; then
+        set_config clusters.sutest.is_managed true
+        set_config clusters.sutest.managed.is_ocm true
+    fi
+
+    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$CONFIG_DEST_DIR/config.yaml"
 }
 
 capture_gather_extra() {
@@ -69,9 +76,9 @@ destroy_cluster() {
     elif ! test_config clusters.sutest.is_managed; then
         "$TESTING_ODS_DIR/ocp_cluster.sh" destroy "$cluster_role"
     else
-        if test_config clusters.managed.is_ocm; then
+        if test_config clusters.sutest.managed.is_ocm; then
             "$TESTING_ODS_DIR/osd_cluster.sh" destroy "$cluster_role"
-        elif test_config clusters.managed.is_rosa; then
+        elif test_config clusters.sutest.managed.is_rosa; then
             _error "cannot destroy ROSA clusters"
         else
             _error "cluster type must be OCM or ROSA"
@@ -82,14 +89,14 @@ destroy_cluster() {
 create_clusters() {
     local cluster_type=$(get_config clusters.create.type)
 
-    if [[ "$cluster_type" == managed || "$cluster_type" == ocp ]]; then
+    if [[ "$cluster_type" == osd || "$cluster_type" == ocp ]]; then
         if [[ "$cluster_type" == ocp ]]; then
             process_ctrl::run_in_bg "$TESTING_ODS_DIR/ocp_cluster.sh" create sutest
 
-        elif test_config clusters.managed.is_ocm; then
+        elif test_config clusters.sutest.managed.is_ocm; then
             process_ctrl::run_in_bg "$TESTING_ODS_DIR/osd_cluster.sh" create sutest
 
-        elif test_config clusters.managed.is_rosa; then
+        elif test_config clusters.sutest.managed.is_rosa; then
             _error "cannot create rosa clusters ..."
 
         else
