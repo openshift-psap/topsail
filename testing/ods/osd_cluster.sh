@@ -85,37 +85,41 @@ destroy_cluster() {
 
 # ---
 
-if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-    _error "artifacts storage directory ARTIFACT_DIR not set ..."
-fi
+main() {
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        _error "artifacts storage directory ARTIFACT_DIR not set ..."
+    fi
 
-if [[ "${CONFIG_DEST_DIR:-}" ]]; then
-    echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
+    if [[ "${CONFIG_DEST_DIR:-}" ]]; then
+        echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
 
-elif [[ "${SHARED_DIR:-}" ]]; then
-    echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
-    CONFIG_DEST_DIR=$SHARED_DIR
-else
-    _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
-fi
+    elif [[ "${SHARED_DIR:-}" ]]; then
+        echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
+        CONFIG_DEST_DIR=$SHARED_DIR
+    else
+        _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
+    fi
 
-action=${1:-}
-cluster_role=${2:-}
+    action=${1:-}
+    cluster_role=${2:-}
 
-set -x
+    set -x
 
-case ${action} in
-    "create")
-        create_cluster "$cluster_role"
-        exit 0
-        ;;
-    "destroy")
-        set +o errexit
-        destroy_cluster "$cluster_role"
-        exit 0
-        ;;
-    *)
-        _error "Unknown action: ${action} $cluster_role"
-        exit 1
-        ;;
-esac
+    case ${action} in
+        "create")
+            create_cluster "$cluster_role"
+            exit 0
+            ;;
+        "destroy")
+            set +o errexit
+            destroy_cluster "$cluster_role"
+            exit 0
+            ;;
+        *)
+            _error "Unknown action: ${action} $cluster_role"
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
