@@ -22,13 +22,15 @@ create_cluster() {
 
     if test_config clusters.create.keep; then
         local author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
-        cluster_name="${author}-$(date +%m%d-%Hh%M)"
+        cluster_name="${author}-$(date +%Hh%M)"
 
     elif [[ "${PULL_NUMBER:-}" ]]; then
         cluster_name="${cluster_name}${PULL_NUMBER}-$(date +%Hh%M)"
     else
         cluster_name="${cluster_name}$(date +%y%m%d%H%M)"
     fi
+
+    cluster_name=$(echo "$cluster_name" | cut -b-15) # OSD only allows cluster names <15 chars
 
     echo "Create cluster $cluster_name..."
     set_config clusters.sutest.managed.name "$cluster_name"
