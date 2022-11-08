@@ -68,7 +68,7 @@ utils build_push_image/user-scale-test:
   git_repo: {{ tests.notebooks.ods_ci.image.repo }}
   git_ref: {{ tests.notebooks.ods_ci.image.ref }}
   dockerfile_path: build/Dockerfile
-{% set user_scale_test_istag = "user-scale-test" %}
+{% set user_scale_test_istag = "ods-ci" %}
   image_tag: {{ user_scale_test_istag }}
   local_image_name: {{ tests.notebooks.imagestream_name }}
 
