@@ -260,6 +260,30 @@ sutest_customize_rhods_after_wait() {
 
 }
 
+prepare_rhods_users() {
+    # this should be part of the LDAP deployment
+    create_rhods_user_group() {
+        local rhods_user_group=$(get_config ldap.users.group)
+        local user_prefix=$(get_config ldap.users.prefix)
+
+        local group_file="$ARTIFACT_DIR/group_rhods-users.yaml"
+        local user0="${user_prefix}0"
+        oc adm groups new "$rhods_user_group" "$user0" --dry-run=client -oyaml > "$group_file"
+
+        for i in $(seq "$(get_config ldap.users.count)"); do
+            echo "- ${user_prefix}$i" >> "$group_file"
+        done
+        oc apply -f "$group_file"
+    }
+
+    create_rhods_user_group
+
+    local rhods_user_group=$(get_config ldap.users.group)
+    for role in $(get_config rhods.user_group_privileges[]); do
+        oc adm policy add-cluster-role-to-group "$role" "$rhods_user_group"
+    done
+}
+
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
 
@@ -270,6 +294,8 @@ sutest_wait_rhods_launch() {
     fi
 
     ./run_toolbox.py rhods wait_ods
+
+    prepare_rhods_users
 
     if test_config "$customize_key"; then
         sutest_customize_rhods_after_wait

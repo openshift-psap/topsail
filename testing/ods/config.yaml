@@ -69,7 +69,7 @@ ldap:
   users:
     count: 1000
     prefix: psapuser
-
+    group: rhods-users
 cluster:
   auto-scaler:
     enabled: false
@@ -92,7 +92,10 @@ rhods:
         cpu: 1
         mem_gi: 4
       remove_gpu_images: true
-
+  user_group_privileges:
+  - odh-notebook-controller-notebooks-edit
+  - self-provisioner
+  - cluster-admin # shouldn't be necessary ...
 tests:
   notebooks:
     repeat: 2 # number of test repetition to perform
