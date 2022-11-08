@@ -292,7 +292,7 @@
   register: check_rhods_test_job
   failed_when: check_rhods_test_job.stdout | length > 0
 
-- name: Test if all the test jobs failed
+- name: Count how many jobs succeeded, fail in none succeeded
   shell:
     set -o pipefail;
     (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code || true)
