@@ -22,7 +22,7 @@ create_cluster() {
 
     if test_config clusters.create.keep; then
         local author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
-        cluster_name="${author}-$(date %m%d-%Hh%M)"
+        cluster_name="${author}-$(date +%m%d-%Hh%M)"
 
     elif [[ "${PULL_NUMBER:-}" ]]; then
         cluster_name="${cluster_name}${PULL_NUMBER}-$(date +%Hh%M)"
@@ -31,7 +31,8 @@ create_cluster() {
     fi
 
     echo "Create cluster $cluster_name..."
-    echo "$cluster_name" > "$CONFIG_DEST_DIR/${cluster_role}_managed_cluster_name"
+    set_config clusters.sutest.managed.name "$cluster_name"
+    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$CONFIG_DEST_DIR/config.yaml"
 
     KUBECONFIG="$CONFIG_DEST_DIR/${cluster_role}_kubeconfig"
     touch "$KUBECONFIG"
@@ -64,10 +65,9 @@ destroy_cluster() {
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_osd_"
 
-    local cluster_name="$(cat "$CONFIG_DEST_DIR/${cluster_role}_managed_cluster_name" || true)"
+    local cluster_name="$(get_config clusters.sutest.managed.name)"
     if [[ -z "$cluster_name" ]]; then
-        echo "No managed cluster to destroy ..."
-        exit 0
+        _error "No managed cluster to destroy ..."
     fi
 
     if test_config clusters.sutest.managed.is_ocm; then
