@@ -202,6 +202,7 @@
 # ---
 
 - name: Cleanup the Prometheus databases of the sutest cluster
+  when: capture_prom_db | bool
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   block:
@@ -220,6 +221,7 @@
       cluster_prometheus_db_mode: reset
 
 - name: Cleanup the Prometheus database of the driver cluster
+  when: capture_prom_db | bool
   include_role:
     name: cluster_prometheus_db
   vars:
