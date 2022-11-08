@@ -248,7 +248,7 @@ sutest_customize_rhods_after_wait() {
     fi
 
     local NB_SIZE_CONFIG_KEY=rhods.notebooks.customize.notebook_size
-    if test_config "$NB_SIZE_CONFIG_KEY.enabled" ]]; then
+    if test_config "$NB_SIZE_CONFIG_KEY.enabled"; then
         local name=$(get_config $NB_SIZE_CONFIG_KEY.name)
         local cpu=$(get_config $NB_SIZE_CONFIG_KEY.cpu)
         local mem=$(get_config $NB_SIZE_CONFIG_KEY.mem_gi)
