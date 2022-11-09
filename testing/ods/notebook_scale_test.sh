@@ -484,8 +484,8 @@ connect_ci() {
         _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
     fi
 
-    KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-${CONFIG_DEST_DIR}/driver_kubeconfig}" # cluster driving the test
-    KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-${CONFIG_DEST_DIR}/sutest_kubeconfig}" # system under test
+    KUBECONFIG_DRIVER="${CONFIG_DEST_DIR}/driver_kubeconfig" # cluster driving the test
+    KUBECONFIG_SUTEST="${CONFIG_DEST_DIR}/sutest_kubeconfig" # system under test
 }
 
 test_ci() {
