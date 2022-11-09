@@ -221,7 +221,7 @@ prepare_managed_sutest_deploy_rhods() {
             _error "prepare_managed_sutest_deploy_rhods not supported on ROSA when 'rhods.deploy_from_catalog' is set."
         fi
         local managed_cluster_name=$(get_config clusters.sutest.managed.name)
-        local email=$(get_config rhods.addon.email)
+        local email="$(cat "$PSAP_ODS_SECRET_PATH/$(get_config secrets.addon_email_file)")"
         process_ctrl::run_in_bg \
             ./run_toolbox.py from_config rhods deploy_addon "$managed_cluster_name" "$email"
     fi
