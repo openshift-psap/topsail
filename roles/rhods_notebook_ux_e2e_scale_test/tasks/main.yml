@@ -74,6 +74,17 @@
     set_fact:
       rhods_dashboard_product_name: "{{ rhods_dashboard_product_name.stdout }}"
 
+- name: Terminate the notebooks
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  shell:
+    set -o pipefail;
+    oc get notebooks -A -ojsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' |
+      xargs --no-run-if-empty --replace
+            bash -c "oc annotate notebook/{} --overwrite
+                 kubeflow-resource-stopped=stopped-by-ci-artifacts
+                 -oname" # > /dev/null
+
 - name: Get the ODS-CI sample var file
   shell:
     oc debug istag/{{ rhods_notebook_ux_e2e_scale_test_istag }}
@@ -179,19 +190,6 @@
        --ignore-not-found
        -n {{ tester_namespace }}
 
-- name: Terminate our notebooks, if they are still running
-  environment:
-    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  shell:
-    set -o pipefail;
-    oc get notebooks -oname -n {{ rhods_notebook_namespace }} |
-      (grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }} || true) |
-      xargs --no-run-if-empty --replace
-            oc annotate {} --overwrite
-               kubeflow-resource-stopped=stopped-by-ci-artifacts
-               -oname
-               -n {{ rhods_notebook_namespace }}
-               > /dev/null
 
 - name: Name the namespace privileged
   command:
@@ -264,18 +262,8 @@
 - name: Capture the sutest cluster artifacts
   include_tasks: artifacts_sutest.yml
 
-- name: Terminate our notebooks
-  environment:
-    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  shell:
-    set -o pipefail;
-    oc get notebooks -oname -n {{ rhods_notebook_namespace }} |
-      (grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }} || true) |
-      xargs --no-run-if-empty --replace
-            oc annotate {} --overwrite
-               kubeflow-resource-stopped=stopped-by-ci-artifacts
-               -n {{ rhods_notebook_namespace }}
-               -oname > /dev/null
+- name: Capture the information about the notebook projects
+  include_tasks: artifacts_sutest_project.yml
 
 - name: Capture the driver cluster artifacts
   include_tasks: artifacts_driver.yml
