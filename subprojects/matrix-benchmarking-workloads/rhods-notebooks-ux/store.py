@@ -188,7 +188,8 @@ def _parse_env(dirname):
             ])
             pr.base_ref = job_spec["refs"]["base_ref"]
 
-    from_env.single_cluster = "single" in from_env.env["JOB_NAME_SAFE"]
+    from_env.ci_run = "JOB_NAME_SAFE" in from_env.env
+    from_env.single_cluster = "single" in from_env.env.get("JOB_NAME_SAFE", "")
 
     return from_env
 
