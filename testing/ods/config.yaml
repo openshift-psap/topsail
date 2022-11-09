@@ -23,7 +23,7 @@ clusters:
         type: m5.2xlarge
     ocp:
       base_domain: psap.aws.rhperfscale.org
-      version: 4.10.15
+      version: 4.11.13
       region: us-west-2
       control_plane:
         type: m6a.xlarge
