@@ -17,9 +17,17 @@ elif [[ ! -d "$PSAP_ODS_SECRET_PATH" ]]; then
     _error "the PSAP_ODS_SECRET_PATH does not point to a valid directory"
 fi
 
-if ! get_config rhods.deploy_from_catalog; then
-    # deploying from the addon. Get the email address from the secret vault.
-    set_config rhods.addon.email "$(cat $PSAP_ODS_SECRET_PATH/addon.email)"
+if [[ "${CONFIG_DEST_DIR:-}" ]]; then
+    echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
+
+elif [[ "${SHARED_DIR:-}" ]]; then
+    echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
+    CONFIG_DEST_DIR=$SHARED_DIR
+fi
+
+if [[ -e "$CONFIG_DEST_DIR/config.yaml" ]]; then
+    cp "$CONFIG_DEST_DIR/config.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
+    echo "Configuration file reloaded from '$CONFIG_DEST_DIR/config.yaml'"
 fi
 
 bash "$TESTING_ODS_DIR/configure_overrides.sh"
