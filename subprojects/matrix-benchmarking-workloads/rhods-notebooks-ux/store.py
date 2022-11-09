@@ -47,7 +47,7 @@ IMPORTANT_FILES = [
     "artifacts-sutest/ocp_version.yml",
     "artifacts-sutest/prometheus_ocp.t*",
     "artifacts-sutest/prometheus_rhods.t*",
-    "artifacts-sutest/notebook_pods.yaml",
+    "artifacts-sutest/project_*/notebook_pods.yaml",
 
     "artifacts-driver/nodes.yaml",
     "artifacts-driver/prometheus_ocp.t*",
@@ -62,8 +62,8 @@ IMPORTANT_FILES = [
 ]
 
 
-ARTIFACTS_VERSION = "2022-10-18"
-PARSER_VERSION = "2022-10-18"
+ARTIFACTS_VERSION = "2022-11-09"
+PARSER_VERSION = "2022-11-09"
 
 
 def is_mandatory_file(filename):
@@ -313,18 +313,18 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
 @ignore_file_not_found
 def _parse_pod_times(dirname, hostnames, is_notebook=False):
     if is_notebook:
-        filename = pathlib.Path("artifacts-sutest") / "notebook_pods.yaml"
+        filenames = pathlib.Path("artifacts-sutest").glob("project_*/notebook_pods.yaml")
     else:
-        filename = pathlib.Path("artifacts-driver") / "tester_pods.yaml"
+        filenames = [pathlib.Path("artifacts-driver") / "tester_pods.yaml"]
 
     pod_times = defaultdict(types.SimpleNamespace)
 
-    in_metadata = False
-    in_spec = False
-    podname = None
     fmt = f'"{K8S_TIME_FMT}"'
 
-    with open(register_important_file(dirname, filename)) as f:
+    def _parse_pod_times_file(f):
+        in_metadata = False
+        in_spec = False
+        podname = None
         for line in f.readlines():
             if line == "  metadata:\n":
                 in_metadata = True
@@ -375,6 +375,12 @@ def _parse_pod_times(dirname, hostnames, is_notebook=False):
                     datetime.datetime.strptime(
                         line.strip().partition(": ")[-1],
                         fmt)
+
+
+    for filename in filenames:
+        with open(register_important_file(dirname, filename)) as f:
+            _parse_pod_times_file(f)
+
 
     return pod_times
 
@@ -540,7 +546,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         if not results.artifacts_version:
             logging.warning("Artifacts does not have a version...")
         else:
-            logging.warning("Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
+            logging.warning(f"Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
     _parse_always(results, dirname, import_settings)
 
