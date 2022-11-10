@@ -106,7 +106,7 @@ tests:
     flavor_to_run: user-level
     namespace: notebooks-scale-test
     imagestream_name: scale-test
-    artifacts_collected: no-screenshot-except-zero
+    artifacts_collected: no-screenshot-except-failed-and-zero
     notebook:
       size_name: *notebook_size_name
       image_name: s2i-generic-data-science-notebook
