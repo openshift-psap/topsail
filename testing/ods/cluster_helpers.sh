@@ -93,7 +93,7 @@ cluster_helpers::connect_sutest_cluster() {
 
         cluster_helpers::ocm_login
 
-        if ! [[ $((ocm describe cluster "$osd_cluster_name"  --json || true) | jq -r .state) == "ready" ]];
+        if [[ $((ocm describe cluster "$managed_cluster_name"  --json || true) | jq -r .state) != "ready" ]];
         then
             _error "OCM cluster '$managed_cluster_name' isn't ready ..."
         fi
