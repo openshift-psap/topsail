@@ -51,6 +51,13 @@ delete_screenshots=0
 if [[ "$ARTIFACTS_COLLECTED" == "no-screenshot"* ]]; then
     delete_screenshots=1
 
+    SKIP_FAILED_USER_COUNT_THRESHOLD=100
+
+    if [[ "$ARTIFACTS_COLLECTED" == no-screenshot-except-failed-and-zero && "$USER_COUNT" -gt "$SKIP_FAILED_USER_COUNT_THRESHOLD" ]]; then
+        ARTIFACTS_COLLECTED=no-screenshot-except-zero
+        echo "More than $SKIP_FAILED_USER_COUNT_THRESHOLD simulted users, cannot keep the failed artifacts. Switching to '$ARTIFACTS_COLLECTED'."
+    fi
+
     # no-screenshot-except-zero or no-screenshot-except-failed-and-zero
     [[ "$ARTIFACTS_COLLECTED" == *"-zero" && "${JOB_COMPLETION_INDEX:-0}" == 0 ]] && delete_screenshots=0
 
