@@ -115,6 +115,7 @@ tests:
         repo: https://github.com/openshift-psap/ods-ci.git
         ref: jh-at-scale.v220923
       excluded_tags: None # tags to exclude when running the robot test case
+      test_case: notebook_ux_e2e_test.robot
     test_pods:
       # must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
       size:

@@ -113,7 +113,7 @@ rhods notebook_ux_e2e_scale_test:
   ods_ci_notebook_benchmark_repeat: {{ tests.notebooks.benchmark.repeat }}
   ods_ci_notebook_image_name: {{ tests.notebooks.notebook.image_name }}
   ods_ci_notebook_size_name: {{ tests.notebooks.notebook.size_name }}
-  ods_ci_test_case: notebook_ux_e2e_test.robot
+  ods_ci_test_case: {{ tests.notebooks.ods_ci.test_case }}
   ods_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
   secret_properties_file: {{ s3_ldap_password_location }}
   state_signal_redis_server: {{ redis_internal_address }}
