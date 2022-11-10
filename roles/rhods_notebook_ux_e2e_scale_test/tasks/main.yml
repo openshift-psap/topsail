@@ -70,9 +70,17 @@
          bash -c "echo ${ODH_PRODUCT_NAME:-Open Data Hub}"
     register: rhods_dashboard_product_name
 
-  - name: Save the Dashboard Product name
+  - name: Get the image name description
+    command:
+      oc get imagestream "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_image_name }}"
+         -n redhat-ods-applications
+         -ojsonpath='{.metadata.annotations.opendatahub\.io/notebook-image-name}'
+    register: notebook_image_name_descr_cmd
+
+  - name: Save the computed variables
     set_fact:
       rhods_dashboard_product_name: "{{ rhods_dashboard_product_name.stdout }}"
+      notebook_image_name_descr: "{{ notebook_image_name_descr_cmd.stdout }}"
 
 - name: Terminate the notebooks
   environment:

@@ -18,7 +18,7 @@ ${DASHBOARD_PRODUCT_NAME}      "%{DASHBOARD_PRODUCT_NAME}"
 ${PROJECT_NAME}                ${TEST_USER.USERNAME}
 ${WORKBENCH_NAME}              ${TEST_USER.USERNAME}
 
-${NOTEBOOK_IMAGE_NAME}         %{NOTEBOOK_IMAGE_NAME}
+${NOTEBOOK_IMAGE_NAME_DESCR}   %{NOTEBOOK_IMAGE_NAME_DESCR}
 ${NOTEBOOK_SIZE_NAME}          %{NOTEBOOK_SIZE_NAME}
 
 ${NOTEBOOK_BENCHMARK_NAME}     %{NOTEBOOK_BENCHMARK_NAME}
@@ -102,7 +102,7 @@ Create and Start the Workbench
   Capture Page Screenshot
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Should Be Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' != 'PASS'
-    Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  ${NONE}
+    Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  ${NONE}
     Wait Until Workbench Is Started  ${WORKBENCH_NAME}  timeout=${NOTEBOOK_SPAWN_WAIT_TIME}
   ELSE
     Workbench Status Should Be  ${WORKBENCH_NAME}  ${WORKBENCH_STATUS_STOPPED}

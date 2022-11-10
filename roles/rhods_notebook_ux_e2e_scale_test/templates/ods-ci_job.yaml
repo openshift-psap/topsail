@@ -51,6 +51,8 @@ spec:
           value: "{{ rhods_notebook_ux_e2e_scale_test_notebook_url }}"
         - name: NOTEBOOK_IMAGE_NAME
           value: "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_image_name }}"
+        - name: NOTEBOOK_IMAGE_NAME_DESCR
+          value: "{{ notebook_image_name_descr }}"
         - name: USER_COUNT
           value: "{{ rhods_notebook_ux_e2e_scale_test_user_count }}"
         - name: USER_INDEX_OFFSET
