@@ -111,8 +111,13 @@ Create and Start the Workbench
 
   Capture Page Screenshot
 
-  Launch Workbench  ${WORKBENCH_NAME}
-
+  ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Launch Workbench  ${WORKBENCH_NAME}
+  IF  '${workbench_launched}' != 'PASS'
+    Capture Page Screenshot  bug_open_not_available.png
+    Log     message=Workaround for RHODS-5819: reload the page    level=WARN
+    Reload Page
+    Just Launch Workbench  ${WORKBENCH_NAME}
+  END
 
 Login to JupyterLab Page
   [Tags]  Notebook  Spawn
@@ -206,3 +211,12 @@ Run Cell And Check For Errors
   Wait Until JupyterLab Code Cell Is Not Active  ${timeout}
   ${output} =  Get Text  (//div[contains(@class,"jp-OutputArea-output")])[last()]
   Should Not Match  ${output}  ERROR*
+
+Just Launch Workbench
+    [Arguments]     ${workbench_title}
+    ${is_started}=      Run Keyword And Return Status   Workbench Status Should Be      workbench_title=${workbench_title}   status=${WORKBENCH_STATUS_RUNNING}
+    IF    ${is_started} == ${TRUE}
+        Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]/td/a[text()="Open"]
+    ELSE
+        Fail   msg=Cannot launch workbench ${workbench_title} because it is not running...
+    END
