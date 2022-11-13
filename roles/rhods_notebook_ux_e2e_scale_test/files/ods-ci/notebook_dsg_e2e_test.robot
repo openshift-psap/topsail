@@ -117,6 +117,24 @@ Create and Start the Workbench
     Just Launch Workbench  ${WORKBENCH_NAME}
   END
 
+  ${app_is_ready} =    Run Keyword And Return Status    Page Should Not Contain  Application is not available
+  IF  ${app_is_ready} != True
+    Log     message=Workaround for RHODS-5912: reload the page    level=WARN
+    Capture Page Screenshot  bug_5912_application_not_available.png
+    oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
+    ${oa_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=oauth-proxy
+    ${jl_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=${WORKBENCH_NAME}
+    Create File  ${OUTPUTDIR}/pod_logs.txt  OAuth\n-----\n\n${oa_logs} \nJupyterLab\n----------\n\n${jl_logs}
+
+    Create File  ${OUTPUTDIR}/bug_5912.url  Get Location
+
+    ${browser log entries}=    Get Browser Console Log Entries
+    ${browser log entries str}=   Convert To String  ${browser log entries}
+    Create File  ${OUTPUTDIR}/bug_5912_browser_log_entries.yaml  ${browser log entries str}
+
+    Sleep  5s
+    Reload Page
+  END
 
 Login to JupyterLab Page
   [Tags]  Notebook  Spawn
