@@ -110,7 +110,7 @@ Create and Start the Workbench
   Workbench Status Should Be      workbench_title=${WORKBENCH_NAME}   status=${WORKBENCH_STATUS_RUNNING}
   ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Just Launch Workbench  ${WORKBENCH_NAME}
   IF  '${workbench_launched}' != 'PASS'
-    Capture Page Screenshot  bug_open_not_available.png
+    Capture Page Screenshot  bug_5819_open_not_available.png
     Log     message=Workaround for RHODS-5819: reload the page    level=WARN
     Reload Page
     Wait Until Page Contains  Create workbench  timeout=60 seconds
