@@ -84,12 +84,6 @@ Go to the Project page
   ${has_errors}  ${error}=  Run Keyword And Ignore Error  Project Should Be Listed  ${PROJECT_NAME}
   IF  '${has_errors}' != 'PASS'
     Create Data Science Project  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
-
-    oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
-    OpenShiftLibrary.Oc Patch  name=${PROJECT_NAME}  kind=Namespace  src={"metadata":{"annotations":{"openshift.io/node-selector":"only-rhods-compute-pods=yes"}}}
-    ${default_toleration_patch}=  Convert To String  {"metadata":{"annotations":{"scheduler.alpha.kubernetes.io/defaultTolerations":"[{\\"operator\\": \\"Exists\\", \\"effect\\": \\"NoSchedule\\", \\"key\\": \\"only-rhods-compute-pods\\"}]"}}}
-    OpenShiftLibrary.Oc Patch  name=${PROJECT_NAME}  kind=Namespace  src=${default_toleration_patch}
-
   ELSE
     Open Data Science Project Details Page  ${PROJECT_NAME}
   END

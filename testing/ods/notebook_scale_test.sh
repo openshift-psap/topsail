@@ -260,30 +260,6 @@ sutest_customize_rhods_after_wait() {
 
 }
 
-prepare_rhods_users() {
-    # this should be part of the LDAP deployment
-    create_rhods_user_group() {
-        local rhods_user_group=$(get_config ldap.users.group)
-        local user_prefix=$(get_config ldap.users.prefix)
-
-        local group_file="$ARTIFACT_DIR/group_rhods-users.yaml"
-        local user0="${user_prefix}0"
-        oc adm groups new "$rhods_user_group" "$user0" --dry-run=client -oyaml > "$group_file"
-
-        for i in $(seq "$(get_config ldap.users.count)"); do
-            echo "- ${user_prefix}$i" >> "$group_file"
-        done
-        oc apply -f "$group_file"
-    }
-
-    create_rhods_user_group
-
-    local rhods_user_group=$(get_config ldap.users.group)
-    for role in $(get_config rhods.user_group_privileges[]); do
-        oc adm policy add-cluster-role-to-group "$role" "$rhods_user_group"
-    done
-}
-
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
 
@@ -294,8 +270,6 @@ sutest_wait_rhods_launch() {
     fi
 
     ./run_toolbox.py rhods wait_ods
-
-    prepare_rhods_users
 
     if test_config "$customize_key"; then
         sutest_customize_rhods_after_wait
@@ -319,10 +293,27 @@ sutest_wait_rhods_launch() {
     local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
     local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
 
+    local node_selector="$sutest_taint_key=$sutest_taint_value"
+    local default_tolerations='[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
+
+    # for the rhods-notebooks project
     oc annotate namespace/rhods-notebooks --overwrite \
-       "openshift.io/node-selector=$sutest_taint_key=$sutest_taint_value"
+       "openshift.io/node-selector=$node_selector"
     oc annotate namespace/rhods-notebooks --overwrite \
-       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
+       "scheduler.alpha.kubernetes.io/defaultTolerations=$defaultTolerations"
+
+    # for the DSG projects
+    oc adm create-bootstrap-project-template -ojson \
+        | jq '.objects[0].metadata.annotations += {"openshift.io/node-selector":"'$node_selector'"}' \
+        | jq '.objects[0].metadata.annotations += {"scheduler.alpha.kubernetes.io/defaultTolerations":"[{\"operator\": \"Exists\", \"effect\": \"'$sutest_taint_effect'\", \"key\": \"'$sutest_taint_key'\"}]"}' \
+        | oc apply -f- -n openshift-config -ojson \
+             > "$ARTIFACT_DIR/project_template.json"
+
+
+    local template_name="$(yq -r .metadata.name "$ARTIFACT_DIR/project_template.json")"
+    oc get -ojson project.config.openshift.io/cluster \
+        | jq '.spec.projectRequestTemplate.name = "'$template_name'"' \
+        | oc apply -f-
 }
 
 capture_environment() {
