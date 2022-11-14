@@ -35,15 +35,14 @@ function oc::wait::object::availability() {
     echo $token
 }
 
-wget --quiet $KFCTL_RELEASE_URL -O $KFCTL_TARBALL
-tar xzf $KFCTL_TARBALL
-KFCTL_BIN=${PWD}/kfctl
+# Deploy ODH
+./run_toolbox.py cluster deploy_operator community-operators opendatahub-operator all
 
+# Deploy Model Mesh
 oc create ns ${MODELMESH_PROJECT}
-
 CWD=$(pwd)
 cd /tmp
-$KFCTL_BIN apply -f $THIS_DIR/modelmesh.yaml
+oc -n ${MODELMESH_PROJECT} apply -f $THIS_DIR/modelmesh.yaml
 cd $CWD
 
 echo "Waiting for kserve crds to be created by the Operator"
