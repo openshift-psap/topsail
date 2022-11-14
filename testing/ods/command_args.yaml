@@ -98,9 +98,8 @@ cluster deploy_minio_s3_server:
 
 cluster deploy_nginx_server:
 {% set nginx_namespace = "nginx-"+tests.notebooks.namespace %}
-  namespace: {{ tests.notebooks.namespace }}
+  namespace: {{ nginx_namespace }}
   directory: {{ tests.notebooks.ipynb.uploaded_directory }}
-  __server_name: {{ nginx_namespace }}
 
 
 rhods notebook_ux_e2e_scale_test:

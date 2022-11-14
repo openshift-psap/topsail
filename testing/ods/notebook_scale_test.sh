@@ -351,8 +351,8 @@ prepare() {
 run_user_level_test() {
     switch_driver_cluster
 
-    local nginx_server=$(get_command_arg __server_name cluster deploy_nginx_server)
-    local nginx_hostname=$(oc whoami --show-server | sed "s/api/$nginx_server.apps/g" | awk -F ":" '{print $2}' | sed s,//,,g)
+    local nginx_namespace=$(get_command_arg namespace cluster deploy_nginx_server)
+    local nginx_hostname=$(oc get route/nginx -n "$nginx_namespace" -ojsonpath={.spec.host})
 
     local notebook_name=$(get_config tests.notebooks.ipynb.notebook_filename)
     local notebook_url="http://$nginx_hostname/$notebook_name"
