@@ -1,4 +1,11 @@
 download:
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/558/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1585740172283088896/artifacts/notebooks/test/artifacts/002_test_run/000__driver_rhods__notebook_ux_e2e_scale_test
+  dest_dir: reference/1.16
+  settings:
+    version: 1.16
+    mode: reference
+    machine: m5a.2xlarge
+    run: 1
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/558/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584559474750787584/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
   dest_dir: reference/1.17
   settings:
