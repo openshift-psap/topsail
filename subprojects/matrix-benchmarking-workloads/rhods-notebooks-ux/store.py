@@ -234,7 +234,7 @@ def _parse_tester_job(dirname):
                 job["status"]["completionTime"],
                 K8S_TIME_FMT)
     else:
-        job_info.completion_time = results.job_creation_time + datetime.timedelta(hours=1)
+        job_info.completion_time = job_info.creation_time + datetime.timedelta(hours=1)
 
     if job["spec"]["template"]["spec"]["containers"][0]["name"] != "main":
         raise ValueError("Expected to find the 'main' container in position 0")
