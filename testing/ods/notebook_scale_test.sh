@@ -162,10 +162,12 @@ prepare_sutest_scale_cluster() {
                 --replicas "$compute_nodes_count" \
                 "
         fi
-        local managed_cluster_name=$(get_config clusters.sutest.managed.name)
+
         if test_config clusters.sutest.managed.is_ocm; then
+            local managed_cluster_name=$(get_config clusters.sutest.managed.name)
             local compute_nodes_type=$(get_config clusters.create.ocm.compute.type)
-            ocm create machinepool "$(get_config clusters.sutest.compute.machineset_name)" \
+            local compute_nodes_machinepool_name=$(get_config clusters.sutest.compute.machineset.name)
+            ocm create machinepool "$compute_nodes_machinepool_name" \
                 --cluster "$managed_cluster_name" \
                 --instance-type "$compute_nodes_type" \
                 --taints "$sutest_taint" \
@@ -180,7 +182,7 @@ prepare_sutest_scale_cluster() {
         if test_config clusters.sutest.compute.autoscaling.enabled; then
             oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
 
-            local machineset_name=$(get_config clusters.sutest.machineset_name)
+            local machineset_name=$(get_config clusters.sutest.compute.machineset.name)
             cat testing/ods/autoscaling/machineautoscaler.yaml \
                 | sed "s/MACHINESET_NAME/$machineset_name/" \
                 | oc apply -f-
