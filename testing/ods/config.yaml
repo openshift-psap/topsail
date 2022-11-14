@@ -70,9 +70,6 @@ ldap:
     count: 1000
     prefix: psapuser
     group: rhods-users
-cluster:
-  auto-scaler:
-    enabled: false
 
 rhods:
   deploy_from_catalog: true
