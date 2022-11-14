@@ -88,7 +88,7 @@ cluster preload_image/notebook:
   pod_toleration_key: "{{ clusters.sutest.compute.machineset.taint.key }}"
 
 cluster deploy_redis_server:
-{% set redis_namespace = tests.notebooks.namespace %}
+{% set redis_namespace = "redis-"+tests.notebooks.namespace %}
 {% set redis_internal_address = "redis."+redis_namespace+".svc" %}
   namespace: {{ redis_namespace }}
 
