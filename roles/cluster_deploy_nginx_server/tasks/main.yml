@@ -33,10 +33,11 @@
        -n "{{ cluster_deploy_nginx_server_namespace }}"
 
 - name: Create nginx-content ConfigMap
-  command: # may fail silently if the directory is invalid
+  command:
     oc create cm nginx-content
        -n "{{ cluster_deploy_nginx_server_namespace }}"
        --from-file="{{ cluster_deploy_nginx_server_directory }}"
+# ^^^ may fail silently if the directory is invalid
 
 - name: Create nginx-config ConfigMap
   command:
