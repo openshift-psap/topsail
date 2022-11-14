@@ -34,5 +34,6 @@ visualize:
   thresholds:
   - settings_selector:
       mode: reference
+      machine: m5a.2xlarge
     thresholds:
-      py_perf_threshold: 14.45
+      py_perf_threshold: 27.5
