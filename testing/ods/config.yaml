@@ -4,6 +4,7 @@ secrets:
     env_key: PSAP_ODS_SECRET_PATH
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
+  addon_email_file: addon.email
 clusters:
   create:
     type: single # can be: single, ocp, managed

@@ -132,25 +132,8 @@ prepare_driver_scale_cluster() {
     local driver_taint_effect=$(get_config clusters.driver.compute.machineset.taint.effect)
     local driver_taint="$driver_taint_key=$driver_taint_value:$driver_taint_effect"
 
-    if test_config clusters.sutest.is_managed; then
-        local managed_cluster_name=$(get_config clusters.sutest.managed.name)
-        local machinepool_name=$(get_config clusters.driver.compute.machineset_name)
-
-        if test_config clusters.sutest.managed.is_ocm; then
-            local compute_nodes_type=$(get_config clusters.create.ocm.compute.type)
-            ocm create machinepool \
-                --cluster "$managed_cluster_name" \
-                --instance-type "$compute_nodes_type" \
-                "$machinepool_name" \
-                --replicas "$compute_nodes_count" \
-                --taints "$driver_taint"
-        elif test_config clusters.sutest.managed.is_rosa; then
-            _error "prepare_driver_scale_cluster not supported with ROSA"
-        fi
-    else
-        ./run_toolbox.py from_config cluster set_scale --prefix="driver" \
-                         --extra "{scale: $compute_nodes_count}"
-    fi
+    ./run_toolbox.py from_config cluster set_scale --prefix="driver" \
+                     --extra "{scale: $compute_nodes_count}"
 }
 
 prepare_sutest_scale_cluster() {
@@ -179,13 +162,16 @@ prepare_sutest_scale_cluster() {
                 --replicas "$compute_nodes_count" \
                 "
         fi
-        local managed_cluster_name=$(get_config clusters.sutest.managed.name)
+
         if test_config clusters.sutest.managed.is_ocm; then
+            local managed_cluster_name=$(get_config clusters.sutest.managed.name)
             local compute_nodes_type=$(get_config clusters.create.ocm.compute.type)
-            ocm create machinepool "$(get_config clusters.sutest.compute.machineset_name)" \
+            local compute_nodes_machinepool_name=$(get_config clusters.sutest.compute.machineset.name)
+            ocm create machinepool "$compute_nodes_machinepool_name" \
                 --cluster "$managed_cluster_name" \
                 --instance-type "$compute_nodes_type" \
                 --taints "$sutest_taint" \
+                --labels "$sutest_taint_key=$sutest_taint_value" \
                 $specific_options
         elif test_config clusters.sutest.managed.is_rosa; then
             _error "prepare_sutest_scale_cluster not supported with rosa"
@@ -197,7 +183,7 @@ prepare_sutest_scale_cluster() {
         if test_config clusters.sutest.compute.autoscaling.enabled; then
             oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
 
-            local machineset_name=$(get_config clusters.sutest.machineset_name)
+            local machineset_name=$(get_config clusters.sutest.compute.machineset.name)
             cat testing/ods/autoscaling/machineautoscaler.yaml \
                 | sed "s/MACHINESET_NAME/$machineset_name/" \
                 | oc apply -f-
@@ -221,7 +207,7 @@ prepare_managed_sutest_deploy_rhods() {
             _error "prepare_managed_sutest_deploy_rhods not supported on ROSA when 'rhods.deploy_from_catalog' is set."
         fi
         local managed_cluster_name=$(get_config clusters.sutest.managed.name)
-        local email=$(get_config rhods.addon.email)
+        local email="$(cat "$PSAP_ODS_SECRET_PATH/$(get_config secrets.addon_email_file)")"
         process_ctrl::run_in_bg \
             ./run_toolbox.py from_config rhods deploy_addon "$managed_cluster_name" "$email"
     fi
@@ -449,7 +435,9 @@ sutest_cleanup_ldap() {
         _info "cm/keep-cluster found, not undeploying LDAP."
         return
     fi
-
+    if test_config clusters.sutest.managed.is_ocm; then
+        cluster_helpers::ocm_login
+    fi
     ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
 }
 
@@ -484,8 +472,8 @@ connect_ci() {
         _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
     fi
 
-    KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-${CONFIG_DEST_DIR}/driver_kubeconfig}" # cluster driving the test
-    KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-${CONFIG_DEST_DIR}/sutest_kubeconfig}" # system under test
+    KUBECONFIG_DRIVER="${CONFIG_DEST_DIR}/driver_kubeconfig" # cluster driving the test
+    KUBECONFIG_SUTEST="${CONFIG_DEST_DIR}/sutest_kubeconfig" # system under test
 }
 
 test_ci() {
