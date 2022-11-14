@@ -435,7 +435,9 @@ sutest_cleanup_ldap() {
         _info "cm/keep-cluster found, not undeploying LDAP."
         return
     fi
-
+    if test_config clusters.sutest.managed.is_ocm; then
+        cluster_helpers::ocm_login
+    fi
     ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
 }
 
