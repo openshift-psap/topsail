@@ -171,6 +171,7 @@ prepare_sutest_scale_cluster() {
                 --cluster "$managed_cluster_name" \
                 --instance-type "$compute_nodes_type" \
                 --taints "$sutest_taint" \
+                --labels "$sutest_taint_key=$sutest_taint_value" \
                 $specific_options
         elif test_config clusters.sutest.managed.is_rosa; then
             _error "prepare_sutest_scale_cluster not supported with rosa"
