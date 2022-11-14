@@ -132,25 +132,8 @@ prepare_driver_scale_cluster() {
     local driver_taint_effect=$(get_config clusters.driver.compute.machineset.taint.effect)
     local driver_taint="$driver_taint_key=$driver_taint_value:$driver_taint_effect"
 
-    if test_config clusters.sutest.is_managed; then
-        local managed_cluster_name=$(get_config clusters.sutest.managed.name)
-        local machinepool_name=$(get_config clusters.driver.compute.machineset_name)
-
-        if test_config clusters.sutest.managed.is_ocm; then
-            local compute_nodes_type=$(get_config clusters.create.ocm.compute.type)
-            ocm create machinepool \
-                --cluster "$managed_cluster_name" \
-                --instance-type "$compute_nodes_type" \
-                "$machinepool_name" \
-                --replicas "$compute_nodes_count" \
-                --taints "$driver_taint"
-        elif test_config clusters.sutest.managed.is_rosa; then
-            _error "prepare_driver_scale_cluster not supported with ROSA"
-        fi
-    else
-        ./run_toolbox.py from_config cluster set_scale --prefix="driver" \
-                         --extra "{scale: $compute_nodes_count}"
-    fi
+    ./run_toolbox.py from_config cluster set_scale --prefix="driver" \
+                     --extra "{scale: $compute_nodes_count}"
 }
 
 prepare_sutest_scale_cluster() {
