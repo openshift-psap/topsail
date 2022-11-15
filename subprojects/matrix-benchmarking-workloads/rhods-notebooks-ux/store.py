@@ -603,7 +603,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         output_dir = pathlib.Path("ods-ci") / ods_ci_dirname
 
         user_id = int(test_pod.split("-")[-2])
-        results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(dirname, output_dir)
+        results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(dirname, output_dir) or {}
         results.ods_ci_exit_code[user_id] = _parse_ods_ci_exit_code(dirname, output_dir)
         results.ods_ci_notebook_benchmark[user_id] = _parse_ods_ci_notebook_benchmark(dirname, output_dir)
         results.ods_ci_progress[user_id] = _parse_ods_ci_progress(dirname, output_dir)
