@@ -73,6 +73,8 @@ queue ${ARTIFACT_DIR}/oc_cmds/nodes $OC get nodes -o wide
 queue ${ARTIFACT_DIR}/openshiftapiserver.json $OC get openshiftapiserver -o json
 queue ${ARTIFACT_DIR}/oc_cmds/openshiftapiserver $OC get openshiftapiserver
 queue ${ARTIFACT_DIR}/pods.json $OC get pods --all-namespaces -o json
+queue ${ARTIFACT_DIR}/oc_cmds/jobs $OC get jobs --all-namespaces -o wide
+queue ${ARTIFACT_DIR}/jobs.json $OC get jobs --all-namespaces -o json
 queue ${ARTIFACT_DIR}/oc_cmds/pods $OC get pods --all-namespaces -o wide
 queue ${ARTIFACT_DIR}/persistentvolumes.json $OC get persistentvolumes --all-namespaces -o json
 queue ${ARTIFACT_DIR}/oc_cmds/persistentvolumes $OC get persistentvolumes --all-namespaces -o wide

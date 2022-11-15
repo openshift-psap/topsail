@@ -74,3 +74,29 @@ get_command_arg() {
     shift
     ./run_toolbox.py from_config "$@" --show_args "$key"
 }
+
+
+# use this function to get a flat version of the configuration
+# the flat key/value pairs can be used to configure the test in the Github PR.
+flat_config() {
+    local prefix=${1:-}
+    if [[ "$prefix" ]]; then
+        prefix="$prefix "
+    fi
+    local yaml_file=$CI_ARTIFACTS_FROM_CONFIG_FILE
+    local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+
+    yq -y . "$yaml_file" |\
+        sed -ne "s|^\(${s}\):|\1|" \
+            -e "s|^\(${s}\)\(${w}\)${s}:${s}[\"']\(.*\)[\"']${s}\$|\1${fs}\2${fs}\3|p" \
+            -e "s|^\(${s}\)\(${w}\)${s}:${s}\(.*\)${s}\$|\1${fs}\2${fs}\3|p" | \
+        awk -F${fs} '{
+      indent = length($1)/2;
+      vname[indent] = $2;
+      for (i in vname) {if (i > indent) {delete vname[i]}}
+      if (length($3) > 0) {
+         vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])(".")}
+         printf("%s%s%s=%s\n", "'$prefix'",vn, $2, $3);
+      }
+   }'
+}

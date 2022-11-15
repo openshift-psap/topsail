@@ -248,7 +248,7 @@ sutest_customize_rhods_after_wait() {
     fi
 
     local NB_SIZE_CONFIG_KEY=rhods.notebooks.customize.notebook_size
-    if test_config "$NB_SIZE_CONFIG_KEY.enabled" ]]; then
+    if test_config "$NB_SIZE_CONFIG_KEY.enabled"; then
         local name=$(get_config $NB_SIZE_CONFIG_KEY.name)
         local cpu=$(get_config $NB_SIZE_CONFIG_KEY.cpu)
         local mem=$(get_config $NB_SIZE_CONFIG_KEY.mem_gi)
@@ -293,10 +293,27 @@ sutest_wait_rhods_launch() {
     local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
     local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
 
+    local node_selector="$sutest_taint_key=$sutest_taint_value"
+    local default_tolerations='[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
+
+    # for the rhods-notebooks project
     oc annotate namespace/rhods-notebooks --overwrite \
-       "openshift.io/node-selector=$sutest_taint_key=$sutest_taint_value"
+       "openshift.io/node-selector=$node_selector"
     oc annotate namespace/rhods-notebooks --overwrite \
-       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
+       "scheduler.alpha.kubernetes.io/defaultTolerations=$defaultTolerations"
+
+    # for the DSG projects
+    oc adm create-bootstrap-project-template -ojson \
+        | jq '.objects[0].metadata.annotations += {"openshift.io/node-selector":"'$node_selector'"}' \
+        | jq '.objects[0].metadata.annotations += {"scheduler.alpha.kubernetes.io/defaultTolerations":"[{\"operator\": \"Exists\", \"effect\": \"'$sutest_taint_effect'\", \"key\": \"'$sutest_taint_key'\"}]"}' \
+        | oc apply -f- -n openshift-config -ojson \
+             > "$ARTIFACT_DIR/project_template.json"
+
+
+    local template_name="$(yq -r .metadata.name "$ARTIFACT_DIR/project_template.json")"
+    oc get -ojson project.config.openshift.io/cluster \
+        | jq '.spec.projectRequestTemplate.name = "'$template_name'"' \
+        | oc apply -f-
 }
 
 capture_environment() {
@@ -325,8 +342,8 @@ prepare() {
 run_user_level_test() {
     switch_driver_cluster
 
-    local nginx_server=$(get_command_arg __server_name cluster deploy_nginx_server)
-    local nginx_hostname=$(oc whoami --show-server | sed "s/api/$nginx_server.apps/g" | awk -F ":" '{print $2}' | sed s,//,,g)
+    local nginx_namespace=$(get_command_arg namespace cluster deploy_nginx_server)
+    local nginx_hostname=$(oc get route/nginx -n "$nginx_namespace" -ojsonpath={.spec.host})
 
     local notebook_name=$(get_config tests.notebooks.ipynb.notebook_filename)
     local notebook_url="http://$nginx_hostname/$notebook_name"
@@ -352,7 +369,11 @@ run_user_level_tests() {
 
         run_user_level_test && test_failed=0 || test_failed=1
         # quick access to these files
-        cp "$ARTIFACT_DIR"/*__driver_rhods__notebook_ux_e2e_scale_test/{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null || true
+        local TEST_DIRNAME=driver_rhods__notebook_ux_e2e_scale_test
+        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+        cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir"
+        cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null || true
+
         generate_plots || plot_failed=1
         if [[ "$test_failed" == 1 ]]; then
             break

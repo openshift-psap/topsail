@@ -70,9 +70,28 @@
          bash -c "echo ${ODH_PRODUCT_NAME:-Open Data Hub}"
     register: rhods_dashboard_product_name
 
-  - name: Save the Dashboard Product name
+  - name: Get the image name description
+    command:
+      oc get imagestream "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_image_name }}"
+         -n redhat-ods-applications
+         -ojsonpath='{.metadata.annotations.opendatahub\.io/notebook-image-name}'
+    register: notebook_image_name_descr_cmd
+
+  - name: Save the computed variables
     set_fact:
       rhods_dashboard_product_name: "{{ rhods_dashboard_product_name.stdout }}"
+      notebook_image_name_descr: "{{ notebook_image_name_descr_cmd.stdout }}"
+
+- name: Terminate the notebooks
+  environment:
+    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
+  shell:
+    set -o pipefail;
+    oc get notebooks -A -ojsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' |
+      xargs --no-run-if-empty --replace
+            bash -c "oc annotate notebook/{} --overwrite
+                 kubeflow-resource-stopped=stopped-by-ci-artifacts
+                 -oname" # > /dev/null
 
 - name: Get the ODS-CI sample var file
   shell:
@@ -179,19 +198,6 @@
        --ignore-not-found
        -n {{ tester_namespace }}
 
-- name: Terminate our notebooks, if they are still running
-  environment:
-    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  shell:
-    set -o pipefail;
-    oc get notebooks -oname -n {{ rhods_notebook_namespace }} |
-      (grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }} || true) |
-      xargs --no-run-if-empty --replace
-            oc annotate {} --overwrite
-               kubeflow-resource-stopped=stopped-by-ci-artifacts
-               -oname
-               -n {{ rhods_notebook_namespace }}
-               > /dev/null
 
 - name: Name the namespace privileged
   command:
@@ -202,6 +208,7 @@
 # ---
 
 - name: Cleanup the Prometheus databases of the sutest cluster
+  when: capture_prom_db | bool
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   block:
@@ -220,6 +227,7 @@
       cluster_prometheus_db_mode: reset
 
 - name: Cleanup the Prometheus database of the driver cluster
+  when: capture_prom_db | bool
   include_role:
     name: cluster_prometheus_db
   vars:
@@ -262,18 +270,8 @@
 - name: Capture the sutest cluster artifacts
   include_tasks: artifacts_sutest.yml
 
-- name: Terminate our notebooks
-  environment:
-    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-  shell:
-    set -o pipefail;
-    oc get notebooks -oname -n {{ rhods_notebook_namespace }} |
-      (grep {{ rhods_notebook_ux_e2e_scale_test_username_prefix }} || true) |
-      xargs --no-run-if-empty --replace
-            oc annotate {} --overwrite
-               kubeflow-resource-stopped=stopped-by-ci-artifacts
-               -n {{ rhods_notebook_namespace }}
-               -oname > /dev/null
+- name: Capture the information about the notebook projects
+  include_tasks: artifacts_sutest_project.yml
 
 - name: Capture the driver cluster artifacts
   include_tasks: artifacts_driver.yml
@@ -290,7 +288,7 @@
   register: check_rhods_test_job
   failed_when: check_rhods_test_job.stdout | length > 0
 
-- name: Test if all the test jobs failed
+- name: Count how many jobs succeeded, fail in none succeeded
   shell:
     set -o pipefail;
     (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code || true)

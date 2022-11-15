@@ -47,7 +47,7 @@ IMPORTANT_FILES = [
     "artifacts-sutest/ocp_version.yml",
     "artifacts-sutest/prometheus_ocp.t*",
     "artifacts-sutest/prometheus_rhods.t*",
-    "artifacts-sutest/notebook_pods.yaml",
+    "artifacts-sutest/project_*/notebook_pods.yaml",
 
     "artifacts-driver/nodes.yaml",
     "artifacts-driver/prometheus_ocp.t*",
@@ -62,8 +62,8 @@ IMPORTANT_FILES = [
 ]
 
 
-ARTIFACTS_VERSION = "2022-10-18"
-PARSER_VERSION = "2022-10-18"
+ARTIFACTS_VERSION = "2022-11-09"
+PARSER_VERSION = "2022-11-09"
 
 
 def is_mandatory_file(filename):
@@ -234,7 +234,7 @@ def _parse_tester_job(dirname):
                 job["status"]["completionTime"],
                 K8S_TIME_FMT)
     else:
-        job_info.completion_time = results.job_creation_time + datetime.timedelta(hours=1)
+        job_info.completion_time = job_info.creation_time + datetime.timedelta(hours=1)
 
     if job["spec"]["template"]["spec"]["containers"][0]["name"] != "main":
         raise ValueError("Expected to find the 'main' container in position 0")
@@ -313,18 +313,18 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
 @ignore_file_not_found
 def _parse_pod_times(dirname, hostnames, is_notebook=False):
     if is_notebook:
-        filename = pathlib.Path("artifacts-sutest") / "notebook_pods.yaml"
+        filenames = pathlib.Path("artifacts-sutest").glob("project_*/notebook_pods.yaml")
     else:
-        filename = pathlib.Path("artifacts-driver") / "tester_pods.yaml"
+        filenames = [pathlib.Path("artifacts-driver") / "tester_pods.yaml"]
 
     pod_times = defaultdict(types.SimpleNamespace)
 
-    in_metadata = False
-    in_spec = False
-    podname = None
     fmt = f'"{K8S_TIME_FMT}"'
 
-    with open(register_important_file(dirname, filename)) as f:
+    def _parse_pod_times_file(f):
+        in_metadata = False
+        in_spec = False
+        podname = None
         for line in f.readlines():
             if line == "  metadata:\n":
                 in_metadata = True
@@ -375,6 +375,12 @@ def _parse_pod_times(dirname, hostnames, is_notebook=False):
                     datetime.datetime.strptime(
                         line.strip().partition(": ")[-1],
                         fmt)
+
+
+    for filename in filenames:
+        with open(register_important_file(dirname, filename)) as f:
+            _parse_pod_times_file(f)
+
 
     return pod_times
 
@@ -540,7 +546,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         if not results.artifacts_version:
             logging.warning("Artifacts does not have a version...")
         else:
-            logging.warning("Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
+            logging.warning(f"Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
     _parse_always(results, dirname, import_settings)
 
@@ -597,7 +603,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         output_dir = pathlib.Path("ods-ci") / ods_ci_dirname
 
         user_id = int(test_pod.split("-")[-2])
-        results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(dirname, output_dir)
+        results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(dirname, output_dir) or {}
         results.ods_ci_exit_code[user_id] = _parse_ods_ci_exit_code(dirname, output_dir)
         results.ods_ci_notebook_benchmark[user_id] = _parse_ods_ci_notebook_benchmark(dirname, output_dir)
         results.ods_ci_progress[user_id] = _parse_ods_ci_progress(dirname, output_dir)

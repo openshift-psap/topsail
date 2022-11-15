@@ -23,7 +23,7 @@ clusters:
         type: m5.2xlarge
     ocp:
       base_domain: psap.aws.rhperfscale.org
-      version: 4.10.15
+      version: 4.11.13
       region: us-west-2
       control_plane:
         type: m6a.xlarge
@@ -69,10 +69,7 @@ ldap:
   users:
     count: 1000
     prefix: psapuser
-
-cluster:
-  auto-scaler:
-    enabled: false
+    group: rhods-users
 
 rhods:
   deploy_from_catalog: true
@@ -92,7 +89,6 @@ rhods:
         cpu: 1
         mem_gi: 4
       remove_gpu_images: true
-
 tests:
   notebooks:
     repeat: 2 # number of test repetition to perform
@@ -103,15 +99,16 @@ tests:
     flavor_to_run: user-level
     namespace: notebooks-scale-test
     imagestream_name: scale-test
-    artifacts_collected: no-screenshot-except-zero
+    artifacts_collected: no-screenshot-except-failed-and-zero
     notebook:
       size_name: *notebook_size_name
       image_name: s2i-generic-data-science-notebook
     ods_ci:
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: jh-at-scale.v220923
+        ref: jh-at-scale.v221114
       excluded_tags: None # tags to exclude when running the robot test case
+      test_case: notebook_ux_e2e_test.robot
     test_pods:
       # must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
       size:
@@ -138,3 +135,4 @@ matbench:
     url_file:
     # if true, copy the results downloaded by `matbench download` into the artifacts directory
     save_to_artifacts: false
+  ignore_exit_code: true

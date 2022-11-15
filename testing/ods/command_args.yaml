@@ -68,7 +68,7 @@ utils build_push_image/user-scale-test:
   git_repo: {{ tests.notebooks.ods_ci.image.repo }}
   git_ref: {{ tests.notebooks.ods_ci.image.ref }}
   dockerfile_path: build/Dockerfile
-{% set user_scale_test_istag = "user-scale-test" %}
+{% set user_scale_test_istag = "ods-ci" %}
   image_tag: {{ user_scale_test_istag }}
   local_image_name: {{ tests.notebooks.imagestream_name }}
 
@@ -88,7 +88,7 @@ cluster preload_image/notebook:
   pod_toleration_key: "{{ clusters.sutest.compute.machineset.taint.key }}"
 
 cluster deploy_redis_server:
-{% set redis_namespace = tests.notebooks.namespace %}
+{% set redis_namespace = "redis-"+tests.notebooks.namespace %}
 {% set redis_internal_address = "redis."+redis_namespace+".svc" %}
   namespace: {{ redis_namespace }}
 
@@ -98,9 +98,8 @@ cluster deploy_minio_s3_server:
 
 cluster deploy_nginx_server:
 {% set nginx_namespace = "nginx-"+tests.notebooks.namespace %}
-  namespace: {{ tests.notebooks.namespace }}
+  namespace: {{ nginx_namespace }}
   directory: {{ tests.notebooks.ipynb.uploaded_directory }}
-  __server_name: {{ nginx_namespace }}
 
 
 rhods notebook_ux_e2e_scale_test:
@@ -113,7 +112,7 @@ rhods notebook_ux_e2e_scale_test:
   ods_ci_notebook_benchmark_repeat: {{ tests.notebooks.benchmark.repeat }}
   ods_ci_notebook_image_name: {{ tests.notebooks.notebook.image_name }}
   ods_ci_notebook_size_name: {{ tests.notebooks.notebook.size_name }}
-  ods_ci_scale_test_case: notebook_ux_e2e_test.robot
+  ods_ci_test_case: {{ tests.notebooks.ods_ci.test_case }}
   ods_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
   secret_properties_file: {{ s3_ldap_password_location }}
   state_signal_redis_server: {{ redis_internal_address }}
