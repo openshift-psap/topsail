@@ -300,7 +300,7 @@ sutest_wait_rhods_launch() {
     oc annotate namespace/rhods-notebooks --overwrite \
        "openshift.io/node-selector=$node_selector"
     oc annotate namespace/rhods-notebooks --overwrite \
-       "scheduler.alpha.kubernetes.io/defaultTolerations=$defaultTolerations"
+       "scheduler.alpha.kubernetes.io/defaultTolerations=$default_tolerations"
 
     # for the DSG projects
     oc adm create-bootstrap-project-template -ojson \
