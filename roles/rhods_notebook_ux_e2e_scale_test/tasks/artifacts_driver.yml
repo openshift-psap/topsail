@@ -35,7 +35,7 @@
 
 - name: Get the logs of the tester Pod
   shell: |
-    oc logs {{ item }} -c main \
+    oc logs {{ item }} --all-containers --prefix \
          -n {{ tester_namespace }} \
          > "{{ artifact_extra_logs_dir }}/artifacts-driver/tester_pod_logs/$(basename "{{ item }}").log";
   loop: "{{ pod_names_cmd.stdout_lines }}"
