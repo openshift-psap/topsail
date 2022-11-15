@@ -1,60 +1,76 @@
 download:
+# 100 users
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/543/pull-ci-openshift-psap-ci-artifacts-main-ods-plot-notebooks/1582480400205221888/artifacts/plot-notebooks/test/artifacts/matrix_benchmarking_results/reference/1.16-1
-  dest_dir: reference/1.16-1
+  dest_dir: reference/100/1.16-1
   settings:
     version: 1.16,
     run: 1,
     mode: reference
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/543/pull-ci-openshift-psap-ci-artifacts-main-ods-plot-notebooks/1582480400205221888/artifacts/plot-notebooks/test/artifacts/matrix_benchmarking_results/reference/1.16-2
-  dest_dir: reference/1.16-2
+  dest_dir: reference/100/1.16-2
   settings:
     version: 1.16
     run: 2
     mode: reference
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/543/pull-ci-openshift-psap-ci-artifacts-main-ods-plot-notebooks/1582480400205221888/artifacts/plot-notebooks/test/artifacts/matrix_benchmarking_results/reference/1.17-1
-  dest_dir: reference/1.17-1,
+  dest_dir: reference/100/1.17-1,
   settings:
     version: 1.17
     run: 1
     mode: reference
-    check_thresholds: "yes"
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/543/pull-ci-openshift-psap-ci-artifacts-main-ods-plot-notebooks/1582480400205221888/artifacts/plot-notebooks/test/artifacts/matrix_benchmarking_results/reference/1.17-2
-  dest_dir: reference/1.17-2
+  dest_dir: reference/100/1.17-2
   settings:
     version: 1.17
     run: 2
     mode: reference
-    check_thresholds: "yes"
-- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584481608432357376/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
-  dest_dir: reference/1.18-1
-  settings:
-    version: 1.18
-    run: 1
-    mode: reference
-    check_thresholds: "yes"
-- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584481608432357376/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
-  dest_dir: reference/1.18-2
-  settings:
-    version: 1.18
-    run: 2
-    mode: reference
-    check_thresholds: "yes"
+
+# 200 users
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584554530144522240/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
-  dest_dir: reference/1.17-1
+  dest_dir: reference/200/1.17-1
   settings:
     version: 1.17
     run: 1
     mode: reference
-- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584554530144522240/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
-  dest_dir: reference/1.17-2
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584554530144522240/artifacts/notebooks/test/artifacts/002_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
+  dest_dir: reference/200/1.17-2
   settings:
     version: 1.17
     run: 2
     mode: reference
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584481608432357376/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
+  dest_dir: reference/200/1.18-1
+  settings:
+    version: 1.18
+    run: 1
+    mode: reference
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584481608432357376/artifacts/notebooks/test/artifacts/002_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
+  dest_dir: reference/200/1.18-2
+  settings:
+    version: 1.18
+    run: 2
+    mode: reference
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/566/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1588659404088020992/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test
+  dest_dir: reference/200/1.19-1
+  settings:
+    version: 1.19
+    run: 1
+    mode: reference
+    check_thresholds: "yes"
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/566/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1588659404088020992/artifacts/notebooks/test/artifacts/002_test_run/000__driver_rhods__notebook_ux_e2e_scale_test
+  dest_dir: reference/200/1.19-2
+  settings:
+    version: 1.19
+    run: 2
+    mode: reference
+    check_thresholds: "yes"
+
 visualize:
   filters:
   - user_count=100
   - user_count=200
+  - user_count=200,run=1
+  - user_count=200,run=2
   generate:
   - "report: Notebooks Scale Test Comparison"
   - "report: RHODS Cluster CPU/Memory Usage"
