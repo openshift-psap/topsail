@@ -7,7 +7,7 @@ Resource            tests/Resources/Page/ODH/ODHDashboard/ODHDataScienceProject/
 Library             JupyterLibrary
 Library             libs/Helpers.py
 Library             SeleniumLibrary
-Library             DebugLibrary  # then use the 'Debug' keyword to set a breakpoint
+#Library             DebugLibrary  # then use the 'Debug' keyword to set a breakpoint
 
 Suite Teardown  Tear Down
 
