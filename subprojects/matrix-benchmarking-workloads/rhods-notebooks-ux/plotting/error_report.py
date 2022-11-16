@@ -61,10 +61,10 @@ def _get_test_setup(entry):
     artifacts_basedir = entry.results.from_local_env.artifacts_basedir
 
     if artifacts_basedir:
-        setup_info += [html.Li(html.A("Results artifacts", href=artifacts_basedir, target="_blank"))]
+        setup_info += [html.Li(html.A("Results artifacts", href=str(artifacts_basedir), target="_blank"))]
 
         if entry.results.odh_dashboard_config.path:
-            href = artifacts_basedir / entry.results.odh_dashboard_config.path
+            href = str(artifacts_basedir / entry.results.odh_dashboard_config.path)
             setup_info += [html.Ul(html.Li(html.A("Dashboard configuration", href=href, target="_blank")))]
         else:
             setup_info += [html.Ul(html.Li("Dashboard configuration: MISSING"))]
@@ -134,10 +134,12 @@ class ErrorReport():
             def artifacts_link(path):
                 if path.suffix != ".png":
                     return f"file://{entry.results.from_local_env.artifacts_basedir / path}"
-
-                with open (path, "rb") as f:
-                    encoded_image = base64.b64encode(f.read()).decode("ascii")
-                return f"data:image/png;base64,{encoded_image}"
+                try:
+                    with open (entry.results.from_local_env.artifacts_basedir / path, "rb") as f:
+                        encoded_image = base64.b64encode(f.read()).decode("ascii")
+                        return f"data:image/png;base64,{encoded_image}"
+                except FileNotFoundError:
+                    return f"file://{entry.results.from_local_env.artifacts_basedir / path}#file_not_found"
         else:
             artifacts_link = lambda path: entry.results.from_local_env.artifacts_basedir / path
 
@@ -146,7 +148,7 @@ class ErrorReport():
         REFERENCE_USER_IDX = 0
 
         reference_content = None
-        for user_idx, exit_code in entry.results.ods_ci_exit_code.items():
+        for user_idx, exit_code in sorted(entry.results.ods_ci_exit_code.items()):
             content = []
 
             if exit_code == 0:

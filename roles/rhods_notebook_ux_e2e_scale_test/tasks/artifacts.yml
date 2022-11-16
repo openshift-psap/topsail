@@ -16,7 +16,7 @@
     for f in "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.log; do
       [[ "$(cat $(dirname "$f")/test.exit_code)" == 0 ]] && continue
       echo -e "\n=== $f ==="
-      egrep 'FAIL|WARN' $f | grep -v "^| FAIL|" | head -1
+      grep 'FAIL' $f | grep -v "^| FAIL|" | head -1
       echo ""
     done > "{{ artifact_extra_logs_dir }}"/failed_tests
   ignore_errors: yes

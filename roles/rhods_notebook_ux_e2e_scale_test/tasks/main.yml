@@ -91,7 +91,7 @@
       xargs --no-run-if-empty --replace
             bash -c "oc annotate notebook/{} --overwrite
                  kubeflow-resource-stopped=stopped-by-ci-artifacts
-                 -oname" # > /dev/null
+                 -oname" > /dev/null
 
 - name: Get the ODS-CI sample var file
   shell:

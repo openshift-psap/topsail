@@ -130,6 +130,7 @@ def _parse_local_env(dirname):
     if not cli_args.kwargs.get("generate"):
         # running in interactive mode
         from_local_env.is_interactive = True
+        from_local_env.artifacts_basedir = dirname
         return from_local_env
 
     # running in generate mode

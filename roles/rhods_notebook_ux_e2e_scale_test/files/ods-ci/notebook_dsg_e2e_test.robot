@@ -7,7 +7,7 @@ Resource            tests/Resources/Page/ODH/ODHDashboard/ODHDataScienceProject/
 Library             JupyterLibrary
 Library             libs/Helpers.py
 Library             SeleniumLibrary
-Library             DebugLibrary  # then use the 'Debug' keyword to set a breakpoint
+#Library             DebugLibrary  # then use the 'Debug' keyword to set a breakpoint
 
 Suite Teardown  Tear Down
 
@@ -51,7 +51,10 @@ Tear Down
   Capture Page Screenshot  final_screenshot.png
 
   ${final_url}=   Get Location
-  Create File  ${OUTPUTDIR}/final_url.txt  ${final_url}
+  Create File  ${OUTPUTDIR}/final.url  ${final_url}
+
+  ${final_html} =    SeleniumLibrary.Get Source
+  Create File  ${OUTPUTDIR}/final.html  ${final_html}
 
   Close Browser
 
@@ -110,8 +113,10 @@ Create and Start the Workbench
     Capture Page Screenshot  bug_open_not_available.png
     Log     message=Workaround for RHODS-5819: reload the page    level=WARN
     Reload Page
+    Wait Until Page Contains  Create workbench  timeout=60 seconds
     Just Launch Workbench  ${WORKBENCH_NAME}
   END
+
 
 Login to JupyterLab Page
   [Tags]  Notebook  Spawn

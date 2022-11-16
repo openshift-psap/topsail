@@ -62,7 +62,7 @@ if [[ "$ARTIFACTS_COLLECTED" == "no-screenshot"* ]]; then
     [[ "$ARTIFACTS_COLLECTED" == *"-zero" && "${JOB_COMPLETION_INDEX:-0}" == 0 ]] && delete_screenshots=0
 
     # no-screenshot-except-failed or no-screenshot-except-failed-and-zero
-    [[ "$ARTIFACTS_COLLECTED" == *"-failed"* && "$test_failed" == 1 ]] && delete_screenshots=0
+    [[ "$ARTIFACTS_COLLECTED" == *"-failed"* && "$test_failed" != 0 ]] && delete_screenshots=0
 fi
 
 if [[ "$delete_screenshots" == 1 ]]; then
