@@ -314,6 +314,39 @@ sutest_wait_rhods_launch() {
     oc get -ojson project.config.openshift.io/cluster \
         | jq '.spec.projectRequestTemplate.name = "'$template_name'"' \
         | oc apply -f-
+
+    wait_project_template_applied() {
+        local test_project_name=$1
+        local expected_annotation_key=$2
+        local expected_annotation_value=$3
+
+        echo "Waiting for annotation: '$expected_annotation_key=$expected_annotation_value' for test project '$test_project_name'"
+
+        if [[ -z "$expected_annotation_value" ]]; then
+            _error "wait_project_template_applied: cannot wait with an empty expected_annotation_value ..."
+        fi
+
+        local retries=12 # 1 minute
+        local project_annotation_value=""
+        while true; do
+            echo "- creating the project ..."
+            oc new-project "$test_project_name" --skip-config-write >/dev/null
+            echo "- querying the annotation ..."
+            project_annotation_value=$(oc get project "$test_project_name" -ojson | jq -r '.metadata.annotations["'$expected_annotation_key'"]')
+            echo "- deleting the project  ..."
+            oc delete ns "$test_project_name" >/dev/null
+            echo "--> project annotation value: '$project_annotation_value'"
+            if [[ "$project_annotation_value" == "$expected_annotation_value" ]]; then
+                break
+            fi
+            retries=$((retries - 1))
+            if [[ $retries == 0 ]]; then
+                _error "wait_project_template_applied: project template annotation not visible in new projects ..."
+            fi
+            sleep 5
+        done
+    }
+    wait_project_template_applied "$(get_config tests.notebooks.namespace)-canary" openshift.io/node-selector "$node_selector"
 }
 
 capture_environment() {
