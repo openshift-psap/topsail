@@ -11,6 +11,19 @@
     (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep -v '^0$' || true) | wc -l
   ignore_errors: yes
 
+- name: Count the number of workarounds required for Jira/RHODS-{{ bug_id }}
+  shell:
+    set -o pipefail;
+    (ls "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/bug_{{ bug_id }}*.png || true)
+      | nl
+      | tee "{{ artifact_extra_logs_dir }}"/workarounds_rhods-{{ bug_id }}.txt
+  ignore_errors: yes
+  loop:
+  - 5819
+  - 5912
+  loop_control:
+    loop_var: bug_id
+
 - name: Show failed tests
   shell: |
     for f in "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.log; do
