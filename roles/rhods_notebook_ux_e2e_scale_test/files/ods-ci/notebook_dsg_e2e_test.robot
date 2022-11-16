@@ -107,8 +107,8 @@ Create and Start the Workbench
   END
 
   Capture Page Screenshot
-
-  ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Launch Workbench  ${WORKBENCH_NAME}
+  Workbench Status Should Be      workbench_title=${WORKBENCH_NAME}   status=${WORKBENCH_STATUS_RUNNING}
+  ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Just Launch Workbench  ${WORKBENCH_NAME}
   IF  '${workbench_launched}' != 'PASS'
     Capture Page Screenshot  bug_open_not_available.png
     Log     message=Workaround for RHODS-5819: reload the page    level=WARN
@@ -213,9 +213,6 @@ Run Cell And Check For Errors
 
 Just Launch Workbench
     [Arguments]     ${workbench_title}
-    ${is_started}=      Run Keyword And Return Status   Workbench Status Should Be      workbench_title=${workbench_title}   status=${WORKBENCH_STATUS_RUNNING}
-    IF    ${is_started} == ${TRUE}
-        Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]/td/a[text()="Open"]
-    ELSE
-        Fail   msg=Cannot launch workbench ${workbench_title} because it is not running...
-    END
+
+    Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]/td/a[text()="Open"]
+    Switch Window   NEW
