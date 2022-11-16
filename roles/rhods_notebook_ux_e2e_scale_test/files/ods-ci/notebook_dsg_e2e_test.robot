@@ -113,8 +113,10 @@ Create and Start the Workbench
     Capture Page Screenshot  bug_open_not_available.png
     Log     message=Workaround for RHODS-5819: reload the page    level=WARN
     Reload Page
+    Wait Until Page Contains  Create workbench  timeout=60 seconds
     Just Launch Workbench  ${WORKBENCH_NAME}
   END
+
 
 Login to JupyterLab Page
   [Tags]  Notebook  Spawn
