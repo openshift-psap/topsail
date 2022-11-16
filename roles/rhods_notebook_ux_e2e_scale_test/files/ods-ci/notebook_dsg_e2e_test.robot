@@ -121,7 +121,7 @@ Create and Start the Workbench
 Login to JupyterLab Page
   [Tags]  Notebook  Spawn
 
-  Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
+  Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}  ${PROJECT_NAME}
 
 
 Go to JupyterLab Page
@@ -192,13 +192,13 @@ Get Browser Console Log Entries
     [Return]    ${log entries}
 
 Login To JupyterLab
-   [Arguments]  ${ocp_user_name}  ${ocp_user_pw}  ${ocp_user_auth_type}
+   [Arguments]  ${ocp_user_name}  ${ocp_user_pw}  ${ocp_user_auth_type}  ${sa_name}=jupyter-nb-${TEST_USER.USERNAME}
 
    ${oauth_prompt_visible} =  Is OpenShift OAuth Login Prompt Visible
    Run Keyword If  ${oauth_prompt_visible}  Click Button  Log in with OpenShift
    ${login-required} =  Is OpenShift Login Visible
    Run Keyword If  ${login-required}  Login To Openshift  ${ocp_user_name}  ${ocp_user_pw}  ${ocp_user_auth_type}
-   ${authorize_service_account} =  Is jupyter-nb-${TEST_USER.USERNAME} Service Account Authorization Required
+   ${authorize_service_account} =  Is ${sa_name} Service Account Authorization Required
    # correct name not required/not working, not sure why
    Run Keyword If  ${authorize_service_account}  Authorize rhods-dashboard service account
 
