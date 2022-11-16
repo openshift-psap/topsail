@@ -51,7 +51,10 @@ Tear Down
   Capture Page Screenshot  final_screenshot.png
 
   ${final_url}=   Get Location
-  Create File  ${OUTPUTDIR}/final_url.txt  ${final_url}
+  Create File  ${OUTPUTDIR}/final.url  ${final_url}
+
+  ${final_html} =    SeleniumLibrary.Get Source
+  Create File  ${OUTPUTDIR}/final.html  ${final_html}
 
   Close Browser
 
