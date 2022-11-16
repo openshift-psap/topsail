@@ -60,7 +60,7 @@
     shell:
       oc describe pods
          -n {{ rhods_notebook_namespace }}
-         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/project_{{ rhods_notebook_namespace }}/notebook_pods.descr"
+         > "{{ project_artifacts_dir }}/notebook_pods.descr"
     ignore_errors: yes
 
   - name: Get the definition of the notebook resources
@@ -129,7 +129,7 @@
     shell:
       oc describe pods
          -lopendatahub.io/dashboard=true -A | grep "{{ rhods_notebook_ux_e2e_scale_test_username_prefix }}"
-         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/project_{{ rhods_notebook_namespace }}/notebook_pods.descr"
+         > "{{ project_artifacts_dir }}/notebook_pods.descr"
     ignore_errors: yes
 
   - name: Get the definition of the notebook resources
