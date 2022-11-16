@@ -260,6 +260,20 @@ sutest_customize_rhods_after_wait() {
 
 }
 
+prepare_rhods_admin_users() {
+    local rhods_admin_roles=$(get_config rhods.admin.roles[])
+    local rhods_admin_count=$(get_config rhods.admin.count)
+    local user_prefix=$(get_config ldap.users.prefix)
+
+    for i in $(seq 0 "$rhods_admin_count"); do
+        user="$user_prefix$i"
+        for role in $rhods_admin_roles; do
+            echo "Giving the '$role' role to user '$user' ..."
+            oc adm policy add-cluster-role-to-user "$role" "$user"
+        done
+    done
+}
+
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
 
@@ -270,6 +284,8 @@ sutest_wait_rhods_launch() {
     fi
 
     ./run_toolbox.py rhods wait_ods
+
+    prepare_rhods_admin_users
 
     if test_config "$customize_key"; then
         sutest_customize_rhods_after_wait

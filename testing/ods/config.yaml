@@ -69,7 +69,6 @@ ldap:
   users:
     count: 1000
     prefix: psapuser
-    group: rhods-users
 
 rhods:
   deploy_from_catalog: true
@@ -89,6 +88,11 @@ rhods:
         cpu: 1
         mem_gi: 4
       remove_gpu_images: true
+  admin:
+    count: 2 # the first N users will be granted these privileges
+    roles:
+    - view
+    - odh-notebook-controller-notebooks-edit
 tests:
   notebooks:
     repeat: 2 # number of test repetition to perform
