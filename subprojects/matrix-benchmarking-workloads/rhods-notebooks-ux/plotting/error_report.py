@@ -148,7 +148,7 @@ class ErrorReport():
         REFERENCE_USER_IDX = 0
 
         reference_content = None
-        for user_idx, exit_code in entry.results.ods_ci_exit_code.items():
+        for user_idx, exit_code in sorted(entry.results.ods_ci_exit_code.items()):
             content = []
 
             if exit_code == 0:
