@@ -61,10 +61,10 @@ def _get_test_setup(entry):
     artifacts_basedir = entry.results.from_local_env.artifacts_basedir
 
     if artifacts_basedir:
-        setup_info += [html.Li(html.A("Results artifacts", href=artifacts_basedir, target="_blank"))]
+        setup_info += [html.Li(html.A("Results artifacts", href=str(artifacts_basedir), target="_blank"))]
 
         if entry.results.odh_dashboard_config.path:
-            href = artifacts_basedir / entry.results.odh_dashboard_config.path
+            href = str(artifacts_basedir / entry.results.odh_dashboard_config.path)
             setup_info += [html.Ul(html.Li(html.A("Dashboard configuration", href=href, target="_blank")))]
         else:
             setup_info += [html.Ul(html.Li("Dashboard configuration: MISSING"))]
