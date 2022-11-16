@@ -134,10 +134,12 @@ class ErrorReport():
             def artifacts_link(path):
                 if path.suffix != ".png":
                     return f"file://{entry.results.from_local_env.artifacts_basedir / path}"
-
-                with open (path, "rb") as f:
-                    encoded_image = base64.b64encode(f.read()).decode("ascii")
-                return f"data:image/png;base64,{encoded_image}"
+                try:
+                    with open (entry.results.from_local_env.artifacts_basedir / path, "rb") as f:
+                        encoded_image = base64.b64encode(f.read()).decode("ascii")
+                        return f"data:image/png;base64,{encoded_image}"
+                except FileNotFoundError:
+                    return f"file://{entry.results.from_local_env.artifacts_basedir / path}#file_not_found"
         else:
             artifacts_link = lambda path: entry.results.from_local_env.artifacts_basedir / path
 
