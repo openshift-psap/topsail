@@ -107,21 +107,39 @@ Create and Start the Workbench
   END
 
   Capture Page Screenshot
-
-  ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Launch Workbench  ${WORKBENCH_NAME}
+  Workbench Status Should Be      workbench_title=${WORKBENCH_NAME}   status=${WORKBENCH_STATUS_RUNNING}
+  ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Just Launch Workbench  ${WORKBENCH_NAME}
   IF  '${workbench_launched}' != 'PASS'
-    Capture Page Screenshot  bug_open_not_available.png
+    Capture Page Screenshot  bug_5819_open_not_available.png
     Log     message=Workaround for RHODS-5819: reload the page    level=WARN
     Reload Page
     Wait Until Page Contains  Create workbench  timeout=60 seconds
     Just Launch Workbench  ${WORKBENCH_NAME}
   END
 
+  ${app_is_ready} =    Run Keyword And Return Status    Page Should Not Contain  Application is not available
+  IF  ${app_is_ready} != True
+    Log     message=Workaround for RHODS-5912: reload the page    level=WARN
+    Capture Page Screenshot  bug_5912_application_not_available.png
+    oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
+    ${oa_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=oauth-proxy
+    ${jl_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=${WORKBENCH_NAME}
+    Create File  ${OUTPUTDIR}/pod_logs.txt  OAuth\n-----\n\n${oa_logs} \nJupyterLab\n----------\n\n${jl_logs}
+
+    Create File  ${OUTPUTDIR}/bug_5912.url  Get Location
+
+    ${browser log entries}=    Get Browser Console Log Entries
+    ${browser log entries str}=   Convert To String  ${browser log entries}
+    Create File  ${OUTPUTDIR}/bug_5912_browser_log_entries.yaml  ${browser log entries str}
+
+    Sleep  5s
+    Reload Page
+  END
 
 Login to JupyterLab Page
   [Tags]  Notebook  Spawn
 
-  Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
+  Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}  ${PROJECT_NAME}
 
 
 Go to JupyterLab Page
@@ -192,13 +210,13 @@ Get Browser Console Log Entries
     [Return]    ${log entries}
 
 Login To JupyterLab
-   [Arguments]  ${ocp_user_name}  ${ocp_user_pw}  ${ocp_user_auth_type}
+   [Arguments]  ${ocp_user_name}  ${ocp_user_pw}  ${ocp_user_auth_type}  ${sa_name}=jupyter-nb-${TEST_USER.USERNAME}
 
    ${oauth_prompt_visible} =  Is OpenShift OAuth Login Prompt Visible
    Run Keyword If  ${oauth_prompt_visible}  Click Button  Log in with OpenShift
    ${login-required} =  Is OpenShift Login Visible
    Run Keyword If  ${login-required}  Login To Openshift  ${ocp_user_name}  ${ocp_user_pw}  ${ocp_user_auth_type}
-   ${authorize_service_account} =  Is jupyter-nb-${TEST_USER.USERNAME} Service Account Authorization Required
+   ${authorize_service_account} =  Is ${sa_name} Service Account Authorization Required
    # correct name not required/not working, not sure why
    Run Keyword If  ${authorize_service_account}  Authorize rhods-dashboard service account
 
@@ -213,9 +231,6 @@ Run Cell And Check For Errors
 
 Just Launch Workbench
     [Arguments]     ${workbench_title}
-    ${is_started}=      Run Keyword And Return Status   Workbench Status Should Be      workbench_title=${workbench_title}   status=${WORKBENCH_STATUS_RUNNING}
-    IF    ${is_started} == ${TRUE}
-        Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]/td/a[text()="Open"]
-    ELSE
-        Fail   msg=Cannot launch workbench ${workbench_title} because it is not running...
-    END
+
+    Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]/td/a[text()="Open"]
+    Switch Window   NEW
