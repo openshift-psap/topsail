@@ -110,7 +110,7 @@ tests:
     ods_ci:
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: jh-at-scale.v221114
+        ref: jh-at-scale.v221117
       excluded_tags: None # tags to exclude when running the robot test case
       test_case: notebook_ux_e2e_test.robot
     test_pods:
