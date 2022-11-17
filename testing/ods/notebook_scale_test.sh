@@ -279,32 +279,6 @@ sutest_wait_rhods_launch() {
 
     local customize_key=rhods.notebooks.customize.enabled
 
-    if test_config "$customize_key"; then
-        sutest_customize_rhods_before_wait
-    fi
-
-    ./run_toolbox.py rhods wait_ods
-
-    prepare_rhods_admin_users
-
-    if test_config "$customize_key"; then
-        sutest_customize_rhods_after_wait
-
-        ./run_toolbox.py rhods wait_ods
-    fi
-
-
-    if test_config clusters.sutest.compute.autoscaling.enable; then
-        local rhods_notebook_image_name=$(get_config tests.notebooks.notebook.image_name)
-        local rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
-                                       | cut -d/ -f2 | grep "$rhods_notebook_image_name" | cut -d: -f2)
-
-        # preload the image only if auto-scaling is disabled
-        notebook_image="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$rhods_notebook_image_name:$rhods_notebook_image_tag"
-        ./run_toolbox.py from_config cluster preload_image --suffix "notebook" \
-                         --extra "{image:'$notebook_image'}"
-    fi
-
     local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
     local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
     local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
@@ -312,11 +286,9 @@ sutest_wait_rhods_launch() {
     local node_selector="$sutest_taint_key=$sutest_taint_value"
     local default_tolerations='[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
 
-    # for the rhods-notebooks project
-    oc annotate namespace/rhods-notebooks --overwrite \
-       "openshift.io/node-selector=$node_selector"
-    oc annotate namespace/rhods-notebooks --overwrite \
-       "scheduler.alpha.kubernetes.io/defaultTolerations=$default_tolerations"
+    if test_config "$customize_key"; then
+        sutest_customize_rhods_before_wait
+    fi
 
     # for the DSG projects
     oc adm create-bootstrap-project-template -ojson \
@@ -342,13 +314,15 @@ sutest_wait_rhods_launch() {
             _error "wait_project_template_applied: cannot wait with an empty expected_annotation_value ..."
         fi
 
-        local retries=12 # 1 minute
+        local retries=$((12*10)) # 10 minutes
         local project_annotation_value=""
+        date
         while true; do
             echo "- creating the project ..."
             oc new-project "$test_project_name" --skip-config-write >/dev/null
             echo "- querying the annotation ..."
-            project_annotation_value=$(oc get project "$test_project_name" -ojson | jq -r '.metadata.annotations["'$expected_annotation_key'"]')
+            project_json=$(oc get project "$test_project_name" -ojson)
+            project_annotation_value=$(jq -r '.metadata.annotations["'$expected_annotation_key'"]' <<< "$project_json")
             echo "- deleting the project  ..."
             oc delete ns "$test_project_name" >/dev/null
             echo "--> project annotation value: '$project_annotation_value'"
@@ -357,12 +331,44 @@ sutest_wait_rhods_launch() {
             fi
             retries=$((retries - 1))
             if [[ $retries == 0 ]]; then
+                date
+                echo "$project_json" > "$ARTIFACT_DIR/failed_project.json"
                 _error "wait_project_template_applied: project template annotation not visible in new projects ..."
             fi
             sleep 5
         done
     }
-    wait_project_template_applied "$(get_config tests.notebooks.namespace)-canary" openshift.io/node-selector "$node_selector"
+    wait_project_template_applied "$(get_config tests.notebooks.namespace)-canary" openshift.io/node-selector "$node_selector" > "$ARTIFACT_DIR/wait_project_annotation.log"
+
+
+    ./run_toolbox.py rhods wait_ods
+
+    prepare_rhods_admin_users
+
+    if test_config "$customize_key"; then
+        sutest_customize_rhods_after_wait
+
+        ./run_toolbox.py rhods wait_ods
+    fi
+
+
+    if test_config clusters.sutest.compute.autoscaling.enable; then
+        local rhods_notebook_image_name=$(get_config tests.notebooks.notebook.image_name)
+        local rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
+                                       | cut -d/ -f2 | grep "$rhods_notebook_image_name" | cut -d: -f2)
+
+        # preload the image only if auto-scaling is disabled
+        notebook_image="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$rhods_notebook_image_name:$rhods_notebook_image_tag"
+        ./run_toolbox.py from_config cluster preload_image --suffix "notebook" \
+                         --extra "{image:'$notebook_image'}"
+    fi
+
+
+    # for the rhods-notebooks project
+    oc annotate namespace/rhods-notebooks --overwrite \
+       "openshift.io/node-selector=$node_selector"
+    oc annotate namespace/rhods-notebooks --overwrite \
+       "scheduler.alpha.kubernetes.io/defaultTolerations=$default_tolerations"
 }
 
 capture_environment() {
