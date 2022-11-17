@@ -63,7 +63,7 @@ IMPORTANT_FILES = [
 
 
 ARTIFACTS_VERSION = "2022-11-09"
-PARSER_VERSION = "2022-11-09"
+PARSER_VERSION = "2022-11-17"
 
 
 def is_mandatory_file(filename):
@@ -314,7 +314,9 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
 @ignore_file_not_found
 def _parse_pod_times(dirname, hostnames, is_notebook=False):
     if is_notebook:
-        filenames = pathlib.Path("artifacts-sutest").glob("project_*/notebook_pods.yaml")
+
+        filenames = [fname.relative_to(dirname) for fname in
+                     (dirname / pathlib.Path("artifacts-sutest")).glob("project_*/notebook_pods.yaml")]
     else:
         filenames = [pathlib.Path("artifacts-driver") / "tester_pods.yaml"]
 
