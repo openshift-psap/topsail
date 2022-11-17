@@ -19,7 +19,7 @@
   set_fact:
     sut_cluster_kubeconfig: "{{ rhods_notebook_api_scale_test_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
     rhods_api_scale_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_test_istag }}
-    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_artifacts_istag }}
+    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_test_artifacts_exporter_istag }}
     rhods_notebook_namespace: rhods-notebooks
     tester_job_name: api-scale-test
     tester_namespace: "{{ rhods_notebook_api_scale_test_namespace }}"

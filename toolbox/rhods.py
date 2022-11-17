@@ -160,6 +160,7 @@ class RHODS:
 
     @AnsibleRole("rhods_notebook_api_scale_test")
     def notebook_api_scale_test(self,
+                                namespace,
                                 idp_name,
                                 secret_properties_file,
                                 username_prefix,
@@ -169,6 +170,8 @@ class RHODS:
                                 spawn_rate="1",
                                 sut_cluster_kubeconfig="",
                                 notebook_image_name="s2i-generic-data-science-notebook",
+                                api_scale_test_istag="ods-ci:api-scale-test",
+                                artifacts_exporter_istag="ods-ci:artifacts-exporter",
                                 toleration_key="",
                                 ):
 
@@ -176,6 +179,7 @@ class RHODS:
         End-to-end testing of RHODS notebook user experience at scale
 
         Args:
+          namespace: Namespace where the test will run
           idp_name: Name of the identity provider to use.
           secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'deploy_ldap' command).
           username_prefix: Prefix of the RHODS users.
@@ -187,9 +191,11 @@ class RHODS:
           spawn_rate: Rate to spawn users at (users per second)
           sut_cluster_kubeconfig: Optional. Path of the system-under-test cluster's Kubeconfig. If provided, the RHODS endpoints will be looked up in this cluster.
           toleration_key: Optional. Toleration key to use for the test Pods.
+          artifacts_exporter_istag: Optional. Imagestream tag of the artifacts exporter side-car container.
         """
 
         opts = {
+            "rhods_notebook_api_scale_test_namespace": namespace,
             "rhods_notebook_api_scale_test_idp_name": idp_name,
             "rhods_notebook_api_scale_test_secret_properties": secret_properties_file,
             "rhods_notebook_api_scale_test_username_prefix": username_prefix,
@@ -200,6 +206,8 @@ class RHODS:
             "rhods_notebook_api_scale_test_sut_cluster_kubeconfig": sut_cluster_kubeconfig,
             "rhods_notebook_api_scale_test_ods_ci_notebook_image_name": notebook_image_name,
             "rhods_notebook_api_scale_test_toleration_key": toleration_key,
+            "rhods_notebook_api_scale_test_artifacts_exporter_istag": artifacts_exporter_istag,
+            "rhods_notebook_api_scale_test_istag": api_scale_test_istag,
         }
 
         return RunAnsibleRole(opts)
