@@ -93,10 +93,16 @@ def _get_test_setup(entry):
 
         nodes_info += [html.Li(nodes_info_li)]
 
+        if purpose == "rhods_compute":
+            auto_scaling_msg = "No auto-scaling"
+            nodes_info += [html.Ul(html.Li(auto_scaling_msg))]
 
-    nodes_info += [html.Li(["Test pods running on "] +
-                           (["the ", html.I("same")] if entry.results.from_env.single_cluster else \
-                            [html.I("another")])+[" cluster"])]
+        elif purpose == "test_pods_only":
+            nodes_info += [html.Ul(html.Li(
+                ["Test pods running on "] +
+                (["the ", html.I("same")] if entry.results.from_env.single_cluster else \
+                 [html.I("another")])+[" cluster"]
+            ))]
 
     setup_info += [html.Ul(nodes_info)]
 
