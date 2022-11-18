@@ -265,7 +265,7 @@ prepare_rhods_admin_users() {
     local rhods_admin_count=$(get_config rhods.admin.count)
     local user_prefix=$(get_config ldap.users.prefix)
 
-    for i in $(seq 0 "$rhods_admin_count"); do
+    for i in $(seq 0 $((rhods_admin_count-1))); do
         user="$user_prefix$i"
         for role in $rhods_admin_roles; do
             echo "Giving the '$role' role to user '$user' ..."
