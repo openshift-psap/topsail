@@ -13,6 +13,7 @@ import matrix_benchmarking.common as common
 
 from . import report
 from . import error_report
+from . import prom_report
 
 def register():
     PerfReport()
@@ -44,7 +45,7 @@ class PerfReport():
             setup_info
         )]
 
-        header += [html.H2("Execution time distribution for getting a usable Notebook")]
+        header += [html.H2("Notebook Spawn Time")]
 
         msg_p = []
         header += [report.Plot("Execution time distribution",
@@ -53,24 +54,23 @@ class PerfReport():
                         )]
         header += [html.I(msg_p[0]), html.Br()]
 
-        header += [f"This plot is important to understand the time it took for the {entry.results.user_count} users to reach JupyterLab."]
+        header += ["This plot shows the time it took to spawn a notebook from the user point of view. Lower is better."]
+
         header += [html.Br()]
         header += [html.Br()]
 
-        msg_p = []
-        header += [html.H2("Start time distribution")]
-        header += [report.Plot("Launch time distribution", args, msg_p,)]
-        header += [html.I(msg_p[0]), html.Br()]
+        header += [html.H2("Master nodes health")]
 
-        start_delay = float(entry.results.tester_job.env["SLEEP_FACTOR"])
-        total_delay = start_delay * entry.results.user_count
+        header += report.Plot_and_Text(f"Prom: Sutest API Server Requests (server errors)", args)
+        header += html.Br()
+        header += html.Br()
+        header += ["This plot shows the number of APIServer errors (5xx HTTP codes). Lower is better."]
 
-        header += [f"This plot is important to understand how ", html.I("simultaneous"), " the execution of the users was.",
-                   html.Br(),
-                   f"The duration of the first steps reflect the startup delay enforced by the test framework ",
-                   html.Br(),
-                   f"The startup delay is configured to {start_delay:.1f} seconds between each user, or a total of {total_delay:.0f} seconds ({total_delay/60:.1f} minutes) between the first and last user joining the test."]
-        header += [html.Br()]
-        header += [html.Br()]
+        header += report.Plot_and_Text(f"Prom: Sutest Master Node CPU idle", args)
+        header += html.Br()
+        header += html.Br()
+        header += ["This plot shows the idle time of the master nodes. Higher is better."]
+
+        prom_report.add_pod_cpu_mem_usage(header, "RHODS Dashboard", args, cpu_only=True)
 
         return None, header
