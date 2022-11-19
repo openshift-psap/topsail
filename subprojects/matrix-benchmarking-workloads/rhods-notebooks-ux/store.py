@@ -149,7 +149,7 @@ def _parse_local_env(dirname):
         except FileNotFoundError:
             from_local_env.source_url = "file-not-found"
 
-    elif job_name == "notebooks" or job_name.startswith("notebooks-on-"):
+    elif job_name in ("notebooks", "notebooks-light"):
         # running right after the test
 
         from_local_env.artifacts_basedir = pathlib.Path("..") / dirname.name
