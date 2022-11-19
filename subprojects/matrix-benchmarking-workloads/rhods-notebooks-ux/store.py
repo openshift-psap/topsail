@@ -146,13 +146,18 @@ def _parse_local_env(dirname):
                 from_local_env.source_url = f.read().strip()
 
             from_local_env.artifacts_basedir = pathlib.Path(from_local_env.source_url.replace("https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/", "/"))
-        except FileNotFoundError:
+        except FileNotFoundError as e:
+            from_local_env.artifacts_basedir = pathlib.Path("/source_url/not/found")
             from_local_env.source_url = "file-not-found"
+            logging.error(f"FileNotFoundError: source_url file missing: {e.filename}")
 
     elif job_name in ("notebooks", "notebooks-light"):
         # running right after the test
 
         from_local_env.artifacts_basedir = pathlib.Path("..") / dirname.name
+    else:
+        logging.error(f"Unknown execution environment: JOB_NAME_SAFE={job_name}")
+        from_local_env.artifacts_basedir = pathlib.Path("/unknown/environment/") / job_name
 
     return from_local_env
 
