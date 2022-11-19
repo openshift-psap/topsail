@@ -548,6 +548,18 @@ connect_ci() {
         _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
     fi
 
+    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
+        # running with a CI-provided cluster
+
+        # double check that we won't request too many nodes
+        local CI_CLUSTER_MAX_USERS=5
+        local user_count=$(get_config tests.notebooks.users.count)
+        if [[ "$user_count" -gt "$CI_CLUSTER_MAX_USERS" ]]; then
+            _warning "Refusing to run in a CI-provided cluster with more that $CI_CLUSTER_MAX_USERS"
+            set_config tests.notebooks.users.count "$CI_CLUSTER_MAX_USERS"
+        fi
+    fi
+
     KUBECONFIG_DRIVER="${CONFIG_DEST_DIR}/driver_kubeconfig" # cluster driving the test
     KUBECONFIG_SUTEST="${CONFIG_DEST_DIR}/sutest_kubeconfig" # system under test
 }

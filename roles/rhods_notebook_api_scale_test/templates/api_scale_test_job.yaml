@@ -42,8 +42,8 @@ spec:
         command: [bash, -ce]
         args:
         - |
-          mkdir -p "$ARTIFACT_DIR"
-          python3 -u /mnt/rhods-notebook-api-scale-test-entrypoint/entrypoint.py
+           mkdir -p "$ARTIFACT_DIR"
+           python3 -u /mnt/rhods-notebook-api-scale-test-entrypoint/entrypoint.py
         env:
         - name: ARTIFACT_DIR
           value: /mnt/shared-dir/api-scale-test

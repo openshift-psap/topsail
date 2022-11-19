@@ -19,7 +19,7 @@
   set_fact:
     sut_cluster_kubeconfig: "{{ rhods_notebook_api_scale_test_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
     rhods_api_scale_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_test_istag }}
-    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_artifacts_istag }}
+    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_test_artifacts_exporter_istag }}
     rhods_notebook_namespace: rhods-notebooks
     tester_job_name: api-scale-test
     tester_namespace: "{{ rhods_notebook_api_scale_test_namespace }}"
@@ -86,17 +86,12 @@
        --ignore-not-found
        -n {{ rhods_notebook_api_scale_test_namespace }}
 
-- name: Delete the events of the tester namespace
-  shell:
-    oc delete ev -n {{ rhods_notebook_api_scale_test_namespace }} --all > /dev/null
-  failed_when: false
-
-- name: Delete the events, pods and PVC of the notebook namespace
+- name: Delete the notebooks of the notebook namespace
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   shell:
     set -o pipefail;
-    oc get pods,pvc,ev -oname -n {{ rhods_notebook_namespace }} | \
+    oc get notebooks -oname -n {{ rhods_notebook_namespace }} | \
       grep {{ rhods_notebook_api_scale_test_username_prefix }} | \
       xargs --no-run-if-empty
             oc delete -n {{ rhods_notebook_namespace }}
