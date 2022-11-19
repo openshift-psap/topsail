@@ -97,6 +97,7 @@ class ExecutionDistribution():
         if (cfg__show_only_step or cfg__time_to_reach_step) and len(times_data) >= 2:
             q1, med, q3 = stats.quantiles(times_data)
             q90 = stats.quantiles(times_data, n=10)[8] # 90th percentile
+            q100 = max(times_data)
 
             def time(sec):
                 if sec <= 120:
@@ -113,6 +114,8 @@ class ExecutionDistribution():
             msg.append(f"90% of the users got their notebook in less than {time(q90)} (+ {time(q90-q3)}) [90th quantile]")
             msg.append(html.Br())
             msg.append(f"There are {time(q3 - q1)} between Q1 and Q3.")
+            msg.append(html.Br())
+            msg.append(f"There are {time(q100 - q3)} between Q3 and Q4.")
             msg.append(html.Br())
 
         return fig, msg

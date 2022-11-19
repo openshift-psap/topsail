@@ -27,13 +27,14 @@ class MultiNotebookSpawnTime():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg__time_to_reach_step = cfg.get("time_to_reach_step", "Go to JupyterLab Page")
         threshold_status_keys = set()
-
+        entry_names = set()
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
             entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
 
             try: check_thresholds = entry.results.check_thresholds
             except AttributeError: check_thresholds = False
+            entry_names.add(entry_name)
 
             if check_thresholds:
                 threshold_status_keys.add(entry_name)
@@ -117,6 +118,30 @@ class MultiNotebookSpawnTime():
                 msg.append(html.Ul(html.Li(f"PASS: {value_75:.0f} seconds <= launch_time_75={threshold_75:.0f} seconds")))
             else:
                 msg.append(html.Ul(html.Li(f"FAIL: {value_75:.0f} seconds > launch_time_75={threshold_75:.0f} seconds")))
+
+        msg.append(html.H4("Median launch time"))
+        for entry_name in sorted(entry_names):
+            res = df[df["Version"] == entry_name]
+            if res.empty:
+                msg.append(html.Ul(html.Li(html.B(f"{entry_name}: no data ..."))))
+                continue
+            value_50 = res["Time"].quantile(0.50)
+            msg.append(html.Ul(html.Li([html.B(f"{entry_name}:"), f" {value_50:.0f} seconds"])))
+
+            if entry_name in threshold_status_keys:
+                for cmp_entry_name in sorted(entry_names):
+                    if entry_name == cmp_entry_name: continue
+
+                    cmp_res = df[df["Version"] == cmp_entry_name]
+                    if cmp_res.empty:
+                        continue
+                    cmp_value_50 = cmp_res["Time"].quantile(0.50)
+                    diff = value_50-cmp_value_50
+
+                    comparator = "faster" if diff <= 0 else "slower"
+
+                    pct = abs(diff/cmp_value_50*100)
+                    msg.append(html.Ul(html.Ul(html.Li(f"{pct:.0f}% {comparator} than {cmp_entry_name} ({diff:+.0f} seconds)"))))
 
         fig.update_layout(title=f"Time to launch the notebooks", title_x=0.5,)
         fig.update_layout(yaxis_title="Launch time")

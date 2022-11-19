@@ -126,7 +126,8 @@ Create and Start the Workbench
     ${jl_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=${WORKBENCH_NAME}
     Create File  ${OUTPUTDIR}/pod_logs.txt  OAuth\n-----\n\n${oa_logs} \nJupyterLab\n----------\n\n${jl_logs}
 
-    Create File  ${OUTPUTDIR}/bug_5912.url  Get Location
+    ${current_url}=   Get Location
+    Create File  ${OUTPUTDIR}/bug_5912.url  ${current_url}
 
     ${browser log entries}=    Get Browser Console Log Entries
     ${browser log entries str}=   Convert To String  ${browser log entries}
