@@ -40,8 +40,8 @@ utils build_push_image/artifacts-exporter:
   namespace: {{ tests.notebooks.namespace }}
   dockerfile_path: testing/ods/images/Containerfile.s3_artifacts_exporter
 {% set artifacts_exporter_istag = "artifacts-exporter" %}
-  image_tag: {{ artifacts_exporter_istag }}
-  local_image_name: {{ tests.notebooks.imagestream_name }}
+  tag: {{ artifacts_exporter_istag }}
+  image_local_name: {{ tests.notebooks.imagestream_name }}
 
 cluster preload_image/artifacts-exporter:
   namespace: {{ tests.notebooks.namespace }}
@@ -53,8 +53,8 @@ utils build_push_image/api-scale-test:
   namespace: {{ tests.notebooks.namespace }}
   dockerfile_path: testing/ods/images/Containerfile.api_scale_test
 {% set api_scale_test_istag = "api-scale-test" %}
-  image_tag: {{ api_scale_test_istag }}
-  local_image_name: {{ tests.notebooks.imagestream_name }}
+  tag: {{ api_scale_test_istag }}
+  image_local_name: {{ tests.notebooks.imagestream_name }}
 
 cluster preload_image/api-scale-test:
   namespace: {{ tests.notebooks.namespace }}
@@ -69,8 +69,8 @@ utils build_push_image/user-scale-test:
   git_ref: {{ tests.notebooks.ods_ci.image.ref }}
   dockerfile_path: build/Dockerfile
 {% set user_scale_test_istag = "ods-ci" %}
-  image_tag: {{ user_scale_test_istag }}
-  local_image_name: {{ tests.notebooks.imagestream_name }}
+  tag: {{ user_scale_test_istag }}
+  image_local_name: {{ tests.notebooks.imagestream_name }}
 
 cluster preload_image/user-scale-test:
   namespace: {{ tests.notebooks.namespace }}

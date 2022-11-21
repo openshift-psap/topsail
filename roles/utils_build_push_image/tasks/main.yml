@@ -17,7 +17,7 @@
 - name: Create the imagestream, if does not exist
   shell:
     set -o pipefail &&
-    oc create imagestream "{{ utils_build_push_image_local_name }}"
+    oc create imagestream "{{ utils_build_push_image_image_local_name }}"
        --dry-run=client
        -oyaml
     | tee "{{ artifact_extra_logs_dir }}/src/001_imagestream.yml"
@@ -32,7 +32,7 @@
 - name: Check if the image is already built
   command:
     oc get
-       "istag/{{ utils_build_push_image_local_name }}:{{ utils_build_push_image_tag }}"
+       "istag/{{ utils_build_push_image_image_local_name }}:{{ utils_build_push_image_tag }}"
        -n "{{ utils_build_push_image_namespace }}"
   register: has_image
   failed_when: false
@@ -47,7 +47,7 @@
   - name: Check if the helper image is already built
     command:
       oc get
-         "istag/{{ utils_build_push_image_local_name }}:helper"
+         "istag/{{ utils_build_push_image_image_local_name }}:helper"
          -n "{{ utils_build_push_image_namespace }}"
     register: has_helper_image
     failed_when: false
