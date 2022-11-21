@@ -106,7 +106,11 @@ class FromConfig:
             if key.startswith("_"):
                 del command_args[key]
 
-        run_ansible_role = command_obj(None, **command_args)
+        try:
+            run_ansible_role = command_obj(None, **command_args)
+        except TypeError as e:
+            logging.error("from_config failed: %s", e)
+            raise SystemExit(1)
 
         run_ansible_role.py_command_name = config_key
         run_ansible_role.py_command_args = command_args
