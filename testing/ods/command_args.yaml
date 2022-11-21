@@ -21,7 +21,7 @@ cluster deploy_ldap:
 
 rhods deploy_ods:
   catalog_image: {{ rhods.catalog.image }}
-  version: {{ rhods.catalog.tag }}
+  tag: {{ rhods.catalog.tag }}
 
 sutest/cluster set_scale:
   instance_type: {{ clusters.create.ocp.compute.type }}
