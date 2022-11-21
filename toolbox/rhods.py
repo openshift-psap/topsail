@@ -276,6 +276,7 @@ class RHODS:
         return RunAnsibleRole(opts)
 
     @AnsibleRole("rhods_capture_state")
+    @AnsibleMappedParams
     def capture_state(self):
         """
         Capture information about the cluster and the RHODS deployment
