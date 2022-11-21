@@ -1,8 +1,10 @@
 import os
 
+import toolbox
 from toolbox.repo_scripts.validate_role_files import main as role_files_main
 from toolbox.repo_scripts.validate_role_vars_used import main as role_vars_used_main
 
+import toolbox.ansible_default_config
 
 class Repo:
     """
@@ -31,3 +33,9 @@ class Repo:
         message title.
         """
         exit(os.system("toolbox/repo_scripts/validate_no_wip.sh"))
+
+
+    @staticmethod
+    def generate_ansible_default_settings():
+        toolbox.ansible_default_config.generate_all(toolbox.Toolbox())
+        exit(0)
