@@ -6,7 +6,7 @@
 - name: Wait for the operator to dissapear
   when: rhods_undeploy_ods_wait | bool
   command:
-    oc get pods -n redhat-ods-operator -lname=rhods-operator -oname
+    oc get pods -n "{{ rhods_undeploy_ods_namespace }}" -lname=rhods-operator -oname
   register:
     wait_operator_deletion
   until: not wait_operator_deletion.stdout
