@@ -91,7 +91,7 @@
       mode: 0400
 
   - name: Get the path of the openshift-installer
-    when: not openshift_installer
+    when: not rhods_cleanup_aws_openshift_installer
     shell:
       set -o pipefail;
       ls subprojects/deploy-cluster/utils/installers/*/openshift-install | head -1
@@ -99,6 +99,6 @@
 
   - name: Trigger openshift-installer cluster deletion
     command: |
-      {{ openshift_installer | default(openshift_installer_cmd) }} destroy cluster \
+      {{ rhods_cleanup_aws_openshift_installer | default(openshift_installer_cmd) }} destroy cluster \
         --log-level=debug \
         --dir "{{ artifact_extra_logs_dir }}"

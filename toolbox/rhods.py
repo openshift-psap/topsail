@@ -234,9 +234,13 @@ class RHODS:
         return RunAnsibleRole(opts)
 
     @AnsibleRole("rhods_cleanup_aws")
-    def cleanup_aws(self):
+    @AnsibleMappedParams
+    def cleanup_aws(self, openshift_installer=""):
         """
         Cleanup AWS from RHODS dangling resources
+
+        Args:
+          openshift_installer: path of the openshift_installer to use. If empty, download it.
         """
 
         return RunAnsibleRole(self)
