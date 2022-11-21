@@ -37,13 +37,14 @@ class FromConfig:
         if not config_file:
             config_file = os.getenv("CI_ARTIFACTS_FROM_CONFIG_FILE", None)
         if not config_file:
-            raise ValueError("--config_file argument must have a value.")
+            logging.error("--config_file flag or CI_ARTIFACTS_FROM_CONFIG_FILE env var must have a value.")
+            raise SystemExit(1)
 
         if not command_args_file:
             command_args_file = os.getenv("CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE", None)
         if not command_args_file:
-            raise ValueError("--command_args_file argument must have a value.")
-
+            logging.error("--command_args_file flag or CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE env var must have a value.")
+            raise SystemExit(1)
 
         import toolbox
         toolbox = toolbox.Toolbox()
@@ -65,7 +66,8 @@ class FromConfig:
                 return value
 
             if not attribute:
-                raise ValueError("An attribute must be passed to env_override ...")
+                logging.error("An attribute must be passed to env_override ...")
+                raise SystemExit(1)
 
             return os.getenv(attribute)
 
