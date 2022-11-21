@@ -1,30 +1,30 @@
 ---
 - name: Ensure that a hostname was passed in parameter
-  fail: msg="'benchmarking_node_hostname' must be provided"
-  when: benchmarking_node_hostname | default('', true) | length == 0
+  fail: msg="'benchmarking_deploy_coco_dataset_node_hostname' must be provided"
+  when: benchmarking_deploy_coco_dataset_node_hostname | default('', true) | length == 0
 
 - name: Ensure that a valid hostname name was passed in parameter
-  command: oc get nodes -l kubernetes.io/hostname={{ benchmarking_node_hostname }} -oname
+  command: oc get nodes -l kubernetes.io/hostname={{ benchmarking_deploy_coco_dataset_node_hostname }} -oname
 
 - name: Delete the s3 secret, if it exists
-  when: benchmarking_coco_dataset_s3_cred | default('', true) | length != 0
+  when: benchmarking_deploy_coco_dataset_s3_cred | default('', true) | length != 0
   command:
     oc delete secret/s3-secret
-       -n {{ benchmarking_namespace }}
+       -n {{ benchmarking_deploy_coco_dataset_namespace }}
        --ignore-not-found=true
 
 - name: Create the s3 secret
-  when: benchmarking_coco_dataset_s3_cred | default('', true) | length != 0
+  when: benchmarking_deploy_coco_dataset_s3_cred | default('', true) | length != 0
   command:
     oc create secret generic s3-secret
-       -n {{ benchmarking_namespace }}
-       --from-file=cococred.csv={{ benchmarking_coco_dataset_s3_cred }}
+       -n {{ benchmarking_deploy_coco_dataset_namespace }}
+       --from-file=cococred.csv={{ benchmarking_deploy_coco_dataset_s3_cred }}
 
 - name: Create the entrypoint ConfigMap file
   shell:
     oc create cm coco-dataset-downloader
        --from-file="entrypoint.sh={{ coco_dataset_entrypoint }}"
-       -n {{ benchmarking_namespace }}
+       -n {{ benchmarking_deploy_coco_dataset_namespace }}
        --dry-run=client
        -oyaml
        > {{ artifact_extra_logs_dir }}/000_configmap_coco-dataset_entrypoint.yml
@@ -76,14 +76,14 @@
 - name: Get the logs of the download Pod (debug)
   shell:
     oc logs pod/coco-dataset-downloader
-       -n {{ benchmarking_namespace }}
+       -n {{ benchmarking_deploy_coco_dataset_namespace }}
        > {{ artifact_extra_logs_dir }}/pod_downloader.log
   failed_when: false
 
 - name: Get the description of the download Pod (debug)
   shell:
     oc describe pod/coco-dataset-downloader
-       -n {{ benchmarking_namespace }}
+       -n {{ benchmarking_deploy_coco_dataset_namespace }}
        > {{ artifact_extra_logs_dir }}/pod_downloader.desc
   failed_when: false
 

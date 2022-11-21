@@ -1,14 +1,20 @@
-# namespace in which the coco dataset will be downloaded
-benchmarking_namespace: "default"
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Benchmarking.download_coco_dataset
 
-# hostname of node in which the coco dataset download pod will be executed
-benchmarking_node_hostname: ""
+# Hostname of the node where the download pod will be executed.
+# Mandatory value
+benchmarking_deploy_coco_dataset_node_hostname:
 
-# name of the PVC that will be created for storing the coco dataset
-benchmarking_coco_dataset_pvc_name: "benchmarking-coco-dataset"
+# Name of the namespace in which the resources will be created.
+benchmarking_deploy_coco_dataset_namespace: default
 
-# name of the file containing s3 credentials of download from psap bucket
-benchmarking_coco_dataset_s3_cred: ""
+# Name of the PVC that will be create to store the dataset files.
+benchmarking_deploy_coco_dataset_pvc_name:
 
-# Dir for dataset to be downloaded into
-benchmarking_coco_dataset_storage_dir: "/storage"
+# Pod directory where the dataset will be downloaded
+benchmarking_deploy_coco_dataset_storage_dir: /storage
+
+# Path to credentials to use for accessing the dataset s3 bucket.
+benchmarking_deploy_coco_dataset_s3_cred:
+
