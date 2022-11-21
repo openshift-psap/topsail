@@ -1,6 +1,21 @@
----
-cluster_prometheus_db_mode: # dump or reset
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.reset_prometheus_db
+
+# Mode in which the role will run. Can be 'reset' or 'dump'.
+cluster_prometheus_db_mode: reset
+
+# Label to use to identify Prometheus Pod.
 cluster_prometheus_db_label: app.kubernetes.io/component=prometheus
+
+# Namespace where to search Promtheus Pod.
 cluster_prometheus_db_namespace: openshift-monitoring
-cluster_prometheus_db_directory: /prometheus
+
+# Prefix to apply to the db name in 'dump' mode
+# Defined as a constant in Cluster.reset_prometheus_db
 cluster_prometheus_db_dump_name_prefix: prometheus
+
+# Directory to dump on the Prometheus Pod
+# Defined as a constant in Cluster.reset_prometheus_db
+cluster_prometheus_db_directory: /prometheus
+
