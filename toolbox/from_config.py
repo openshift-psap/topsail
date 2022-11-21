@@ -84,12 +84,12 @@ class FromConfig:
         try:
             command_args = command_args[config_key].copy()
         except KeyError:
-            print(f"ERROR: key '{config_key}' not found. Available keys: \n-",
-                  "\n- ".join(sorted(config.keys())))
+            logging.error(f"key '{config_key}' not found. Available keys: \n-",
+                          "\n- ".join(sorted(config.keys())))
             raise SystemExit(1)
 
         if not isinstance(extra, dict):
-            print(f"ERROR: --extra must be a dictionnary. Got '{extra}', type '{extra.__class__.__name__}'.")
+            logging.error(f"--extra must be a dictionnary. Got '{extra}', type '{extra.__class__.__name__}'.")
             raise SystemExit(1)
 
         command_args.update(extra)
