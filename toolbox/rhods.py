@@ -30,6 +30,9 @@ class RHODS:
         return RunAnsibleRole(opts)
 
     @AnsibleRole("rhods_wait_ods")
+    @AnsibleMappedParams
+    @AnsibleConstant("Comma-separated list of the RHODS images that should be awaited",
+                     "images", "s2i-minimal-notebook,s2i-generic-data-science-notebook")
     def wait_ods(self):
         """
         Wait for ODS to finish its deployment
