@@ -60,7 +60,7 @@ spec:
         - name: API_SCALE_TEST_NAME
           value: "{{ rhods_notebook_api_scale_test_test_name }}"
         - name: NOTEBOOK_IMAGE_NAME
-          value: "{{ rhods_notebook_api_scale_test_ods_ci_notebook_image_name }}"
+          value: "{{ rhods_notebook_api_scale_test_notebook_image_name }}"
         - name: LOCUST_LOCUSTFILE
           value: "/mnt/rhods-notebook-api-scale-test-entrypoint/locustfile.py"
         - name: LOCUST_DIR
