@@ -1,6 +1,5 @@
 import sys, os
-
-import secrets
+import logging
 
 from toolbox._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams
 
@@ -45,39 +44,39 @@ class Utils:
         """
 
         if not git_repo and not dockerfile_path:
-            print("Either a git repo or a Dockerfile Path is required")
+            logging.error("Either a git repo or a Dockerfile Path is required")
             sys.exit(1)
 
         both_or_none = lambda a, b: (a and b) or (not a and not b)
 
         if not both_or_none(remote_repo, remote_auth_file):
-            print("ERROR: remote_repo and remote_auth_file must come together.")
+            logging.error("remote_repo and remote_auth_file must come together.")
             sys.exit(1)
 
         elif remote_repo:
-            print(f"Using remote repo {remote_repo} and auth file {remote_auth_file} to push the image.")
+            logging.info(f"Using remote repo {remote_repo} and auth file {remote_auth_file} to push the image.")
         else:
-            print(f"No remote repo provided, not pushing the image.")
+            logging.info(f"No remote repo provided, not pushing the image.")
 
         if not both_or_none(git_repo, git_ref):
-            print("ERROR: git_repo and git_ref must come together.")
+            logging.error("git_repo and git_ref must come together.")
             sys.exit(1)
 
         elif git_repo:
-            print(f"Using Git repo {git_repo}|{git_ref}|{context_dir}|{dockerfile_path} for building the image.")
+            logging.info(f"Using Git repo {git_repo}|{git_ref}|{context_dir}|{dockerfile_path} for building the image.")
         else:
-            print(f"Using local dockerfile at {dockerfile_path} for building the image.")
+            logging.info(f"Using local dockerfile at {dockerfile_path} for building the image.")
 
         if not git_repo and context_dir != "/":
-            print("ERROR: local builds (no git_repo) cannot specify a context_dir.")
+            logging.error("local builds (no git_repo) cannot specify a context_dir.")
             sys.exit(1)
 
         if memory:
             try:
                 memory = str(float(memory))
-                print(f"Requesting {memory} of memory for building the image.")
+                logging.info(f"Requesting {memory} of memory for building the image.")
             except ValueError:
-                print("ERROR: memory must be of type float or int")
+                logging.error("memory must be of type float or int")
                 sys.exit(1)
 
         toolbox_name_suffix = os.environ.get("ARTIFACT_TOOLBOX_NAME_SUFFIX", "")
