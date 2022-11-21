@@ -1,6 +1,7 @@
 import sys, os
 import yaml
 import io
+import logging
 
 import jinja2
 import jinja2.filters
@@ -44,8 +45,8 @@ class FromConfig:
             raise ValueError("--command_args_file argument must have a value.")
 
 
-        import run_toolbox
-        toolbox = run_toolbox.Toolbox()
+        import toolbox
+        toolbox = toolbox.Toolbox()
 
         group_obj = getattr(toolbox, group)
         command_obj = getattr(group_obj, command.replace("-", "_"))
