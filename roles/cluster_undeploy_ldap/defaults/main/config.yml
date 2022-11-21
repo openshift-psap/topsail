@@ -1,4 +1,17 @@
-cluster_undeploy_ldap_idp_name: ""
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.undeploy_ldap
+
+# Name of the LDAP identity provider.
+# Mandatory value
+cluster_undeploy_ldap_idp_name:
+
+# If true, use `ocm delete idp` to delete the LDAP identity provider.
 cluster_undeploy_ldap_use_ocm: false
+
+# If true, use `rosa delete idp` to delete the LDAP identity provider.
 cluster_undeploy_ldap_use_rosa: false
-cluster_undeploy_ldap_cluster_name: false
+
+# Cluster to use when using OCM or ROSA.
+cluster_undeploy_ldap_cluster_name: null
+
