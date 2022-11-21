@@ -103,17 +103,19 @@ cluster deploy_nginx_server:
 
 
 rhods notebook_ux_e2e_scale_test:
+  namespace: {{ tests.notebooks.namespace }}
   artifacts_collected: {{ tests.notebooks.artifacts_collected }}
   idp_name: {{ ldap.idp_name }}
-  ods_ci_artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_istag }}"
+  artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_istag }}"
+  ods_ci_istag: "{{ tests.notebooks.imagestream_name }}:{{ user_scale_test_istag }}"
   ods_ci_exclude_tags: {{ tests.notebooks.ods_ci.excluded_tags }}
-  ods_ci_notebook_benchmark_name: {{ tests.notebooks.benchmark.name }}
-  ods_ci_notebook_benchmark_number: {{ tests.notebooks.benchmark.number }}
-  ods_ci_notebook_benchmark_repeat: {{ tests.notebooks.benchmark.repeat }}
-  ods_ci_notebook_image_name: {{ tests.notebooks.notebook.image_name }}
-  ods_ci_notebook_size_name: {{ tests.notebooks.notebook.size_name }}
   ods_ci_test_case: {{ tests.notebooks.ods_ci.test_case }}
-  ods_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
+  notebook_benchmark_name: {{ tests.notebooks.benchmark.name }}
+  notebook_benchmark_number: {{ tests.notebooks.benchmark.number }}
+  notebook_benchmark_repeat: {{ tests.notebooks.benchmark.repeat }}
+  notebook_image_name: {{ tests.notebooks.notebook.image_name }}
+  notebook_size_name: {{ tests.notebooks.notebook.size_name }}
+  user_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
   secret_properties_file: {{ s3_ldap_password_location }}
   state_signal_redis_server: {{ redis_internal_address }}
   toleration_key: {{ clusters.driver.compute.machineset.taint.key }}

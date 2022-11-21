@@ -1,7 +1,7 @@
 ---
 - name: Ensure that the secret properties file exists
   stat:
-    path: "{{ rhods_notebook_ux_e2e_scale_test_secret_properties }}"
+    path: "{{ rhods_notebook_ux_e2e_scale_test_secret_properties_file }}"
 
 - name: Ensure that the user count is set
   fail: msg="user count isn't set"
@@ -21,8 +21,8 @@
 
 - name: Define the test environments
   set_fact:
-    rhods_test_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_ux_e2e_scale_test_istag }}
-    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_ux_e2e_scale_test_ods_ci_artifacts_exporter_istag }}
+    rhods_test_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_ux_e2e_scale_test_ods_ci_istag }}
+    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_ux_e2e_scale_test_artifacts_exporter_istag }}
     rhods_notebook_namespace: rhods-notebooks
     tester_job_name: ods-ci
     test_artifacts_collected: "{{ rhods_notebook_ux_e2e_scale_test_artifacts_collected }}"
@@ -72,7 +72,7 @@
 
   - name: Get the image name description
     command:
-      oc get imagestream "{{ rhods_notebook_ux_e2e_scale_test_ods_ci_notebook_image_name }}"
+      oc get imagestream "{{ rhods_notebook_ux_e2e_scale_test_notebook_image_name }}"
          -n redhat-ods-applications
          -ojsonpath='{.metadata.annotations.opendatahub\.io/notebook-image-name}'
     register: notebook_image_name_descr_cmd
@@ -95,7 +95,7 @@
 
 - name: Get the ODS-CI sample var file
   shell:
-    oc debug istag/{{ rhods_notebook_ux_e2e_scale_test_istag }}
+    oc debug istag/{{ rhods_notebook_ux_e2e_scale_test_ods_ci_istag }}
        -n {{ tester_namespace }}
        -- cat test-variables.yml.model > /tmp/test-variables.yml.model
 
@@ -133,7 +133,7 @@
 
     cp "$TEST_VAR_SAFE" "$TEST_VAR_FULL"
 
-    TEST_USER_PASSWORD="$(cat "{{ rhods_notebook_ux_e2e_scale_test_secret_properties }}" | grep '^user_password=' | cut -d= -f2)";
+    TEST_USER_PASSWORD="$(cat "{{ rhods_notebook_ux_e2e_scale_test_secret_properties_file }}" | grep '^user_password=' | cut -d= -f2)";
 
     yq -yi .TEST_USER.PASSWORD=\"${TEST_USER_PASSWORD}\" "$TEST_VAR_FULL"
 
