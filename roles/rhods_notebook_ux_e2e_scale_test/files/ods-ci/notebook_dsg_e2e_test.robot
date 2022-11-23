@@ -99,7 +99,10 @@ Create and Start the Workbench
   Capture Page Screenshot
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Should Be Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' != 'PASS'
-    Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  ${NONE}
+    ${envs_var_cm}=         Create Dictionary    BENCHMARK_NAME="${NOTEBOOK_BENCHMARK_NAME}"   BENCHMARK_NUMBER=${NOTEBOOK_BENCHMARK_NUMBER}  BENCHMARK_REPEAT=${NOTEBOOK_BENCHMARK_REPEAT}
+    ${envs_list}=    Create List  ${envs_var_cm}
+
+    Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  envs=${envs_list}
     Wait Until Workbench Is Started  ${WORKBENCH_NAME}  timeout=${NOTEBOOK_SPAWN_WAIT_TIME}
   ELSE
     Workbench Status Should Be  ${WORKBENCH_NAME}  ${WORKBENCH_STATUS_STOPPED}
@@ -191,10 +194,6 @@ Run the Notebook
       Fail  "Error detected during the execution of the notebook:\n${error}"
   END
 
-  Run Cell And Check For Errors  print(f"{datetime.datetime.now()} Running ...")
-  Run Cell And Check For Errors  REPEAT=${NOTEBOOK_BENCHMARK_REPEAT}; NUMBER=${NOTEBOOK_BENCHMARK_NUMBER}
-  Run Cell And Check For Errors  measures = run_benchmark(repeat=REPEAT, number=NUMBER)  timeout=${NOTEBOOK_EXEC_WAIT_TIME}
-  Run Cell And Check For Errors  print(f"{datetime.datetime.now()} Done ...")
   Run Cell And Check For Errors  print(f"The benchmark ran for {sum(measures):.2f} seconds")
   ${measures} =  Run Cell And Get Output  import json; print(json.dumps(dict(benchmark="${NOTEBOOK_BENCHMARK_NAME}", repeat=REPEAT, number=NUMBER, measures=measures)))
   Create File  ${OUTPUTDIR}/benchmark_measures.json  ${measures}
