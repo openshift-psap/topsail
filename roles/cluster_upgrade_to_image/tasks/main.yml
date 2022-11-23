@@ -1,7 +1,7 @@
 ---
-- name: Check that cluster_upgrade_image  is defined
-  fail: msg="Bailing out. This play requires 'cluster_upgrade_image' to be defined"
-  when: cluster_upgrade_image is undefined
+- name: Check that cluster_upgrade_to_image_image  is defined
+  fail: msg="Bailing out. This play requires 'cluster_upgrade_to_image_image' to be defined"
+  when: cluster_upgrade_to_image_image is undefined
 
 - name: Get the current version of the cluster
   command: oc get clusterversion
@@ -21,7 +21,7 @@
 
 - name: Trigger the cluster upgrade
   command:
-    oc adm upgrade '--to-image={{ cluster_upgrade_image }}'
+    oc adm upgrade '--to-image={{ cluster_upgrade_to_image_image }}'
       --allow-explicit-upgrade
       --force=true
       --allow-upgrade-with-warnings

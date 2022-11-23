@@ -3,20 +3,20 @@ kind: Pod
 metadata:
   labels:
     app: ci-artifacts
-  name: "{{ utils_build_push_image_local_name }}-push-pod"
+  name: "{{ utils_build_push_image_image_local_name }}-push-pod"
 spec:
   containers:
   - command:
     - bash
     - /mnt/helper/run-helper-image-push.sh
-    image: "image-registry.openshift-image-registry.svc:5000/{{ utils_build_push_image_namespace }}/{{ utils_build_push_image_local_name }}:helper"
-    name: "{{ utils_build_push_image_local_name }}-helper"
+    image: "image-registry.openshift-image-registry.svc:5000/{{ utils_build_push_image_namespace }}/{{ utils_build_push_image_image_local_name }}:helper"
+    name: "{{ utils_build_push_image_image_local_name }}-helper"
     imagePullPolicy: Always
     securityContext:
       privileged: true
     env:
       - name: LOCAL_IMAGE
-        value: "image-registry.openshift-image-registry.svc:5000/{{ utils_build_push_image_namespace }}/{{ utils_build_push_image_local_name }}:{{ utils_build_push_image_tag }}"
+        value: "image-registry.openshift-image-registry.svc:5000/{{ utils_build_push_image_namespace }}/{{ utils_build_push_image_image_local_name }}:{{ utils_build_push_image_tag }}"
       - name: IMAGE_TAG
         value: "{{ utils_build_push_image_tag }}"
       - name: REMOTE_REPO

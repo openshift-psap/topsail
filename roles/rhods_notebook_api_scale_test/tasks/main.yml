@@ -1,7 +1,7 @@
 ---
 - name: Ensure that the secret properties file exists
   stat:
-    path: "{{ rhods_notebook_api_scale_test_secret_properties }}"
+    path: "{{ rhods_notebook_api_scale_test_secret_properties_file }}"
 
 - name: Ensure that the user count is set
   fail: msg="user count isn't set"
@@ -18,7 +18,7 @@
 - name: Set system-under-test == driver-cluster if no system-under-test (SUT) is provided
   set_fact:
     sut_cluster_kubeconfig: "{{ rhods_notebook_api_scale_test_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
-    rhods_api_scale_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_test_istag }}
+    rhods_api_scale_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_test_api_scale_test_istag }}
     rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_api_scale_test_namespace }}/{{ rhods_notebook_api_scale_test_artifacts_exporter_istag }}
     rhods_notebook_namespace: rhods-notebooks
     tester_job_name: api-scale-test
@@ -76,7 +76,7 @@
 - name: Create the credentials secret file
   command:
     oc create secret generic rhods-scale-test-credentials
-       "--from-file=secret.properties={{ rhods_notebook_api_scale_test_secret_properties }}"
+       "--from-file=secret.properties={{ rhods_notebook_api_scale_test_secret_properties_name }}"
        -n {{ rhods_notebook_api_scale_test_namespace }}
 
 - name: Delete the RHODS tester job, if it exists

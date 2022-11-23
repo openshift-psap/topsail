@@ -1,2 +1,10 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: RHODS.deploy_ods
+
+# Container image containing the RHODS bundle.
 rhods_deploy_ods_catalog_image:
-rhods_deploy_ods_catalog_image_tag:
+
+# Missing documentation for tag
+rhods_deploy_ods_tag:
+

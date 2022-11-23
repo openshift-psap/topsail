@@ -1,11 +1,44 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.create_osd
+
+# The name to give to the cluster.
+# Mandatory value
 cluster_create_osd_cluster_name:
+
+# The file containing the cluster creation credentials.
+# Mandatory value
 cluster_create_osd_secret_file:
+
+# The KUBECONFIG file to populate with the access to the cluster.
+# Mandatory value
 cluster_create_osd_kubeconfig:
-cluster_create_osd_region: "us-east-1"
-cluster_create_osd_version: "4.10.15"
-cluster_create_osd_kubeadmin_name: kubeadmin
-cluster_create_osd_kubeadmin_group: cluster-admins
+
+# OpenShift version to deploy.
+cluster_create_osd_version: 4.10.15
+
+# AWS region where the cluster will be deployed.
+cluster_create_osd_region: us-east-1
+
+# Name of the Identity provider that will be created for the admin account.
 cluster_create_osd_htaccess_idp_name: htpasswd
+
+# Name of the AWS machine instance type that will be used for the compute nodes.
 cluster_create_osd_compute_machine_type: m5.xlarge
+
+# The number of compute nodes to create. A minimum of 2 is required by OSD.
+# Type: Int
 cluster_create_osd_compute_nodes: 2
+
+# Name of the worker node machinepool
+# Defined as a constant in Cluster.create_osd
 cluster_create_osd_machinepool_name: default
+
+# Group that the admin account will be part of.
+# Defined as a constant in Cluster.create_osd
+cluster_create_osd_kubeadmin_group: cluster-admins
+
+# Name of the admin account that will be created.
+# Defined as a constant in Cluster.create_osd
+cluster_create_osd_kubeadmin_name: kubeadmin
+

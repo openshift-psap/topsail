@@ -1,1 +1,11 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: RHODS.undeploy_ods
+
+# Namespace where RHODS is installed.
+rhods_undeploy_ods_namespace: redhat-ods-operator
+
+# Wait for the operator full deletion.
+# Type: Bool
 rhods_undeploy_ods_wait: true
+

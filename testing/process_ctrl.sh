@@ -19,7 +19,7 @@ process_ctrl::wait_bg_processes() {
             echo "Background process '$command' failed :( retcode=$retcode pid=$pid"
             return $retcode
         else
-            echo "Background process '$command' is finished successfully :)"
+            echo "Background process '$command' finished successfully :)"
         fi
     done
     echo "All the processes are done!"

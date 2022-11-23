@@ -5,7 +5,7 @@
 
 - name: Ensure that the secret properties file exists
   stat:
-    path: "{{ cluster_deploy_ldap_secret_properties }}"
+    path: "{{ cluster_deploy_ldap_secret_properties_file }}"
 
 - name: Ensure that the username prefix is set
   fail: msg="username prefix isn't set"
@@ -31,7 +31,7 @@
   set_fact:
     py_secret_generator_cmd: >-
       python3 "{{ cluster_deploy_ldap_secret_generator }}" \
-              --secret_props "{{ cluster_deploy_ldap_secret_properties }}" \
+              --secret_props "{{ cluster_deploy_ldap_secret_properties_file }}" \
               --prefix "{{ cluster_deploy_ldap_username_prefix }}" \
               --nbusers "{{ cluster_deploy_ldap_username_count }}" \
               --admin_user "{{ cluster_deploy_ldap_admin_user }}"

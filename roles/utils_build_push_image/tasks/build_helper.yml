@@ -13,7 +13,7 @@
 - name: Get the name of the helper build
   command:
     oc get builds
-       "-lbuildconfig={{ utils_build_push_image_local_name }}-helper"
+       "-lbuildconfig={{ utils_build_push_image_image_local_name }}-helper"
        -oname
        -n "{{ utils_build_push_image_namespace }}"
   register: helper_name_cmd

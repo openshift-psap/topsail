@@ -1,2 +1,8 @@
-# the image to which the cluster will be upgraded
-cluster_upgrade_image: ""
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.upgrade_to_image
+
+# The image to upgrade the cluster to
+# Mandatory value
+cluster_upgrade_to_image_image:
+

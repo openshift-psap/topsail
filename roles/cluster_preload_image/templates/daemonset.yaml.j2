@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ cluster_preload_image_ds_name }}
-  namespace: {{ cluster_preload_image_ds_namespace }}
+  name: {{ cluster_preload_image_name }}
+  namespace: {{ cluster_preload_image_namespace }}
 spec:
   selector:
     matchLabels:
-      name: {{ cluster_preload_image_ds_name }}
+      name: {{ cluster_preload_image_name }}
   template:
     metadata:
       labels:
-        name: {{ cluster_preload_image_ds_name }}
+        name: {{ cluster_preload_image_name }}
     spec:
 {% if cluster_preload_image_node_selector_key|length %}
       nodeSelector:
@@ -24,7 +24,7 @@ spec:
 {% endif %}
       containers:
       - name: preloader
-        image: {{ cluster_preload_image_ds_image }}
+        image: {{ cluster_preload_image_image }}
         command:
         - sleep
         - 1d

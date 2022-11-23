@@ -1,6 +1,7 @@
 import sys, os
 import yaml
 import io
+import logging
 
 import jinja2
 import jinja2.filters
@@ -36,16 +37,17 @@ class FromConfig:
         if not config_file:
             config_file = os.getenv("CI_ARTIFACTS_FROM_CONFIG_FILE", None)
         if not config_file:
-            raise ValueError("--config_file argument must have a value.")
+            logging.error("--config_file flag or CI_ARTIFACTS_FROM_CONFIG_FILE env var must have a value.")
+            raise SystemExit(1)
 
         if not command_args_file:
             command_args_file = os.getenv("CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE", None)
         if not command_args_file:
-            raise ValueError("--command_args_file argument must have a value.")
+            logging.error("--command_args_file flag or CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE env var must have a value.")
+            raise SystemExit(1)
 
-
-        import run_toolbox
-        toolbox = run_toolbox.Toolbox()
+        import toolbox
+        toolbox = toolbox.Toolbox()
 
         group_obj = getattr(toolbox, group)
         command_obj = getattr(group_obj, command.replace("-", "_"))
@@ -64,7 +66,8 @@ class FromConfig:
                 return value
 
             if not attribute:
-                raise ValueError("An attribute must be passed to env_override ...")
+                logging.error("An attribute must be passed to env_override ...")
+                raise SystemExit(1)
 
             return os.getenv(attribute)
 
@@ -84,12 +87,12 @@ class FromConfig:
         try:
             command_args = command_args[config_key].copy()
         except KeyError:
-            print(f"ERROR: key '{config_key}' not found. Available keys: \n-",
-                  "\n- ".join(sorted(config.keys())))
+            logging.error(f"key '{config_key}' not found. Available keys: \n-",
+                          "\n- ".join(sorted(config.keys())))
             raise SystemExit(1)
 
         if not isinstance(extra, dict):
-            print(f"ERROR: --extra must be a dictionnary. Got '{extra}', type '{extra.__class__.__name__}'.")
+            logging.error(f"--extra must be a dictionnary. Got '{extra}', type '{extra.__class__.__name__}'.")
             raise SystemExit(1)
 
         command_args.update(extra)
@@ -106,7 +109,11 @@ class FromConfig:
             if key.startswith("_"):
                 del command_args[key]
 
-        run_ansible_role = command_obj(None, **command_args)
+        try:
+            run_ansible_role = command_obj(None, **command_args)
+        except TypeError as e:
+            logging.error("from_config failed: %s", e)
+            raise SystemExit(1)
 
         run_ansible_role.py_command_name = config_key
         run_ansible_role.py_command_args = command_args

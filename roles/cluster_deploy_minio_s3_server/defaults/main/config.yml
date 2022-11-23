@@ -1,5 +1,19 @@
----
-cluster_deploy_minio_s3_server_secret_properties:
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.deploy_minio_s3_server
+
+# Path of a file containing the properties of S3 secrets.
+# Mandatory value
+cluster_deploy_minio_s3_server_secret_properties_file:
+
+# Missing documentation for namespace
 cluster_deploy_minio_s3_server_namespace: minio
-cluster_deploy_minio_s3_server_access_key: minio
+
+# Name of the Minio admin user
+# Defined as a constant in Cluster.deploy_minio_s3_server
 cluster_deploy_minio_s3_server_root_user: admin
+
+# Name of the user/access key to use to connect to the Minio server
+# Defined as a constant in Cluster.deploy_minio_s3_server
+cluster_deploy_minio_s3_server_access_key: minio
+

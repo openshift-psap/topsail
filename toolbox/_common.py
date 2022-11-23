@@ -13,12 +13,17 @@ import shutil
 top_dir = Path(__file__).resolve().parent.parent
 
 def AnsibleRole(role_name):
-
     def decorator(fct):
+        fct.ansible_role = role_name
+
         @functools.wraps(fct)
         def call_fct(*args, **kwargs):
             run_ansible_role = fct(*args, **kwargs)
+
             run_ansible_role.role_name = role_name
+            run_ansible_role.ansible_constants = getattr(fct, "ansible_constants", {})
+            run_ansible_role.ansible_mapped_params = getattr(fct, "ansible_mapped_params", False)
+            run_ansible_role.ansible_skip_config_generation = getattr(fct, "ansible_skip_config_generation", False)
 
             if not run_ansible_role.group:
                 run_ansible_role.group = fct.__qualname__.partition(".")[0].lower()
@@ -33,6 +38,24 @@ def AnsibleRole(role_name):
 
     return decorator
 
+
+def AnsibleMappedParams(fct):
+    fct.ansible_mapped_params = True
+    return fct
+
+def AnsibleSkipConfigGeneration(fct):
+    fct.ansible_skip_config_generation = True
+    return fct
+
+def AnsibleConstant(description, name, value):
+    def decorator(fct):
+        if not hasattr(fct, "ansible_constants"):
+            fct.ansible_constants = []
+        fct.ansible_constants.append(dict(description=description, name=name, value=value))
+
+        return fct
+
+    return decorator
 
 class RunAnsibleRole:
     """
@@ -49,12 +72,15 @@ class RunAnsibleRole:
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     """
-    def __init__(self, ansible_vars: dict = None, role_name: str = None, group: str = "", command: str = ""):
+    def __init__(self,
+                 ansible_vars: dict = None,
+                 role_name: str = None,
+                 group: str = "",
+                 command: str = ""):
         self.ansible_vars = ansible_vars or {}
         self.role_name = role_name
         self.group = group
         self.command = command
-
         self.clazz = None
 
     def __str__(self):
@@ -68,6 +94,14 @@ class RunAnsibleRole:
 
         if version_override is not None:
             self.ansible_vars["openshift_release"] = version_override
+
+        if self.ansible_mapped_params:
+            py_params = self.ansible_vars
+            self.ansible_vars = {
+                f"{self.role_name}_{k}": v for k, v in py_params.items() if k != "self"
+            }
+            for constant in self.ansible_constants:
+                self.ansible_vars[f"{self.role_name}_{constant['name']}"] = constant["value"]
 
         # do not modify the `os.environ` of this Python process
         env = os.environ.copy()

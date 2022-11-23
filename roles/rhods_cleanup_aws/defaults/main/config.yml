@@ -1,1 +1,7 @@
-openshift_installer:
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: RHODS.cleanup_aws
+
+# path of the openshift_installer to use. If empty, download it.
+rhods_cleanup_aws_openshift_installer:
+

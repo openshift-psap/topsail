@@ -1,5 +1,19 @@
-cluster_destroy_ocp_openshift_install: openshift-install
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.destroy_ocp
+
+# The AWS region where the cluster lives. If empty and --confirm is passed, look up from the cluster.
 cluster_destroy_ocp_region:
+
+# Missing documentation for tag
 cluster_destroy_ocp_tag:
+
+# If the region/label are not set, and --confirm is passed, destroy the current cluster.
 cluster_destroy_ocp_confirm: false
+
+# The resource tag value.
 cluster_destroy_ocp_tag_value: owned
+
+# The path to the `openshift-install` to use to destroy the cluster. If empty, pick it up from the `deploy-cluster` subproject.
+cluster_destroy_ocp_openshift_install: openshift-install
+
