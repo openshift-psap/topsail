@@ -120,7 +120,7 @@ tests:
         mem_gi: 0.75
     ipynb:
       uploaded_directory: testing/ods/notebooks
-      notebook_filename: simple-notebook.ipynb
+      notebook_filename: benchmark_entrypoint.ipynb
     benchmark:
       name: pyperf_bm_go.py
       number: 20
