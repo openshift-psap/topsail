@@ -18,5 +18,11 @@ jobs:
       - name: "Ensure that Ansible 'default' files match the Python entrypoint"
         run: ./run_toolbox.py repo generate_ansible_default_settings
 
-      - name: Check the difference between the commited files and the regenerated Ansible files
-        run: git diff --exit-code
+      - name: Show the difference between the commited files and the regenerated Ansible files
+        run: git diff
+
+      - name: "Ensure that there is no missing Ansible documentation"
+        run: ! grep 'Missing documentation' . -R --include 'config.yml'
+
+      - name: Fail the test if the diff is not empty
+        run: git diff --quiet
