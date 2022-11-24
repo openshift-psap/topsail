@@ -178,7 +178,7 @@
        "--from-file=entrypoint.sh={{ rhods_notebook_ux_e2e_scale_test_entrypoint }}"
        "--from-file=state-signal_barrier.py={{ rhods_notebook_ux_e2e_scale_test_state_signal_barrier }}"
        "--from-file=artifacts-exporter.sh={{ rhods_notebook_ux_e2e_scale_test_s3_artifacts_exporter_sidecar }}"
-       "--from-file={{ rhods_notebook_ux_e2e_scale_test_test_case_directory }}/{{ rhods_notebook_ux_e2e_scale_test_ods_ci_test_case }}"
+       "--from-file={{ rhods_notebook_ux_e2e_scale_test_test_case_directory }}"
        -n {{ tester_namespace }}
 
 - name: Empty the Minio S3 bucket
