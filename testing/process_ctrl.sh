@@ -10,7 +10,7 @@ process_ctrl::run_in_bg() {
 
 process_ctrl::wait_bg_processes() {
     echo "Waiting for the background processes '${!process_ctrl__wait_list[@]}' to terminate ..."
-    while [[ "${#process_ctrl__wait_list[@]}" -ne 0 ]]; do
+    while [[ "${!process_ctrl__wait_list[*]}" ]]; do
         wait -ppid -n ${!process_ctrl__wait_list[@]} && retcode=0 || retcode=$?
         command="${process_ctrl__wait_list[$pid]}"
         unset process_ctrl__wait_list[$pid]
