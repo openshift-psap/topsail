@@ -100,7 +100,7 @@ tests:
       count: 5 # number of users to simulate
       start_offset: 0 # offset to add to the Pod user index
       sleep_factor: 5.0 # how long to wait between user starts, multiplied by the user index
-    flavor_to_run: user-level
+    flavor_to_run: user-level # can be: user-level, api-level or notebook-performance
     namespace: notebooks-scale-test
     imagestream_name: scale-test
     artifacts_collected: no-screenshot-except-failed-and-zero
@@ -130,6 +130,21 @@ tests:
       cleanup_driver_on_exit: true
       skip_if_le_than_users: 5
 
+    notebook_performance:
+      use_rhods: true
+      tests:
+      - imagestream: s2i-generic-data-science-notebook
+        ipynb:
+          uploaded_directory: testing/ods/notebooks
+          notebook_filename: benchmark_entrypoint.ipynb
+        instance_types:
+        - m5.xlarge
+        - m6a.xlarge
+        - m6i.xlarge
+        benchmarks:
+        - name: pyperf_bm_go.py
+          number: 20
+          repeat: 5
 matbench:
   preset: null
   workload: rhods-notebooks-ux

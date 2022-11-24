@@ -170,23 +170,23 @@ class RHODS:
         return RunAnsibleRole(locals())
 
 
-    @AnsibleRole("rhods_benchmark_single_notebook")
+    @AnsibleRole("rhods_benchmark_notebook_performance")
     @AnsibleConstant("Address where the imagestreams are stored. Used only when use_rhods=false.",
                      "imagestream_source_location", "https://raw.githubusercontent.com/red-hat-data-services/odh-manifests/master/jupyterhub/notebook-images/overlays/additional")
     @AnsibleMappedParams
-    def benchmark_single_notebook(self,
-                                  namespace="rhods-notebooks",
-                                  imagestream="s2i-generic-data-science-notebook",
-                                  imagestream_tag="",
-                                  use_rhods: bool = True,
-                                  notebook_directory="testing/ods/notebooks/",
-                                  notebook_filename="benchmark_entrypoint.ipynb",
-                                  benchmark_name="pyperf_bm_go.py",
-                                  benchmark_repeat: int = 1,
-                                  benchmark_number: int = 1,
-                                  ):
+    def benchmark_notebook_performance(self,
+                                       namespace="rhods-notebooks",
+                                       imagestream="s2i-generic-data-science-notebook",
+                                       imagestream_tag="",
+                                       use_rhods: bool = True,
+                                       notebook_directory="testing/ods/notebooks/",
+                                       notebook_filename="benchmark_entrypoint.ipynb",
+                                       benchmark_name="pyperf_bm_go.py",
+                                       benchmark_repeat: int = 1,
+                                       benchmark_number: int = 1,
+                                       ):
         """
-        Benchmarking of a single notebook
+        Benchmark the performance of a notebook image.
 
         Args:
           namespace: Namespace in which the notebook will be deployed, if not deploying with RHODS.

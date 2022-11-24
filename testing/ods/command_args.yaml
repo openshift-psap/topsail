@@ -35,6 +35,11 @@ driver/cluster set_scale:
   taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
   scale: SET_AT_RUNTIME
 
+cluster set_scale/notebook-performance:
+  instance_type: SET_AT_RUNTIME
+  name: {{ clusters.sutest.compute.machineset.name }}
+  taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
+  scale: 1
 
 utils build_push_image/artifacts-exporter:
   namespace: {{ tests.notebooks.namespace }}
@@ -101,6 +106,9 @@ cluster deploy_nginx_server:
   namespace: {{ nginx_namespace }}
   directory: {{ tests.notebooks.ipynb.uploaded_directory }}
 
+rhods benchmark_notebook_performance:
+{% set notebook_performance_namespace = "single-notebook-"+tests.notebooks.namespace %}
+  namespace: {{ notebook_performance_namespace }}
 
 rhods notebook_ux_e2e_scale_test:
   namespace: {{ tests.notebooks.namespace }}
