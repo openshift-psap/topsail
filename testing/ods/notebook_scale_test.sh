@@ -402,11 +402,21 @@ run_user_level_test() {
 
     local notebook_name=$(get_config tests.notebooks.ipynb.notebook_filename)
     local notebook_url="http://$nginx_hostname/$notebook_name"
+    local failed=0
     ./run_toolbox.py from_config rhods notebook_ux_e2e_scale_test \
-                     --extra "{notebook_url: '$notebook_url', sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}"
+                     --extra "{notebook_url: '$notebook_url', sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}" \
+        || failed=1
+
+    # quick access to these files
+    local TEST_DIRNAME=driver_rhods__notebook_ux_e2e_scale_test
+    local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+    cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
+    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
+
+    return $failed
 }
 
-run_user_level_tests() {
+run_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
     local test_failed=0
@@ -422,12 +432,7 @@ run_user_level_tests() {
             [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
         done
 
-        run_user_level_test && test_failed=0 || test_failed=1
-        # quick access to these files
-        local TEST_DIRNAME=driver_rhods__notebook_ux_e2e_scale_test
-        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
-        cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir"
-        cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null || true
+        run_test && test_failed=0 || test_failed=1
 
         generate_plots || plot_failed=1
         if [[ "$test_failed" == 1 ]]; then
@@ -565,18 +570,10 @@ connect_ci() {
 }
 
 test_ci() {
-
-    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
-    if [[ "$test_flavor" == "user-level" ]]; then
-        run_user_level_tests
-    elif [[ "$test_flavor" == "api-level" ]]; then
-        run_api_level_test
-    else
-        _error "Unknown test flavor: $test_flavor"
-    fi
+    run_tests_and_plots
 }
 
-run_one_test() {
+run_test() {
     local test_flavor=$(get_config tests.notebooks.flavor_to_run)
     if [[ "$test_flavor" == "user-level" ]]; then
         run_user_level_test
@@ -659,12 +656,12 @@ main() {
             return 0
             ;;
         "run_test_and_plot")
-            run_one_test
+            run_test
             generate_plots
             return 0
             ;;
         "run_test")
-            run_one_test
+            run_test
             return 0
             ;;
         "generate_plots")
