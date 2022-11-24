@@ -10,13 +10,13 @@ class RHODS:
 
     @AnsibleRole("rhods_deploy_ods")
     @AnsibleMappedParams
-    def deploy_ods(self, catalog_image="", tag=""):
+    def deploy_ods(self, catalog_image, tag):
         """
         Deploy ODS operator from its custom catalog
 
         Args:
           catalog_image: Container image containing the RHODS bundle.
-          version: Catalog image tag to use to deploy RHODS.
+          tag: Catalog image tag to use to deploy RHODS.
         """
 
         return RunAnsibleRole(locals())

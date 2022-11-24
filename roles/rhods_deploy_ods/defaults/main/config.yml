@@ -3,8 +3,10 @@
 # Source component: RHODS.deploy_ods
 
 # Container image containing the RHODS bundle.
+# Mandatory value
 rhods_deploy_ods_catalog_image:
 
-# Missing documentation for tag
+# Catalog image tag to use to deploy RHODS.
+# Mandatory value
 rhods_deploy_ods_tag:
 
