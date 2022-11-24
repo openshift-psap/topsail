@@ -23,7 +23,7 @@ USER_INDEX=$(($USER_INDEX_OFFSET + $JOB_COMPLETION_INDEX))
 
 sed "s/#{USER_INDEX}/${USER_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.yml > /tmp/test-variables.yml
 
-cp "/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/$RUN_ROBOT_TEST_CASE" .
+cp /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/* .
 
 # Use StateSignal-barrier to wait for all the Pods to be ready
 
