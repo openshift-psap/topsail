@@ -299,6 +299,9 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
     with open(register_important_file(dirname, filename)) as f:
         odh_dashboard_config.content = yaml.safe_load(f)
 
+    if not odh_dashboard_config.content:
+        return None
+
     odh_dashboard_config.path = str(filename)
     odh_dashboard_config.notebook_size_name = notebook_size_name
     odh_dashboard_config.notebook_size_mem = None
