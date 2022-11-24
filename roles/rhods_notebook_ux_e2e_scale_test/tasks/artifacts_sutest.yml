@@ -13,12 +13,14 @@
       oc get odhdashboardconfig/odh-dashboard-config -oyaml
          -n redhat-ods-applications
          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/odh-dashboard-config.yaml"
+    failed_when: false
 
   - name: Get the RHODS version
     shell:
       oc get csv -oname -n redhat-ods-operator | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods.version"
     ignore_errors: yes
+    failed_when: false
 
   - name: Store OpenShift YAML version
     shell:
