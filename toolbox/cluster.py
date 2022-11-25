@@ -160,6 +160,7 @@ class Cluster:
 
         Args:
             secret_properties_file: Path of a file containing the properties of S3 secrets.
+            namespace: Namespace in which Minio should be deployed.
         """
 
         return RunAnsibleRole(locals())
@@ -236,7 +237,7 @@ class Cluster:
 
         Args:
           region: The AWS region where the cluster lives. If empty and --confirm is passed, look up from the cluster.
-          label: The resource tag key. If empty and --confirm is passed, look up from the cluster.
+          tag: The resource tag key. If empty and --confirm is passed, look up from the cluster.
           confirm: If the region/label are not set, and --confirm is passed, destroy the current cluster.
           tag_value: The resource tag value.
           openshift_install: The path to the `openshift-install` to use to destroy the cluster. If empty, pick it up from the `deploy-cluster` subproject.

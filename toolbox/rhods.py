@@ -10,13 +10,13 @@ class RHODS:
 
     @AnsibleRole("rhods_deploy_ods")
     @AnsibleMappedParams
-    def deploy_ods(self, catalog_image="", tag=""):
+    def deploy_ods(self, catalog_image, tag):
         """
         Deploy ODS operator from its custom catalog
 
         Args:
           catalog_image: Container image containing the RHODS bundle.
-          version: Catalog image tag to use to deploy RHODS.
+          tag: Catalog image tag to use to deploy RHODS.
         """
 
         return RunAnsibleRole(locals())
@@ -52,9 +52,9 @@ class RHODS:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("rhods_notebook_ux_e2e_scale_test")
+    @AnsibleRole("rhods_notebook_osd_ci_scale_test")
     @AnsibleMappedParams
-    def notebook_ux_e2e_scale_test(self,
+    def notebook_osd_ci_scale_test(self,
                                    namespace,
                                    idp_name, username_prefix, user_count: int,
                                    secret_properties_file,
@@ -77,7 +77,7 @@ class RHODS:
                                    ):
 
         """
-        End-to-end testing of RHODS notebook user experience at scale
+        End-to-end scale testing of RHODS notebooks, at  user level.
 
         Args:
           namespace: Namespace in which the scale test should be deployed.

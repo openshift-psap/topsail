@@ -37,5 +37,8 @@ class Repo:
 
     @staticmethod
     def generate_ansible_default_settings():
+        """
+        Generate the 'defaults/main/config.yml' file of the Ansible roles, based on the Python definition.
+        """
         toolbox.ansible_default_config.generate_all(toolbox.Toolbox())
         exit(0)

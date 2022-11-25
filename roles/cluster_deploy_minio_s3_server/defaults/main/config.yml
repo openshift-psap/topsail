@@ -6,7 +6,7 @@
 # Mandatory value
 cluster_deploy_minio_s3_server_secret_properties_file:
 
-# Missing documentation for namespace
+# Namespace in which Minio should be deployed.
 cluster_deploy_minio_s3_server_namespace: minio
 
 # Name of the Minio admin user

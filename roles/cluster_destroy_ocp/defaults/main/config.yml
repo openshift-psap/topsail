@@ -5,7 +5,7 @@
 # The AWS region where the cluster lives. If empty and --confirm is passed, look up from the cluster.
 cluster_destroy_ocp_region:
 
-# Missing documentation for tag
+# The resource tag key. If empty and --confirm is passed, look up from the cluster.
 cluster_destroy_ocp_tag:
 
 # If the region/label are not set, and --confirm is passed, destroy the current cluster.
