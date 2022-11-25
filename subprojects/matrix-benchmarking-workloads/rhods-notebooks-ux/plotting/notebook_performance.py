@@ -110,7 +110,9 @@ class NotebookPerformance():
             msg.append(f"There are {q100 - q0:.2f} seconds between min and max ({q100_q0/med*100:.1f}% of the median).")
             msg.append(html.Br())
             try:
-                if not entry.results.rhods_cluster_info.compute:
+                if "instance_type" in entry.settings.__dict__:
+                    machine_type = entry.settings.instance_type
+                elif not entry.results.rhods_cluster_info.compute:
                     machine_type = "not available (no compute node?)"
                 else:
                     machine_type = entry.results.rhods_cluster_info.compute[0].instance_type
@@ -119,9 +121,11 @@ class NotebookPerformance():
 
             msg += ["The notebook machine instance type is ", html.Code(machine_type)]
             msg.append(html.Br())
-            rq = f"mem={entry.results.odh_dashboard_config.notebook_request_size_mem}Gi and cpu={entry.results.odh_dashboard_config.notebook_request_size_cpu}"
-            lt = f"mem={entry.results.odh_dashboard_config.notebook_limit_size_mem}Gi and cpu={entry.results.odh_dashboard_config.notebook_limit_size_cpu}"
-            msg.append(f"The notebook requested {rq}, limited to {lt}.")
+
+            if entry.results.odh_dashboard_config:
+                rq = f"mem={entry.results.odh_dashboard_config.notebook_request_size_mem}Gi and cpu={entry.results.odh_dashboard_config.notebook_request_size_cpu}"
+                lt = f"mem={entry.results.odh_dashboard_config.notebook_limit_size_mem}Gi and cpu={entry.results.odh_dashboard_config.notebook_limit_size_cpu}"
+                msg.append(f"The notebook requested {rq}, limited to {lt}.")
             msg.append(html.Br())
 
         return fig, msg
