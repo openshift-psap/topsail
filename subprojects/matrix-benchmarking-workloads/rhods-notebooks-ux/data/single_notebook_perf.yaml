@@ -1,6 +1,4 @@
 visualize:
   generate:
-    - "report: Error report"
-    - "report: Performance report"
-    - "report: Master Nodes Load"
-    - "report: Notebook Performance"
+  - "report: Notebook Performance"
+  - "report: Notebooks Performance Comparison"
