@@ -33,6 +33,15 @@ def set_config(additional_cfg, args):
     cfg.d.update(additional_cfg)
     return list(args[:-1]) + [cfg]
 
+def set_entry(entry, _args):
+    args = copy.deepcopy(_args)
+    ordered_vars, settings, setting_lists, variables, cfg = args
+
+    settings.update(entry.settings.__dict__)
+    setting_lists[:] = []
+    variables.clear()
+    return args
+
 def Plot(name, args, msg_p=None):
     stats = table_stats.TableStats.stats_by_name[name]
     fig, msg = stats.do_plot(*args)
