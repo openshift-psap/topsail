@@ -78,17 +78,17 @@ class FromConfig:
 
         command_args = yaml.safe_load(command_args_rendered)
 
-        config_key = f"{group} {command}"
+        command_key = f"{group} {command}"
         if prefix:
-            config_key = f"{prefix}/{config_key}"
+            command_key = f"{prefix}/{command_key}"
         if suffix:
-            config_key = f"{config_key}/{suffix}"
+            command_key = f"{command_key}/{suffix}"
 
         try:
-            command_args = command_args[config_key].copy()
+            command_args = command_args[command_key].copy()
         except KeyError:
-            logging.error(f"key '{config_key}' not found. Available keys: \n-",
-                          "\n- ".join(sorted(config.keys())))
+            logging.error(f"key '{config_key}' not found. Available keys: \n-"
+                          + "\n- ".join(sorted(command_args.keys())))
             raise SystemExit(1)
 
         if not isinstance(extra, dict):
@@ -115,7 +115,7 @@ class FromConfig:
             logging.error("from_config failed: %s", e)
             raise SystemExit(1)
 
-        run_ansible_role.py_command_name = config_key
+        run_ansible_role.py_command_name = command_key
         run_ansible_role.py_command_args = command_args
 
         return run_ansible_role
