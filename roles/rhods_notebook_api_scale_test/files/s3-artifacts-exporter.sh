@@ -1,1 +1,1 @@
-../../rhods_notebook_ux_e2e_scale_test/files/s3-artifacts-exporter.sh
+../../rhods_notebook_osd_ci_scale_test/files/s3-artifacts-exporter.sh
