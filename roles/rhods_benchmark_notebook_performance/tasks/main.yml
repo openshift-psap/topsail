@@ -1,0 +1,246 @@
+---
+
+- name: Check that rhods_benchmark_notebook_performance_notebook_directory is defined
+  fail: msg="Bailing out. This role requires 'rhods_benchmark_notebook_performance_notebook_directory'"
+  when: not rhods_benchmark_notebook_performance_notebook_directory
+
+- name: Get the stats of {{ rhods_benchmark_notebook_performance_notebook_directory }}
+  stat:
+    path: "{{ rhods_benchmark_notebook_performance_notebook_directory }}"
+  register: directory_stats
+
+- name: Fail if {{ rhods_benchmark_notebook_performance_notebook_directory }} is not a directory
+  fail: msg="'{{ rhods_benchmark_notebook_performance_notebook_directory }}' isn't a reachable directory."
+  when: not directory_stats.stat.exists or not directory_stats.stat.isdir
+
+- name: Store the listing of the notebook directory
+  shell:
+    find "{{ rhods_benchmark_notebook_performance_notebook_directory }}"
+      > "{{ artifact_extra_logs_dir }}/server_files"
+
+- name: Lookup the RHODS image address
+  when: rhods_benchmark_notebook_performance_use_rhods | bool
+  block:
+  - name: Lookup the imagestream tag
+    when: rhods_benchmark_notebook_performance_imagestream_tag | length == 0
+    shell:
+      set -o pipefail;
+      oc get is/{{ rhods_benchmark_notebook_performance_imagestream }}
+         -n redhat-ods-applications
+         --no-headers
+         | awk '{print $3}'
+    register: image_tag_cmd
+    failed_when: not image_tag_cmd.stdout
+
+  - name: Ensure that only one tag was found
+    fail: 'msg="Multiple tags where found for image "{{ rhods_benchmark_notebook_performance_imagestream }}": {{ image_tag_cmd.stdout }}"'
+    when:
+    - rhods_benchmark_notebook_performance_imagestream_tag | length == 0
+    - '"," in image_tag_cmd.stdout'
+
+  - name: Save the imagestream tag
+    set_fact:
+      image_tag: "{% if rhods_benchmark_notebook_performance_imagestream_tag %}{{ rhods_benchmark_notebook_performance_imagestream_tag }}{% else %}{{ image_tag_cmd.stdout }}{% endif %}"
+
+  - name: Get the image address
+    command:
+      oc get istag {{ rhods_benchmark_notebook_performance_imagestream }}:{% if rhods_benchmark_notebook_performance_imagestream_tag %}{{ rhods_benchmark_notebook_performance_imagestream_tag }}{% else %}{{ image_tag_cmd.stdout }}{% endif %}
+         -ojsonpath={.image.dockerImageReference}
+         -n redhat-ods-applications
+    register: rhods_image_address_cmd
+
+- name: Lookup the RHODS image address from upstream
+  when: not rhods_benchmark_notebook_performance_use_rhods | bool
+  block:
+  - name: Compute the imagestream filename
+    shell:
+      echo -n "{{ rhods_benchmark_notebook_performance_imagestream }}" | sed 's/^s2i-//g' | sed 's/-notebook//g';
+      echo "-notebook-imagestream.yaml"
+    register: imagestream_filename_cmd
+
+  - name: Fetch the imagestream definition from the source repository
+    get_url:
+      url: "{{ rhods_benchmark_notebook_performance_imagestream_source_location }}/{{ imagestream_filename_cmd.stdout }}"
+      dest: "{{ artifact_extra_logs_dir }}/imagestream.yaml"
+      mode: '0440'
+
+  - name: Ensure that it contains only one tag
+    command: yq -r .spec.tags[].name "{{ artifact_extra_logs_dir }}/imagestream.yaml"
+    register: imagestream_tags_cmd
+    failed_when:
+    - rhods_benchmark_notebook_performance_imagestream_tag | length == 0
+    - imagestream_tags_cmd.stdout_lines | length != 1
+
+  - name: Get the image address
+    command:
+      yq -r '.spec.tags[] | select(.name == "{{ imagestream_tags_cmd.stdout }}") | .from.name' "{{ artifact_extra_logs_dir }}/imagestream.yaml"
+    register: from_source_image_address_cmd
+
+- name: Define the test environment
+  set_fact:
+    notebook_name: notebook-perf-{{ rhods_benchmark_notebook_performance_imagestream }}
+    notebook_namespace: "{% if rhods_benchmark_notebook_performance_use_rhods | bool %}rhods-notebooks{% else %}{{ rhods_benchmark_notebook_performance_namespace }}{% endif %}"
+    notebook_src_template_dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook.yaml"
+    notebook_file_cm_name: rhods-notebook-files
+    capture_prom_db: no
+    notebook_image_address: "{% if rhods_benchmark_notebook_performance_use_rhods | bool %}{{ rhods_image_address_cmd.stdout }}{% else %}{{ from_source_image_address_cmd.stdout }}{% endif %}"
+
+- name: Define the test environment
+  set_fact:
+    notebook_search_labels: "-lci-artifacts.single-notebook-perf=true -lapp={{ notebook_name }}"
+    rhods_notebook_ux_e2e_scale_test_username_prefix: "{{ notebook_name }}"
+
+- name: Delete the notebook files ConfigMap, if it exists
+  command:
+    oc delete cm "{{ notebook_file_cm_name }}"
+       -n "{{ notebook_namespace }}"
+       --ignore-not-found
+
+- name: Prepare the notebook files ConfigMap
+  command:
+    oc create cm "{{ notebook_file_cm_name }}"
+       -n "{{ notebook_namespace }}"
+       --from-file="{{ rhods_benchmark_notebook_performance_notebook_directory }}"
+# ^^^ may fail silently if the directory is invalid
+# but Task 'Store the listing of the notebook directory' will catch it earlier
+
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Instantiate the notebook template
+  template:
+    src: "{{ rhods_benchmark_notebook_performance_benchmark_notebook_template }}"
+    dest: "{{ notebook_src_template_dest }}"
+    mode: 0700
+
+- name: Transform the Notebook into a Pod
+  when: not rhods_benchmark_notebook_performance_use_rhods | bool
+  shell:
+    set -o pipefail;
+    cp "{{ notebook_src_template_dest }}"{,.orig};
+    notebook=$(cat "{{ notebook_src_template_dest }}" | yq);
+    pod_name=$(jq -r .metadata.name <<< "$notebook");
+    pod=$(jq .spec.template <<< "$notebook");
+
+    jq '.apiVersion= "v1"
+      | .kind= "Pod"
+      | .metadata.name = "'$pod_name'"'
+      <<< "$pod"
+      > "{{ notebook_src_template_dest }}"
+
+- name: Delete the notebook, if it exists
+  command:
+    oc delete
+       -f "{{ notebook_src_template_dest }}"
+       --ignore-not-found
+       -n "{{ notebook_namespace }}"
+
+# ---
+
+- name: Cleanup the Prometheus database of the cluster
+  when: capture_prom_db | bool
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: reset
+
+# ---
+
+- name: Create the test notebook
+  command:
+    oc create
+       -f "{{ notebook_src_template_dest }}"
+       -n "{{ notebook_namespace }}"
+
+- name: Wait for the Notebook Pod to start running
+  shell:
+    set -o pipefail;
+    oc get pod {{ notebook_search_labels }}
+       -n "{{ notebook_namespace }}"
+       --no-headers | awk '{print $3}'
+  register: wait_notebook_pod_start
+  retries: 20
+  delay: 15
+  until: wait_notebook_pod_start.stdout == "Running"
+
+- name: Wait for the Notebook Pod to be ready
+  shell:
+    set -o pipefail;
+    oc get pod {{ notebook_search_labels }}
+       -n "{{ notebook_namespace }}"
+       --no-headers | awk '{print $2}'
+  register: wait_notebook_pod_ready
+  retries: 12
+  delay: 5
+  until: wait_notebook_pod_ready.stdout == "1/1"
+
+- name: Get the notebook Pod name
+  command:
+    oc get pod {{ notebook_search_labels }}
+      -oname
+      -n "{{ notebook_namespace }}"
+  register: notebook_pod_name_cmd
+  failed_when: not notebook_pod_name_cmd.stdout
+# ---
+
+- name: Move the notebook files to HOME
+  shell:
+    oc -n "{{ notebook_namespace }}"
+       rsh "{{ notebook_pod_name_cmd.stdout }}"
+       bash -c 'cp -v "$NOTEBOOK_FILES"/* . && mkdir -p results'
+
+- name: Run the notebook
+  shell:
+    oc -n "{{ notebook_namespace }}"
+       rsh "{{ notebook_pod_name_cmd.stdout }}"
+       bash -exc 'jupyter nbconvert --to notebook --execute "$NOTEBOOK_FILENAME"
+            && mv "$(basename "$NOTEBOOK_FILENAME" .ipynb).nbconvert.ipynb" results/$(basename "$NOTEBOOK_FILENAME" .ipynb).executed.ipynb'
+
+- name: Create the notebook artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/notebook-artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Collect the artifacts
+  command:
+    oc cp "{{ notebook_namespace }}/{{ notebook_pod_name_cmd.stdout.split('/')[1] }}":results
+          "{{ artifact_extra_logs_dir }}/notebook-artifacts/"
+
+- name: Capture the information about the notebook projects
+  include_tasks: artifacts_sutest_project.yml
+  vars:
+    rhods_notebook_namespace: "{{ notebook_namespace }}"
+    sut_cluster_kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+
+- name: Capture the sutest cluster artifacts
+  include_tasks: artifacts_sutest.yml
+  vars:
+    sut_cluster_kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+
+- name: Delete the notebook
+  command:
+    oc delete
+       -f "{{ notebook_src_template_dest }}"
+       -n "{{ notebook_namespace }}"
+
+- name: Generate MatrixBenchmark settings file
+  shell: |
+    cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
+    user_count=1
+    image={{ notebook_image_address }}
+    benchmark_name={{ rhods_benchmark_notebook_performance_benchmark_name }}
+    benchmark_repeat={{ rhods_benchmark_notebook_performance_benchmark_repeat }}
+    benchmark_number={{ rhods_benchmark_notebook_performance_benchmark_number }}
+    notebook_file_name={{ rhods_benchmark_notebook_performance_notebook_filename }}
+    EOF
+  ignore_errors: yes
+
+- name: Generate MatrixBenchmark exit code file
+  shell:
+    echo 1 > "{{ artifact_extra_logs_dir }}/exit_code"
+  ignore_errors: yes

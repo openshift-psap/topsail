@@ -2,6 +2,12 @@
   set_fact:
     project_artifacts_dir: "{{ artifact_extra_logs_dir }}/artifacts-sutest/project_{{ rhods_notebook_namespace }}"
 
+- name: Check if the cluster has the notebook CRD
+  command:
+    oc get crd notebooks.kubeflow.org
+  register: has_notebooks_crd
+  failed_when: false
+
 - name: Count the notebooks in the {{ rhods_notebook_namespace }} namespace
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
@@ -50,6 +56,7 @@
          -n {{ rhods_notebook_namespace }}
          > "{{ project_artifacts_dir }}/notebooks.status"
     ignore_errors: yes
+    when: has_notebooks_crd.rc == 0
 
   - name: Get the status of the notebook Pods
     shell:
@@ -71,6 +78,7 @@
          -n {{ rhods_notebook_namespace }}
          > "{{ project_artifacts_dir }}/notebooks.yaml"
     ignore_errors: yes
+    when: has_notebooks_crd.rc == 0
 
   - name: Get the definition of the notebook Pods
     shell:
@@ -80,6 +88,7 @@
     ignore_errors: yes
 
   - name: Terminate the notebooks
+    when: has_notebooks_crd.rc == 0
     shell:
       set -o pipefail;
       oc get notebooks -oname -n {{ rhods_notebook_namespace }} |

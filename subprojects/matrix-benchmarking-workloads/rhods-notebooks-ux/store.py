@@ -59,11 +59,13 @@ IMPORTANT_FILES = [
     "ods-ci/ods-ci-*/progress_ts.yaml",
     "ods-ci/ods-ci-*/final_screenshot.png",
     "ods-ci/ods-ci-*/log.html",
+
+    "notebook-artifacts/benchmark_measures.json",
 ]
 
 
 ARTIFACTS_VERSION = "2022-11-09"
-PARSER_VERSION = "2022-11-17"
+PARSER_VERSION = "2022-11-25"
 
 
 def is_mandatory_file(filename):
@@ -298,6 +300,9 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
     filename = pathlib.Path("artifacts-sutest") / "odh-dashboard-config.yaml"
     with open(register_important_file(dirname, filename)) as f:
         odh_dashboard_config.content = yaml.safe_load(f)
+
+    if not odh_dashboard_config.content:
+        return None
 
     odh_dashboard_config.path = str(filename)
     odh_dashboard_config.notebook_size_name = notebook_size_name
@@ -616,6 +621,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.ods_ci_notebook_benchmark[user_id] = _parse_ods_ci_notebook_benchmark(dirname, output_dir)
         results.ods_ci_progress[user_id] = _parse_ods_ci_progress(dirname, output_dir)
 
+    if (dirname / "notebook-artifacts").exists():
+        results.ods_ci_notebook_benchmark[-1] = _parse_ods_ci_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
 
     results.possible_machines = store_theoretical.get_possible_machines()
 

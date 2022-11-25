@@ -169,6 +169,39 @@ class RHODS:
 
         return RunAnsibleRole(locals())
 
+
+    @AnsibleRole("rhods_benchmark_notebook_performance")
+    @AnsibleConstant("Address where the imagestreams are stored. Used only when use_rhods=false.",
+                     "imagestream_source_location", "https://raw.githubusercontent.com/red-hat-data-services/odh-manifests/master/jupyterhub/notebook-images/overlays/additional")
+    @AnsibleMappedParams
+    def benchmark_notebook_performance(self,
+                                       namespace="rhods-notebooks",
+                                       imagestream="s2i-generic-data-science-notebook",
+                                       imagestream_tag="",
+                                       use_rhods: bool = True,
+                                       notebook_directory="testing/ods/notebooks/",
+                                       notebook_filename="benchmark_entrypoint.ipynb",
+                                       benchmark_name="pyperf_bm_go.py",
+                                       benchmark_repeat: int = 1,
+                                       benchmark_number: int = 1,
+                                       ):
+        """
+        Benchmark the performance of a notebook image.
+
+        Args:
+          namespace: Namespace in which the notebook will be deployed, if not deploying with RHODS.
+          imagestream: Imagestream to use to look up the notebook Pod image.
+          imagestream_tag: Imagestream tag to use to look up the notebook Pod image. If emtpy and and the image stream has only one tag, use it. Fails otherwise.
+          use_rhods: If true, deploy a RHODS notebook, If false, deploy directly a Pod.
+          notebook_directory: Directory containing the files to mount in the notebook.
+          notebook_filename: Name of the ipynb notebook file to execute with JupyterLab.
+          benchmark_name: Name of the benchmark to execute in the notebook.
+          benchmark_repeat: Number of repeats of the benchmark to perform for one time measurement.
+          benchmark_number: Number of times the benchmark time measurement should be done.
+        """
+
+        return RunAnsibleRole(locals())
+
     @AnsibleRole("rhods_undeploy_ods")
     @AnsibleMappedParams
     def undeploy_ods(self,

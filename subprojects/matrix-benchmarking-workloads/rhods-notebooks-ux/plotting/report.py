@@ -33,6 +33,15 @@ def set_config(additional_cfg, args):
     cfg.d.update(additional_cfg)
     return list(args[:-1]) + [cfg]
 
+def set_entry(entry, _args):
+    args = copy.deepcopy(_args)
+    ordered_vars, settings, setting_lists, variables, cfg = args
+
+    settings.update(entry.settings.__dict__)
+    setting_lists[:] = []
+    variables.clear()
+    return args
+
 def Plot(name, args, msg_p=None):
     stats = table_stats.TableStats.stats_by_name[name]
     fig, msg = stats.do_plot(*args)
@@ -234,24 +243,31 @@ class NotebookPerformanceReport():
         header = []
         header += [html.H2("Notebook Performance")]
 
-        if settings["user_count"] == "1":
-            msg_p = []
-            header += Plot_and_Text("Notebook Performance",
-                                    set_config(dict(user_details=1, stacked=1), args))
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            if ordered_vars:
+                header.append(html.H3(", ".join(f"{k}={entry.settings.__dict__[k]}" for k in ordered_vars)))
 
-            header += ["This plot shows the distribution of the notebook performance benchmark results, when a single notebook is running on the node."]
+            if settings["user_count"] == "1":
+                msg_p = []
+                header += Plot_and_Text("Notebook Performance",
+                                        set_config(dict(user_details=1, stacked=1), set_entry(entry, args)))
 
-        else:
-            header += Plot_and_Text("Notebook Performance", set_config(dict(all_in_one=True), args))
-            header += ["This plot shows the distribution of the notebook performance benchmark results, for all of the simulated users."]
+                header += ["This plot shows the distribution of the notebook performance benchmark results, "
+                           "when a single notebook is running on the node."]
+
+            else:
+                header += Plot_and_Text("Notebook Performance", set_config(dict(all_in_one=True), set_entry(entry, args)))
+                header += ["This plot shows the distribution of the notebook performance benchmark results, "
+                           "for all of the simulated users."]
+                header += html.Br()
+                header += html.Br()
+
+                header += Plot_and_Text("Notebook Performance", args)
+                header += ["This plot shows the distribution of the notebook performance benchmark results,"
+                "for each of the simulated users."]
+
             header += html.Br()
             header += html.Br()
-
-            header += Plot_and_Text("Notebook Performance", args)
-            header += ["This plot shows the distribution of the notebook performance benchmark results, for each of the simulated users."]
-
-        header += html.Br()
-        header += html.Br()
 
         return None, header
 

@@ -385,7 +385,36 @@ prepare_ci() {
     trap "set +e; sutest_cleanup; driver_cleanup; exit 1" ERR
 }
 
+prepare_notebook_performance_without_rhods() {
+    local namespace=$(get_command_arg namespace rhods benchmark_notebook_performance)
+    oc create namespace "$namespace" -oyaml --dry-run=client | oc apply -f-
+
+    local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
+    local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
+    local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
+    local sutest_taint="$sutest_taint_key=$sutest_taint_value:$sutest_taint_effect"
+
+    oc annotate namespace/"$namespace" --overwrite \
+       "openshift.io/node-selector=$sutest_taint_key=$sutest_taint_value"
+    oc annotate namespace/"$namespace" --overwrite \
+       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
+}
+
 prepare() {
+
+    prepare_notebook_performance_without_rhods
+
+    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    if [[ "$test_flavor" == "notebook-performance" ]]; then
+        set_config tests.notebooks.repeat 1
+
+        if ! test_config tests.notebooks.notebook_performance.use_rhods; then
+            _info "Skip cluster preparation (running the notebook-performance test without using RHODS)"
+
+            return
+        fi
+    fi
+
     prepare_sutest_cluster
     prepare_driver_cluster
 
@@ -402,12 +431,27 @@ run_user_level_test() {
 
     local notebook_name=$(get_config tests.notebooks.ipynb.notebook_filename)
     local notebook_url="http://$nginx_hostname/$notebook_name"
+    local failed=0
     ./run_toolbox.py from_config rhods notebook_ux_e2e_scale_test \
-                     --extra "{notebook_url: '$notebook_url', sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}"
+                     --extra "{notebook_url: '$notebook_url', sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}" \
+        || failed=1
+
+    # quick access to these files
+    local TEST_DIRNAME=driver_rhods__notebook_ux_e2e_scale_test
+    local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+    cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
+    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
+
+    return $failed
 }
 
-run_user_level_tests() {
+run_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
+
+    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    if [[ "$test_flavor" == "notebook-performance" ]]; then
+        set_config tests.notebooks.repeat 1
+    fi
 
     local test_failed=0
     local plot_failed=0
@@ -422,12 +466,7 @@ run_user_level_tests() {
             [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
         done
 
-        run_user_level_test && test_failed=0 || test_failed=1
-        # quick access to these files
-        local TEST_DIRNAME=driver_rhods__notebook_ux_e2e_scale_test
-        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
-        cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir"
-        cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null || true
+        run_test && test_failed=0 || test_failed=1
 
         generate_plots || plot_failed=1
         if [[ "$test_failed" == 1 ]]; then
@@ -446,6 +485,65 @@ run_user_level_tests() {
 run_api_level_test() {
     switch_driver_cluster
     ./run_toolbox.py from_config rhods notebook_api_scale_test
+}
+
+run_single_notebook_test() {
+    switch_sutest_cluster # should have only one cluster for this test
+
+    local failed=0
+
+    local namespace=$(get_command_arg namespace rhods benchmark_notebook_performance)
+    local toleration_key=$(get_config clusters.driver.compute.machineset.taint.key)
+
+    local use_rhods=$(get_config tests.notebooks.notebook_performance.use_rhods)
+    local notebook_performance_tests=$(get_config tests.notebooks.notebook_performance.tests[])
+    for notebook_performance_test in $(echo "$notebook_performance_tests" | jq --compact-output); do
+        local imagestream=$(echo "$notebook_performance_test" | jq -r .imagestream)
+        local notebook_directory=$(echo "$notebook_performance_test" | jq -r .ipynb.uploaded_directory)
+        local notebook_filename=$(echo "$notebook_performance_test" | jq -r .ipynb.notebook_filename)
+        local instance_types=$(echo "$notebook_performance_test" | jq -r .instance_types[])
+
+        for instance_type in $instance_types; do
+            local machineset_name=$(get_command_arg name cluster set_scale --suffix notebook-performance)
+            oc delete "machineset/$machineset_name" \
+               -n openshift-machine-api \
+               --ignore-not-found
+
+            ./run_toolbox.py from_config cluster set_scale \
+                             --suffix notebook-performance \
+                             --extra "{instance_type:'$instance_type'}"
+
+            for benchmark in $(echo "$notebook_performance_test" | jq .benchmarks[] --compact-output); do
+                local benchmark_name=$(echo "$benchmark" | jq -r .name)
+
+                local benchmark_repeat=$(echo "$benchmark" | jq -r .repeat)
+                local benchmark_number=$(echo "$benchmark" | jq -r .number)
+
+                if ! ./run_toolbox.py rhods benchmark_notebook_performance \
+                     --imagestream "$imagestream" \
+                     --namespace "$namespace" \
+                     --use_rhods "$use_rhods" \
+                     --notebook_directory "$notebook_directory" \
+                     --notebook_filename "$notebook_filename" \
+                     --benchmark_name "$benchmark_name" \
+                     --benchmark_repeat "$benchmark_repeat" \
+                     --benchmark_number "$benchmark_number" \
+                   ;
+                then
+                    failed=$((failed + 1)) # run through all the tests, even in case of a failure
+                fi
+
+                local TEST_DIRNAME=sutest_rhods__benchmark_notebook_performance
+                local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+                cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
+                cat <<EOF > "$last_test_dir/settings.test" || true
+instance_type=$instance_type
+EOF
+            done
+        done
+    done
+
+    return $failed
 }
 
 driver_cleanup() {
@@ -502,6 +600,12 @@ sutest_cleanup() {
 
 sutest_cleanup_ldap() {
     switch_sutest_cluster
+
+    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    if [[ "$test_flavor" == "notebook-performance" ]]; then
+        echo "Running the notebook-performance, nothing to cleanup"
+        return
+    fi
 
     if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
         _warning "rhods notebook cleanup failed :("
@@ -565,23 +669,17 @@ connect_ci() {
 }
 
 test_ci() {
-
-    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
-    if [[ "$test_flavor" == "user-level" ]]; then
-        run_user_level_tests
-    elif [[ "$test_flavor" == "api-level" ]]; then
-        run_api_level_test
-    else
-        _error "Unknown test flavor: $test_flavor"
-    fi
+    run_tests_and_plots
 }
 
-run_one_test() {
+run_test() {
     local test_flavor=$(get_config tests.notebooks.flavor_to_run)
     if [[ "$test_flavor" == "user-level" ]]; then
         run_user_level_test
     elif [[ "$test_flavor" == "api-level" ]]; then
         run_api_level_test
+    elif [[ "$test_flavor" == "notebook-performance" ]]; then
+        run_single_notebook_test
     else
         _error "Unknown test flavor: $test_flavor"
     fi
@@ -659,12 +757,12 @@ main() {
             return 0
             ;;
         "run_test_and_plot")
-            run_one_test
+            run_test
             generate_plots
             return 0
             ;;
         "run_test")
-            run_one_test
+            run_test
             return 0
             ;;
         "generate_plots")
