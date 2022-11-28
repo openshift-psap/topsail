@@ -52,9 +52,9 @@ class RHODS:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("rhods_notebook_osd_ci_scale_test")
+    @AnsibleRole("rhods_notebook_ods_ci_scale_test")
     @AnsibleMappedParams
-    def notebook_osd_ci_scale_test(self,
+    def notebook_ods_ci_scale_test(self,
                                    namespace,
                                    idp_name, username_prefix, user_count: int,
                                    secret_properties_file,

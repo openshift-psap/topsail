@@ -1,40 +1,40 @@
 ---
 - name: Ensure that the secret properties file exists
   stat:
-    path: "{{ rhods_notebook_osd_ci_scale_test_secret_properties_file }}"
+    path: "{{ rhods_notebook_ods_ci_scale_test_secret_properties_file }}"
 
 - name: Ensure that the user count is set
   fail: msg="user count isn't set"
-  when: rhods_notebook_osd_ci_scale_test_user_count | int < 0
+  when: rhods_notebook_ods_ci_scale_test_user_count | int < 0
 
 - name: Ensure that the IDP name is set
   fail: msg="idp name isn't set"
-  when: not rhods_notebook_osd_ci_scale_test_idp_name
+  when: not rhods_notebook_ods_ci_scale_test_idp_name
 
 - name: Ensure that the username prefix is set
   fail: msg="username prefix isn't set"
-  when: not rhods_notebook_osd_ci_scale_test_username_prefix
+  when: not rhods_notebook_ods_ci_scale_test_username_prefix
 
 - name: Define the test namespace
   set_fact:
-    tester_namespace: "{{ rhods_notebook_osd_ci_scale_test_namespace }}"
+    tester_namespace: "{{ rhods_notebook_ods_ci_scale_test_namespace }}"
 
 - name: Define the test environments
   set_fact:
-    rhods_test_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_osd_ci_scale_test_ods_ci_istag }}
-    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_osd_ci_scale_test_artifacts_exporter_istag }}
+    rhods_ods_ci_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_ods_ci_scale_test_ods_ci_istag }}
+    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_ods_ci_scale_test_artifacts_exporter_istag }}
     rhods_notebook_namespace: rhods-notebooks
     tester_job_name: ods-ci
-    test_artifacts_collected: "{{ rhods_notebook_osd_ci_scale_test_artifacts_collected }}"
+    test_artifacts_collected: "{{ rhods_notebook_ods_ci_scale_test_artifacts_collected }}"
     capture_prom_db: yes
 
 - name: Set system-under-test == driver-cluster if no system-under-test (SUT) is provided
   set_fact:
-    sut_cluster_kubeconfig: "{{ rhods_notebook_osd_ci_scale_test_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
+    sut_cluster_kubeconfig: "{{ rhods_notebook_ods_ci_scale_test_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
 
 - name: Fetch the notebook file (to validate the URL and store it)
   get_url:
-    url: "{{ rhods_notebook_osd_ci_scale_test_notebook_url }}"
+    url: "{{ rhods_notebook_ods_ci_scale_test_notebook_url }}"
     dest: "{{ artifact_extra_logs_dir }}/notebook.raw"
     mode: '0440'
 
@@ -72,7 +72,7 @@
 
   - name: Get the image name description
     command:
-      oc get imagestream "{{ rhods_notebook_osd_ci_scale_test_notebook_image_name }}"
+      oc get imagestream "{{ rhods_notebook_ods_ci_scale_test_notebook_image_name }}"
          -n redhat-ods-applications
          -ojsonpath='{.metadata.annotations.opendatahub\.io/notebook-image-name}'
     register: notebook_image_name_descr_cmd
@@ -95,7 +95,7 @@
 
 - name: Get the ODS-CI sample var file
   shell:
-    oc debug istag/{{ rhods_notebook_osd_ci_scale_test_ods_ci_istag }}
+    oc debug istag/{{ rhods_notebook_ods_ci_scale_test_ods_ci_istag }}
        -n {{ tester_namespace }}
        -- cat test-variables.yml.model > /tmp/test-variables.yml.model
 
@@ -108,8 +108,8 @@
     OCP_API_URL="{{ oc_api_url_cmd.stdout }}";
     ODH_DASHBOARD_URL="https://{{ rhods_dashboard_hostname_cmd.stdout }}";
 
-    TEST_USER_AUTH_TYPE="{{ rhods_notebook_osd_ci_scale_test_idp_name }}";
-    TEST_USER_USERNAME="{{ rhods_notebook_osd_ci_scale_test_username_prefix }}#{USER_INDEX}";
+    TEST_USER_AUTH_TYPE="{{ rhods_notebook_ods_ci_scale_test_idp_name }}";
+    TEST_USER_USERNAME="{{ rhods_notebook_ods_ci_scale_test_username_prefix }}#{USER_INDEX}";
 
     export TEST_USER_PASSWORD="PASSWORD_WILL_BE_HERE";
 
@@ -133,7 +133,7 @@
 
     cp "$TEST_VAR_SAFE" "$TEST_VAR_FULL"
 
-    TEST_USER_PASSWORD="$(cat "{{ rhods_notebook_osd_ci_scale_test_secret_properties_file }}" | grep '^user_password=' | cut -d= -f2)";
+    TEST_USER_PASSWORD="$(cat "{{ rhods_notebook_ods_ci_scale_test_secret_properties_file }}" | grep '^user_password=' | cut -d= -f2)";
 
     yq -yi .TEST_USER.PASSWORD=\"${TEST_USER_PASSWORD}\" "$TEST_VAR_FULL"
 
@@ -162,8 +162,8 @@
 
 - name: Instantiate the RHODS tester job template
   template:
-    src: "{{ rhods_notebook_osd_ci_scale_test_job }}"
-    dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_osd_ci_scale_test.yaml"
+    src: "{{ rhods_notebook_ods_ci_scale_test_job }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_ods_ci_scale_test.yaml"
     mode: 0400
 
 - name: Delete the RHODS test entrypoint, if it exists
@@ -175,10 +175,10 @@
 - name: Create the RHODS test entrypoint
   command:
     oc create cm rhods-notebook-ux-e2e-scale-test-entrypoint
-       "--from-file=entrypoint.sh={{ rhods_notebook_osd_ci_scale_test_entrypoint }}"
-       "--from-file=state-signal_barrier.py={{ rhods_notebook_osd_ci_scale_test_state_signal_barrier }}"
-       "--from-file=artifacts-exporter.sh={{ rhods_notebook_osd_ci_scale_test_s3_artifacts_exporter_sidecar }}"
-       "--from-file={{ rhods_notebook_osd_ci_scale_test_test_case_directory }}"
+       "--from-file=entrypoint.sh={{ rhods_notebook_ods_ci_scale_test_entrypoint }}"
+       "--from-file=state-signal_barrier.py={{ rhods_notebook_ods_ci_scale_test_state_signal_barrier }}"
+       "--from-file=artifacts-exporter.sh={{ rhods_notebook_ods_ci_scale_test_s3_artifacts_exporter_sidecar }}"
+       "--from-file={{ rhods_notebook_ods_ci_scale_test_test_case_directory }}"
        -n {{ tester_namespace }}
 
 - name: Empty the Minio S3 bucket
@@ -194,7 +194,7 @@
 - name: Delete the RHODS tester job, if it exists
   command:
     oc delete
-       -f "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_osd_ci_scale_test.yaml"
+       -f "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_ods_ci_scale_test.yaml"
        --ignore-not-found
        -n {{ tester_namespace }}
 
@@ -238,7 +238,7 @@
 - name: Create the RHODS test job
   command:
     oc create
-       -f "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_osd_ci_scale_test.yaml"
+       -f "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_ods_ci_scale_test.yaml"
        -n {{ tester_namespace }}
 
 - name: Wait for the RHODS tester job to start
