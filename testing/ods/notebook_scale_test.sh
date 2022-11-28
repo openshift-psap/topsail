@@ -432,12 +432,12 @@ run_user_level_test() {
     local notebook_name=$(get_config tests.notebooks.ipynb.notebook_filename)
     local notebook_url="http://$nginx_hostname/$notebook_name"
     local failed=0
-    ./run_toolbox.py from_config rhods notebook_osd_ci_scale_test \
+    ./run_toolbox.py from_config rhods notebook_ods_ci_scale_test \
                      --extra "{notebook_url: '$notebook_url', sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}" \
         || failed=1
 
     # quick access to these files
-    local TEST_DIRNAME=driver_rhods__notebook_osd_ci_scale_test
+    local TEST_DIRNAME=driver_rhods__notebook_ods_ci_scale_test
     local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
     cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
     cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
