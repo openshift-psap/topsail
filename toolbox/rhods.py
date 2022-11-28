@@ -159,7 +159,7 @@ class RHODS:
           test_name: Test to perform.
           user_count: Number of users to run in parallel.
           notebook_image_name: Name of the RHODS image to use when launching the notebooks.
-
+          api_scale_test_istag: Image stream tag.
           run_time: Test run time (eg, 300s, 20m, 3h, 1h30m, etc.)
           spawn_rate: Rate to spawn users at (users per second)
           sut_cluster_kubeconfig: Path of the system-under-test cluster's Kubeconfig. If provided, the RHODS endpoints will be looked up in this cluster.
