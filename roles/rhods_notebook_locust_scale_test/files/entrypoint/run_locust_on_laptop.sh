@@ -7,25 +7,35 @@ set -o errtrace
 #set -x
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source "$THIS_DIR/../../../../testing/ods/config_common.sh"
-source "$THIS_DIR/../../../../testing/ods/config_rhods.sh"
-source "$THIS_DIR/../../../../testing/ods/config_notebook_ux.sh"
+BASE_DIR="$(realpath "$THIS_DIR")/../../../.."
+source "$BASE_DIR/testing/ods/configure.sh"
+
+LOCUST_COMMAND="rhods notebook_locust_scale_test"
+
+_get_command_arg() {
+    cd "$BASE_DIR"
+    get_command_arg "$@"
+}
 
 export ODH_DASHBOARD_URL=https://$(oc get route -n redhat-ods-applications rhods-dashboard -ojsonpath={.spec.host})
-export TEST_USERS_USERNAME_PREFIX=$LDAP_USER_PREFIX
-export TEST_USERS_IDP_NAME=$LDAP_IDP_NAME
-export CREDS_FILE=$S3_LDAP_PROPS
-export NOTEBOOK_IMAGE_NAME=$RHODS_NOTEBOOK_IMAGE_NAME
-export NOTEBOOK_SIZE_NAME=$ODS_NOTEBOOK_SIZE
-export USER_INDEX_OFFSET=$ODS_CI_USER_INDEX_OFFSET
+export TEST_USERS_USERNAME_PREFIX=$(_get_command_arg username_prefix $LOCUST_COMMAND)
+export TEST_USERS_IDP_NAME=$(_get_command_arg idp_name $LOCUST_COMMAND)
+export USER_INDEX_OFFSET=$(_get_command_arg user_index_offset $LOCUST_COMMAND)
 
-export LOCUST_USERS=$ODS_CI_NB_USERS
-export LOCUST_SPAWN_RATE=1
-export LOCUST_RUN_TIME=5m
+export CREDS_FILE=$(_get_command_arg secret_properties_file $LOCUST_COMMAND)
+export NOTEBOOK_IMAGE_NAME=$(_get_command_arg notebook_image_name $LOCUST_COMMAND)
+export NOTEBOOK_SIZE_NAME=$(_get_command_arg notebook_size_name $LOCUST_COMMAND)
+
+
+export LOCUST_USERS=$(_get_command_arg user_count $LOCUST_COMMAND)
+export LOCUST_SPAWN_RATE=$(_get_command_arg spawn_rate $LOCUST_COMMAND)
+export LOCUST_RUN_TIME=$(_get_command_arg run_time $LOCUST_COMMAND)
 # or
 #export LOCUST_ITERATIONS=1
 
-export LOCUST_LOCUSTFILE=$PWD/locustfile.py
+
+export LOCUST_LOCUSTFILE=$THIS_DIR/locustfile.py
+
 export REUSE_COOKIES=1
 
 DEBUG_MODE=${DEBUG_MODE:-1}
