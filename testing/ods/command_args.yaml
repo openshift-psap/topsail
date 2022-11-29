@@ -132,6 +132,27 @@ rhods notebook_ods_ci_scale_test:
   username_prefix: {{ ldap.users.prefix }}
   notebook_url: SET_AT_RUNTIME # set at runtime
 
+rhods notebook_locust_scale_test:
+  namespace: {{ tests.notebooks.namespace }}
+  idp_name: {{ ldap.idp_name }}
+  secret_properties_file: {{ s3_ldap_password_location }}
+  locust_istag: "{{ tests.notebooks.imagestream_name }}:{{ locust_istag }}"
+  artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_tag }}"
+
+  test_name: all
+  username_prefix: {{ ldap.users.prefix }}
+  user_count: {{ tests.notebooks.users.count }}
+  user_index_offset: {{ tests.notebooks.users.start_offset }}
+
+  run_time: {{ tests.notebooks.locust.run_time }}
+  spawn_rate: {{ tests.notebooks.locust.spawn_rate }}
+
+  notebook_image_name: {{ tests.notebooks.notebook.image_name }}
+  notebook_size_name: {{ tests.notebooks.notebook.size_name }}
+  toleration_key: {{ clusters.driver.compute.machineset.taint.key }}
+
+  sut_cluster_kubeconfig: # set at runtime if necessary
+
 sutest/cluster set_scale/cleanup:
   instance_type: not-used
   name: {{ clusters.sutest.compute.machineset.name }}
