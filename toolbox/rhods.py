@@ -130,26 +130,28 @@ class RHODS:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("rhods_notebook_api_scale_test")
+    @AnsibleRole("rhods_notebook_locust_scale_test")
     @AnsibleMappedParams
-    def notebook_api_scale_test(self,
-                                namespace,
-                                idp_name,
-                                secret_properties_file,
-                                username_prefix,
-                                test_name,
-                                user_count: int,
-                                run_time="1m",
-                                spawn_rate="1",
-                                sut_cluster_kubeconfig="",
-                                notebook_image_name="s2i-generic-data-science-notebook",
-                                api_scale_test_istag="ods-ci:api-scale-test",
-                                artifacts_exporter_istag="ods-ci:artifacts-exporter",
-                                toleration_key="",
-                                ):
+    def notebook_locust_scale_test(self,
+                                   namespace,
+                                   idp_name,
+                                   secret_properties_file,
+                                   test_name,
+                                   username_prefix,
+                                   user_count: int,
+                                   user_index_offset: int,
+                                   locust_istag,
+                                   artifacts_exporter_istag,
+                                   run_time="1m",
+                                   spawn_rate="1",
+                                   sut_cluster_kubeconfig="",
+                                   notebook_image_name="s2i-generic-data-science-notebook",
+                                   notebook_size_name="Small",
+                                   toleration_key="",
+                                   ):
 
         """
-        End-to-end testing of RHODS notebook user experience at scale
+        End-to-end testing of RHODS notebooks at scale, at API level
 
         Args:
           namespace: Namespace where the test will run
@@ -158,8 +160,9 @@ class RHODS:
           username_prefix: Prefix of the RHODS users.
           test_name: Test to perform.
           user_count: Number of users to run in parallel.
+          user_index_offset: Offset to add to the user index to compute the user name.
           notebook_image_name: Name of the RHODS image to use when launching the notebooks.
-          api_scale_test_istag: Image stream tag.
+          locust_istag: Imagestream tag of the locust container.
           run_time: Test run time (eg, 300s, 20m, 3h, 1h30m, etc.)
           spawn_rate: Rate to spawn users at (users per second)
           sut_cluster_kubeconfig: Path of the system-under-test cluster's Kubeconfig. If provided, the RHODS endpoints will be looked up in this cluster.

@@ -44,43 +44,43 @@ cluster set_scale/notebook-performance:
 utils build_push_image/artifacts-exporter:
   namespace: {{ tests.notebooks.namespace }}
   dockerfile_path: testing/ods/images/Containerfile.s3_artifacts_exporter
-{% set artifacts_exporter_istag = "artifacts-exporter" %}
-  tag: {{ artifacts_exporter_istag }}
+{% set artifacts_exporter_tag = "artifacts-exporter" %}
+  tag: {{ artifacts_exporter_tag }}
   image_local_name: {{ tests.notebooks.imagestream_name }}
 
 cluster preload_image/artifacts-exporter:
   namespace: {{ tests.notebooks.namespace }}
-  name: {{ artifacts_exporter_istag }}
-  image: {{ scale_test_imagestream }}:{{ artifacts_exporter_istag }}
+  name: {{ artifacts_exporter_tag }}
+  image: {{ scale_test_imagestream }}:{{ artifacts_exporter_tag }}
   <<: *driver_preload_image
 
-utils build_push_image/api-scale-test:
+utils build_push_image/locust:
   namespace: {{ tests.notebooks.namespace }}
-  dockerfile_path: testing/ods/images/Containerfile.api_scale_test
-{% set api_scale_test_istag = "api-scale-test" %}
-  tag: {{ api_scale_test_istag }}
+  dockerfile_path: testing/ods/images/Containerfile.locust
+{% set locust_tag = "locust" %}
+  tag: {{ locust_tag }}
   image_local_name: {{ tests.notebooks.imagestream_name }}
 
-cluster preload_image/api-scale-test:
+cluster preload_image/locust:
   namespace: {{ tests.notebooks.namespace }}
-  name: {{ api_scale_test_istag }}
-  image: {{ scale_test_imagestream }}:{{ api_scale_test_istag }}
+  name: {{ locust_tag }}
+  image: {{ scale_test_imagestream }}:{{ locust_tag }}
   <<: *driver_preload_image
 
 
-utils build_push_image/user-scale-test:
+utils build_push_image/ods-ci:
   namespace: {{ tests.notebooks.namespace }}
   git_repo: {{ tests.notebooks.ods_ci.image.repo }}
   git_ref: {{ tests.notebooks.ods_ci.image.ref }}
   dockerfile_path: build/Dockerfile
-{% set user_scale_test_istag = "ods-ci" %}
-  tag: {{ user_scale_test_istag }}
+{% set ods_ci_tag = "ods-ci" %}
+  tag: {{ ods_ci_tag }}
   image_local_name: {{ tests.notebooks.imagestream_name }}
 
-cluster preload_image/user-scale-test:
+cluster preload_image/ods-ci:
   namespace: {{ tests.notebooks.namespace }}
-  name: {{ user_scale_test_istag }}
-  image: {{ scale_test_imagestream }}:{{ user_scale_test_istag }}
+  name: {{ ods_ci_tag }}
+  image: {{ scale_test_imagestream }}:{{ ods_ci_tag }}
   <<: *driver_preload_image
 
 
@@ -114,8 +114,8 @@ rhods notebook_ods_ci_scale_test:
   namespace: {{ tests.notebooks.namespace }}
   artifacts_collected: {{ tests.notebooks.artifacts_collected }}
   idp_name: {{ ldap.idp_name }}
-  artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_istag }}"
-  ods_ci_istag: "{{ tests.notebooks.imagestream_name }}:{{ user_scale_test_istag }}"
+  artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_tag }}"
+  ods_ci_istag: "{{ tests.notebooks.imagestream_name }}:{{ ods_ci_tag }}"
   ods_ci_exclude_tags: {{ tests.notebooks.ods_ci.excluded_tags }}
   ods_ci_test_case: {{ tests.notebooks.ods_ci.test_case }}
   notebook_benchmark_name: {{ tests.notebooks.benchmark.name }}
@@ -131,6 +131,27 @@ rhods notebook_ods_ci_scale_test:
   user_index_offset: {{ tests.notebooks.users.start_offset }}
   username_prefix: {{ ldap.users.prefix }}
   notebook_url: SET_AT_RUNTIME # set at runtime
+
+rhods notebook_locust_scale_test:
+  namespace: {{ tests.notebooks.namespace }}
+  idp_name: {{ ldap.idp_name }}
+  secret_properties_file: {{ s3_ldap_password_location }}
+  locust_istag: "{{ tests.notebooks.imagestream_name }}:{{ locust_istag }}"
+  artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_tag }}"
+
+  test_name: all
+  username_prefix: {{ ldap.users.prefix }}
+  user_count: {{ tests.notebooks.users.count }}
+  user_index_offset: {{ tests.notebooks.users.start_offset }}
+
+  run_time: {{ tests.notebooks.locust.run_time }}
+  spawn_rate: {{ tests.notebooks.locust.spawn_rate }}
+
+  notebook_image_name: {{ tests.notebooks.notebook.image_name }}
+  notebook_size_name: {{ tests.notebooks.notebook.size_name }}
+  toleration_key: {{ clusters.driver.compute.machineset.taint.key }}
+
+  sut_cluster_kubeconfig: # set at runtime if necessary
 
 sutest/cluster set_scale/cleanup:
   instance_type: not-used

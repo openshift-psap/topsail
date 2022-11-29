@@ -32,6 +32,7 @@ class SpawnTime():
 
         data = []
 
+        hide_launch_delay = cfg.get("hide_launch_delay", False)
         keep_failed_steps = cfg.get("keep_failed_steps", False)
         hide_failed_users = cfg.get("hide_failed_users", False)
 
@@ -103,12 +104,17 @@ class SpawnTime():
         fig.update_layout(yaxis_title="")
         fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
 
+        if hide_launch_delay:
+            fig.for_each_trace(lambda trace: trace.update(visible="legendonly")
+                               if trace.name == "launch_delay" else ())
+
         title = "Execution Time of the User Steps"
         if keep_failed_steps:
             title += " with the failed steps"
         if hide_failed_users:
             title += " without the failed users"
-
+        if hide_launch_delay:
+            title += " without the launch delay"
         fig.update_layout(title=title, title_x=0.5,)
 
         return fig, ""

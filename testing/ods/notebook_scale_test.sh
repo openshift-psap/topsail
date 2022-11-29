@@ -76,25 +76,19 @@ prepare_driver_cluster() {
        'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$driver_taint_effect'", "key": "'$driver_taint_key'"}]'
 
 
-    build_and_preload_user_scale_test_image() {
+    build_and_preload_image() {
+        suffix=$1
+
         process_ctrl::retry 5 30s \
-                            ./run_toolbox.py from_config utils build_push_image --suffix user-scale-test
-        ./run_toolbox.py from_config cluster preload_image --suffix user-scale-test
+                            ./run_toolbox.py from_config utils build_push_image \
+                                --suffix "$suffix"
+        ./run_toolbox.py from_config cluster preload_image \
+                         --suffix "$suffix"
     }
 
-    build_and_preload_artifacts_exporter_image() {
-        ./run_toolbox.py from_config utils build_push_image --suffix artifacts-exporter
-        ./run_toolbox.py from_config cluster preload_image --suffix artifacts-exporter
-    }
-
-    build_and_preload_api_scale_test_image() {
-        ./run_toolbox.py from_config utils build_push_image --suffix api-scale-test
-        ./run_toolbox.py from_config cluster preload_image --suffix api-scale-test
-    }
-
-    process_ctrl::run_in_bg build_and_preload_user_scale_test_image
-    process_ctrl::run_in_bg build_and_preload_artifacts_exporter_image
-    process_ctrl::run_in_bg build_and_preload_api_scale_test_image
+    process_ctrl::run_in_bg build_and_preload_image "ods-ci"
+    process_ctrl::run_in_bg build_and_preload_image "locust"
+    process_ctrl::run_in_bg build_and_preload_image "artifacts-exporter"
 
     process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_minio_s3_server
     process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_nginx_server
@@ -423,7 +417,7 @@ prepare() {
     sutest_wait_rhods_launch
 }
 
-run_user_level_test() {
+run_ods_ci_test() {
     switch_driver_cluster
 
     local nginx_namespace=$(get_command_arg namespace cluster deploy_nginx_server)
@@ -482,9 +476,9 @@ run_tests_and_plots() {
 
 }
 
-run_api_level_test() {
+run_locust_test() {
     switch_driver_cluster
-    ./run_toolbox.py from_config rhods notebook_api_scale_test
+    ./run_toolbox.py from_config rhods notebook_locust_scale_test
 }
 
 run_single_notebook_test() {
@@ -674,10 +668,10 @@ test_ci() {
 
 run_test() {
     local test_flavor=$(get_config tests.notebooks.flavor_to_run)
-    if [[ "$test_flavor" == "user-level" ]]; then
-        run_user_level_test
-    elif [[ "$test_flavor" == "api-level" ]]; then
-        run_api_level_test
+    if [[ "$test_flavor" == "ods-ci" ]]; then
+        run_ods_ci_test
+    elif [[ "$test_flavor" == "locust" ]]; then
+        run_locust_test
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
         run_single_notebook_test
     else

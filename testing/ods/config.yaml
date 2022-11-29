@@ -108,7 +108,7 @@ tests:
       start_offset: 0
       # how long to wait between user starts, multiplied by the user index
       sleep_factor: 5.0
-    flavor_to_run: user-level # can be: user-level, api-level or notebook-performance
+    flavor_to_run: ods-ci # can be: ods-ci, locust or notebook-performance
     # namespace in which the scale test should run
     namespace: notebooks-scale-test
     imagestream_name: scale-test
@@ -153,7 +153,11 @@ tests:
       # if enable, delete the test namespaces after the testing
       cleanup_driver_on_exit: true
       skip_if_le_than_users: 5
-
+    locust:
+      # Rate to spawn users at (users per second)
+      spawn_rate: 1
+      # Test run time (eg, 300s, 20m, 3h, 1h30m, etc.)
+      run_time: 5m
     notebook_performance:
       use_rhods: true
       tests:
