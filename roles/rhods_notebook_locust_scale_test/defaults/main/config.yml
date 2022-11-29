@@ -14,18 +14,31 @@ rhods_notebook_locust_scale_test_idp_name:
 # Mandatory value
 rhods_notebook_locust_scale_test_secret_properties_file:
 
-# Prefix of the RHODS users.
-# Mandatory value
-rhods_notebook_locust_scale_test_username_prefix:
-
 # Test to perform.
 # Mandatory value
 rhods_notebook_locust_scale_test_test_name:
+
+# Prefix of the RHODS users.
+# Mandatory value
+rhods_notebook_locust_scale_test_username_prefix:
 
 # Number of users to run in parallel.
 # Mandatory value
 # Type: Int
 rhods_notebook_locust_scale_test_user_count:
+
+# Offset to add to the user index to compute the user name.
+# Mandatory value
+# Type: Int
+rhods_notebook_locust_scale_test_user_index_offset:
+
+# Imagestream tag of the locust container.
+# Mandatory value
+rhods_notebook_locust_scale_test_locust_istag:
+
+# Imagestream tag of the artifacts exporter side-car container.
+# Mandatory value
+rhods_notebook_locust_scale_test_artifacts_exporter_istag:
 
 # Test run time (eg, 300s, 20m, 3h, 1h30m, etc.)
 rhods_notebook_locust_scale_test_run_time: 1m
@@ -39,11 +52,8 @@ rhods_notebook_locust_scale_test_sut_cluster_kubeconfig:
 # Name of the RHODS image to use when launching the notebooks.
 rhods_notebook_locust_scale_test_notebook_image_name: s2i-generic-data-science-notebook
 
-# Image stream tag.
-rhods_notebook_locust_scale_test_api_scale_test_istag: ods-ci:api-scale-test
-
-# Imagestream tag of the artifacts exporter side-car container.
-rhods_notebook_locust_scale_test_artifacts_exporter_istag: ods-ci:artifacts-exporter
+# Missing documentation for notebook_size_name
+rhods_notebook_locust_scale_test_notebook_size_name: Small
 
 # Toleration key to use for the test Pods.
 rhods_notebook_locust_scale_test_toleration_key:
