@@ -48,9 +48,9 @@ spec:
         - name: ARTIFACT_DIR
           value: /mnt/shared-dir/api-scale-test
         - name: TEST_USERS_IDP_NAME
-          value: "{{ rhods_notebook_api_scale_test_idp_name }}"
+          value: "{{ rhods_notebook_locust_scale_test_idp_name }}"
         - name: TEST_USERS_USERNAME_PREFIX
-          value: "{{ rhods_notebook_api_scale_test_username_prefix }}"
+          value: "{{ rhods_notebook_locust_scale_test_username_prefix }}"
         - name: RHODS_VERSION
           value: "{{ rhods_version_cmd.stdout }}"
         - name: ODH_DASHBOARD_URL
@@ -58,19 +58,19 @@ spec:
         - name: CREDS_FILE
           value: "/mnt/rhods-scale-test-credentials/secret.properties"
         - name: API_SCALE_TEST_NAME
-          value: "{{ rhods_notebook_api_scale_test_test_name }}"
+          value: "{{ rhods_notebook_locust_scale_test_test_name }}"
         - name: NOTEBOOK_IMAGE_NAME
-          value: "{{ rhods_notebook_api_scale_test_notebook_image_name }}"
+          value: "{{ rhods_notebook_locust_scale_test_notebook_image_name }}"
         - name: LOCUST_LOCUSTFILE
           value: "/mnt/rhods-notebook-api-scale-test-entrypoint/locustfile.py"
         - name: LOCUST_DIR
           value: "/mnt/rhods-notebook-api-scale-test-entrypoint"
         - name: LOCUST_USERS
-          value: "{{ rhods_notebook_api_scale_test_user_count }}"
+          value: "{{ rhods_notebook_locust_scale_test_user_count }}"
         - name: LOCUST_RUN_TIME
-          value: "{{ rhods_notebook_api_scale_test_run_time }}"
+          value: "{{ rhods_notebook_locust_scale_test_run_time }}"
         - name: LOCUST_SPAWN_RATE
-          value: "{{ rhods_notebook_api_scale_test_spawn_rate }}"
+          value: "{{ rhods_notebook_locust_scale_test_spawn_rate }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir
@@ -100,10 +100,10 @@ spec:
         - name: rhods-notebook-api-scale-test-entrypoint
           mountPath: /mnt/rhods-notebook-api-scale-test-entrypoint
       restartPolicy: Never
-{% if rhods_notebook_api_scale_test_toleration_key|length %}
+{% if rhods_notebook_locust_scale_test_toleration_key|length %}
       tolerations:
       - effect: NoSchedule
-        key: {{ rhods_notebook_api_scale_test_toleration_key }}
+        key: {{ rhods_notebook_locust_scale_test_toleration_key }}
         operator: Exists
 {% endif %}
       volumes:

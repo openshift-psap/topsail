@@ -130,9 +130,9 @@ class RHODS:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("rhods_notebook_api_scale_test")
+    @AnsibleRole("rhods_notebook_locust_scale_test")
     @AnsibleMappedParams
-    def notebook_api_scale_test(self,
+    def notebook_locust_scale_test(self,
                                 namespace,
                                 idp_name,
                                 secret_properties_file,
