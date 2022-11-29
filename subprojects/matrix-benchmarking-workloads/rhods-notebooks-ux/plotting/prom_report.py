@@ -23,9 +23,9 @@ def add_pod_cpu_mem_usage(header, what, args, mem_only=False, cpu_only=False):
         descr = "CPU and memory"
         these_plots_show = "These plots show"
 
-    if mem_only:
+    if not cpu_only:
         header += [report.Plot(f"Prom: {what}: Mem usage", args)]
-    if cpu_only:
+    if not mem_only:
         header += [report.Plot(f"Prom: {what}: CPU usage", args)]
 
     header += [f"{these_plots_show} the {descr} usage of {what} Pods. "]
