@@ -42,8 +42,8 @@ spec:
         command: [bash, -ce]
         args:
         - |
-           mkdir -p "$ARTIFACT_DIR"
-           python3 -u /mnt/rhods-notebook-api-scale-test-entrypoint/entrypoint.py
+            mkdir -p "$ARTIFACT_DIR"
+            python3 -u /mnt/rhods-notebook-api-scale-test-entrypoint/entrypoint.py
         env:
         - name: ARTIFACT_DIR
           value: /mnt/shared-dir/api-scale-test
@@ -61,6 +61,10 @@ spec:
           value: "{{ rhods_notebook_locust_scale_test_test_name }}"
         - name: NOTEBOOK_IMAGE_NAME
           value: "{{ rhods_notebook_locust_scale_test_notebook_image_name }}"
+        - name: NOTEBOOK_SIZE_NAME
+          value: "{{ rhods_notebook_locust_scale_test_notebook_size_name }}"
+        - name: USER_INDEX_OFFSET
+          value: "{{ rhods_notebook_locust_scale_test_user_index_offset }}"
         - name: LOCUST_LOCUSTFILE
           value: "/mnt/rhods-notebook-api-scale-test-entrypoint/locustfile.py"
         - name: LOCUST_DIR
