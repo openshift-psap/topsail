@@ -22,8 +22,8 @@ metadata:
     deployment: ods-ci
   name: ods-ci
 spec:
-  parallelism: {{ rhods_notebook_osd_ci_scale_test_user_count }}
-  completions: {{ rhods_notebook_osd_ci_scale_test_user_count }}
+  parallelism: {{ rhods_notebook_ods_ci_scale_test_user_count }}
+  completions: {{ rhods_notebook_ods_ci_scale_test_user_count }}
   activeDeadlineSeconds: 18000
   backoffLimit: 0
   completionMode: Indexed
@@ -34,42 +34,42 @@ spec:
       securityContext:
         runAsUser: 1001
       containers:
-      - image: "{{ rhods_test_image }}"
+      - image: "{{ rhods_ods_ci_image }}"
         imagePullPolicy: Always
         name: main
         command: ['bash', '/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/entrypoint.sh']
         env:
         - name: RUN_ROBOT_TEST_CASE
-          value: "{{ rhods_notebook_osd_ci_scale_test_ods_ci_test_case }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_ods_ci_test_case }}"
         - name: ARTIFACT_DIR
           value: /mnt/shared-dir/ods-ci
         - name: RUN_ROBOT_EXCLUDE_TAGS
-          value: "{{ rhods_notebook_osd_ci_scale_test_ods_ci_exclude_tags }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags }}"
         - name: SLEEP_FACTOR
-          value: "{{ rhods_notebook_osd_ci_scale_test_user_sleep_factor }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_user_sleep_factor }}"
         - name: NOTEBOOK_URL
-          value: "{{ rhods_notebook_osd_ci_scale_test_notebook_url }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_notebook_url }}"
         - name: NOTEBOOK_IMAGE_NAME
-          value: "{{ rhods_notebook_osd_ci_scale_test_notebook_image_name }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_notebook_image_name }}"
         - name: NOTEBOOK_IMAGE_NAME_DESCR
           value: "{{ notebook_image_name_descr }}"
         - name: USER_COUNT
-          value: "{{ rhods_notebook_osd_ci_scale_test_user_count }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_user_count }}"
         - name: USER_INDEX_OFFSET
-          value: "{{ rhods_notebook_osd_ci_scale_test_user_index_offset }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_user_index_offset }}"
         - name: REDIS_SERVER
-          value: "{{ rhods_notebook_osd_ci_scale_test_state_signal_redis_server }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_state_signal_redis_server }}"
         - name: DASHBOARD_PRODUCT_NAME
           value: "{{ rhods_dashboard_product_name }}"
         - name: NOTEBOOK_SIZE_NAME
-          value: "{{ rhods_notebook_osd_ci_scale_test_notebook_size_name }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_notebook_size_name }}"
 
         - name: NOTEBOOK_BENCHMARK_NAME
-          value: "{{ rhods_notebook_osd_ci_scale_test_notebook_benchmark_name }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_notebook_benchmark_name }}"
         - name: NOTEBOOK_BENCHMARK_REPEAT
-          value: "{{ rhods_notebook_osd_ci_scale_test_notebook_benchmark_repeat }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_notebook_benchmark_repeat }}"
         - name: NOTEBOOK_BENCHMARK_NUMBER
-          value: "{{ rhods_notebook_osd_ci_scale_test_notebook_benchmark_number }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_notebook_benchmark_number }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir
@@ -91,13 +91,13 @@ spec:
         command: ['bash', '/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/artifacts-exporter.sh']
         env:
         - name: ARTIFACTS_COLLECTED
-          value: "{{ rhods_notebook_osd_ci_scale_test_artifacts_collected }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_artifacts_collected }}"
         - name: ARTIFACT_DIR
           value: "/mnt/shared-dir/ods-ci"
         - name: BUCKET_DEST_DIR
           value: "ods-ci"
         - name: USER_COUNT
-          value: "{{ rhods_notebook_osd_ci_scale_test_user_count }}"
+          value: "{{ rhods_notebook_ods_ci_scale_test_user_count }}"
         volumeMounts:
         - name: s3cmd-config
           mountPath: /mnt/s3-config
@@ -108,10 +108,10 @@ spec:
         - name: rhods-notebook-ux-e2e-scale-test-entrypoint
           mountPath: /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint
       restartPolicy: Never
-{% if rhods_notebook_osd_ci_scale_test_toleration_key|length %}
+{% if rhods_notebook_ods_ci_scale_test_toleration_key|length %}
       tolerations:
       - effect: NoSchedule
-        key: {{ rhods_notebook_osd_ci_scale_test_toleration_key }}
+        key: {{ rhods_notebook_ods_ci_scale_test_toleration_key }}
         operator: Exists
 {% endif %}
       volumes:

@@ -39,7 +39,7 @@ rhods_notebook_api_scale_test_sut_cluster_kubeconfig:
 # Name of the RHODS image to use when launching the notebooks.
 rhods_notebook_api_scale_test_notebook_image_name: s2i-generic-data-science-notebook
 
-# Missing documentation for api_scale_test_istag
+# Image stream tag.
 rhods_notebook_api_scale_test_api_scale_test_istag: ods-ci:api-scale-test
 
 # Imagestream tag of the artifacts exporter side-car container.
