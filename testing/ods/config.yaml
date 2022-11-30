@@ -132,7 +132,7 @@ tests:
       # tags to exclude when running the robot test case
       excluded_tags: None
       # ODS-CI test case to execute.
-      test_case: notebook_ux_e2e_test.robot
+      test_case: notebook_dsg_test.robot
     test_pods:
       # must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
       size:
