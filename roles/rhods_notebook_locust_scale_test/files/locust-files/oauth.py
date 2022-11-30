@@ -1,45 +1,51 @@
+import logging
 import urllib3
 from bs4 import BeautifulSoup
 
-class Oauth():
-    def __init__(self, client, env, user_name):
-        self.client = client
-        self.env = env
-        self.user_name = user_name
+import common
 
-    def do_login(self, response):
-        if "Log in with OpenShift" in response.text:
-            response = self._do_login_with_openshift(response)
-            if response is False:
-                return False
+class Oauth(common.ContextBase):
+    def __init__(self, context):
+        common.ContextBase.__init__(self, context)
 
-        response = self._do_login_with(response, self.env.IDP_NAME)
-        if response is False:
-            return False
+    def do_login(self, where, _response):
+        @common.Step(f"Login to {where} (oauth)")
+        def do_it(response):
+            if "Log in with OpenShift" in response.text:
+                response = self._do_login_with_openshift(response)
+                if not response:
+                    return response
 
-        response = self._do_log_in_to_your_account(response, self.user_name, self.env.USER_PASSWORD)
-        if response is False:
-            return False
+            response = self._do_login_with(response, self.env.IDP_NAME)
+            if not response:
+                return response
 
-        if "Authorize" in response.text:
-            response = self._do_authorize_service_account(response)
-            if response is False:
-                return False
+            response = self._do_log_in_to_your_account(response, self.env.IDP_NAME,
+                                                       self.user_name, self.env.USER_PASSWORD)
+            if not response:
+                return response
 
-        return response
+            if "Authorize" in response.text:
+                response = self._do_authorize_service_account(response)
+                if not response:
+                    return response
+
+            return response
+
+        return do_it(_response)
 
     def _do_login_with_openshift(self, response):
-        print("Log in with OpenShift")
+        logging.info("Log in with OpenShift")
         #
         # Page: Log in with OpenShift
         #
         soup = BeautifulSoup(response.text, features="lxml")
         action = soup.body.find("form").get("action")
 
-        return self.client.get(action, params={"rd":"/"}, name=action)
+        return self.client.get(action, params={"rd":"/"}, name="<oauth_host>/{action}")
 
     def _do_login_with(self, response, method):
-        print("Log in with ...")
+        logging.info("Log in with ...")
         #
         # Page: Log in with ...
         #
@@ -52,14 +58,15 @@ class Oauth():
             action = auth_type.get("href")
             break
         else:
-            print("FAILED")
-            return False
+            logging.error(f"Could not find the authentication method '{method}' in the oauth page ...")
+            common.debug_point()
+            if response: response.status_code = 599
+            return response
 
-        return self.client.get(oauth_host + action, name=action.partition("?")[0])
+        return self.client.get(oauth_host + action, name="<oauth_host>"+action.partition("?")[0])
 
-
-    def _do_log_in_to_your_account(self, response, username, password):
-        print("Log in to your account")
+    def _do_log_in_to_your_account(self, response, method, username, password):
+        logging.info("Log in to your account")
         #
         # Page: Log in to your account
         #
@@ -75,21 +82,25 @@ class Oauth():
             if form_input.get("type") == "hidden":
                 params[form_input.get("name")] = form_input.get("value")
 
-        with self.client.post(oauth_host + action, data=params|{
-            "username": username,
-            "password": password,
-        }, catch_response=True) as response:
+        with self.client.post(oauth_host + action,
+                              name="<oauth_host>"+action.replace(method, "{oauth method}"),
+                              data=params|{
+                                  "username": username,
+                                  "password": password,
+                              }, catch_response=True) as response:
             soup = BeautifulSoup(response.text, features="lxml")
 
             if "Log in" in str(soup.title):
-                print("Authentication failed")
+                logging.error("Authentication failed ...")
                 response.failure("Authentication failed")
-                return False
+
+                if response: response.status_code = 599
+                return response
 
         return response
 
     def _do_authorize_service_account(self, response):
-        print("Authorize ...")
+        logging.info("Authorize ...")
         #
         # Authorize ...
         #
@@ -120,6 +131,8 @@ class Oauth():
                 params[name] = value
                 continue
 
-        next_response = self.client.post(next_url, data=params)
-
+        next_response = self.client.post(next_url, data=params, name="<oauth_host>"+url.path)
+        if not next_response:
+            logging.error("Authorize failed ...")
+            common.debug_point()
         return next_response

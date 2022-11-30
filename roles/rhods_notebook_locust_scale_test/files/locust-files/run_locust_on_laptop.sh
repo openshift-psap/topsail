@@ -17,7 +17,7 @@ _get_command_arg() {
     get_command_arg "$@"
 }
 
-export ODH_DASHBOARD_URL=https://$(oc get route -n redhat-ods-applications rhods-dashboard -ojsonpath={.spec.host})
+export ODH_DASHBOARD_URL="https://$(oc get route -n redhat-ods-applications rhods-dashboard -ojsonpath={.spec.host})"
 export TEST_USERS_USERNAME_PREFIX=$(_get_command_arg username_prefix $LOCUST_COMMAND)
 export TEST_USERS_IDP_NAME=$(_get_command_arg idp_name $LOCUST_COMMAND)
 export USER_INDEX_OFFSET=$(_get_command_arg user_index_offset $LOCUST_COMMAND)
@@ -39,17 +39,21 @@ export LOCUST_LOCUSTFILE=$THIS_DIR/locustfile.py
 export REUSE_COOKIES=1
 
 DEBUG_MODE=${DEBUG_MODE:-1}
+export DEBUG_MODE
+
 if [[ "$DEBUG_MODE" == 1 ]]; then
+    echo "Debug!"
     exec python3 "$LOCUST_LOCUSTFILE"
 else
     mkdir -p results
     rm results/* -f
-
+    echo "Run!"
     locust --headless \
+           --reset-stats \
            --csv results/api_scale_test \
            --csv-full-history \
            --html results/api_scale_test.html \
-           --only-summary
+           --only-summary || true
 
     locust-reporter \
         -prefix results/api_scale_test \
