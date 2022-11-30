@@ -65,7 +65,7 @@ class RHODS:
                                    user_sleep_factor=1.0,
                                    ods_ci_istag="",
                                    ods_ci_exclude_tags="None",
-                                   ods_ci_test_case="notebook_ux_e2e_test.robot",
+                                   ods_ci_test_case="notebook_dsg_test.robot",
                                    artifacts_exporter_istag="",
                                    notebook_image_name="s2i-generic-data-science-notebook",
                                    notebook_size_name="Small",
