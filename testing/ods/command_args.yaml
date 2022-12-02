@@ -136,7 +136,7 @@ rhods notebook_locust_scale_test:
   namespace: {{ tests.notebooks.namespace }}
   idp_name: {{ ldap.idp_name }}
   secret_properties_file: {{ s3_ldap_password_location }}
-  locust_istag: "{{ tests.notebooks.imagestream_name }}:{{ locust_istag }}"
+  locust_istag: "{{ tests.notebooks.imagestream_name }}:{{ locust_tag }}"
   artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_tag }}"
 
   test_name: all
