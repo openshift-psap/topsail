@@ -47,7 +47,7 @@ rhods_notebook_ods_ci_scale_test_ods_ci_istag:
 rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags: None
 
 # Missing documentation for ods_ci_test_case
-rhods_notebook_ods_ci_scale_test_ods_ci_test_case: notebook_ux_e2e_test.robot
+rhods_notebook_ods_ci_scale_test_ods_ci_test_case: notebook_dsg_test.robot
 
 # Imagestream tag of the artifacts exporter side-car container image.
 rhods_notebook_ods_ci_scale_test_artifacts_exporter_istag:
