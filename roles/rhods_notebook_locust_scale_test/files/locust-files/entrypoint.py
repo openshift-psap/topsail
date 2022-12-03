@@ -3,18 +3,24 @@ import datetime
 import os, sys
 import pathlib
 import tarfile
+import logging
+logging.getLogger().setLevel(logging.INFO)
 
-LOCUST_TEST_CMD = "cd $LOCUST_DIR; PYTHONUNBUFFERED=1 locust --headless \
-    --csv $ARTIFACT_DIR/api_scale_test \
+LOCUST_FILE_PREFIX="locust_scale_test"
+
+LOCUST_TEST_CMD = f"cd $LOCUST_DIR; PYTHONUNBUFFERED=1 locust --headless \
+    --csv $ARTIFACT_DIR/{ LOCUST_FILE_PREFIX } \
     --csv-full-history \
-    --html $ARTIFACT_DIR/api_scale_test.html \
+    --html $ARTIFACT_DIR/{ LOCUST_FILE_PREFIX }.html \
     --only-summary \
+     > $ARTIFACT_DIR/{ LOCUST_FILE_PREFIX }.stdout \
+    2> $ARTIFACT_DIR/{ LOCUST_FILE_PREFIX }.stderr \
 "
 
-LOCUST_REPORTER_CMD = "locust-reporter \
-    -prefix $ARTIFACT_DIR/api_scale_test \
+LOCUST_REPORTER_CMD = f"locust-reporter \
+    -prefix $ARTIFACT_DIR/{ LOCUST_FILE_PREFIX } \
     -failures=true \
-    -outfile $ARTIFACT_DIR/locust_reporter.html \
+    -outfile $ARTIFACT_DIR/{LOCUST_FILE_PREFIX}_report.html \
 "
 
 artifacts_directory = pathlib.Path(os.getenv("ARTIFACT_DIR"))
@@ -30,29 +36,30 @@ def main():
     idp_name = os.getenv("TEST_USERS_IDP_NAME")
     creds_file = os.getenv("CREDS_FILE")
 
-    print(f"Running locust test: {api_scale_test_name}")
-    print(f"Against RHODS {rhods_dashboard} version {rhods_version}")
-    print(f"Connect with user {username_prefix}|{job_completion_index} on {idp_name}")
+    logging.info(f"Running locust test: {api_scale_test_name}")
+    logging.info(f"Against RHODS {rhods_dashboard} version {rhods_version}")
+    logging.info(f"Connect with user {username_prefix}|{job_completion_index} on {idp_name}")
 
-    print(f"Storing artifacts in {artifacts_directory}")
+    logging.info(f"Storing artifacts in {artifacts_directory}")
     artifacts_directory.mkdir(parents=True, exist_ok=True)
 
-    print(LOCUST_TEST_CMD)
-    test_retcode = os.system(LOCUST_TEST_CMD) != 0
+    logging.info(LOCUST_TEST_CMD)
+    test_retcode = os.system(LOCUST_TEST_CMD)
 
-    if test_retcode: return test_retcode
+    if not test_retcode:
+        logging.error("locust failed ...")
 
     if not os.system(LOCUST_REPORTER_CMD):
-        print("WARNING: locust-reporter failed ...")
+        logging.error("locust-reporter failed ...")
 
-    return 0
+    return test_retcode
 
 if __name__ == "__main__":
     test_retcode = 255
     try:
         test_retcode = main()
     finally:
-        print("Triggering the artifact export.")
+        logging.info("Triggering the artifact export.")
         with open(artifacts_directory / "test.exit_code", "w") as out_f:
             print(str(test_retcode), file=out_f)
 
