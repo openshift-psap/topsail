@@ -82,6 +82,13 @@ spec:
           mountPath: /mnt/rhods-notebook-locust-entrypoint
         - name: rhods-scale-test-credentials
           mountPath: /mnt/rhods-scale-test-credentials
+        resources:
+          requests:
+            memory: 2G
+            cpu: 2
+          limits:
+            memory: 2G
+            cpu: 2
       - image: "{{ rhods_artifacts_exporter_image }}"
         name: artifacts-exporter
         command: ['bash', '/mnt/rhods-notebook-locust-entrypoint/artifacts-exporter.sh']
