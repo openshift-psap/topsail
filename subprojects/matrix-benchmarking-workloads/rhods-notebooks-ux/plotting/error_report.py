@@ -73,7 +73,14 @@ def _get_test_setup(entry):
         setup_info += [html.Ul(html.Li("Dashboard configuration: NOT AVAILABLE"))]
 
     setup_info += [html.Li("Test configuration:")]
-    setup_info += [html.Ul(html.Li([html.Code(entry.results.tester_job.env["USER_COUNT"]), " users starting with a delay of ", html.Code(entry.results.tester_job.env["SLEEP_FACTOR"]), " seconds"]))]
+
+    try:
+        sleep_factor = entry.results.tester_job.env["SLEEP_FACTOR"]
+        delay = " starting with a delay of ", html.Code(sleep_factor), " seconds"
+    except KeyError: # SLEEP_FACTOR missing
+        delay = ""
+
+    setup_info += [html.Ul(html.Li([html.Code(entry.results.user_count), " users", delay]))]
 
     managed = list(entry.results.rhods_cluster_info.master)[0].managed
     sutest_ocp_version = entry.results.sutest_ocp_version
