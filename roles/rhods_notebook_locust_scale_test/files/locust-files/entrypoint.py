@@ -9,6 +9,7 @@ logging.getLogger().setLevel(logging.INFO)
 LOCUST_FILE_PREFIX="locust_scale_test"
 
 LOCUST_TEST_CMD = f"cd $LOCUST_DIR; PYTHONUNBUFFERED=1 locust --headless \
+    --reset-stats \
     --csv $ARTIFACT_DIR/{ LOCUST_FILE_PREFIX } \
     --csv-full-history \
     --html $ARTIFACT_DIR/{ LOCUST_FILE_PREFIX }.html \
