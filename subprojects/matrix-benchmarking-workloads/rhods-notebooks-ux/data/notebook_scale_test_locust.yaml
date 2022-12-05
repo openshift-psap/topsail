@@ -1,0 +1,11 @@
+visualize:
+  generate:
+  - "report: Error report"
+  - "report: Performance report"
+  - "report: Pod-Node Mapping"
+  - "report: User Execution Overview"
+  - "report: Launch Time and Execution Time Distribution"
+  - "report: RHODS Cluster CPU/Memory Usage"
+  - "report: Authentication System"
+  - "report: Master Nodes Load"
+  - "report: RHODS metrics"
