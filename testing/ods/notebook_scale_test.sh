@@ -207,8 +207,16 @@ prepare_managed_sutest_deploy_rhods() {
     fi
 }
 
+setup_brew_registry() {
+    local token_file=$PSAP_ODS_SECRET_PATH/$(get_config secrets.brew_registry_redhat_io_token_file)
+
+    "$TESTING_ODS_DIR"/brew.registry.redhat.io/setup.sh "$token_file"
+}
+
 prepare_ocp_sutest_deploy_rhods() {
     switch_sutest_cluster
+
+    setup_brew_registry
 
     process_ctrl::run_in_bg \
         process_ctrl::retry 5 3m \
