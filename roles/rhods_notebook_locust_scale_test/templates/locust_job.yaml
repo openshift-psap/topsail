@@ -57,7 +57,7 @@ spec:
           value: "https://{{ rhods_dashboard_hostname_cmd.stdout }}"
         - name: CREDS_FILE
           value: "/mnt/rhods-scale-test-credentials/secret.properties"
-        - name: API_SCALE_TEST_NAME
+        - name: LOCUST_SCALE_TEST_NAME
           value: "{{ rhods_notebook_locust_scale_test_test_name }}"
         - name: NOTEBOOK_IMAGE_NAME
           value: "{{ rhods_notebook_locust_scale_test_notebook_image_name }}"

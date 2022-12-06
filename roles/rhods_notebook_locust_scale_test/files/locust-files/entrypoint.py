@@ -27,7 +27,7 @@ LOCUST_REPORTER_CMD = f"locust-reporter \
 artifacts_directory = pathlib.Path(os.getenv("ARTIFACT_DIR"))
 
 def main():
-    api_scale_test_name = os.getenv("API_SCALE_TEST_NAME")
+    locust_scale_test_name = os.getenv("LOCUST_SCALE_TEST_NAME")
 
     rhods_dashboard = os.getenv("ODH_DASHBOARD_URL")
     rhods_version = os.getenv("RHODS_VERSION")
@@ -37,7 +37,7 @@ def main():
     idp_name = os.getenv("TEST_USERS_IDP_NAME")
     creds_file = os.getenv("CREDS_FILE")
 
-    logging.info(f"Running locust test: {api_scale_test_name}")
+    logging.info(f"Running locust test: {locust_scale_test_name}")
     logging.info(f"Against RHODS {rhods_dashboard} version {rhods_version}")
     logging.info(f"Connect with user {username_prefix}|{job_completion_index} on {idp_name}")
 
