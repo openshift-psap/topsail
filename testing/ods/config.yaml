@@ -201,9 +201,11 @@ tests:
       skip_if_le_than_users: 5
     locust:
       # Rate to spawn users at (users per second)
-      spawn_rate: 1
+      spawn_rate: 0.5
       # Test run time (eg, 300s, 20m, 3h, 1h30m, etc.)
       run_time: 5m
+      # Number of Locust processes to launch (one per Pod with 1cpu)
+      cpu_count: 5
     notebook_performance:
       use_rhods: true
       tests:
