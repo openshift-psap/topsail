@@ -44,19 +44,63 @@ export DEBUG_MODE
 if [[ "$DEBUG_MODE" == 1 ]]; then
     echo "Debug!"
     exec python3 "$LOCUST_LOCUSTFILE"
-else
-    mkdir -p results
-    rm results/* -f
-    echo "Run!"
-    locust --headless \
-           --reset-stats \
-           --csv results/api_scale_test \
-           --csv-full-history \
-           --html results/api_scale_test.html \
-           --only-summary || true
+fi
+
+unset LOCUST_RUN_TIME
+mkdir -p results
+rm results/* -f
+echo "Run!"
+
+
+WORKER_COUNT=4
+# distributed locust options
+export LOCUST_EXPECT_WORKERS=${WORKER_COUNT}
+export LOCUST_EXPECT_WORKERS_MAX_WAIT=$((3 + ${WORKER_COUNT} / 10))
+
+export LOCUST_HEADLESS=1
+export LOCUST_RESET_STATS=1
+export LOCUST_CSV=results/api_scale_test
+export LOCUST_HTML=$LOCUST_CSV.html
+export LOCUST_ONLY_SUMMARY=1
+
+unset process_ctrl__wait_list
+declare -A process_ctrl__wait_list
+
+locust --master &
+MASTER_PID=$!
+
+finish() {
+    trap - INT
+    echo "Killing the background processes still running ..."
+    for pid in ${!process_ctrl__wait_list[@]}; do
+        echo "- ${process_ctrl__wait_list[$pid]} (pid=$pid)"
+        kill -KILL $pid 2>/dev/null || true
+        unset process_ctrl__wait_list[$pid]
+    done
+    echo "All the processes have been terminated."
+
+    kill -KILL $MASTER_PID
+    echo "Waiting ..."
+    wait $MASTER_PID
 
     locust-reporter \
         -prefix results/api_scale_test \
         -failures=true \
         -outfile results/locust_reporter.html
-fi
+}
+
+trap finish INT
+
+# locust clients don't like that to be set
+unset LOCUST_RUN_TIME
+
+sleep 1 # give 1s for the locust coordinator to be ready
+for worker in $(seq 1 ${CPU_COUNT})
+do
+    sleep 0.1
+    locust --worker &
+    pid=$!
+    process_ctrl__wait_list[$pid]="locust --worker"
+done
+
+wait $MASTER_PID
