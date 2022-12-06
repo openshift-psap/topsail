@@ -23,15 +23,18 @@ class Dashboard(common.ContextBase):
         self.workbench = workbench.Workbench(context)
 
     def connect_to_the_dashboard(self):
-
+        failed = False
         with self.client.get("/", catch_response=True) as response:
             if response.status_code == 403:
                 response.success()
 
                 response = self.oauth.do_login("Dashboard", response)
                 if not response:
-                    common.debug_point()
-                    raise ValueError(f"Dashboard authentication failed ... (code {response.status_code})")
+                    failed = f"Dashboard authentication failed ... (code {response.status_code})"
+                    response.failure(failed)
+
+        if failed:
+            raise common.ScaleTestError(failed, unclear=True)
 
         return response
 
@@ -71,7 +74,10 @@ class Dashboard(common.ContextBase):
             self.client.get("/projects") # HTML page
             self.client.get("/api/status")
 
-        k8s_projects = self.client.get(Dashboard.PROJECTS_URL).json()
+        response = self.client.get(**url_name(Dashboard.PROJECTS_URL,
+                                              _query="labelSelector=opendatahub.io/dashboard=true"),
+                                   params={"labelSelector": "opendatahub.io/dashboard=true"})
+        k8s_projects = common.check_status(response.json())
 
         k8s_project = self._get_k8s_obj_from_list(k8s_projects, project_name)
         if not k8s_project:
@@ -94,7 +100,8 @@ class Dashboard(common.ContextBase):
             self.client.get(**url_name(Dashboard.PROJECTS_URL+"/{project_name}", project_name=project_name))
 
         # Workbenches
-        k8s_workbenches = self.client.get(**url_name(Dashboard.NOTEBOOKS_URL, namespace=project_name)).json()
+        response = self.client.get(**url_name(Dashboard.NOTEBOOKS_URL, namespace=project_name))
+        k8s_workbenches = common.check_status(response.json())
 
         if not self.env.SKIP_OPTIONAL:
             # Cluster storage
@@ -119,11 +126,11 @@ class Dashboard(common.ContextBase):
 
             workbench_obj.start()
         else:
-            k8s_workbench = self.workbench.create(k8s_project, workbench_name)
+            workbench_obj = self.workbench(self.workbench.create(k8s_project, workbench_name))
 
-        route = self.workbench(k8s_workbench).wait()
+        route = workbench_obj.wait()
 
-        return k8s_workbench, route
+        return workbench_obj, route
 
     def _get_k8s_obj_from_list(self, k8s_list, name):
         for item in k8s_list["items"]:

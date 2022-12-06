@@ -37,14 +37,15 @@ class Workbench(common.ContextBase):
 
         json.loads(workbench_rendered) # ensure that the JSON is valid
 
-        k8s_obj = self.client.post(
+        response = self.client.post(
             **url_name(Workbench.URL, namespace=project_name, name=name),
             headers={"Content-Type": "application/json"},
-            data=workbench_rendered).json()
+            data=workbench_rendered)
+        k8s_obj = common.check_status(response.json())
 
         if k8s_obj["kind"] == "Status":
             message = k8s_obj["message"]
-            raise ValueError(f"Could not create the workenbench '{name}' in project '{project_name}': {message}")
+            raise common.ScaleTestError(f"Could not create the workenbench '{name}' in project '{project_name}': {message}")
 
         return k8s_obj
 
@@ -64,7 +65,7 @@ class WorkbenchObj(common.ContextBase):
             logging.error(f"GET images/jupyter --> {response.status_code}")
             return False
 
-        for image in response.json():
+        for image in common.check_status(response.json()):
             if image["name"] != self.env.NOTEBOOK_IMAGE_NAME: continue
 
             return image["tags"][0]["name"]
@@ -79,15 +80,17 @@ class WorkbenchObj(common.ContextBase):
             return
 
         if self.is_stopped():
+            self.is_stopped()
             logging.info(f"Workbench {self.namespace}/{self.name} already stopped")
             return
         logging.info(f"Stopping the workbench {self.namespace}/{self.name} ...")
 
         data = '[{"op":"add","path":"/metadata/annotations/kubeflow-resource-stopped","value":"stopped-by-ci-artifacts"}]'
-        response = self.client.patch(**self.url,
-                                     headers={"Content-Type": "application/json"},
+        response = self.client.patch(**url_name(Workbench.URL, namespace=self.namespace, name=self.name, _descr="(stop)"),
+                          headers={"Content-Type": "application/json"},
                                      data=data)
-        self.k8s_obj = response.json()
+        self.k8s_obj = common.check_status(response.json())
+
 
     def is_stopped(self):
         return "kubeflow-resource-stopped" in self.k8s_obj["metadata"]["annotations"]
@@ -99,10 +102,10 @@ class WorkbenchObj(common.ContextBase):
 
         data = '[{"op":"remove","path":"/metadata/annotations/kubeflow-resource-stopped"}]'
 
-        response = self.client.patch(**self.url,
+        response = self.client.patch(**url_name(Workbench.URL, namespace=self.namespace, name=self.name, _descr="(start)"),
                                      headers={"Content-Type": "application/json"},
                                      data=data)
-        self.k8s_obj = response.json()
+        self.k8s_obj = common.check_status(response.json())
 
     def wait(self):
         start_time = datetime.datetime.now()
@@ -149,10 +152,10 @@ class WorkbenchObj(common.ContextBase):
         self.client.delete(self.url)
 
     def is_ready(self):
-        response = self.client.get(**url_name("/api/k8s/api/v1/namespaces/{namespace}/pods", namespace=self.namespace, _query="labelSelector?notebook-name={workbench}"),
+        response = self.client.get(**url_name("/api/k8s/api/v1/namespaces/{namespace}/pods", namespace=self.namespace, _query="labelSelector=notebook-name={workbench}"),
                                    params={"labelSelector": f"notebook-name={self.name}"})
 
-        k8s_pods = response.json()["items"]
+        k8s_pods = common.check_status(response.json())["items"]
         if not k8s_pods:
             return None # Pod doesn't exist yet
 
@@ -161,11 +164,18 @@ class WorkbenchObj(common.ContextBase):
         if k8s_pod["status"]["phase"] == "Pending":
             return False
 
-        for container_status in k8s_pod["status"].get("containerStatuses", []):
+        if not k8s_pod["status"].get("containerStatuses", []):
+            return False
+
+        ready = []
+        for container_status in k8s_pod["status"]["containerStatuses"]:
             if not container_status.get("ready", False):
                 return False
+            if container_status.get("ready", False):
+                ready.append(True)
 
-        return True
+
+        return ready and all(ready)
 
     def get_route(self):
         with self.client.get(
@@ -174,6 +184,6 @@ class WorkbenchObj(common.ContextBase):
             if response.status_code == 404:
                 response.success() # not an error, but the Route doesn't exist yet
                 return False
-        k8s_route = response.json()
+        k8s_route = common.check_status(response.json())
 
         return k8s_route["spec"]["host"]

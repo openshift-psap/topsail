@@ -5,5 +5,5 @@
         "name": "{{ project_name }}"
     },
     "description": "",
-    "displayName": "{{ project_name }}[DSP]"
+    "displayName": "{{ project_name }}"
 }

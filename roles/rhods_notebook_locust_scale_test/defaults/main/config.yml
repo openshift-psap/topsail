@@ -58,3 +58,7 @@ rhods_notebook_locust_scale_test_notebook_size_name: Small
 # Toleration key to use for the test Pods.
 rhods_notebook_locust_scale_test_toleration_key:
 
+# Number of Locust processes to launch (one per Pod with 1cpu).
+# Type: Int
+rhods_notebook_locust_scale_test_cpu_count: 1
+

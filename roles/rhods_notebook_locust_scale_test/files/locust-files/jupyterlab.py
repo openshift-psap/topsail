@@ -12,7 +12,8 @@ class JupyterLab(common.ContextBase):
 
         self.oauth = oauth
 
-    def go_to_jupyterlab_page(self, k8s_workbench, workbench_route):
+    def go_to_jupyterlab_page(self, workbench_obj, workbench_route):
+        k8s_workbench = workbench_obj.k8s_obj
         try:
             base_url = k8s_workbench["metadata"]["annotations"]["ci-artifacts/base-url"]
         except KeyError:
@@ -32,9 +33,10 @@ class JupyterLab(common.ContextBase):
     @common.Step("Login to JupyterLab")
     def login_to_jupyterlab_page(self, base_url):
         needs_login = False
+        failed = False
         with self.client.get(base_url, catch_response=True,
                              name="<jupyterlab_host>/{base_url} (login)") as response:
-
+            err_kwargs = {}
             if "Log in" in response.text:
                 response.success()
                 needs_login = True
@@ -45,20 +47,26 @@ class JupyterLab(common.ContextBase):
                 needs_login = False
 
             elif response.status_code == 503:
-                raise ValueError("JupyterLab 503 error ...")
-
+                failed = "JupyterLab 503 error ..."
+                err_kwargs = dict(known_bug="RHODS-5912")
             elif response.status_code == 0:
-                raise ValueError("JupyterLab empty response ...")
+                failed = "JupyterLab empty response ..."
 
             else:
                 common.debug_point()
-                raise ValueError(f"JupyterLab authentication failed :/ (code {response.status_code})")
+                failed = f"JupyterLab authentication failed :/ (code {response.status_code})"
+                err_kwargs = dict(unclear=True)
+
+            if failed:
+                response.failure(failed)
+
+        if failed:
+            raise common.ScaleTestError(failed, **err_kwargs)
 
         if needs_login:
             login_response = self.oauth.do_login("JupyterLab", response)
             if not login_response:
-                common.debug_point()
-                raise ValueError(f"JupyterLab authentication failed .. (code {login_response.status_code})")
+                raise common.ScaleTestError(f"JupyterLab authentication failed .. (code {login_response.status_code})", unclear=True)
 
             final_response = login_response
         else:
@@ -70,21 +78,21 @@ class JupyterLab(common.ContextBase):
     def get_jupyterlab_page(self, base_url):
         response = self.client.get(base_url, name="<jupyterlab_host>/{base_url} (access)")
         if response.status_code == 0:
-            raise ValueError("JupyterLab empty response ...")
+            raise common.ScaleTestError("JupyterLab empty response ...")
         elif not response:
-            common.debug_point()
-            raise ValueError(f"JupyterLab home page failed to load ... (code {response.status_code})")
+            raise common.ScaleTestError(f"JupyterLab home page failed to load ... (code {response.status_code})",
+                                        unclear=True)
 
         soup = BeautifulSoup(response.text, features="lxml")
         if soup.title and soup.title.text == "JupyterLab":
             logging.info(f"Reached JupyterLab page \o/")
 
         elif soup.title and "Log in" in soup.title.text:
-            common.debug_point()
-            raise ValueError(f"JupyterLab home page failed to load properly... (still on the login page)")
+            raise common.ScaleTestError(f"JupyterLab home page failed to load properly... (still on the login page)",
+                                        unclear=True)
 
         else:
-            raise ValueError(f"JupyterLab home page failed to load properly... (unknown page, code {response.status_code})")
+            raise common.ScaleTestError(f"JupyterLab home page failed to load properly... (unknown page, code {response.status_code})")
 
 
         return self.client.get(f"{base_url}/lab/api/workspaces",

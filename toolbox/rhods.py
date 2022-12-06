@@ -148,6 +148,7 @@ class RHODS:
                                    notebook_image_name="s2i-generic-data-science-notebook",
                                    notebook_size_name="Small",
                                    toleration_key="",
+                                   cpu_count: int = 1,
                                    ):
 
         """
@@ -168,6 +169,7 @@ class RHODS:
           sut_cluster_kubeconfig: Path of the system-under-test cluster's Kubeconfig. If provided, the RHODS endpoints will be looked up in this cluster.
           toleration_key: Toleration key to use for the test Pods.
           artifacts_exporter_istag: Imagestream tag of the artifacts exporter side-car container.
+          cpu_count: Number of Locust processes to launch (one per Pod with 1cpu).
         """
 
         return RunAnsibleRole(locals())

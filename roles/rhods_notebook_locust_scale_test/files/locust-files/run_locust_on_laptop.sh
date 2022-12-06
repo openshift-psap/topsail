@@ -20,7 +20,7 @@ _get_command_arg() {
 export ODH_DASHBOARD_URL="https://$(oc get route -n redhat-ods-applications rhods-dashboard -ojsonpath={.spec.host})"
 export TEST_USERS_USERNAME_PREFIX=$(_get_command_arg username_prefix $LOCUST_COMMAND)
 export TEST_USERS_IDP_NAME=$(_get_command_arg idp_name $LOCUST_COMMAND)
-export USER_INDEX_OFFSET=$(_get_command_arg user_index_offset $LOCUST_COMMAND)
+export USER_INDEX_OFFSET=100
 
 export CREDS_FILE=$(_get_command_arg secret_properties_file $LOCUST_COMMAND)
 export NOTEBOOK_IMAGE_NAME=$(_get_command_arg notebook_image_name $LOCUST_COMMAND)
@@ -30,6 +30,7 @@ export NOTEBOOK_SIZE_NAME=$(_get_command_arg notebook_size_name $LOCUST_COMMAND)
 export LOCUST_USERS=$(_get_command_arg user_count $LOCUST_COMMAND)
 export LOCUST_SPAWN_RATE=$(_get_command_arg spawn_rate $LOCUST_COMMAND)
 export LOCUST_RUN_TIME=$(_get_command_arg run_time $LOCUST_COMMAND)
+echo "LOCUST_USERS --> $LOCUST_USERS"
 # or
 #export LOCUST_ITERATIONS=1
 
@@ -52,10 +53,10 @@ rm results/* -f
 echo "Run!"
 
 
-WORKER_COUNT=4
+export WORKER_COUNT=$(get_config tests.notebooks.locust.cpu_count)
 # distributed locust options
 export LOCUST_EXPECT_WORKERS=${WORKER_COUNT}
-export LOCUST_EXPECT_WORKERS_MAX_WAIT=$((3 + ${WORKER_COUNT} / 10))
+export LOCUST_EXPECT_WORKERS_MAX_WAIT=60 # seconds
 
 export LOCUST_HEADLESS=1
 export LOCUST_RESET_STATS=1
@@ -95,7 +96,7 @@ trap finish INT
 unset LOCUST_RUN_TIME
 
 sleep 1 # give 1s for the locust coordinator to be ready
-for worker in $(seq 1 ${CPU_COUNT})
+for worker in $(seq 1 ${WORKER_COUNT})
 do
     sleep 0.1
     locust --worker &

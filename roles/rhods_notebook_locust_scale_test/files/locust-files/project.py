@@ -32,12 +32,17 @@ class Project(common.ContextBase):
         json.loads(project_rendered) # ensure that the JSON is valid
 
         project_request_url = "/api/k8s/apis/project.openshift.io/v1/projectrequests"
-        k8s_obj = self.client.post(**url_name(project_request_url+"/{project_name}", project_name=name),
+        response = self.client.post(**url_name(project_request_url+"/{project_name}", project_name=name),
                          headers={"Content-Type": "application/json"},
-                         data=project_rendered).json()
+                         data=project_rendered)
 
-        return k8s_obj
+        project_k8s = common.check_status(response.json())
 
+        response = self.client.get(**url_name("/api/namespaces/{namespace}/0", namespace=name))
+        if not response.json()["applied"]:
+            raise common.ScaleTestError(f"Could not tag the namespace '{name}': {response.text}")
+
+        return project_k8s
 
 class ProjectObj(common.ContextBase):
     def __init__(self, context, k8s_obj):

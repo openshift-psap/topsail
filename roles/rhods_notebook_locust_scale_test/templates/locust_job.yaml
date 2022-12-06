@@ -22,8 +22,8 @@ metadata:
     deployment: {{ tester_job_name }}
   name: {{ tester_job_name }}
 spec:
-  parallelism: 1
-  completions: 1
+  parallelism: {{ rhods_notebook_locust_scale_test_cpu_count + 1 }}
+  completions: {{ rhods_notebook_locust_scale_test_cpu_count + 1}}
   activeDeadlineSeconds: 18000
   backoffLimit: 0
   completionMode: Indexed
@@ -41,7 +41,7 @@ spec:
         name: main
         command: [bash, -ce]
         args:
-        - |
+        - |-
             mkdir -p "$ARTIFACT_DIR"
             python3 -u /mnt/rhods-notebook-locust-entrypoint/entrypoint.py
         env:
@@ -75,6 +75,10 @@ spec:
           value: "{{ rhods_notebook_locust_scale_test_run_time }}"
         - name: LOCUST_SPAWN_RATE
           value: "{{ rhods_notebook_locust_scale_test_spawn_rate }}"
+        - name: WORKER_COUNT
+          value: "{{ rhods_notebook_locust_scale_test_cpu_count }}"
+        - name: JOB_NAME
+          value: "{{ tester_job_name }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir
@@ -85,10 +89,10 @@ spec:
         resources:
           requests:
             memory: 2G
-            cpu: 2
+            cpu: 1
           limits:
             memory: 2G
-            cpu: 2
+            cpu: 1
       - image: "{{ rhods_artifacts_exporter_image }}"
         name: artifacts-exporter
         command: ['bash', '/mnt/rhods-notebook-locust-entrypoint/artifacts-exporter.sh']

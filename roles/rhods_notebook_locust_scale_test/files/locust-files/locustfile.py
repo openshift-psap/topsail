@@ -30,14 +30,18 @@ env.USERNAME_PREFIX = os.getenv("TEST_USERS_USERNAME_PREFIX")
 env.JOB_COMPLETION_INDEX = os.getenv("JOB_COMPLETION_INDEX", 0)
 env.IDP_NAME = os.getenv("TEST_USERS_IDP_NAME")
 env.NAMESPACE = "rhods-notebooks"
+env.JOB_COMPLETION_INDEX = int(os.getenv("JOB_COMPLETION_INDEX", 0))
 
 env.NOTEBOOK_IMAGE_NAME = os.getenv("NOTEBOOK_IMAGE_NAME")
 env.NOTEBOOK_SIZE_NAME = os.getenv("NOTEBOOK_SIZE_NAME")
 env.USER_INDEX_OFFSET = int(os.getenv("USER_INDEX_OFFSET", 0))
 env.REUSE_COOKIES = os.getenv("REUSE_COOKIES", False) == "1"
+env.WORKER_COUNT = int(os.getenv("WORKER_COUNT", 1))
 env.DEBUG_MODE = os.getenv("DEBUG_MODE", False) == "1"
 env.DO_NOT_STOP_NOTEBOOK = False
 env.SKIP_OPTIONAL = True
+
+env.LOCUST_USERS = int(os.getenv("LOCUST_USERS"))
 
 # Other env variables:
 # - LOCUST_USERS (number of users)
@@ -55,7 +59,7 @@ with open(creds_file) as f:
 class WorkbenchUser(HttpUser):
     host = env.DASHBOARD_HOST
     verify = False
-    user_next_id = env.USER_INDEX_OFFSET
+    user_next_id = 0
     default_resource_filter = f'/A(?!{env.DASHBOARD_HOST}/data:image:)'
     bundle_resource_stats = False
 
@@ -66,9 +70,15 @@ class WorkbenchUser(HttpUser):
         self.client.verify = False
 
         self.loop = 0
-        self.user_id = self.__class__.user_next_id
+        self.user_id = (env.USER_INDEX_OFFSET # common offset
+                        + int(env.LOCUST_USERS / env.WORKER_COUNT) * env.JOB_COMPLETION_INDEX # per worker offset
+                        + self.__class__.user_next_id # per user offset (= per object instance)
+                        )
         self.user_name = f"{env.USERNAME_PREFIX}{self.user_id}"
+        logging.warning(f"Starting user '{self.user_name}'.")
+
         self.__class__.user_next_id += 1
+
         self.project_name = self.user_name
         self.workbench_name = self.user_name
         self.workbench_route = None
@@ -79,7 +89,7 @@ class WorkbenchUser(HttpUser):
         self.workbench = workbench.Workbench(self.__context)
         self.jupyterlab = jupyterlab.JupyterLab(self.__context, self.oauth)
 
-        self.k8s_workbench = None
+        self.workbench_obj = None
 
     def on_start(self):
         logging.info(f"Running user #{self.user_name}")
@@ -116,20 +126,28 @@ class WorkbenchUser(HttpUser):
 
         k8s_project, k8s_workbenches = self.dashboard.go_to_the_project_page(self.project_name)
 
-        self.k8s_workbench, self.workbench_route = self.dashboard.create_and_start_the_workbench(k8s_project, k8s_workbenches, self.workbench_name)
+        try:
+            self.workbench_obj, self.workbench_route = self.dashboard.create_and_start_the_workbench(k8s_project, k8s_workbenches, self.workbench_name)
 
-        self.jupyterlab.go_to_jupyterlab_page(self.k8s_workbench, self.workbench_route)
+            self.jupyterlab.go_to_jupyterlab_page(self.workbench_obj, self.workbench_route)
 
-        self.workbench(self.k8s_workbench).stop()
-        self.k8s_workbench = None
+        except common.ScaleTestError as e:
+            # catch the Exception, so that Locust doesn't track it.
+            # it has already been recorded as part of common.LocustMetaEvent context manager.
+            logging.error(f"{e.__class__.__name__}: {e}")
+
+        finally:
+            if self.workbench_obj:
+                self.workbench_obj.stop()
+            self.k8s_workbench = None
 
         if __name__ == "__main__":
             raise StopUser()
 
     def on_stop(self):
-        if not self.k8s_workbench: return
+        if not self.workbench_obj: return
 
-        self.workbench(self.k8s_workbench).stop()
+        self.workbench_obj.stop()
 
 
 if __name__ == "__main__":

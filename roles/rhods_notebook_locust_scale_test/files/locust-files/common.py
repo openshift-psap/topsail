@@ -67,8 +67,11 @@ class ContextBase():
         self.env = context.env
         self.user_name = context.user_name
 
-def url_name(url, _query=None, **params):
+def url_name(url, _query=None, _descr=None, **params):
     name = f"{url}?{_query}" if _query else url
+
+    if _descr:
+        name = f"{name} {_descr}"
 
     return dict(
         url=url.format(**params),
@@ -81,3 +84,28 @@ def debug_point():
 
     import pdb;pdb.set_trace()
     pass
+
+def check_status(response_json):
+    if response_json["kind"] != "Status":
+        return response_json
+    debug_point()
+    logging.warning(response_json)
+
+    raise ScaleTestError("K8s error", response_json)
+
+
+class ScaleTestError(Exception):
+    def __init__(self, msg, unclear=False, known_bug=False):
+        Exception.__init__(self)
+        self.msg = msg
+        self.unclear = unclear
+        self.known_bug = known_bug
+
+    def __str__(self):
+        opts = ""
+        if self.known_bug:
+            opts += f", known_bug={self.known_bug}"
+        if self.unclear:
+            opts += f", unclear={self.unclear}"
+
+        return f'{self.__class__.__name__}("{self.msg}"{opts})'

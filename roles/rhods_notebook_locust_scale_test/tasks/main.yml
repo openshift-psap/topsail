@@ -97,6 +97,24 @@
             oc delete -n {{ rhods_notebook_namespace }}
   failed_when: false
 
+- name: Create a role for listing Pods
+  shell:
+    set -o pipefail;
+    oc create role pod-reader
+       --verb=get,list
+       --resource=pods
+       -n {{ rhods_notebook_locust_scale_test_namespace }}
+       --dry-run=client -oyaml
+    | oc apply -f-
+
+- name: Give the default SA the Pod listing privilege
+  command:
+    oc adm policy add-role-to-user
+       pod-reader
+       system:serviceaccount:{{ rhods_notebook_locust_scale_test_namespace }}:default
+       --role-namespace {{ rhods_notebook_locust_scale_test_namespace }}
+       -n {{ rhods_notebook_locust_scale_test_namespace }}
+
 - name: Name the namespace privileged
   command:
     oc adm policy add-scc-to-user privileged
