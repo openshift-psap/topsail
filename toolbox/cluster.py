@@ -1,4 +1,5 @@
-import sys, os
+import os
+import sys
 
 from toolbox._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
@@ -69,7 +70,6 @@ class Cluster:
 
         return RunAnsibleRole()
 
-
     @AnsibleRole("cluster_deploy_operator")
     @AnsibleMappedParams
     def deploy_operator(self, catalog, manifest_name, namespace,
@@ -101,11 +101,10 @@ class Cluster:
                 print("Namespace monitoring cannot be enabled when deploying in all the namespaces.")
                 sys.exit(1)
 
-            print(f"Deploying the operator in all the namespaces.")
-
+            print("Deploying the operator in all the namespaces.")
 
         if namespace_monitoring:
-            print(f"Enabling namespace monitoring.")
+            print("Enabling namespace monitoring.")
 
         print(f"Deploying the operator using namespace '{namespace}'.")
 
@@ -119,14 +118,14 @@ class Cluster:
 
             print(f"Deploying the operator using version '{version}'.")
 
-        if installplan not in ("Manual", "Automatic"):
-            print(f"--install-plan can only be Manual or Automatic. Received '{installplan}'.")
+        if installplan_approval not in ("Manual", "Automatic"):
+            print(f"--install-plan can only be Manual or Automatic. Received '{installplan_approval}'.")
             sys.exit(1)
 
-        print(f"Deploying the operator using InstallPlan approval mode '{installplan}'.")
+        print(f"Deploying the operator using InstallPlan approval mode '{installplan_approval}'.")
 
         if deploy_cr:
-            print(f"Deploying the operator default CR.")
+            print("Deploying the operator default CR.")
 
         print("Deploying the operator.")
 
@@ -214,7 +213,7 @@ class Cluster:
     @AnsibleRole("cluster_prometheus_db")
     @AnsibleConstant("", "mode", "dump")
     @AnsibleMappedParams
-    @AnsibleSkipConfigGeneration # see reset_prometheus_db
+    @AnsibleSkipConfigGeneration  # see reset_prometheus_db
     def dump_prometheus_db(self, label="app.kubernetes.io/component=prometheus", namespace="openshift-monitoring", dump_name_prefix="prometheus"):
         """
         Dump Prometheus database into a file
@@ -259,7 +258,7 @@ class Cluster:
                    region="us-east-1",
                    htaccess_idp_name="htpasswd",
                    compute_machine_type="m5.xlarge",
-                   compute_nodes : int = 2,
+                   compute_nodes: int = 2,
                    ):
         """
         Create an OpenShift Dedicated cluster.
@@ -372,7 +371,7 @@ class Cluster:
     @AnsibleConstant("Name of the group that will be created for the user",
                      "groupname", "local-admins")
     @AnsibleConstant("Role that will be given to the user group",
-                      "role", "cluster-admin")
+                     "role", "cluster-admin")
     @AnsibleConstant("Name of the htpasswd IDP being created",
                      "htpasswd_idp_name", "htpasswd")
     @AnsibleConstant("Name of the secret that will contain the htpasswd passwords",
