@@ -97,14 +97,14 @@ class Cluster:
             all_namespaces = True
             namespace = "openshift-operators"
 
-            if ns_monitoring:
+            if namespace_monitoring:
                 print("Namespace monitoring cannot be enabled when deploying in all the namespaces.")
                 sys.exit(1)
 
             print(f"Deploying the operator in all the namespaces.")
 
 
-        if ns_monitoring:
+        if namespace_monitoring:
             print(f"Enabling namespace monitoring.")
 
         print(f"Deploying the operator using namespace '{namespace}'.")
