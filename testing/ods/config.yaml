@@ -40,6 +40,7 @@ secrets:
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
   addon_email_file: addon.email
+  brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
 clusters:
   create:
     type: single # can be: single, ocp, managed
@@ -111,8 +112,8 @@ ldap:
 rhods:
   deploy_from_catalog: true
   catalog:
-    image: quay.io/modh/qe-catalog-source
-    tag: latest
+    image: registry-proxy.engineering.redhat.com/rh-osbs/iib
+    tag:
   addon:
     # only necessary/set when rhods.deploy_from_catalog is true
     email: SET_AT_RUNTIME
