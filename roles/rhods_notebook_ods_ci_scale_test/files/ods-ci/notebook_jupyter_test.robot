@@ -23,7 +23,7 @@ ${NOTEBOOK_BENCHMARK_NUMBER}   %{NOTEBOOK_BENCHMARK_NUMBER}
 ${NOTEBOOK_BENCHMARK_REPEAT}   %{NOTEBOOK_BENCHMARK_REPEAT}
 
 ${NOTEBOOK_IMAGE_SIZE}         %{NOTEBOOK_SIZE_NAME}
-${NOTEBOOK_SPAWN_WAIT_TIME}    2 minutes
+${NOTEBOOK_SPAWN_WAIT_TIME}    20 minutes
 
 ${NOTEBOOK_URL}                %{NOTEBOOK_URL}
 ${NOTEBOOK_CLONE_WAIT_TIME}    3 minutes
@@ -77,8 +77,6 @@ Wait for the Notebook Spawn
   [Tags]  Notebook  Spawn
 
   Trigger Notebook Spawn
-  Click Element  xpath://span[@class="pf-c-expandable-section__toggle-text"]
-  Capture Page Screenshot
 
   Wait Notebook Spawn  ${NOTEBOOK_SPAWN_WAIT_TIME}
   Capture Page Screenshot

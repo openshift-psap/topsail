@@ -123,8 +123,8 @@ ldap:
 rhods:
   deploy_from_catalog: true
   catalog:
-    image: registry-proxy.engineering.redhat.com/rh-osbs/iib
-    tag:
+    image: quay.io/modh/qe-catalog-source
+    tag: v120-11
   addon:
     # only necessary/set when rhods.deploy_from_catalog is true
     email: SET_AT_RUNTIME
@@ -174,7 +174,7 @@ tests:
     ods_ci:
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: jh-at-scale.v221117
+        ref: jh-at-scale.v221208
       # tags to exclude when running the robot test case
       excluded_tags: None
       # ODS-CI test case to execute.
