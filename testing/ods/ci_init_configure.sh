@@ -31,6 +31,8 @@ if [[ -e "$CONFIG_DEST_DIR/config.yaml" ]]; then
 fi
 
 bash "$TESTING_ODS_DIR/configure_overrides.sh"
+bash "$TESTING_ODS_DIR/configure_set_presets.sh"
+bash "$TESTING_ODS_DIR/configure_overrides.sh"
 
 if [[ "${ARTIFACT_DIR:-}" ]]; then
     cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "${ARTIFACT_DIR}"
