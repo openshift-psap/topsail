@@ -43,6 +43,20 @@ ci_presets:
   plot.notebooks_scale_tests_comparison:
     matbench.preset: notebooks_scale_tests_comparison
 
+  # cluster creation presets
+
+  single:
+    clusters.create.type: single
+
+  keep:
+    clusters.create.keep: true
+
+  ocp:
+    clusters.create.type: ocp
+
+  osd:
+    clusters.create.type: osd
+
 secrets:
   dir:
     name: null
