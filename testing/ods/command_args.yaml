@@ -93,7 +93,7 @@ cluster preload_image/notebook:
   pod_toleration_key: "{{ clusters.sutest.compute.machineset.taint.key }}"
 
 cluster deploy_redis_server:
-{% set redis_namespace = "redis-"+tests.notebooks.namespace %}
+{% set redis_namespace = tests.notebooks.namespace + "-redis" %}
 {% set redis_internal_address = "redis."+redis_namespace+".svc" %}
   namespace: {{ redis_namespace }}
 
@@ -102,12 +102,12 @@ cluster deploy_minio_s3_server:
   secret_properties_file: {{ s3_ldap_password_location }}
 
 cluster deploy_nginx_server:
-{% set nginx_namespace = "nginx-"+tests.notebooks.namespace %}
+{% set nginx_namespace = tests.notebooks.namespace + "-nginx" %}
   namespace: {{ nginx_namespace }}
   directory: {{ tests.notebooks.ipynb.uploaded_directory }}
 
 rhods benchmark_notebook_performance:
-{% set notebook_performance_namespace = "single-notebook-"+tests.notebooks.namespace %}
+{% set notebook_performance_namespace = tests.notebooks.namespace + "-single-notebook" %}
   namespace: {{ notebook_performance_namespace }}
 
 rhods notebook_ods_ci_scale_test:
@@ -136,7 +136,7 @@ rhods notebook_locust_scale_test:
   namespace: {{ tests.notebooks.namespace }}
   idp_name: {{ ldap.idp_name }}
   secret_properties_file: {{ s3_ldap_password_location }}
-  locust_istag: "{{ tests.notebooks.imagestream_name }}:{{ locust_istag }}"
+  locust_istag: "{{ tests.notebooks.imagestream_name }}:{{ locust_tag }}"
   artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_tag }}"
 
   test_name: all
@@ -146,6 +146,7 @@ rhods notebook_locust_scale_test:
 
   run_time: {{ tests.notebooks.locust.run_time }}
   spawn_rate: {{ tests.notebooks.locust.spawn_rate }}
+  cpu_count: {{ tests.notebooks.locust.cpu_count }}
 
   notebook_image_name: {{ tests.notebooks.notebook.image_name }}
   notebook_size_name: {{ tests.notebooks.notebook.size_name }}

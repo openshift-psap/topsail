@@ -17,10 +17,10 @@ _get_command_arg() {
     get_command_arg "$@"
 }
 
-export ODH_DASHBOARD_URL=https://$(oc get route -n redhat-ods-applications rhods-dashboard -ojsonpath={.spec.host})
+export ODH_DASHBOARD_URL="https://$(oc get route -n redhat-ods-applications rhods-dashboard -ojsonpath={.spec.host})"
 export TEST_USERS_USERNAME_PREFIX=$(_get_command_arg username_prefix $LOCUST_COMMAND)
 export TEST_USERS_IDP_NAME=$(_get_command_arg idp_name $LOCUST_COMMAND)
-export USER_INDEX_OFFSET=$(_get_command_arg user_index_offset $LOCUST_COMMAND)
+export USER_INDEX_OFFSET=100
 
 export CREDS_FILE=$(_get_command_arg secret_properties_file $LOCUST_COMMAND)
 export NOTEBOOK_IMAGE_NAME=$(_get_command_arg notebook_image_name $LOCUST_COMMAND)
@@ -30,6 +30,7 @@ export NOTEBOOK_SIZE_NAME=$(_get_command_arg notebook_size_name $LOCUST_COMMAND)
 export LOCUST_USERS=$(_get_command_arg user_count $LOCUST_COMMAND)
 export LOCUST_SPAWN_RATE=$(_get_command_arg spawn_rate $LOCUST_COMMAND)
 export LOCUST_RUN_TIME=$(_get_command_arg run_time $LOCUST_COMMAND)
+echo "LOCUST_USERS --> $LOCUST_USERS"
 # or
 #export LOCUST_ITERATIONS=1
 
@@ -39,20 +40,68 @@ export LOCUST_LOCUSTFILE=$THIS_DIR/locustfile.py
 export REUSE_COOKIES=1
 
 DEBUG_MODE=${DEBUG_MODE:-1}
-if [[ "$DEBUG_MODE" == 1 ]]; then
-    exec python3 "$LOCUST_LOCUSTFILE"
-else
-    mkdir -p results
-    rm results/* -f
+export DEBUG_MODE
 
-    locust --headless \
-           --csv results/api_scale_test \
-           --csv-full-history \
-           --html results/api_scale_test.html \
-           --only-summary
+if [[ "$DEBUG_MODE" == 1 ]]; then
+    echo "Debug!"
+    exec python3 "$LOCUST_LOCUSTFILE"
+fi
+
+unset LOCUST_RUN_TIME
+mkdir -p results
+rm results/* -f
+echo "Run!"
+
+
+export WORKER_COUNT=$(get_config tests.notebooks.locust.cpu_count)
+# distributed locust options
+export LOCUST_EXPECT_WORKERS=${WORKER_COUNT}
+export LOCUST_EXPECT_WORKERS_MAX_WAIT=60 # seconds
+
+export LOCUST_HEADLESS=1
+export LOCUST_RESET_STATS=1
+export LOCUST_CSV=results/api_scale_test
+export LOCUST_HTML=$LOCUST_CSV.html
+export LOCUST_ONLY_SUMMARY=1
+
+unset process_ctrl__wait_list
+declare -A process_ctrl__wait_list
+
+locust --master &
+MASTER_PID=$!
+
+finish() {
+    trap - INT
+    echo "Killing the background processes still running ..."
+    for pid in ${!process_ctrl__wait_list[@]}; do
+        echo "- ${process_ctrl__wait_list[$pid]} (pid=$pid)"
+        kill -KILL $pid 2>/dev/null || true
+        unset process_ctrl__wait_list[$pid]
+    done
+    echo "All the processes have been terminated."
+
+    kill -KILL $MASTER_PID
+    echo "Waiting ..."
+    wait $MASTER_PID
 
     locust-reporter \
         -prefix results/api_scale_test \
         -failures=true \
         -outfile results/locust_reporter.html
-fi
+}
+
+trap finish INT
+
+# locust clients don't like that to be set
+unset LOCUST_RUN_TIME
+
+sleep 1 # give 1s for the locust coordinator to be ready
+for worker in $(seq 1 ${WORKER_COUNT})
+do
+    sleep 0.1
+    locust --worker &
+    pid=$!
+    process_ctrl__wait_list[$pid]="locust --worker"
+done
+
+wait $MASTER_PID

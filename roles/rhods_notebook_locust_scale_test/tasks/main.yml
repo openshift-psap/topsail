@@ -18,7 +18,7 @@
 - name: Set system-under-test == driver-cluster if no system-under-test (SUT) is provided
   set_fact:
     sut_cluster_kubeconfig: "{{ rhods_notebook_locust_scale_test_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
-    rhods_api_scale_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_locust_scale_test_namespace }}/{{ rhods_notebook_locust_scale_test_locust_istag }}
+    rhods_locust_scale_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_locust_scale_test_namespace }}/{{ rhods_notebook_locust_scale_test_locust_istag }}
     rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_locust_scale_test_namespace }}/{{ rhods_notebook_locust_scale_test_artifacts_exporter_istag }}
     rhods_notebook_namespace: rhods-notebooks
     tester_job_name: locust-notebooks-scale-test
@@ -56,13 +56,13 @@
 
 - name: Delete the RHODS test entrypoint, if it exists
   command:
-    oc delete cm/locust-notebooks-scale-test-entrypoint
+    oc delete cm/rhods-notebook-locust-entrypoint
        -n {{ rhods_notebook_locust_scale_test_namespace }}
        --ignore-not-found
 
 - name: Create the RHODS test entrypoint
   command:
-    oc create cm locust-notebooks-entrypoint
+    oc create cm rhods-notebook-locust-entrypoint
        "--from-file={{ rhods_notebook_locust_scale_test_entrypoint_directory }}"
        "--from-file=artifacts-exporter.sh={{ rhods_notebook_locust_scale_test_s3_artifacts_exporter_sidecar }}"
        -n {{ rhods_notebook_locust_scale_test_namespace }}
@@ -96,6 +96,24 @@
       xargs --no-run-if-empty
             oc delete -n {{ rhods_notebook_namespace }}
   failed_when: false
+
+- name: Create a role for listing Pods
+  shell:
+    set -o pipefail;
+    oc create role pod-reader
+       --verb=get,list
+       --resource=pods
+       -n {{ rhods_notebook_locust_scale_test_namespace }}
+       --dry-run=client -oyaml
+    | oc apply -f-
+
+- name: Give the default SA the Pod listing privilege
+  command:
+    oc adm policy add-role-to-user
+       pod-reader
+       system:serviceaccount:{{ rhods_notebook_locust_scale_test_namespace }}:default
+       --role-namespace {{ rhods_notebook_locust_scale_test_namespace }}
+       -n {{ rhods_notebook_locust_scale_test_namespace }}
 
 - name: Name the namespace privileged
   command:

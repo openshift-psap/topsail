@@ -19,34 +19,34 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   labels:
-    deployment: api-scale-test
-  name: api-scale-test
+    deployment: {{ tester_job_name }}
+  name: {{ tester_job_name }}
 spec:
-  parallelism: 1
-  completions: 1
+  parallelism: {{ rhods_notebook_locust_scale_test_cpu_count + 1 }}
+  completions: {{ rhods_notebook_locust_scale_test_cpu_count + 1}}
   activeDeadlineSeconds: 18000
   backoffLimit: 0
   completionMode: Indexed
   template:
     metadata:
-      name: api-scale-test
+      name: {{ tester_job_name }}
       labels:
-        deployment: api-scale-test
+        deployment: {{ tester_job_name }}
     spec:
       securityContext:
         runAsUser: 1001
       containers:
-      - image: "{{ rhods_api_scale_test_image }}"
+      - image: "{{ rhods_locust_scale_test_image }}"
         imagePullPolicy: Always
         name: main
         command: [bash, -ce]
         args:
-        - |
+        - |-
             mkdir -p "$ARTIFACT_DIR"
-            python3 -u /mnt/rhods-notebook-api-scale-test-entrypoint/entrypoint.py
+            python3 -u /mnt/rhods-notebook-locust-entrypoint/entrypoint.py
         env:
         - name: ARTIFACT_DIR
-          value: /mnt/shared-dir/api-scale-test
+          value: /mnt/shared-dir/locust-scale-test
         - name: TEST_USERS_IDP_NAME
           value: "{{ rhods_notebook_locust_scale_test_idp_name }}"
         - name: TEST_USERS_USERNAME_PREFIX
@@ -57,7 +57,7 @@ spec:
           value: "https://{{ rhods_dashboard_hostname_cmd.stdout }}"
         - name: CREDS_FILE
           value: "/mnt/rhods-scale-test-credentials/secret.properties"
-        - name: API_SCALE_TEST_NAME
+        - name: LOCUST_SCALE_TEST_NAME
           value: "{{ rhods_notebook_locust_scale_test_test_name }}"
         - name: NOTEBOOK_IMAGE_NAME
           value: "{{ rhods_notebook_locust_scale_test_notebook_image_name }}"
@@ -66,34 +66,45 @@ spec:
         - name: USER_INDEX_OFFSET
           value: "{{ rhods_notebook_locust_scale_test_user_index_offset }}"
         - name: LOCUST_LOCUSTFILE
-          value: "/mnt/rhods-notebook-api-scale-test-entrypoint/locustfile.py"
+          value: "/mnt/rhods-notebook-locust-entrypoint/locustfile.py"
         - name: LOCUST_DIR
-          value: "/mnt/rhods-notebook-api-scale-test-entrypoint"
+          value: "/mnt/rhods-notebook-locust-entrypoint"
         - name: LOCUST_USERS
           value: "{{ rhods_notebook_locust_scale_test_user_count }}"
         - name: LOCUST_RUN_TIME
           value: "{{ rhods_notebook_locust_scale_test_run_time }}"
         - name: LOCUST_SPAWN_RATE
           value: "{{ rhods_notebook_locust_scale_test_spawn_rate }}"
+        - name: WORKER_COUNT
+          value: "{{ rhods_notebook_locust_scale_test_cpu_count }}"
+        - name: JOB_NAME
+          value: "{{ tester_job_name }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir
-        - name: rhods-notebook-api-scale-test-entrypoint
-          mountPath: /mnt/rhods-notebook-api-scale-test-entrypoint
+        - name: rhods-notebook-locust-entrypoint
+          mountPath: /mnt/rhods-notebook-locust-entrypoint
         - name: rhods-scale-test-credentials
           mountPath: /mnt/rhods-scale-test-credentials
+        resources:
+          requests:
+            memory: 2G
+            cpu: 1
+          limits:
+            memory: 2G
+            cpu: 1
       - image: "{{ rhods_artifacts_exporter_image }}"
         name: artifacts-exporter
-        command: ['bash', '/mnt/rhods-notebook-api-scale-test-entrypoint/artifacts-exporter.sh']
+        command: ['bash', '/mnt/rhods-notebook-locust-entrypoint/artifacts-exporter.sh']
         env:
         - name: ARTIFACTS_COLLECTED
           value: "all"
         - name: ARTIFACT_DIR
-          value: "/mnt/shared-dir/api-scale-test"
+          value: "/mnt/shared-dir/locust-scale-test"
         - name: CREDS_FILE
           value: "/mnt/rhods-scale-test-credentials/secret.properties"
         - name: BUCKET_DEST_DIR
-          value: "api-scale-test"
+          value: "locust-scale-test"
         volumeMounts:
         - name: s3cmd-config
           mountPath: /mnt/s3-config
@@ -101,8 +112,8 @@ spec:
           mountPath: /mnt/shared-dir
         - name: rhods-scale-test-credentials
           mountPath: /mnt/rhods-scale-test-credentials
-        - name: rhods-notebook-api-scale-test-entrypoint
-          mountPath: /mnt/rhods-notebook-api-scale-test-entrypoint
+        - name: rhods-notebook-locust-entrypoint
+          mountPath: /mnt/rhods-notebook-locust-entrypoint
       restartPolicy: Never
 {% if rhods_notebook_locust_scale_test_toleration_key|length %}
       tolerations:
@@ -117,8 +128,8 @@ spec:
       - name: s3cmd-config
         configMap:
           name: s3cmd-config
-      - name: rhods-notebook-api-scale-test-entrypoint
+      - name: rhods-notebook-locust-entrypoint
         configMap:
-          name: rhods-notebook-api-scale-test-entrypoint
+          name: rhods-notebook-locust-entrypoint
       - name: shared-dir
         emptyDir: {}

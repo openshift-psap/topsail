@@ -19,4 +19,5 @@ RUN virtualenv -p /usr/bin/python3.9 $VIRTUAL_ENV \
  && pip install --quiet --no-cache-dir  \
            locust==2.8.* \
            locust-plugins==2.6.* \
-           BeautifulSoup4==4.11.*
+           BeautifulSoup4==4.11.* \
+           jinja2==3.0.*
