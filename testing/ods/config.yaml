@@ -1,6 +1,6 @@
 ci_presets:
-  # name of the preset to apply, or null
-  name: null
+  # list of names of the preset to apply, or null, or a single name.
+  names: null
 
   # run the Locust Notebook scale test
   notebook_locust_scale_test:
