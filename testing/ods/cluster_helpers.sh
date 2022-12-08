@@ -55,8 +55,7 @@ cluster_helpers::get_compute_node_count() {
                     > '${ARTIFACT_DIR:-/tmp}/${cluster_role}_sizing'; echo \$?")
 
     if [[ "$size" == 0 ]]; then
-        echo "ERROR: couldn't determine the number of nodes to request ..." >&2
-        false
+        _error "couldn't determine the number of nodes to request ..." >&2
     fi
 
     echo "$size"
