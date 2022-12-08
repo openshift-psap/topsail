@@ -58,7 +58,8 @@ ci_presets:
 
   osd:
     clusters.create.type: osd
-
+    clusters.sutest.is_managed: true
+    clusters.sutest.managed.is_ocm: true
 secrets:
   dir:
     name: null
