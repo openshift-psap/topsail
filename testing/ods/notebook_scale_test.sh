@@ -645,6 +645,11 @@ generate_plots() {
 
 connect_ci() {
     "$TESTING_ODS_DIR/ci_init_configure.sh"
+    set_presets_from_pr_args
+    bash "$TESTING_ODS_DIR/configure_set_presets.sh"
+    # ^^^ applies the presets
+    # vvv overrides the presets, if necessary
+    bash "$TESTING_ODS_DIR/configure_overrides.sh"
 
     if [[ "${CONFIG_DEST_DIR:-}" ]]; then
         echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."

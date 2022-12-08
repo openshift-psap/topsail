@@ -1,6 +1,6 @@
 ci_presets:
-  # name of the preset to apply, or null
-  name: null
+  # list of names of the preset to apply, or null, or a single name.
+  names: null
 
   # run the Locust Notebook scale test
   notebook_locust_scale_test:
@@ -42,6 +42,20 @@ ci_presets:
 
   plot.notebooks_scale_tests_comparison:
     matbench.preset: notebooks_scale_tests_comparison
+
+  # cluster creation presets
+
+  single:
+    clusters.create.type: single
+
+  keep:
+    clusters.create.keep: true
+
+  ocp:
+    clusters.create.type: ocp
+
+  osd:
+    clusters.create.type: osd
 
 secrets:
   dir:

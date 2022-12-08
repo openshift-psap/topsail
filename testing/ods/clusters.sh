@@ -16,20 +16,9 @@ source "$TESTING_ODS_DIR/cluster_helpers.sh"
 # ---
 
 prepare_args_from_pr() {
-    set_config_from_pr_arg 1 clusters.create.type
-    set_config_from_pr_arg 2 clusters.create.keep --optional
-
-    if [[ "$(get_config clusters.create.keep)" == keep ]]; then
-        set_config clusters.create.keep true
-    fi
-
-    cluster_type=$(get_config "clusters.create.type")
-    if [[ "$cluster_type" == osd ]]; then
-        set_config clusters.sutest.is_managed true
-        set_config clusters.sutest.managed.is_ocm true
-    fi
-
-    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$CONFIG_DEST_DIR/config.yaml"
+    set_presets_from_pr_args
+    bash "$TESTING_ODS_DIR/configure_set_presets.sh"
+    bash "$TESTING_ODS_DIR/configure_overrides.sh"
 }
 
 capture_gather_extra() {
