@@ -77,8 +77,6 @@ Wait for the Notebook Spawn
   [Tags]  Notebook  Spawn
 
   Trigger Notebook Spawn
-  Click Element  xpath://span[@class="pf-c-expandable-section__toggle-text"]
-  Capture Page Screenshot
 
   Wait Notebook Spawn  ${NOTEBOOK_SPAWN_WAIT_TIME}
   Capture Page Screenshot
