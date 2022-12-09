@@ -50,8 +50,8 @@ class JupyterLab(common.ContextBase):
                 failed = "JupyterLab 503 error ..."
                 err_kwargs = dict(known_bug="RHODS-5912")
             elif response.status_code == 0:
-                failed = "JupyterLab empty response ..."
-
+                failed = "JupyterLab empty response ... (during login)"
+                err_kwargs = dict(known_bug="RHODS-6126")
             else:
                 common.debug_point()
                 failed = f"JupyterLab authentication failed :/ (code {response.status_code})"
@@ -78,7 +78,7 @@ class JupyterLab(common.ContextBase):
     def get_jupyterlab_page(self, base_url):
         response = self.client.get(base_url, name="<jupyterlab_host>/{base_url} (access)")
         if response.status_code == 0:
-            raise common.ScaleTestError("JupyterLab empty response ...")
+            raise common.ScaleTestError("JupyterLab empty response ... (during access)", known_bug="RHODS-6126")
         elif not response:
             raise common.ScaleTestError(f"JupyterLab home page failed to load ... (code {response.status_code})",
                                         unclear=True)
