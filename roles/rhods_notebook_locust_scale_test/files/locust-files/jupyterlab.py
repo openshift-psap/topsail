@@ -30,7 +30,7 @@ class JupyterLab(common.ContextBase):
 
         return self.get_jupyterlab_page(full_base_url)
 
-    @common.Step("Login to JupyterLab")
+    @common.Step("5. Login to JupyterLab")
     def login_to_jupyterlab_page(self, base_url):
         needs_login = False
         failed = False
@@ -64,7 +64,7 @@ class JupyterLab(common.ContextBase):
             raise common.ScaleTestError(failed, **err_kwargs)
 
         if needs_login:
-            login_response = self.oauth.do_login("JupyterLab", response)
+            login_response = self.oauth.do_login(5, "JupyterLab", response)
             if not login_response:
                 raise common.ScaleTestError(f"JupyterLab authentication failed .. (code {login_response.status_code})", unclear=True)
 
@@ -74,7 +74,7 @@ class JupyterLab(common.ContextBase):
 
         return final_response
 
-    @common.Step("Go to JupyterLab Page")
+    @common.Step("6. Go to JupyterLab Page")
     def get_jupyterlab_page(self, base_url):
         response = self.client.get(base_url, name="<jupyterlab_host>/{base_url} (access)")
         if response.status_code == 0:
