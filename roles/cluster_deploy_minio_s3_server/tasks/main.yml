@@ -49,12 +49,31 @@
        -n "{{ cluster_deploy_minio_s3_server_namespace }}"
 
 - name: Wait for the minio deployment to be ready
-  command:
-    oc get deploy/minio-deployment
-       -oyaml
-       -n "{{ cluster_deploy_minio_s3_server_namespace }}"
-       -ojsonpath={.status.readyReplicas}
-  register: wait_minio_ready
-  retries: 12
-  delay: 10
-  until: wait_minio_ready.stdout
+  block:
+  - name: Wait for the minio deployment to be ready
+    command:
+      oc get deploy/minio-deployment
+         -oyaml
+         -n "{{ cluster_deploy_minio_s3_server_namespace }}"
+         -ojsonpath={.status.readyReplicas}
+    register: wait_minio_ready
+    retries: 12
+    delay: 30
+    until: wait_minio_ready.stdout
+  always:
+  - name: Capture the state of the minio Deployment
+    shell:
+      oc get deploy/minio-deployment
+          -n "{{ cluster_deploy_minio_s3_server_namespace }}"
+         > "{{ artifact_extra_logs_dir }}/deploy.status"
+
+  - name: Capture the state of the minio Pod
+    shell:
+      oc get pods -lapp=minio
+             -n "{{ cluster_deploy_minio_s3_server_namespace }}"
+             > "{{ artifact_extra_logs_dir }}/pod.status"
+  - name: Capture the descr of the minio Pod
+    shell:
+      oc describe pods -lapp=minio
+             -n "{{ cluster_deploy_minio_s3_server_namespace }}"
+             > "{{ artifact_extra_logs_dir }}/pod.descr"
