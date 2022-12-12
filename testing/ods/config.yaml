@@ -1,5 +1,7 @@
 ci_presets:
-  # list of names of the preset to apply, or null, or a single name.
+  # name of the presets to apply, or null if no preset
+  name: null
+  # list of names of the presets to apply, or a single name, or null if no preset
   names: null
 
   # run the Locust Notebook scale test
@@ -56,7 +58,8 @@ ci_presets:
 
   osd:
     clusters.create.type: osd
-
+    clusters.sutest.is_managed: true
+    clusters.sutest.managed.is_ocm: true
 secrets:
   dir:
     name: null
@@ -188,7 +191,7 @@ tests:
     ods_ci:
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: jh-at-scale.v221208
+        ref: jh-at-scale.v221212
       # tags to exclude when running the robot test case
       excluded_tags: None
       # ODS-CI test case to execute.

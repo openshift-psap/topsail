@@ -66,10 +66,6 @@ Go to Jupyter Page
   Select Notebook Image  ${NOTEBOOK_IMAGE_NAME}
   Select Container Size  ${NOTEBOOK_IMAGE_SIZE}
 
-  Remove All Spawner Environment Variables
-  Add Spawner Environment Variable  BENCHMARK_NAME  ${NOTEBOOK_BENCHMARK_NAME}
-  Add Spawner Environment Variable  BENCHMARK_NUMBER  ${NOTEBOOK_BENCHMARK_NUMBER}
-  Add Spawner Environment Variable  BENCHMARK_REPEAT  ${NOTEBOOK_BENCHMARK_REPEAT}
   Capture Page Screenshot
 
 

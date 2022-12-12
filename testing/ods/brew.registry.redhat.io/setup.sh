@@ -18,12 +18,12 @@ if [[ -z "${TOKEN_FILE}" || ! -e "${TOKEN_FILE}" ]]; then
     exit 1
 fi
 
-set +x # disable 'set -x' / 'bash -x' as credentials are handled with bash variables
+set -x # disable 'set -x' / 'bash -x' as credentials are handled with bash variables
 
 pull_secrets=$(oc get $OCP_PULL_SECRET -o json | jq -r '.data.".dockerconfigjson"' | base64 -d | jq)
 if [[ "$(echo $pull_secrets  | jq -r ".auths | has(\"$SERVER\")")" == true ]]; then
-    echo "ERROR: OpenShift pull secrets already contain a key for $SERVER ..."
-    exit 1
+    echo "INFO: OpenShift pull secrets already contain a key for $SERVER ..."
+    exit 0
 fi
 
 echo "Updating the OpenShift secrets to allow pull images from $SERVER ..."

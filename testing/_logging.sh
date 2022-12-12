@@ -1,53 +1,25 @@
 #! /usr/bin/env bash
 
 if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-    echo "ERROR: ARTIFACT_DIR must be defined ..."
-    false
+    echo "$0: WARNING: ARTIFACT_DIR not defined ..."
 fi
 
 _flake() {
-    msg="$1"
-    fname="${2:-msg}"
-
-    DEST_DIR="${ARTIFACT_DIR}/_FLAKE/"
-    mkdir -p "$DEST_DIR"
-    echo "$msg" >> "${DEST_DIR}/$fname"
-
-    echo "FLAKE: $msg"
+    __do_log FLAKE "$@"
 }
 
 _info() {
-    msg="$1"
-    fname="${2:-msg}"
-
-    DEST_DIR="${ARTIFACT_DIR}/_INFO/"
-    mkdir -p "$DEST_DIR"
-    echo "$msg" >> "${DEST_DIR}/$fname"
-
-    echo "INFO: $msg"
+    __do_log INFO "$@"
 }
 
 _error() {
-    msg="$1"
-    fname="${2:-msg}"
+    __do_log ERROR "$@"
 
-    DEST_DIR="${ARTIFACT_DIR}/_ERROR/"
-    mkdir -p "$DEST_DIR"
-    echo "$msg" >> "${DEST_DIR}/$fname"
-
-    echo "ERROR: $msg"
     return 1
 }
 
 _warning() {
-    msg="$1"
-    fname="${2:-msg}"
-
-    DEST_DIR="${ARTIFACT_DIR}/_WARNING/"
-    mkdir -p "$DEST_DIR"
-    echo "$msg" >> "${DEST_DIR}/$fname"
-
-    echo "WARNING: $msg"
+    __do_log WARNING "$@"
 }
 
 _expected_fail() {
@@ -58,4 +30,22 @@ _expected_fail() {
 
     last_toolbox_dir=$(ls ${ARTIFACT_DIR}/*__* -d | tail -1)
     echo "$1" > ${last_toolbox_dir}/EXPECTED_FAIL
+}
+
+__do_log() {
+    level=$1
+    shift
+    msg="$1"
+    shift
+    fname="${1:-msg}"
+
+    echo "${level}: $msg"
+
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        return
+    fi
+
+    DEST_DIR="${ARTIFACT_DIR}/_${level}/"
+    mkdir -p "$DEST_DIR"
+    echo "$msg" >> "${DEST_DIR}/$fname"
 }
