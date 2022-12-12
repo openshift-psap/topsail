@@ -39,7 +39,7 @@ env.REUSE_COOKIES = os.getenv("REUSE_COOKIES", False) == "1"
 env.WORKER_COUNT = int(os.getenv("WORKER_COUNT", 1))
 env.DEBUG_MODE = os.getenv("DEBUG_MODE", False) == "1"
 env.DO_NOT_STOP_NOTEBOOK = False
-env.SKIP_OPTIONAL = True
+env.SKIP_OPTIONAL = os.getenv("SKIP_OPTIONAL", False) == "1"
 
 env.LOCUST_USERS = int(os.getenv("LOCUST_USERS"))
 
