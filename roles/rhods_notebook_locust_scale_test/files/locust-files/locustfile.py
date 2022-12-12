@@ -80,11 +80,12 @@ class WorkbenchUser(HttpUser):
         self.client.verify = False
 
         self.loop = 0
-        self.user_id = (env.USER_INDEX_OFFSET # common offset
-                        + int(env.LOCUST_USERS / env.WORKER_COUNT) * env.JOB_COMPLETION_INDEX # per worker offset
-                        + self.__class__.user_next_id # per user offset (= per object instance)
-                        )
-        self.user_name = f"{env.USERNAME_PREFIX}{self.user_id}"
+
+        self.user_index = (int(env.LOCUST_USERS / env.WORKER_COUNT) # user slice size per worker
+                           * env.JOB_COMPLETION_INDEX # per worker offset
+                           + self.__class__.user_next_id # per user offset (= per object instance)
+                           )
+        self.user_name = f"{env.USERNAME_PREFIX}{self.user_index + env.USER_INDEX_OFFSET}"
         logging.warning(f"Starting user '{self.user_name}'.")
 
         self.__class__.user_next_id += 1
