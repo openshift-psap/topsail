@@ -63,6 +63,16 @@ class WorkbenchUser(HttpUser):
     default_resource_filter = f'/A(?!{env.DASHBOARD_HOST}/data:image:)'
     bundle_resource_stats = False
 
+    @locust.events.test_start.add_listener
+    def on_test_start(environment, **_kwargs):
+        if env.JOB_COMPLETION_INDEX:
+            return
+
+        from locust.runners import MasterRunner, WorkerRunner
+        if isinstance(environment.runner, WorkerRunner):
+            env.JOB_COMPLETION_INDEX = environment.runner.worker_index
+            logging.info(f"JOB_COMPLETION_INDEX=0 overriden to {environment.runner.worker_index=}")
+
     def __init__(self, locust_env):
         HttpUser.__init__(self, locust_env)
 
