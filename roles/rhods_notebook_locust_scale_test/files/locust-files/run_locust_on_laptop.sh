@@ -91,7 +91,9 @@ finish() {
 
 trap finish INT
 
-# locust clients don't like that to be set
+unset LOCUST_CSV
+unset LOCUST_ONLY_SUMMARY
+unset LOCUST_HTML
 unset LOCUST_RUN_TIME
 
 sleep 1 # give 1s for the locust coordinator to be ready
