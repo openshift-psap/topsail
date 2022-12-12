@@ -79,6 +79,8 @@ spec:
           value: "{{ rhods_notebook_locust_scale_test_user_count }}"
         - name: WORKER_COUNT
           value: "{{ rhods_notebook_locust_scale_test_cpu_count }}"
+        - name: USER_SLEEP_FACTOR
+          value: "{{ rhods_notebook_locust_scale_test_user_sleep_factor }}"
         - name: JOB_NAME
           value: "{{ tester_job_name }}"
         volumeMounts:

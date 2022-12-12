@@ -5,6 +5,7 @@ import json
 import types
 import logging
 logging.getLogger().setLevel(logging.INFO)
+import time
 
 import locust
 import locust_plugins
@@ -35,6 +36,7 @@ env.JOB_COMPLETION_INDEX = int(os.getenv("JOB_COMPLETION_INDEX", 0))
 env.NOTEBOOK_IMAGE_NAME = os.getenv("NOTEBOOK_IMAGE_NAME")
 env.NOTEBOOK_SIZE_NAME = os.getenv("NOTEBOOK_SIZE_NAME")
 env.USER_INDEX_OFFSET = int(os.getenv("USER_INDEX_OFFSET", 0))
+env.USER_SLEEP_FACTOR = float(os.getenv("USER_SLEEP_FACTOR"))
 env.REUSE_COOKIES = os.getenv("REUSE_COOKIES", False) == "1"
 env.WORKER_COUNT = int(os.getenv("WORKER_COUNT", 1))
 env.DEBUG_MODE = os.getenv("DEBUG_MODE", False) == "1"
@@ -113,6 +115,11 @@ class WorkbenchUser(HttpUser):
             except FileNotFoundError: pass # ignore
             except EOFError: pass # ignore
 
+        sleep_delay = self.user_index * env.USER_SLEEP_FACTOR
+        logging.info(f"{self.user_name}: sleep for {sleep_delay:.1f}s before running.")
+        time.sleep(sleep_delay)
+        logging.info(f"{self.user_name}: done sleeping.")
+
         if not self.dashboard.connect_to_the_dashboard():
             logging.error("Failed to go to RHODS dashboard")
             return False
@@ -128,7 +135,7 @@ class WorkbenchUser(HttpUser):
             raise SystemExit(1)
 
         first = self.loop == 0
-        logging.info(f"TASK: launch_a_workbench #{self.loop}, user={self.user_name}")
+        logging.info(f"TASK: launch_a_workbench #{self.loop}, user={self.user_name}, worker={env.JOB_COMPLETION_INDEX}")
         self.loop += 1
 
         if first:

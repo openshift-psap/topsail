@@ -25,7 +25,7 @@ export USER_INDEX_OFFSET=100
 export CREDS_FILE=$(_get_command_arg secret_properties_file $LOCUST_COMMAND)
 export NOTEBOOK_IMAGE_NAME=$(_get_command_arg notebook_image_name $LOCUST_COMMAND)
 export NOTEBOOK_SIZE_NAME=$(_get_command_arg notebook_size_name $LOCUST_COMMAND)
-
+export USER_SLEEP_FACTOR=$(_get_command_arg user_sleep_factor $LOCUST_COMMAND)
 
 export LOCUST_USERS=$(_get_command_arg user_count $LOCUST_COMMAND)
 #export LOCUST_RUN_TIME=$(_get_command_arg run_time $LOCUST_COMMAND)
