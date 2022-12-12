@@ -90,7 +90,7 @@ spec:
           mountPath: /mnt/rhods-notebook-locust-entrypoint
         - name: rhods-scale-test-credentials
           mountPath: /mnt/rhods-scale-test-credentials
-        resources:
+        resources: # must match testing/ods/cluster_helpers.sh
           requests:
             memory: 2G
             cpu: 1
