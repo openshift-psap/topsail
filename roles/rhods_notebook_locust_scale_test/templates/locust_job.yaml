@@ -74,7 +74,9 @@ spec:
         - name: LOCUST_RUN_TIME
           value: "{{ rhods_notebook_locust_scale_test_run_time }}"
         - name: LOCUST_SPAWN_RATE
-          value: "{{ rhods_notebook_locust_scale_test_spawn_rate }}"
+          value: "{{ rhods_notebook_locust_scale_test_user_count }}" # ignore {{ rhods_notebook_locust_scale_test_spawn_rate }}
+        - name: LOCUST_ITERATIONS
+          value: "{{ rhods_notebook_locust_scale_test_user_count }}"
         - name: WORKER_COUNT
           value: "{{ rhods_notebook_locust_scale_test_cpu_count }}"
         - name: JOB_NAME
