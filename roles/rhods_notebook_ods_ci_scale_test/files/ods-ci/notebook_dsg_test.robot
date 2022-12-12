@@ -79,10 +79,7 @@ Create and Start the Workbench
   Capture Page Screenshot
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Should Be Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' != 'PASS'
-    ${envs_var_cm}=         Create Dictionary    BENCHMARK_NAME=${NOTEBOOK_BENCHMARK_NAME}   BENCHMARK_NUMBER=${NOTEBOOK_BENCHMARK_NUMBER}  BENCHMARK_REPEAT=${NOTEBOOK_BENCHMARK_REPEAT}  k8s_type=Config Map  input_type=${KEYVALUE_TYPE}
-    ${envs_list}=    Create List  ${envs_var_cm}
-
-    Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  ${NONE}  envs=${envs_list}
+    Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  ${NONE}
     Wait Until Workbench Is Started  ${WORKBENCH_NAME}  timeout=${NOTEBOOK_SPAWN_WAIT_TIME}
   ELSE
     Workbench Status Should Be  ${WORKBENCH_NAME}  ${WORKBENCH_STATUS_STOPPED}
@@ -151,5 +148,5 @@ Run the Notebook
 Just Launch Workbench
     [Arguments]     ${workbench_title}
 
-    Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]/td/a[text()="Open"]
+    Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]//a[text()="Open"]
     Switch Window   NEW

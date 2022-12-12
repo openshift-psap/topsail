@@ -47,6 +47,9 @@ Load the Notebook
   Capture Page Screenshot
 
 Run the Notebook
+
+  Run Cell And Check For Errors  import datetime;print(f"{datetime.datetime.now()} Configuring ...")
+  Run Cell And Check For Errors  import os;os.environ["BENCHMARK_NAME"]="${NOTEBOOK_BENCHMARK_NAME}";os.environ["BENCHMARK_REPEAT"]="${NOTEBOOK_BENCHMARK_REPEAT}"; os.environ["BENCHMARK_NUMBER"]="${NOTEBOOK_BENCHMARK_NUMBER}";
   Open With JupyterLab Menu  Run  Run All Cells
   Capture Page Screenshot
 
