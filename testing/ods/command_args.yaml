@@ -143,6 +143,7 @@ rhods notebook_locust_scale_test:
   username_prefix: {{ ldap.users.prefix }}
   user_count: {{ tests.notebooks.users.count }}
   user_index_offset: {{ tests.notebooks.users.start_offset }}
+  user_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
 
   run_time: {{ tests.notebooks.locust.run_time }}
   spawn_rate: {{ tests.notebooks.locust.spawn_rate }}
