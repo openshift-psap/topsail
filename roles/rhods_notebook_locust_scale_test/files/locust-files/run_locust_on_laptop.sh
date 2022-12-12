@@ -34,7 +34,7 @@ export LOCUST_SPAWN_RATE=$LOCUST_USERS # Spawn all the users at the same time
 echo "LOCUST_USERS --> $LOCUST_USERS"
 
 export LOCUST_LOCUSTFILE=$THIS_DIR/locustfile.py
-
+export RESULTS_DEST=results/locust_scale_test
 export REUSE_COOKIES=1
 
 DEBUG_MODE=${DEBUG_MODE:-0}
@@ -57,7 +57,7 @@ export LOCUST_EXPECT_WORKERS=${WORKER_COUNT}
 export LOCUST_EXPECT_WORKERS_MAX_WAIT=60 # seconds
 
 export LOCUST_HEADLESS=1
-export LOCUST_CSV=results/api_scale_test
+export LOCUST_CSV=$RESULTS_DEST
 export LOCUST_HTML=$LOCUST_CSV.html
 export LOCUST_ONLY_SUMMARY=1
 export LOCUST_ITERATIONS=$LOCUST_USERS # run only one iteration per user at the moment
@@ -83,9 +83,9 @@ finish() {
     wait $MASTER_PID
 
     locust-reporter \
-        -prefix results/api_scale_test \
+        -prefix "$LOCUST_CSV" \
         -failures=true \
-        -outfile results/locust_reporter.html
+        -outfile "${RESULTS_DEST}_reporter.html"
 }
 
 trap finish INT

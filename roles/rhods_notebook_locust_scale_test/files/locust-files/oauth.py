@@ -10,7 +10,7 @@ class Oauth(common.ContextBase):
 
     def do_login(self, step_id, where, _response):
         @common.Step(f"{step_id}. Login to {where} (oauth)")
-        def do_it(response):
+        def do_it(self, response):
             if "Log in with OpenShift" in response.text:
                 response = self._do_login_with_openshift(response)
                 if not response:
@@ -32,7 +32,7 @@ class Oauth(common.ContextBase):
 
             return response
 
-        return do_it(_response)
+        return do_it(self, _response)
 
     def _do_login_with_openshift(self, response):
         logging.info("Log in with OpenShift")

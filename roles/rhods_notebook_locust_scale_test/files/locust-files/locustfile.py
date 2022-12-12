@@ -32,6 +32,7 @@ env.JOB_COMPLETION_INDEX = os.getenv("JOB_COMPLETION_INDEX", 0)
 env.IDP_NAME = os.getenv("TEST_USERS_IDP_NAME")
 env.NAMESPACE = "rhods-notebooks"
 env.JOB_COMPLETION_INDEX = int(os.getenv("JOB_COMPLETION_INDEX", 0))
+env.RESULTS_DEST = os.getenv("RESULTS_DEST")
 
 env.NOTEBOOK_IMAGE_NAME = os.getenv("NOTEBOOK_IMAGE_NAME")
 env.NOTEBOOK_SIZE_NAME = os.getenv("NOTEBOOK_SIZE_NAME")
@@ -41,7 +42,7 @@ env.REUSE_COOKIES = os.getenv("REUSE_COOKIES", False) == "1"
 env.WORKER_COUNT = int(os.getenv("WORKER_COUNT", 1))
 env.DEBUG_MODE = os.getenv("DEBUG_MODE", False) == "1"
 env.DO_NOT_STOP_NOTEBOOK = False
-env.SKIP_OPTIONAL = os.getenv("SKIP_OPTIONAL", False) == "1"
+env.SKIP_OPTIONAL = os.getenv("SKIP_OPTIONAL", "1") == "1"
 
 env.LOCUST_USERS = int(os.getenv("LOCUST_USERS"))
 
@@ -51,12 +52,16 @@ env.LOCUST_USERS = int(os.getenv("LOCUST_USERS"))
 # - LOCUST_SPAWN_RATE (locust number of new users per seconds)
 # - LOCUST_LOCUSTFILE (locustfile.py file that will be executed)
 
+env.LOCUST_CSV = os.getenv("LOCUST_CSV")
+
 creds_file = os.getenv("CREDS_FILE")
 env.USER_PASSWORD = None
 with open(creds_file) as f:
     for line in f:
         if not line.startswith("user_password="): continue
         env.USER_PASSWORD = line.strip().split("=")[1]
+
+env.csv_progress = None # initialized in WorkbenchUser.on_test_start
 
 class WorkbenchUser(HttpUser):
     host = env.DASHBOARD_HOST
@@ -67,13 +72,13 @@ class WorkbenchUser(HttpUser):
 
     @locust.events.test_start.add_listener
     def on_test_start(environment, **_kwargs):
-        if env.JOB_COMPLETION_INDEX:
-            return
+        if not env.JOB_COMPLETION_INDEX:
+            from locust.runners import MasterRunner, WorkerRunner
+            if isinstance(environment.runner, WorkerRunner):
+                env.JOB_COMPLETION_INDEX = environment.runner.worker_index
+                logging.info(f"JOB_COMPLETION_INDEX=0 overriden to {environment.runner.worker_index=}")
 
-        from locust.runners import MasterRunner, WorkerRunner
-        if isinstance(environment.runner, WorkerRunner):
-            env.JOB_COMPLETION_INDEX = environment.runner.worker_index
-            logging.info(f"JOB_COMPLETION_INDEX=0 overriden to {environment.runner.worker_index=}")
+        env.csv_progress = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_progress.csv", common.CsvProgressEntry)
 
     def __init__(self, locust_env):
         HttpUser.__init__(self, locust_env)
@@ -135,7 +140,8 @@ class WorkbenchUser(HttpUser):
             raise SystemExit(1)
 
         first = self.loop == 0
-        logging.info(f"TASK: launch_a_workbench #{self.loop}, user={self.user_name}, worker={env.JOB_COMPLETION_INDEX}")
+        logging.info(f"TASK: launch_a_workbench #{self.loop}, "
+                     f"user={self.user_name}, worker={env.JOB_COMPLETION_INDEX}")
         self.loop += 1
 
         if first:

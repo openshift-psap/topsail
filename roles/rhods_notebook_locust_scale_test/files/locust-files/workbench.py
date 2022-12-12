@@ -120,6 +120,7 @@ class WorkbenchObj(common.ContextBase):
             "url": "/launch",
             "response_length": 0,
             "exception": None,
+            "user_name": self.user_name,
         }
         with common.LocustMetaEvent(meta_event):
             route = None
