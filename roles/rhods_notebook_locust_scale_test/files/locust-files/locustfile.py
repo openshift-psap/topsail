@@ -104,10 +104,11 @@ class WorkbenchUser(HttpUser):
 
     def on_start(self):
         logging.info(f"Running user #{self.user_name}")
+        cookies_filename = f".cookies.{self.user_name}.pickle"
 
         if env.REUSE_COOKIES:
             try:
-                with open(f"cookies.{self.user_id}.pickle", "rb") as f:
+                with open(cookies_filename, "rb") as f:
                     self.client.cookies.update(pickle.load(f))
             except FileNotFoundError: pass # ignore
             except EOFError: pass # ignore
@@ -117,7 +118,7 @@ class WorkbenchUser(HttpUser):
             return False
 
         if env.REUSE_COOKIES:
-            with open(f"cookies.{self.user_id}.pickle", "wb") as f:
+            with open(cookies_filename, "wb") as f:
                 pickle.dump(self.client.cookies, f)
 
     @task
