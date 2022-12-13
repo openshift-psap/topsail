@@ -21,10 +21,10 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
 
     if is_notebook:
         hostnames = entry_results.notebook_hostnames
-        pods = entry_results.notebook_pods
+        all_pod_times = entry_results.notebook_pod_times
     else:
         hostnames = entry_results.testpod_hostnames
-        pods = entry_results.test_pods
+        all_pod_times = entry_results.testpod_times
 
     hostnames_index = list(hostnames.values()).index
 
@@ -42,17 +42,11 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
                 Count=0,
             ))
 
-    for pod_name in pods:
-        if is_notebook:
-            user_idx = int(re.findall(r'[:letter:]*(\d+)$', pod_name)[0])
-        else:
-            user_idx = int(pod_name.split("-")[2])
-
-        try: pod_times = entry_results.pod_times[pod_name]
-        except KeyError: continue
-
+    for pod_times in all_pod_times.values():
+        user_idx = pod_times.user_index
+        pod_name = pod_times.pod_name
         try:
-            hostname = hostnames[pod_name]
+            hostname = hostnames[user_idx]
         except KeyError:
             data.append(dict(
                 UserIndex = f"User #{user_idx:03d}",
