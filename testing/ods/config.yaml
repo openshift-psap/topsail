@@ -191,7 +191,7 @@ tests:
     ods_ci:
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: jh-at-scale.v221212
+        ref: jh-at-scale.v221213
       # tags to exclude when running the robot test case
       excluded_tags: None
       # ODS-CI test case to execute.
