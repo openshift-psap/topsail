@@ -109,6 +109,9 @@ Create and Start the Workbench
     ${current_url}=   Get Location
     Create File  ${OUTPUTDIR}/bug_5912.url  ${current_url}
 
+    ${current_html} =    SeleniumLibrary.Get Source
+    Create File  ${OUTPUTDIR}/bug_5912.html  ${current_html}
+
     ${browser log entries}=    Get Browser Console Log Entries
     ${browser log entries str}=   Convert To String  ${browser log entries}
     Create File  ${OUTPUTDIR}/bug_5912_browser_log_entries.yaml  ${browser log entries str}
