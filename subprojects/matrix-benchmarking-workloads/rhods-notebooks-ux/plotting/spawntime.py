@@ -106,7 +106,7 @@ class SpawnTime():
 
         if hide_launch_delay:
             fig.for_each_trace(lambda trace: trace.update(visible="legendonly")
-                               if trace.name == "launch_delay" else ())
+                               if not trace[0].isdigit() else ())
 
         title = "Execution Time of the User Steps"
         if keep_failed_steps:
