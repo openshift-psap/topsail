@@ -40,12 +40,21 @@ cluster_helpers::get_compute_node_count() {
             local instance_type="$(get_config clusters.create.ocp.compute.type)"
         fi
 
+        local user_count=$(get_config tests.notebooks.users.count)
     else
-        notebook_size="$(get_config tests.notebooks.test_pods.size.cpu) $(get_config tests.notebooks.test_pods.size.mem_gi)"
+        local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+        if [[ "$test_flavor" == "ods-ci" ]]; then
+            local notebook_size="$(get_config tests.notebooks.test_pods.size.cpu) $(get_config tests.notebooks.test_pods.size.mem_gi)"
+            local user_count=$(get_config tests.notebooks.users.count)
+        elif [[ "$test_flavor" == "locust" ]]; then
+            local notebook_size="1 2" # 'cpu mem', must match roles/rhods_notebook_locust_scale_test/templates/locust_job.yaml
+            local user_count=$(($(get_config tests.notebooks.locust.cpu_count) + 1))
+        else
+            _error "Unknown test flavor: $test_flavor"
+        fi
+
         local instance_type="$(get_config clusters.create.ocp.compute.type)"
     fi
-
-    local user_count=$(get_config tests.notebooks.users.count)
 
     local size=$(bash -c "python3 $TESTING_ODS_DIR/sizing/sizing \
                    '$instance_type' \

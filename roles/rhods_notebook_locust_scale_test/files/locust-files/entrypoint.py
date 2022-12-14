@@ -45,6 +45,9 @@ def main():
     creds_file = os.getenv("CREDS_FILE")
     rank = int(os.getenv("JOB_COMPLETION_INDEX", -1))
 
+    result_dest = pathlib.Path(os.getenv("ARTIFACT_DIR")) / LOCUST_FILE_PREFIX
+    os.environ["RESULTS_DEST"] = str(result_dest)
+
     logging.info(f"Running locust test: {locust_scale_test_name}")
     logging.info(f"Against RHODS {rhods_dashboard} version {rhods_version}")
     logging.info(f"With Identity provider {idp_name}")

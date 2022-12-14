@@ -5,6 +5,7 @@ import json
 import types
 import logging
 logging.getLogger().setLevel(logging.INFO)
+import time
 
 import locust
 import locust_plugins
@@ -31,15 +32,17 @@ env.JOB_COMPLETION_INDEX = os.getenv("JOB_COMPLETION_INDEX", 0)
 env.IDP_NAME = os.getenv("TEST_USERS_IDP_NAME")
 env.NAMESPACE = "rhods-notebooks"
 env.JOB_COMPLETION_INDEX = int(os.getenv("JOB_COMPLETION_INDEX", 0))
+env.RESULTS_DEST = os.getenv("RESULTS_DEST")
 
 env.NOTEBOOK_IMAGE_NAME = os.getenv("NOTEBOOK_IMAGE_NAME")
 env.NOTEBOOK_SIZE_NAME = os.getenv("NOTEBOOK_SIZE_NAME")
 env.USER_INDEX_OFFSET = int(os.getenv("USER_INDEX_OFFSET", 0))
+env.USER_SLEEP_FACTOR = float(os.getenv("USER_SLEEP_FACTOR"))
 env.REUSE_COOKIES = os.getenv("REUSE_COOKIES", False) == "1"
 env.WORKER_COUNT = int(os.getenv("WORKER_COUNT", 1))
 env.DEBUG_MODE = os.getenv("DEBUG_MODE", False) == "1"
 env.DO_NOT_STOP_NOTEBOOK = False
-env.SKIP_OPTIONAL = True
+env.SKIP_OPTIONAL = os.getenv("SKIP_OPTIONAL", "1") == "1"
 
 env.LOCUST_USERS = int(os.getenv("LOCUST_USERS"))
 
@@ -49,12 +52,16 @@ env.LOCUST_USERS = int(os.getenv("LOCUST_USERS"))
 # - LOCUST_SPAWN_RATE (locust number of new users per seconds)
 # - LOCUST_LOCUSTFILE (locustfile.py file that will be executed)
 
+env.LOCUST_CSV = os.getenv("LOCUST_CSV")
+
 creds_file = os.getenv("CREDS_FILE")
 env.USER_PASSWORD = None
 with open(creds_file) as f:
     for line in f:
         if not line.startswith("user_password="): continue
         env.USER_PASSWORD = line.strip().split("=")[1]
+
+env.csv_progress = None # initialized in WorkbenchUser.on_test_start
 
 class WorkbenchUser(HttpUser):
     host = env.DASHBOARD_HOST
@@ -63,6 +70,16 @@ class WorkbenchUser(HttpUser):
     default_resource_filter = f'/A(?!{env.DASHBOARD_HOST}/data:image:)'
     bundle_resource_stats = False
 
+    @locust.events.test_start.add_listener
+    def on_test_start(environment, **_kwargs):
+        if not env.JOB_COMPLETION_INDEX:
+            from locust.runners import MasterRunner, WorkerRunner
+            if isinstance(environment.runner, WorkerRunner):
+                env.JOB_COMPLETION_INDEX = environment.runner.worker_index
+                logging.info(f"JOB_COMPLETION_INDEX=0 overriden to {environment.runner.worker_index=}")
+
+        env.csv_progress = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_progress.csv", common.CsvProgressEntry)
+
     def __init__(self, locust_env):
         HttpUser.__init__(self, locust_env)
 
@@ -70,11 +87,12 @@ class WorkbenchUser(HttpUser):
         self.client.verify = False
 
         self.loop = 0
-        self.user_id = (env.USER_INDEX_OFFSET # common offset
-                        + int(env.LOCUST_USERS / env.WORKER_COUNT) * env.JOB_COMPLETION_INDEX # per worker offset
-                        + self.__class__.user_next_id # per user offset (= per object instance)
-                        )
-        self.user_name = f"{env.USERNAME_PREFIX}{self.user_id}"
+
+        self.user_index = (int(env.LOCUST_USERS / env.WORKER_COUNT) # user slice size per worker
+                           * env.JOB_COMPLETION_INDEX # per worker offset
+                           + self.__class__.user_next_id # per user offset (= per object instance)
+                           )
+        self.user_name = f"{env.USERNAME_PREFIX}{self.user_index + env.USER_INDEX_OFFSET}"
         logging.warning(f"Starting user '{self.user_name}'.")
 
         self.__class__.user_next_id += 1
@@ -93,20 +111,26 @@ class WorkbenchUser(HttpUser):
 
     def on_start(self):
         logging.info(f"Running user #{self.user_name}")
+        cookies_filename = f".cookies.{self.user_name}.pickle"
 
         if env.REUSE_COOKIES:
             try:
-                with open(f"cookies.{self.user_id}.pickle", "rb") as f:
+                with open(cookies_filename, "rb") as f:
                     self.client.cookies.update(pickle.load(f))
             except FileNotFoundError: pass # ignore
             except EOFError: pass # ignore
+
+        sleep_delay = self.user_index * env.USER_SLEEP_FACTOR
+        logging.info(f"{self.user_name}: sleep for {sleep_delay:.1f}s before running.")
+        time.sleep(sleep_delay)
+        logging.info(f"{self.user_name}: done sleeping.")
 
         if not self.dashboard.connect_to_the_dashboard():
             logging.error("Failed to go to RHODS dashboard")
             return False
 
         if env.REUSE_COOKIES:
-            with open(f"cookies.{self.user_id}.pickle", "wb") as f:
+            with open(cookies_filename, "wb") as f:
                 pickle.dump(self.client.cookies, f)
 
     @task
@@ -116,7 +140,8 @@ class WorkbenchUser(HttpUser):
             raise SystemExit(1)
 
         first = self.loop == 0
-        logging.info(f"TASK: launch_a_workbench #{self.loop}, user={self.user_name}")
+        logging.info(f"TASK: launch_a_workbench #{self.loop}, "
+                     f"user={self.user_name}, worker={env.JOB_COMPLETION_INDEX}")
         self.loop += 1
 
         if first:

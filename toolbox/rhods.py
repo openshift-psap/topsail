@@ -149,6 +149,7 @@ class RHODS:
                                    notebook_size_name="Small",
                                    toleration_key="",
                                    cpu_count: int = 1,
+                                   user_sleep_factor: float = 1.0,
                                    ):
 
         """
@@ -170,6 +171,7 @@ class RHODS:
           toleration_key: Toleration key to use for the test Pods.
           artifacts_exporter_istag: Imagestream tag of the artifacts exporter side-car container.
           cpu_count: Number of Locust processes to launch (one per Pod with 1cpu).
+          user_sleep_factor: Delay to sleep between users
         """
 
         return RunAnsibleRole(locals())

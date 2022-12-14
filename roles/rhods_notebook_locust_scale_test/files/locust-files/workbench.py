@@ -111,15 +111,16 @@ class WorkbenchObj(common.ContextBase):
         start_time = datetime.datetime.now()
         timeout = datetime.timedelta(minutes=LAUNCH_TIMEOUT)
 
-        logging.info(f"Waiting for the Notebook {self.user_name} ...")
+        logging.info(f"Waiting for the Notebook {self.name} ...")
 
         meta_event = {
             "request_type": f"NOTEBOOK",
-            "name": f"Launch",
+            "name": f"Launch({self.name})",
             "response": "no answer",
             "url": "/launch",
             "response_length": 0,
             "exception": None,
+            "user_name": self.user_name,
         }
         with common.LocustMetaEvent(meta_event):
             route = None

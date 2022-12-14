@@ -1,6 +1,9 @@
 import functools
 import datetime
 import logging
+import threading, queue
+import collections
+import io, csv
 
 class LocustMetaEvent:
     def __init__(self, event):
@@ -26,16 +29,25 @@ class LocustMetaEvent:
         if value:
             logging.error(f"{value.__class__.__name__}: {value}")
 
+        Context.context.env.csv_progress.write(CsvProgressEntry(
+            event["user_name"],
+            event["name"],
+            self.start_ts,
+            datetime.datetime.timestamp(finish_time),
+            event.get("exception")
+        ))
+
         Context.context.client.request_event.fire(**event)
 
 def Step(name):
     def decorator(fct):
         @functools.wraps(fct)
         def call_fct(*args, **kwargs):
-            #print()
-            #print(name)
-            #print("="*len(name))
-            #print()
+            if not isinstance(args[0], ContextBase):
+                import pdb;pdb.set_trace()
+                raise ValueError(f"Step: {args[0]=} should be a subclass of ContextBase ...")
+            caller = args[0]
+
             meta_event = {
                 "request_type": f"STEP",
                 "name": name,
@@ -43,6 +55,7 @@ def Step(name):
                 "url": "/"+name.replace(" ", "_").lower(),
                 "response_length": 0,
                 "exception": None,
+                "user_name": caller.user_name,
             }
             with LocustMetaEvent(meta_event):
                 return fct(*args, **kwargs)
@@ -109,3 +122,33 @@ class ScaleTestError(Exception):
             opts += f", unclear={self.unclear}"
 
         return f'{self.__class__.__name__}("{self.msg}"{opts})'
+
+class CsvFileWriter(threading.Thread):
+    def __init__(self, filepath, csv_class):
+        threading.Thread.__init__(self, daemon=True)
+        self.queue = queue.Queue()
+        self.filepath = filepath
+        self.csv_class = csv_class
+
+        self.queue.put(", ".join(self.csv_class._fields) + "\n")
+        self.start()
+
+    def run(self):
+        with open(self.filepath, 'w') as f:
+            while True:
+                csv_line = self.queue.get()
+                f.write(csv_line)
+                f.flush()
+                self.queue.task_done()
+
+    def write(self, csv_obj):
+        output = io.StringIO()
+        wr = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+        wr.writerow([getattr(csv_obj, attr) for attr in self.csv_class._fields])
+
+        self.queue.put(output.getvalue())
+
+CsvProgressEntry = collections.namedtuple(
+    "CsvProgressEntry",
+    ["user_name", "step_name", "start", "stop", "exception"]
+)

@@ -25,21 +25,19 @@ export USER_INDEX_OFFSET=100
 export CREDS_FILE=$(_get_command_arg secret_properties_file $LOCUST_COMMAND)
 export NOTEBOOK_IMAGE_NAME=$(_get_command_arg notebook_image_name $LOCUST_COMMAND)
 export NOTEBOOK_SIZE_NAME=$(_get_command_arg notebook_size_name $LOCUST_COMMAND)
-
+export USER_SLEEP_FACTOR=$(_get_command_arg user_sleep_factor $LOCUST_COMMAND)
 
 export LOCUST_USERS=$(_get_command_arg user_count $LOCUST_COMMAND)
-export LOCUST_SPAWN_RATE=$(_get_command_arg spawn_rate $LOCUST_COMMAND)
-export LOCUST_RUN_TIME=$(_get_command_arg run_time $LOCUST_COMMAND)
-echo "LOCUST_USERS --> $LOCUST_USERS"
-# or
-#export LOCUST_ITERATIONS=1
+#export LOCUST_RUN_TIME=$(_get_command_arg run_time $LOCUST_COMMAND)
+export LOCUST_SPAWN_RATE=$LOCUST_USERS # Spawn all the users at the same time
 
+echo "LOCUST_USERS --> $LOCUST_USERS"
 
 export LOCUST_LOCUSTFILE=$THIS_DIR/locustfile.py
-
+export RESULTS_DEST=results/locust_scale_test
 export REUSE_COOKIES=1
 
-DEBUG_MODE=${DEBUG_MODE:-1}
+DEBUG_MODE=${DEBUG_MODE:-0}
 export DEBUG_MODE
 
 if [[ "$DEBUG_MODE" == 1 ]]; then
@@ -59,10 +57,10 @@ export LOCUST_EXPECT_WORKERS=${WORKER_COUNT}
 export LOCUST_EXPECT_WORKERS_MAX_WAIT=60 # seconds
 
 export LOCUST_HEADLESS=1
-export LOCUST_RESET_STATS=1
-export LOCUST_CSV=results/api_scale_test
+export LOCUST_CSV=$RESULTS_DEST
 export LOCUST_HTML=$LOCUST_CSV.html
 export LOCUST_ONLY_SUMMARY=1
+export LOCUST_ITERATIONS=$LOCUST_USERS # run only one iteration per user at the moment
 
 unset process_ctrl__wait_list
 declare -A process_ctrl__wait_list
@@ -85,15 +83,18 @@ finish() {
     wait $MASTER_PID
 
     locust-reporter \
-        -prefix results/api_scale_test \
+        -prefix "$LOCUST_CSV" \
         -failures=true \
-        -outfile results/locust_reporter.html
+        -outfile "${RESULTS_DEST}_reporter.html"
 }
 
 trap finish INT
 
-# locust clients don't like that to be set
+unset LOCUST_CSV
+unset LOCUST_ONLY_SUMMARY
+unset LOCUST_HTML
 unset LOCUST_RUN_TIME
+unset LOCUST_ITERATIONS
 
 sleep 1 # give 1s for the locust coordinator to be ready
 for worker in $(seq 1 ${WORKER_COUNT})

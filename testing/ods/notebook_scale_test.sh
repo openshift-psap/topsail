@@ -669,7 +669,7 @@ connect_ci() {
         local CI_CLUSTER_MAX_USERS=5
         local user_count=$(get_config tests.notebooks.users.count)
         if [[ "$user_count" -gt "$CI_CLUSTER_MAX_USERS" ]]; then
-            _warning "Refusing to run in a CI-provided cluster with more that $CI_CLUSTER_MAX_USERS"
+            _info "Capping the number of users to simulated to $CI_CLUSTER_MAX_USERS in the CI-provided cluster ($user_count were requested)."
             set_config tests.notebooks.users.count "$CI_CLUSTER_MAX_USERS"
         fi
     fi
