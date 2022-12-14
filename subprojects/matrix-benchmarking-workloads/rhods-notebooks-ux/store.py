@@ -324,7 +324,6 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
 @ignore_file_not_found
 def _parse_pod_times(dirname, hostnames, is_notebook=False):
     if is_notebook:
-
         filenames = [fname.relative_to(dirname) for fname in
                      (dirname / pathlib.Path("artifacts-sutest")).glob("project_*/notebook_pods.yaml")]
     else:
@@ -337,13 +336,15 @@ def _parse_pod_times(dirname, hostnames, is_notebook=False):
     def _parse_pod_times_file(f):
         in_metadata = False
         in_spec = False
-        podname = None
+        pod_name = None
+        user_index = None
+        last_transition = None
         for line in f.readlines():
             if line == "  metadata:\n":
                 in_metadata = True
                 in_status = False
                 in_spec = False
-                podname = None
+                pod_name = None
                 continue
 
             elif line == "  spec:\n":
@@ -359,36 +360,49 @@ def _parse_pod_times(dirname, hostnames, is_notebook=False):
                 continue
 
             if in_metadata and line.startswith("    name:"):
-                _podname = line.strip().split(": ")[1]
-                if _podname.endswith("-build"): continue
-                if _podname.endswith("-debug"): continue
+                pod_name = line.strip().split(": ")[1]
+                if pod_name.endswith("-build"): continue
+                if pod_name.endswith("-debug"): continue
 
                 if is_notebook:
-                    if TEST_USERNAME_PREFIX not in _podname:
+                    if TEST_USERNAME_PREFIX not in pod_name:
                         continue
 
-                    user_idx = int(re.findall(JUPYTER_USER_IDX_REGEX, _podname)[0])
-                    _podname = f"{JUPYTER_USER_RENAME_PREFIX}{user_idx}"
-                podname = _podname
+                    user_index = int(re.findall(JUPYTER_USER_IDX_REGEX, pod_name)[0])
+                else:
+                    user_index = int(pod_name.rpartition("-")[0].replace("ods-ci-", ""))
 
-            if podname is None: continue
+                pod_times[user_index].user_index = user_index
+                pod_times[user_index].pod_name = pod_name
+
+            if pod_name is None: continue
 
             if in_spec and line.startswith("    nodeName:"):
-                hostnames[podname] = line.strip().partition(": ")[-1]
+                hostnames[user_index] = line.strip().partition(": ")[-1]
 
-            elif in_status and "startTime:" in line:
-                pod_times[podname].start_time = \
-                    datetime.datetime.strptime(
-                        line.strip().partition(": ")[-1],
-                        fmt)
+            elif in_status:
+                if "startTime:" in line:
+                    pod_times[user_index].start_time = \
+                        datetime.datetime.strptime(
+                            line.strip().partition(": ")[-1],
+                            fmt)
 
-            elif in_status and "finishedAt:" in line:
-                # this will keep the *last* finish date
-                pod_times[podname].container_finished = \
-                    datetime.datetime.strptime(
-                        line.strip().partition(": ")[-1],
-                        fmt)
+                elif "finishedAt:" in line:
+                    # this will keep the *last* finish date
+                    pod_times[user_index].container_finished = \
+                        datetime.datetime.strptime(
+                            line.strip().partition(": ")[-1],
+                            fmt)
 
+                if "lastTransitionTime:" in line:
+                    last_transition = datetime.datetime.strptime(line.strip().partition(": ")[-1], fmt)
+                elif "type: ContainersReady" in line:
+                    pod_times[user_index].containers_ready = last_transition
+
+                elif "type: Initialized" in line:
+                    pod_times[user_index].pod_initialized = last_transition
+                elif "type: PodScheduled" in line:
+                    pod_times[user_index].pod_scheduled = last_transition
 
     for filename in filenames:
         with open(register_important_file(dirname, filename)) as f:
@@ -589,37 +603,29 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     print("_extract_metrics")
     results.metrics = _extract_metrics(dirname)
 
-    results.notebook_pod_userid = notebook_hostnames = {}
-    results.testpod_hostnames = testpod_hostnames = {}
-
     results.notebook_hostnames = notebook_hostnames = {}
     results.testpod_hostnames = testpod_hostnames = {}
-    results.pod_times = {}
 
     print("_parse_pod_times (tester)")
-    results.pod_times |= _parse_pod_times(dirname, testpod_hostnames) or {}
+    results.testpod_times = _parse_pod_times(dirname, testpod_hostnames) or {}
     print("_parse_pod_times (notebooks)")
-    results.pod_times |= _parse_pod_times(dirname, notebook_hostnames, is_notebook=True) or {}
+    results.notebook_pod_times = _parse_pod_times(dirname, notebook_hostnames, is_notebook=True) or {}
 
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
-
-    results.test_pods = [k for k in results.pod_times.keys() if k.startswith("ods-ci") and not "image" in k]
-    results.notebook_pods = [k for k in results.pod_times.keys() if k.startswith(JUPYTER_USER_RENAME_PREFIX)]
 
     print("_parse_pod_results")
     results.ods_ci_output = {}
     results.ods_ci_exit_code = {}
     results.ods_ci_notebook_benchmark = {}
     results.ods_ci_progress = {}
-    for test_pod in results.test_pods:
-        ods_ci_dirname = test_pod.rpartition("-")[0]
+    for user_idx, pod_times in results.testpod_times.items():
+        ods_ci_dirname = pod_times.pod_name.rpartition("-")[0]
         output_dir = pathlib.Path("ods-ci") / ods_ci_dirname
 
-        user_id = int(test_pod.split("-")[-2])
-        results.ods_ci_output[user_id] = _parse_ods_ci_output_xml(dirname, output_dir) or {}
-        results.ods_ci_exit_code[user_id] = _parse_ods_ci_exit_code(dirname, output_dir)
-        results.ods_ci_notebook_benchmark[user_id] = _parse_ods_ci_notebook_benchmark(dirname, output_dir)
-        results.ods_ci_progress[user_id] = _parse_ods_ci_progress(dirname, output_dir)
+        results.ods_ci_output[user_idx] = _parse_ods_ci_output_xml(dirname, output_dir) or {}
+        results.ods_ci_exit_code[user_idx] = _parse_ods_ci_exit_code(dirname, output_dir)
+        results.ods_ci_notebook_benchmark[user_idx] = _parse_ods_ci_notebook_benchmark(dirname, output_dir)
+        results.ods_ci_progress[user_idx] = _parse_ods_ci_progress(dirname, output_dir)
 
     if (dirname / "notebook-artifacts").exists():
         results.ods_ci_notebook_benchmark[-1] = _parse_ods_ci_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))

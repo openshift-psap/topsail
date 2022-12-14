@@ -139,15 +139,16 @@ EOF
 EOF
         }
 
+        local ocp_region=$(get_config clusters.create.ocp.region)
 
-        KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster driver "$(get_config clusters.ocp.region)"
+        KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster driver "$ocp_region"
 
         # * 'osd' clusters already have their kubeadmin password
         # populated during the cluster bring up
         # * 'single' clusters already have been modified with the
         # keep_cluster call of the sutest cluster.
         if [[ "$cluster_type" == "ocp" ]]; then
-            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster sutest "$(get_config clusters.ocp.region)"
+            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster sutest "$ocp_region"
         fi
     fi
 }

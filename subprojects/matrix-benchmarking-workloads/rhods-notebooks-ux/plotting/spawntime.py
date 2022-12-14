@@ -36,8 +36,8 @@ class SpawnTime():
         keep_failed_steps = cfg.get("keep_failed_steps", False)
         hide_failed_users = cfg.get("hide_failed_users", False)
 
-        for user_id, ods_ci_progress in entry.results.ods_ci_progress.items():
-            failures = entry.results.ods_ci_exit_code[user_id]
+        for user_idx, ods_ci_progress in entry.results.ods_ci_progress.items():
+            failures = entry.results.ods_ci_exit_code[user_idx]
             if failures and hide_failed_users: continue
 
             previous_checkpoint_time = entry.results.tester_job.creation_time
@@ -51,18 +51,28 @@ class SpawnTime():
                 entry_data["Step Name"] = checkpoint_name
                 entry_data["Step Duration"] = timelength
                 entry_data["Step Index"] = checkpoint_idx
-                entry_data["User Index"] = user_id
-                entry_data["User Name"] = f"User #{user_id}"
+                entry_data["User Index"] = user_idx
+                entry_data["User Name"] = f"User #{user_idx}"
                 if failures:
                     entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
+
                 data.insert(0, entry_data)
 
                 previous_checkpoint_time = checkpoint_time
 
-        for user_id, ods_ci_output in entry.results.ods_ci_output.items():
+        def add_substep_time(entry_data, substep_index, name, start, finish):
+            subentry_data = entry_data.copy()
+            subentry_data["Step Name"] = f"{entry_data['step_index']}.{substep_index} {name}"
+            subentry_data["Step Duration"] = (finish - start).total_seconds()
+            subentry_data["Step Index"] = entry_data["Step Index"] + substep_index
+
+            return subentry_data
+
+        for user_idx, ods_ci_output in entry.results.ods_ci_output.items():
+
             for step_idx, (step_name, step_status) in enumerate(ods_ci_output.items()):
 
-                failures = entry.results.ods_ci_exit_code[user_id]
+                failures = entry.results.ods_ci_exit_code[user_idx]
                 if failures and hide_failed_users: continue
 
                 step_start = step_status.start
@@ -70,27 +80,41 @@ class SpawnTime():
 
                 hide = cfg.get("hide", None)
                 if isinstance(hide, int):
-                    if hide == user_id: continue
+                    if hide == user_idx: continue
 
                 elif isinstance(hide, str):
                     skip = False
                     for hide_idx in hide.split(","):
-                        if int(hide_idx) == user_id:
+                        if int(hide_idx) == user_idx:
                             skip = True
                             break
                     if skip: continue
 
                 entry_data = {}
+                entry_data["step_index"] = step_idx
+                entry_data["Step Index"] = 100 + step_idx * 10
+                entry_data["User Index"] = user_idx
+                entry_data["User Name"] = f"User #{user_idx}"
+                if failures:
+                    entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
+
+                if step_name == "Wait for the Notebook Spawn":
+                    notebook_pod_times = entry.results.notebook_pod_times[user_idx]
+
+                    data.append(add_substep_time(entry_data, 1, "K8s Resources initialization",
+                                                 step_start, notebook_pod_times.pod_scheduled,))
+                    data.append(add_substep_time(entry_data, 2, "Pod initialization",
+                                                 notebook_pod_times.pod_scheduled, notebook_pod_times.pod_initialized,))
+                    data.append(add_substep_time(entry_data, 3, "Container initialization",
+                                                 notebook_pod_times.pod_initialized, notebook_pod_times.containers_ready))
+                    data.append(add_substep_time(entry_data, 4, "User notification",
+                                                 notebook_pod_times.containers_ready, step_finish))
+                    continue
+
+                entry_data["Step Name"] = f"{step_idx} - {step_name}"
                 entry_data["Step Duration"] = (step_finish - step_start).total_seconds() \
                     if keep_failed_steps or step_status.status == "PASS" \
                        else 0
-
-                entry_data["Step Index"] = 100 + step_idx
-                entry_data["Step Name"] = f"{step_idx} - {step_name}"
-                entry_data["User Index"] = user_id
-                entry_data["User Name"] = f"User #{user_id}"
-                if failures:
-                    entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
 
                 data.append(entry_data)
 
@@ -106,7 +130,7 @@ class SpawnTime():
 
         if hide_launch_delay:
             fig.for_each_trace(lambda trace: trace.update(visible="legendonly")
-                               if trace.name == "launch_delay" else ())
+                               if not trace.name[0].isdigit() else ())
 
         title = "Execution Time of the User Steps"
         if keep_failed_steps:

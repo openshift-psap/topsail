@@ -27,7 +27,7 @@ ${NOTEBOOK_BENCHMARK_NAME}     %{NOTEBOOK_BENCHMARK_NAME}
 ${NOTEBOOK_BENCHMARK_NUMBER}   %{NOTEBOOK_BENCHMARK_NUMBER}
 ${NOTEBOOK_BENCHMARK_REPEAT}   %{NOTEBOOK_BENCHMARK_REPEAT}
 
-${NOTEBOOK_SPAWN_WAIT_TIME}    2 minutes
+${NOTEBOOK_SPAWN_WAIT_TIME}    20 minutes
 
 ${NOTEBOOK_URL}                %{NOTEBOOK_URL}
 ${NOTEBOOK_NAME}               notebook.ipynb
@@ -83,7 +83,7 @@ Create and Start the Workbench
     Wait Until Workbench Is Started  ${WORKBENCH_NAME}  timeout=${NOTEBOOK_SPAWN_WAIT_TIME}
   ELSE
     Workbench Status Should Be  ${WORKBENCH_NAME}  ${WORKBENCH_STATUS_STOPPED}
-    Start Workbench  ${WORKBENCH_NAME}
+    Start Workbench  ${WORKBENCH_NAME}  ${NOTEBOOK_SPAWN_WAIT_TIME}
   END
 
   Capture Page Screenshot
@@ -108,6 +108,9 @@ Create and Start the Workbench
 
     ${current_url}=   Get Location
     Create File  ${OUTPUTDIR}/bug_5912.url  ${current_url}
+
+    ${current_html} =    SeleniumLibrary.Get Source
+    Create File  ${OUTPUTDIR}/bug_5912.html  ${current_html}
 
     ${browser log entries}=    Get Browser Console Log Entries
     ${browser log entries str}=   Convert To String  ${browser log entries}

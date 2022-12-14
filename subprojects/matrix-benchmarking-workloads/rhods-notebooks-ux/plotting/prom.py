@@ -311,7 +311,7 @@ def get_driver_metrics(register=False):
     cluster_role = "driver"
 
     container_labels = [
-        {"Test Pods": dict(namespace="loadtest", container="main")},
+        {"Test Pods": dict(namespace="notebooks-scale-test", container="main")},
     ]
     all_metrics = []
     all_metrics += _get_cluster_mem_cpu(cluster_role, register)

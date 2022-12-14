@@ -115,8 +115,11 @@ class UserExecutionOverviewReport():
         header += [html.H2("Execution Time of the User Steps")]
         header += [Plot("Notebook spawn time", args)]
         header += ["This plot shows the time the simulated user took to execute each of the test steps. User IDs shown in bold font failed to pass the test. Failed steps are not shown."]
-        header += html.Br()
-        header += html.Br()
+
+        header += [html.H2("Execution Time without the launch delay")]
+        header += [Plot(f"Notebook spawn time", set_config({"hide_launch_delay": True}, args))]
+        header += ["This plot shows the time the simulated user took to execute each of the test steps, with the test pod initialization and launch delay _hidden_."]
+
 
         header += [html.H2("Execution Time with the failed steps")]
         header += [Plot(f"Notebook spawn time", set_config({"keep_failed_steps": True}, args))]
@@ -124,7 +127,7 @@ class UserExecutionOverviewReport():
 
         header += [html.H2("Execution Time without the failed users")]
         header += [Plot(f"Notebook spawn time", set_config({"hide_failed_users": True}, args))]
-        header += ["This plot shows the time the simulated user took to execute each of the test steps. User who failed the test are _not_ shown.."]
+        header += ["This plot shows the time the simulated user took to execute each of the test steps. User who failed the test are _not_ shown."]
 
         return None, header
 
