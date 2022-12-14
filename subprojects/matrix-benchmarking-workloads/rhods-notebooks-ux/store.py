@@ -573,7 +573,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     if results:
         _parse_always(results, dirname, import_settings)
 
-        store.add_to_matrix(import_settings, dirname, results, None)
+        fn_add_to_matrix(results)
 
         return
 
@@ -648,7 +648,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.notebook_perf = _parse_notebook_perf_notebook(dirname)
 
-    store.add_to_matrix(import_settings, dirname, results, None)
+    fn_add_to_matrix(results)
 
     with open(dirname / CACHE_FILENAME, "wb") as f:
         pickle.dump(results, f)
