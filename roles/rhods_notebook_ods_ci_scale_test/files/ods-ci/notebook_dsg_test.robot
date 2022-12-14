@@ -92,6 +92,10 @@ Create and Start the Workbench
   IF  '${workbench_launched}' != 'PASS'
     Capture Page Screenshot  bug_5819_open_not_available.png
     Log     message=Workaround for RHODS-5819: reload the page    level=WARN
+
+    ${current_html} =    SeleniumLibrary.Get Source
+    Create File  ${OUTPUTDIR}/bug_5819.html  ${current_html}
+
     Reload Page
     Wait Until Page Contains  Create workbench  timeout=60 seconds
     Just Launch Workbench  ${WORKBENCH_NAME}
