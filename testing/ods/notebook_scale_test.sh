@@ -387,6 +387,19 @@ capture_environment() {
 
 prepare_ci() {
     cluster_helpers::connect_sutest_cluster
+
+    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
+        # running with a CI-provided cluster
+
+        # double check that we won't request too many nodes
+        local CI_CLUSTER_MAX_USERS=5
+        local user_count=$(get_config tests.notebooks.users.count)
+        if [[ "$user_count" -gt "$CI_CLUSTER_MAX_USERS" ]]; then
+            _warning "Refusing to run in a CI-provided cluster with more that $CI_CLUSTER_MAX_USERS"
+            set_config tests.notebooks.users.count "$CI_CLUSTER_MAX_USERS"
+        fi
+    fi
+
     trap "set +e; sutest_cleanup; driver_cleanup; exit 1" ERR
 }
 
