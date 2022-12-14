@@ -98,7 +98,7 @@ class SpawnTime():
                 if failures:
                     entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
 
-                if step_name == "Wait for the Notebook Spawn":
+                if step_name in ("Wait for the Notebook Spawn", "Create and Start the Workbench") :
                     notebook_pod_times = entry.results.notebook_pod_times[user_idx]
 
                     data.append(add_substep_time(entry_data, 1, "K8s Resources initialization",
