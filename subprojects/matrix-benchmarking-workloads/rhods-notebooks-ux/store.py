@@ -67,7 +67,7 @@ IMPORTANT_FILES = [
 
 
 ARTIFACTS_VERSION = "2022-11-09"
-PARSER_VERSION = "2022-11-25"
+PARSER_VERSION = "2022-12-14"
 
 
 def is_mandatory_file(filename):
