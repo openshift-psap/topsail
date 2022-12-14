@@ -71,7 +71,7 @@ PARSER_VERSION = "2022-11-25"
 
 
 def is_mandatory_file(filename):
-    return filename.name in ("settings", "exit_code")
+    return filename.name in ("settings", "exit_code") or filename.name.startswith("settings.")
 
 
 def is_important_file(filename):
