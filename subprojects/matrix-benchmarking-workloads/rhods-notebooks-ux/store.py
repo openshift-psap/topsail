@@ -61,6 +61,8 @@ IMPORTANT_FILES = [
     "ods-ci/ods-ci-*/log.html",
 
     "notebook-artifacts/benchmark_measures.json",
+
+    "src/000_rhods_notebook.yaml",
 ]
 
 
@@ -413,6 +415,16 @@ def _parse_pod_times(dirname, hostnames, is_notebook=False):
 
     return pod_times
 
+@ignore_file_not_found
+def _parse_notebook_perf_notebook(dirname):
+    notebook_perf = types.SimpleNamespace()
+
+    filename = pathlib.Path("src") / "000_rhods_notebook.yaml"
+    with open(register_important_file(dirname, filename)) as f:
+        notebook_perf.notebook = yaml.safe_load(f)
+
+    return notebook_perf
+
 
 def _extract_metrics(dirname):
     METRICS = {
@@ -633,6 +645,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.ods_ci_notebook_benchmark[-1] = _parse_ods_ci_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
 
     results.possible_machines = store_theoretical.get_possible_machines()
+
+    results.notebook_perf = _parse_notebook_perf_notebook(dirname)
 
     store.add_to_matrix(import_settings, dirname, results, None)
 
