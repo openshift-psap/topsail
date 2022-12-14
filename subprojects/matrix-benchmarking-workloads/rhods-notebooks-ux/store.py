@@ -306,8 +306,10 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
 
     odh_dashboard_config.path = str(filename)
     odh_dashboard_config.notebook_size_name = notebook_size_name
-    odh_dashboard_config.notebook_size_mem = None
-    odh_dashboard_config.notebook_size_cpu = None
+    odh_dashboard_config.notebook_request_size_mem = None
+    odh_dashboard_config.notebook_request_size_cpu = None
+    odh_dashboard_config.notebook_limit_size_mem = None
+    odh_dashboard_config.notebook_limit_size_cpu = None
 
     for notebook_size in odh_dashboard_config.content["spec"]["notebookSizes"]:
         if notebook_size["name"] != odh_dashboard_config.notebook_size_name: continue
