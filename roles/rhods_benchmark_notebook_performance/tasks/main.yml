@@ -242,5 +242,4 @@
 
 - name: Generate MatrixBenchmark exit code file
   shell:
-    echo 1 > "{{ artifact_extra_logs_dir }}/exit_code"
-  ignore_errors: yes
+    echo 0 > "{{ artifact_extra_logs_dir }}/exit_code"

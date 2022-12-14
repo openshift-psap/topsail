@@ -61,15 +61,17 @@ IMPORTANT_FILES = [
     "ods-ci/ods-ci-*/log.html",
 
     "notebook-artifacts/benchmark_measures.json",
+
+    "src/000_rhods_notebook.yaml",
 ]
 
 
 ARTIFACTS_VERSION = "2022-11-09"
-PARSER_VERSION = "2022-11-25"
+PARSER_VERSION = "2022-12-14"
 
 
 def is_mandatory_file(filename):
-    return filename.name in ("settings", "exit_code")
+    return filename.name in ("settings", "exit_code") or filename.name.startswith("settings.")
 
 
 def is_important_file(filename):
@@ -306,8 +308,10 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
 
     odh_dashboard_config.path = str(filename)
     odh_dashboard_config.notebook_size_name = notebook_size_name
-    odh_dashboard_config.notebook_size_mem = None
-    odh_dashboard_config.notebook_size_cpu = None
+    odh_dashboard_config.notebook_request_size_mem = None
+    odh_dashboard_config.notebook_request_size_cpu = None
+    odh_dashboard_config.notebook_limit_size_mem = None
+    odh_dashboard_config.notebook_limit_size_cpu = None
 
     for notebook_size in odh_dashboard_config.content["spec"]["notebookSizes"]:
         if notebook_size["name"] != odh_dashboard_config.notebook_size_name: continue
@@ -410,6 +414,16 @@ def _parse_pod_times(dirname, hostnames, is_notebook=False):
 
 
     return pod_times
+
+@ignore_file_not_found
+def _parse_notebook_perf_notebook(dirname):
+    notebook_perf = types.SimpleNamespace()
+
+    filename = pathlib.Path("src") / "000_rhods_notebook.yaml"
+    with open(register_important_file(dirname, filename)) as f:
+        notebook_perf.notebook = yaml.safe_load(f)
+
+    return notebook_perf
 
 
 def _extract_metrics(dirname):
@@ -559,7 +573,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     if results:
         _parse_always(results, dirname, import_settings)
 
-        store.add_to_matrix(import_settings, dirname, results, None)
+        fn_add_to_matrix(results)
 
         return
 
@@ -632,7 +646,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.possible_machines = store_theoretical.get_possible_machines()
 
-    store.add_to_matrix(import_settings, dirname, results, None)
+    results.notebook_perf = _parse_notebook_perf_notebook(dirname)
+
+    fn_add_to_matrix(results)
 
     with open(dirname / CACHE_FILENAME, "wb") as f:
         pickle.dump(results, f)

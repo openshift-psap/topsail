@@ -122,9 +122,10 @@ class NotebookPerformance():
             msg += ["The notebook machine instance type is ", html.Code(machine_type)]
             msg.append(html.Br())
 
-            if entry.results.odh_dashboard_config:
-                rq = f"mem={entry.results.odh_dashboard_config.notebook_request_size_mem}Gi and cpu={entry.results.odh_dashboard_config.notebook_request_size_cpu}"
-                lt = f"mem={entry.results.odh_dashboard_config.notebook_limit_size_mem}Gi and cpu={entry.results.odh_dashboard_config.notebook_limit_size_cpu}"
+            if entry.results.notebook_perf:
+                res = entry.results.notebook_perf.notebook["spec"]["template"]["spec"]["containers"][0]["resources"]
+                rq = f"mem={res['requests']['memory']} and cpu={res['requests']['cpu']}"
+                lt = f"mem={res['limits']['memory']} and cpu={res['limits']['cpu']}"
                 msg.append(f"The notebook requested {rq}, limited to {lt}.")
             msg.append(html.Br())
 
