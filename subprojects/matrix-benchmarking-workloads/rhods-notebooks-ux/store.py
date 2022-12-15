@@ -326,7 +326,7 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
 
 
 @ignore_file_not_found
-def _parse_pod_times(dirname, hostnames, is_notebook=False):
+def _parse_pod_times(dirname, is_notebook=False):
     if is_notebook:
         filenames = [fname.relative_to(dirname) for fname in
                      (dirname / pathlib.Path("artifacts-sutest")).glob("project_*/notebook_pods.yaml")]
@@ -334,6 +334,7 @@ def _parse_pod_times(dirname, hostnames, is_notebook=False):
         filenames = [pathlib.Path("artifacts-driver") / "tester_pods.yaml"]
 
     pod_times = defaultdict(types.SimpleNamespace)
+    hostnames = {}
 
     fmt = f'"{K8S_TIME_FMT}"'
 
@@ -412,8 +413,7 @@ def _parse_pod_times(dirname, hostnames, is_notebook=False):
         with open(register_important_file(dirname, filename)) as f:
             _parse_pod_times_file(f)
 
-
-    return pod_times
+    return pod_times, hostnames
 
 @ignore_file_not_found
 def _parse_notebook_perf_notebook(dirname):
@@ -462,7 +462,7 @@ def _parse_ods_ci_output_xml(dirname, output_dir):
     with open(register_important_file(dirname, filename)) as f:
         output_dict = xmltodict.parse(f.read())
 
-    ods_ci_times = {}
+    ods_ci_output = {}
     tests = output_dict["robot"]["suite"]["test"]
     if not isinstance(tests, list): tests = [tests]
 
@@ -470,17 +470,17 @@ def _parse_ods_ci_output_xml(dirname, output_dir):
         if test["status"].get("#text") == 'Failure occurred and exit-on-failure mode is in use.':
             continue
 
-        ods_ci_times[test["@name"]] = test_times = types.SimpleNamespace()
+        ods_ci_output[test["@name"]] = output_step = types.SimpleNamespace()
 
-        test_times.start = datetime.datetime.strptime(test["status"]["@starttime"], ROBOT_TIME_FMT)
-        test_times.finish = datetime.datetime.strptime(test["status"]["@endtime"], ROBOT_TIME_FMT)
-        test_times.status = test["status"]["@status"]
+        output_step.start = datetime.datetime.strptime(test["status"]["@starttime"], ROBOT_TIME_FMT)
+        output_step.finish = datetime.datetime.strptime(test["status"]["@endtime"], ROBOT_TIME_FMT)
+        output_step.status = test["status"]["@status"]
 
-    return ods_ci_times
+    return ods_ci_output
 
 
 @ignore_file_not_found
-def _parse_ods_ci_notebook_benchmark(dirname, output_dir):
+def _parse_notebook_benchmark(dirname, output_dir):
     filename = output_dir / "benchmark_measures.json"
     with open(register_important_file(dirname, filename)) as f:
         return json.load(f)
@@ -562,6 +562,16 @@ def load_cache(dirname):
 
     return results
 
+def _parse_ods_ci_pods_directory(dirname, output_dir):
+    ods_ci = types.SimpleNamespace()
+
+    ods_ci.output = _parse_ods_ci_output_xml(dirname, output_dir) or {}
+    ods_ci.exit_code = _parse_ods_ci_exit_code(dirname, output_dir)
+    ods_ci.notebook_benchmark = _parse_notebook_benchmark(dirname, output_dir)
+    ods_ci.progress = _parse_ods_ci_progress(dirname, output_dir)
+
+    return ods_ci
+
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
@@ -617,32 +627,35 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     print("_extract_metrics")
     results.metrics = _extract_metrics(dirname)
 
-    results.notebook_hostnames = notebook_hostnames = {}
-    results.testpod_hostnames = testpod_hostnames = {}
 
     print("_parse_pod_times (tester)")
-    results.testpod_times = _parse_pod_times(dirname, testpod_hostnames) or {}
+    results.testpod_times, results.testpod_hostnames = _parse_pod_times(dirname) or {}
     print("_parse_pod_times (notebooks)")
-    results.notebook_pod_times = _parse_pod_times(dirname, notebook_hostnames, is_notebook=True) or {}
+    results.notebook_pod_times, results.notebook_hostnames = _parse_pod_times(dirname, is_notebook=True) or {}
 
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
 
     print("_parse_pod_results")
-    results.ods_ci_output = {}
-    results.ods_ci_exit_code = {}
-    results.ods_ci_notebook_benchmark = {}
-    results.ods_ci_progress = {}
-    for user_idx, pod_times in results.testpod_times.items():
-        ods_ci_dirname = pod_times.pod_name.rpartition("-")[0]
-        output_dir = pathlib.Path("ods-ci") / ods_ci_dirname
 
-        results.ods_ci_output[user_idx] = _parse_ods_ci_output_xml(dirname, output_dir) or {}
-        results.ods_ci_exit_code[user_idx] = _parse_ods_ci_exit_code(dirname, output_dir)
-        results.ods_ci_notebook_benchmark[user_idx] = _parse_ods_ci_notebook_benchmark(dirname, output_dir)
-        results.ods_ci_progress[user_idx] = _parse_ods_ci_progress(dirname, output_dir)
+    # ODS-CI
+    if (dirname / "ods-ci").exists():
+        results.ods_ci = defaultdict(types.SimpleNamespace)
 
+        for user_idx, pod_times in results.testpod_times.items():
+            pod_hostname = pod_times.pod_name.rpartition("-")[0]
+
+            output_dir = pathlib.Path("ods-ci") / pod_hostname
+            results.ods_ci[user_idx] = _parse_ods_ci_pods_directory(dirname, output_dir) \
+                if (dirname / output_dir).exists() else None
+    else:
+        results.ods_ci = None
+
+    # notebook performance
     if (dirname / "notebook-artifacts").exists():
-        results.ods_ci_notebook_benchmark[-1] = _parse_ods_ci_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
+        if results.ods_ci is None:
+            results.ods_ci = defaultdict(types.SimpleNamespace)
+
+        results.ods_ci[-1] = _parse_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
 
     results.possible_machines = store_theoretical.get_possible_machines()
 

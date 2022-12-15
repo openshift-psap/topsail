@@ -49,7 +49,7 @@ class LaunchTimeDistribution():
             user_counts.add(results.user_count)
 
             if cfg__all_in_one:
-                success_users = sum(1 for exit_code in entry.results.ods_ci_exit_code.values() if exit_code == 0)
+                success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci.exit_code == 0)
 
                 failed_users = results.user_count - success_users
                 threshold = int(entry.results.thresholds.get("test_successes", 0)) or None
@@ -73,8 +73,8 @@ class LaunchTimeDistribution():
                 ))
                 continue
 
-            for pod_name, ods_ci_output in entry.results.ods_ci_output.items():
-                for step_name, step_status in ods_ci_output.items():
+            for user_index, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
+                for step_name, step_status in ods_ci.output.items():
                     if not self.show_successes and step_status.status != "PASS":
                         continue
                     if cfg__show_only_step and cfg__show_only_step != step_name:
@@ -116,7 +116,7 @@ class LaunchTimeDistribution():
             fig.update_layout(xaxis_title="")
 
         msg = []
-        for idx, step_name in enumerate(entry.results.ods_ci_output[pod_name] if not cfg__all_in_one else []):
+        for idx, step_name in enumerate(entry.results.ods_ci[user_index].output if not cfg__all_in_one else []):
             step_times = df[df["Event"] == step_name]["Time"]
 
             if step_times.empty:

@@ -41,11 +41,11 @@ class ExecutionDistribution():
         if cfg__show_only_step or cfg__time_to_reach_step:
             times_data = []
 
-        for user_idx, ods_ci_output in entry.results.ods_ci_output.items():
+        for user_idx, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
             if cfg__time_to_reach_step:
                 accumulated_timelength = 0
 
-            for step_name, test_times in ods_ci_output.items():
+            for step_name, test_times in ods_ci.output.items():
                 if cfg__show_only_step and step_name != cfg__show_only_step:
                     continue
 
