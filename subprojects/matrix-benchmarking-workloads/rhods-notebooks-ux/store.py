@@ -11,6 +11,8 @@ import json
 import fnmatch
 import pickle
 
+import pandas as pd
+
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 import matrix_benchmarking.common as common
@@ -63,6 +65,8 @@ IMPORTANT_FILES = [
     "notebook-artifacts/benchmark_measures.json",
 
     "src/000_rhods_notebook.yaml",
+
+    "locust-scale-test/locust-notebooks-scale-test-*/locust_scale_test_worker*_progress.csv"
 ]
 
 
@@ -373,11 +377,17 @@ def _parse_pod_times(dirname, is_notebook=False):
                     if TEST_USERNAME_PREFIX not in pod_name:
                         continue
 
-                    user_index = int(re.findall(JUPYTER_USER_IDX_REGEX, pod_name)[0])
+                    user_index = re.findall(JUPYTER_USER_IDX_REGEX, pod_name)[0]
+                elif "ods-ci-" in pod_name:
+                    user_index = pod_name.rpartition("-")[0].replace("ods-ci-", "")
+                elif "locust-notebooks-scale-test" in pod_name:
+                    user_index = pod_name.split("-")[-2]
                 else:
-                    user_index = int(pod_name.rpartition("-")[0].replace("ods-ci-", ""))
+                    logging.warning(f"Unexpected pod name: {pod_name}")
+                    continue
 
-                pod_times[user_index].user_index = user_index
+                user_index = int(user_index)
+                pod_times[user_index].user_index = int(user_index)
                 pod_times[user_index].pod_name = pod_name
 
             if pod_name is None: continue
@@ -573,6 +583,19 @@ def _parse_ods_ci_pods_directory(dirname, output_dir):
     return ods_ci
 
 
+@ignore_file_not_found
+def _parse_locust_progress(dirname, output_dir, user_idx):
+    with open(register_important_file(dirname, output_dir / f"locust_scale_test_worker{user_idx}_progress.csv")) as f:
+        return pd.read_csv(f)
+
+
+def _parse_locust_pods_directory(dirname, output_dir, user_idx):
+    locust = types.SimpleNamespace()
+
+    locust.progress = _parse_locust_progress(dirname, output_dir, user_idx)
+
+    return locust
+
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     try:
@@ -649,6 +672,19 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
                 if (dirname / output_dir).exists() else None
     else:
         results.ods_ci = None
+
+    # Locust
+    if (dirname / "locust-scale-test").exists():
+        results.locust = defaultdict(types.SimpleNamespace)
+
+        for user_idx, pod_times in results.testpod_times.items():
+            pod_hostname = pod_times.pod_name.rpartition("-")[0]
+
+            output_dir = pathlib.Path("locust-scale-test") / pod_hostname
+            results.locust[user_idx] = _parse_locust_pods_directory(dirname, output_dir, user_idx) \
+                if (dirname / output_dir).exists() else None
+    else:
+        results.locust = None
 
     # notebook performance
     if (dirname / "notebook-artifacts").exists():
