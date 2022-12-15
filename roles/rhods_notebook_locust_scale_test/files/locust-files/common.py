@@ -30,7 +30,9 @@ class LocustMetaEvent:
             logging.error(f"{value.__class__.__name__}: {value}")
 
         Context.context.env.csv_progress.write(CsvProgressEntry(
+            event["request_type"],
             event["user_name"],
+            event["user_index"],
             event["name"],
             self.start_ts,
             datetime.datetime.timestamp(finish_time),
@@ -56,6 +58,7 @@ def Step(name):
                 "response_length": 0,
                 "exception": None,
                 "user_name": caller.user_name,
+                "user_index": caller.user_index,
             }
             with LocustMetaEvent(meta_event):
                 return fct(*args, **kwargs)
@@ -66,10 +69,11 @@ def Step(name):
 
 class Context():
     context = None
-    def __init__(self, client, env, user_name):
+    def __init__(self, client, env, user_name, user_index):
         self.client = client
         self.env = env
         self.user_name = user_name
+        self.user_index = user_index
 
         Context.context = self
 
@@ -79,6 +83,7 @@ class ContextBase():
         self.client = context.client
         self.env = context.env
         self.user_name = context.user_name
+        self.user_index = context.user_index
 
 def url_name(url, _query=None, _descr=None, **params):
     name = f"{url}?{_query}" if _query else url
@@ -130,7 +135,7 @@ class CsvFileWriter(threading.Thread):
         self.filepath = filepath
         self.csv_class = csv_class
 
-        self.queue.put(", ".join(self.csv_class._fields) + "\n")
+        self.queue.put(",".join(self.csv_class._fields) + "\n")
         self.start()
 
     def run(self):
@@ -150,5 +155,5 @@ class CsvFileWriter(threading.Thread):
 
 CsvProgressEntry = collections.namedtuple(
     "CsvProgressEntry",
-    ["user_name", "step_name", "start", "stop", "exception"]
+    ["type", "user_name", "user_index", "step_name", "start", "stop", "exception"]
 )

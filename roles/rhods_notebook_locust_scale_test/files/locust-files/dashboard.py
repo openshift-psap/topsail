@@ -38,7 +38,7 @@ class Dashboard(common.ContextBase):
 
         return response
 
-    @common.Step("2. Go to RHODS Dashboard (first time)")
+    @common.Step("Go to RHODS Dashboard (first time)")
     def go_to_the_dashboard_first(self):
         if not self.env.SKIP_OPTIONAL:
             self.client.get("/app.bundle.js")
@@ -48,7 +48,7 @@ class Dashboard(common.ContextBase):
 
         self.go_to_the_dashboard()
 
-    @common.Step("2. Go to RHODS Dashboard")
+    @common.Step("Go to RHODS Dashboard")
     def go_to_the_dashboard(self):
         if not self.env.SKIP_OPTIONAL:
             self.client.get("/") # HTML page
@@ -61,7 +61,7 @@ class Dashboard(common.ContextBase):
             self.client.get("/api/quickstarts")
             self.client.get("/api/components", params={"installed":"true"})
 
-    @common.Step("3. Go to the Project page")
+    @common.Step("Go to the Project page")
     def go_to_the_project_page(self, project_name):
         k8s_project = self.get_or_create_the_project(project_name)
 
@@ -113,7 +113,7 @@ class Dashboard(common.ContextBase):
 
         return k8s_workbenches
 
-    @common.Step("4. Create and Start the Workbench")
+    @common.Step("Create and Start the Workbench")
     def create_and_start_the_workbench(self, k8s_project, k8s_workbenches, workbench_name):
         k8s_workbench = self._get_k8s_obj_from_list(k8s_workbenches, workbench_name)
 

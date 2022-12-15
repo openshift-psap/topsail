@@ -114,13 +114,14 @@ class WorkbenchObj(common.ContextBase):
         logging.info(f"Waiting for the Notebook {self.name} ...")
 
         meta_event = {
-            "request_type": f"NOTEBOOK",
+            "request_type": f"NOTEBOOK_LAUNCH",
             "name": f"Launch({self.name})",
             "response": "no answer",
             "url": "/launch",
             "response_length": 0,
             "exception": None,
             "user_name": self.user_name,
+            "user_index": self.user_index,
         }
         with common.LocustMetaEvent(meta_event):
             route = None

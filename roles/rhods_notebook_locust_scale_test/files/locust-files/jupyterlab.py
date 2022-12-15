@@ -30,7 +30,7 @@ class JupyterLab(common.ContextBase):
 
         return self.get_jupyterlab_page(full_base_url)
 
-    @common.Step("5. Login to JupyterLab")
+    @common.Step("Login to JupyterLab")
     def login_to_jupyterlab_page(self, base_url):
         needs_login = False
         failed = False
@@ -74,7 +74,7 @@ class JupyterLab(common.ContextBase):
 
         return final_response
 
-    @common.Step("6. Go to JupyterLab Page")
+    @common.Step("Go to JupyterLab Page")
     def get_jupyterlab_page(self, base_url):
         response = self.client.get(base_url, name="<jupyterlab_host>/{base_url} (access)")
         if response.status_code == 0:

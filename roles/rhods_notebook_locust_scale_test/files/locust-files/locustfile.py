@@ -101,7 +101,7 @@ class WorkbenchUser(HttpUser):
         self.workbench_name = self.user_name
         self.workbench_route = None
 
-        self.__context = common.Context(self.client, env, self.user_name) # self.context is used by Locust :/
+        self.__context = common.Context(self.client, env, self.user_name, self.user_index) # self.context is used by Locust :/
         self.oauth = oauth.Oauth(self.__context)
         self.dashboard = dashboard.Dashboard(self.__context, self.oauth)
         self.workbench = workbench.Workbench(self.__context)
