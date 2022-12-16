@@ -6,24 +6,31 @@ download:
     version: 1.16
     run: 1
     mode: reference
+    launcher: jupyter
+
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/543/pull-ci-openshift-psap-ci-artifacts-main-ods-plot-notebooks/1582480400205221888/artifacts/plot-notebooks/test/artifacts/matrix_benchmarking_results/reference/1.16-2
   dest_dir: reference/100/1.16-2
   settings:
     version: 1.16
     run: 2
     mode: reference
+    launcher: jupyter
+
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/543/pull-ci-openshift-psap-ci-artifacts-main-ods-plot-notebooks/1582480400205221888/artifacts/plot-notebooks/test/artifacts/matrix_benchmarking_results/reference/1.17-1
   dest_dir: reference/100/1.17-1,
   settings:
     version: 1.17
     run: 1
     mode: reference
+    launcher: jupyter
+
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/543/pull-ci-openshift-psap-ci-artifacts-main-ods-plot-notebooks/1582480400205221888/artifacts/plot-notebooks/test/artifacts/matrix_benchmarking_results/reference/1.17-2
   dest_dir: reference/100/1.17-2
   settings:
     version: 1.17
     run: 2
     mode: reference
+    launcher: jupyter
 
 # 200 users
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584554530144522240/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
@@ -32,37 +39,98 @@ download:
     version: 1.17
     run: 1
     mode: reference
+    launcher: jupyter
+
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584554530144522240/artifacts/notebooks/test/artifacts/002_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
   dest_dir: reference/200/1.17-2
   settings:
     version: 1.17
     run: 2
     mode: reference
+    launcher: jupyter
+
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584481608432357376/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
   dest_dir: reference/200/1.18-1
   settings:
     version: 1.18
     run: 1
     mode: reference
+    launcher: jupyter
+
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/557/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584481608432357376/artifacts/notebooks/test/artifacts/002_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
   dest_dir: reference/200/1.18-2
   settings:
     version: 1.18
     run: 2
     mode: reference
+    launcher: jupyter
+
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/566/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1588659404088020992/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test
   dest_dir: reference/200/1.19-1
   settings:
     version: 1.19
     run: 1
     mode: reference
-    check_thresholds: "yes"
+    launcher: jupyter
+
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/566/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1588659404088020992/artifacts/notebooks/test/artifacts/002_test_run/000__driver_rhods__notebook_ux_e2e_scale_test
   dest_dir: reference/200/1.19-2
   settings:
     version: 1.19
     run: 2
     mode: reference
+    launcher: jupyter
+
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/580/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1593283845606608896/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test
+  dest_dir: reference/200/1.19-1
+  settings:
+    version: 1.19
+    run: 1
+    mode: reference
+    launcher: dsg
+
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/580/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1593283845606608896/artifacts/notebooks/test/artifacts/002_test_run/000__driver_rhods__notebook_ux_e2e_scale_test
+  dest_dir: reference/200/1.19-2
+  settings:
+    version: 1.19
+    run: 2
+    mode: reference
+    launcher: dsg
+
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/605/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1602772468018188288/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ods_ci_scale_test
+  dest_dir: reference/300/1.20-1/dsg
+  settings:
+    version: 1.20
+    run: 1
+    mode: reference
+    launcher: dsg
+    check_thresholds: "yes"
+
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/605/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1602772468018188288/artifacts/notebooks/test/artifacts/002_test_run/000__driver_rhods__notebook_ods_ci_scale_test
+  dest_dir: reference/300/1.20-2/dsg
+  settings:
+    version: 1.20
+    run: 2
+    mode: reference
+    launcher: dsg
+    check_thresholds: "yes"
+
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/605/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1602772468018188288/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ods_ci_scale_test
+  dest_dir: reference/300/1.20-1/jupyter
+  settings:
+    version: 1.20
+    run: 1
+    mode: reference
+    launcher: jupyter
+    check_thresholds: "yes"
+
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/605/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1602772468018188288/artifacts/notebooks/test/artifacts/002_test_run/000__driver_rhods__notebook_ods_ci_scale_test
+  dest_dir: reference/300/1.20-1/jupyter
+  settings:
+    version: 1.20
+    run: 2
+    mode: reference
+    launcher: jupyter
     check_thresholds: "yes"
 
 visualize:

@@ -27,6 +27,14 @@ download:
     mode: reference
     machine: m5a.2xlarge
     run: 1
+
+- url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/607/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks-light/1603036858990727168/artifacts/notebooks-light/test/artifacts/001_test_run/001__sutest_rhods__benchmark_notebook_performance/
+  dest_dir: reference/1.20
+  settings:
+    version: 1.20
+    mode: reference
+    machine: m5a.xlarge
+    run: 1
     check_thresholds: "yes"
 visualize:
   generate:
