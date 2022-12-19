@@ -25,6 +25,8 @@ import dashboard
 import workbench
 import jupyterlab
 
+import locust_users
+
 env = types.SimpleNamespace()
 env.DASHBOARD_HOST = os.getenv("ODH_DASHBOARD_URL")
 env.USERNAME_PREFIX = os.getenv("TEST_USERS_USERNAME_PREFIX")
@@ -64,10 +66,11 @@ with open(creds_file) as f:
 env.csv_progress = None # initialized in WorkbenchUser.on_test_start
 env.csv_bug_hits = None # initialized in WorkbenchUser.on_test_start
 
+
 class WorkbenchUser(HttpUser):
     host = env.DASHBOARD_HOST
     verify = False
-    user_next_id = 0
+
     default_resource_filter = f'/A(?!{env.DASHBOARD_HOST}/data:image:)'
     bundle_resource_stats = False
 
@@ -79,6 +82,7 @@ class WorkbenchUser(HttpUser):
                 env.JOB_COMPLETION_INDEX = environment.runner.worker_index
                 logging.info(f"JOB_COMPLETION_INDEX=0 overriden to {environment.runner.worker_index=}")
 
+        logging.info(f"Worker {env.JOB_COMPLETION_INDEX} is in charge of users {locust_users.user_indexes}")
         env.csv_progress = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_progress.csv", common.CsvProgressEntry)
 
         env.csv_bug_hits = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_bug_hits.csv", common.CsvBugHitEntry)
@@ -91,14 +95,17 @@ class WorkbenchUser(HttpUser):
 
         self.loop = 0
 
-        self.user_index = (int(env.LOCUST_USERS / env.WORKER_COUNT) # user slice size per worker
-                           * env.JOB_COMPLETION_INDEX # per worker offset
-                           + self.__class__.user_next_id # per user offset (= per object instance)
-                           )
-        self.user_name = f"{env.USERNAME_PREFIX}{self.user_index + env.USER_INDEX_OFFSET}"
+        while not locust_users.ready:
+            print("not ready")
+            time.sleep(1)
+
+        if not locust_users.user_indexes:
+            self.environment.runner.quit()
+
+        self.user_index = locust_users.user_indexes.pop()
+        self.user_name = f"{env.USERNAME_PREFIX}{env.USER_INDEX_OFFSET + self.user_index}"
         logging.warning(f"Starting user '{self.user_name}'.")
 
-        self.__class__.user_next_id += 1
 
         self.project_name = self.user_name
         self.workbench_name = self.user_name
@@ -145,10 +152,11 @@ class WorkbenchUser(HttpUser):
             raise SystemExit(1)
 
         if self.loop != 0:
-            # execution crashed before reaching the end of this function
+            # we currently want to run only once
             logging.info(f"END: launch_a_workbench #{self.loop}, "
                          f"user={self.user_name}, worker={env.JOB_COMPLETION_INDEX}")
-            raise SystemExit(0)
+
+            self.environment.runner.quit()
 
         first = self.loop == 0
         logging.info(f"TASK: launch_a_workbench #{self.loop}, "

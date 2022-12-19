@@ -65,7 +65,7 @@ def Step(name):
             caller = args[0]
 
             meta_event = {
-                "request_type": f"STEP",
+                "request_type": "STEP",
                 "name": name,
                 "response": "no answer",
                 "url": "/"+name.replace(" ", "_").lower(),
@@ -74,7 +74,8 @@ def Step(name):
                 "user_name": caller.user_name,
                 "user_index": caller.user_index,
             }
-            with LocustMetaEvent(meta_event):
+            with LocustMetaEvent(meta_event) as evt:
+                evt.fire(dict(request_type="STEP_START"))
                 return fct(*args, **kwargs)
 
         return call_fct
