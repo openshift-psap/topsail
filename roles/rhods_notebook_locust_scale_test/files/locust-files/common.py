@@ -11,23 +11,36 @@ class LocustMetaEvent:
 
         self.start_time = None
         self.start_ts = None
+        if "context" not in self.event:
+            self.event["context"] = {"hello": "world"}
 
     def __enter__(self):
         self.start_time = datetime.datetime.now()
         self.start_ts = datetime.datetime.timestamp(self.start_time)
+        self.event["start_time"] = self.start_ts,
+
+        logging.info("")
+        logging.info(f"<START>\t{self.event['user_name']} {self.event['name']}")
+
+        return self
 
     def __exit__(self, type, value, traceback):
-        finish_time = datetime.datetime.now()
-        event = self.event|{
-            "response_time": (finish_time - self.start_time).total_seconds() * 1000,
-            "context": {"hello": "world"},
-            "start_time": self.start_ts,
-        }
+        finish_event_data = {}
 
-        if value and not event.get("exception"):
-            event["exception"] = str(value)
+        if value and "exception" not in finish_event_data:
+            finish_event_data["exception"] = str(value)
+
         if value:
             logging.error(f"{value.__class__.__name__}: {value}")
+
+        return self.fire(finish_event_data)
+
+    def fire(self, extra_event_data):
+        finish_time = datetime.datetime.now()
+
+        event = self.event | extra_event_data | {
+            "response_time": (finish_time - self.start_time).total_seconds() * 1000,
+        }
 
         Context.context.env.csv_progress.write(CsvProgressEntry(
             event["request_type"],
@@ -40,6 +53,7 @@ class LocustMetaEvent:
         ))
 
         Context.context.client.request_event.fire(**event)
+        logging.info(f"<FIRE>\t{self.event['user_name']} {self.event['name']} {finish_time - self.start_time}\n")
 
 def Step(name):
     def decorator(fct):
@@ -103,9 +117,18 @@ def debug_point():
     import pdb;pdb.set_trace()
     pass
 
-def check_status(response_json):
+def check_status(response):
+    try:
+        response_json = response.json()
+    except Exception as e:
+        debug_point()
+        logging.warning(f"Couldn't parse the response as json: {e} [{response.url}] [{response}]")
+        logging.warning(response.text)
+        raise ScaleTestError("K8s error (invalid response)", response)
+
     if response_json["kind"] != "Status":
         return response_json
+
     debug_point()
     logging.warning(response_json)
 

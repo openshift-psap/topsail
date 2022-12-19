@@ -111,15 +111,17 @@ class WorkbenchUser(HttpUser):
 
     def on_start(self):
         logging.info(f"Running user #{self.user_name}")
-        cookies_filename = f".cookies.{self.user_name}.pickle"
 
         if env.REUSE_COOKIES:
+            self.cookies_filename = f".cookies.{self.user_name}.pickle"
+
             try:
-                with open(cookies_filename, "rb") as f:
+                with open(self.cookies_filename, "rb") as f:
                     self.client.cookies.update(pickle.load(f))
             except FileNotFoundError: pass # ignore
             except EOFError: pass # ignore
 
+    def initialize(self):
         sleep_delay = self.user_index * env.USER_SLEEP_FACTOR
         logging.info(f"{self.user_name}: sleep for {sleep_delay:.1f}s before running.")
         time.sleep(sleep_delay)
@@ -130,7 +132,7 @@ class WorkbenchUser(HttpUser):
             return False
 
         if env.REUSE_COOKIES:
-            with open(cookies_filename, "wb") as f:
+            with open(self.cookies_filename, "wb") as f:
                 pickle.dump(self.client.cookies, f)
 
     @task
@@ -139,15 +141,22 @@ class WorkbenchUser(HttpUser):
             # execution crashed before reaching the end of this function
             raise SystemExit(1)
 
+        if self.loop != 0:
+            # execution crashed before reaching the end of this function
+            logging.info(f"END: launch_a_workbench #{self.loop}, "
+                         f"user={self.user_name}, worker={env.JOB_COMPLETION_INDEX}")
+            raise SystemExit(0)
+
         first = self.loop == 0
         logging.info(f"TASK: launch_a_workbench #{self.loop}, "
                      f"user={self.user_name}, worker={env.JOB_COMPLETION_INDEX}")
         self.loop += 1
 
         if first:
-            self.dashboard.go_to_the_dashboard_first()
-        else:
-            self.dashboard.go_to_the_dashboard()
+            self.initialize()
+            self.dashboard.fetch_the_dashboard_frontend()
+
+        self.dashboard.load_the_dashboard()
 
         k8s_project, k8s_workbenches = self.dashboard.go_to_the_project_page(self.project_name)
 

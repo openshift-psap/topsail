@@ -36,7 +36,7 @@ class Project(common.ContextBase):
                          headers={"Content-Type": "application/json"},
                          data=project_rendered)
 
-        project_k8s = common.check_status(response.json())
+        project_k8s = common.check_status(response)
 
         response = self.client.get(**url_name("/api/namespaces/{namespace}/0", namespace=name))
         if not response.json()["applied"]:

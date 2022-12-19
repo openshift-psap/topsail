@@ -64,7 +64,7 @@ class JupyterLab(common.ContextBase):
             raise common.ScaleTestError(failed, **err_kwargs)
 
         if needs_login:
-            login_response = self.oauth.do_login(5, "JupyterLab", response)
+            login_response = self.oauth.do_login(response)
             if not login_response:
                 raise common.ScaleTestError(f"JupyterLab authentication failed .. (code {login_response.status_code})", unclear=True)
 

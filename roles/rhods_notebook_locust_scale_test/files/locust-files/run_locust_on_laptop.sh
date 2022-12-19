@@ -37,6 +37,8 @@ export LOCUST_LOCUSTFILE=$THIS_DIR/locustfile.py
 export RESULTS_DEST=results/locust_scale_test
 export REUSE_COOKIES=1
 
+export SKIP_OPTIONAL=${SKIP_OPTIONAL:-0}
+
 DEBUG_MODE=${DEBUG_MODE:-0}
 export DEBUG_MODE
 

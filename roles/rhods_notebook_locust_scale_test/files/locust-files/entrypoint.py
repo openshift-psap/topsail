@@ -13,7 +13,6 @@ logging.getLogger().setLevel(logging.INFO)
 LOCUST_FILE_PREFIX="locust_scale_test"
 
 LOCUST_COORDINATOR_CMD = f"cd $LOCUST_DIR; PYTHONUNBUFFERED=1 locust --headless \
-    --reset-stats \
     --csv $ARTIFACT_DIR/{ LOCUST_FILE_PREFIX } \
     --csv-full-history \
     --html $ARTIFACT_DIR/{ LOCUST_FILE_PREFIX }.html \
@@ -65,22 +64,25 @@ def main():
     else:
         logging.info("Running Locust in worker mode")
         retries = 5
+        time.sleep(5)
         while True:
             leader_ip = get_leader.get_leader_ip()
             if leader_ip:
                 logging.info(f"Found the Locust leader Pod IP address: {leader_ip} ... ")
                 break
             elif leader_ip is None:
-                logging.error("Failed to find the Locust leader Pod ... ")
+                logging.warning("Failed to find the Locust leader Pod ... ")
             else:
-                logging.error("Failed to find the Locust leader Pod IP address ... ")
+                logging.warning("Failed to find the Locust leader Pod IP address ... ")
 
             retries -= 1
             if retries == 0:
+
                 return 255
             time.sleep(5)
 
         del os.environ["LOCUST_RUN_TIME"] # locust workers don't like it ...
+        del os.environ["LOCUST_ITERATIONS"] # locust workers don't like it ...
         locust_test_cmd = f"{LOCUST_WORKER_CMD} --worker --master-host {leader_ip}"
 
     test_retcode = os.system(locust_test_cmd)
