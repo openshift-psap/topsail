@@ -114,7 +114,9 @@ def _get_test_setup(entry):
     setup_info += [html.Ul(nodes_info)]
 
     total_users = entry.results.user_count
-    success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci.exit_code == 0)
+
+    success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci.exit_code == 0) \
+        if entry.results.ods_ci else 0
 
     setup_info += [html.Li(f"{success_users}/{total_users} users succeeded")]
 
@@ -161,7 +163,7 @@ class ErrorReport():
         REFERENCE_USER_IDX = 0
 
         reference_content = None
-        for user_idx, ods_ci in entry.results.ods_ci.items():
+        for user_idx, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else {}:
             content = []
 
             if ods_ci.exit_code == 0:
