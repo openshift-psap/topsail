@@ -53,7 +53,7 @@ class LocustMetaEvent:
         ))
 
         Context.context.client.request_event.fire(**event)
-        logging.info(f"<FIRE>\t{self.event['user_name']} {self.event['name']} {finish_time - self.start_time}\n")
+        logging.info(f"<FIRE>\t{event['user_name']} {event['name']} {finish_time - self.start_time}\n")
 
 def Step(name):
     def decorator(fct):
@@ -180,3 +180,15 @@ CsvProgressEntry = collections.namedtuple(
     "CsvProgressEntry",
     ["type", "user_name", "user_index", "step_name", "start", "stop", "exception"]
 )
+
+CsvBugHitEntry = collections.namedtuple(
+    "CsvBugHit",
+    ["jira_id", "user_name", "timestamp", "details"]
+)
+
+def bug_hit(jira_id, user_name, details=""):
+    logging.warning("User {user_name} hit {jira_id}" + f"({details})" if details else "")
+    now = datetime.datetime.timestamp(datetime.datetime.now())
+    Context.context.env.csv_bug_hits.write(CsvBugHitEntry(
+        jira_id, user_name, now, details,
+    ))

@@ -62,6 +62,7 @@ with open(creds_file) as f:
         env.USER_PASSWORD = line.strip().split("=")[1]
 
 env.csv_progress = None # initialized in WorkbenchUser.on_test_start
+env.csv_bug_hits = None # initialized in WorkbenchUser.on_test_start
 
 class WorkbenchUser(HttpUser):
     host = env.DASHBOARD_HOST
@@ -79,6 +80,8 @@ class WorkbenchUser(HttpUser):
                 logging.info(f"JOB_COMPLETION_INDEX=0 overriden to {environment.runner.worker_index=}")
 
         env.csv_progress = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_progress.csv", common.CsvProgressEntry)
+
+        env.csv_bug_hits = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_bug_hits.csv", common.CsvBugHitEntry)
 
     def __init__(self, locust_env):
         HttpUser.__init__(self, locust_env)
