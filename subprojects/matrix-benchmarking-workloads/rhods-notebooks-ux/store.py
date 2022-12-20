@@ -67,6 +67,7 @@ IMPORTANT_FILES = [
     "src/000_rhods_notebook.yaml",
 
     "locust-scale-test/locust-notebooks-scale-test-*/locust_scale_test_worker*_progress.csv"
+    "metrics/*",
 ]
 
 
@@ -568,7 +569,7 @@ def load_cache(dirname):
         else:
             logging.warning(f"Cache file '{dirname / CACHE_FILENAME}' version '{cache_version}' does not match the parser version '{PARSER_VERSION}', ignoring.")
 
-        result = None
+        results = None
 
     return results
 

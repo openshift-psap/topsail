@@ -65,7 +65,6 @@ def Plot(name, args, msg_p=None):
 
     return dcc.Graph(figure=fig)
 
-
 def Plot_and_Text(name, args):
     msg_p = []
 
@@ -267,7 +266,6 @@ class NotebookPerformanceReport():
                 header.append(html.H3(", ".join(f"{k}={entry.settings.__dict__[k]}" for k in ordered_vars)))
 
             if settings["user_count"] == "1":
-                msg_p = []
                 header += Plot_and_Text("Notebook Performance",
                                         set_config(dict(user_details=1, stacked=1), set_entry(entry, args)))
 
