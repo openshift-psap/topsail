@@ -14,6 +14,9 @@ visualize:
   - mode=scale_test,launcher=dsg,run=1
   - mode=scale_test,launcher=dsg,run=2
   generate:
+  - "gating report: Functional and Spawn Time"
+  - "gating report: Performance"
+
   - "report: Notebooks Scale Test Comparison"
   - "report: RHODS Cluster CPU/Memory Usage"
   - "report: Driver Cluster CPU/Memory Usage"
@@ -25,6 +28,7 @@ visualize:
     - reference_data/thresholds.yaml
 - id: notebook_perf
   generate:
+  - "gating report: Notebook Performance"
   - "report: Notebooks Performance Comparison"
   thresholds:
   - settings_selector:
