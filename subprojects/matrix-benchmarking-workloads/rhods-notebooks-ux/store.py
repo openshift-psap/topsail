@@ -110,8 +110,17 @@ def _rewrite_settings(settings_dict):
     try: del settings_dict["check_thresholds"]
     except KeyError: pass
 
-    return settings_dict
+    if "launcher" in settings_dict:
+        del settings_dict["test_case"]
 
+    del settings_dict["expe"]
+
+    if settings_dict.get("mode") == "notebook_perf":
+        for k in ("image", "benchmark_name", "benchmark_repeat", "benchmark_number", "notebook_file_name", "instance_type", "exclude_tags", "test_case"):
+            try: del settings_dict[k]
+            except KeyError: pass
+
+    return settings_dict
 
 def ignore_file_not_found(fn):
     def decorator(*args, **kwargs):
