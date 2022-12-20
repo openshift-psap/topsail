@@ -42,6 +42,22 @@ def set_entry(entry, _args):
     variables.clear()
     return args
 
+def set_filters(filters, _args):
+    args = copy.deepcopy(_args)
+    ordered_vars, settings, setting_lists, variables, cfg = args
+
+    for filter_key, filter_value in filters.items():
+        if filter_key in variables:
+            variables.pop(filter_key)
+        settings[filter_key] = filter_value
+
+        for idx, setting_list_entry in enumerate(setting_lists):
+            if setting_list_entry[0][0] == filter_key:
+                del setting_lists[idx]
+                break
+
+    return args
+
 def Plot(name, args, msg_p=None):
     stats = table_stats.TableStats.stats_by_name[name]
     fig, msg = stats.do_plot(*args)
