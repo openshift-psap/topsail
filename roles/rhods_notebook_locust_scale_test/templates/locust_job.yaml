@@ -83,6 +83,8 @@ spec:
           value: "{{ rhods_notebook_locust_scale_test_user_sleep_factor }}"
         - name: JOB_NAME
           value: "{{ tester_job_name }}"
+        - name: SKIP_OPTIONAL
+          value: "0"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir
