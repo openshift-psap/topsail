@@ -22,13 +22,24 @@ def _parse_thresholds():
     with open(fname) as f:
         data = yaml.safe_load(f)
 
-    if not data.get("visualize") or not data["visualize"].get("thresholds"):
-        logging.info(f"No threshold found in {filename}")
-        return
+    for visualization in data["visualize"]:
+        for threshold in visualization.get("thresholds", []):
+            if "files" not in threshold:
+                # threshold entry is here, cache it
+                thresholds_cache.append([threshold["settings_selector"], threshold["thresholds"]])
+                continue
 
-    for entry in data["visualize"]["thresholds"]:
-        thresholds_cache.append([entry["settings_selector"], entry["thresholds"]])
+            for filename in threshold["files"]:
+                # threshold entries are in another file, process it
+                with open(fname.parent / filename) as f:
+                    threshold_file_data = yaml.safe_load(f)
+                    for threshold_file_entry in threshold_file_data:
+                        thresholds_cache.append(
+                            [threshold_file_entry["settings_selector"],
+                             threshold_file_entry["thresholds"]])
 
+    if not thresholds_cache:
+        logging.info(f"No threshold found in {filename}.")
 
 def get_thresholds(entry_settings):
     _parse_thresholds()
