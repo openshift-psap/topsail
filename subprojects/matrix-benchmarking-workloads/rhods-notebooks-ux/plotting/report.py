@@ -218,8 +218,8 @@ class LaunchAndExecTimeDistributionReport():
 
 
         step_names = []
-        for ods_ci_output in entry.results.ods_ci_output.values():
-            step_names = list(ods_ci_output.keys())
+        for ods_ci in entry.results.ods_ci.values() if entry.results.ods_ci else []:
+            step_names = list(ods_ci.output.keys())
             break
 
         for step_name in step_names:

@@ -22,13 +22,14 @@ class Dashboard(common.ContextBase):
         self.project = project.Project(context)
         self.workbench = workbench.Workbench(context)
 
+    @common.Step("Login to Dashboard")
     def connect_to_the_dashboard(self):
         failed = False
         with self.client.get("/", catch_response=True) as response:
             if response.status_code == 403:
                 response.success()
 
-                response = self.oauth.do_login(1, "Dashboard", response)
+                response = self.oauth.do_login(response)
                 if not response:
                     failed = f"Dashboard authentication failed ... (code {response.status_code})"
                     response.failure(failed)
@@ -38,18 +39,16 @@ class Dashboard(common.ContextBase):
 
         return response
 
-    @common.Step("2. Go to RHODS Dashboard (first time)")
-    def go_to_the_dashboard_first(self):
+    @common.Step("Fetch the RHODS Dashboard frontend")
+    def fetch_the_dashboard_frontend(self):
         if not self.env.SKIP_OPTIONAL:
             self.client.get("/app.bundle.js")
             self.client.get("/app.bundle.css")
             self.client.get("/app.css")
             self.client.get("/rhods-favicon.svg")
 
-        self.go_to_the_dashboard()
-
-    @common.Step("2. Go to RHODS Dashboard")
-    def go_to_the_dashboard(self):
+    @common.Step("Load RHODS Dashboard")
+    def load_the_dashboard(self):
         if not self.env.SKIP_OPTIONAL:
             self.client.get("/") # HTML page
 
@@ -61,7 +60,7 @@ class Dashboard(common.ContextBase):
             self.client.get("/api/quickstarts")
             self.client.get("/api/components", params={"installed":"true"})
 
-    @common.Step("3. Go to the Project page")
+    @common.Step("Go to the Project page")
     def go_to_the_project_page(self, project_name):
         k8s_project = self.get_or_create_the_project(project_name)
 
@@ -77,7 +76,7 @@ class Dashboard(common.ContextBase):
         response = self.client.get(**url_name(Dashboard.PROJECTS_URL,
                                               _query="labelSelector=opendatahub.io/dashboard=true"),
                                    params={"labelSelector": "opendatahub.io/dashboard=true"})
-        k8s_projects = common.check_status(response.json())
+        k8s_projects = common.check_status(response)
 
         k8s_project = self._get_k8s_obj_from_list(k8s_projects, project_name)
         if not k8s_project:
@@ -101,7 +100,7 @@ class Dashboard(common.ContextBase):
 
         # Workbenches
         response = self.client.get(**url_name(Dashboard.NOTEBOOKS_URL, namespace=project_name))
-        k8s_workbenches = common.check_status(response.json())
+        k8s_workbenches = common.check_status(response)
 
         if not self.env.SKIP_OPTIONAL:
             # Cluster storage
@@ -113,7 +112,7 @@ class Dashboard(common.ContextBase):
 
         return k8s_workbenches
 
-    @common.Step("4. Create and Start the Workbench")
+    @common.Step("Create and Start the Workbench")
     def create_and_start_the_workbench(self, k8s_project, k8s_workbenches, workbench_name):
         k8s_workbench = self._get_k8s_obj_from_list(k8s_workbenches, workbench_name)
 

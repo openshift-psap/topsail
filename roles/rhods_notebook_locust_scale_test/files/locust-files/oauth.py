@@ -8,31 +8,28 @@ class Oauth(common.ContextBase):
     def __init__(self, context):
         common.ContextBase.__init__(self, context)
 
-    def do_login(self, step_id, where, _response):
-        @common.Step(f"{step_id}. Login to {where} (oauth)")
-        def do_it(self, response):
-            if "Log in with OpenShift" in response.text:
-                response = self._do_login_with_openshift(response)
-                if not response:
-                    return response
-
-            response = self._do_login_with(response, self.env.IDP_NAME)
+    def do_login(self, response):
+        if "Log in with OpenShift" in response.text:
+            response = self._do_login_with_openshift(response)
             if not response:
                 return response
 
-            response = self._do_log_in_to_your_account(response, self.env.IDP_NAME,
-                                                       self.user_name, self.env.USER_PASSWORD)
-            if not response:
-                return response
-
-            if "Authorize" in response.text:
-                response = self._do_authorize_service_account(response)
-                if not response:
-                    return response
-
+        response = self._do_login_with(response, self.env.IDP_NAME)
+        if not response:
             return response
 
-        return do_it(self, _response)
+        response = self._do_log_in_to_your_account(response, self.env.IDP_NAME,
+                                                   self.user_name, self.env.USER_PASSWORD)
+        if not response:
+            return response
+
+        if "Authorize" in response.text:
+            response = self._do_authorize_service_account(response)
+            if not response:
+                return response
+
+        return response
+
 
     def _do_login_with_openshift(self, response):
         logging.info("Log in with OpenShift")

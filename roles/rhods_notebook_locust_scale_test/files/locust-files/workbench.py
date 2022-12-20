@@ -41,7 +41,7 @@ class Workbench(common.ContextBase):
             **url_name(Workbench.URL, namespace=project_name, name=name),
             headers={"Content-Type": "application/json"},
             data=workbench_rendered)
-        k8s_obj = common.check_status(response.json())
+        k8s_obj = common.check_status(response)
 
         if k8s_obj["kind"] == "Status":
             message = k8s_obj["message"]
@@ -65,7 +65,7 @@ class WorkbenchObj(common.ContextBase):
             logging.error(f"GET images/jupyter --> {response.status_code}")
             return False
 
-        for image in common.check_status(response.json()):
+        for image in common.check_status(response):
             if image["name"] != self.env.NOTEBOOK_IMAGE_NAME: continue
 
             return image["tags"][0]["name"]
@@ -89,7 +89,7 @@ class WorkbenchObj(common.ContextBase):
         response = self.client.patch(**url_name(Workbench.URL, namespace=self.namespace, name=self.name, _descr="(stop)"),
                           headers={"Content-Type": "application/json"},
                                      data=data)
-        self.k8s_obj = common.check_status(response.json())
+        self.k8s_obj = common.check_status(response)
 
 
     def is_stopped(self):
@@ -105,7 +105,7 @@ class WorkbenchObj(common.ContextBase):
         response = self.client.patch(**url_name(Workbench.URL, namespace=self.namespace, name=self.name, _descr="(start)"),
                                      headers={"Content-Type": "application/json"},
                                      data=data)
-        self.k8s_obj = common.check_status(response.json())
+        self.k8s_obj = common.check_status(response)
 
     def wait(self):
         start_time = datetime.datetime.now()
@@ -114,15 +114,16 @@ class WorkbenchObj(common.ContextBase):
         logging.info(f"Waiting for the Notebook {self.name} ...")
 
         meta_event = {
-            "request_type": f"NOTEBOOK",
-            "name": f"Launch({self.name})",
+            "request_type": f"NOTEBOOK_LAUNCH",
+            "name": f"notebook_ready",
             "response": "no answer",
             "url": "/launch",
             "response_length": 0,
             "exception": None,
             "user_name": self.user_name,
+            "user_index": self.user_index,
         }
-        with common.LocustMetaEvent(meta_event):
+        with common.LocustMetaEvent(meta_event) as evt:
             route = None
             ready = False
 
@@ -131,11 +132,13 @@ class WorkbenchObj(common.ContextBase):
                     route = self.get_route()
                     if route:
                         logging.info(f"Notebook {self.name} has a route after {(datetime.datetime.now() - start_time)}.")
+                        evt.fire(dict(name="route_ready"))
 
                 if not ready:
                     ready = self.is_ready()
                     if ready:
-                        logging.info(f"Notebook {self.name} is ready after {(datetime.datetime.now() - start_time)}.")
+                        logging.info(f"Notebook {self.name} Pod is ready after {(datetime.datetime.now() - start_time)}.")
+                        evt.fire(dict(name="pod_ready"))
 
                 if ready and route:
                     break
@@ -156,7 +159,7 @@ class WorkbenchObj(common.ContextBase):
         response = self.client.get(**url_name("/api/k8s/api/v1/namespaces/{namespace}/pods", namespace=self.namespace, _query="labelSelector=notebook-name={workbench}"),
                                    params={"labelSelector": f"notebook-name={self.name}"})
 
-        k8s_pods = common.check_status(response.json())["items"]
+        k8s_pods = common.check_status(response)["items"]
         if not k8s_pods:
             return None # Pod doesn't exist yet
 
@@ -185,6 +188,6 @@ class WorkbenchObj(common.ContextBase):
             if response.status_code == 404:
                 response.success() # not an error, but the Route doesn't exist yet
                 return False
-        k8s_route = common.check_status(response.json())
+        k8s_route = common.check_status(response)
 
         return k8s_route["spec"]["host"]

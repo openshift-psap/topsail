@@ -11,26 +11,41 @@ class LocustMetaEvent:
 
         self.start_time = None
         self.start_ts = None
+        if "context" not in self.event:
+            self.event["context"] = {"hello": "world"}
 
     def __enter__(self):
         self.start_time = datetime.datetime.now()
         self.start_ts = datetime.datetime.timestamp(self.start_time)
+        self.event["start_time"] = self.start_ts,
+
+        logging.info("")
+        logging.info(f"<START>\t{self.event['user_name']} {self.event['name']}")
+
+        return self
 
     def __exit__(self, type, value, traceback):
-        finish_time = datetime.datetime.now()
-        event = self.event|{
-            "response_time": (finish_time - self.start_time).total_seconds() * 1000,
-            "context": {"hello": "world"},
-            "start_time": self.start_ts,
-        }
+        finish_event_data = {}
 
-        if value and not event.get("exception"):
-            event["exception"] = str(value)
+        if value and "exception" not in finish_event_data:
+            finish_event_data["exception"] = str(value)
+
         if value:
             logging.error(f"{value.__class__.__name__}: {value}")
 
+        return self.fire(finish_event_data)
+
+    def fire(self, extra_event_data):
+        finish_time = datetime.datetime.now()
+
+        event = self.event | extra_event_data | {
+            "response_time": (finish_time - self.start_time).total_seconds() * 1000,
+        }
+
         Context.context.env.csv_progress.write(CsvProgressEntry(
+            event["request_type"],
             event["user_name"],
+            event["user_index"],
             event["name"],
             self.start_ts,
             datetime.datetime.timestamp(finish_time),
@@ -38,6 +53,7 @@ class LocustMetaEvent:
         ))
 
         Context.context.client.request_event.fire(**event)
+        logging.info(f"<FIRE>\t{event['user_name']} {event['name']} {finish_time - self.start_time}\n")
 
 def Step(name):
     def decorator(fct):
@@ -49,15 +65,17 @@ def Step(name):
             caller = args[0]
 
             meta_event = {
-                "request_type": f"STEP",
+                "request_type": "STEP",
                 "name": name,
                 "response": "no answer",
                 "url": "/"+name.replace(" ", "_").lower(),
                 "response_length": 0,
                 "exception": None,
                 "user_name": caller.user_name,
+                "user_index": caller.user_index,
             }
-            with LocustMetaEvent(meta_event):
+            with LocustMetaEvent(meta_event) as evt:
+                evt.fire(dict(request_type="STEP_START"))
                 return fct(*args, **kwargs)
 
         return call_fct
@@ -66,10 +84,11 @@ def Step(name):
 
 class Context():
     context = None
-    def __init__(self, client, env, user_name):
+    def __init__(self, client, env, user_name, user_index):
         self.client = client
         self.env = env
         self.user_name = user_name
+        self.user_index = user_index
 
         Context.context = self
 
@@ -79,6 +98,7 @@ class ContextBase():
         self.client = context.client
         self.env = context.env
         self.user_name = context.user_name
+        self.user_index = context.user_index
 
 def url_name(url, _query=None, _descr=None, **params):
     name = f"{url}?{_query}" if _query else url
@@ -98,9 +118,18 @@ def debug_point():
     import pdb;pdb.set_trace()
     pass
 
-def check_status(response_json):
+def check_status(response):
+    try:
+        response_json = response.json()
+    except Exception as e:
+        debug_point()
+        logging.warning(f"Couldn't parse the response as json: {e} [{response.url}] [{response}]")
+        logging.warning(response.text)
+        raise ScaleTestError("K8s error (invalid response)", response)
+
     if response_json["kind"] != "Status":
         return response_json
+
     debug_point()
     logging.warning(response_json)
 
@@ -130,7 +159,7 @@ class CsvFileWriter(threading.Thread):
         self.filepath = filepath
         self.csv_class = csv_class
 
-        self.queue.put(", ".join(self.csv_class._fields) + "\n")
+        self.queue.put(",".join(self.csv_class._fields) + "\n")
         self.start()
 
     def run(self):
@@ -150,5 +179,17 @@ class CsvFileWriter(threading.Thread):
 
 CsvProgressEntry = collections.namedtuple(
     "CsvProgressEntry",
-    ["user_name", "step_name", "start", "stop", "exception"]
+    ["type", "user_name", "user_index", "step_name", "start", "stop", "exception"]
 )
+
+CsvBugHitEntry = collections.namedtuple(
+    "CsvBugHit",
+    ["jira_id", "user_name", "timestamp", "details"]
+)
+
+def bug_hit(jira_id, user_name, details=""):
+    logging.warning("User {user_name} hit {jira_id}" + f"({details})" if details else "")
+    now = datetime.datetime.timestamp(datetime.datetime.now())
+    Context.context.env.csv_bug_hits.write(CsvBugHitEntry(
+        jira_id, user_name, now, details,
+    ))

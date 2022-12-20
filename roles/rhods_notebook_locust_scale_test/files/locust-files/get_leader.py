@@ -1,5 +1,8 @@
 import requests
 import os
+import urllib3
+import logging
+urllib3.disable_warnings()
 
 def get_leader_ip():
     with open("/var/run/secrets/kubernetes.io/serviceaccount/token") as f:
@@ -17,7 +20,7 @@ def get_leader_ip():
     pod_list = response.json()
 
     if pod_list["kind"] != "PodList":
-        print("ERROR: didn't receive a pod list :/ ", pod_list)
+        logging.error("didn't receive a pod list :/ ", pod_list)
         exit(1)
 
     for pod in pod_list["items"]:

@@ -1,4 +1,5 @@
 from collections import defaultdict
+import datetime
 
 import plotly.graph_objs as go
 import pandas as pd
@@ -9,6 +10,125 @@ import matrix_benchmarking.common as common
 
 def register():
     SpawnTime("Notebook spawn time")
+
+def add_ods_ci_progress(entry, hide_failed_users):
+    data = []
+    for user_idx, ods_ci in entry.results.ods_ci.items():
+        failures = ods_ci.exit_code
+        if failures and hide_failed_users: continue
+
+        previous_checkpoint_time = entry.results.tester_job.creation_time
+
+        for checkpoint_idx, (checkpoint_name, checkpoint_time) in enumerate(ods_ci.progress.items()):
+            if checkpoint_name == "test_execution": continue
+
+            timelength = (checkpoint_time - previous_checkpoint_time).total_seconds()
+
+            entry_data = {}
+
+            entry_data["Step Name"] = checkpoint_name
+            entry_data["Step Duration"] = timelength
+            entry_data["Step Index"] = checkpoint_idx
+            entry_data["User Index"] = user_idx
+            entry_data["User Name"] = f"User #{user_idx}"
+            if failures:
+                entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
+
+            data.insert(0, entry_data)
+
+            previous_checkpoint_time = checkpoint_time
+    return data
+
+
+def add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide):
+    data = []
+    def add_substep_time(entry_data, substep_index, name, start, finish):
+        subentry_data = entry_data.copy()
+        subentry_data["Step Name"] = f"{entry_data['step_index']}.{substep_index} {name}"
+        subentry_data["Step Duration"] = (finish - start).total_seconds()
+        subentry_data["Step Index"] = entry_data["Step Index"] + substep_index
+
+        return subentry_data
+
+    for user_idx, ods_ci in entry.results.ods_ci.items():
+        for step_idx, (step_name, step_status) in enumerate(ods_ci.output.items()):
+
+            failures = ods_ci.exit_code
+            if failures and hide_failed_users:
+                continue
+
+            step_start = step_status.start
+            step_finish = step_status.finish
+
+            if isinstance(hide, int):
+                if hide == user_idx:
+                    continue
+
+            elif isinstance(hide, str):
+                skip = False
+                for hide_idx in hide.split(","):
+                    if int(hide_idx) == user_idx:
+                        skip = True
+                        break
+                if skip: continue
+
+            entry_data = {}
+            entry_data["step_index"] = step_idx
+            entry_data["Step Index"] = 100 + step_idx * 10
+            entry_data["User Index"] = user_idx
+            entry_data["User Name"] = f"User #{user_idx}"
+            if failures:
+                entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
+
+            if step_name in ("Wait for the Notebook Spawn", "Create and Start the Workbench") :
+                notebook_pod_times = entry.results.notebook_pod_times[user_idx]
+
+                data.append(add_substep_time(entry_data, 1, "K8s Resources initialization",
+                                             step_start, notebook_pod_times.pod_scheduled,))
+                data.append(add_substep_time(entry_data, 2, "Pod initialization",
+                                             notebook_pod_times.pod_scheduled, notebook_pod_times.pod_initialized,))
+                data.append(add_substep_time(entry_data, 3, "Container initialization",
+                                             notebook_pod_times.pod_initialized, notebook_pod_times.containers_ready))
+                data.append(add_substep_time(entry_data, 4, "User notification",
+                                             notebook_pod_times.containers_ready, step_finish))
+                continue
+
+            entry_data["Step Name"] = f"{step_idx} - {step_name}"
+            entry_data["Step Duration"] = (step_finish - step_start).total_seconds() \
+                if keep_failed_steps or step_status.status == "PASS" \
+                   else 0
+
+            data.append(entry_data)
+    return data
+
+
+def add_locust_progress(entry):
+    data = []
+
+    for _worker_index, locust_data in entry.results.locust.items():
+        if locust_data.progress is None: continue
+
+        steps_index = locust_data.progress["step_name"].unique().tolist().index
+        for index, row in locust_data.progress.reset_index().iterrows():
+            if row["type"] != "STEP": continue
+
+            step_idx = steps_index(row["step_name"])
+            user_idx = int(row["user_name"].replace("psapuser", ""))
+            step_name = row["step_name"]
+            step_start = datetime.datetime.fromtimestamp(row["start"])
+            step_finish = datetime.datetime.fromtimestamp(row["stop"])
+
+            entry_data = {}
+            entry_data["step_index"] = step_idx
+            entry_data["Step Index"] = 100 + step_idx * 10
+            entry_data["User Index"] = user_idx
+            entry_data["User Name"] = f"User #{user_idx}"
+            entry_data["Step Name"] = f"{step_idx} - {step_name}"
+            entry_data["Step Duration"] = (step_finish - step_start).total_seconds()
+            data.append(entry_data)
+
+    return data
+
 
 class SpawnTime():
     def __init__(self, name):
@@ -28,98 +148,24 @@ class SpawnTime():
             return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
 
         for entry in common.Matrix.all_records(settings, setting_lists):
-            results = entry.results
+            pass # entry is set
 
         data = []
 
         hide_launch_delay = cfg.get("hide_launch_delay", False)
         keep_failed_steps = cfg.get("keep_failed_steps", False)
         hide_failed_users = cfg.get("hide_failed_users", False)
+        hide = cfg.get("hide", None)
 
-        for user_idx, ods_ci_progress in entry.results.ods_ci_progress.items():
-            failures = entry.results.ods_ci_exit_code[user_idx]
-            if failures and hide_failed_users: continue
+        if entry.results.ods_ci:
+            data += add_ods_ci_progress(entry, hide_failed_users)
+            data += add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide)
 
-            previous_checkpoint_time = entry.results.tester_job.creation_time
-            for checkpoint_idx, (checkpoint_name, checkpoint_time) in enumerate(ods_ci_progress.items()):
-                if checkpoint_name == "test_execution": continue
-
-                timelength = (checkpoint_time - previous_checkpoint_time).total_seconds()
-
-                entry_data = {}
-
-                entry_data["Step Name"] = checkpoint_name
-                entry_data["Step Duration"] = timelength
-                entry_data["Step Index"] = checkpoint_idx
-                entry_data["User Index"] = user_idx
-                entry_data["User Name"] = f"User #{user_idx}"
-                if failures:
-                    entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
-
-                data.insert(0, entry_data)
-
-                previous_checkpoint_time = checkpoint_time
-
-        def add_substep_time(entry_data, substep_index, name, start, finish):
-            subentry_data = entry_data.copy()
-            subentry_data["Step Name"] = f"{entry_data['step_index']}.{substep_index} {name}"
-            subentry_data["Step Duration"] = (finish - start).total_seconds()
-            subentry_data["Step Index"] = entry_data["Step Index"] + substep_index
-
-            return subentry_data
-
-        for user_idx, ods_ci_output in entry.results.ods_ci_output.items():
-
-            for step_idx, (step_name, step_status) in enumerate(ods_ci_output.items()):
-
-                failures = entry.results.ods_ci_exit_code[user_idx]
-                if failures and hide_failed_users: continue
-
-                step_start = step_status.start
-                step_finish = step_status.finish
-
-                hide = cfg.get("hide", None)
-                if isinstance(hide, int):
-                    if hide == user_idx: continue
-
-                elif isinstance(hide, str):
-                    skip = False
-                    for hide_idx in hide.split(","):
-                        if int(hide_idx) == user_idx:
-                            skip = True
-                            break
-                    if skip: continue
-
-                entry_data = {}
-                entry_data["step_index"] = step_idx
-                entry_data["Step Index"] = 100 + step_idx * 10
-                entry_data["User Index"] = user_idx
-                entry_data["User Name"] = f"User #{user_idx}"
-                if failures:
-                    entry_data["User Name"] = f"<b>{entry_data['User Name']}</b>"
-
-                if step_name in ("Wait for the Notebook Spawn", "Create and Start the Workbench") :
-                    notebook_pod_times = entry.results.notebook_pod_times[user_idx]
-
-                    data.append(add_substep_time(entry_data, 1, "K8s Resources initialization",
-                                                 step_start, notebook_pod_times.pod_scheduled,))
-                    data.append(add_substep_time(entry_data, 2, "Pod initialization",
-                                                 notebook_pod_times.pod_scheduled, notebook_pod_times.pod_initialized,))
-                    data.append(add_substep_time(entry_data, 3, "Container initialization",
-                                                 notebook_pod_times.pod_initialized, notebook_pod_times.containers_ready))
-                    data.append(add_substep_time(entry_data, 4, "User notification",
-                                                 notebook_pod_times.containers_ready, step_finish))
-                    continue
-
-                entry_data["Step Name"] = f"{step_idx} - {step_name}"
-                entry_data["Step Duration"] = (step_finish - step_start).total_seconds() \
-                    if keep_failed_steps or step_status.status == "PASS" \
-                       else 0
-
-                data.append(entry_data)
+        if entry.results.locust:
+            data += add_locust_progress(entry)
 
         if not data:
-            return {}, "No data available"
+            return None, "No data available"
 
         df = pd.DataFrame(data).sort_values(by=["User Index", "Step Index"], ascending=True)
 

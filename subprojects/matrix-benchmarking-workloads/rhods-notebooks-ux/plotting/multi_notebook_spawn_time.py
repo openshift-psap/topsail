@@ -39,10 +39,10 @@ class MultiNotebookSpawnTime():
             if check_thresholds:
                 threshold_status_keys.add(entry_name)
 
-            for user_idx, ods_ci_output in entry.results.ods_ci_output.items():
+            for user_idx, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
                 accumulated_timelength = 0
 
-                for step_name, test_times in ods_ci_output.items():
+                for step_name, test_times in ods_ci.output.items():
                     if test_times.status != "PASS":
                         continue
 

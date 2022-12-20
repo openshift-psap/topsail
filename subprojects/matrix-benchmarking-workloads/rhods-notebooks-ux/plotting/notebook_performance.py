@@ -46,10 +46,10 @@ class NotebookPerformance():
         if cfg__show_all_in_one or cfg__show_user_details:
             times_data = []
 
-        for user_idx, ods_ci_notebook_benchmark in entry.results.ods_ci_notebook_benchmark.items():
-            if not ods_ci_notebook_benchmark: continue
+        for user_idx, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
+            if not ods_ci.notebook_benchmark: continue
 
-            measures = ods_ci_notebook_benchmark["measures"]
+            measures = ods_ci.notebook_benchmark["measures"]
 
             user_name = "All the users" if cfg__show_all_in_one else f"User #{user_idx}"
 

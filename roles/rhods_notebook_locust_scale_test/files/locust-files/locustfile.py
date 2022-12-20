@@ -25,6 +25,8 @@ import dashboard
 import workbench
 import jupyterlab
 
+import locust_users
+
 env = types.SimpleNamespace()
 env.DASHBOARD_HOST = os.getenv("ODH_DASHBOARD_URL")
 env.USERNAME_PREFIX = os.getenv("TEST_USERS_USERNAME_PREFIX")
@@ -62,11 +64,13 @@ with open(creds_file) as f:
         env.USER_PASSWORD = line.strip().split("=")[1]
 
 env.csv_progress = None # initialized in WorkbenchUser.on_test_start
+env.csv_bug_hits = None # initialized in WorkbenchUser.on_test_start
+
 
 class WorkbenchUser(HttpUser):
     host = env.DASHBOARD_HOST
     verify = False
-    user_next_id = 0
+
     default_resource_filter = f'/A(?!{env.DASHBOARD_HOST}/data:image:)'
     bundle_resource_stats = False
 
@@ -78,7 +82,10 @@ class WorkbenchUser(HttpUser):
                 env.JOB_COMPLETION_INDEX = environment.runner.worker_index
                 logging.info(f"JOB_COMPLETION_INDEX=0 overriden to {environment.runner.worker_index=}")
 
+        logging.info(f"Worker {env.JOB_COMPLETION_INDEX} is in charge of users {locust_users.user_indexes}")
         env.csv_progress = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_progress.csv", common.CsvProgressEntry)
+
+        env.csv_bug_hits = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_bug_hits.csv", common.CsvBugHitEntry)
 
     def __init__(self, locust_env):
         HttpUser.__init__(self, locust_env)
@@ -88,20 +95,23 @@ class WorkbenchUser(HttpUser):
 
         self.loop = 0
 
-        self.user_index = (int(env.LOCUST_USERS / env.WORKER_COUNT) # user slice size per worker
-                           * env.JOB_COMPLETION_INDEX # per worker offset
-                           + self.__class__.user_next_id # per user offset (= per object instance)
-                           )
-        self.user_name = f"{env.USERNAME_PREFIX}{self.user_index + env.USER_INDEX_OFFSET}"
+        while not locust_users.ready:
+            print("not ready")
+            time.sleep(1)
+
+        if not locust_users.user_indexes:
+            self.environment.runner.quit()
+
+        self.user_index = locust_users.user_indexes.pop()
+        self.user_name = f"{env.USERNAME_PREFIX}{env.USER_INDEX_OFFSET + self.user_index}"
         logging.warning(f"Starting user '{self.user_name}'.")
 
-        self.__class__.user_next_id += 1
 
         self.project_name = self.user_name
         self.workbench_name = self.user_name
         self.workbench_route = None
 
-        self.__context = common.Context(self.client, env, self.user_name) # self.context is used by Locust :/
+        self.__context = common.Context(self.client, env, self.user_name, self.user_index) # self.context is used by Locust :/
         self.oauth = oauth.Oauth(self.__context)
         self.dashboard = dashboard.Dashboard(self.__context, self.oauth)
         self.workbench = workbench.Workbench(self.__context)
@@ -111,15 +121,17 @@ class WorkbenchUser(HttpUser):
 
     def on_start(self):
         logging.info(f"Running user #{self.user_name}")
-        cookies_filename = f".cookies.{self.user_name}.pickle"
 
         if env.REUSE_COOKIES:
+            self.cookies_filename = f".cookies.{self.user_name}.pickle"
+
             try:
-                with open(cookies_filename, "rb") as f:
+                with open(self.cookies_filename, "rb") as f:
                     self.client.cookies.update(pickle.load(f))
             except FileNotFoundError: pass # ignore
             except EOFError: pass # ignore
 
+    def initialize(self):
         sleep_delay = self.user_index * env.USER_SLEEP_FACTOR
         logging.info(f"{self.user_name}: sleep for {sleep_delay:.1f}s before running.")
         time.sleep(sleep_delay)
@@ -130,7 +142,7 @@ class WorkbenchUser(HttpUser):
             return False
 
         if env.REUSE_COOKIES:
-            with open(cookies_filename, "wb") as f:
+            with open(self.cookies_filename, "wb") as f:
                 pickle.dump(self.client.cookies, f)
 
     @task
@@ -139,15 +151,23 @@ class WorkbenchUser(HttpUser):
             # execution crashed before reaching the end of this function
             raise SystemExit(1)
 
+        if self.loop != 0:
+            # we currently want to run only once
+            logging.info(f"END: launch_a_workbench #{self.loop}, "
+                         f"user={self.user_name}, worker={env.JOB_COMPLETION_INDEX}")
+
+            self.environment.runner.quit()
+
         first = self.loop == 0
         logging.info(f"TASK: launch_a_workbench #{self.loop}, "
                      f"user={self.user_name}, worker={env.JOB_COMPLETION_INDEX}")
         self.loop += 1
 
         if first:
-            self.dashboard.go_to_the_dashboard_first()
-        else:
-            self.dashboard.go_to_the_dashboard()
+            self.initialize()
+            self.dashboard.fetch_the_dashboard_frontend()
+
+        self.dashboard.load_the_dashboard()
 
         k8s_project, k8s_workbenches = self.dashboard.go_to_the_project_page(self.project_name)
 
