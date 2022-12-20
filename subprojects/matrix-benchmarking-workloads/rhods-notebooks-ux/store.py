@@ -145,6 +145,14 @@ def _parse_local_env(dirname):
     from_local_env.artifacts_basedir = None
     from_local_env.source_url = None
     from_local_env.is_interactive = False
+
+    try:
+        with open(dirname / "source_url") as f: # not an important file
+            from_local_env.source_url = f.read().strip()
+            from_local_env.artifacts_basedir = pathlib.Path(from_local_env.source_url.replace("https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/", "/"))
+    except FileNotFoundError as e:
+        pass
+
     if not cli_args.kwargs.get("generate"):
         # running in interactive mode
         from_local_env.is_interactive = True
@@ -159,12 +167,7 @@ def _parse_local_env(dirname):
 
     if not job_name or job_name == "plot-notebooks":
         # not running in the CI / running independently of the test
-        try:
-            with open(dirname / "source_url") as f: # not an important file
-                from_local_env.source_url = f.read().strip()
-
-            from_local_env.artifacts_basedir = pathlib.Path(from_local_env.source_url.replace("https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/", "/"))
-        except FileNotFoundError as e:
+        if from_local_env.source_url is None:
             from_local_env.artifacts_basedir = pathlib.Path("/source_url/not/found")
             from_local_env.source_url = "file-not-found"
             logging.error(f"FileNotFoundError: source_url file missing: {e.filename}")
