@@ -199,7 +199,7 @@ CsvBugHitEntry = collections.namedtuple(
 )
 
 def bug_hit(jira_id, user_name, details=""):
-    logging.warning("User {user_name} hit {jira_id}" + f"({details})" if details else "")
+    logging.warning(f"User {user_name} hit {jira_id}" + f"({details})" if details else "")
     now = datetime.datetime.timestamp(datetime.datetime.now())
     Context.context.env.csv_bug_hits.write(CsvBugHitEntry(
         jira_id, user_name, now, details,
