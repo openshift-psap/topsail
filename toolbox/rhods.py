@@ -74,6 +74,7 @@ class RHODS:
                                    notebook_benchmark_repeat=2,
                                    state_signal_redis_server="",
                                    toleration_key="",
+                                   capture_prom_db: bool = True,
                                    ):
 
         """
@@ -107,6 +108,7 @@ class RHODS:
           ods_ci_notebook_benchmark_number: Number of times the benchmark should be executed within one repeat.
           state_signal_redis_server: Hostname and port of the Redis server for StateSignal synchronization (for the synchronization of the beginning of the user simulation)
           toleration_key: Toleration key to use for the test Pods.
+          capture_prom_db: If True, captures the Prometheus DB of the systems.
         """
 
         ARTIFACTS_COLLECTED_VALUES = ("all", "none", "no-screenshot", "no-screenshot-except-zero", "no-screenshot-except-failed", "no-screenshot-except-failed-and-zero")
@@ -150,6 +152,7 @@ class RHODS:
                                    toleration_key="",
                                    cpu_count: int = 1,
                                    user_sleep_factor: float = 1.0,
+                                   capture_prom_db: bool = True,
                                    ):
 
         """
@@ -172,6 +175,7 @@ class RHODS:
           artifacts_exporter_istag: Imagestream tag of the artifacts exporter side-car container.
           cpu_count: Number of Locust processes to launch (one per Pod with 1cpu).
           user_sleep_factor: Delay to sleep between users
+          capture_prom_db: If True, captures the Prometheus DB of the systems.
         """
 
         return RunAnsibleRole(locals())

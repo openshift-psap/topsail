@@ -66,3 +66,7 @@ rhods_notebook_locust_scale_test_cpu_count: 1
 # Type: Float
 rhods_notebook_locust_scale_test_user_sleep_factor: 1.0
 
+# If True, captures the Prometheus DB of the systems.
+# Type: Bool
+rhods_notebook_locust_scale_test_capture_prom_db: true
+

@@ -73,3 +73,7 @@ rhods_notebook_ods_ci_scale_test_state_signal_redis_server:
 # Toleration key to use for the test Pods.
 rhods_notebook_ods_ci_scale_test_toleration_key:
 
+# If True, captures the Prometheus DB of the systems.
+# Type: Bool
+rhods_notebook_ods_ci_scale_test_capture_prom_db: true
+

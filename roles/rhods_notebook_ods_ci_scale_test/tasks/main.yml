@@ -26,7 +26,7 @@
     rhods_notebook_namespace: rhods-notebooks
     tester_job_name: ods-ci
     test_artifacts_collected: "{{ rhods_notebook_ods_ci_scale_test_artifacts_collected }}"
-    capture_prom_db: yes
+    capture_prom_db: "{{ rhods_notebook_ods_ci_scale_test_capture_prom_db }}"
 
 - name: Set system-under-test == driver-cluster if no system-under-test (SUT) is provided
   set_fact:
