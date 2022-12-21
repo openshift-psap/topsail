@@ -63,6 +63,7 @@ class RHODS:
                                    sut_cluster_kubeconfig="",
                                    artifacts_collected="all",
                                    user_sleep_factor=1.0,
+                                   user_batch_size: int = 1,
                                    ods_ci_istag="",
                                    ods_ci_exclude_tags="None",
                                    ods_ci_test_case="notebook_dsg_test.robot",
@@ -97,6 +98,7 @@ class RHODS:
            - 'no-screenshot-except-failed-and-zero': exclude the screenshots, except if the test failed or the job index is zero.
            - 'none': do not collect any ODS-CI artifact.
           user_sleep_factor: Delay to sleep between users
+          user_batch_size: Number of users to launch at the same time.
           ods_ci_istag: Imagestream tag of the ODS-CI container image.
           ods_ci_scale_test_case: ODS-CI test case to execute.
           ods_ci_exclude_tags: Tags to exclude in the ODS-CI test case.

@@ -47,7 +47,7 @@ fi
 echo "statesignal_synchronizing: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 # Sleep for a while to avoid DDoSing OAuth
 
-sleep_delay=$(python3 -c "print($JOB_COMPLETION_INDEX * $SLEEP_FACTOR)")
+sleep_delay=$(python3 -c "print(int($JOB_COMPLETION_INDEX / $USER_BATCH_SIZE) * $SLEEP_FACTOR)")
 
 echo "Waiting $sleep_delay seconds before starting (job index: $JOB_COMPLETION_INDEX, sleep factor: $SLEEP_FACTOR)"
 

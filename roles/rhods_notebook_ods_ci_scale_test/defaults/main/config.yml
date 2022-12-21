@@ -40,6 +40,10 @@ rhods_notebook_ods_ci_scale_test_artifacts_collected: all
 # Delay to sleep between users
 rhods_notebook_ods_ci_scale_test_user_sleep_factor: 1.0
 
+# Number of users to launch at the same time.
+# Type: Int
+rhods_notebook_ods_ci_scale_test_user_batch_size: 1
+
 # Imagestream tag of the ODS-CI container image.
 rhods_notebook_ods_ci_scale_test_ods_ci_istag:
 
