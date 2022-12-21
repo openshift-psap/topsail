@@ -65,6 +65,7 @@ class PythonPerformance():
                             line=dict(color='black', width=3, dash='dot'))
 
         msg = []
+
         for entry_name in threshold_status_keys:
             res = df[df["EntryName"] == entry_name]
             if res.empty:
@@ -72,7 +73,12 @@ class PythonPerformance():
                 msg.append(html.Br())
                 continue
 
-            threshold = float(res["Threshold"].values[0])
+            threshold_val = res["Threshold"].values[0]
+            if threshold_val is None:
+                msg.append(html.Ul(html.Li(f"SKIP: threshold not available ...")))
+                continue
+
+            threshold = float(threshold_val)
             value_90 = res["Time"].quantile(0.90)
             test_passed = value_90 <= threshold
             success_count = 1 if test_passed else 0
@@ -82,4 +88,5 @@ class PythonPerformance():
                 msg.append(html.Ul(html.Li(f"PASS: {value_90:.1f} seconds <= threshold={threshold:.1f} seconds")))
             else:
                 msg.append(html.Ul(html.Li(f"FAIL: {value_90:.1f} seconds > threshold={threshold:.1f} seconds")))
+
         return fig, msg

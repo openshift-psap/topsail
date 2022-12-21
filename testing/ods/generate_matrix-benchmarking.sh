@@ -92,20 +92,37 @@ generate_matbench::get_prometheus() {
     cp "/tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
 }
 
-generate_matbench::generate_plots() {
+
+generate_matbench::generate_visualizations() {
     if [[ -z "${MATBENCH_RESULTS_DIRNAME:-}" ]]; then
         echo "ERROR: expected MATBENCH_RESULTS_DIRNAME to be set ..."
     fi
 
-    if [[ "$(get_matbench_config visualize.generate)" == null ]]; then
-        _error "Could not find the list of plots to generate ..."
+    length=$(get_matbench_config visualize | jq '. | length')
+    plotting_failed=0
+    for idx in $(seq 0 $((length - 1))); do
+        if ! generate_matbench::generate_visualization "$idx"; then
+            plotting_failed=1 # do not fail before the end of the visualization generation
+        fi
+    done
+
+    return $plotting_failed
+}
+
+
+generate_matbench::generate_visualization() {
+    local idx=$1
+
+    if [[ "$(get_matbench_config visualize[$idx].generate)" == null ]]; then
+        _warning "Could not find the list of plots to generate in $MATBENCH_RESULTS_DIRNAME visualization #$idx ..."
+        return
     fi
 
-    generate_list=$(get_matbench_config visualize.generate[])
+    generate_list=$(get_matbench_config visualize[$idx].generate[])
 
-    filters=$(get_matbench_config visualize.filters)
+    filters=$(get_matbench_config visualize[$idx].filters)
     if [[ "$filters" != null ]]; then
-        filters="$(get_matbench_config visualize.filters[])"
+        filters="$(get_matbench_config visualize[$idx].filters[])"
     else
         filters="null"
     fi
@@ -163,7 +180,7 @@ if [[ "$action" == "prepare_matbench" ]]; then
     generate_matbench::prepare_matrix_benchmarking
 
 elif [[ "$action" == "generate_plots" ]]; then
-    generate_matbench::generate_plots
+    generate_matbench::generate_visualizations
 
 elif [[ "$action" == "from_dir" ]]; then
     dir=${2:-}
@@ -177,7 +194,7 @@ elif [[ "$action" == "from_dir" ]]; then
     generate_matbench::get_prometheus
     generate_matbench::prepare_matrix_benchmarking
 
-    generate_matbench::generate_plots
+    generate_matbench::generate_visualizations
 
 elif [[ "$action" == "from_pr_args" ]]; then
     generate_matbench::get_prometheus
@@ -186,7 +203,7 @@ elif [[ "$action" == "from_pr_args" ]]; then
     export MATBENCH_RESULTS_DIRNAME="/tmp/matrix_benchmarking_results"
     _get_data_from_pr
 
-    generate_matbench::generate_plots
+    generate_matbench::generate_visualizations
 
 else
     echo "ERROR: unknown action='$action' (JOB_NAME_SAFE='$JOB_NAME_SAFE')"

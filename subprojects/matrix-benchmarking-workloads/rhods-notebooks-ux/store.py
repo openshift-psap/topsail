@@ -66,7 +66,8 @@ IMPORTANT_FILES = [
 
     "src/000_rhods_notebook.yaml",
 
-    "locust-scale-test/locust-notebooks-scale-test-*/locust_scale_test_worker*_progress.csv"
+    "locust-scale-test/locust-notebook-scale-test-*/locust_scale_test_worker*_progress.csv"
+    "metrics/*",
 ]
 
 
@@ -109,8 +110,17 @@ def _rewrite_settings(settings_dict):
     try: del settings_dict["check_thresholds"]
     except KeyError: pass
 
-    return settings_dict
+    if "launcher" in settings_dict:
+        del settings_dict["test_case"]
 
+    del settings_dict["expe"]
+
+    if settings_dict.get("mode") == "notebook_perf":
+        for k in ("image", "benchmark_name", "benchmark_repeat", "benchmark_number", "notebook_file_name", "instance_type", "exclude_tags", "test_case"):
+            try: del settings_dict[k]
+            except KeyError: pass
+
+    return settings_dict
 
 def ignore_file_not_found(fn):
     def decorator(*args, **kwargs):
@@ -135,6 +145,14 @@ def _parse_local_env(dirname):
     from_local_env.artifacts_basedir = None
     from_local_env.source_url = None
     from_local_env.is_interactive = False
+
+    try:
+        with open(dirname / "source_url") as f: # not an important file
+            from_local_env.source_url = f.read().strip()
+            from_local_env.artifacts_basedir = pathlib.Path(from_local_env.source_url.replace("https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/", "/"))
+    except FileNotFoundError as e:
+        pass
+
     if not cli_args.kwargs.get("generate"):
         # running in interactive mode
         from_local_env.is_interactive = True
@@ -149,12 +167,7 @@ def _parse_local_env(dirname):
 
     if not job_name or job_name == "plot-notebooks":
         # not running in the CI / running independently of the test
-        try:
-            with open(dirname / "source_url") as f: # not an important file
-                from_local_env.source_url = f.read().strip()
-
-            from_local_env.artifacts_basedir = pathlib.Path(from_local_env.source_url.replace("https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/", "/"))
-        except FileNotFoundError as e:
+        if from_local_env.source_url is None:
             from_local_env.artifacts_basedir = pathlib.Path("/source_url/not/found")
             from_local_env.source_url = "file-not-found"
             logging.error(f"FileNotFoundError: source_url file missing: {e.filename}")
@@ -380,7 +393,7 @@ def _parse_pod_times(dirname, is_notebook=False):
                     user_index = re.findall(JUPYTER_USER_IDX_REGEX, pod_name)[0]
                 elif "ods-ci-" in pod_name:
                     user_index = pod_name.rpartition("-")[0].replace("ods-ci-", "")
-                elif "locust-notebooks-scale-test" in pod_name:
+                elif "locust-notebook-scale-test" in pod_name:
                     user_index = pod_name.split("-")[-2]
                 else:
                     logging.warning(f"Unexpected pod name: {pod_name}")
@@ -568,7 +581,7 @@ def load_cache(dirname):
         else:
             logging.warning(f"Cache file '{dirname / CACHE_FILENAME}' version '{cache_version}' does not match the parser version '{PARSER_VERSION}', ignoring.")
 
-        result = None
+        results = None
 
     return results
 
