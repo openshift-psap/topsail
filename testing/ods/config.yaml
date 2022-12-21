@@ -101,6 +101,7 @@ clusters:
     max_age: 4 #hours
 
   sutest:
+    is_metal: false
     is_managed: false
     managed:
       is_rosa: false

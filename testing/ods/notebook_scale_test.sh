@@ -67,14 +67,16 @@ prepare_driver_cluster() {
 
     oc create namespace "$loadtest_namespace" -oyaml --dry-run=client | oc apply -f-
 
-    local driver_taint_key=$(get_config clusters.driver.compute.machineset.taint.key)
-    local driver_taint_value=$(get_config clusters.driver.compute.machineset.taint.value)
-    local driver_taint_effect=$(get_config clusters.driver.compute.machineset.taint.effect)
-    oc annotate namespace/"$loadtest_namespace" --overwrite \
-       "openshift.io/node-selector=$driver_taint_key=$driver_taint_value"
-    oc annotate namespace/"$loadtest_namespace" --overwrite \
-       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$driver_taint_effect'", "key": "'$driver_taint_key'"}]'
+    if ! test_config clusters.sutest.is_metal; then
+        local driver_taint_key=$(get_config clusters.driver.compute.machineset.taint.key)
+        local driver_taint_value=$(get_config clusters.driver.compute.machineset.taint.value)
+        local driver_taint_effect=$(get_config clusters.driver.compute.machineset.taint.effect)
 
+        oc annotate namespace/"$loadtest_namespace" --overwrite \
+           "openshift.io/node-selector=$driver_taint_key=$driver_taint_value"
+        oc annotate namespace/"$loadtest_namespace" --overwrite \
+           'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$driver_taint_effect'", "key": "'$driver_taint_key'"}]'
+    fi
 
     build_and_preload_image() {
         suffix=$1
@@ -116,6 +118,11 @@ prepare_sutest_deploy_ldap() {
 prepare_driver_scale_cluster() {
     switch_driver_cluster
 
+    if [[ "$(get_config clusters.create.type)" == "single" ]] && test_config clusters.sutest.is_metal; then
+        _info "prepare_sutest_scale_cluster: bare-metal cluster, nothing to do."
+        return
+    fi
+
     local compute_nodes_count=$(get_config clusters.driver.compute.machineset.count)
     if [[ "$compute_nodes_count" == "null" ]]; then
         compute_nodes_count=$(cluster_helpers::get_compute_node_count driver)
@@ -132,6 +139,11 @@ prepare_driver_scale_cluster() {
 
 prepare_sutest_scale_cluster() {
     local cluster_role=sutest
+
+    if test_config clusters.sutest.is_metal; then
+        _info "prepare_sutest_scale_cluster: bare-metal cluster, nothing to do."
+        return
+    fi
 
     switch_sutest_cluster
 
@@ -279,22 +291,7 @@ prepare_rhods_admin_users() {
     done
 }
 
-sutest_wait_rhods_launch() {
-    switch_sutest_cluster
-
-    local customize_key=rhods.notebooks.customize.enabled
-
-    local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
-    local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
-    local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
-
-    local node_selector="$sutest_taint_key=$sutest_taint_value"
-    local default_tolerations='[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
-
-    if test_config "$customize_key"; then
-        sutest_customize_rhods_before_wait
-    fi
-
+sutest_set_project_template() {
     # for the DSG projects
     oc adm create-bootstrap-project-template -ojson \
         | jq '.objects[0].metadata.annotations += {"openshift.io/node-selector":"'$node_selector'"}' \
@@ -344,7 +341,27 @@ sutest_wait_rhods_launch() {
         done
     }
     wait_project_template_applied "$(get_config tests.notebooks.namespace)-canary" openshift.io/node-selector "$node_selector" > "$ARTIFACT_DIR/wait_project_annotation.log"
+}
 
+sutest_wait_rhods_launch() {
+    switch_sutest_cluster
+
+    local customize_key=rhods.notebooks.customize.enabled
+
+    local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
+    local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
+    local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
+
+    local node_selector="$sutest_taint_key=$sutest_taint_value"
+    local default_tolerations='[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
+
+    if test_config "$customize_key"; then
+        sutest_customize_rhods_before_wait
+    fi
+
+    if ! test_config clusters.sutest.is_metal; then
+        sutest_set_project_template
+    fi
 
     ./run_toolbox.py rhods wait_ods
 
@@ -368,6 +385,9 @@ sutest_wait_rhods_launch() {
                          --extra "{image:'$notebook_image',name:'$rhods_notebook_image_name'}"
     fi
 
+    if test_config clusters.sutest.is_metal; then
+        return
+    fi
 
     # for the rhods-notebooks project
     oc annotate namespace/rhods-notebooks --overwrite \
@@ -522,14 +542,16 @@ run_single_notebook_test() {
         local instance_types=$(echo "$notebook_performance_test" | jq -r .instance_types[])
 
         for instance_type in $instance_types; do
-            local machineset_name=$(get_command_arg name cluster set_scale --suffix notebook-performance)
-            oc delete "machineset/$machineset_name" \
-               -n openshift-machine-api \
-               --ignore-not-found
+            if ! test_config clusters.sutest.is_metal; then
+               local machineset_name=$(get_command_arg name cluster set_scale --suffix notebook-performance)
+               oc delete "machineset/$machineset_name" \
+                  -n openshift-machine-api \
+                  --ignore-not-found
 
-            ./run_toolbox.py from_config cluster set_scale \
-                             --suffix notebook-performance \
-                             --extra "{instance_type:'$instance_type'}"
+               ./run_toolbox.py from_config cluster set_scale \
+                                --suffix notebook-performance \
+                                --extra "{instance_type:'$instance_type'}"
+            fi
 
             for benchmark in $(echo "$notebook_performance_test" | jq .benchmarks[] --compact-output); do
                 local benchmark_name=$(echo "$benchmark" | jq -r .name)
@@ -575,7 +597,9 @@ driver_cleanup() {
         return
     fi
 
-    ./run_toolbox.py from_config cluster set_scale --prefix "driver" --suffix "cleanup" > /dev/null
+    if ! test_config clusters.sutest.is_metal; then
+       ./run_toolbox.py from_config cluster set_scale --prefix "driver" --suffix "cleanup" > /dev/null
+    fi
 
     if test_config tests.notebooks.cleanup.cleanup_driver_on_exit; then
 
@@ -611,6 +635,8 @@ sutest_cleanup() {
         else
             _error "sutest_cleanup: managed cluster must be OCM or ROSA ..."
         fi
+    elif ! test_config clusters.sutest.is_metal; then
+         true # nothing to do
     else
         ./run_toolbox.py from_config cluster set_scale --prefix "sutest" --suffix "cleanup" > /dev/null
     fi
