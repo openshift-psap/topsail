@@ -183,6 +183,9 @@ tests:
     # - 'no-screenshot-except-failed-and-zero': exclude the screenshots, except if the test failed or the job index is zero.
     # - 'none': do not collect any ODS-CI artifact.
     artifacts_collected: no-screenshot-except-failed-and-zero
+    # Should be true to capture Prometheus databases and properly generate the cluster usage metrics
+    # Can be overriden by CI_ARTIFACTS_CAPTURE_PROM_DB
+    capture_prom_db: true
     notebook:
       # name of the RHODS notebook size to select when launching the notebook.
       size_name: *notebook_size_name

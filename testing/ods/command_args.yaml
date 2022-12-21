@@ -135,6 +135,7 @@ rhods notebook_ods_ci_scale_test:
 {% else %}
   notebook_url: SET_AT_RUNTIME # set at runtime
 {% endif %}
+  capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
 
 rhods notebook_locust_scale_test:
   namespace: {{ tests.notebooks.namespace }}
@@ -156,6 +157,7 @@ rhods notebook_locust_scale_test:
   notebook_image_name: {{ tests.notebooks.notebook.image_name }}
   notebook_size_name: {{ tests.notebooks.notebook.size_name }}
   toleration_key: {{ clusters.driver.compute.machineset.taint.key }}
+  capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
 
   sut_cluster_kubeconfig: # set at runtime if necessary
 
