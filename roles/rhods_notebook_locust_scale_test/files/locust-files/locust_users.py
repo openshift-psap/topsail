@@ -6,6 +6,7 @@ import math
 from locust import HttpUser, task, events, between
 from locust.runners import MasterRunner, WorkerRunner
 
+env = None # set by locustfile.py
 ready = False
 user_indexes = []
 
@@ -15,6 +16,8 @@ def setup_test_users(environment, msg, **kwargs):
     environment.runner.send_message("acknowledge_users", f"Thanks for the {len(msg.data)} users! {user_indexes}")
     global ready
     ready = True
+    env.start_event.fire(dict(request_type="USER_RECEIVED"))
+
     if not user_indexes:
         logging.info(f"Worker {environment.runner} has no work, quitting.")
         environment.runner.quit()
@@ -33,6 +36,8 @@ def on_locust_init(environment, **_kwargs):
         user_indexes.append(0)
         global ready
         ready = True
+        env.start_event.fire(dict(request_type="USER_RECEIVED"))
+
         return
 
     if not isinstance(environment.runner, MasterRunner):

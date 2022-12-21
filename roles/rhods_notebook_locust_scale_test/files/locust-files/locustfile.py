@@ -28,6 +28,9 @@ import jupyterlab
 import locust_users
 
 env = types.SimpleNamespace()
+
+locust_users.env = env
+
 env.DASHBOARD_HOST = os.getenv("ODH_DASHBOARD_URL")
 env.USERNAME_PREFIX = os.getenv("TEST_USERS_USERNAME_PREFIX")
 env.JOB_COMPLETION_INDEX = os.getenv("JOB_COMPLETION_INDEX", 0)
@@ -66,6 +69,7 @@ with open(creds_file) as f:
 env.csv_progress = None # initialized in WorkbenchUser.on_test_start
 env.csv_bug_hits = None # initialized in WorkbenchUser.on_test_start
 
+env.start_event = common.LocustMetaEvent(dict("request_type": "PROCESS_START")).fire()
 
 class WorkbenchUser(HttpUser):
     host = env.DASHBOARD_HOST
@@ -132,10 +136,14 @@ class WorkbenchUser(HttpUser):
             except EOFError: pass # ignore
 
     def initialize(self):
-        sleep_delay = self.user_index * env.USER_SLEEP_FACTOR
-        logging.info(f"{self.user_name}: sleep for {sleep_delay:.1f}s before running.")
-        time.sleep(sleep_delay)
-        logging.info(f"{self.user_name}: done sleeping.")
+        @common.Step("launch_delay")
+        def sleep_delay():
+            sleep_delay = self.user_index * env.USER_SLEEP_FACTOR
+            logging.info(f"{self.user_name}: sleep for {sleep_delay:.1f}s before running.")
+            time.sleep(sleep_delay)
+            logging.info(f"{self.user_name}: done sleeping.")
+
+        sleep_delay()
 
         if not self.dashboard.connect_to_the_dashboard():
             logging.error("Failed to go to RHODS dashboard")
