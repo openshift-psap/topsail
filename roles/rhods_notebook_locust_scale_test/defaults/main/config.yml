@@ -62,3 +62,7 @@ rhods_notebook_locust_scale_test_toleration_key:
 # Type: Int
 rhods_notebook_locust_scale_test_cpu_count: 1
 
+# Delay to sleep between users
+# Type: Float
+rhods_notebook_locust_scale_test_user_sleep_factor: 1.0
+
