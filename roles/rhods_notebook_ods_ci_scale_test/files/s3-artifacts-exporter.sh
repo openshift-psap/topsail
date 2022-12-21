@@ -8,7 +8,7 @@ set -x
 S3_BUCKET_NAME=mybucket
 
 configure_s3() {
-    export S3_HOST_BASE=minio.minio.svc.cluster.local:9000
+    export S3_HOST_BASE=minio.$MINIO_NAMESPACE.svc.cluster.local:9000
     export S3_HOST_BUCKET=$S3_HOST_BASE
 
     export S3_ACCESS_KEY=minio

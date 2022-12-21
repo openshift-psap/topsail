@@ -100,6 +100,8 @@ spec:
           value: "ods-ci"
         - name: USER_COUNT
           value: "{{ rhods_notebook_ods_ci_scale_test_user_count }}"
+        - name: MINIO_NAMESPACE
+          value: "{{ rhods_notebook_ods_ci_scale_test_minio_namespace }}"
         volumeMounts:
         - name: s3cmd-config
           mountPath: /mnt/s3-config

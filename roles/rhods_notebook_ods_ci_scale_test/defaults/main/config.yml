@@ -27,6 +27,10 @@ rhods_notebook_ods_ci_scale_test_secret_properties_file:
 # Mandatory value
 rhods_notebook_ods_ci_scale_test_notebook_url:
 
+# Namespace where the Minio server is located.
+# Mandatory value
+rhods_notebook_ods_ci_scale_test_minio_namespace:
+
 # Offset to add to the user index to compute the user name.
 # Type: Int
 rhods_notebook_ods_ci_scale_test_user_index_offset: 0
