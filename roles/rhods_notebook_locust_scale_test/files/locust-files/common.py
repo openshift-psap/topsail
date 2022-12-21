@@ -5,6 +5,8 @@ import threading, queue
 import collections
 import io, csv
 
+env = None # set by locustfile.py
+
 class LocustMetaEvent:
     def __init__(self, event):
 
@@ -13,7 +15,7 @@ class LocustMetaEvent:
 
         BASE_EVENT = {
             "request_type": "NONE",
-            "content": {"no": "context"},
+            "context": {"no": "context"},
             "response": "no response",
             "response_length": 0,
             "exception": None,
@@ -31,7 +33,7 @@ class LocustMetaEvent:
         self.event["start_time"] = self.start_ts,
 
         logging.info("")
-        logging.info(f"<START>\t{self.event['user_name']} {self.event['name']}")
+        logging.info(f"<START> {self.event['request_type']}\t{self.event['user_name']} {self.event['name']}")
 
         return self
 
@@ -46,14 +48,14 @@ class LocustMetaEvent:
 
         return self.fire(finish_event_data)
 
-    def fire(self, extra_event_data=None):
+    def fire(self, extra_event_data={}):
         finish_time = datetime.datetime.now()
 
         event = self.event | extra_event_data | {
             "response_time": (finish_time - self.start_time).total_seconds() * 1000,
         }
 
-        Context.context.env.csv_progress.write(CsvProgressEntry(
+        env.csv_progress.write(CsvProgressEntry(
             event["request_type"],
             event["user_name"],
             event["user_index"],
@@ -63,8 +65,8 @@ class LocustMetaEvent:
             event.get("exception")
         ))
 
-        Context.context.client.request_event.fire(**event)
-        logging.info(f"<FIRE>\t{event['user_name']} {event['name']} {finish_time - self.start_time}\n")
+        logging.info(f"<FIRE> {event['request_type']}\t{event['user_name']} {event['name']} {finish_time - self.start_time}\n")
+
         return self
 
 def Step(name):
