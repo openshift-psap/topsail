@@ -81,10 +81,8 @@
   shell: |
     set -o pipefail
 
-    oc -n {{ rhods_notebook_ods_ci_scale_test_minio_namespace }} -c ubi8
-       exec "{{ minio_podname_cmd.stdout }}" \
-       -- tar czf - -C /artifacts/to_export/ . \
-       | tar xzf - -C "{{ artifact_extra_logs_dir }}"
+    oc -n {{ rhods_notebook_ods_ci_scale_test_minio_namespace }} -c ubi8 \
+       rsync "{{ minio_podname_cmd.stdout }}:/artifacts/to_export/" "{{ artifact_extra_logs_dir }}" --quiet
 
     rm -f "{{ artifact_extra_logs_dir }}/os-release"
   when: 'test_artifacts_collected != "none"'
