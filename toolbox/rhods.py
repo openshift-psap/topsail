@@ -141,6 +141,7 @@ class RHODS:
                                    idp_name,
                                    secret_properties_file,
                                    test_name,
+                                   minio_namespace,
                                    username_prefix,
                                    user_count: int,
                                    user_index_offset: int,
@@ -164,6 +165,7 @@ class RHODS:
           namespace: Namespace where the test will run
           idp_name: Name of the identity provider to use.
           secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'deploy_ldap' command).
+          minio_namespace: Namespace where the Minio server is located.
           username_prefix: Prefix of the RHODS users.
           test_name: Test to perform.
           user_count: Number of users to run in parallel.

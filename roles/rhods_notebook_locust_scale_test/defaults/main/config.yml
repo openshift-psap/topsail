@@ -18,6 +18,10 @@ rhods_notebook_locust_scale_test_secret_properties_file:
 # Mandatory value
 rhods_notebook_locust_scale_test_test_name:
 
+# Namespace where the Minio server is located.
+# Mandatory value
+rhods_notebook_locust_scale_test_minio_namespace:
+
 # Prefix of the RHODS users.
 # Mandatory value
 rhods_notebook_locust_scale_test_username_prefix:
