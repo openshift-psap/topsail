@@ -482,8 +482,13 @@ def _parse_ods_ci_exit_code(dirname, output_dir):
 def _parse_ods_ci_output_xml(dirname, output_dir):
     filename = output_dir / "output.xml"
 
+
     with open(register_important_file(dirname, filename)) as f:
-        output_dict = xmltodict.parse(f.read())
+        try:
+            output_dict = xmltodict.parse(f.read())
+        except Exception as e:
+            logging.warning(f"Failed to parse {filename}: {e}")
+            return None
 
     ods_ci_output = {}
     tests = output_dict["robot"]["suite"]["test"]

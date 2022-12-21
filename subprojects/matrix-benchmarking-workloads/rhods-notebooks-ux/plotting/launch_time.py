@@ -74,6 +74,8 @@ class LaunchTimeDistribution():
                 continue
 
             for user_index, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
+                if not ods_ci: continue
+
                 for step_name, step_status in ods_ci.output.items():
                     if not self.show_successes and step_status.status != "PASS":
                         continue
@@ -116,7 +118,12 @@ class LaunchTimeDistribution():
             fig.update_layout(xaxis_title="")
 
         msg = []
-        for idx, step_name in enumerate(entry.results.ods_ci[user_index].output if not cfg__all_in_one else []):
+        if cfg__all_in_one or entry.results.ods_ci[user_index] :
+            entries = []
+        else:
+            entries = entry.results.ods_ci[user_index].output if entry.results.ods_ci[user_index] else []
+
+        for idx, step_name in enumerate(entries):
             step_times = df[df["Event"] == step_name]["Time"]
 
             if step_times.empty:

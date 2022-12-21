@@ -115,7 +115,7 @@ def _get_test_setup(entry):
 
     total_users = entry.results.user_count
 
-    success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci.exit_code == 0) \
+    success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci and ods_ci.exit_code == 0) \
         if entry.results.ods_ci else 0
 
     setup_info += [html.Li(f"{success_users}/{total_users} users succeeded")]
@@ -164,9 +164,10 @@ class ErrorReport():
 
         reference_content = None
         for user_idx, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else {}:
+
             content = []
 
-            if ods_ci.exit_code == 0:
+            if ods_ci and ods_ci.exit_code == 0:
                 if user_idx != REFERENCE_USER_IDX: continue
 
                 robot_log_path = pathlib.Path("ods-ci") / f"ods-ci-{user_idx}" / "log.html"
@@ -179,12 +180,23 @@ class ErrorReport():
 
             content.append(html.H3(f"User #{user_idx}"))
 
+            if ods_ci is None:
+                content.append(html.Ul([
+                    html.Li([f'No data collected :/'])
+                ]))
+                step_name = "No data collected"
+
+                failed_steps[step_name].append(content)
+                failed_users_at_step[step_name].append(user_idx)
+                continue
+
             if ods_ci.output is None:
                 content.append(html.Ul([
                     html.Li([f'No report available :/'])
                 ]))
-                failed_steps["Terminate in time"].append(content)
-
+                step_name = "Terminate in time"
+                failed_steps[step_name].append(content)
+                failed_users_at_step[step_name].append(user_idx)
                 continue
 
             for step_idx, (step_name, step_info) in enumerate(ods_ci.output.items()):
