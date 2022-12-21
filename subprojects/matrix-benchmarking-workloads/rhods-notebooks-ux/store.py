@@ -66,7 +66,7 @@ IMPORTANT_FILES = [
 
     "src/000_rhods_notebook.yaml",
 
-    "locust-scale-test/locust-notebooks-scale-test-*/locust_scale_test_worker*_progress.csv"
+    "locust-scale-test/locust-notebook-scale-test-*/locust_scale_test_worker*_progress.csv"
     "metrics/*",
 ]
 
@@ -393,7 +393,7 @@ def _parse_pod_times(dirname, is_notebook=False):
                     user_index = re.findall(JUPYTER_USER_IDX_REGEX, pod_name)[0]
                 elif "ods-ci-" in pod_name:
                     user_index = pod_name.rpartition("-")[0].replace("ods-ci-", "")
-                elif "locust-notebooks-scale-test" in pod_name:
+                elif "locust-notebook-scale-test" in pod_name:
                     user_index = pod_name.split("-")[-2]
                 else:
                     logging.warning(f"Unexpected pod name: {pod_name}")

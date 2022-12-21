@@ -21,7 +21,7 @@
     rhods_locust_scale_test_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_locust_scale_test_namespace }}/{{ rhods_notebook_locust_scale_test_locust_istag }}
     rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ rhods_notebook_locust_scale_test_namespace }}/{{ rhods_notebook_locust_scale_test_artifacts_exporter_istag }}
     rhods_notebook_namespace: rhods-notebooks
-    tester_job_name: locust-notebooks-scale-test
+    tester_job_name: locust-notebook-scale-test
     tester_namespace: "{{ rhods_notebook_locust_scale_test_namespace }}"
     test_artifacts_collected: all
     capture_prom_db: yes
