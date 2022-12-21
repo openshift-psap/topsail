@@ -130,7 +130,11 @@ rhods notebook_ods_ci_scale_test:
   user_count: {{ tests.notebooks.users.count }}
   user_index_offset: {{ tests.notebooks.users.start_offset }}
   username_prefix: {{ ldap.users.prefix }}
+{% if clusters.create.type == "single" %}
+  notebook_url: "http://nginx.{{ nginx_namespace }}.svc/{{ tests.notebooks.ipynb.notebook_filename }}"
+{% else %}
   notebook_url: SET_AT_RUNTIME # set at runtime
+{% endif %}
 
 rhods notebook_locust_scale_test:
   namespace: {{ tests.notebooks.namespace }}
