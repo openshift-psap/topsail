@@ -12,7 +12,6 @@ ci_presets:
     tests.notebooks.users.sleep_factor: 3.0
     tests.notebooks.flavor_to_run: locust
     tests.notebooks.locust.run_time: 10m
-    tests.notebooks.repeat: 1
     matbench.config_file: notebook_scale_test_locust.yaml
 
   # run the DSG Notebook scale test
@@ -23,6 +22,7 @@ ci_presets:
     tests.notebooks.users.sleep_factor: 3.0
     tests.notebooks.flavor_to_run: ods-ci
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
+    tests.notebooks.repeat: 2
 
   # run the Jupyter Notebook scale test
   jupyter_notebook_scale_test:
@@ -35,7 +35,6 @@ ci_presets:
     matbench.config_file: single_notebook_perf.yaml
     tests.notebooks.notebook_performance.use_rhods: false
     tests.notebooks.users.count: 1
-    tests.notebooks.repeat: 1
 
   # run the notebook image performance test on RHODS (test mode)
   rhods_notebook_performance:
@@ -164,7 +163,7 @@ rhods:
 tests:
   notebooks:
     # number of test repetition to perform
-    repeat: 2
+    repeat: 1
     users:
       # number of users to simulate
       count: 5
