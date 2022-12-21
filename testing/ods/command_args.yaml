@@ -124,6 +124,7 @@ rhods notebook_ods_ci_scale_test:
   notebook_image_name: {{ tests.notebooks.notebook.image_name }}
   notebook_size_name: {{ tests.notebooks.notebook.size_name }}
   user_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
+  user_batch_size: {{ tests.notebooks.users.batch_size }}
   secret_properties_file: {{ s3_ldap_password_location }}
   state_signal_redis_server: {{ redis_internal_address }}
   toleration_key: {{ clusters.driver.compute.machineset.taint.key }}

@@ -171,6 +171,8 @@ tests:
       start_offset: 0
       # how long to wait between user starts, multiplied by the user index
       sleep_factor: 5.0
+      # number of users to launch at the same time
+      batch_size: 10
     flavor_to_run: ods-ci # can be: ods-ci, locust or notebook-performance
     # namespace in which the scale test should run
     namespace: notebook-scale-test
