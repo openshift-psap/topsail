@@ -99,6 +99,8 @@ cluster deploy_redis_server:
 
 
 cluster deploy_minio_s3_server:
+{% set minio_namespace = tests.notebooks.namespace + "-minio" %}
+  namespace: {{ minio_namespace }}
   secret_properties_file: {{ s3_ldap_password_location }}
 
 cluster deploy_nginx_server:
@@ -123,6 +125,7 @@ rhods notebook_ods_ci_scale_test:
   notebook_benchmark_repeat: {{ tests.notebooks.benchmark.repeat }}
   notebook_image_name: {{ tests.notebooks.notebook.image_name }}
   notebook_size_name: {{ tests.notebooks.notebook.size_name }}
+  minio_namespace: {{ minio_namespace }}
   user_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
   user_batch_size: {{ tests.notebooks.users.batch_size }}
   secret_properties_file: {{ s3_ldap_password_location }}
@@ -144,6 +147,7 @@ rhods notebook_locust_scale_test:
   secret_properties_file: {{ s3_ldap_password_location }}
   locust_istag: "{{ tests.notebooks.imagestream_name }}:{{ locust_tag }}"
   artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_tag }}"
+  minio_namespace: {{ minio_namespace }}
 
   test_name: all
   username_prefix: {{ ldap.users.prefix }}
