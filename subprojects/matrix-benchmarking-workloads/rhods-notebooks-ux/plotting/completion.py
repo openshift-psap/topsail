@@ -39,6 +39,7 @@ class Completion():
         if mode == "notebooks":
             rq_cpu = entry.results.odh_dashboard_config.notebook_request_size_cpu
             rq_mem = entry.results.odh_dashboard_config.notebook_request_size_mem
+
         elif mode == "test_pods":
             rq_cpu = entry.results.tester_job.request.cpu
             rq_mem = entry.results.tester_job.request.mem
@@ -46,6 +47,9 @@ class Completion():
             mode = "pods"
             rq_cpu = float(cfg.get("notebook_cpu", 1))
             rq_mem = float(cfg.get("notebook_mem", 1))
+
+        if not (rq_mem and rq_mem):
+            return {}, f"no request could be found for mode {mode} ... ({rq_cpu=}, {rq_mem=})"
 
         cpu_needed = rq_cpu * user_count
         memory_needed = rq_mem * user_count
