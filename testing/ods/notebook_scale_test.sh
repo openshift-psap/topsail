@@ -439,12 +439,10 @@ prepare_notebook_performance_without_rhods() {
 }
 
 prepare() {
-
     prepare_notebook_performance_without_rhods
 
     local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "notebook-performance" ]]; then
-        set_config tests.notebooks.repeat 1
 
         if ! test_config tests.notebooks.notebook_performance.use_rhods; then
             _info "Skip cluster preparation (running the notebook-performance test without using RHODS)"
@@ -550,9 +548,6 @@ run_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
     local test_flavor=$(get_config tests.notebooks.test_flavor)
-    if [[ "$test_flavor" == "notebook-performance" ]]; then
-        set_config tests.notebooks.repeat 1
-    fi
 
     local test_failed=0
     local plot_failed=0
