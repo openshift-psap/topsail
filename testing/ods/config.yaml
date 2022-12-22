@@ -195,13 +195,17 @@ tests:
       # name of the RHODS imagestream to use when launching the notebooks.
       image_name: s2i-generic-data-science-notebook
     ods_ci:
+      # ODS-CI test case to execute.
+      test_case: notebook_dsg_test.robot
+      # mode in which the ODS-CI test should be executed
+      # can be: null, simple (default) or batched
+      test_mode: simple
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
         ref: jh-at-scale.v221221
       # tags to exclude when running the robot test case
       excluded_tags: None
-      # ODS-CI test case to execute.
-      test_case: notebook_dsg_test.robot
+
     test_pods:
       # must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
       size:
