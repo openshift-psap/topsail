@@ -170,7 +170,6 @@ def _parse_local_env(dirname):
         if from_local_env.source_url is None:
             from_local_env.artifacts_basedir = pathlib.Path("/source_url/not/found")
             from_local_env.source_url = "file-not-found"
-            logging.error(f"FileNotFoundError: source_url file missing: {e.filename}")
 
     elif job_name in ("notebooks", "notebooks-light"):
         # running right after the test
