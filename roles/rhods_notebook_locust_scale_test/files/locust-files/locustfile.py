@@ -27,9 +27,7 @@ import jupyterlab
 
 import locust_users
 
-env = types.SimpleNamespace()
-
-locust_users.env = env
+locust_users.env = common.env = env = types.SimpleNamespace()
 
 env.DASHBOARD_HOST = os.getenv("ODH_DASHBOARD_URL")
 env.USERNAME_PREFIX = os.getenv("TEST_USERS_USERNAME_PREFIX")
@@ -66,10 +64,11 @@ with open(creds_file) as f:
         if not line.startswith("user_password="): continue
         env.USER_PASSWORD = line.strip().split("=")[1]
 
-env.csv_progress = None # initialized in WorkbenchUser.on_test_start
-env.csv_bug_hits = None # initialized in WorkbenchUser.on_test_start
+env.csv_progress = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_progress.csv", common.CsvProgressEntry)
+env.csv_bug_hits = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_bug_hits.csv", common.CsvBugHitEntry)
 
-env.start_event = common.LocustMetaEvent(dict("request_type": "PROCESS_START")).fire()
+env.start_event.__enter__()
+env.start_event.fire(dict(request_type="PROCESS_STARTED"))
 
 class WorkbenchUser(HttpUser):
     host = env.DASHBOARD_HOST
@@ -87,9 +86,6 @@ class WorkbenchUser(HttpUser):
                 logging.info(f"JOB_COMPLETION_INDEX=0 overriden to {environment.runner.worker_index=}")
 
         logging.info(f"Worker {env.JOB_COMPLETION_INDEX} is in charge of users {locust_users.user_indexes}")
-        env.csv_progress = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_progress.csv", common.CsvProgressEntry)
-
-        env.csv_bug_hits = common.CsvFileWriter(f"{env.RESULTS_DEST}_worker{env.JOB_COMPLETION_INDEX}_bug_hits.csv", common.CsvBugHitEntry)
 
     def __init__(self, locust_env):
         HttpUser.__init__(self, locust_env)
@@ -137,13 +133,13 @@ class WorkbenchUser(HttpUser):
 
     def initialize(self):
         @common.Step("launch_delay")
-        def sleep_delay():
+        def sleep_delay(_dashboard_self):
             sleep_delay = self.user_index * env.USER_SLEEP_FACTOR
             logging.info(f"{self.user_name}: sleep for {sleep_delay:.1f}s before running.")
             time.sleep(sleep_delay)
             logging.info(f"{self.user_name}: done sleeping.")
 
-        sleep_delay()
+        sleep_delay(self.dashboard)
 
         if not self.dashboard.connect_to_the_dashboard():
             logging.error("Failed to go to RHODS dashboard")

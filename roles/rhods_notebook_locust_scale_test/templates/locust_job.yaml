@@ -112,7 +112,7 @@ spec:
         - name: BUCKET_DEST_DIR
           value: "locust-scale-test"
         - name: MINIO_NAMESPACE
-          value: "{{ rhods_notebook_ods_ci_scale_test_minio_namespace }}"
+          value: "{{ rhods_notebook_locust_scale_test_minio_namespace }}"
         volumeMounts:
         - name: s3cmd-config
           mountPath: /mnt/s3-config
