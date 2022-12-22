@@ -7,12 +7,23 @@ import io, csv
 
 class LocustMetaEvent:
     def __init__(self, event):
-        self.event = event
 
         self.start_time = None
         self.start_ts = None
-        if "context" not in self.event:
-            self.event["context"] = {"hello": "world"}
+
+        BASE_EVENT = {
+            "request_type": "NONE",
+            "content": {"no": "context"},
+            "response": "no response",
+            "response_length": 0,
+            "exception": None,
+            "url": "no url",
+
+            "user_name": "no user_name",
+            "user_index": "no user_index",
+            "name": "no name",
+        }
+        self.event = {} | BASE_EVENT | event
 
     def __enter__(self):
         self.start_time = datetime.datetime.now()
@@ -35,7 +46,7 @@ class LocustMetaEvent:
 
         return self.fire(finish_event_data)
 
-    def fire(self, extra_event_data):
+    def fire(self, extra_event_data=None):
         finish_time = datetime.datetime.now()
 
         event = self.event | extra_event_data | {
@@ -54,6 +65,7 @@ class LocustMetaEvent:
 
         Context.context.client.request_event.fire(**event)
         logging.info(f"<FIRE>\t{event['user_name']} {event['name']} {finish_time - self.start_time}\n")
+        return self
 
 def Step(name):
     def decorator(fct):
@@ -67,10 +79,7 @@ def Step(name):
             meta_event = {
                 "request_type": "STEP",
                 "name": name,
-                "response": "no answer",
                 "url": "/"+name.replace(" ", "_").lower(),
-                "response_length": 0,
-                "exception": None,
                 "user_name": caller.user_name,
                 "user_index": caller.user_index,
             }

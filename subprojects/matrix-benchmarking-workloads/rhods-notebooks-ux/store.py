@@ -297,7 +297,7 @@ def _parse_nodes_info(dirname, sutest_cluster=False):
         node_info.name = node_name
         node_info.sutest_cluster = sutest_cluster
         node_info.managed = "managed.openshift.com/customlabels" in node["metadata"]["annotations"]
-        node_info.instance_type = node["metadata"]["labels"]["node.kubernetes.io/instance-type"]
+        node_info.instance_type = node["metadata"]["labels"].get("node.kubernetes.io/instance-type", "N/A")
 
         node_info.master = "node-role.kubernetes.io/master" in node["metadata"]["labels"]
         node_info.rhods_compute = node["metadata"]["labels"].get("only-rhods-compute-pods") == "yes"
@@ -482,8 +482,13 @@ def _parse_ods_ci_exit_code(dirname, output_dir):
 def _parse_ods_ci_output_xml(dirname, output_dir):
     filename = output_dir / "output.xml"
 
+
     with open(register_important_file(dirname, filename)) as f:
-        output_dict = xmltodict.parse(f.read())
+        try:
+            output_dict = xmltodict.parse(f.read())
+        except Exception as e:
+            logging.warning(f"Failed to parse {filename}: {e}")
+            return None
 
     ods_ci_output = {}
     tests = output_dict["robot"]["suite"]["test"]

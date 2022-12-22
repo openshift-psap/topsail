@@ -99,6 +99,8 @@ cluster deploy_redis_server:
 
 
 cluster deploy_minio_s3_server:
+{% set minio_namespace = tests.notebooks.namespace + "-minio" %}
+  namespace: {{ minio_namespace }}
   secret_properties_file: {{ s3_ldap_password_location }}
 
 cluster deploy_nginx_server:
@@ -123,14 +125,21 @@ rhods notebook_ods_ci_scale_test:
   notebook_benchmark_repeat: {{ tests.notebooks.benchmark.repeat }}
   notebook_image_name: {{ tests.notebooks.notebook.image_name }}
   notebook_size_name: {{ tests.notebooks.notebook.size_name }}
+  minio_namespace: {{ minio_namespace }}
   user_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
+  user_batch_size: {{ tests.notebooks.users.batch_size }}
   secret_properties_file: {{ s3_ldap_password_location }}
   state_signal_redis_server: {{ redis_internal_address }}
   toleration_key: {{ clusters.driver.compute.machineset.taint.key }}
   user_count: {{ tests.notebooks.users.count }}
   user_index_offset: {{ tests.notebooks.users.start_offset }}
   username_prefix: {{ ldap.users.prefix }}
+{% if clusters.create.type == "single" %}
+  notebook_url: "http://nginx.{{ nginx_namespace }}.svc/{{ tests.notebooks.ipynb.notebook_filename }}"
+{% else %}
   notebook_url: SET_AT_RUNTIME # set at runtime
+{% endif %}
+  capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
 
 rhods notebook_locust_scale_test:
   namespace: {{ tests.notebooks.namespace }}
@@ -138,6 +147,7 @@ rhods notebook_locust_scale_test:
   secret_properties_file: {{ s3_ldap_password_location }}
   locust_istag: "{{ tests.notebooks.imagestream_name }}:{{ locust_tag }}"
   artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_tag }}"
+  minio_namespace: {{ minio_namespace }}
 
   test_name: all
   username_prefix: {{ ldap.users.prefix }}
@@ -152,6 +162,7 @@ rhods notebook_locust_scale_test:
   notebook_image_name: {{ tests.notebooks.notebook.image_name }}
   notebook_size_name: {{ tests.notebooks.notebook.size_name }}
   toleration_key: {{ clusters.driver.compute.machineset.taint.key }}
+  capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
 
   sut_cluster_kubeconfig: # set at runtime if necessary
 

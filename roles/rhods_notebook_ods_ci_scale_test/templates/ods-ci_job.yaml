@@ -47,6 +47,8 @@ spec:
           value: "{{ rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags }}"
         - name: SLEEP_FACTOR
           value: "{{ rhods_notebook_ods_ci_scale_test_user_sleep_factor }}"
+        - name: USER_BATCH_SIZE
+          value: "{{ rhods_notebook_ods_ci_scale_test_user_batch_size }}"
         - name: NOTEBOOK_URL
           value: "{{ rhods_notebook_ods_ci_scale_test_notebook_url }}"
         - name: NOTEBOOK_IMAGE_NAME
@@ -98,6 +100,8 @@ spec:
           value: "ods-ci"
         - name: USER_COUNT
           value: "{{ rhods_notebook_ods_ci_scale_test_user_count }}"
+        - name: MINIO_NAMESPACE
+          value: "{{ rhods_notebook_ods_ci_scale_test_minio_namespace }}"
         volumeMounts:
         - name: s3cmd-config
           mountPath: /mnt/s3-config

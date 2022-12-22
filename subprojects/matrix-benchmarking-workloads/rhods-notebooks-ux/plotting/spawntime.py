@@ -14,11 +14,14 @@ def register():
 def add_ods_ci_progress(entry, hide_failed_users):
     data = []
     for user_idx, ods_ci in entry.results.ods_ci.items():
+        if not ods_ci: continue
+
         failures = ods_ci.exit_code
         if failures and hide_failed_users: continue
 
         previous_checkpoint_time = entry.results.tester_job.creation_time
 
+        if not ods_ci.progress: continue
         for checkpoint_idx, (checkpoint_name, checkpoint_time) in enumerate(ods_ci.progress.items()):
             if checkpoint_name == "test_execution": continue
 
@@ -51,6 +54,8 @@ def add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide):
         return subentry_data
 
     for user_idx, ods_ci in entry.results.ods_ci.items():
+        if not ods_ci: continue
+
         for step_idx, (step_name, step_status) in enumerate(ods_ci.output.items()):
 
             failures = ods_ci.exit_code

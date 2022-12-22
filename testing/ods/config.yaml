@@ -12,7 +12,6 @@ ci_presets:
     tests.notebooks.users.sleep_factor: 3.0
     tests.notebooks.flavor_to_run: locust
     tests.notebooks.locust.run_time: 10m
-    tests.notebooks.repeat: 1
     matbench.config_file: notebook_scale_test_locust.yaml
 
   # run the DSG Notebook scale test
@@ -23,6 +22,7 @@ ci_presets:
     tests.notebooks.users.sleep_factor: 3.0
     tests.notebooks.flavor_to_run: ods-ci
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
+    tests.notebooks.repeat: 2
 
   # run the Jupyter Notebook scale test
   jupyter_notebook_scale_test:
@@ -35,7 +35,6 @@ ci_presets:
     matbench.config_file: single_notebook_perf.yaml
     tests.notebooks.notebook_performance.use_rhods: false
     tests.notebooks.users.count: 1
-    tests.notebooks.repeat: 1
 
   # run the notebook image performance test on RHODS (test mode)
   rhods_notebook_performance:
@@ -101,6 +100,7 @@ clusters:
     max_age: 4 #hours
 
   sutest:
+    is_metal: false
     is_managed: false
     managed:
       is_rosa: false
@@ -140,8 +140,8 @@ ldap:
 rhods:
   deploy_from_catalog: true
   catalog:
-    image: quay.io/modh/qe-catalog-source
-    tag: v120-11
+    image: brew.registry.redhat.io/rh-osbs/iib
+    tag: 398681 # v.1.20.1-5
   addon:
     # only necessary/set when rhods.deploy_from_catalog is true
     email: SET_AT_RUNTIME
@@ -163,7 +163,7 @@ rhods:
 tests:
   notebooks:
     # number of test repetition to perform
-    repeat: 2
+    repeat: 1
     users:
       # number of users to simulate
       count: 5
@@ -171,6 +171,8 @@ tests:
       start_offset: 0
       # how long to wait between user starts, multiplied by the user index
       sleep_factor: 5.0
+      # number of users to launch at the same time
+      batch_size: 10
     flavor_to_run: ods-ci # can be: ods-ci, locust or notebook-performance
     # namespace in which the scale test should run
     namespace: notebook-scale-test
@@ -183,6 +185,9 @@ tests:
     # - 'no-screenshot-except-failed-and-zero': exclude the screenshots, except if the test failed or the job index is zero.
     # - 'none': do not collect any ODS-CI artifact.
     artifacts_collected: no-screenshot-except-failed-and-zero
+    # Should be true to capture Prometheus databases and properly generate the cluster usage metrics
+    # Can be overriden by CI_ARTIFACTS_CAPTURE_PROM_DB
+    capture_prom_db: true
     notebook:
       # name of the RHODS notebook size to select when launching the notebook.
       size_name: *notebook_size_name
@@ -191,7 +196,7 @@ tests:
     ods_ci:
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: jh-at-scale.v221213
+        ref: jh-at-scale.v221221
       # tags to exclude when running the robot test case
       excluded_tags: None
       # ODS-CI test case to execute.

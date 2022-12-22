@@ -18,6 +18,10 @@ rhods_notebook_locust_scale_test_secret_properties_file:
 # Mandatory value
 rhods_notebook_locust_scale_test_test_name:
 
+# Namespace where the Minio server is located.
+# Mandatory value
+rhods_notebook_locust_scale_test_minio_namespace:
+
 # Prefix of the RHODS users.
 # Mandatory value
 rhods_notebook_locust_scale_test_username_prefix:
@@ -61,4 +65,12 @@ rhods_notebook_locust_scale_test_toleration_key:
 # Number of Locust processes to launch (one per Pod with 1cpu).
 # Type: Int
 rhods_notebook_locust_scale_test_cpu_count: 1
+
+# Delay to sleep between users
+# Type: Float
+rhods_notebook_locust_scale_test_user_sleep_factor: 1.0
+
+# If True, captures the Prometheus DB of the systems.
+# Type: Bool
+rhods_notebook_locust_scale_test_capture_prom_db: true
 

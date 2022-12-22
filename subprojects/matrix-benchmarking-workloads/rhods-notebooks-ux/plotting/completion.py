@@ -44,8 +44,8 @@ class Completion():
             rq_mem = entry.results.tester_job.request.mem
         else:
             mode = "pods"
-            rq_cpu = cfg.get("notebook_cpu", 1)
-            rq_mem = cfg.get("notebook_mem", 1)
+            rq_cpu = float(cfg.get("notebook_cpu", 1))
+            rq_mem = float(cfg.get("notebook_mem", 1))
 
         cpu_needed = rq_cpu * user_count
         memory_needed = rq_mem * user_count
@@ -60,13 +60,14 @@ class Completion():
                 print(f"WARNING: {e} ...")
 
         data = []
+        has_price = False
         for machine_entry in entry.results.possible_machines:
             instance_count = max([math.ceil(memory_needed / machine_entry.memory),
                                   math.ceil(cpu_needed / machine_entry.cpu)])
 
             time = 1 # hr
             price = time * machine_entry.price * instance_count
-
+            if price: has_price = True
             machine_in_use = machine_entry.instance_name in machines_in_use
 
             data.append(dict(instance=f"{instance_count} x {machine_entry.instance_name} ({machine_entry.group})",
@@ -86,7 +87,7 @@ class Completion():
                     x=df_not_in_use["instance"], y=df_not_in_use["instance_count"],
                     hoverlabel={'namelength' :-1},
                     opacity=0.5,
-                    ), secondary_y=True)
+                    ), secondary_y=True if has_price else False)
 
             fig.add_trace(
                 go.Bar(
@@ -94,8 +95,8 @@ class Completion():
                     x=df_in_use["instance"], y=df_in_use["instance_count"],
                     hoverlabel={'namelength' :-1},
                     opacity=0.5,
-                    ), secondary_y=True)
-
+                    ), secondary_y=True if has_price else False)
+            if not has_price: continue
             fig.add_trace(
                 go.Scatter(
                     name="Total hourly price",
@@ -105,8 +106,10 @@ class Completion():
                 ))
 
 
-        fig.update_yaxes(title_text="<b>Price to completion</b> (in $ per hour, lower is better)")
-        fig.update_yaxes(title_text="Number of instances required", secondary_y=True)
+        if has_price:
+            fig.update_yaxes(title_text="<b>Price to completion</b> (in $ per hour, lower is better)")
+
+        fig.update_yaxes(title_text="Number of instances required", secondary_y=True if has_price else False)
         fig.update_layout(title=f"Price per instance type<br>to run {user_count} {mode.replace('_', ' ')}<br>with cpu={rq_cpu}, mem={rq_mem:.2f}Gi",
                           title_x=0.5)
         return fig, ""
