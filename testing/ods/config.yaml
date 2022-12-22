@@ -10,7 +10,7 @@ ci_presets:
     clusters.create.ocp.control_plane.type: m6i.2xlarge
     clusters.create.ocp.compute.type: m6i.2xlarge
     tests.notebooks.users.sleep_factor: 3.0
-    tests.notebooks.flavor_to_run: locust
+    tests.notebooks.test_flavor: locust
     tests.notebooks.locust.run_time: 10m
     matbench.config_file: notebook_scale_test_locust.yaml
 
@@ -20,7 +20,7 @@ ci_presets:
     clusters.create.ocp.control_plane.type: m6i.2xlarge
     clusters.create.ocp.compute.type: m6i.2xlarge
     tests.notebooks.users.sleep_factor: 3.0
-    tests.notebooks.flavor_to_run: ods-ci
+    tests.notebooks.test_flavor: ods-ci
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
     tests.notebooks.repeat: 2
 
@@ -31,7 +31,7 @@ ci_presets:
 
   # run the notebook image performance test (dev mode)
   notebook_performance:
-    tests.notebooks.flavor_to_run: notebook-performance
+    tests.notebooks.test_flavor: notebook-performance
     matbench.config_file: single_notebook_perf.yaml
     tests.notebooks.notebook_performance.use_rhods: false
     tests.notebooks.users.count: 1
@@ -173,7 +173,8 @@ tests:
       sleep_factor: 5.0
       # number of users to launch at the same time
       batch_size: 10
-    flavor_to_run: ods-ci # can be: ods-ci, locust or notebook-performance
+    test_flavor: ods-ci # can be: ods-ci, locust or notebook-performance
+
     # namespace in which the scale test should run
     namespace: notebook-scale-test
     imagestream_name: scale-test

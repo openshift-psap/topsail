@@ -442,7 +442,7 @@ prepare() {
 
     prepare_notebook_performance_without_rhods
 
-    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "notebook-performance" ]]; then
         set_config tests.notebooks.repeat 1
 
@@ -486,7 +486,7 @@ run_ods_ci_test() {
 run_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
-    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "notebook-performance" ]]; then
         set_config tests.notebooks.repeat 1
     fi
@@ -645,7 +645,7 @@ sutest_cleanup() {
 sutest_cleanup_ldap() {
     switch_sutest_cluster
 
-    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "notebook-performance" ]]; then
         echo "Running the notebook-performance, nothing to cleanup"
         return
@@ -722,7 +722,7 @@ test_ci() {
 }
 
 run_test() {
-    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "ods-ci" ]]; then
         run_ods_ci_test
     elif [[ "$test_flavor" == "locust" ]]; then
