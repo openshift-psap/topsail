@@ -888,6 +888,13 @@ main() {
             testing/ods/generate_matrix-benchmarking.sh prepare_matbench
             return 0
             ;;
+        "rebuild_ods-ci")
+            local loadtest_namespace=$(get_config tests.notebooks.namespace)
+            oc delete istag -n $loadtest_namespace scale-test:ods-ci --ignore-not-found
+            prepare_driver_cluster
+            process_ctrl::wait_bg_processes
+            return 0
+            ;;
         "source")
             # file is being sourced by another script
             ;;
