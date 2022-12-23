@@ -783,11 +783,11 @@ test_ci() {
 run_test() {
     local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "ods-ci" ]]; then
-        run_ods_ci_test
+        run_ods_ci_test || return 1
     elif [[ "$test_flavor" == "locust" ]]; then
-        run_locust_test
+        run_locust_test || return 1
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
-        run_single_notebook_test
+        run_single_notebook_test || return 1
     else
         _error "Unknown test flavor: $test_flavor"
     fi
@@ -865,9 +865,12 @@ main() {
             return 0
             ;;
         "run_test_and_plot")
-            run_test
-            generate_plots
-            return 0
+            local failed=0
+
+            run_test || failed=1
+            generate_plots || failed=1
+
+            return $failed
             ;;
         "run_test")
             run_test
