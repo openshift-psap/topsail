@@ -63,6 +63,8 @@ Go to the Project page
   [Tags]  Dashboard
 
   Open Data Science Projects Home Page
+  Wait Until Page Contains No Spinner
+
   Capture Page Screenshot
 
   ${has_errors}  ${error}=  Run Keyword And Ignore Error  Project Should Be Listed  ${PROJECT_NAME}
@@ -71,6 +73,7 @@ Go to the Project page
   ELSE
     Open Data Science Project Details Page  ${PROJECT_NAME}
   END
+  Wait Until Page Contains No Spinner
   Capture Page Screenshot
 
 
@@ -78,7 +81,7 @@ Create and Start the Workbench
   [Tags]  Notebook Spawn
 
   Capture Page Screenshot
-  ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Should Be Listed  ${WORKBENCH_NAME}
+  ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' != 'PASS'
     Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  ${NONE}
     Wait Until Workbench Is Started  ${WORKBENCH_NAME}  timeout=${NOTEBOOK_SPAWN_WAIT_TIME}
@@ -163,3 +166,7 @@ Just Launch Workbench
 
     Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]//a[text()="Open"]
     Switch Window   NEW
+
+Wait Until Page Contains No Spinner
+    [Arguments]     ${timeout}=30 seconds
+    Wait Until Page Does Not Contain Element   //*[contains(@class, 'pf-c-spinner')]  timeout=${timeout}
