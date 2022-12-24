@@ -93,6 +93,7 @@
             bash -c "oc annotate notebook/{} --overwrite
                  kubeflow-resource-stopped=stopped-by-ci-artifacts
                  -oname" > /dev/null
+  when: rhods_notebook_ods_ci_scale_test_stop_notebooks_on_exit
 
 - name: Get the ODS-CI sample var file
   shell:

@@ -188,6 +188,12 @@ class WorkbenchObj(common.ContextBase):
             if response.status_code == 404:
                 response.success() # not an error, but the Route doesn't exist yet
                 return False
+
         k8s_route = common.check_status(response)
+
+        has_host = k8s_route["spec"].get("host")
+        if not has_host:
+            logging.warning(f"Route {workbench_name} exists but has no host :/")
+            return False
 
         return k8s_route["spec"]["host"]

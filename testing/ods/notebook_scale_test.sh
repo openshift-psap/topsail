@@ -439,12 +439,10 @@ prepare_notebook_performance_without_rhods() {
 }
 
 prepare() {
-
     prepare_notebook_performance_without_rhods
 
-    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "notebook-performance" ]]; then
-        set_config tests.notebooks.repeat 1
 
         if ! test_config tests.notebooks.notebook_performance.use_rhods; then
             _info "Skip cluster preparation (running the notebook-performance test without using RHODS)"
@@ -461,24 +459,87 @@ prepare() {
     sutest_wait_rhods_launch
 }
 
+run_ods_ci_batched_test() {
+    local extra_notebook_url=$1
+    local failed=0
+
+    # number of users to launch in one test
+    local batch_size=$(get_config tests.notebooks.users.batch_size)
+    # total number of users to launch
+    local total_user_count=$(get_config tests.notebooks.users.count)
+    local users_launched=0
+
+    while [[ $users_launched -lt $total_user_count ]]; do
+        users_launched=$((users_launched + batch_size))
+
+        # take care of the overflow
+        if [[ $users_launched -gt $total_user_count ]]; then
+            batch_size=$((users_launched - total_user_count))
+        fi
+        local users_already_in=$((users_launched - batch_size))
+        echo "$(date) Launching $batch_size users. $users_already_in already in the system."
+        ./run_toolbox.py from_config rhods notebook_ods_ci_scale_test \
+             --extra "{$extra_notebook_url
+                       stop_notebooks_on_exit: False,
+                       user_sleep_factor: 0,
+                       user_index_offset: $users_already_in,
+                       user_count: '$batch_size',
+                       sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}" || failed=1
+
+
+        local TEST_DIRNAME=driver_rhods__notebook_ods_ci_scale_test
+        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+
+        cat > $last_test_dir/settings.batched_test <<EOF
+test_mode=batched
+total_users=$total_user_count
+live_users=$users_launched
+batch_size=$(get_config tests.notebooks.users.batch_size)
+EOF
+        if [[ "$failed" == 1 ]]; then
+            break
+        fi
+    done
+
+    oc delete notebooks --all -A || true
+
+    return $failed
+}
+
 run_ods_ci_test() {
     switch_driver_cluster
 
-    local nginx_namespace=$(get_command_arg namespace cluster deploy_nginx_server)
-    local nginx_hostname=$(oc get route/nginx -n "$nginx_namespace" -ojsonpath={.spec.host})
+    local test_mode=$(get_config tests.notebooks.ods_ci.test_mode)
 
-    local notebook_name=$(get_config tests.notebooks.ipynb.notebook_filename)
-    local notebook_url="http://$nginx_hostname/$notebook_name"
+    if ! test_config clusters.sutest.is_metal; then
+        local nginx_namespace=$(get_command_arg namespace cluster deploy_nginx_server)
+        local nginx_hostname=$(oc get route/nginx -n "$nginx_namespace" -ojsonpath={.spec.host})
+
+        local notebook_name=$(get_config tests.notebooks.ipynb.notebook_filename)
+        local notebook_url="http://$nginx_hostname/$notebook_name"
+
+        local extra_notebook_url="notebook_url: '$notebook_url',"
+    else
+        local extra_notebook_url=""
+    fi
+
     local failed=0
-    ./run_toolbox.py from_config rhods notebook_ods_ci_scale_test \
-                     --extra "{notebook_url: '$notebook_url', sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}" \
-        || failed=1
 
-    # quick access to these files
-    local TEST_DIRNAME=driver_rhods__notebook_ods_ci_scale_test
-    local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
-    cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
-    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
+    if [[ "$test_mode" == null || "$test_mode" == simple ]]; then
+        ./run_toolbox.py from_config rhods notebook_ods_ci_scale_test \
+                         --extra "{$extra_notebook_url sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}" \
+            || failed=1
+
+        # quick access to these files
+        local TEST_DIRNAME=driver_rhods__notebook_ods_ci_scale_test
+        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+        cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
+        cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
+    elif [[ "$test_mode" == batched ]]; then
+        run_ods_ci_batched_test "$extra_notebook_url" || failed=1
+    else
+        _error "Unknown ODS-CI test mode: '$test_mode'"
+    fi
 
     return $failed
 }
@@ -486,14 +547,12 @@ run_ods_ci_test() {
 run_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
-    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
-    if [[ "$test_flavor" == "notebook-performance" ]]; then
-        set_config tests.notebooks.repeat 1
-    fi
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
 
     local test_failed=0
     local plot_failed=0
     local test_runs=$(get_config tests.notebooks.repeat)
+
     for idx in $(seq "$test_runs"); do
         export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
 
@@ -645,7 +704,7 @@ sutest_cleanup() {
 sutest_cleanup_ldap() {
     switch_sutest_cluster
 
-    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "notebook-performance" ]]; then
         echo "Running the notebook-performance, nothing to cleanup"
         return
@@ -722,13 +781,13 @@ test_ci() {
 }
 
 run_test() {
-    local test_flavor=$(get_config tests.notebooks.flavor_to_run)
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "ods-ci" ]]; then
-        run_ods_ci_test
+        run_ods_ci_test || return 1
     elif [[ "$test_flavor" == "locust" ]]; then
-        run_locust_test
+        run_locust_test || return 1
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
-        run_single_notebook_test
+        run_single_notebook_test || return 1
     else
         _error "Unknown test flavor: $test_flavor"
     fi
@@ -806,9 +865,12 @@ main() {
             return 0
             ;;
         "run_test_and_plot")
-            run_test
-            generate_plots
-            return 0
+            local failed=0
+
+            run_test || failed=1
+            generate_plots || failed=1
+
+            return $failed
             ;;
         "run_test")
             run_test
@@ -824,6 +886,13 @@ main() {
             ;;
         "prepare_matbench")
             testing/ods/generate_matrix-benchmarking.sh prepare_matbench
+            return 0
+            ;;
+        "rebuild_ods-ci")
+            local loadtest_namespace=$(get_config tests.notebooks.namespace)
+            oc delete istag -n $loadtest_namespace scale-test:ods-ci --ignore-not-found
+            prepare_driver_cluster
+            process_ctrl::wait_bg_processes
             return 0
             ;;
         "source")

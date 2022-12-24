@@ -4,6 +4,7 @@ Resource            tests/Resources/Common.robot
 Resource            tests/Resources/Page/ODH/ODHDashboard/ODHDataScienceProject/Workbenches.resource
 Resource            tests/Resources/Page/ODH/ODHDashboard/ODHDataScienceProject/Projects.resource
 
+Library             DateTime
 Library             JupyterLibrary
 Library             libs/Helpers.py
 Library             SeleniumLibrary
@@ -62,6 +63,8 @@ Go to the Project page
   [Tags]  Dashboard
 
   Open Data Science Projects Home Page
+  Wait Until Page Contains No Spinner
+
   Capture Page Screenshot
 
   ${has_errors}  ${error}=  Run Keyword And Ignore Error  Project Should Be Listed  ${PROJECT_NAME}
@@ -70,6 +73,7 @@ Go to the Project page
   ELSE
     Open Data Science Project Details Page  ${PROJECT_NAME}
   END
+  Wait Until Page Contains No Spinner
   Capture Page Screenshot
 
 
@@ -77,7 +81,7 @@ Create and Start the Workbench
   [Tags]  Notebook Spawn
 
   Capture Page Screenshot
-  ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Should Be Listed  ${WORKBENCH_NAME}
+  ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' != 'PASS'
     Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  ${NONE}
     Wait Until Workbench Is Started  ${WORKBENCH_NAME}  timeout=${NOTEBOOK_SPAWN_WAIT_TIME}
@@ -89,15 +93,20 @@ Create and Start the Workbench
   Capture Page Screenshot
   Workbench Status Should Be      workbench_title=${WORKBENCH_NAME}   status=${WORKBENCH_STATUS_RUNNING}
   ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Just Launch Workbench  ${WORKBENCH_NAME}
+
   IF  '${workbench_launched}' != 'PASS'
     Capture Page Screenshot  bug_5819_open_not_available.png
-    Log     message=Workaround for RHODS-5819: reload the page    level=WARN
+    Log     message=Workaround for RHODS-5819: wait for the open button not to be disabled    level=WARN
 
     ${current_html} =    SeleniumLibrary.Get Source
     Create File  ${OUTPUTDIR}/bug_5819.html  ${current_html}
 
-    Reload Page
-    Wait Until Page Contains  Create workbench  timeout=60 seconds
+    ${route_wait_start} = 	Get Current Date
+    Wait Until Page Does Not Contain Element    ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${WORKBENCH_NAME}"]]]//a[text()="Open" and contains(@class, 'pf-m-disabled')]  timeout=1 minutes
+    ${route_wait_end} = 	Get Current Date
+    ${wait_time}=  Subtract Date From Date  ${route_wait_end}  ${route_wait_start}
+    Create File  ${OUTPUTDIR}/bug_5819_wait_time.txt  ${wait_time} seconds\n
+
     Just Launch Workbench  ${WORKBENCH_NAME}
   END
 
@@ -157,3 +166,7 @@ Just Launch Workbench
 
     Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]//a[text()="Open"]
     Switch Window   NEW
+
+Wait Until Page Contains No Spinner
+    [Arguments]     ${timeout}=30 seconds
+    Wait Until Page Does Not Contain Element   //*[contains(@class, 'pf-c-spinner')]  timeout=${timeout}

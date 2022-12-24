@@ -77,6 +77,7 @@ class RHODS:
                                    state_signal_redis_server="",
                                    toleration_key="",
                                    capture_prom_db: bool = True,
+                                   stop_notebooks_on_exit: bool = True,
                                    ):
 
         """
@@ -113,6 +114,7 @@ class RHODS:
           state_signal_redis_server: Hostname and port of the Redis server for StateSignal synchronization (for the synchronization of the beginning of the user simulation)
           toleration_key: Toleration key to use for the test Pods.
           capture_prom_db: If True, captures the Prometheus DB of the systems.
+          stop_notebooks_on_exit: If False, keep the user notebooks running at the end of the test.
         """
 
         ARTIFACTS_COLLECTED_VALUES = ("all", "none", "no-screenshot", "no-screenshot-except-zero", "no-screenshot-except-failed", "no-screenshot-except-failed-and-zero")
