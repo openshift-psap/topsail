@@ -24,6 +24,21 @@ ci_presets:
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
     tests.notebooks.repeat: 2
 
+  # run the DSG Notebook scale test with user bursting
+  notebook_scale_test_burst:
+    extends: [notebook_scale_test]
+    tests.notebooks.ods_ci.test_mode: burst
+    # burst users 10 by 10, with 0s delay
+    tests.notebooks.users.batch_size: 10
+    tests.notebooks.users.sleep_factor: 0
+    tests.notebooks.repeat: 1
+
+  # run the DSG Notebook scale test with user batching
+  notebook_scale_test_batch:
+    extends: [notebook_scale_test]
+    tests.notebooks.users.batch_size: 10
+    tests.notebooks.users.sleep_factor: 5.0
+
   # run the Jupyter Notebook scale test
   jupyter_notebook_scale_test:
     extends: [notebook_scale_test]
