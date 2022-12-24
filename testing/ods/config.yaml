@@ -187,7 +187,7 @@ tests:
       # how long to wait between user starts, multiplied by the user index
       sleep_factor: 5.0
       # number of users to launch at the same time
-      batch_size: 10
+      batch_size: 1
     test_flavor: ods-ci # can be: ods-ci, locust or notebook-performance
 
     # namespace in which the scale test should run
