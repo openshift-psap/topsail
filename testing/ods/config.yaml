@@ -198,7 +198,7 @@ tests:
       # ODS-CI test case to execute.
       test_case: notebook_dsg_test.robot
       # mode in which the ODS-CI test should be executed
-      # can be: null, simple (default) or batched
+      # can be: null, simple (default) or burst
       test_mode: simple
       image:
         repo: https://github.com/openshift-psap/ods-ci.git

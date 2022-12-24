@@ -459,7 +459,7 @@ prepare() {
     sutest_wait_rhods_launch
 }
 
-run_ods_ci_batched_test() {
+run_ods_ci_burst_test() {
     local extra_notebook_url=$1
     local failed=0
 
@@ -490,8 +490,8 @@ run_ods_ci_batched_test() {
         local TEST_DIRNAME=driver_rhods__notebook_ods_ci_scale_test
         local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
 
-        cat > $last_test_dir/settings.batched_test <<EOF
-test_mode=batched
+        cat > $last_test_dir/settings.burst_test <<EOF
+test_mode=burst
 total_users=$total_user_count
 live_users=$users_launched
 batch_size=$(get_config tests.notebooks.users.batch_size)
@@ -535,8 +535,8 @@ run_ods_ci_test() {
         local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
         cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
         cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
-    elif [[ "$test_mode" == batched ]]; then
-        run_ods_ci_batched_test "$extra_notebook_url" || failed=1
+    elif [[ "$test_mode" == burst ]]; then
+        run_ods_ci_burst_test "$extra_notebook_url" || failed=1
     else
         _error "Unknown ODS-CI test mode: '$test_mode'"
     fi
