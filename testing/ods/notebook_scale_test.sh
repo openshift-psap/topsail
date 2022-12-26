@@ -408,18 +408,6 @@ capture_environment() {
 prepare_ci() {
     cluster_helpers::connect_sutest_cluster
 
-    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
-        # running with a CI-provided cluster
-
-        # double check that we won't request too many nodes
-        local CI_CLUSTER_MAX_USERS=5
-        local user_count=$(get_config tests.notebooks.users.count)
-        if [[ "$user_count" -gt "$CI_CLUSTER_MAX_USERS" ]]; then
-            _warning "Refusing to run in a CI-provided cluster with more that $CI_CLUSTER_MAX_USERS"
-            set_config tests.notebooks.users.count "$CI_CLUSTER_MAX_USERS"
-        fi
-    fi
-
     trap "set +e; sutest_cleanup; driver_cleanup; exit 1" ERR
 }
 
@@ -743,7 +731,16 @@ generate_plots() {
 
 connect_ci() {
     "$TESTING_ODS_DIR/ci_init_configure.sh"
+
+    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
+        local LIGHT_PROFILE="notebooks_light"
+        # running with a CI-provided cluster
+        _info "Running '$JOB_NAME_SAFE' test, applying '$LIGHT_PROFILE' extra preset."
+        set_config PR_POSITIONAL_ARG_EXTRA_1 "$LIGHT_PROFILE"
+    fi
+
     set_presets_from_pr_args
+
     bash "$TESTING_ODS_DIR/configure_set_presets.sh"
     # ^^^ applies the presets
     # vvv overrides the presets, if necessary
@@ -758,18 +755,6 @@ connect_ci() {
 
     else
         _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
-    fi
-
-    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
-        # running with a CI-provided cluster
-
-        # double check that we won't request too many nodes
-        local CI_CLUSTER_MAX_USERS=5
-        local user_count=$(get_config tests.notebooks.users.count)
-        if [[ "$user_count" -gt "$CI_CLUSTER_MAX_USERS" ]]; then
-            _info "Capping the number of users to simulated to $CI_CLUSTER_MAX_USERS in the CI-provided cluster ($user_count were requested)."
-            set_config tests.notebooks.users.count "$CI_CLUSTER_MAX_USERS"
-        fi
     fi
 
     KUBECONFIG_DRIVER="${CONFIG_DEST_DIR}/driver_kubeconfig" # cluster driving the test
