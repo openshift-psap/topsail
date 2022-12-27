@@ -9,10 +9,6 @@ TESTING_ODS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)
 
 source "$TESTING_ODS_DIR/configure.sh"
 
-bash "$TESTING_ODS_DIR/configure_overrides.sh"
-bash "$TESTING_ODS_DIR/configure_set_presets.sh"
-bash "$TESTING_ODS_DIR/configure_overrides.sh"
-
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 
 export MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE=$(get_config matbench.ignore_exit_code)

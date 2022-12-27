@@ -408,18 +408,6 @@ capture_environment() {
 prepare_ci() {
     cluster_helpers::connect_sutest_cluster
 
-    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
-        # running with a CI-provided cluster
-
-        # double check that we won't request too many nodes
-        local CI_CLUSTER_MAX_USERS=5
-        local user_count=$(get_config tests.notebooks.users.count)
-        if [[ "$user_count" -gt "$CI_CLUSTER_MAX_USERS" ]]; then
-            _warning "Refusing to run in a CI-provided cluster with more that $CI_CLUSTER_MAX_USERS"
-            set_config tests.notebooks.users.count "$CI_CLUSTER_MAX_USERS"
-        fi
-    fi
-
     trap "set +e; sutest_cleanup; driver_cleanup; exit 1" ERR
 }
 
@@ -459,7 +447,7 @@ prepare() {
     sutest_wait_rhods_launch
 }
 
-run_ods_ci_batched_test() {
+run_ods_ci_burst_test() {
     local extra_notebook_url=$1
     local failed=0
 
@@ -490,8 +478,8 @@ run_ods_ci_batched_test() {
         local TEST_DIRNAME=driver_rhods__notebook_ods_ci_scale_test
         local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
 
-        cat > $last_test_dir/settings.batched_test <<EOF
-test_mode=batched
+        cat > $last_test_dir/settings.burst_test <<EOF
+test_mode=burst
 total_users=$total_user_count
 live_users=$users_launched
 batch_size=$(get_config tests.notebooks.users.batch_size)
@@ -535,8 +523,8 @@ run_ods_ci_test() {
         local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
         cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
         cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
-    elif [[ "$test_mode" == batched ]]; then
-        run_ods_ci_batched_test "$extra_notebook_url" || failed=1
+    elif [[ "$test_mode" == burst ]]; then
+        run_ods_ci_burst_test "$extra_notebook_url" || failed=1
     else
         _error "Unknown ODS-CI test mode: '$test_mode'"
     fi
@@ -743,7 +731,16 @@ generate_plots() {
 
 connect_ci() {
     "$TESTING_ODS_DIR/ci_init_configure.sh"
+
+    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
+        local LIGHT_PROFILE="notebooks_light"
+        # running with a CI-provided cluster
+        _info "Running '$JOB_NAME_SAFE' test, applying '$LIGHT_PROFILE' extra preset."
+        set_config PR_POSITIONAL_ARG_EXTRA_1 "$LIGHT_PROFILE"
+    fi
+
     set_presets_from_pr_args
+
     bash "$TESTING_ODS_DIR/configure_set_presets.sh"
     # ^^^ applies the presets
     # vvv overrides the presets, if necessary
@@ -758,18 +755,6 @@ connect_ci() {
 
     else
         _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
-    fi
-
-    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
-        # running with a CI-provided cluster
-
-        # double check that we won't request too many nodes
-        local CI_CLUSTER_MAX_USERS=5
-        local user_count=$(get_config tests.notebooks.users.count)
-        if [[ "$user_count" -gt "$CI_CLUSTER_MAX_USERS" ]]; then
-            _info "Capping the number of users to simulated to $CI_CLUSTER_MAX_USERS in the CI-provided cluster ($user_count were requested)."
-            set_config tests.notebooks.users.count "$CI_CLUSTER_MAX_USERS"
-        fi
     fi
 
     KUBECONFIG_DRIVER="${CONFIG_DEST_DIR}/driver_kubeconfig" # cluster driving the test
@@ -881,6 +866,8 @@ main() {
             return  0
             ;;
         "generate_plots_from_pr_args")
+            connect_ci
+
             testing/ods/generate_matrix-benchmarking.sh from_pr_args
             return  0
             ;;
