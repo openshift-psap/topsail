@@ -866,6 +866,8 @@ main() {
             return  0
             ;;
         "generate_plots_from_pr_args")
+            connect_ci
+
             testing/ods/generate_matrix-benchmarking.sh from_pr_args
             return  0
             ;;
