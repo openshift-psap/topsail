@@ -234,7 +234,7 @@ tests:
       test_mode: simple
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: jh-at-scale.v221223
+        ref: jh-at-scale.v230102
       # tags to exclude when running the robot test case
       excluded_tags: None
 
