@@ -520,6 +520,7 @@ run_ods_ci_test() {
         # quick access to these files
         local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
         cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
+
         cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
     elif [[ "$test_mode" == burst ]]; then
         run_ods_ci_burst_test "$extra_notebook_url" || failed=1
@@ -780,6 +781,16 @@ run_test() {
     fi
 }
 
+apply_presets_from_args() {
+    cp  "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$ARTIFACT_DIR" || true
+    export CI_ARTIFACTS_FROM_CONFIG_FILE="$ARTIFACT_DIR/$(basename "$CI_ARTIFACTS_FROM_CONFIG_FILE")"
+
+    while [[ "${1:-}" ]]; do
+        apply_preset "$1"
+        shift
+    done
+}
+
 # ---
 
 main() {
@@ -799,6 +810,7 @@ main() {
     fi
 
     action=${1:-}
+    shift || true
 
     case ${action} in
         "prepare_ci")
@@ -847,6 +859,8 @@ main() {
             return 0
             ;;
         "prepare_driver_cluster")
+            apply_presets_from_args "$@"
+
             prepare_driver_cluster
             process_ctrl::wait_bg_processes
             return 0
@@ -855,17 +869,26 @@ main() {
             local failed=0
             export CI_ARTIFACTS_CAPTURE_PROM_DB=1
 
+            apply_presets_from_args "$@"
+
             run_test || failed=1
-            local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+
+            local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
             generate_plots "$last_test_dir" || failed=1
 
             return $failed
             ;;
         "run_test")
+
+            apply_presets_from_args "$@"
+
             run_test
             return 0
             ;;
         "generate_plots")
+
+            apply_presets_from_args "$@"
+
             generate_plots
             return  0
             ;;

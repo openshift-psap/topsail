@@ -35,8 +35,32 @@ set_config() {
     yq --yaml-roundtrip --in-place --argjson value "$(echo "$value" | yq)" ".$key = \$value" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
 
     if [[ "${ARTIFACT_DIR:-}" ]]; then
-        cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "${ARTIFACT_DIR}"
+        cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "${ARTIFACT_DIR}" || true
     fi
+}
+
+apply_preset() {
+    local name=$1
+
+    local values
+    values=$(get_config "ci_presets.${name}")
+    if [[ "$values" == null ]]; then
+        _error "Cannot apply ci_presets '$name': key does not exist :/"
+    fi
+    for key in $(echo "$values" | jq -r '. | keys[]'); do
+        local value=$(echo $values | jq -r '.["'$key'"]')
+
+        if [[ "$key" == "extends" ]]; then
+            for extend_presets_name in $(echo $value | jq -r '.[]'); do
+                apply_preset "$extend_presets_name"
+            done
+
+            continue
+        fi
+
+        echo "presets[$name] $key --> $value"
+        set_config "$key" "$value"
+    done
 }
 
 set_presets_from_pr_args() {

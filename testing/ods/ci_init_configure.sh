@@ -26,7 +26,7 @@ elif [[ "${SHARED_DIR:-}" ]]; then
 fi
 
 if [[ -e "$CONFIG_DEST_DIR/config.yaml" ]]; then
-    cp "$CONFIG_DEST_DIR/config.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
+    cp "$CONFIG_DEST_DIR/config.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE" || true
     echo "Configuration file reloaded from '$CONFIG_DEST_DIR/config.yaml'"
 fi
 
