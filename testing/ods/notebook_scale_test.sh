@@ -475,8 +475,7 @@ run_ods_ci_burst_test() {
                        sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}" || failed=1
 
 
-        local TEST_DIRNAME=driver_rhods__notebook_ods_ci_scale_test
-        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
 
         cat > $last_test_dir/settings.burst_test <<EOF
 test_mode=burst
@@ -519,8 +518,7 @@ run_ods_ci_test() {
             || failed=1
 
         # quick access to these files
-        local TEST_DIRNAME=driver_rhods__notebook_ods_ci_scale_test
-        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
         cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
         cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
     elif [[ "$test_mode" == burst ]]; then
@@ -552,8 +550,8 @@ run_tests_and_plots() {
         done
 
         run_test && test_failed=0 || test_failed=1
-
-        generate_plots || plot_failed=1
+        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
+        generate_plots "$last_test_dir" || plot_failed=1
         if [[ "$test_failed" == 1 ]]; then
             break
         fi
@@ -620,8 +618,7 @@ run_single_notebook_test() {
                     failed=$((failed + 1)) # run through all the tests, even in case of a failure
                 fi
 
-                local TEST_DIRNAME=sutest_rhods__benchmark_notebook_performance
-                local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+                local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
                 cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
                 cat <<EOF > "$last_test_dir/settings.test" || true
 instance_type=$instance_type
@@ -713,18 +710,23 @@ sutest_cleanup_ldap() {
 }
 
 generate_plots() {
-    local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
-    local PLOT_ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
-    mkdir "$PLOT_ARTIFACT_DIR"
-    if ARTIFACT_DIR="$PLOT_ARTIFACT_DIR" \
+    local test_dir="${1:-$ARTIFACT_DIR}"
+
+    local artifact_next_dir_idx=$(ls "${ARTIFACT_DIR}/" | grep __ | wc -l)
+    local plots_dirname="$(printf '%03d' "$artifact_next_dir_idx")__plots"
+    local plots_artifact_dir="$ARTIFACT_DIR/$plots_dirname"
+
+    mkdir -p "$plots_artifact_dir"
+
+    if ARTIFACT_DIR="$plots_artifact_dir" \
                    ./testing/ods/generate_matrix-benchmarking.sh \
-                   from_dir "$BASE_ARTIFACT_DIR" \
-                       > "$PLOT_ARTIFACT_DIR/build-log.txt" 2>&1;
+                   from_dir "$test_dir" \
+                       > "$plots_artifact_dir/build-log.txt" 2>&1;
     then
         echo "MatrixBenchmarkings plots successfully generated."
     else
         local errcode=$?
-        _warning "MatrixBenchmarkings plots generated failed. See logs in \$ARTIFACT_DIR/plotting/build-log.txt"
+        _warning "MatrixBenchmarkings plots generated failed. See logs in \$ARTIFACT_DIR/$plots_dirname/build-log.txt"
         return $errcode
     fi
 }
@@ -851,9 +853,11 @@ main() {
             ;;
         "run_test_and_plot")
             local failed=0
+            export CI_ARTIFACTS_CAPTURE_PROM_DB=1
 
             run_test || failed=1
-            generate_plots || failed=1
+            local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__"$TEST_DIRNAME"/ | tail -1)
+            generate_plots "$last_test_dir" || failed=1
 
             return $failed
             ;;
