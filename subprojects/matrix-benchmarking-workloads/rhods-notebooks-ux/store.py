@@ -165,16 +165,18 @@ def _parse_local_env(dirname):
     # properly generate the error report links to the image.
     job_name = os.getenv("JOB_NAME_SAFE")
 
-    if not job_name or job_name == "plot-notebooks":
-        # not running in the CI / running independently of the test
+    if job_name == "plot-notebooks":
+        # running independently of the test, the source_url file must be available
         if from_local_env.source_url is None:
-            from_local_env.artifacts_basedir = pathlib.Path("/source_url/not/found")
-            from_local_env.source_url = "file-not-found"
+            raise ValueError(f"The source URL should be available when running from '{job_name}'")
 
-    elif job_name in ("notebooks", "notebooks-light"):
-        # running right after the test
+    elif "ARTIFACT_DIR" in os.environ:
 
-        from_local_env.artifacts_basedir = pathlib.Path("..") / dirname.name
+        # os.path.relpath can return '..', but pathlib.Path().relative_to cannot
+        from_local_env.source_url = pathlib.Path(os.path.relpath(dirname,
+                                                                 pathlib.Path(os.environ["ARTIFACT_DIR"])))
+        from_local_env.artifacts_basedir = from_local_env.source_url
+
     else:
         logging.error(f"Unknown execution environment: JOB_NAME_SAFE={job_name}")
         from_local_env.artifacts_basedir = pathlib.Path("/unknown/environment/") / job_name
