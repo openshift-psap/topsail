@@ -55,7 +55,7 @@
     register: oc_console_url_cmd
 
   - name: Get OCP API URL (SUT cluster)
-    command: oc config view --minify -o jsonpath='{.clusters[0].cluster.server}'
+    command: oc whoami --show-server
     register: oc_api_url_cmd
 
   - name: Get the RHODS version
