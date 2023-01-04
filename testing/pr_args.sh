@@ -46,7 +46,7 @@ last_user_test_comment=$(curl -sSf "$PR_COMMENTS_URL?page=$last_comment_page" \
                              | tail -1 | jq -r)
 
 if [[ -z "$last_user_test_comment" ]]; then
-    echo "WARNING: last comment of author '$pr_author' could not be found ..."
+    echo "WARNING: last comment of author '$pr_author' could not be found (searching for '$test_name') ..."
 fi
 
 pos_args=$(echo "$last_user_test_comment" |
