@@ -1,0 +1,24 @@
+utils build_push_image:
+  namespace: "{{ base_image.namespace }}"
+  image_local_name: "{{ base_image.imagestream }}"
+  tag: "{{ base_image.repo.ref }}"
+  _istag: "{{ base_image.imagestream }}:{{ base_image.repo.ref }}"
+
+  git_repo: "{{ base_image.repo.url }}"
+  git_ref: "{{ base_image.repo.ref }}"
+  dockerfile_path: "{{ base_image.repo.dockerfile_path }}"
+
+local_ci run/ods:
+  namespace: "{{ base_image.namespace }}"
+  istag: "{{ base_image.imagestream }}:{{ base_image.repo.ref }}"
+  service_account: "{{ base_image.user.service_account }}"
+
+  secret_name: "psap-ods-secret"
+  secret_env_key: "{{ secrets['psap-ods-secret'].env_key }}"
+
+  export_command: "run ods notebook_scale_test export_to_s3"
+  export_identifier: SET_AT_RUNTIME
+  export_ts_id:  SET_AT_RUNTIME
+
+  ci_command: SET_AT_RUNTIME
+  pr_number: null # set at runtime
