@@ -1,0 +1,97 @@
+---
+- name: Ensure that the CI image exists
+  command: oc get istag -n "{{ local_ci_run_namespace }}" "{{ local_ci_run_istag }}"
+
+- name: Apply the Pod template
+  template:
+    src: "{{ local_ci_run_pod_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/000_pod.yaml"
+    mode: 0400
+
+- name: Delete any stalled CI execution Pod
+  command: oc delete -f "{{ artifact_extra_logs_dir }}/000_pod.yaml" --ignore-not-found=true
+
+- name: Create the CI Pod
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
+
+- name: Wait for the Pod to start running
+  shell:
+    set -o pipefail;
+    oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
+       --no-headers | awk '{print $3}'
+  register: wait_pod_start
+  retries: 20
+  delay: 5
+  until: wait_pod_start.stdout in ["Running", "Error", "Init:Error", "Completed", "NotReady"]
+
+- name: Capture the Pod logs
+  shell:
+    set -o pipefail;
+    oc logs -n "{{ local_ci_run_namespace }}" "pod/{{ local_ci_run_pod_name }}" -c fetch-git
+       > {{ artifact_extra_logs_dir }}/pod_init.log
+
+- name: Fail if the Init Pod did not complete successfully
+  fail: msg="Init Pod crashed :/"
+  when: wait_pod_start.stdout == "Init:Error"
+
+- name: Wait for the main container to finish running
+  shell:
+    set -o pipefail;
+    oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
+       --no-headers | awk '{print $3}'
+  register: wait_pod_start
+  retries: 30
+  delay: 120
+  until: wait_pod_start.stdout != "Running"
+
+- name: Tell the artifacts exporter that the main container is done
+  command:
+    oc rsh -c artifacts-exporter -n "{{ local_ci_run_namespace }}" "{{ local_ci_run_pod_name }}" touch /tmp/main_container_done
+
+- name: Create a directory for the artifacts
+  file:
+    path: "{{ artifact_extra_logs_dir }}/test-artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Export the test artifacts to the local filesystem
+  command:
+     oc cp -c artifacts-exporter "{{ local_ci_run_namespace }}/{{ local_ci_run_pod_name }}:/logs" "{{ artifact_extra_logs_dir }}/test-artifacts/"
+  retries: 3
+  delay: 0
+  failed_when: false
+
+- name: Tell the artifacts exporter that the local export is done
+  command:
+    oc rsh -c artifacts-exporter -n "{{ local_ci_run_namespace }}" "{{ local_ci_run_pod_name }}" touch /tmp/local_export_done
+  failed_when: false
+
+- name: Wait for the Pod to finish running
+  shell:
+    set -o pipefail;
+    oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
+       --no-headers | awk '{print $3}'
+  register: wait_pod_start
+  retries: 3
+  delay: 10
+  until: wait_pod_start.stdout not in ["Running", "NotReady"]
+
+- name: Capture the main container logs
+  shell:
+    set -o pipefail;
+    oc logs -n "{{ local_ci_run_namespace }}" "pod/{{ local_ci_run_pod_name }}" -c main
+       > {{ artifact_extra_logs_dir }}/pod_main.log
+
+- name: Capture the export container logs
+  shell:
+    set -o pipefail;
+    oc logs -n "{{ local_ci_run_namespace }}" "pod/{{ local_ci_run_pod_name }}" -c artifacts-exporter
+       > {{ artifact_extra_logs_dir }}/pod_exporter.log
+
+- name: Get the status of the Pod
+  command: oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml" -ojsonpath={.status.phase}
+  register: pod_status
+
+- name: Fail if the Pod did not complete successfully
+  fail: msg="The execution of '{{ local_ci_run_ci_command }}' failed :/. See the logs in {{ artifact_extra_logs_dir }}/pod_main.log"
+  when: pod_status.stdout != "Succeeded"

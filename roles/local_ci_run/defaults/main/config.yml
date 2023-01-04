@@ -1,0 +1,44 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: LocalCI.run
+
+# The CI command to run.
+# Mandatory value
+local_ci_run_ci_command:
+
+# The ID of the PR to use for the repository.
+local_ci_run_pr_number: null
+
+# The Github repo to use.
+local_ci_run_repo: https://github.com/openshift-psap/ci-artifacts
+
+# The namespace in which the image.
+local_ci_run_namespace: ci-artifacts
+
+# The imagestream tag to use.
+local_ci_run_istag: ci-artifacts:main
+
+# The name to give to the Pod running the CI command.
+local_ci_run_pod_name: ci-artifacts
+
+# Name of the ServiceAccount to use for running the Pod.
+local_ci_run_service_account: default
+
+# Name of the Secret to mount in the Pod.
+local_ci_run_secret_name: null
+
+# Name of the environment variable with which the secret path will be exposed in the Pod.
+local_ci_run_secret_env_key: null
+
+# Command to run to export the execution artifacts to a external storage.
+local_ci_run_export_command: null
+
+# Identifier of the test being executed (will be a dirname).
+local_ci_run_export_identifier: default
+
+# Timestamp identifier of the test being executed (will be a dirname).
+local_ci_run_export_ts_id: null
+
+# If False, do not run the export command.
+local_ci_run_export: true
+
