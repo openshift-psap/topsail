@@ -6,4 +6,5 @@ ansible==2.9.*
 jinja2==3.0.*
 flake8
 pylint
+awscli
 
