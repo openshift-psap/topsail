@@ -216,6 +216,7 @@
   vars:
     rhods_notebook_namespace: "{{ notebook_namespace }}"
     sut_cluster_kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+    rhods_notebook_ods_ci_scale_test_stop_notebooks_on_exit: true
 
 - name: Capture the sutest cluster artifacts
   include_tasks: artifacts_sutest.yml
