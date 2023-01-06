@@ -4,6 +4,20 @@
   fail: msg="Bailing out. This role requires 'machineset_instance_type' to be defined"
   when: not machineset_instance_type
 
+- name: Ensure that the named machineset has the right instance type
+  when: machineset_name | length > 0
+  command:
+    oc get machineset {{ machineset_name }} -ojsonpath={.spec.template.spec.providerSpec.value.instanceType} --ignore-not-found
+  register: named_machineset_instance_type_cmd
+
+- name: Delete the existing named machineset if the instance type is incorrect
+  when:
+  - machineset_name | length > 0
+  - named_machineset_instance_type_cmd.stdout | length > 0 # empty if the named machineset does not exist
+  - named_machineset_instance_type_cmd.stdout != machineset_instance_type
+  command:
+    oc delete machineset {{ machineset_name }} -n openshift-machine-api
+
 - name: Get current replicas of machinesets with type {{ machineset_instance_type }}
   command:
     oc get machineset -n openshift-machine-api
@@ -12,7 +26,6 @@
     {% else %}
       -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.spec.replicas}{"\n"}{end}'
     {% endif %}
-
   register: machineset_replicas
 
 - name: Calculate sum of replicas of machinesets with type {{ machineset_instance_type }}
