@@ -228,6 +228,11 @@ setup_brew_registry() {
 prepare_ocp_sutest_deploy_rhods() {
     switch_sutest_cluster
 
+    if oc get csv -n redhat-ods-operator -oname | grep rhods-operator --quiet; then
+        _info "RHODS already installed, skipping."
+        return
+    fi
+
     setup_brew_registry
 
     # https://issues.redhat.com/browse/RHODS-5203
