@@ -434,6 +434,13 @@ prepare_notebook_performance_without_rhods() {
 }
 
 prepare() {
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
+    if [[ "$test_flavor" == "gating" ]]; then
+        # cluster preparation is done right before testing (in run_gating_tests_and_plots)
+        _info "Nothing to prepare when test flavor is '$test_flavor'."
+        return
+    fi
+
     prepare_notebook_performance_without_rhods
 
     local test_flavor=$(get_config tests.notebooks.test_flavor)
@@ -538,7 +545,7 @@ run_ods_ci_test() {
     return $failed
 }
 
-run_tests_and_plots() {
+run_simple_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
     local test_flavor=$(get_config tests.notebooks.test_flavor)
@@ -634,6 +641,53 @@ EOF
             done
         done
     done
+
+    return $failed
+}
+
+run_gating_tests_and_plots() {
+    local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
+
+    do_cleanup() {
+        sutest_cleanup_rhods
+    }
+
+    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" /tmp/config.orig.yaml
+    local test_idx=0
+    local failed=0
+    for preset in $(get_config tests.notebooks.gating_tests[])
+    do
+        test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps
+
+        # restore the initial configuration
+        cp /tmp/config.orig.yaml "$CI_ARTIFACTS_FROM_CONFIG_FILE"
+
+        apply_preset "$preset"
+
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)_${preset}"
+
+        if ! prepare; then
+            ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' preparation failed :/"
+            failed=1
+
+            do_cleanup
+
+            continue
+        fi
+
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)_$preset"
+        if ! run_simple_tests_and_plots; then
+            ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' test failed :/"
+            failed=1
+        fi
+
+        do_cleanup
+    done
+
+    export ARTIFACT_DIR="$BASE_ARTIFACT_DIR"
+    if [[ "$failed" == 1 ]]; then
+        _warning "Gating test failed :/"
+    fi
 
     return $failed
 }
@@ -784,8 +838,14 @@ connect_ci() {
     KUBECONFIG_SUTEST="${CONFIG_DEST_DIR}/sutest_kubeconfig" # system under test
 }
 
-test_ci() {
-    run_tests_and_plots
+run_tests_and_plots() {
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
+
+    if [[ "$test_flavor" == "gating" ]]; then
+        run_gating_tests_and_plots
+    else
+        run_simple_tests_and_plots
+    fi
 }
 
 run_test() {
@@ -796,6 +856,9 @@ run_test() {
         run_locust_test || return 1
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
         run_single_notebook_test || return 1
+    elif [[ "$test_flavor" == "gating" ]]; then
+        # 'gating' testing is handled higher in the call stack, before the 'repeat' (in run_gating_tests_and_plots)
+        _error "Test flavor cannot be '$test_flavor' in function run_test."
     else
         _error "Unknown test flavor: $test_flavor"
     fi
@@ -864,7 +927,7 @@ main() {
             process_ctrl__finalizers+=("sutest_cleanup")
             process_ctrl__finalizers+=("driver_cleanup")
 
-            test_ci
+            run_tests_and_plots
             return 0
             ;;
         "prepare")
