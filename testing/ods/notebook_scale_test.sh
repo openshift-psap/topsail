@@ -555,7 +555,9 @@ run_simple_tests_and_plots() {
     local test_runs=$(get_config tests.notebooks.repeat)
 
     for idx in $(seq "$test_runs"); do
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
+        if [[ "$test_runs" != 1 ]]; then
+            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
+        fi
 
         mkdir -p "$ARTIFACT_DIR"
         local pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
