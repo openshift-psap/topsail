@@ -709,8 +709,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     if (dirname / "notebook-artifacts").exists():
         if results.ods_ci is None:
             results.ods_ci = defaultdict(types.SimpleNamespace)
-
-        results.ods_ci[-1] = _parse_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
+        ods_ci = results.ods_ci[-1] = types.SimpleNamespace()
+        ods_ci.notebook_benchmark = _parse_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
 
     results.possible_machines = store_theoretical.get_possible_machines()
 
