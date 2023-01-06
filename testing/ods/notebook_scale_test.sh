@@ -717,6 +717,19 @@ sutest_cleanup_ldap() {
     ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
 }
 
+sutest_cleanup_rhods() {
+    switch_sutest_cluster
+
+    oc delete projects -lopendatahub.io/dashboard=true
+}
+
+suest_reset_rhods() {
+    switch_sutest_cluster
+
+    sutest_cleanup_rhods
+    sutest_wait_rhods_launch
+}
+
 generate_plots() {
     local test_dir="${1:-$ARTIFACT_DIR}"
 
@@ -916,6 +929,10 @@ main() {
 
             testing/ods/generate_matrix-benchmarking.sh from_pr_args
             return  0
+            ;;
+        "reset_rhods")
+            sutest_reset_rhods
+            return 0
             ;;
         "prepare_matbench")
             testing/ods/generate_matrix-benchmarking.sh prepare_matbench
