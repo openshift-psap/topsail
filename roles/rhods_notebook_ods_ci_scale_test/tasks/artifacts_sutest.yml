@@ -15,10 +15,22 @@
          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/odh-dashboard-config.yaml"
     failed_when: false
 
-  - name: Get the RHODS version
+  - name: Get the RHODS CSV name
     shell:
-      oc get csv -oname -n redhat-ods-operator | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
+      oc get csv -oname -n redhat-ods-operator | grep rhods-operator
+    register: rhods_csv_cmd
+
+  - name: Store the RHODS version
+    shell:
+      oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods.version"
+    ignore_errors: yes
+    failed_when: false
+
+  - name: Store the RHODS CSV
+    shell:
+      oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oyaml
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods.csv.yaml"
     ignore_errors: yes
     failed_when: false
 
