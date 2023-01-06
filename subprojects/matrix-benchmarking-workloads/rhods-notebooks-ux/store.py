@@ -671,9 +671,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
 
     print("_parse_pod_times (tester)")
-    results.testpod_times, results.testpod_hostnames = _parse_pod_times(dirname) or {}
+    results.testpod_times, results.testpod_hostnames = _parse_pod_times(dirname) or ({}, {})
     print("_parse_pod_times (notebooks)")
-    results.notebook_pod_times, results.notebook_hostnames = _parse_pod_times(dirname, is_notebook=True) or {}
+    results.notebook_pod_times, results.notebook_hostnames = _parse_pod_times(dirname, is_notebook=True) or ({}, {})
 
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
 
