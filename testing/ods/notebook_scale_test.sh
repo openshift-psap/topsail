@@ -973,6 +973,13 @@ main() {
 
             return $failed
             ;;
+        "run_tests_and_plots")
+
+            apply_presets_from_args "$@"
+
+            run_tests_and_plots
+            return 0
+            ;;
         "run_test")
 
             apply_presets_from_args "$@"
