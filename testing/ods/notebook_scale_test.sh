@@ -58,6 +58,20 @@ switch_cluster() {
 
 # ---
 
+build_and_preload_image() {
+    suffix=$1
+
+    process_ctrl::retry 5 30s \
+                        ./run_toolbox.py from_config utils build_push_image \
+                        --suffix "$suffix"
+    ./run_toolbox.py from_config cluster preload_image \
+                     --suffix "$suffix"
+}
+
+build_and_preload_ods_ci_image() {
+    build_and_preload_image "ods-ci"
+}
+
 prepare_driver_cluster() {
     switch_cluster driver
 
@@ -78,17 +92,7 @@ prepare_driver_cluster() {
            'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$driver_taint_effect'", "key": "'$driver_taint_key'"}]'
     fi
 
-    build_and_preload_image() {
-        suffix=$1
-
-        process_ctrl::retry 5 30s \
-                            ./run_toolbox.py from_config utils build_push_image \
-                                --suffix "$suffix"
-        ./run_toolbox.py from_config cluster preload_image \
-                         --suffix "$suffix"
-    }
-
-    process_ctrl::run_in_bg build_and_preload_image "ods-ci"
+    process_ctrl::run_in_bg build_and_preload_ods_ci_image
     process_ctrl::run_in_bg build_and_preload_image "locust"
     process_ctrl::run_in_bg build_and_preload_image "artifacts-exporter"
 
@@ -918,10 +922,10 @@ main() {
             return 0
             ;;
         "rebuild_ods-ci")
-            local loadtest_namespace=$(get_config tests.notebooks.namespace)
-            oc delete istag -n $loadtest_namespace scale-test:ods-ci --ignore-not-found
-            prepare_driver_cluster
-            process_ctrl::wait_bg_processes
+            local namespace=$(get_config tests.notebooks.namespace)
+            local istag=$(get_command_arg ods_ci_istag rhods notebook_ods_ci_scale_test)
+            oc delete istag "$istag" -n "$namespace" --ignore-not-found
+            build_and_preload_ods_ci_image
             return 0
             ;;
         "export_to_s3")
