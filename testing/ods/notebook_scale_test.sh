@@ -390,15 +390,13 @@ sutest_wait_rhods_launch() {
                          --extra "{image:'$notebook_image',name:'$rhods_notebook_image_name'}"
     fi
 
-    if test_config clusters.sutest.is_metal; then
-        return
+    if ! test_config clusters.sutest.is_metal; then
+        # for the rhods-notebooks project
+        oc annotate namespace/rhods-notebooks --overwrite \
+           "openshift.io/node-selector=$node_selector"
+        oc annotate namespace/rhods-notebooks --overwrite \
+           "scheduler.alpha.kubernetes.io/defaultTolerations=$default_tolerations"
     fi
-
-    # for the rhods-notebooks project
-    oc annotate namespace/rhods-notebooks --overwrite \
-       "openshift.io/node-selector=$node_selector"
-    oc annotate namespace/rhods-notebooks --overwrite \
-       "scheduler.alpha.kubernetes.io/defaultTolerations=$default_tolerations"
 }
 
 capture_environment() {
