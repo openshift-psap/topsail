@@ -8,7 +8,7 @@ from toolbox.benchmarking import Benchmarking
 from toolbox.utils import Utils
 from toolbox.rhods import RHODS
 from toolbox.from_config import FromConfig
-
+from toolbox.local_ci import LocalCI
 
 class Toolbox:
     """
@@ -32,3 +32,4 @@ class Toolbox:
         self.utils = Utils
         self.rhods = RHODS
         self.from_config = FromConfig.run
+        self.local_ci = LocalCI

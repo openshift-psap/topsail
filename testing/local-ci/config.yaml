@@ -1,0 +1,31 @@
+base_image:
+  namespace: ci-artifacts
+  imagestream: ci-artifacts
+  repo:
+    url: https://github.com/openshift-psap/ci-artifacts/
+    ref: main
+    dockerfile_path: build/Dockerfile
+  user:
+    service_account: ci-artifacts
+    role: cluster-admin
+secrets:
+  psap-ods-secret:
+    env_key: PSAP_ODS_SECRET_PATH
+
+workloads:
+  notebook-gating:
+    command_group: ods
+    steps:
+      test:
+        command: ods notebook_scale_test run_tests_and_plots notebook_gating_scale_test
+
+  notebook-scale-test:
+    command_group: ods
+    steps:
+      prepare:
+        command: ods notebook_scale_test reset_rhods
+      test:
+        command: ods notebook_scale_test run_tests_and_plots notebook_gating_scale_test
+      gather:
+        command: recipes test
+        alway_run: true

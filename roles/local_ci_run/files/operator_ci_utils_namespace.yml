@@ -1,0 +1,7 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: gpu-operator-ci-utils
+  labels:
+    app: gpu-operator-ci
+spec: {}

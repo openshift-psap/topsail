@@ -791,6 +791,18 @@ apply_presets_from_args() {
     done
 }
 
+export_to_s3() {
+    local ts_id=${1:-$(date "+%Y%M%d_%H%M")}
+    local run_identifier=${2:-default}
+
+    export AWS_SHARED_CREDENTIALS_FILE="${PSAP_ODS_SECRET_PATH:-}/.awscred"
+    local bucket_name=$(get_config "export_to_s3.bucket_name")
+
+    local dest="s3://$bucket_name/local-ci/$ts_id/$run_identifier"
+    echo "Pushing to '$dest'"
+    aws s3 cp "$ARTIFACT_DIR" "$dest" --recursive --acl public-read
+}
+
 # ---
 
 main() {
@@ -907,6 +919,11 @@ main() {
             oc delete istag -n $loadtest_namespace scale-test:ods-ci --ignore-not-found
             prepare_driver_cluster
             process_ctrl::wait_bg_processes
+            return 0
+            ;;
+        "export_to_s3")
+            export_to_s3 "$@"
+
             return 0
             ;;
         "source")

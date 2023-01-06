@@ -1,0 +1,173 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: ci-artifacts
+    test: {{ local_ci_run_pod_name }}
+  name: {{ local_ci_run_pod_name }}
+  namespace: {{ local_ci_run_namespace }}
+spec:
+  initContainers:
+  - name: fetch-git
+    workingDir: /opt/ci-artifacts/src
+    command:
+    - bash
+    - -cxe
+    args:
+    - |
+      git clone "$GIT_REPO" .
+
+      if [[ "$PULL_NUMBER" ]]; then
+        git fetch origin refs/pull/$PULL_NUMBER/head:pull_$PULL_NUMBER
+        git switch pull_$PULL_NUMBER
+        git show --quiet --oneline main..HEAD
+      else
+        git pull
+      fi
+
+      git submodule update --init
+    env:
+    - name: GIT_REPO
+      value: "{{ local_ci_run_repo }}"
+    - name: PULL_NUMBER
+      value: "{{ local_ci_run_pr_number }}"
+
+    image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
+    imagePullPolicy: Always
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      seccompProfile:
+        type: RuntimeDefault
+    runAsNonRoot: True
+    volumeMounts:
+    - mountPath: /logs
+      name: artifacts
+    - mountPath: /opt/ci-artifacts/src
+      name: ci-artifacts-repo
+  serviceAccount: "{{ local_ci_run_service_account }}"
+  containers:
+  - name: main
+    command:
+    - bash
+    - -cxe
+    args:
+    - "run {{ local_ci_run_ci_command }}"
+    image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
+    imagePullPolicy: Always
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      seccompProfile:
+        type: RuntimeDefault
+    runAsNonRoot: True
+    env:
+    - name: JOB_NAME
+      value: local-ci
+    - name: "RUNNING_LOCALLY"
+      value: "yes"
+    - name: ARTIFACT_DIR
+      value: /logs
+    - name: PULL_BASE_SHA
+      value: main
+    - name: PULL_BASE_REF
+      value: main
+    - name: PULL_PULL_SHA
+      value: HEAD
+    - name: PULL_NUMBER
+      value: "{{ local_ci_run_pr_number }}"
+    - name: REPO_OWNER
+      value: "{{ local_ci_run_repo.split('/')[3] }}"
+    - name: REPO_NAME
+      value: "{{ local_ci_run_repo.split('/')[4] }}"
+    - name: KUBECONFIG # Kubernetes is accessed via the in-Pod credentials
+      value: ""
+{% if local_ci_run_secret_name %}
+    - name: {{ local_ci_run_secret_env_key }}
+      value: /secrets/{{ local_ci_run_secret_name }}
+{% endif %}
+    volumeMounts:
+    - mountPath: /logs
+      name: artifacts
+    - mountPath: /opt/ci-artifacts/src
+      name: ci-artifacts-repo
+{% if local_ci_run_secret_name %}
+    - mountPath: /secrets/{{ local_ci_run_secret_name }}
+      name: {{ local_ci_run_secret_name }}
+{% endif %}
+  - name: artifacts-exporter
+    command:
+    - bash
+    - -cxe
+    args:
+    - |
+      echo 'Waiting for the main container to be done ...'
+      set +x
+      while [[ ! -f /tmp/main_container_done ]]; do
+        sleep 1
+      done
+      set -x
+      echo 'The main container is done ...'
+      echo 'Waiting for the local export to be done ...'
+      set +x
+      while [[ ! -f /tmp/local_export_done ]]; do
+        sleep 1
+      done
+      echo 'The local export is done ...'
+
+{% if local_ci_run_export %}
+      eval $EXPORT_COMMAND
+{% elif not local_ci_run_export %}
+      echo "Export disabled."
+{% endif %}
+      echo 'All done, bye.'
+
+    image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
+    imagePullPolicy: Always
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      seccompProfile:
+        type: RuntimeDefault
+    runAsNonRoot: True
+    env:
+{% if local_ci_run_secret_name %}
+    - name: {{ local_ci_run_secret_env_key }}
+      value: /secrets/{{ local_ci_run_secret_name }}
+{% endif %}
+    - name: EXPORT_IDENTIFIER
+      value: "{{ local_ci_run_export_identifier }}"
+    - name: EXPORT_TS_ID
+      value: "{{ local_ci_run_export_ts_id }}"
+    - name: EXPORT_COMMAND
+      value: '{{ local_ci_run_export_command }} "{{ local_ci_run_export_ts_id }}" "{{ local_ci_run_export_identifier }}"'
+
+    - name: JOB_NAME
+      value: local-ci
+    - name: ARTIFACT_DIR
+      value: /logs
+    - name: KUBECONFIG
+      value: ""
+    volumeMounts:
+    - mountPath: /logs
+      name: artifacts
+    - mountPath: /opt/ci-artifacts/src
+      name: ci-artifacts-repo
+{% if local_ci_run_secret_name %}
+    - mountPath: /secrets/{{ local_ci_run_secret_name }}
+      name: {{ local_ci_run_secret_name }}
+{% endif %}
+  restartPolicy: Never
+  volumes:
+  - name: artifacts
+    emptyDir: {}
+  - name: ci-artifacts-repo
+    emptyDir: {}
+{% if local_ci_run_secret_name %}
+  - name: {{ local_ci_run_secret_name }}
+    secret:
+      secretName: {{ local_ci_run_secret_name }}
+{% endif %}

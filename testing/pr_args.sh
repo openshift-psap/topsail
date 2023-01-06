@@ -20,7 +20,6 @@ fi
 PR_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PULL_NUMBER"
 PR_COMMENTS_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PULL_NUMBER/comments"
 
-author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
 
 JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-${PULL_BASE_REF}
 test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
@@ -28,6 +27,13 @@ test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 pr_json=$(curl -sSf "$PR_URL")
 pr_body=$(jq -r .body <<< "$pr_json")
 pr_comments=$(jq -r .comments <<< "$pr_json")
+
+if [[ "${JOB_SPEC:-}" ]]; then
+    pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
+else
+    pr_author=$(jq -r .user.login <<< "$pr_json")
+fi
+
 COMMENTS_PER_PAGE=30 # default
 last_comment_page=$(($pr_comments / $COMMENTS_PER_PAGE))
 [[ $(($pr_comments % $COMMENTS_PER_PAGE)) != 0 ]] && last_comment_page=$(($last_comment_page + 1))
@@ -35,12 +41,12 @@ last_comment_page=$(($pr_comments / $COMMENTS_PER_PAGE))
 
 
 last_user_test_comment=$(curl -sSf "$PR_COMMENTS_URL?page=$last_comment_page" \
-                             | jq '.[] | select(.user.login == "'$author'") | .body' \
+                             | jq '.[] | select(.user.login == "'$pr_author'") | .body' \
                              | (grep "$test_name" || true) \
                              | tail -1 | jq -r)
 
 if [[ -z "$last_user_test_comment" ]]; then
-    echo "WARNING: last comment of author '$author' could not be found ..."
+    echo "WARNING: last comment of author '$pr_author' could not be found (searching for '$test_name') ..."
 fi
 
 pos_args=$(echo "$last_user_test_comment" |
