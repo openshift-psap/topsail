@@ -58,6 +58,20 @@ switch_cluster() {
 
 # ---
 
+build_and_preload_image() {
+    suffix=$1
+
+    process_ctrl::retry 5 30s \
+                        ./run_toolbox.py from_config utils build_push_image \
+                        --suffix "$suffix"
+    ./run_toolbox.py from_config cluster preload_image \
+                     --suffix "$suffix"
+}
+
+build_and_preload_ods_ci_image() {
+    build_and_preload_image "ods-ci"
+}
+
 prepare_driver_cluster() {
     switch_cluster driver
 
@@ -78,17 +92,7 @@ prepare_driver_cluster() {
            'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$driver_taint_effect'", "key": "'$driver_taint_key'"}]'
     fi
 
-    build_and_preload_image() {
-        suffix=$1
-
-        process_ctrl::retry 5 30s \
-                            ./run_toolbox.py from_config utils build_push_image \
-                                --suffix "$suffix"
-        ./run_toolbox.py from_config cluster preload_image \
-                         --suffix "$suffix"
-    }
-
-    process_ctrl::run_in_bg build_and_preload_image "ods-ci"
+    process_ctrl::run_in_bg build_and_preload_ods_ci_image
     process_ctrl::run_in_bg build_and_preload_image "locust"
     process_ctrl::run_in_bg build_and_preload_image "artifacts-exporter"
 
@@ -227,6 +231,11 @@ setup_brew_registry() {
 
 prepare_ocp_sutest_deploy_rhods() {
     switch_sutest_cluster
+
+    if oc get csv -n redhat-ods-operator -oname | grep rhods-operator --quiet; then
+        _info "RHODS already installed, skipping."
+        return
+    fi
 
     setup_brew_registry
 
@@ -385,15 +394,13 @@ sutest_wait_rhods_launch() {
                          --extra "{image:'$notebook_image',name:'$rhods_notebook_image_name'}"
     fi
 
-    if test_config clusters.sutest.is_metal; then
-        return
+    if ! test_config clusters.sutest.is_metal; then
+        # for the rhods-notebooks project
+        oc annotate namespace/rhods-notebooks --overwrite \
+           "openshift.io/node-selector=$node_selector"
+        oc annotate namespace/rhods-notebooks --overwrite \
+           "scheduler.alpha.kubernetes.io/defaultTolerations=$default_tolerations"
     fi
-
-    # for the rhods-notebooks project
-    oc annotate namespace/rhods-notebooks --overwrite \
-       "openshift.io/node-selector=$node_selector"
-    oc annotate namespace/rhods-notebooks --overwrite \
-       "scheduler.alpha.kubernetes.io/defaultTolerations=$default_tolerations"
 }
 
 capture_environment() {
@@ -427,6 +434,13 @@ prepare_notebook_performance_without_rhods() {
 }
 
 prepare() {
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
+    if [[ "$test_flavor" == "gating" ]]; then
+        # cluster preparation is done right before testing (in run_gating_tests_and_plots)
+        _info "Nothing to prepare when test flavor is '$test_flavor'."
+        return
+    fi
+
     prepare_notebook_performance_without_rhods
 
     local test_flavor=$(get_config tests.notebooks.test_flavor)
@@ -531,7 +545,7 @@ run_ods_ci_test() {
     return $failed
 }
 
-run_tests_and_plots() {
+run_simple_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
     local test_flavor=$(get_config tests.notebooks.test_flavor)
@@ -541,7 +555,9 @@ run_tests_and_plots() {
     local test_runs=$(get_config tests.notebooks.repeat)
 
     for idx in $(seq "$test_runs"); do
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
+        if [[ "$test_runs" != 1 ]]; then
+            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
+        fi
 
         mkdir -p "$ARTIFACT_DIR"
         local pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
@@ -631,6 +647,53 @@ EOF
     return $failed
 }
 
+run_gating_tests_and_plots() {
+    local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
+
+    do_cleanup() {
+        sutest_cleanup_rhods
+    }
+
+    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" /tmp/config.orig.yaml
+    local test_idx=0
+    local failed=0
+    for preset in $(get_config tests.notebooks.gating_tests[])
+    do
+        test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps
+
+        # restore the initial configuration
+        cp /tmp/config.orig.yaml "$CI_ARTIFACTS_FROM_CONFIG_FILE"
+
+        apply_preset "$preset"
+
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)_${preset}"
+
+        if ! prepare; then
+            ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' preparation failed :/"
+            failed=1
+
+            do_cleanup
+
+            continue
+        fi
+
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)_$preset"
+        if ! run_simple_tests_and_plots; then
+            ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' test failed :/"
+            failed=1
+        fi
+
+        do_cleanup
+    done
+
+    export ARTIFACT_DIR="$BASE_ARTIFACT_DIR"
+    if [[ "$failed" == 1 ]]; then
+        _warning "Gating test failed :/"
+    fi
+
+    return $failed
+}
+
 driver_cleanup() {
     switch_driver_cluster
 
@@ -710,6 +773,19 @@ sutest_cleanup_ldap() {
     ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
 }
 
+sutest_cleanup_rhods() {
+    switch_sutest_cluster
+
+    oc delete projects -lopendatahub.io/dashboard=true
+}
+
+suest_reset_rhods() {
+    switch_sutest_cluster
+
+    sutest_cleanup_rhods
+    sutest_wait_rhods_launch
+}
+
 generate_plots() {
     local test_dir="${1:-$ARTIFACT_DIR}"
 
@@ -764,8 +840,14 @@ connect_ci() {
     KUBECONFIG_SUTEST="${CONFIG_DEST_DIR}/sutest_kubeconfig" # system under test
 }
 
-test_ci() {
-    run_tests_and_plots
+run_tests_and_plots() {
+    local test_flavor=$(get_config tests.notebooks.test_flavor)
+
+    if [[ "$test_flavor" == "gating" ]]; then
+        run_gating_tests_and_plots
+    else
+        run_simple_tests_and_plots
+    fi
 }
 
 run_test() {
@@ -776,6 +858,9 @@ run_test() {
         run_locust_test || return 1
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
         run_single_notebook_test || return 1
+    elif [[ "$test_flavor" == "gating" ]]; then
+        # 'gating' testing is handled higher in the call stack, before the 'repeat' (in run_gating_tests_and_plots)
+        _error "Test flavor cannot be '$test_flavor' in function run_test."
     else
         _error "Unknown test flavor: $test_flavor"
     fi
@@ -844,7 +929,7 @@ main() {
             process_ctrl__finalizers+=("sutest_cleanup")
             process_ctrl__finalizers+=("driver_cleanup")
 
-            test_ci
+            run_tests_and_plots
             return 0
             ;;
         "prepare")
@@ -890,6 +975,13 @@ main() {
 
             return $failed
             ;;
+        "run_tests_and_plots")
+
+            apply_presets_from_args "$@"
+
+            run_tests_and_plots
+            return 0
+            ;;
         "run_test")
 
             apply_presets_from_args "$@"
@@ -910,15 +1002,19 @@ main() {
             testing/ods/generate_matrix-benchmarking.sh from_pr_args
             return  0
             ;;
+        "reset_rhods")
+            sutest_reset_rhods
+            return 0
+            ;;
         "prepare_matbench")
             testing/ods/generate_matrix-benchmarking.sh prepare_matbench
             return 0
             ;;
         "rebuild_ods-ci")
-            local loadtest_namespace=$(get_config tests.notebooks.namespace)
-            oc delete istag -n $loadtest_namespace scale-test:ods-ci --ignore-not-found
-            prepare_driver_cluster
-            process_ctrl::wait_bg_processes
+            local namespace=$(get_config tests.notebooks.namespace)
+            local istag=$(get_command_arg ods_ci_istag rhods notebook_ods_ci_scale_test)
+            oc delete istag "$istag" -n "$namespace" --ignore-not-found
+            build_and_preload_ods_ci_image
             return 0
             ;;
         "export_to_s3")

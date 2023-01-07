@@ -671,9 +671,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
 
     print("_parse_pod_times (tester)")
-    results.testpod_times, results.testpod_hostnames = _parse_pod_times(dirname) or {}
+    results.testpod_times, results.testpod_hostnames = _parse_pod_times(dirname) or ({}, {})
     print("_parse_pod_times (notebooks)")
-    results.notebook_pod_times, results.notebook_hostnames = _parse_pod_times(dirname, is_notebook=True) or {}
+    results.notebook_pod_times, results.notebook_hostnames = _parse_pod_times(dirname, is_notebook=True) or ({}, {})
 
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
 
@@ -709,8 +709,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     if (dirname / "notebook-artifacts").exists():
         if results.ods_ci is None:
             results.ods_ci = defaultdict(types.SimpleNamespace)
-
-        results.ods_ci[-1] = _parse_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
+        ods_ci = results.ods_ci[-1] = types.SimpleNamespace()
+        ods_ci.notebook_benchmark = _parse_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
 
     results.possible_machines = store_theoretical.get_possible_machines()
 

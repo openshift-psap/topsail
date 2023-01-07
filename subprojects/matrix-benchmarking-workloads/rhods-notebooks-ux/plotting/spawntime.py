@@ -87,17 +87,21 @@ def add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide):
 
             if step_name in ("Wait for the Notebook Spawn", "Create and Start the Workbench") :
                 notebook_pod_times = entry.results.notebook_pod_times[user_idx]
+
                 if not hasattr(notebook_pod_times, "pod_scheduled"): continue
                 data.append(add_substep_time(entry_data, 1, "K8s Resources initialization",
                                              step_start, notebook_pod_times.pod_scheduled,))
 
+                if not hasattr(notebook_pod_times, "pod_initialized"): continue
                 data.append(add_substep_time(entry_data, 2, "Pod initialization",
                                              notebook_pod_times.pod_scheduled, notebook_pod_times.pod_initialized,))
+
+                if not hasattr(notebook_pod_times, "containers_ready"): continue
                 data.append(add_substep_time(entry_data, 3, "Container initialization",
                                              notebook_pod_times.pod_initialized, notebook_pod_times.containers_ready))
+
                 data.append(add_substep_time(entry_data, 4, "User notification",
                                              notebook_pod_times.containers_ready, step_finish))
-                continue
 
             entry_data["Step Name"] = f"{step_idx} - {step_name}"
             entry_data["Step Duration"] = (step_finish - step_start).total_seconds() \
