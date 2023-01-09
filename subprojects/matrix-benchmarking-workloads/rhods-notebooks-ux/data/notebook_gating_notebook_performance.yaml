@@ -1,0 +1,10 @@
+visualize:
+- id: notebook_perf
+  generate:
+  - "gating report: Notebook Performance"
+  - "report: Notebook Performance"
+  thresholds:
+  - settings_selector:
+      instance_type: m6i.2xlarge
+    thresholds:
+      py_perf_threshold: 8.6
