@@ -84,7 +84,7 @@ def local_ci_prepare():
 
 
 def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None, export=True, step=None,
-                 check_clean_diff=True, check_branch_synced=True):
+                 check_clean_diff=True, check_branch_synced=True, pr_config=None):
     """
     Runs a CI workload.
 
@@ -97,6 +97,7 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
       step: The pipeline step to execute. If empty (default), execute all the steps of the pipeline.
       check_clean_diff: If True, bail out if `git diff` is dirty.
       check_branch_synced: If True, bail out if the git branch isn't synced with its upstream branch.
+      pr_config: Optional path to a PR config file (avoids fetching Github PR json).
     """
     namespace = get_config("base_image.namespace")
 
@@ -173,6 +174,10 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
             export=export,
             pod_name=f"{workload}-{step}",
         )
+
+        if pr_config is not None:
+            extra["pr_config"] = pr_config
+
         try:
             run(f'./run_toolbox.py from_config local_ci run --suffix {command_group} --extra "{extra}"')
         except subprocess.CalledProcessError as e:
