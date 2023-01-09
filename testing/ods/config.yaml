@@ -28,6 +28,11 @@ ci_presets:
   # (DSG and Jupyter scale tests, notebook performance)
   notebook_gating_scale_test:
     tests.notebooks.test_flavor: gating
+    # modify the presets, as they will be applied by the gating test
+    'ci_presets.notebook_scale_test["matbench.config_file"]': notebook_gating_notebook_scale_test.yaml
+    # 'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5 # uncomment this line to test at small scale
+    'ci_presets.notebook_performance["matbench.config_file"]': notebook_gating_notebook_performance.yaml
+    'ci_presets.notebook_performance["tests.notebooks.notebook_performance.tests[0].instance_types"]': [m6i.2xlarge]
 
   icelake_notebook_scale_test:
     extends: [notebook_scale_test, metal]
@@ -64,11 +69,6 @@ ci_presets:
   rhods_notebook_performance:
     extends: [notebook_performance]
     tests.notebooks.notebook_performance.use_rhods: true
-
-  # run the notebook image performance test on RHODS (gating mode)
-  gating_rhods_notebook_performance:
-    extends: [rhods_notebook_performance]
-    tests.notebooks.notebook_performance.tests[0].instance_types: [m6i.2xlarge]
 
   plot.notebook_scale_tests_comparison:
     matbench.preset: notebook_scale_tests_comparison
@@ -298,9 +298,10 @@ tests:
           repeat: 5
     # List of preset configurations to run as part of the 'gating' test
     gating_tests:
-    - notebook_scale_test
-    - jupyter_notebook_scale_test
-    - gating_rhods_notebook_performance
+    - notebook_scale_test_dsg
+    - notebook_scale_test_jupyter
+    - rhods_notebook_performance
+
 matbench:
   preset: null
   workload: rhods-notebooks-ux
