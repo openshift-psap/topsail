@@ -99,7 +99,8 @@ ci_presets:
     clusters.sutest.is_metal: false
 
   icelake:
-    extends: [icelake_notebook_scale_test]
+    extends: [metal]
+    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
 secrets:
   dir:
