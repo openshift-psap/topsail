@@ -654,7 +654,7 @@ run_gating_tests_and_plots() {
         sutest_cleanup_rhods
     }
 
-    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" /tmp/config.orig.yaml
+    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$ARTIFACT_DIR/config.base.yaml"
     local test_idx=0
     local failed=0
     for preset in $(get_config tests.notebooks.gating_tests[])
@@ -662,7 +662,7 @@ run_gating_tests_and_plots() {
         test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps
 
         # restore the initial configuration
-        cp /tmp/config.orig.yaml "$CI_ARTIFACTS_FROM_CONFIG_FILE"
+        cp "$BASE_ARTIFACT_DIR/config.base.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
 
         apply_preset "$preset"
 
