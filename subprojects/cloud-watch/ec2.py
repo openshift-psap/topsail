@@ -21,6 +21,7 @@ IGNORE_NODES = [
     "Lena-jumphost-rhel-8.2",
     "walid-arm64-rhel82-jumphost",
     "walid-arm64-jumphost",
+    "microshifttest",
 ]
 
 IGNORE_CLUSTERS = [
