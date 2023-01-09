@@ -27,19 +27,17 @@ class GatingReport1():
         header = []
         header += [html.H2("Functional Test Results")]
 
-        for entry in common.Matrix.all_records(settings, setting_lists):
-            total_users = entry.results.user_count
-            success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci.exit_code == 0) \
-                if entry.results.ods_ci else 0
+        # User successes
+        header += [html.H2("User successes")]
+        header += report.Plot_and_Text("Step successes",
+                                       report.set_config(dict(all_in_one=True, check_all_thresholds=True), args))
+        header += ["This plot shows the number of users who passed and failed each of the tests."]
+        header += html.Br()
 
-            txt = f"{success_users}/{total_users} successes"
-            if entry.results.from_local_env.source_url:
-                txt = html.A(txt, target="_blank", href=entry.results.from_local_env.source_url)
-            #header += [html.Ul(html.Li([f"RHODS {entry.settings.version}, {entry.settings.launcher} launcher, run #{entry.settings.run}: ", html.Ul(html.Li(txt))]))]
-
-        header += [html.H2("Gating Test Results (lower is better)")]
-
-        header += report.Plot_and_Text("multi: Notebook Spawn Time", report.set_config(dict(check_all_thresholds=True), args))
+        # Notebook Spawn Time
+        header += [html.H2("Notebook Spawn Time")]
+        header += report.Plot_and_Text("multi: Notebook Spawn Time",
+                                       report.set_config(dict(check_all_thresholds=True), args))
         header += ["This plot shows the time it took to spawn a notebook from the user point of view. Lower is better."]
         header += html.Br()
 
@@ -47,7 +45,7 @@ class GatingReport1():
 
 class GatingReport3():
     def __init__(self):
-        self.name = "gating report: Performance"
+        self.name = "gating report: Health Check"
         self.id_name = self.name.lower().replace(" ", "_")
         self.no_graph = True
         self.is_report = True
@@ -56,19 +54,26 @@ class GatingReport3():
 
     def do_plot(self, *args):
         ordered_vars, settings, setting_lists, variables, cfg = args
-
         header = []
 
-        header += [html.H2("Performance results")]
+        # Master nodes health
+        header += [html.H2("Master nodes health")]
+        header += report.Plot_and_Text("Prom: Sutest API Server Requests (server errors)", args)
+        header += ["This plot shows the number of APIServer errors (5xx HTTP codes). Lower is better."]
+        header += html.Br()
 
-        for entry in common.Matrix.all_records(settings, setting_lists):
-            #header += [html.H3(f"RHODS {entry.settings.version}, {entry.settings.launcher} launcher, run #{entry.settings.run}")]
+        header += report.Plot_and_Text("Prom: Sutest Master Node CPU idle",
+                                       report.set_config(dict(check_all_thresholds=True), args))
+        header += ["This plot shows the idle time of the master nodes. Higher is better."]
+        header += html.Br()
 
-            header += report.Plot_and_Text("Execution time distribution",
-                                           report.set_entry(entry,
-                                                            report.set_config(dict(check_all_thresholds=True,
-                                                                                   time_to_reach_step="Go to JupyterLab Page"),
-                                                                              args)))
+        # Dashboard health
+        header += [html.H2("Dashboard health")]
+        header += report.Plot_and_Text("Prom: RHODS Dashboard: CPU usage",
+                                       report.set_config(dict(check_all_thresholds=True), args))
+        header += ["This plot shows the CPU usage of the Dashboard pods. Lower is better."]
+        header += html.Br()
+
         return None, header
 
 class GatingReport2():
