@@ -29,7 +29,7 @@ set_config() {
     value=${2:-}
 
     if [[ -z "$key" || -z "$value" ]]; then
-        error "set_config key value are both mandatory"
+        _error "set_config key value are both mandatory"
     fi
 
     yq --yaml-roundtrip --in-place --argjson value "$(echo "$value" | yq)" ".$key = \$value" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
