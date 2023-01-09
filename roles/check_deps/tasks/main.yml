@@ -35,33 +35,3 @@
           2. that `oc` is available in the PATH
           3. that `jq` is available in the PATH
           4. that `oc` and `KUBECONFIG` are able to access the OpenShift cluster
-
-- name: Get openshift major and minor version
-  shell:
-    set -eo pipefail;
-    echo "{{ ocp_version.stdout }}" | tr '.' '\n' | head -2
-  register: ocp_major_minor_version
-  when: check_deps_needs_cluster
-
-- name: Store openshift major and minor version
-  set_fact:
-    openshift_release_major: "{{ ocp_major_minor_version.stdout[0] }}"
-    openshift_release_minor: "{{ ocp_major_minor_version.stdout[2] }}"
-  when: check_deps_needs_cluster
-
-- name: 'Store openshift_release={{ ocp_version.stdout }}'
-  set_fact:
-    openshift_release: "{{ openshift_release_major }}.{{ openshift_release_minor }}"
-  when: check_deps_needs_cluster
-
-- name: Store openshift major and minor version
-  debug: msg="openshift_release_major='{{ openshift_release_major }}', openshift_release_minor='{{ openshift_release_minor }}'"
-  when: check_deps_needs_cluster
-
-- name: Get the address of the console (debug)
-  command: oc whoami --show-console
-  when: check_deps_needs_cluster
-
-- name: Get the cluster username (debug)
-  command: oc whoami
-  when: check_deps_needs_cluster
