@@ -28,10 +28,6 @@ class GatingReport1():
         header += [html.H2("Functional Test Results")]
 
         for entry in common.Matrix.all_records(settings, setting_lists):
-            if not entry.results.check_thresholds:
-                continue
-            if entry.settings.mode != "scale_test": continue
-
             total_users = entry.results.user_count
             success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci.exit_code == 0) \
                 if entry.results.ods_ci else 0
@@ -39,17 +35,11 @@ class GatingReport1():
             txt = f"{success_users}/{total_users} successes"
             if entry.results.from_local_env.source_url:
                 txt = html.A(txt, target="_blank", href=entry.results.from_local_env.source_url)
-            header += [html.Ul(html.Li([f"RHODS {entry.settings.version}, {entry.settings.launcher} launcher, run #{entry.settings.run}: ", html.Ul(html.Li(txt))]))]
+            #header += [html.Ul(html.Li([f"RHODS {entry.settings.version}, {entry.settings.launcher} launcher, run #{entry.settings.run}: ", html.Ul(html.Li(txt))]))]
 
         header += [html.H2("Gating Test Results (lower is better)")]
 
-        header += [html.H3("DSG launcher")]
-        header += report.Plot_and_Text("multi: Notebook Spawn Time", report.set_filters(dict(launcher="DSG", mode="scale_test"), args))
-        header += ["This plot shows the time it took to spawn a notebook from the user point of view. Lower is better."]
-        header += html.Br()
-
-        header += [html.H3("Jupyter launcher")]
-        header += report.Plot_and_Text("multi: Notebook Spawn Time", report.set_filters(dict(launcher="jupyter", mode="scale_test"), args))
+        header += report.Plot_and_Text("multi: Notebook Spawn Time", report.set_config(dict(check_all_thresholds=True), args))
         header += ["This plot shows the time it took to spawn a notebook from the user point of view. Lower is better."]
         header += html.Br()
 
@@ -72,14 +62,13 @@ class GatingReport3():
         header += [html.H2("Performance results")]
 
         for entry in common.Matrix.all_records(settings, setting_lists):
-            if not entry.results.check_thresholds:
-                continue
-            if entry.settings.mode != "scale_test": continue
-            header += [html.H3(f"RHODS {entry.settings.version}, {entry.settings.launcher} launcher, run #{entry.settings.run}")]
+            #header += [html.H3(f"RHODS {entry.settings.version}, {entry.settings.launcher} launcher, run #{entry.settings.run}")]
 
-            header += report.Plot_and_Text("Execution time distribution", report.set_entry(entry,
-                                                                                           report.set_config(dict(time_to_reach_step="Go to JupyterLab Page"),
-                                                                                                             args)))
+            header += report.Plot_and_Text("Execution time distribution",
+                                           report.set_entry(entry,
+                                                            report.set_config(dict(check_all_thresholds=True,
+                                                                                   time_to_reach_step="Go to JupyterLab Page"),
+                                                                              args)))
         return None, header
 
 class GatingReport2():
