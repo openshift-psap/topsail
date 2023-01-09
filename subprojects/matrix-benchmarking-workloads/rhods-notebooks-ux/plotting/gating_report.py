@@ -98,19 +98,16 @@ class GatingReport2():
         header += [html.H2("Functional Test Results")]
 
         for entry in common.Matrix.all_records(settings, setting_lists):
-            if not entry.results.check_thresholds: continue
-
-            if entry.settings.mode != "notebook_perf": continue
-
             txt = f"results"
             if entry.results.from_local_env.source_url:
                 txt = html.A(txt, target="_blank", href=entry.results.from_local_env.source_url)
-            header += [html.Ul(html.Li([f"RHODS {entry.settings.version}, {entry.settings.machine} machine: ", html.Ul(html.Li(txt))]))]
+            header += [html.Ul(html.Li([f" {entry.settings.instance_type} machine: ", html.Ul(html.Li(txt))]))]
 
         header += [html.H2("Gating Test Results (lower is better)")]
 
         header += [html.H3("Python Performance")]
-        header += report.Plot_and_Text("Notebook Python Performance Comparison", report.set_filters(dict(mode="notebook_perf"), args))
+        header += report.Plot_and_Text("Notebook Python Performance Comparison",
+                                       report.set_config(dict(check_all_thresholds=True), args))
         header += ["This plot shows a Python compute performance indicator comparison. Lower is better."]
         header += html.Br()
 
