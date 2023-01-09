@@ -637,7 +637,7 @@ run_single_notebook_test() {
 
                 local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
                 cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
-                cat <<EOF > "$last_test_dir/settings.test" || true
+                cat <<EOF > "$last_test_dir/settings.instance_type" || true
 instance_type=$instance_type
 EOF
             done
