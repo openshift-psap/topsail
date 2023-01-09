@@ -12,6 +12,11 @@ if [[ -z "$DEST" ]]; then
     exit 1
 fi
 
+if [[ -f "$DEST" ]]; then
+    echo "INFO: '$DEST' already exists, not running $0"
+    exit 0
+fi
+
 if [[ -z "${PULL_NUMBER:-}" ]]; then
     echo "ERROR: no PULL_NUMBER available ..."
     exit 1

@@ -17,7 +17,7 @@ workloads:
     command_group: ods
     steps:
       test:
-        command: ods notebook_scale_test run_tests_and_plots notebook_gating_scale_test
+        command: ods notebook_scale_test run_tests_and_plots icelake notebook_gating_scale_test
 
   notebook-scale-test:
     command_group: ods
