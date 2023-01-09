@@ -453,6 +453,15 @@ prepare() {
         fi
     fi
 
+    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
+        local user_count=$(get_config tests.notebooks.users.count)
+        local light_test_user_count=$(get_config 'ci_presets.notebooks_light["tests.notebooks.users.count"]')
+        if [[ "$user_count" -gt "$light_test_user_count" ]]; then
+            _error "Job '$JOB_NAME_SAFE' shouldn't run with more than $light_test_user_count. Found $user_count."
+            exit 1 # shouldn't be reached, but just to be 100% sure.
+        fi
+    fi
+
     prepare_sutest_cluster
     prepare_driver_cluster
 
