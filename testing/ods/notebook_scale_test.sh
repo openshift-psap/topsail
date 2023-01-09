@@ -657,6 +657,9 @@ run_gating_tests_and_plots() {
     cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$ARTIFACT_DIR/config.base.yaml"
     local test_idx=0
     local failed=0
+
+    do_cleanup
+
     for preset in $(get_config tests.notebooks.gating_tests[])
     do
         test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps
