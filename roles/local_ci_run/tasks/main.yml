@@ -54,18 +54,20 @@
   command:
     oc rsh -c artifacts-exporter -n "{{ local_ci_run_namespace }}" "{{ local_ci_run_pod_name }}" touch /tmp/main_container_done
 
-- name: Create a directory for the artifacts
+- name: Create a directory for the test artifacts
   file:
     path: "{{ artifact_extra_logs_dir }}/test-artifacts/"
     state: directory
     mode: '0755'
+  when: local_ci_run_retrieve_artifacts | bool
 
-- name: Export the test artifacts to the local filesystem
+- name: Retrieve the test artifacts to the local filesystem
   command:
      oc cp -c artifacts-exporter "{{ local_ci_run_namespace }}/{{ local_ci_run_pod_name }}:/logs" "{{ artifact_extra_logs_dir }}/test-artifacts/"
   retries: 3
   delay: 0
   failed_when: false
+  when: local_ci_run_retrieve_artifacts | bool
 
 - name: Tell the artifacts exporter that the local export is done
   command:

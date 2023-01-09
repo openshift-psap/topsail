@@ -22,6 +22,7 @@ class LocalCI:
             export_identifier="default",
             export_ts_id=None,
             export=True,
+            retrieve_artifacts=True,
             pr_config=None,
             ):
         """
@@ -41,7 +42,7 @@ class LocalCI:
             export_ts_id: Timestamp identifier of the test being executed (will be a dirname).
             export_command: Command to run to export the execution artifacts to a external storage.
             export: If False, do not run the export command.
-
+            retrieve_artifacts: If False, do not retrieve locally the test artifacts.
             pr_config: Optional path to a PR config file (avoids fetching Github PR json).
         """
 
