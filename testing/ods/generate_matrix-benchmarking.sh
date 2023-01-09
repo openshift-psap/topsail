@@ -124,6 +124,7 @@ generate_matbench::generate_visualization() {
     fi
 
     export MATBENCH_RHODS_NOTEBOOKS_UX_CONFIG=$(get_config matbench.config_file)
+    export MATBENCH_RHODS_NOTEBOOKS_UX_CONFIG_ID=$(get_matbench_config visualize[$idx].id)
 
     generate_url="stats=$(echo -n "$generate_list" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
