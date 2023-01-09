@@ -566,7 +566,7 @@ run_simple_tests_and_plots() {
             [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
         done
 
-        run_test && test_failed=0 || test_failed=1
+        run_test "$idx" && test_failed=0 || test_failed=1
         local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
         generate_plots "$last_test_dir" || plot_failed=1
         if [[ "$test_failed" == 1 ]]; then
@@ -856,13 +856,19 @@ run_tests_and_plots() {
 }
 
 run_test() {
+    local repeat_idx=${1:-}
+
     local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "ods-ci" ]]; then
         run_ods_ci_test || return 1
+        if [[ "$repeat_idx" ]]; then
+            local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
+            echo "repeat=$repeat_idx" > "$last_test_dir/settings.repeat"
+        fi
     elif [[ "$test_flavor" == "locust" ]]; then
-        run_locust_test || return 1
+        run_locust_test "$repeat_idx" || return 1
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
-        run_single_notebook_test || return 1
+        run_single_notebook_test "$repeat_idx" || return 1
     elif [[ "$test_flavor" == "gating" ]]; then
         # 'gating' testing is handled higher in the call stack, before the 'repeat' (in run_gating_tests_and_plots)
         _error "Test flavor cannot be '$test_flavor' in function run_test."
