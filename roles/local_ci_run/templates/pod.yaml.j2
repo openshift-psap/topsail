@@ -26,12 +26,19 @@ spec:
       fi
 
       git submodule update --init
+
+{% if local_ci_run_pr_config %}
+      cat > "${ARTIFACT_DIR}/variable_overrides" << EOF
+      {{ local_ci_run_pr_config_content_cmd.stdout | indent(6) }}
+      EOF
+{% endif %}
     env:
     - name: GIT_REPO
       value: "{{ local_ci_run_repo }}"
     - name: PULL_NUMBER
       value: "{{ local_ci_run_pr_number }}"
-
+    - name: ARTIFACT_DIR
+      value: /logs
     image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
     imagePullPolicy: Always
     securityContext:
