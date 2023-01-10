@@ -22,3 +22,4 @@ local_ci run/ods:
 
   ci_command: SET_AT_RUNTIME
   pr_number: null # set at runtime
+  pr_config: null # set at runtime if required

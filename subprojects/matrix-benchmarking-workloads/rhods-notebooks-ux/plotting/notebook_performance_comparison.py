@@ -26,6 +26,8 @@ class PythonPerformance():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
+
         threshold_status_keys = set()
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
@@ -33,6 +35,9 @@ class PythonPerformance():
 
             try: check_thresholds = entry.results.check_thresholds
             except AttributeError: check_thresholds = False
+
+            if cfg__check_all_thresholds:
+                check_thresholds = True
 
             if check_thresholds:
                 threshold_status_keys.add(entry_name)
@@ -45,7 +50,7 @@ class PythonPerformance():
                 measures = ods_ci.notebook_benchmark["measures"]
 
                 for measure_idx, measure in enumerate(measures):
-                    data.append(dict(EntryName=entry_name,
+                    data.append(dict(Test=entry_name,
                                      Time=measure,
                                      Threshold=threshold))
 
@@ -55,19 +60,21 @@ class PythonPerformance():
         if not data:
             return None, "No data to plot ..."
 
-        df = pd.DataFrame(data).sort_values(by=["EntryName"])
-        fig = px.box(df, x="EntryName", y="Time", color="EntryName")
+        df = pd.DataFrame(data).sort_values(by=["Test"])
+        fig = px.box(df, x="Test", y="Time", color="Test")
+
+        max_time = max(df["Time"])
 
         if 'Threshold' in df and not df["Threshold"].isnull().all():
             fig.add_scatter(name="Test threshold",
-                            x=df['EntryName'], y=df['Threshold'], mode='lines+markers',
+                            x=df['Test'], y=df['Threshold'], mode='lines+markers',
                             marker=dict(color='red', size=15, symbol="triangle-down"),
                             line=dict(color='black', width=3, dash='dot'))
 
         msg = []
 
         for entry_name in threshold_status_keys:
-            res = df[df["EntryName"] == entry_name]
+            res = df[df["Test"] == entry_name]
             if res.empty:
                 msg.append(html.B(f"{entry_name}: no data ..."))
                 msg.append(html.Br())
@@ -79,14 +86,20 @@ class PythonPerformance():
                 continue
 
             threshold = float(threshold_val)
+            max_time = max([max_time, threshold])
+
             value_90 = res["Time"].quantile(0.90)
             test_passed = value_90 <= threshold
             success_count = 1 if test_passed else 0
-            msg += [html.B(entry_name), ": ", html.B("PASSED" if test_passed else "FAILED"), f" ({success_count}/1 success{'es' if success_count > 1 else ''})"]
+            msg += [html.B(entry_name), ": " if entry_name else "Test ", html.B("PASSED" if test_passed else "FAILED"), f" ({success_count}/1 success{'es' if success_count > 1 else ''})"]
 
             if test_passed:
                 msg.append(html.Ul(html.Li(f"PASS: {value_90:.1f} seconds <= threshold={threshold:.1f} seconds")))
             else:
                 msg.append(html.Ul(html.Li(f"FAIL: {value_90:.1f} seconds > threshold={threshold:.1f} seconds")))
+
+        SET_YAXES_RANGE = False
+        if SET_YAXES_RANGE:
+            fig.update_yaxes(range=[0, max_time * 1.1])
 
         return fig, msg

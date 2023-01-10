@@ -42,3 +42,9 @@ local_ci_run_export_ts_id: null
 # If False, do not run the export command.
 local_ci_run_export: true
 
+# If False, do not retrieve locally the test artifacts.
+local_ci_run_retrieve_artifacts: true
+
+# Optional path to a PR config file (avoids fetching Github PR json).
+local_ci_run_pr_config: null
+

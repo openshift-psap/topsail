@@ -179,7 +179,7 @@ def _parse_local_env(dirname):
 
     else:
         logging.error(f"Unknown execution environment: JOB_NAME_SAFE={job_name}")
-        from_local_env.artifacts_basedir = pathlib.Path("/unknown/environment/") / job_name
+        from_local_env.artifacts_basedir = dirname.absolute()
 
     return from_local_env
 

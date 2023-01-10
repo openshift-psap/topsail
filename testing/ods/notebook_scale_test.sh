@@ -453,6 +453,15 @@ prepare() {
         fi
     fi
 
+    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
+        local user_count=$(get_config tests.notebooks.users.count)
+        local light_test_user_count=$(get_config 'ci_presets.notebooks_light["tests.notebooks.users.count"]')
+        if [[ "$user_count" -gt "$light_test_user_count" ]]; then
+            _error "Job '$JOB_NAME_SAFE' shouldn't run with more than $light_test_user_count. Found $user_count."
+            exit 1 # shouldn't be reached, but just to be 100% sure.
+        fi
+    fi
+
     prepare_sutest_cluster
     prepare_driver_cluster
 
@@ -566,7 +575,7 @@ run_simple_tests_and_plots() {
             [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
         done
 
-        run_test && test_failed=0 || test_failed=1
+        run_test "$idx" && test_failed=0 || test_failed=1
         local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
         generate_plots "$last_test_dir" || plot_failed=1
         if [[ "$test_failed" == 1 ]]; then
@@ -637,7 +646,7 @@ run_single_notebook_test() {
 
                 local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
                 cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
-                cat <<EOF > "$last_test_dir/settings.test" || true
+                cat <<EOF > "$last_test_dir/settings.instance_type" || true
 instance_type=$instance_type
 EOF
             done
@@ -654,19 +663,22 @@ run_gating_tests_and_plots() {
         sutest_cleanup_rhods
     }
 
-    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" /tmp/config.orig.yaml
+    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$ARTIFACT_DIR/config.base.yaml"
     local test_idx=0
     local failed=0
+
+    do_cleanup
+
     for preset in $(get_config tests.notebooks.gating_tests[])
     do
         test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps
 
         # restore the initial configuration
-        cp /tmp/config.orig.yaml "$CI_ARTIFACTS_FROM_CONFIG_FILE"
+        cp "$BASE_ARTIFACT_DIR/config.base.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
 
         apply_preset "$preset"
 
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)_${preset}"
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)_prepare_${preset}"
 
         if ! prepare; then
             ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' preparation failed :/"
@@ -776,7 +788,9 @@ sutest_cleanup_ldap() {
 sutest_cleanup_rhods() {
     switch_sutest_cluster
 
-    oc delete projects -lopendatahub.io/dashboard=true
+    oc delete projects -lopendatahub.io/dashboard=true >/dev/null
+    oc delete notebooks --all -n rhods-notebooks || true
+    oc delete pvc --all -n rhods-notebooks
 }
 
 suest_reset_rhods() {
@@ -851,13 +865,19 @@ run_tests_and_plots() {
 }
 
 run_test() {
+    local repeat_idx=${1:-}
+
     local test_flavor=$(get_config tests.notebooks.test_flavor)
     if [[ "$test_flavor" == "ods-ci" ]]; then
         run_ods_ci_test || return 1
+        if [[ "$repeat_idx" ]]; then
+            local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
+            echo "repeat=$repeat_idx" > "$last_test_dir/settings.repeat"
+        fi
     elif [[ "$test_flavor" == "locust" ]]; then
-        run_locust_test || return 1
+        run_locust_test "$repeat_idx" || return 1
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
-        run_single_notebook_test || return 1
+        run_single_notebook_test "$repeat_idx" || return 1
     elif [[ "$test_flavor" == "gating" ]]; then
         # 'gating' testing is handled higher in the call stack, before the 'repeat' (in run_gating_tests_and_plots)
         _error "Test flavor cannot be '$test_flavor' in function run_test."

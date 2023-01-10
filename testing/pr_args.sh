@@ -12,6 +12,11 @@ if [[ -z "$DEST" ]]; then
     exit 1
 fi
 
+if [[ -f "$DEST" ]]; then
+    echo "INFO: '$DEST' already exists, not running $0"
+    exit 0
+fi
+
 if [[ -z "${PULL_NUMBER:-}" ]]; then
     echo "ERROR: no PULL_NUMBER available ..."
     exit 1
@@ -24,6 +29,7 @@ PR_COMMENTS_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PUL
 JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-${PULL_BASE_REF}
 test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 
+echo "PR URL: $PR_URL"
 pr_json=$(curl -sSf "$PR_URL")
 pr_body=$(jq -r .body <<< "$pr_json")
 pr_comments=$(jq -r .comments <<< "$pr_json")
@@ -39,7 +45,7 @@ last_comment_page=$(($pr_comments / $COMMENTS_PER_PAGE))
 [[ $(($pr_comments % $COMMENTS_PER_PAGE)) != 0 ]] && last_comment_page=$(($last_comment_page + 1))
 
 
-
+echo "PR comments URL: $PR_COMMENTS_URL"
 last_user_test_comment=$(curl -sSf "$PR_COMMENTS_URL?page=$last_comment_page" \
                              | jq '.[] | select(.user.login == "'$pr_author'") | .body' \
                              | (grep "$test_name" || true) \

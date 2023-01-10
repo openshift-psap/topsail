@@ -31,6 +31,7 @@ class LaunchTimeDistribution():
 
         cfg__all_in_one = cfg.get("all_in_one", False)
         cfg__show_only_step = cfg.get("show_only_step", False)
+        cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
 
         if expe_cnt != 1 and not cfg__all_in_one:
             return {}, f"ERROR: only one experiment must be selected (found {expe_cnt}), or pass the all_in_one config flag."
@@ -46,13 +47,21 @@ class LaunchTimeDistribution():
             try: check_thresholds = entry.results.check_thresholds
             except AttributeError: check_thresholds = False
 
+            if cfg__check_all_thresholds:
+                check_thresholds = True
+
             user_counts.add(results.user_count)
 
             if cfg__all_in_one:
                 success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci.exit_code == 0)
 
                 failed_users = results.user_count - success_users
-                threshold = int(entry.results.thresholds.get("test_successes", 0)) or None
+                _threshold = entry.results.thresholds.get("test_successes", 0)
+                if "%" in _threshold:
+                    _threshold_pct = int(_threshold[:-1])
+                    threshold = int(results.user_count * _threshold_pct / 100)
+                else:
+                    threshold = int(_threshold) or None
 
                 data.append(dict(
                     Event=entry_name,

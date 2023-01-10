@@ -29,7 +29,7 @@ set_config() {
     value=${2:-}
 
     if [[ -z "$key" || -z "$value" ]]; then
-        error "set_config key value are both mandatory"
+        _error "set_config key value are both mandatory"
     fi
 
     yq --yaml-roundtrip --in-place --argjson value "$(echo "$value" | yq)" ".$key = \$value" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
@@ -48,7 +48,7 @@ apply_preset() {
         _error "Cannot apply ci_presets '$name': key does not exist :/"
     fi
     for key in $(echo "$values" | jq -r '. | keys[]'); do
-        local value=$(echo $values | jq -r '.["'$key'"]')
+        local value=$(echo $values | jq -r '.['$(echo "$key" | yq)']')
 
         if [[ "$key" == "extends" ]]; then
             for extend_presets_name in $(echo $value | jq -r '.[]'); do

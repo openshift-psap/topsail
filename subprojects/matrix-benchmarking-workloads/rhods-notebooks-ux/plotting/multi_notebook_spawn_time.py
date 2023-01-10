@@ -25,16 +25,21 @@ class MultiNotebookSpawnTime():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
         cfg__time_to_reach_step = cfg.get("time_to_reach_step", "Go to JupyterLab Page")
+
         threshold_status_keys = set()
         entry_names = set()
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
             entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+            entry_names.add(entry_name)
 
             try: check_thresholds = entry.results.check_thresholds
             except AttributeError: check_thresholds = False
-            entry_names.add(entry_name)
+
+            if cfg__check_all_thresholds:
+                check_thresholds = True
 
             if check_thresholds:
                 threshold_status_keys.add(entry_name)
@@ -108,7 +113,7 @@ class MultiNotebookSpawnTime():
             status = [test90_passed, test75_passed]
             test_passed = all(status)
             success_count = len([s for s in status if s])
-            msg += [html.B(entry_name), ": ", html.B("PASSED" if test_passed else "FAILED"), f" ({success_count}/{len(status)} success{'es' if success_count > 1 else ''})"]
+            msg += [html.B(entry_name), ": " if entry_name else "Test ", html.B("PASSED" if test_passed else "FAILED"), f" ({success_count}/{len(status)} success{'es' if success_count > 1 else ''})"]
             if test90_passed:
                 msg.append(html.Ul(html.Li(f"PASS: {value_90:.0f} seconds <= launch_time_90={threshold_90:.0f} seconds")))
             else:
@@ -126,7 +131,7 @@ class MultiNotebookSpawnTime():
                 msg.append(html.Ul(html.Li(html.B(f"{entry_name}: no data ..."))))
                 continue
             value_50 = res["Time"].quantile(0.50)
-            msg.append(html.Ul(html.Li([html.B(f"{entry_name}:"), f" {value_50:.0f} seconds"])))
+            msg.append(html.Ul(html.Li([html.B(f"{entry_name}:") if entry_name else "", f" {value_50:.0f} seconds"])))
 
             if entry_name in threshold_status_keys:
                 for cmp_entry_name in sorted(entry_names):
