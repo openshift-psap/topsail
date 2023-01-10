@@ -509,7 +509,9 @@ EOF
         fi
     done
 
-    oc delete notebooks --all -A || true
+    if ! test_config tests.notebooks.ods_ci.only_create_notebooks; then
+        oc delete notebooks --all -A || true
+    fi
 
     return $failed
 }
