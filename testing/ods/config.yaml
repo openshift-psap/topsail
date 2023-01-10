@@ -46,6 +46,7 @@ ci_presets:
     tests.notebooks.users.batch_size: 10
     tests.notebooks.users.sleep_factor: 0
     tests.notebooks.repeat: 1
+    tests.notebooks.ods_ci.stop_notebooks_on_exit: false
 
   # run the DSG Notebook scale test with user batching
   notebook_scale_test_batch:
@@ -82,6 +83,7 @@ ci_presets:
     tests.notebooks.users.batch_size: 100
     tests.notebooks.users.sleep_factor: 3
     tests.notebooks.repeat: 1
+    tests.notebooks.ods_ci.stop_notebooks_on_exit: true
 
   plot.notebook_scale_tests_comparison:
     matbench.preset: notebook_scale_tests_comparison
@@ -271,6 +273,7 @@ tests:
       excluded_tags: None
       # if true, only create the notebooks but don't start them
       only_create_notebooks: true
+      stop_notebooks_on_exit: true
     test_pods:
       # must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
       size:
