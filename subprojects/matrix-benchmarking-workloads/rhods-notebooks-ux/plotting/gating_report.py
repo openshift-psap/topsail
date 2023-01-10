@@ -58,7 +58,8 @@ class GatingReport3():
 
         # Master nodes health
         header += [html.H2("Master nodes health")]
-        header += report.Plot_and_Text("Prom: Sutest API Server Requests (server errors)", args)
+        header += report.Plot_and_Text("Prom: Sutest API Server Requests (server errors)",
+                                       report.set_config(dict(check_all_thresholds=True), args))
         header += ["This plot shows the number of APIServer errors (5xx HTTP codes). Lower is better."]
         header += html.Br()
 
