@@ -53,8 +53,12 @@ ci_presets:
     tests.notebooks.users.batch_size: 10
     tests.notebooks.users.sleep_factor: 5.0
 
+  notebook_scale_test_dsg:
+    extends: [notebook_scale_test]
+    tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
+
   # run the Jupyter Notebook scale test
-  jupyter_notebook_scale_test:
+  notebook_scale_test_jupyter:
     extends: [notebook_scale_test]
     tests.notebooks.ods_ci.test_case: notebook_jupyter_test.robot
 
