@@ -195,7 +195,7 @@ ldap:
   idp_name: RHODS_CI_LDAP
   users:
     # number of users to create
-    count: 1000
+    count: 2000
     # prefix of the user names of the LDAP provider
     prefix: psapuser
 
