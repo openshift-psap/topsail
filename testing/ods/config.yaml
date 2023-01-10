@@ -74,6 +74,15 @@ ci_presets:
     extends: [notebook_performance]
     tests.notebooks.notebook_performance.use_rhods: true
 
+  notebook_scale_test_burst_create_only:
+    extends: [notebook_scale_test]
+    tests.notebooks.ods_ci.only_create_notebooks: true
+    tests.notebooks.ods_ci.test_mode: burst
+    tests.notebooks.users.count: 700
+    tests.notebooks.users.batch_size: 100
+    tests.notebooks.users.sleep_factor: 3
+    tests.notebooks.repeat: 1
+
   plot.notebook_scale_tests_comparison:
     matbench.preset: notebook_scale_tests_comparison
 
@@ -97,6 +106,8 @@ ci_presets:
   notebooks_light:
     tests.notebooks.users.count: 5
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
+    'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.count"]': 200
+    'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.batch_size"]': 50
 
   metal:
     clusters.sutest.is_metal: true
@@ -258,7 +269,8 @@ tests:
         ref: notebook-scale-test.v230106
       # tags to exclude when running the robot test case
       excluded_tags: None
-
+      # if true, only create the notebooks but don't start them
+      only_create_notebooks: true
     test_pods:
       # must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
       size:
