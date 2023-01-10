@@ -776,7 +776,9 @@ sutest_cleanup_ldap() {
 sutest_cleanup_rhods() {
     switch_sutest_cluster
 
-    oc delete projects -lopendatahub.io/dashboard=true
+    oc delete projects -lopendatahub.io/dashboard=true >/dev/null
+    oc delete notebooks --all -n rhods-notebooks || true
+    oc delete pvc --all -n rhods-notebooks
 }
 
 suest_reset_rhods() {
