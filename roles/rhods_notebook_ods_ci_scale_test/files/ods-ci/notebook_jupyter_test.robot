@@ -56,7 +56,7 @@ Go to RHODS Dashboard
 
 
 Go to Jupyter Page
-  [Tags]  Dashboard
+  [Tags]  Dashboard  Notebook  Spawn
 
   Launch Jupyter From RHODS Dashboard Link
   Wait Until Page Contains  Start a notebook server  timeout=60 seconds
@@ -70,7 +70,9 @@ Go to Jupyter Page
 
 
 Wait for the Notebook Spawn
-  [Tags]  Notebook  Spawn
+  [Tags]  Notebook  Wait
+
+  # nothing to do for %{TEST_ONLY_CREATE_NOTEBOOKS} == True, as this test and the followings are skipped
 
   Trigger Notebook Spawn
 
@@ -79,26 +81,26 @@ Wait for the Notebook Spawn
 
 
 Login to JupyterLab Page
-  [Tags]  Notebook  Spawn
+  [Tags]  Notebook  JupyterLab
 
   Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
 
 
 Go to JupyterLab Page
-  [Tags]  Notebook  Spawn
+  [Tags]  Notebook  JupyterLab
 
   Wait Until Page Contains Element  xpath:${JL_TABBAR_CONTENT_XPATH}  timeout=3 minutes
   Capture Page Screenshot
 
 
 Load the Notebook
-  [Tags]  Notebook  Run
+  [Tags]  Notebook  JupyterLab
 
   Load the Notebook
 
 
 Run the Notebook
-  [Tags]  Notebook  Run
+  [Tags]  Notebook  JupyterLab
 
   Run the Notebook
 

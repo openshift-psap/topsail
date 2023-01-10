@@ -72,6 +72,9 @@ spec:
           value: "{{ rhods_notebook_ods_ci_scale_test_notebook_benchmark_repeat }}"
         - name: NOTEBOOK_BENCHMARK_NUMBER
           value: "{{ rhods_notebook_ods_ci_scale_test_notebook_benchmark_number }}"
+
+        - name: TEST_ONLY_CREATE_NOTEBOOKS
+          value: "{{ rhods_notebook_ods_ci_scale_test_only_create_notebooks }}"
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir

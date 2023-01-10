@@ -80,6 +80,7 @@ class RHODS:
                                    toleration_key="",
                                    capture_prom_db: bool = True,
                                    stop_notebooks_on_exit: bool = True,
+                                   only_create_notebooks: bool = False,
                                    ):
 
         """
@@ -117,6 +118,7 @@ class RHODS:
           toleration_key: Toleration key to use for the test Pods.
           capture_prom_db: If True, captures the Prometheus DB of the systems.
           stop_notebooks_on_exit: If False, keep the user notebooks running at the end of the test.
+          only_create_notebooks: If True, only create the notebooks, but don't start them. This will overwrite the value of 'ods_ci_exclude_tags'.
         """
 
         ARTIFACTS_COLLECTED_VALUES = ("all", "none", "no-screenshot", "no-screenshot-except-zero", "no-screenshot-except-failed", "no-screenshot-except-failed-and-zero")

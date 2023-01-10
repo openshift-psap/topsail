@@ -28,6 +28,8 @@ ${NOTEBOOK_BENCHMARK_NAME}     %{NOTEBOOK_BENCHMARK_NAME}
 ${NOTEBOOK_BENCHMARK_NUMBER}   %{NOTEBOOK_BENCHMARK_NUMBER}
 ${NOTEBOOK_BENCHMARK_REPEAT}   %{NOTEBOOK_BENCHMARK_REPEAT}
 
+${TEST_ONLY_CREATE_NOTEBOOKS}   %{TEST_ONLY_CREATE_NOTEBOOKS}
+
 ${NOTEBOOK_SPAWN_WAIT_TIME}    20 minutes
 
 ${NOTEBOOK_URL}                %{NOTEBOOK_URL}
@@ -78,15 +80,28 @@ Go to the Project page
 
 
 Create and Start the Workbench
-  [Tags]  Notebook Spawn
+  [Tags]  Notebook  Spawn
 
-  Capture Page Screenshot
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
-  IF  '${workbench_exists}' != 'PASS'
+  IF  '${workbench_exists}' == 'FAIL'
     Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  ${NONE}
+
+    IF  '${TEST_ONLY_CREATE_NOTEBOOKS}' == 'True'
+      Wait Until Workbench Is Starting  ${WORKBENCH_NAME}  timeout=30 seconds
+      Stop Starting Workbench  ${WORKBENCH_NAME}
+      Capture Page Screenshot
+      Log     message=Stopped after creating the workbench    level=WARN
+      Skip  # skip is the only way I found to return without failing the test
+    END
+
     Wait Until Workbench Is Started  ${WORKBENCH_NAME}  timeout=${NOTEBOOK_SPAWN_WAIT_TIME}
   ELSE
     Workbench Status Should Be  ${WORKBENCH_NAME}  ${WORKBENCH_STATUS_STOPPED}
+    Capture Page Screenshot
+    IF  '${TEST_ONLY_CREATE_NOTEBOOKS}' == 'True'
+      Log     message=Stopped after checking that the workbench existed    level=WARN
+      Skip  # skip is the only way to return without failing the test
+    END
     Start Workbench  ${WORKBENCH_NAME}  ${NOTEBOOK_SPAWN_WAIT_TIME}
   END
 
@@ -134,26 +149,26 @@ Create and Start the Workbench
   END
 
 Login to JupyterLab Page
-  [Tags]  Notebook  Spawn
+  [Tags]  Notebook  JupyterLab  Login
 
   Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}  ${PROJECT_NAME}
 
 
 Go to JupyterLab Page
-  [Tags]  Notebook  Spawn
+  [Tags]  Notebook  JupyterLab
 
   Wait Until Page Contains Element  xpath:${JL_TABBAR_CONTENT_XPATH}  timeout=3 minutes
   Capture Page Screenshot
 
 
 Load the Notebook
-  [Tags]  Notebook  Run
+  [Tags]  Notebook  JupyterLab
 
    Load the Notebook
 
 
 Run the Notebook
-  [Tags]  Notebook  Run
+  [Tags]  Notebook  JupyterLab
 
   Run the Notebook
 
@@ -170,3 +185,24 @@ Just Launch Workbench
 Wait Until Page Contains No Spinner
     [Arguments]     ${timeout}=30 seconds
     Wait Until Page Does Not Contain Element   //*[contains(@class, 'pf-c-spinner')]  timeout=${timeout}
+
+Wait Until Workbench Is Starting
+    [Documentation]    Waits until workbench status is "Starting..." in the DS Project details page
+    [Arguments]     ${workbench_title}      ${timeout}=30s    ${status}=${WORKBENCH_STATUS_STARTING}
+
+    Wait Until Page Contains Element
+    ...        ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]/td[@data-label="Status"]//p[text()="${status}"]    timeout=${timeout}
+
+Stop Starting Workbench
+    [Documentation]    Stops a starting workbench from DS Project details page
+    [Arguments]     ${workbench_title}    ${press_cancel}=${FALSE}
+    ${is_stopped}=      Run Keyword And Return Status   Workbench Status Should Be
+    ...    workbench_title=${workbench_title}   status=${WORKBENCH_STATUS_STOPPED}
+    IF    ${is_stopped} == ${False}
+        Click Element       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]/td[@data-label="Status"]//span[@class="pf-c-switch__toggle"]
+        Wait Until Generic Modal Appears
+        Page Should Contain    Are you sure you want to stop the workbench? Any changes without saving will be erased.
+        Click Button    ${WORKBENCH_STOP_BTN_XP}
+    ELSE
+        Fail   msg=Cannot stop workbench ${workbench_title} because it is always stopped..
+    END

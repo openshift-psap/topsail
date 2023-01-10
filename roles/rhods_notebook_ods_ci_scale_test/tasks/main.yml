@@ -19,6 +19,10 @@
   set_fact:
     tester_namespace: "{{ rhods_notebook_ods_ci_scale_test_namespace }}"
 
+- name: Update the Exclude tags if necessary
+  set_fact:
+    rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags: "{% if rhods_notebook_ods_ci_scale_test_only_create_notebooks|bool %}JupyterLabORWait{% else %}{{ rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags }}{% endif %}"
+
 - name: Define the test environments
   set_fact:
     rhods_ods_ci_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_ods_ci_scale_test_ods_ci_istag }}
