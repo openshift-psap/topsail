@@ -41,6 +41,10 @@ cluster_helpers::get_compute_node_count() {
         fi
 
         local user_count=$(get_config tests.notebooks.users.count)
+
+        if test_config tests.notebooks.ods_ci.only_create_notebooks; then
+            user_count=1
+        fi
     else
         local test_flavor=$(get_config tests.notebooks.test_flavor)
         if [[ "$test_flavor" == "locust" ]]; then
@@ -49,6 +53,11 @@ cluster_helpers::get_compute_node_count() {
         else
             local notebook_size="$(get_config tests.notebooks.test_pods.size.cpu) $(get_config tests.notebooks.test_pods.size.mem_gi)"
             local user_count=$(get_config tests.notebooks.users.count)
+
+            local test_mode=$(get_config tests.notebooks.ods_ci.test_mode)
+            if [[ "$test_mode" == burst || "$test_mode" == batch ]]; then
+                user_count=$(get_config tests.notebooks.users.batch_size)
+            fi
         fi
 
         local instance_type="$(get_config clusters.create.ocp.compute.type)"
@@ -64,7 +73,7 @@ cluster_helpers::get_compute_node_count() {
     if [[ "$size" == 0 ]]; then
         _error "couldn't determine the number of nodes to request ..." >&2
     fi
-
+    _info "Need $size $instance_type nodes for running $user_count users with cpu/mem=($notebook_size) ($cluster_role cluster)" > /dev/null # cannot print anything on stdout here
     echo "$size"
 }
 
