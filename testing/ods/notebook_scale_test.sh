@@ -477,18 +477,17 @@ run_ods_ci_burst_test() {
     # number of users to launch in one test
     local batch_size=$(get_config tests.notebooks.users.batch_size)
     # total number of users to launch
-    local total_user_count=$(get_config tests.notebooks.users.count)
-    local users_launched=0
+    local user_target_count=$(get_config tests.notebooks.users.count)
+    local users_already_in=0
 
-    while [[ $users_launched -lt $total_user_count ]]; do
-        users_launched=$((users_launched + batch_size))
+    while [[ $users_already_in -lt $user_target_count ]]; do
 
         # take care of the overflow
-        if [[ $users_launched -gt $total_user_count ]]; then
-            batch_size=$((users_launched - total_user_count))
+        if [[ $((users_already_in + batch_size)) -gt $user_target_count ]]; then
+            batch_size=$((user_target_count - users_already_in)) # original value lost, but that's the last iteration
         fi
-        local users_already_in=$((users_launched - batch_size))
-        echo "$(date) Launching $batch_size users. $users_already_in already in the system."
+
+        echo "$(date) Launching $batch_size users. $users_already_in/$user_target_count already in the system."
         ./run_toolbox.py from_config rhods notebook_ods_ci_scale_test \
              --extra "{$extra_notebook_url
                        user_index_offset: $users_already_in,
@@ -500,13 +499,14 @@ run_ods_ci_burst_test() {
 
         cat > $last_test_dir/settings.burst_test <<EOF
 test_mode=burst
-total_users=$total_user_count
-live_users=$users_launched
+user_target_count=$user_target_count
+users_already_in=$users_already_in
 batch_size=$(get_config tests.notebooks.users.batch_size)
 EOF
         if [[ "$failed" == 1 ]]; then
             break
         fi
+        users_already_in=$((users_already_in + batch_size))
     done
 
     if ! test_config tests.notebooks.ods_ci.only_create_notebooks; then
