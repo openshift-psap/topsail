@@ -4,6 +4,11 @@
   register: prometheus_pod_name_cmd
   failed_when: not prometheus_pod_name_cmd.stdout
 
+- name: Empty Prometheus database
+  command: oc rsh -n {{ cluster_prometheus_db_namespace }} {{ item }} rm -rf "{{ cluster_prometheus_db_directory }}/*"
+  when: 'cluster_prometheus_db_namespace == "openshift-monitoring"'
+  loop: "{{ prometheus_pod_name_cmd.stdout_lines }}"
+
 - name: Delete Prometheus Pod (openshift-monitoring only)
   command: oc delete {{ prometheus_pod_name_cmd.stdout }} -n {{ cluster_prometheus_db_namespace }}
   when: 'cluster_prometheus_db_namespace == "openshift-monitoring"'
@@ -26,6 +31,5 @@
       resources:
         requests:
           storage: 5Gi
-      storageClassName: gp2
     EOF
   when: 'cluster_prometheus_db_namespace == "redhat-ods-monitoring"'
