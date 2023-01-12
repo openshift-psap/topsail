@@ -96,7 +96,8 @@ queue ${ARTIFACT_DIR}/subscriptions.json $OC get subscriptions --all-namespaces 
 queue ${ARTIFACT_DIR}/oc_cmds/subscriptions $OC get subscriptions --all-namespaces
 queue ${ARTIFACT_DIR}/clusterserviceversions.json $OC get clusterserviceversions --all-namespaces -o json
 queue ${ARTIFACT_DIR}/oc_cmds/clusterserviceversions $OC get clusterserviceversions --all-namespaces
-
+queue ${ARTIFACT_DIR}/packagemanifests.json $OC get packagemanifests --all-namespaces -o json
+queue ${ARTIFACT_DIR}/oc_cmds/packagemanifests $OC get packagemanifests --all-namespaces
 
 # gather nodes first in parallel since they may contain the most relevant debugging info
 while IFS= read -r i; do
