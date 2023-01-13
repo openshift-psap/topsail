@@ -57,14 +57,3 @@
       cluster_prometheus_db_mode: dump
       cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_ocp
     when: capture_prom_db | bool
-
-  - name: Get the RHODS Prometheus database
-    include_role:
-      name: cluster_prometheus_db
-    vars:
-      cluster_prometheus_db_mode: dump
-      cluster_prometheus_db_label: deployment=prometheus
-      cluster_prometheus_db_namespace: redhat-ods-monitoring
-      cluster_prometheus_db_directory: /prometheus/data
-      cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_rhods
-    when: capture_prom_db | bool
