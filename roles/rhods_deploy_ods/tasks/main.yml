@@ -1,4 +1,13 @@
 ---
+- name: Create RHODS namespaces
+  shell:
+    set -o pipefail;
+    oc create ns {{ item }} --dry-run=client -oyaml | oc apply -f-
+  loop:
+  - "{{ rhods_namespace }}"
+  - redhat-ods-applications
+  - redhat-ods-monitoring
+
 - name: Create the src directory
   file:
     path: "{{ artifact_extra_logs_dir }}/src"
@@ -16,15 +25,6 @@
 
 - name: Create RHODS catalog
   command: oc create -f "{{ artifact_extra_logs_dir }}/src/000_rhods_catalog.yml"
-
-- name: Create RHODS namespaces
-  shell:
-    set -o pipefail;
-    oc create ns {{ item }} --dry-run=client -oyaml | oc apply -f-
-  loop:
-  - redhat-ods-operator
-  - redhat-ods-applications
-  - redhat-ods-monitoring
 
 - name: Create dummy secrets
   shell: |
@@ -53,7 +53,7 @@
 - name: Test if the RHODS operator is installed
   command:
      oc get subscription.operators.coreos.com -A -oname
-       -loperators.coreos.com/rhods-operator.openshift-operators
+       -loperators.coreos.com/{{ rhods_manifest_name }}.openshift-operators
   failed_when: false
   register: has_rhods_operator_cmd
 
@@ -62,8 +62,9 @@
   include_role:
     name: cluster_deploy_operator
   vars:
-    cluster_deploy_operator_catalog: addon-managed-odh-catalog
-    cluster_deploy_operator_manifest_name: rhods-operator
-    cluster_deploy_operator_namespace: redhat-ods-operator
-    cluster_deploy_operator_channel: beta
+    cluster_deploy_operator_catalog: "{{ rhods_catalog_name }}"
+    cluster_deploy_operator_manifest_name: "{{ rhods_manifest_name }}"
+    cluster_deploy_operator_namespace: "{{ rhods_namespace }}"
+    cluster_deploy_operator_channel: "{{ rhods_channel_name }}"
     cluster_deploy_operator_all_namespaces: "True"
+    cluster_deploy_operator_catalog_namespace: "{{ rhods_namespace }}"
