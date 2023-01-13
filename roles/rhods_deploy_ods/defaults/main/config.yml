@@ -10,3 +10,9 @@ rhods_deploy_ods_catalog_image:
 # Mandatory value
 rhods_deploy_ods_tag:
 
+# The channel to use for the deployment. Let empty to use the default channel.
+rhods_deploy_ods_channel:
+
+# The version to deploy. Let empty to install the last version available.
+rhods_deploy_ods_version:
+

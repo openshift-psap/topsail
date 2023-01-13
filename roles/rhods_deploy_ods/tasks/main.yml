@@ -65,6 +65,7 @@
     cluster_deploy_operator_catalog: "{{ rhods_catalog_name }}"
     cluster_deploy_operator_manifest_name: "{{ rhods_manifest_name }}"
     cluster_deploy_operator_namespace: "{{ rhods_namespace }}"
-    cluster_deploy_operator_channel: "{{ rhods_channel_name }}"
     cluster_deploy_operator_all_namespaces: "True"
     cluster_deploy_operator_catalog_namespace: "{{ rhods_namespace }}"
+    cluster_deploy_operator_channel: "{{ rhods_deploy_ods_channel }}"
+    cluster_deploy_operator_version: "{{ rhods_deploy_ods_version }}"

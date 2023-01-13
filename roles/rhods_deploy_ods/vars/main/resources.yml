@@ -5,4 +5,3 @@ rhods_catalog_name: rhods-catalog
 rhods_catalog_display_name: Red Hat Openshift Data Science
 rhods_catalog_publish: Red Hat RHODS team
 rhods_manifest_name: rhods-operator
-rhods_channel_name: beta
