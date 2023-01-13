@@ -75,6 +75,7 @@ class Cluster:
     def deploy_operator(self, catalog, manifest_name, namespace,
                         version='', channel='',
                         installplan_approval="Manual",
+                        catalog_namespace="openshift-marketplace",
                         deploy_cr: bool = False,
                         namespace_monitoring: bool = False,
                         all_namespaces: bool = False):
@@ -91,6 +92,7 @@ class Cluster:
             deploy_cr: If set, deploy the first example CR found in the CSV.
             namespace_monitoring: If set, enable OpenShift namespace monitoring.
             all_namespaces: If set, deploy the CSV in all the namespaces.
+            catalog_namespace: Namespace in which the CatalogSource will be deployed
         """
 
         if namespace == "all":
