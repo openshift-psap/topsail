@@ -169,7 +169,7 @@
   rescue:
   - name: Store the CSV version from the parameter
     set_fact:
-      operator_csv_name: "{{ cluster_deploy_operator_manifest_name }}.v{{ cluster_deploy_operator_version }}"
+      operator_csv_name: "{{ cluster_deploy_operator_manifest_name }}.{{ cluster_deploy_operator_version }}"
 
 - name: Store the CSV version
   set_fact:
