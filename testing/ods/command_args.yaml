@@ -22,6 +22,8 @@ cluster deploy_ldap:
 rhods deploy_ods:
   catalog_image: {{ rhods.catalog.image }}
   tag: {{ rhods.catalog.tag }}
+  channel: {{ rhods.catalog.channel }}
+  version: {{ rhods.catalog.version }}
 
 sutest/cluster set_scale:
   instance_type: {{ clusters.create.ocp.compute.type }}
