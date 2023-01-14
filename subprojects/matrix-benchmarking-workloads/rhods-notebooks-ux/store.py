@@ -168,7 +168,9 @@ def _parse_local_env(dirname):
     if job_name == "plot-notebooks":
         # running independently of the test, the source_url file must be available
         if from_local_env.source_url is None:
-            raise ValueError(f"The source URL should be available when running from '{job_name}'")
+            logging.warning(f"The source URL should be available when running from '{job_name}'")
+            from_local_env.source_url = "/missing/source/url"
+            from_local_env.artifacts_basedir = dirname
 
     elif "ARTIFACT_DIR" in os.environ:
 
