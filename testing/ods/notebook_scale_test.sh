@@ -831,7 +831,7 @@ generate_plots() {
         echo "MatrixBenchmarkings plots successfully generated."
     else
         local errcode=$?
-        _warning "MatrixBenchmarkings plots generated failed. See logs in \$ARTIFACT_DIR/$plots_dirname/build-log.txt"
+        _warning "MatrixBenchmarkings plots generated failed. See logs in $ARTIFACT_DIR/$plots_dirname/build-log.txt"
         return $errcode
     fi
 }
