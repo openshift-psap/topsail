@@ -1,12 +1,12 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: addon-managed-odh-catalog
-  namespace: openshift-marketplace
+  name: {{ rhods_catalog_name }}
+  namespace: {{ rhods_namespace }}
 spec:
-  displayName: Managed Open Data Hub Operator
+  displayName: {{ rhods_catalog_display_name }}
   image: {{ rhods_deploy_ods_catalog_image }}:{{ rhods_deploy_ods_tag }}
-  publisher: OSD Red Hat Addons
+  publisher: {{ rhods_catalog_publish }}
   sourceType: grpc
   secrets:
   - modh-idh-cluster-image-puller-pull-secret

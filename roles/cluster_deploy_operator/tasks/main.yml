@@ -33,6 +33,8 @@
     cluster_deploy_operator_deploy_cr: {{ cluster_deploy_operator_deploy_cr }}
     # Optional boolean flag to enable OpenShift namespace monitoring.
     cluster_deploy_operator_namespace_monitoring: {{ cluster_deploy_operator_namespace_monitoring }}
+    # cluster_deploy_operator_catalog_namespace
+    cluster_deploy_operator_catalog_namespace: {{ cluster_deploy_operator_catalog_namespace }}
     EOF
 
 - name: Ensure the operator package is available
@@ -40,19 +42,19 @@
   - name: Ensure that the CatalogSource exists
     command:
       oc get CatalogSource/{{ cluster_deploy_operator_catalog }}
-         -n openshift-marketplace
+         -n {{ cluster_deploy_operator_catalog_namespace }}
 
   - name: Capture the state of the CatalogSource (debug)
     shell:
       oc get -oyaml CatalogSource/{{ cluster_deploy_operator_catalog }}
-         -n openshift-marketplace
+         -n {{ cluster_deploy_operator_catalog_namespace }}
          -oyaml
       > {{ artifact_extra_logs_dir }}/catalogsource.yml
     failed_when: false
 
   - name: Ensure that the operator package manifest exists
     command:
-      oc get packagemanifests/{{ cluster_deploy_operator_manifest_name }} -n openshift-marketplace
+      oc get packagemanifests/{{ cluster_deploy_operator_manifest_name }} -n {{ cluster_deploy_operator_catalog_namespace }}
     register: operator_package_available
     until: operator_package_available.rc == 0
     retries: 15
@@ -61,14 +63,14 @@
   - name: Save the operator PackageManifest YAML (debug)
     shell:
       oc get packagemanifests/{{ cluster_deploy_operator_manifest_name }}
-         -n openshift-marketplace
+         -n {{ cluster_deploy_operator_catalog_namespace }}
          -oyaml
          > {{ artifact_extra_logs_dir }}/operator_packagemanifest.yml
 
   - name: Store the operator PackageManifest JSON
     shell:
       oc get packagemanifests/{{ cluster_deploy_operator_manifest_name }}
-         -n openshift-marketplace
+         -n {{ cluster_deploy_operator_catalog_namespace }}
          -ojson
          > {{ artifact_extra_logs_dir }}/operator_packagemanifest.json
 
@@ -167,7 +169,7 @@
   rescue:
   - name: Store the CSV version from the parameter
     set_fact:
-      operator_csv_name: "{{ cluster_deploy_operator_manifest_name }}.v{{ cluster_deploy_operator_version }}"
+      operator_csv_name: "{{ cluster_deploy_operator_manifest_name }}.{{ cluster_deploy_operator_version }}"
 
 - name: Store the CSV version
   set_fact:

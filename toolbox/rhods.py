@@ -10,13 +10,15 @@ class RHODS:
 
     @AnsibleRole("rhods_deploy_ods")
     @AnsibleMappedParams
-    def deploy_ods(self, catalog_image, tag):
+    def deploy_ods(self, catalog_image, tag, channel="", version=""):
         """
         Deploy ODS operator from its custom catalog
 
         Args:
           catalog_image: Container image containing the RHODS bundle.
           tag: Catalog image tag to use to deploy RHODS.
+          channel: The channel to use for the deployment. Let empty to use the default channel.
+          version: The version to deploy. Let empty to install the last version available.
         """
 
         return RunAnsibleRole(locals())

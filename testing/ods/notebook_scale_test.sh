@@ -572,7 +572,7 @@ run_simple_tests_and_plots() {
         local pr_file="$BASE_ARTIFACT_DIR"/pull_request.json
         local pr_comment_file="$BASE_ARTIFACT_DIR"/pull_request-comments.json
         for f in "$pr_file" "$pr_comment_file"; do
-            [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR"
+            [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR" || true
         done
 
         run_test "$idx" && test_failed=0 || test_failed=1

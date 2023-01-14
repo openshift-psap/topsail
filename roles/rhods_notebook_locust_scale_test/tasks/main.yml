@@ -127,15 +127,6 @@
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   block:
-  - name: Cleanup the RHODS Prometheus database of the sutest cluster
-    include_role:
-      name: cluster_prometheus_db
-    vars:
-      cluster_prometheus_db_mode: reset
-      cluster_prometheus_db_label: deployment=prometheus
-      cluster_prometheus_db_namespace: redhat-ods-monitoring
-    when: capture_prom_db | bool
-
   - name: Cleanup the Prometheus database of the sutest cluster
     include_role:
       name: cluster_prometheus_db
