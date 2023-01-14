@@ -8,6 +8,7 @@ set -x
 TESTING_ODS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
 
 source "$TESTING_ODS_DIR/configure.sh"
+source "$TESTING_ODS_DIR/../_logging.sh"
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 
