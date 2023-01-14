@@ -477,22 +477,19 @@ run_ods_ci_burst_test() {
     # number of users to launch in one test
     local batch_size=$(get_config tests.notebooks.users.batch_size)
     # total number of users to launch
-    local total_user_count=$(get_config tests.notebooks.users.count)
-    local users_launched=0
+    local user_target_count=$(get_config tests.notebooks.users.count)
+    local users_already_in=0
 
-    while [[ $users_launched -lt $total_user_count ]]; do
-        users_launched=$((users_launched + batch_size))
+    while [[ $users_already_in -lt $user_target_count ]]; do
 
         # take care of the overflow
-        if [[ $users_launched -gt $total_user_count ]]; then
-            batch_size=$((users_launched - total_user_count))
+        if [[ $((users_already_in + batch_size)) -gt $user_target_count ]]; then
+            batch_size=$((user_target_count - users_already_in)) # original value lost, but that's the last iteration
         fi
-        local users_already_in=$((users_launched - batch_size))
-        echo "$(date) Launching $batch_size users. $users_already_in already in the system."
+
+        echo "$(date) Launching $batch_size users. $users_already_in/$user_target_count already in the system."
         ./run_toolbox.py from_config rhods notebook_ods_ci_scale_test \
              --extra "{$extra_notebook_url
-                       stop_notebooks_on_exit: False,
-                       user_sleep_factor: 0,
                        user_index_offset: $users_already_in,
                        user_count: '$batch_size',
                        sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}" || failed=1
@@ -502,16 +499,21 @@ run_ods_ci_burst_test() {
 
         cat > $last_test_dir/settings.burst_test <<EOF
 test_mode=burst
-total_users=$total_user_count
-live_users=$users_launched
+user_target_count=$user_target_count
+users_already_in=$users_already_in
 batch_size=$(get_config tests.notebooks.users.batch_size)
 EOF
         if [[ "$failed" == 1 ]]; then
             break
         fi
+        users_already_in=$((users_already_in + batch_size))
     done
 
-    oc delete notebooks --all -A || true
+    if ! test_config tests.notebooks.ods_ci.only_create_notebooks; then
+        oc delete notebooks --all -A || true
+    fi
+
+    set_config matbench.test_directory "$ARTIFACT_DIR"
 
     return $failed
 }
@@ -545,6 +547,8 @@ run_ods_ci_test() {
         cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
 
         cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
+        set_config matbench.test_directory "$last_test_dir"
+
     elif [[ "$test_mode" == burst ]]; then
         run_ods_ci_burst_test "$extra_notebook_url" || failed=1
     else
@@ -576,8 +580,9 @@ run_simple_tests_and_plots() {
         done
 
         run_test "$idx" && test_failed=0 || test_failed=1
-        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
-        generate_plots "$last_test_dir" || plot_failed=1
+
+        generate_plots || plot_failed=1
+
         if [[ "$test_failed" == 1 ]]; then
             break
         fi
@@ -594,6 +599,9 @@ run_simple_tests_and_plots() {
 run_locust_test() {
     switch_driver_cluster
     ./run_toolbox.py from_config rhods notebook_locust_scale_test
+
+    local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
+    set_config matbench.test_directory "$last_test_dir"
 }
 
 run_single_notebook_test() {
@@ -652,6 +660,8 @@ EOF
             done
         done
     done
+
+    set_config matbench.test_directory "$ARTIFACT_DIR"
 
     return $failed
 }
@@ -801,11 +811,15 @@ suest_reset_rhods() {
 }
 
 generate_plots() {
-    local test_dir="${1:-$ARTIFACT_DIR}"
-
     local artifact_next_dir_idx=$(ls "${ARTIFACT_DIR}/" | grep __ | wc -l)
     local plots_dirname="$(printf '%03d' "$artifact_next_dir_idx")__plots"
     local plots_artifact_dir="$ARTIFACT_DIR/$plots_dirname"
+
+    local test_dir=$(get_config matbench.test_directory)
+
+    if [[ "$test_dir" == null ]]; then
+        _error "generate_plots: matbench.test_directory should be set."
+    fi
 
     mkdir -p "$plots_artifact_dir"
 
@@ -817,7 +831,7 @@ generate_plots() {
         echo "MatrixBenchmarkings plots successfully generated."
     else
         local errcode=$?
-        _warning "MatrixBenchmarkings plots generated failed. See logs in \$ARTIFACT_DIR/$plots_dirname/build-log.txt"
+        _warning "MatrixBenchmarkings plots generated failed. See logs in $ARTIFACT_DIR/$plots_dirname/build-log.txt"
         return $errcode
     fi
 }
@@ -990,8 +1004,7 @@ main() {
 
             run_test || failed=1
 
-            local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
-            generate_plots "$last_test_dir" || failed=1
+            generate_plots || failed=1
 
             return $failed
             ;;
@@ -1017,6 +1030,7 @@ main() {
             return  0
             ;;
         "generate_plots_from_pr_args")
+            export IGNORE_PSAP_ODS_SECRET_PATH=1
             connect_ci
 
             testing/ods/generate_matrix-benchmarking.sh from_pr_args

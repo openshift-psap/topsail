@@ -46,6 +46,7 @@ ci_presets:
     tests.notebooks.users.batch_size: 10
     tests.notebooks.users.sleep_factor: 0
     tests.notebooks.repeat: 1
+    tests.notebooks.ods_ci.stop_notebooks_on_exit: false
 
   # run the DSG Notebook scale test with user batching
   notebook_scale_test_batch:
@@ -74,6 +75,16 @@ ci_presets:
     extends: [notebook_performance]
     tests.notebooks.notebook_performance.use_rhods: true
 
+  notebook_scale_test_burst_create_only:
+    extends: [notebook_scale_test]
+    tests.notebooks.ods_ci.only_create_notebooks: true
+    tests.notebooks.ods_ci.test_mode: burst
+    tests.notebooks.users.count: 700
+    tests.notebooks.users.batch_size: 100
+    tests.notebooks.users.sleep_factor: 3
+    tests.notebooks.repeat: 1
+    tests.notebooks.ods_ci.stop_notebooks_on_exit: true
+
   plot.notebook_scale_tests_comparison:
     matbench.preset: notebook_scale_tests_comparison
 
@@ -97,6 +108,8 @@ ci_presets:
   notebooks_light:
     tests.notebooks.users.count: 5
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
+    'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.count"]': 200
+    'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.batch_size"]': 50
 
   metal:
     clusters.sutest.is_metal: true
@@ -182,7 +195,7 @@ ldap:
   idp_name: RHODS_CI_LDAP
   users:
     # number of users to create
-    count: 1000
+    count: 2000
     # prefix of the user names of the LDAP provider
     prefix: psapuser
 
@@ -255,10 +268,12 @@ tests:
       test_mode: simple
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: notebook-scale-test.v230106
+        ref: notebook-scale-test.v230110
       # tags to exclude when running the robot test case
       excluded_tags: None
-
+      # if true, only create the notebooks but don't start them
+      only_create_notebooks: true
+      stop_notebooks_on_exit: true
     test_pods:
       # must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
       size:
@@ -321,5 +336,7 @@ matbench:
     # if true, copy the results downloaded by `matbench download` into the artifacts directory
     save_to_artifacts: false
   ignore_exit_code: true
+  # directory to plot. Set by notebook_scale_test.sh before launching the visualization
+  test_directory: null
 export_to_s3:
   bucket_name: rhods-baremetal-results

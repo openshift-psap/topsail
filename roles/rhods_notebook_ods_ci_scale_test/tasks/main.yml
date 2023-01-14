@@ -19,6 +19,10 @@
   set_fact:
     tester_namespace: "{{ rhods_notebook_ods_ci_scale_test_namespace }}"
 
+- name: Update the Exclude tags if necessary
+  set_fact:
+    rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags: "{% if rhods_notebook_ods_ci_scale_test_only_create_notebooks|bool %}JupyterLabORWait{% else %}{{ rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags }}{% endif %}"
+
 - name: Define the test environments
   set_fact:
     rhods_ods_ci_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ rhods_notebook_ods_ci_scale_test_ods_ci_istag }}
@@ -255,7 +259,7 @@
 - name: Test if the Notebook Pods did not crash (reboot)
   shell:
     set -o pipefail;
-    oc get pods -n redhat-ods-applications -ojsonpath='{.items[*].status.containerStatuses[*].restartCount}'
+    oc get pods -lopendatahub.io/dashboard=true -A -ojsonpath='{range .items[*]}{range .status.containerStatuses[*]}{.restartCount}{"\n"}{end}{end}'
        | tr ' ' '\n'
        | python -c "import sys; print(sum(int(l) for l in sys.stdin))"
   register: check_pod_restart_count_cmd
