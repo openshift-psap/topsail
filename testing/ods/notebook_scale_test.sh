@@ -513,6 +513,8 @@ EOF
         oc delete notebooks --all -A || true
     fi
 
+    set_config matbench.test_directory "$ARTIFACT_DIR"
+
     return $failed
 }
 
@@ -545,6 +547,8 @@ run_ods_ci_test() {
         cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
 
         cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
+        set_config matbench.test_directory "$last_test_dir"
+
     elif [[ "$test_mode" == burst ]]; then
         run_ods_ci_burst_test "$extra_notebook_url" || failed=1
     else
@@ -576,8 +580,9 @@ run_simple_tests_and_plots() {
         done
 
         run_test "$idx" && test_failed=0 || test_failed=1
-        local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
-        generate_plots "$last_test_dir" || plot_failed=1
+
+        generate_plots || plot_failed=1
+
         if [[ "$test_failed" == 1 ]]; then
             break
         fi
@@ -594,6 +599,9 @@ run_simple_tests_and_plots() {
 run_locust_test() {
     switch_driver_cluster
     ./run_toolbox.py from_config rhods notebook_locust_scale_test
+
+    local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
+    set_config matbench.test_directory "$last_test_dir"
 }
 
 run_single_notebook_test() {
@@ -652,6 +660,8 @@ EOF
             done
         done
     done
+
+    set_config matbench.test_directory "$ARTIFACT_DIR"
 
     return $failed
 }
@@ -801,11 +811,15 @@ suest_reset_rhods() {
 }
 
 generate_plots() {
-    local test_dir="${1:-$ARTIFACT_DIR}"
-
     local artifact_next_dir_idx=$(ls "${ARTIFACT_DIR}/" | grep __ | wc -l)
     local plots_dirname="$(printf '%03d' "$artifact_next_dir_idx")__plots"
     local plots_artifact_dir="$ARTIFACT_DIR/$plots_dirname"
+
+    local test_dir=$(get_config matbench.test_directory)
+
+    if [[ "$test_dir" == null ]]; then
+        _error "generate_plots: matbench.test_directory should be set."
+    fi
 
     mkdir -p "$plots_artifact_dir"
 
@@ -990,8 +1004,7 @@ main() {
 
             run_test || failed=1
 
-            local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
-            generate_plots "$last_test_dir" || failed=1
+            generate_plots || failed=1
 
             return $failed
             ;;
