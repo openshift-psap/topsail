@@ -113,6 +113,9 @@ def _rewrite_settings(settings_dict):
     if "repeat" not in settings_dict:
         settings_dict["repeat"] = "1"
 
+    if "live_users" in settings_dict:
+        settings_dict["live_users"] = int(settings_dict["live_users"])
+
     if "launcher" in settings_dict:
         del settings_dict["test_case"]
 
