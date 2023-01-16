@@ -31,9 +31,13 @@ class MultiNotebookSpawnTime():
         threshold_status_keys = set()
         entry_names = set()
         data = []
+
         for entry in common.Matrix.all_records(settings, setting_lists):
             entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
             entry_names.add(entry_name)
+
+            sort_index = entry.settings.__dict__[ordered_vars[0]] if len(variables) == 1 \
+                else entry_name
 
             try: check_thresholds = entry.results.check_thresholds
             except AttributeError: check_thresholds = False
@@ -63,6 +67,7 @@ class MultiNotebookSpawnTime():
                 thr75 = int(entry.results.thresholds.get("launch_time_75", 0)) or None
 
                 data.append(dict(Version=entry_name,
+                                 SortIndex=sort_index,
                                  LaunchTime90Threshold=thr90,
                                  LaunchTime75Threshold=thr75,
                                  Time=accumulated_timelength))
@@ -70,7 +75,7 @@ class MultiNotebookSpawnTime():
         if not data:
             return None, "No data found :/"
 
-        df = pd.DataFrame(data).sort_values(by=["Version"])
+        df = pd.DataFrame(data).sort_values(by=["SortIndex"])
 
         fig = px.box(df, x="Version", y="Time", color="Version")
         has_thresholds = False
