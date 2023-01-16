@@ -882,12 +882,12 @@ run_test() {
     local repeat_idx=${1:-}
 
     local test_flavor=$(get_config tests.notebooks.test_flavor)
+    if [[ "$repeat_idx" ]]; then
+        mkdir -p "$ARTIFACT_DIR"
+        echo "repeat=$repeat_idx" > "$ARTIFACT_DIR/settings.repeat"
+    fi
     if [[ "$test_flavor" == "ods-ci" ]]; then
         run_ods_ci_test || return 1
-        if [[ "$repeat_idx" ]]; then
-            local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
-            echo "repeat=$repeat_idx" > "$last_test_dir/settings.repeat"
-        fi
     elif [[ "$test_flavor" == "locust" ]]; then
         run_locust_test "$repeat_idx" || return 1
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
