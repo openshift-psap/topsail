@@ -41,12 +41,12 @@ ci_presets:
 
   notebook_scale_test_burst:
     extends: [notebook_scale_test]
+    tests.notebooks.users.count: 2000
     tests.notebooks.ods_ci.test_mode: burst
-    # burst users 10 by 10, with 0s delay
-    tests.notebooks.users.batch_size: 10
-    tests.notebooks.users.sleep_factor: 0
-    tests.notebooks.repeat: 1
+    tests.notebooks.users.batch_size: 100
+    tests.notebooks.users.sleep_factor: 3
     tests.notebooks.ods_ci.stop_notebooks_on_exit: false
+    tests.notebooks.repeat: 1
 
   # run the DSG Notebook scale test with user batching
   notebook_scale_test_batch:
