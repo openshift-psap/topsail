@@ -21,7 +21,7 @@ class NFDOperator:
             channel: The operator hub channel to deploy. e.g. 4.7
         """
 
-        return RunAnsibleRole(opts)
+        return RunAnsibleRole(locals())
 
     @AnsibleRole("nfd_operator_undeploy_from_operatorhub")
     @AnsibleMappedParams
