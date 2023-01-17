@@ -56,18 +56,19 @@ class LaunchTimeDistribution():
                 success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci.exit_code == 0)
 
                 failed_users = results.user_count - success_users
-                _threshold = entry.results.thresholds.get("test_successes", 0)
-                if "%" in _threshold:
-                    _threshold_pct = int(_threshold[:-1])
-                    threshold = int(results.user_count * _threshold_pct / 100)
-                else:
-                    threshold = int(_threshold) or None
+                if check_thresholds:
+                    _threshold = entry.results.thresholds.get("test_successes", 0)
+                    if "%" in _threshold:
+                        _threshold_pct = int(_threshold[:-1])
+                        threshold = int(results.user_count * _threshold_pct / 100)
+                    else:
+                        threshold = int(_threshold) or None
 
                 data.append(dict(
                     Event=entry_name,
                     Count=success_users,
                     Status="PASS",
-                    Threshold=threshold,
+                    Threshold=threshold if check_thresholds else None,
                 ))
 
                 if check_thresholds:
@@ -78,7 +79,7 @@ class LaunchTimeDistribution():
                         Event=entry_name,
                         Count=failed_users,
                         Status="FAIL",
-                        Threshold=threshold,
+                        Threshold=threshold if check_thresholds else None,
                 ))
                 continue
 
