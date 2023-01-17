@@ -8,10 +8,10 @@ class NFDOperator:
 
     @AnsibleRole("cluster_deploy_operator")
     @AnsibleSkipConfigGeneration # see cluster.deploy_operator
-    @AnsibleConstant("", "cluster_deploy_operator_catalog", "redhat-operators")
-    @AnsibleConstant("", "cluster_deploy_operator_manifest_name", "nfd")
-    @AnsibleConstant("", "cluster_deploy_operator_namespace", "openshift-nfd")
-    @AnsibleConstant("", "cluster_deploy_operator_deploy_cr", True)
+    @AnsibleConstant("", "catalog", "redhat-operators")
+    @AnsibleConstant("", "manifest_name", "nfd")
+    @AnsibleConstant("", "namespace", "openshift-nfd")
+    @AnsibleConstant("", "deploy_cr", True)
     @AnsibleMappedParams
     def deploy_from_operatorhub(self, channel=''):
         """
