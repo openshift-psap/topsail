@@ -272,7 +272,7 @@ tests:
       # tags to exclude when running the robot test case
       excluded_tags: None
       # if true, only create the notebooks but don't start them
-      only_create_notebooks: true
+      only_create_notebooks: false
       stop_notebooks_on_exit: true
     test_pods:
       # must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
