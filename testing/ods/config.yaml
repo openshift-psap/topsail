@@ -36,7 +36,7 @@ ci_presets:
 
   icelake_notebook_scale_test:
     extends: [notebook_scale_test, metal]
-    tests.notebooks.users.count: 190
+    tests.notebooks.users.count: 1500
     tests.notebooks.repeat: 1
 
   notebook_scale_test_burst:
