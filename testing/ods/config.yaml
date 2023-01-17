@@ -79,7 +79,7 @@ ci_presets:
     extends: [notebook_scale_test]
     tests.notebooks.ods_ci.only_create_notebooks: true
     tests.notebooks.ods_ci.test_mode: burst
-    tests.notebooks.users.count: 700
+    tests.notebooks.users.count: 500
     tests.notebooks.users.batch_size: 100
     tests.notebooks.users.sleep_factor: 3
     tests.notebooks.repeat: 1
@@ -272,7 +272,7 @@ tests:
       # tags to exclude when running the robot test case
       excluded_tags: None
       # if true, only create the notebooks but don't start them
-      only_create_notebooks: true
+      only_create_notebooks: false
       stop_notebooks_on_exit: true
     test_pods:
       # must be consistent with roles/rhods_notebook_scale_test/templates/ods-ci_job.yaml
