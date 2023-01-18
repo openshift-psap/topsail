@@ -123,8 +123,9 @@ spec:
         sleep 1
       done
       echo 'The local export is done ...'
-
+      set -x
 {% if local_ci_run_export %}
+      echo "Running the export command '$EXPORT_COMMAND'"
       eval $EXPORT_COMMAND
 {% elif not local_ci_run_export %}
       echo "Export disabled."
