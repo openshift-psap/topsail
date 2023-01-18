@@ -891,7 +891,7 @@ connect_ci() {
         local LIGHT_PROFILE="notebooks_light"
         # running with a CI-provided cluster
         _info "Running '$JOB_NAME_SAFE' test, applying '$LIGHT_PROFILE' extra preset."
-        set_config PR_POSITIONAL_ARG_EXTRA_1 "$LIGHT_PROFILE"
+        set_config PR_POSITIONAL_ARG_EXTRA_LIGHT "$LIGHT_PROFILE"
     fi
 
     set_presets_from_pr_args
