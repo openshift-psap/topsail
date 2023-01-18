@@ -994,6 +994,10 @@ main() {
     shift || true
 
     case ${action} in
+        "connect_ci")
+            connect_ci
+            return 0
+            ;;
         "prepare_ci")
             connect_ci
 
