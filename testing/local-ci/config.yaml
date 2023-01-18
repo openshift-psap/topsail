@@ -31,7 +31,7 @@ workloads:
       prepare:
         command: ods notebook_scale_test reset_rhods
       test:
-        command: ods notebook_scale_test run_tests_and_plots notebook_gating_scale_test
+        command: ods notebook_scale_test run_tests_and_plots icelake_notebook_scale_test
       gather:
-        command: recipes test
+        command: gather-extra
         alway_run: true
