@@ -47,7 +47,7 @@
        --no-headers | awk '{print $3}'
   register: wait_pod_start
   retries: 30
-  delay: 120
+  delay: 920
   until: wait_pod_start.stdout != "Running"
 
 - name: Tell the artifacts exporter that the main container is done
