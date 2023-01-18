@@ -128,9 +128,9 @@ postchecks() {
     elif [[ "$reason" == EXIT ]]; then
         echo ""
         if [ ! -e "$ARTIFACT_DIR/FAILURES" ]; then
-            echo "Test of '$@' succeeded."
+            echo "$(date) Test of '$@' succeeded." | tee "$ARTIFACT_DIR/FINISHED"
         else
-            echo "Test of '$@' failed."
+            echo "$(date) Test of '$@' failed." | tee "$ARTIFACT_DIR/FINISHED"
         fi
     fi
 }
@@ -169,6 +169,8 @@ if [[ "${INSIDE_RUN:-}" != "y" ]]; then
 fi
 
 #############
+
+echo "$(date) Test of '$@' started." | tee "$ARTIFACT_DIR/STARTED"
 
 if [[ -z "${1:-}" ]]; then
     echo
