@@ -136,9 +136,10 @@ spec:
       set -x
       echo 'The main container is done ...'
 
+      declare failed=0
 {% if local_ci_run_export %}
       echo "Running the export command '$EXPORT_COMMAND'"
-      eval $EXPORT_COMMAND
+      eval $EXPORT_COMMAND || failed=1
 {% elif not local_ci_run_export %}
       echo "Export disabled."
 {% endif %}
@@ -150,6 +151,8 @@ spec:
       done
       echo 'The local export is done ...'
       echo 'All done, bye.'
+
+      exit $failed
 
     image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
     imagePullPolicy: Always
