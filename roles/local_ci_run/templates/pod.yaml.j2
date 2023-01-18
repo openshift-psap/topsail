@@ -58,9 +58,20 @@ spec:
   - name: main
     command:
     - bash
-    - -cxe
+    - -c
     args:
-    - "run {{ local_ci_run_ci_command }}"
+    - |
+      set -o errexit
+      set -o pipefail
+      set -o nounset
+      set -o errtrace
+      set -x
+
+{% if local_ci_run_init_command %}
+      echo "Running the init command ..."
+      {{ local_ci_run_init_command }} &> "${ARTIFACT_DIR}/init.log"
+{% endif %}
+      run {{ local_ci_run_ci_command }} |& tee "${ARTIFACT_DIR}/run.log"
     image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
     imagePullPolicy: Always
     securityContext:
@@ -95,6 +106,8 @@ spec:
     - name: {{ local_ci_run_secret_env_key }}
       value: /secrets/{{ local_ci_run_secret_name }}
 {% endif %}
+    - name: SHARED_DIR # shouldn't be used
+      value: /tmp/shared
     volumeMounts:
     - mountPath: /logs
       name: artifacts
@@ -107,29 +120,39 @@ spec:
   - name: artifacts-exporter
     command:
     - bash
-    - -cxe
+    - -c
     args:
     - |
+      set -o errexit
+      set -o pipefail
+      set -o nounset
+      set -o errtrace
+
       echo 'Waiting for the main container to be done ...'
       set +x
-      while [[ ! -f /tmp/main_container_done ]]; do
+      while [[ ! -f "$ARTIFACT_DIR/FINISHED" ]]; do
         sleep 1
       done
       set -x
       echo 'The main container is done ...'
+
+      declare failed=0
+{% if local_ci_run_export %}
+      echo "Running the export command '$EXPORT_COMMAND'"
+      eval $EXPORT_COMMAND || failed=1
+{% elif not local_ci_run_export %}
+      echo "Export disabled."
+{% endif %}
+
       echo 'Waiting for the local export to be done ...'
       set +x
       while [[ ! -f /tmp/local_export_done ]]; do
         sleep 1
       done
       echo 'The local export is done ...'
-
-{% if local_ci_run_export %}
-      eval $EXPORT_COMMAND
-{% elif not local_ci_run_export %}
-      echo "Export disabled."
-{% endif %}
       echo 'All done, bye.'
+
+      exit $failed
 
     image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
     imagePullPolicy: Always
@@ -158,6 +181,8 @@ spec:
       value: /logs
     - name: KUBECONFIG
       value: ""
+    - name: SHARED_DIR # shouldn't be used
+      value: /tmp/shared
     volumeMounts:
     - mountPath: /logs
       name: artifacts

@@ -47,12 +47,12 @@
        --no-headers | awk '{print $3}'
   register: wait_pod_start
   retries: 30
-  delay: 120
+  delay: 920
   until: wait_pod_start.stdout != "Running"
 
 - name: Tell the artifacts exporter that the main container is done
   command:
-    oc rsh -c artifacts-exporter -n "{{ local_ci_run_namespace }}" "{{ local_ci_run_pod_name }}" touch /tmp/main_container_done
+    oc rsh -c artifacts-exporter -n "{{ local_ci_run_namespace }}" "{{ local_ci_run_pod_name }}" touch /logs/FINISHED
 
 - name: Create a directory for the test artifacts
   file:
@@ -80,7 +80,7 @@
     oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
        --no-headers | awk '{print $3}'
   register: wait_pod_start
-  retries: 3
+  retries: 30
   delay: 10
   until: wait_pod_start.stdout not in ["Running", "NotReady"]
 

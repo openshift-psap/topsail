@@ -8,11 +8,15 @@ set -x
 
 TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+source "$TESTING_ODS_DIR/../_logging.sh"
 source "$TESTING_ODS_DIR/configure.sh"
 
 do_override() {
     echo "Configuration overrides:"
     while read line; do
+        if [[ -z "$line" ]]; then
+            continue
+        fi
         key=$(echo "$line" | cut -d= -f1)
         value=$(echo "$line" | cut -d= -f2- | cut -d\' -f2)
         echo "$key --> '$value'"

@@ -16,6 +16,7 @@ local_ci run/ods:
   secret_name: "psap-ods-secret"
   secret_env_key: "{{ secrets['psap-ods-secret'].env_key }}"
 
+  init_command: "run ods notebook_scale_test connect_ci"
   export_command: "run ods notebook_scale_test export_to_s3"
   export_identifier: SET_AT_RUNTIME
   export_ts_id:  SET_AT_RUNTIME

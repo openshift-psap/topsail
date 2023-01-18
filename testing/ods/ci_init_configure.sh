@@ -28,9 +28,11 @@ elif [[ "${SHARED_DIR:-}" ]]; then
     CONFIG_DEST_DIR=$SHARED_DIR
 fi
 
-if [[ -e "$CONFIG_DEST_DIR/config.yaml" ]]; then
-    cp "$CONFIG_DEST_DIR/config.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE" || true
-    echo "Configuration file reloaded from '$CONFIG_DEST_DIR/config.yaml'"
+if [[ "${CONFIG_DEST_DIR:-}" ]]; then
+    if [[ -e "$CONFIG_DEST_DIR/config.yaml" ]]; then
+        cp "$CONFIG_DEST_DIR/config.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE" || true
+        echo "Configuration file reloaded from '$CONFIG_DEST_DIR/config.yaml'"
+    fi
 fi
 
 bash "$TESTING_ODS_DIR/configure_overrides.sh"

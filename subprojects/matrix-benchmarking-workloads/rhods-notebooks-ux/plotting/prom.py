@@ -4,29 +4,50 @@ import matrix_benchmarking.plotting.prom as plotting_prom
 import matrix_benchmarking.parsing.prom as parsing_prom
 import matrix_benchmarking.plotting.prom.cpu_memory as plotting_prom_cpu_memory
 
-def _get_container_cpu(cluster_role, **kwargs):
-    labels = ",".join(f"{k}=~'{v}'" for k, v in kwargs.items())
-    labels_no_container = ",".join(f"{k}=~'{v}'" for k, v in kwargs.items() if k != "container") # the 'container' isn't set for the CPU usage
-    metric_name = "_".join(f"{k}={v}" for k, v in kwargs.items())
+def _labels_to_string(labels, exclude=[]):
+    values = []
+    for k, vals in labels.items():
+        if k in exclude: continue
+
+        if not isinstance(vals, list):
+           vals = [vals]
+
+        for v in vals:
+            if v.startswith("!~"):
+                op = "!~"
+                v = v.replace("!~", "")
+            else:
+                op = "=~"
+
+            values.append(f"{k}{op}'{v}'")
+
+    return ",".join(values)
+
+def _get_container_cpu(cluster_role, labels):
+    labels_str = _labels_to_string(labels)
+    labels_str_no_container = _labels_to_string(labels, ["container"]) # the 'container' isn't set for the CPU usage
+
+    metric_name = "_".join(f"{k}={v}" for k, v in labels.items())
 
     return [
-        {f"{cluster_role}__container_cpu__{metric_name}": "pod:container_cpu_usage:sum{"+labels_no_container+"}"},
-        {f"{cluster_role}__container_cpu_requests__{metric_name}": "kube_pod_container_resource_requests{"+labels+",resource='cpu'}"},
-        {f"{cluster_role}__container_cpu_limits__{metric_name}": "kube_pod_container_resource_limits{"+labels+",resource='cpu'}"},
+        {f"{cluster_role}__container_cpu__{metric_name}": "pod:container_cpu_usage:sum{"+labels_str_no_container+"}"},
+        {f"{cluster_role}__container_cpu_requests__{metric_name}": "kube_pod_container_resource_requests{"+labels_str+",resource='cpu'}"},
+        {f"{cluster_role}__container_cpu_limits__{metric_name}": "kube_pod_container_resource_limits{"+labels_str+",resource='cpu'}"},
     ]
 
-def _get_container_mem(cluster_role, **kwargs):
-    labels = ",".join(f"{k}=~'{v}'" for k, v in kwargs.items())
-    metric_name = "_".join(f"{k}={v}" for k, v in kwargs.items())
+def _get_container_mem(cluster_role, labels):
+    labels_str = _labels_to_string(labels)
+
+    metric_name = "_".join(f"{k}={v}" for k, v in labels.items())
 
     return [
-        {f"{cluster_role}__container_memory__{metric_name}": "container_memory_rss{"+labels+"}"},
-        {f"{cluster_role}__container_memory_requests__{metric_name}": "kube_pod_container_resource_requests{"+labels+",resource='memory'}"},
-        {f"{cluster_role}__container_memory_limits__{metric_name}": "kube_pod_container_resource_limits{"+labels+",resource='memory'}"},
+        {f"{cluster_role}__container_memory__{metric_name}": "container_memory_rss{"+labels_str+"}"},
+        {f"{cluster_role}__container_memory_requests__{metric_name}": "kube_pod_container_resource_requests{"+labels_str+",resource='memory'}"},
+        {f"{cluster_role}__container_memory_limits__{metric_name}": "kube_pod_container_resource_limits{"+labels_str+",resource='memory'}"},
     ]
 
-def _get_container_cpu_mem(**kwargs):
-    return _get_container_mem(**kwargs) + _get_container_mem(**kwargs)
+def _get_container_cpu_mem(labelss):
+    return _get_container_mem(labels) + _get_container_mem(labels)
 
 def _get_cluster_mem(cluster_role):
     return [
@@ -113,8 +134,8 @@ def _get_container_mem_cpu(cluster_role, register, label_sets):
     for plot_name_labels in label_sets:
         plot_name, labels = list(plot_name_labels.items())[0]
 
-        mem = _get_container_mem(cluster_role, **labels)
-        cpu = _get_container_cpu(cluster_role, **labels)
+        mem = _get_container_mem(cluster_role, labels)
+        cpu = _get_container_cpu(cluster_role, labels)
 
         all_metrics += mem
         all_metrics += cpu
@@ -170,8 +191,8 @@ def _get_master_nodes_cpu_usage(cluster_role, register):
 
 def _get_master(cluster_role, register):
     all_metrics = []
-    all_metrics += _get_container_mem_cpu(cluster_role, register, [{f"{cluster_role.title()} ApiServer": dict(namespace="openshift-kube-apiserver", pod="kube-apiserver-ip-.*")}])
-    all_metrics += _get_container_mem_cpu(cluster_role, register, [{f"{cluster_role.title()} ETCD": dict(namespace="openshift-etcd", pod="etcd-ip-.*")}])
+    all_metrics += _get_container_mem_cpu(cluster_role, register, [{f"{cluster_role.title()} ApiServer": dict(namespace="openshift-kube-apiserver", pod=["!~kube-apiserver-guard.*", "kube-apiserver-.*"])}])
+    all_metrics += _get_container_mem_cpu(cluster_role, register, [{f"{cluster_role.title()} ETCD": dict(namespace="openshift-etcd", pod=["!~etcd-guard-.*", "etcd-.*"])}])
 
     return all_metrics
 
