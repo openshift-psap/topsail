@@ -39,6 +39,14 @@ ci_presets:
     tests.notebooks.users.count: 1500
     tests.notebooks.repeat: 1
 
+  icelake_notebook_scale_test_scaleup:
+    extends: [notebook_scale_test_scaleup]
+    tests.notebooks.users.scaleups: [5, 300, 600, 1200, 1500]
+
+  notebook_scale_test_scaleup:
+    tests.notebooks.ods_ci.test_mode: scaleup
+    tests.notebooks.repeat: 1
+
   notebook_scale_test_burst:
     extends: [notebook_scale_test]
     tests.notebooks.users.count: 2000
@@ -240,6 +248,8 @@ tests:
       sleep_factor: 5.0
       # number of users to launch at the same time
       batch_size: 1
+      # numbers of users to launch during the scaleup test
+      scaleups: [5, 4, 3, 2, 1]
 
     # namespace in which the scale test should run
     namespace: notebook-scale-test
@@ -264,7 +274,7 @@ tests:
       # ODS-CI test case to execute.
       test_case: notebook_dsg_test.robot
       # mode in which the ODS-CI test should be executed
-      # can be: null, simple (default) or burst
+      # can be: null, simple (default), burst or scaleup
       test_mode: simple
       image:
         repo: https://github.com/openshift-psap/ods-ci.git

@@ -470,6 +470,53 @@ prepare() {
     sutest_wait_rhods_launch
 }
 
+run_ods_ci_scaleup_test() {
+    local extra_notebook_url=$1
+    local failed=0
+    local scalup_users=$(get_config tests.notebooks.users.scaleups[])
+    local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
+
+    do_cleanup() {
+        sutest_cleanup_rhods
+    }
+
+    do_cleanup
+
+    local test_idx=0
+    for user_count in $scalup_users; do
+        echo "$(date) Launching $user_count users."
+        set_config tests.notebooks.users.count "$user_count"
+        set_config tests.notebooks.ods_ci.test_mode simple
+        test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps
+
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)_prepare_scalup${test_idx}_${user_count}"
+
+        if ! prepare; then
+            failed=1
+            break
+        fi
+
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)_scalup${test_idx}_${user_count}users"
+        run_test || failed=1
+        generate_plots || failed=1
+
+        do_cleanup
+
+        if [[ "$failed" == 1 ]]; then
+            break
+        fi
+
+    done
+
+    if ! test_config tests.notebooks.ods_ci.only_create_notebooks; then
+        oc delete notebooks --all -A || true
+    fi
+
+    set_config matbench.test_directory "$ARTIFACT_DIR"
+
+    return $failed
+}
+
 run_ods_ci_burst_test() {
     local extra_notebook_url=$1
     local failed=0
@@ -551,6 +598,8 @@ run_ods_ci_test() {
 
     elif [[ "$test_mode" == burst ]]; then
         run_ods_ci_burst_test "$extra_notebook_url" || failed=1
+    elif [[ "$test_mode" == scaleup ]]; then
+        run_ods_ci_scaleup_test "$extra_notebook_url" || failed=1
     else
         _error "Unknown ODS-CI test mode: '$test_mode'"
     fi
