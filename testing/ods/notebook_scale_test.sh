@@ -489,7 +489,7 @@ run_ods_ci_scaleup_test() {
         set_config tests.notebooks.ods_ci.test_mode simple
         test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps
 
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)_prepare_scalup${test_idx}_${user_count}"
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)_prepare_scalup${test_idx}_${user_count}users"
 
         if ! prepare; then
             failed=1
@@ -512,7 +512,8 @@ run_ods_ci_scaleup_test() {
         oc delete notebooks --all -A || true
     fi
 
-    set_config matbench.test_directory "$ARTIFACT_DIR"
+    set_config matbench.test_directory "$BASE_ARTIFACT_DIR"
+    export ARTIFACT_DIR="$BASE_ARTIFACT_DIR"
 
     return $failed
 }
