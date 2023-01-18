@@ -116,6 +116,9 @@ def _rewrite_settings(settings_dict):
     if "live_users" in settings_dict:
         settings_dict["live_users"] = int(settings_dict["live_users"])
 
+    if "users_already_in" in settings_dict:
+        settings_dict["users_already_in"] = int(settings_dict["users_already_in"])
+
     if "launcher" in settings_dict:
         del settings_dict["test_case"]
 
