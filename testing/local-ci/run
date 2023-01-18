@@ -117,7 +117,7 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
 
     try:
         logging.info("Checking if the branch is synced with upstream ...")
-        run("test $(git rev-parse HEAD) == $(git rev-parse $(git rev-parse --abbrev-ref --symbolic-full-name @{u}))")
+        run('test "$(git rev-parse HEAD)" == "$(git rev-parse $(git rev-parse --abbrev-ref --symbolic-full-name @{u}))"')
     except subprocess.CalledProcessError:
         if not diff_is_clean:
             logging.warning(f"Git branch isn't in sync with its upstream branch.")
