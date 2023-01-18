@@ -46,8 +46,9 @@
     oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
        --no-headers | awk '{print $3}'
   register: wait_pod_start
-  retries: 30
-  delay: 920
+  retries: 9999
+  delay: 30
+
   until: wait_pod_start.stdout != "Running"
 
 - name: Tell the artifacts exporter that the main container is done
