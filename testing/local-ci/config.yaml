@@ -36,7 +36,7 @@ workloads:
         command: gather-extra
         alway_run: true
 
-  notebook_scale_test_scaleup:
+  notebook-scale-test-scaleup:
     command_group: ods
     steps:
       prepare:
