@@ -1086,8 +1086,8 @@ main() {
             testing/ods/generate_matrix-benchmarking.sh from_pr_args
             return  0
             ;;
-        "reset_rhods")
-            sutest_reset_rhods
+        "cleanup_rhods")
+            sutest_cleanup_rhods
             return 0
             ;;
         "prepare_matbench")
