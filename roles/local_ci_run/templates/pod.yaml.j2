@@ -112,24 +112,25 @@ spec:
     - |
       echo 'Waiting for the main container to be done ...'
       set +x
-      while [[ ! -f /tmp/main_container_done ]]; do
+      while [[ ! -f "$ARTIFACT_DIR/FINISHED" ]]; do
         sleep 1
       done
       set -x
       echo 'The main container is done ...'
-      echo 'Waiting for the local export to be done ...'
-      set +x
-      while [[ ! -f /tmp/local_export_done ]]; do
-        sleep 1
-      done
-      echo 'The local export is done ...'
-      set -x
+
 {% if local_ci_run_export %}
       echo "Running the export command '$EXPORT_COMMAND'"
       eval $EXPORT_COMMAND
 {% elif not local_ci_run_export %}
       echo "Export disabled."
 {% endif %}
+
+      echo 'Waiting for the local export to be done ...'
+      set +x
+      while [[ ! -f /tmp/local_export_done ]]; do
+        sleep 1
+      done
+      echo 'The local export is done ...'
       echo 'All done, bye.'
 
     image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
