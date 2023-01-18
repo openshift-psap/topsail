@@ -848,8 +848,7 @@ sutest_cleanup_rhods() {
     switch_sutest_cluster
 
     oc delete projects -lopendatahub.io/dashboard=true >/dev/null
-    oc delete notebooks --all -n rhods-notebooks || true
-    oc delete pvc --all -n rhods-notebooks
+    oc delete notebooks,pvc --all -n rhods-notebooks || true
 }
 
 suest_reset_rhods() {
@@ -919,6 +918,8 @@ connect_ci() {
 
 run_tests_and_plots() {
     local test_flavor=$(get_config tests.notebooks.test_flavor)
+
+    sutest_cleanup_rhods
 
     if [[ "$test_flavor" == "gating" ]]; then
         run_gating_tests_and_plots
