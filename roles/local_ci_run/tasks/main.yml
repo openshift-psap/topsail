@@ -80,7 +80,7 @@
     oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
        --no-headers | awk '{print $3}'
   register: wait_pod_start
-  retries: 3
+  retries: 30
   delay: 10
   until: wait_pod_start.stdout not in ["Running", "NotReady"]
 
