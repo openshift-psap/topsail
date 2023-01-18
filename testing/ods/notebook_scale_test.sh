@@ -894,6 +894,13 @@ connect_ci() {
         set_config PR_POSITIONAL_ARG_EXTRA_LIGHT "$LIGHT_PROFILE"
     fi
 
+    if [[ $(oc whoami --show-console) == *"bm.example.com"* ]]; then
+        local METAL_PROFILE="metal"
+
+        echo "Bare-metal environment detected, applying the 'metal' profile".
+        set_config PR_POSITIONAL_ARG_EXTRA_METAL "$METAL_PROFILE"
+    fi
+
     set_presets_from_pr_args
 
     bash "$TESTING_ODS_DIR/configure_set_presets.sh"
