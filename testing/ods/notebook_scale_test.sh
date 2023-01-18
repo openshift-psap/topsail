@@ -558,7 +558,7 @@ run_ods_ci_test() {
     return $failed
 }
 
-run_simple_tests_and_plots() {
+run_normal_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
     local test_flavor=$(get_config tests.notebooks.test_flavor)
@@ -700,7 +700,7 @@ run_gating_tests_and_plots() {
         fi
 
         export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)_$preset"
-        if ! run_simple_tests_and_plots; then
+        if ! run_normal_tests_and_plots; then
             ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' test failed :/"
             failed=1
         fi
@@ -874,7 +874,7 @@ run_tests_and_plots() {
     if [[ "$test_flavor" == "gating" ]]; then
         run_gating_tests_and_plots
     else
-        run_simple_tests_and_plots
+        run_normal_tests_and_plots
     fi
 }
 
