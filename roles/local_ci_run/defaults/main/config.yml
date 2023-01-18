@@ -30,6 +30,9 @@ local_ci_run_secret_name: null
 # Name of the environment variable with which the secret path will be exposed in the Pod.
 local_ci_run_secret_env_key: null
 
+# Command to run in the container before running anything else.
+local_ci_run_init_command: null
+
 # Command to run to export the execution artifacts to a external storage.
 local_ci_run_export_command: null
 

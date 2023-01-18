@@ -67,6 +67,10 @@ spec:
       set -o errtrace
       set -x
 
+{% if local_ci_run_init_command %}
+      echo "Running the init command ..."
+      run {{ local_ci_run_init_command }}
+{% endif %}
       run {{ local_ci_run_ci_command }} |& tee ${ARTIFACT_DIR}/run.log
     image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
     imagePullPolicy: Always
@@ -121,6 +125,7 @@ spec:
       set -o pipefail
       set -o nounset
       set -o errtrace
+
       echo 'Waiting for the main container to be done ...'
       set +x
       while [[ ! -f "$ARTIFACT_DIR/FINISHED" ]]; do
