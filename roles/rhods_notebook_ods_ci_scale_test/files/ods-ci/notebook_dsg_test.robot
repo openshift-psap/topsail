@@ -111,16 +111,21 @@ Create and Start the Workbench
 
   IF  '${workbench_launched}' != 'PASS'
     Capture Page Screenshot  bug_5819_open_not_available.png
-    Log     message=Workaround for RHODS-5819: wait for the open button not to be disabled    level=WARN
+    Log     message=Workaround-1 for RHODS-5819: wait for the open button not to be disabled    level=WARN
 
     ${current_html} =    SeleniumLibrary.Get Source
     Create File  ${OUTPUTDIR}/bug_5819.html  ${current_html}
 
-    ${route_wait_start} = 	Get Current Date
-    Wait Until Page Does Not Contain Element    ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${WORKBENCH_NAME}"]]]//a[text()="Open" and contains(@class, 'pf-m-disabled')]  timeout=1 minutes
-    ${route_wait_end} = 	Get Current Date
-    ${wait_time}=  Subtract Date From Date  ${route_wait_end}  ${route_wait_start}
-    Create File  ${OUTPUTDIR}/bug_5819_wait_time.txt  ${wait_time} seconds\n
+    # disabled until 1.22
+    #${route_wait_start} = 	Get Current Date
+    #Wait Until Page Does Not Contain Element    ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${WORKBENCH_NAME}"]]]//a[text()="Open" and contains(@class, 'pf-m-disabled')]  timeout=1 minutes
+    #${route_wait_end} = 	Get Current Date
+    #${wait_time}=  Subtract Date From Date  ${route_wait_end}  ${route_wait_start}
+    #Create File  ${OUTPUTDIR}/bug_5819_wait_time.txt  ${wait_time} seconds\n
+
+    Log     message=Workaround-2 for RHODS-5819: reload the page    level=WARN
+    Reload Page
+    Wait Until Page Contains  Create workbench  timeout=60 seconds
 
     Just Launch Workbench  ${WORKBENCH_NAME}
   END
