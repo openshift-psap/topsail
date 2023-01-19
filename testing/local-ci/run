@@ -163,7 +163,7 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
     for step in steps:
         run(f"oc delete pod/{workload}-{step} -n {namespace} --ignore-not-found")
 
-    failed = False
+    failed = []
     for step in steps:
         if failed and not workload_data["steps"][step].get("always_run", False):
             print(f"Test step '{failed}' failed, skipping {step} ...")
@@ -188,9 +188,10 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
             run(f'./run_toolbox.py from_config local_ci run --suffix {command_group} --extra "{extra}"')
         except subprocess.CalledProcessError as e:
             logging.error(f"Step {step} failed (command '{e.cmd}') --> {e.returncode}")
-            failed = step
+            failed.append(step)
 
     if failed:
+        logging.error(f"Steps [{', '.join(failed)}] of workload '{workload}' failed :/")
         sys.exit(1)
 
 class LocalCi:
