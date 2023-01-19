@@ -14,7 +14,7 @@ if [ -z "${ARTIFACT_DIR:-}" ]; then
         false
     fi
 
-    export ARTIFACT_DIR="/tmp/ci-artifacts_$(date +%Y%m%d)"
+    export ARTIFACT_DIR="${CI_ARTIFACT_BASE_DIR:-/tmp}/ci-artifacts_$(date +%Y%m%d)"
     mkdir -p "$ARTIFACT_DIR"
 
     echo "Using ARTIFACT_DIR=$ARTIFACT_DIR as default artifacts directory."
