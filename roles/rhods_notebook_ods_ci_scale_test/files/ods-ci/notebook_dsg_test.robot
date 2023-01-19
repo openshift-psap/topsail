@@ -126,6 +126,8 @@ Create and Start the Workbench
     Log     message=Workaround-2 for RHODS-5819: reload the page    level=WARN
     Reload Page
     Wait Until Page Contains  Create workbench  timeout=60 seconds
+    Wait Until Page Contains  Running  timeout=60 seconds
+    Wait Until Page Contains  Open  timeout=60 seconds
 
     Just Launch Workbench  ${WORKBENCH_NAME}
   END
