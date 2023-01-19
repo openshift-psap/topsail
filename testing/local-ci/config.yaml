@@ -36,6 +36,14 @@ workloads:
         command: gather-extra
         always_run: true
 
+  notebook-scale-test-light:
+    command_group: ods
+    steps:
+      prepare:
+        command: ods notebook_scale_test cleanup_rhods
+      test:
+        command: ods notebook_scale_test run_tests_and_plots notebooks_light notebook_scale_test
+
   notebook-scale-test-scaleup:
     command_group: ods
     steps:
