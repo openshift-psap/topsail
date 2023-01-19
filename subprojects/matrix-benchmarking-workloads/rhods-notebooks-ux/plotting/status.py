@@ -45,6 +45,8 @@ class ExecutionDistribution():
             if cfg__time_to_reach_step:
                 accumulated_timelength = 0
 
+            if not ods_ci.output: continue
+
             for step_name, test_times in ods_ci.output.items():
                 if cfg__show_only_step and step_name != cfg__show_only_step:
                     continue
