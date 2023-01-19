@@ -165,8 +165,8 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
 
     failed = False
     for step in steps:
-        if failed and not workload_data.get("always_run", False):
-            print(f"Test step {failed} failed, skipping {step} ...")
+        if failed and not workload_data["steps"][step].get("always_run", False):
+            print(f"Test step '{failed}' failed, skipping {step} ...")
             continue
 
         os.environ["CI_ARTIFACT_BASE_DIR"] = str(ci_artifact_base_dir / step)
