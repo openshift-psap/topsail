@@ -169,7 +169,7 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
             print(f"Test step '{failed}' failed, skipping {step} ...")
             continue
 
-        os.environ["CI_ARTIFACT_BASE_DIR"] = str(ci_artifact_base_dir / step)
+        os.environ["ARTIFACT_DIR"] = str(ci_artifact_base_dir / step)
         command = workload_data["steps"][step]["command"]
 
         extra = dict(
