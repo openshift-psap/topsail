@@ -34,7 +34,7 @@ workloads:
         command: ods notebook_scale_test run_tests_and_plots icelake_notebook_scale_test
       gather:
         command: gather-extra
-        alway_run: true
+        always_run: true
 
   notebook-scale-test-scaleup:
     command_group: ods
