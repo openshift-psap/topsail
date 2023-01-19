@@ -45,6 +45,7 @@ ci_presets:
 
   notebook_scale_test_scaleup:
     tests.notebooks.ods_ci.test_mode: scaleup
+    tests.notebooks.users.scaleups: [300, 200, 100, 5]
     tests.notebooks.repeat: 1
 
   notebook_scale_test_burst:

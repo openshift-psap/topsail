@@ -107,7 +107,8 @@ class RunAnsibleRole:
         env = os.environ.copy()
 
         if env.get("ARTIFACT_DIR") is None:
-            env["ARTIFACT_DIR"] = f"/tmp/ci-artifacts_{time.strftime('%Y%m%d')}"
+            ci_artifact_base_dir = Path(env.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
+            env["ARTIFACT_DIR"] = str(ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d')}")
 
         artifact_dir = Path(env["ARTIFACT_DIR"])
         artifact_dir.mkdir(parents=True, exist_ok=True)

@@ -7,6 +7,7 @@ import fire
 import logging
 logging.getLogger().setLevel(logging.INFO)
 import datetime
+import time
 
 import yaml
 import jsonpath_ng
@@ -131,6 +132,9 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
         logging.error(f"Invalid workload '{workload}'. Must be in {', '.join(workloads.keys())}")
         sys.exit(1)
 
+    env_ci_artifact_base_dir = pathlib.Path(os.environ.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
+    ci_artifact_base_dir = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d-%H%M')}" / workload
+
     workload_data = workloads[workload]
     command_group = workload_data["command_group"]
 
@@ -159,12 +163,13 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
     for step in steps:
         run(f"oc delete pod/{workload}-{step} -n {namespace} --ignore-not-found")
 
-    failed = False
+    failed = []
     for step in steps:
-        if failed and not workload_data.get("always_run", False):
-            print(f"Test step {failed} failed, skipping {step} ...")
+        if failed and not workload_data["steps"][step].get("always_run", False):
+            print(f"Test step '{failed}' failed, skipping {step} ...")
             continue
 
+        os.environ["CI_ARTIFACT_BASE_DIR"] = str(ci_artifact_base_dir / step)
         command = workload_data["steps"][step]["command"]
 
         extra = dict(
@@ -183,9 +188,10 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
             run(f'./run_toolbox.py from_config local_ci run --suffix {command_group} --extra "{extra}"')
         except subprocess.CalledProcessError as e:
             logging.error(f"Step {step} failed (command '{e.cmd}') --> {e.returncode}")
-            failed = step
+            failed.append(step)
 
     if failed:
+        logging.error(f"Steps [{', '.join(failed)}] of workload '{workload}' failed :/")
         sys.exit(1)
 
 class LocalCi:

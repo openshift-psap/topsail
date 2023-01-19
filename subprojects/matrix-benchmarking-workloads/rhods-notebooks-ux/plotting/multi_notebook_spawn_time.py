@@ -51,6 +51,8 @@ class MultiNotebookSpawnTime():
             for user_idx, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
                 accumulated_timelength = 0
 
+                if not ods_ci.output: continue
+
                 for step_name, test_times in ods_ci.output.items():
                     if test_times.status != "PASS":
                         continue

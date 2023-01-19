@@ -67,6 +67,8 @@ spec:
       set -o errtrace
       set -x
 
+      trap 'touch "$ARTIFACT_DIR/.local_ci_done"' EXIT
+
 {% if local_ci_run_init_command %}
       echo "Running the init command ..."
       {{ local_ci_run_init_command }} &> "${ARTIFACT_DIR}/init.log"
@@ -130,7 +132,7 @@ spec:
 
       echo 'Waiting for the main container to be done ...'
       set +x
-      while [[ ! -f "$ARTIFACT_DIR/FINISHED" ]]; do
+      while [[ ! -f "$ARTIFACT_DIR/.local_ci_done" ]]; do
         sleep 1
       done
       set -x
