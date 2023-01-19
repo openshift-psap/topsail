@@ -489,14 +489,14 @@ run_ods_ci_scaleup_test() {
         set_config tests.notebooks.ods_ci.test_mode simple
         test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps
 
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)_prepare_scalup${test_idx}_${user_count}users"
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000__prepare_steps/$(printf "%03d" $test_idx)__prepare_scalup${test_idx}_${user_count}users"
 
         if ! prepare; then
             failed=1
             break
         fi
 
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)_scalup${test_idx}_${user_count}users"
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)__scalup${test_idx}_${user_count}users"
         run_test || failed=1
         generate_plots || failed=1
 
@@ -619,7 +619,7 @@ run_normal_tests_and_plots() {
 
     for idx in $(seq "$test_runs"); do
         if [[ "$test_runs" != 1 ]]; then
-            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)_test_run"
+            export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)__test_run"
         fi
 
         mkdir -p "$ARTIFACT_DIR"
@@ -738,7 +738,7 @@ run_gating_tests_and_plots() {
 
         apply_preset "$preset"
 
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)_prepare_${preset}"
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)__prepare_${preset}"
 
         if ! prepare; then
             ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' preparation failed :/"
