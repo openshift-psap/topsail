@@ -159,6 +159,13 @@
          > "{{ project_artifacts_dir }}/notebook_pods.yaml"
     ignore_errors: yes
 
+    # this will catch too many statefulsets, but we cannot filter only the Notebook ones ...
+  - name: Get the definition of all the stateful sets
+    shell:
+      oc get statefulsets -oyaml -A
+         > "{{ project_artifacts_dir }}/statefulsets.yaml"
+    ignore_errors: yes
+
   - name: Terminate the notebooks
     shell:
       set -o pipefail;
