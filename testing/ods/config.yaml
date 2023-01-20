@@ -36,20 +36,21 @@ ci_presets:
 
   icelake_notebook_scale_test:
     extends: [notebook_scale_test, metal]
-    tests.notebooks.users.count: 1500
-    tests.notebooks.repeat: 2
-    tests.notebooks.users.sleep_factor: 3.0
+    tests.notebooks.users.count: 350
+    tests.notebooks.repeat: 1
+    tests.notebooks.users.sleep_factor: 180
+    tests.notebooks.users.batch_size: 10
 
   icelake_notebook_scale_test_scaleup:
     extends: [notebook_scale_test_scaleup]
-    tests.notebooks.users.scaleups: [5, 300, 600, 1200, 1500]
+    tests.notebooks.users.scaleups: [50, 100, 200, 400, 600, 800]
 
   icelake_notebook_scale_test_burst:
     extends: [notebook_scale_test_burst]
-    tests.notebooks.users.count: 400
+    tests.notebooks.users.count: 350
     tests.notebooks.ods_ci.test_mode: burst
-    tests.notebooks.users.batch_size: 50
-    tests.notebooks.users.sleep_factor: 3
+    tests.notebooks.users.batch_size: 10
+    tests.notebooks.users.sleep_factor: 0
 
   notebook_scale_test_scaleup:
     tests.notebooks.ods_ci.test_mode: scaleup
