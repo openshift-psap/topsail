@@ -19,13 +19,17 @@ function queue() {
     "${@}" >"${TARGET}" &
   fi
 }
-
-if test ! -f "${KUBECONFIG}"
-then
-    echo "No kubeconfig, so no point in gathering extra artifacts."
-    exit 0
+if ! oc whoami 2>/dev/null >/dev/null; then
+    if test ! -f "${KUBECONFIG}"
+    then
+        echo "No kubeconfig, so no point in gathering extra artifacts."
+        exit 0
+    else
+        echo "Cannot access OpenShift server ..."
+        oc whoami
+        exit 1
+    fi
 fi
-
 OC="oc --insecure-skip-tls-verify --request-timeout=5s"
 
 echo "Gathering artifacts ..."
