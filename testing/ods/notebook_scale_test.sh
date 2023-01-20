@@ -956,6 +956,8 @@ run_test() {
     else
         _error "Unknown test flavor: $test_flavor"
     fi
+
+    ./run_toolbox.py rhods capture_state > /dev/null || true
 }
 
 apply_presets_from_args() {
