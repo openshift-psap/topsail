@@ -30,7 +30,7 @@ if ! oc whoami 2>/dev/null >/dev/null; then
         exit 1
     fi
 fi
-OC="oc --insecure-skip-tls-verify --request-timeout=5s"
+OC="oc --request-timeout=5s"
 
 echo "Gathering artifacts ..."
 mkdir -p ${ARTIFACT_DIR}/pods ${ARTIFACT_DIR}/nodes ${ARTIFACT_DIR}/metrics ${ARTIFACT_DIR}/bootstrap ${ARTIFACT_DIR}/network ${ARTIFACT_DIR}/oc_cmds ${ARTIFACT_DIR}/internal
