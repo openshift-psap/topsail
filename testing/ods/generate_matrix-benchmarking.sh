@@ -204,6 +204,6 @@ elif [[ "$action" == "from_pr_args" ]]; then
     generate_matbench::generate_visualizations
 
 else
-    echo "ERROR: unknown action='$action' (JOB_NAME_SAFE='$JOB_NAME_SAFE')"
+    echo "ERROR: unknown action='$action' (JOB_NAME_SAFE='${JOB_NAME_SAFE:-}')"
     exit 1
 fi
