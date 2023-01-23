@@ -102,6 +102,7 @@ def add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide):
 
                 data.append(add_substep_time(entry_data, 4, "User notification",
                                              notebook_pod_times.containers_ready, step_finish))
+                continue
 
             entry_data["Step Name"] = f"{step_idx} - {step_name}"
             entry_data["Step Duration"] = (step_finish - step_start).total_seconds() \
