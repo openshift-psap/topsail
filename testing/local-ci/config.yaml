@@ -54,3 +54,14 @@ workloads:
       gather:
         command: gather-extra
         alway_run: true
+
+  notebook-scale-test-burst:
+    command_group: ods
+    steps:
+      cleanup:
+        command: ods notebook_scale_test cleanup_rhods
+      test:
+        command: ods notebook_scale_test run_tests_and_plots icelake_notebook_scale_test_burst
+      gather:
+        command: gather-extra
+        alway_run: true
