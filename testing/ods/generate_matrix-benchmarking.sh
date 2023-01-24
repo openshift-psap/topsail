@@ -131,7 +131,7 @@ generate_matbench::generate_visualization() {
 
     cp -f /tmp/prometheus.yml "." || true
     if ! matbench parse |& tee > "$ARTIFACT_DIR/_matbench_parse.log"; then
-        echo "An error happened during the parsing of the results (or no results were available), aborting."
+        echo "An error happened during the parsing of the results (or no results were available) in $ARTIFACT_DIR, aborting."
         return 1
     fi
 
