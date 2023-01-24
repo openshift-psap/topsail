@@ -44,6 +44,13 @@ ci_presets:
     extends: [notebook_scale_test_scaleup]
     tests.notebooks.users.scaleups: [5, 300, 600, 1200, 1500]
 
+  icelake_notebook_scale_test_burst:
+    extends: [notebook_scale_test_burst]
+    tests.notebooks.users.count: 400
+    tests.notebooks.ods_ci.test_mode: burst
+    tests.notebooks.users.batch_size: 50
+    tests.notebooks.users.sleep_factor: 3
+
   notebook_scale_test_scaleup:
     tests.notebooks.ods_ci.test_mode: scaleup
     tests.notebooks.users.scaleups: [300, 200, 100, 5]
