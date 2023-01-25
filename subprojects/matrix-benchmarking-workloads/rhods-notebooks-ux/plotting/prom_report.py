@@ -55,7 +55,7 @@ class RhodsCpuMemoryReport():
         header += html.Br()
         header += html.Br()
 
-        for what in "Notebooks", "RHODS Dashboard", "KF Notebook Controller", "ODH Notebook Controller":
+        for what in "Notebooks", "RHODS Dashboard", "RHODS Dashboard oauth-proxy", "KF Notebook Controller", "ODH Notebook Controller":
             add_pod_cpu_mem_usage(header, what, args)
 
         return None, header

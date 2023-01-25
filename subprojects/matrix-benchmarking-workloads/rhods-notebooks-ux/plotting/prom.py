@@ -313,6 +313,7 @@ def get_sutest_metrics(register=False):
         {"Notebooks": dict(namespace="rhods-notebooks", container="jupyter-nb-psapuser.*")},
         {"OpenLDAP": dict(namespace="openldap", pod="openldap.*")},
         {"RHODS Dashboard": dict(namespace="redhat-ods-applications", pod="rhods-dashboard.*", container="rhods-dashboard")},
+        {"RHODS Dashboard oauth-proxy": dict(namespace="redhat-ods-applications", pod="rhods-dashboard.*", container="oauth-proxy")},
         {"KF Notebook Controller": dict(namespace="redhat-ods-applications", pod="notebook-controller-deployment.*")},
         {"ODH Notebook Controller": dict(namespace="redhat-ods-applications", pod="odh-notebook-controller-manager.*")},
         {"OpenShift Authentication": dict(namespace="openshift-authentication", pod="oauth-openshift.*")},
