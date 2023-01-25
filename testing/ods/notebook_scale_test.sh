@@ -27,8 +27,8 @@ source "$TESTING_ODS_DIR/../process_ctrl.sh"
 source "$TESTING_ODS_DIR/configure.sh"
 source "$TESTING_ODS_DIR/cluster_helpers.sh"
 
-KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-$KUBECONFIG}" # cluster driving the test
-KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-$KUBECONFIG}" # system under test
+KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-${KUBECONFIG:-}}" # cluster driving the test
+KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-${KUBECONFIG:-}}" # system under test
 
 
 DRIVER_CLUSTER=driver
