@@ -76,7 +76,7 @@ PARSER_VERSION = "2022-12-14"
 
 
 def is_mandatory_file(filename):
-    return filename.name in ("settings", "exit_code") or filename.name.startswith("settings.")
+    return filename.name in ("settings", "exit_code", "config.yaml") or filename.name.startswith("settings.")
 
 
 def is_important_file(filename):
@@ -463,6 +463,13 @@ def _parse_notebook_perf_notebook(dirname):
 
     return notebook_perf
 
+def _parse_test_config(dirname):
+
+    filename = pathlib.Path("config.yaml")
+    with open(register_important_file(dirname, filename)) as f:
+        test_config = yaml.safe_load(f)
+
+    return test_config
 
 def _extract_metrics(dirname):
     METRICS = {
@@ -572,6 +579,7 @@ def _parse_always(results, dirname, import_settings):
 
     results.from_local_env = _parse_local_env(dirname)
     results.thresholds = store_thresholds.get_thresholds(import_settings)
+    results.test_config = _parse_test_config(dirname)
 
     results.check_thresholds = import_settings.get("check_thresholds", "no") == "yes"
     if results.check_thresholds:
