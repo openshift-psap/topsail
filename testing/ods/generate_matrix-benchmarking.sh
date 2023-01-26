@@ -131,7 +131,7 @@ generate_matbench::generate_visualization() {
 
     cp -f /tmp/prometheus.yml "." || true
     if ! matbench parse |& tee > "$ARTIFACT_DIR/_matbench_parse.log"; then
-        echo "An error happened during the parsing of the results (or no results were available), aborting."
+        echo "An error happened during the parsing of the results (or no results were available) in $ARTIFACT_DIR, aborting."
         return 1
     fi
 
@@ -204,6 +204,6 @@ elif [[ "$action" == "from_pr_args" ]]; then
     generate_matbench::generate_visualizations
 
 else
-    echo "ERROR: unknown action='$action' (JOB_NAME_SAFE='$JOB_NAME_SAFE')"
+    echo "ERROR: unknown action='$action' (JOB_NAME_SAFE='${JOB_NAME_SAFE:-}')"
     exit 1
 fi

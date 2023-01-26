@@ -85,6 +85,7 @@ Create and Start the Workbench
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' == 'FAIL'
     Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  ${NONE}
+    Capture Page Screenshot
 
     IF  '${TEST_ONLY_CREATE_NOTEBOOKS}' == 'True'
       Wait Until Workbench Is Starting  ${WORKBENCH_NAME}  timeout=30 seconds
