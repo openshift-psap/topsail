@@ -358,7 +358,7 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
 
 
 @ignore_file_not_found
-def _parse_pod_times(dirname, is_notebook=False):
+def _parse_pod_times(dirname, config=None, is_notebook=False):
     if is_notebook:
         filenames = [fname.relative_to(dirname) for fname in
                      (dirname / pathlib.Path("artifacts-sutest")).glob("project_*/notebook_pods.yaml")]
@@ -407,7 +407,8 @@ def _parse_pod_times(dirname, is_notebook=False):
 
                     user_index = re.findall(JUPYTER_USER_IDX_REGEX, pod_name)[0]
                 elif "ods-ci-" in pod_name:
-                    user_index = pod_name.rpartition("-")[0].replace("ods-ci-", "")
+                    user_index = int(pod_name.rpartition("-")[0].replace("ods-ci-", "")) \
+                        - config["tests"]["notebooks"]["users"]["start_offset"]
                 elif "locust-notebook-scale-test" in pod_name:
                     user_index = pod_name.split("-")[-2]
                 else:
@@ -692,7 +693,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
 
     print("_parse_pod_times (tester)")
-    results.testpod_times, results.testpod_hostnames = _parse_pod_times(dirname) or ({}, {})
+    results.testpod_times, results.testpod_hostnames = _parse_pod_times(dirname, results.test_config) or ({}, {})
     print("_parse_pod_times (notebooks)")
     results.notebook_pod_times, results.notebook_hostnames = _parse_pod_times(dirname, is_notebook=True) or ({}, {})
 
