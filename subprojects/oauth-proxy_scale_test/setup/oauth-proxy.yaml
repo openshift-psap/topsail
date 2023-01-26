@@ -1,0 +1,169 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: oauth-proxy-example
+    template: oauth-proxy-example
+  name: oauth-proxy-example
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: oauth-proxy-example
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        openshift.io/generated-by: OpenShiftNewApp
+      creationTimestamp: null
+      labels:
+        name: oauth-proxy-example
+      name: oauth-proxy-example
+    spec:
+      containers:
+      - args:
+        - -provider=openshift
+        - -http-address=:4180
+        - -https-address=:9090
+        - -upstream=http://localhost:8080
+        - -openshift-service-account=oauth-proxy
+        - -tls-cert=/tls/tls.crt
+        - -tls-key=/tls/tls.key
+        - -cookie-secret=SECRET
+        - -cookie-name=oauth-proxy
+        - -skip-auth-regex=^/metrics
+        - -cookie-secure=false
+        - '--openshift-delegate-urls={"/nginx-start/ready": {"namespace": "oauth-proxy", "resource": "services", "verb": "get"}}'
+        - '--openshift-sar={"namespace": "oauth-proxy", "resource": "services", "verb": "get"}'
+        image: quay.io/openshift/origin-oauth-proxy:4.9.0
+        imagePullPolicy: IfNotPresent
+        name: oauth-proxy
+        ports:
+        - containerPort: 9090
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /tls
+          name: oauth-proxy-tls-secret
+      - image: registry.access.redhat.com/ubi8/nginx-120
+        command:
+        - bash
+        - -ce
+        args:
+        - |
+          echo yes >  /opt/app-root/src/nginx-start/ready
+          exec /usr/libexec/s2i/run
+        imagePullPolicy: IfNotPresent
+        name: nginx
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          limits:
+            memory: 512Mi
+      serviceAccount: oauth-proxy
+      serviceAccountName: oauth-proxy
+      volumes:
+      - name: oauth-proxy-tls-secret
+        secret:
+          defaultMode: 420
+          secretName: oauth-proxy-tls-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: oauth-proxy-tls-secret
+  labels:
+    app: oauth-proxy-example
+    template: oauth-proxy-example
+  name: oauth-proxy-example
+spec:
+  ports:
+  - name: oauth-https
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+  selector:
+    name: oauth-proxy-example
+  type: ClusterIP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: oauth-proxy-example
+    template: oauth-proxy-example
+  name: oauth-proxy-example
+spec:
+  port:
+    targetPort: oauth-https
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
+  to:
+    kind: Service
+    name: oauth-proxy-example
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oauth-proxy-auth-delegator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: oauth-proxy
+    namespace: oauth-proxy
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    serviceaccounts.openshift.io/oauth-redirectreference.oauth-proxy: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"oauth-proxy-example"}}'
+  name: oauth-proxy
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: user-one
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: user-one-view
+subjects:
+  - kind: ServiceAccount
+    name: user-one
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view

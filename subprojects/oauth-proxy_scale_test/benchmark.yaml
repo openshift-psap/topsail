@@ -1,0 +1,24 @@
+#--path_tpl: "{expe}/{protocol}_{pings_per_seconds}qps/{host}/"
+--path_tpl: "{protocol}_{number_of_cores}cores/{host}/"
+
+
+--script_tpl: "exec/run_test.py"
+--remote_mode: false
+--stop_on_error: true
+
+--expe_to_run:
+  - test
+
+common_settings:
+  server: apps.fcami-2023-01-233dd534c1.psap.aws.rhperfscale.org # oc whoami --show-console | cut -d. -f2-
+  duration: 300
+
+expe:
+  test:
+    #pings_per_seconds: 10, 100, 500, 1000
+    number_of_cores: 1, 2, 4, 8
+    extra:
+    - protocol=https, host=oauth-proxy-example-oauth-proxy, path=/oauth/healthz
+    - protocol=http,  host=oauth-proxy-example-oauth-proxy, path=/oauth/healthz
+    - protocol=http,  host=nginx-oauth-proxy, path=/ready
+    - protocol=https, host=nginx-secure-oauth-proxy, path=/ready
