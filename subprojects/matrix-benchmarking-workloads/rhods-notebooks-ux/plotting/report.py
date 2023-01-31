@@ -107,12 +107,16 @@ class PodNodeMappingReport():
                                                                          args))]
             header += [html.P(f"This plot shows the timeline of {what} mapping on the cluster's nodes, ordered by user ID. It can help understanding when the Pods started and finished their execution, as well as which users ran on the same node.")]
 
-            header += html.Br()
-            header += html.Br()
-
             header += [html.H2("Distribution")]
             header += [Plot(f"Pod/Node distribution: {what}", args)]
             header += [f"This plot shows the distribution of the {what} on the cluster's nodes. It provides the Node's name and machine-instance type."]
+
+            header += [html.H2("Performance")]
+            header += [Plot(f"Pod/Node performance index: {what}", args)]
+            header += [f"This plot shows the performance index of the {what} on the cluster's nodes."]
+
+            header += html.Br()
+            header += html.Br()
 
         return None, header
 
