@@ -41,4 +41,25 @@ http {
             root /opt/app-root/src/;
         }
     }
+
+    server {
+        listen       8443 ssl http2;
+        listen       [::]:8443 ssl http2;
+        server_name _;
+
+        location /ready {
+            return 200;
+        }
+        location / {
+            root /opt/app-root/src/;
+        }
+
+        ssl_certificate "/mnt/nginx-certs/tls.crt";
+        ssl_verify_depth 5;
+        ssl_certificate_key "/mnt/nginx-certs/tls.key";
+        ssl_session_cache shared:SSL:1m;
+        ssl_session_timeout  10m;
+        ssl_ciphers PROFILE=SYSTEM;
+        ssl_prefer_server_ciphers on;
+    }
 }
