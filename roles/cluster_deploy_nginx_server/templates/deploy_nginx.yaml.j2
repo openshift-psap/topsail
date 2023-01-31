@@ -20,12 +20,17 @@ spec:
         command: ["nginx", "-g", "daemon off; error_log /dev/stdout info;"]
         ports:
         - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
         volumeMounts:
         - name: data-dir
           mountPath: /opt/app-root/src
         - name: nginx-config
           mountPath: /etc/nginx/nginx.conf
           subPath: nginx.conf
+        - name: nginx-certs
+          mountPath: /mnt/nginx-certs
       volumes:
       - name: data-dir
         configMap:
@@ -38,16 +43,25 @@ spec:
           items:
           - key: nginx.conf
             path: nginx.conf
+      - name: nginx-certs
+        secret:
+          secretName: nginx-certs
 ---
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: nginx-certs
   name: nginx
 spec:
   ports:
   - name: http
     port: 80
     targetPort: 8080
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8443
     protocol: TCP
   selector:
     app: nginx
