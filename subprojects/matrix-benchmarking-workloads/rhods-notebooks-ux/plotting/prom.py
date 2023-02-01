@@ -29,7 +29,7 @@ def _get_container_cpu(cluster_role, labels):
     metric_name = "_".join(f"{k}={v}" for k, v in labels.items())
 
     return [
-        {f"{cluster_role}__container_cpu__{metric_name}": "sum by (pod)(rate(container_cpu_usage_seconds_total{"+labels_str+"}[5m]))"},
+        {f"{cluster_role}__container_cpu__{metric_name}": "sum by (pod)(rate(container_cpu_usage_seconds_total{"+labels_str+"}[1m]))"},
         {f"{cluster_role}__container_cpu_requests__{metric_name}": "kube_pod_container_resource_requests{"+labels_str+",resource='cpu'}"},
         {f"{cluster_role}__container_cpu_limits__{metric_name}": "kube_pod_container_resource_limits{"+labels_str+",resource='cpu'}"},
     ]
