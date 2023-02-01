@@ -23,12 +23,11 @@ def _labels_to_string(labels, exclude=[]):
 
 def _get_container_cpu(cluster_role, labels):
     labels_str = _labels_to_string(labels)
-    labels_str_no_container = _labels_to_string(labels, ["container"]) # the 'container' isn't set for the CPU usage
 
     metric_name = "_".join(f"{k}={v}" for k, v in labels.items())
 
     return [
-        {f"{cluster_role}__container__cpu__{metric_name}": "pod:container_cpu_usage:sum{"+labels_str_no_container+"}"},
+        {f"{cluster_role}__container__cpu__{metric_name}": "sum by (pod)(rate(container_cpu_usage_seconds_total{"+labels_str+"}[1m]))"},
         {f"{cluster_role}__container_cpu_requests__{metric_name}": "kube_pod_container_resource_requests{"+labels_str+",resource='cpu'}"},
         {f"{cluster_role}__container_cpu_limits__{metric_name}": "kube_pod_container_resource_limits{"+labels_str+",resource='cpu'}"},
     ]
@@ -75,8 +74,8 @@ def get_test_metrics(register=False):
     cluster_role = "cluster"
 
     container_labels = [
-        {"nginx": dict(namespace="notebook-scale-test-nginx", container="nginx")},
-        {"oauth-proxy": dict(namespace="oauth-proxy", pod="cakephp-mysql-example.*", container="oauth-proxy")},
+        {"nginx": dict(namespace="oauth-proxy", pod="nginx-deployment.*", container="nginx")},
+        {"oauth-proxy": dict(namespace="oauth-proxy", pod="oauth-proxy-example.*", container="oauth-proxy")},
     ]
 
     all_metrics = []

@@ -7,13 +7,12 @@ from . import store_prom
 
 def _rewrite_settings(settings_dict):
 
-    if "cakephp-mysql" in settings_dict["host"]:
+    if "oauth-proxy-example" in settings_dict["host"]:
         settings_dict["host"] = "oauth-proxy"
     if "nginx" in settings_dict["host"]:
         settings_dict["host"] = "nginx"
 
     del settings_dict["path"]
-    del settings_dict["server"]
 
     return settings_dict
 
