@@ -60,6 +60,9 @@ class FromConfig:
             # to resolve yaml aliases
             command_args = f.read()
 
+        def raise_exception(msg):
+            raise Exception(msg)
+
         @jinja2.filters.pass_environment
         def or_env(environment, value, attribute=None):
             if value:
@@ -72,6 +75,7 @@ class FromConfig:
             return os.getenv(attribute)
 
         jinja2.filters.FILTERS["or_env"] = or_env
+        jinja2.filters.FILTERS["raise_exception"] = raise_exception
 
         command_args_tpl = jinja2.Template(command_args)
         command_args_rendered = command_args_tpl.render(config)
