@@ -847,9 +847,13 @@ sutest_cleanup_ldap() {
 }
 
 sutest_cleanup_rhods() {
+    local user_prefix=$(get_config ldap.users.prefix)
+
     switch_sutest_cluster
 
     oc delete namespaces -lopendatahub.io/dashboard=true >/dev/null
+    # delete any leftover namespace (if the label ^^^ wasn't properly applied)
+    oc get ns -oname | (grep "$user_prefix" || true) | xargs -r oc delete
     oc delete notebooks,pvc --all -n rhods-notebooks || true
 }
 
