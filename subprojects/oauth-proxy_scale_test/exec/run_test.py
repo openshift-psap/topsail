@@ -40,6 +40,14 @@ def set_artifacts_dir():
 
     os.environ["ARTIFACT_DIR"] = str(ARTIFACT_DIR)
 
+def run_and_get_output(command):
+    try:
+        proc = subprocess.run(command, check=True, shell=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(e.stderr.decode("utf-8").strip())
+        raise
+
+    return proc.stdout.decode("utf-8").strip()
 
 def run(command):
     return subprocess.run(command, check=True, shell=True)
@@ -61,10 +69,12 @@ def main():
     settings = prepare_settings()
     set_artifacts_dir()
 
+    server = run_and_get_output("oc whoami --show-console | cut -d. -f2-")
+
     logging.info("Reset Prometheus metrics ...")
     run_toolbox("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
 
-    target = f"{settings.protocol}://{settings.host}.{settings.server}{settings.path}"
+    target = f"{settings.protocol}://{settings.host}.{server}{settings.path}"
     logging.info(f"Running the test against {target} with {settings.number_of_cores} cores for {settings.duration}s")
 
     processes = []

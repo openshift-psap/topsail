@@ -10,7 +10,6 @@
   - test
 
 common_settings:
-  server: apps.fcami-2023-01-233dd534c1.psap.aws.rhperfscale.org # oc whoami --show-console | cut -d. -f2-
   duration: 300
 
 expe:
