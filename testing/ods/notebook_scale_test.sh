@@ -812,13 +812,11 @@ sutest_cleanup_rhods() {
     # delete any leftover namespace (if the label ^^^ wasn't properly applied)
     oc get ns -oname | (grep "$user_prefix" || true) | xargs -r oc delete
     oc delete notebooks,pvc --all -n rhods-notebooks || true
-}
 
-suest_reset_rhods() {
-    switch_sutest_cluster
+    # restart all the RHODS pods, to cleanup their logs
+    oc delete pods --all -n redhat-ods-applications
 
-    sutest_cleanup_rhods
-    sutest_wait_rhods_launch
+    ./run_toolbox.py rhods wait_ods
 }
 
 generate_plots() {
