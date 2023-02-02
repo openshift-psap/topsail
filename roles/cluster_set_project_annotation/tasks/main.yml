@@ -1,0 +1,8 @@
+---
+- name: Set the annotation cluster-wide
+  when: cluster_set_project_annotation_all|bool
+  include_tasks: cluster_set.yaml
+
+- name: Set the annotation project-wide
+  when: not cluster_set_project_annotation_all|bool
+  include_tasks: project_set.yaml

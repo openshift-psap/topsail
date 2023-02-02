@@ -395,3 +395,26 @@ class Cluster:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("cluster_set_project_annotation")
+    @AnsibleMappedParams
+    def set_project_annotation(self, key, value=None, project=None, all=False):
+        """
+        Set an annotation on a given project, or for any new projects.
+
+        Args:
+          key: The annotation key
+          value: The annotation value. If value is omited, the annotation is removed.
+          project: The project to annotate. Must be set unless --all is passed.
+          all: If set, the annotation will be set for any new project.
+        """
+
+        if all and project:
+            print(f"ERROR: --project cannot be both set if --all is set.")
+            sys.exit(1)
+
+        if not all and not project:
+            print(f"ERROR: --project must be set, unless --all is set.")
+            sys.exit(1)
+
+        return RunAnsibleRole(locals())

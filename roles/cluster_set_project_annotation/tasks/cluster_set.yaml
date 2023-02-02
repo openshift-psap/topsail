@@ -1,0 +1,63 @@
+- name: Get the project template if it exists
+  shell:
+    set -o pipefail;
+    oc adm create-bootstrap-project-template -ojson | oc get -n openshift-config -f- -ojson | jq .items[0]
+       > "{{ artifact_extra_logs_dir }}/base_project_template.yaml"
+  failed_when: false
+  register: get_project_template_cmd
+
+- name: Create the project template if it did not exist
+  when: get_project_template_cmd.rc != 0
+  shell:
+    oc adm create-bootstrap-project-template -ojson
+       > "{{ artifact_extra_logs_dir }}/base_project_template.yaml"
+
+- name: Add the annotation
+  when: (cluster_set_project_annotation_value | default('') or '') | length > 0
+  shell: |
+    set -o pipefail;
+    cat "{{ artifact_extra_logs_dir }}/base_project_template.yaml" \
+      | jq \
+          --arg value '{{ cluster_set_project_annotation_value }}' \
+          '.objects[0].metadata.annotations += {"{{ cluster_set_project_annotation_key }}": $value}' \
+      > "{{ artifact_extra_logs_dir }}/new_project_template.yaml"
+
+- name: Remove the annotation
+  when: (cluster_set_project_annotation_value | default('') or '') | length == 0
+  shell:
+    set -o pipefail;
+    cat "{{ artifact_extra_logs_dir }}/base_project_template.yaml"
+      | jq 'del(.objects[0].metadata.annotations["{{ cluster_set_project_annotation_key }}"])'
+      > "{{ artifact_extra_logs_dir }}/new_project_template.yaml"
+
+- name: Create/Apply the template resource
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/new_project_template.yaml" -n openshift-config
+
+- name: Get the name of the template resource
+  command: jq -r .metadata.name "{{ artifact_extra_logs_dir }}/new_project_template.yaml"
+  register: template_name_cmd
+
+- name: Activate the project template
+  shell:
+    oc patch project.config.openshift.io/cluster --type merge
+       -p '{"spec":{"projectRequestTemplate":{"name":"{{ template_name_cmd.stdout }}"}}}'
+
+- name: Wait for the project template to be active
+  shell: |
+    set -o pipefail
+    test_project_name="project-template-canary"
+
+    echo "- creating the project '$test_project_name' ..."
+    oc new-project "$test_project_name" --skip-config-write >/dev/null
+    echo "- querying the annotation '{{ cluster_set_project_annotation_key }}' ..."
+    project_json=$(oc get project "$test_project_name" -ojson)
+    project_annotation_value=$(jq -r '.metadata.annotations["{{ cluster_set_project_annotation_key }}"]' <<< "$project_json")
+    echo "- deleting the project  $test_project_name ..."
+    oc delete ns "$test_project_name" >/dev/null
+    echo "--> project annotation value: $project_annotation_value"
+    echo "==> expected value:           "'{{ cluster_set_project_annotation_value or "null"}}'
+    [[ "$project_annotation_value" == '{{ cluster_set_project_annotation_value or "null"}}' ]]
+  retries: 120
+  delay: 5
+  register: wait_project_template_active
+  until: wait_project_template_active.rc == 0
