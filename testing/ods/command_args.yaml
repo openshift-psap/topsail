@@ -5,6 +5,7 @@
   {{ ("ERROR: secrets_location must be defined (secrets.dir.name="+ secrets.dir.name|string +" or env(secrets.dir.env_key=" + secrets.dir.env_key|string + ")) ") | raise_exception }}
 {% endif %}
 {% set s3_ldap_password_location = secrets_location + "/" + secrets.s3_ldap_password_file %}
+{% set notebook_performance_namespace = tests.notebooks.namespace + "-single-notebook" %}
 
 __aliases:
   driver_preload_image: &driver_preload_image
@@ -45,6 +46,46 @@ cluster set_scale/notebook-performance:
   name: {{ clusters.sutest.compute.machineset.name }}
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
   scale: 1
+
+driver/cluster set_project_annotation/node_selector:
+  key: openshift.io/node-selector
+  value: "{{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}"
+  project: {{ tests.notebooks.namespace }}
+
+driver/cluster set_project_annotation/toleration:
+  key: scheduler.alpha.kubernetes.io/defaultTolerations
+  value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.driver.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.driver.compute.machineset.taint.key }}\"}]'
+  project: {{ tests.notebooks.namespace }}
+
+sutest/cluster set_project_annotation/rhods_notebooks_node_selector:
+  key: openshift.io/node-selector
+  value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"
+  project: rhods-notebooks
+
+sutest/cluster set_project_annotation/rhods_notebooks_toleration:
+  key: scheduler.alpha.kubernetes.io/defaultTolerations
+  value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
+  project: rhods-notebooks
+
+sutest/cluster set_project_annotation/single_notebook_node_selector:
+  key: openshift.io/node-selector
+  value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"
+  project: {{ notebook_performance_namespace }}
+
+sutest/cluster set_project_annotation/single_notebook_toleration:
+  key: scheduler.alpha.kubernetes.io/defaultTolerations
+  value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
+  project: {{ notebook_performance_namespace }}
+
+sutest/cluster set_project_annotation/node_selector:
+  key: openshift.io/node-selector
+  value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"
+  all: true
+
+sutest/cluster set_project_annotation/toleration:
+  key: scheduler.alpha.kubernetes.io/defaultTolerations
+  value: '[{"operator": "Exists", "effect": "{{ clusters.sutest.compute.machineset.taint.effect }}", "key": "{{ clusters.sutest.compute.machineset.taint.key }}"}]'
+  all: true
 
 utils build_push_image/artifacts-exporter:
   namespace: {{ tests.notebooks.namespace }}
@@ -114,7 +155,6 @@ cluster deploy_nginx_server:
   directory: {{ tests.notebooks.ipynb.uploaded_directory }}
 
 rhods benchmark_notebook_performance:
-{% set notebook_performance_namespace = tests.notebooks.namespace + "-single-notebook" %}
   namespace: {{ notebook_performance_namespace }}
 
 rhods notebook_ods_ci_scale_test:

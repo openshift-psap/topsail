@@ -187,6 +187,7 @@ clusters:
       env: staging
       name: null
     compute:
+      dedicated: true
       autoscaling:
         enabled: false
       machineset:
@@ -199,6 +200,7 @@ clusters:
 
   driver:
     compute:
+      dedicated: true
       machineset:
         name: test-pods
         count: null

@@ -81,16 +81,20 @@ prepare_driver_cluster() {
 
     oc create namespace "$loadtest_namespace" -oyaml --dry-run=client | oc apply -f-
 
-    if ! test_config clusters.sutest.is_metal; then
-        local driver_taint_key=$(get_config clusters.driver.compute.machineset.taint.key)
-        local driver_taint_value=$(get_config clusters.driver.compute.machineset.taint.value)
-        local driver_taint_effect=$(get_config clusters.driver.compute.machineset.taint.effect)
+    set_dedicated_node_annotations() {
+        # sets (or removes) the toleration/node-selector annotations on the $loadtest_namespace project
 
-        oc annotate namespace/"$loadtest_namespace" --overwrite \
-           "openshift.io/node-selector=$driver_taint_key=$driver_taint_value"
-        oc annotate namespace/"$loadtest_namespace" --overwrite \
-           'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$driver_taint_effect'", "key": "'$driver_taint_key'"}]'
-    fi
+        local dedicated="{}" # set the toleration/node-selector annotations
+        if ! test_config clusters.sutest.compute.dedicated; then
+            dedicated="{value: ''}" # delete the toleration/node-selector annotations, if it exists
+        fi
+
+        ./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix node_selector --extra "$dedicated"
+        ./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix toleration --extra "$dedicated"
+    }
+
+    # do not run this in background, we want to have the labels before running anything else
+    set_dedicated_node_annotations
 
     process_ctrl::run_in_bg build_and_preload_ods_ci_image
     process_ctrl::run_in_bg build_and_preload_image "locust"
@@ -300,58 +304,6 @@ prepare_rhods_admin_users() {
     done
 }
 
-sutest_set_project_template() {
-    # for the DSG projects
-    oc adm create-bootstrap-project-template -ojson \
-        | jq '.objects[0].metadata.annotations += {"openshift.io/node-selector":"'$node_selector'"}' \
-        | jq '.objects[0].metadata.annotations += {"scheduler.alpha.kubernetes.io/defaultTolerations":"[{\"operator\": \"Exists\", \"effect\": \"'$sutest_taint_effect'\", \"key\": \"'$sutest_taint_key'\"}]"}' \
-        | oc apply -f- -n openshift-config -ojson \
-             > "$ARTIFACT_DIR/project_template.json"
-
-
-    local template_name="$(yq -r .metadata.name "$ARTIFACT_DIR/project_template.json")"
-    oc get -ojson project.config.openshift.io/cluster \
-        | jq '.spec.projectRequestTemplate.name = "'$template_name'"' \
-        | oc apply -f-
-
-    wait_project_template_applied() {
-        local test_project_name=$1
-        local expected_annotation_key=$2
-        local expected_annotation_value=$3
-
-        echo "Waiting for annotation: '$expected_annotation_key=$expected_annotation_value' for test project '$test_project_name'"
-
-        if [[ -z "$expected_annotation_value" ]]; then
-            _error "wait_project_template_applied: cannot wait with an empty expected_annotation_value ..."
-        fi
-
-        local retries=$((12*10)) # 10 minutes
-        local project_annotation_value=""
-        date
-        while true; do
-            echo "- creating the project ..."
-            oc new-project "$test_project_name" --skip-config-write >/dev/null
-            echo "- querying the annotation ..."
-            project_json=$(oc get project "$test_project_name" -ojson)
-            project_annotation_value=$(jq -r '.metadata.annotations["'$expected_annotation_key'"]' <<< "$project_json")
-            echo "- deleting the project  ..."
-            oc delete ns "$test_project_name" >/dev/null
-            echo "--> project annotation value: '$project_annotation_value'"
-            if [[ "$project_annotation_value" == "$expected_annotation_value" ]]; then
-                break
-            fi
-            retries=$((retries - 1))
-            if [[ $retries == 0 ]]; then
-                date
-                echo "$project_json" > "$ARTIFACT_DIR/failed_project.json"
-                _error "wait_project_template_applied: project template annotation not visible in new projects ..."
-            fi
-            sleep 5
-        done
-    }
-    wait_project_template_applied "$(get_config tests.notebooks.namespace)-canary" openshift.io/node-selector "$node_selector" > "$ARTIFACT_DIR/wait_project_annotation.log"
-}
-
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
 
@@ -368,9 +320,13 @@ sutest_wait_rhods_launch() {
         sutest_customize_rhods_before_wait
     fi
 
-    if ! test_config clusters.sutest.is_metal; then
-        sutest_set_project_template
+    local dedicated="{}" # set the toleration/node-selector annotations
+    if ! test_config clusters.sutest.compute.dedicated; then
+        dedicated="{value: ''}" # delete the toleration/node-selector annotations, if it exists
     fi
+
+    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated"
+    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated"
 
     ./run_toolbox.py rhods wait_ods
 
@@ -394,13 +350,9 @@ sutest_wait_rhods_launch() {
                          --extra "{image:'$notebook_image',name:'$rhods_notebook_image_name'}"
     fi
 
-    if ! test_config clusters.sutest.is_metal; then
-        # for the rhods-notebooks project
-        oc annotate namespace/rhods-notebooks --overwrite \
-           "openshift.io/node-selector=$node_selector"
-        oc annotate namespace/rhods-notebooks --overwrite \
-           "scheduler.alpha.kubernetes.io/defaultTolerations=$default_tolerations"
-    fi
+    # for the rhods-notebooks project
+    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix rhods_notebooks_node_selector --extra "$dedicated"
+    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix rhods_notebooks_toleration --extra "$dedicated"
 }
 
 capture_environment() {
@@ -427,10 +379,15 @@ prepare_notebook_performance_without_rhods() {
     local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
     local sutest_taint="$sutest_taint_key=$sutest_taint_value:$sutest_taint_effect"
 
-    oc annotate namespace/"$namespace" --overwrite \
-       "openshift.io/node-selector=$sutest_taint_key=$sutest_taint_value"
-    oc annotate namespace/"$namespace" --overwrite \
-       'scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
+    local defaultTolerations='[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
+
+    local dedicated="{}" # set the toleration/node-selector annotations
+    if ! test_config clusters.sutest.compute.dedicated; then
+        dedicated="{value: ''}" # delete the toleration/node-selector annotations, if it exists
+    fi
+
+    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix single_notebook_node_selector --extra "$dedicated"
+    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix single_notebook_toleration --extra "$dedicated"
 }
 
 prepare() {
