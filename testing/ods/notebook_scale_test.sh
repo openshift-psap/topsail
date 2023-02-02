@@ -545,7 +545,8 @@ run_ods_ci_burst_test() {
 
         local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
 
-        cat > $last_test_dir/settings.burst_test <<EOF
+        cp  "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir/config.yaml" || true
+        cat > "$last_test_dir/settings.burst_test" <<EOF
 test_mode=burst
 user_target_count=$user_target_count
 users_already_in=$users_already_in
@@ -594,7 +595,7 @@ run_ods_ci_test() {
         local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
         cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
 
-        cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
+        cp  "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir/config.yaml" || true
         set_config matbench.test_directory "$last_test_dir"
 
     elif [[ "$test_mode" == burst ]]; then
@@ -703,7 +704,7 @@ run_single_notebook_test() {
                 fi
 
                 local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
-                cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir" || true
+                cp  "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir/config.yaml" || true
                 cat <<EOF > "$last_test_dir/settings.instance_type" || true
 instance_type=$instance_type
 EOF
@@ -846,9 +847,13 @@ sutest_cleanup_ldap() {
 }
 
 sutest_cleanup_rhods() {
+    local user_prefix=$(get_config ldap.users.prefix)
+
     switch_sutest_cluster
 
     oc delete namespaces -lopendatahub.io/dashboard=true >/dev/null
+    # delete any leftover namespace (if the label ^^^ wasn't properly applied)
+    oc get ns -oname | (grep "$user_prefix" || true) | xargs -r oc delete
     oc delete notebooks,pvc --all -n rhods-notebooks || true
 }
 
@@ -961,7 +966,7 @@ run_test() {
 }
 
 apply_presets_from_args() {
-    cp  "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$ARTIFACT_DIR" || true
+    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$ARTIFACT_DIR" || true
     export CI_ARTIFACTS_FROM_CONFIG_FILE="$ARTIFACT_DIR/$(basename "$CI_ARTIFACTS_FROM_CONFIG_FILE")"
 
     while [[ "${1:-}" ]]; do

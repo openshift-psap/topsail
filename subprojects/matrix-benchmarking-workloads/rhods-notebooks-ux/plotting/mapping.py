@@ -15,6 +15,9 @@ def register():
     MappingDistribution("Pod/Node distribution: Test Pods", is_notebook=False)
     MappingDistribution("Pod/Node distribution: Notebooks", is_notebook=True)
 
+    MappingPerformance("Pod/Node performance index: Test Pods", is_notebook=False)
+    MappingPerformance("Pod/Node performance index: Notebooks", is_notebook=True)
+
 def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
     test_nodes = {}
     entry_results = entry.results
@@ -45,6 +48,17 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
     for pod_times in all_pod_times.values():
         user_idx = pod_times.user_index
         pod_name = pod_times.pod_name
+
+        try:
+            if is_notebook:
+                open_step = entry.results.ods_ci[user_idx].output["Open the Browser"]
+                performanceIndex = (open_step.finish - open_step.start).total_seconds()
+            else:
+                performanceIndex = max(entry.results.ods_ci[user_idx].notebook_benchmark["measures"])
+
+        except Exception:
+            performanceIndex = None
+
         try:
             hostname = hostnames[user_idx]
         except KeyError:
@@ -55,6 +69,7 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
                 PodFinish = entry_results.tester_job.completion_time,
                 NodeIndex = f"No node",
                 NodeName = f"No node",
+                PerformanceIndex = performanceIndex,
                 Count=1,
             ))
             continue
@@ -76,7 +91,8 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
             PodStart = pod_times.start_time,
             PodFinish = finish,
             NodeIndex = f"Node {hostnames_index(hostname)}",
-            NodeName = f"Node {hostnames_index(hostname)}<br>{shortname}<br>{instance_type}",
+            NodeName = f"Node {hostnames_index(hostname)}<br>{shortname}" + (f"<br>{instance_type}" if instance_type != "N/A" else ""),
+            PerformanceIndex = performanceIndex,
             Count=1,
         ))
 
@@ -148,5 +164,42 @@ class MappingDistribution():
         fig.update_layout(title_x=0.5,)
         fig.update_layout(xaxis_title="")
         fig.update_layout(yaxis_title="Pod count")
+        fig.update_yaxes(tick0=0, dtick=1)
+        return fig, ""
+
+class MappingPerformance():
+    def __init__(self, name, is_notebook):
+        self.name = name
+        self.id_name = name
+        self.is_notebook = is_notebook
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
+            return {}, "ERROR: only one experiment must be selected"
+
+        df = None
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            df = pd.DataFrame(generate_data(entry, cfg, self.is_notebook))
+
+        if df.empty:
+            return None, "Nothing to plot (no data)"
+
+        # sort by UserIndex to improve readability
+        df = df.sort_values(by=["UserIndex"])
+
+        title = (f"Performance of the {'Notebook' if self.is_notebook else 'Test'} Pods on the nodes" +
+                 f"<br><sup>" + ("(Python benchmark results)" if self.is_notebook else "(browser loading times)") + "</sup>")
+        fig = px.box(df, x="NodeName", y="PerformanceIndex",
+                     title=title)
+
+        fig.update_layout(title_x=0.5,)
+        fig.update_layout(xaxis_title="")
+        fig.update_layout(yaxis_title="Pod performance index")
         fig.update_yaxes(tick0=0, dtick=1)
         return fig, ""

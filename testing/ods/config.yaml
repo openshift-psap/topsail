@@ -36,10 +36,9 @@ ci_presets:
 
   icelake_notebook_scale_test:
     extends: [notebook_scale_test, metal]
-    tests.notebooks.users.count: 350
+    tests.notebooks.users.count: 1000
     tests.notebooks.repeat: 1
-    tests.notebooks.users.sleep_factor: 180
-    tests.notebooks.users.batch_size: 10
+    tests.notebooks.users.sleep_factor: 0
 
   icelake_notebook_scale_test_scaleup:
     extends: [notebook_scale_test_scaleup]
