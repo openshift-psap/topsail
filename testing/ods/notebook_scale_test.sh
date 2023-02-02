@@ -210,6 +210,7 @@ prepare_sutest_cluster() {
     prepare_sutest_deploy_rhods
     prepare_sutest_deploy_ldap
     prepare_sutest_scale_cluster
+    prepare_rhods_admin_users
 }
 
 prepare_managed_sutest_deploy_rhods() {
@@ -329,8 +330,6 @@ sutest_wait_rhods_launch() {
     ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated"
 
     ./run_toolbox.py rhods wait_ods
-
-    prepare_rhods_admin_users
 
     if test_config "$customize_key"; then
         sutest_customize_rhods_after_wait
