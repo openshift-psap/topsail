@@ -142,6 +142,8 @@ ci_presets:
 
   icelake:
     extends: [metal]
+    clusters.driver.compute.dedicated: false
+    clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
 secrets:
