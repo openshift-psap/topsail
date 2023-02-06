@@ -1,0 +1,27 @@
+- name: Ensure that the project exists
+  command:
+    oc get "project/{{ cluster_set_project_annotation_project }}"
+
+- name: Store the project before annotating
+  shell:
+    oc get "project/{{ cluster_set_project_annotation_project }}" -oyaml
+      > "{{ artifact_extra_logs_dir }}/project_before.yaml"
+
+- name: Apply the annotation
+  when: (cluster_set_project_annotation_value | default('') or '') | length > 0
+  command:
+    oc annotate --overwrite
+       "namespace/{{ cluster_set_project_annotation_project }}"
+       "{{ cluster_set_project_annotation_key }}={{ cluster_set_project_annotation_value }}"
+
+- name: Remove the annotation
+  when: (cluster_set_project_annotation_value | default('') or '') | length == 0
+  command:
+    oc annotate
+       "namespace/{{ cluster_set_project_annotation_project }}"
+       "{{ cluster_set_project_annotation_key }}-"
+
+- name: Store the project after annotating
+  shell:
+    oc get "project/{{ cluster_set_project_annotation_project }}" -oyaml
+      > "{{ artifact_extra_logs_dir }}/project_after.yaml"

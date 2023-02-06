@@ -123,6 +123,12 @@ ci_presets:
 
   # preset used in CI-provided clusters to limit the scale of the test
   notebooks_light:
+    clusters.sutest.compute.dedicated: false
+    clusters.sutest.compute.machineset.count: 0
+
+    clusters.driver.compute.dedicated: false
+    clusters.driver.compute.machineset.count: 1
+
     tests.notebooks.users.count: 5
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
     'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.count"]': 200
@@ -136,6 +142,8 @@ ci_presets:
 
   icelake:
     extends: [metal]
+    clusters.driver.compute.dedicated: false
+    clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
 secrets:
@@ -187,6 +195,7 @@ clusters:
       env: staging
       name: null
     compute:
+      dedicated: true
       autoscaling:
         enabled: false
       machineset:
@@ -199,6 +208,7 @@ clusters:
 
   driver:
     compute:
+      dedicated: true
       machineset:
         name: test-pods
         count: null
