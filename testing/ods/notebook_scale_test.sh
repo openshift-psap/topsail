@@ -310,15 +310,48 @@ sutest_wait_rhods_launch() {
 
     local customize_key=rhods.notebooks.customize.enabled
 
-    local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
-    local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
-    local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
-
-    local node_selector="$sutest_taint_key=$sutest_taint_value"
-    local default_tolerations='[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
-
     if test_config "$customize_key"; then
         sutest_customize_rhods_before_wait
+    fi
+
+    if test_config rhods.operator.stop; then
+        oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator
+
+        odh_nbc_image=$(get_config rhods.operator.odh_notebook_controller.image)
+        if [[ "$odh_nbc_image" != null ]]; then
+            oc set image deploy/odh-notebook-controller-manager "manager=$odh_nbc_image" -n redhat-ods-applications
+            echo "$odh_nbc_image" > "$ARTIFACT_DIR/odh-notebook-controller-manager.image"
+        fi
+
+        odh_nbc_replicas=$(get_config rhods.operator.odh_notebook_controller.replicas)
+        if [[ "$odh_nbc_replicas" != null ]]; then
+            oc scale deploy/odh-notebook-controller-manager "--replicas=$odh_nbc_replicas" -n redhat-ods-applications
+            echo "$odh_nbc_replicas" > "$ARTIFACT_DIR/odh-notebook-controller-manager.replicas"
+        fi
+
+        kf_nbc_image=$(get_config rhods.operator.images.notebook_controller_deployment)
+        if [[ "$kf_nbc_image" != null ]]; then
+            oc set image deploy/notebook-controller-deployment "manager=$kf_nbc_image" -n redhat-ods-applications
+            echo "$kf_nbc_image" > "$ARTIFACT_DIR/notebook-controller-deployment.image"
+        fi
+
+        dashboard_image=$(get_config rhods.operator.dashboard.image)
+        if [[ "$dashboard_image" != null ]]; then
+            oc set image deploy/rhods-dashboard "rhods-dashboard=$dashboard_image" -n redhat-ods-applications
+            echo "$dashboard_image" > "$ARTIFACT_DIR/dashboard.image"
+        fi
+
+
+        dashboard_replicas=$(get_config rhods.operator.dashboard.replicas)
+        if [[ "$dashboard_replicas" != null ]]; then
+            oc scale deploy/rhods-dashboard "--replicas=$dashboard_replicas" -n redhat-ods-applications
+            echo "$dashboard_replicas" > "$ARTIFACT_DIR/dashboard.replicas"
+        fi
+
+        if test_config rhods.operator.remove_oauth_resources; then
+            oc get deploy rhods-dashboard -ojson | jq 'del(.spec.template.spec.containers[1].resources)' -n redhat-ods-applications | oc apply -f-
+            echo "removed" > "$ARTIFACT_DIR/dashboard.oauth.resources"
+        fi
     fi
 
     local dedicated="{}" # set the toleration/node-selector annotations

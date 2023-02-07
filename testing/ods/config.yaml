@@ -246,6 +246,24 @@ rhods:
         cpu: 1
         mem_gi: 4
       remove_gpu_images: true
+  operator:
+    # set to true to stop the RHODS operator
+    stop: false
+
+    odh_notebook_controller:
+      image: null
+      replicas: null
+
+    notebook_controller_deployment:
+      image: null
+
+    dashboard:
+      image: null
+      # set to true to remove the Dashboard Oauth-proxy resources
+      remove_oauth_resources: false
+      replicas: null
+
+
   admin:
     count: 2 # the first N users will be granted these privileges
     roles:
