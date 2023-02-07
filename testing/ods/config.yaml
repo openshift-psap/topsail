@@ -124,10 +124,10 @@ ci_presets:
   # preset used in CI-provided clusters to limit the scale of the test
   notebooks_light:
     clusters.sutest.compute.dedicated: false
-    clusters.sutest.compute.machineset.count: 0
+    clusters.sutest.compute.machineset.count: 1
 
     clusters.driver.compute.dedicated: false
-    clusters.driver.compute.machineset.count: 1
+    clusters.driver.compute.machineset.count: 0
 
     tests.notebooks.users.count: 5
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
