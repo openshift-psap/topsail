@@ -160,10 +160,6 @@ prepare_sutest_scale_cluster() {
         compute_nodes_count=$(cluster_helpers::get_compute_node_count sutest)
     fi
 
-    local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
-    local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
-    local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
-    local sutest_taint="$sutest_taint_key=$sutest_taint_value:$sutest_taint_effect"
     if test_config clusters.sutest.is_managed; then
         if test_config clusters.sutest.compute.autoscaling.enable; then
             local specific_options=" \
@@ -181,6 +177,12 @@ prepare_sutest_scale_cluster() {
             local managed_cluster_name=$(get_config clusters.sutest.managed.name)
             local compute_nodes_type=$(get_config clusters.create.ocm.compute.type)
             local compute_nodes_machinepool_name=$(get_config clusters.sutest.compute.machineset.name)
+
+            local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
+            local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
+            local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
+            local sutest_taint="$sutest_taint_key=$sutest_taint_value:$sutest_taint_effect"
+
             ocm create machinepool "$compute_nodes_machinepool_name" \
                 --cluster "$managed_cluster_name" \
                 --instance-type "$compute_nodes_type" \
@@ -405,13 +407,6 @@ prepare_ci() {
 prepare_notebook_performance_without_rhods() {
     local namespace=$(get_command_arg namespace rhods benchmark_notebook_performance)
     oc create namespace "$namespace" -oyaml --dry-run=client | oc apply -f-
-
-    local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
-    local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
-    local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
-    local sutest_taint="$sutest_taint_key=$sutest_taint_value:$sutest_taint_effect"
-
-    local defaultTolerations='[{"operator": "Exists", "effect": "'$sutest_taint_effect'", "key": "'$sutest_taint_key'"}]'
 
     local dedicated="{}" # set the toleration/node-selector annotations
     if ! test_config clusters.sutest.compute.dedicated; then
