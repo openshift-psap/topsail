@@ -36,7 +36,23 @@ RESERVED_MEM = 4
 EXTRA_USERS = 1 # count as if there was +10% of users
 
 def main():
-    machine_type, _user_count, _cpu, _memory = sys.argv[1:]
+    try:
+        machine_type, _user_count, _cpu, _memory = sys.argv[1:]
+    except ValueError:
+        print(f"ERROR: expected 4 arguments: `MACHINE_TYPE, USER_COUNT, CPU, MEMORY`, got {len(sys.argv[1:])}: {sys.argv[1:]}")
+        print(f"""Example:
+MACHINE="Dell FC640"
+USERS=1000
+
+CPU=0.2
+MEM=0.750
+# or
+CPU=1
+MEM=4
+
+{sys.argv[0]} "$MACHINE" "$USERS" "$CPU" "$MEM"
+""")
+        sys.exit(1)
 
     machines = parse_machines()
 
