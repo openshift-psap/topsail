@@ -148,7 +148,7 @@
   - name: Get the description of the notebook Pods
     shell:
       oc describe pods
-         -lopendatahub.io/dashboard=true -A | grep "{{ rhods_notebook_ods_ci_scale_test_username_prefix }}"
+         -lopendatahub.io/dashboard=true -A
          > "{{ project_artifacts_dir }}/notebook_pods.descr"
     ignore_errors: yes
 
