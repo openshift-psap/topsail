@@ -34,6 +34,20 @@ ci_presets:
     'ci_presets.notebook_performance["matbench.config_file"]': notebook_gating_notebook_performance.yaml
     'ci_presets.notebook_performance["tests.notebooks.notebook_performance.tests[0].instance_types"]': [m6i.2xlarge]
 
+
+  notebook_fast_scale_test:
+    extends: [notebook_scale_test]
+    rhods.operator.stop: true
+    rhods.operator.dashboard.remove_oauth_resources: true
+    rhods.operator.odh_notebook_controller.image: null
+    rhods.operator.odh_notebook_controller.replicas: 1
+    clusters.create.ocp.control_plane.type: m5.xlarge
+    clusters.create.ocp.compute.type: m5.xlarge
+
+    tests.notebooks.users.count: 300
+    tests.notebooks.repeat: 2
+    tests.notebooks.users.sleep_factor: 1
+
   icelake_notebook_scale_test:
     extends: [notebook_scale_test, metal]
     tests.notebooks.users.count: 1000
@@ -246,6 +260,24 @@ rhods:
         cpu: 1
         mem_gi: 4
       remove_gpu_images: true
+  operator:
+    # set to true to stop the RHODS operator
+    stop: false
+
+    odh_notebook_controller:
+      image: null
+      replicas: null
+
+    notebook_controller_deployment:
+      image: null
+
+    dashboard:
+      image: null
+      # set to true to remove the Dashboard Oauth-proxy resources
+      remove_oauth_resources: false
+      replicas: null
+
+
   admin:
     count: 2 # the first N users will be granted these privileges
     roles:
