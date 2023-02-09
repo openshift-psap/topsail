@@ -44,6 +44,7 @@ Open the Browser
 Login to RHODS Dashboard
   [Tags]  Authenticate
 
+  Go To  ${ODH_DASHBOARD_URL}
   Login To RHODS Dashboard  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
 
 

@@ -2,7 +2,7 @@
 
 Setup
   Set Library Search Order  SeleniumLibrary
-  Open Browser  ${ODH_DASHBOARD_URL}  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}  desired_capabilities=${capabilities}
+  Open Browser  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}  desired_capabilities=${capabilities}
 
 Tear Down
   ${browser log entries}=    Get Browser Console Log Entries
