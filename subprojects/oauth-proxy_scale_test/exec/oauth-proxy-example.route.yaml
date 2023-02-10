@@ -1,0 +1,18 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: oauth-proxy-example
+    template: oauth-proxy-example
+  name: oauth-proxy-example-reencrypt
+  namespace: oauth-proxy
+spec:
+  port:
+    targetPort: oauth-https
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
+  to:
+    kind: Service
+    name: oauth-proxy-example
+    weight: 100
