@@ -47,7 +47,7 @@ apply_preset() {
     if [[ "$values" == null ]]; then
         _error "Cannot apply ci_presets '$name': key does not exist :/"
     fi
-    for key in $(echo "$values" | jq -r '. | keys[]'); do
+    for key in $(echo "$values" | jq -r 'keys_unsorted | .[]'); do
         local value=$(echo $values | jq -r '.['$(echo "$key" | yq)']')
 
         if [[ "$key" == "extends" ]]; then
