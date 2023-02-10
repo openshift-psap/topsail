@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: oauth-proxy-compiled
+    template: oauth-proxy-compiled
+  name: oauth-proxy-compiled
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: oauth-proxy-example
+  template:
+    metadata:
+      annotation:
+        alpha.image.policy.openshift.io/resolve-names: '*' # allows specifying an imagestreamtag as image
+      name: oauth-proxy-compiled
+      labels:
+        name: oauth-proxy-example
+    spec:
+      containers:
+      - name: cnt
+        #command: [sleep, +inf]
+        command: [/home/oauth-proxy/oauth-proxy/oauth-proxy]
+        args:
+        - -provider=openshift
+        - -http-address=:4180
+        - -https-address=:9090
+        - -upstream=http://localhost:8080
+        - -openshift-service-account=oauth-proxy
+        - -tls-cert=/tls/tls.crt
+        - -tls-key=/tls/tls.key
+        - -cookie-secret=SECRET
+        - -cookie-name=oauth-proxy
+        - -skip-auth-regex=^/metrics
+        - -cookie-secure=false
+        - -request-logging
+        - '--openshift-delegate-urls={"/nginx-start/ready": {"namespace": "oauth-proxy", "resource": "services", "verb": "get"}}'
+        - '--openshift-sar={"namespace": "oauth-proxy", "resource": "services", "verb": "get"}'
+        # -provider=openshift -http-address=:4180 -https-address=:9090 -upstream=http://localhost:8080 -openshift-service-account=oauth-proxy -tls-cert=/tls/tls.crt -tls-key=/tls/tls.key -cookie-secret=SECRET -cookie-name=oauth-proxy -skip-auth-regex=^/metrics -cookie-secure=false -request-logging '--openshift-delegate-urls={"/nginx-start/ready": {"namespace": "oauth-proxy", "resource": "services", "verb": "get"}}' '--openshift-sar={"namespace": "oauth-proxy", "resource": "services", "verb": "get"}'
+        image: oauth-proxy:latest
+        imagePullPolicy: Always
+        securityContext:
+          #allowPrivilegeEscalation: true
+          runAsRoot: true
+          runAsUser: 0
+          privileged: true
+          #capabilities:
+          #  drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
+        ports:
+        - containerPort: 9090
+          name: https
+        livenessProbe:
+        failureThreshold: 3
+        httpGet:
+          path: /oauth/healthz
+          port: 9090
+          scheme: HTTPS
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        successThreshold: 1
+        timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /tls
+          name: oauth-proxy-tls-secret
+      - image: registry.access.redhat.com/ubi8/nginx-120
+        command:
+        - bash
+        - -ce
+        args:
+        - |
+          echo yes >  /opt/app-root/src/nginx-start/ready
+          exec /usr/libexec/s2i/run
+        imagePullPolicy: IfNotPresent
+        name: nginx
+        securityContext:
+          #allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+          #runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          limits:
+            memory: 512Mi
+      serviceAccount: oauth-proxy
+      serviceAccountName: oauth-proxy
+      volumes:
+      - name: oauth-proxy-tls-secret
+        secret:
+          defaultMode: 420
+          secretName: oauth-proxy-tls-secret

@@ -1,0 +1,48 @@
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: oauth-proxy
+spec:
+  lookupPolicy:
+    local: true # allow pods to specify the image with an imagestreamtag
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: oauth-proxy
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: oauth-proxy:latest
+  source:
+    dockerfile: |2
+      FROM quay.io/centos/centos:stream8
+
+      ENV USER_NAME=oauth-proxy \
+          USER=oauth-proxy \
+          HOME=/home/oauth-proxy
+
+      WORKDIR ${HOME}
+
+      RUN dnf -y install --quiet \
+          vim golang git gdb
+
+      RUN git clone https://github.com/openshift/oauth-proxy
+      RUN cd oauth-proxy && go build .
+
+      RUN chgrp -R 0 "${HOME}" \
+       && chmod -R g=u "${HOME}"
+
+      ENTRYPOINT ["/home/oauth-proxy/oauth-proxy/oauth-proxy"]
+
+    type: Dockerfile
+  strategy:
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: quay.io/centos/centos:stream8
+    type: Docker
+  triggers:
+  - type: ConfigChange
