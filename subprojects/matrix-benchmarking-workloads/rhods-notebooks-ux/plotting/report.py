@@ -342,6 +342,14 @@ class MastersReport():
             header += html.Br()
             header += html.Br()
 
+            header += Plot_and_Text(f"Prom: {cluster_role.title()} Worker Node CPU usage", args)
+            header += html.Br()
+            header += html.Br()
+
+            header += Plot_and_Text(f"Prom: {cluster_role.title()} Worker Node CPU idle", args)
+            header += html.Br()
+            header += html.Br()
+
             header += [html.H2(f"APIServer requests duration")]
             for verb in ["LIST", "GET", "PUT", "PATCH"]:
                 header += Plot_and_Text(f"Prom: {cluster_role.title()} API Server {verb} Requests duration", args)
