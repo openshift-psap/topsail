@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotation:
+    alpha.image.policy.openshift.io/resolve-names: '*' # allows specifying an imagestreamtag as image
+  name: pod-impersonator-ssh-server
+  labels:
+    name: oauth-proxy-example
+spec:
+  containers:
+  - name: cnt
+    command:
+    - bash
+    args:
+    - -c
+    - |
+      chmod 600 ${HOME}/custom_ssh/ssh_host_*_key;
+      mkdir /var/empty/sshd
+      ssh-keygen -f ${HOME}/.ssh/id_rsa -b 2048 -t rsa  -q -N ''
+      echo "$PUBLIC_KEY" > ${HOME}/.ssh/authorized_keys
+      /usr/sbin/sshd -D -e
+    image: pod-impersonator:ssh
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsRoot: false
+      runAsUser: 1000
+      capabilities:
+        drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
+    ports:
+    - containerPort: 9090
+      name: https
+      livenessProbe:
+        failureThreshold: 3
+        httpGet:
+          path: /oauth/healthz
+          port: 9090
+          scheme: HTTPS
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        successThreshold: 1
+        timeoutSeconds: 1
+    volumeMounts:
+    - mountPath: /var/empty/
+      name: var-sshd
+      defaultMode: 0700
+    env:
+    - name: PUBLIC_KEY
+      value: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQChCP79KVtCRuBl0YMTlC8jwaxBkMmYvB+y6XMPiHdhUoAHTcfnMwsqcr9JCK70EiWtyUJtJs0iU5zU4poTa6cD/hbzedXJzfTgsN5g3WVD+LaxB8rcLo+IUPUGtABPPBMoTJFsesit8SKpbkns06rHmMtCIk3v+L/YqFo6RZzAO6VLug0iAi0gl4vxf0T5rP3R4hDaY68S/Uy+nLWTATCwhdW7k4i1scQr6d+d9y9MsSGwr0kQMN4iPU0txO522lYSwXZbOZMvTqNtJ7owIXtd5KPYmf2bTIgH1aqOneCFpHHFVtOp6A0FAs9URSkY5JgagYorjizYfylvC7f/A2MH kevin@pinea.redhat.com"
+  volumes:
+  - name: var-sshd
+    emptyDir: {}
+# oc rsh pod/pod-impersonator-ssh-server bash -c "cat > .ssh/authorized_keys" < .ssh/id_rsa.pub
+# oc port-forward pod/pod-impersonator-ssh-server 2222:2222
+# ssh -R 8443:localhost:8050 1000@localhost -p2222
+# oc get secrets/odh-notebook-controller-webhook-cert -oyaml | yq '.data["tls.crt"]' -r | base64 -d > /tmp/k8s-webhook-server/serving-certs/tls.crt
+# oc get secrets/odh-notebook-controller-webhook-cert -oyaml | yq '.data["tls.key"]' -r | base64 -d > /tmp/k8s-webhook-server/serving-certs/tls.key
