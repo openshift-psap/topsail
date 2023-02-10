@@ -18,6 +18,9 @@ def register():
     MappingPerformance("Pod/Node performance index: Test Pods", is_notebook=False)
     MappingPerformance("Pod/Node performance index: Notebooks", is_notebook=True)
 
+    TestNodesPerformance("Test nodes test duration")
+
+
 def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
     test_nodes = {}
     entry_results = entry.results
@@ -202,4 +205,62 @@ class MappingPerformance():
         fig.update_layout(xaxis_title="")
         fig.update_layout(yaxis_title="Pod performance index")
         fig.update_yaxes(tick0=0, dtick=1)
+        return fig, ""
+
+
+class TestNodesPerformance():
+    def __init__(self, name):
+        self.name = name
+        self.id_name = name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
+            return {}, "ERROR: only one experiment must be selected"
+
+        data = []
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            hostnames = entry.results.testpod_hostnames
+            hostnames_index = list(hostnames.values()).index
+
+            for user_idx, ods_ci in entry.results.ods_ci.items():
+                if not ods_ci: continue
+                if not ods_ci.progress: continue
+
+                failures = ods_ci.exit_code
+                test_start_time = ods_ci.progress["launch_delay"]
+                test_finish_time = ods_ci.progress["test_execution"]
+
+                test_duration = test_finish_time - test_start_time
+
+                hostname = hostnames[user_idx]
+                shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "")
+
+                data.append(dict(
+                    Status="PASS" if ods_ci.exit_code == 0 else "FAIL",
+                    Duration = test_duration.total_seconds(),
+                    User = f"User #{user_idx:03d}",
+                    NodeIndex = f"Node {hostnames_index(hostname)}",
+                    NodeName = f"Node {hostnames_index(hostname)}<br>{shortname}",
+                ))
+
+
+        df = pd.DataFrame(data).sort_values(by=["Duration"], ascending=True)
+
+        if df.empty:
+            return None, "Nothing to plot (no data)"
+
+        title = f"Duration of the user test on each of the test nodes"
+        fig = px.bar(df, x="User", y="Duration", color="NodeName",
+                     title=title)
+
+        fig.update_layout(title_x=0.5,)
+        fig.update_layout(xaxis_title="")
+        fig.update_layout(yaxis_title="Test duration")
+
         return fig, ""

@@ -50,6 +50,7 @@ Open the Browser
 Login to RHODS Dashboard
   [Tags]  Authenticate
 
+  Go To  ${ODH_DASHBOARD_URL}
   Login To RHODS Dashboard  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
 
 
@@ -141,6 +142,13 @@ Create and Start the Workbench
     ${oa_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=oauth-proxy
     ${jl_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=${WORKBENCH_NAME}
     Create File  ${OUTPUTDIR}/pod_logs.txt  OAuth\n-----\n\n${oa_logs} \nJupyterLab\n----------\n\n${jl_logs}
+
+    ${endpoints}=  Oc Get  kind=Endpoints  namespace=${PROJECT_NAME}
+    ${route}=  Oc Get  kind=Route  name=${WORKBENCH_NAME}  namespace=${PROJECT_NAME}  api_version=route.openshift.io/v1
+    ${endpoints_str}=  Convert to String  ${endpoints}
+    Create File  ${OUTPUTDIR}/bug_5912.endpoints  ${endpoints_str}
+    ${route_str}=  Convert to String  ${route}
+    Create File  ${OUTPUTDIR}/bug_5912.route  ${route_str}
 
     ${current_url}=   Get Location
     Create File  ${OUTPUTDIR}/bug_5912.url  ${current_url}

@@ -118,6 +118,10 @@ class PodNodeMappingReport():
             header += html.Br()
             header += html.Br()
 
+        header += [html.H2("Test duration by test node")]
+        header += [Plot(f"Test nodes test duration", args)]
+        header += [f"This plot shows the duration of the user test on each of the test nodes. The duration should be more or less identical on all of them."]
+
         return None, header
 
 class UserExecutionOverviewReport():
@@ -335,6 +339,14 @@ class MastersReport():
             header += html.Br()
 
             header += Plot_and_Text(f"Prom: {cluster_role.title()} Master Node CPU idle", args)
+            header += html.Br()
+            header += html.Br()
+
+            header += Plot_and_Text(f"Prom: {cluster_role.title()} Worker Node CPU usage", args)
+            header += html.Br()
+            header += html.Br()
+
+            header += Plot_and_Text(f"Prom: {cluster_role.title()} Worker Node CPU idle", args)
             header += html.Br()
             header += html.Br()
 

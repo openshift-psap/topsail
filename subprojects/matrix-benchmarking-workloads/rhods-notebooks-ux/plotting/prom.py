@@ -162,12 +162,21 @@ def _get_master_nodes_cpu_usage(cluster_role, register):
     ]
 
     def get_legend_name(metric_name, metric_metric):
-        return metric_metric['mode'], metric_metric['instance']
+        name = metric_metric['mode'] + " | " + metric_metric['instance'].split(".")[0]
+        group = metric_metric['instance'].split(".")[0]
+        return name, group
 
-    def filter_metrics(entry, metrics):
+    def only_master_nodes(entry, metrics):
         master_nodes = [node.name for node in entry.results.rhods_cluster_info.master]
         for metric in metrics:
             if metric["metric"]["instance"] not in master_nodes:
+                continue
+            yield metric
+
+    def no_master_nodes(entry, metrics):
+        master_nodes = [node.name for node in entry.results.rhods_cluster_info.master]
+        for metric in metrics:
+            if metric["metric"]["instance"] in master_nodes:
                 continue
             yield metric
 
@@ -179,7 +188,19 @@ def _get_master_nodes_cpu_usage(cluster_role, register):
                                None,
                                "Count",
                                get_metrics=get_metrics(cluster_role),
-                               filter_metrics=filter_metrics,
+                               filter_metrics=only_master_nodes,
+                               get_legend_name=get_legend_name,
+                               show_queries_in_title=True,
+                               show_legend=True,
+                               higher_better=True if "CPU idle" in name else False,
+                               as_timestamp=True)
+
+            plotting_prom.Plot({name: rq},
+                               f"Prom: {name}".replace("Master", "Worker"),
+                               None,
+                               "Count",
+                               get_metrics=get_metrics(cluster_role),
+                               filter_metrics=no_master_nodes,
                                get_legend_name=get_legend_name,
                                show_queries_in_title=True,
                                show_legend=True,
