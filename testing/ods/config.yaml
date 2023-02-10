@@ -34,6 +34,20 @@ ci_presets:
     'ci_presets.notebook_performance["matbench.config_file"]': notebook_gating_notebook_performance.yaml
     'ci_presets.notebook_performance["tests.notebooks.notebook_performance.tests[0].instance_types"]': [m6i.2xlarge]
 
+  notebook_large_scale_test:
+    extends: [notebook_scale_test]
+
+    clusters.create.type: ocp
+    clusters.create.ocp.compute.type: m6i.16xlarge
+    clusters.create.ocp.worker.type: m6i.2xlarge
+    clusters.create.ocp.worker.count: 3
+
+    rhods.operator.stop: true
+    rhods.operator.dashboard.remove_oauth_resources: true
+
+    tests.notebooks.users.count: 2000
+    tests.notebooks.users.sleep_factor: 3
+    tests.notebooks.repeat: 1
 
   notebook_fast_scale_test:
     extends: [notebook_scale_test]
