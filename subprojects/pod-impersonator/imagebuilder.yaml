@@ -1,0 +1,73 @@
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: pod-impersonator
+spec:
+  lookupPolicy:
+    local: true # allow pods to specify the image with an imagestreamtag
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: pod-impersonator
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: pod-impersonator:ssh
+  source:
+    dockerfile: |2
+      FROM quay.io/centos/centos:stream8
+
+      ENV USER_NAME=pod-impersonator \
+          USER=pod-impersonator \
+          HOME=/home/pod-impersonator
+
+      WORKDIR ${HOME}
+
+      RUN dnf -y install --quiet \
+          vim python3 \
+          openssh-server openssh-clients tftp \
+        \
+       && (echo "Host *"; echo "    StrictHostKeyChecking no") >> /etc/ssh/ssh_config.d/StrictHostKeyChecking.conf \
+       && (echo "Host *"; echo "    IdentityFile ${HOME}/.ssh/id_rsa") >> /etc/ssh/ssh_config.d/IdentityFile.conf \
+       && (echo "Host *"; echo "    Port 2222") >> /etc/ssh/ssh_config.d/Port_2222.conf \
+       && (echo "Host *"; echo "    UserKnownHostsFile /dev/null") >> /etc/ssh/ssh_config.d/UserKnownHostsFile.conf \
+       \
+       && mkdir -p ${HOME}/custom_ssh \
+       && ssh-keygen -f ${HOME}/custom_ssh/ssh_host_rsa_key -N '' -t rsa \
+       && ssh-keygen -f ${HOME}/custom_ssh/ssh_host_dsa_key -N '' -t dsa \
+       \
+       && echo -e > ${HOME}/custom_ssh/sshd_config "\
+       Port 2222 \n\
+       HostKey ${HOME}/custom_ssh/ssh_host_rsa_key \n\
+       HostKey ${HOME}/custom_ssh/ssh_host_dsa_key \n\
+       AuthorizedKeysFile  .ssh/authorized_keys \n\
+       ChallengeResponseAuthentication no \n\
+       UsePAM no \n\
+       Subsystem   sftp    /usr/lib/ssh/sftp-server \n\
+       PidFile ${HOME}/custom_ssh/sshd.pid \n\
+       StrictModes no \n\
+       GatewayPorts yes \n\
+       AllowTcpForwarding yes \n\
+       " \
+       && rm -f /etc/ssh/sshd_config && ln -s ${HOME}/custom_ssh/sshd_config /etc/ssh/ \
+       && rm /sbin/nologin && ln -s /usr/bin/bash /sbin/nologin \
+       \
+       && touch /var/log/lastlog \
+       && chgrp utmp /var/log/lastlog \
+       && chmod 664 /var/log/lastlog
+
+      RUN chgrp -R 0 "${HOME}" \
+       && chmod -R g=u "${HOME}"
+
+    type: Dockerfile
+  strategy:
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: quay.io/centos/centos:stream8
+    type: Docker
+  triggers:
+  - type: ConfigChange
