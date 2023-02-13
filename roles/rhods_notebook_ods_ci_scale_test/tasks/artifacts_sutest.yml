@@ -55,6 +55,30 @@
           > "{{ artifact_extra_logs_dir }}/artifacts-sutest/nodes.descr"
     ignore_errors: yes
 
+  - name: Get the definition of all the statefulsets
+    shell:
+      oc get statefulsets -ojson -A
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/statefulsets.json"
+    ignore_errors: yes
+
+  - name: Get the definition of all the routes
+    shell:
+      oc get routes -ojson -A
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/routes.json"
+    ignore_errors: yes
+
+  - name: Get the definition of all the services
+    shell:
+      oc get services -ojson -A
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/services.json"
+    ignore_errors: yes
+
+  - name: Get the (safe) definition of the secrets
+    shell:
+      oc get -A secrets -ojson | jq 'del(.items[].data) | del(.items[].metadata.annotations)'
+        > "{{ artifact_extra_logs_dir }}/artifacts-sutest/secrets_safe.json"
+    ignore_errors: yes
+
   - name: Get the OpenShift Prometheus database
     include_role:
       name: cluster_prometheus_db

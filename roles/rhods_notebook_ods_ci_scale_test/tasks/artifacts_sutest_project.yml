@@ -80,11 +80,33 @@
     ignore_errors: yes
     when: has_notebooks_crd.rc == 0
 
+  - name: Get the json definition of the notebook resources
+    shell:
+      oc get notebooks -ojson
+         -n {{ rhods_notebook_namespace }}
+         > "{{ project_artifacts_dir }}/notebooks.json"
+    ignore_errors: yes
+    when: has_notebooks_crd.rc == 0
+
   - name: Get the definition of the notebook Pods
     shell:
       oc get pods -oyaml
          -n {{ rhods_notebook_namespace }}
          > "{{ project_artifacts_dir }}/notebook_pods.yaml"
+    ignore_errors: yes
+
+  - name: Get the json definition of the notebook Pods
+    shell:
+      oc get pods -ojson
+         -n {{ rhods_notebook_namespace }}
+         > "{{ project_artifacts_dir }}/notebook_pods.json"
+    ignore_errors: yes
+
+  - name: Get the json definition of the namespaces
+    shell:
+      oc get namespace -ojson
+         -n {{ rhods_notebook_namespace }}
+         > "{{ project_artifacts_dir }}/namespaces.json"
     ignore_errors: yes
 
   - name: Terminate the notebooks
@@ -159,6 +181,13 @@
          > "{{ project_artifacts_dir }}/notebooks.yaml"
     ignore_errors: yes
 
+  - name: Get the json definition of the notebook resources
+    shell:
+      oc get notebooks -ojson
+         -lopendatahub.io/dashboard=true -A
+         > "{{ project_artifacts_dir }}/notebooks.json"
+    ignore_errors: yes
+
   - name: Get the definition of the notebook Pods
     shell:
       oc get pods -oyaml
@@ -166,11 +195,17 @@
          > "{{ project_artifacts_dir }}/notebook_pods.yaml"
     ignore_errors: yes
 
-    # this will catch too many statefulsets, but we cannot filter only the Notebook ones ...
-  - name: Get the definition of all the stateful sets
+  - name: Get the json definition of the notebook Pods
     shell:
-      oc get statefulsets -oyaml -A
-         > "{{ project_artifacts_dir }}/statefulsets.yaml"
+      oc get pods -ojson
+         -lopendatahub.io/dashboard=true -A
+         > "{{ project_artifacts_dir }}/notebook_pods.json"
+    ignore_errors: yes
+
+  - name: Get the json definition of the namespaces
+    shell:
+      oc get namespace -ojson -lopendatahub.io/dashboard=true
+         > "{{ project_artifacts_dir }}/namespaces.json"
     ignore_errors: yes
 
   - name: Terminate the notebooks
