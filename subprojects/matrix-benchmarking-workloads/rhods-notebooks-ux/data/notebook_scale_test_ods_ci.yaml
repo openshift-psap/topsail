@@ -10,6 +10,7 @@ visualize:
   - "report: Driver Cluster CPU/Memory Usage"
   - "report: Authentication System"
   - "report: Master Nodes Load"
+  - "report: RHODS metrics"
   - "report: Notebook Performance"
   - "report: Price Estimation"
   - "multi: Notebook Spawn Time"

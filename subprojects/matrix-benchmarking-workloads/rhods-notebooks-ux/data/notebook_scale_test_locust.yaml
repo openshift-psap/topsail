@@ -9,3 +9,4 @@ visualize:
   - "report: RHODS Cluster CPU/Memory Usage"
   - "report: Authentication System"
   - "report: Master Nodes Load"
+  - "report: RHODS metrics"

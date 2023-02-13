@@ -22,6 +22,7 @@ visualize:
   - "report: Driver Cluster CPU/Memory Usage"
   - "report: Authentication System"
   - "report: Master Nodes Load"
+  - "report: RHODS metrics"
   thresholds:
   - files:
     - reference_data/thresholds.yaml
