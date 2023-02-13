@@ -39,9 +39,14 @@
       oc version -oyaml > "{{ artifact_extra_logs_dir }}/artifacts-sutest/ocp_version.yml"
     ignore_errors: yes
 
-  - name: Store the Cluster nodes
+  - name: Store the Cluster nodes in yaml
     shell:
       oc get nodes -oyaml > "{{ artifact_extra_logs_dir }}/artifacts-sutest/nodes.yaml"
+    ignore_errors: yes
+
+  - name: Store the Cluster nodes in json
+    shell:
+      oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/artifacts-sutest/nodes.json"
     ignore_errors: yes
 
   - name: Get the description of the nodes
