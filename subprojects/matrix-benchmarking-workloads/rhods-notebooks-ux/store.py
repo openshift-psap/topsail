@@ -50,6 +50,11 @@ IMPORTANT_FILES = [
     "artifacts-sutest/prometheus_ocp.t*",
     "artifacts-sutest/prometheus_rhods.t*",
     "artifacts-sutest/project_*/notebook_pods.yaml",
+    "artifacts-sutest/project_*/notebook_pods.json",
+    "artifacts-sutest/project_*/notebooks.json",
+    "artifacts-sutest/routes.json",
+    "artifacts-sutest/services.json",
+    "artifacts-sutest/statefulsets.json",
 
     "artifacts-driver/nodes.yaml",
     "artifacts-driver/prometheus_ocp.t*",
@@ -359,6 +364,54 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
     return odh_dashboard_config
 
 
+def _parse_resource_times(dirname):
+    all_resource_times = types.SimpleNamespace()
+
+    @ignore_file_not_found
+    def parse(fname):
+        print(f"Parsing {fname} ...")
+        file_path = (dirname / "artifacts-sutest" / "project_dsg"/ f"{fname}.json").resolve().relative_to(dirname)
+        with open(register_important_file(dirname, file_path)) as f:
+            data = json.load(f)
+
+        times = defaultdict(lambda : defaultdict(types.SimpleNamespace))
+        for item in data["items"]:
+
+            metadata = item["metadata"]
+            if fname == "namespaces":
+                namespace = metadata["name"]
+            else:
+                namespace = metadata["namespace"]
+
+            if not namespace.startswith(TEST_USERNAME_PREFIX): continue
+            user_idx = int(namespace.replace(TEST_USERNAME_PREFIX, ""))
+
+            kind = item["kind"]
+            creationTimestamp = datetime.datetime.strptime(
+                metadata["creationTimestamp"], K8S_TIME_FMT)
+
+            name = metadata["name"].replace(namespace, "username")
+            generate_name, found, suffix = name.rpartition("-")
+            remove_suffix = ((found and not suffix.isalpha())
+                             or "dockercfg" in name
+                             or "token" in name)
+            if remove_suffix:
+                name = generate_name # remove generated suffix
+            times[user_idx][f"{kind}/{name}"].creationTimestamp = creationTimestamp
+
+        return dict(times)
+
+    all_resource_times.pods = parse("notebook_pods")
+    all_resource_times.notebooks = parse("notebooks")
+    all_resource_times.namespaces = parse("namespaces")
+
+    all_resource_times.statefulsets = parse("../statefulsets")
+    all_resource_times.routes = parse("../routes")
+    all_resource_times.services = parse("../services")
+    all_resource_times.secrets_safe = parse("../secrets_safe")
+
+    return all_resource_times
+
 @ignore_file_not_found
 def _parse_pod_times(dirname, config=None, is_notebook=False):
     if is_notebook:
@@ -595,7 +648,6 @@ def _parse_always(results, dirname, import_settings):
             logging.info(f"Import settings: {import_settings}")
 
 
-
 def load_cache(dirname):
     try:
         with open(dirname / CACHE_FILENAME, "rb") as f:
@@ -740,6 +792,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.possible_machines = store_theoretical.get_possible_machines()
 
     results.notebook_perf = _parse_notebook_perf_notebook(dirname)
+
+    results.all_resource_times = _parse_resource_times(dirname)
 
     fn_add_to_matrix(results)
 
