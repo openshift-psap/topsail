@@ -53,6 +53,7 @@ m6a.xlarge, 4 vcpu, 16 Gib RAM, $0.173
 m6a.2xlarge, 8 vcpu, 32 Gib RAM, $0.345
 m6i.2xlarge, 8 vcpu, 32 Gib RAM, $0.384
 m5a.2xlarge, 8 vcpu, 32 Gib RAM, $0.344
+m6i.16xlarge, 64 vCPU, 256 GiB RAM, $3.072
 
 # Bare-metal scale lab machines
 Dell R650, 112 vcpu, 512 Gib RAM, $0
