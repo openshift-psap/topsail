@@ -10,6 +10,7 @@ import matrix_benchmarking.common as common
 
 def register():
     SpawnTime("Notebook spawn time")
+    NotebookResourceCreationTimeline("Notebook Resource Creation Timeline")
 
 def add_ods_ci_progress(entry, hide_failed_users):
     data = []
@@ -196,6 +197,56 @@ class SpawnTime():
             title += " without the failed users"
         if hide_launch_delay:
             title += " without the launch delay"
+        fig.update_layout(title=title, title_x=0.5,)
+
+        return fig, ""
+
+
+class NotebookResourceCreationTimeline():
+    def __init__(self, name):
+        self.name = name
+        self.id_name = name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        expe_cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+        if expe_cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            pass # entry is set
+
+        data = []
+        for kind in entry.results.all_resource_times.__dict__:
+            resource_times = entry.results.all_resource_times.__dict__[kind]
+            if not resource_times: continue
+            for user_idx, resources in resource_times.items():
+                for res_name, res_times in resources.items():
+                    data.append({
+                        "User Index": f"{user_idx:03d}",
+                        "Resource": res_name,
+                        "Create Time": res_times.creationTimestamp,
+                    })
+
+        if not data:
+            return None, "No data available"
+
+
+        df = pd.DataFrame(data).sort_values(by=["User Index"], ascending=True)
+        fig = px.line(df, x="Create Time", y="User Index", color="Resource", title="Resource creation time")
+
+        fig.update_layout(xaxis_title="Timeline (in seconds)")
+        fig.update_layout(yaxis_title="")
+        fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
+
+        title = "Execution Time of the User Steps"
+
         fig.update_layout(title=title, title_x=0.5,)
 
         return fig, ""
