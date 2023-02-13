@@ -68,6 +68,8 @@ IMPORTANT_FILES = [
 
     "locust-scale-test/locust-notebook-scale-test-*/locust_scale_test_worker*_progress.csv"
     "metrics/*",
+
+    "config.yaml",
 ]
 
 
