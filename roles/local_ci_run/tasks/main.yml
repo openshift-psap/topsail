@@ -100,6 +100,9 @@
 - name: Get the status of the Pod
   command: oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml" -ojsonpath={.status.phase}
   register: pod_status
+  retries: 30
+  delay: 10
+  until: pod_status.stdout != "Running"
 
 - name: Fail if the Pod did not complete successfully
   fail: msg="The execution of '{{ local_ci_run_ci_command }}' failed :/. See the logs in {{ artifact_extra_logs_dir }}/pod_main.log"

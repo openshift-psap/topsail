@@ -50,6 +50,13 @@
        > "{{ artifact_extra_logs_dir }}/artifacts-driver/tester_pods.yaml"
   ignore_errors: yes
 
+- name: Get the json of the tester Pods
+  shell:
+    oc get pods -ljob-name={{ tester_job_name }} -ojson
+       -n {{ tester_namespace }}
+       > "{{ artifact_extra_logs_dir }}/artifacts-driver/tester_pods.json"
+  ignore_errors: yes
+
 - name: Get the yaml of the tester Job
   shell:
     oc get job/{{ tester_job_name }} -oyaml
@@ -88,9 +95,14 @@
   when: 'test_artifacts_collected != "none"'
   ignore_errors: yes
 
-- name: Store the Cluster nodes
+- name: Store the Cluster nodes in yaml
   shell:
     oc get nodes -oyaml > "{{ artifact_extra_logs_dir }}/artifacts-driver/nodes.yaml"
+  ignore_errors: yes
+
+- name: Store the Cluster nodes in json
+  shell:
+    oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/artifacts-driver/nodes.json"
   ignore_errors: yes
 
 - name: Get the description of the nodes

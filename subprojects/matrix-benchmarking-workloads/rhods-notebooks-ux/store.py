@@ -45,15 +45,21 @@ IMPORTANT_FILES = [
 
     "artifacts-sutest/rhods.version",
     "artifacts-sutest/odh-dashboard-config.yaml",
-    "artifacts-sutest/nodes.yaml",
+    "artifacts-sutest/nodes.json",
     "artifacts-sutest/ocp_version.yml",
     "artifacts-sutest/prometheus_ocp.t*",
     "artifacts-sutest/prometheus_rhods.t*",
-    "artifacts-sutest/project_*/notebook_pods.yaml",
+    "artifacts-sutest/project_*/notebook_pods.json",
+    "artifacts-sutest/project_*/notebooks.json",
+    "artifacts-sutest/project_*/namespaces.json",
+    "artifacts-sutest/routes.json",
+    "artifacts-sutest/services.json",
+    "artifacts-sutest/statefulsets.json",
+    "artifacts-sutest/setcrets_safe.json",
 
-    "artifacts-driver/nodes.yaml",
+    "artifacts-driver/nodes.json",
     "artifacts-driver/prometheus_ocp.t*",
-    "artifacts-driver/tester_pods.yaml",
+    "artifacts-driver/tester_pods.json",
     "artifacts-driver/tester_job.yaml",
     "ods-ci/ods-ci-*/output.xml",
     "ods-ci/ods-ci-*/test.exit_code",
@@ -68,6 +74,8 @@ IMPORTANT_FILES = [
 
     "locust-scale-test/locust-notebook-scale-test-*/locust_scale_test_worker*_progress.csv"
     "metrics/*",
+
+    "config.yaml",
 ]
 
 
@@ -301,9 +309,9 @@ def _parse_tester_job(dirname):
 @ignore_file_not_found
 def _parse_nodes_info(dirname, sutest_cluster=False):
     nodes_info = {}
-    filename = pathlib.Path("artifacts-sutest" if sutest_cluster else "artifacts-driver") / "nodes.yaml"
+    filename = pathlib.Path("artifacts-sutest" if sutest_cluster else "artifacts-driver") / "nodes.json"
     with open(register_important_file(dirname, filename)) as f:
-        nodeList = yaml.safe_load(f)
+        nodeList = json.load(f)
 
     for node in nodeList["items"]:
         node_name = node["metadata"]["name"]
@@ -357,100 +365,119 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
     return odh_dashboard_config
 
 
+def _parse_resource_times(dirname):
+    all_resource_times = types.SimpleNamespace()
+
+    @ignore_file_not_found
+    def parse(fname):
+        print(f"Parsing {fname} ...")
+        file_path = (dirname / "artifacts-sutest" / "project_dsg"/ f"{fname}.json").resolve().relative_to(dirname)
+        with open(register_important_file(dirname, file_path)) as f:
+            data = json.load(f)
+
+        times = defaultdict(lambda : defaultdict(types.SimpleNamespace))
+        for item in data["items"]:
+
+            metadata = item["metadata"]
+            if fname == "namespaces":
+                namespace = metadata["name"]
+            else:
+                namespace = metadata["namespace"]
+
+            if not namespace.startswith(TEST_USERNAME_PREFIX): continue
+            user_idx = int(namespace.replace(TEST_USERNAME_PREFIX, ""))
+
+            kind = item["kind"]
+            creationTimestamp = datetime.datetime.strptime(
+                metadata["creationTimestamp"], K8S_TIME_FMT)
+
+            name = metadata["name"].replace(namespace, "username")
+            generate_name, found, suffix = name.rpartition("-")
+            remove_suffix = ((found and not suffix.isalpha())
+                             or "dockercfg" in name
+                             or "token" in name)
+            if remove_suffix:
+                name = generate_name # remove generated suffix
+            times[user_idx][f"{kind}/{name}"].creationTimestamp = creationTimestamp
+
+        return dict(times)
+
+    all_resource_times.pods = parse("notebook_pods")
+    all_resource_times.notebooks = parse("notebooks")
+    all_resource_times.namespaces = parse("namespaces")
+
+    all_resource_times.statefulsets = parse("../statefulsets")
+    all_resource_times.routes = parse("../routes")
+    all_resource_times.services = parse("../services")
+    all_resource_times.secrets_safe = parse("../secrets_safe")
+
+    return all_resource_times
+
+
 @ignore_file_not_found
 def _parse_pod_times(dirname, config=None, is_notebook=False):
     if is_notebook:
         filenames = [fname.relative_to(dirname) for fname in
-                     (dirname / pathlib.Path("artifacts-sutest")).glob("project_*/notebook_pods.yaml")]
+                     (dirname / pathlib.Path("artifacts-sutest")).glob("project_*/notebook_pods.json")]
     else:
-        filenames = [pathlib.Path("artifacts-driver") / "tester_pods.yaml"]
+        filenames = [pathlib.Path("artifacts-driver") / "tester_pods.json"]
 
     pod_times = defaultdict(types.SimpleNamespace)
     hostnames = {}
 
-    fmt = f'"{K8S_TIME_FMT}"'
+    def _parse_pod_times_file(pods):
+        for pod in pods["items"]:
+            pod_name = pod["metadata"]["name"]
 
-    def _parse_pod_times_file(f):
-        in_metadata = False
-        in_spec = False
-        pod_name = None
-        user_index = None
-        last_transition = None
-        for line in f.readlines():
-            if line == "  metadata:\n":
-                in_metadata = True
-                in_status = False
-                in_spec = False
-                pod_name = None
-                continue
-
-            elif line == "  spec:\n":
-                in_metadata = False
-                in_spec = True
-                in_status = False
-                continue
-
-            elif line == "  status:\n":
-                in_metadata = False
-                in_spec = False
-                in_status = True
-                continue
-
-            if in_metadata and line.startswith("    name:"):
-                pod_name = line.strip().split(": ")[1]
-                if pod_name.endswith("-build"): continue
-                if pod_name.endswith("-debug"): continue
-
-                if is_notebook:
-                    if TEST_USERNAME_PREFIX not in pod_name:
-                        continue
-
-                    user_index = re.findall(JUPYTER_USER_IDX_REGEX, pod_name)[0]
-                elif "ods-ci-" in pod_name:
-                    user_index = int(pod_name.rpartition("-")[0].replace("ods-ci-", "")) \
-                        - config["tests"]["notebooks"]["users"]["start_offset"]
-                elif "locust-notebook-scale-test" in pod_name:
-                    user_index = pod_name.split("-")[-2]
-                else:
-                    logging.warning(f"Unexpected pod name: {pod_name}")
+            if is_notebook:
+                if TEST_USERNAME_PREFIX not in pod_name:
                     continue
 
-                user_index = int(user_index)
-                pod_times[user_index].user_index = int(user_index)
-                pod_times[user_index].pod_name = pod_name
+                user_index = re.findall(JUPYTER_USER_IDX_REGEX, pod_name)[0]
+            elif "ods-ci-" in pod_name:
+                user_index = int(pod_name.rpartition("-")[0].replace("ods-ci-", "")) \
+                    - config["tests"]["notebooks"]["users"]["start_offset"]
+            elif "locust-notebook-scale-test" in pod_name:
+                user_index = pod_name.split("-")[-2]
+            else:
+                logging.warning(f"Unexpected pod name: {pod_name}")
+                continue
 
-            if pod_name is None: continue
+            user_index = int(user_index)
+            pod_times[user_index].user_index = int(user_index)
+            pod_times[user_index].pod_name = pod_name
 
-            if in_spec and line.startswith("    nodeName:"):
-                hostnames[user_index] = line.strip().partition(": ")[-1]
+            hostnames[user_index] = pod["spec"]["nodeName"]
 
-            elif in_status:
-                if "startTime:" in line:
-                    pod_times[user_index].start_time = \
-                        datetime.datetime.strptime(
-                            line.strip().partition(": ")[-1],
-                            fmt)
+            start_time = pod["status"].get("startTime")
+            pod_times[user_index].start_time = None if not start_time else \
+                datetime.datetime.strptime(start_time, K8S_TIME_FMT)
 
-                elif "finishedAt:" in line:
-                    # this will keep the *last* finish date
-                    pod_times[user_index].container_finished = \
-                        datetime.datetime.strptime(
-                            line.strip().partition(": ")[-1],
-                            fmt)
+            for condition in pod["status"].get("conditions", []):
+                last_transition = datetime.datetime.strptime(condition["lastTransitionTime"], K8S_TIME_FMT)
 
-                if "lastTransitionTime:" in line:
-                    last_transition = datetime.datetime.strptime(line.strip().partition(": ")[-1], fmt)
-                elif "type: ContainersReady" in line:
+                if condition["type"] == "ContainersReady":
                     pod_times[user_index].containers_ready = last_transition
 
-                elif "type: Initialized" in line:
+                elif condition["type"] == "Initialized":
                     pod_times[user_index].pod_initialized = last_transition
-                elif "type: PodScheduled" in line:
+                elif condition["type"] == "PodScheduled":
                     pod_times[user_index].pod_scheduled = last_transition
+
+            for containerStatus in pod["status"]["containerStatuses"]:
+                try:
+                    finishedAt =  datetime.datetime.strptime(
+                        containerStatus["state"]["terminated"]["finishedAt"],
+                        K8S_TIME_FMT)
+                except KeyError: continue
+
+                if ("container_finished" not in pod_times[user_index].__dict__
+                    or pod_times[user_index].container_finished < finishedAt):
+                    pod_times[user_index].container_finished = finishedAt
 
     for filename in filenames:
         with open(register_important_file(dirname, filename)) as f:
-            _parse_pod_times_file(f)
+            _parse_pod_times_file(json.load(f))
 
     return pod_times, hostnames
 
@@ -476,6 +503,7 @@ def _extract_metrics(dirname):
     METRICS = {
         "sutest": ("artifacts-sutest/prometheus_ocp.t*", rhods_plotting_prom.get_sutest_metrics()),
         "driver": ("artifacts-driver/prometheus_ocp.t*", rhods_plotting_prom.get_driver_metrics()),
+        "rhods":  ("artifacts-sutest/prometheus_rhods.t*", rhods_plotting_prom.get_rhods_metrics()),
     }
 
     results_metrics = {}
@@ -590,7 +618,6 @@ def _parse_always(results, dirname, import_settings):
         else:
             logging.error(f"Check thresholds set for {dirname}, but no threshold available {import_settings} :/")
             logging.info(f"Import settings: {import_settings}")
-
 
 
 def load_cache(dirname):
@@ -737,6 +764,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.possible_machines = store_theoretical.get_possible_machines()
 
     results.notebook_perf = _parse_notebook_perf_notebook(dirname)
+
+    results.all_resource_times = _parse_resource_times(dirname)
 
     fn_add_to_matrix(results)
 

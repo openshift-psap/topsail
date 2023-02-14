@@ -7,6 +7,7 @@ def register():
     RhodsCpuMemoryReport()
     DriverCpuMemoryReport()
     AuthenticationReport()
+    RhodsReport()
 
 def add_pod_cpu_mem_usage(header, what, args, mem_only=False, cpu_only=False):
     if mem_only:
@@ -109,5 +110,32 @@ class AuthenticationReport():
         header += [html.H2("Authentication Metrics")]
         header += [report.Plot("OCP: Form Auth Metrics", args)]
         header += [report.Plot("OCP: Basic Auth Metrics", args)]
+
+        return None, header
+
+class RhodsReport():
+    def __init__(self):
+        self.name = "report: RHODS metrics"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.P("These plots show an overview the RHODS metrics.")]
+
+        plots = [
+            ("RHODS: User Count and Joining Rate", "This plot shows the number of RHODS users, and the rate of new user creations, per minute."),
+            ("RHODS: Pods CPU Usage", "This plot shows the CPU usage of the RHODS Pods, as exposed in RHODS prometheus. (May be incomplete.)"),
+            ("RHODS: Pods Memory Usage", "This plot shows the memory usage (virtual and resident memory), as exposed in RHODS prometheus."),
+            ("RHODS: Notebooks PVC Disk Usage", "This plot shows the disk usage of the user's PVCs, grouped by nodes."),
+            ("RHODS: Reasons Why Notebooks Are Waiting", "This plot shows the number of Notebook Pods waiting for execution."),
+        ]
+
+        for (plot_name, description) in plots:
+            header += [report.Plot(plot_name, args)]
+            header += [html.P(description)]
 
         return None, header
