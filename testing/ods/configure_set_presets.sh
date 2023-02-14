@@ -32,7 +32,7 @@ main() {
         done <<< "$(jq -r .[] <<< "$ci_preset_names")"
     else
         # it's simple entry
-        update_with_presets "$ci_preset_names"
+        apply_preset "$ci_preset_names"
     fi
 }
 
