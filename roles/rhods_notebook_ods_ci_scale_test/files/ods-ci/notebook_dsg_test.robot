@@ -85,7 +85,7 @@ Create and Start the Workbench
 
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' == 'FAIL'
-    Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Ephemeral  ${NONE}  ${NONE}  ${NONE}  ${NONE}
+    Create Workbench  ${WORKBENCH_NAME}  ${PROJECT_NAME} workbench  ${PROJECT_NAME}  ${NOTEBOOK_IMAGE_NAME_DESCR}  ${NOTEBOOK_SIZE_NAME}  Persistent  ${FALSE}  ${WORKBENCH_NAME}  ${WORKBENCH_NAME}  pv_size=5
     Capture Page Screenshot
 
     IF  '${TEST_ONLY_CREATE_NOTEBOOKS}' == 'True'
@@ -223,3 +223,10 @@ Stop Starting Workbench
     ELSE
         Fail   msg=Cannot stop workbench ${workbench_title} because it is always stopped..
     END
+
+Workbench is Listed
+    [Documentation]    Checks a workbench is listed in the DS Project details page
+    [Arguments]     ${workbench_title}
+    Run keyword And Continue On Failure
+    ...    Page Should Contain Element
+    ...        ${WORKBENCH_SECTION_XP}//td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]
