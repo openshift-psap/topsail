@@ -258,9 +258,9 @@ rhods:
   deploy_from_catalog: true
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 421939
+    tag: 447640
     channel: beta
-    version: 1.22.0-2
+    version: 1.23.0
   addon:
     # only necessary/set when rhods.deploy_from_catalog is true
     email: SET_AT_RUNTIME
