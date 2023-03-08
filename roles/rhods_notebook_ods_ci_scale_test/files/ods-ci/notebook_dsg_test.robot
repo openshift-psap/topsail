@@ -223,3 +223,10 @@ Stop Starting Workbench
     ELSE
         Fail   msg=Cannot stop workbench ${workbench_title} because it is always stopped..
     END
+
+Workbench is Listed
+    [Documentation]    Checks a workbench is listed in the DS Project details page
+    [Arguments]     ${workbench_title}
+    Run keyword And Continue On Failure
+    ...    Page Should Contain Element
+    ...        ${WORKBENCH_SECTION_XP}//td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]
