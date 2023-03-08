@@ -343,7 +343,7 @@ tests:
       test_mode: simple
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: notebook-scale-test.v1.22.0-0
+        ref: notebook-scale-test.v1.23.0-0
       # tags to exclude when running the robot test case
       excluded_tags: None
       # if true, only create the notebooks but don't start them
