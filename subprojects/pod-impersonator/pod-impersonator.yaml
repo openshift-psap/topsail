@@ -5,7 +5,6 @@ metadata:
     alpha.image.policy.openshift.io/resolve-names: '*' # allows specifying an imagestreamtag as image
   name: pod-impersonator-ssh-server
   labels:
-    name: oauth-proxy-example
 spec:
   containers:
   - name: cnt
@@ -47,7 +46,7 @@ spec:
       defaultMode: 0700
     env:
     - name: PUBLIC_KEY
-      value: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQChCP79KVtCRuBl0YMTlC8jwaxBkMmYvB+y6XMPiHdhUoAHTcfnMwsqcr9JCK70EiWtyUJtJs0iU5zU4poTa6cD/hbzedXJzfTgsN5g3WVD+LaxB8rcLo+IUPUGtABPPBMoTJFsesit8SKpbkns06rHmMtCIk3v+L/YqFo6RZzAO6VLug0iAi0gl4vxf0T5rP3R4hDaY68S/Uy+nLWTATCwhdW7k4i1scQr6d+d9y9MsSGwr0kQMN4iPU0txO522lYSwXZbOZMvTqNtJ7owIXtd5KPYmf2bTIgH1aqOneCFpHHFVtOp6A0FAs9URSkY5JgagYorjizYfylvC7f/A2MH kevin@pinea.redhat.com"
+      value: "<SSH public key inserted here>"
   volumes:
   - name: var-sshd
     emptyDir: {}
