@@ -418,13 +418,6 @@ prepare_notebook_performance_without_rhods() {
 }
 
 prepare() {
-    local test_flavor=$(get_config tests.notebooks.test_flavor)
-    if [[ "$test_flavor" == "gating" ]]; then
-        # cluster preparation is done right before testing (in run_gating_tests_and_plots)
-        _info "Nothing to prepare when test flavor is '$test_flavor'."
-        return
-    fi
-
     prepare_notebook_performance_without_rhods
 
     local test_flavor=$(get_config tests.notebooks.test_flavor)
