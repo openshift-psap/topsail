@@ -1018,6 +1018,8 @@ main() {
             return 0
             ;;
         "prepare")
+            apply_presets_from_args "$@"
+
             prepare
             return 0
             ;;
