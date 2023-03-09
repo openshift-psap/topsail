@@ -36,6 +36,7 @@ echo "Gathering artifacts ..."
 mkdir -p ${ARTIFACT_DIR}/pods ${ARTIFACT_DIR}/nodes ${ARTIFACT_DIR}/metrics ${ARTIFACT_DIR}/bootstrap ${ARTIFACT_DIR}/network ${ARTIFACT_DIR}/oc_cmds ${ARTIFACT_DIR}/internal
 
 $OC get nodes -o jsonpath --template '{range .items[*]}{.metadata.name}{"\n"}{end}' > /tmp/nodes
+$OC get nodes -o jsonpath --template '{range .items[*]}{.metadata.name}{"\n"}{end}' -lnode-role.kubernetes.io/master > /tmp/control_plan_nodes
 $OC get pods --all-namespaces --template '{{ range .items }}{{ $name := .metadata.name }}{{ $ns := .metadata.namespace }}{{ range .spec.containers }}-n {{ $ns }} {{ $name }} -c {{ .name }}{{ "\n" }}{{ end }}{{ range .spec.initContainers }}-n {{ $ns }} {{ $name }} -c {{ .name }}{{ "\n" }}{{ end }}{{ end }}' > ${ARTIFACT_DIR}/internal/containers
 
 queue ${ARTIFACT_DIR}/config-resources.json $OC get apiserver.config.openshift.io authentication.config.openshift.io build.config.openshift.io console.config.openshift.io dns.config.openshift.io featuregate.config.openshift.io image.config.openshift.io infrastructure.config.openshift.io ingress.config.openshift.io network.config.openshift.io oauth.config.openshift.io project.config.openshift.io scheduler.config.openshift.io -o json
@@ -111,6 +112,12 @@ while IFS= read -r i; do
   FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/journal-previous.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false --boot=-1
   FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/audit.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false --path=audit/audit.log
 done < /tmp/nodes
+
+# gather nodes first in parallel since they may contain the most relevant debugging info
+while IFS= read -r i; do
+  mkdir -p ${ARTIFACT_DIR}/nodes/$i
+  FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/kube-apiserver.audit.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false --path=kube-apiserver/audit.log
+done < /tmp/control_plan_nodes
 
 echo "INFO: gathering the audit logs for each master"
 paths=(openshift-apiserver kube-apiserver oauth-apiserver etcd)
