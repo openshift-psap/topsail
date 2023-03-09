@@ -718,6 +718,13 @@ run_gating_tests_and_plots() {
     do
         test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps
 
+        # Wait a few minutes if this isn't the first test
+        if [[ $test_idx -ne 1 ]]; then
+            local WAIT_TIME=5m
+            echo "Waiting $WAIT_TIME for the cluster to cool down before running the next test."
+            sleep 5m
+        fi
+
         # restore the initial configuration
         cp "$BASE_ARTIFACT_DIR/config.base.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
 
