@@ -728,6 +728,8 @@ run_gating_tests_and_plots() {
         prepare_failed=0
         if ! prepare; then
             prepare_failed=1
+        else
+            prepare_failed=0
         fi
 
         do_cleanup
