@@ -723,24 +723,27 @@ run_gating_tests_and_plots() {
 
         apply_preset "$preset"
 
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)__prepare_${preset}"
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)__$preset/000__prepare_steps"
 
+        prepare_failed=0
         if ! prepare; then
+            prepare_failed=1
+        fi
+
+        do_cleanup
+
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)__$preset"
+
+        if [[ "$prepare_failed" == 1 ]]; then
             ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' preparation failed :/"
             failed=1
-
-            do_cleanup
-
             continue
         fi
 
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)_$preset"
         if ! run_normal_tests_and_plots; then
             ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' test failed :/"
             failed=1
         fi
-
-        do_cleanup
     done
 
     export ARTIFACT_DIR="$BASE_ARTIFACT_DIR"
