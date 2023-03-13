@@ -6,3 +6,5 @@ machineset_name:
 machineset_taint:
 
 cluster_ensure_machineset_base_machineset:
+
+cluster_ensure_machineset_spot: false

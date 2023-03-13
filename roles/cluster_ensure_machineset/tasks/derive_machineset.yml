@@ -35,15 +35,18 @@
       {{ machineset_taint }}
       > {{ artifact_extra_logs_dir }}/new_machineset.json"
 
-- name: Get the name of the new MachineSet
-  command: jq -r .metadata.name -- '{{ artifact_extra_logs_dir }}/new_machineset.json'
-  register: new_machineset_name
+- name: Update the MachineSet {% if cluster_ensure_machineset_spot %}with{% else %}without{% endif %} the Spot instance flag
+  shell:
+    set -o pipefail;
 
-- name: Search if new the MachineSet resource already exists
-  command: oc get 'machineset/{{ new_machineset_name.stdout }}' -n openshift-machine-api -oname
-  register: has_machineset
-  failed_when: false
+    new_machineset_json=$(cat "{{ artifact_extra_logs_dir }}/new_machineset.json");
 
-- name: Create the new MachineSet resource if it does not exist
-  command: oc create -f '{{ artifact_extra_logs_dir }}/new_machineset.json'
-  when: not has_machineset.stdout
+    jq <<< "$new_machineset_json" > "{{ artifact_extra_logs_dir }}/new_machineset.json"
+    {% if cluster_ensure_machineset_spot %}
+        '.spec.template.spec.providerSpec.value.spotMarketOptions = {}'
+    {% else %}
+        'del(.spec.template.spec.providerSpec.value.spotMarketOptions)'
+    {% endif %}
+
+- name: Create/Update the new MachineSet resource
+  command: oc apply -f '{{ artifact_extra_logs_dir }}/new_machineset.json'
