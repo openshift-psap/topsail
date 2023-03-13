@@ -198,6 +198,14 @@ secrets:
   addon_email_file: addon.email
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
 clusters:
+  spot:
+    tags:
+      Budget: PSAP
+      Project: PSAP
+      Environment: TEST/DEV
+      Owner: KEVIN POUGET
+      Manager: ASHISH KAMRA
+      User: kpouget
   create:
     type: single # can be: single, ocp, managed
     keep: false
