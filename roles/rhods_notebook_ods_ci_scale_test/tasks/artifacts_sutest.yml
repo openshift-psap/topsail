@@ -14,11 +14,13 @@
          -n redhat-ods-applications
          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/odh-dashboard-config.yaml"
     failed_when: false
+    ignore_errors: yes
 
   - name: Get the RHODS CSV name
     shell:
       oc get csv -oname -n redhat-ods-operator | grep rhods-operator
     register: rhods_csv_cmd
+    ignore_errors: yes
 
   - name: Store the RHODS version
     shell:
@@ -86,6 +88,7 @@
       cluster_prometheus_db_mode: dump
       cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_ocp
     when: capture_prom_db | bool
+    ignore_errors: yes
 
   - name: Get the RHODS Prometheus database
     include_role:
@@ -97,3 +100,4 @@
       cluster_prometheus_db_directory: /prometheus/data
       cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_rhods
     when: capture_prom_db | bool
+    ignore_errors: yes
