@@ -33,12 +33,14 @@ sutest/cluster set_scale:
   instance_type: {{ clusters.create.ocp.compute.type }}
   name: {{ clusters.sutest.compute.machineset.name }}
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
+  spot: {{ clusters.sutest.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 driver/cluster set_scale:
   instance_type: {{ clusters.create.ocp.compute.type }}
   name: {{ clusters.driver.compute.machineset.name }}
   taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
+  spot: {{ clusters.driver.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 cluster set_scale/notebook-performance:

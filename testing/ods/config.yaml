@@ -183,6 +183,11 @@ ci_presets:
     clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
+  spot:
+    clusters.sutest.compute.machineset.spot: true
+    'ci_presets.notebooks_light["clusters.driver.compute.machineset.count"]': null
+    'ci_presets.notebooks_light["clusters.driver.compute.machineset.dedicated"]': true
+
 secrets:
   dir:
     name: null
@@ -239,6 +244,7 @@ clusters:
       machineset:
         name: rhods-compute-pods
         count: null
+        spot: false
         taint:
           key: only-rhods-compute-pods
           value: "yes"
@@ -250,6 +256,7 @@ clusters:
       machineset:
         name: test-pods
         count: null
+        spot: false
         taint:
           key: &driver_toleration_key only-test-pods
           value: "yes"
