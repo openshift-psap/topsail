@@ -794,6 +794,14 @@ sutest_cleanup() {
         return
     fi
 
+    if ! ./run_toolbox.py rhods capture_state > /dev/null > /dev/null; then
+        _warning "rhods notebook cleanup failed :("
+    fi
+
+    if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
+        _warning "rhods notebook cleanup failed :("
+    fi
+
     if test_config clusters.sutest.is_managed; then
         local managed_cluster_name=$(get_config clusters.sutest.managed.name)
         local sutest_machineset_name=$(get_config clusters.sutest.compute.machineset.name)
@@ -819,10 +827,6 @@ sutest_cleanup_ldap() {
     if [[ "$test_flavor" == "notebook-performance" ]]; then
         echo "Running the notebook-performance, nothing to cleanup"
         return
-    fi
-
-    if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
-        _warning "rhods notebook cleanup failed :("
     fi
 
     if oc get cm/keep-cluster -n default 2>/dev/null; then
