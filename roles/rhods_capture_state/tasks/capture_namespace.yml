@@ -14,6 +14,11 @@
     oc get pods -n {{ namespace }} -oyaml
        > {{ artifact_extra_logs_dir }}/{{ namespace }}_pods.yaml
 
+- name: Get the description of the pods
+  shell:
+    oc describe pods -n {{ namespace }}
+       > {{ artifact_extra_logs_dir }}/{{ namespace }}_pods.desc
+
 - name: Get the names of the pods
   command: oc get pods -oname -n {{ namespace }}
   register: rhods_pod_names_cmd
