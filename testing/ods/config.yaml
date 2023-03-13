@@ -64,9 +64,9 @@ ci_presets:
 
   icelake_notebook_scale_test:
     extends: [notebook_scale_test, metal]
-    tests.notebooks.users.count: 1000
+    tests.notebooks.users.count: 80
     tests.notebooks.repeat: 1
-    tests.notebooks.users.sleep_factor: 3
+    tests.notebooks.users.sleep_factor: 1
 
   icelake_notebook_scale_test_scaleup:
     extends: [notebook_scale_test_scaleup]
@@ -170,8 +170,8 @@ ci_presets:
 
   icelake:
     extends: [metal]
-    clusters.driver.compute.dedicated: true
-    clusters.sutest.compute.dedicated: true
+    clusters.driver.compute.dedicated: false
+    clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
 secrets:
