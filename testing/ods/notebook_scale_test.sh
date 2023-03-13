@@ -953,7 +953,9 @@ run_test() {
         _error "Unknown test flavor: $test_flavor"
     fi
 
-    ./run_toolbox.py rhods capture_state > /dev/null || true
+    if ./run_toolbox.py rhods capture_state > /dev/null; then
+        _warning "rhods notebook cleanup failed :("
+    fi
 }
 
 apply_presets_from_args() {
