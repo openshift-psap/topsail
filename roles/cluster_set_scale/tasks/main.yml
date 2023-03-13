@@ -109,7 +109,7 @@
     register: non_ready_replicas
     until: not non_ready_replicas.stdout_lines
     retries: 120
-    delay: 10
+    delay: 30
 
   always:
   - name: Capture the description of the machines
