@@ -111,6 +111,16 @@
         > "{{ artifact_extra_logs_dir }}/artifacts-driver/nodes.descr"
   ignore_errors: yes
 
+- name: Store the Cluster machines status
+  shell:
+    oc get machines -n openshift-machine-api -owide > "{{ artifact_extra_logs_dir }}/artifacts-sutest/machines.status"
+  ignore_errors: yes
+
+- name: Store the Cluster machines description
+  shell:
+    oc describes machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/artifacts-sutest/machines.desc"
+  ignore_errors: yes
+
 - name: Get the Prometheus database
   include_role:
     name: cluster_prometheus_db
