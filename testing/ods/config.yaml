@@ -27,6 +27,9 @@ ci_presets:
   # run the notebook gating tests
   # (DSG and Jupyter scale tests, notebook performance)
   notebook_gating_scale_test:
+    clusters.create.ocp.control_plane.type: m6i.2xlarge
+    clusters.create.ocp.workers.type: m6i.2xlarge
+
     tests.notebooks.test_flavor: gating
     # modify the presets, as they will be applied by the gating test
     'ci_presets.notebook_scale_test["matbench.config_file"]': notebook_gating_notebook_scale_test.yaml
