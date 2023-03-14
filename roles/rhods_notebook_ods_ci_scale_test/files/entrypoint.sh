@@ -25,26 +25,58 @@ sed "s/#{USER_INDEX}/${USER_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.
 
 cp /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/* .
 
-# Use StateSignal-barrier to wait for all the Pods to be ready
+if [[ "$DRIVER_RUNNING_ON_SPOT_INSTANCES" == "False" ]]; then
+    # Use StateSignal-barrier to wait for all the Pods to be ready
 
-python3 -m pip --no-cache-dir install state-signals==0.5.2 --user
-echo "Running with user $JOB_COMPLETION_INDEX / $USER_COUNT"
-if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
-    python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" --exporter "$USER_COUNT" --delay "$STATE_SIGNAL_DELAY" &
+    python3 -m pip --no-cache-dir install state-signals==0.5.2 --user
+    echo "Running with user $JOB_COMPLETION_INDEX / $USER_COUNT"
+    if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
+        python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" --exporter "$USER_COUNT" --delay "$STATE_SIGNAL_DELAY" &
+    fi
+
+    echo "statesignal_setup: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
+    if ! python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER"; then # fails if the all Pods don't reach the barrier in time
+        echo "StateSignal syncrhonization failed :( (errcode=$?)"
+
+        # mark this test as failed
+        echo 1 > "$ARTIFACT_DIR/test.exit_code"
+
+        # exit the Pod successfully, so that all the Pod logs are retrieved.
+        # without this, we don't know why the 'fail' event was generated.
+        exit 0
+    fi
+    echo "statesignal_ready: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
+else
+    # Wait 60s after the Pod creation as an estimation for all the Pods to be ready
+    echo "spotdelaysync_ready_to_wait: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
+
+    if [[ "$JOB_CREATION_TIME" == '$JOB_CREATION_TIME' ]]; then
+        echo 'ERROR: driver running on spot instance but $JOB_CREATION_TIME is not set. Cannot continue.'
+        # mark this test as failed
+        echo 1 > "$ARTIFACT_DIR/test.exit_code"
+
+        exit 0
+    fi
+
+    SPOT_START_DELAY=60 # in seconds
+    cat >> /tmp/sync.py <<EOF
+import datetime, time
+job_creation_time = "$JOB_CREATION_TIME"
+timedelta_seconds = $SPOT_START_DELAY
+ready_time = datetime.datetime.strptime(job_creation_time, "%Y-%m-%dT%H:%M:%SZ") + datetime.timedelta(seconds=$SPOT_START_DELAY)
+print("INFO: Hardcoded start delay:", timedelta_seconds, "seconds")
+print("INFO: Job creation time:", job_creation_time)
+print("INFO: Ready time:", ready_time)
+print("INFO: Current time:", datetime.datetime.now())
+print("INFO: Waiting time:", (ready_time - datetime.datetime.now()).total_seconds())
+while datetime.datetime.now() < ready_time: time.sleep(1)
+print("INFO: Done :)")
+print("INFO: Current time:", datetime.datetime.now())
+EOF
+    time python3 /tmp/sync.py
+    echo "spotdelaysync_ready: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 fi
 
-echo "statesignal_setup: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
-if ! python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER"; then # fails if the all Pods don't reach the barrier in time
-    echo "StateSignal syncrhonization failed :( (errcode=$?)"
-
-    # mark this test as failed
-    echo 1 > "$ARTIFACT_DIR/test.exit_code"
-
-    # exit the Pod successfully, so that all the Pod logs are retrieved.
-    # without this, we don't know why the 'fail' event was generated.
-    exit 0
-fi
-echo "statesignal_synchronizing: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 # Sleep for a while to avoid DDoSing OAuth
 
 sleep_delay=$(python3 -c "print(int($JOB_COMPLETION_INDEX / $USER_BATCH_SIZE) * $SLEEP_FACTOR)")

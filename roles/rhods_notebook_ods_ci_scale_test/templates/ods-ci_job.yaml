@@ -75,6 +75,12 @@ spec:
 
         - name: TEST_ONLY_CREATE_NOTEBOOKS
           value: "{{ rhods_notebook_ods_ci_scale_test_only_create_notebooks }}"
+
+        - name: DRIVER_RUNNING_ON_SPOT_INSTANCES
+          value: "{{ rhods_notebook_ods_ci_scale_test_driver_running_on_spot }}"
+
+        - name: JOB_CREATION_TIME
+          value: "$JOB_CREATION_TIME" # set by `main.yml` (with sed) when creating the resource
         volumeMounts:
         - name: shared-dir
           mountPath: /mnt/shared-dir

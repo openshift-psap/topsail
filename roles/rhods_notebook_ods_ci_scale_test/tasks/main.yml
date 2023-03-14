@@ -242,10 +242,11 @@
 # ---
 
 - name: Create the RHODS test job
-  command:
-    oc create
-       -f "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_ods_ci_scale_test.yaml"
-       -n {{ tester_namespace }}
+  shell:
+    set -o pipefail;
+    cat "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_ods_ci_scale_test.yaml"
+      | sed 's/$JOB_CREATION_TIME/'$(date "+%Y-%m-%dT%H:%M:%SZ" --utc)'/'
+      | oc create -f- -n "{{ tester_namespace }}"
 
 - name: Wait for the RHODS tester job to start
   shell:
