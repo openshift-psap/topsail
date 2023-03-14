@@ -5,6 +5,7 @@ cluster_full_entitled:
 	@make diff
 	@make manifest
 	@make manifest_entitle
+	@make manifest_spot
 	@make install
 	@make kubeconfig
 

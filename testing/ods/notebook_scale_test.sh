@@ -72,6 +72,26 @@ build_and_preload_ods_ci_image() {
     build_and_preload_image "ods-ci"
 }
 
+tag_spot_machineset() {
+    local cluster_role="$1"
+    local name="$2"
+
+    local spot_tags=$(get_config clusters.spot.tags | jq '. | to_entries | .[]' --compact-output)
+    while read spot_tag; do
+        local tag_key=$(echo "$spot_tag" | jq .key -r)
+        local tag_value=$(echo "$spot_tag" | jq .value -r)
+
+        oc get machineset "$name" -ojson -n openshift-machine-api \
+            | jq \
+                  --arg name "$tag_key" \
+                  --arg value "$tag_value" \
+                  '.spec.template.spec.providerSpec.value.tags += [{"name": $name, "value": $value}]' \
+            | oc apply -f-
+    done <<< "$spot_tags"
+
+    oc get machineset "$name" -oyaml -n openshift-machine-api > "$ARTIFACT_DIR/${cluster_role}_machineset_spot_tagged.yaml"
+}
+
 prepare_driver_cluster() {
     switch_cluster driver
 
@@ -143,6 +163,10 @@ prepare_driver_scale_cluster() {
 
     ./run_toolbox.py from_config cluster set_scale --prefix="driver" \
                      --extra "{scale: $compute_nodes_count}"
+
+    if test_config clusters.driver.compute.machineset.spot; then
+        tag_spot_machineset driver "$(get_config clusters.driver.compute.machineset.name)"
+    fi
 }
 
 prepare_sutest_scale_cluster() {
@@ -195,6 +219,10 @@ prepare_sutest_scale_cluster() {
     else
         ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
                          --extra "{scale: $compute_nodes_count}"
+
+        if test_config clusters.sutest.compute.machineset.spot; then
+            tag_spot_machineset sutest "$(get_config clusters.sutest.compute.machineset.name)"
+        fi
 
         if test_config clusters.sutest.compute.autoscaling.enabled; then
             oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml

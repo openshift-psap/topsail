@@ -33,12 +33,14 @@ sutest/cluster set_scale:
   instance_type: {{ clusters.create.ocp.compute.type }}
   name: {{ clusters.sutest.compute.machineset.name }}
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
+  spot: {{ clusters.sutest.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 driver/cluster set_scale:
   instance_type: {{ clusters.create.ocp.compute.type }}
   name: {{ clusters.driver.compute.machineset.name }}
   taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
+  spot: {{ clusters.driver.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 cluster set_scale/notebook-performance:
@@ -187,6 +189,8 @@ rhods notebook_ods_ci_scale_test:
   capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
   only_create_notebooks: {{ tests.notebooks.ods_ci.only_create_notebooks }}
   stop_notebooks_on_exit: {{ tests.notebooks.ods_ci.stop_notebooks_on_exit }}
+  driver_running_on_spot: {{ clusters.driver.compute.machineset.spot or false}}
+
 rhods notebook_locust_scale_test:
   namespace: {{ tests.notebooks.namespace }}
   idp_name: {{ ldap.idp_name }}

@@ -23,3 +23,4 @@ include cluster_single-master.mk
 include cluster_sno.mk
 
 include entitlement.mk
+include spot.mk
