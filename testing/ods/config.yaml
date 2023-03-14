@@ -18,6 +18,7 @@ ci_presets:
   notebook_scale_test:
     tests.notebooks.users.count: 300
     clusters.create.ocp.control_plane.type: m6i.2xlarge
+    clusters.create.ocp.workers.type: m6i.2xlarge
     clusters.create.ocp.compute.type: m6i.2xlarge
     tests.notebooks.users.sleep_factor: 3.0
     tests.notebooks.test_flavor: ods-ci
