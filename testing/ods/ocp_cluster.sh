@@ -75,6 +75,7 @@ create_cluster() {
         yq -y '.compute[0].platform.aws.type = "'$(get_config clusters.create.ocp.workers.type)'"' | \
         yq -y '.compute[0].replicas = '$(get_config clusters.create.ocp.workers.count) | \
         yq -y '.controlPlane.platform.aws.type = "'$(get_config clusters.create.ocp.control_plane.type)'"' | \
+        yq -y '.controlPlane.replicas.count = "'$(get_config clusters.create.ocp.control_plane.count)'"' | \
         yq -y '.platform.aws.region = "'$(get_config clusters.create.ocp.region)'"' \
            > "$install_dir_config"
 

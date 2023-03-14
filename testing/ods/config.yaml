@@ -18,6 +18,7 @@ ci_presets:
   notebook_scale_test:
     tests.notebooks.users.count: 300
     clusters.create.ocp.control_plane.type: m6i.2xlarge
+    clusters.create.ocp.workers.type: m6i.2xlarge
     clusters.create.ocp.compute.type: m6i.2xlarge
     tests.notebooks.users.sleep_factor: 3.0
     tests.notebooks.test_flavor: ods-ci
@@ -27,6 +28,9 @@ ci_presets:
   # run the notebook gating tests
   # (DSG and Jupyter scale tests, notebook performance)
   notebook_gating_scale_test:
+    clusters.create.ocp.control_plane.type: m6i.2xlarge
+    clusters.create.ocp.workers.type: m6i.2xlarge
+
     tests.notebooks.test_flavor: gating
     # modify the presets, as they will be applied by the gating test
     'ci_presets.notebook_scale_test["matbench.config_file"]': notebook_gating_notebook_scale_test.yaml
@@ -39,8 +43,7 @@ ci_presets:
 
     clusters.create.type: ocp
     clusters.create.ocp.compute.type: m6i.16xlarge
-    clusters.create.ocp.worker.type: m6i.2xlarge
-    clusters.create.ocp.worker.count: 3
+    clusters.create.ocp.workers.count: 3
 
     rhods.operator.stop: true
     rhods.operator.dashboard.remove_oauth_resources: true
@@ -64,9 +67,9 @@ ci_presets:
 
   icelake_notebook_scale_test:
     extends: [notebook_scale_test, metal]
-    tests.notebooks.users.count: 1000
+    tests.notebooks.users.count: 80
     tests.notebooks.repeat: 1
-    tests.notebooks.users.sleep_factor: 3
+    tests.notebooks.users.sleep_factor: 1
 
   icelake_notebook_scale_test_scaleup:
     extends: [notebook_scale_test_scaleup]
@@ -149,6 +152,9 @@ ci_presets:
     clusters.sutest.is_managed: true
     clusters.sutest.managed.is_ocm: true
 
+  light_cluster:
+    clusters.create.ocp.control_plane.count: 1
+
   # preset used in CI-provided clusters to limit the scale of the test
   notebooks_light:
     clusters.sutest.compute.dedicated: false
@@ -162,6 +168,9 @@ ci_presets:
     'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.count"]': 200
     'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.batch_size"]': 50
 
+  light:
+    extends: [light_cluster, notebooks_light]
+
   metal:
     clusters.sutest.is_metal: true
 
@@ -170,8 +179,8 @@ ci_presets:
 
   icelake:
     extends: [metal]
-    clusters.driver.compute.dedicated: true
-    clusters.sutest.compute.dedicated: true
+    clusters.driver.compute.dedicated: false
+    clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
 secrets:
@@ -205,6 +214,7 @@ clusters:
       region: us-west-2
       control_plane:
         type: m6a.xlarge
+        count: 3
       workers:
         type: m6a.xlarge
         count: 2

@@ -111,22 +111,32 @@
     retries: 120
     delay: 10
 
-  rescue:
-  - name: Capture more information about the machineset failure
-    shell: |
-      echo Dumping information for machineset {{ item }}
-      echo MachineSets;
-      oc get 'machineset/{{ item }}' -n openshift-machine-api;
-      echo GPU Machines;
-      oc get machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}';
-    failed_when: false
-    loop: "{{ oc_get_machinesets.stdout_lines }}"
-
-  - name: Capture more information about the machineset failure
+  always:
+  - name: Capture the description of the machines
     shell: |
       oc describe machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}' > {{ artifact_extra_logs_dir }}/machines_{{ item }}.desc
     failed_when: false
     loop: "{{ oc_get_machinesets.stdout_lines }}"
+
+  - name: Capture the yaml of the machines
+    shell: |
+      oc get -oyaml machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}' > {{ artifact_extra_logs_dir }}/machines_{{ item }}.yaml
+    failed_when: false
+    loop: "{{ oc_get_machinesets.stdout_lines }}"
+
+  - name: Capture the description of the machinesets
+    shell: |
+      oc describe machineset/{{ item }} -n openshift-machine-api > {{ artifact_extra_logs_dir }}/machines_{{ item }}.desc
+    failed_when: false
+    loop: "{{ oc_get_machinesets.stdout_lines }}"
+
+  - name: Capture the yaml of the machinesets
+    shell: |
+      oc get -oyaml machineset/{{ item }} -n openshift-machine-api > {{ artifact_extra_logs_dir }}/machineset_{{ item }}.yaml
+    failed_when: false
+    loop: "{{ oc_get_machinesets.stdout_lines }}"
+
+  rescue:
 
   - name: Fail because the cluster machineset creation failed
     fail: msg="Failing because cluster machineset creation failed"

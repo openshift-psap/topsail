@@ -118,3 +118,4 @@
     cluster_prometheus_db_mode: dump
     cluster_prometheus_db_dump_name_prefix: artifacts-driver/prometheus_ocp
   when: capture_prom_db | bool
+  ignore_errors: yes

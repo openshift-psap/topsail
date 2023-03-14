@@ -418,13 +418,6 @@ prepare_notebook_performance_without_rhods() {
 }
 
 prepare() {
-    local test_flavor=$(get_config tests.notebooks.test_flavor)
-    if [[ "$test_flavor" == "gating" ]]; then
-        # cluster preparation is done right before testing (in run_gating_tests_and_plots)
-        _info "Nothing to prepare when test flavor is '$test_flavor'."
-        return
-    fi
-
     prepare_notebook_performance_without_rhods
 
     local test_flavor=$(get_config tests.notebooks.test_flavor)
@@ -718,29 +711,41 @@ run_gating_tests_and_plots() {
     do
         test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps
 
+        # Wait a few minutes if this isn't the first test
+        if [[ $test_idx -ne 1 ]]; then
+            local WAIT_TIME=5m
+            echo "Waiting $WAIT_TIME for the cluster to cool down before running the next test."
+            sleep 5m
+        fi
+
         # restore the initial configuration
         cp "$BASE_ARTIFACT_DIR/config.base.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
 
         apply_preset "$preset"
 
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/000_prepare_steps/$(printf "%03d" $test_idx)__prepare_${preset}"
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)__$preset/000__prepare_steps"
 
+        prepare_failed=0
         if ! prepare; then
+            prepare_failed=1
+        else
+            prepare_failed=0
+        fi
+
+        do_cleanup
+
+        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)__$preset"
+
+        if [[ "$prepare_failed" == 1 ]]; then
             ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' preparation failed :/"
             failed=1
-
-            do_cleanup
-
             continue
         fi
 
-        export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)_$preset"
         if ! run_normal_tests_and_plots; then
             ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' test failed :/"
             failed=1
         fi
-
-        do_cleanup
     done
 
     export ARTIFACT_DIR="$BASE_ARTIFACT_DIR"
@@ -789,6 +794,14 @@ sutest_cleanup() {
         return
     fi
 
+    if ! ./run_toolbox.py rhods capture_state > /dev/null > /dev/null; then
+        _warning "rhods capture_state failed :("
+    fi
+
+    if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
+        _warning "rhods notebook cleanup failed :("
+    fi
+
     if test_config clusters.sutest.is_managed; then
         local managed_cluster_name=$(get_config clusters.sutest.managed.name)
         local sutest_machineset_name=$(get_config clusters.sutest.compute.machineset.name)
@@ -814,10 +827,6 @@ sutest_cleanup_ldap() {
     if [[ "$test_flavor" == "notebook-performance" ]]; then
         echo "Running the notebook-performance, nothing to cleanup"
         return
-    fi
-
-    if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
-        _warning "rhods notebook cleanup failed :("
     fi
 
     if oc get cm/keep-cluster -n default 2>/dev/null; then
@@ -875,9 +884,9 @@ generate_plots() {
 connect_ci() {
     "$TESTING_ODS_DIR/ci_init_configure.sh"
 
-    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
-        local LIGHT_PROFILE="notebooks_light"
-        # running with a CI-provided cluster
+    if [[ "${JOB_NAME_SAFE:-}" == *"-light" ]]; then
+        local LIGHT_PROFILE="light"
+        # running a light test (usually in a CI-provided cluster)
         _info "Running '$JOB_NAME_SAFE' test, applying '$LIGHT_PROFILE' extra preset."
         set_config PR_POSITIONAL_ARG_EXTRA_LIGHT "$LIGHT_PROFILE"
     fi
@@ -944,7 +953,9 @@ run_test() {
         _error "Unknown test flavor: $test_flavor"
     fi
 
-    ./run_toolbox.py rhods capture_state > /dev/null || true
+    if ! ./run_toolbox.py rhods capture_state > /dev/null; then
+        _warning "rhods capture state failed :("
+    fi
 }
 
 apply_presets_from_args() {
@@ -1018,6 +1029,8 @@ main() {
             return 0
             ;;
         "prepare")
+            apply_presets_from_args "$@"
+
             prepare
             return 0
             ;;

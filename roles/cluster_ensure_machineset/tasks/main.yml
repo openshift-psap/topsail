@@ -3,11 +3,16 @@
   shell:
     oc get machineset -n openshift-machine-api
     {% if machineset_name | length > 0 %}
-      {{ machineset_name }} --ignore-not-found -ojsonpath={.metadata.name}
+      -ojson | jq '.items[] | select(.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}" and .metadata.name=="{{ machineset_name }}") | .metadata.name' -r
     {% else %}
       -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")].metadata.name}'
     {% endif %}
   register: cluster_has_machineset
+
+- name: Delete the machineset if it is set but has the wrong instance type
+  when: not cluster_has_machineset.stdout and machineset_name | length > 0
+  command:
+    oc delete machineset {{ machineset_name }} -n openshift-machine-api --ignore-not-found
 
 - name: Cluster already has machineset with required type
   when: cluster_has_machineset.stdout
