@@ -884,9 +884,9 @@ generate_plots() {
 connect_ci() {
     "$TESTING_ODS_DIR/ci_init_configure.sh"
 
-    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
+    if [[ "${JOB_NAME_SAFE:-}" == *"-light" ]]; then
         local LIGHT_PROFILE="light"
-        # running with a CI-provided cluster
+        # running a light test (usually in a CI-provided cluster)
         _info "Running '$JOB_NAME_SAFE' test, applying '$LIGHT_PROFILE' extra preset."
         set_config PR_POSITIONAL_ARG_EXTRA_LIGHT "$LIGHT_PROFILE"
     fi
