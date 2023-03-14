@@ -185,8 +185,10 @@ ci_presets:
 
   spot:
     clusters.sutest.compute.machineset.spot: true
+    clusters.driver.compute.machineset.spot: true
     'ci_presets.notebooks_light["clusters.driver.compute.machineset.count"]': null
     'ci_presets.notebooks_light["clusters.driver.compute.machineset.dedicated"]': true
+    'ci_presets.notebooks_light["clusters.sutest.compute.machineset.dedicated"]': true
 
 secrets:
   dir:
