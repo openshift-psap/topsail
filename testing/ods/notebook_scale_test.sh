@@ -795,7 +795,7 @@ sutest_cleanup() {
     fi
 
     if ! ./run_toolbox.py rhods capture_state > /dev/null > /dev/null; then
-        _warning "rhods notebook cleanup failed :("
+        _warning "rhods capture_state failed :("
     fi
 
     if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
@@ -954,7 +954,7 @@ run_test() {
     fi
 
     if ./run_toolbox.py rhods capture_state > /dev/null; then
-        _warning "rhods notebook cleanup failed :("
+        _warning "rhods capture state failed :("
     fi
 }
 
