@@ -953,7 +953,7 @@ run_test() {
         _error "Unknown test flavor: $test_flavor"
     fi
 
-    if ./run_toolbox.py rhods capture_state > /dev/null; then
+    if ! ./run_toolbox.py rhods capture_state > /dev/null; then
         _warning "rhods capture state failed :("
     fi
 }
