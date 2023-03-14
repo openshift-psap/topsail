@@ -155,12 +155,8 @@ ci_presets:
   light_cluster:
     clusters.create.ocp.control_plane.count: 1
 
-  light:
-    extends: [light_cluster]
-
   # preset used in CI-provided clusters to limit the scale of the test
   notebooks_light:
-    extends: [light]
     clusters.sutest.compute.dedicated: false
     clusters.sutest.compute.machineset.count: 1
 
@@ -171,6 +167,9 @@ ci_presets:
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
     'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.count"]': 200
     'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.batch_size"]': 50
+
+  light:
+    extends: [light_cluster, notebooks_light]
 
   metal:
     clusters.sutest.is_metal: true

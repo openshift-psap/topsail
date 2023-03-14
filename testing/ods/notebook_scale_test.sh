@@ -885,7 +885,7 @@ connect_ci() {
     "$TESTING_ODS_DIR/ci_init_configure.sh"
 
     if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
-        local LIGHT_PROFILE="notebooks_light"
+        local LIGHT_PROFILE="light"
         # running with a CI-provided cluster
         _info "Running '$JOB_NAME_SAFE' test, applying '$LIGHT_PROFILE' extra preset."
         set_config PR_POSITIONAL_ARG_EXTRA_LIGHT "$LIGHT_PROFILE"
