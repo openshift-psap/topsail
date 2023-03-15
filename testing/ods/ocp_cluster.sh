@@ -138,7 +138,7 @@ destroy_cluster() {
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_ocp_"
 
-    local destroy_dir="/tmp/${cluster_role}_ocp_destroy"
+    local destroy_dir="/tmp/${cluster_role}__ocp_destroy"
     mkdir "$destroy_dir"
 
     if ! cp "${CONFIG_DEST_DIR}/${cluster_role}_ocp_metadata.json" "${destroy_dir}/metadata.json"; then
