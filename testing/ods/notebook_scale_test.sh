@@ -841,7 +841,7 @@ sutest_cleanup() {
         else
             _error "sutest_cleanup: managed cluster must be OCM or ROSA ..."
         fi
-    elif ! test_config clusters.sutest.is_metal; then
+    elif test_config clusters.sutest.is_metal; then
          true # nothing to do
     else
         ./run_toolbox.py from_config cluster set_scale --prefix "sutest" --suffix "cleanup" > /dev/null
