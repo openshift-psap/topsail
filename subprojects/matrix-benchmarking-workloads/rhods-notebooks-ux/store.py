@@ -12,6 +12,7 @@ import fnmatch
 import pickle
 
 import pandas as pd
+import jsonpath_ng
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
@@ -239,7 +240,6 @@ def _parse_env(dirname):
             pr.base_ref = job_spec["refs"]["base_ref"]
 
     from_env.ci_run = "JOB_NAME_SAFE" in from_env.env
-    from_env.single_cluster = "single" in from_env.env.get("JOB_NAME_SAFE", "")
 
     return from_env
 
@@ -415,7 +415,7 @@ def _parse_resource_times(dirname):
 
 
 @ignore_file_not_found
-def _parse_pod_times(dirname, config=None, is_notebook=False):
+def _parse_pod_times(dirname, test_config=None, is_notebook=False):
     if is_notebook:
         filenames = [fname.relative_to(dirname) for fname in
                      (dirname / pathlib.Path("artifacts-sutest")).glob("project_*/notebook_pods.json")]
@@ -436,7 +436,7 @@ def _parse_pod_times(dirname, config=None, is_notebook=False):
                 user_index = re.findall(JUPYTER_USER_IDX_REGEX, pod_name)[0]
             elif "ods-ci-" in pod_name:
                 user_index = int(pod_name.rpartition("-")[0].replace("ods-ci-", "")) \
-                    - config["tests"]["notebooks"]["users"]["start_offset"]
+                    - test_config.get("tests.notebooks.users.start_offset")
             elif "locust-notebook-scale-test" in pod_name:
                 user_index = pod_name.split("-")[-2]
             else:
@@ -492,10 +492,23 @@ def _parse_notebook_perf_notebook(dirname):
     return notebook_perf
 
 def _parse_test_config(dirname):
+    test_config = types.SimpleNamespace()
 
     filename = pathlib.Path("config.yaml")
     with open(register_important_file(dirname, filename)) as f:
-        test_config = yaml.safe_load(f)
+        yaml_file = test_config.yaml_file = yaml.safe_load(f)
+
+    def get(key):
+        nonlocal yaml_file
+        jsonpath_expression = jsonpath_ng.parse(f'$.{key}')
+
+        match = jsonpath_expression.find(yaml_file)
+        if not match:
+            raise KeyError(f"Key '{key}' not found in {filename} ...")
+
+        return match[0].value
+
+    test_config.get = get
 
     return test_config
 
@@ -769,6 +782,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     fn_add_to_matrix(results)
 
+    results.test_config.get = None # cannot be serialized
     with open(dirname / CACHE_FILENAME, "wb") as f:
         pickle.dump(results, f)
 
