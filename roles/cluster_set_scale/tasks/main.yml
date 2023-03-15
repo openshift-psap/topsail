@@ -112,6 +112,7 @@
     delay: 30
 
   always:
+  # info about the 'machines'
   - name: Capture the description of the machines
     shell: |
       oc describe machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}' > {{ artifact_extra_logs_dir }}/machines_{{ item }}.desc
@@ -124,6 +125,13 @@
     failed_when: false
     loop: "{{ oc_get_machinesets.stdout_lines }}"
 
+  - name: Capture the status of the machines
+    shell: |
+      oc get machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}' > {{ artifact_extra_logs_dir }}/machines_{{ item }}.status
+    failed_when: false
+    loop: "{{ oc_get_machinesets.stdout_lines }}"
+
+  # info about the 'machinesets'
   - name: Capture the description of the machinesets
     shell: |
       oc describe machineset/{{ item }} -n openshift-machine-api > {{ artifact_extra_logs_dir }}/machines_{{ item }}.desc
@@ -133,6 +141,12 @@
   - name: Capture the yaml of the machinesets
     shell: |
       oc get -oyaml machineset/{{ item }} -n openshift-machine-api > {{ artifact_extra_logs_dir }}/machineset_{{ item }}.yaml
+    failed_when: false
+    loop: "{{ oc_get_machinesets.stdout_lines }}"
+
+  - name: Capture the status of the machinesets
+    shell: |
+      oc get machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}' > {{ artifact_extra_logs_dir }}/machineset_{{ item }}.status
     failed_when: false
     loop: "{{ oc_get_machinesets.stdout_lines }}"
 
