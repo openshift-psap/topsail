@@ -117,7 +117,7 @@ create_cluster() {
           CLUSTER_NAME="${cluster_name}" \
           METADATA_JSON_DEST="${CONFIG_DEST_DIR}/${cluster_role}_ocp_metadata.json" \
           DIFF_TOOL= \
-          USE_SPOT=no \
+          USE_SPOT= \
          | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/${cluster_role}_ocp_install.log"
     )
 
