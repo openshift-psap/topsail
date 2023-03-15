@@ -58,7 +58,7 @@
 
   - name: Store the Cluster machines description
     shell:
-      oc describes machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/artifacts-sutest/machines.desc"
+      oc describe machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/artifacts-sutest/machines.desc"
     ignore_errors: yes
 
   - name: Get the description of the nodes

@@ -75,7 +75,7 @@ create_cluster() {
         yq -y '.compute[0].platform.aws.type = "'$(get_config clusters.create.ocp.workers.type)'"' | \
         yq -y '.compute[0].replicas = '$(get_config clusters.create.ocp.workers.count) | \
         yq -y '.controlPlane.platform.aws.type = "'$(get_config clusters.create.ocp.control_plane.type)'"' | \
-        yq -y '.controlPlane.replicas.count = "'$(get_config clusters.create.ocp.control_plane.count)'"' | \
+        yq -y '.controlPlane.replicas = '$(get_config clusters.create.ocp.control_plane.count) | \
         yq -y '.platform.aws.region = "'$(get_config clusters.create.ocp.region)'"' \
            > "$install_dir_config"
 
@@ -117,7 +117,7 @@ create_cluster() {
           CLUSTER_NAME="${cluster_name}" \
           METADATA_JSON_DEST="${CONFIG_DEST_DIR}/${cluster_role}_ocp_metadata.json" \
           DIFF_TOOL= \
-          USE_SPOT=no \
+          USE_SPOT= \
          | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/${cluster_role}_ocp_install.log"
     )
 
@@ -138,7 +138,7 @@ destroy_cluster() {
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_ocp_"
 
-    local destroy_dir="/tmp/${cluster_role}_ocp_destroy"
+    local destroy_dir="/tmp/${cluster_role}__ocp_destroy"
     mkdir "$destroy_dir"
 
     if ! cp "${CONFIG_DEST_DIR}/${cluster_role}_ocp_metadata.json" "${destroy_dir}/metadata.json"; then
