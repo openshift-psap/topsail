@@ -464,7 +464,7 @@ def _parse_pod_times(dirname, test_config=None, is_notebook=False):
                 elif condition["type"] == "PodScheduled":
                     pod_times[user_index].pod_scheduled = last_transition
 
-            for containerStatus in pod["status"]["containerStatuses"]:
+            for containerStatus in pod["status"].get("containerStatuses", []):
                 try:
                     finishedAt =  datetime.datetime.strptime(
                         containerStatus["state"]["terminated"]["finishedAt"],
