@@ -27,6 +27,12 @@ cluster_helpers::get_compute_node_count() {
     local cluster_role=$1
 
     if [[ "$cluster_role" == "sutest" ]]; then
+
+        if test_config clusters.sutest.compute.autoscaling.enable; then
+            echo 0
+            return
+        fi
+
         local NB_SIZE_CONFIG_KEY=rhods.notebooks.customize.notebook_size
         local notebook_size="$(get_config $NB_SIZE_CONFIG_KEY.cpu) $(get_config $NB_SIZE_CONFIG_KEY.mem_gi)"
 
