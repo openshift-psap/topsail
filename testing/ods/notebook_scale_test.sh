@@ -1048,7 +1048,7 @@ main() {
             connect_ci
             local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
 
-            process_ctrl__finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999_teardown'") # switch to the 'teardown' artifacts directory
+            process_ctrl__finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999__teardown'") # switch to the 'teardown' artifacts directory
             process_ctrl__finalizers+=("capture_environment")
             process_ctrl__finalizers+=("sutest_cleanup")
             process_ctrl__finalizers+=("driver_cleanup")

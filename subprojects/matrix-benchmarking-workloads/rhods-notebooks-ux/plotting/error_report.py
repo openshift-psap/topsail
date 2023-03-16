@@ -74,13 +74,21 @@ def _get_test_setup(entry):
 
     setup_info += [html.Li("Test configuration:")]
 
-    try:
-        sleep_factor = entry.results.tester_job.env["SLEEP_FACTOR"]
-        delay = " starting with a delay of ", html.Code(sleep_factor), " seconds"
-    except KeyError: # SLEEP_FACTOR missing
-        delay = [""]
+    test_config = [html.Li(["Simulating ", html.B([html.Code(str(entry.results.user_count)), " users ..."])])]
 
-    setup_info += [html.Ul(html.Li([html.Code(str(entry.results.user_count)), " users", *delay]))]
+    sleep_factor = entry.results.test_config.get("tests.notebooks.users.sleep_factor")
+    test_config += [html.Ul(html.Li(["starting with a delay of ", html.Code(sleep_factor), " seconds"]))]
+
+    batch_size = entry.results.test_config.get("tests.notebooks.users.batch_size")
+    if batch_size > 1:
+        test_config += [html.Ul(html.Li(["by batches of ", html.Code(str(batch_size)), " users"]))]
+
+    total_repeat = entry.results.test_config.get("tests.notebooks.repeat")
+    if total_repeat > 1:
+        current_repeat = entry.settings.__dict__.get("repeat", -1)
+        test_config += [html.Li(["Running repetition ", html.B([html.Code(f"#{current_repeat}"), " out of ", html.Code(str(total_repeat))])])]
+
+    setup_info += [html.Ul(test_config)]
 
     managed = list(entry.results.rhods_cluster_info.master)[0].managed
     sutest_ocp_version = entry.results.sutest_ocp_version
@@ -101,15 +109,27 @@ def _get_test_setup(entry):
         nodes_info += [html.Li(nodes_info_li)]
 
         if purpose == "rhods_compute":
-            auto_scaling_msg = "No auto-scaling"
+            sutest_autoscaling = entry.results.test_config.get("clusters.sutest.compute.autoscaling.enabled")
+            if sutest_autoscaling:
+                auto_scaling_msg = ["Auto-scaling ", html.I("enabled"), "."]
+            else:
+                auto_scaling_msg = ["Nodes scaled up ", html.I("before"), " the test."]
             nodes_info += [html.Ul(html.Li(auto_scaling_msg))]
 
+            sutest_spot = entry.results.test_config.get("clusters.sutest.compute.machineset.spot")
+            if sutest_spot:
+                nodes_info += [html.Ul(html.Li(["Running on ", html.I("AWS Spot"), " instances."]))]
+
         elif purpose == "test_pods_only":
-            nodes_info += [html.Ul(html.Li(
-                ["Test pods running on "] +
-                (["the ", html.I("same")] if entry.results.from_env.single_cluster else \
-                 [html.I("another")])+[" cluster"]
-            ))]
+            single_cluster = entry.results.test_config.get("clusters.create.type") == "single"
+            if single_cluster:
+                nodes_info += [html.Ul(html.Li(["Test pods running on the ", html.I("same"), " cluster."]))]
+            else:
+                nodes_info += [html.Ul(html.Li(["Test pods running on ", html.I("another"), " cluster."]))]
+
+            driver_spot = entry.results.test_config.get("clusters.driver.compute.machineset.spot")
+            if driver_spot:
+                nodes_info += [html.Ul(html.Li(["Running on ", html.I("AWS Spot instances.")]))]
 
     setup_info += [html.Ul(nodes_info)]
 

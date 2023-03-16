@@ -24,6 +24,14 @@
   delay: 60
   loop: "{{ rhods_wait_ods_images.split(',') }}"
 
+- name: Wait for RHODS `notebooks` custom resource to be available
+  command:
+    oc get notebooks -n redhat-ods-operator
+  register: has_rhods_notebooks_cr
+  until: has_rhods_notebooks_cr.rc == 0
+  retries: 20
+  delay: 15
+
 - name: Capture the RHODS images details (debug)
   shell:
     set -o pipefail;
