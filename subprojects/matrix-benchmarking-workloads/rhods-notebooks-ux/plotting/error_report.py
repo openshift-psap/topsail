@@ -103,7 +103,13 @@ def _get_test_setup(entry):
 
         if not nodes and purpose == "test_pods_only": continue
 
-        nodes_info_li = [f"{len(nodes)} ", html.Code(list(nodes)[0].instance_type), f" {purpose} nodes"] \
+        purpose_str = f" {purpose_str} nodes"
+        purpose_str = f" nodes running OpenShift control plane"
+        if purpose == "rhods_compute": purpose_str = " nodes, running the OpenShift and RHODS Pods"
+        if purpose == "rhods_compute": purpose_str = " nodes running the Notebooks"
+        if purpose == "test_pods_only": purpose_str = " nodes running the user simulation Pods"
+
+        nodes_info_li = [f"{len(nodes)} ", html.Code(list(nodes)[0].instance_type), purpose_str] \
             if nodes else f"0 {purpose} nodes"
 
         nodes_info += [html.Li(nodes_info_li)]
