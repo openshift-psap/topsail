@@ -127,6 +127,10 @@ def _get_test_setup(entry):
             else:
                 nodes_info += [html.Ul(html.Li(["Test pods running on ", html.I("another"), " cluster."]))]
 
+            driver_autoscaling = entry.results.test_config.get("clusters.driver.compute.autoscaling.enabled")
+            if driver_autoscaling:
+                nodes_info += [html.Ul(html.Li(["Auto-scaling ", html.I("enabled"), "."]))]
+
             driver_spot = entry.results.test_config.get("clusters.driver.compute.machineset.spot")
             if driver_spot:
                 nodes_info += [html.Ul(html.Li(["Running on ", html.I("AWS Spot instances.")]))]
