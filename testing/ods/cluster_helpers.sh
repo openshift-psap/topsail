@@ -27,6 +27,12 @@ cluster_helpers::get_compute_node_count() {
     local cluster_role=$1
 
     if [[ "$cluster_role" == "sutest" ]]; then
+
+        if test_config clusters.sutest.compute.autoscaling.enable; then
+            echo 0
+            return
+        fi
+
         local NB_SIZE_CONFIG_KEY=rhods.notebooks.customize.notebook_size
         local notebook_size="$(get_config $NB_SIZE_CONFIG_KEY.cpu) $(get_config $NB_SIZE_CONFIG_KEY.mem_gi)"
 
@@ -46,6 +52,11 @@ cluster_helpers::get_compute_node_count() {
             user_count=1
         fi
     else
+        if test_config clusters.driver.compute.autoscaling.enable; then
+            echo 0
+            return
+        fi
+
         local test_flavor=$(get_config tests.notebooks.test_flavor)
         if [[ "$test_flavor" == "locust" ]]; then
             local notebook_size="1 2" # 'cpu mem', must match roles/rhods_notebook_locust_scale_test/templates/locust_job.yaml
