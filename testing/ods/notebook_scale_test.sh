@@ -58,18 +58,21 @@ switch_cluster() {
 
 # ---
 
-build_and_preload_image() {
+driver_build_and_preload_image() {
     suffix=$1
 
     process_ctrl::retry 5 30s \
                         ./run_toolbox.py from_config utils build_push_image \
                         --suffix "$suffix"
-    ./run_toolbox.py from_config cluster preload_image \
-                     --suffix "$suffix"
+
+    if ! test_config clusters.driver.compute.autoscaling.enable; then
+        ./run_toolbox.py from_config cluster preload_image \
+                         --suffix "$suffix"
+    fi
 }
 
-build_and_preload_ods_ci_image() {
-    build_and_preload_image "ods-ci"
+driver_build_and_preload_ods_ci_image() {
+    driver_build_and_preload_image "ods-ci"
 }
 
 tag_spot_machineset() {
@@ -116,9 +119,9 @@ prepare_driver_cluster() {
     # do not run this in background, we want to have the labels before running anything else
     set_dedicated_node_annotations
 
-    process_ctrl::run_in_bg build_and_preload_ods_ci_image
-    process_ctrl::run_in_bg build_and_preload_image "locust"
-    process_ctrl::run_in_bg build_and_preload_image "artifacts-exporter"
+    process_ctrl::run_in_bg driver_build_and_preload_ods_ci_image
+    process_ctrl::run_in_bg driver_build_and_preload_image "locust"
+    process_ctrl::run_in_bg driver_build_and_preload_image "artifacts-exporter"
 
     process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_minio_s3_server
     process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_nginx_server
@@ -166,6 +169,15 @@ prepare_driver_scale_cluster() {
 
     if test_config clusters.driver.compute.machineset.spot; then
         tag_spot_machineset driver "$(get_config clusters.driver.compute.machineset.name)"
+    fi
+
+    if test_config clusters.driver.compute.autoscaling.enabled; then
+        oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
+
+        local machineset_name=$(get_config clusters.driver.compute.machineset.name)
+        cat testing/ods/autoscaling/machineautoscaler.yaml \
+            | sed "s/MACHINESET_NAME/$machineset_name/" \
+            | oc apply -f-
     fi
 }
 
@@ -401,12 +413,12 @@ sutest_wait_rhods_launch() {
     fi
 
 
+    # preload the notebook image only if auto-scaling is disabled
     if ! test_config clusters.sutest.compute.autoscaling.enable; then
         local rhods_notebook_image_name=$(get_config tests.notebooks.notebook.image_name)
         local rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
                                        | cut -d/ -f2 | grep "$rhods_notebook_image_name" | cut -d: -f2)
 
-        # preload the image only if auto-scaling is disabled
         notebook_image="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$rhods_notebook_image_name:$rhods_notebook_image_tag"
         ./run_toolbox.py from_config cluster preload_image --suffix "notebook" \
                          --extra "{image:'$notebook_image',name:'$rhods_notebook_image_name'}"
@@ -1140,7 +1152,7 @@ main() {
             local namespace=$(get_config tests.notebooks.namespace)
             local istag=$(get_command_arg ods_ci_istag rhods notebook_ods_ci_scale_test)
             oc delete istag "$istag" -n "$namespace" --ignore-not-found
-            build_and_preload_ods_ci_image
+            driver_build_and_preload_ods_ci_image
             return 0
             ;;
         "export_to_s3")
