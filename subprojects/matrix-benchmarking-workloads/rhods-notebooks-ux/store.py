@@ -789,12 +789,15 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.all_resource_times = _parse_resource_times(dirname)
 
+    print("add the result to the matrix ...")
+
     fn_add_to_matrix(results)
 
     results.test_config.get = None # cannot be serialized
     with open(dirname / CACHE_FILENAME, "wb") as f:
         pickle.dump(results, f)
 
+    print("parsing done :)")
 
 def parse_data():
     # delegate the parsing to the simple_store
