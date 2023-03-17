@@ -103,9 +103,9 @@ def _get_test_setup(entry):
 
         if not nodes and purpose == "test_pods_only": continue
 
-        purpose_str = f" {purpose_str} nodes"
-        purpose_str = f" nodes running OpenShift control plane"
-        if purpose == "rhods_compute": purpose_str = " nodes, running the OpenShift and RHODS Pods"
+        purpose_str = f" {purpose} nodes"
+        if purpose == "master": purpose_str = f" nodes running OpenShift control plane"
+        if purpose == "infra": purpose_str = " nodes, running the OpenShift and RHODS infrastructure Pods"
         if purpose == "rhods_compute": purpose_str = " nodes running the Notebooks"
         if purpose == "test_pods_only": purpose_str = " nodes running the user simulation Pods"
 
