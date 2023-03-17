@@ -56,7 +56,7 @@ IMPORTANT_FILES = [
     "artifacts-sutest/routes.json",
     "artifacts-sutest/services.json",
     "artifacts-sutest/statefulsets.json",
-    "artifacts-sutest/setcrets_safe.json",
+    "artifacts-sutest/secrets_safe.json",
 
     "artifacts-driver/nodes.json",
     "artifacts-driver/prometheus_ocp.t*",
