@@ -495,15 +495,24 @@ def _parse_test_config(dirname):
     test_config = types.SimpleNamespace()
 
     filename = pathlib.Path("config.yaml")
+    test_config.filepath = dirname / filename
+
     with open(register_important_file(dirname, filename)) as f:
         yaml_file = test_config.yaml_file = yaml.safe_load(f)
 
-    def get(key):
+    if not yaml_file:
+        logging.error("Config file '{filename}' is empty ...")
+        yaml_file = test_config.yaml_file = {}
+
+    def get(key, missing=...):
         nonlocal yaml_file
         jsonpath_expression = jsonpath_ng.parse(f'$.{key}')
 
         match = jsonpath_expression.find(yaml_file)
         if not match:
+            if missing != ...:
+                return missing
+
             raise KeyError(f"Key '{key}' not found in {filename} ...")
 
         return match[0].value
