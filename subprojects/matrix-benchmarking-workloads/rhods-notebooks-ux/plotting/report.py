@@ -277,7 +277,7 @@ class NotebookPerformanceReport():
             if ordered_vars:
                 header.append(html.H3(", ".join(f"{k}={entry.settings.__dict__[k]}" for k in ordered_vars)))
 
-            if settings["user_count"] == "1":
+            if settings.get("user_count") == "1":
                 header += Plot_and_Text("Notebook Performance",
                                         set_config(dict(user_details=1, stacked=1), set_entry(entry, args)))
 
