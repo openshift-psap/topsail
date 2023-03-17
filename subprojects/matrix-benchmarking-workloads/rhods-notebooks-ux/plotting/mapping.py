@@ -238,15 +238,19 @@ class TestNodesPerformance():
 
                 test_duration = test_finish_time - test_start_time
 
-                hostname = hostnames[user_idx]
+                hostname = hostnames.get(user_idx, "mapping not found")
                 shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "")
+                try:
+                    hostname_idx = hostnames_index(hostname)
+                except ValueError:
+                    hostname_idx = -1
 
                 data.append(dict(
                     Status="PASS" if ods_ci.exit_code == 0 else "FAIL",
                     Duration = test_duration.total_seconds(),
                     User = f"User #{user_idx:03d}",
-                    NodeIndex = f"Node {hostnames_index(hostname)}",
-                    NodeName = f"Node {hostnames_index(hostname)}<br>{shortname}",
+                    NodeIndex = f"Node {hostname_idx}",
+                    NodeName = f"Node {hostname_idx}<br>{shortname}",
                 ))
 
 
