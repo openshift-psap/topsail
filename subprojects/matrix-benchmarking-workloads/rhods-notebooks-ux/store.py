@@ -553,8 +553,6 @@ def _parse_ods_ci_exit_code(dirname, output_dir):
 @ignore_file_not_found
 def _parse_ods_ci_output_xml(dirname, output_dir):
     filename = output_dir / "output.xml"
-
-
     with open(register_important_file(dirname, filename)) as f:
         try:
             output_dict = xmltodict.parse(f.read())
@@ -742,6 +740,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
 
     print("_parse_pod_times (tester)")
+
     results.testpod_times, results.testpod_hostnames = _parse_pod_times(dirname, results.test_config) or ({}, {})
     print("_parse_pod_times (notebooks)")
     results.notebook_pod_times, results.notebook_hostnames = _parse_pod_times(dirname, is_notebook=True) or ({}, {})
@@ -754,9 +753,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     if (dirname / "ods-ci").exists():
         results.ods_ci = {}
 
-        for user_idx, pod_times in results.testpod_times.items():
-            pod_hostname = pod_times.pod_name.rpartition("-")[0]
-
+        for ods_ci_dirname in (dirname / pathlib.Path("ods-ci")).glob("*"):
+            pod_hostname = ods_ci_dirname.name
+            user_idx = int(pod_hostname.split("-")[-1])
             output_dir = pathlib.Path("ods-ci") / pod_hostname
             results.ods_ci[user_idx] = _parse_ods_ci_pods_directory(dirname, output_dir) \
                 if (dirname / output_dir).exists() else None
