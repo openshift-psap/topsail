@@ -447,7 +447,7 @@ def _parse_pod_times(dirname, test_config=None, is_notebook=False):
             pod_times[user_index].user_index = int(user_index)
             pod_times[user_index].pod_name = pod_name
 
-            hostnames[user_index] = pod["spec"].get("nodeName", "<not available>")
+            hostnames[user_index] = pod["spec"].get("nodeName")
 
             start_time = pod["status"].get("startTime")
             pod_times[user_index].start_time = None if not start_time else \
