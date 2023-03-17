@@ -1,6 +1,7 @@
 from collections import defaultdict
 import datetime
 import math
+import logging
 
 import plotly.graph_objs as go
 import pandas as pd
@@ -55,13 +56,16 @@ class Completion():
         memory_needed = rq_mem * user_count
 
         machines_in_use = set()
+        unknown_hostnames = set([None])
         for hostname in entry.results.notebook_hostnames.values():
             try:
                 machines_in_use.add(entry.results.nodes_info[hostname].instance_type)
             except KeyError as e:
-                print(f"WARNING: {hostname} not found ...")
+                if hostname not in unknown_hostnames:
+                    logging.warning(f"completion: hostname={hostname} not found ...")
+                    unknown_hostnames.add(hostname)
             except AttributeError as e:
-                print(f"WARNING: {e} ...")
+                logging.warning(f"completion: {e} ...")
 
         data = []
         has_price = False
