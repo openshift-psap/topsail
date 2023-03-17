@@ -731,7 +731,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.odh_dashboard_config = _parse_odh_dashboard_config(dirname, notebook_size_name)
 
     print("_parse_nodes_info")
-    results.nodes_info = defaultdict(types.SimpleNamespace)
+    results.nodes_info = {}
     results.nodes_info |= _parse_nodes_info(dirname) or {}
     results.nodes_info |= _parse_nodes_info(dirname, sutest_cluster=True) or {}
 
@@ -752,7 +752,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     # ODS-CI
     if (dirname / "ods-ci").exists():
-        results.ods_ci = defaultdict(types.SimpleNamespace)
+        results.ods_ci = {}
 
         for user_idx, pod_times in results.testpod_times.items():
             pod_hostname = pod_times.pod_name.rpartition("-")[0]
@@ -765,7 +765,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     # Locust
     if (dirname / "locust-scale-test").exists():
-        results.locust = defaultdict(types.SimpleNamespace)
+        results.locust = {}
 
         for user_idx, pod_times in results.testpod_times.items():
             pod_hostname = pod_times.pod_name.rpartition("-")[0]
