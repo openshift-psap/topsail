@@ -331,6 +331,9 @@ sutest_customize_rhods_after_wait() {
             | oc apply -f-
     fi
 
+    # workaround for RHODS-7570: disable RHODS monitoring
+    oc label namespace redhat-ods-monitoring openshift.io/cluster-monitoring-
+    oc label namespace redhat-ods-monitoring openshift.io/user-monitoring=false --overwrite
 }
 
 prepare_rhods_admin_users() {
