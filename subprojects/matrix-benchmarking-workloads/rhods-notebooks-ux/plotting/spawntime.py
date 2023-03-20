@@ -94,15 +94,11 @@ def add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide):
                 data.append(add_substep_time(entry_data, 1, "K8s Resources initialization",
                                              step_start, notebook_pod_times.pod_scheduled,))
 
-                if not hasattr(notebook_pod_times, "pod_initialized"): continue
-                data.append(add_substep_time(entry_data, 2, "Pod initialization",
-                                             notebook_pod_times.pod_scheduled, notebook_pod_times.pod_initialized,))
-
                 if not hasattr(notebook_pod_times, "containers_ready"): continue
-                data.append(add_substep_time(entry_data, 3, "Container initialization",
+                data.append(add_substep_time(entry_data, 2, "Container initialization",
                                              notebook_pod_times.pod_initialized, notebook_pod_times.containers_ready))
 
-                data.append(add_substep_time(entry_data, 4, "User notification",
+                data.append(add_substep_time(entry_data, 3, "User notification",
                                              notebook_pod_times.containers_ready, step_finish))
                 continue
 
