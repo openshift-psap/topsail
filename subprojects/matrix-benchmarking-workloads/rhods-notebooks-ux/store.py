@@ -56,7 +56,7 @@ IMPORTANT_FILES = [
     "artifacts-sutest/routes.json",
     "artifacts-sutest/services.json",
     "artifacts-sutest/statefulsets.json",
-    "artifacts-sutest/setcrets_safe.json",
+    "artifacts-sutest/secrets_safe.json",
 
     "artifacts-driver/nodes.json",
     "artifacts-driver/prometheus_ocp.t*",
@@ -447,7 +447,7 @@ def _parse_pod_times(dirname, test_config=None, is_notebook=False):
             pod_times[user_index].user_index = int(user_index)
             pod_times[user_index].pod_name = pod_name
 
-            hostnames[user_index] = pod["spec"].get("nodeName", "<not available>")
+            hostnames[user_index] = pod["spec"].get("nodeName")
 
             start_time = pod["status"].get("startTime")
             pod_times[user_index].start_time = None if not start_time else \
@@ -464,7 +464,7 @@ def _parse_pod_times(dirname, test_config=None, is_notebook=False):
                 elif condition["type"] == "PodScheduled":
                     pod_times[user_index].pod_scheduled = last_transition
 
-            for containerStatus in pod["status"]["containerStatuses"]:
+            for containerStatus in pod["status"].get("containerStatuses", []):
                 try:
                     finishedAt =  datetime.datetime.strptime(
                         containerStatus["state"]["terminated"]["finishedAt"],
@@ -495,15 +495,24 @@ def _parse_test_config(dirname):
     test_config = types.SimpleNamespace()
 
     filename = pathlib.Path("config.yaml")
+    test_config.filepath = dirname / filename
+
     with open(register_important_file(dirname, filename)) as f:
         yaml_file = test_config.yaml_file = yaml.safe_load(f)
 
-    def get(key):
+    if not yaml_file:
+        logging.error("Config file '{filename}' is empty ...")
+        yaml_file = test_config.yaml_file = {}
+
+    def get(key, missing=...):
         nonlocal yaml_file
         jsonpath_expression = jsonpath_ng.parse(f'$.{key}')
 
         match = jsonpath_expression.find(yaml_file)
         if not match:
+            if missing != ...:
+                return missing
+
             raise KeyError(f"Key '{key}' not found in {filename} ...")
 
         return match[0].value
@@ -544,8 +553,6 @@ def _parse_ods_ci_exit_code(dirname, output_dir):
 @ignore_file_not_found
 def _parse_ods_ci_output_xml(dirname, output_dir):
     filename = output_dir / "output.xml"
-
-
     with open(register_important_file(dirname, filename)) as f:
         try:
             output_dict = xmltodict.parse(f.read())
@@ -722,7 +729,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.odh_dashboard_config = _parse_odh_dashboard_config(dirname, notebook_size_name)
 
     print("_parse_nodes_info")
-    results.nodes_info = defaultdict(types.SimpleNamespace)
+    results.nodes_info = {}
     results.nodes_info |= _parse_nodes_info(dirname) or {}
     results.nodes_info |= _parse_nodes_info(dirname, sutest_cluster=True) or {}
 
@@ -733,6 +740,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
 
     print("_parse_pod_times (tester)")
+
     results.testpod_times, results.testpod_hostnames = _parse_pod_times(dirname, results.test_config) or ({}, {})
     print("_parse_pod_times (notebooks)")
     results.notebook_pod_times, results.notebook_hostnames = _parse_pod_times(dirname, is_notebook=True) or ({}, {})
@@ -743,11 +751,11 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     # ODS-CI
     if (dirname / "ods-ci").exists():
-        results.ods_ci = defaultdict(types.SimpleNamespace)
+        results.ods_ci = {}
 
-        for user_idx, pod_times in results.testpod_times.items():
-            pod_hostname = pod_times.pod_name.rpartition("-")[0]
-
+        for ods_ci_dirname in (dirname / pathlib.Path("ods-ci")).glob("*"):
+            pod_hostname = ods_ci_dirname.name
+            user_idx = int(pod_hostname.split("-")[-1])
             output_dir = pathlib.Path("ods-ci") / pod_hostname
             results.ods_ci[user_idx] = _parse_ods_ci_pods_directory(dirname, output_dir) \
                 if (dirname / output_dir).exists() else None
@@ -756,7 +764,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     # Locust
     if (dirname / "locust-scale-test").exists():
-        results.locust = defaultdict(types.SimpleNamespace)
+        results.locust = {}
 
         for user_idx, pod_times in results.testpod_times.items():
             pod_hostname = pod_times.pod_name.rpartition("-")[0]
@@ -780,12 +788,15 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.all_resource_times = _parse_resource_times(dirname)
 
+    print("add the result to the matrix ...")
+
     fn_add_to_matrix(results)
 
     results.test_config.get = None # cannot be serialized
     with open(dirname / CACHE_FILENAME, "wb") as f:
         pickle.dump(results, f)
 
+    print("parsing done :)")
 
 def parse_data():
     # delegate the parsing to the simple_store

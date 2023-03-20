@@ -33,6 +33,7 @@ def add_ods_ci_progress(entry, hide_failed_users):
             entry_data["Step Name"] = checkpoint_name
             entry_data["Step Duration"] = timelength
             entry_data["Step Index"] = checkpoint_idx
+
             entry_data["User Index"] = user_idx
             entry_data["User Name"] = f"User #{user_idx}"
             if failures:
@@ -93,15 +94,11 @@ def add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide):
                 data.append(add_substep_time(entry_data, 1, "K8s Resources initialization",
                                              step_start, notebook_pod_times.pod_scheduled,))
 
-                if not hasattr(notebook_pod_times, "pod_initialized"): continue
-                data.append(add_substep_time(entry_data, 2, "Pod initialization",
-                                             notebook_pod_times.pod_scheduled, notebook_pod_times.pod_initialized,))
-
                 if not hasattr(notebook_pod_times, "containers_ready"): continue
-                data.append(add_substep_time(entry_data, 3, "Container initialization",
+                data.append(add_substep_time(entry_data, 2, "Container initialization",
                                              notebook_pod_times.pod_initialized, notebook_pod_times.containers_ready))
 
-                data.append(add_substep_time(entry_data, 4, "User notification",
+                data.append(add_substep_time(entry_data, 3, "User notification",
                                              notebook_pod_times.containers_ready, step_finish))
                 continue
 
@@ -226,10 +223,12 @@ class NotebookResourceCreationTimeline():
         for kind in entry.results.all_resource_times.__dict__:
             resource_times = entry.results.all_resource_times.__dict__[kind]
             if not resource_times: continue
+
             for user_idx, resources in resource_times.items():
                 for res_name, res_times in resources.items():
                     data.append({
-                        "User Index": f"{user_idx:03d}",
+                        "User Index": user_idx,
+                        "User Name": f"User #{user_idx:4d}",
                         "Resource": res_name,
                         "Create Time": res_times.creationTimestamp,
                     })
@@ -237,9 +236,9 @@ class NotebookResourceCreationTimeline():
         if not data:
             return None, "No data available"
 
+        df = pd.DataFrame(data).sort_values(by=["User Index", "Resource"], ascending=True)
 
-        df = pd.DataFrame(data).sort_values(by=["User Index"], ascending=True)
-        fig = px.line(df, x="Create Time", y="User Index", color="Resource", title="Resource creation time")
+        fig = px.line(df, x="Create Time", y="User Name", color="Resource", title="Resource creation time")
 
         fig.update_layout(xaxis_title="Timeline (in seconds)")
         fig.update_layout(yaxis_title="")

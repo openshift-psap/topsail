@@ -64,6 +64,7 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
 
         try:
             hostname = hostnames[user_idx]
+            if not hostname: raise KeyError # not mapped
         except KeyError:
             data.append(dict(
                 UserIndex = f"User #{user_idx:03d}",
@@ -85,7 +86,7 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
 
         try:
             instance_type = entry.results.nodes_info[hostname].instance_type
-        except AttributeError:
+        except (AttributeError, KeyError):
             instance_type = ""
 
         data.append(dict(
@@ -238,22 +239,25 @@ class TestNodesPerformance():
 
                 test_duration = test_finish_time - test_start_time
 
-                hostname = hostnames[user_idx]
+                hostname = hostnames.get(user_idx, "mapping not found")
                 shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "")
+                try:
+                    hostname_idx = hostnames_index(hostname)
+                except ValueError:
+                    hostname_idx = -1
 
                 data.append(dict(
                     Status="PASS" if ods_ci.exit_code == 0 else "FAIL",
                     Duration = test_duration.total_seconds(),
                     User = f"User #{user_idx:03d}",
-                    NodeIndex = f"Node {hostnames_index(hostname)}",
-                    NodeName = f"Node {hostnames_index(hostname)}<br>{shortname}",
+                    NodeIndex = f"Node {hostname_idx}",
+                    NodeName = f"Node {hostname_idx}<br>{shortname}",
                 ))
 
+        if not data:
+            return None, "Nothing to plot (no data)"
 
         df = pd.DataFrame(data).sort_values(by=["Duration"], ascending=True)
-
-        if df.empty:
-            return None, "Nothing to plot (no data)"
 
         title = f"Duration of the user test on each of the test nodes"
         fig = px.bar(df, x="User", y="Duration", color="NodeName",

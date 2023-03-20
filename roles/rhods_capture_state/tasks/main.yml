@@ -21,6 +21,14 @@
        > "{{ artifact_extra_logs_dir }}/notebooks.yaml"
   failed_when: false
 
+- name: Get the RHODS CSV
+  shell:
+    oc get csv -n redhat-ods-operator -oyaml > "{{ artifact_extra_logs_dir }}/rhods.csv.yaml"
+
+- name: Get the RHODS version
+  shell:
+    oc get csv -n redhat-ods-operator -ojsonpath={.items[0].spec.version} > "{{ artifact_extra_logs_dir }}/rhods.versionl"
+
 - name: Get the RHODS operator pod status
   shell:
     oc get pod -A -lname=rhods-operator > "{{ artifact_extra_logs_dir }}/rhods_operator.status"

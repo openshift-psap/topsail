@@ -20,7 +20,7 @@ def register():
 
 def _get_test_setup(entry):
     setup_info = []
-    if entry.results.from_env.pr:
+    if entry.results.from_env and entry.results.from_env.pr:
         pr = entry.results.from_env.pr
         if entry.results.from_pr:
             title = html.B(entry.results.from_pr["title"])
@@ -76,14 +76,14 @@ def _get_test_setup(entry):
 
     test_config = [html.Li(["Simulating ", html.B([html.Code(str(entry.results.user_count)), " users ..."])])]
 
-    sleep_factor = entry.results.test_config.get("tests.notebooks.users.sleep_factor")
+    sleep_factor = entry.results.test_config.get("tests.notebooks.users.sleep_factor", None)
     test_config += [html.Ul(html.Li(["starting with a delay of ", html.Code(sleep_factor), " seconds"]))]
 
-    batch_size = entry.results.test_config.get("tests.notebooks.users.batch_size")
+    batch_size = entry.results.test_config.get("tests.notebooks.users.batch_size", 0)
     if batch_size > 1:
         test_config += [html.Ul(html.Li(["by batches of ", html.Code(str(batch_size)), " users"]))]
 
-    total_repeat = entry.results.test_config.get("tests.notebooks.repeat")
+    total_repeat = entry.results.test_config.get("tests.notebooks.repeat", 0)
     if total_repeat > 1:
         current_repeat = entry.settings.__dict__.get("repeat", -1)
         test_config += [html.Li(["Running repetition ", html.B([html.Code(f"#{current_repeat}"), " out of ", html.Code(str(total_repeat))])])]
@@ -103,9 +103,9 @@ def _get_test_setup(entry):
 
         if not nodes and purpose == "test_pods_only": continue
 
-        purpose_str = f" {purpose_str} nodes"
-        purpose_str = f" nodes running OpenShift control plane"
-        if purpose == "rhods_compute": purpose_str = " nodes, running the OpenShift and RHODS Pods"
+        purpose_str = f" {purpose} nodes"
+        if purpose == "master": purpose_str = f" nodes running OpenShift control plane"
+        if purpose == "infra": purpose_str = " nodes, running the OpenShift and RHODS infrastructure Pods"
         if purpose == "rhods_compute": purpose_str = " nodes running the Notebooks"
         if purpose == "test_pods_only": purpose_str = " nodes running the user simulation Pods"
 
@@ -115,14 +115,14 @@ def _get_test_setup(entry):
         nodes_info += [html.Li(nodes_info_li)]
 
         if purpose == "rhods_compute":
-            sutest_autoscaling = entry.results.test_config.get("clusters.sutest.compute.autoscaling.enabled")
+            sutest_autoscaling = entry.results.test_config.get("clusters.sutest.compute.autoscaling.enabled", False)
             if sutest_autoscaling:
                 auto_scaling_msg = ["Auto-scaling ", html.I("enabled"), "."]
             else:
                 auto_scaling_msg = ["Nodes scaled up ", html.I("before"), " the test."]
             nodes_info += [html.Ul(html.Li(auto_scaling_msg))]
 
-            sutest_spot = entry.results.test_config.get("clusters.sutest.compute.machineset.spot")
+            sutest_spot = entry.results.test_config.get("clusters.sutest.compute.machineset.spot", False)
             if sutest_spot:
                 nodes_info += [html.Ul(html.Li(["Running on ", html.I("AWS Spot"), " instances."]))]
 
@@ -133,11 +133,11 @@ def _get_test_setup(entry):
             else:
                 nodes_info += [html.Ul(html.Li(["Test pods running on ", html.I("another"), " cluster."]))]
 
-            driver_autoscaling = entry.results.test_config.get("clusters.driver.compute.autoscaling.enabled")
+            driver_autoscaling = entry.results.test_config.get("clusters.driver.compute.autoscaling.enabled", False)
             if driver_autoscaling:
                 nodes_info += [html.Ul(html.Li(["Auto-scaling ", html.I("enabled"), "."]))]
 
-            driver_spot = entry.results.test_config.get("clusters.driver.compute.machineset.spot")
+            driver_spot = entry.results.test_config.get("clusters.driver.compute.machineset.spot", False)
             if driver_spot:
                 nodes_info += [html.Ul(html.Li(["Running on ", html.I("AWS Spot instances.")]))]
 
