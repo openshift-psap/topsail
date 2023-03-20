@@ -58,8 +58,8 @@ ci_presets:
     rhods.operator.dashboard.remove_oauth_resources: true
     rhods.operator.odh_notebook_controller.image: null
     rhods.operator.odh_notebook_controller.replicas: 1
-    clusters.create.ocp.control_plane.type: m5.xlarge
-    clusters.create.ocp.compute.type: m5.xlarge
+    clusters.create.ocp.control_plane.type: m6i.xlarge
+    clusters.create.ocp.compute.type: m6i.xlarge
 
     tests.notebooks.users.count: 300
     tests.notebooks.repeat: 2
@@ -235,7 +235,7 @@ clusters:
         type: m6a.xlarge
         count: 2
       compute:
-        type: m5a.2xlarge
+        type: m6i.2xlarge
 
   cleanup:
     max_age: 4 #hours
