@@ -42,6 +42,25 @@ finalize_cluster() {
     wait
 }
 
+check_test_size() {
+    if [[ "${OPENSHIFT_CI:-}" == true ]]; then
+        if [[ "$JOB_NAME_SAFE" != *-long ]]; then
+            # not running in a long test
+
+            if [[ "$(get_config tests.notebooks.test_flavor)" == gating ]]; then
+                echo "ERROR: refusing to run the notebook gating scale test outside of a '-long' test. (JOB_NAME_SAFE=$JOB_NAME_SAFE)"
+                exit 1
+            fi
+
+            local user_count=$($(get_config tests.notebooks.users.count))
+            if [[ "$user_count" -gt 300 ]]; then
+                echo "ERROR: refusing to run the notebook scale test with $user_count users outside of a '-long' test. (JOB_NAME_SAFE=$JOB_NAME_SAFE)"
+                exit 1
+            fi
+        fi
+    fi
+}
+
 destroy_cluster() {
     local cluster_role=$1
 
@@ -187,6 +206,7 @@ main() {
             process_ctrl__finalizers+=("process_ctrl::kill_bg_processes")
             "$TESTING_ODS_DIR/ci_init_configure.sh"
             prepare_args_from_pr
+            check_test_size
 
             "$TESTING_ODS_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
 
