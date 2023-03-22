@@ -316,7 +316,7 @@ rhods:
     dashboard:
       image: null
       replicas: null
-
+      resources_cpu: null
 
   admin:
     count: 2 # the first N users will be granted these privileges

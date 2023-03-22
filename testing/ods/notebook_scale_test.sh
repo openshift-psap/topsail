@@ -393,6 +393,11 @@ sutest_wait_rhods_launch() {
             echo "$dashboard_replicas" > "$ARTIFACT_DIR/dashboard.replicas"
         fi
 
+        dashboard_resources_cpu=$(get_config rhods.operator.dashboard.resources_cpu)
+        if [[ "$dashboard_resources_cpu" != null ]]; then
+            oc set resources deploy/rhods-dashboard "--limits=cpu=$dashboard_resources_cpu" "--requests=cpu=$dashboard_resources_cpu" -n redhat-ods-applications
+            echo "$dashboard_resources_cpu" > "$ARTIFACT_DIR/dashboard.resources_cpu"
+        fi
     fi
 
     local dedicated="{}" # set the toleration/node-selector annotations
