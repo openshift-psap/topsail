@@ -19,8 +19,8 @@ ci_banner() {
 }
 
 prechecks() {
-    if [ "${INSIDE_CI_IMAGE:-}" == "y" ]; then
-        if [[ "$JOB_NAME" == rehearse-* ]]; then
+    if [ "${OPENSHIFT_CI:-}" == true ]; then
+        if [[ "${JOB_NAME:-}" == rehearse-* ]]; then
             echo "FATAL: rehearsal disabled. Please merge the commit for testing."
             exit 1
         fi
