@@ -393,10 +393,6 @@ sutest_wait_rhods_launch() {
             echo "$dashboard_replicas" > "$ARTIFACT_DIR/dashboard.replicas"
         fi
 
-        if test_config rhods.operator.remove_oauth_resources; then
-            oc get deploy rhods-dashboard -ojson | jq 'del(.spec.template.spec.containers[1].resources)' -n redhat-ods-applications | oc apply -f-
-            echo "removed" > "$ARTIFACT_DIR/dashboard.oauth.resources"
-        fi
     fi
 
     local dedicated="{}" # set the toleration/node-selector annotations
