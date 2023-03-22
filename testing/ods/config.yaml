@@ -43,9 +43,10 @@ ci_presets:
 
     clusters.create.type: ocp
     clusters.create.ocp.compute.type: m6i.16xlarge
-    clusters.create.ocp.workers.count: 3
+    clusters.create.ocp.workers.count: 4
 
     rhods.operator.stop: true
+    rhods.operator.dashboard.resources_cpu: 2
 
     tests.notebooks.users.count: 2000
     tests.notebooks.users.sleep_factor: 3
