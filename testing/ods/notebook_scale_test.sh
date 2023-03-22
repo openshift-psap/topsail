@@ -359,6 +359,16 @@ sutest_wait_rhods_launch() {
         sutest_customize_rhods_before_wait
     fi
 
+    local dedicated="{}" # set the toleration/node-selector annotations
+    if ! test_config clusters.sutest.compute.dedicated; then
+        dedicated="{value: ''}" # delete the toleration/node-selector annotations, if it exists
+    fi
+
+    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated"
+    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated"
+
+    ./run_toolbox.py rhods wait_ods
+
     if test_config rhods.operator.stop; then
         oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator
 
@@ -393,21 +403,14 @@ sutest_wait_rhods_launch() {
             echo "$dashboard_replicas" > "$ARTIFACT_DIR/dashboard.replicas"
         fi
 
-        if test_config rhods.operator.remove_oauth_resources; then
-            oc get deploy rhods-dashboard -ojson | jq 'del(.spec.template.spec.containers[1].resources)' -n redhat-ods-applications | oc apply -f-
-            echo "removed" > "$ARTIFACT_DIR/dashboard.oauth.resources"
+        dashboard_resources_cpu=$(get_config rhods.operator.dashboard.resources_cpu)
+        if [[ "$dashboard_resources_cpu" != null ]]; then
+            oc set resources deploy/rhods-dashboard "--limits=cpu=$dashboard_resources_cpu" "--requests=cpu=$dashboard_resources_cpu" -n redhat-ods-applications
+            echo "$dashboard_resources_cpu" > "$ARTIFACT_DIR/dashboard.resources_cpu"
         fi
+
+        ./run_toolbox.py rhods wait_ods
     fi
-
-    local dedicated="{}" # set the toleration/node-selector annotations
-    if ! test_config clusters.sutest.compute.dedicated; then
-        dedicated="{value: ''}" # delete the toleration/node-selector annotations, if it exists
-    fi
-
-    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated"
-    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated"
-
-    ./run_toolbox.py rhods wait_ods
 
     if test_config "$customize_key"; then
         sutest_customize_rhods_after_wait
