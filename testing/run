@@ -14,8 +14,15 @@ ci_banner() {
     echo "===> $0 $@ <=="
 
     echo ""
-    git show --quiet --oneline ${PULL_BASE_SHA:-}..${PULL_PULL_SHA:-} || echo "Could not access git history ..."
-    echo
+    if [ "${INSIDE_CI_IMAGE:-}" == "y" ]; then
+        if [[ "${PULL_BASE_SHA:-}" && "${PULL_PULL_SHA:-}" ]]; then
+            git show --quiet --oneline ${PULL_BASE_SHA:-}..${PULL_PULL_SHA:-} 2>/dev/null \
+                || echo "WARNING: Could not access git history (${PULL_BASE_SHA:-}..${PULL_PULL_SHA:-}) ..."
+        else
+            echo "WARNING: PULL_BASE_SHA=${PULL_BASE_SHA:-} and/or PULL_PULL_SHA=${PULL_PULL_SHA:-} not set. Showing only the HEAD commit."
+            git show --quiet --oneline
+        fi
+    fi
 }
 
 prechecks() {
