@@ -134,10 +134,17 @@ postchecks() {
         fi
     elif [[ "$reason" == EXIT ]]; then
         echo ""
-        if [ ! -e "$ARTIFACT_DIR/FAILURES" ]; then
-            echo "$(date) Test of '$@' succeeded." | tee "$ARTIFACT_DIR/FINISHED"
+        if [[ "${start_time:-}" ]]; then
+            local end_time=$(date +%s)
+            local duration_seconds=$((end_time - start_time))
+            local duration="after $(date -d "1970-01-01 + $duration_seconds seconds" "+%H hours %M minutes %S seconds")"
         else
-            echo "$(date) Test of '$@' failed." | tee "$ARTIFACT_DIR/FINISHED"
+            local duration="(start_time missing :/)"
+        fi
+        if [ ! -e "$ARTIFACT_DIR/FAILURES" ]; then
+            echo "$(date) Test of '$@' succeeded $duration." | tee "$ARTIFACT_DIR/FINISHED"
+        else
+            echo "$(date) Test of '$@' failed after $duration." | tee "$ARTIFACT_DIR/FINISHED"
         fi
     fi
 }
@@ -178,6 +185,7 @@ fi
 #############
 
 echo "$(date) Test of '$@' started." | tee "$ARTIFACT_DIR/STARTED"
+start_time=$(date +%s)
 
 if [[ -z "${1:-}" ]]; then
     echo
