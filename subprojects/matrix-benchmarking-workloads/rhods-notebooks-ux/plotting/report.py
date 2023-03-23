@@ -156,6 +156,10 @@ class UserExecutionOverviewReport():
         header += [Plot(f"Notebook Resource Creation Timeline", args)]
         header += ["This plot shows the timeline of the notebook resources creation. It is relevant only for the first test, not when notebook are restarted from existing resources."]
 
+        header += [html.H2("Notebook Resource Creation Delay")]
+        header += [Plot(f"Notebook Resource Creation Delay", args)]
+        header += ["This plot shows the delay of the notebook resources creation: the line 'A -> B' in the legend show the delay between the creation of resource A and the creation of the resource B. Lower is better."]
+
         return None, header
 
 class PriceEstimationReport():
