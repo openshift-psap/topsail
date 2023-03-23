@@ -53,6 +53,9 @@ m6a.xlarge, 4 vcpu, 16 Gib RAM, $0.173
 m6a.2xlarge, 8 vcpu, 32 Gib RAM, $0.345
 m6i.2xlarge, 8 vcpu, 32 Gib RAM, $0.384
 m5a.2xlarge, 8 vcpu, 32 Gib RAM, $0.344
+m6i.4xlarge, 16 vcpu, 64 Gib RAM, $0.0
+m6i.8xlarge, 32 vcpu, 128 Gib RAM, $0.0
+m6i.12xlarge, 48 vcpu, 192 Gib RAM, $2.304
 m6i.16xlarge, 64 vCPU, 256 GiB RAM, $3.072
 
 # Bare-metal scale lab machines
