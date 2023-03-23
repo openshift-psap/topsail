@@ -366,7 +366,7 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
 
 
 def _parse_resource_times(dirname):
-    all_resource_times = types.SimpleNamespace()
+    all_resource_times = defaultdict(dict)
 
     @ignore_file_not_found
     def parse(fname):
@@ -375,7 +375,6 @@ def _parse_resource_times(dirname):
         with open(register_important_file(dirname, file_path)) as f:
             data = json.load(f)
 
-        times = defaultdict(lambda : defaultdict(types.SimpleNamespace))
         for item in data["items"]:
 
             metadata = item["metadata"]
@@ -398,20 +397,19 @@ def _parse_resource_times(dirname):
                              or "token" in name)
             if remove_suffix:
                 name = generate_name # remove generated suffix
-            times[user_idx][f"{kind}/{name}"].creationTimestamp = creationTimestamp
 
-        return dict(times)
+            all_resource_times[f"{kind}/{name}"][user_idx] = creationTimestamp
 
-    all_resource_times.pods = parse("notebook_pods")
-    all_resource_times.notebooks = parse("notebooks")
-    all_resource_times.namespaces = parse("namespaces")
+    parse("notebook_pods")
+    parse("notebooks")
+    parse("namespaces")
 
-    all_resource_times.statefulsets = parse("../statefulsets")
-    all_resource_times.routes = parse("../routes")
-    all_resource_times.services = parse("../services")
-    all_resource_times.secrets_safe = parse("../secrets_safe")
+    parse("../statefulsets")
+    parse("../routes")
+    parse("../services")
+    parse("../secrets_safe")
 
-    return all_resource_times
+    return dict(all_resource_times)
 
 
 @ignore_file_not_found
