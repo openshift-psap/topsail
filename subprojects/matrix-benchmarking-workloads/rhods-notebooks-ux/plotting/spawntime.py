@@ -11,6 +11,7 @@ import matrix_benchmarking.common as common
 def register():
     SpawnTime("Notebook spawn time")
     NotebookResourceCreationTimeline("Notebook Resource Creation Timeline")
+    NotebookResourceCreationDelay("Notebook Resource Creation Delay")
 
 def add_ods_ci_progress(entry, hide_failed_users):
     data = []
@@ -244,6 +245,79 @@ class NotebookResourceCreationTimeline():
         fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
 
         title = "Execution Time of the User Steps"
+
+        fig.update_layout(title=title, title_x=0.5,)
+
+        return fig, ""
+
+class NotebookResourceCreationDelay():
+    def __init__(self, name):
+        self.name = name
+        self.id_name = name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        expe_cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+        if expe_cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            pass # entry is set
+
+        mapping = {
+            "Namespace/username": {"Secret": ["builder-dockercfg", "builder-token", "default-dockercfg", "default-token", "deployer-dockercfg", "deployer-token", "model-serving-proxy-tls", "modelmesh-serving"],
+                                    "Notebook": ["username"]},
+            "Notebook/username": {"Route": ["username"],
+                                  "StatefulSet": ["username"],
+                                  "Service": ["username", "username-tls"],
+                                  "Secret": ["username-tls", "username-dockercfg", "username-oauth-config", "username-token"],
+                                  "Pod": ["username"]},
+            "StatefulSet/username": {"Pod": ["username"]},
+        }
+
+        data = []
+
+        for base, dependencies in mapping.items():
+            try:
+                base_times = entry.results.all_resource_times[base]
+            except KeyError: continue
+
+            for user_idx in range(entry.results.user_count):
+                try: base_time = base_times[user_idx]
+                except KeyError: continue
+
+                for dep_kind, dep_names in dependencies.items():
+                    for dep_name in dep_names:
+                        try: dep_time = entry.results.all_resource_times[f"{dep_kind}/{dep_name}"][user_idx]
+                        except KeyError: continue
+                        duration = (dep_time - base_time).total_seconds()
+
+                        data.append({
+                            "Base": base,
+                            "Name": f"{base} -> {dep_kind}/{dep_name}",
+                            "Duration": duration,
+                            "User Index": user_idx,
+                            "User Name": f"User #{user_idx:04d}",
+                        })
+
+
+        if not data:
+            return None, "No data available"
+
+        df = pd.DataFrame(data).sort_values(by=["User Index", "Base"], ascending=True)
+
+        fig = px.line(df, x="Duration", y="User Name", color="Name", title="Resource creation duration")
+
+        fig.update_layout(xaxis_title="User index")
+        fig.update_layout(yaxis_title="Resource creation duration, in seconds")
+
+        title = "Duration of the Notebook Resource Creation"
 
         fig.update_layout(title=title, title_x=0.5,)
 
