@@ -220,17 +220,16 @@ class NotebookResourceCreationTimeline():
             pass # entry is set
 
         data = []
-        for kind in entry.results.all_resource_times.__dict__:
-            resource_times = entry.results.all_resource_times.__dict__[kind]
-            if not resource_times: continue
 
-            for user_idx, resources in resource_times.items():
-                for res_name, res_times in resources.items():
-                    data.append({
+        for resource_name, user_resource_times in entry.results.all_resource_times.items():
+            if not user_resource_times: continue
+
+            for user_idx, resource_time in user_resource_times.items():
+                data.append({
                         "User Index": user_idx,
-                        "User Name": f"User #{user_idx:4d}",
-                        "Resource": res_name,
-                        "Create Time": res_times.creationTimestamp,
+                        "User Name": f"User #{user_idx:04d}",
+                        "Resource": resource_name,
+                        "Create Time": resource_time,
                     })
 
         if not data:
