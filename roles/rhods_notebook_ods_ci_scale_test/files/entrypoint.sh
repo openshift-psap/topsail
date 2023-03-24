@@ -5,6 +5,11 @@ set -o pipefail
 set -o nounset
 set -x
 
+cd /tmp/ods-ci/ods_ci
+
+# workaround: remove 'poetry install' until someting like '--skip-pip-install' is reimplemented
+sed "s/poetry install//" -i run_robot_test.sh
+
 JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-0}
 STATE_SIGNAL_BARRIER=/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/state-signal_barrier.py
 STATE_SIGNAL_DELAY=-1 # delay for all the Pods to reach the entry barrier
@@ -26,8 +31,11 @@ sed "s/#{USER_INDEX}/${USER_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.
 cp /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/* .
 
 if [[ "$DRIVER_RUNNING_ON_SPOT_INSTANCES" == "False" ]]; then
-    # Use StateSignal-barrier to wait for all the Pods to be ready
+    # workaround: HOME=/tmp isn't a writeable directory
 
+    export HOME=/tmp/ods-ci # move to a writable HOME
+
+    # Use StateSignal-barrier to wait for all the Pods to be ready
     python3 -m pip --no-cache-dir install state-signals==0.5.2 --user
     echo "Running with user $JOB_COMPLETION_INDEX / $USER_COUNT"
     if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
@@ -46,6 +54,9 @@ if [[ "$DRIVER_RUNNING_ON_SPOT_INSTANCES" == "False" ]]; then
         exit 0
     fi
     echo "statesignal_ready: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
+
+    # end of the workaround: HOME=/tmp isn't a writeable directory
+    export HOME=/tmp # move back to the default HOME
 else
     # Wait 60s after the Pod creation as an estimation for all the Pods to be ready
     echo "spotdelaysync_ready_to_wait: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"

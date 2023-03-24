@@ -120,7 +120,7 @@ utils build_push_image/ods-ci:
   namespace: {{ tests.notebooks.namespace }}
   git_repo: {{ tests.notebooks.ods_ci.image.repo }}
   git_ref: {{ tests.notebooks.ods_ci.image.ref }}
-  dockerfile_path: build/Dockerfile
+  dockerfile_path: ods_ci/build/Dockerfile
 {% set ods_ci_tag = "ods-ci" %}
   tag: {{ ods_ci_tag }}
   image_local_name: {{ tests.notebooks.imagestream_name }}

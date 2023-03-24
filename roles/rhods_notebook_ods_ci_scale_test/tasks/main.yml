@@ -67,12 +67,11 @@
       oc get csv -n redhat-ods-operator -ojsonpath={.items[0].spec.version}
     register: rhods_version_cmd
 
-  - name: Get the Dashboard Product name (to distinguish RHODS from ODH)
+  - name: Get the Dashboard Product name (to distinguish RHODS from ODH). Currently hardcoded to RHODS.
+    # We'll have to find another way to distinguish RHODS from ODH, this doesn't work anymore:
+    # oc -c rhods-dashboard -n redhat-ods-applications -n redhat-ods-applications rsh deploy/rhods-dashboard bash -c "echo ${ODH_PRODUCT_NAME:-Open Data Hub}"
     command:
-      oc -c rhods-dashboard
-         -n redhat-ods-applications
-         rsh deploy/rhods-dashboard
-         bash -c "echo ${ODH_PRODUCT_NAME:-Open Data Hub}"
+      echo "Red Hat OpenShift Data Science"
     register: rhods_dashboard_product_name
 
   - name: Get the image name description
@@ -103,7 +102,7 @@
   shell:
     oc debug istag/{{ rhods_notebook_ods_ci_scale_test_ods_ci_istag }}
        -n {{ tester_namespace }}
-       -- cat test-variables.yml.model > /tmp/test-variables.yml.model
+       -- cat ods_ci/test-variables.yml.model > /tmp/test-variables.yml.model
 
 - name: Apply the ODS-CI template
   shell: |
