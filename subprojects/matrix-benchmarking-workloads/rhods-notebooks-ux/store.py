@@ -545,8 +545,10 @@ def _parse_ods_ci_exit_code(dirname, output_dir):
     filename = output_dir / "test.exit_code"
 
     with open(register_important_file(dirname, filename)) as f:
-        return int(f.read())
-
+        try:
+            return int(f.read())
+        except ValueError as e:
+            logging.warning(f"Failed to parse {filename}: {e}")
 
 @ignore_file_not_found
 def _parse_ods_ci_output_xml(dirname, output_dir):
