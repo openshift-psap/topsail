@@ -236,8 +236,12 @@ class TestNodesPerformance():
                 if not ods_ci.progress: continue
 
                 failures = ods_ci.exit_code
-                test_start_time = ods_ci.progress["launch_delay"]
-                test_finish_time = ods_ci.progress["test_execution"]
+                try:
+                    test_start_time = ods_ci.progress["launch_delay"]
+                    test_finish_time = ods_ci.progress["test_execution"]
+                except KeyError as e:
+                    logging.warning(f"User #{user_idx} key error: {e}")
+                    continue
 
                 test_duration = test_finish_time - test_start_time
 
