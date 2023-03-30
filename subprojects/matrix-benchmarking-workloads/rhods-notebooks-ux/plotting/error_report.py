@@ -261,14 +261,22 @@ class ErrorReport():
 
                 break
 
+        missing_results = entry.results.user_count - len(entry.results.ods_ci)
+        missing_exit_code = sum(1 for ods_ci in entry.results.ods_ci.values() if not ods_ci or ods_ci.exit_code is None)
+
         HIDE_USER_DETAILS_THRESHOLD = 10
         steps = html.Ul(
+            ([html.Li(f"{missing_results} users didn't report any result (test infra issue)")] if missing_results else [])
+            +
+            ([html.Li(f"{missing_exit_code} users didn't report their completion status (test infra issue)")] if missing_exit_code else [])
+            +
             list(
                 [html.Li([f"{len(contents)} users failed the step ", html.Code(step_name)] + ([" (", ", ".join(map(str, failed_users_at_step[step_name])), ")"] if len(contents) < HIDE_USER_DETAILS_THRESHOLD else []))
                  for step_name, contents in failed_steps.items()]
             )
 
         )
+
         header += [html.Ul(
             setup_info
             + [steps]
