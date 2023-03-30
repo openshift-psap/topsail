@@ -316,6 +316,7 @@ class NotebookResourceCreationDelay():
 
         fig.update_layout(xaxis_title="User index")
         fig.update_layout(yaxis_title="Resource creation duration, in seconds")
+        fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
 
         title = "Duration of the Notebook Resource Creation"
 
