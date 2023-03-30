@@ -79,9 +79,11 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
             continue
 
         shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "")
-        try:
+        if "container_finished" in pod_times.__dict__:
             finish = pod_times.container_finished
-        except AttributeError:
+        elif "last_activity" in pod_times.__dict__ and pod_times.last_activity:
+            finish = pod_times.last_activity
+        else:
             finish = entry_results.tester_job.completion_time
 
         try:
