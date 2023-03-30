@@ -101,16 +101,23 @@ def _get_test_setup(entry):
     for purpose in ["master", "infra", "rhods_compute", "test_pods_only"]:
         nodes = entry.results.rhods_cluster_info.__dict__.get(purpose)
 
-        if not nodes and purpose == "test_pods_only": continue
-
         purpose_str = f" {purpose} nodes"
         if purpose == "master": purpose_str = f" nodes running OpenShift control plane"
         if purpose == "infra": purpose_str = " nodes, running the OpenShift and RHODS infrastructure Pods"
         if purpose == "rhods_compute": purpose_str = " nodes running the Notebooks"
         if purpose == "test_pods_only": purpose_str = " nodes running the user simulation Pods"
 
-        nodes_info_li = [f"{len(nodes)} ", html.Code(list(nodes)[0].instance_type), purpose_str] \
-            if nodes else f"0 {purpose} nodes"
+        if purpose == "test_pods_only" and entry.results.test_config.get("clusters.driver.compute.autoscaling.enabled"):
+            node_count = len(set(entry.results.testpod_hostnames.values()))
+            node_type = entry.results.test_config.get("clusters.create.ocp.compute.type")
+        elif not nodes:
+            node_count = 0
+            node_type = "n/a"
+        else:
+            node_count = len(nodes)
+            node_type = list(nodes)[0].instance_type
+
+        nodes_info_li = [f"{node_count} ", html.Code(node_type), purpose_str]
 
         nodes_info += [html.Li(nodes_info_li)]
 
