@@ -1,5 +1,6 @@
 from collections import defaultdict
 import re
+import logging
 
 import plotly.graph_objs as go
 import pandas as pd
