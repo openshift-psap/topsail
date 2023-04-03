@@ -18,7 +18,7 @@ config_single-master:
 	yq -yi '.controlPlane.replicas=1' "${CLUSTER_PATH}/install-config.yaml"
 
 manifest_single-master:
-	cp -v "${SINGLE_MASTER_MANIFESTS}" "${SINGLE_MASTER_DST}"
+	cp -v ${SINGLE_MASTER_MANIFESTS} "${SINGLE_MASTER_DST}"
 	cat "${SINGLE_MASTER_CVO_OVERRIDE}" >> "${CLUSTER_PATH}/manifests/cvo-overrides.yaml"
 
 install_single-master_fix-authentication:
