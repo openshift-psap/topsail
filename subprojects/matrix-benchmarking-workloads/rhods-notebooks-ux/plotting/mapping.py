@@ -1,6 +1,7 @@
 from collections import defaultdict
 import re
 import logging
+import datetime
 
 import plotly.graph_objs as go
 import pandas as pd
@@ -132,6 +133,13 @@ class MappingTimeline():
             return None, "Not data available ..."
 
         fig = px.timeline(df, x_start="PodStart", x_end="PodFinish", y="UserIndex", color="NodeIndex")
+
+        for fig_data in fig.data:
+            if fig_data.x[0].__class__ is datetime.timedelta:
+                # workaround for Py3.9 error:
+                # TypeError: Object of type timedelta is not JSON serializable
+                fig_data.x = [v.total_seconds() * 1000 for v in fig_data.x]
+
         fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
         fig.update_layout(barmode='stack', title=f"Mapping of the {'Notebook' if self.is_notebook else 'Test'} Pods on the nodes", title_x=0.5,)
         fig.update_layout(yaxis_title="")
