@@ -16,6 +16,7 @@ ci_presets:
 
   # run the DSG Notebook scale test
   notebook_scale_test:
+    clusters.create.ocp.tags.Project: PSAP/RHODS/scale_test
     tests.notebooks.users.count: 300
     clusters.create.ocp.control_plane.type: m6i.2xlarge
     clusters.create.ocp.workers.type: m6i.2xlarge
@@ -30,6 +31,7 @@ ci_presets:
   notebook_gating_scale_test:
     clusters.create.ocp.control_plane.type: m6i.2xlarge
     clusters.create.ocp.workers.type: m6i.2xlarge
+    clusters.create.ocp.tags.Project: PSAP/RHODS/gating
 
     tests.notebooks.test_flavor: gating
     # modify the presets, as they will be applied by the gating test
@@ -42,6 +44,7 @@ ci_presets:
     extends: [notebook_scale_test]
 
     clusters.create.type: ocp
+    clusters.create.ocp.tags.Project: PSAP/RHODS/large_scale
     clusters.create.ocp.workers.count: 3
     clusters.create.ocp.workers.type: m6i.4xlarge
     clusters.create.ocp.compute.type: m6i.8xlarge
@@ -147,6 +150,7 @@ ci_presets:
 
   keep:
     clusters.create.keep: true
+    clusters.create.ocp.tags.Project: PSAP/RHODS/home-dev
 
   ocp:
     clusters.create.type: ocp
@@ -161,6 +165,8 @@ ci_presets:
 
   # preset used in CI-provided clusters to limit the scale of the test
   notebooks_light:
+    clusters.create.ocp.tags.Project: PSAP/RHODS/ci-dev
+
     clusters.sutest.compute.dedicated: false
     clusters.sutest.compute.machineset.count: 1
 
