@@ -107,6 +107,14 @@ create_cluster() {
 
     local deploy_cluster_target=$(get_config clusters.create.ocp.deploy_cluster.target)
 
+    local cluster_tags=$(get_config clusters.create.ocp.tags)
+    if [[ "$cluster_tags" == "null" || "$cluster_tags" == "{}" ]]; then
+        machine_tags=""
+    else
+        machine_tags=$((echo "$cluster_tags") | jq '. | to_entries | .[] | {"name": .key, "value": .value}' --compact-output)
+    fi
+
+    local
     # ensure that the cluster's 'metadata.json' is copied
     # to the CONFIG_DEST_DIR even in case of errors
     trap "save_install_artifacts error" ERR SIGTERM SIGINT
@@ -119,6 +127,7 @@ create_cluster() {
           METADATA_JSON_DEST="${CONFIG_DEST_DIR}/${cluster_role}_ocp_metadata.json" \
           DIFF_TOOL= \
           USE_SPOT= \
+          MACHINE_TAGS="${machine_tags}" \
          | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/${cluster_role}_ocp_install.log"
     )
 

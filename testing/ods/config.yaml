@@ -200,14 +200,6 @@ secrets:
   addon_email_file: addon.email
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
 clusters:
-  spot:
-    tags:
-      Budget: PSAP
-      Project: PSAP
-      Environment: TEST/DEV
-      Owner: KEVIN POUGET
-      Manager: ASHISH KAMRA
-      User: kpouget
   create:
     type: single # can be: single, ocp, managed
     keep: false
@@ -224,6 +216,18 @@ clusters:
       compute:
         type: m5.2xlarge
     ocp:
+      # list of tags to apply to the machineset when creating the cluster
+      tags: {}
+      # list of tags to apply to the spot machineset
+      spot:
+        tags:
+          Budget: PSAP
+          Project: PSAP
+          Environment: TEST/DEV
+          Owner: KEVIN POUGET
+          Manager: ASHISH KAMRA
+          User: kpouget
+
       deploy_cluster:
         target: cluster
       base_domain: psap.aws.rhperfscale.org
