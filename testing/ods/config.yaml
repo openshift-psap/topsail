@@ -152,6 +152,7 @@ ci_presets:
     clusters.sutest.managed.is_ocm: true
 
   light_cluster:
+    clusters.create.ocp.deploy_cluster.target: cluster_light
 
   # preset used in CI-provided clusters to limit the scale of the test
   notebooks_light:
@@ -223,6 +224,8 @@ clusters:
       compute:
         type: m5.2xlarge
     ocp:
+      deploy_cluster:
+        target: cluster
       base_domain: psap.aws.rhperfscale.org
       version: 4.11.13
       region: us-west-2

@@ -105,12 +105,14 @@ create_cluster() {
         return 0
     }
 
+    local deploy_cluster_target=$(get_config clusters.create.ocp.deploy_cluster.target)
+
     # ensure that the cluster's 'metadata.json' is copied
     # to the CONFIG_DEST_DIR even in case of errors
     trap "save_install_artifacts error" ERR SIGTERM SIGINT
 
     (cd subprojects/deploy-cluster/;
-     make cluster \
+     make "$deploy_cluster_target" \
           OCP_VERSION="$(get_config clusters.create.ocp.version)" \
           CLUSTER_PATH="${install_dir}" \
           CLUSTER_NAME="${cluster_name}" \
