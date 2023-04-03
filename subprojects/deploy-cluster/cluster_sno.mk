@@ -7,6 +7,7 @@ cluster_sno:
 	@make manifest
 	@make manifest_entitle
 	@make manifest_entitle_master
+	@make manifest_spot
 	@make install
 	@make kubeconfig
 

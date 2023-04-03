@@ -7,6 +7,7 @@ cluster_single-master_entitled:
 	@make manifest
 	@make manifest_entitle
 	@make manifest_single-master
+	@make manifest_spot
 	@make install
 	@make kubeconfig
 
