@@ -62,6 +62,12 @@ ci_presets:
     tests.notebooks.users.sleep_factor: 3
     tests.notebooks.repeat: 1
 
+  notebook_large_scale_test_light:
+    extends: [notebook_large_scale_test]
+
+    clusters.create.type: single
+    tests.notebooks.users.count: 100
+
   notebook_fast_scale_test:
     extends: [notebook_scale_test]
     rhods.operator.stop: true
