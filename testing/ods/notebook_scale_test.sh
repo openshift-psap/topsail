@@ -443,7 +443,7 @@ sutest_wait_rhods_launch() {
 
 capture_environment() {
     switch_sutest_cluster
-    ./run_toolbox.py rhods capture_state > /dev/null || true
+
     ./run_toolbox.py cluster capture_environment > /dev/null || true
 
     switch_driver_cluster
@@ -844,10 +844,6 @@ sutest_cleanup() {
     if [[ "$user_count" -le "$skip_threshold" ]]; then
         _info "Skip cluster cleanup (less that $skip_threshold users)"
         return
-    fi
-
-    if ! ./run_toolbox.py rhods capture_state > /dev/null > /dev/null; then
-        _warning "rhods capture_state failed :("
     fi
 
     if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
