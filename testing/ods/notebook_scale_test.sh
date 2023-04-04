@@ -231,6 +231,10 @@ prepare_sutest_scale_cluster() {
             _error "prepare_sutest_scale_cluster not supported with rosa"
         fi
     else
+        if test_config clusters.sutest.compute.machineset.spot; then
+            compute_nodes_count=$(python3 -c "print(round($compute_nodes_count * 1.1))")
+            _info "SUTEST running with SPOT nodes, giving +10% of worker nodes --> $compute_nodes_count"
+        fi
         ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
                          --extra "{scale: $compute_nodes_count}"
 
