@@ -44,7 +44,7 @@
 
   - name: Get the image address
     command:
-      oc get istag {{ rhods_benchmark_notebook_performance_imagestream }}:{% if rhods_benchmark_notebook_performance_imagestream_tag %}{{ rhods_benchmark_notebook_performance_imagestream_tag }}{% else %}{{ image_tag_cmd.stdout }}{% endif %}
+      oc get istag {{ rhods_benchmark_notebook_performance_imagestream }}:{{ image_tag }}
          -ojsonpath={.image.dockerImageReference}
          -n redhat-ods-applications
     register: rhods_image_address_cmd
@@ -78,7 +78,7 @@
 
 - name: Define the test environment
   set_fact:
-    notebook_name: notebook-perf-{{ rhods_benchmark_notebook_performance_imagestream }}
+    notebook_name: notebook-perf-{{ rhods_benchmark_notebook_performance_imagestream | replace(".", "-")}}-{{ image_tag | replace(".", "-") }}
     notebook_namespace: "{% if rhods_benchmark_notebook_performance_use_rhods | bool %}rhods-notebooks{% else %}{{ rhods_benchmark_notebook_performance_namespace }}{% endif %}"
     notebook_src_template_dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook.yaml"
     notebook_file_cm_name: rhods-notebook-files
@@ -165,7 +165,8 @@
   register: wait_notebook_pod_start
   retries: 20
   delay: 15
-  until: wait_notebook_pod_start.stdout == "Running"
+  until: wait_notebook_pod_start.stdout == "Running" or wait_notebook_pod_start.stdout == "CrashLoopBackOff"
+  failed_when: wait_notebook_pod_start.stdout != "Running"
 
 - name: Wait for the Notebook Pod to be ready
   shell:
