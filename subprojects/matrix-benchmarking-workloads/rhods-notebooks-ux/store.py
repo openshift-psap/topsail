@@ -422,7 +422,6 @@ def _parse_notebook_times(dirname, pod_times):
             notebook_name = notebook["metadata"]["name"]
             user_index = int(re.findall(JUPYTER_USER_IDX_REGEX, notebook_name + "-0")[0])
             if user_index not in pod_times:
-                import pdb;pdb.set_trace()
                 continue
 
             pod_times[user_index].last_activity = None
