@@ -65,7 +65,7 @@ driver_build_and_preload_image() {
                         ./run_toolbox.py from_config utils build_push_image \
                         --suffix "$suffix"
 
-    if ! test_config clusters.driver.compute.autoscaling.enable; then
+    if ! test_config clusters.driver.compute.autoscaling.enabled; then
         ./run_toolbox.py from_config cluster preload_image \
                          --suffix "$suffix"
     fi
@@ -199,7 +199,7 @@ prepare_sutest_scale_cluster() {
     fi
 
     if test_config clusters.sutest.is_managed; then
-        if test_config clusters.sutest.compute.autoscaling.enable; then
+        if test_config clusters.sutest.compute.autoscaling.enabled; then
             local specific_options=" \
                 --enable-autoscaling \
                 --min-replicas=2 \
@@ -422,7 +422,7 @@ sutest_wait_rhods_launch() {
 
 
     # preload the notebook image only if auto-scaling is disabled
-    if ! test_config clusters.sutest.compute.autoscaling.enable; then
+    if ! test_config clusters.sutest.compute.autoscaling.enabled; then
         local rhods_notebook_image_name=$(get_config tests.notebooks.notebook.image_name)
         local rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
                                        | cut -d/ -f2 | grep "$rhods_notebook_image_name" | cut -d: -f2)
