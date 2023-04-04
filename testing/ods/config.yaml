@@ -216,8 +216,8 @@ ci_presets:
     clusters.sutest.compute.autoscaling.enabled: true
     clusters.driver.compute.machineset.spot: false
     'ci_presets.notebooks_light["clusters.driver.compute.machineset.count"]': null
-    'ci_presets.notebooks_light["clusters.driver.compute.machineset.dedicated"]': true
-    'ci_presets.notebooks_light["clusters.sutest.compute.machineset.dedicated"]': true
+    'ci_presets.notebooks_light["clusters.driver.compute.dedicated"]': true
+    'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
 
 secrets:
   dir:
