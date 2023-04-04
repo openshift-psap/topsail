@@ -438,7 +438,7 @@ tests:
     notebook_performance:
       use_rhods: true
       tests:
-      - imagestream: s2i-generic-data-science-notebook
+      - imagestream: all
         ipynb:
           uploaded_directory: testing/ods/notebooks
           notebook_filename: benchmark_entrypoint.ipynb
