@@ -1,4 +1,5 @@
 from collections import defaultdict
+import statistics as stats
 
 import plotly.graph_objs as go
 import pandas as pd
@@ -8,11 +9,12 @@ from dash import html
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+from . import spawntime
 
 def register():
     LaunchTimeDistribution("Launch time distribution")
     LaunchTimeDistribution("Step successes", show_successes=True)
-
+    RunTimeDistribution("Median runtime timeline")
 
 class LaunchTimeDistribution():
     def __init__(self, name, show_successes=False):
@@ -182,3 +184,90 @@ class LaunchTimeDistribution():
 
 
         return fig, msg
+
+
+class RunTimeDistribution():
+    def __init__(self, name, show_successes=False):
+        self.name = name
+        self.id_name = name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        expe_cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+
+        user_counts = set()
+
+        data = []
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            results = entry.results
+            entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+
+            user_counts.add(results.user_count)
+
+            for user_index, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
+                if not ods_ci: continue
+
+                for step_name, step_status in ods_ci.output.items():
+                    if step_status.status != "PASS":
+                        continue
+
+                    data.append(dict(
+                        UserCount=results.user_count,
+                        Step=step_name + entry_name,
+                        Time=(step_status.finish - step_status.start).total_seconds(),
+                    ))
+
+        data = spawntime.add_ods_ci_output(entry, keep_failed_steps=False, hide_failed_users=True, hide=None)
+
+        if not data:
+            return None, "No data to plot ..."
+
+        data_df = pd.DataFrame(data)
+
+        stats_data = []
+        base_value = 0
+        steps = data_df["Step Name"].unique()
+        notebook_ready_time = None
+        msg = []
+        for step_name in steps:
+            step_df = data_df[data_df["Step Name"] == step_name]
+            q1, median, q3 = stats.quantiles(step_df["Step Duration"])
+            q1_dist = median-q1
+            q3_dist = q3-median
+            stats_data.append(dict(
+                Steps=step_name,
+                MedianDuration=median,
+                Q1=q1_dist,
+                Q3=q3_dist,
+                UserCount=str(entry.results.user_count),
+                Base=base_value,
+            ))
+
+            q1_txt = f"-{q1_dist:.0f}s" if round(q1_dist) >= 2 else ""
+            q3_txt = f"+{q3_dist:.0f}s" if round(q3_dist) >= 2 else ""
+            msg.append([f"{step_name}: {median:.0f}s {q1_txt}{q3_txt}", html.Br()])
+
+            base_value += median
+            if step_name.endswith("Go to JupyterLab Page"):
+                notebook_ready_time = base_value
+                msg.append(["---", html.Br()])
+
+        stats_df = pd.DataFrame(stats_data)
+
+        fig = px.bar(stats_df,
+                     x="MedianDuration", y="Steps", color="Steps", base="Base",
+                     error_x_minus="Q1", error_x="Q3",
+                     title="Median runtime timeline")
+
+        if notebook_ready_time:
+            fig.add_scatter(name="Time to reach JupyterLab",
+                            x=[notebook_ready_time, notebook_ready_time],
+                            y=[steps[0], steps[-1]])
+        fig.update_layout(xaxis_title="Timeline (in seconds). Error bars show Q1 and Q3.")
+        fig.update_layout(yaxis_title="", title_x=0.5,)
+        return fig, None

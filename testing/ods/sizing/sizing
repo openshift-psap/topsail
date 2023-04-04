@@ -93,6 +93,12 @@ MEM=4
     unallocated_mem = machine_size.memory - pod_size['memory'] * pods_per_machine
 
     print(f"Expecting {pods_per_machine:d} pods per node ({unallocated_cpu:.3f} cpu and {unallocated_mem:.2f}Gi of memory not allocated per node)")
+
+    AWS_MAX_VOLUMES_PER_NODE = 26
+    if "xlarge" in machine_type and pods_per_machine > AWS_MAX_VOLUMES_PER_NODE:
+        print(f"WARNING: if the Pods have AWS volumes, this configuration won't work (only {AWS_MAX_VOLUMES_PER_NODE} volumes per node is working)")
+        print("See https://docs.openshift.com/container-platform/4.12/storage/persistent_storage/persistent-storage-aws.html")
+        print("See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/volume_limits.html")
     return machine_count
 
 if __name__ == "__main__":

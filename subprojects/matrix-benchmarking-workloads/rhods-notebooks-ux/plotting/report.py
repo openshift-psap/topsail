@@ -152,6 +152,10 @@ class UserExecutionOverviewReport():
         header += [Plot(f"Notebook spawn time", set_config({"hide_failed_users": True}, args))]
         header += ["This plot shows the time the simulated user took to execute each of the test steps. User who failed the test are _not_ shown."]
 
+        header += [html.H2("Median Runtime Timeline")]
+        header += Plot_and_Text(f"Median runtime timeline", args)
+        header += ["This plot shows the timeline for the execution of each of the step. The main bar show the media time, and the error bars show the Q1-Q3 distance. This range includes 50% of the users. Only the users who succeeded the step are included in the computation. The vertical bar shows the 'time to reach JupyterLab', which is a key performance indicator."]
+
         header += [html.H2("Notebook Resource Creation timeline")]
         header += [Plot(f"Notebook Resource Creation Timeline", args)]
         header += ["This plot shows the timeline of the notebook resources creation. It is relevant only for the first test, not when notebook are restarted from existing resources."]

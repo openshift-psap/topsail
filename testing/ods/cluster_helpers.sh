@@ -34,7 +34,15 @@ cluster_helpers::get_compute_node_count() {
         fi
 
         local NB_SIZE_CONFIG_KEY=rhods.notebooks.customize.notebook_size
-        local notebook_size="$(get_config $NB_SIZE_CONFIG_KEY.cpu) $(get_config $NB_SIZE_CONFIG_KEY.mem_gi)"
+        local notebook_cpu=$(get_config $NB_SIZE_CONFIG_KEY.cpu)
+        local notebook_mem=$(get_config $NB_SIZE_CONFIG_KEY.mem_gi)
+
+        NOTEBOOK_OAUTH_PROXY_CPU=0.1
+        NOTEBOOK_OAUTH_PROXY_MEM=0.160 # mb # as shown in the node allocated resources. But 64Mb is what is in the spec ...
+
+        local request_cpu=$(python3 -c "print(f'{$notebook_cpu + $NOTEBOOK_OAUTH_PROXY_CPU:.3f}')")
+        local request_mem=$(python3 -c "print(f'{$notebook_mem + $NOTEBOOK_OAUTH_PROXY_MEM:.3f}')")
+        local notebook_size="$request_cpu $request_mem"
 
         if test_config clusters.sutest.is_managed; then
             if test_config clusters.sutest.managed.is_ocm; then

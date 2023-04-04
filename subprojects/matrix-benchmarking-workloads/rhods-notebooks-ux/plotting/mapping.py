@@ -1,5 +1,7 @@
 from collections import defaultdict
 import re
+import logging
+import datetime
 
 import plotly.graph_objs as go
 import pandas as pd
@@ -39,7 +41,7 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
     if force_order_by_user_idx:
         for user_idx in range(entry.results.user_count):
             data.append(dict(
-                UserIndex = f"User #{user_idx:03d}",
+                UserIndex = f"User #{user_idx:04d}",
                 UserIdx = user_idx,
                 PodStart = entry_results.tester_job.creation_time,
                 PodFinish = entry_results.tester_job.creation_time,
@@ -67,7 +69,7 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
             if not hostname: raise KeyError # not mapped
         except KeyError:
             data.append(dict(
-                UserIndex = f"User #{user_idx:03d}",
+                UserIndex = f"User #{user_idx:04d}",
                 UserIdx = user_idx,
                 PodStart = entry_results.tester_job.creation_time,
                 PodFinish = entry_results.tester_job.completion_time,
@@ -79,9 +81,11 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
             continue
 
         shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "")
-        try:
+        if "container_finished" in pod_times.__dict__:
             finish = pod_times.container_finished
-        except AttributeError:
+        elif "last_activity" in pod_times.__dict__ and pod_times.last_activity:
+            finish = pod_times.last_activity
+        else:
             finish = entry_results.tester_job.completion_time
 
         try:
@@ -90,7 +94,7 @@ def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
             instance_type = ""
 
         data.append(dict(
-            UserIndex = f"User #{user_idx:03d}",
+            UserIndex = f"User #{user_idx:04d}",
             UserIdx = user_idx,
             PodStart = pod_times.start_time,
             PodFinish = finish,
@@ -129,6 +133,13 @@ class MappingTimeline():
             return None, "Not data available ..."
 
         fig = px.timeline(df, x_start="PodStart", x_end="PodFinish", y="UserIndex", color="NodeIndex")
+
+        for fig_data in fig.data:
+            if fig_data.x[0].__class__ is datetime.timedelta:
+                # workaround for Py3.9 error:
+                # TypeError: Object of type timedelta is not JSON serializable
+                fig_data.x = [v.total_seconds() * 1000 for v in fig_data.x]
+
         fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
         fig.update_layout(barmode='stack', title=f"Mapping of the {'Notebook' if self.is_notebook else 'Test'} Pods on the nodes", title_x=0.5,)
         fig.update_layout(yaxis_title="")
@@ -160,7 +171,7 @@ class MappingDistribution():
             return None, "Nothing to plot (no data)"
 
         # sort by UserIndex to improve readability
-        df = df.sort_values(by=["UserIndex"])
+        df = df.sort_values(by=["UserIdx"])
 
         fig = px.bar(df, x="NodeName", y="Count", color="UserIdx",
                      title=f"Distribution of the {'Notebook' if self.is_notebook else 'Test'} Pods on the nodes")
@@ -234,8 +245,12 @@ class TestNodesPerformance():
                 if not ods_ci.progress: continue
 
                 failures = ods_ci.exit_code
-                test_start_time = ods_ci.progress["launch_delay"]
-                test_finish_time = ods_ci.progress["test_execution"]
+                try:
+                    test_start_time = ods_ci.progress["launch_delay"]
+                    test_finish_time = ods_ci.progress["test_execution"]
+                except KeyError as e:
+                    logging.warning(f"User #{user_idx} key error: {e}")
+                    continue
 
                 test_duration = test_finish_time - test_start_time
 
@@ -249,7 +264,7 @@ class TestNodesPerformance():
                 data.append(dict(
                     Status="PASS" if ods_ci.exit_code == 0 else "FAIL",
                     Duration = test_duration.total_seconds(),
-                    User = f"User #{user_idx:03d}",
+                    User = f"User #{user_idx:04d}",
                     NodeIndex = f"Node {hostname_idx}",
                     NodeName = f"Node {hostname_idx}<br>{shortname}",
                 ))

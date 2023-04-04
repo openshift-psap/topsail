@@ -413,6 +413,37 @@ def _parse_resource_times(dirname):
 
 
 @ignore_file_not_found
+def _parse_notebook_times(dirname, pod_times):
+    filenames = [fname.relative_to(dirname) for fname in
+                 (dirname / pathlib.Path("artifacts-sutest")).glob("project_*/notebooks.json")]
+
+    def _parse_notebook_times_file(notebooks):
+        for notebook in notebooks["items"]:
+            notebook_name = notebook["metadata"]["name"]
+            user_index = int(re.findall(JUPYTER_USER_IDX_REGEX, notebook_name + "-0")[0])
+            if user_index not in pod_times:
+                import pdb;pdb.set_trace()
+                continue
+
+            pod_times[user_index].last_activity = None
+
+            try:
+                last_activity_str = notebook["metadata"]["annotations"]["notebooks.kubeflow.org/last-activity"]
+            except KeyError:
+                continue
+
+            if not last_activity_str or not last_activity_str.endswith("Z"):
+                continue
+
+            last_activity = datetime.datetime.strptime(last_activity_str, K8S_TIME_FMT)
+            pod_times[user_index].last_activity = last_activity
+
+
+    for filename in filenames:
+        with open(register_important_file(dirname, filename)) as f:
+            _parse_notebook_times_file(json.load(f))
+
+@ignore_file_not_found
 def _parse_pod_times(dirname, test_config=None, is_notebook=False):
     if is_notebook:
         filenames = [fname.relative_to(dirname) for fname in
@@ -545,8 +576,15 @@ def _parse_ods_ci_exit_code(dirname, output_dir):
     filename = output_dir / "test.exit_code"
 
     with open(register_important_file(dirname, filename)) as f:
-        return int(f.read())
+        code = f.read()
+        if not code:
+            return None
 
+        try:
+            return int(code)
+        except ValueError as e:
+            logging.warning(f"Failed to parse {filename}: {e}")
+            return None
 
 @ignore_file_not_found
 def _parse_ods_ci_output_xml(dirname, output_dir):
@@ -742,6 +780,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     results.testpod_times, results.testpod_hostnames = _parse_pod_times(dirname, results.test_config) or ({}, {})
     print("_parse_pod_times (notebooks)")
     results.notebook_pod_times, results.notebook_hostnames = _parse_pod_times(dirname, is_notebook=True) or ({}, {})
+
+    print("_parse_notebook_times")
+    _parse_notebook_times(dirname, results.notebook_pod_times)
 
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
 

@@ -16,6 +16,7 @@ ci_presets:
 
   # run the DSG Notebook scale test
   notebook_scale_test:
+    clusters.create.ocp.tags.Project: PSAP/RHODS/scale_test
     tests.notebooks.users.count: 300
     clusters.create.ocp.control_plane.type: m6i.2xlarge
     clusters.create.ocp.workers.type: m6i.2xlarge
@@ -30,6 +31,7 @@ ci_presets:
   notebook_gating_scale_test:
     clusters.create.ocp.control_plane.type: m6i.2xlarge
     clusters.create.ocp.workers.type: m6i.2xlarge
+    clusters.create.ocp.tags.Project: PSAP/RHODS/gating
 
     tests.notebooks.test_flavor: gating
     # modify the presets, as they will be applied by the gating test
@@ -42,11 +44,19 @@ ci_presets:
     extends: [notebook_scale_test]
 
     clusters.create.type: ocp
-    clusters.create.ocp.compute.type: m6i.16xlarge
+    clusters.create.ocp.tags.Project: PSAP/RHODS/large_scale
+    clusters.create.ocp.workers.count: 3
+    clusters.create.ocp.workers.type: m6i.4xlarge
+    clusters.create.ocp.compute.type: m6i.8xlarge
     clusters.create.ocp.workers.count: 4
+    clusters.driver.compute.autoscaling.enabled: false
+    clusters.sutest.compute.machineset.spot: true
+    clusters.sutest.compute.autoscaling.enabled: true
 
     rhods.operator.stop: true
     rhods.operator.dashboard.resources_cpu: 2
+
+    rhods.notebooks.customize.notebook_size.mem_gi: 5
 
     tests.notebooks.users.count: 2000
     tests.notebooks.users.sleep_factor: 3
@@ -142,6 +152,7 @@ ci_presets:
 
   keep:
     clusters.create.keep: true
+    clusters.create.ocp.tags.Project: PSAP/RHODS/home-dev
 
   ocp:
     clusters.create.type: ocp
@@ -152,10 +163,12 @@ ci_presets:
     clusters.sutest.managed.is_ocm: true
 
   light_cluster:
-    clusters.create.ocp.control_plane.count: 1
+    clusters.create.ocp.deploy_cluster.target: cluster_light
 
   # preset used in CI-provided clusters to limit the scale of the test
   notebooks_light:
+    clusters.create.ocp.tags.Project: PSAP/RHODS/ci-dev
+
     clusters.sutest.compute.dedicated: false
     clusters.sutest.compute.machineset.count: 1
 
@@ -200,14 +213,6 @@ secrets:
   addon_email_file: addon.email
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
 clusters:
-  spot:
-    tags:
-      Budget: PSAP
-      Project: PSAP
-      Environment: TEST/DEV
-      Owner: KEVIN POUGET
-      Manager: ASHISH KAMRA
-      User: kpouget
   create:
     type: single # can be: single, ocp, managed
     keep: false
@@ -224,12 +229,25 @@ clusters:
       compute:
         type: m5.2xlarge
     ocp:
+      # list of tags to apply to the machineset when creating the cluster
+      tags: {}
+      # list of tags to apply to the spot machineset
+      spot:
+        tags:
+          Budget: PSAP
+          Project: PSAP
+          Environment: TEST/DEV
+          Owner: KEVIN POUGET
+          Manager: ASHISH KAMRA
+          User: kpouget
+
+      deploy_cluster:
+        target: cluster
       base_domain: psap.aws.rhperfscale.org
       version: 4.11.13
       region: us-west-2
       control_plane:
         type: m6a.xlarge
-        count: 3
       workers:
         type: m6a.xlarge
         count: 2

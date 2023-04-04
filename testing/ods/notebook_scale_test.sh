@@ -79,10 +79,12 @@ tag_spot_machineset() {
     local cluster_role="$1"
     local name="$2"
 
-    local spot_tags=$(get_config clusters.spot.tags | jq '. | to_entries | .[]' --compact-output)
-    while read spot_tag; do
-        local tag_key=$(echo "$spot_tag" | jq .key -r)
-        local tag_value=$(echo "$spot_tag" | jq .value -r)
+    local spot_tags=$(get_config clusters.create.ocp.spot.tags)
+    local cluster_tags=$(get_config clusters.create.ocp.tags)
+    local tags=$((echo -e "$spot_tags\n$cluster_tags") | jq -s '.[0] * .[1]' |  jq '. | to_entries | .[]' --compact-output)
+    while read tag; do
+        local tag_key=$(echo "$tag" | jq .key -r)
+        local tag_value=$(echo "$tag" | jq .value -r)
 
         oc get machineset "$name" -ojson -n openshift-machine-api \
             | jq \
@@ -90,7 +92,7 @@ tag_spot_machineset() {
                   --arg value "$tag_value" \
                   '.spec.template.spec.providerSpec.value.tags += [{"name": $name, "value": $value}]' \
             | oc apply -f-
-    done <<< "$spot_tags"
+    done <<< "$tags"
 
     oc get machineset "$name" -oyaml -n openshift-machine-api > "$ARTIFACT_DIR/${cluster_role}_machineset_spot_tagged.yaml"
 }
