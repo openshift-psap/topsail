@@ -234,7 +234,7 @@
   shell: |
     cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
     user_count=1
-    image={{ notebook_image_address }}
+    image={{ rhods_benchmark_notebook_performance_imagestream }}:{{ image_tag }}
     benchmark_name={{ rhods_benchmark_notebook_performance_benchmark_name }}
     benchmark_repeat={{ rhods_benchmark_notebook_performance_benchmark_repeat }}
     benchmark_number={{ rhods_benchmark_notebook_performance_benchmark_number }}
