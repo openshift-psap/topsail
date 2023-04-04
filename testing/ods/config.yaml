@@ -443,8 +443,6 @@ tests:
           uploaded_directory: testing/ods/notebooks
           notebook_filename: benchmark_entrypoint.ipynb
         instance_types:
-        - m5.xlarge
-        - m6a.xlarge
         - m6i.xlarge
         benchmarks:
           # name of the benchmark to pass to the notebook
