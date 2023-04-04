@@ -307,14 +307,8 @@ prepare_ocp_sutest_deploy_rhods() {
 }
 
 sutest_customize_rhods_before_wait() {
-    if test_config rhods.notebooks.customize.remove_gpu_images; then
-        # Fill the imagestreams with dummy (ubi) images
-        for image in minimal-gpu nvidia-cuda-11.4.2 pytorch tensorflow; do
-            oc tag registry.access.redhat.com/ubi8/ubi "$image:ubi" -n redhat-ods-applications
-        done
-        # Delete the RHODS builds
-        oc delete builds --all  -n redhat-ods-applications
-    fi
+    # nothing to do at the moment
+    echo -n ""
 }
 
 sutest_customize_rhods_after_wait() {

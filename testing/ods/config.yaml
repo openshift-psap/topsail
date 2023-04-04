@@ -336,7 +336,6 @@ rhods:
         name: &notebook_size_name Tiny
         cpu: 1
         mem_gi: 4
-      remove_gpu_images: true
   operator:
     # set to true to stop the RHODS operator
     stop: false
