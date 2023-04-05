@@ -148,100 +148,104 @@
   vars:
     cluster_prometheus_db_mode: reset
 
-# ---
-
-- name: Create the test notebook
-  command:
-    oc create
-       -f "{{ notebook_src_template_dest }}"
-       -n "{{ notebook_namespace }}"
-
-- name: Wait for the Notebook Pod to start running
-  shell:
-    set -o pipefail;
-    oc get pod {{ notebook_search_labels }}
-       -n "{{ notebook_namespace }}"
-       --no-headers | awk '{print $3}'
-  register: wait_notebook_pod_start
-  retries: 20
-  delay: 15
-  until: wait_notebook_pod_start.stdout == "Running" or wait_notebook_pod_start.stdout == "CrashLoopBackOff"
-  failed_when: wait_notebook_pod_start.stdout != "Running"
-
-- name: Wait for the Notebook Pod to be ready
-  shell:
-    set -o pipefail;
-    oc get pod {{ notebook_search_labels }}
-       -n "{{ notebook_namespace }}"
-       --no-headers | awk '{print $2}'
-  register: wait_notebook_pod_ready
-  retries: 12
-  delay: 5
-  until: wait_notebook_pod_ready.stdout == "1/1"
-
-- name: Get the notebook Pod name
-  command:
-    oc get pod {{ notebook_search_labels }}
-      -oname
-      -n "{{ notebook_namespace }}"
-  register: notebook_pod_name_cmd
-  failed_when: not notebook_pod_name_cmd.stdout
-# ---
-
-- name: Move the notebook files to HOME
-  shell:
-    oc -n "{{ notebook_namespace }}"
-       rsh "{{ notebook_pod_name_cmd.stdout }}"
-       bash -c 'cp -v "$NOTEBOOK_FILES"/* . && mkdir -p results'
-
-- name: Run the notebook
-  shell:
-    oc -n "{{ notebook_namespace }}"
-       rsh "{{ notebook_pod_name_cmd.stdout }}"
-       bash -exc 'jupyter nbconvert --to notebook --execute "$NOTEBOOK_FILENAME"
-            && mv "$(basename "$NOTEBOOK_FILENAME" .ipynb).nbconvert.ipynb" results/$(basename "$NOTEBOOK_FILENAME" .ipynb).executed.ipynb'
-
 - name: Create the notebook artifacts directory
   file:
     path: "{{ artifact_extra_logs_dir }}/notebook-artifacts/"
     state: directory
     mode: '0755'
 
-- name: Collect the artifacts
-  command:
-    oc cp "{{ notebook_namespace }}/{{ notebook_pod_name_cmd.stdout.split('/')[1] }}":results
-          "{{ artifact_extra_logs_dir }}/notebook-artifacts/"
+# ---
 
-- name: Capture the information about the notebook projects
-  include_tasks: artifacts_sutest_project.yml
-  vars:
-    rhods_notebook_namespace: "{{ notebook_namespace }}"
-    sut_cluster_kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
-    rhods_notebook_ods_ci_scale_test_stop_notebooks_on_exit: true
+- name: Run the test notebook
+  block:
+  - name: Create the test notebook
+    command:
+      oc create
+         -f "{{ notebook_src_template_dest }}"
+         -n "{{ notebook_namespace }}"
 
-- name: Capture the sutest cluster artifacts
-  include_tasks: artifacts_sutest.yml
-  vars:
-    sut_cluster_kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+  - name: Wait for the Notebook Pod to start running
+    shell:
+      set -o pipefail;
+      oc get pod {{ notebook_search_labels }}
+         -n "{{ notebook_namespace }}"
+         --no-headers | awk '{print $3}'
+    register: wait_notebook_pod_start
+    retries: 20
+    delay: 15
+    until: wait_notebook_pod_start.stdout == "Running" or wait_notebook_pod_start.stdout == "CrashLoopBackOff"
+    failed_when: wait_notebook_pod_start.stdout != "Running"
+
+  - name: Wait for the Notebook Pod to be ready
+    shell:
+      set -o pipefail;
+      oc get pod {{ notebook_search_labels }}
+         -n "{{ notebook_namespace }}"
+         --no-headers | awk '{print $2}'
+    register: wait_notebook_pod_ready
+    retries: 12
+    delay: 5
+    until: wait_notebook_pod_ready.stdout == "1/1"
+
+  - name: Get the notebook Pod name
+    command:
+      oc get pod {{ notebook_search_labels }}
+        -oname
+        -n "{{ notebook_namespace }}"
+    register: notebook_pod_name_cmd
+    failed_when: not notebook_pod_name_cmd.stdout
+    # ---
+
+  - name: Move the notebook files to HOME
+    shell:
+      oc -n "{{ notebook_namespace }}"
+         rsh "{{ notebook_pod_name_cmd.stdout }}"
+         bash -c 'cp -v "$NOTEBOOK_FILES"/* . && mkdir -p results'
+
+  - name: Run the notebook
+    shell:
+      oc -n "{{ notebook_namespace }}"
+         rsh "{{ notebook_pod_name_cmd.stdout }}"
+         bash -exc 'jupyter nbconvert --to notebook --execute "$NOTEBOOK_FILENAME"
+              && mv "$(basename "$NOTEBOOK_FILENAME" .ipynb).nbconvert.ipynb" results/$(basename "$NOTEBOOK_FILENAME" .ipynb).executed.ipynb'
+
+  - name: Collect the execution artifacts
+    command:
+      oc cp "{{ notebook_namespace }}/{{ notebook_pod_name_cmd.stdout.split('/')[1] }}":results
+            "{{ artifact_extra_logs_dir }}/notebook-artifacts/"
+
+  - name: Generate MatrixBenchmark exit code file
+    shell:
+      echo 0 > "{{ artifact_extra_logs_dir }}/exit_code"
+
+  always:
+  - name: Capture the information about the notebook projects
+    include_tasks: artifacts_sutest_project.yml
+    vars:
+      rhods_notebook_namespace: "{{ notebook_namespace }}"
+      sut_cluster_kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+      rhods_notebook_ods_ci_scale_test_stop_notebooks_on_exit: true
+
+  - name: Capture the sutest cluster artifacts
+    include_tasks: artifacts_sutest.yml
+    vars:
+      sut_cluster_kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+
+  - name: Generate MatrixBenchmark settings file
+    shell: |
+      cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
+      user_count=1
+      image={{ rhods_benchmark_notebook_performance_imagestream }}:{{ image_tag }}
+      benchmark_name={{ rhods_benchmark_notebook_performance_benchmark_name }}
+      benchmark_repeat={{ rhods_benchmark_notebook_performance_benchmark_repeat }}
+      benchmark_number={{ rhods_benchmark_notebook_performance_benchmark_number }}
+      notebook_file_name={{ rhods_benchmark_notebook_performance_notebook_filename }}
+      EOF
+    ignore_errors: true
 
 - name: Delete the notebook
   command:
     oc delete
-       -f "{{ notebook_src_template_dest }}"
-       -n "{{ notebook_namespace }}"
-
-- name: Generate MatrixBenchmark settings file
-  shell: |
-    cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
-    user_count=1
-    image={{ rhods_benchmark_notebook_performance_imagestream }}:{{ image_tag }}
-    benchmark_name={{ rhods_benchmark_notebook_performance_benchmark_name }}
-    benchmark_repeat={{ rhods_benchmark_notebook_performance_benchmark_repeat }}
-    benchmark_number={{ rhods_benchmark_notebook_performance_benchmark_number }}
-    notebook_file_name={{ rhods_benchmark_notebook_performance_notebook_filename }}
-    EOF
-  ignore_errors: yes
-
-- name: Generate MatrixBenchmark exit code file
-  shell:
-    echo 0 > "{{ artifact_extra_logs_dir }}/exit_code"
+    -f "{{ notebook_src_template_dest }}"
+    -n "{{ notebook_namespace }}"
+  ignore_errors: true
