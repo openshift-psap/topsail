@@ -32,6 +32,14 @@ spec:
         ports:
         - containerPort: 9000
         - containerPort: 9001
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          runAsNonRoot: true
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
         volumeMounts:
         - name: data-dir
           mountPath: /data
