@@ -2,4 +2,3 @@ visualize:
 - id: single_notebook_perf
   generate:
   - "report: Notebook Performance"
-  - "report: Notebooks Performance Comparison"
