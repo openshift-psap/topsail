@@ -68,6 +68,14 @@ ci_presets:
     clusters.create.type: single
     tests.notebooks.users.count: 100
 
+  notebook_large_scale_test_no_notebook:
+    extends: [notebook_large_scale_test]
+    clusters.sutest.compute.machineset.count: 0
+    clusters.sutest.compute.machineset.spot: false
+    clusters.sutest.compute.autoscaling.enabled: false
+    clusters.create.type: single
+    tests.notebooks.users.count: 1000
+
   notebook_fast_scale_test:
     extends: [notebook_scale_test]
     rhods.operator.stop: true
