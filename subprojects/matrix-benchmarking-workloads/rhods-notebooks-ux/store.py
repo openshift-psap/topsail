@@ -322,12 +322,12 @@ def _parse_nodes_info(dirname, sutest_cluster=False):
         node_info.managed = "managed.openshift.com/customlabels" in node["metadata"]["annotations"]
         node_info.instance_type = node["metadata"]["labels"].get("node.kubernetes.io/instance-type", "N/A")
 
-        node_info.master = "node-role.kubernetes.io/master" in node["metadata"]["labels"]
+        node_info.control_plane = "node-role.kubernetes.io/control-plane" in node["metadata"]["labels"] or "node-role.kubernetes.io/master" in node["metadata"]["labels"]
         node_info.rhods_compute = node["metadata"]["labels"].get("only-rhods-compute-pods") == "yes"
 
         node_info.test_pods_only = node["metadata"]["labels"].get("only-test-pods") == "yes"
         node_info.infra = \
-            not node_info.master and \
+            not node_info.control_plane and \
             not node_info.rhods_compute and \
             not node_info.test_pods_only
 
@@ -643,8 +643,8 @@ def _extract_rhods_cluster_info(nodes_info):
     rhods_cluster_info.node_count = [node_info for node_info in nodes_info.values() \
                                      if node_info.sutest_cluster]
 
-    rhods_cluster_info.master = [node_info for node_info in nodes_info.values() \
-                                 if node_info.sutest_cluster and node_info.master]
+    rhods_cluster_info.control_plane = [node_info for node_info in nodes_info.values() \
+                                 if node_info.sutest_cluster and node_info.control_plane]
 
     rhods_cluster_info.infra = [node_info for node_info in nodes_info.values() \
                                 if node_info.sutest_cluster and node_info.infra]

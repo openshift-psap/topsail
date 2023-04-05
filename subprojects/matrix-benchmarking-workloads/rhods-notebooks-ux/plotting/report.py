@@ -13,7 +13,7 @@ def register():
     PodNodeMappingReport()
     LaunchAndExecTimeDistributionReport()
     NotebookPerformanceReport()
-    MastersReport()
+    ControlPlaneReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -320,9 +320,9 @@ class NotebookPerformanceReport():
         return None, header
 
 
-class MastersReport():
+class ControlPlaneReport():
     def __init__(self):
-        self.name = "report: Master Nodes Load"
+        self.name = "report: Control Plane Nodes Load"
         self.id_name = self.name.lower().replace(" ", "_")
         self.no_graph = True
         self.is_report = True
@@ -331,12 +331,12 @@ class MastersReport():
 
     def do_plot(self, *args):
         header = []
-        header += [html.H1("Master Nodes Load")]
+        header += [html.H1("Control Plane Nodes Load")]
 
         for cluster_role in ["sutest", "driver"]:
             header += [html.H1(f"{cluster_role.title()} cluster")]
 
-            header += ["These plots shows the CPU and memory usage of the Kubernetes API Server and ETCD, running on the Master nodes of the cluster."]
+            header += ["These plots shows the CPU and memory usage of the Kubernetes API Server and ETCD, running on the Control Plane nodes of the cluster."]
 
             for pod_name in ["ApiServer", "ETCD"]:
                 header += [html.H2(f"{pod_name} subsystem")]
@@ -350,18 +350,18 @@ class MastersReport():
 
             header += [html.H2(f"CPU usage")]
 
-            header += ["These plots shows the CPU usage of the master nodes.",
+            header += ["These plots shows the CPU usage of the Control Plane nodes.",
                        html.Br(),
                        "The first plot show all the available modes, while the second one shows only the idle time (higher is better).",
                        html.Br(),
                        "The Y scale is arbitrary, but for a given node, the sum of all the modes at a given time indicate 100% of the CPU."
                        ]
 
-            header += Plot_and_Text(f"Prom: {cluster_role.title()} Master Node CPU usage", args)
+            header += Plot_and_Text(f"Prom: {cluster_role.title()} Control Plane Node CPU usage", args)
             header += html.Br()
             header += html.Br()
 
-            header += Plot_and_Text(f"Prom: {cluster_role.title()} Master Node CPU idle", args)
+            header += Plot_and_Text(f"Prom: {cluster_role.title()} Control Plane Node CPU idle", args)
             header += html.Br()
             header += html.Br()
 

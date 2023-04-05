@@ -8,7 +8,7 @@
     test_successes: 100
     rhods_dashboard_cpu_usage: 0.75
     prom_overview_prom_sutest_api_server_requests_server_errors: 0
-    prom_overview_prom_sutest_master_node_cpu_idle: 50%
+    prom_overview_prom_sutest_control_plane_node_cpu_idle: 50%
 - settings_selector:
     mode: scale_test
     user_count: 100
@@ -19,7 +19,7 @@
     test_successes: 100
     rhods_dashboard_cpu_usage: 0.75
     prom_overview_prom_sutest_api_server_requests_server_errors: 0
-    prom_overview_prom_sutest_master_node_cpu_idle: 50%
+    prom_overview_prom_sutest_control_plane_node_cpu_idle: 50%
 - settings_selector:
     mode: scale_test
     run: 1
@@ -29,7 +29,7 @@
     test_successes: 200
     rhods_dashboard_cpu_usage: 0.75
     prom_overview_prom_sutest_api_server_requests_server_errors: 0
-    prom_overview_prom_sutest_master_node_cpu_idle: 50%
+    prom_overview_prom_sutest_control_plane_node_cpu_idle: 50%
 - settings_selector:
     mode: scale_test
     run: 2
@@ -40,7 +40,7 @@
     test_successes: 200
     rhods_dashboard_cpu_usage: 0.75
     prom_overview_prom_sutest_api_server_requests_server_errors: 0
-    prom_overview_prom_sutest_master_node_cpu_idle: 50%
+    prom_overview_prom_sutest_control_plane_node_cpu_idle: 50%
 - settings_selector:
     mode: scale_test
   thresholds:
@@ -49,4 +49,4 @@
     test_successes: 200
     rhods_dashboard_cpu_usage: 0.75
     prom_overview_prom_sutest_api_server_requests_server_errors: 0
-    prom_overview_prom_sutest_master_node_cpu_idle: 50%
+    prom_overview_prom_sutest_control_plane_node_cpu_idle: 50%

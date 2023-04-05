@@ -8,5 +8,5 @@ visualize:
   - "report: Launch Time and Execution Time Distribution"
   - "report: RHODS Cluster CPU/Memory Usage"
   - "report: Authentication System"
-  - "report: Master Nodes Load"
+  - "report: Control Plane Nodes Load"
   - "report: RHODS metrics"

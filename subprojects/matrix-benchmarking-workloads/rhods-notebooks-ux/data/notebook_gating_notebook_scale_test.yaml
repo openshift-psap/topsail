@@ -9,7 +9,7 @@ visualize:
   - "report: Pod-Node Mapping"
   - "report: User Execution Overview"
   - "report: Launch Time and Execution Time Distribution"
-  - "report: Master Nodes Load"
+  - "report: Control Plane Nodes Load"
   - "report: RHODS Cluster CPU/Memory Usage"
 
   thresholds:
@@ -18,7 +18,7 @@ visualize:
       test_successes: "100%"
       rhods_dashboard_cpu_usage: 0.75
       prom_overview_prom_sutest_api_server_requests_server_errors: 0
-      prom_overview_prom_sutest_master_node_cpu_idle: 50%
+      prom_overview_prom_sutest_control_plane_node_cpu_idle: 50%
 
       launch_time_90: 150
       launch_time_75: 140
