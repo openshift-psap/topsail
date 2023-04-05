@@ -16,6 +16,7 @@ spec:
       labels:
         app: "{{ notebook_name }}"
         ci-artifacts.single-notebook-perf: "true"
+        opendatahub.io/dashboard: "true"
     spec:
       affinity:
         nodeAffinity:
