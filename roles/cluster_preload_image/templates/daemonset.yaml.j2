@@ -28,3 +28,11 @@ spec:
         command:
         - sleep
         - 1d
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          runAsNonRoot: true
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault

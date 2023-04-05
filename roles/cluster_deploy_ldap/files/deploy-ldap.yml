@@ -56,6 +56,14 @@ spec:
                 secretKeyRef:
                   key: passwords
                   name: openldap
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
           ports:
             - name: tcp-ldap
               containerPort: 1389

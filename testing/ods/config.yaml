@@ -260,12 +260,12 @@ clusters:
       deploy_cluster:
         target: cluster
       base_domain: psap.aws.rhperfscale.org
-      version: 4.11.13
+      version: 4.12.9
       region: us-west-2
       control_plane:
         type: m6a.xlarge
       workers:
-        type: m6a.xlarge
+        type: m6a.2xlarge
         count: 2
       compute:
         type: m6i.2xlarge
@@ -297,7 +297,7 @@ clusters:
   driver:
     compute:
       autoscaling:
-        enabled: true
+        enabled: false
       dedicated: true
       machineset:
         name: test-pods

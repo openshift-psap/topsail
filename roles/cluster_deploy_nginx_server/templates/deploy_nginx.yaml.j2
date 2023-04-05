@@ -23,6 +23,14 @@ spec:
           protocol: TCP
         - containerPort: 8443
           protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          runAsNonRoot: true
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
         volumeMounts:
         - name: data-dir
           mountPath: /opt/app-root/src

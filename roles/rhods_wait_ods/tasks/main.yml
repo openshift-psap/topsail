@@ -2,6 +2,8 @@
 - name: Get RHODS dashboard route host
   command: oc get route/rhods-dashboard -n redhat-ods-applications -ojsonpath={.spec.host}
   register: rhods_dashboard_hostname_cmd
+  retries: 30
+  delay: 10
 
 - name: Wait for RHODS dashboard to be ready
   shell:
