@@ -52,7 +52,7 @@ check_test_size() {
                 exit 1
             fi
 
-            local user_count=$($(get_config tests.notebooks.users.count))
+            local user_count=$(get_config tests.notebooks.users.count)
             if [[ "$user_count" -gt 300 ]]; then
                 echo "ERROR: refusing to run the notebook scale test with $user_count users outside of a '-long' test. (JOB_NAME_SAFE=$JOB_NAME_SAFE)"
                 exit 1

@@ -28,7 +28,7 @@ cluster_helpers::get_compute_node_count() {
 
     if [[ "$cluster_role" == "sutest" ]]; then
 
-        if test_config clusters.sutest.compute.autoscaling.enable; then
+        if test_config clusters.sutest.compute.autoscaling.enabled; then
             echo 0
             return
         fi
@@ -60,7 +60,7 @@ cluster_helpers::get_compute_node_count() {
             user_count=1
         fi
     else
-        if test_config clusters.driver.compute.autoscaling.enable; then
+        if test_config clusters.driver.compute.autoscaling.enabled; then
             echo 0
             return
         fi

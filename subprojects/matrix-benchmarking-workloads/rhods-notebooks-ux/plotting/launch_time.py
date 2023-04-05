@@ -250,12 +250,12 @@ class RunTimeDistribution():
 
             q1_txt = f"-{q1_dist:.0f}s" if round(q1_dist) >= 2 else ""
             q3_txt = f"+{q3_dist:.0f}s" if round(q3_dist) >= 2 else ""
-            msg.append([f"{step_name}: {median:.0f}s {q1_txt}{q3_txt}", html.Br()])
+            msg += [f"{step_name}: {median:.0f}s {q1_txt}{q3_txt}", html.Br()]
 
             base_value += median
             if step_name.endswith("Go to JupyterLab Page"):
                 notebook_ready_time = base_value
-                msg.append(["---", html.Br()])
+                msg += ["---", html.Br()]
 
         stats_df = pd.DataFrame(stats_data)
 
@@ -270,4 +270,5 @@ class RunTimeDistribution():
                             y=[steps[0], steps[-1]])
         fig.update_layout(xaxis_title="Timeline (in seconds). Error bars show Q1 and Q3.")
         fig.update_layout(yaxis_title="", title_x=0.5,)
-        return fig, None
+
+        return fig, msg

@@ -154,7 +154,11 @@ class UserExecutionOverviewReport():
 
         header += [html.H2("Median Runtime Timeline")]
         header += Plot_and_Text(f"Median runtime timeline", args)
-        header += ["This plot shows the timeline for the execution of each of the step. The main bar show the media time, and the error bars show the Q1-Q3 distance. This range includes 50% of the users. Only the users who succeeded the step are included in the computation. The vertical bar shows the 'time to reach JupyterLab', which is a key performance indicator."]
+        header += ["This plot shows the timeline for the execution of each of the step.", html.Br(),
+                   "The main bar show the media time, and the error bars show the Q1-Q3 distance.", html.Br(),
+                   "This range includes 50% of the users. ", html.Br(),
+                   "Only the users who succeeded the step are included in the computation.", html.Br(),
+                   "The vertical bar shows the 'time to reach JupyterLab', which is a key performance indicator."]
 
         header += [html.H2("Notebook Resource Creation timeline")]
         header += [Plot(f"Notebook Resource Creation Timeline", args)]
