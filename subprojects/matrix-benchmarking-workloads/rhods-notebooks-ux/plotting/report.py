@@ -1,4 +1,5 @@
 import copy
+import logging
 
 from dash import html
 from dash import dcc
@@ -59,8 +60,14 @@ def set_filters(filters, _args):
     return args
 
 def Plot(name, args, msg_p=None):
-    stats = table_stats.TableStats.stats_by_name[name]
-    fig, msg = stats.do_plot(*args)
+    try:
+        stats = table_stats.TableStats.stats_by_name[name]
+    except KeyError:
+        logging.error(f"Report: Stats '{name}' does not exist. Skipping it.")
+        stats = None
+
+    fig, msg = stats.do_plot(*args) if stats else (None, f"Stats '{name}' does not exit :/")
+
     if msg_p is not None: msg_p.append(msg)
 
     return dcc.Graph(figure=fig)
