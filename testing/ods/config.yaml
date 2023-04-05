@@ -265,7 +265,7 @@ clusters:
       control_plane:
         type: m6a.xlarge
       workers:
-        type: m6a.xlarge
+        type: m6a.2xlarge
         count: 2
       compute:
         type: m6i.2xlarge
