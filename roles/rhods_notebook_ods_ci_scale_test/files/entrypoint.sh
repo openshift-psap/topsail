@@ -7,9 +7,6 @@ set -x
 
 cd /tmp/ods-ci/ods_ci
 
-# workaround: remove 'poetry install' until someting like '--skip-pip-install' is reimplemented
-sed "s/poetry install//" -i run_robot_test.sh
-
 JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-0}
 STATE_SIGNAL_BARRIER=/mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/state-signal_barrier.py
 STATE_SIGNAL_DELAY=-1 # delay for all the Pods to reach the entry barrier
@@ -99,7 +96,7 @@ echo "launch_delay: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 
 test_exit_code=0
 (bash -x ./run_robot_test.sh \
-    --skip-pip-install \
+    --skip-install \
     --test-variables-file /tmp/test-variables.yml \
     --skip-oclogin true \
     --test-artifact-dir "$ARTIFACT_DIR" \
