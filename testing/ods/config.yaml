@@ -297,7 +297,7 @@ clusters:
   driver:
     compute:
       autoscaling:
-        enabled: true
+        enabled: false
       dedicated: true
       machineset:
         name: test-pods
