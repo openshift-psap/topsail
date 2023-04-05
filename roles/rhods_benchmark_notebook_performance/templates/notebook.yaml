@@ -9,7 +9,7 @@ metadata:
   labels:
     app: "{{ notebook_name }}"
     ci-artifacts.single-notebook-perf: "true"
-  name: "{{ notebook_name | truncate(45, true, '') }}"
+  name: "{{ notebook_name | truncate(35, true, '') }}"
 spec:
   template:
     metadata:
