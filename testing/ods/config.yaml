@@ -140,6 +140,8 @@ ci_presets:
     matbench.config_file: single_notebook_perf.yaml
     tests.notebooks.notebook_performance.use_rhods: false
     tests.notebooks.users.count: 1
+    clusters.sutest.compute.dedicated: true
+    'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
 
   # run the notebook image performance test on RHODS (benchmark mode)
   rhods_notebook_performance:
@@ -214,8 +216,8 @@ ci_presets:
     clusters.sutest.compute.autoscaling.enabled: true
     clusters.driver.compute.machineset.spot: false
     'ci_presets.notebooks_light["clusters.driver.compute.machineset.count"]': null
-    'ci_presets.notebooks_light["clusters.driver.compute.machineset.dedicated"]': true
-    'ci_presets.notebooks_light["clusters.sutest.compute.machineset.dedicated"]': true
+    'ci_presets.notebooks_light["clusters.driver.compute.dedicated"]': true
+    'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
 
 secrets:
   dir:
@@ -334,7 +336,6 @@ rhods:
         name: &notebook_size_name Tiny
         cpu: 1
         mem_gi: 4
-      remove_gpu_images: true
   operator:
     # set to true to stop the RHODS operator
     stop: false
@@ -438,13 +439,11 @@ tests:
     notebook_performance:
       use_rhods: true
       tests:
-      - imagestream: s2i-generic-data-science-notebook
+      - imagestream: all
         ipynb:
           uploaded_directory: testing/ods/notebooks
           notebook_filename: benchmark_entrypoint.ipynb
         instance_types:
-        - m5.xlarge
-        - m6a.xlarge
         - m6i.xlarge
         benchmarks:
           # name of the benchmark to pass to the notebook
