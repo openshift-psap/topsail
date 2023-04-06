@@ -188,8 +188,8 @@ ci_presets:
     clusters.sutest.compute.dedicated: false
     clusters.sutest.compute.machineset.count: 1
 
-    clusters.driver.compute.dedicated: false
-    clusters.driver.compute.machineset.count: 0
+    clusters.driver.compute.dedicated: true
+    clusters.driver.compute.machineset.count: 1
 
     tests.notebooks.users.count: 5
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
