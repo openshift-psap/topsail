@@ -231,24 +231,48 @@ prepare_sutest_scale_cluster() {
             _error "prepare_sutest_scale_cluster not supported with rosa"
         fi
     else
-        if test_config clusters.sutest.compute.machineset.spot; then
-            compute_nodes_count=$(python3 -c "print(round($compute_nodes_count * 1.1))")
-            _info "SUTEST running with SPOT nodes, giving +10% of worker nodes --> $compute_nodes_count"
-        fi
-        ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
-                         --extra "{scale: $compute_nodes_count}"
+        if test_config clusters.sutest.compute.autoscaling.enabled && test_config clusters.sutest.compute.machineset.spot; then
+            touch "$ARTIFACT_DIR/spot_and_autoscaling"
 
-        if test_config clusters.sutest.compute.machineset.spot; then
-            tag_spot_machineset sutest "$(get_config clusters.sutest.compute.machineset.name)"
-        fi
+            # create one auto-scaling machineset per (region)/zone of the base worker machinesets
 
-        if test_config clusters.sutest.compute.autoscaling.enabled; then
+            cluster_name=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
+            worker_machinesets=$(oc get machinesets -n openshift-machine-api -oname | grep $cluster_name | cut -d/ -f2)
+
             oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
+            for base_worker_machineset in $worker_machinesets; do
+                region_zone=$(echo "$base_worker_machineset" | cut -d- -f6-)
+                new_machineset_name="$(get_config clusters.sutest.compute.machineset.name)-$region_zone"
 
-            local machineset_name=$(get_config clusters.sutest.compute.machineset.name)
-            cat testing/ods/autoscaling/machineautoscaler.yaml \
-                | sed "s/MACHINESET_NAME/$machineset_name/" \
-                | oc apply -f-
+                ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
+                                 --extra "{scale: 0, name: '$new_machineset_name', base_machineset: '$base_worker_machineset'}"
+
+                tag_spot_machineset sutest "$new_machineset_name"
+
+                cat testing/ods/autoscaling/machineautoscaler.yaml \
+                    | sed "s/MACHINESET_NAME/$new_machineset_name/" \
+                    | oc apply -f-
+            done
+        else
+            if test_config clusters.sutest.compute.machineset.spot; then
+                compute_nodes_count=$(python3 -c "print(round($compute_nodes_count * 1.1))")
+                _info "SUTEST running with SPOT nodes, giving +10% of worker nodes --> $compute_nodes_count"
+            fi
+            ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
+                             --extra "{scale: $compute_nodes_count}"
+
+            if test_config clusters.sutest.compute.machineset.spot; then
+                tag_spot_machineset sutest "$(get_config clusters.sutest.compute.machineset.name)"
+            fi
+
+            if test_config clusters.sutest.compute.autoscaling.enabled; then
+                oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
+
+                local machineset_name=$(get_config clusters.sutest.compute.machineset.name)
+                cat testing/ods/autoscaling/machineautoscaler.yaml \
+                    | sed "s/MACHINESET_NAME/$machineset_name/" \
+                    | oc apply -f-
+            fi
         fi
     fi
 }
