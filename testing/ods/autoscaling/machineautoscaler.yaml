@@ -1,7 +1,7 @@
 apiVersion: autoscaling.openshift.io/v1beta1
 kind: MachineAutoscaler
 metadata:
-  name: kpouget-20220701-5g2b7-worker-eu-central-1a--m5-2xlarge
+  name: MACHINESET_NAME
   namespace: openshift-machine-api
 spec:
   minReplicas: 0
