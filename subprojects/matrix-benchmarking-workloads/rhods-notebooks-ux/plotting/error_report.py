@@ -90,7 +90,9 @@ def _get_test_setup(entry):
 
     setup_info += [html.Ul(test_config)]
 
-    managed = list(entry.results.rhods_cluster_info.control_plane)[0].managed
+    managed = list(entry.results.rhods_cluster_info.control_plane)[0].managed \
+        if entry.results.rhods_cluster_info.control_plane else False
+
     sutest_ocp_version = entry.results.sutest_ocp_version
     setup_info += [html.Li([html.B("RHODS "), html.B(html.Code(entry.results.rhods_info.version)), " running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
 
