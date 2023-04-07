@@ -420,7 +420,12 @@ def _parse_notebook_times(dirname, pod_times):
     def _parse_notebook_times_file(notebooks):
         for notebook in notebooks["items"]:
             notebook_name = notebook["metadata"]["name"]
-            user_index = int(re.findall(JUPYTER_USER_IDX_REGEX, notebook_name + "-0")[0])
+            try:
+                user_index = int(re.findall(JUPYTER_USER_IDX_REGEX, notebook_name + "-0")[0])
+            except Exception as e:
+                logging.warning(f"Cannot parsr user index in {notebook_name}")
+                user_index = -1
+
             if user_index not in pod_times:
                 continue
 

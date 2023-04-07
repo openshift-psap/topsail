@@ -78,7 +78,7 @@
 
 - name: Define the test environment
   set_fact:
-    notebook_name: notebook-perf-{{ rhods_benchmark_notebook_performance_imagestream | replace(".", "-")}}-{{ image_tag | replace(".", "-") }}
+    notebook_name: notebook-performance
     notebook_namespace: "{% if rhods_benchmark_notebook_performance_use_rhods | bool %}rhods-notebooks{% else %}{{ rhods_benchmark_notebook_performance_namespace }}{% endif %}"
     notebook_src_template_dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook.yaml"
     notebook_file_cm_name: rhods-notebook-files
