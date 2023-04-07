@@ -59,17 +59,17 @@ class PerfReport():
         header += [html.Br()]
         header += [html.Br()]
 
-        header += [html.H2("Master nodes health")]
+        header += [html.H2("Control plane nodes health")]
 
         header += report.Plot_and_Text(f"Prom: Sutest API Server Requests (server errors)", args)
         header += html.Br()
         header += html.Br()
         header += ["This plot shows the number of APIServer errors (5xx HTTP codes). Lower is better."]
 
-        header += report.Plot_and_Text(f"Prom: Sutest Master Node CPU idle", args)
+        header += report.Plot_and_Text(f"Prom: Sutest Control Plane Node CPU idle", args)
         header += html.Br()
         header += html.Br()
-        header += ["This plot shows the idle time of the master nodes. Higher is better."]
+        header += ["This plot shows the idle time of the control plane nodes. Higher is better."]
 
         prom_report.add_pod_cpu_mem_usage(header, "RHODS Dashboard", args, cpu_only=True)
 

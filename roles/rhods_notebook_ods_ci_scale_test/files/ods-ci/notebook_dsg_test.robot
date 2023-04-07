@@ -111,29 +111,6 @@ Create and Start the Workbench
   Workbench Status Should Be      workbench_title=${WORKBENCH_NAME}   status=${WORKBENCH_STATUS_RUNNING}
   ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Just Launch Workbench  ${WORKBENCH_NAME}
 
-  IF  '${workbench_launched}' != 'PASS'
-    Capture Page Screenshot  bug_5819_open_not_available.png
-    Log     message=Workaround-1 for RHODS-5819: wait for the open button not to be disabled    level=WARN
-
-    ${current_html} =    SeleniumLibrary.Get Source
-    Create File  ${OUTPUTDIR}/bug_5819.html  ${current_html}
-
-    # disabled until 1.22
-    #${route_wait_start} = 	Get Current Date
-    #Wait Until Page Does Not Contain Element    ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${WORKBENCH_NAME}"]]]//a[text()="Open" and contains(@class, 'pf-m-disabled')]  timeout=1 minutes
-    #${route_wait_end} = 	Get Current Date
-    #${wait_time}=  Subtract Date From Date  ${route_wait_end}  ${route_wait_start}
-    #Create File  ${OUTPUTDIR}/bug_5819_wait_time.txt  ${wait_time} seconds\n
-
-    Log     message=Workaround-2 for RHODS-5819: reload the page    level=WARN
-    Reload Page
-    Wait Until Page Contains  Create workbench  timeout=60 seconds
-    Wait Until Page Contains  Running  timeout=60 seconds
-    Wait Until Page Contains  Open  timeout=60 seconds
-
-    Just Launch Workbench  ${WORKBENCH_NAME}
-  END
-
   ${app_is_ready} =    Run Keyword And Return Status    Page Should Not Contain  Application is not available
   IF  ${app_is_ready} != True
     Log     message=Workaround for RHODS-5912: reload the page    level=WARN
@@ -196,7 +173,7 @@ Run the Notebook
 Just Launch Workbench
     [Arguments]     ${workbench_title}
 
-    Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]//a[text()="Open"]
+    Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h3[div[starts-with(text(), "${workbench_title}")]]]//a[text()="Open"]
     Switch Window   NEW
 
 Wait Until Page Contains No Spinner
@@ -208,7 +185,7 @@ Wait Until Workbench Is Starting
     [Arguments]     ${workbench_title}      ${timeout}=30s    ${status}=${WORKBENCH_STATUS_STARTING}
 
     Wait Until Page Contains Element
-    ...        ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]/td[@data-label="Status"]//p[text()="${status}"]    timeout=${timeout}
+    ...        ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h3[div[starts-with(text(), "${workbench_title}")]]]/td[@data-label="Status"]//p[text()="${status}"]    timeout=${timeout}
 
 Stop Starting Workbench
     [Documentation]    Stops a starting workbench from DS Project details page
@@ -216,7 +193,7 @@ Stop Starting Workbench
     ${is_stopped}=      Run Keyword And Return Status   Workbench Status Should Be
     ...    workbench_title=${workbench_title}   status=${WORKBENCH_STATUS_STOPPED}
     IF    ${is_stopped} == ${False}
-        Click Element       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]]/td[@data-label="Status"]//span[@class="pf-c-switch__toggle"]
+        Click Element       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h3[div[starts-with(text(), "${workbench_title}")]]]/td[@data-label="Status"]//span[@class="pf-c-switch__toggle"]
         Wait Until Generic Modal Appears
         Page Should Contain    Are you sure you want to stop the workbench? Any changes without saving will be erased.
         Click Button    ${WORKBENCH_STOP_BTN_XP}
@@ -229,4 +206,4 @@ Workbench is Listed
     [Arguments]     ${workbench_title}
     Run keyword And Continue On Failure
     ...    Page Should Contain Element
-    ...        ${WORKBENCH_SECTION_XP}//td[@data-label="Name"]/h4[div[text()="${workbench_title}"]]
+    ...        ${WORKBENCH_SECTION_XP}//td[@data-label="Name"]/h3[div[starts-with(text(), "${workbench_title}")]]

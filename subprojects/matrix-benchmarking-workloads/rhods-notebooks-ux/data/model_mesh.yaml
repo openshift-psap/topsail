@@ -2,4 +2,4 @@ visualize:
 - id: model_mesh
   generate:
   - "report: RHODS Cluster CPU/Memory Usage"
-  - "report: Master Nodes Load"
+  - "report: Control Plane Nodes Load"

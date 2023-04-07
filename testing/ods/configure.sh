@@ -59,6 +59,7 @@ apply_preset() {
         fi
 
         echo "presets[$name] $key --> $value"
+        echo "presets[$name] $key --> $value" >> "$ARTIFACT_DIR/presets_applied"
         set_config "$key" "$value"
     done
 }

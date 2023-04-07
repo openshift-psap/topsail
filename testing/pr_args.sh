@@ -8,28 +8,40 @@ set -o errtrace
 DEST=${1:-}
 
 if [[ -z "$DEST" ]]; then
-    echo "ERROR: expected a destination file as parameter ..."
+    echo "ERROR: expected a destination file as parameter ..." >&2
     exit 1
 fi
 
 if [[ -f "$DEST" ]]; then
-    echo "INFO: '$DEST' already exists, not running $0"
+    echo "INFO: '$DEST' already exists, not running $0" >&2
     exit 0
 fi
 
-if [[ -z "${PULL_NUMBER:-}" ]]; then
-    echo "ERROR: no PULL_NUMBER available ..."
+if [[ -z "${PULL_NUMBER:-}" || -z "${REPO_OWNER:-}" || -z "${REPO_NAME:-}" ]]; then
+    echo "ERROR: PULL_NUMBER=${PULL_NUMBER:-} or REPO_OWNER=${REPO_OWNER:-} or REPO_NAME=${REPO_NAME:-} not defined ..." >&2
     exit 1
+fi
+
+if [[ "$DEST" == "-" ]]; then
+    DEST=/proc/self/fd/1
 fi
 
 PR_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PULL_NUMBER"
 PR_COMMENTS_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PULL_NUMBER/comments"
 
+if [[ "${TEST_NAME:-}" ]]; then
+    test_name=$TEST_NAME
 
-JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-${PULL_BASE_REF}
-test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
+elif [[ "${OPENSHIFT_CI:-}" == true ]]; then
+    JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-${PULL_BASE_REF}
+    test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 
-echo "PR URL: $PR_URL"
+else
+    echo "ERROR: not running in OpenShift CI and TEST_NAME not defined." >&2
+    exit 1
+fi
+
+echo "PR URL: $PR_URL" >&2
 pr_json=$(curl -sSf "$PR_URL")
 pr_body=$(jq -r .body <<< "$pr_json")
 pr_comments=$(jq -r .comments <<< "$pr_json")
@@ -45,14 +57,14 @@ last_comment_page=$(($pr_comments / $COMMENTS_PER_PAGE))
 [[ $(($pr_comments % $COMMENTS_PER_PAGE)) != 0 ]] && last_comment_page=$(($last_comment_page + 1))
 
 
-echo "PR comments URL: $PR_COMMENTS_URL"
+echo "PR comments URL: $PR_COMMENTS_URL" >&2
 last_user_test_comment=$(curl -sSf "$PR_COMMENTS_URL?page=$last_comment_page" \
                              | jq '.[] | select(.user.login == "'$pr_author'") | .body' \
                              | (grep "$test_name" || true) \
                              | tail -1 | jq -r)
 
 if [[ -z "$last_user_test_comment" ]]; then
-    echo "WARNING: last comment of author '$pr_author' could not be found (searching for '$test_name') ..."
+    echo "WARNING: last comment of author '$pr_author' could not be found (searching for '$test_name') ..." >&2
 fi
 
 pos_args=$(echo "$last_user_test_comment" |

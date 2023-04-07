@@ -56,16 +56,16 @@ class GatingReport3():
         ordered_vars, settings, setting_lists, variables, cfg = args
         header = []
 
-        # Master nodes health
-        header += [html.H2("Master nodes health")]
+        # Control_Plane nodes health
+        header += [html.H2("Control Plane nodes health")]
         header += report.Plot_and_Text("Prom: Sutest API Server Requests (server errors)",
                                        report.set_config(dict(check_all_thresholds=True), args))
         header += ["This plot shows the number of APIServer errors (5xx HTTP codes). Lower is better."]
         header += html.Br()
 
-        header += report.Plot_and_Text("Prom: Sutest Master Node CPU idle",
+        header += report.Plot_and_Text("Prom: Sutest Control Plane Node CPU idle",
                                        report.set_config(dict(check_all_thresholds=True), args))
-        header += ["This plot shows the idle time of the master nodes. Higher is better."]
+        header += ["This plot shows the idle time of the control plane nodes. Higher is better."]
         header += html.Br()
 
         # Dashboard health

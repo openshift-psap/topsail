@@ -188,8 +188,8 @@ ci_presets:
     clusters.sutest.compute.dedicated: false
     clusters.sutest.compute.machineset.count: 1
 
-    clusters.driver.compute.dedicated: false
-    clusters.driver.compute.machineset.count: 0
+    clusters.driver.compute.dedicated: true
+    clusters.driver.compute.machineset.count: 1
 
     tests.notebooks.users.count: 5
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
@@ -321,7 +321,7 @@ rhods:
   deploy_from_catalog: true
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 459294
+    tag: 470448
     channel: beta
     version: 1.25.0
   addon:
@@ -403,7 +403,7 @@ tests:
       test_mode: simple
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: notebook-scale-test.v1.25.0-0
+        ref: notebook-scale-test.v1.25.0-3
       # tags to exclude when running the robot test case
       excluded_tags: None
       # if true, only create the notebooks but don't start them
