@@ -17,7 +17,7 @@ def _parse_lts_dir(add_to_matrix, dirname, import_settings):
 
 
 def _parse_entry(val):
-    type_skiplist = [PosixPath]
+    type_skiplist = [PosixPath, types.FunctionType]
 
     val_type = type(val)
     if val_type is datetime.datetime:
