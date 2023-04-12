@@ -6,19 +6,20 @@ set -o nounset
 set -o errtrace
 set -x
 
-TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_OCP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="${TESTING_UTILS_OCP_DIR}/.."
 
-source "$TESTING_ODS_DIR/../process_ctrl.sh"
-source "$TESTING_ODS_DIR/../_logging.sh"
-source "$TESTING_ODS_DIR/configure.sh"
-source "$TESTING_ODS_DIR/cluster_helpers.sh"
+source "$TESTING_UTILS_DIR/process_ctrl.sh"
+source "$TESTING_UTILS_DIR/logging.sh"
+source "$TESTING_UTILS_DIR/configure.sh"
 
+"$TESTING_UTILS_DIR/ci_init_configure.sh"
 # ---
 
 prepare_args_from_pr() {
     set_presets_from_pr_args
-    bash "$TESTING_ODS_DIR/configure_set_presets.sh"
-    bash "$TESTING_ODS_DIR/configure_overrides.sh"
+    bash "$TESTING_UTILS_DIR/configure_set_presets.sh"
+    bash "$TESTING_UTILS_DIR/configure_overrides.sh"
 }
 
 capture_gather_extra() {
@@ -29,7 +30,7 @@ capture_gather_extra() {
     export ARTIFACT_DIR=$base_artifact_dir/${cluster_role}__gather-extra
     export KUBECONFIG=$CONFIG_DEST_DIR/${cluster_role}_kubeconfig
 
-    "$TESTING_ODS_DIR"/../gather-extra.sh > "$base_artifact_dir/${cluster_role}__gather-extra.log" 2>&1 || true
+    "$TESTING_UTILS_DIR"/gather-extra.sh > "$base_artifact_dir/${cluster_role}__gather-extra.log" 2>&1 || true
 
     export ARTIFACT_DIR=$base_artifact_dir
 }
@@ -79,13 +80,13 @@ destroy_cluster() {
     fi
 
     if [[ "$cluster_role" == driver ]]; then
-        "$TESTING_ODS_DIR/ocp_cluster.sh" destroy "$cluster_role"
+        "$TESTING_UTILS_OCP_DIR/ocp_cluster.sh" destroy "$cluster_role"
 
     elif ! test_config clusters.sutest.is_managed; then
-        "$TESTING_ODS_DIR/ocp_cluster.sh" destroy "$cluster_role"
+        "$TESTING_UTILS_OCP_DIR/ocp_cluster.sh" destroy "$cluster_role"
     else
         if test_config clusters.sutest.managed.is_ocm; then
-            "$TESTING_ODS_DIR/osd_cluster.sh" destroy "$cluster_role"
+            "$TESTING_UTILS_OCP_DIR/osd_cluster.sh" destroy "$cluster_role"
         elif test_config clusters.sutest.managed.is_rosa; then
             _error "cannot destroy ROSA clusters"
         else
@@ -99,10 +100,10 @@ create_clusters() {
 
     if [[ "$cluster_type" == osd || "$cluster_type" == ocp ]]; then
         if [[ "$cluster_type" == ocp ]]; then
-            process_ctrl::run_in_bg "$TESTING_ODS_DIR/ocp_cluster.sh" create sutest
+            process_ctrl::run_in_bg "$TESTING_UTILS_OCP_DIR/ocp_cluster.sh" create sutest
 
         elif test_config clusters.sutest.managed.is_ocm; then
-            process_ctrl::run_in_bg "$TESTING_ODS_DIR/osd_cluster.sh" create sutest
+            process_ctrl::run_in_bg "$TESTING_UTILS_OCP_DIR/osd_cluster.sh" create sutest
 
         elif test_config clusters.sutest.managed.is_rosa; then
             _error "cannot create rosa clusters ..."
@@ -110,10 +111,10 @@ create_clusters() {
         else
             _error "managed cluster type must be OCM (or ROSA [unsupported]) ..."
         fi
-        process_ctrl::run_in_bg "$TESTING_ODS_DIR/ocp_cluster.sh" create driver
+        process_ctrl::run_in_bg "$TESTING_UTILS_OCP_DIR/ocp_cluster.sh" create driver
 
     elif [[ "$cluster_type" == single ]]; then
-        process_ctrl::run_in_bg "$TESTING_ODS_DIR/ocp_cluster.sh" create sutest
+        process_ctrl::run_in_bg "$TESTING_UTILS_OCP_DIR/ocp_cluster.sh" create sutest
 
         echo "Launching a single cluster, creating a symlink for the driver cluster"
         ln -s "${CONFIG_DEST_DIR}/sutest_kubeconfig" "${CONFIG_DEST_DIR}/driver_kubeconfig"
@@ -204,11 +205,10 @@ main() {
     case ${action} in
         "create")
             process_ctrl__finalizers+=("process_ctrl::kill_bg_processes")
-            "$TESTING_ODS_DIR/ci_init_configure.sh"
             prepare_args_from_pr
             check_test_size
 
-            "$TESTING_ODS_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
+            "$TESTING_UTILS_OCP_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
 
             create_clusters
             exit 0
@@ -216,10 +216,9 @@ main() {
         "destroy")
             set +o errexit # do not exit on error when destroying the resources
 
-            "$TESTING_ODS_DIR/ci_init_configure.sh"
             prepare_args_from_pr
 
-            "$TESTING_ODS_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
+            "$TESTING_UTILS_OCP_DIR/ocp_cluster.sh" prepare_deploy_cluster_subproject
 
             destroy_clusters
             exit 0

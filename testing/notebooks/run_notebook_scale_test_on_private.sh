@@ -6,12 +6,13 @@ set -o nounset
 set -o errtrace
 set -x
 
-TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_NOTEBOOKS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$TESTING_NOTEBOOKS_DIR/../utils"
 
-source "$TESTING_ODS_DIR/../process_ctrl.sh"
-source "$TESTING_ODS_DIR/../_logging.sh"
-source "$TESTING_ODS_DIR/configure.sh"
-source "$TESTING_ODS_DIR/cluster_helpers.sh"
+source "$TESTING_UTILS_DIR/process_ctrl.sh"
+source "$TESTING_UTILS_DIR/logging.sh"
+source "$TESTING_NOTEBOOKS_DIR/configure.sh"
+source "$TESTING_NOTEBOOKS_DIR/cluster_helpers.sh"
 
 export KUBECONFIG_DRIVER=$KUBECONFIG
 export KUBECONFIG_SUTEST=/tmp/sutest_kubeconfig
@@ -21,7 +22,7 @@ USERNAME_KEY=clusters.create.sutest_already_exists.username
 
 
 main() {
-    "$TESTING_ODS_DIR/ci_init_configure.sh"
+    "$TESTING_UTILS_DIR/ci_init_configure.sh"
 
     set_config_from_pr_arg 1 "$HOSTNAME_KEY"
     set_config_from_pr_arg 2 "$USERNAME_KEY"
@@ -38,25 +39,26 @@ main() {
     fi
 
     prepare_driver_cluster() {
-        process_ctrl::run_in_bg "$TESTING_ODS_DIR/private_cluster.sh" prepare_driver_cluster
-        "$TESTING_ODS_DIR/notebook_scale_test.sh" prepare_driver_cluster
+        process_ctrl::run_in_bg "$TESTING_UTILS_DIR/openshift_clusters/private_cluster.sh" prepare_driver_cluster
+        "$TESTING_NOTEBOOKS_DIR/scale_test.sh" prepare_driver_cluster
     }
 
     action=${1:-}
 
-    "$TESTING_ODS_DIR/private_cluster.sh" connect_sutest_cluster
+    "$TESTING_UTILS_DIR/openshift_clusters/private_cluster.sh" connect_sutest_cluster
 
     if [[ "$action" == "prepare" ]]; then
-        process_ctrl::run_in_bg "$TESTING_ODS_DIR/private_cluster.sh" prepare_sutest_cluster
+        process_ctrl::run_in_bg "$TESTING_UTILS_DIR/openshift_clusters/private_cluster.sh" prepare_sutest_cluster
         process_ctrl::run_in_bg prepare_driver_cluster
 
         process_ctrl::wait_bg_processes
     else
-        "$TESTING_ODS_DIR/notebook_scale_test.sh" run_test_and_plot
+        "$TESTING_NOTEBOOKS_DIR/
+scale_test.sh" run_test_and_plot
 
         if [[ "$action" != "run" ]]; then
-            process_ctrl::run_in_bg "$TESTING_ODS_DIR/private_cluster.sh" unprepare_sutest_cluster
-            process_ctrl::run_in_bg "$TESTING_ODS_DIR/private_cluster.sh" unprepare_driver_cluster
+            process_ctrl::run_in_bg "$TESTING_UTILS_DIR/openshift_clusters/private_cluster.sh" unprepare_sutest_cluster
+            process_ctrl::run_in_bg "$TESTING_UTILS_DIR/openshift_clusters/private_cluster.sh" unprepare_driver_cluster
         fi
     fi
 }

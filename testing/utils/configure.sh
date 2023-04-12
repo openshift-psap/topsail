@@ -1,16 +1,9 @@
-if [ -n "$BASH_VERSION" ]; then
-    # assume Bash
-    TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-elif [ -n "$ZSH_VERSION" ]; then
-    # assume ZSH
-    TESTING_ODS_DIR=${0:a:h}
-elif [[ -z "${TESTING_ODS_DIR:-}" ]]; then
-     echo "Shell isn't bash nor zsh, please expose the directory of this file with TESTING_ODS_DIR."
-     false
-fi
+#! /bin/bash
 
-export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_ODS_DIR}/command_args.yaml
-export CI_ARTIFACTS_FROM_CONFIG_FILE=${TESTING_ODS_DIR}/config.yaml
+if [[ -z "${CI_ARTIFACTS_FROM_CONFIG_FILE:-}" ]]; then
+    echo "ERROR: CI_ARTIFACTS_FROM_CONFIG_FILE not set, cannot proceed."
+    exit 1
+fi
 
 test_config() {
     key=$1

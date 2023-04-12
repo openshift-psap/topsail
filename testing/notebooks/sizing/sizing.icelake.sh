@@ -6,9 +6,9 @@ set -o nounset
 set -o errtrace
 set -x
 
-TESTING_ODS_SIZING_DIR=$(dirname "$(realpath ${BASH_SOURCE[0]})")
+TESTING_NOTEBOOKS_SIZING_DIR=$(dirname "$(realpath ${BASH_SOURCE[0]})")
 
-source "$TESTING_ODS_SIZING_DIR/../configure.sh" # hardcoded values below could be replaced with $(get_config ...) commands ...
+source "$TESTING_NOTEBOOKS_SIZING_DIR/../configure.sh" # hardcoded values below could be replaced with $(get_config ...) commands ...
 
 TEST_POD_NODES_LABEL_KEY=only-test-pods
 TEST_POD_NODES_LABEL_VALUE=yes
@@ -28,13 +28,13 @@ TEST_POD_MEM=0.750
 NOTEBOOK_CPU=1.250
 NOTEBOOK_MEM=4.160
 
-./testing/ods/sizing/sizing "$MACHINE" "$USERS" "$TEST_POD_CPU" "$TEST_POD_MEM" || test_pod_node_count="$?"
+"$TESTING_NOTEBOOKS_SIZING_DIR/sizing" "$MACHINE" "$USERS" "$TEST_POD_CPU" "$TEST_POD_MEM" || test_pod_node_count="$?"
 
 echo "Preparing $test_pod_node_count test-pod nodes ..."
 
 # notebooks
 
-./testing/ods/sizing/sizing "$MACHINE" "$USERS" "$NOTEBOOK_CPU" "$NOTEBOOK_MEM" || notebook_node_count="$?"
+"$TESTING_NOTEBOOKS_SIZING_DIR/sizing" "$MACHINE" "$USERS" "$NOTEBOOK_CPU" "$NOTEBOOK_MEM" || notebook_node_count="$?"
 
 echo "Preparing $notebook_node_count notebook nodes ..."
 

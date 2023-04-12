@@ -91,7 +91,7 @@ sutest/cluster set_project_annotation/toleration:
 
 utils build_push_image/artifacts-exporter:
   namespace: {{ tests.notebooks.namespace }}
-  dockerfile_path: testing/ods/images/Containerfile.s3_artifacts_exporter
+  dockerfile_path: testing/notebooks/images/Containerfile.s3_artifacts_exporter
 {% set artifacts_exporter_tag = "artifacts-exporter" %}
   tag: {{ artifacts_exporter_tag }}
   image_local_name: {{ tests.notebooks.imagestream_name }}
@@ -104,7 +104,7 @@ cluster preload_image/artifacts-exporter:
 
 utils build_push_image/locust:
   namespace: {{ tests.notebooks.namespace }}
-  dockerfile_path: testing/ods/images/Containerfile.locust
+  dockerfile_path: testing/notebooks/images/Containerfile.locust
 {% set locust_tag = "locust" %}
   tag: {{ locust_tag }}
   image_local_name: {{ tests.notebooks.imagestream_name }}

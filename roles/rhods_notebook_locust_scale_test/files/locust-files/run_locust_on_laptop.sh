@@ -8,7 +8,7 @@ set -o errtrace
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 BASE_DIR="$(realpath "$THIS_DIR")/../../../.."
-source "$BASE_DIR/testing/ods/configure.sh"
+source "$BASE_DIR/testing/notebooks/configure.sh"
 
 LOCUST_COMMAND="rhods notebook_locust_scale_test"
 

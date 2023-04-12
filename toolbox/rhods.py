@@ -204,7 +204,7 @@ class RHODS:
                                        imagestream="s2i-generic-data-science-notebook",
                                        imagestream_tag="",
                                        use_rhods: bool = True,
-                                       notebook_directory="testing/ods/notebooks/",
+                                       notebook_directory="testing/notebooks/notebooks/",
                                        notebook_filename="benchmark_entrypoint.ipynb",
                                        benchmark_name="pyperf_bm_go.py",
                                        benchmark_repeat: int = 1,
