@@ -256,6 +256,7 @@
       oc get ClusterServiceVersion/{{ operator_csv_name }}
          -oname
          -n "{{ cluster_deploy_operator_namespace }}"
+         --ignore-not-found
     register: operator_wait_csv
     until: operator_wait_csv.stdout != ""
     retries: 40

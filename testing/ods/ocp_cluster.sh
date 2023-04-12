@@ -95,8 +95,10 @@ create_cluster() {
             yq -yi 'del(.pullSecret)' "$install_config"
             yq -yi 'del(.sshKey)' "$install_config"
 
-            cp "$install_config" "${ARTIFACT_DIR}/${cluster_role}_ocp_install-config.yaml"
+            cp "$install_config" "${ARTIFACT_DIR}/${cluster_role}_ocp/install-config.yaml"
         fi
+
+        cp "${install_dir}/"*.log "${ARTIFACT_DIR}/${cluster_role}_ocp/" || true
 
         if [[ "$status" != "success" ]]; then
             _error "$cluster_role OCP cluster creation failed ..."
@@ -119,6 +121,7 @@ create_cluster() {
     # to the CONFIG_DEST_DIR even in case of errors
     trap "save_install_artifacts error" ERR SIGTERM SIGINT
 
+    mkdir "${ARTIFACT_DIR}/${cluster_role}_ocp"
     (cd subprojects/deploy-cluster/;
      make "$deploy_cluster_target" \
           OCP_VERSION="$(get_config clusters.create.ocp.version)" \
@@ -128,7 +131,7 @@ create_cluster() {
           DIFF_TOOL= \
           USE_SPOT= \
           MACHINE_TAGS="${machine_tags}" \
-         | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/${cluster_role}_ocp_install.log"
+         | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/${cluster_role}_ocp/make_cluster.log"
     )
 
     cp "${install_dir}/auth/kubeadmin-password" \

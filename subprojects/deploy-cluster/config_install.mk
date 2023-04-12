@@ -15,10 +15,15 @@ ${OPENSHIFT_INSTALLER}:
 	test -e "${OPENSHIFT_INSTALLER}"
 
 manifest: has_installer
-	@[ -f "${CLUSTER_PATH}/install-config.yaml" ] && cp "${CLUSTER_PATH}"/install-config{,.back}.yaml || echo
-	"${OPENSHIFT_INSTALLER}" create ignition-configs --dir="${CLUSTER_PATH}" > /dev/null;
+	rm -f "${CLUSTER_PATH}/.openshift_install_state.json"
+	[ -f "${CLUSTER_PATH}/install-config.yaml.back" ] && cp "${CLUSTER_PATH}"/install-config{.back,}.yaml || echo
+	[ -f "${CLUSTER_PATH}/install-config.yaml" ] && cp "${CLUSTER_PATH}"/install-config{,.back}.yaml || echo
+	mkdir -p "${CLUSTER_PATH}"
+
+	"${OPENSHIFT_INSTALLER}" create ignition-configs --dir="${CLUSTER_PATH}" --log-level=debug 2> "${CLUSTER_PATH}/create_ignition-configs.log";
 	[[ "${METADATA_JSON_DEST}" ]] && cp "${CLUSTER_PATH}/metadata.json" "${METADATA_JSON_DEST}" || true
-	"${OPENSHIFT_INSTALLER}" create manifests --dir="${CLUSTER_PATH}" > /dev/null;
+	"${OPENSHIFT_INSTALLER}" create manifests --dir="${CLUSTER_PATH}" --log-level=debug 2> "${CLUSTER_PATH}/create_manifests.log";
+	find "${CLUSTER_PATH}" > "${CLUSTER_PATH}/manifest_files.log"
 
 install: has_installer
 	@[ -f "${CLUSTER_PATH}/install-config.yaml" ] && cp "${CLUSTER_PATH}"/install-config{,.back}.yaml || echo
