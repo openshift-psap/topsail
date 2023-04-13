@@ -136,7 +136,7 @@ generate_matbench::generate_visualization() {
         return 1
     fi
 
-    if ! matbench parse --output_lts $ARTIFACT_DIR/lts_payload.json |& tee > "$ARTIFACT_DIR/_matbench_parse.log"; then
+    if ! matbench parse --output_lts $ARTIFACT_DIR/lts_payload.json |& tee > "$ARTIFACT_DIR/_matbench_parse_lts.log"; then
         echo "An error happened while encoding results into a JSON object within $ARTIFACT_DIR, aborting."
         return 1
     fi
