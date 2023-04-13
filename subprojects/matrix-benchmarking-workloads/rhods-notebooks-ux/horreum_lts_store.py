@@ -130,24 +130,34 @@ def build_lts_payloads() -> dict:
 
 def build_limited_lts_payload() -> dict:
     for(_, entry) in common.Matrix.processed_map.items():
-        result = {
+        RESULTS = entry.results
+        output = {
             "$schema": "urn:rhods-matbench-upload:3.0.0",
-            "users": []
+            "users": _decode_limited_users(RESULTS.ods_ci, RESULTS.testpod_hostnames),
+            'rhods_version': RESULTS.rhods_info.version,
+            'ocp_version': RESULTS.sutest_ocp_version
         }
         
-        for (key, val) in entry.results.ods_ci.items():
-            user = {
-                'steps': []
-            }
-            user['hostname'] = entry.results.testpod_hostnames[key]
-            for (stepName, stepData) in val.output.items():
-                user['steps'].append({
-                    'name': stepName,
-                    'duration': (stepData.finish - stepData.start).total_seconds(),
-                    'success': stepData.status == "PASS"
-                })
-
-            result['users'].append(user)
+        yield output, 0, 0
 
 
-        yield result, 0, 0 
+def _decode_limited_users(users, hostnames):
+    output = []
+    for (key, val) in users.items():
+        output.append({
+            'hostname': hostnames[key],
+            'steps': _decode_limited_steps(val.output)
+        })
+
+    return output
+
+
+def _decode_limited_steps(steps):
+    out_steps = []
+    for (step_name, step_data) in steps.items():
+        out_steps.append({
+            'name': step_name,
+            'duration': (step_data.finish - step_data.start).total_seconds(),
+            'success': step_data.status
+        })
+    return out_steps
