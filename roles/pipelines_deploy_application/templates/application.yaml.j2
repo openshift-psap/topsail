@@ -1,0 +1,11 @@
+apiVersion: datasciencepipelinesapplications.opendatahub.io/v1alpha1
+kind: DataSciencePipelinesApplication
+metadata:
+  name: {{ pipelines_deploy_application_name }}
+  namespace: {{ pipelines_deploy_application_namespace }}
+spec:
+  mlpipelineUI: # optional
+    image: quay.io/opendatahub/odh-ml-pipelines-frontend-container:beta-ui
+  objectStorage:
+    minio:
+      image: quay.io/opendatahub/minio:RELEASE.2019-08-14T20-37-41Z-license-compliance

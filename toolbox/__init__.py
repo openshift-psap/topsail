@@ -7,6 +7,7 @@ from toolbox.repo import Repo
 from toolbox.benchmarking import Benchmarking
 from toolbox.utils import Utils
 from toolbox.rhods import RHODS
+from toolbox.pipelines import Pipelines
 from toolbox.from_config import FromConfig
 from toolbox.local_ci import LocalCI
 
@@ -31,5 +32,6 @@ class Toolbox:
         self.benchmarking = Benchmarking
         self.utils = Utils
         self.rhods = RHODS
+        self.pipelines = Pipelines
         self.from_config = FromConfig.run
         self.local_ci = LocalCI

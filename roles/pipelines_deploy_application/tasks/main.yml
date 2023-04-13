@@ -1,0 +1,77 @@
+---
+- name: Create the namespace, if it does not exist
+  shell:
+    set -o pipefail;
+    oc create ns "{{ pipelines_deploy_application_namespace }}" -oyaml --dry-run=client | oc apply -f-
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Prepare the template file
+  template:
+    src: "{{ pipelines_deploy_application_app_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/000_dsp_application.yaml"
+    mode: 0400
+
+- name: Create the application
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/000_dsp_application.yaml"
+
+- name: Wait for the deployments to be all available
+  block:
+  - name: Wait for the deployments to be created
+    command:
+      oc get deploy
+         --ignore-not-found
+         -lcomponent=data-science-pipelines
+         -n {{ pipelines_deploy_application_namespace }}
+    register: deployments
+    until: deployments.stdout | length > 0
+    retries: 6
+    delay: 10
+
+  - name: Wait for the deployments to be all available
+    shell:
+      set -o pipefail;
+      oc get deploy
+         -o=jsonpath="{range .items[*]}{.metadata.name}{' ='}{.status.unavailableReplicas}{'=\n'}{end}"
+         -lcomponent=data-science-pipelines
+         -n {{ pipelines_deploy_application_namespace }}
+         | grep -v "=="
+    register: deployments_not_ready
+    failed_when: false
+    until: not deployments_not_ready.stdout
+    retries: 24
+    delay: 10
+
+  always:
+  - name: Get the list of the deployments
+    shell:
+      oc get deploy
+         -lcomponent=data-science-pipelines
+         -n {{ pipelines_deploy_application_namespace }}
+         > "{{ artifact_extra_logs_dir }}/deployments.status"
+
+  - name: Get the list of the pods
+    shell:
+      oc get pods
+        -lcomponent=data-science-pipelines
+        -n {{ pipelines_deploy_application_namespace }}
+        > "{{ artifact_extra_logs_dir }}/pods.status"
+
+  - name: Get the yaml of the pods
+    shell:
+      oc get pods -oyaml
+        -lcomponent=data-science-pipelines
+        -n {{ pipelines_deploy_application_namespace }}
+        > "{{ artifact_extra_logs_dir }}/pods.yaml"
+
+  - name: Get the description of the pods
+    shell:
+      oc describe pods
+        -lcomponent=data-science-pipelines
+        -n {{ pipelines_deploy_application_namespace }}
+        > "{{ artifact_extra_logs_dir }}/pods.desc"
