@@ -169,12 +169,13 @@ def _decode_limited_steps(steps, pod_times):
     return out_steps
 
 def _generate_pod_timings(pod_times, start, end):
-    output = {
-        'user_notification': (end - pod_times.containers_ready).total_seconds()
-    }
+    output = {}
+
     if hasattr(pod_times, "pod_scheduled"):
         output['resource_init_time'] = (pod_times.pod_scheduled - start).total_seconds()
     if hasattr(pod_times, "containers_ready"):
         output['container_ready_time'] = (pod_times.containers_ready - pod_times.pod_initialized).total_seconds()
+    if hasattr(pod_times, 'containers_ready'):
+        output['user_notification'] = (end - pod_times.containers_ready).total_seconds()
     
     return output
