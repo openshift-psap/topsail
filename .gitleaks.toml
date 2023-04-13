@@ -4,5 +4,5 @@ title = "ci-artifacts gitleaks config"
   paths = [
     '''roles/cluster_deploy_ldap/templates/bind-secret.yml''',
     '''roles/cluster_deploy_ldap/templates/secret.yml''',
-    '''testing/ods/clusters.sh''',
+    '''testing/utils/openshift_clusters/clusters.sh''',
   ]

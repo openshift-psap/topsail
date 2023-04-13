@@ -6,7 +6,8 @@ set -o nounset
 set -o errtrace
 set -x
 
-TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_NOTEBOOKS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$TESTING_NOTEBOOKS_DIR/../utils"
 
 if [ -z "${ARTIFACT_DIR:-}" ]; then
     if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
@@ -22,10 +23,10 @@ else
     echo "Using ARTIFACT_DIR=$ARTIFACT_DIR."
 fi
 
-source "$TESTING_ODS_DIR/../_logging.sh"
-source "$TESTING_ODS_DIR/../process_ctrl.sh"
-source "$TESTING_ODS_DIR/configure.sh"
-source "$TESTING_ODS_DIR/cluster_helpers.sh"
+source "$TESTING_UTILS_DIR/logging.sh"
+source "$TESTING_UTILS_DIR/process_ctrl.sh"
+source "$TESTING_NOTEBOOKS_DIR/configure.sh"
+source "$TESTING_NOTEBOOKS_DIR/cluster_helpers.sh"
 
 KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-${KUBECONFIG:-}}" # cluster driving the test
 KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-${KUBECONFIG:-}}" # system under test
@@ -174,10 +175,10 @@ prepare_driver_scale_cluster() {
     fi
 
     if test_config clusters.driver.compute.autoscaling.enabled; then
-        oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
+        oc apply -f "$TESTING_NOTEBOOKS_DIR"/autoscaling/clusterautoscaler.yaml
 
         local machineset_name=$(get_config clusters.driver.compute.machineset.name)
-        cat testing/ods/autoscaling/machineautoscaler.yaml \
+        cat "$TESTING_NOTEBOOKS_DIR"/autoscaling/machineautoscaler.yaml \
             | sed "s/MACHINESET_NAME/$machineset_name/" \
             | oc apply -f-
     fi
@@ -239,7 +240,7 @@ prepare_sutest_scale_cluster() {
             cluster_name=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
             worker_machinesets=$(oc get machinesets -n openshift-machine-api -oname | grep $cluster_name | cut -d/ -f2)
 
-            oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
+            oc apply -f "$TESTING_NOTEBOOKS_DIR"/autoscaling/clusterautoscaler.yaml
             for base_worker_machineset in $worker_machinesets; do
                 region_zone=$(echo "$base_worker_machineset" | cut -d- -f6-)
                 new_machineset_name="$(get_config clusters.sutest.compute.machineset.name)-$region_zone"
@@ -249,7 +250,7 @@ prepare_sutest_scale_cluster() {
 
                 tag_spot_machineset sutest "$new_machineset_name"
 
-                cat testing/ods/autoscaling/machineautoscaler.yaml \
+                cat "$TESTING_NOTEBOOKS_DIR"/autoscaling/machineautoscaler.yaml \
                     | sed "s/MACHINESET_NAME/$new_machineset_name/" \
                     | oc apply -f-
             done
@@ -266,10 +267,10 @@ prepare_sutest_scale_cluster() {
             fi
 
             if test_config clusters.sutest.compute.autoscaling.enabled; then
-                oc apply -f testing/ods/autoscaling/clusterautoscaler.yaml
+                oc apply -f "$TESTING_NOTEBOOKS_DIR"/autoscaling/clusterautoscaler.yaml
 
                 local machineset_name=$(get_config clusters.sutest.compute.machineset.name)
-                cat testing/ods/autoscaling/machineautoscaler.yaml \
+                cat "$TESTING_NOTEBOOKS_DIR"/autoscaling/machineautoscaler.yaml \
                     | sed "s/MACHINESET_NAME/$machineset_name/" \
                     | oc apply -f-
             fi
@@ -303,7 +304,7 @@ prepare_managed_sutest_deploy_rhods() {
 setup_brew_registry() {
     local token_file=$PSAP_ODS_SECRET_PATH/$(get_config secrets.brew_registry_redhat_io_token_file)
 
-    "$TESTING_ODS_DIR"/brew.registry.redhat.io/setup.sh "$token_file"
+    "$TESTING_NOTEBOOKS_DIR"/brew.registry.redhat.io/setup.sh "$token_file"
 }
 
 prepare_ocp_sutest_deploy_rhods() {
@@ -995,7 +996,7 @@ generate_plots() {
     mkdir -p "$plots_artifact_dir"
 
     if ARTIFACT_DIR="$plots_artifact_dir" \
-                   ./testing/ods/generate_matrix-benchmarking.sh \
+                   "$TESTING_NOTEBOOKS_DIR/generate_matrix-benchmarking.sh" \
                    from_dir "$test_dir" \
                        > "$plots_artifact_dir/build-log.txt" 2>&1;
     then
@@ -1008,7 +1009,7 @@ generate_plots() {
 }
 
 connect_ci() {
-    "$TESTING_ODS_DIR/ci_init_configure.sh"
+    "$TESTING_UTILS_DIR/ci_init_configure.sh"
 
     if [[ "${JOB_NAME_SAFE:-}" == *"-light" ]]; then
         local LIGHT_PROFILE="light"
@@ -1026,10 +1027,10 @@ connect_ci() {
 
     set_presets_from_pr_args
 
-    bash "$TESTING_ODS_DIR/configure_set_presets.sh"
+    bash "$TESTING_UTILS_DIR/configure_set_presets.sh"
     # ^^^ applies the presets
     # vvv overrides the presets, if necessary
-    bash "$TESTING_ODS_DIR/configure_overrides.sh"
+    bash "$TESTING_UTILS_DIR/configure_overrides.sh"
 
     if [[ "${CONFIG_DEST_DIR:-}" ]]; then
         echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
@@ -1115,10 +1116,10 @@ main() {
     if [[ "$(get_config clusters.create.type)" == "customer" ]]; then
         case ${action} in
             "prepare_ci")
-                exec "$TESTING_ODS_DIR/run_notebook_scale_test_on_customer.sh" prepare
+                exec "$TESTING_NOTEBOOKS_DIR/run_notebook_scale_test_on_customer.sh" prepare
                 ;;
             "test_ci")
-                exec "$TESTING_ODS_DIR/run_notebook_scale_test_on_customer.sh" test
+                exec "$TESTING_NOTEBOOKS_DIR/run_notebook_scale_test_on_customer.sh" test
                 ;;
         esac
 
@@ -1224,7 +1225,7 @@ main() {
             export IGNORE_PSAP_ODS_SECRET_PATH=1
             connect_ci
 
-            testing/ods/generate_matrix-benchmarking.sh from_pr_args
+            "$TESTING_NOTEBOOKS_DIR/generate_matrix-benchmarking.sh" from_pr_args
             return  0
             ;;
         "cleanup_rhods")
@@ -1232,7 +1233,7 @@ main() {
             return 0
             ;;
         "prepare_matbench")
-            testing/ods/generate_matrix-benchmarking.sh prepare_matbench
+            "$TESTING_NOTEBOOKS_DIR/generate_matrix-benchmarking.sh" prepare_matbench
             return 0
             ;;
         "rebuild_ods-ci")

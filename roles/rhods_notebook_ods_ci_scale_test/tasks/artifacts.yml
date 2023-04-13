@@ -19,7 +19,6 @@
       | tee "{{ artifact_extra_logs_dir }}"/workarounds_rhods-{{ bug_id }}.txt
   ignore_errors: yes
   loop:
-  - 5819
   - 5912
   loop_control:
     loop_var: bug_id

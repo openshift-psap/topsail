@@ -6,8 +6,11 @@ set -o nounset
 set -o errtrace
 set -x
 
-source "$TESTING_ODS_DIR/../_logging.sh"
-source "$TESTING_ODS_DIR/configure.sh"
+TESTING_NOTEBOOKS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$TESTING_NOTEBOOKS_DIR/../utils"
+
+source "$TESTING_UTILS_DIR/logging.sh"
+source "$TESTING_NOTEBOOKS_DIR/configure.sh"
 
 #
 # Configuration the test and the environment
@@ -49,20 +52,20 @@ case ${action} in
 
         # 1.0 Deploy RHODS in the sutest cluster
 
-        testing/ods/notebook_scale_test.sh deploy_rhods
-        testing/ods/notebook_scale_test.sh wait_rhods
+        testing/notebooks/scale_test.sh deploy_rhods
+        testing/notebooks/scale_test.sh wait_rhods
 
         # 1.1 Deploy LDAP in the sutest cluster
 
-        testing/ods/notebook_scale_test.sh deploy_ldap
+        testing/notebooks/scale_test.sh deploy_ldap
 
         # 1.2 Prepare the driver cluster
 
-        testing/ods/notebook_scale_test.sh prepare_driver_cluster
+        testing/notebooks/scale_test.sh prepare_driver_cluster
 
         # 1.3 Prepare the laptop for generating the plots
 
-        testing/ods/notebook_scale_test.sh prepare_matbench
+        testing/notebooks/scale_test.sh prepare_matbench
         exit 0
         ;;
     "test")
@@ -77,7 +80,7 @@ case ${action} in
         set_config tests.notebooks.users.count 4
         set_config tests.notebooks.users.sleep_factor 2 # seconds
 
-        testing/ods/notebook_scale_test.sh run_test_and_plot
+        testing/notebooks/scale_test.sh run_test_and_plot
 
         # 2.2 Run the second test
 
@@ -85,8 +88,8 @@ case ${action} in
         set_config tests.notebooks.users.count 3
         set_config tests.notebooks.users.sleep_factor 1 # seconds
 
-        testing/ods/notebook_scale_test.sh run_test
-        testing/ods/notebook_scale_test.sh generate_plots
+        testing/notebooks/scale_test.sh run_test
+        testing/notebooks/scale_test.sh generate_plots
 
         #
         # 3. Cleanup the RHODS cluster
@@ -96,7 +99,7 @@ case ${action} in
 
         # 3.1 Undeploy LDAP in the sutest cluster
 
-        testing/ods/notebook_scale_test.sh undeploy_ldap
+        testing/notebooks/scale_test.sh undeploy_ldap
         ;;
     *)
         _error "$0: unknown action '$action'"

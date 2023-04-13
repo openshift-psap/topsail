@@ -7,7 +7,7 @@
 
 utils build_push_image/artifacts-exporter:
   namespace: {{ tests.model_mesh.namespace }}
-  dockerfile_path: testing/ods/images/Containerfile.s3_artifacts_exporter
+  dockerfile_path: testing/notebooks/images/Containerfile.s3_artifacts_exporter
 {% set artifacts_exporter_istag = "artifacts-exporter" %}
   image_tag: {{ artifacts_exporter_istag }}
   local_image_name: {{ tests.model_mesh.imagestream_name }}
@@ -21,7 +21,7 @@ cluster preload_image/artifacts-exporter:
 
 utils build_push_image/locust-scale-test:
   namespace: {{ tests.model_mesh.namespace }}
-  dockerfile_path: testing/ods/images/Containerfile.api_scale_test
+  dockerfile_path: testing/notebooks/images/Containerfile.api_scale_test
 {% set locust_scale_test_istag = "api-scale-test" %}
   image_tag: {{ locust_scale_test_istag }}
   local_image_name: {{ tests.model_mesh.imagestream_name }}

@@ -17,21 +17,21 @@ workloads:
     command_group: ods
     steps:
       test:
-        command: ods notebook_scale_test run_tests_and_plots icelake notebook_scale_test_burst
+        command: notebooks scale_test run_tests_and_plots icelake notebook_scale_test_burst
 
   notebook-gating:
     command_group: ods
     steps:
       test:
-        command: ods notebook_scale_test run_tests_and_plots icelake notebook_gating_scale_test
+        command: notebooks scale_test run_tests_and_plots icelake notebook_gating_scale_test
 
   notebook-scale-test:
     command_group: ods
     steps:
       prepare:
-        command: ods notebook_scale_test cleanup_rhods
+        command: notebooks scale_test cleanup_rhods
       test:
-        command: ods notebook_scale_test run_tests_and_plots icelake_notebook_scale_test
+        command: notebooks scale_test run_tests_and_plots icelake_notebook_scale_test
       gather:
         command: gather-extra
         always_run: true
@@ -40,23 +40,23 @@ workloads:
     command_group: ods
     steps:
       test:
-        command: ods notebook_scale_test run_tests_and_plots icelake_notebook_scale_test
+        command: notebooks scale_test run_tests_and_plots icelake_notebook_scale_test
 
   notebook-scale-test-light:
     command_group: ods
     steps:
       prepare:
-        command: ods notebook_scale_test cleanup_rhods
+        command: notebooks scale_test cleanup_rhods
       test:
-        command: ods notebook_scale_test run_tests_and_plots notebooks_light notebook_scale_test
+        command: notebooks scale_test run_tests_and_plots notebooks_light notebook_scale_test
 
   notebook-scale-test-scaleup:
     command_group: ods
     steps:
       cleanup:
-        command: ods notebook_scale_test cleanup_rhods
+        command: notebooks scale_test cleanup_rhods
       test:
-        command: ods notebook_scale_test run_tests_and_plots icelake_notebook_scale_test_scaleup
+        command: notebooks scale_test run_tests_and_plots icelake_notebook_scale_test_scaleup
       gather:
         command: gather-extra
         alway_run: true
@@ -65,9 +65,9 @@ workloads:
     command_group: ods
     steps:
       cleanup:
-        command: ods notebook_scale_test cleanup_rhods
+        command: notebooks scale_test cleanup_rhods
       test:
-        command: ods notebook_scale_test run_tests_and_plots icelake_notebook_scale_test_burst
+        command: notebooks scale_test run_tests_and_plots icelake_notebook_scale_test_burst
       gather:
         command: gather-extra
         alway_run: true

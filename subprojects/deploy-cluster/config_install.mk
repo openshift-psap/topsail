@@ -15,15 +15,13 @@ ${OPENSHIFT_INSTALLER}:
 	test -e "${OPENSHIFT_INSTALLER}"
 
 manifest: has_installer
-	rm -f "${CLUSTER_PATH}/.openshift_install_state.json"
+
 	[ -f "${CLUSTER_PATH}/install-config.yaml.back" ] && cp "${CLUSTER_PATH}"/install-config{.back,}.yaml || echo
 	[ -f "${CLUSTER_PATH}/install-config.yaml" ] && cp "${CLUSTER_PATH}"/install-config{,.back}.yaml || echo
 	mkdir -p "${CLUSTER_PATH}"
 
-	"${OPENSHIFT_INSTALLER}" create ignition-configs --dir="${CLUSTER_PATH}" --log-level=debug 2> "${CLUSTER_PATH}/create_ignition-configs.log";
-	[[ "${METADATA_JSON_DEST}" ]] && cp "${CLUSTER_PATH}/metadata.json" "${METADATA_JSON_DEST}" || true
 	"${OPENSHIFT_INSTALLER}" create manifests --dir="${CLUSTER_PATH}" --log-level=debug 2> "${CLUSTER_PATH}/create_manifests.log";
-	find "${CLUSTER_PATH}" > "${CLUSTER_PATH}/manifest_files.log"
+
 
 install: has_installer
 	@[ -f "${CLUSTER_PATH}/install-config.yaml" ] && cp "${CLUSTER_PATH}"/install-config{,.back}.yaml || echo
@@ -32,6 +30,10 @@ install: has_installer
 	  echo "ERROR: Cluster already installed ..."; \
 	  exit 1; \
 	fi
+
+	"${OPENSHIFT_INSTALLER}" create ignition-configs --dir="${CLUSTER_PATH}" --log-level=debug 2> "${CLUSTER_PATH}/create_ignition_configs.log";
+	[[ "${METADATA_JSON_DEST}" ]] && cp "${CLUSTER_PATH}/metadata.json" "${METADATA_JSON_DEST}"
+
 	time "${OPENSHIFT_INSTALLER}" create cluster --dir="${CLUSTER_PATH}" --log-level=debug 2>&1 | tee "${CLUSTER_PATH}/install.log"
 
 config_new_install: has_installer

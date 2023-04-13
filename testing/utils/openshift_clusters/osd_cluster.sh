@@ -5,11 +5,11 @@ set -o errexit
 set -o nounset
 set -o errtrace
 
-TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_OCP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="${TESTING_UTILS_OCP_DIR}/.."
 
-source "$TESTING_ODS_DIR/../_logging.sh"
-source "$TESTING_ODS_DIR/configure.sh"
-source "$TESTING_ODS_DIR/cluster_helpers.sh"
+source "$TESTING_UTILS_DIR/logging.sh"
+source "$TESTING_UTILS_DIR/configure.sh"
 
 # ---
 

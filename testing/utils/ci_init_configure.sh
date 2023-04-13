@@ -6,10 +6,10 @@ set -o nounset
 set -o errtrace
 set -x
 
-TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-source "$TESTING_ODS_DIR/../_logging.sh"
-source "$TESTING_ODS_DIR/configure.sh"
+source "$TESTING_UTILS_DIR/logging.sh"
+source "$TESTING_UTILS_DIR/configure.sh"
 
 if [[ "${IGNORE_PSAP_ODS_SECRET_PATH:-0}" == 1 ]]; then
     _info "Ignoring the check of PSAP_ODS_SECRET_PATH=${PSAP_ODS_SECRET_PATH:-}"
@@ -35,7 +35,7 @@ if [[ "${CONFIG_DEST_DIR:-}" ]]; then
     fi
 fi
 
-bash "$TESTING_ODS_DIR/configure_overrides.sh"
+bash "$TESTING_UTILS_DIR/configure_overrides.sh"
 
 if [[ "${ARTIFACT_DIR:-}" ]]; then
     cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "${ARTIFACT_DIR}"

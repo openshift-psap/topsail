@@ -7,7 +7,7 @@ set -o errtrace
 set -x
 
 TESTING_MM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/../ods"
+TESTING_NOTEBOOKS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/../notebooks"
 
 if [ -z "${ARTIFACT_DIR:-}" ]; then
     if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
@@ -24,10 +24,10 @@ else
 fi
 
 source "$TESTING_MM_DIR/config.sh"
-source "$TESTING_MM_DIR/../_logging.sh"
+source "$TESTING_MM_DIR/../utils/logging.sh"
 source "$TESTING_MM_DIR/../process_ctrl.sh"
-source "$TESTING_ODS_DIR/configure.sh"
-source "$TESTING_ODS_DIR/cluster_helpers.sh"
+source "$TESTING_NOTEBOOKS_DIR/configure.sh"
+source "$TESTING_NOTEBOOKS_DIR/cluster_helpers.sh"
 export CI_ARTIFACTS_FROM_CONFIG_FILE=${TESTING_MM_DIR}/config.yaml
 export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_MM_DIR}/command_args.yaml
 
@@ -126,7 +126,7 @@ generate_plots() {
     local PLOT_ARTIFACT_DIR="$ARTIFACT_DIR/plotting"
     mkdir "$PLOT_ARTIFACT_DIR"
     if ARTIFACT_DIR="$PLOT_ARTIFACT_DIR" \
-                   ./testing/ods/generate_matrix-benchmarking.sh \
+                   ./testing/notebooks/generate_matrix-benchmarking.sh \
                    from_dir "$BASE_ARTIFACT_DIR" \
                        > "$PLOT_ARTIFACT_DIR/build-log.txt" 2>&1;
     then
@@ -139,7 +139,7 @@ generate_plots() {
 }
 
 connect_ci() {
-    "$TESTING_ODS_DIR/ci_init_configure.sh"
+    "$TESTING_UTILS_DIR/ci_init_configure.sh"
 
     if [[ "${CONFIG_DEST_DIR:-}" ]]; then
         echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."

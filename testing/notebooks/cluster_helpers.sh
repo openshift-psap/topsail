@@ -1,27 +1,4 @@
-if [ -n "$BASH_VERSION" ]; then
-    # assume Bash
-    TESTING_ODS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-elif [ -n "$ZSH_VERSION" ]; then
-    # assume ZSH
-    TESTING_ODS_DIR=${0:a:h}
-elif [[ -z "${TESTING_ODS_DIR:-}" ]]; then
-     echo "Shell isn't bash nor zsh, please expose the directory of this file with TESTING_ODS_DIR."
-     false
-fi
-
-cluster_helpers::ocm_login() {
-    local ocm_env=$(get_config clusters.sutest.managed.env)
-
-    # do it in a subshell to avoid leaking the `OCM_TOKEN` secret because of `set -x`
-    bash -c '
-      set -o errexit
-      set -o nounset
-
-      OCM_TOKEN=$(cat "'$PSAP_ODS_SECRET_PATH'/ocm.token" | grep "^'${ocm_env}'=" | cut -d= -f2-)
-      echo "Login in '$ocm_env' with token length=$(echo "$OCM_TOKEN" | wc -c)"
-      exec ocm login --token="$OCM_TOKEN" --url="'$ocm_env'"
-      '
-}
+#! /bin/bash
 
 cluster_helpers::get_compute_node_count() {
     local cluster_role=$1
@@ -82,7 +59,7 @@ cluster_helpers::get_compute_node_count() {
         local instance_type="$(get_config clusters.create.ocp.compute.type)"
     fi
 
-    local size=$(bash -c "python3 $TESTING_ODS_DIR/sizing/sizing \
+    local size=$(bash -c "python3 $TESTING_NOTEBOOKS_DIR/sizing/sizing \
                    '$instance_type' \
                    '$user_count' \
                    $notebook_size \

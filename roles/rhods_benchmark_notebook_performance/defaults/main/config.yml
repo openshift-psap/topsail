@@ -16,7 +16,7 @@ rhods_benchmark_notebook_performance_imagestream_tag:
 rhods_benchmark_notebook_performance_use_rhods: true
 
 # Directory containing the files to mount in the notebook.
-rhods_benchmark_notebook_performance_notebook_directory: testing/ods/notebooks/
+rhods_benchmark_notebook_performance_notebook_directory: testing/notebooks/notebooks/
 
 # Name of the ipynb notebook file to execute with JupyterLab.
 rhods_benchmark_notebook_performance_notebook_filename: benchmark_entrypoint.ipynb
