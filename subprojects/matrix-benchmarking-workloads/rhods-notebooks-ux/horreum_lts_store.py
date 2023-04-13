@@ -3,6 +3,7 @@ import datetime
 import json
 from pathlib import PosixPath
 from collections import defaultdict, OrderedDict
+import logging
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
@@ -125,3 +126,28 @@ def build_lts_payloads() -> dict:
             "$schema": "urn:rhods-matbench-upload:2.0.0",
             **_convert_steps(data)
         }, start_time, end_time
+
+
+def build_limited_lts_payload() -> dict:
+    for(_, entry) in common.Matrix.processed_map.items():
+        result = {
+            "$schema": "urn:rhods-matbench-upload:3.0.0",
+            "users": []
+        }
+        
+        for (key, val) in entry.results.ods_ci.items():
+            user = {
+                'steps': []
+            }
+            user['hostname'] = entry.results.testpod_hostnames[key]
+            for (stepName, stepData) in val.output.items():
+                user['steps'].append({
+                    'name': stepName,
+                    'duration': (stepData.finish - stepData.start).total_seconds(),
+                    'success': stepData.status == "PASS"
+                })
+
+            result['users'].append(user)
+
+
+        yield result, 0, 0 
