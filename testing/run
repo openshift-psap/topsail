@@ -205,12 +205,31 @@ if [[ -e "${target_entrypoint_file}" ]]; then
 fi
 
 target_entrypoint_dir="${THIS_DIR}/${target}"
-target_entrypoint_file="${target_entrypoint_dir}/${second_target}.sh"
+
+target_entrypoint_file="${target_entrypoint_dir}/${second_target}"
 
 if [[ -e "${target_entrypoint_file}" ]]; then
     shift # eat second_target
 
     "${target_entrypoint_file}" "$@"
+    exit 0
+fi
+
+target_entrypoint_file_py="${target_entrypoint_dir}/${second_target}.py"
+
+if [[ -e "${target_entrypoint_file_py}" ]]; then
+    shift # eat second_target
+
+    "${target_entrypoint_file_py}" "$@"
+    exit 0
+fi
+
+target_entrypoint_file_sh="${target_entrypoint_dir}/${second_target}.sh"
+
+if [[ -e "${target_entrypoint_file_sh}" ]]; then
+    shift # eat second_target
+
+    "${target_entrypoint_file_sh}" "$@"
     exit 0
 fi
 
