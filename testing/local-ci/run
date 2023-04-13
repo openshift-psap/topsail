@@ -17,14 +17,10 @@ def run(command):
 
 TESTING_LOCAL_CI_DIR = pathlib.Path(__file__).absolute().parent
 
-os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_LOCAL_CI_DIR / "command_args.yaml")
 os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(TESTING_LOCAL_CI_DIR / "config.yaml")
 
 with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
     config = yaml.safe_load(config_f)
-
-with open(os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"]) as command_args_f:
-    command_args = yaml.safe_load(command_args_f)
 
 def get_config(jsonpath):
     return jsonpath_ng.parse(jsonpath).find(config)[0].value
