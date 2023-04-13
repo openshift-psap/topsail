@@ -321,7 +321,7 @@ rhods:
   deploy_from_catalog: true
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 470448
+    tag: 476299
     channel: beta
     version: 1.25.0
   addon:
