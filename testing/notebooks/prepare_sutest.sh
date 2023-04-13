@@ -150,9 +150,6 @@ prepare_ocp_sutest_deploy_rhods() {
 
     setup_brew_registry
 
-    # https://issues.redhat.com/browse/RHODS-5203
-    oc create namespace "anonymous" -oyaml --dry-run=client | oc apply -f-
-
     process_ctrl::run_in_bg \
         process_ctrl::retry 5 3m \
             ./run_toolbox.py from_config rhods deploy_ods
