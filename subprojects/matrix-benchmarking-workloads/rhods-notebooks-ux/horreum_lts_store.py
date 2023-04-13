@@ -133,7 +133,7 @@ def build_limited_lts_payload() -> dict:
         RESULTS = entry.results
         output = {
             "$schema": "urn:rhods-matbench-upload:3.0.0",
-            "users": _decode_limited_users(RESULTS.ods_ci, RESULTS.testpod_hostnames),
+            "users": _decode_limited_users(RESULTS.ods_ci, RESULTS.testpod_hostnames, RESULTS.notebook_pod_times),
             'rhods_version': RESULTS.rhods_info.version,
             'ocp_version': RESULTS.sutest_ocp_version
         }
@@ -141,23 +141,40 @@ def build_limited_lts_payload() -> dict:
         yield output, 0, 0
 
 
-def _decode_limited_users(users, hostnames):
+def _decode_limited_users(users, hostnames, pod_times):
     output = []
     for (key, val) in users.items():
         output.append({
             'hostname': hostnames[key],
-            'steps': _decode_limited_steps(val.output)
+            'steps': _decode_limited_steps(val.output, pod_times[key]),
+            'succeeded': val.exit_code == 0
         })
 
     return output
 
 
-def _decode_limited_steps(steps):
+def _decode_limited_steps(steps, pod_times):
     out_steps = []
     for (step_name, step_data) in steps.items():
-        out_steps.append({
+        out_step = {
             'name': step_name,
             'duration': (step_data.finish - step_data.start).total_seconds(),
-            'success': step_data.status
-        })
+            'status': step_data.status
+        }
+        if step_name in ("Wait for the Notebook Spawn", "Create and Start the Workbench"):
+            out_step['substeps'] = _generate_pod_timings(pod_times, step_data.start, step_data.finish)
+        
+        out_steps.append(out_step)
+
     return out_steps
+
+def _generate_pod_timings(pod_times, start, end):
+    output = {
+        'user_notification': (end - pod_times.containers_ready).total_seconds()
+    }
+    if hasattr(pod_times, "pod_scheduled"):
+        output['resource_init_time'] = (pod_times.pod_scheduled - start).total_seconds()
+    if hasattr(pod_times, "containers_ready"):
+        output['container_ready_time'] = (pod_times.containers_ready - pod_times.pod_initialized).total_seconds()
+    
+    return output
