@@ -26,6 +26,7 @@ from . import k8s_quantity
 from . import store_theoretical
 from . import store_thresholds
 from .plotting import prom as rhods_plotting_prom
+from .horreum_lts_store import build_lts_payloads as horreum_build_lts_payloads
 
 K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
@@ -851,3 +852,8 @@ def parse_data():
     store_simple.register_custom_parse_results(_parse_directory)
 
     return store_simple.parse_data()
+
+def build_lts_payloads():
+    store_simple.register_custom_build_lts_payloads(horreum_build_lts_payloads)
+
+    return store_simple.build_lts_payloads()
