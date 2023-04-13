@@ -1,0 +1,183 @@
+ci_presets:
+  # name of the presets to apply, or null if no preset
+  name: null
+  # list of names of the presets to apply, or a single name, or null if no preset
+  names: null
+
+  single:
+    clusters.create.type: single
+
+  keep:
+    clusters.create.keep: true
+    clusters.create.ocp.tags.Project: PSAP/RHODS/home-dev
+
+  ocp:
+    clusters.create.type: ocp
+
+  osd:
+    clusters.create.type: osd
+    clusters.sutest.is_managed: true
+    clusters.sutest.managed.is_ocm: true
+
+  light_cluster:
+    clusters.create.ocp.deploy_cluster.target: cluster_light
+
+  light:
+    extends: [light_cluster]
+
+  metal:
+    clusters.sutest.is_metal: true
+
+  not_metal:
+    clusters.sutest.is_metal: false
+
+secrets:
+  dir:
+    name: null
+    env_key: PSAP_ODS_SECRET_PATH
+  # name of the file containing the properties of LDAP secrets
+  s3_ldap_password_file: s3_ldap.passwords
+  keep_cluster_password_file: get_cluster.password
+  addon_email_file: addon.email
+  brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+clusters:
+  create:
+    type: single # can be: single, ocp, managed
+    keep: false
+    name_prefix: odsci
+    sutest_already_exists:
+      hostname: null
+      username: null
+    ocm:
+      version: 4.10.15
+      region: us-west-2
+      workers:
+        type: m5.2xlarge
+        count: 2
+      compute:
+        type: m5.2xlarge
+    ocp:
+      # list of tags to apply to the machineset when creating the cluster
+      tags: {}
+      # list of tags to apply to the spot machineset
+      spot:
+        tags:
+          Budget: PSAP
+          Project: PSAP
+          Environment: TEST/DEV
+          Owner: KEVIN POUGET
+          Manager: ASHISH KAMRA
+          User: kpouget
+
+      deploy_cluster:
+        target: cluster
+      base_domain: psap.aws.rhperfscale.org
+      version: 4.12.9
+      region: us-west-2
+      control_plane:
+        type: m6a.xlarge
+      workers:
+        type: m6a.2xlarge
+        count: 2
+      compute:
+        type: m6i.2xlarge
+
+  cleanup:
+    max_age: 4 #hours
+
+  sutest:
+    is_metal: false
+    is_managed: false
+    managed:
+      is_rosa: false
+      is_ocm: false
+      env: staging
+      name: null
+    compute:
+      dedicated: true
+      autoscaling:
+        enabled: false
+      machineset:
+        name: rhods-compute-pods
+        count: null
+        spot: false
+        taint:
+          key: only-rhods-compute-pods
+          value: "yes"
+          effect: NoSchedule
+
+  driver:
+    compute:
+      autoscaling:
+        enabled: false
+      dedicated: true
+      machineset:
+        name: test-pods
+        count: null
+        spot: false
+        taint:
+          key: &driver_toleration_key only-test-pods
+          value: "yes"
+          effect: NoSchedule
+
+ldap:
+  # Name of the LDAP identity provider.
+  idp_name: RHODS_CI_LDAP
+  users:
+    # number of users to create
+    count: 2000
+    # prefix of the user names of the LDAP provider
+    prefix: psapuser
+
+rhods:
+  deploy_from_catalog: true
+  catalog:
+    image: brew.registry.redhat.io/rh-osbs/iib
+    tag: 470448
+    channel: beta
+    version: 1.25.0
+  addon:
+    # only necessary/set when rhods.deploy_from_catalog is true
+    email: SET_AT_RUNTIME
+  notebooks:
+    customize:
+      enabled: true
+      pvc_size: 5Gi
+      notebook_size:
+        enabled: true
+        name: &notebook_size_name Tiny
+        cpu: 1
+        mem_gi: 4
+  pipelines:
+    application:
+      name: sample
+    namespace: dsp-scale-test
+  operator:
+    # set to true to stop the RHODS operator
+    stop: true
+
+    dashboard:
+      replicas: 1
+
+  admin:
+    count: 2 # the first N users will be granted these privileges
+    roles:
+    - view
+    - odh-notebook-controller-notebooks-edit
+tests:
+
+matbench:
+  preset: null
+  workload: rhods-pipelines
+  config_file: ...
+  download:
+    mode: prefer_cache
+    url:
+    url_file:
+    # if true, copy the results downloaded by `matbench download` into the artifacts directory
+    save_to_artifacts: false
+  ignore_exit_code: true
+  # directory to plot. Set by notebook_scale_test.sh before launching the visualization
+  test_directory: null
+export_to_s3:
+  bucket_name: rhods-baremetal-results
