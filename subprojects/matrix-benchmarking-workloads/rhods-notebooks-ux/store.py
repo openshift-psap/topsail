@@ -850,22 +850,29 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     print("parsing done :)")
 
+@ignore_file_not_found
 def _parse_start_end_times(dirname):
-    with open(dirname / '_ansible.log', 'rb') as file:
-        first = file.readline().decode('utf-8').strip()
-        file.seek(-20, 2)
-        while file.read(1) != b'\n':
-            file.seek(-2, 1)
-        last = file.readline().decode('utf-8').strip()
-        start_time = ' '.join(first.split(' ')[0:2]).split(',')[0]
-        end_time = ' '.join(last.split(' ')[0:2]).split(',')[0]
+    ISO_FORMAT="%Y-%m-%d %H:%M:%S"
+    with open(dirname / '_ansible.log', 'r') as file:
+        first = None
+        last = None
+        for line in file:
+            if not first:
+                first = line
+            last = line
+        
+        start_time = datetime.datetime.strptime(
+            first.partition(',')[0],
+            ISO_FORMAT
+        )
+        end_time = datetime.datetime.strptime(
+            last.partition(',')[0],
+            ISO_FORMAT
+        )
         logging.debug(f'Start time: {start_time}')
         logging.debug(f'End time: {end_time}')
 
-        return (
-            datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S"),
-            datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S"),
-        )
+        return (start_time, end_time)
     
 
 def parse_data():
