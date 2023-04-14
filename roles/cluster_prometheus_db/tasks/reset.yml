@@ -26,6 +26,5 @@
       resources:
         requests:
           storage: 5Gi
-      storageClassName: gp2
     EOF
   when: 'cluster_prometheus_db_namespace == "redhat-ods-monitoring"'

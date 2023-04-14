@@ -195,6 +195,7 @@ ci_presets:
 
     clusters.driver.compute.dedicated: true
     clusters.driver.compute.machineset.count: 1
+    clusters.sutest.storage.deploy_nfs_provisioner.enabled: true
 
     tests.notebooks.users.count: 5
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
@@ -298,7 +299,12 @@ clusters:
           key: only-rhods-compute-pods
           value: "yes"
           effect: NoSchedule
-
+    storage:
+      deploy_nfs_provisioner:
+        enable: false
+        default_sc: true
+        pvc_size: 10Gi
+        pvc_sc: gp3-csi
   driver:
     compute:
       autoscaling:

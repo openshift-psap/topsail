@@ -146,6 +146,24 @@ class Cluster:
 
         return RunAnsibleRole()
 
+    @AnsibleRole("cluster_deploy_nfs_provisioner")
+    @AnsibleMappedParams
+    def deploy_nfs_provisioner(self, namespace="nfs-provisioner",
+                               pvc_sc="gp3-csi", pvc_size="10Gi",
+                               storage_class_name="nfs-provisioner", default_sc=False):
+        """
+        Deploy NFS Provisioner
+
+        Args:
+          namespace: The namespace where the resources will be deployed
+          pvc_sc: The name of the storage class to use for the NFS-provisioner PVC
+          pvc_size: The size of the PVC to give to the NFS-provisioner
+          storage_class_name: The name of the storage class that will be created
+          default_sc: Set to true to mark the storage class as default in the cluster
+        """
+
+        return RunAnsibleRole(locals())
+
     @AnsibleRole("cluster_deploy_minio_s3_server")
     @AnsibleConstant("Name of the user/access key to use to connect to the Minio server",
                      "access_key", "minio")
