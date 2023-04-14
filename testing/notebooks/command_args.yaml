@@ -234,3 +234,8 @@ cluster undeploy_ldap:
   use_ocm: {{ clusters.sutest.managed.is_ocm }}
   use_rosa: {{ clusters.sutest.managed.is_rosa }}
   cluster_name: {{ clusters.sutest.managed.name }}
+
+cluster deploy_nfs_provisioner:
+  pvc_size: {{ clusters.sutest.storage.deploy_nfs_provisioner.pvc_size }}
+  pvc_sc: {{ clusters.sutest.storage.deploy_nfs_provisioner.pvc_sc }}
+  default_sc: {{ clusters.sutest.storage.deploy_nfs_provisioner.default_sc }}

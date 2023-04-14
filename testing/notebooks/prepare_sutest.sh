@@ -117,6 +117,10 @@ prepare_sutest_cluster() {
     prepare_sutest_deploy_ldap
     prepare_sutest_scale_cluster
     prepare_rhods_admin_users
+
+    if test_config clusters.sutest.storage.deploy_nfs_provisioner.enabled; then
+        prepare_nfs_provisioner
+    fi
 }
 
 prepare_managed_sutest_deploy_rhods() {
@@ -203,6 +207,10 @@ prepare_rhods_admin_users() {
             oc adm policy add-cluster-role-to-user "$role" "$user"
         done
     done
+}
+
+prepare_nfs_provisioner() {
+    ./run_toolbox.py from_config cluster deploy_nfs_provisioner
 }
 
 sutest_wait_rhods_launch() {
