@@ -84,7 +84,7 @@ def _decode_steps(data: dict) -> dict:
     try:
         results: dict = data['results']['ods_ci']
     except KeyError:
-        return {}
+        return data
     
     for (key, _) in results.items():
         if key != "$type":
@@ -97,7 +97,11 @@ def _decode_steps(data: dict) -> dict:
 
 
 def _convert_steps(data: dict) -> dict:
-    results: dict = data['results']['ods_ci']
+    try:
+        results: dict = data['results']['ods_ci']
+    except KeyError:
+        return data
+
     for (key, _) in results.items():
         counter = 0
         if key != "$type":
