@@ -91,6 +91,12 @@
         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/secrets_safe.json"
     ignore_errors: yes
 
+  - name: Get the status of all the pvc
+    shell:
+      oc get pvc -A
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/pvc.status"
+    ignore_errors: yes
+
   - name: Get the OpenShift Prometheus database
     include_role:
       name: cluster_prometheus_db
