@@ -752,6 +752,10 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
             logging.warning(f"Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
     _parse_always(results, dirname, import_settings)
+    
+    (start, end) = _parse_start_end_times(dirname)
+    results.start_time = start
+    results.end_time = end
 
     results.user_count = int(import_settings.get("user_count", 0))
     results.location = dirname
@@ -845,6 +849,24 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.test_config.get = get_config
 
     print("parsing done :)")
+
+def _parse_start_end_times(dirname):
+    with open(dirname / '_ansible.log', 'rb') as file:
+        first = file.readline().decode('utf-8').strip()
+        file.seek(-20, 2)
+        while file.read(1) != b'\n':
+            file.seek(-2, 1)
+        last = file.readline().decode('utf-8').strip()
+        start_time = ' '.join(first.split(' ')[0:2]).split(',')[0]
+        end_time = ' '.join(last.split(' ')[0:2]).split(',')[0]
+        logging.debug(f'Start time: {start_time}')
+        logging.debug(f'End time: {end_time}')
+
+        return (
+            datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S"),
+            datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S"),
+        )
+    
 
 def parse_data():
     # delegate the parsing to the simple_store
