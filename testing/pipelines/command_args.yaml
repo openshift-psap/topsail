@@ -1,0 +1,9 @@
+pipelines deploy_application:
+  namespace: {{ rhods.pipelines.namespace }}
+  name: {{ rhods.pipelines.application.name}}
+
+rhods deploy_ods:
+  catalog_image: {{ rhods.catalog.image }}
+  tag: {{ rhods.catalog.tag }}
+  channel: {{ rhods.catalog.channel }}
+  version: {{ rhods.catalog.version }}

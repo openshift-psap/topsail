@@ -1,0 +1,12 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Pipelines.deploy_application
+
+# the name of the application to deploy
+# Mandatory value
+pipelines_deploy_application_name:
+
+# the namespace in which the application should be deployed
+# Mandatory value
+pipelines_deploy_application_namespace:
+
