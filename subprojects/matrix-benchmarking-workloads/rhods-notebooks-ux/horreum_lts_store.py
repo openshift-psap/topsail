@@ -81,7 +81,11 @@ def _encode_json(obj, name, settings):
 
 
 def _decode_steps(data: dict) -> dict:
-    results: dict = data['results']['ods_ci']
+    try:
+        results: dict = data['results']['ods_ci']
+    except KeyError:
+        return {}
+    
     for (key, _) in results.items():
         if key != "$type":
             end_dict = {}

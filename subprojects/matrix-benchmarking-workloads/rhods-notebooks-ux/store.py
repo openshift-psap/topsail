@@ -861,10 +861,12 @@ def _parse_start_end_times(dirname):
                 first = line
             last = line
         
+        # first = "2023-04-14 17:19:19,808 p=770 u=psap-ci-runner n=ansible | ansible-playbook 2.9.27"
         start_time = datetime.datetime.strptime(
             first.partition(',')[0],
             ISO_FORMAT
         )
+        # last = 2023-04-14 17:25:31,697 p=770 u=psap-ci-runner n=ansible |...
         end_time = datetime.datetime.strptime(
             last.partition(',')[0],
             ISO_FORMAT
