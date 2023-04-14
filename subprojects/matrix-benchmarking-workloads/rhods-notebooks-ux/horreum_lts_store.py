@@ -108,8 +108,8 @@ def _convert_steps(data: dict) -> dict:
 def build_lts_payloads() -> dict:
     entry: common.MatrixEntry = None
     for (_, entry) in common.Matrix.processed_map.items():
-        start_time = entry.results.tester_job.creation_time
-        end_time = entry.results.tester_job.completion_time
+        start_time = entry.results.start_time
+        end_time = entry.results.end_time
         data = _decode_ci_items(entry)
 
         yield {
