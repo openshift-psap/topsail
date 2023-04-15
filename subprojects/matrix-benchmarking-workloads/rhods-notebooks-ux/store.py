@@ -752,6 +752,10 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
             logging.warning(f"Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
     _parse_always(results, dirname, import_settings)
+    
+    (start, end) = _parse_start_end_times(dirname)
+    results.start_time = start
+    results.end_time = end
 
     results.user_count = int(import_settings.get("user_count", 0))
     results.location = dirname
@@ -845,6 +849,33 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.test_config.get = get_config
 
     print("parsing done :)")
+
+@ignore_file_not_found
+def _parse_start_end_times(dirname):
+    ISO_FORMAT="%Y-%m-%d %H:%M:%S"
+    with open(dirname / '_ansible.log', 'r') as file:
+        first = None
+        last = None
+        for line in file:
+            if not first:
+                first = line
+            last = line
+        
+        # first = "2023-04-14 17:19:19,808 p=770 u=psap-ci-runner n=ansible | ansible-playbook 2.9.27"
+        start_time = datetime.datetime.strptime(
+            first.partition(',')[0],
+            ISO_FORMAT
+        )
+        # last = 2023-04-14 17:25:31,697 p=770 u=psap-ci-runner n=ansible |...
+        end_time = datetime.datetime.strptime(
+            last.partition(',')[0],
+            ISO_FORMAT
+        )
+        logging.debug(f'Start time: {start_time}')
+        logging.debug(f'End time: {end_time}')
+
+        return (start_time, end_time)
+    
 
 def parse_data():
     # delegate the parsing to the simple_store

@@ -81,7 +81,11 @@ def _encode_json(obj, name, settings):
 
 
 def _decode_steps(data: dict) -> dict:
-    results: dict = data['results']['ods_ci']
+    try:
+        results: dict = data['results']['ods_ci']
+    except KeyError:
+        return data
+    
     for (key, _) in results.items():
         if key != "$type":
             end_dict = {}
@@ -93,23 +97,28 @@ def _decode_steps(data: dict) -> dict:
 
 
 def _convert_steps(data: dict) -> dict:
-    results: dict = data['results']['ods_ci']
+    try:
+        results: dict = data['results']['ods_ci']
+    except KeyError:
+        return data
+
     for (key, _) in results.items():
         counter = 0
         if key != "$type":
             end_dict = {}
-            for (step, val) in results[key]['output'].items():
-                end_dict[f"{counter}. {step}"] = val
-                counter += 1
-            results[key]['output'] = end_dict
+            if 'output' in results[key].keys():
+                for (step, val) in results[key]['output'].items():
+                    end_dict[f"{counter}. {step}"] = val
+                    counter += 1
+                results[key]['output'] = end_dict
     return data
 
 
 def build_lts_payloads() -> dict:
     entry: common.MatrixEntry = None
     for (_, entry) in common.Matrix.processed_map.items():
-        start_time = entry.results.tester_job.creation_time
-        end_time = entry.results.tester_job.completion_time
+        start_time = entry.results.start_time
+        end_time = entry.results.end_time
         data = _decode_ci_items(entry)
 
         yield {
