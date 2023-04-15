@@ -106,10 +106,11 @@ def _convert_steps(data: dict) -> dict:
         counter = 0
         if key != "$type":
             end_dict = {}
-            for (step, val) in results[key]['output'].items():
-                end_dict[f"{counter}. {step}"] = val
-                counter += 1
-            results[key]['output'] = end_dict
+            if 'output' in results[key].keys():
+                for (step, val) in results[key]['output'].items():
+                    end_dict[f"{counter}. {step}"] = val
+                    counter += 1
+                results[key]['output'] = end_dict
     return data
 
 
