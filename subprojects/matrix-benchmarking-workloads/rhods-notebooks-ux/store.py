@@ -860,7 +860,7 @@ def _parse_start_end_times(dirname):
             if not first:
                 first = line
             last = line
-        
+
         # first = "2023-04-14 17:19:19,808 p=770 u=psap-ci-runner n=ansible | ansible-playbook 2.9.27"
         start_time = datetime.datetime.strptime(
             first.partition(',')[0],
@@ -875,7 +875,7 @@ def _parse_start_end_times(dirname):
         logging.debug(f'End time: {end_time}')
 
         return (start_time, end_time)
-    
+
 
 def parse_data():
     # delegate the parsing to the simple_store
