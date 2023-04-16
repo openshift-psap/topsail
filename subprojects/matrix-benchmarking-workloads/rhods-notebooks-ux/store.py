@@ -658,8 +658,7 @@ def _extract_rhods_cluster_info(nodes_info):
     rhods_cluster_info.rhods_compute = [node_info for node_info in nodes_info.values() \
                                   if node_info.sutest_cluster and node_info.rhods_compute]
 
-    rhods_cluster_info.test_pods_only = [node_info for node_info in nodes_info.values() \
-                                         if node_info.sutest_cluster and node_info.test_pods_only]
+    rhods_cluster_info.test_pods_only = [node_info for node_info in nodes_info.values() if node_info.test_pods_only]
 
     return rhods_cluster_info
 
