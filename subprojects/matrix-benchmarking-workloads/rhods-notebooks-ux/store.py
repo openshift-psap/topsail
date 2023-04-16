@@ -751,8 +751,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
             logging.warning(f"Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
     _parse_always(results, dirname, import_settings)
-    
-    (start, end) = _parse_start_end_times(dirname)
+
+    start_end = _parse_start_end_times(dirname)
+    start, end = start_end if start_end else (None, None)
     results.start_time = start
     results.end_time = end
 
