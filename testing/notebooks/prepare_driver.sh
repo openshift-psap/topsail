@@ -103,12 +103,16 @@ driver_cleanup() {
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.driver.delete_test_namespaces; then
+        echo "Deleting the driver scale test namespaces"
         ods_ci_test_namespace=$(get_config tests.notebooks.namespace)
         statesignal_redis_namespace=$(get_command_arg namespace cluster deploy_redis_server)
         nginx_notebook_namespace=$(get_command_arg namespace cluster deploy_nginx_server)
+        minio_namespace=$(get_command_arg namespace cluster deploy_minio_s3_server)
+
         oc delete namespace --ignore-not-found \
            "$ods_ci_test_namespace" \
            "$statesignal_redis_namespace" \
-           "$nginx_notebook_namespace"
+           "$nginx_notebook_namespace" \
+           "$minio_namespace"
     fi
 }
