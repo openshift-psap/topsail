@@ -304,7 +304,6 @@ sutest_wait_rhods_launch() {
 
 sutest_cleanup() {
     switch_sutest_cluster
-    sutest_cleanup_ldap
 
     skip_threshold=$(get_config tests.notebooks.cleanup.on_exit.skip_if_le_than_users)
     user_count=$(get_config tests.notebooks.users.count)
@@ -334,26 +333,45 @@ sutest_cleanup() {
         ./run_toolbox.py from_config cluster set_scale --prefix "sutest" --suffix "cleanup" > /dev/null
     fi
 
-    if test_config tests.notebooks.cleanup.on_exit.sutest.delete_rhods_namespaces; then
-        oc delete namespace --ignore-not-found \
-           redhat-ods-applications  redhat-ods-monitoring redhat-ods-operator rhods-notebooks
+    if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_rhods; then
+        echo "$(date +%H:%M:%S) Uninstall RHODS ..."
+        oc create configmap delete-self-managed-odh -n redhat-ods-operator
+        oc label configmap/delete-self-managed-odh api.openshift.com/addon-managed-odh-delete=true -n redhat-ods-operator
+        for project in redhat-ods-applications redhat-ods-monitoring rhods-notebooks; do
+            local current_remaining_time=$((5 * 60)) # 5 minutes
+            while oc get ns "$project" &> /dev/null; do
+                sleep 1
+                current_remaining_time=$((current_remaining_time - 1))
+                if [[ "$current_remaining_time" == 0 ]]; then
+                    _error "$(date +%H:%M:%S) RHODS deletion failed :/"
+                    exit 1 # shouldn't be reached
+                fi
+
+            done
+            echo "$(date +%H:%M:%S) Namespace $project no longer exists"
+        done
+        oc delete ns redhat-ods-operator
+        echo "$(date +%H:%M:%S) Uninstall of RHODS done."
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.delete_test_namespaces; then
+        echo "Deleting the notebook performance namespace"
        local notebook_performance_namespace=$(get_command_arg namespace rhods benchmark_notebook_performance)
        oc delete namespace --ignore-not-found \
           "$notebook_performance_namespace"
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_ldap; then
+        echo "Uninstaling LDAP IDP"
         sutest_cleanup_ldap
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.remove_dsg_notebook_dedicated_toleration; then
         dedicated="{value: ''}" # delete the toleration/node-selector annotations, if it exists
+        echo "Removing the DSG notebook toleration"
 
-        ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated"
-        ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated"
+        ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated" > /dev/null
+        ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated" > /dev/null
     fi
 }
 
