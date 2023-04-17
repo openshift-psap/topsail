@@ -333,6 +333,21 @@ sutest_cleanup() {
     else
         ./run_toolbox.py from_config cluster set_scale --prefix "sutest" --suffix "cleanup" > /dev/null
     fi
+
+    if test_config tests.notebooks.cleanup.on_exit.sutest.delete_rhods_namespaces; then
+        oc delete namespace --ignore-not-found \
+           redhat-ods-applications  redhat-ods-monitoring redhat-ods-operator rhods-notebooks
+    fi
+
+    if test_config tests.notebooks.cleanup.on_exit.sutest.delete_test_namespaces; then
+       local notebook_performance_namespace=$(get_command_arg namespace rhods benchmark_notebook_performance)
+       oc delete namespace --ignore-not-found \
+          "$notebook_performance_namespace"
+    fi
+
+    if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_ldap; then
+        sutest_cleanup_ldap
+    fi
 }
 
 sutest_cleanup_ldap() {
