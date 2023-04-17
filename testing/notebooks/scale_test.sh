@@ -254,6 +254,11 @@ main() {
             sutest_cleanup_rhods
             return 0
             ;;
+        "cleanup_clusters")
+            sutest_cleanup
+            driver_cleanup
+            return 0
+            ;;
         "prepare_matbench")
             "$TESTING_NOTEBOOKS_DIR/generate_matrix-benchmarking.sh" prepare_matbench
             return 0
