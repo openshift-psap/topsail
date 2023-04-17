@@ -348,6 +348,13 @@ sutest_cleanup() {
     if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_ldap; then
         sutest_cleanup_ldap
     fi
+
+    if test_config tests.notebooks.cleanup.on_exit.sutest.remove_dsg_notebook_dedicated_toleration; then
+        dedicated="{value: ''}" # delete the toleration/node-selector annotations, if it exists
+
+        ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated"
+        ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated"
+    fi
 }
 
 sutest_cleanup_ldap() {
