@@ -110,6 +110,8 @@ run_gating_tests_and_plots() {
         _warning "Gating test failed :/"
     fi
 
+    python3 "$TESTING_UTILS_DIR/generate_plot_index.py" > "$ARTIFACT_DIR/report_index.html"
+
     return $failed
 }
 
