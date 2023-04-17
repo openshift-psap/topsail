@@ -6,12 +6,6 @@ run_ods_ci_scaleup_test() {
     local scalup_users=$(get_config tests.notebooks.users.scaleups[])
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
-    do_cleanup() {
-        sutest_cleanup_rhods
-    }
-
-    do_cleanup
-
     local test_idx=0
     for user_count in $scalup_users; do
         echo "$(date) Launching $user_count users."
@@ -27,15 +21,13 @@ run_ods_ci_scaleup_test() {
         fi
 
         export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)__scalup${test_idx}_${user_count}users"
+        sutest_cleanup_rhods
         run_test || failed=1
         generate_plots || failed=1
-
-        do_cleanup
 
         if [[ "$failed" == 1 ]]; then
             break
         fi
-
     done
 
     if ! test_config tests.notebooks.ods_ci.only_create_notebooks; then
