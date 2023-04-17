@@ -448,9 +448,17 @@ tests:
       # number of repeats of the benchmark to perform.
       repeat: 3
     cleanup:
-      # if enable, delete the test namespaces after the testing
-      cleanup_driver_on_exit: true
-      skip_if_le_than_users: 5
+      on_exit:
+        skip_if_le_than_users: 2
+        driver:
+          # if enable, delete the test namespaces after the testing
+          delete_test_namespaces: true
+        sutest:
+          # if enable, uninstall RHODS
+          uninstall_rhods: true
+          delete_test_namespaces: true
+          uninstall_ldap: true
+          remove_dsg_notebook_dedicated_toleration: true
     locust:
       # Rate to spawn users at (users per second)
       spawn_rate: 0.5 # not used at the moment (spawn_rate = user_count)

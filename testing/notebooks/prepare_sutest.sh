@@ -306,7 +306,7 @@ sutest_cleanup() {
     switch_sutest_cluster
     sutest_cleanup_ldap
 
-    skip_threshold=$(get_config tests.notebooks.cleanup.skip_if_le_than_users)
+    skip_threshold=$(get_config tests.notebooks.cleanup.on_exit.skip_if_le_than_users)
     user_count=$(get_config tests.notebooks.users.count)
     if [[ "$user_count" -le "$skip_threshold" ]]; then
         _info "Skip cluster cleanup (less that $skip_threshold users)"
