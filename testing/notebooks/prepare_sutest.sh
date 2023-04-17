@@ -359,6 +359,11 @@ sutest_cleanup_rhods() {
 
     switch_sutest_cluster
 
+    if ! oc get ns redhat-ods-applications > /dev/null; then
+        _info "RHODS not installed, cannot clean it up."
+        return
+    fi
+
     oc delete namespaces -lopendatahub.io/dashboard=true >/dev/null
     # delete any leftover namespace (if the label ^^^ wasn't properly applied)
     oc get ns -oname | (grep "$user_prefix" || true) | xargs -r oc delete
