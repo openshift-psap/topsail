@@ -119,8 +119,8 @@ apply_presets_from_args() {
 }
 
 export_to_s3() {
-    local ts_id=${1:-$(date "+%Y%M%d_%H%M")}
-    local run_identifier=${2:-default}
+    local ts_id=${EXPORT_TS_ID:-$(date "+%Y%M%d_%H%M")}
+    local run_identifier=${EXPORT_IDENTIFIER:-default}
 
     export AWS_SHARED_CREDENTIALS_FILE="${PSAP_ODS_SECRET_PATH:-}/.awscred"
     local bucket_name=$(get_config "export_to_s3.bucket_name")
@@ -271,7 +271,7 @@ main() {
             return 0
             ;;
         "export_to_s3")
-            export_to_s3 "$@"
+            export_to_s3
 
             return 0
             ;;
