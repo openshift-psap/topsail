@@ -26,6 +26,11 @@ ci_presets:
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
     tests.notebooks.repeat: 2
 
+  notebook_scale_test_autoscaling:
+    extends: [notebook_scale_test]
+    clusters.sutest.compute.autoscaling.enabled: true
+    tests.notebooks.repeat: 1
+
   # run the notebook gating tests
   # (DSG and Jupyter scale tests, notebook performance)
   notebook_gating_scale_test:
@@ -272,7 +277,7 @@ clusters:
       deploy_cluster:
         target: cluster
       base_domain: psap.aws.rhperfscale.org
-      version: 4.12.9
+      version: 4.12.12
       region: us-west-2
       control_plane:
         type: m6a.xlarge
