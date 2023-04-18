@@ -151,6 +151,8 @@ main() {
     action=${1:-}
     shift || true
 
+    apply_presets_from_args "$@"
+
     case ${action} in
         "connect_ci")
             connect_ci
@@ -179,8 +181,6 @@ main() {
             return 0
             ;;
         "prepare")
-            apply_presets_from_args "$@"
-
             prepare
             return 0
             ;;
@@ -204,8 +204,6 @@ main() {
             return 0
             ;;
         "prepare_driver_cluster")
-            apply_presets_from_args "$@"
-
             prepare_driver_cluster
             process_ctrl::wait_bg_processes
             return 0
@@ -214,8 +212,6 @@ main() {
             local failed=0
             export CI_ARTIFACTS_CAPTURE_PROM_DB=1
 
-            apply_presets_from_args "$@"
-
             run_test || failed=1
 
             generate_plots || failed=1
@@ -223,23 +219,14 @@ main() {
             return $failed
             ;;
         "run_tests_and_plots")
-
-            apply_presets_from_args "$@"
-
             run_tests_and_plots
             return 0
             ;;
         "run_test")
-
-            apply_presets_from_args "$@"
-
             run_test
             return 0
             ;;
         "generate_plots")
-
-            apply_presets_from_args "$@"
-
             generate_plots
             return  0
             ;;
