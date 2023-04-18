@@ -38,5 +38,5 @@ fi
 bash "$TESTING_UTILS_DIR/configure_overrides.sh"
 
 if [[ "${ARTIFACT_DIR:-}" ]]; then
-    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "${ARTIFACT_DIR}"
+    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "${ARTIFACT_DIR}" || true
 fi
