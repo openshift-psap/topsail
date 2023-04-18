@@ -9,6 +9,8 @@ run_normal_tests_and_plots() {
     local plot_failed=0
     local test_runs=$(get_config tests.notebooks.repeat)
 
+    sutest_cleanup_rhods
+
     for idx in $(seq "$test_runs"); do
         if [[ "$test_runs" != 1 ]]; then
             export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $idx)__test_run"
@@ -54,15 +56,9 @@ run_locust_test() {
 run_gating_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
-    do_cleanup() {
-        sutest_cleanup_rhods
-    }
-
     cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$ARTIFACT_DIR/config.base.yaml"
     local test_idx=0
     local failed=0
-
-    do_cleanup
 
     for preset in $(get_config tests.notebooks.gating_tests[])
     do
@@ -89,7 +85,7 @@ run_gating_tests_and_plots() {
             prepare_failed=0
         fi
 
-        do_cleanup
+        sutest_cleanup_rhods
 
         export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)__$preset"
 
@@ -118,8 +114,6 @@ run_gating_tests_and_plots() {
 run_tests_and_plots() {
     local test_flavor=$(get_config tests.notebooks.test_flavor)
 
-    sutest_cleanup_rhods
-
     if [[ "$test_flavor" == "gating" ]]; then
         run_gating_tests_and_plots
     else
@@ -135,6 +129,7 @@ run_test() {
         mkdir -p "$ARTIFACT_DIR"
         echo "repeat=$repeat_idx" > "$ARTIFACT_DIR/settings.repeat"
     fi
+
     if [[ "$test_flavor" == "ods-ci" ]]; then
         run_ods_ci_test || return 1
     elif [[ "$test_flavor" == "locust" ]]; then

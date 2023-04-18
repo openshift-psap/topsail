@@ -17,3 +17,11 @@
   - pvc
   - configmap
   - secrets
+
+- name: Delete the notebook user projects
+  shell:
+    set -o pipefail;
+    (oc get namespaces -oname || true) |
+      (grep {{ rhods_cleanup_notebooks_username_prefix }} || true) |
+        xargs --no-run-if-empty
+          oc delete

@@ -92,7 +92,7 @@ driver_cleanup() {
 
     local user_count=$(get_config tests.notebooks.users.count)
 
-    skip_threshold=$(get_config tests.notebooks.cleanup.skip_if_le_than_users)
+    skip_threshold=$(get_config tests.notebooks.cleanup.on_exit.skip_if_le_than_users)
     if [[ "$user_count" -le "$skip_threshold" ]]; then
         _info "Skip cluster cleanup (less that $skip_threshold users)"
         return
@@ -102,14 +102,17 @@ driver_cleanup() {
        ./run_toolbox.py from_config cluster set_scale --prefix "driver" --suffix "cleanup" > /dev/null
     fi
 
-    if test_config tests.notebooks.cleanup.cleanup_driver_on_exit; then
-
+    if test_config tests.notebooks.cleanup.on_exit.driver.delete_test_namespaces; then
+        echo "Deleting the driver scale test namespaces"
         ods_ci_test_namespace=$(get_config tests.notebooks.namespace)
         statesignal_redis_namespace=$(get_command_arg namespace cluster deploy_redis_server)
         nginx_notebook_namespace=$(get_command_arg namespace cluster deploy_nginx_server)
+        minio_namespace=$(get_command_arg namespace cluster deploy_minio_s3_server)
+
         oc delete namespace --ignore-not-found \
            "$ods_ci_test_namespace" \
            "$statesignal_redis_namespace" \
-           "$nginx_notebook_namespace"
+           "$nginx_notebook_namespace" \
+           "$minio_namespace"
     fi
 }

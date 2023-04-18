@@ -59,7 +59,7 @@ capture_environment() {
 prepare_ci() {
     cluster_helpers::connect_sutest_cluster
 
-    trap "set +e; sutest_cleanup; driver_cleanup; exit 1" ERR
+    trap "set +e; process_ctrl::kill_bg_processes; sutest_cleanup; driver_cleanup; exit 1" ERR
 }
 
 prepare_notebook_performance_without_rhods() {

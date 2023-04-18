@@ -171,6 +171,14 @@ ci_presets:
   plot.notebook_scale_tests_comparison:
     matbench.preset: notebook_scale_tests_comparison
 
+  cleanup_clusters_on_exit:
+    tests.notebooks.cleanup.on_exit.skip_if_le_than_users: 0
+    tests.notebooks.cleanup.on_exit.driver.delete_test_namespaces: true
+    tests.notebooks.cleanup.on_exit.sutest.delete_rhods_namespaces: true
+    tests.notebooks.cleanup.on_exit.sutest.delete_test_namespaces: true
+    tests.notebooks.cleanup.on_exit.sutest.uninstall_ldap: true
+    tests.notebooks.cleanup.on_exit.sutest.remove_dsg_notebook_dedicated_toleration: true
+
   # cluster creation presets
 
   single:
@@ -212,6 +220,8 @@ ci_presets:
 
   metal:
     clusters.sutest.is_metal: true
+    clusters.driver.compute.dedicated: false
+    clusters.sutest.compute.dedicated: false
 
   not_metal:
     clusters.sutest.is_metal: false
@@ -231,7 +241,7 @@ ci_presets:
     'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
 
   perflab_notebook_scale_test:
-    extends: [notebook_scale_test, metal]
+    extends: [notebook_scale_test, metal, cleanup_clusters_on_exit]
     clusters.driver.compute.dedicated: false
     clusters.sutest.compute.dedicated: false
     tests.notebooks.users.count: 15
@@ -448,9 +458,17 @@ tests:
       # number of repeats of the benchmark to perform.
       repeat: 3
     cleanup:
-      # if enable, delete the test namespaces after the testing
-      cleanup_driver_on_exit: true
-      skip_if_le_than_users: 5
+      on_exit:
+        skip_if_le_than_users: 2
+        driver:
+          # if enable, delete the test namespaces after the testing
+          delete_test_namespaces: true
+        sutest:
+          # if enable, uninstall RHODS
+          uninstall_rhods: true
+          delete_test_namespaces: true
+          uninstall_ldap: true
+          remove_dsg_notebook_dedicated_toleration: true
     locust:
       # Rate to spawn users at (users per second)
       spawn_rate: 0.5 # not used at the moment (spawn_rate = user_count)
