@@ -241,7 +241,7 @@ ci_presets:
     'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
 
   perflab_notebook_scale_test:
-    extends: [notebook_scale_test, metal]
+    extends: [notebook_scale_test, metal, cleanup_clusters_on_exit]
     clusters.driver.compute.dedicated: false
     clusters.sutest.compute.dedicated: false
     tests.notebooks.users.count: 15
