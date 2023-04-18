@@ -658,8 +658,7 @@ def _extract_rhods_cluster_info(nodes_info):
     rhods_cluster_info.rhods_compute = [node_info for node_info in nodes_info.values() \
                                   if node_info.sutest_cluster and node_info.rhods_compute]
 
-    rhods_cluster_info.test_pods_only = [node_info for node_info in nodes_info.values() \
-                                         if node_info.sutest_cluster and node_info.test_pods_only]
+    rhods_cluster_info.test_pods_only = [node_info for node_info in nodes_info.values() if node_info.test_pods_only]
 
     return rhods_cluster_info
 
@@ -752,8 +751,9 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
             logging.warning(f"Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
     _parse_always(results, dirname, import_settings)
-    
-    (start, end) = _parse_start_end_times(dirname)
+
+    start_end = _parse_start_end_times(dirname)
+    start, end = start_end if start_end else (None, None)
     results.start_time = start
     results.end_time = end
 
@@ -860,7 +860,7 @@ def _parse_start_end_times(dirname):
             if not first:
                 first = line
             last = line
-        
+
         # first = "2023-04-14 17:19:19,808 p=770 u=psap-ci-runner n=ansible | ansible-playbook 2.9.27"
         start_time = datetime.datetime.strptime(
             first.partition(',')[0],
@@ -875,7 +875,7 @@ def _parse_start_end_times(dirname):
         logging.debug(f'End time: {end_time}')
 
         return (start_time, end_time)
-    
+
 
 def parse_data():
     # delegate the parsing to the simple_store
