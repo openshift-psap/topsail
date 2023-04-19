@@ -12,10 +12,19 @@ import time
 import yaml
 import jsonpath_ng
 
-def run(command):
+def run(command, capture_stdout=False, capture_stderr=False, check=True):
     logging.info(f"run: {command}")
+    args = {}
+    if capture_stdout: args["stdout"] = subprocess.PIPE
+    if capture_stderr: args["stderr"] = subprocess.PIPE
+    if check: args["check"] = True
 
-    return subprocess.run(command, check=True, shell=True)
+    proc = subprocess.run(command, shell=True, **args)
+
+    if capture_stdout: proc.stdout = proc.stdout.decode("utf8")
+    if capture_stderr: proc.stderr = proc.stderr.decode("utf8")
+
+    return proc
 
 TESTING_PIPELINES_DIR = pathlib.Path(__file__).absolute().parent
 TESTING_ODS_DIR = TESTING_PIPELINES_DIR.parent / "ods"
@@ -67,13 +76,12 @@ def setup_brew_registry():
 # ---
 
 def install_rhods():
+    MANIFEST_NAME = "rhods-operator"
+    installed_csv_cmd = run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
 
-    try:
-        run("oc get csv -n redhat-ods-operator -oname | grep rhods-operator --quiet")
-        logging.warning("RHODS is already installed, do not reinstall it.")
+    if MANIFEST_NAME in installed_csv_cmd.stdout:
+        logging.info(f"Operator '{MANIFEST_NAME}' is already installed.")
         return
-    except Exception: pass # RHODS isn't installed, proceed
-
 
     setup_brew_registry()
 
@@ -81,20 +89,27 @@ def install_rhods():
 
 
 def customize_rhods():
-    if get_config("rhods.operator.stop"):
-        run("oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator")
-        time.sleep(10)
+    if not get_config("rhods.operator.stop"):
+        return
 
-        dashboard_replicas = get_config("rhods.operator.dashboard.replicas")
+    run("oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator")
+    time.sleep(10)
 
-        if dashboard_replicas is not None:
-            run(f'oc scale deploy/rhods-dashboard "--replicas={dashboard_replicas}" -n redhat-ods-applications')
-            with open(ARTIFACT_DIR / "dashboard.replicas", "w") as f:
-                print(f"{dashboard_replicas}", file=f)
+    dashboard_replicas = get_config("rhods.operator.dashboard.replicas")
+
+    if dashboard_replicas is not None:
+        run(f'oc scale deploy/rhods-dashboard "--replicas={dashboard_replicas}" -n redhat-ods-applications')
+        with open(ARTIFACT_DIR / "dashboard.replicas", "w") as f:
+            print(f"{dashboard_replicas}", file=f)
 
 def install_ocp_pipelines():
-    run("ARTIFACT_TOOLBOX_NAME_SUFFIX=_pipelines ./run_toolbox.py cluster deploy_operator redhat-operators openshift-pipelines-operator-rh all")
+    MANIFEST_NAME = "openshift-pipelines-operator-rh"
+    installed_csv_cmd = run("oc get csv -oname", capture_stdout=True)
+    if MANIFEST_NAME in installed_csv_cmd.stdout:
+        logging.info(f"Operator '{MANIFEST_NAME}' is already installed.")
+        return
 
+    run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_pipelines ./run_toolbox.py cluster deploy_operator redhat-operators {MANIFEST_NAME} all")
 
 def create_dsp_application():
     namespace = get_config("rhods.pipelines.namespace")
@@ -105,22 +120,45 @@ def create_dsp_application():
 
     run("./run_toolbox.py from_config pipelines deploy_application")
 
-def pipelines_prepare():
+def prepare_cluster():
     """
     Prepares the cluster for running pipelines scale tests.
     """
-
+    install_ocp_pipelines()
     install_rhods()
+
     run("./run_toolbox.py rhods wait_ods")
     customize_rhods()
     run("./run_toolbox.py rhods wait_ods")
 
-    install_ocp_pipelines()
+    run("./run_toolbox.py from_config cluster deploy_ldap")
+
+    run("./run_toolbox.py from_config cluster set_scale --prefix=sutest")
+
+def prepare_namespace():
+    """
+    Prepares the namespace for running pipelines scale tests.
+    """
+
+    namespace = get_config("rhods.pipelines.namespace")
+    run(f"oc new-project '{namespace}' --skip-config-write >/dev/null || true")
+    run(f"oc label namespace/{namespace} opendatahub.io/dashboard=true --overwrite")
+
+    dedicated = "{}" if get_config("clusters.sutest.compute.dedicated") \
+        else "{value: ''}" # delete the toleration/node-selector annotations, if it exists
+
+    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_node_selector --extra {dedicated}")
+    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_toleration --extra {dedicated}")
 
     create_dsp_application()
 
+def pipelines_prepare():
+    """
+    Prepares the cluster and the namespace for running pipelines scale tests
+    """
 
-    return None
+    prepare_cluster()
+    prepare_namespace()
 
 
 def pipelines_run():
@@ -128,8 +166,20 @@ def pipelines_run():
     Runs a CI workload.
 
     """
+    namespace = get_config("rhods.pipelines.namespace")
+    application_name = get_config("rhods.pipelines.application.name")
 
-    pass
+    for i in range(5):
+        try:
+            run(f"./run_toolbox.py pipelines run_kfp_notebook '{namespace}' '{application_name}'")
+            break
+        except Exception as e:
+            import bdb;
+            if isinstance(e, bdb.BdbQuit): raise e
+            logging.error("Run #{i} failed :/")
+    else:
+        logging.error("Failed to run successfully the pipeline application :/")
+        sys.exit(1)
 
 
 class Pipelines:
@@ -139,6 +189,8 @@ class Pipelines:
 
     def __init__(self):
         self.prepare = pipelines_prepare
+        self.prepare_namespace = prepare_namespace
+        self.prepare_cluster = prepare_cluster
         self.run = pipelines_run
 
         self.prepare_ci = pipelines_prepare
