@@ -1,17 +1,9 @@
 ---
-- name: Get RHODS dashboard replica count
-  command:
-    oc get deploy -nredhat-ods-applications rhods-dashboard -ojsonpath={.status.replicas}
-  register: rhods_dashboard_replicas
-  retries: 10
-  delay: 60
-  until: rhods_dashboard_replicas.rc == 0
-
 - name: Wait all the RHODS dashboard replicas to be ready
   command:
     oc get deploy -nredhat-ods-applications rhods-dashboard -ojsonpath={.status.readyReplicas}
   register: rhods_dashboard_ready_replicas
-  until: rhods_dashboard_replicas.stdout | int == rhods_dashboard_ready_replicas.stdout | int
+  until: rhods_dashboard_ready_replicas.stdout | int >= 1
   retries: 40
   delay: 60
 
