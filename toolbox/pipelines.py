@@ -20,3 +20,31 @@ class Pipelines:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("pipelines_run_kfp_notebook")
+    @AnsibleMappedParams
+    def run_kfp_notebook(self,
+                         namespace="",
+                         dsp_application_name="",
+                         imagestream="s2i-generic-data-science-notebook",
+                         imagestream_tag="",
+                         notebook_directory="testing/pipelines/notebooks/hello-world",
+                         notebook_filename="kfp_hello_world.ipynb",
+                         stop_on_exit=True,
+                         capture_artifacts=True,
+                         ):
+        """
+        Run a notebook in a given notebook image.
+
+        Args:
+          namespace: Namespace in which the notebook will be deployed, if not deploying with RHODS. If empty, use the project return by 'oc project --short'.
+          dsp_application_name: The name of the DSPipelines Application to use. If empty, lookup the application name in the namespace.
+          imagestream: Imagestream to use to look up the notebook Pod image.
+          imagestream_tag: Imagestream tag to use to look up the notebook Pod image. If emtpy and and the image stream has only one tag, use it. Fails otherwise.
+          notebook_directory: Directory containing the files to mount in the notebook.
+          notebook_filename: Name of the ipynb notebook file to execute with JupyterLab.
+          stop_on_exit: If False, keep the notebook running after the test.
+          capture_artifacts: If False, disable the post-test artifact collection.
+        """
+
+        return RunAnsibleRole(locals())

@@ -1,0 +1,22 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Pipelines.run_kfp_notebook
+
+# Namespace in which the notebook will be deployed, if not deploying with RHODS. If empty, use the project return by 'oc project --short'.
+pipelines_run_kfp_notebook_namespace:
+
+# The name of the DSPipelines Application to use. If empty, lookup the application name in the namespace.
+pipelines_run_kfp_notebook_dsp_application_name:
+
+# Imagestream to use to look up the notebook Pod image.
+pipelines_run_kfp_notebook_imagestream: s2i-generic-data-science-notebook
+
+# Imagestream tag to use to look up the notebook Pod image. If emtpy and and the image stream has only one tag, use it. Fails otherwise.
+pipelines_run_kfp_notebook_imagestream_tag:
+
+# Directory containing the files to mount in the notebook.
+pipelines_run_kfp_notebook_notebook_directory: testing/pipelines/notebooks/hello-world
+
+# Name of the ipynb notebook file to execute with JupyterLab.
+pipelines_run_kfp_notebook_notebook_filename: kfp_hello_world.ipynb
+
