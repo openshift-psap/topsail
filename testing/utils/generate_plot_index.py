@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import glob
-import sys
+import sys, os
 import pathlib
 
 def report_index_to_html(report_index):
@@ -22,7 +22,7 @@ def report_index_to_html(report_index):
 
 def main():
     ARTIFACT_DIR = pathlib.Path(os.environ["ARTIFACT_DIR"])
-    for report_index in sorted(ARTIFACT_DIR.glob('**/reports_index.html', recursive=True)):
+    for report_index in sorted(ARTIFACT_DIR.glob('**/reports_index.html')):
         report_index_to_html(pathlib.Path(report_index))
 
 if __name__ == "__main__":
