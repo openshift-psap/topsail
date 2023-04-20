@@ -50,7 +50,9 @@ driver/cluster set_scale:
 cluster set_scale/notebook-performance:
   instance_type: SET_AT_RUNTIME
   name: {{ clusters.sutest.compute.machineset.name }}
+{% if clusters.sutest.compute.machineset.dedicated %}
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
+{% endif %}
   scale: 1
 
 driver/cluster set_project_annotation/node_selector:
