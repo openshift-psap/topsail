@@ -141,7 +141,9 @@ def build_limited_lts_payload() -> dict:
                 "users": _decode_limited_users(RESULTS.ods_ci, RESULTS.testpod_hostnames, RESULTS.notebook_pod_times),
                 'rhods_version': RESULTS.rhods_info.version,
                 'ocp_version': RESULTS.sutest_ocp_version,
-                'metrics': _gather_prom_metrics(RESULTS.metrics)
+                'metrics': _gather_prom_metrics(RESULTS.metrics),
+                'thresholds': RESULTS.thresholds,
+                'config': RESULTS.test_config.yaml_file
             },
             "metadata": {
                 "test": "rhods-notebooks-ux",
