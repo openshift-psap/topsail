@@ -140,7 +140,8 @@ def build_limited_lts_payload() -> dict:
             "data": {
                 "users": _decode_limited_users(RESULTS.ods_ci, RESULTS.testpod_hostnames, RESULTS.notebook_pod_times),
                 'rhods_version': RESULTS.rhods_info.version,
-                'ocp_version': RESULTS.sutest_ocp_version
+                'ocp_version': RESULTS.sutest_ocp_version,
+                'metrics': _gather_prom_metrics(RESULTS.metrics)
             },
             "metadata": {
                 "test": "rhods-notebooks-ux",
@@ -190,3 +191,22 @@ def _generate_pod_timings(pod_times, start, end):
         output['user_notification'] = (end - pod_times.containers_ready).total_seconds()
     
     return output
+
+def _gather_prom_metrics(metrics) -> dict:
+    out = {}
+    prom_metrics = {
+        "sutest": [
+            "Sutest API Server Requests (server errors)",
+            "Sutest Control Plane Node CPU idle",
+            "sutest__container_cpu__namespace=redhat-ods-applications_pod=rhods-dashboard.*_container=rhods-dashboard",
+            "sutest__container_cpu_requests__namespace=redhat-ods-applications_pod=rhods-dashboard.*_container=rhods-dashboard",
+            "sutest__container_cpu_limits__namespace=redhat-ods-applications_pod=rhods-dashboard.*_container=rhods-dashboard"
+        ]
+    }
+
+    for (key, metric_names) in prom_metrics.items():
+        for metric_name in metric_names:
+            logging.info(f"Gathering {metric_name}")
+            out[metric_name] = metrics[key][metric_name]
+    
+    return out
