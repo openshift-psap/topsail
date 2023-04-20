@@ -334,24 +334,33 @@ sutest_cleanup() {
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_rhods; then
-        echo "$(date +%H:%M:%S) Uninstall RHODS ..."
+        echo "$(date +%H:%M:%S) Uninstalling RHODS ..."
         oc create configmap delete-self-managed-odh -n redhat-ods-operator
         oc label configmap/delete-self-managed-odh api.openshift.com/addon-managed-odh-delete=true -n redhat-ods-operator
+        local deletion_failed=0
         for project in redhat-ods-applications redhat-ods-monitoring rhods-notebooks; do
             local current_remaining_time=$((5 * 60)) # 5 minutes
+            local failed=0
             while oc get ns "$project" &> /dev/null; do
                 sleep 1
                 current_remaining_time=$((current_remaining_time - 1))
                 if [[ "$current_remaining_time" == 0 ]]; then
-                    _error "$(date +%H:%M:%S) RHODS deletion failed :/"
-                    exit 1 # shouldn't be reached
+                    _warning "$(date +%H:%M:%S) RHODS deletion failed, namespace $projec still exists :/"
+                    failed=1
+                    deletion_failed=1
+                    break
                 fi
-
             done
-            echo "$(date +%H:%M:%S) Namespace $project no longer exists"
+            if [[ "$failed" == 0 ]]; then
+                echo "$(date +%H:%M:%S) Namespace $project no longer exists"
+            fi
         done
-        oc delete ns redhat-ods-operator
-        echo "$(date +%H:%M:%S) Uninstall of RHODS done."
+        oc delete ns redhat-ods-operator --wait=false
+        if [[ "$deletion_failed" == 0 ]]; then
+            echo "$(date +%H:%M:%S) Uninstall of RHODS done."
+        else
+            echo "$(date +%H:%M:%S) Uninstall of RHODS failed :/ "
+        fi
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.delete_test_namespaces; then
