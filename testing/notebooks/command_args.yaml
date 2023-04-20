@@ -32,14 +32,18 @@ rhods deploy_ods:
 sutest/cluster set_scale:
   instance_type: {{ clusters.create.ocp.compute.type }}
   name: {{ clusters.sutest.compute.machineset.name }}
+{% if clusters.sutest.compute.machineset.dedicated %}
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
+{% endif %}
   spot: {{ clusters.sutest.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 driver/cluster set_scale:
   instance_type: {{ clusters.create.ocp.compute.type }}
   name: {{ clusters.driver.compute.machineset.name }}
+{% if clusters.driver.compute.machineset.dedicated %}
   taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
+{% endif %}
   spot: {{ clusters.driver.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
