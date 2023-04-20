@@ -40,12 +40,12 @@
          -o=jsonpath="{range .items[*]}{.metadata.name}{' ='}{.status.unavailableReplicas}{'=\n'}{end}"
          -lcomponent=data-science-pipelines
          -n {{ pipelines_deploy_application_namespace }}
-         | grep -v "=="
+         | grep -v "==" || true
     register: deployments_not_ready
-    failed_when: false
     until: not deployments_not_ready.stdout
     retries: 24
     delay: 10
+    failed_when: deployments_not_ready.stdout | length > 0
 
   always:
   - name: Get the list of the deployments
