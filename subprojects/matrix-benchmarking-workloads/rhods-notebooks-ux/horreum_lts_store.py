@@ -131,14 +131,25 @@ def build_lts_payloads() -> dict:
 def build_limited_lts_payload() -> dict:
     for(_, entry) in common.Matrix.processed_map.items():
         RESULTS = entry.results
+        
+        start_time: datetime.datetime = RESULTS.start_time
+        end_time: datetime.datetime = RESULTS.end_time
+
         output = {
             "$schema": "urn:rhods-matbench-upload:3.0.0",
-            "users": _decode_limited_users(RESULTS.ods_ci, RESULTS.testpod_hostnames, RESULTS.notebook_pod_times),
-            'rhods_version': RESULTS.rhods_info.version,
-            'ocp_version': RESULTS.sutest_ocp_version
+            "data": {
+                "users": _decode_limited_users(RESULTS.ods_ci, RESULTS.testpod_hostnames, RESULTS.notebook_pod_times),
+                'rhods_version': RESULTS.rhods_info.version,
+                'ocp_version': RESULTS.sutest_ocp_version
+            },
+            "metadata": {
+                "test": "rhods-notebooks-ux",
+                "start": start_time.isoformat(),
+                "end": end_time.isoformat()
+            }
         }
         
-        yield output, 0, 0
+        yield output, start_time, end_time
 
 
 def _decode_limited_users(users, hostnames, pod_times):
