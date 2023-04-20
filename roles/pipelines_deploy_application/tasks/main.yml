@@ -1,8 +1,14 @@
 ---
+- name: Check if the namespace exists
+  command:
+    oc get namespace "{{ pipelines_deploy_application_namespace }}" -oname
+  failed_when: false
+  register: namespace_exists
+
 - name: Create the namespace, if it does not exist
-  shell:
-    set -o pipefail;
-    oc create ns "{{ pipelines_deploy_application_namespace }}" -oyaml --dry-run=client | oc apply -f-
+  command:
+    oc new-project "{{ pipelines_deploy_application_namespace }}" --skip-config-write
+  when: namespace_exists.rc != 0
 
 - name: Create the src artifacts directory
   file:
