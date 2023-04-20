@@ -3,9 +3,11 @@
 # content are secrets (passwords). With Python+envsubst, we're sure
 # that the secrets won't be printed in clear.
 
-- name: Ensure that the secret properties file exists
+- name: Ensure that the secret properties file '{{ cluster_deploy_ldap_secret_properties_file }}' exists and is a file
   stat:
     path: "{{ cluster_deploy_ldap_secret_properties_file }}"
+  register: secret_props_file_stat
+  failed_when: not secret_props_file_stat.stat.exists or secret_props_file_stat.stat.isdir
 
 - name: Ensure that the username prefix is set
   fail: msg="username prefix isn't set"
