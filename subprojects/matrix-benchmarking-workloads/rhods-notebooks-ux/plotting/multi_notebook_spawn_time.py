@@ -52,7 +52,7 @@ class MultiNotebookSpawnTime():
                 accumulated_timelength = 0
 
                 if not ods_ci: continue
-                if not ods_ci.output: continue
+                if not getattr(ods_ci, "output", False): continue
 
                 for step_name, test_times in ods_ci.output.items():
                     if test_times.status != "PASS":
