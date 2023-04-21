@@ -1,8 +1,14 @@
 ---
+- name: Check if the namespace exists
+  command:
+    oc get namespace "{{ pipelines_deploy_application_namespace }}" -oname
+  failed_when: false
+  register: namespace_exists
+
 - name: Create the namespace, if it does not exist
-  shell:
-    set -o pipefail;
-    oc create ns "{{ pipelines_deploy_application_namespace }}" -oyaml --dry-run=client | oc apply -f-
+  command:
+    oc new-project "{{ pipelines_deploy_application_namespace }}" --skip-config-write
+  when: namespace_exists.rc != 0
 
 - name: Create the src artifacts directory
   file:
@@ -40,12 +46,12 @@
          -o=jsonpath="{range .items[*]}{.metadata.name}{' ='}{.status.unavailableReplicas}{'=\n'}{end}"
          -lcomponent=data-science-pipelines
          -n {{ pipelines_deploy_application_namespace }}
-         | grep -v "=="
+         | grep -v "==" || true
     register: deployments_not_ready
-    failed_when: false
     until: not deployments_not_ready.stdout
     retries: 24
     delay: 10
+    failed_when: deployments_not_ready.stdout | length > 0
 
   always:
   - name: Get the list of the deployments

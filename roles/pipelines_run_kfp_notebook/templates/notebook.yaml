@@ -1,0 +1,113 @@
+{% set notebook_base_url = "/notebook/" + notebook_namespace + "/"+ notebook_name %}
+{% set dashboard_route_host = "rhods-dashboard-redhat-ods-applications.not.available.yet" %}
+apiVersion: kubeflow.org/v1
+kind: Notebook
+metadata:
+  annotations:
+    notebooks.kubeflow.org/last-activity: ""
+    notebooks.opendatahub.io/inject-oauth: "true"
+    notebooks.opendatahub.io/last-image-selection: {{ pipelines_run_kfp_notebook_imagestream }}:{{ image_tag }}
+    notebooks.opendatahub.io/last-size-selection: Small
+    notebooks.opendatahub.io/oauth-logout-url: https://{{ dashboard_route_host }}/projects/{{ notebook_namespace }}?notebookLogout={{ notebook_name }}
+    opendatahub.io/username: "{{ notebook_name }}"
+    openshift.io/description: "{{ notebook_name }} workbench"
+    openshift.io/display-name: "{{ notebook_name }}"
+    ci-artifacts/base-url: "{{ notebook_base_url }}"
+  labels:
+    app: "{{ notebook_name }}"
+    ci-artifacts.single-notebook-perf: "true"
+    opendatahub.io/dashboard: "true"
+    opendatahub.io/odh-managed: "true"
+    opendatahub.io/user: "{{ notebook_name }}"
+  name: "{{ notebook_name | truncate(35, true, '') }}"
+spec:
+  template:
+    metadata:
+      labels:
+        app: "{{ notebook_name }}"
+        ci-artifacts.single-notebook-perf: "true"
+        opendatahub.io/dashboard: "true"
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: nvidia.com/gpu.present
+                operator: NotIn
+                values:
+                - "true"
+            weight: 1
+      containers:
+      - env:
+        - name: NOTEBOOK_ARGS
+          value: |-
+            --ServerApp.port=8888
+                              --ServerApp.token=''
+                              --ServerApp.password=''
+                              --ServerApp.base_url={{ notebook_base_url }}
+                              --ServerApp.quit_button=False
+                              --ServerApp.tornado_settings={"user":"{{ notebook_name }}","hub_host":"https://{{ dashboard_route_host }}","hub_prefix":"/projects/{{ notebook_namespace }}"}
+        - name: JUPYTER_IMAGE
+          value: "{{ notebook_image_address }}"
+        - name: NOTEBOOK_FILENAME
+          value: "{{ pipelines_run_kfp_notebook_notebook_filename }}"
+        - name: DSP_ROUTE
+          value: "{{ dsp_route }}"
+        - name: NOTEBOOK_FILES
+          value: /mnt/notebook_files
+        image: {{ notebook_image_address }}
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: {{ notebook_base_url }}/api
+            port: notebook-port
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: "{{ notebook_name }}"
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 8888
+          name: notebook-port
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: {{ notebook_base_url }}/api
+            port: notebook-port
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: "1"
+            memory: 4Gi
+          requests:
+            cpu: "1"
+            memory: 4Gi
+        volumeMounts:
+        - mountPath: /mnt/notebook_files
+          name: {{ notebook_file_cm_name }}
+        - mountPath: /mnt/secret_token
+          name: "{{ secret_token_name }}"
+        workingDir: /opt/app-root/src
+      volumes:
+      - name: {{ notebook_file_cm_name }}
+        configMap:
+          name: {{ notebook_file_cm_name }}
+      - name: "{{ secret_token_name }}"
+        secret:
+          secretName: "{{ secret_token_name }}"

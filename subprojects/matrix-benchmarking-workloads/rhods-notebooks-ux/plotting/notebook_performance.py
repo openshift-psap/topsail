@@ -47,7 +47,7 @@ class NotebookPerformance():
             times_data = []
 
         for user_idx, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
-            if not hasattr(ods_ci, "notebook_performance"): continue
+            if not hasattr(ods_ci, "notebook_benchmark"): continue
             if not ods_ci.notebook_benchmark: continue
 
             measures = ods_ci.notebook_benchmark["measures"]

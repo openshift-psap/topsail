@@ -11,14 +11,6 @@ ci_presets:
     clusters.create.keep: true
     clusters.create.ocp.tags.Project: PSAP/RHODS/home-dev
 
-  ocp:
-    clusters.create.type: ocp
-
-  osd:
-    clusters.create.type: osd
-    clusters.sutest.is_managed: true
-    clusters.sutest.managed.is_ocm: true
-
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
 
@@ -38,37 +30,15 @@ secrets:
   # name of the file containing the properties of LDAP secrets
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
-  addon_email_file: addon.email
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
 clusters:
   create:
     type: single # can be: single, ocp, managed
     keep: false
     name_prefix: odsci
-    sutest_already_exists:
-      hostname: null
-      username: null
-    ocm:
-      version: 4.10.15
-      region: us-west-2
-      workers:
-        type: m5.2xlarge
-        count: 2
-      compute:
-        type: m5.2xlarge
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags: {}
-      # list of tags to apply to the spot machineset
-      spot:
-        tags:
-          Budget: PSAP
-          Project: PSAP
-          Environment: TEST/DEV
-          Owner: KEVIN POUGET
-          Manager: ASHISH KAMRA
-          User: kpouget
-
       deploy_cluster:
         target: cluster
       base_domain: psap.aws.rhperfscale.org
@@ -82,41 +52,15 @@ clusters:
       compute:
         type: m6i.2xlarge
 
-  cleanup:
-    max_age: 4 #hours
-
   sutest:
     is_metal: false
-    is_managed: false
-    managed:
-      is_rosa: false
-      is_ocm: false
-      env: staging
-      name: null
     compute:
       dedicated: true
-      autoscaling:
-        enabled: false
       machineset:
-        name: rhods-compute-pods
+        name: rhods-pipelines
         count: null
-        spot: false
         taint:
-          key: only-rhods-compute-pods
-          value: "yes"
-          effect: NoSchedule
-
-  driver:
-    compute:
-      autoscaling:
-        enabled: false
-      dedicated: true
-      machineset:
-        name: test-pods
-        count: null
-        spot: false
-        taint:
-          key: &driver_toleration_key only-test-pods
+          key: only-rhods-pipelines
           value: "yes"
           effect: NoSchedule
 
@@ -130,24 +74,11 @@ ldap:
     prefix: psapuser
 
 rhods:
-  deploy_from_catalog: true
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
     tag: 470448
     channel: beta
     version: 1.25.0
-  addon:
-    # only necessary/set when rhods.deploy_from_catalog is true
-    email: SET_AT_RUNTIME
-  notebooks:
-    customize:
-      enabled: true
-      pvc_size: 5Gi
-      notebook_size:
-        enabled: true
-        name: &notebook_size_name Tiny
-        cpu: 1
-        mem_gi: 4
   pipelines:
     application:
       name: sample
@@ -158,14 +89,7 @@ rhods:
 
     dashboard:
       replicas: 1
-
-  admin:
-    count: 2 # the first N users will be granted these privileges
-    roles:
-    - view
-    - odh-notebook-controller-notebooks-edit
 tests:
-
 matbench:
   preset: null
   workload: rhods-pipelines

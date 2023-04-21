@@ -1,0 +1,302 @@
+---
+
+- name: Check that pipelines_run_kfp_notebook_notebook_directory is defined
+  fail: msg="Bailing out. This role requires 'pipelines_run_kfp_notebook_notebook_directory'"
+  when: not pipelines_run_kfp_notebook_notebook_directory
+
+- name: Ensure that {{ pipelines_run_kfp_notebook_notebook_directory }} is a directory
+  stat:
+    path: "{{ pipelines_run_kfp_notebook_notebook_directory }}"
+  register: directory_stats
+  failed_when: not directory_stats.stat.exists or not directory_stats.stat.isdir
+
+- name: Ensure that {{ pipelines_run_kfp_notebook_notebook_directory }}/{{ pipelines_run_kfp_notebook_notebook_filename }} is a file
+  stat:
+    path: "{{ pipelines_run_kfp_notebook_notebook_directory }}/{{ pipelines_run_kfp_notebook_notebook_filename }}"
+  register: file_stats
+  failed_when: not file_stats.stat.exists
+
+- name: Get the stats of {{ pipelines_run_kfp_notebook_notebook_directory }}
+  stat:
+    path: "{{ pipelines_run_kfp_notebook_notebook_directory }}"
+  register: directory_stats
+
+- name: Fail if {{ pipelines_run_kfp_notebook_notebook_directory }} is not a directory
+  fail: msg="'{{ pipelines_run_kfp_notebook_notebook_directory }}' isn't a reachable directory."
+  when: not directory_stats.stat.exists or not directory_stats.stat.isdir
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Store the listing of the notebook directory
+  shell:
+    find "{{ pipelines_run_kfp_notebook_notebook_directory }}"
+      > "{{ artifact_extra_logs_dir }}/src/notebook-files.list"
+
+- name: Store the content of the notebook directory
+  ansible.builtin.copy:
+    src: "{{ pipelines_run_kfp_notebook_notebook_directory }}/"
+    dest: "{{ artifact_extra_logs_dir }}/src/notebook-files"
+
+- name: Lookup the imagestream tag
+  when: pipelines_run_kfp_notebook_imagestream_tag | length == 0
+  shell:
+    set -o pipefail;
+    oc get is/{{ pipelines_run_kfp_notebook_imagestream }}
+       -n redhat-ods-applications
+       --no-headers
+       | awk '{print $3}'
+       | tr "," "\n"
+       | sort -r
+       | head -1
+  register: image_tag_cmd
+  failed_when: not image_tag_cmd.stdout
+
+- name: Save the imagestream tag
+  set_fact:
+    image_tag: "{% if pipelines_run_kfp_notebook_imagestream_tag %}{{ pipelines_run_kfp_notebook_imagestream_tag }}{% else %}{{ image_tag_cmd.stdout }}{% endif %}"
+
+- name: Set the name of the token secret
+  set_fact:
+    secret_token_name: "secret-token"
+
+- name: Get the image address
+  command:
+    oc get istag {{ pipelines_run_kfp_notebook_imagestream }}:{{ image_tag }}
+       -ojsonpath={.image.dockerImageReference}
+       -n redhat-ods-applications
+  register: rhods_image_address_cmd
+
+- name: Get the name of the current project
+  command:
+    oc project --short
+  register: project_name_cmd
+  when: not pipelines_run_kfp_notebook_namespace
+
+- name: Define the test environment
+  set_fact:
+    notebook_name: pipeline-notebook
+    notebook_container: pipeline-notebook
+    notebook_namespace: "{% if pipelines_run_kfp_notebook_namespace | length > 0 %}{{ pipelines_run_kfp_notebook_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
+    notebook_src_template_dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook.yaml"
+    notebook_file_cm_name: pipeline-notebook-files
+    capture_prom_db: no
+    notebook_image_address: "{{ rhods_image_address_cmd.stdout }}"
+
+- name: Define the test environment
+  set_fact:
+    notebook_search_labels: "-lci-artifacts.single-notebook-perf=true -lapp={{ notebook_name }}"
+    rhods_notebook_ods_ci_scale_test_username_prefix: "{{ notebook_name }}"
+
+- name: Delete the notebook files ConfigMap, if it exists
+  command:
+    oc delete cm "{{ notebook_file_cm_name }}"
+       -n "{{ notebook_namespace }}"
+       --ignore-not-found
+
+- name: Prepare the notebook files ConfigMap
+  command:
+    oc create cm "{{ notebook_file_cm_name }}"
+       -n "{{ notebook_namespace }}"
+       --from-file="{{ pipelines_run_kfp_notebook_notebook_directory }}"
+# ^^^ may fail silently if the directory is invalid
+# but Task 'Store the listing of the notebook directory' will catch it earlier
+
+- name: Compute the DSP application name
+  shell:
+    oc get dspa -oname | head -1 | cut -d/ -f2
+  register: dspa_name_cmd
+  when: not pipelines_run_kfp_notebook_dsp_application_name
+  failed_when: not dspa_name_cmd.stdout
+
+- name: Save the DSP application name
+  set_fact:
+    dspa_application_name: "{% if pipelines_run_kfp_notebook_dsp_application_name %}{{ pipelines_run_kfp_notebook_dsp_application_name }}{% else %}{{ dspa_name_cmd.stdout }}{% endif %}"
+
+- name: Compute the DSP address
+  shell: echo "https://$(oc get routes -n {{ notebook_namespace }} ds-pipeline-{{ dspa_application_name }} --template=\{\{.spec.host\}\})"
+  register: dsp_route_cmd
+
+- name: Save the DSP route
+  set_fact:
+    dsp_route: "{{ dsp_route_cmd.stdout }}"
+
+- name: Instantiate the notebook template
+  template:
+    src: "{{ pipelines_run_kfp_notebook_benchmark_notebook_template }}"
+    dest: "{{ notebook_src_template_dest }}"
+    mode: 0700
+
+- name: Delete the notebook, if it exists
+  command:
+    oc delete
+       -f "{{ notebook_src_template_dest }}"
+       --ignore-not-found
+       -n "{{ notebook_namespace }}"
+
+- name: Delete the secret token, if it exists
+  command: oc delete secret "{{ secret_token_name }}" -n "{{ notebook_namespace }}" --ignore-not-found
+  failed_when: false
+
+# ---
+
+- name: Cleanup the Prometheus database of the cluster
+  when: capture_prom_db | bool
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: reset
+
+- name: Create the notebook artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/notebook-artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Delete the existing pipelines
+  command:
+    oc delete pipelineruns --all -n "{{ notebook_namespace }}"
+
+# ---
+
+- name: Run the test notebook
+  block:
+  - name: Create the secret token
+    shell:
+      oc create secret generic "{{ secret_token_name }}"
+         "--from-literal=token=$(oc whoami --show-token)"
+         -n "{{ notebook_namespace }}"
+
+  - name: Create the test notebook
+    command:
+      oc create
+         -f "{{ notebook_src_template_dest }}"
+         -n "{{ notebook_namespace }}"
+
+  - name: Wait for the Notebook Pod to start running
+    shell:
+      set -o pipefail;
+      oc get pod {{ notebook_search_labels }}
+         --ignore-not-found
+         -n "{{ notebook_namespace }}"
+         --no-headers | awk '{print $3}'
+    register: wait_notebook_pod_start
+    retries: 20
+    delay: 15
+    until: wait_notebook_pod_start.stdout == "Running" or wait_notebook_pod_start.stdout == "CrashLoopBackOff"
+    failed_when: wait_notebook_pod_start.stdout != "Running"
+
+  - name: Wait for the Notebook Pod to be ready
+    shell:
+      set -o pipefail;
+      oc get pod {{ notebook_search_labels }}
+         -n "{{ notebook_namespace }}"
+         --no-headers | awk '{print $2}'
+    register: wait_notebook_pod_ready
+    retries: 12
+    delay: 5
+    until: wait_notebook_pod_ready.stdout == "2/2"
+
+  - name: Get the notebook Pod name
+    command:
+      oc get pod {{ notebook_search_labels }}
+        -oname
+        -n "{{ notebook_namespace }}"
+    register: notebook_pod_name_cmd
+    failed_when: not notebook_pod_name_cmd.stdout
+    # ---
+
+  - name: Move the notebook files to HOME
+    shell:
+      oc -n "{{ notebook_namespace }}"
+         -c "{{ notebook_container }}"
+         rsh "{{ notebook_pod_name_cmd.stdout }}"
+         bash -c 'cp -v "$NOTEBOOK_FILES"/* . && mkdir -p results'
+
+  - name: Run the notebook
+    shell:
+      oc -n "{{ notebook_namespace }}"
+         -c "{{ notebook_container }}"
+         rsh "{{ notebook_pod_name_cmd.stdout }}"
+         bash -exc 'jupyter nbconvert --to notebook --execute "$NOTEBOOK_FILENAME"
+              && cp "$(basename "$NOTEBOOK_FILENAME" .ipynb).nbconvert.ipynb" $(basename "$NOTEBOOK_FILENAME" .ipynb).ipynb
+              && mv "$(basename "$NOTEBOOK_FILENAME" .ipynb).nbconvert.ipynb" results/$(basename "$NOTEBOOK_FILENAME" .ipynb).executed.ipynb
+              && jupyter nbconvert --to html results/$(basename "$NOTEBOOK_FILENAME" .ipynb).executed.ipynb'
+    register: notebook_execution
+
+  - name: Wait for the pipeline execution to complete
+    shell:
+      oc get pipelineruns --no-headers --ignore-not-found | awk '{print $3}'
+    register: pipelineruns_wait
+    retries: 10
+    delay: 10
+    until: ' pipelineruns_wait.stdout and "Running" not in pipelineruns_wait.stdout'
+
+  - name: Generate MatrixBenchmark exit code file
+    shell:
+      echo 0 > "{{ artifact_extra_logs_dir }}/exit_code"
+
+  always:
+  - name: Delete the secret token
+    command: oc delete secret/secret_token_name -n "{{ notebook_namespace }}" --ignore-not-found
+    failed_when: false
+
+  - name: Save the pipeline status
+    shell:
+      oc get pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipeline.status"
+    failed_when: false
+
+  - name: Save the pipeline description
+    shell:
+      oc describe pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipeline.desc"
+    failed_when: false
+
+  - name: Save the pipeline definition
+    shell:
+      oc get -oyaml pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipeline.yaml"
+    failed_when: false
+
+  - name: Save the notebook execution logs
+    local_action:
+      module: copy
+      content: "{{ notebook_execution.stderr }}"
+      dest: "{{ artifact_extra_logs_dir }}/notebook_execution.stderr"
+    failed_when: false
+    when: notebook_execution is defined
+
+  - name: Collect the execution artifacts
+    command:
+      oc cp "{{ notebook_namespace }}/{{ notebook_pod_name_cmd.stdout.split('/')[1] }}":results
+            "{{ artifact_extra_logs_dir }}/notebook-artifacts/"
+    when: notebook_pod_name_cmd is defined
+
+  - name: Capture the information about the notebook projects
+    include_tasks: artifacts_sutest_project.yml
+    vars:
+      rhods_notebook_namespace: "{{ notebook_namespace }}"
+      sut_cluster_kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+      rhods_notebook_ods_ci_scale_test_stop_notebooks_on_exit: "{{ pipelines_run_kfp_notebook_stop_on_exit | bool }}"
+
+  - name: Capture the sutest cluster artifacts
+    include_tasks: artifacts_sutest.yml
+    vars:
+      sut_cluster_kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+    when: pipelines_run_kfp_notebook_capture_artifacts | bool
+
+  - name: Generate MatrixBenchmark settings file
+    shell: |
+      cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
+      notebook_file_name={{ pipelines_run_kfp_notebook_notebook_filename }}
+      EOF
+    ignore_errors: true
+
+- name: Delete the notebook
+  command:
+    oc delete
+       -f "{{ notebook_src_template_dest }}"
+       -n "{{ notebook_namespace }}"
+  ignore_errors: true
+  when: pipelines_run_kfp_notebook_stop_on_exit | bool

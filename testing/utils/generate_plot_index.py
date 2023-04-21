@@ -21,7 +21,8 @@ def report_index_to_html(report_index):
     print("</ul>")
 
 def main():
-    for report_index in sorted(glob.glob('./**/reports_index.html', recursive=True)):
+    ARTIFACT_DIR = pathlib.Path(os.environ["ARTIFACT_DIR"])
+    for report_index in sorted(ARTIFACT_DIR.glob('**/reports_index.html', recursive=True)):
         report_index_to_html(pathlib.Path(report_index))
 
 if __name__ == "__main__":
