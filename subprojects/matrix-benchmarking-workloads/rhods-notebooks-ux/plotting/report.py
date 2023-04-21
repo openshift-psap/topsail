@@ -265,6 +265,7 @@ class LaunchAndExecTimeDistributionReport():
 
         step_names = []
         for ods_ci in entry.results.ods_ci.values() if entry.results.ods_ci else []:
+            if not getattr(ods_ci, "output", False): continue
             step_names = list(ods_ci.output.keys())
             break
 
