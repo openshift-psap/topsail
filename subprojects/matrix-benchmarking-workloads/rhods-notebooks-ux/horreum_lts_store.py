@@ -5,11 +5,20 @@ from pathlib import PosixPath
 from collections import defaultdict, OrderedDict
 import logging
 
+from .plotting import prom
+
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 
+lts_metrics = {
+    'sutest': []
+}
+
+def register_lts_metric(cluster_role, metric):
+    for (name, query) in metric.items():
+        lts_metrics[cluster_role].append((name, query))
 
 def _parse_lts_dir(add_to_matrix, dirname, import_settings):
     with open(f'{dirname}/data.json') as f:
@@ -22,11 +31,9 @@ def _parse_entry(val):
 
     val_type = type(val)
     if val_type is datetime.datetime:
-        return {"$type": val_type.__name__, "value": datetime.datetime.timestamp(val)}
+        return datetime.datetime.timestamp(val)
     elif val_type in [dict, types.SimpleNamespace, common.MatrixEntry, defaultdict, list]:
         parsed = _decode_ci_items(val)
-        if val_type not in [list, dict]:
-            parsed["$type"] = val_type.__name__
         return parsed
     elif val_type not in type_skiplist:
         return val
@@ -130,25 +137,26 @@ def build_lts_payloads() -> dict:
 
 def build_limited_lts_payload() -> dict:
     for(_, entry) in common.Matrix.processed_map.items():
-        RESULTS = entry.results
+        results = entry.results
         
-        start_time: datetime.datetime = RESULTS.start_time
-        end_time: datetime.datetime = RESULTS.end_time
+        start_time: datetime.datetime = results.start_time
+        end_time: datetime.datetime = results.end_time
 
         output = {
             "$schema": "urn:rhods-matbench-upload:3.0.0",
             "data": {
-                "users": _decode_limited_users(RESULTS.ods_ci, RESULTS.testpod_hostnames, RESULTS.notebook_pod_times),
-                'rhods_version': RESULTS.rhods_info.version,
-                'ocp_version': RESULTS.sutest_ocp_version,
-                'metrics': _gather_prom_metrics(RESULTS.metrics),
-                'thresholds': RESULTS.thresholds,
-                'config': RESULTS.test_config.yaml_file
+                "users": _decode_limited_users(results.ods_ci, results.testpod_hostnames, results.notebook_pod_times),
+                'rhods_version': results.rhods_info.version,
+                'ocp_version': results.sutest_ocp_version,
+                'metrics': _gather_prom_metrics(entry),
+                'thresholds': results.thresholds,
+                'config': results.test_config.yaml_file
             },
             "metadata": {
                 "test": "rhods-notebooks-ux",
                 "start": start_time.isoformat(),
-                "end": end_time.isoformat()
+                "end": end_time.isoformat(),
+                "settings": _parse_entry(entry.settings)
             }
         }
         
@@ -194,21 +202,17 @@ def _generate_pod_timings(pod_times, start, end):
     
     return output
 
-def _gather_prom_metrics(metrics) -> dict:
+def _gather_prom_metrics(entry) -> dict:
     out = {}
-    prom_metrics = {
-        "sutest": [
-            "Sutest API Server Requests (server errors)",
-            "Sutest Control Plane Node CPU idle",
-            "sutest__container_cpu__namespace=redhat-ods-applications_pod=rhods-dashboard.*_container=rhods-dashboard",
-            "sutest__container_cpu_requests__namespace=redhat-ods-applications_pod=rhods-dashboard.*_container=rhods-dashboard",
-            "sutest__container_cpu_limits__namespace=redhat-ods-applications_pod=rhods-dashboard.*_container=rhods-dashboard"
-        ]
-    }
+    
+    prom.register()
 
-    for (key, metric_names) in prom_metrics.items():
+    for (key, metric_names) in lts_metrics.items():
         for metric_name in metric_names:
-            logging.info(f"Gathering {metric_name}")
-            out[metric_name] = metrics[key][metric_name]
+            logging.info(f"Gathering {metric_name[0]}")
+            out[metric_name[0]] = {
+                'data': prom.get_metrics('sutest')(entry, metric_name[0]),
+                'query': metric_name[1]
+            }
     
     return out
