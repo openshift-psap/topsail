@@ -14,6 +14,10 @@ fi
 TESTING_UTILS_DIR="$TESTING_PIPELINES_DIR/../utils"
 
 export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_PIPELINES_DIR}/command_args.yaml
-export CI_ARTIFACTS_FROM_CONFIG_FILE=${TESTING_PIPELINES_DIR}/config.yaml
+
+if [[ -z "${CI_ARTIFACTS_FROM_CONFIG_FILE:-}" ]]; then
+    export CI_ARTIFACTS_FROM_CONFIG_FILE=${TESTING_PIPELINES_DIR}/config.yaml
+fi
+echo "Using '$CI_ARTIFACTS_FROM_CONFIG_FILE' as configuration file."
 
 source "$TESTING_UTILS_DIR/configure.sh"
