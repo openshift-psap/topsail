@@ -29,6 +29,13 @@
     ignore_errors: yes
     failed_when: false
 
+  - name: Store the RHODS creation timestamp
+    shell:
+      oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname -ojsonpath={.metadata.annotations.createdAt}
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods.createdAt"
+    ignore_errors: yes
+    failed_when: false
+
   - name: Store the RHODS CSV
     shell:
       oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oyaml
