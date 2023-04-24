@@ -55,7 +55,7 @@ clusters:
   sutest:
     is_metal: false
     compute:
-      dedicated: true
+      dedicated: false
       machineset:
         name: rhods-pipelines
         count: null
