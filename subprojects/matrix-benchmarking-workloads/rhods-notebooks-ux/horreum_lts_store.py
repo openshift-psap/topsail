@@ -119,8 +119,10 @@ def build_lts_payloads() -> dict:
 def _decode_users(users, hostnames, pod_times):
     output = []
     for (key, val) in users.items():
+        if not hasattr(val, "output"): continue
+
         output.append({
-            'hostname': hostnames[key],
+            'hostname': hostnames.get(key, None),
             'steps': _decode_steps(val.output, pod_times[key]),
             'succeeded': val.exit_code == 0
         })
