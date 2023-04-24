@@ -62,13 +62,13 @@ def _encode_entry(obj):
     elif obj_type is not dict:
         return obj
 
-    result = {}    
+    result = {}
     final_type = obj.get("$type", "dict")
     try:
         del obj['$type']
     except Exception:
         pass
-    
+
     if final_type == "datetime":
         return datetime.datetime.fromtimestamp(obj.get('value'))
 
@@ -79,8 +79,8 @@ def _encode_entry(obj):
         return defaultdict(types.SimpleNamespace, result)
     elif final_type == "SimpleNamespace":
         return types.SimpleNamespace(**result)
-    return result 
-         
+    return result
+
 
 def _encode_json(obj, name, settings):
     del obj['$schema']
@@ -91,7 +91,7 @@ def _encode_json(obj, name, settings):
 def build_lts_payloads() -> dict:
     for(_, entry) in common.Matrix.processed_map.items():
         results = entry.results
-        
+
         start_time: datetime.datetime = results.start_time
         end_time: datetime.datetime = results.end_time
 
@@ -112,7 +112,7 @@ def build_lts_payloads() -> dict:
                 "settings": _parse_entry(entry.settings)
             }
         }
-        
+
         yield output, start_time, end_time
 
 
@@ -138,7 +138,7 @@ def _decode_steps(steps, pod_times):
         }
         if step_name in ("Wait for the Notebook Spawn", "Create and Start the Workbench"):
             out_step['substeps'] = _generate_pod_timings(pod_times, step_data.start, step_data.finish)
-        
+
         out_steps.append(out_step)
 
     return out_steps
@@ -152,12 +152,12 @@ def _generate_pod_timings(pod_times, start, end):
         output['container_ready_time'] = (pod_times.containers_ready - pod_times.pod_initialized).total_seconds()
     if hasattr(pod_times, 'containers_ready'):
         output['user_notification'] = (end - pod_times.containers_ready).total_seconds()
-    
+
     return output
 
 def _gather_prom_metrics(entry) -> dict:
     out = {}
-    
+
     prom.register()
 
     for (key, metric_names) in lts_metrics.items():
@@ -167,5 +167,5 @@ def _gather_prom_metrics(entry) -> dict:
                 'data': prom.get_metrics('sutest')(entry, metric_name[0]),
                 'query': metric_name[1]
             }
-    
+
     return out
