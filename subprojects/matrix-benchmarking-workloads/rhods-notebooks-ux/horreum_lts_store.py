@@ -88,54 +88,7 @@ def _encode_json(obj, name, settings):
     return common.MatrixEntry(import_key=name, processed_settings=settings, **data)
 
 
-def _decode_steps(data: dict) -> dict:
-    try:
-        results: dict = data['results']['ods_ci']
-    except KeyError:
-        return data
-    
-    for (key, _) in results.items():
-        if key != "$type":
-            end_dict = {}
-            for (step, val) in results[key]['output'].items():
-                step = " ".join(step.split(' ')[1:])
-                end_dict[f"{step}"] = val
-            results[key]['output'] = end_dict
-    return data
-
-
-def _convert_steps(data: dict) -> dict:
-    try:
-        results: dict = data['results']['ods_ci']
-    except KeyError:
-        return data
-
-    for (key, _) in results.items():
-        counter = 0
-        if key != "$type":
-            end_dict = {}
-            if 'output' in results[key].keys():
-                for (step, val) in results[key]['output'].items():
-                    end_dict[f"{counter}. {step}"] = val
-                    counter += 1
-                results[key]['output'] = end_dict
-    return data
-
-
 def build_lts_payloads() -> dict:
-    entry: common.MatrixEntry = None
-    for (_, entry) in common.Matrix.processed_map.items():
-        start_time = entry.results.start_time
-        end_time = entry.results.end_time
-        data = _decode_ci_items(entry)
-
-        yield {
-            "$schema": "urn:rhods-matbench-upload:2.0.0",
-            **_convert_steps(data)
-        }, start_time, end_time
-
-
-def build_limited_lts_payload() -> dict:
     for(_, entry) in common.Matrix.processed_map.items():
         results = entry.results
         
@@ -145,7 +98,7 @@ def build_limited_lts_payload() -> dict:
         output = {
             "$schema": "urn:rhods-matbench-upload:3.0.0",
             "data": {
-                "users": _decode_limited_users(results.ods_ci, results.testpod_hostnames, results.notebook_pod_times),
+                "users": _decode_users(results.ods_ci, results.testpod_hostnames, results.notebook_pod_times),
                 'rhods_version': results.rhods_info.version,
                 'ocp_version': results.sutest_ocp_version,
                 'metrics': _gather_prom_metrics(entry),
@@ -163,19 +116,19 @@ def build_limited_lts_payload() -> dict:
         yield output, start_time, end_time
 
 
-def _decode_limited_users(users, hostnames, pod_times):
+def _decode_users(users, hostnames, pod_times):
     output = []
     for (key, val) in users.items():
         output.append({
             'hostname': hostnames[key],
-            'steps': _decode_limited_steps(val.output, pod_times[key]),
+            'steps': _decode_steps(val.output, pod_times[key]),
             'succeeded': val.exit_code == 0
         })
 
     return output
 
 
-def _decode_limited_steps(steps, pod_times):
+def _decode_steps(steps, pod_times):
     out_steps = []
     for (step_name, step_data) in steps.items():
         out_step = {
