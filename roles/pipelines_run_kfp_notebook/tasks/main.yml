@@ -246,17 +246,17 @@
 
   - name: Save the pipeline status
     shell:
-      oc get pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipeline.status"
+      oc get pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.status"
     failed_when: false
 
   - name: Save the pipeline description
     shell:
-      oc describe pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipeline.desc"
+      oc describe pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.desc"
     failed_when: false
 
   - name: Save the pipeline definition
     shell:
-      oc get -oyaml pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipeline.yaml"
+      oc get -oyaml pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
     failed_when: false
 
   - name: Save the notebook execution logs
