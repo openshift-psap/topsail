@@ -145,10 +145,10 @@ def prepare_namespace():
     run(f"oc label namespace/{namespace} opendatahub.io/dashboard=true --overwrite")
 
     dedicated = "{}" if get_config("clusters.sutest.compute.dedicated") \
-        else "{value: ''}" # delete the toleration/node-selector annotations, if it exists
+        else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
-    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_node_selector --extra {dedicated}")
-    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_toleration --extra {dedicated}")
+    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_node_selector --extra '{dedicated}'")
+    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_toleration --extra '{dedicated}'")
 
     create_dsp_application()
 
