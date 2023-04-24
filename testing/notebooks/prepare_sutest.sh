@@ -312,6 +312,11 @@ sutest_cleanup() {
         return
     fi
 
+    if oc get cm/keep-cluster -n default 2>/dev/null; then
+        _info "cm/keep-cluster found, not cleanup the cluster."
+        return
+    fi
+
     if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
         _warning "rhods notebook cleanup failed :("
     fi
@@ -372,7 +377,8 @@ sutest_cleanup() {
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_ldap; then
         echo "Uninstaling LDAP IDP"
-        sutest_cleanup_ldap
+
+        ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.remove_dsg_notebook_dedicated_toleration; then
@@ -382,25 +388,6 @@ sutest_cleanup() {
         ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated" > /dev/null
         ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated" > /dev/null
     fi
-}
-
-sutest_cleanup_ldap() {
-    switch_sutest_cluster
-
-    local test_flavor=$(get_config tests.notebooks.test_flavor)
-    if [[ "$test_flavor" == "notebook-performance" ]]; then
-        echo "Running the notebook-performance, nothing to cleanup"
-        return
-    fi
-
-    if oc get cm/keep-cluster -n default 2>/dev/null; then
-        _info "cm/keep-cluster found, not undeploying LDAP."
-        return
-    fi
-    if test_config clusters.sutest.managed.is_ocm; then
-        cluster_helpers::ocm_login
-    fi
-    ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
 }
 
 sutest_cleanup_rhods() {
