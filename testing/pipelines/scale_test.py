@@ -164,23 +164,12 @@ def pipelines_prepare():
 def pipelines_run():
     """
     Runs a CI workload.
-
     """
-    namespace = get_config("rhods.pipelines.namespace")
-    application_name = get_config("rhods.pipelines.application.name")
 
-    for i in range(5):
-        try:
-            run(f"./run_toolbox.py pipelines run_kfp_notebook '{namespace}' '{application_name}'")
-            break
-        except Exception as e:
-            import bdb;
-            if isinstance(e, bdb.BdbQuit): raise e
-            logging.error("Run #{i} failed :/")
-    else:
-        logging.error("Failed to run successfully the pipeline application :/")
-        sys.exit(1)
-
+    try:
+        run(f"./run_toolbox.py from_config pipelines run_kfp_notebook")
+    finally:
+        run(f"./run_toolbox.py from_config pipelines capture_state")
 
 class Pipelines:
     """

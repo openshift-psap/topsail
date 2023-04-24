@@ -37,3 +37,11 @@ sutest/cluster set_project_annotation/pipelines_toleration:
   key: scheduler.alpha.kubernetes.io/defaultTolerations
   value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
   project: {{ rhods.pipelines.namespace }}
+
+pipelines run_kfp_notebook:
+  namespace: {{ rhods.pipelines.namespace }}
+  dsp_application_name: {{ rhods.pipelines.application.name }}
+
+pipelines capture_state:
+  namespace: {{ rhods.pipelines.namespace }}
+  dsp_application_name: {{ rhods.pipelines.application.name }}
