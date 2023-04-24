@@ -129,6 +129,7 @@ def _get_cluster_mem_cpu(cluster_role, register):
 
 
 def _get_container_mem_cpu(cluster_role, register, label_sets):
+    from ..horreum_lts_store import register_lts_metric
     all_metrics = []
 
     for plot_name_labels in label_sets:
@@ -141,6 +142,12 @@ def _get_container_mem_cpu(cluster_role, register, label_sets):
         all_metrics += cpu
 
         if not register: continue
+
+        if cluster_role == 'sutest':
+            for metric in cpu:
+                for key in metric.keys():
+                    if 'container=rhods-dashboard' in key:
+                        register_lts_metric(cluster_role, metric)
 
         container = labels.get("container", "all")
 
@@ -182,8 +189,13 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
             yield metric
 
     if register:
+        from ..horreum_lts_store import register_lts_metric
         for metric in all_metrics:
             name, rq = list(metric.items())[0]
+
+            if 'CPU idle' in name and cluster_role == 'sutest':
+                register_lts_metric(cluster_role, metric)
+
             plotting_prom.Plot({name: rq},
                                f"Prom: {name}",
                                None,
@@ -248,8 +260,13 @@ def _get_apiserver_errcodes(cluster_role, register):
         return res, None
 
     if register:
+        from ..horreum_lts_store import register_lts_metric
         for metric in apiserver_request_metrics:
             name, rq = list(metric.items())[0]
+
+            if 'server errors' in name and cluster_role == 'sutest':
+                register_lts_metric(cluster_role, metric)
+
             plotting_prom.Plot({name: rq},
                                f"Prom: {name}",
                                None,
