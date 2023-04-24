@@ -212,7 +212,6 @@ ci_presets:
 
     clusters.driver.compute.dedicated: true
     clusters.driver.compute.machineset.count: 1
-    clusters.sutest.storage.deploy_nfs_provisioner.enabled: true
 
     tests.notebooks.users.count: 5
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
