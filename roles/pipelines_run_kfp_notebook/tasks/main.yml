@@ -143,6 +143,32 @@
 
 # ---
 
+- name: Save the DSP route
+  set_fact:
+    sa_name: pipeline-sa
+    sa_cluster_role: cluster-admin
+
+- name: Create the service account that will be used in the Notebook
+  shell:
+    set -o pipefail;
+    oc create serviceaccount "{{ sa_name }}"
+       -n "{{ notebook_namespace }}"
+       --dry-run=client -oyaml
+       | tee "{{ artifact_extra_logs_dir }}/src/serviceaccount.yaml"
+       | oc apply -f-
+
+- name: Grant all the privileges to the service account
+  shell:
+    set -o pipefail;
+    oc adm policy add-cluster-role-to-user "{{ sa_cluster_role }}"
+       -n "{{ notebook_namespace }}"
+       -z "{{ sa_name}}"
+       --dry-run=client -oyaml
+       | tee "{{ artifact_extra_logs_dir }}/src/clusterrolebinding.yaml"
+       | oc apply -f-
+
+# ---
+
 - name: Cleanup the Prometheus database of the cluster
   when: capture_prom_db | bool
   include_role:
@@ -167,7 +193,7 @@
   - name: Create the secret token
     shell:
       oc create secret generic "{{ secret_token_name }}"
-         "--from-literal=token=$(oc whoami --show-token)"
+         "--from-literal=token=$(oc create token '{{ sa_name}}' -n '{{ notebook_namespace }}')"
          -n "{{ notebook_namespace }}"
     register: create_secret_token_cmd
     failed_when: '"no token is currently in use for this session" in create_secret_token_cmd.stderr'
