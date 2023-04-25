@@ -257,7 +257,12 @@
 
   - name: Wait for the pipeline execution to complete
     shell:
-      oc get pipelineruns --no-headers --ignore-not-found | awk '{print $3}'
+      set -o pipefail;
+      oc get pipelineruns
+         --no-headers
+         --ignore-not-found
+         -n "{{ notebook_namespace }}"
+         | awk '{print $3}'
     register: pipelineruns_wait
     retries: 10
     delay: 10
