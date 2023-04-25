@@ -169,6 +169,8 @@
       oc create secret generic "{{ secret_token_name }}"
          "--from-literal=token=$(oc whoami --show-token)"
          -n "{{ notebook_namespace }}"
+    register: create_secret_token_cmd
+    failed_when: '"no token is currently in use for this session" in create_secret_token_cmd.stderr'
 
   - name: Create the test notebook
     command:
