@@ -20,76 +20,87 @@ def register_lts_metric(cluster_role, metric):
     for (name, query) in metric.items():
         lts_metrics[cluster_role].append((name, query))
 
+
 def _parse_lts_dir(add_to_matrix, dirname, import_settings):
-    with open(f'{dirname}/data.json') as f:
+    with open(dirname / "data.json") as f:
         data = json.load(f)
-        add_to_matrix(_encode_json(data, dirname, data['settings']))
+
+    add_to_matrix(_encode_json(data, dirname, data["settings"]))
 
 
 def _parse_entry(val):
     type_skiplist = [PosixPath, types.FunctionType]
 
     val_type = type(val)
+
     if val_type is datetime.datetime:
         return datetime.datetime.timestamp(val)
+
     elif val_type in [dict, types.SimpleNamespace, common.MatrixEntry, defaultdict, list]:
-        parsed = _decode_ci_items(val)
-        return parsed
+        return _decode_ci_items(val)
+
     elif val_type not in type_skiplist:
         return val
 
 
-def _decode_ci_items(obj):
-    obj_type = type(obj)
+def _decode_ci_items(src_obj):
+    src_obj_type = type(src_obj)
 
-    if obj_type == list:
-        return [ _parse_entry(val) for val in obj ]
-    elif obj_type in [types.SimpleNamespace, common.MatrixEntry, dict, defaultdict]:
-        if obj_type in [types.SimpleNamespace, common.MatrixEntry]:
-            obj = vars(obj)
-        res = {}
-        for (key, val) in obj.items():
-            res[key] = _parse_entry(val)
-        return res
-    return obj
+    if src_obj_type == list:
+        new_obj = [_parse_entry(val) for val in src_obj ]
+
+    elif src_obj_type in [types.SimpleNamespace, common.MatrixEntry, dict, defaultdict]:
+        _src_obj = vars(src_obj) \
+            if src_obj_type in [types.SimpleNamespace, common.MatrixEntry] \
+            else src_obj
+
+        new_obj = {key: _parse_entry(val) for key, val in _src_obj.items()}
+
+    else:
+        new_obj = src_obj
+
+    return new_obj
 
 
-def _encode_entry(obj):
-    obj_type = type(obj)
+def _encode_entry(src_obj):
+    src_obj_type = type(src_obj)
 
-    if obj_type == list:
-        return [ _encode_entry(val) for val in obj ]
-    elif obj_type is not dict:
-        return obj
+    if src_obj_type == list:
+        return [_encode_entry(val) for val in src_obj]
+    elif src_obj_type is not dict:
+        return src_obj
 
     result = {}
-    final_type = obj.get("$type", "dict")
-    try:
-        del obj['$type']
-    except Exception:
-        pass
+
+    final_type = src_obj.get("$type", "dict")
+    try: del src_obj['$type']
+    except Exception: pass
 
     if final_type == "datetime":
-        return datetime.datetime.fromtimestamp(obj.get('value'))
+        return datetime.datetime.fromtimestamp(src_obj.get('value'))
 
-    for (key, val) in obj.items():
+    for key, val in src_obj.items():
         result[key] = _encode_entry(val)
 
     if final_type == "defaultdict":
         return defaultdict(types.SimpleNamespace, result)
+
     elif final_type == "SimpleNamespace":
         return types.SimpleNamespace(**result)
+
     return result
 
 
-def _encode_json(obj, name, settings):
-    del obj['$schema']
-    data = _encode_entry(obj)
+def _encode_json(src_obj, name, settings):
+    del src_obj['$schema']
+
+    data = _encode_entry(src_obj)
+
     return common.MatrixEntry(import_key=name, processed_settings=settings, **data)
 
 
 def build_lts_payloads() -> dict:
-    for(_, entry) in common.Matrix.processed_map.items():
+    for entry in common.Matrix.processed_map.values():
         results = entry.results
 
         start_time: datetime.datetime = results.start_time
@@ -98,7 +109,7 @@ def build_lts_payloads() -> dict:
         output = {
             "$schema": "urn:rhods-matbench-upload:3.0.0",
             "data": {
-                "users": _decode_users(results.ods_ci, results.testpod_hostnames, results.notebook_pod_times),
+                "users": _decode_users(results),
                 'rhods_version': results.rhods_info.version,
                 'ocp_version': results.sutest_ocp_version,
                 'metrics': _gather_prom_metrics(entry),
@@ -116,15 +127,15 @@ def build_lts_payloads() -> dict:
         yield output, start_time, end_time
 
 
-def _decode_users(users, hostnames, pod_times):
+def _decode_users(results):
     output = []
-    for (key, val) in users.items():
-        if not hasattr(val, "output"): continue
+    for user_idx, ods_ci in getattr(results, "ods_ci", {}).items():
+        if not hasattr(ods_ci, "output"): continue
 
         output.append({
-            'hostname': hostnames.get(key, None),
-            'steps': _decode_steps(val.output, pod_times[key]),
-            'succeeded': val.exit_code == 0
+            'hostname': results.testpod_hostnames.get(user_idx, None),
+            'steps': _decode_steps(ods_ci.output, results.notebook_pod_times.get(user_idx)),
+            'succeeded': ods_ci.exit_code == 0
         })
 
     return output
@@ -132,7 +143,7 @@ def _decode_users(users, hostnames, pod_times):
 
 def _decode_steps(steps, pod_times):
     out_steps = []
-    for (step_name, step_data) in steps.items():
+    for step_name, step_data in steps.items():
         out_step = {
             'name': step_name,
             'duration': (step_data.finish - step_data.start).total_seconds(),
@@ -144,6 +155,7 @@ def _decode_steps(steps, pod_times):
         out_steps.append(out_step)
 
     return out_steps
+
 
 def _generate_pod_timings(pod_times, start, end):
     output = {}
@@ -157,15 +169,16 @@ def _generate_pod_timings(pod_times, start, end):
 
     return output
 
-def _gather_prom_metrics(entry) -> dict:
-    out = {}
 
-    for (key, metric_names) in lts_metrics.items():
+def _gather_prom_metrics(entry) -> dict:
+    output = {}
+
+    for cluster_role, metric_names in lts_metrics.items():
         for metric_name in metric_names:
             logging.info(f"Gathering {metric_name[0]}")
-            out[metric_name[0]] = {
+            output[metric_name[0]] = {
                 'data': prom.get_metrics('sutest')(entry, metric_name[0]),
                 'query': metric_name[1]
             }
 
-    return out
+    return output
