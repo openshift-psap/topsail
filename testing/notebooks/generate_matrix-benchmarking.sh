@@ -93,7 +93,8 @@ generate_matbench::get_prometheus() {
 
 generate_matbench::generate_visualizations() {
     if [[ -z "${MATBENCH_RESULTS_DIRNAME:-}" ]]; then
-        echo "ERROR: expected MATBENCH_RESULTS_DIRNAME to be set ..."
+        _error " expected MATBENCH_RESULTS_DIRNAME to be set ..."
+        exit 1 # shouldn't be reached
     fi
 
     length=$(get_matbench_config visualize | jq '. | length')
@@ -132,7 +133,7 @@ generate_matbench::generate_visualization() {
 
     cp -f /tmp/prometheus.yml "." || true
     if ! matbench parse |& tee > "$ARTIFACT_DIR/_matbench_parse.log"; then
-        echo "An error happened during the parsing of the results (or no results were available) in $ARTIFACT_DIR, aborting."
+        _warning "An error happened during the parsing of the results (or no results were available) in $MATBENCH_RESULTS_DIRNAME, aborting."
         return 1
     fi
 
@@ -159,11 +160,11 @@ generate_matbench::generate_visualization() {
 
         export MATBENCH_FILTERS="$filters_to_apply"
         if ! matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
-            echo "Visualization generation failed :("
+            _warning "Visualization generation failed :("
             retcode=1
         fi
         if grep "^ERROR" "$VISU_LOG_FILE"; then
-            echo "An error happened during the report generation, aborting."
+            _warning "An error happened during the report generation :/."
             grep "^ERROR" "$VISU_LOG_FILE" > "$ARTIFACT_DIR"/FAILURE
             retcode=1
         fi
@@ -191,8 +192,8 @@ elif [[ "$action" == "from_dir" ]]; then
     dir=${2:-}
 
     if [[ -z "$dir" ]]; then
-        echo "ERROR: no directory provided in 'from_dir' mode ..."
-        exit 1
+        _error "no directory provided in 'from_dir' mode, cannot continue."
+        exit 1 # shouldn't be reached
     fi
     export MATBENCH_RESULTS_DIRNAME="$dir"
 
@@ -211,6 +212,6 @@ elif [[ "$action" == "from_pr_args" ]]; then
     generate_matbench::generate_visualizations
 
 else
-    echo "ERROR: unknown action='$action' (JOB_NAME_SAFE='${JOB_NAME_SAFE:-}')"
-    exit 1
+    _error "unknown action='$action' (JOB_NAME_SAFE='${JOB_NAME_SAFE:-}')"
+    exit 1 # shouldn't be reached
 fi
