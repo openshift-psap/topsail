@@ -96,7 +96,7 @@ class GatingReport2():
             txt = f"results"
             if entry.results.from_local_env.source_url:
                 txt = html.A(txt, target="_blank", href=entry.results.from_local_env.source_url)
-            header += [html.Ul(html.Li([f" {entry.settings.instance_type} machine: ", html.Ul(html.Li(txt))]))]
+            header += [html.Ul(html.Li([f" {entry.settings.image} image: ", html.Ul(html.Li(txt))]))]
 
         header += [html.H2("Gating Test Results (lower is better)")]
 

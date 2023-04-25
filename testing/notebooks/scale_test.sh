@@ -200,7 +200,11 @@ main() {
             return 0
             ;;
         "undeploy_ldap")
-            sutest_cleanup_ldap
+            switch_sutest_cluster
+            if test_config clusters.sutest.managed.is_ocm; then
+                cluster_helpers::ocm_login
+            fi
+            ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
             return 0
             ;;
         "prepare_driver_cluster")

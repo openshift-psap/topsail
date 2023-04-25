@@ -22,7 +22,7 @@
   when: rhods_benchmark_notebook_performance_use_rhods | bool
   block:
   - name: Lookup the imagestream tag
-    when: rhods_benchmark_notebook_performance_imagestream_tag | length == 0
+    when: rhods_benchmark_notebook_performance_imagestream_tag | string | length == 0
     shell:
       set -o pipefail;
       oc get is/{{ rhods_benchmark_notebook_performance_imagestream }}
@@ -35,12 +35,12 @@
   - name: Ensure that only one tag was found
     fail: 'msg="Multiple tags where found for image "{{ rhods_benchmark_notebook_performance_imagestream }}": {{ image_tag_cmd.stdout }}"'
     when:
-    - rhods_benchmark_notebook_performance_imagestream_tag | length == 0
+    - rhods_benchmark_notebook_performance_imagestream_tag | string | length == 0
     - '"," in image_tag_cmd.stdout'
 
   - name: Save the imagestream tag
     set_fact:
-      image_tag: "{% if rhods_benchmark_notebook_performance_imagestream_tag %}{{ rhods_benchmark_notebook_performance_imagestream_tag }}{% else %}{{ image_tag_cmd.stdout }}{% endif %}"
+      image_tag: "{% if rhods_benchmark_notebook_performance_imagestream_tag | string  %}{{ rhods_benchmark_notebook_performance_imagestream_tag }}{% else %}{{ image_tag_cmd.stdout }}{% endif %}"
 
   - name: Get the image address
     command:
@@ -68,7 +68,7 @@
     command: yq -r .spec.tags[].name "{{ artifact_extra_logs_dir }}/imagestream.yaml"
     register: imagestream_tags_cmd
     failed_when:
-    - rhods_benchmark_notebook_performance_imagestream_tag | length == 0
+    - rhods_benchmark_notebook_performance_imagestream_tag | string | length == 0
     - imagestream_tags_cmd.stdout_lines | length != 1
 
   - name: Get the image address

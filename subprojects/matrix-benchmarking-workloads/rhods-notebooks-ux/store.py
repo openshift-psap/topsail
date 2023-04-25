@@ -46,6 +46,7 @@ IMPORTANT_FILES = [
     "_ansible.env",
 
     "artifacts-sutest/rhods.version",
+    "artifacts-sutest/rhods.createdAt",
     "artifacts-sutest/odh-dashboard-config.yaml",
     "artifacts-sutest/nodes.json",
     "artifacts-sutest/ocp_version.yml",
@@ -263,6 +264,15 @@ def _parse_rhods_info(dirname):
 
     with open(register_important_file(dirname, pathlib.Path("artifacts-sutest") / "rhods.version")) as f:
         rhods_info.version = f.read().strip()
+
+    with open(register_important_file(dirname, pathlib.Path("artifacts-sutest") / "rhods.createdAt")) as f:
+        rhods_info.createdAt_raw = f.read().strip()
+
+    try:
+        rhods_info.createdAt = datetime.datetime.strptime(rhods_info.createdAt_raw, K8S_TIME_FMT)
+    except ValueError as e:
+        logging.error("Couldn't parse RHODS version timestamp: {e}")
+        rhods_info.createdAt = None
 
     return rhods_info
 

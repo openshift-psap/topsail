@@ -42,7 +42,6 @@ ci_presets:
     tests.notebooks.test_flavor: gating
     # modify the presets, as they will be applied by the gating test
     'ci_presets.notebook_scale_test["matbench.config_file"]': notebook_gating_notebook_scale_test.yaml
-    # 'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5 # uncomment this line to test at small scale
     'ci_presets.notebook_performance["matbench.config_file"]': notebook_gating_notebook_performance.yaml
     'ci_presets.notebook_performance["tests.notebooks.notebook_performance.tests[0].instance_types"]': [m6i.2xlarge]
 
@@ -212,7 +211,6 @@ ci_presets:
 
     clusters.driver.compute.dedicated: true
     clusters.driver.compute.machineset.count: 1
-    clusters.sutest.storage.deploy_nfs_provisioner.enabled: true
 
     tests.notebooks.users.count: 5
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
@@ -357,9 +355,9 @@ rhods:
   deploy_from_catalog: true
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 476299
+    tag: 481980
     channel: beta
-    version: 1.25.0
+    version: 1.26.0
   addon:
     # only necessary/set when rhods.deploy_from_catalog is true
     email: SET_AT_RUNTIME
@@ -439,7 +437,7 @@ tests:
       test_mode: simple
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: notebook-scale-test.v1.25.0-5
+        ref: notebook-scale-test.v1.26.0-0
       # tags to exclude when running the robot test case
       excluded_tags: None
       # if true, only create the notebooks but don't start them

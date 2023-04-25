@@ -98,6 +98,11 @@ driver_cleanup() {
         return
     fi
 
+    if oc get cm/keep-cluster -n default 2>/dev/null; then
+        _info "cm/keep-cluster found, not cleanup the cluster."
+        return
+    fi
+
     if ! test_config clusters.sutest.is_metal; then
        ./run_toolbox.py from_config cluster set_scale --prefix "driver" --suffix "cleanup" > /dev/null
     fi

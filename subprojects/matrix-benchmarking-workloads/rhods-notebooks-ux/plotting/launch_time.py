@@ -176,7 +176,7 @@ class LaunchTimeDistribution():
 
             test_passed = pass_count >= threshold
 
-            msg += [html.B(legend_name), ": ", html.B("PASSED" if test_passed else "FAILED"), f" ({'1' if test_passed else '0'}/1 success)"]
+            msg += [html.B(legend_name), ": " if legend_name else "Test", html.B("PASSED" if test_passed else "FAILED"), f" ({'1' if test_passed else '0'}/1 success)"]
             if test_passed:
                 msg.append(html.Ul(html.Li(f"PASS: {pass_count} >= threshold={threshold} successes")))
             else:
