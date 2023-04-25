@@ -160,8 +160,6 @@ def _generate_pod_timings(pod_times, start, end):
 def _gather_prom_metrics(entry) -> dict:
     out = {}
 
-    prom.register()
-
     for (key, metric_names) in lts_metrics.items():
         for metric_name in metric_names:
             logging.info(f"Gathering {metric_name[0]}")
