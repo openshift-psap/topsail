@@ -145,10 +145,10 @@ def prepare_namespace():
     run(f"oc label namespace/{namespace} opendatahub.io/dashboard=true --overwrite")
 
     dedicated = "{}" if get_config("clusters.sutest.compute.dedicated") \
-        else "{value: ''}" # delete the toleration/node-selector annotations, if it exists
+        else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
-    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_node_selector --extra {dedicated}")
-    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_toleration --extra {dedicated}")
+    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_node_selector --extra '{dedicated}'")
+    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_toleration --extra '{dedicated}'")
 
     create_dsp_application()
 
@@ -164,23 +164,12 @@ def pipelines_prepare():
 def pipelines_run():
     """
     Runs a CI workload.
-
     """
-    namespace = get_config("rhods.pipelines.namespace")
-    application_name = get_config("rhods.pipelines.application.name")
 
-    for i in range(5):
-        try:
-            run(f"./run_toolbox.py pipelines run_kfp_notebook '{namespace}' '{application_name}'")
-            break
-        except Exception as e:
-            import bdb;
-            if isinstance(e, bdb.BdbQuit): raise e
-            logging.error("Run #{i} failed :/")
-    else:
-        logging.error("Failed to run successfully the pipeline application :/")
-        sys.exit(1)
-
+    try:
+        run(f"./run_toolbox.py from_config pipelines run_kfp_notebook")
+    finally:
+        run(f"./run_toolbox.py from_config pipelines capture_state")
 
 class Pipelines:
     """

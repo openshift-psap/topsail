@@ -107,7 +107,7 @@
 
 - name: Compute the DSP application name
   shell:
-    oc get dspa -oname | head -1 | cut -d/ -f2
+    oc get dspa -oname -n "{{ notebook_namespace }}" | head -1 | cut -d/ -f2
   register: dspa_name_cmd
   when: not pipelines_run_kfp_notebook_dsp_application_name
   failed_when: not dspa_name_cmd.stdout
@@ -143,6 +143,32 @@
 
 # ---
 
+- name: Save the DSP route
+  set_fact:
+    sa_name: pipeline-sa
+    sa_cluster_role: cluster-admin
+
+- name: Create the service account that will be used in the Notebook
+  shell:
+    set -o pipefail;
+    oc create serviceaccount "{{ sa_name }}"
+       -n "{{ notebook_namespace }}"
+       --dry-run=client -oyaml
+       | tee "{{ artifact_extra_logs_dir }}/src/serviceaccount.yaml"
+       | oc apply -f-
+
+- name: Grant all the privileges to the service account
+  shell:
+    set -o pipefail;
+    oc adm policy add-cluster-role-to-user "{{ sa_cluster_role }}"
+       -n "{{ notebook_namespace }}"
+       -z "{{ sa_name}}"
+       --dry-run=client -oyaml
+       | tee "{{ artifact_extra_logs_dir }}/src/clusterrolebinding.yaml"
+       | oc apply -f-
+
+# ---
+
 - name: Cleanup the Prometheus database of the cluster
   when: capture_prom_db | bool
   include_role:
@@ -167,8 +193,10 @@
   - name: Create the secret token
     shell:
       oc create secret generic "{{ secret_token_name }}"
-         "--from-literal=token=$(oc whoami --show-token)"
+         "--from-literal=token=$(oc create token '{{ sa_name}}' -n '{{ notebook_namespace }}')"
          -n "{{ notebook_namespace }}"
+    register: create_secret_token_cmd
+    failed_when: '"no token is currently in use for this session" in create_secret_token_cmd.stderr'
 
   - name: Create the test notebook
     command:
@@ -229,7 +257,12 @@
 
   - name: Wait for the pipeline execution to complete
     shell:
-      oc get pipelineruns --no-headers --ignore-not-found | awk '{print $3}'
+      set -o pipefail;
+      oc get pipelineruns
+         --no-headers
+         --ignore-not-found
+         -n "{{ notebook_namespace }}"
+         | awk '{print $3}'
     register: pipelineruns_wait
     retries: 10
     delay: 10
@@ -246,17 +279,17 @@
 
   - name: Save the pipeline status
     shell:
-      oc get pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipeline.status"
+      oc get pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.status"
     failed_when: false
 
   - name: Save the pipeline description
     shell:
-      oc describe pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipeline.desc"
+      oc describe pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.desc"
     failed_when: false
 
   - name: Save the pipeline definition
     shell:
-      oc get -oyaml pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipeline.yaml"
+      oc get -oyaml pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
     failed_when: false
 
   - name: Save the notebook execution logs

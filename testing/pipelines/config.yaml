@@ -9,7 +9,8 @@ ci_presets:
 
   keep:
     clusters.create.keep: true
-    clusters.create.ocp.tags.Project: PSAP/RHODS/home-dev
+    clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/home-dev
+    clusters.create.ocp.tags.TicketId: 87
 
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
@@ -55,7 +56,7 @@ clusters:
   sutest:
     is_metal: false
     compute:
-      dedicated: true
+      dedicated: false
       machineset:
         name: rhods-pipelines
         count: null
@@ -76,9 +77,9 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 470448
+    tag: 481980
     channel: beta
-    version: 1.25.0
+    version: 1.26.0
   pipelines:
     application:
       name: sample

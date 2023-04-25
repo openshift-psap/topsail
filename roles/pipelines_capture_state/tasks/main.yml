@@ -1,0 +1,91 @@
+---
+- name: Get the name of the current project
+  command:
+    oc project --short
+  register: project_name_cmd
+  when: not pipelines_capture_state_namespace
+
+- name: Define the test environment
+  set_fact:
+    namespace: "{% if pipelines_capture_state_namespace | length > 0 %}{{ pipelines_capture_state_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
+
+- name: Compute the DSP application name
+  shell:
+    oc get dspa -oname -n "{{ namespace }}" | head -1 | cut -d/ -f2
+  register: dspa_name_cmd
+  when: not pipelines_capture_state_name
+  failed_when: not dspa_name_cmd.stdout
+
+- name: Save the DSP application name
+  set_fact:
+    dspa_application_name: "{% if pipelines_capture_state_dsp_application_name %}{{ pipelines_capture_state_dsp_application_name }}{% else %}{{ dspa_name_cmd.stdout }}{% endif %}"
+
+- name: Save the state of all the resources
+  shell:
+    oc get all -lapp=ds-pipeline-{{ dspa_application_name }} -n "{{ namespace }}"
+       > "{{ artifact_extra_logs_dir }}/all.status"
+  failed_when: false
+
+- name: Save the pipeline status
+  shell:
+    oc get pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.status"
+  failed_when: false
+
+- name: Save the pipeline description
+  shell:
+    oc describe pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.desc"
+  failed_when: false
+
+- name: Save the pipeline definition
+  shell:
+    oc get -oyaml pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
+  failed_when: false
+
+- name: Save the status  of the application pods
+  shell:
+    oc get pods -owide
+       -lcomponent=data-science-pipelines
+       -n "{{ namespace }}"
+       > "{{ artifact_extra_logs_dir }}/pods.status"
+  register: dspa_pod_names_cmd
+
+- name: Get the names of the application pods
+  command:
+    oc get pods
+       -n "{{ namespace }}"
+       -lcomponent=data-science-pipelines
+       -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+  register: dspa_pod_names_cmd
+
+- name: Capture the logs of the application pods
+  loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
+  shell:
+    oc logs pod/{{ item }}
+       -n {{ namespace }}
+       --all-containers --prefix
+       > "{{ artifact_extra_logs_dir }}/{{ item }}.log"
+  failed_when: false
+
+- name: Capture the description of the application pods
+  loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
+  shell:
+    oc describe pod/{{ item }}
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/{{ item }}.desc"
+  failed_when: false
+
+- name: Capture the definition of the application pods
+  loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
+  shell:
+    oc get
+       -n {{ namespace }}
+       -oyaml pod/{{ item }}
+       > "{{ artifact_extra_logs_dir }}/{{ item }}.yaml"
+  failed_when: false
+
+- name: Capture the DSP Application
+  shell:
+    oc get -oyaml dspa/{{ dspa_application_name }}
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/application.yaml"
+  failed_when: false
