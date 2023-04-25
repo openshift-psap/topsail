@@ -7,4 +7,4 @@ manifest_tags:
 
 _manifest_tags:
 	@echo "Setting the machineset tags."
-	yq -yi '.spec.template.spec.providerSpec.value.tags = [${MACHINE_TAGS}]' $(wildcard ${MASTER_MACHINESET_FILES}) $(wildcard ${WORKER_MACHINESET_FILES})
+	yq -yi '.spec.template.spec.providerSpec.value.tags = ${MACHINE_TAGS}' $(wildcard ${MASTER_MACHINESET_FILES}) $(wildcard ${WORKER_MACHINESET_FILES})
