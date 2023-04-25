@@ -136,16 +136,17 @@ generate_matbench::generate_visualization() {
         return 1
     fi
 
-    if ! matbench parse --output_lts $ARTIFACT_DIR/lts_payload.json |& tee > "$ARTIFACT_DIR/_matbench_parse_lts.log"; then
-        echo "An error happened while encoding results into a JSON object within $ARTIFACT_DIR, aborting."
-        return 1
+    retcode=0
+
+    if ! matbench parse --output_lts $ARTIFACT_DIR/lts_payload.json |& tee > "$ARTIFACT_DIR/_matbench_generate_lts.log"; then
+        _warning "An error happened while generating the LTS payload from $MATBENCH_RESULTS_DIRNAME :/."
+        retcode=1
     fi
 
     if test_config matbench.download.save_to_artifacts; then
         cp -rv "$MATBENCH_RESULTS_DIRNAME" "$ARTIFACT_DIR"
     fi
 
-    retcode=0
     for filters_to_apply in $filters; do
         if [[ "$filters_to_apply" == "null" ]]; then
             filters_to_apply=""
