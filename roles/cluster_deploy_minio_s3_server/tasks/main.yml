@@ -33,8 +33,8 @@
     oc create secret generic minio
        -n "{{ cluster_deploy_minio_s3_server_namespace }}"
        "--from-literal=MINIO_ROOT_PASSWORD=$ADMIN_PASSWORD"
+       "--from-literal=MINIO_S3_ACCESS_KEY=minio"
        "--from-literal=MINIO_S3_SECRET_KEY=$SECRET_KEY"
-
 - name: Delete minio deployment, if it exists
   command:
     oc delete
