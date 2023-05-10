@@ -13,7 +13,7 @@
   shell:
     oc get dspa -oname -n "{{ namespace }}" | head -1 | cut -d/ -f2
   register: dspa_name_cmd
-  when: not pipelines_capture_state_name
+  when: not pipelines_capture_state_dsp_application_name
   failed_when: not dspa_name_cmd.stdout
 
 - name: Save the DSP application name
