@@ -170,7 +170,7 @@ class Cluster:
     @AnsibleConstant("Name of the Minio admin user",
                      "root_user", "admin")
     @AnsibleMappedParams
-    def deploy_minio_s3_server(self, secret_properties_file, namespace="minio"):
+    def deploy_minio_s3_server(self, secret_properties_file, namespace="minio", bucket_name="myBucket"):
         """
         Deploy Minio S3 server
 
@@ -182,6 +182,7 @@ class Cluster:
         Args:
             secret_properties_file: Path of a file containing the properties of S3 secrets.
             namespace: Namespace in which Minio should be deployed.
+            bucket_name: The name of the default bucket to create in Minio.
         """
 
         return RunAnsibleRole(locals())

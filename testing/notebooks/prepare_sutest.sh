@@ -317,6 +317,11 @@ sutest_cleanup() {
         return
     fi
 
+    if test_config rhods.operator.stop; then
+
+        oc scale deploy/rhods-operator --replicas=1 -n redhat-ods-operator
+    fi
+
     if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
         _warning "rhods notebook cleanup failed :("
     fi

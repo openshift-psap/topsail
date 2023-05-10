@@ -31,6 +31,10 @@ rhods_notebook_ods_ci_scale_test_notebook_url:
 # Mandatory value
 rhods_notebook_ods_ci_scale_test_minio_namespace:
 
+# Name of the bucket in the Minio server.
+# Mandatory value
+rhods_notebook_ods_ci_scale_test_minio_bucket_name:
+
 # Offset to add to the user index to compute the user name.
 # Type: Int
 rhods_notebook_ods_ci_scale_test_user_index_offset: 0

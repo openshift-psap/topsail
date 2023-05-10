@@ -20,7 +20,7 @@
        -n "{{ cluster_deploy_minio_s3_server_namespace }}"
        --from-literal=MINIO_ROOT_USER={{ cluster_deploy_minio_s3_server_root_user }}
        --from-literal=MINIO_S3_ACCESS_KEY={{ cluster_deploy_minio_s3_server_access_key }}
-
+       --from-literal=MINIO_S3_BUCKET_NAME={{ cluster_deploy_minio_s3_server_bucket_name }}
 - name: Delete minio secret, if it exists
   command: oc delete secret/minio --ignore-not-found -n "{{ cluster_deploy_minio_s3_server_namespace }}"
 

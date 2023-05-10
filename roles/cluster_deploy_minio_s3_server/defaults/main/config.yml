@@ -9,6 +9,9 @@ cluster_deploy_minio_s3_server_secret_properties_file:
 # Namespace in which Minio should be deployed.
 cluster_deploy_minio_s3_server_namespace: minio
 
+# The name of the default bucket to create in Minio.
+cluster_deploy_minio_s3_server_bucket_name: myBucket
+
 # Name of the Minio admin user
 # Defined as a constant in Cluster.deploy_minio_s3_server
 cluster_deploy_minio_s3_server_root_user: admin
