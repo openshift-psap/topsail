@@ -3,10 +3,8 @@
 # Source component: Pipelines.capture_state
 
 # the name of the application
-# Mandatory value
-pipelines_capture_state_name:
+pipelines_capture_state_dsp_application_name:
 
 # the namespace in which the application was deployed
-# Mandatory value
 pipelines_capture_state_namespace:
 
