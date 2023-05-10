@@ -7,5 +7,42 @@ spec:
   mlpipelineUI: # optional
     image: quay.io/opendatahub/odh-ml-pipelines-frontend-container:beta-ui
   objectStorage:
-    minio:
-      image: quay.io/opendatahub/minio:RELEASE.2019-08-14T20-37-41Z-license-compliance
+    apiServer:
+      applyTektonCustomResource: true
+      archiveLogs: false
+      autoUpdatePipelineDefaultVersion: true
+      collectMetrics: true
+      dbConfigConMaxLifetimeSec: 120
+      deploy: true
+      enableOauth: true
+      enableSamplePipeline: true
+      injectDefaultScript: true
+      stripEOF: true
+      terminateStatus: Cancelled
+      trackArtifacts: true
+    database:
+      mariaDB:
+        deploy: true
+        pipelineDBName: mlpipeline
+        pvcSize: 10Gi
+        username: mlpipeline
+    mlpipelineUI:
+      deploy: true
+      image: quay.io/opendatahub/odh-ml-pipelines-frontend-container:beta-ui
+    objectStorage:
+      externalStorage:
+        bucket: ""
+        host: s3.amazonaws.com
+        port: ""
+        s3CredentialsSecret:
+          accessKey: AWS_ACCESS_KEY_ID
+          secretKey: AWS_SECRET_ACCESS_KEY
+          secretName: aws-connection-totor
+        scheme: https
+        secure: true
+    persistenceAgent:
+      deploy: true
+      numWorkers: 2
+    scheduledWorkflow:
+      cronScheduleTimezone: UTC
+      deploy: true
