@@ -22,6 +22,10 @@ rhods_notebook_locust_scale_test_test_name:
 # Mandatory value
 rhods_notebook_locust_scale_test_minio_namespace:
 
+# Name of the bucket in the Minio server.
+# Mandatory value
+rhods_notebook_locust_scale_test_minio_bucket_name:
+
 # Prefix of the RHODS users.
 # Mandatory value
 rhods_notebook_locust_scale_test_username_prefix:
