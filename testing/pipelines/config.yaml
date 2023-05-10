@@ -90,6 +90,8 @@ rhods:
 
     dashboard:
       replicas: 1
+      custom_commit: 06ce2ec
+      enable_pipelines: true
 tests:
 matbench:
   preset: null
