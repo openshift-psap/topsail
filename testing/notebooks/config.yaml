@@ -395,7 +395,7 @@ tests:
   notebooks:
     # The test flavor to run. Can be: ods-ci, locust, notebook-performance or gating
     test_flavor: ods-ci
-
+    minio_bucket_name: notebooks
     # number of test repetition to perform
     repeat: 1
     users:
