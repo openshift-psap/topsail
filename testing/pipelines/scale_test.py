@@ -57,7 +57,7 @@ def get_config(jsonpath):
 def get_command_arg(command, args):
     try:
         logging.info(f"get_command_arg: {command} {args}")
-        proc = subprocess.run(f'./run_toolbox.py from_config "{command}" --show_args "{args}"', check=True, shell=True, capture_output=True)
+        proc = subprocess.run(f'./run_toolbox.py from_config {command} --show_args "{args}"', check=True, shell=True, capture_output=True)
     except subprocess.CalledProcessError as e:
         logging.error(e.stderr.decode("utf-8").strip())
         raise
@@ -146,9 +146,9 @@ def create_dsp_application():
 
     run("./run_toolbox.py from_config pipelines deploy_application")
 
-def prepare_cluster():
+def prepare_rhods():
     """
-    Prepares the cluster for running pipelines scale tests.
+    Prepares the cluster for running RHODS pipelines scale tests.
     """
     install_ocp_pipelines()
     install_rhods()
@@ -161,9 +161,10 @@ def prepare_cluster():
 
     run("./run_toolbox.py from_config cluster set_scale --prefix=sutest")
 
+
 def prepare_namespace():
     """
-    Prepares the namespace for running pipelines scale tests.
+    Prepares the namespace for running a pipelines scale test.
     """
 
     namespace = get_config("rhods.pipelines.namespace")
@@ -178,24 +179,83 @@ def prepare_namespace():
 
     create_dsp_application()
 
+
+def build_base_image():
+    """
+    Prepares the cluster for running the multi-user ci-artifacts operations
+    """
+
+    namespace = get_config("base_image.namespace")
+    service_account = get_config("base_image.user.service_account")
+    role = get_config("base_image.user.role")
+
+    #
+    # Prepare the container image
+    #
+
+    if get_config("base_image.repo.ref_prefer_pr") and (pr_number := os.environ.get("PULL_NUMBER")):
+        pr_ref = f"refs/pull/{pr_number}/head"
+
+        logging.info(f"Setting '{pr_ref}' as ref for building the base image")
+        set_config("base_image.repo.ref", pr_ref)
+        set_config("base_image.repo.tag", f"pr-{pr_number}")
+
+    # keep this command (utils build_push_image) first, it creates the namespace
+
+    istag = get_command_arg("utils build_push_image --prefix base_image", "_istag")
+    try:
+        run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null")
+        has_istag = True
+        logging.info(f"Image {istag} already exists in namespace {namespace}. Don't build it.")
+    except subprocess.CalledProcessError:
+        has_istag = False
+
+    if not has_istag:
+        run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
+
+    #
+    # Prepare the ServiceAccount
+    #
+
+    run(f"oc create serviceaccount {service_account} -n {namespace} --dry-run=client -oyaml | oc apply -f-")
+    run(f"oc adm policy add-cluster-role-to-user {role} -z {service_account} -n {namespace}")
+
+    #
+    # Prepare the Secret
+    #
+
+    secret_name = get_config("secrets.dir.name")
+    secret_env_key = get_config("secrets.dir.env_key")
+
+    run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")
+    run(f"oc get secrets -n {namespace}")
+
 def pipelines_prepare():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
     """
 
-    prepare_cluster()
-    prepare_namespace()
+    build_base_image()
+    prepare_rhods()
 
 
-def pipelines_run():
+def pipelines_run_one():
     """
-    Runs a CI workload.
+    Runs a single Pipeline scale test.
     """
 
     try:
+        prepare_namespace()
         run(f"./run_toolbox.py from_config pipelines run_kfp_notebook")
     finally:
         run(f"./run_toolbox.py from_config pipelines capture_state")
+
+def pipelines_run_many():
+    """
+    Runs multiple concurrent Pipelines scale test.
+    """
+
+    run(f"./run_toolbox.py from_config local_ci run --suffix scale_test")
 
 class Pipelines:
     """
@@ -204,12 +264,15 @@ class Pipelines:
 
     def __init__(self):
         self.prepare = pipelines_prepare
+        self.prepare_rhods = prepare_rhods
         self.prepare_namespace = prepare_namespace
-        self.prepare_cluster = prepare_cluster
-        self.run = pipelines_run
+        self.build_base_image = build_base_image
+
+        self.run_one = pipelines_run_one
+        self.run = pipelines_run_many
 
         self.prepare_ci = pipelines_prepare
-        self.test_ci = pipelines_run
+        self.test_ci = self.run
 
 def main():
     # Print help rather than opening a pager

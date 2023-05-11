@@ -26,7 +26,7 @@ ci_presets:
 
 secrets:
   dir:
-    name: null
+    name: psap-ods-secret
     env_key: PSAP_ODS_SECRET_PATH
   # name of the file containing the properties of LDAP secrets
   s3_ldap_password_file: s3_ldap.passwords
@@ -73,7 +73,6 @@ ldap:
     count: 2000
     # prefix of the user names of the LDAP provider
     prefix: psapuser
-
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
@@ -92,7 +91,18 @@ rhods:
       replicas: 1
       custom_commit: 06ce2ec
       enable_pipelines: true
-tests:
+base_image:
+  namespace: ci-artifacts
+  imagestream: ci-artifacts
+  repo:
+    url: https://github.com/openshift-psap/ci-artifacts/
+    tag: main
+    ref: main
+    ref_prefer_pr: true
+    dockerfile_path: build/Dockerfile
+  user:
+    service_account: ci-artifacts
+    role: cluster-admin
 matbench:
   preset: null
   workload: rhods-pipelines
