@@ -8,22 +8,28 @@
 - name: Ensure that the CI image exists
   command: oc get istag -n "{{ local_ci_run_namespace }}" "{{ local_ci_run_istag }}"
 
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
 - name: Apply the Pod template
   template:
     src: "{{ local_ci_run_pod_template }}"
-    dest: "{{ artifact_extra_logs_dir }}/000_pod.yaml"
+    dest: "{{ artifact_extra_logs_dir }}/src/000_pod.yaml"
     mode: 0400
 
 - name: Delete any stalled CI execution Pod
-  command: oc delete -f "{{ artifact_extra_logs_dir }}/000_pod.yaml" --ignore-not-found=true
+  command: oc delete -f "{{ artifact_extra_logs_dir }}/src/000_pod.yaml" --ignore-not-found=true
 
 - name: Create the CI Pod
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/000_pod.yaml"
 
 - name: Wait for the Pod to start running
   shell:
     set -o pipefail;
-    oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
+    oc get -f "{{ artifact_extra_logs_dir }}/src/000_pod.yaml"
        --no-headers | awk '{print $3}'
   register: wait_pod_start
   retries: 20
@@ -43,7 +49,7 @@
 - name: Wait for the main container to finish running
   shell:
     set -o pipefail;
-    oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
+    oc get -f "{{ artifact_extra_logs_dir }}/src/000_pod.yaml"
        --no-headers | awk '{print $3}'
   register: wait_pod_start
   retries: 9999
@@ -78,7 +84,7 @@
 - name: Wait for the Pod to finish running
   shell:
     set -o pipefail;
-    oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml"
+    oc get -f "{{ artifact_extra_logs_dir }}/src/000_pod.yaml"
        --no-headers | awk '{print $3}'
   register: wait_pod_start
   retries: 30
@@ -98,7 +104,7 @@
        > {{ artifact_extra_logs_dir }}/pod_exporter.log
 
 - name: Get the status of the Pod
-  command: oc get -f "{{ artifact_extra_logs_dir }}/000_pod.yaml" -ojsonpath={.status.phase}
+  command: oc get -f "{{ artifact_extra_logs_dir }}/src/000_pod.yaml" -ojsonpath={.status.phase}
   register: pod_status
   retries: 30
   delay: 10
