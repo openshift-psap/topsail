@@ -22,6 +22,7 @@ spec:
         git switch pull_$PULL_NUMBER
         git show --quiet --oneline main..HEAD
       else
+        git config --global --add safe.directory "$PWD"
         git pull
       fi
 
