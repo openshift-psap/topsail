@@ -25,6 +25,7 @@ class LocalCI:
             export=True,
             retrieve_artifacts=True,
             pr_config=None,
+            update_git=True,
             ):
         """
         Runs a given CI command
@@ -46,7 +47,12 @@ class LocalCI:
             export: If False, do not run the export command.
             retrieve_artifacts: If False, do not retrieve locally the test artifacts.
             pr_config: Optional path to a PR config file (avoids fetching Github PR json).
+            update_git: If True, updates the git repo with the latest main/PR before running the test.
         """
+
+        if pr_number and not update_git:
+            logging.error(f"Cannot have --pr-number={pr_number} without --update-git")
+            sys.exit(1)
 
         if not export_ts_id:
             export_ts_id = datetime.datetime.now().strftime("%Y%m%d_%H%M")

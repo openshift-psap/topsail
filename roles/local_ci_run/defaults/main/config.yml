@@ -51,3 +51,6 @@ local_ci_run_retrieve_artifacts: true
 # Optional path to a PR config file (avoids fetching Github PR json).
 local_ci_run_pr_config: null
 
+# If True, updates the git repo with the latest main/PR before running the test.
+local_ci_run_update_git: true
+

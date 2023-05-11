@@ -15,6 +15,7 @@ spec:
     - -cxe
     args:
     - |
+{% if local_ci_run_update_git %}
       git clone "$GIT_REPO" .
 
       if [[ "$PULL_NUMBER" ]]; then
@@ -24,9 +25,11 @@ spec:
       else
         git config --global --add safe.directory "$PWD"
         git pull
+        git show --quiet --oneline HEAD
       fi
 
       git submodule update --init
+{% endif %}
 
 {% if local_ci_run_pr_config %}
       cat > "${ARTIFACT_DIR}/variable_overrides" << EOF
@@ -52,8 +55,10 @@ spec:
     volumeMounts:
     - mountPath: /logs
       name: artifacts
+{% if local_ci_run_update_git %}
     - mountPath: /opt/ci-artifacts/src
       name: ci-artifacts-repo
+{% endif %}
   serviceAccount: "{{ local_ci_run_service_account }}"
   containers:
   - name: main
@@ -114,8 +119,10 @@ spec:
     volumeMounts:
     - mountPath: /logs
       name: artifacts
+{% if local_ci_run_update_git %}
     - mountPath: /opt/ci-artifacts/src
       name: ci-artifacts-repo
+{% endif %}
 {% if local_ci_run_secret_name %}
     - mountPath: /secrets/{{ local_ci_run_secret_name }}
       name: {{ local_ci_run_secret_name }}
@@ -189,8 +196,10 @@ spec:
     volumeMounts:
     - mountPath: /logs
       name: artifacts
+{% if local_ci_run_update_git %}
     - mountPath: /opt/ci-artifacts/src
       name: ci-artifacts-repo
+{% endif %}
 {% if local_ci_run_secret_name %}
     - mountPath: /secrets/{{ local_ci_run_secret_name }}
       name: {{ local_ci_run_secret_name }}
@@ -199,8 +208,10 @@ spec:
   volumes:
   - name: artifacts
     emptyDir: {}
+{% if local_ci_run_update_git %}
   - name: ci-artifacts-repo
     emptyDir: {}
+{% endif %}
 {% if local_ci_run_secret_name %}
   - name: {{ local_ci_run_secret_name }}
     secret:
