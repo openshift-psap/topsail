@@ -64,6 +64,20 @@ def get_command_arg(command, args):
 
     return proc.stdout.decode("utf-8").strip()
 
+def set_config(jsonpath, value):
+    try:
+        jsonpath_ng.parse(jsonpath).update(config, value)
+    except Exception as ex:
+        logging.error(f"set_config: {jsonpath}={value} --> {ex}")
+        raise
+
+    logging.info(f"set_config: {jsonpath} --> {value}")
+
+    new_config_file_path = ARTIFACT_DIR / pathlib.Path(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]).name
+    os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(new_config_file_path)
+    with open(new_config_file_path, "w") as f:
+        yaml.dump(config, f, indent=4)
+
 # ---
 
 def setup_brew_registry():
