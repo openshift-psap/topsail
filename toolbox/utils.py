@@ -79,6 +79,10 @@ class Utils:
                 logging.error("memory must be of type float or int")
                 sys.exit(1)
 
+        if "/" in tag or "_" in tag:
+            logging.error("the tag cannot contain '/' or '_' characters")
+            sys.exit(1)
+
         toolbox_name_suffix = os.environ.get("ARTIFACT_TOOLBOX_NAME_SUFFIX", "")
         # use `{image_local_name}_{tag}` as first suffix in the directory name
         os.environ["ARTIFACT_TOOLBOX_NAME_SUFFIX"] = f"_{image_local_name}_{tag}{toolbox_name_suffix}"
