@@ -43,6 +43,12 @@ def set_config_environ():
     config_path = ARTIFACT_DIR / "config.yaml"
     os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
 
+    if shared_dir := os.environ.get("SHARED_DIR"):
+        shared_dir_config_path = pathlib.Path(shared_dir) / "config.yaml"
+        if shared_dir_config_path.exists():
+            logging.info(f"Reloading the config file from {shared_dir_config_path} ...")
+            shutil.copyfile(shared_dir_config_path, config_path)
+
     if not config_path.exists():
         shutil.copyfile(TESTING_PIPELINES_DIR / "config.yaml", config_path)
 
@@ -82,6 +88,10 @@ def set_config(jsonpath, value):
 
     with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"], "w") as f:
         yaml.dump(config, f, indent=4)
+
+    if shared_dir := os.environ.get("SHARED_DIR"):
+        with open(pathlib.Path(shared_dir) / "config.yaml", "w") as f:
+            yaml.dump(config, f, indent=4)
 
 # ---
 
