@@ -11,7 +11,8 @@ class LocalCI:
     @AnsibleMappedParams
     def run(self, ci_command,
             pr_number=None,
-            repo="https://github.com/openshift-psap/ci-artifacts",
+            git_repo="https://github.com/openshift-psap/ci-artifacts",
+            git_ref="main",
             namespace="ci-artifacts",
             istag="ci-artifacts:main",
             pod_name="ci-artifacts",
@@ -31,7 +32,8 @@ class LocalCI:
         Runs a given CI command
 
         Args:
-            repo: The Github repo to use.
+            git_repo: The Github repo to use.
+            git_ref: The Github ref to use.
             pr_number: The ID of the PR to use for the repository.
             ci_command: The CI command to run.
             namespace: The namespace in which the image.
