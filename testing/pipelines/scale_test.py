@@ -8,6 +8,7 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 import datetime
 import time
+import shutil
 
 import yaml
 import jsonpath_ng
@@ -37,9 +38,15 @@ except KeyError:
     ARTIFACT_DIR = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d')}"
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
 
-os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_PIPELINES_DIR / "command_args.yaml")
-os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(TESTING_PIPELINES_DIR / "config.yaml")
+def set_config_environ():
+    os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_PIPELINES_DIR / "command_args.yaml")
+    config_path = ARTIFACT_DIR / "config.yaml"
+    os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
 
+    if not config_path.exists():
+        shutil.copyfile(TESTING_PIPELINES_DIR / "config.yaml", config_path)
+
+set_config_environ()
 with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
     config = yaml.safe_load(config_f)
 
@@ -73,9 +80,7 @@ def set_config(jsonpath, value):
 
     logging.info(f"set_config: {jsonpath} --> {value}")
 
-    new_config_file_path = ARTIFACT_DIR / pathlib.Path(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]).name
-    os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(new_config_file_path)
-    with open(new_config_file_path, "w") as f:
+    with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"], "w") as f:
         yaml.dump(config, f, indent=4)
 
 # ---
