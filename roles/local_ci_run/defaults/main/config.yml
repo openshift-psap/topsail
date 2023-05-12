@@ -10,7 +10,10 @@ local_ci_run_ci_command:
 local_ci_run_pr_number: null
 
 # The Github repo to use.
-local_ci_run_repo: https://github.com/openshift-psap/ci-artifacts
+local_ci_run_git_repo: https://github.com/openshift-psap/ci-artifacts
+
+# The Github ref to use.
+local_ci_run_git_ref: main
 
 # The namespace in which the image.
 local_ci_run_namespace: ci-artifacts
@@ -50,4 +53,7 @@ local_ci_run_retrieve_artifacts: true
 
 # Optional path to a PR config file (avoids fetching Github PR json).
 local_ci_run_pr_config: null
+
+# If True, updates the git repo with the latest main/PR before running the test.
+local_ci_run_update_git: true
 

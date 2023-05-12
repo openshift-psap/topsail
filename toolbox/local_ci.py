@@ -11,7 +11,8 @@ class LocalCI:
     @AnsibleMappedParams
     def run(self, ci_command,
             pr_number=None,
-            repo="https://github.com/openshift-psap/ci-artifacts",
+            git_repo="https://github.com/openshift-psap/ci-artifacts",
+            git_ref="main",
             namespace="ci-artifacts",
             istag="ci-artifacts:main",
             pod_name="ci-artifacts",
@@ -25,12 +26,14 @@ class LocalCI:
             export=True,
             retrieve_artifacts=True,
             pr_config=None,
+            update_git=True,
             ):
         """
         Runs a given CI command
 
         Args:
-            repo: The Github repo to use.
+            git_repo: The Github repo to use.
+            git_ref: The Github ref to use.
             pr_number: The ID of the PR to use for the repository.
             ci_command: The CI command to run.
             namespace: The namespace in which the image.
@@ -46,7 +49,12 @@ class LocalCI:
             export: If False, do not run the export command.
             retrieve_artifacts: If False, do not retrieve locally the test artifacts.
             pr_config: Optional path to a PR config file (avoids fetching Github PR json).
+            update_git: If True, updates the git repo with the latest main/PR before running the test.
         """
+
+        if pr_number and not update_git:
+            logging.error(f"Cannot have --pr-number={pr_number} without --update-git")
+            sys.exit(1)
 
         if not export_ts_id:
             export_ts_id = datetime.datetime.now().strftime("%Y%m%d_%H%M")

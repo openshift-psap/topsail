@@ -10,3 +10,7 @@ pipelines_deploy_application_name:
 # Mandatory value
 pipelines_deploy_application_namespace:
 
+# Path of a file containing the properties of LDAP secrets. (See 'cluster deploy_ldap' command)
+# Mandatory value
+pipelines_deploy_application_secret_properties_file:
+

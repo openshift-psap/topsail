@@ -15,17 +15,23 @@ spec:
     - -cxe
     args:
     - |
+{% if local_ci_run_update_git %}
       git clone "$GIT_REPO" .
+      git config --global --add safe.directory "$PWD"
 
       if [[ "$PULL_NUMBER" ]]; then
         git fetch origin refs/pull/$PULL_NUMBER/head:pull_$PULL_NUMBER
         git switch pull_$PULL_NUMBER
         git show --quiet --oneline main..HEAD
+      elif [[ "$GIT_REF" ]]; then
+        git fetch origin "$GIT_REF"
+        git show --quiet --oneline main..$GIT_REF
       else
         git pull
       fi
 
       git submodule update --init
+{% endif %}
 
 {% if local_ci_run_pr_config %}
       cat > "${ARTIFACT_DIR}/variable_overrides" << EOF
@@ -34,7 +40,9 @@ spec:
 {% endif %}
     env:
     - name: GIT_REPO
-      value: "{{ local_ci_run_repo }}"
+      value: "{{ local_ci_run_git_repo }}"
+    - name: GIT_REF
+      value: "{{ local_ci_run_git_ref }}"
     - name: PULL_NUMBER
       value: "{{ local_ci_run_pr_number }}"
     - name: ARTIFACT_DIR
@@ -51,8 +59,10 @@ spec:
     volumeMounts:
     - mountPath: /logs
       name: artifacts
+{% if local_ci_run_update_git %}
     - mountPath: /opt/ci-artifacts/src
       name: ci-artifacts-repo
+{% endif %}
   serviceAccount: "{{ local_ci_run_service_account }}"
   containers:
   - name: main
@@ -99,9 +109,9 @@ spec:
     - name: PULL_NUMBER
       value: "{{ local_ci_run_pr_number }}"
     - name: REPO_OWNER
-      value: "{{ local_ci_run_repo.split('/')[3] }}"
+      value: "{{ local_ci_run_git_repo.split('/')[3] }}"
     - name: REPO_NAME
-      value: "{{ local_ci_run_repo.split('/')[4] }}"
+      value: "{{ local_ci_run_git_repo.split('/')[4] }}"
     - name: KUBECONFIG # Kubernetes is accessed via the in-Pod credentials
       value: ""
 {% if local_ci_run_secret_name %}
@@ -113,8 +123,10 @@ spec:
     volumeMounts:
     - mountPath: /logs
       name: artifacts
+{% if local_ci_run_update_git %}
     - mountPath: /opt/ci-artifacts/src
       name: ci-artifacts-repo
+{% endif %}
 {% if local_ci_run_secret_name %}
     - mountPath: /secrets/{{ local_ci_run_secret_name }}
       name: {{ local_ci_run_secret_name }}
@@ -188,8 +200,10 @@ spec:
     volumeMounts:
     - mountPath: /logs
       name: artifacts
+{% if local_ci_run_update_git %}
     - mountPath: /opt/ci-artifacts/src
       name: ci-artifacts-repo
+{% endif %}
 {% if local_ci_run_secret_name %}
     - mountPath: /secrets/{{ local_ci_run_secret_name }}
       name: {{ local_ci_run_secret_name }}
@@ -198,8 +212,10 @@ spec:
   volumes:
   - name: artifacts
     emptyDir: {}
+{% if local_ci_run_update_git %}
   - name: ci-artifacts-repo
     emptyDir: {}
+{% endif %}
 {% if local_ci_run_secret_name %}
   - name: {{ local_ci_run_secret_name }}
     secret:

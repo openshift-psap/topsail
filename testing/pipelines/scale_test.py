@@ -8,6 +8,7 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 import datetime
 import time
+import shutil
 
 import yaml
 import jsonpath_ng
@@ -37,9 +38,21 @@ except KeyError:
     ARTIFACT_DIR = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d')}"
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
 
-os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_PIPELINES_DIR / "command_args.yaml")
-os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(TESTING_PIPELINES_DIR / "config.yaml")
+def set_config_environ():
+    os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_PIPELINES_DIR / "command_args.yaml")
+    config_path = ARTIFACT_DIR / "config.yaml"
+    os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
 
+    if shared_dir := os.environ.get("SHARED_DIR"):
+        shared_dir_config_path = pathlib.Path(shared_dir) / "config.yaml"
+        if shared_dir_config_path.exists():
+            logging.info(f"Reloading the config file from {shared_dir_config_path} ...")
+            shutil.copyfile(shared_dir_config_path, config_path)
+
+    if not config_path.exists():
+        shutil.copyfile(TESTING_PIPELINES_DIR / "config.yaml", config_path)
+
+set_config_environ()
 with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
     config = yaml.safe_load(config_f)
 
@@ -57,12 +70,28 @@ def get_config(jsonpath):
 def get_command_arg(command, args):
     try:
         logging.info(f"get_command_arg: {command} {args}")
-        proc = subprocess.run(f'./run_toolbox.py from_config "{command}" --show_args "{args}"', check=True, shell=True, capture_output=True)
+        proc = subprocess.run(f'./run_toolbox.py from_config {command} --show_args "{args}"', check=True, shell=True, capture_output=True)
     except subprocess.CalledProcessError as e:
         logging.error(e.stderr.decode("utf-8").strip())
         raise
 
     return proc.stdout.decode("utf-8").strip()
+
+def set_config(jsonpath, value):
+    try:
+        jsonpath_ng.parse(jsonpath).update(config, value)
+    except Exception as ex:
+        logging.error(f"set_config: {jsonpath}={value} --> {ex}")
+        raise
+
+    logging.info(f"set_config: {jsonpath} --> {value}")
+
+    with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"], "w") as f:
+        yaml.dump(config, f, indent=4)
+
+    if shared_dir := os.environ.get("SHARED_DIR"):
+        with open(pathlib.Path(shared_dir) / "config.yaml", "w") as f:
+            yaml.dump(config, f, indent=4)
 
 # ---
 
@@ -132,9 +161,9 @@ def create_dsp_application():
 
     run("./run_toolbox.py from_config pipelines deploy_application")
 
-def prepare_cluster():
+def prepare_rhods():
     """
-    Prepares the cluster for running pipelines scale tests.
+    Prepares the cluster for running RHODS pipelines scale tests.
     """
     install_ocp_pipelines()
     install_rhods()
@@ -147,9 +176,10 @@ def prepare_cluster():
 
     run("./run_toolbox.py from_config cluster set_scale --prefix=sutest")
 
+
 def prepare_namespace():
     """
-    Prepares the namespace for running pipelines scale tests.
+    Prepares the namespace for running a pipelines scale test.
     """
 
     namespace = get_config("rhods.pipelines.namespace")
@@ -164,24 +194,83 @@ def prepare_namespace():
 
     create_dsp_application()
 
+
+def build_base_image():
+    """
+    Prepares the cluster for running the multi-user ci-artifacts operations
+    """
+
+    namespace = get_config("base_image.namespace")
+    service_account = get_config("base_image.user.service_account")
+    role = get_config("base_image.user.role")
+
+    #
+    # Prepare the container image
+    #
+
+    if get_config("base_image.repo.ref_prefer_pr") and (pr_number := os.environ.get("PULL_NUMBER")):
+        pr_ref = f"refs/pull/{pr_number}/head"
+
+        logging.info(f"Setting '{pr_ref}' as ref for building the base image")
+        set_config("base_image.repo.ref", pr_ref)
+        set_config("base_image.repo.tag", f"pr-{pr_number}")
+
+    # keep this command (utils build_push_image) first, it creates the namespace
+
+    istag = get_command_arg("utils build_push_image --prefix base_image", "_istag")
+    try:
+        run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null")
+        has_istag = True
+        logging.info(f"Image {istag} already exists in namespace {namespace}. Don't build it.")
+    except subprocess.CalledProcessError:
+        has_istag = False
+
+    if not has_istag:
+        run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
+
+    #
+    # Prepare the ServiceAccount
+    #
+
+    run(f"oc create serviceaccount {service_account} -n {namespace} --dry-run=client -oyaml | oc apply -f-")
+    run(f"oc adm policy add-cluster-role-to-user {role} -z {service_account} -n {namespace}")
+
+    #
+    # Prepare the Secret
+    #
+
+    secret_name = get_config("secrets.dir.name")
+    secret_env_key = get_config("secrets.dir.env_key")
+
+    run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")
+    run(f"oc get secrets -n {namespace}")
+
 def pipelines_prepare():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
     """
 
-    prepare_cluster()
-    prepare_namespace()
+    build_base_image()
+    prepare_rhods()
 
 
-def pipelines_run():
+def pipelines_run_one():
     """
-    Runs a CI workload.
+    Runs a single Pipeline scale test.
     """
 
     try:
+        prepare_namespace()
         run(f"./run_toolbox.py from_config pipelines run_kfp_notebook")
     finally:
         run(f"./run_toolbox.py from_config pipelines capture_state")
+
+def pipelines_run_many():
+    """
+    Runs multiple concurrent Pipelines scale test.
+    """
+
+    run(f"./run_toolbox.py from_config local_ci run --suffix scale_test")
 
 class Pipelines:
     """
@@ -190,12 +279,15 @@ class Pipelines:
 
     def __init__(self):
         self.prepare = pipelines_prepare
+        self.prepare_rhods = prepare_rhods
         self.prepare_namespace = prepare_namespace
-        self.prepare_cluster = prepare_cluster
-        self.run = pipelines_run
+        self.build_base_image = build_base_image
+
+        self.run_one = pipelines_run_one
+        self.run = pipelines_run_many
 
         self.prepare_ci = pipelines_prepare
-        self.test_ci = pipelines_run
+        self.test_ci = self.run
 
 def main():
     # Print help rather than opening a pager
