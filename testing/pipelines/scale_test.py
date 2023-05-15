@@ -270,7 +270,7 @@ def pipelines_run_many():
     Runs multiple concurrent Pipelines scale test.
     """
 
-    run(f"./run_toolbox.py from_config local_ci run --suffix scale_test")
+    run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale_test")
 
 class Pipelines:
     """
