@@ -67,3 +67,8 @@ local_ci run_multi/scale_test:
   secret_env_key: "{{ secrets.dir.env_key }}"
 
   ci_command: "pipelines scale_test run_one"
+
+cluster deploy_minio_s3_server:
+  namespace: "{{ base_image.namespace }}"
+  secret_properties_file: {{ s3_ldap_password_location }}
+  bucket_name: {{ base_image.minio.bucket_name }}

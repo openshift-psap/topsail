@@ -229,6 +229,12 @@ def build_base_image():
         run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
 
     #
+    # Deploy Minio
+    #
+
+    run(f"./run_toolbox.py from_config cluster deploy_minio_s3_server")
+
+    #
     # Prepare the ServiceAccount
     #
 

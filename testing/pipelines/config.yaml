@@ -103,6 +103,8 @@ base_image:
   user:
     service_account: ci-artifacts
     role: cluster-admin
+  minio:
+    bucket_name: pipelines-scale-test-bucket
 tests:
   pipelines:
     user_count: 1
