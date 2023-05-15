@@ -75,6 +75,8 @@ exec ${HOME}/testing/run "$@" \n\
  && chgrp -R 0 "${VIRTUAL_ENV}" \
  && chmod -R g=u "${VIRTUAL_ENV}"
 
+# Disable git dubious ownership detection in the image
+RUN git config --global --add safe.directory '*'
 
 WORKDIR ${HOME}
 
