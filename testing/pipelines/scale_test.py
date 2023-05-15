@@ -195,7 +195,7 @@ def prepare_namespace():
     create_dsp_application()
 
 
-def build_base_image():
+def prepare_test_namespace():
     """
     Prepares the cluster for running the multi-user ci-artifacts operations
     """
@@ -256,7 +256,7 @@ def pipelines_prepare():
     Prepares the cluster and the namespace for running pipelines scale tests
     """
 
-    build_base_image()
+    prepare_test_namespace()
     prepare_rhods()
 
 
@@ -287,7 +287,7 @@ class Pipelines:
         self.prepare = pipelines_prepare
         self.prepare_rhods = prepare_rhods
         self.prepare_namespace = prepare_namespace
-        self.build_base_image = build_base_image
+        self.prepare_test_namespace = prepare_test_namespace
 
         self.run_one = pipelines_run_one
         self.run = pipelines_run_many
