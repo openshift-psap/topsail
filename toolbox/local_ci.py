@@ -76,6 +76,7 @@ class Local_CI:
                   retrieve_artifacts=False,
                   minio_namespace=None,
                   minio_bucket_name=None,
+                  minio_secret_key_key=None,
                   pr_config=None,
                   capture_prom_db: bool = True,
                   ):
@@ -93,6 +94,7 @@ class Local_CI:
             retrieve_artifacts: If False, do not retrieve locally the test artifacts.
             minio_namespace: Namespace where the Minio server is located.
             minio_bucket_name: Name of the bucket in the Minio server.
+            minio_secret_key_key: Key inside 'secret_env_key' containing the secret to access the Minio bucket. Must be in the form 'user_password=SECRET_KEY'.
             pr_config: Optional path to a PR config file (avoids fetching Github PR json).
             capture_prom_db: If True, captures the Prometheus DB of the systems.
         """
