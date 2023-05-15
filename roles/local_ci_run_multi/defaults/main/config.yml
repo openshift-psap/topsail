@@ -1,0 +1,49 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Local_CI.run_multi
+
+# The CI command to run.
+# Mandatory value
+local_ci_run_multi_ci_command:
+
+# Missing documentation for user_count
+# Type: Int
+local_ci_run_multi_user_count: 1
+
+# The namespace in which the image.
+local_ci_run_multi_namespace: ci-artifacts
+
+# The imagestream tag to use.
+local_ci_run_multi_istag: ci-artifacts:main
+
+# The name to give to the Job running the CI command.
+local_ci_run_multi_job_name: ci-artifacts
+
+# Name of the ServiceAccount to use for running the Pod.
+local_ci_run_multi_service_account: default
+
+# Name of the Secret to mount in the Pod.
+local_ci_run_multi_secret_name: null
+
+# Name of the environment variable with which the secret path will be exposed in the Pod.
+local_ci_run_multi_secret_env_key: null
+
+# If False, do not retrieve locally the test artifacts.
+local_ci_run_multi_retrieve_artifacts: false
+
+# Namespace where the Minio server is located.
+local_ci_run_multi_minio_namespace: null
+
+# Name of the bucket in the Minio server.
+local_ci_run_multi_minio_bucket_name: null
+
+# Key inside 'secret_env_key' containing the secret to access the Minio bucket. Must be in the form 'user_password=SECRET_KEY'.
+local_ci_run_multi_minio_secret_key_key: null
+
+# Optional path to a PR config file (avoids fetching Github PR json).
+local_ci_run_multi_pr_config: null
+
+# If True, captures the Prometheus DB of the systems.
+# Type: Bool
+local_ci_run_multi_capture_prom_db: true
+

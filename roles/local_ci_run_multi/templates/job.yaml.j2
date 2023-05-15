@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: ci-artifacts
+    test: {{ local_ci_run_multi_job_name }}
+  name: {{ local_ci_run_multi_job_name }}
+  namespace: {{ local_ci_run_multi_namespace }}
+spec:
+  parallelism: {{ local_ci_run_multi_user_count }}
+  completions: {{ local_ci_run_multi_user_count }}
+  activeDeadlineSeconds: 18000
+  backoffLimit: 0
+  completionMode: Indexed
+  template:
+    metadata:
+      name: ods-ci-loadtest
+    spec:
+      serviceAccount: "{{ local_ci_run_multi_service_account }}"
+      containers:
+      - name: main
+        command:
+        - bash
+        - -c
+        args:
+        - |
+          set -o errexit
+          set -o pipefail
+          set -o nounset
+          set -o errtrace
+          set -x
+
+          git config --global --add safe.directory '*'
+
+          trap 'touch "$ARTIFACT_DIR/.local_ci_done"' EXIT
+
+{% if local_ci_run_multi_pr_config %}
+          cat > "${ARTIFACT_DIR}/variable_overrides" << EOF
+          {{ local_ci_run_pr_config_content_cmd.stdout | indent(6) }}
+          EOF
+{% endif %}
+
+          bash -x /opt/ci-artifacts/src/testing/run {{ local_ci_run_multi_ci_command }} |& tee "${ARTIFACT_DIR}/run.log"
+        image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_multi_namespace }}/{{ local_ci_run_multi_istag }}"
+        imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+          seccompProfile:
+            type: RuntimeDefault
+        runAsNonRoot: True
+        env:
+        - name: ARTIFACT_DIR
+          value: /logs
+        - name: KUBECONFIG # Kubernetes is accessed via the in-Pod credentials
+          value: ""
+{% if local_ci_run_multi_secret_name %}
+        - name: {{ local_ci_run_multi_secret_env_key }}
+          value: /secrets/{{ local_ci_run_multi_secret_name }}
+{% endif %}
+        - name: SHARED_DIR # shouldn't be used
+          value: /tmp/shared
+        volumeMounts:
+        - mountPath: /logs
+          name: artifacts
+{% if local_ci_run_multi_secret_name %}
+        - mountPath: /secrets/{{ local_ci_run_multi_secret_name }}
+          name: {{ local_ci_run_multi_secret_name }}
+{% endif %}
+      restartPolicy: Never
+      volumes:
+      - name: artifacts
+        emptyDir: {}
+{% if local_ci_run_multi_secret_name %}
+      - name: {{ local_ci_run_multi_secret_name }}
+        secret:
+          secretName: {{ local_ci_run_multi_secret_name }}
+{% endif %}
