@@ -1,8 +1,10 @@
 import datetime
+import logging
+import sys
 
 from toolbox._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
-class LocalCI:
+class Local_CI:
     """
     Commands to run the CI scripts in a container environment similar to the one used by the CI
     """
