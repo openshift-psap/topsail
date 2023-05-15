@@ -68,6 +68,11 @@ local_ci run_multi/scale_test:
 
   ci_command: "pipelines scale_test run_one"
 
+  retrieve_artifacts: true
+  minio_bucket_name: "{{ base_image.minio.bucket_name }}"
+  minio_namespace: "{{ base_image.namespace }}"
+  minio_secret_key_key: s3_ldap.passwords
+
 cluster deploy_minio_s3_server:
   namespace: "{{ base_image.namespace }}"
   secret_properties_file: {{ s3_ldap_password_location }}
