@@ -1,0 +1,123 @@
+---
+- name: Create wisdom namespace
+  shell: |
+    set -o pipefail
+    oc new-project {{ wisdom_namespace }}
+    oc label namespace {{ wisdom_namespace }} modelmesh-enabled=true --overwrite=true
+    oc label namespace {{ wisdom_namespace }} opendatahub.io/dashboard=true --overwrite=true
+
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+#TODO: Create the S3 and Quay secret using YAML from the vault
+- name: Ensure that the S3 secret file exists
+  stat:
+    path: "{{ wisdom_deploy_model_s3_secret_path }}"
+
+- name: Ensure that the quay secret file exists
+  stat:
+    path: "{{ wisdom_deploy_model_quay_pull_secret_path }}"
+
+- name: Delete the S3 secret, if it exists
+  command: oc delete -f {{ wisdom_deploy_model_s3_secret_path }} --ignore-not-found -n {{ wisdom_namespace }}
+
+- name: Create the S3 secret 
+  command: oc create -f {{ wisdom_deploy_model_s3_secret_path }} -n {{ wisdom_namespace }}
+
+- name: Delete the quay pull secret, if it exists
+  command: oc delete -f {{ wisdom_deploy_model_quay_pull_secret_path }} --ignore-not-found -n {{ wisdom_namespace }}
+
+- name: Create the quay pull secret
+  command: oc create -f {{ wisdom_deploy_model_quay_pull_secret_path }} -n {{ wisdom_namespace }}
+
+# model-serving-config ConfigMap:
+- name: Apply the ConfigMap "model-serving-config" template
+  template:
+    src: "{{ wisdom_deploy_model_model_serving_config_template_path }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/000_model_serving_config.yml"
+    mode: 0400
+
+- name: Create or update the ConfigMap "model-serving-config" 
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/000_model_serving_config.yml"
+
+# ServingRuntime
+- name: Apply the ServingRuntime template
+  template:
+    src: "{{ wisdom_deploy_model_serving_runtime_template_path }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/001_serving_runtime.yml"
+    mode: 0400
+
+- name: Create or update ServingRuntime
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_serving_runtime.yml"
+
+# InferenceService
+- name: Apply the InferenceService template
+  template:
+    src: "{{ wisdom_deploy_model_inference_service_template_path }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/002_inference_service.yml"
+    mode: 0400
+
+- name: Create or update InferenceService
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/002_inference_service.yml"
+
+- name: Create wisdom namespace
+  shell: |
+    set -o pipefail
+    oc patch serviceaccount modelmesh-serving-sa -n {{ wisdom_namespace }} -p '{"imagePullSecrets": [{"name": "quay-io"}]}'
+    oc delete pods --all --force -n {{ wisdom_namespace }}
+  
+
+# Wait for wisdom Pods to be ready. 
+# Max time is 15 minutes to give time for the GPU operator stack and image pull to complete.
+- name: Wait for wisdom model mesh Pods to be ready
+  block:
+  - name: Ensure that wisdom model mesh deployment is ready
+    command:
+      oc get deployment/modelmesh-serving-{{ serving_runtime_name }}
+         -n {{ wisdom_namespace }}
+         -oyaml
+         -ojsonpath={.status.unavailableReplicas}
+    register: wisdom_number_unavailable
+    until:
+    - wisdom_number_unavailable.rc == 0
+    - not wisdom_number_unavailable.stdout
+    retries: 30
+    delay: 30
+
+# Put wisdom protos in a ConfigMap
+- name: Delete the protos ConfigMap if it already exists
+  command: oc delete configmap/wisdom-protos --ignore-not-found -n {{ wisdom_namespace }}
+
+- name: Create the wisdom Protos
+  command: oc create configmap wisdom-protos --from-file={{ wisdom_deploy_model_protos_path }} -n {{ wisdom_namespace }}
+
+- name: Delete the wisdom tester Pod if it exists
+  command: oc delete  --ignore-not-found=true -f "{{ wisdom_tester_pod }}" -n {{ wisdom_namespace }}
+
+- name: Apply the wisdom tester entrypoint template
+  template:
+    src: "{{ wisdom_tester_entrypoint_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/003_wisdom_tester_pod_entrypoint.yml"
+    mode: 0400
+  
+- name: Create the entrypoint ConfigMap
+  command: oc apply -n {{ wisdom_namespace }} -f "{{ artifact_extra_logs_dir }}/src/003_wisdom_tester_pod_entrypoint.yml"
+
+# Wait for model to respond without error
+- block:
+  - name: Create the wisdom tester Pod
+    command: oc create -f "{{ wisdom_tester_pod }}" -n {{ wisdom_namespace }}
+
+  - name: Wait for the wisdom test Pod to terminate
+    command:
+      oc get pod/wisdom-tester
+         -n {{ wisdom_namespace }}
+         -o custom-columns=:.status.phase
+         --no-headers
+    register: tester_wait
+    until: tester_wait.stdout == "Succeeded" or tester_wait.stdout == "Error" or tester_wait.stdout == "Failed"
+    retries: 10
+    delay: 30

@@ -1,0 +1,50 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Delete the wisdom warmup Pod if it exists
+  command: oc delete  --ignore-not-found=true -f "{{ wisdom_warmup_pod }}" -n {{ wisdom_namespace }}
+
+- name: Apply the wisdom warmup entrypoint template
+  template:
+    src: "{{ wisdom_warmup_entrypoint_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/003_wisdom_warmup_pod_entrypoint.yml"
+    mode: 0400
+
+- name: Delete the protos ConfigMap if it exists
+  command: oc delete  --ignore-not-found=true configmap/wisdom-protos -n {{ wisdom_namespace }}
+
+- name: Create the protos ConfigMap
+  command: oc create configmap wisdom-protos --from-file="{{ wisdom_warmup_model_protos_path }}" -n {{ wisdom_namespace }}
+
+- name: Create the entrypoint ConfigMap
+  command: oc apply -n {{ wisdom_namespace }} -f "{{ artifact_extra_logs_dir }}/src/003_wisdom_warmup_pod_entrypoint.yml"
+
+- name: Create the wisdom warmup Pod if it exists
+  command: oc apply -f "{{ wisdom_warmup_pod }}" -n {{ wisdom_namespace }}
+
+# Wait for wisdom modelmesh Pods to all load the model.
+- name: Wait for wisdom model mesh Pods to be ready
+  block:
+  # Iterate through each modelmesh Pod and verify that the model is taking up more space than 0 GB.
+  # This means that it is loading/loaded.
+  - name: Ensure that wisdom model mesh deployment is ready
+    shell: |
+      for pod in $(oc get pod -oname -n wisdom | grep 'modelmesh-serving'); do
+          if oc exec -n wisdom $pod -c puller -- du -h -s /models | grep -q '^0\s'; then
+            echo "At least one wisdom Pod still hasn't loaded the model"
+            exit 1
+          fi
+      done
+    register: model_loaded
+    until:
+    - model_loaded.rc == 0
+    - not model_loaded.stdout
+    retries: 15
+    delay: 30
+
+- name: Delete the wisdom warmup Pod if it exists
+  command: oc delete  --ignore-not-found=true -f "{{ wisdom_warmup_pod }}" -n {{ wisdom_namespace }}

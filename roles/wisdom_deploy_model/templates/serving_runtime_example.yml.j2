@@ -1,0 +1,12 @@
+# An example ServingRuntime to show how the variables 
+# will be used in the template.
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: {{ serving_runtime_name }}
+  namespace: {{ wisdom_namespace }}
+spec:
+  replicas: {{ wisdom_deploy_model_replicas }}
+  containers:
+    - name: runtime
+      image: quay.io/example/example:example

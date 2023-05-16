@@ -1,0 +1,6 @@
+---
+wisdom_namespace: wisdom
+wisdom_warmup_entrypoint_template: 'templates/wisdom-warmup_entrypoint.yml.j2'
+wisdom_warmup_pod: 'roles/wisdom_warmup_model/files/wisdom-warmup_pod.yml'
+warmup_concurrency: '16'
+warmup_total_requests: '4096'

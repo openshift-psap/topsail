@@ -1,0 +1,69 @@
+---
+
+# TODO: Make the runtime / model version configurable
+# TODO: Make instancetype configurable
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Delete the llm-load-test Pod if it exists
+  command: oc delete --ignore-not-found=true -f "{{ llm_load_test_pod }}" -n {{ wisdom_namespace }}
+  
+# the .proto files need to be mounted into the Pod
+- name: Delete the protos ConfigMap if it exists
+  command: oc delete  --ignore-not-found=true configmap/wisdom-protos -n {{ wisdom_namespace }}
+
+- name: Create the protos ConfigMap
+  command: oc create configmap wisdom-protos --from-file="{{ wisdom_llm_load_test_protos_path }}" -n {{ wisdom_namespace }}
+
+# The results need to be pushed to S3 after the run, put S3 credentials in a Secret
+- name: Delete the S3 push secret for results if it exists
+  command: oc delete --ignore-not-found=true secret/llm-load-test-s3-credentials -n {{ wisdom_namespace }}
+
+- name: Create the S3 push secret for results
+  command: oc create secret generic --from-file={{ wisdom_llm_load_test_s3_secret_path }} -n {{ wisdom_namespace }} llm-load-test-s3-credentials
+
+# The dataset (input to the model) needs to be mounted into the test Pod.
+- name: Delete the dataset ConfigMap if it exists
+  command: oc delete --ignore-not-found=true configmap/llm-load-test-dataset -n {{ wisdom_namespace }}
+
+- name: Create the dataset ConfigMap
+  command: oc create configmap llm-load-test-dataset --from-file=dataset.json="{{ wisdom_llm_load_test_dataset_path }}" -n {{ wisdom_namespace }}
+  # The Pod will mount llm-load-test-dataset in /etc/load_test_dataset. The config.json expects the dataset.json at /etc/load_test_dataset/dataset.json.
+
+# The config.json file configures settings for llm-load-test. It will be templatized before each run.
+- name: Delete the llm-load-test config.json ConfigMap if it exists
+  command: oc delete --ignore-not-found=true configmap/llm-load-test-config -n {{ wisdom_namespace }}
+
+- name: Apply the llm-load-test config.json template
+  template:
+    src: "{{ llm_load_test_config_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/010_llm_load_test_config.json"
+    mode: 0400
+
+- name: Create the llm-load-test-config ConfigMap
+  command: oc create configmap llm-load-test-config --from-file=config.json="{{ artifact_extra_logs_dir }}/src/010_llm_load_test_config.json" -n {{ wisdom_namespace }}
+
+- name: Create the llm-load-test Pod 
+  command: oc apply -f "{{ llm_load_test_pod }}" -n {{ wisdom_namespace }}
+
+- name: Wait for llm load test Pod to finish running
+  block:
+  - name: Ensure that the llm-load-test Pod is complete
+    command:
+      oc get pod/llm-load-test
+         -n {{ wisdom_namespace }}
+         -o custom-columns=:.status.phase
+         --no-headers
+    register: load_test_wait
+    until: load_test_wait.stdout == "Succeeded" or load_test_wait.stdout == "Error" or load_test_wait.stdout == "Failed"
+    retries: 20
+    delay: 60
+
+- name: Save the llm-load-test Pod logs
+  shell: oc logs pod/llm-load-test > {{ artifact_extra_logs_dir }}/llm-load-test-logs-{{ wisdom_llm_load_test_replicas }}-{{ wisdom_llm_load_test_requests }}-{{ wisdom_llm_load_test_concurrency }}.log
+
+- name: Delete the llm-load-test Pod if it exists
+  command: oc delete  --ignore-not-found=true -f "{{ llm_load_test_pod }}" -n {{ wisdom_namespace }}

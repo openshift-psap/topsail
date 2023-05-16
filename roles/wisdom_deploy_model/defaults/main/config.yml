@@ -1,0 +1,32 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Wisdom.deploy_model
+
+# Model Mesh Deployment replicas
+# Mandatory value
+wisdom_deploy_model_replicas:
+
+# File path to a yaml manifest for the Secret containing credentials for the S3 bucket with the model files
+# Mandatory value
+wisdom_deploy_model_s3_secret_path:
+
+# File path to a yaml manifest for the Secret containing credentials for the quay repository containing the runtime image.
+# Mandatory value
+wisdom_deploy_model_quay_pull_secret_path:
+
+# File path to the proto files needed to query the model
+# Mandatory value
+wisdom_deploy_model_protos_path:
+
+# File path to the template for the model-serving-config ConfigMap
+# Mandatory value
+wisdom_deploy_model_model_serving_config_template_path:
+
+# File path to the template for the ServingRuntime YAML
+# Mandatory value
+wisdom_deploy_model_serving_runtime_template_path:
+
+# File path to the template for the InferenceService YAML
+# Mandatory value
+wisdom_deploy_model_inference_service_template_path:
+
