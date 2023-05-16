@@ -177,7 +177,7 @@ def prepare_rhods():
     run("./run_toolbox.py from_config cluster set_scale --prefix=sutest")
 
 
-def prepare_namespace():
+def prepare_pipelines_namespace():
     """
     Prepares the namespace for running a pipelines scale test.
     """
@@ -195,7 +195,7 @@ def prepare_namespace():
     create_dsp_application()
 
 
-def prepare_test_namespace():
+def prepare_test_driver_namespace():
     """
     Prepares the cluster for running the multi-user ci-artifacts operations
     """
@@ -249,14 +249,13 @@ def prepare_test_namespace():
     secret_env_key = get_config("secrets.dir.env_key")
 
     run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")
-    run(f"oc get secrets -n {namespace}")
 
 def pipelines_prepare():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
     """
 
-    prepare_test_namespace()
+    prepare_test_driver_namespace()
     prepare_rhods()
 
 
@@ -272,7 +271,7 @@ def pipelines_run_one():
         set_config("rhods.pipelines.namespace", new_namespace)
 
     try:
-        prepare_namespace()
+        prepare_pipelines_namespace()
         run(f"./run_toolbox.py from_config pipelines run_kfp_notebook")
     finally:
         run(f"./run_toolbox.py from_config pipelines capture_state")
@@ -292,8 +291,8 @@ class Pipelines:
     def __init__(self):
         self.prepare = pipelines_prepare
         self.prepare_rhods = prepare_rhods
-        self.prepare_namespace = prepare_namespace
-        self.prepare_test_namespace = prepare_test_namespace
+        self.prepare_pipelines_namespace = prepare_pipelines_namespace
+        self.prepare_test_driver_namespace = prepare_test_driver_namespace
 
         self.run_one = pipelines_run_one
         self.run = pipelines_run_many
