@@ -8,7 +8,6 @@ set -x
 
 TESTING_NOTEBOOKS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 TESTING_UTILS_DIR="$TESTING_NOTEBOOKS_DIR/../utils"
-TESTING_ODS_DIR="$TESTING_NOTEBOOKS_DIR/../ods"
 
 if [ -z "${ARTIFACT_DIR:-}" ]; then
     if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
