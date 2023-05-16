@@ -30,9 +30,14 @@ spec:
           set -o errtrace
           set -x
 
+          trap 'touch "$ARTIFACT_DIR/.local_ci_done"' EXIT
+
           git config --global --add safe.directory '*'
 
-          trap 'touch "$ARTIFACT_DIR/.local_ci_done"' EXIT
+{% if local_ci_run_multi_git_pull %}
+          git fetch origin "$OPENSHIFT_BUILD_REFERENCE"
+          git reset --hard FETCH_HEAD
+{% endif %}
 
 {% if local_ci_run_multi_pr_config %}
           cat > "${ARTIFACT_DIR}/variable_overrides" << EOF
