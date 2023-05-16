@@ -23,6 +23,7 @@
     cluster_deploy_minio_s3_server_namespace: "{{ pipelines_deploy_application_namespace }}"
     cluster_deploy_minio_s3_server_secret_properties_file: "{{ pipelines_deploy_application_secret_properties_file }}"
     cluster_deploy_minio_s3_server_bucket_name: "{{ pipelines_deploy_application_name }}"
+    artifact_extra_logs_dir: "{{ artifact_extra_logs_dir }}/cluster_deploy_minio_s3_server"
 
 - name: Prepare the template file
   template:
