@@ -104,7 +104,7 @@
 
   - name: Get the BuildConfig definition (debug)
     shell:
-      oc describe
+      oc get -oyaml
          -n "{{ utils_build_push_image_namespace }}"
          buildconfig/{{ buildconfig_name_cmd.stdout }}
          > {{ artifact_extra_logs_dir }}/buildconfig.yaml

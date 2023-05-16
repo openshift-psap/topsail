@@ -96,13 +96,18 @@ base_image:
   imagestream: ci-artifacts
   repo:
     url: https://github.com/openshift-psap/ci-artifacts/
-    tag: main
+    tag: pr-701
     ref: main
     ref_prefer_pr: true
     dockerfile_path: build/Dockerfile
   user:
     service_account: ci-artifacts
     role: cluster-admin
+  minio:
+    bucket_name: pipelines-scale-test-bucket
+tests:
+  pipelines:
+    user_count: 2
 matbench:
   preset: null
   workload: rhods-pipelines

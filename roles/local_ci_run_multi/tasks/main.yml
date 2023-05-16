@@ -1,0 +1,168 @@
+---
+- name: Get the content of the configuration file, if it is enabled
+  when: local_ci_run_multi_pr_config | default('', true) | trim
+  command:
+    cat "{{ local_ci_run_multi_pr_config }}"
+  register: local_ci_run_multi_pr_config_content_cmd
+
+- name: Ensure that the CI image exists
+  command: oc get istag -n "{{ local_ci_run_multi_namespace }}" "{{ local_ci_run_multi_istag }}"
+
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Empty the Minio S3 bucket
+  shell: |
+    oc -c mc -n {{ local_ci_run_multi_minio_namespace }} rsh $(oc get pod -lapp=minio -n {{ local_ci_run_multi_minio_namespace }} -oname) \
+       mc --config-dir /tmp rm minio/{{ local_ci_run_multi_minio_bucket_name }}/ --recursive --force --quiet >/dev/null;
+    oc -c mc -n {{ local_ci_run_multi_minio_namespace }} rsh $(oc get pod -lapp=minio -n {{ local_ci_run_multi_minio_namespace }} -oname) \
+       rm -rf /artifacts/to_export > /dev/null
+    oc -c mc -n {{ local_ci_run_multi_minio_namespace }} rsh $(oc get pod -lapp=minio -n {{ local_ci_run_multi_minio_namespace }} -oname) \
+       mc --config-dir /tmp cp /etc/os-release minio/{{ local_ci_run_multi_minio_bucket_name }}; # without it, cp may fail if the bucket is empty
+  failed_when: false
+  when: local_ci_run_multi_retrieve_artifacts
+
+- name: Apply the Job template
+  template:
+    src: "{{ local_ci_run_multi_job_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
+    mode: 0400
+
+- name: Delete any stalled CI execution Pod
+  command: oc delete -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml" --ignore-not-found=true
+
+- name: Cleanup the Prometheus database of the cluster
+  when: local_ci_run_multi_capture_prom_db | bool
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: reset
+
+- name: Create the CI Job
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
+
+- name: Wait for the CI Job to start
+  shell:
+    oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
+       -ojsonpath={.status.startTime}
+  register: wait_ci_job_start
+  retries: 12
+  delay: 5
+  until: wait_ci_job_start.stdout
+
+- name: Wait for the CI Job to terminate
+  command:
+    oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
+       -ojsonpath={.status.active}
+  register: wait_ci_job
+  retries: 180
+  delay: 20
+  until: not wait_ci_job.stdout
+  failed_when: false
+
+- name: Get the status of the CI Job
+  shell:
+    oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
+        > "{{ artifact_extra_logs_dir }}/ci_job.status"
+  ignore_errors: yes
+
+- name: Get the yaml of the CI Job
+  shell:
+    oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
+       -oyaml
+       > "{{ artifact_extra_logs_dir }}/ci_job.yaml"
+  ignore_errors: yes
+
+- name: Get the status of the CI Pods
+  shell:
+    oc get pods
+       -ljob-name={{ local_ci_run_multi_job_name }}
+       -n {{ local_ci_run_multi_namespace }}
+        > "{{ artifact_extra_logs_dir }}/ci_pods.status"
+  ignore_errors: yes
+
+- name: Get the yaml of the CI Pods
+  shell:
+    oc get pods -oyaml
+       -ljob-name={{ local_ci_run_multi_job_name }}
+       -n {{ local_ci_run_multi_namespace }}
+       > "{{ artifact_extra_logs_dir }}/ci_pods.yaml"
+  ignore_errors: yes
+
+- name: Get the JSON of the CI Pods
+  shell:
+    oc get pods -ojson
+       -ljob-name={{ local_ci_run_multi_job_name }}
+       -n {{ local_ci_run_multi_namespace }}
+       > "{{ artifact_extra_logs_dir }}/ci_pods.json"
+  ignore_errors: yes
+
+- name: Create the CI Pod logs directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/ci-pods_logs"
+    state: directory
+    mode: '0755'
+
+- name: Get the names of the CI Pods
+  command:
+    oc get pods -oname
+       -ljob-name={{ local_ci_run_multi_job_name }}
+       -n {{ local_ci_run_multi_namespace }}
+  register: pod_names_cmd
+  ignore_errors: yes
+  # mute to reduce the log length
+  no_log: true
+
+- name: Get the logs of the tester Pod
+  shell:
+    oc logs {{ item }}
+         --all-containers --prefix
+         -n {{ local_ci_run_multi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/ci-pods_logs/$(basename "{{ item }}").log"
+  loop: "{{ pod_names_cmd.stdout_lines }}"
+  ignore_errors: yes
+  # mute to reduce the log length
+  no_log: true
+
+- name: Get Minio Pod name
+  command:
+    oc get pod
+      -lapp=minio
+      -n {{ local_ci_run_multi_minio_namespace }}
+      -ojsonpath={.items[0].metadata.name}
+  register: minio_podname_cmd
+  ignore_errors: yes
+
+- name: Create the ci-pods_artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/ci-pods_artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Export the data out of the S3 bucket
+  command:
+    oc -n {{ local_ci_run_multi_minio_namespace }}
+       -c mc
+       exec "{{ minio_podname_cmd.stdout }}"
+       -- bash -c 'mkdir -p /artifacts/to_export && mc --config-dir /tmp cp minio/{{ local_ci_run_multi_minio_bucket_name }}/ /artifacts/to_export --recursive --quiet > /dev/null'
+  ignore_errors: yes
+
+- name: Extract the test artifacts from the Minio S3 container
+  shell: |
+    set -o pipefail
+
+    oc -n {{ local_ci_run_multi_minio_namespace }} -c ubi8 \
+       rsync "{{ minio_podname_cmd.stdout }}:/artifacts/to_export/" "{{ artifact_extra_logs_dir }}/ci-pods_artifacts" --quiet
+
+    rm -f "{{ artifact_extra_logs_dir }}/ci-pods_artifacts/os-release"
+  ignore_errors: yes
+
+- name: Test if the CI job crashed
+  command:
+    oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
+       -ojsonpath={.status.failed}
+  register: check_ci_job
+  failed_when: check_ci_job.stdout | length > 0

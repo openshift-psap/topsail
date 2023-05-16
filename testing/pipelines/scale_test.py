@@ -89,8 +89,9 @@ def set_config(jsonpath, value):
     with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"], "w") as f:
         yaml.dump(config, f, indent=4)
 
-    if shared_dir := os.environ.get("SHARED_DIR"):
-        with open(pathlib.Path(shared_dir) / "config.yaml", "w") as f:
+    if (shared_dir := os.environ.get("SHARED_DIR")) and (shared_dir_path := pathlib.Path(shared_dir)) and shared_dir_path.exists():
+
+        with open(shared_dir_path / "config.yaml", "w") as f:
             yaml.dump(config, f, indent=4)
 
 # ---
@@ -177,13 +178,13 @@ def prepare_rhods():
     run("./run_toolbox.py from_config cluster set_scale --prefix=sutest")
 
 
-def prepare_namespace():
+def prepare_pipelines_namespace():
     """
     Prepares the namespace for running a pipelines scale test.
     """
 
     namespace = get_config("rhods.pipelines.namespace")
-    run(f"oc new-project '{namespace}' --skip-config-write >/dev/null || true")
+    run(f"oc new-project '{namespace}' --skip-config-write >/dev/null 2>/dev/null || true")
     run(f"oc label namespace/{namespace} opendatahub.io/dashboard=true --overwrite")
 
     dedicated = "{}" if get_config("clusters.sutest.compute.dedicated") \
@@ -195,7 +196,7 @@ def prepare_namespace():
     create_dsp_application()
 
 
-def build_base_image():
+def prepare_test_driver_namespace():
     """
     Prepares the cluster for running the multi-user ci-artifacts operations
     """
@@ -229,6 +230,12 @@ def build_base_image():
         run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
 
     #
+    # Deploy Minio
+    #
+
+    run(f"./run_toolbox.py from_config cluster deploy_minio_s3_server")
+
+    #
     # Prepare the ServiceAccount
     #
 
@@ -243,14 +250,13 @@ def build_base_image():
     secret_env_key = get_config("secrets.dir.env_key")
 
     run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")
-    run(f"oc get secrets -n {namespace}")
 
 def pipelines_prepare():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
     """
 
-    build_base_image()
+    prepare_test_driver_namespace()
     prepare_rhods()
 
 
@@ -259,8 +265,14 @@ def pipelines_run_one():
     Runs a single Pipeline scale test.
     """
 
+    if job_index := os.environ.get("JOB_COMPLETION_INDEX"):
+        namespace = get_config("rhods.pipelines.namespace")
+        new_namespace = f"{namespace}-user-{job_index}"
+        logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
+        set_config("rhods.pipelines.namespace", new_namespace)
+
     try:
-        prepare_namespace()
+        prepare_pipelines_namespace()
         run(f"./run_toolbox.py from_config pipelines run_kfp_notebook")
     finally:
         run(f"./run_toolbox.py from_config pipelines capture_state")
@@ -270,7 +282,7 @@ def pipelines_run_many():
     Runs multiple concurrent Pipelines scale test.
     """
 
-    run(f"./run_toolbox.py from_config local_ci run --suffix scale_test")
+    run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale_test")
 
 class Pipelines:
     """
@@ -280,8 +292,8 @@ class Pipelines:
     def __init__(self):
         self.prepare = pipelines_prepare
         self.prepare_rhods = prepare_rhods
-        self.prepare_namespace = prepare_namespace
-        self.build_base_image = build_base_image
+        self.prepare_pipelines_namespace = prepare_pipelines_namespace
+        self.prepare_test_driver_namespace = prepare_test_driver_namespace
 
         self.run_one = pipelines_run_one
         self.run = pipelines_run_many
