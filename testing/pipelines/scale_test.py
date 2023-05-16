@@ -89,8 +89,9 @@ def set_config(jsonpath, value):
     with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"], "w") as f:
         yaml.dump(config, f, indent=4)
 
-    if shared_dir := os.environ.get("SHARED_DIR"):
-        with open(pathlib.Path(shared_dir) / "config.yaml", "w") as f:
+    if (shared_dir := os.environ.get("SHARED_DIR")) and (shared_dir_path := pathlib.Path(shared_dir)) and shared_dir_path.exists():
+
+        with open(shared_dir_path / "config.yaml", "w") as f:
             yaml.dump(config, f, indent=4)
 
 # ---
