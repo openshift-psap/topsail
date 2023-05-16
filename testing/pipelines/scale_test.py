@@ -28,7 +28,7 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True):
     return proc
 
 TESTING_PIPELINES_DIR = pathlib.Path(__file__).absolute().parent
-TESTING_ODS_DIR = TESTING_PIPELINES_DIR.parent / "ods"
+TESTING_UTILS_DIR = TESTING_PIPELINES_DIR.parent / "utils"
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"])
 
 try:
@@ -98,7 +98,7 @@ def set_config(jsonpath, value):
 def setup_brew_registry():
     token_file = PSAP_ODS_SECRET_PATH / get_config("secrets.brew_registry_redhat_io_token_file")
 
-    brew_setup_script = TESTING_ODS_DIR / "brew.registry.redhat.io" / "setup.sh"
+    brew_setup_script = TESTING_UTILS_DIR / "brew.registry.redhat.io" / "setup.sh"
 
     return run(f'"{brew_setup_script}" "{token_file}"')
 
