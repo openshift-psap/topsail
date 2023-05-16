@@ -107,7 +107,7 @@ base_image:
     bucket_name: pipelines-scale-test-bucket
 tests:
   pipelines:
-    user_count: 1
+    user_count: 2
 matbench:
   preset: null
   workload: rhods-pipelines
