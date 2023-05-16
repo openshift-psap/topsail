@@ -183,7 +183,7 @@ def prepare_pipelines_namespace():
     """
 
     namespace = get_config("rhods.pipelines.namespace")
-    run(f"oc new-project '{namespace}' --skip-config-write >/dev/null || true")
+    run(f"oc new-project '{namespace}' --skip-config-write >/dev/null 2>/dev/null || true")
     run(f"oc label namespace/{namespace} opendatahub.io/dashboard=true --overwrite")
 
     dedicated = "{}" if get_config("clusters.sutest.compute.dedicated") \
