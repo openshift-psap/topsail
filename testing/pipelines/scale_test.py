@@ -44,6 +44,9 @@ def set_config_environ():
     config_path = ARTIFACT_DIR / "config.yaml"
     os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
 
+    # make sure we're using a clean copy of the configuration file
+    config_path.unlink(missing_ok=True)
+
     if shared_dir := os.environ.get("SHARED_DIR"):
         shared_dir_config_path = pathlib.Path(shared_dir) / "config.yaml"
         if shared_dir_config_path.exists():
