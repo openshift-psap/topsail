@@ -35,7 +35,13 @@ spec:
           git config --global --add safe.directory '*'
 
 {% if local_ci_run_multi_git_pull %}
-          git fetch origin "$OPENSHIFT_BUILD_REFERENCE"
+
+          git fetch origin \
+{% if local_ci_run_multi_git_pull is true %}
+              "$OPENSHIFT_BUILD_REFERENCE"
+{% else %}
+              "{{ local_ci_run_multi_git_pull }}"
+{% endif %}
           git reset --hard FETCH_HEAD
 {% endif %}
 
