@@ -234,14 +234,12 @@ class RHODS:
     @AnsibleRole("rhods_undeploy_ods")
     @AnsibleMappedParams
     def undeploy_ods(self,
-                     namespace="redhat-ods-operator",
-                     wait: bool = True):
+                     namespace="redhat-ods-operator"):
         """
         Undeploy ODS operator
 
         Args:
           namespace: Namespace where RHODS is installed.
-          wait: Wait for the operator full deletion.
         """
 
         return RunAnsibleRole(locals())
