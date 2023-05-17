@@ -96,7 +96,7 @@ base_image:
   imagestream: ci-artifacts
   repo:
     url: https://github.com/openshift-psap/ci-artifacts/
-    tag: pr-701
+    tag: main
     ref: main
     ref_prefer_pr: true
     dockerfile_path: build/Dockerfile
