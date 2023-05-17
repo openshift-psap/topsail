@@ -238,6 +238,12 @@ def prepare_test_driver_namespace():
         run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
 
     #
+    # Deploy Redis server for Pod startup synchronization
+    #
+
+    run("./run_toolbox.py from_config cluster deploy_redis_server")
+
+    #
     # Deploy Minio
     #
 
