@@ -10,6 +10,9 @@ cluster deploy_ldap:
   username_count: {{ ldap.users.count }}
   username_prefix: {{ ldap.users.prefix }}
 
+cluster undeploy_ldap:
+  idp_name: {{ ldap.idp_name }}
+
 rhods deploy_ods:
   catalog_image: {{ rhods.catalog.image }}
   tag: {{ rhods.catalog.tag }}

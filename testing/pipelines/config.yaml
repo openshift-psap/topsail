@@ -64,7 +64,7 @@ clusters:
           key: only-rhods-pipelines
           value: "yes"
           effect: NoSchedule
-
+  cleanup_on_exit: true
 ldap:
   # Name of the LDAP identity provider.
   idp_name: RHODS_CI_LDAP
@@ -83,6 +83,9 @@ rhods:
     application:
       name: sample
     namespace: dsp-scale-test
+    namespace_label:
+      key: dsp-scale-test
+      value: "true"
   operator:
     # set to true to stop the RHODS operator
     stop: true
