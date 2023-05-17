@@ -304,6 +304,18 @@ def pipelines_run_many():
     run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale_test")
 
 
+
+def pipelines_test_ci():
+    """
+    Runs the Pipelines scale test from the CI
+    """
+
+    try:
+        pipelines_run_many()
+    except Exception as e:
+        raise
+
+
 class Pipelines:
     """
     Commands for launching the Pipeline Perf & Scale tests
@@ -319,7 +331,7 @@ class Pipelines:
         self.run = pipelines_run_many
 
         self.prepare_ci = pipelines_prepare
-        self.test_ci = self.run
+        self.test_ci = pipelines_test_ci
 
 
 def main():
