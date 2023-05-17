@@ -9,3 +9,4 @@ pylint
 awscli
 
 jsonpath_ng
+state-signals==0.5.2
