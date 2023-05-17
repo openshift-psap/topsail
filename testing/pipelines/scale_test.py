@@ -38,6 +38,7 @@ except KeyError:
     ARTIFACT_DIR = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d')}"
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
 
+
 def set_config_environ():
     os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_PIPELINES_DIR / "command_args.yaml")
     config_path = ARTIFACT_DIR / "config.yaml"
@@ -52,9 +53,11 @@ def set_config_environ():
     if not config_path.exists():
         shutil.copyfile(TESTING_PIPELINES_DIR / "config.yaml", config_path)
 
+
 set_config_environ()
 with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
     config = yaml.safe_load(config_f)
+
 
 def get_config(jsonpath):
     try:
@@ -67,6 +70,7 @@ def get_config(jsonpath):
 
     return value
 
+
 def get_command_arg(command, args):
     try:
         logging.info(f"get_command_arg: {command} {args}")
@@ -76,6 +80,7 @@ def get_command_arg(command, args):
         raise
 
     return proc.stdout.decode("utf-8").strip()
+
 
 def set_config(jsonpath, value):
     try:
@@ -144,6 +149,7 @@ def customize_rhods():
         with open(ARTIFACT_DIR / "dashboard.replicas", "w") as f:
             print(f"{dashboard_replicas}", file=f)
 
+
 def install_ocp_pipelines():
     MANIFEST_NAME = "openshift-pipelines-operator-rh"
     installed_csv_cmd = run("oc get csv -oname", capture_stdout=True)
@@ -153,6 +159,7 @@ def install_ocp_pipelines():
 
     run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_pipelines ./run_toolbox.py cluster deploy_operator redhat-operators {MANIFEST_NAME} all")
 
+
 def create_dsp_application():
     namespace = get_config("rhods.pipelines.namespace")
     try:
@@ -161,6 +168,7 @@ def create_dsp_application():
 
 
     run("./run_toolbox.py from_config pipelines deploy_application")
+
 
 def prepare_rhods():
     """
@@ -251,6 +259,7 @@ def prepare_test_driver_namespace():
 
     run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")
 
+
 def pipelines_prepare():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
@@ -277,12 +286,14 @@ def pipelines_run_one():
     finally:
         run(f"./run_toolbox.py from_config pipelines capture_state")
 
+
 def pipelines_run_many():
     """
     Runs multiple concurrent Pipelines scale test.
     """
 
     run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale_test")
+
 
 class Pipelines:
     """
@@ -300,6 +311,7 @@ class Pipelines:
 
         self.prepare_ci = pipelines_prepare
         self.test_ci = self.run
+
 
 def main():
     # Print help rather than opening a pager
