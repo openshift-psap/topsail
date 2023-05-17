@@ -1,14 +1,38 @@
 ---
+- name: Check if the operator is stopped
+  command:
+    oc get deploy/rhods-operator
+       -n "{{ rhods_undeploy_ods_namespace }}"
+       -ojsonpath={.spec.replicas}
+  register: rhods_operator_replicas_cmd
+
+- name: Scale up the operator if it was stopped
+  command:
+    oc scale deploy/rhods-operator
+       --replicas=1
+       -n "{{ rhods_undeploy_ods_namespace }}"
+  when: rhods_operator_replicas_cmd.stdout == "0"
+
 - name: Apply the deletion config map
   command:
-    oc apply -f "{{ rhods_undeploy_ods_delete_cm }}"
+    oc apply
+      -f "{{ rhods_undeploy_ods_delete_cm }}"
+      -n "{{ rhods_undeploy_ods_namespace }}"
 
-- name: Wait for the operator to dissapear
-  when: rhods_undeploy_ods_wait | bool
+- name: Wait for the operand namespaces to disappear
+  shell:
+    oc get ns "{{ item }}" --no-headers 2>/dev/null
+  register: has_rhods_namespace
+  until: has_rhods_namespace.rc != 0
+  failed_when: has_rhods_namespace.rc == 0
+  retries: 30
+  delay: 20
+  loop:
+  - redhat-ods-applications
+  - redhat-ods-monitoring
+  - rhods-notebooks
+
+- name: Delete the operator namespace
   command:
-    oc get pods -n "{{ rhods_undeploy_ods_namespace }}" -lname=rhods-operator -oname
-  register:
-    wait_operator_deletion
-  until: not wait_operator_deletion.stdout
-  delay: 60
-  retries: 60
+    oc delete ns "{{ rhods_undeploy_ods_namespace }}"
+       --wait=false

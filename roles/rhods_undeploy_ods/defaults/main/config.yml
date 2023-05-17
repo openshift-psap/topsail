@@ -5,7 +5,3 @@
 # Namespace where RHODS is installed.
 rhods_undeploy_ods_namespace: redhat-ods-operator
 
-# Wait for the operator full deletion.
-# Type: Bool
-rhods_undeploy_ods_wait: true
-
