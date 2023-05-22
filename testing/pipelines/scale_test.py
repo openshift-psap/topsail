@@ -135,25 +135,6 @@ def customize_rhods():
     run("oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator")
     time.sleep(10)
 
-    dashboard_commit = get_config("rhods.operator.dashboard.custom_commit")
-    if dashboard_commit:
-        dashboard_image = "quay.io/opendatahub/odh-dashboard:main-" + dashboard_commit
-        run(f"oc set image deploy/rhods-dashboard 'rhods-dashboard={dashboard_image}' -n redhat-ods-applications")
-
-    if get_config("rhods.operator.dashboard.enable_pipelines"):
-        # Update CRD OdhDashboardConfigs to enable data science
-        crd_url = f"https://raw.githubusercontent.com/opendatahub-io/odh-dashboard/{dashboard_commit}/manifests/crd/odhdashboardconfigs.opendatahub.io.crd.yaml"
-        run(f"oc apply -f {crd_url}")
-
-        # Enable pipelines in Dashboard
-        run("""oc patch OdhDashboardConfig/odh-dashboard-config -n redhat-ods-applications --type=merge --patch='{"spec":{"dashboardConfig":{"disablePipelines":false}}}'""")
-
-    dashboard_replicas = get_config("rhods.operator.dashboard.replicas")
-    if dashboard_replicas is not None:
-        run(f'oc scale deploy/rhods-dashboard "--replicas={dashboard_replicas}" -n redhat-ods-applications')
-        with open(ARTIFACT_DIR / "dashboard.replicas", "w") as f:
-            print(f"{dashboard_replicas}", file=f)
-
 
 def install_ocp_pipelines():
     installed_csv_cmd = run("oc get csv -oname", capture_stdout=True)
@@ -221,6 +202,20 @@ def prepare_test_driver_namespace():
     role = get_config("base_image.user.role")
 
     #
+    # Prepare the driver namespace
+    #
+    run(f"oc new-project '{namespace}' --skip-config-write >/dev/null 2>/dev/null || true")
+
+    dedicated = "{}" if get_config("clusters.driver.compute.dedicated") \
+        else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
+
+    #
+    # Prepare the driver machineset
+    #
+
+    run("./run_toolbox.py from_config cluster set_scale --prefix=driver")
+
+    #
     # Prepare the container image
     #
 
@@ -230,8 +225,6 @@ def prepare_test_driver_namespace():
         logging.info(f"Setting '{pr_ref}' as ref for building the base image")
         set_config("base_image.repo.ref", pr_ref)
         set_config("base_image.repo.tag", f"pr-{pr_number}")
-
-    # keep this command (utils build_push_image) first, it creates the namespace
 
     istag = get_command_arg("utils build_push_image --prefix base_image", "_istag")
     try:
@@ -305,7 +298,7 @@ def pipelines_run_many():
     Runs multiple concurrent Pipelines scale test.
     """
 
-    run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale_test")
+    run(f"./run_toolbox.py from_config pipelines run_scale_test")
 
 
 def pipelines_cleanup_scale_test():

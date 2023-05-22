@@ -56,12 +56,23 @@ clusters:
   sutest:
     is_metal: false
     compute:
-      dedicated: false
+      dedicated: true
       machineset:
         name: rhods-pipelines
         count: null
         taint:
           key: only-rhods-pipelines
+          value: "yes"
+          effect: NoSchedule
+  driver:
+    is_metal: false
+    compute:
+      dedicated: true
+      machineset:
+        name: test-pods
+        count: null
+        taint:
+          key: only-test-pods
           value: "yes"
           effect: NoSchedule
   cleanup_on_exit: true
@@ -76,26 +87,22 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 492604
+    tag: 498982
     channel: beta
     version: 1.27.0
   pipelines:
     application:
       name: sample
-    namespace: dsp-scale-test
+    namespace: data-science-test
     namespace_label:
       key: dsp-scale-test
       value: "true"
   operator:
     # set to true to stop the RHODS operator
-    stop: true
+    stop: false
 
-    dashboard:
-      replicas: 1
-      custom_commit: 06ce2ec
-      enable_pipelines: true
 base_image:
-  namespace: ci-artifacts
+  namespace: pipelines-scale-test
   imagestream: ci-artifacts
   repo:
     url: https://github.com/openshift-psap/ci-artifacts/
