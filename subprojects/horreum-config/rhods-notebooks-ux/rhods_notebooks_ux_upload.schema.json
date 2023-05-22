@@ -19,8 +19,35 @@
         "data": {
             "type": "object",
             "additionalProperties": false,
-            "required": [],
-            "properties": {}
+            "required": [
+                "rhods_version",
+                "ocp_version",
+                "users",
+                "metrics"
+            ],
+            "properties": {
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/user_result"
+                    }
+                },
+                "metrics": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "patternProperties": {
+                        ".+": {
+                            "$ref": "#/definitions/prom_metric"
+                        }
+                    }
+                },
+                "ocp_version": {
+                    "$ref": "#/definitions/version_string"
+                },
+                "rhods_version": {
+                    "$ref": "#/definitions/version_string"
+                }
+            }
         },
         "isoTime": {
             "type": "string",
@@ -29,8 +56,33 @@
         "metadata": {
             "type": "object",
             "additionalProperties": false,
-            "required": [],
-            "properties": {}
+            "required": [
+                "test",
+                "start",
+                "end",
+                "settings",
+                "cluster_info"
+            ],
+            "properties": {
+                "end": {
+                    "$ref": "#/definitions/isoTime"
+                },
+                "test": {
+                    "enum": [
+                        "rhods-notebooks-ux"
+                    ],
+                    "type": "string"
+                },
+                "start": {
+                    "$ref": "#/definitions/isoTime"
+                },
+                "settings": {
+                    "$ref": "#/definitions/test_settings"
+                },
+                "cluster_info": {
+                    "type": "object"
+                }
+            }
         },
         "prom_data": {
             "type": "object",
@@ -79,6 +131,89 @@
                 },
                 "query": {
                     "type": "string"
+                }
+            }
+        },
+        "user_result": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "hostname",
+                "succeeded",
+                "steps"
+            ],
+            "properties": {
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/user_test_step"
+                    }
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "succeeded": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "test_settings": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "repeat",
+                "test_case",
+                "exclude_tags",
+                "user_count"
+            ],
+            "properties": {
+                "repeat": {
+                    "type": "string"
+                },
+                "test_case": {
+                    "enum": [
+                        "notebook_dsg_test.robot"
+                    ],
+                    "type": "string"
+                },
+                "user_count": {
+                    "type": "integer"
+                },
+                "exclude_tags": {
+                    "type": "string"
+                }
+            }
+        },
+        "user_test_step": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "name",
+                "duration",
+                "status"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "enum": [
+                        "PASS",
+                        "FAIL"
+                    ],
+                    "type": "string"
+                },
+                "duration": {
+                    "type": "number"
+                },
+                "substeps": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "patternProperties": {
+                        ".+": {
+                            "type": "number"
+                        }
+                    }
                 }
             }
         },
