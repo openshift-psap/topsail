@@ -41,23 +41,21 @@
     oc get -oyaml pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
   failed_when: false
 
-- name: Save the status  of the application pods
+- name: Save the status of the pods
   shell:
     oc get pods -owide
-       -lcomponent=data-science-pipelines
        -n "{{ namespace }}"
        > "{{ artifact_extra_logs_dir }}/pods.status"
   register: dspa_pod_names_cmd
 
-- name: Get the names of the application pods
+- name: Get the names of the pods
   command:
     oc get pods
        -n "{{ namespace }}"
-       -lcomponent=data-science-pipelines
        -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
   register: dspa_pod_names_cmd
 
-- name: Capture the logs of the application pods
+- name: Capture the logs of the pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
   shell:
     oc logs pod/{{ item }}
@@ -74,7 +72,7 @@
        > "{{ artifact_extra_logs_dir }}/{{ item }}.desc"
   failed_when: false
 
-- name: Capture the definition of the application pods
+- name: Capture the definition of the pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
   shell:
     oc get
@@ -88,4 +86,11 @@
     oc get -oyaml dspa/{{ dspa_application_name }}
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/application.yaml"
+  failed_when: false
+
+- name: Capture the Notebooks description
+  shell:
+    oc describe notebooks
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/notebooks.descr"
   failed_when: false
