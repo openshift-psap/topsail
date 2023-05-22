@@ -3,6 +3,7 @@
 driver_build_and_preload_image() {
     suffix=$1
 
+    # this command may fail when the ImageStream operator isn't 100% ready
     process_ctrl::retry 5 30s \
                         ./run_toolbox.py from_config utils build_push_image \
                         --suffix "$suffix"
