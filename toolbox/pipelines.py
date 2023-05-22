@@ -2,6 +2,8 @@ import sys
 
 from toolbox._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
+from toolbox import local_ci
+
 
 class Pipelines:
     """
@@ -49,6 +51,9 @@ class Pipelines:
         """
 
         return RunAnsibleRole(locals())
+
+
+    run_scale_test = local_ci.Local_CI.run_multi
 
     @AnsibleRole("pipelines_capture_state")
     @AnsibleMappedParams
