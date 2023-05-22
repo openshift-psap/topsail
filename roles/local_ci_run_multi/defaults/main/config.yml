@@ -51,3 +51,6 @@ local_ci_run_multi_capture_prom_db: true
 # Type: Bool
 local_ci_run_multi_git_pull: false
 
+# Optional address of the Redis server to pass to StateSignal synchronization.
+local_ci_run_multi_state_signal_redis_server: null
+

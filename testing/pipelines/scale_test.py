@@ -13,6 +13,9 @@ import shutil
 import yaml
 import jsonpath_ng
 
+PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
+RHODS_OPERATOR_MANIFEST_NAME = "rhods-operator"
+
 def run(command, capture_stdout=False, capture_stderr=False, check=True):
     logging.info(f"run: {command}")
     args = {}
@@ -38,10 +41,14 @@ except KeyError:
     ARTIFACT_DIR = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d')}"
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
 
+
 def set_config_environ():
     os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_PIPELINES_DIR / "command_args.yaml")
     config_path = ARTIFACT_DIR / "config.yaml"
     os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
+
+    # make sure we're using a clean copy of the configuration file
+    config_path.unlink(missing_ok=True)
 
     if shared_dir := os.environ.get("SHARED_DIR"):
         shared_dir_config_path = pathlib.Path(shared_dir) / "config.yaml"
@@ -52,9 +59,11 @@ def set_config_environ():
     if not config_path.exists():
         shutil.copyfile(TESTING_PIPELINES_DIR / "config.yaml", config_path)
 
+
 set_config_environ()
 with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
     config = yaml.safe_load(config_f)
+
 
 def get_config(jsonpath):
     try:
@@ -67,6 +76,7 @@ def get_config(jsonpath):
 
     return value
 
+
 def get_command_arg(command, args):
     try:
         logging.info(f"get_command_arg: {command} {args}")
@@ -76,6 +86,7 @@ def get_command_arg(command, args):
         raise
 
     return proc.stdout.decode("utf-8").strip()
+
 
 def set_config(jsonpath, value):
     try:
@@ -106,11 +117,10 @@ def setup_brew_registry():
 # ---
 
 def install_rhods():
-    MANIFEST_NAME = "rhods-operator"
     installed_csv_cmd = run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
 
-    if MANIFEST_NAME in installed_csv_cmd.stdout:
-        logging.info(f"Operator '{MANIFEST_NAME}' is already installed.")
+    if RHODS_OPERATOR_MANIFEST_NAME in installed_csv_cmd.stdout:
+        logging.info(f"Operator '{RHODS_OPERATOR_MANIFEST_NAME}' is already installed.")
         return
 
     setup_brew_registry()
@@ -144,14 +154,15 @@ def customize_rhods():
         with open(ARTIFACT_DIR / "dashboard.replicas", "w") as f:
             print(f"{dashboard_replicas}", file=f)
 
+
 def install_ocp_pipelines():
-    MANIFEST_NAME = "openshift-pipelines-operator-rh"
     installed_csv_cmd = run("oc get csv -oname", capture_stdout=True)
-    if MANIFEST_NAME in installed_csv_cmd.stdout:
-        logging.info(f"Operator '{MANIFEST_NAME}' is already installed.")
+    if PIPELINES_OPERATOR_MANIFEST_NAME in installed_csv_cmd.stdout:
+        logging.info(f"Operator '{PIPELINES_OPERATOR_MANIFEST_NAME}' is already installed.")
         return
 
-    run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_pipelines ./run_toolbox.py cluster deploy_operator redhat-operators {MANIFEST_NAME} all")
+    run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_pipelines ./run_toolbox.py cluster deploy_operator redhat-operators {PIPELINES_OPERATOR_MANIFEST_NAME} all")
+
 
 def create_dsp_application():
     namespace = get_config("rhods.pipelines.namespace")
@@ -159,8 +170,12 @@ def create_dsp_application():
         run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
     except Exception: pass # project already exists
 
+    label_key = get_config("rhods.pipelines.namespace_label.key")
+    label_value = get_config("rhods.pipelines.namespace_label.value")
+    run(f"oc label 'ns/{namespace}' '{label_key}={label_value}' --overwrite")
 
     run("./run_toolbox.py from_config pipelines deploy_application")
+
 
 def prepare_rhods():
     """
@@ -230,6 +245,12 @@ def prepare_test_driver_namespace():
         run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
 
     #
+    # Deploy Redis server for Pod startup synchronization
+    #
+
+    run("./run_toolbox.py from_config cluster deploy_redis_server")
+
+    #
     # Deploy Minio
     #
 
@@ -251,7 +272,8 @@ def prepare_test_driver_namespace():
 
     run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")
 
-def pipelines_prepare():
+
+def pipelines_prepare_cluster():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
     """
@@ -277,6 +299,7 @@ def pipelines_run_one():
     finally:
         run(f"./run_toolbox.py from_config pipelines capture_state")
 
+
 def pipelines_run_many():
     """
     Runs multiple concurrent Pipelines scale test.
@@ -284,13 +307,79 @@ def pipelines_run_many():
 
     run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale_test")
 
+
+def pipelines_cleanup_scale_test():
+    """
+    Cleanups the pipelines scale test namespaces
+    """
+
+    #
+    # delete the pipelines namespaces
+    #
+    label_key = get_config("rhods.pipelines.namespace_label.key")
+    label_value = get_config("rhods.pipelines.namespace_label.value")
+    run(f"oc delete ns -l{label_key}={label_value} --ignore-not-found")
+
+def pipelines_cleanup_cluster():
+    """
+    Restores the cluster to its original state
+    """
+
+    pipelines_cleanup_scale_test()
+
+    #
+    # uninstall RHODS
+    #
+    installed_csv_cmd = run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
+
+    if RHODS_OPERATOR_MANIFEST_NAME in installed_csv_cmd.stdout:
+        run(f"./run_toolbox.py rhods undeploy_ods > /dev/null")
+    else:
+        logging.info("RHODS is not installed.")
+    #
+    # uninstall the pipelines operator
+    #
+    installed_csv_cmd = run("oc get csv -oname", capture_stdout=True)
+    if PIPELINES_OPERATOR_MANIFEST_NAME in installed_csv_cmd.stdout:
+        run(f"oc delete tektonconfigs.operator.tekton.dev --all")
+        PIPELINES_OPERATOR_NAMESPACE = "openshift-operators"
+        run(f"oc delete sub/{PIPELINES_OPERATOR_MANIFEST_NAME} -n {PIPELINES_OPERATOR_NAMESPACE}")
+        run(f"oc delete csv -n {PIPELINES_OPERATOR_NAMESPACE} -loperators.coreos.com/{PIPELINES_OPERATOR_MANIFEST_NAME}.{PIPELINES_OPERATOR_NAMESPACE}")
+    else:
+        logging.info("Pipelines Operator is not installed")
+    #
+    # uninstall LDAP
+    #
+    ldap_installed_cmd = run("oc get ns/openldap --ignore-not-found -oname", capture_stdout=True)
+    if "openldap" in ldap_installed_cmd.stdout:
+        run("./run_toolbox.py from_config cluster undeploy_ldap > /dev/null")
+    else:
+        logging.info("OpenLDAP is not installed")
+
+    #
+    # delete the test driver namespace
+    #
+    base_image_ns = get_config("base_image.namespace")
+    run(f"oc delete ns '{base_image_ns}' --ignore-not-found")
+
+def pipelines_test_ci():
+    """
+    Runs the Pipelines scale test from the CI
+    """
+
+    try:
+        pipelines_run_many()
+    finally:
+        if get_config("clusters.cleanup_on_exit"):
+            pipelines_cleanup_cluster()
+
 class Pipelines:
     """
     Commands for launching the Pipeline Perf & Scale tests
     """
 
     def __init__(self):
-        self.prepare = pipelines_prepare
+        self.prepare_cluster = pipelines_prepare_cluster
         self.prepare_rhods = prepare_rhods
         self.prepare_pipelines_namespace = prepare_pipelines_namespace
         self.prepare_test_driver_namespace = prepare_test_driver_namespace
@@ -298,8 +387,12 @@ class Pipelines:
         self.run_one = pipelines_run_one
         self.run = pipelines_run_many
 
-        self.prepare_ci = pipelines_prepare
-        self.test_ci = self.run
+        self.cleanup_cluster = pipelines_cleanup_cluster
+        self.cleanup_scale_test = pipelines_cleanup_scale_test
+
+        self.prepare_ci = pipelines_prepare_cluster
+        self.test_ci = pipelines_test_ci
+
 
 def main():
     # Print help rather than opening a pager
