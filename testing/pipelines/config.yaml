@@ -76,7 +76,7 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 492604
+    tag: 498982
     channel: beta
     version: 1.27.0
   pipelines:
