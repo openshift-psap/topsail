@@ -88,12 +88,8 @@ rhods:
       value: "true"
   operator:
     # set to true to stop the RHODS operator
-    stop: true
+    stop: false
 
-    dashboard:
-      replicas: 1
-      custom_commit: 06ce2ec
-      enable_pipelines: true
 base_image:
   namespace: ci-artifacts
   imagestream: ci-artifacts
