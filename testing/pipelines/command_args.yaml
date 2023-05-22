@@ -32,6 +32,14 @@ sutest/cluster set_scale:
 {% endif %}
   scale: 1
 
+driver/cluster set_scale:
+  instance_type: {{ clusters.create.ocp.compute.type }}
+  name: {{ clusters.driver.compute.machineset.name }}
+{% if clusters.driver.compute.dedicated %}
+  taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
+{% endif %}
+  scale: 1
+
 sutest/cluster set_project_annotation/pipelines_node_selector:
   key: openshift.io/node-selector
   value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"

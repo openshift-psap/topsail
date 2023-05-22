@@ -202,6 +202,20 @@ def prepare_test_driver_namespace():
     role = get_config("base_image.user.role")
 
     #
+    # Prepare the driver namespace
+    #
+    run(f"oc new-project '{namespace}' --skip-config-write >/dev/null 2>/dev/null || true")
+
+    dedicated = "{}" if get_config("clusters.driver.compute.dedicated") \
+        else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
+
+    #
+    # Prepare the driver machineset
+    #
+
+    run("./run_toolbox.py from_config cluster set_scale --prefix=driver")
+
+    #
     # Prepare the container image
     #
 
@@ -211,8 +225,6 @@ def prepare_test_driver_namespace():
         logging.info(f"Setting '{pr_ref}' as ref for building the base image")
         set_config("base_image.repo.ref", pr_ref)
         set_config("base_image.repo.tag", f"pr-{pr_number}")
-
-    # keep this command (utils build_push_image) first, it creates the namespace
 
     istag = get_command_arg("utils build_push_image --prefix base_image", "_istag")
     try:
