@@ -33,7 +33,9 @@ if [[ "$DRIVER_RUNNING_ON_SPOT_INSTANCES" == "False" ]]; then
     export HOME=/tmp/ods-ci # move to a writable HOME
 
     # Use StateSignal-barrier to wait for all the Pods to be ready
+    python3 -m ensurepip --user
     python3 -m pip --no-cache-dir install state-signals==0.5.2 --user
+
     echo "Running with user $JOB_COMPLETION_INDEX / $USER_COUNT"
     if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
         python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" --exporter "$USER_COUNT" --delay "$STATE_SIGNAL_DELAY" &
