@@ -77,7 +77,7 @@ clusters:
           key: only-test-pods
           value: "yes"
           effect: NoSchedule
-  cleanup_on_exit: true
+  cleanup_on_exit: false
 ldap:
   # Name of the LDAP identity provider.
   idp_name: RHODS_CI_LDAP
