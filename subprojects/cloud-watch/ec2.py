@@ -91,11 +91,17 @@ def collect_instances(region=None):
             else:
                 info["Age"] += f" ({age_hr:.1f} hours)"
 
+        cluster_tags = info["Cluster tags"] = {}
         for tag in instance.tags or {}:
             if tag["Key"] == "Name":
                 info["Name"] = tag["Value"]
+                continue
             if tag["Value"] == "owned":
                 info["Cluster ID"] = tag["Key"].split("/")[-1]
+                continue
+            if tag["Key"] in ("Manager", "Duration", "User", "EstimatedCost", "UserCRO", "ApprovedManager", "Email"):
+                continue
+            cluster_tags[tag["Key"]] = tag["Value"]
 
         if info["Name"] in IGNORE_NODES:
             instances_ignored_from_list += 1
@@ -157,7 +163,12 @@ def print_clusters():
                     if cluster_tag != "None":
                         print("Cluster:", cluster_instance['Region'], cluster_name)
                     print("Age:", cluster_instance['Age'])
-
+                    has_tags = False
+                    for tag_key, tag_value in cluster_instance["Cluster tags"].items():
+                        has_tags = True
+                        print(f"- {tag_key}: {tag_value}")
+                    if not has_tags:
+                        print("Tags: None")
                     if args.ci_prefix and args.ci_list_older_than:
                         if args.ci_list_file:
                             with open(args.ci_list_file, "a") as out_f:
