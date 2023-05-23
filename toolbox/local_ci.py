@@ -81,6 +81,8 @@ class Local_CI:
                   capture_prom_db: bool = True,
                   git_pull: bool = False,
                   state_signal_redis_server=None,
+                  sleep_factor=0.0,
+                  user_batch_size=1,
                   ):
         """
         Runs a given CI command in parallel from multiple Pods
@@ -101,6 +103,8 @@ class Local_CI:
             capture_prom_db: If True, captures the Prometheus DB of the systems.
             git_pull: If True, update the repo in the image with the latest version of the build ref before running the command in the Pods.
             state_signal_redis_server: Optional address of the Redis server to pass to StateSignal synchronization.
+            sleep_factor: Delay (in seconds) between the start of each of the users.
+            user_batch_size: Number of users to launch after the sleep delay.
         """
 
         if retrieve_artifacts and not (minio_namespace and minio_bucket_name):
