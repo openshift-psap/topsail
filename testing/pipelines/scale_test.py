@@ -327,7 +327,10 @@ def pipelines_run_many():
     Runs multiple concurrent Pipelines scale test.
     """
 
-    run(f"./run_toolbox.py from_config pipelines run_scale_test")
+    try:
+        run(f"./run_toolbox.py from_config pipelines run_scale_test")
+    finally:
+        run(f"./run_toolbox.py cluster capture_environment")
 
 
 def pipelines_cleanup_scale_test():
