@@ -120,6 +120,8 @@ base_image:
 tests:
   pipelines:
     user_count: 2
+    sleep_factor: 1
+    user_batch_size: 1
 matbench:
   preset: null
   workload: rhods-pipelines
