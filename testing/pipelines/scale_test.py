@@ -171,7 +171,9 @@ def prepare_rhods():
 
     run("./run_toolbox.py from_config cluster deploy_ldap")
 
-    run("./run_toolbox.py from_config cluster set_scale --prefix=sutest")
+
+def compute_node():
+    return 1
 
 
 def prepare_pipelines_namespace():
@@ -209,11 +211,20 @@ def prepare_test_driver_namespace():
     dedicated = "{}" if get_config("clusters.driver.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
+    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix test_node_selector --extra '{dedicated}'")
+    run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix test_toleration --extra '{dedicated}'")
+
     #
     # Prepare the driver machineset
     #
+    if not get_config("clusters.driver.is_metal"):
+        nodes_count = get_config("clusters.driver.compute.machineset.count")
+        extra = ""
+        if nodes_count is None:
+            node_count = compute_node()
+            extra = f"--extra '{{scale: {node_count}}}'"
 
-    run("./run_toolbox.py from_config cluster set_scale --prefix=driver")
+        run(f"./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
 
     #
     # Prepare the container image
@@ -266,12 +277,30 @@ def prepare_test_driver_namespace():
     run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")
 
 
+def prepare_sutest_scale_up():
+    """
+    Scales up the SUTest cluster with the right number of nodes
+    """
+
+    if get_config("clusters.sutest.is_metal"):
+        return
+
+    node_count = get_config("clusters.sutest.compute.machineset.count")
+    extra = ""
+    if node_count is None:
+        node_count = compute_node()
+        extra = f"--extra '{{scale: {node_count}}}'"
+
+    run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest {extra}")
+
+
 def pipelines_prepare_cluster():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
     """
 
     prepare_test_driver_namespace()
+    prepare_sutest_scale_up()
     prepare_rhods()
 
 
@@ -312,6 +341,7 @@ def pipelines_cleanup_scale_test():
     label_key = get_config("rhods.pipelines.namespace_label.key")
     label_value = get_config("rhods.pipelines.namespace_label.value")
     run(f"oc delete ns -l{label_key}={label_value} --ignore-not-found")
+
 
 def pipelines_cleanup_cluster():
     """
@@ -355,6 +385,7 @@ def pipelines_cleanup_cluster():
     base_image_ns = get_config("base_image.namespace")
     run(f"oc delete ns '{base_image_ns}' --ignore-not-found")
 
+
 def pipelines_test_ci():
     """
     Runs the Pipelines scale test from the CI
@@ -366,6 +397,7 @@ def pipelines_test_ci():
         if get_config("clusters.cleanup_on_exit"):
             pipelines_cleanup_cluster()
 
+
 class Pipelines:
     """
     Commands for launching the Pipeline Perf & Scale tests
@@ -376,6 +408,7 @@ class Pipelines:
         self.prepare_rhods = prepare_rhods
         self.prepare_pipelines_namespace = prepare_pipelines_namespace
         self.prepare_test_driver_namespace = prepare_test_driver_namespace
+        self.prepare_sutest_scale_up = prepare_sutest_scale_up
 
         self.run_one = pipelines_run_one
         self.run = pipelines_run_many
