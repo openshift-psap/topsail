@@ -14,14 +14,6 @@
     | tee "{{ artifact_extra_logs_dir }}/src/000_namespace.yml"
     | oc apply -f-
 
-- name: Check if the imagestream already exists
-  command: 
-    oc get imagestream "{{ utils_build_push_image_image_local_name }}" 
-       -n "{{ utils_build_push_image_namespace }}"
-       --ignore-not-found
-       -oname
-  register: has_imagestream
-
 - name: Create the imagestream, if does not exist
   shell:
     set -o pipefail &&
@@ -32,7 +24,14 @@
     | oc create
          -f-
          -n "{{ utils_build_push_image_namespace }}"
-  when: not has_imagestream.stdout
+  # this task may safely fail if the imagestream is created by this role running in parallel for another image
+  failed_when: false
+
+- name: Ensure that the imagestream exists
+  command:
+    oc get imagestream "{{ utils_build_push_image_image_local_name }}"
+       -n "{{ utils_build_push_image_namespace }}"
+       -oname
 
 - name: Check if the image is already built
   command:
