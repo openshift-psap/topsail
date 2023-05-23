@@ -3,6 +3,7 @@ cluster_sno:
 	@make has_installer
 	@make config_base_install
 	@make config_sno
+	@make config_tags
 	@make diff
 	@make manifest
 	@make manifest_entitle

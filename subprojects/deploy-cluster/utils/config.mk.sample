@@ -42,7 +42,3 @@ DIFF_TOOL := meld
 
 # set to copy the cluster's metadata.json to a safe place before creating the cluster
 METADATA_JSON_DEST ?=
-
-# machineset files
-MASTER_MACHINESET_FILES := ${CLUSTER_PATH}/openshift/99_openshift-cluster-api_master-machineset-*.yaml
-WORKER_MACHINESET_FILES := ${CLUSTER_PATH}/openshift/99_openshift-cluster-api_worker-machineset-*.yaml
