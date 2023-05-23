@@ -59,7 +59,7 @@ cluster_helpers::get_compute_node_count() {
         local instance_type="$(get_config clusters.create.ocp.compute.type)"
     fi
 
-    local size=$(bash -c "python3 $TESTING_NOTEBOOKS_DIR/sizing/sizing \
+    local size=$(bash -c "python3 $TESTING_UTILS_DIR/sizing/sizing \
                    '$instance_type' \
                    '$user_count' \
                    $notebook_size \
