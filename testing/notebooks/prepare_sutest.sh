@@ -350,8 +350,9 @@ sutest_cleanup() {
     if test_config tests.notebooks.cleanup.on_exit.sutest.delete_test_namespaces; then
         echo "Deleting the notebook performance namespace"
        local notebook_performance_namespace=$(get_command_arg namespace rhods benchmark_notebook_performance)
-       oc delete namespace --ignore-not-found \
-          "$notebook_performance_namespace"
+       timeout 15m \
+               oc delete namespace --ignore-not-found \
+               "$notebook_performance_namespace"
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_ldap; then
@@ -379,13 +380,16 @@ sutest_cleanup_rhods() {
         return
     fi
 
-    oc delete namespaces -lopendatahub.io/dashboard=true >/dev/null
+    timeout 15m \
+            oc delete namespaces -lopendatahub.io/dashboard=true >/dev/null
     # delete any leftover namespace (if the label ^^^ wasn't properly applied)
-    oc get ns -oname | (grep "$user_prefix" || true) | xargs -r oc delete
-    oc delete notebooks,pvc --all -n rhods-notebooks || true
+    oc get ns -oname | (grep "$user_prefix" || true) | xargs -r timeout 15m oc delete
+    timeout 15m \
+            oc delete notebooks,pvc --all -n rhods-notebooks
 
     # restart all the RHODS pods, to cleanup their logs
-    oc delete pods --all -n redhat-ods-applications
+    timeout 15m \
+            oc delete pods --all -n redhat-ods-applications
 
     ./run_toolbox.py rhods wait_ods
 }
