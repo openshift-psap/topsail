@@ -54,3 +54,9 @@ local_ci_run_multi_git_pull: false
 # Optional address of the Redis server to pass to StateSignal synchronization.
 local_ci_run_multi_state_signal_redis_server: null
 
+# Delay (in seconds) between the start of each of the users.
+local_ci_run_multi_sleep_factor: 0.0
+
+# Number of users to launch after the sleep delay.
+local_ci_run_multi_user_batch_size: 1
+

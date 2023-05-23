@@ -39,7 +39,9 @@ clusters:
     name_prefix: odsci
     ocp:
       # list of tags to apply to the machineset when creating the cluster
-      tags: {}
+      tags:
+        TicketId: "87"
+        Project: PSAP/RHODS/Pipelines
       deploy_cluster:
         target: cluster
       base_domain: psap.aws.rhperfscale.org
@@ -118,6 +120,8 @@ base_image:
 tests:
   pipelines:
     user_count: 2
+    sleep_factor: 1
+    user_batch_size: 1
 matbench:
   preset: null
   workload: rhods-pipelines
