@@ -111,9 +111,9 @@ create_cluster() {
 
     local cluster_tags=$(get_config clusters.create.ocp.tags)
     if [[ "$cluster_tags" == "null" || "$cluster_tags" == "{}" ]]; then
-        machine_tags="[]"
+        machine_tags="{}"
     else
-        machine_tags=$((echo "$cluster_tags") | jq '. | to_entries | .[] | {"name": .key, "value": .value|tostring}' | jq -n '[inputs|.]' --compact-output)
+        machine_tags=$((echo "$cluster_tags") | jq . --compact-output)
     fi
 
     local
