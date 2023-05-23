@@ -97,6 +97,10 @@ spec:
           seccompProfile:
             type: RuntimeDefault
         runAsNonRoot: True
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 2Gi
         env:
         - name: ARTIFACT_DIR
           value: /logs

@@ -78,7 +78,7 @@
 
 - name: Get the status of the CI Pods
   shell:
-    oc get pods
+    oc get pods -owide
        -ljob-name={{ local_ci_run_multi_job_name }}
        -n {{ local_ci_run_multi_namespace }}
         > "{{ artifact_extra_logs_dir }}/ci_pods.status"
