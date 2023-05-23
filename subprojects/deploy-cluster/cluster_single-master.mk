@@ -3,11 +3,11 @@ cluster_single-master_entitled:
 	@make has_installer
 	@make config_base_install
 	@make config_single-master
+	@make config_tags
 	@make diff
 	@make manifest
 	@make manifest_entitle
 	@make manifest_single-master
-	@make manifest_tags
 	@make manifest_spot
 	@make install
 	@make kubeconfig

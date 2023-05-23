@@ -2,10 +2,10 @@ cluster_full_entitled:
 	@make all
 	@make has_installer
 	@make config_base_install
+	@make config_tags
 	@make diff
 	@make manifest
 	@make manifest_entitle
-	@make manifest_tags
 	@make manifest_spot
 	@make install
 	@make kubeconfig
