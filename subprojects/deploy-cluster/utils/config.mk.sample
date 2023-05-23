@@ -44,5 +44,5 @@ DIFF_TOOL := meld
 METADATA_JSON_DEST ?=
 
 # machineset files
-MASTER_MACHINESET_FILES := ${CLUSTER_PATH}/openshift/99_openshift-cluster-api_master-machineset-*.yaml
+MASTER_MACHINESET_FILES := ${CLUSTER_PATH}/openshift/99_openshift-machine-api_master-control-plane-machine-set.yaml
 WORKER_MACHINESET_FILES := ${CLUSTER_PATH}/openshift/99_openshift-cluster-api_worker-machineset-*.yaml
