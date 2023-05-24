@@ -166,3 +166,12 @@
        -ojsonpath={.status.failed}
   register: check_ci_job
   failed_when: check_ci_job.stdout | length > 0
+
+- name: Count how many Pods succeeded, fail in none succeeded
+  shell:
+    set -o pipefail;
+    (cat "{{ artifact_extra_logs_dir }}"/ci-pods_artifacts/ci-pod-*/test.exit_code || true)
+      | (grep '^0$' || true)
+      | wc -l
+  register: success_count_cmd
+  failed_when: success_count_cmd.stdout == "0"

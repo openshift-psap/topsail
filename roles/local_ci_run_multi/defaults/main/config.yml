@@ -60,3 +60,6 @@ local_ci_run_multi_sleep_factor: 0.0
 # Number of users to launch after the sleep delay.
 local_ci_run_multi_user_batch_size: 1
 
+# If true, let the Job abort the parallel execution on the first Pod failure. If false, ignore the process failure and track the overall failure count with a flag.
+local_ci_run_multi_abort_on_failure: false
+

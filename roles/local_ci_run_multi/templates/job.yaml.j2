@@ -63,17 +63,30 @@ spec:
                       --delay "$STATE_SIGNAL_DELAY" &
           fi
 
+          safe_exit() {
+              set +x
+              ret_code=$1
+              # mark this test as failed
+              echo $ret_code > "$ARTIFACT_DIR/test.exit_code"
+              touch "$ARTIFACT_DIR/FAILURES"
+              ABORT_ON_FAILURE={{ local_ci_run_multi_abort_on_failure }} # set via the Job template
+              if [[ "$ABORT_ON_FAILURE" == true ]]; then
+                  echo "ABORT_ON_FAILURE is set, aborting the execution."
+                  exit 1
+              else
+                  # exit the Pod successfully, so that all the Pod logs are retrieved.
+                  # without this, we don't know why the 'fail' event was generated.
+                  echo "ABORT_ON_FAILURE isn't set, exit peacefully to keep the other Pods running."
+                  exit 0
+              fi
+          }
+
           echo "statesignal_setup: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
           if ! python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER"; then
               # fails if the all Pods don't reach the barrier in time
               echo "StateSignal syncrhonization failed :( (errcode=$?)"
 
-              # mark this test as failed
-              echo 1 > "$ARTIFACT_DIR/test.exit_code"
-
-              # exit the Pod successfully, so that all the Pod logs are retrieved.
-              # without this, we don't know why the 'fail' event was generated.
-              exit 0
+              safe_exit 1
           fi
           echo "statesignal_ready: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 {% endif %}
@@ -87,7 +100,12 @@ spec:
           sleep "$sleep_delay"
           echo "launch_delay: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 
-          bash -x /opt/ci-artifacts/src/testing/run {{ local_ci_run_multi_ci_command }} |& tee "${ARTIFACT_DIR}/run.log"
+          if ! /opt/ci-artifacts/src/testing/run {{ local_ci_run_multi_ci_command }} |& tee "${ARTIFACT_DIR}/run.log"; then
+              safe_exit 1
+          fi
+
+          echo 0 > "$ARTIFACT_DIR/test.exit_code"
+          exit
         image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_multi_namespace }}/{{ local_ci_run_multi_istag }}"
         imagePullPolicy: Always
         securityContext:
