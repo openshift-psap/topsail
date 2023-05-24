@@ -1,0 +1,37 @@
+---
+- name: Ensure that the operator exists
+  command:
+    oc get deploy/rhods-operator
+       -n "{{ rhods_delete_ods_namespace }}"
+       --ignore-not-found
+  register: has_rhods_operator_cmd
+
+- name: Ensure that the operator is not running
+  command:
+    oc scale deploy/rhods-operator
+       --replicas=0
+       -n "{{ rhods_delete_ods_namespace }}"
+  when: has_rhods_operator_cmd.stdout
+
+- name: Wait for the operator pod to disappear
+  command:
+    oc get pods -lname=rhods-operator
+       --no-headers
+       -n "{{ rhods_delete_ods_namespace }}"
+  register: has_rhods_operator_pod_cmd
+  until: not has_rhods_operator_pod_cmd.stdout
+  failed_when: has_rhods_operator_pod_cmd.stdout
+  retries: 10
+  delay: 10
+
+- name: Wait for the operand namespaces to disappear
+  include_tasks: delete_ns.yaml
+  loop:
+  - redhat-ods-applications
+  - redhat-ods-monitoring
+  - rhods-notebooks
+
+- name: Delete the operator namespace
+  command:
+    oc delete ns "{{ rhods_delete_ods_namespace }}"
+       --ignore-not-found

@@ -246,6 +246,7 @@ main() {
             return 0
             ;;
         "cleanup_clusters")
+            apply_preset cleanup_clusters_on_exit
             sutest_cleanup
             driver_cleanup
             return 0

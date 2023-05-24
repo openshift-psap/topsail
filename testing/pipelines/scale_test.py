@@ -359,7 +359,9 @@ def pipelines_cleanup_cluster():
     installed_csv_cmd = run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
 
     if RHODS_OPERATOR_MANIFEST_NAME in installed_csv_cmd.stdout:
-        run(f"./run_toolbox.py rhods undeploy_ods > /dev/null")
+        print("Force delete RHODS (workaround for RHODS-8002)")
+        run("./run_toolbox.py rhods delete_ods > /dev/null")
+        #run(f"./run_toolbox.py rhods undeploy_ods > /dev/null")
     else:
         logging.info("RHODS is not installed.")
     #
