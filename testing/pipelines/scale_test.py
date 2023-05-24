@@ -16,6 +16,18 @@ import jsonpath_ng
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 RHODS_OPERATOR_MANIFEST_NAME = "rhods-operator"
 
+TESTING_PIPELINES_DIR = pathlib.Path(__file__).absolute().parent
+TESTING_UTILS_DIR = TESTING_PIPELINES_DIR.parent / "utils"
+PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"])
+
+try:
+    ARTIFACT_DIR = pathlib.Path(os.environ["ARTIFACT_DIR"])
+except KeyError:
+    ARTIFACT_DIR = None
+
+config = None
+
+
 def run(command, capture_stdout=False, capture_stderr=False, check=True):
     logging.info(f"run: {command}")
     args = {}
@@ -30,16 +42,42 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True):
 
     return proc
 
-TESTING_PIPELINES_DIR = pathlib.Path(__file__).absolute().parent
-TESTING_UTILS_DIR = TESTING_PIPELINES_DIR.parent / "utils"
-PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"])
 
-try:
-    ARTIFACT_DIR = pathlib.Path(os.environ["ARTIFACT_DIR"])
-except KeyError:
-    env_ci_artifact_base_dir = pathlib.Path(os.environ.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
-    ARTIFACT_DIR = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d')}"
-    ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+def apply_config_overrides():
+    VARIABLE_OVERRIDES_PATH = ARTIFACT_DIR / "variable_overrides"
+    if not VARIABLE_OVERRIDES_PATH.exists():
+        logging.info("apply_config_overrides: {VARIABLE_OVERRIDES_PATH} does not exist, nothing to override.")
+        return
+
+    with open(VARIABLE_OVERRIDES_PATH) as f:
+        for line in f.readlines():
+            key, found, _value = line.strip().partition("=")
+            if not found:
+                logging.warning(f"apply_config_overrides: Invalid line: '{line.strip()}', ignoring it.")
+                continue
+            value = _value.strip("'")
+            logging.info(f"config override: {key} --> {value}")
+            set_config(key, value)
+
+
+def apply_preset(name):
+    values = get_config(f"ci_presets.{name}")
+    logging.info(f"Appling preset '{name}' ==> {values}")
+    if not values:
+        raise ValueError("Preset '{name}' does not exists")
+
+    for key, value in values.items():
+        if key == "extends":
+            for extend_name in value:
+                apply_preset(extend_name)
+            continue
+
+        msg = f"preset[{name}] --> {value}"
+        logging.info(msg)
+        with open(ARTIFACT_DIR / "presets_applied", "a") as f:
+            print(msg, file=f)
+
+        set_config(key, value)
 
 
 def set_config_environ():
@@ -60,9 +98,30 @@ def set_config_environ():
         shutil.copyfile(TESTING_PIPELINES_DIR / "config.yaml", config_path)
 
 
-set_config_environ()
-with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
-    config = yaml.safe_load(config_f)
+def init():
+    global ARTIFACT_DIR
+    global config
+
+    if ARTIFACT_DIR is None:
+        env_ci_artifact_base_dir = pathlib.Path(os.environ.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
+        ARTIFACT_DIR = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d')}"
+        ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+
+    set_config_environ()
+    with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
+        config = yaml.safe_load(config_f)
+
+
+    console = run("oc whoami --show-console", capture_stdout=True)
+    apply_config_overrides()
+
+    if console.stdout.strip().endswith("apps.bm.example.com"):
+        apply_preset("icelake")
+
+    if os.environ.get("JOB_NAME_SAFE", "").endswith("-light"):
+        LIGHT_PROFILE = "light"
+        logging.info(f"Running a light test, applying the {LIGHT_PROFILE}")
+        apply_preset(LIGHT_PROFILE)
 
 
 def get_config(jsonpath):
@@ -355,7 +414,7 @@ def pipelines_run_many():
     try:
         run(f"./run_toolbox.py from_config pipelines run_scale_test")
     finally:
-        run(f"./run_toolbox.py cluster capture_environment")
+        run(f"./run_toolbox.py cluster capture_environment > /dev/null")
 
 
 def pipelines_cleanup_scale_test():
@@ -451,6 +510,8 @@ class Pipelines:
 
 
 def main():
+    init()
+
     # Print help rather than opening a pager
     fire.core.Display = lambda lines, out: print(*lines, file=out)
 
