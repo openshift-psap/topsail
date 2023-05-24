@@ -403,7 +403,7 @@ def pipelines_run_one():
         prepare_pipelines_namespace()
         run(f"./run_toolbox.py from_config pipelines run_kfp_notebook")
     finally:
-        run(f"./run_toolbox.py from_config pipelines capture_state")
+        run(f"./run_toolbox.py from_config pipelines capture_state > /dev/null")
 
 
 def pipelines_run_many():
