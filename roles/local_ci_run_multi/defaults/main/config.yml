@@ -40,8 +40,11 @@ local_ci_run_multi_minio_bucket_name: null
 # Key inside 'secret_env_key' containing the secret to access the Minio bucket. Must be in the form 'user_password=SECRET_KEY'.
 local_ci_run_multi_minio_secret_key_key: null
 
-# Optional path to a PR config file (avoids fetching Github PR json).
-local_ci_run_multi_pr_config: null
+# Optional path to the variable_overrides config file (avoids fetching Github PR json).
+local_ci_run_multi_variable_overrides: null
+
+# If true, gives the local configuration file ($CI_ARTIFACTS_FROM_CONFIG_FILE) to the Pods.
+local_ci_run_multi_use_local_config: true
 
 # If True, captures the Prometheus DB of the systems.
 # Type: Bool

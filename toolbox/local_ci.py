@@ -77,7 +77,8 @@ class Local_CI:
                   minio_namespace=None,
                   minio_bucket_name=None,
                   minio_secret_key_key=None,
-                  pr_config=None,
+                  variable_overrides=None,
+                  use_local_config=True,
                   capture_prom_db: bool = True,
                   git_pull: bool = False,
                   state_signal_redis_server=None,
@@ -100,7 +101,8 @@ class Local_CI:
             minio_namespace: Namespace where the Minio server is located.
             minio_bucket_name: Name of the bucket in the Minio server.
             minio_secret_key_key: Key inside 'secret_env_key' containing the secret to access the Minio bucket. Must be in the form 'user_password=SECRET_KEY'.
-            pr_config: Optional path to a PR config file (avoids fetching Github PR json).
+            variable_overrides: Optional path to the variable_overrides config file (avoids fetching Github PR json).
+            use_local_config: If true, gives the local configuration file ($CI_ARTIFACTS_FROM_CONFIG_FILE) to the Pods.
             capture_prom_db: If True, captures the Prometheus DB of the systems.
             git_pull: If True, update the repo in the image with the latest version of the build ref before running the command in the Pods.
             state_signal_redis_server: Optional address of the Redis server to pass to StateSignal synchronization.

@@ -47,10 +47,14 @@ spec:
           git reset --hard FETCH_HEAD
 {% endif %}
 
-{% if local_ci_run_multi_pr_config %}
+{% if local_ci_run_multi_variable_overrides %}
           cat > "${ARTIFACT_DIR}/variable_overrides" << EOF
-          {{ local_ci_run_pr_config_content_cmd.stdout | indent(6) }}
+          {{ local_ci_run_variable_overrides_cmd.stdout | indent(6) }}
           EOF
+{% endif %}
+
+{% if local_ci_run_multi_use_local_config %}
+          cp /mnt/pipeline_scale_test_config/config.yaml $SHARED_DIR/config.yaml
 {% endif %}
 
 {% if local_ci_run_multi_state_signal_redis_server %}
@@ -128,8 +132,8 @@ spec:
         - name: {{ local_ci_run_multi_secret_env_key }}
           value: /mnt/secrets/{{ local_ci_run_multi_secret_name }}
 {% endif %}
-        - name: SHARED_DIR # shouldn't be used
-          value: /tmp/shared
+        - name: SHARED_DIR
+          value: /mnt/shared
         - name: USER_COUNT
           value: "{{ local_ci_run_multi_user_count }}"
 {% if local_ci_run_multi_state_signal_redis_server %}
@@ -145,9 +149,15 @@ spec:
         volumeMounts:
         - mountPath: /mnt/logs
           name: artifacts
+        - mountPath: /mnt/shared
+          name: shared-dir
 {% if local_ci_run_multi_secret_name %}
         - mountPath: /mnt/secrets/{{ local_ci_run_multi_secret_name }}
           name: {{ local_ci_run_multi_secret_name }}
+{% endif %}
+{% if local_ci_run_multi_use_local_config %}
+        - mountPath: /mnt/pipeline_scale_test_config
+          name: {{ local_ci_run_multi_job_name }}-config
 {% endif %}
 {% if local_ci_run_multi_retrieve_artifacts %}
       - name: artifacts-exporter
@@ -224,8 +234,15 @@ spec:
       volumes:
       - name: artifacts
         emptyDir: {}
+      - name: shared-dir
+        emptyDir: {}
 {% if local_ci_run_multi_secret_name %}
       - name: {{ local_ci_run_multi_secret_name }}
         secret:
           secretName: {{ local_ci_run_multi_secret_name }}
+{% endif %}
+{% if local_ci_run_multi_use_local_config %}
+      - name: {{ local_ci_run_multi_job_name }}-config
+        configMap:
+          name: {{ local_ci_run_multi_job_name }}-config
 {% endif %}
