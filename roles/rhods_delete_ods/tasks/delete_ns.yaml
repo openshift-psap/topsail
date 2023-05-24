@@ -1,0 +1,21 @@
+---
+- name: Patch the kfdef to remove the finalizers
+  shell: |
+    set -o pipefail;
+    kfdef=$(oc get kfdef -n {{ item }} -oname) # may be empty
+
+    if [[ "$kfdef" ]]; then
+      oc patch $kfdef \
+         -n {{ item }} \
+         --type json \
+         --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]'
+    fi
+
+
+- name: Delete the kfdef of the namespace
+  command:
+    oc delete kfdef --all -n {{ item }}
+
+- name: Delete the operand namespace (blocking operation)
+  command:
+    oc delete namespace {{ item }} --ignore-not-found
