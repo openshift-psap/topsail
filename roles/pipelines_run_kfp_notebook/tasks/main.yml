@@ -277,6 +277,21 @@
     command: oc delete secret/secret_token_name -n "{{ notebook_namespace }}" --ignore-not-found
     failed_when: false
 
+  - name: Save the pods status
+    shell:
+      oc get pods -owide -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.status"
+    failed_when: false
+
+  - name: Save the pods description
+    shell:
+      oc describe pods  -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.desc"
+    failed_when: false
+
+  - name: Save the pods definition
+    shell:
+      oc get -oyaml pods  -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.yaml"
+    failed_when: false
+
   - name: Save the pipeline status
     shell:
       oc get pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.status"
