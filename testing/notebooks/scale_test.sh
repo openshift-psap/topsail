@@ -66,19 +66,20 @@ connect_ci() {
     # vvv overrides the presets, if necessary
     bash "$TESTING_UTILS_DIR/configure_overrides.sh"
 
-    if [[ "${CONFIG_DEST_DIR:-}" ]]; then
-        echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
+    if [[ "${OPENSHIFT_CI:-}" == true ]]; then
+        if [[ "${CONFIG_DEST_DIR:-}" ]]; then
+            echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
 
-    elif [[ "${SHARED_DIR:-}" ]]; then
-        echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
-        CONFIG_DEST_DIR=$SHARED_DIR
+        elif [[ "${SHARED_DIR:-}" ]]; then
+            echo "Using CONFIG_DEST_DIR=\$SHARED_DIR=$SHARED_DIR ..."
+            CONFIG_DEST_DIR=$SHARED_DIR
 
-    else
-        _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
+        else
+            _error "CONFIG_DEST_DIR or SHARED_DIR must be set ..."
+        fi
+        KUBECONFIG_DRIVER="${CONFIG_DEST_DIR}/driver_kubeconfig" # cluster driving the test
+        KUBECONFIG_SUTEST="${CONFIG_DEST_DIR}/sutest_kubeconfig" # system under test
     fi
-
-    KUBECONFIG_DRIVER="${CONFIG_DEST_DIR}/driver_kubeconfig" # cluster driving the test
-    KUBECONFIG_SUTEST="${CONFIG_DEST_DIR}/sutest_kubeconfig" # system under test
 }
 
 generate_plots() {
