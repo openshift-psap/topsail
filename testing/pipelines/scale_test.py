@@ -172,8 +172,33 @@ def prepare_rhods():
     run("./run_toolbox.py from_config cluster deploy_ldap")
 
 
-def compute_node():
-    return 1
+def compute_node_requirement(driver=False, sutest=False):
+    if (not driver and not sutest) or (sutest and driver):
+        raise ValueError("compute_node_requirement must be called with driver=True or sutest=True")
+
+    if driver:
+        cluster_role = "driver"
+        # from the right namespace, get a hint of the resource request with these commands:
+        # oc get pods -oyaml | yq .items[].spec.containers[].resources.requests.cpu -r | awk NF | grep -v null | python -c "import sys; print(sum(int(l.strip()[:-1]) for l in sys.stdin))"
+        # --> 1090
+        # oc get pods -oyaml | yq .items[].spec.containers[].resources.requests.memory -r | awk NF | grep -v null | python -c "import sys; print(sum(int(l.strip()[:-2]) for l in sys.stdin))"
+        # --> 2668
+        cpu_count = 1.5
+        memory = 3
+
+    if sutest:
+        cluster_role = "sutest"
+        # must match 'roles/local_ci_run_multi/templates/job.yaml.j2'
+        cpu_count = 1
+        memory = 2
+
+    machine_type = get_config("clusters.create.ocp.compute.type")
+    user_count = get_config("tests.pipelines.user_count")
+
+    logfile = ARTIFACT_DIR / f'sizing_{cluster_role}'
+    proc = run(f"{TESTING_UTILS_DIR / 'sizing' / 'sizing'} {machine_type} {user_count} {cpu_count} {memory} > {logfile}", check=False)
+
+    return proc.returncode
 
 
 def prepare_pipelines_namespace():
@@ -221,7 +246,7 @@ def prepare_test_driver_namespace():
         nodes_count = get_config("clusters.driver.compute.machineset.count")
         extra = ""
         if nodes_count is None:
-            node_count = compute_node()
+            node_count = compute_node_requirement(driver=True)
             extra = f"--extra '{{scale: {node_count}}}'"
 
         run(f"./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
@@ -288,7 +313,7 @@ def prepare_sutest_scale_up():
     node_count = get_config("clusters.sutest.compute.machineset.count")
     extra = ""
     if node_count is None:
-        node_count = compute_node()
+        node_count = compute_node_requirement(sutest=True)
         extra = f"--extra '{{scale: {node_count}}}'"
 
     run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest {extra}")
