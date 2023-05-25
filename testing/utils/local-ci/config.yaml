@@ -88,3 +88,13 @@ workloads:
       gather:
         command: utils gather-extra
         alway_run: true
+
+  pipelines:
+    command_group: pipelines
+    test_args:
+    - icelake
+    steps:
+      cleanup:
+        command: pipelines scale_test cleanup_scale_test
+      test:
+        command: pipelines scale_test run
