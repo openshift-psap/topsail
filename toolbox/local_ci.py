@@ -21,6 +21,8 @@ class Local_CI:
             service_account="default",
             secret_name=None,
             secret_env_key=None,
+            test_name="local-ci-test",
+            test_args=[],
             init_command=None,
             export_command=None,
             export_identifier="default",
@@ -44,6 +46,8 @@ class Local_CI:
             service_account: Name of the ServiceAccount to use for running the Pod.
             secret_name: Name of the Secret to mount in the Pod.
             secret_env_key: Name of the environment variable with which the secret path will be exposed in the Pod.
+            test_name: Name of the test being executed.
+            test_args: List of arguments to give to the test.
             init_command: Command to run in the container before running anything else.
             export_identifier: Identifier of the test being executed (will be a dirname).
             export_ts_id: Timestamp identifier of the test being executed (will be a dirname).

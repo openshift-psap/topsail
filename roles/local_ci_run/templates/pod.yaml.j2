@@ -79,6 +79,13 @@ spec:
 
       trap 'touch "$ARTIFACT_DIR/.local_ci_done"' EXIT
 
+      cat > "$ARTIFACT_DIR/variable_overrides" <<EOF
+      PR_POSITIONAL_ARG_0="{{ local_ci_run_test_name }}"
+{% for element in local_ci_run_test_args %}
+      PR_POSITIONAL_ARG_{{loop.index}}="{{ element }}"
+{% endfor %}
+      EOF
+
 {% if local_ci_run_init_command %}
       echo "Running the init command ..."
       {{ local_ci_run_init_command }} &> "${ARTIFACT_DIR}/init.log"
@@ -94,8 +101,8 @@ spec:
         type: RuntimeDefault
     runAsNonRoot: True
     env:
-    - name: JOB_NAME
-      value: local-ci
+    - name: JOB_NAME_SAFE
+      value: "{{ local_ci_run_test_name }}"
     - name: "RUNNING_LOCALLY"
       value: "yes"
     - name: ARTIFACT_DIR
