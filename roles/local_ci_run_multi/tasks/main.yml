@@ -205,6 +205,21 @@
     rm -f "{{ artifact_extra_logs_dir }}/ci-pods_artifacts/os-release"
   ignore_errors: yes
 
+- name: Count how many Pods succeeded
+  shell:
+    set -o pipefail;
+    (cat "{{ artifact_extra_logs_dir }}"/ci-pods_artifacts/ci-pod-*/test.exit_code || true)
+      | (grep '^0$' || true)
+      | wc -l
+  register: success_count_cmd
+
+- name: Store the success count
+  shell:
+    echo "{{ success_count_cmd.stdout_lines[0] }}/{{ local_ci_run_multi_user_count }}"
+         | tee "{{ artifact_extra_logs_dir }}/success_count"
+
+# the tasks below will abort the execution in case of problems
+
 - name: Test if the CI job crashed
   command:
     oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
@@ -212,11 +227,6 @@
   register: check_ci_job
   failed_when: check_ci_job.stdout | length > 0
 
-- name: Count how many Pods succeeded, fail in none succeeded
-  shell:
-    set -o pipefail;
-    (cat "{{ artifact_extra_logs_dir }}"/ci-pods_artifacts/ci-pod-*/test.exit_code || true)
-      | (grep '^0$' || true)
-      | wc -l
-  register: success_count_cmd
-  failed_when: success_count_cmd.stdout == "0"
+- name: Fail if none of the Pods succeeded
+  when: success_count_cmd.stdout == "0"
+  fail: msg="None of the Pods succeeded"
