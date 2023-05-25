@@ -5,11 +5,13 @@ import plotly.graph_objs as go
 import pandas as pd
 import plotly.express as px
 from dash import html
+import logging
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 from . import spawntime
+from . import utils
 
 def register():
     LaunchTimeDistribution("Launch time distribution")
@@ -29,11 +31,12 @@ class LaunchTimeDistribution():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        expe_cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
-
         cfg__all_in_one = cfg.get("all_in_one", False)
         cfg__show_only_step = cfg.get("show_only_step", False)
         cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
+        cfg__show_lts = cfg.get('show_lts', False)
+
+        expe_cnt = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts)
 
         if expe_cnt != 1 and not cfg__all_in_one:
             return {}, f"ERROR: only one experiment must be selected (found {expe_cnt}), or pass the all_in_one config flag."
@@ -42,9 +45,8 @@ class LaunchTimeDistribution():
         threshold_status_keys = set()
 
         data = []
-        for entry in common.Matrix.all_records(settings, setting_lists):
-            results = entry.results
-            entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+        for entry in common.Matrix.all_records(settings, setting_lists, include_lts=cfg__show_lts):
+            entry_name = entry.get_name(variables)
 
             try: check_thresholds = entry.results.check_thresholds
             except AttributeError: check_thresholds = False
@@ -52,17 +54,15 @@ class LaunchTimeDistribution():
             if cfg__check_all_thresholds:
                 check_thresholds = True
 
-            user_counts.add(results.user_count)
+            success_users, failed_users, total_users = utils.get_user_info(entry)
+            user_counts.add(total_users)
 
             if cfg__all_in_one:
-                success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci.exit_code == 0)
-
-                failed_users = results.user_count - success_users
                 if check_thresholds:
-                    _threshold = entry.results.thresholds.get("test_successes", 0)
+                    _threshold = entry.get_threshold("test_successes", "0")
                     if "%" in _threshold:
                         _threshold_pct = int(_threshold[:-1])
-                        threshold = int(results.user_count * _threshold_pct / 100)
+                        threshold = int(total_users * _threshold_pct / 100)
                     else:
                         threshold = int(_threshold) or None
 
@@ -85,21 +85,18 @@ class LaunchTimeDistribution():
                 ))
                 continue
 
-            for user_index, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
-                if not ods_ci: continue
-
-                for step_name, step_status in ods_ci.output.items():
-                    if not self.show_successes and step_status.status != "PASS":
-                        continue
-                    if cfg__show_only_step and cfg__show_only_step != step_name:
-                        continue
-
-                    data.append(dict(
-                        Event=step_name + entry_name,
-                        Time=step_status.start,
-                        Count=1,
-                        Status=step_status.status,
-                    ))
+            for user_index, step_name, step_status, step_time in utils.parse_users(entry): 
+                if not self.show_successes and step_status != "PASS":
+                    continue
+                if cfg__show_only_step and cfg__show_only_step != step_name:
+                    continue
+                
+                data.append(dict(
+                    Event=step_name + (entry_name if expe_cnt > 1 else ''),
+                    Time=step_time,
+                    Count=1,
+                    Status=step_status,
+                ))
 
         if not data:
             return None, "No data to plot ..."
@@ -130,10 +127,10 @@ class LaunchTimeDistribution():
             fig.update_layout(xaxis_title="")
 
         msg = []
-        if cfg__all_in_one or entry.results.ods_ci[user_index] :
+        if cfg__all_in_one or utils.get_last_user(entry) :
             entries = []
         else:
-            entries = entry.results.ods_ci[user_index].output if entry.results.ods_ci[user_index] else []
+            entries = utils.get_last_user_steps(entry) if utils.get_last_user(entry) else []
 
         for idx, step_name in enumerate(entries):
             step_times = df[df["Event"] == step_name]["Time"]
@@ -145,9 +142,9 @@ class LaunchTimeDistribution():
 
             step_start_time = min(step_times)
 
-            total_time = (step_times.quantile(1) - step_start_time).total_seconds() # 100%
-            mid_80 = (step_times.quantile(0.90) - step_times.quantile(0.10)).total_seconds() # 10% <-> 90%
-            mid_50 = (step_times.quantile(0.75) - step_times.quantile(0.25)).total_seconds() # 25% <-> 75%
+            total_time = step_times.quantile(1) - step_start_time # 100%
+            mid_80 = step_times.quantile(0.90) - step_times.quantile(0.10) # 10% <-> 90%
+            mid_50 = step_times.quantile(0.75) - step_times.quantile(0.25) # 25% <-> 75%
 
             def time(sec):
                 if sec <= 120:
@@ -198,9 +195,10 @@ class RunTimeDistribution():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        expe_cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
-
         user_counts = set()
+        
+        if not common.Matrix.has_records(settings, setting_lists):
+            return None, "No experiments to plot"
 
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):

@@ -188,7 +188,7 @@ class PriceEstimationReport():
 
     def do_plot(self, *args):
         ordered_vars, settings, setting_lists, variables, cfg = args
-        cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+        cnt = common.Matrix.count_records(settings, setting_lists)
         if cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
 
@@ -259,9 +259,12 @@ class LaunchAndExecTimeDistributionReport():
         header += ["The plots below show the break down of the execution timelength for the different steps."]
 
         ordered_vars, settings, setting_lists, variables, cfg = args
+
+        if not common.Matrix.has_records(settings, setting_lists):
+            return None, "No experiments available"
+
         for entry in common.Matrix.all_records(settings, setting_lists):
             break
-
 
         step_names = []
         for ods_ci in entry.results.ods_ci.values() if entry.results.ods_ci else []:

@@ -5,6 +5,8 @@ from pathlib import PosixPath
 from collections import defaultdict, OrderedDict
 import logging
 
+from . import store_thresholds
+
 from .plotting import prom
 
 import matrix_benchmarking.store as store
@@ -21,11 +23,62 @@ def register_lts_metric(cluster_role, metric):
         lts_metrics[cluster_role].append((name, query))
 
 
+def _recursive_create_namespace(obj: dict) -> types.SimpleNamespace:
+    final_obj = {}
+    for (key, val) in obj.items():
+        out_val = val
+        if type(val) is dict:
+            out_val = _recursive_create_namespace(val)
+        if type(val) is list:
+            out_val = []
+            for i in val:
+                out_val.append(_recursive_create_namespace(i))
+
+        final_obj[key] = out_val
+    
+    return types.SimpleNamespace(**final_obj)
+
 def _parse_lts_dir(add_to_matrix, dirname, import_settings):
     with open(dirname / "data.json") as f:
-        data = json.load(f)
+        payload = json.load(f)
 
-    add_to_matrix(_encode_json(data, dirname, data["settings"]))
+    data = payload['data']
+    metadata = payload['metadata']
+    settings = metadata['settings']
+
+    results = types.SimpleNamespace(
+        start_time = datetime.datetime.fromisoformat(metadata['start']),
+        end_time = datetime.datetime.fromisoformat(metadata['end']),
+        
+        thresholds = data['thresholds'] or store_thresholds.get_thresholds(import_settings),
+        settings = settings,
+        
+        sutest_ocp_version = data['ocp_version'],
+        rhods_cluster_info = _recursive_create_namespace(metadata['cluster_info']),
+        rhods_info = types.SimpleNamespace(
+            version = data['rhods_version']
+        ),
+
+        test_config = types.SimpleNamespace(
+            yaml_file = data['config']
+        ),
+        users = data['users'],
+        metrics = {
+            'sutest': {
+                key: val['data'] \
+                    for key, val in data['metrics'].items()
+            }
+        }
+    )
+    common.MatrixEntry(
+        "LTS from Horreum",
+        results,
+        common.Matrix.settings_to_key(settings),
+        common.Matrix.settings_to_key(import_settings),
+        settings,
+        import_settings,
+        is_lts = True
+    )
 
 
 def _parse_entry(val):
@@ -101,6 +154,9 @@ def _encode_json(src_obj, name, settings):
 
 def build_lts_payloads() -> dict:
     for entry in common.Matrix.processed_map.values():
+        if entry.is_lts:
+            continue
+        
         results = entry.results
 
         start_time: datetime.datetime = results.start_time
@@ -120,7 +176,8 @@ def build_lts_payloads() -> dict:
                 "test": "rhods-notebooks-ux",
                 "start": start_time.isoformat(),
                 "end": end_time.isoformat(),
-                "settings": _parse_entry(entry.settings)
+                "settings": {'version': results.rhods_info.version, **_parse_entry(entry.settings)},
+                "cluster_info": _parse_entry(entry.results.rhods_cluster_info),
             }
         }
 
@@ -172,7 +229,7 @@ def _generate_pod_timings(pod_times, start, end):
 
 def _gather_prom_metrics(entry) -> dict:
     output = {}
-
+    prom.register()
     for cluster_role, metric_names in lts_metrics.items():
         for metric_name in metric_names:
             logging.info(f"Gathering {metric_name[0]}")
