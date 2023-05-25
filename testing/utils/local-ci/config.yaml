@@ -14,60 +14,87 @@ secrets:
 
 workloads:
   notebook-burst:
-    command_group: ods
+    command_group: notebooks
+    test_args:
+    - icelake
+    - notebook_scale_test_burst
     steps:
       test:
-        command: notebooks scale_test run_tests_and_plots icelake notebook_scale_test_burst
+        command: notebooks scale_test run_tests_and_plots
 
   notebook-gating:
-    command_group: ods
+    command_group: notebooks
+    test_args:
+    - icelake
+    - notebook_gating_scale_test
     steps:
       test:
-        command: notebooks scale_test run_tests_and_plots icelake notebook_gating_scale_test
+        command: notebooks scale_test run_tests_and_plots
 
   notebook-scale-test:
-    command_group: ods
+    command_group: notebooks
+    test_args:
+    - icelake_notebook_scale_test
     steps:
       prepare:
         command: notebooks scale_test cleanup_rhods
       test:
-        command: notebooks scale_test run_tests_and_plots icelake_notebook_scale_test
+        command: notebooks scale_test run_tests_and_plots
       gather:
-        command: gather-extra
+        command: utils gather-extra
         always_run: true
 
   notebook-just-scale-test:
-    command_group: ods
+    command_group: notebooks
+    test_args:
+    - icelake_notebook_scale_test
     steps:
       test:
-        command: notebooks scale_test run_tests_and_plots icelake_notebook_scale_test
+        command: notebooks scale_test run_tests_and_plots
 
   notebook-scale-test-light:
-    command_group: ods
+    command_group: notebooks
+    test_args:
+    - notebooks_light
+    - notebook_scale_test
     steps:
       prepare:
         command: notebooks scale_test cleanup_rhods
       test:
-        command: notebooks scale_test run_tests_and_plots notebooks_light notebook_scale_test
+        command: notebooks scale_test run_tests_and_plots
 
   notebook-scale-test-scaleup:
-    command_group: ods
+    command_group: notebooks
+    test_args:
+    - icelake_notebook_scale_test_scaleup
     steps:
       cleanup:
         command: notebooks scale_test cleanup_rhods
       test:
-        command: notebooks scale_test run_tests_and_plots icelake_notebook_scale_test_scaleup
+        command: notebooks scale_test run_tests_and_plots
       gather:
-        command: gather-extra
+        command: utils gather-extra
         alway_run: true
 
   notebook-scale-test-burst:
-    command_group: ods
+    command_group: notebooks
+    test_args:
+    - icelake_notebook_scale_test_burst
     steps:
       cleanup:
         command: notebooks scale_test cleanup_rhods
       test:
-        command: notebooks scale_test run_tests_and_plots icelake_notebook_scale_test_burst
+        command: notebooks scale_test run_tests_and_plots
       gather:
-        command: gather-extra
+        command: utils gather-extra
         alway_run: true
+
+  pipelines:
+    command_group: pipelines
+    test_args:
+    - icelake
+    steps:
+      cleanup:
+        command: pipelines scale_test cleanup_scale_test
+      test:
+        command: pipelines scale_test run

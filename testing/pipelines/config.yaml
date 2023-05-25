@@ -30,7 +30,8 @@ ci_presets:
     extends: [metal]
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
-
+    tests.pipelines.user_count: 50
+    tests.pipelines.sleep_factor: 5
 secrets:
   dir:
     name: psap-ods-secret
@@ -142,5 +143,3 @@ matbench:
   ignore_exit_code: true
   # directory to plot. Set by notebook_scale_test.sh before launching the visualization
   test_directory: null
-export_to_s3:
-  bucket_name: rhods-baremetal-results

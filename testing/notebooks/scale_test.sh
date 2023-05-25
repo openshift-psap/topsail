@@ -118,18 +118,6 @@ apply_presets_from_args() {
     done
 }
 
-export_to_s3() {
-    local ts_id=${EXPORT_TS_ID:-$(date "+%Y%M%d_%H%M")}
-    local run_identifier=${EXPORT_IDENTIFIER:-default}
-
-    export AWS_SHARED_CREDENTIALS_FILE="${PSAP_ODS_SECRET_PATH:-}/.awscred"
-    local bucket_name=$(get_config "export_to_s3.bucket_name")
-
-    local dest="s3://$bucket_name/local-ci/$ts_id/$run_identifier"
-    echo "Pushing to '$dest'"
-    aws s3 cp "$ARTIFACT_DIR" "$dest" --recursive --acl public-read
-}
-
 # ---
 
 main() {
@@ -260,11 +248,6 @@ main() {
             local istag=$(get_command_arg ods_ci_istag rhods notebook_ods_ci_scale_test)
             oc delete istag "$istag" -n "$namespace" --ignore-not-found
             driver_build_and_preload_ods_ci_image
-            return 0
-            ;;
-        "export_to_s3")
-            export_to_s3
-
             return 0
             ;;
         "source")

@@ -13,11 +13,13 @@ import yaml
 import jsonpath_ng
 
 def run(command):
+    logging.info(command)
     return subprocess.run(command, check=True, shell=True)
 
-TESTING_LOCAL_CI_DIR = pathlib.Path(__file__).absolute().parent
+TESTING_UTILS_LOCALCI_DIR = pathlib.Path(__file__).absolute().parent
 
-os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(TESTING_LOCAL_CI_DIR / "config.yaml")
+os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(TESTING_UTILS_LOCALCI_DIR / "config.yaml")
+os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_UTILS_LOCALCI_DIR / "command_args.yaml")
 
 with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
     config = yaml.safe_load(config_f)
@@ -133,6 +135,10 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
 
     workload_data = workloads[workload]
     command_group = workload_data["command_group"]
+    test_args = workload_data.get("test_args", [])
+    if isinstance(test_args, str):
+        logging.error(f"Invalid test args {test_args} for workload {workload}. Expected a list of strings.")
+        sys.exit(1)
 
     if workload_identifier is None:
         workload_identifier = workload
@@ -175,6 +181,8 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
             export_ts_id=f"{ts_id}",
             export=export,
             pod_name=f"{workload}-{step}",
+            test_name=workload,
+            test_args=test_args
         )
 
         if pr_config is not None:

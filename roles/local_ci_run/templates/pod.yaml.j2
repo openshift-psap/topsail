@@ -79,6 +79,13 @@ spec:
 
       trap 'touch "$ARTIFACT_DIR/.local_ci_done"' EXIT
 
+      cat > "$ARTIFACT_DIR/variable_overrides" <<EOF
+      PR_POSITIONAL_ARG_0="{{ local_ci_run_test_name }}"
+{% for element in local_ci_run_test_args %}
+      PR_POSITIONAL_ARG_{{loop.index}}="{{ element }}"
+{% endfor %}
+      EOF
+
 {% if local_ci_run_init_command %}
       echo "Running the init command ..."
       {{ local_ci_run_init_command }} &> "${ARTIFACT_DIR}/init.log"
@@ -94,8 +101,8 @@ spec:
         type: RuntimeDefault
     runAsNonRoot: True
     env:
-    - name: JOB_NAME
-      value: local-ci
+    - name: JOB_NAME_SAFE
+      value: "{{ local_ci_run_test_name }}"
     - name: "RUNNING_LOCALLY"
       value: "yes"
     - name: ARTIFACT_DIR
@@ -152,8 +159,19 @@ spec:
 
       declare failed=0
 {% if local_ci_run_export %}
-      echo "Running the export command '$EXPORT_COMMAND'"
-      eval $EXPORT_COMMAND || failed=1
+      echo "Running the export command ..."
+
+      export AWS_SHARED_CREDENTIALS_FILE="${{ local_ci_run_secret_env_key }}/.awscred"
+
+      if [[ ! -e "$AWS_SHARED_CREDENTIALS_FILE" ]]; then
+        echo "ERROR: AWS crentials file doesn't exist in the {{ local_ci_run_secret_env_key }} secrets ..."
+        exit 1
+      fi
+
+      dest="s3://$BUCKET_NAME/local-ci/$EXPORT_TS_ID/$EXPORT_IDENTIFIER"
+      echo "Pushing to '$dest'"
+      aws s3 cp "$ARTIFACT_DIR" "$dest" --recursive --acl public-read
+
 {% elif not local_ci_run_export %}
       echo "Export disabled."
 {% endif %}
@@ -186,9 +204,8 @@ spec:
       value: "{{ local_ci_run_export_identifier }}"
     - name: EXPORT_TS_ID
       value: "{{ local_ci_run_export_ts_id }}"
-    - name: EXPORT_COMMAND
-      value: '{{ local_ci_run_export_command }}'
-
+    - name: BUCKET_NAME
+      value: "{{ local_ci_run_export_bucket_name }}"
     - name: JOB_NAME
       value: local-ci
     - name: ARTIFACT_DIR
