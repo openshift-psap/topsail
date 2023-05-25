@@ -22,6 +22,7 @@ cluster deploy_ldap:
   use_ocm: {{ clusters.sutest.managed.is_ocm }}
   use_rosa: {{ clusters.sutest.managed.is_rosa }}
   cluster_name: {{ clusters.sutest.managed.name }}
+  wait: true
 
 rhods deploy_ods:
   catalog_image: {{ rhods.catalog.image }}
