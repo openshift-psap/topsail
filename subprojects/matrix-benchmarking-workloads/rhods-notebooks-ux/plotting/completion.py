@@ -26,7 +26,7 @@ class Completion():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+        cnt = common.Matrix.count_records(settings, setting_lists)
         if cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
 

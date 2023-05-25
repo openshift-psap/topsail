@@ -30,14 +30,14 @@ class GatingReport1():
         # User successes
         header += [html.H2("User successes")]
         header += report.Plot_and_Text("Step successes",
-                                       report.set_config(dict(all_in_one=True, check_all_thresholds=True), args))
+                                       report.set_config(dict(show_lts=True, all_in_one=True, check_all_thresholds=True), args))
         header += ["This plot shows the number of users who passed and failed each of the tests."]
         header += html.Br()
 
         # Notebook Spawn Time
         header += [html.H2("Notebook Spawn Time")]
         header += report.Plot_and_Text("multi: Notebook Spawn Time",
-                                       report.set_config(dict(check_all_thresholds=True), args))
+                                       report.set_config(dict(show_lts=True, check_all_thresholds=True), args))
         header += ["This plot shows the time it took to spawn a notebook from the user point of view. Lower is better."]
         header += html.Br()
 
@@ -59,19 +59,19 @@ class GatingReport3():
         # Control_Plane nodes health
         header += [html.H2("Control Plane nodes health")]
         header += report.Plot_and_Text("Prom: Sutest API Server Requests (server errors)",
-                                       report.set_config(dict(check_all_thresholds=True), args))
+                                       report.set_config(dict(check_all_thresholds=True, show_lts=True), args))
         header += ["This plot shows the number of APIServer errors (5xx HTTP codes). Lower is better."]
         header += html.Br()
 
         header += report.Plot_and_Text("Prom: Sutest Control Plane Node CPU idle",
-                                       report.set_config(dict(check_all_thresholds=True), args))
+                                       report.set_config(dict(check_all_thresholds=True, show_lts=True), args))
         header += ["This plot shows the idle time of the control plane nodes. Higher is better."]
         header += html.Br()
 
         # Dashboard health
         header += [html.H2("Dashboard health")]
         header += report.Plot_and_Text("Prom: RHODS Dashboard: CPU usage",
-                                       report.set_config(dict(check_all_thresholds=True), args))
+                                       report.set_config(dict(check_all_thresholds=True, show_lts=True), args))
         header += ["This plot shows the CPU usage of the Dashboard pods. Lower is better."]
         header += html.Br()
 
@@ -96,7 +96,8 @@ class GatingReport2():
             txt = f"results"
             if entry.results.from_local_env.source_url:
                 txt = html.A(txt, target="_blank", href=entry.results.from_local_env.source_url)
-            header += [html.Ul(html.Li([f" {entry.settings.image} image: ", html.Ul(html.Li(txt))]))]
+            if hasattr(entry.settings, "image"): 
+                header += [html.Ul(html.Li([f" {entry.settings.image} image: ", html.Ul(html.Li(txt))]))]
 
         header += [html.H2("Gating Test Results (lower is better)")]
 

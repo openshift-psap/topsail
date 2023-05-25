@@ -47,6 +47,8 @@ def add_ods_ci_progress(entry, hide_failed_users):
 
 
 def add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide):
+    if entry.is_lts:
+        return []
     data = []
     def add_substep_time(entry_data, substep_index, name, start, finish):
         subentry_data = entry_data.copy()
@@ -153,7 +155,7 @@ class SpawnTime():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
 
-        expe_cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
         if expe_cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
 
@@ -213,7 +215,7 @@ class NotebookResourceCreationTimeline():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
 
-        expe_cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
         if expe_cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
 
@@ -263,7 +265,7 @@ class NotebookResourceCreationDelay():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
 
-        expe_cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
         if expe_cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
 

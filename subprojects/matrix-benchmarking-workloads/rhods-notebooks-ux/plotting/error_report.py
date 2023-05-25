@@ -19,6 +19,9 @@ def register():
 
 
 def _get_test_setup(entry):
+    if entry.is_lts:
+        return []
+
     setup_info = []
     if entry.results.from_env and entry.results.from_env.pr:
         pr = entry.results.from_env.pr
@@ -175,7 +178,7 @@ class ErrorReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
+        if common.Matrix.count_records(settings, setting_lists) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
         for entry in common.Matrix.all_records(settings, setting_lists):

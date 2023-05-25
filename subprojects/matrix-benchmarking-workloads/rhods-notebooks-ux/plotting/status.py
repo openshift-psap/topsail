@@ -10,6 +10,8 @@ from dash import html
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+from . import utils
+
 def register():
     ExecutionDistribution("Execution time distribution")
 
@@ -26,7 +28,7 @@ class ExecutionDistribution():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
 
-        cnt = sum(1 for _ in common.Matrix.all_records(settings, setting_lists))
+        cnt = common.Matrix.count_records(settings, setting_lists)
         if cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
 
@@ -41,36 +43,35 @@ class ExecutionDistribution():
         if cfg__show_only_step or cfg__time_to_reach_step:
             times_data = []
 
-        for user_idx, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
-            if cfg__time_to_reach_step:
+        if cfg__time_to_reach_step:
+            accumulated_timelength = 0
+            last_user_idx = 0
+
+        for user_idx, step_name, step_status, step_time in utils.parse_users(entry):
+            if cfg__time_to_reach_step and user_idx != last_user_idx:
                 accumulated_timelength = 0
+                last_user_idx = user_idx
 
-            if not ods_ci.output: continue
+            if cfg__show_only_step and step_name != cfg__show_only_step:
+                continue
 
-            for step_name, test_times in ods_ci.output.items():
-                if cfg__show_only_step and step_name != cfg__show_only_step:
+            if step_status != "PASS":
+                continue
+            
+            timelength = step_time
+
+            if cfg__time_to_reach_step:
+                accumulated_timelength += step_time
+                if step_name != cfg__time_to_reach_step:
                     continue
 
-                if test_times.status != "PASS":
-                    continue
+                timelength = accumulated_timelength
+                step_name = f"Time to reach {step_name}"
 
-                timelength = (test_times.finish - test_times.start).total_seconds()
+            data.append(dict(user=1, step_name=step_name, timelength=timelength))
 
-                if cfg__time_to_reach_step:
-                    accumulated_timelength += timelength
-                    if step_name != cfg__time_to_reach_step:
-                        continue
-
-                    timelength = accumulated_timelength
-                    step_name = f"Time to reach {step_name}"
-
-                data.append(dict(user=1, step_name=step_name, timelength=timelength))
-
-                if cfg__show_only_step or cfg__time_to_reach_step:
-                    times_data.append(data[-1]["timelength"])
-
-                if cfg__time_to_reach_step:
-                    break
+            if cfg__show_only_step or cfg__time_to_reach_step:
+                times_data.append(data[-1]["timelength"])
 
         if not data:
             return None, "No data to plot ..."
@@ -83,7 +84,7 @@ class ExecutionDistribution():
                            hover_data=df.columns)
         fig.update_layout(xaxis_title="Step timelength (in seconds)")
 
-        user_count = entry.settings.user_count
+        _, _, user_count = utils.get_user_info(entry)
 
         title = f"Execution time distribution with {user_count} users"
         if cfg__show_only_step:

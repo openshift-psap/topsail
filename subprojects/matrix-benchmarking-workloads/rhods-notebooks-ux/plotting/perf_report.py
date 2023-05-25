@@ -29,9 +29,13 @@ class PerfReport():
 
     def do_plot(self, *args):
         ordered_vars, settings, setting_lists, variables, cfg = args
-        if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
+        
+        cnt = common.Matrix.count_records(settings, setting_lists)
+
+        if cnt != 1:
             return {}, "ERROR: only one experiment must be selected"
 
+        entry = None
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass
 
@@ -40,10 +44,11 @@ class PerfReport():
         header += [html.P("This report shows the RHODS/Notebook performance testing setup and results.")]
         header += [html.H1("Performance Report")]
 
-        setup_info = error_report._get_test_setup(entry)
-        header += [html.Ul(
-            setup_info
-        )]
+        if entry:
+            setup_info = error_report._get_test_setup(entry)
+            header += [html.Ul(
+                setup_info
+            )]
 
         header += [html.H2("Notebook Spawn Time")]
 

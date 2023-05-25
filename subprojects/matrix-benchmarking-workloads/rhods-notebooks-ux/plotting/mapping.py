@@ -24,6 +24,9 @@ def register():
 
 
 def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
+    if entry.is_lts:
+        return []
+
     test_nodes = {}
     entry_results = entry.results
 
@@ -119,7 +122,7 @@ class MappingTimeline():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
+        if common.Matrix.count_records(settings, setting_lists) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
         cfg__force_order_by_user_idx = cfg.get("force_order_by_user_idx", False)
@@ -160,7 +163,7 @@ class MappingDistribution():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
+        if common.Matrix.count_records(settings, setting_lists) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
         df = None
@@ -195,7 +198,7 @@ class MappingPerformance():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
+        if common.Matrix.count_records(settings, setting_lists) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
         df = None
@@ -232,7 +235,7 @@ class TestNodesPerformance():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        if sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) != 1:
+        if common.Matrix.count_records(settings, setting_lists) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
         data = []

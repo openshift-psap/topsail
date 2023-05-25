@@ -1,4 +1,5 @@
 from collections import defaultdict
+import logging
 
 import plotly.graph_objs as go
 import pandas as pd
@@ -7,6 +8,8 @@ from dash import html
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
+
+from . import utils
 
 
 def register():
@@ -32,11 +35,11 @@ class MultiNotebookSpawnTime():
         entry_names = set()
         data = []
 
-        for entry in common.Matrix.all_records(settings, setting_lists):
-            entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+        for entry in common.Matrix.all_records(settings, setting_lists, include_lts=True):
+            entry_name = entry.get_name(variables)
             entry_names.add(entry_name)
 
-            sort_index = entry.settings.__dict__[ordered_vars[0]] if len(variables) == 1 \
+            sort_index = entry.get_settings()[ordered_vars[0]] if len(variables) == 1 \
                 else entry_name
 
             try: check_thresholds = entry.results.check_thresholds
@@ -47,33 +50,28 @@ class MultiNotebookSpawnTime():
 
             if check_thresholds:
                 threshold_status_keys.add(entry_name)
+            
+            accumulated_timelength = 0
+            current_index = -1
+            for user_idx, step_name, step_status, step_time in utils.parse_users(entry):
+                if current_index != user_idx:
+                    accumulated_timelength = 0
+                    current_index = user_idx
 
-            for user_idx, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
-                accumulated_timelength = 0
-
-                if not ods_ci: continue
-                if not getattr(ods_ci, "output", False): continue
-
-                for step_name, test_times in ods_ci.output.items():
-                    if test_times.status != "PASS":
-                        continue
-
-                    timelength = (test_times.finish - test_times.start).total_seconds()
-
-                    accumulated_timelength += timelength
-                    if step_name != cfg__time_to_reach_step:
-                        continue
-
-                    break
-
-                thr90 = int(entry.results.thresholds.get("launch_time_90", 0)) or None
-                thr75 = int(entry.results.thresholds.get("launch_time_75", 0)) or None
+                if step_status != "PASS":
+                    continue
+                
+                accumulated_timelength += step_time
+                if step_name != cfg__time_to_reach_step:
+                    continue
+                thr90 = int(entry.get_threshold("launch_time_90", '0')) or None
+                thr75 = int(entry.get_threshold("launch_time_75", '0')) or None
 
                 data.append(dict(Version=entry_name,
-                                 SortIndex=sort_index,
-                                 LaunchTime90Threshold=thr90,
-                                 LaunchTime75Threshold=thr75,
-                                 Time=accumulated_timelength))
+                                SortIndex=sort_index,
+                                LaunchTime90Threshold=thr90,
+                                LaunchTime75Threshold=thr75,
+                                Time=accumulated_timelength))
 
         if not data:
             return None, "No data found :/"
