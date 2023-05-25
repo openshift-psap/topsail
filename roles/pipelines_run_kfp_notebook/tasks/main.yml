@@ -264,7 +264,7 @@
          -n "{{ notebook_namespace }}"
          | awk '{print $3}'
     register: pipelineruns_wait
-    retries: 10
+    retries: 60
     delay: 10
     until: ' pipelineruns_wait.stdout and "Running" not in pipelineruns_wait.stdout'
 
@@ -275,6 +275,21 @@
   always:
   - name: Delete the secret token
     command: oc delete secret/secret_token_name -n "{{ notebook_namespace }}" --ignore-not-found
+    failed_when: false
+
+  - name: Save the pods status
+    shell:
+      oc get pods -owide -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.status"
+    failed_when: false
+
+  - name: Save the pods description
+    shell:
+      oc describe pods  -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.desc"
+    failed_when: false
+
+  - name: Save the pods definition
+    shell:
+      oc get -oyaml pods  -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.yaml"
     failed_when: false
 
   - name: Save the pipeline status
@@ -311,7 +326,7 @@
     vars:
       rhods_notebook_namespace: "{{ notebook_namespace }}"
       sut_cluster_kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
-      rhods_notebook_ods_ci_scale_test_stop_notebooks_on_exit: "{{ pipelines_run_kfp_notebook_stop_on_exit | bool }}"
+      rhods_notebook_ods_ci_scale_test_stop_notebooks_on_exit: false
 
   - name: Capture the sutest cluster artifacts
     include_tasks: artifacts_sutest.yml

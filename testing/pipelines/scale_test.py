@@ -16,6 +16,18 @@ import jsonpath_ng
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 RHODS_OPERATOR_MANIFEST_NAME = "rhods-operator"
 
+TESTING_PIPELINES_DIR = pathlib.Path(__file__).absolute().parent
+TESTING_UTILS_DIR = TESTING_PIPELINES_DIR.parent / "utils"
+PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"])
+
+try:
+    ARTIFACT_DIR = pathlib.Path(os.environ["ARTIFACT_DIR"])
+except KeyError:
+    ARTIFACT_DIR = None
+
+config = None
+
+
 def run(command, capture_stdout=False, capture_stderr=False, check=True):
     logging.info(f"run: {command}")
     args = {}
@@ -30,16 +42,42 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True):
 
     return proc
 
-TESTING_PIPELINES_DIR = pathlib.Path(__file__).absolute().parent
-TESTING_UTILS_DIR = TESTING_PIPELINES_DIR.parent / "utils"
-PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"])
 
-try:
-    ARTIFACT_DIR = pathlib.Path(os.environ["ARTIFACT_DIR"])
-except KeyError:
-    env_ci_artifact_base_dir = pathlib.Path(os.environ.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
-    ARTIFACT_DIR = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d')}"
-    ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+def apply_config_overrides():
+    VARIABLE_OVERRIDES_PATH = ARTIFACT_DIR / "variable_overrides"
+    if not VARIABLE_OVERRIDES_PATH.exists():
+        logging.info("apply_config_overrides: {VARIABLE_OVERRIDES_PATH} does not exist, nothing to override.")
+        return
+
+    with open(VARIABLE_OVERRIDES_PATH) as f:
+        for line in f.readlines():
+            key, found, _value = line.strip().partition("=")
+            if not found:
+                logging.warning(f"apply_config_overrides: Invalid line: '{line.strip()}', ignoring it.")
+                continue
+            value = _value.strip("'")
+            logging.info(f"config override: {key} --> {value}")
+            set_config(key, value)
+
+
+def apply_preset(name):
+    values = get_config(f"ci_presets.{name}")
+    logging.info(f"Appling preset '{name}' ==> {values}")
+    if not values:
+        raise ValueError("Preset '{name}' does not exists")
+
+    for key, value in values.items():
+        if key == "extends":
+            for extend_name in value:
+                apply_preset(extend_name)
+            continue
+
+        msg = f"preset[{name}] --> {value}"
+        logging.info(msg)
+        with open(ARTIFACT_DIR / "presets_applied", "a") as f:
+            print(msg, file=f)
+
+        set_config(key, value)
 
 
 def set_config_environ():
@@ -60,9 +98,30 @@ def set_config_environ():
         shutil.copyfile(TESTING_PIPELINES_DIR / "config.yaml", config_path)
 
 
-set_config_environ()
-with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
-    config = yaml.safe_load(config_f)
+def init():
+    global ARTIFACT_DIR
+    global config
+
+    if ARTIFACT_DIR is None:
+        env_ci_artifact_base_dir = pathlib.Path(os.environ.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
+        ARTIFACT_DIR = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d')}"
+        ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+
+    set_config_environ()
+    with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
+        config = yaml.safe_load(config_f)
+
+
+    console = run("oc whoami --show-console", capture_stdout=True)
+    apply_config_overrides()
+
+    if console.stdout.strip().endswith("apps.bm.example.com"):
+        apply_preset("icelake")
+
+    if os.environ.get("JOB_NAME_SAFE", "").endswith("-light"):
+        LIGHT_PROFILE = "light"
+        logging.info(f"Running a light test, applying the {LIGHT_PROFILE}")
+        apply_preset(LIGHT_PROFILE)
 
 
 def get_config(jsonpath):
@@ -172,8 +231,33 @@ def prepare_rhods():
     run("./run_toolbox.py from_config cluster deploy_ldap")
 
 
-def compute_node():
-    return 1
+def compute_node_requirement(driver=False, sutest=False):
+    if (not driver and not sutest) or (sutest and driver):
+        raise ValueError("compute_node_requirement must be called with driver=True or sutest=True")
+
+    if driver:
+        cluster_role = "driver"
+        # from the right namespace, get a hint of the resource request with these commands:
+        # oc get pods -oyaml | yq .items[].spec.containers[].resources.requests.cpu -r | awk NF | grep -v null | python -c "import sys; print(sum(int(l.strip()[:-1]) for l in sys.stdin))"
+        # --> 1090
+        # oc get pods -oyaml | yq .items[].spec.containers[].resources.requests.memory -r | awk NF | grep -v null | python -c "import sys; print(sum(int(l.strip()[:-2]) for l in sys.stdin))"
+        # --> 2668
+        cpu_count = 1.5
+        memory = 3
+
+    if sutest:
+        cluster_role = "sutest"
+        # must match 'roles/local_ci_run_multi/templates/job.yaml.j2'
+        cpu_count = 1
+        memory = 2
+
+    machine_type = get_config("clusters.create.ocp.compute.type")
+    user_count = get_config("tests.pipelines.user_count")
+
+    logfile = ARTIFACT_DIR / f'sizing_{cluster_role}'
+    proc = run(f"{TESTING_UTILS_DIR / 'sizing' / 'sizing'} {machine_type} {user_count} {cpu_count} {memory} > {logfile}", check=False)
+
+    return proc.returncode
 
 
 def prepare_pipelines_namespace():
@@ -221,7 +305,7 @@ def prepare_test_driver_namespace():
         nodes_count = get_config("clusters.driver.compute.machineset.count")
         extra = ""
         if nodes_count is None:
-            node_count = compute_node()
+            node_count = compute_node_requirement(driver=True)
             extra = f"--extra '{{scale: {node_count}}}'"
 
         run(f"./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
@@ -288,7 +372,7 @@ def prepare_sutest_scale_up():
     node_count = get_config("clusters.sutest.compute.machineset.count")
     extra = ""
     if node_count is None:
-        node_count = compute_node()
+        node_count = compute_node_requirement(sutest=True)
         extra = f"--extra '{{scale: {node_count}}}'"
 
     run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest {extra}")
@@ -319,7 +403,7 @@ def pipelines_run_one():
         prepare_pipelines_namespace()
         run(f"./run_toolbox.py from_config pipelines run_kfp_notebook")
     finally:
-        run(f"./run_toolbox.py from_config pipelines capture_state")
+        run(f"./run_toolbox.py from_config pipelines capture_state > /dev/null")
 
 
 def pipelines_run_many():
@@ -330,7 +414,7 @@ def pipelines_run_many():
     try:
         run(f"./run_toolbox.py from_config pipelines run_scale_test")
     finally:
-        run(f"./run_toolbox.py cluster capture_environment")
+        run(f"./run_toolbox.py cluster capture_environment > /dev/null")
 
 
 def pipelines_cleanup_scale_test():
@@ -426,6 +510,8 @@ class Pipelines:
 
 
 def main():
+    init()
+
     # Print help rather than opening a pager
     fire.core.Display = lambda lines, out: print(*lines, file=out)
 

@@ -1,9 +1,9 @@
 ---
-- name: Get the content of the configuration file, if it is enabled
-  when: local_ci_run_multi_pr_config | default('', true) | trim
+- name: Get the content of the variable_overrides file, if it is enabled
+  when: local_ci_run_multi_variable_overrides | default('', true) | trim
   command:
-    cat "{{ local_ci_run_multi_pr_config }}"
-  register: local_ci_run_multi_pr_config_content_cmd
+    cat "{{ local_ci_run_multi_variable_overrides }}"
+  register: local_ci_run_multi_variable_overrides_content_cmd
 
 - name: Ensure that the CI image exists
   command: oc get istag -n "{{ local_ci_run_multi_namespace }}" "{{ local_ci_run_multi_istag }}"
@@ -13,6 +13,20 @@
     path: "{{ artifact_extra_logs_dir }}/src"
     state: directory
     mode: '0755'
+
+- name: Create the config configmap
+  shell:
+    set -o nounset;
+    set -o pipefail;
+    oc create configmap
+       {{ local_ci_run_multi_job_name }}-config
+       -n {{ local_ci_run_multi_namespace }}
+       --from-file=config.yaml=$CI_ARTIFACTS_FROM_CONFIG_FILE
+       --dry-run=client
+       -oyaml
+       | tee "{{ artifact_extra_logs_dir }}/src/001_config.yaml"
+       | oc apply -f-
+  when: local_ci_run_multi_use_local_config
 
 - name: Empty the Minio S3 bucket
   shell: |
@@ -41,6 +55,14 @@
   vars:
     cluster_prometheus_db_mode: reset
 
+- name: Cleanup the RHODS Prometheus database of the cluster
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: reset
+    cluster_prometheus_db_label: deployment=prometheus
+    cluster_prometheus_db_namespace: redhat-ods-monitoring
+
 - name: Create the CI Job
   command: oc apply -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
 
@@ -62,6 +84,27 @@
   delay: 20
   until: not wait_ci_job.stdout
   failed_when: false
+
+- name: Get the OpenShift Prometheus database
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: dump
+    cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_ocp
+  when: capture_prom_db | bool
+  ignore_errors: yes
+
+- name: Get the RHODS Prometheus database
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: dump
+    cluster_prometheus_db_label: deployment=prometheus
+    cluster_prometheus_db_namespace: redhat-ods-monitoring
+    cluster_prometheus_db_directory: /prometheus/data
+    cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_rhods
+  when: capture_prom_db | bool
+  ignore_errors: yes
 
 - name: Get the status of the CI Job
   shell:
@@ -166,3 +209,12 @@
        -ojsonpath={.status.failed}
   register: check_ci_job
   failed_when: check_ci_job.stdout | length > 0
+
+- name: Count how many Pods succeeded, fail in none succeeded
+  shell:
+    set -o pipefail;
+    (cat "{{ artifact_extra_logs_dir }}"/ci-pods_artifacts/ci-pod-*/test.exit_code || true)
+      | (grep '^0$' || true)
+      | wc -l
+  register: success_count_cmd
+  failed_when: success_count_cmd.stdout == "0"
