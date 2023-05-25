@@ -42,8 +42,8 @@ local_ci_run_test_args: []
 # Command to run in the container before running anything else.
 local_ci_run_init_command: null
 
-# Missing documentation for export_command
-local_ci_run_export_command: null
+# Name of the S3 bucket where the artifacts should be exported.
+local_ci_run_export_bucket_name: null
 
 # Identifier of the test being executed (will be a dirname).
 local_ci_run_export_identifier: default

@@ -19,9 +19,9 @@ local_ci run/notebooks:
   secret_env_key: "{{ secrets['psap-ods-secret'].env_key }}"
 
   init_command: "run notebooks scale_test connect_ci"
-  export_command: "run notebooks scale_test export_to_s3"
   export_identifier: SET_AT_RUNTIME
   export_ts_id:  SET_AT_RUNTIME
+  export_bucket_name: rhods-baremetal-results
 
   ci_command: SET_AT_RUNTIME
   pr_number: null # set at runtime
