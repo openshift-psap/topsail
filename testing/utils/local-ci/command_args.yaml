@@ -8,7 +8,7 @@ utils build_push_image:
   git_ref: "{{ base_image.repo.ref }}"
   dockerfile_path: "{{ base_image.repo.dockerfile_path }}"
 
-local_ci run/ods:
+local_ci run/notebooks:
   namespace: "{{ base_image.namespace }}"
   istag: "{{ base_image.imagestream }}:{{ base_image.repo.ref }}"
   service_account: "{{ base_image.user.service_account }}"

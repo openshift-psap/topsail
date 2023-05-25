@@ -14,19 +14,19 @@ secrets:
 
 workloads:
   notebook-burst:
-    command_group: ods
+    command_group: notebooks
     steps:
       test:
         command: notebooks scale_test run_tests_and_plots icelake notebook_scale_test_burst
 
   notebook-gating:
-    command_group: ods
+    command_group: notebooks
     steps:
       test:
         command: notebooks scale_test run_tests_and_plots icelake notebook_gating_scale_test
 
   notebook-scale-test:
-    command_group: ods
+    command_group: notebooks
     steps:
       prepare:
         command: notebooks scale_test cleanup_rhods
@@ -37,13 +37,13 @@ workloads:
         always_run: true
 
   notebook-just-scale-test:
-    command_group: ods
+    command_group: notebooks
     steps:
       test:
         command: notebooks scale_test run_tests_and_plots icelake_notebook_scale_test
 
   notebook-scale-test-light:
-    command_group: ods
+    command_group: notebooks
     steps:
       prepare:
         command: notebooks scale_test cleanup_rhods
@@ -51,7 +51,7 @@ workloads:
         command: notebooks scale_test run_tests_and_plots notebooks_light notebook_scale_test
 
   notebook-scale-test-scaleup:
-    command_group: ods
+    command_group: notebooks
     steps:
       cleanup:
         command: notebooks scale_test cleanup_rhods
@@ -62,7 +62,7 @@ workloads:
         alway_run: true
 
   notebook-scale-test-burst:
-    command_group: ods
+    command_group: notebooks
     steps:
       cleanup:
         command: notebooks scale_test cleanup_rhods
