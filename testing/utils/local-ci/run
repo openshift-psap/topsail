@@ -15,9 +15,10 @@ import jsonpath_ng
 def run(command):
     return subprocess.run(command, check=True, shell=True)
 
-TESTING_LOCAL_CI_DIR = pathlib.Path(__file__).absolute().parent
+TESTING_UTILS_LOCALCI_DIR = pathlib.Path(__file__).absolute().parent
 
-os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(TESTING_LOCAL_CI_DIR / "config.yaml")
+os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(TESTING_UTILS_LOCALCI_DIR / "config.yaml")
+os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_UTILS_LOCALCI_DIR / "command_args.yaml")
 
 with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
     config = yaml.safe_load(config_f)
