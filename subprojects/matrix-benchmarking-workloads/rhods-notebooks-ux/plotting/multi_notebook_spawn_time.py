@@ -53,7 +53,7 @@ class MultiNotebookSpawnTime():
 
             accumulated_timelength = 0
             current_index = -1
-            for user_idx, step_name, step_status, step_time in utils.parse_users(entry):
+            for user_idx, step_name, step_status, step_time, _not_used_step_start_time in utils.parse_users(entry):
                 if current_index != user_idx:
                     accumulated_timelength = 0
                     current_index = user_idx
