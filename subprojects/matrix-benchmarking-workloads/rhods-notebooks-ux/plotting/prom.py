@@ -180,7 +180,7 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
 
     def only_control_plane_nodes(entry, metrics):
         control_plane_nodes = utils.get_control_nodes(entry)
-        
+
         for metric in metrics:
             if metric["metric"]["instance"] not in control_plane_nodes:
                 continue

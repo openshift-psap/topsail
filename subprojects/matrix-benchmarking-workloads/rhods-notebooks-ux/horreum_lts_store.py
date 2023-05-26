@@ -35,7 +35,7 @@ def _recursive_create_namespace(obj: dict) -> types.SimpleNamespace:
                 out_val.append(_recursive_create_namespace(i))
 
         final_obj[key] = out_val
-    
+
     return types.SimpleNamespace(**final_obj)
 
 def _parse_lts_dir(add_to_matrix, dirname, import_settings):
@@ -49,10 +49,10 @@ def _parse_lts_dir(add_to_matrix, dirname, import_settings):
     results = types.SimpleNamespace(
         start_time = datetime.datetime.fromisoformat(metadata['start']),
         end_time = datetime.datetime.fromisoformat(metadata['end']),
-        
+
         thresholds = data['thresholds'] or store_thresholds.get_thresholds(import_settings),
         settings = settings,
-        
+
         sutest_ocp_version = data['ocp_version'],
         rhods_cluster_info = _recursive_create_namespace(metadata['cluster_info']),
         rhods_info = types.SimpleNamespace(
@@ -156,7 +156,7 @@ def build_lts_payloads() -> dict:
     for entry in common.Matrix.processed_map.values():
         if entry.is_lts:
             continue
-        
+
         results = entry.results
 
         start_time: datetime.datetime = results.start_time
