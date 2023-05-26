@@ -153,6 +153,8 @@ def _encode_json(src_obj, name, settings):
 
 
 def build_lts_payloads() -> dict:
+    prom.register() # this call populates the 'lts_metrics' structure
+
     for entry in common.Matrix.processed_map.values():
         if entry.is_lts:
             continue
@@ -229,7 +231,6 @@ def _generate_pod_timings(pod_times, start, end):
 
 def _gather_prom_metrics(entry) -> dict:
     output = {}
-    prom.register()
     for cluster_role, metric_names in lts_metrics.items():
         for metric_name in metric_names:
             logging.info(f"Gathering {metric_name[0]}")
