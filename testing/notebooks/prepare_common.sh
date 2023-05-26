@@ -59,7 +59,50 @@ capture_environment() {
 prepare_ci() {
     cluster_helpers::connect_sutest_cluster
 
+    lab_ci_sutest_prepare
+
     trap "set +e; process_ctrl::kill_bg_processes; sutest_cleanup; driver_cleanup; exit 1" ERR
+}
+
+LAB_ENVIRONEMNT_PREPARE_SUTEST_FCT=lab_environment_prepare_sutest
+LAB_ENVIRONEMNT_CLEANUP_SUTEST_FCT=lab_environment_cleanup_sutest
+
+lab_ci_sutest_prepare() {
+    lab_name=$(get_config clusters.sutest.lab.name)
+    if [[ "$lab_name" == "null" ]]; then
+        echo "No lab environment to prepare."
+        return
+    fi
+
+    prepare_lab_file="$TESTING_NOTEBOOKS_DIR/prepare_lab_$lab_name.sh"
+    if [[ ! -f "$prepare_lab_file" ]]; then
+        _error "Lab '$lab_name' preparation file '$prepare_lab_file' does not exist :/"
+    fi
+    source "$prepare_lab_file"
+
+    if [[ "$(type -t $LAB_ENVIRONEMNT_PREPARE_SUTEST_FCT)" != function \
+              || "$(type -t $LAB_ENVIRONEMNT_CLEANUP_SUTEST_FCT)" != function ]];
+    then
+        _error "Lab '$lab_name' preparation file '$prepare_lab_environment' does not contain '$PREPARE_FCT' or '$LAB_ENVIRONEMNT_CLEANUP_SUTEST_FCT' functions :/"
+    fi
+
+    $LAB_ENVIRONEMNT_PREPARE_SUTEST_FCT # execute the function
+}
+
+lab_ci_sutest_cleanup() {
+    lab_name=$(get_config clusters.sutest.lab.name)
+    if [[ "$lab_name" == "null" ]]; then
+        echo "No lab environment to cleanup."
+        return
+    fi
+
+    prepare_lab_file="$TESTING_NOTEBOOKS_DIR/prepare_lab_$lab_name.sh"
+
+    # all the import consistency verifications have been done in prepare_lab_ci
+
+    source "$prepare_lab_file"
+
+    $LAB_ENVIRONEMNT_CLEANUP_SUTEST_FCT # execute the function
 }
 
 prepare_notebook_performance_without_rhods() {
