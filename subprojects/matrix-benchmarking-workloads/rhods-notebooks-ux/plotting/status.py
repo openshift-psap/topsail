@@ -57,7 +57,7 @@ class ExecutionDistribution():
 
             if step_status != "PASS":
                 continue
-            
+
             timelength = step_time
 
             if cfg__time_to_reach_step:

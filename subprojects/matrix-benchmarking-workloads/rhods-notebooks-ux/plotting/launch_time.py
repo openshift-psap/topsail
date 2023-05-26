@@ -196,7 +196,7 @@ class RunTimeDistribution():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         user_counts = set()
-        
+
         if not common.Matrix.has_records(settings, setting_lists):
             return None, "No experiments to plot"
 

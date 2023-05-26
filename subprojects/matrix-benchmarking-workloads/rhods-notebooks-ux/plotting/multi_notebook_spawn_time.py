@@ -50,7 +50,7 @@ class MultiNotebookSpawnTime():
 
             if check_thresholds:
                 threshold_status_keys.add(entry_name)
-            
+
             accumulated_timelength = 0
             current_index = -1
             for user_idx, step_name, step_status, step_time in utils.parse_users(entry):
@@ -60,7 +60,7 @@ class MultiNotebookSpawnTime():
 
                 if step_status != "PASS":
                     continue
-                
+
                 accumulated_timelength += step_time
                 if step_name != cfg__time_to_reach_step:
                     continue

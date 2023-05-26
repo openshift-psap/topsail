@@ -15,7 +15,7 @@ def get_user_info(entry: MatrixEntry) -> (int, int, int):
             failed_users += 1 if not user['succeeded'] else 0
     else:
         success_users = sum(1 for ods_ci in entry.results.ods_ci.values() if ods_ci.exit_code == 0)
-        failed_users = entry.results.user_count - success_users        
+        failed_users = entry.results.user_count - success_users
 
     return success_users, failed_users, success_users + failed_users
 
