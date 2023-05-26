@@ -237,6 +237,9 @@ main() {
             apply_preset cleanup_clusters_on_exit
             sutest_cleanup
             driver_cleanup
+
+            lab_ci_sutest_cleanup
+
             return 0
             ;;
         "prepare_matbench")

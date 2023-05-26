@@ -305,6 +305,8 @@ clusters:
   sutest:
     is_metal: false
     is_managed: false
+    lab:
+      name: null
     managed:
       is_rosa: false
       is_ocm: false
