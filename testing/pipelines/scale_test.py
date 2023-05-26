@@ -205,15 +205,6 @@ def install_ocp_pipelines():
 
 
 def create_dsp_application():
-    namespace = get_config("rhods.pipelines.namespace")
-    try:
-        run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
-    except Exception: pass # project already exists
-
-    label_key = get_config("rhods.pipelines.namespace_label.key")
-    label_value = get_config("rhods.pipelines.namespace_label.value")
-    run(f"oc label 'ns/{namespace}' '{label_key}={label_value}' --overwrite")
-
     run("./run_toolbox.py from_config pipelines deploy_application")
 
 
@@ -266,8 +257,17 @@ def prepare_pipelines_namespace():
     """
 
     namespace = get_config("rhods.pipelines.namespace")
-    run(f"oc new-project '{namespace}' --skip-config-write >/dev/null 2>/dev/null || true")
+    if run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
+        run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
+    else:
+        logging.warning(f"Project {namespace} already exists.")
+        (ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
+
     run(f"oc label namespace/{namespace} opendatahub.io/dashboard=true --overwrite")
+
+    label_key = get_config("rhods.pipelines.namespace_label.key")
+    label_value = get_config("rhods.pipelines.namespace_label.value")
+    run(f"oc label namespace/{namespace} '{label_key}={label_value}' --overwrite")
 
     dedicated = "{}" if get_config("clusters.sutest.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
