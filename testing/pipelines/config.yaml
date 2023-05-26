@@ -103,7 +103,7 @@ rhods:
   pipelines:
     application:
       name: sample
-    namespace: data-science-test
+    namespace: pipelines-test
     namespace_label:
       key: dsp-scale-test
       value: "true"
