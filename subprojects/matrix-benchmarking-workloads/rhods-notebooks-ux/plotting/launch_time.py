@@ -85,15 +85,18 @@ class LaunchTimeDistribution():
                 ))
                 continue
 
-            for user_index, step_name, step_status, step_time in utils.parse_users(entry): 
+            for user_index, step_name, step_status, step_time, step_start_time in utils.parse_users(entry):
                 if not self.show_successes and step_status != "PASS":
                     continue
                 if cfg__show_only_step and cfg__show_only_step != step_name:
                     continue
-                
+
+                if step_start_time is None: # LTS entry do not have the step start time
+                    logging.error(f"Received step_start_time=None for entry {entry}, this is unexpected")
+
                 data.append(dict(
                     Event=step_name + (entry_name if expe_cnt > 1 else ''),
-                    Time=step_time,
+                    Time=step_start_time,
                     Count=1,
                     Status=step_status,
                 ))
