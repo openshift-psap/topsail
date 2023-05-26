@@ -41,6 +41,21 @@
     oc get -oyaml pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
   failed_when: false
 
+- name: Save the taskrun status
+  shell:
+    oc get taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.status"
+  failed_when: false
+
+- name: Save the taskrun description
+  shell:
+    oc describe taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.desc"
+  failed_when: false
+
+- name: Save the taskrun definition
+  shell:
+    oc get -oyaml taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.yaml"
+  failed_when: false
+
 - name: Save the status of the pods
   shell:
     oc get pods -owide
