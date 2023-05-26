@@ -60,6 +60,11 @@ run_gating_tests_and_plots() {
     local test_idx=0
     local failed=0
 
+    cat <<EOF > "$ARTIFACT_DIR/settings.gating"
+test_flavor=notebooks_gating
+version=$(get_config rhods.catalog.version)
+EOF
+
     for preset in $(get_config tests.notebooks.gating_tests[])
     do
         test_idx=$((test_idx + 1)) # start at 1, 0 is prepare_steps

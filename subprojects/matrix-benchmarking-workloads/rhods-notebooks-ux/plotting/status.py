@@ -47,7 +47,7 @@ class ExecutionDistribution():
             accumulated_timelength = 0
             last_user_idx = 0
 
-        for user_idx, step_name, step_status, step_time in utils.parse_users(entry):
+        for user_idx, step_name, step_status, step_time, _not_used_step_start_time in utils.parse_users(entry):
             if cfg__time_to_reach_step and user_idx != last_user_idx:
                 accumulated_timelength = 0
                 last_user_idx = user_idx
@@ -57,7 +57,7 @@ class ExecutionDistribution():
 
             if step_status != "PASS":
                 continue
-            
+
             timelength = step_time
 
             if cfg__time_to_reach_step:

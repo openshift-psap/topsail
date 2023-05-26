@@ -180,7 +180,7 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
 
     def only_control_plane_nodes(entry, metrics):
         control_plane_nodes = utils.get_control_nodes(entry)
-        
+
         for metric in metrics:
             if metric["metric"]["instance"] not in control_plane_nodes:
                 continue
@@ -353,7 +353,7 @@ def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
     container_labels = [
-        {"Notebooks": dict(namespace="rhods-notebooks", container="jupyter-nb-psapuser.*")},
+        {"Notebooks": dict(namespace="psapuser.*", container="psapuser.*")},
         {"OpenLDAP": dict(namespace="openldap", pod="openldap.*")},
         {"RHODS Dashboard": dict(namespace="redhat-ods-applications", pod="rhods-dashboard.*", container="rhods-dashboard")},
         {"RHODS Dashboard oauth-proxy": dict(namespace="redhat-ods-applications", pod="rhods-dashboard.*", container="oauth-proxy")},
@@ -422,7 +422,7 @@ def _get_rhods_pod_resource_metrics(register=False):
         {'process_max_fds': 'process_max_fds{job!="prometheus"}'},
     ]
     pod_disk_usage_metrics = [
-        {"notebooks_pvc_disk_usage": 'kubelet_volume_stats_used_bytes{namespace="rhods-notebooks"}'},
+        {"notebooks_pvc_disk_usage": 'kubelet_volume_stats_used_bytes{namespace=~"psapuser.*"}'},
     ]
 
     def get_resource_legend_name(metric_name, metric_metric):
@@ -472,7 +472,7 @@ def _get_rhods_pod_resource_metrics(register=False):
 
 def _get_rhods_notebook_metrics(register=False):
     notebook_creation_delay_metrics = [
-        {"reason_notebooks_delayed": 'sum by (reason) (kube_pod_container_status_waiting_reason{namespace="rhods-notebooks"})'},
+        {"reason_notebooks_delayed": 'sum by (reason) (kube_pod_container_status_waiting_reason{namespace=~"psapuser.*"})'},
     ]
     notebook_servers_running_metrics = [
         "jupyterhub_running_servers",
@@ -531,7 +531,8 @@ def get_metrics(name):
     return _get_metrics
 
 
-def register():
-    get_sutest_metrics(register=True)
-    get_driver_metrics(register=True)
-    get_rhods_metrics(register=True)
+def register(only_initialize=False):
+    register = not only_initialize
+    get_sutest_metrics(register)
+    get_driver_metrics(register)
+    get_rhods_metrics(register)
