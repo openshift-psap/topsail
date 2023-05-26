@@ -26,6 +26,19 @@
        > "{{ artifact_extra_logs_dir }}/all.status"
   failed_when: false
 
+- name: Get the status of the events
+  shell:
+    oc get events
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/events.status"
+  failed_when: false
+
+- name: Get the json definition of the events
+  shell:
+    oc get events -ojson
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/events.json"
+
 - name: Save the pipeline status
   shell:
     oc get pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.status"
