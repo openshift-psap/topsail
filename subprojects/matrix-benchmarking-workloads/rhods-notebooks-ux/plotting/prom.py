@@ -531,7 +531,8 @@ def get_metrics(name):
     return _get_metrics
 
 
-def register():
-    get_sutest_metrics(register=True)
-    get_driver_metrics(register=True)
-    get_rhods_metrics(register=True)
+def register(only_initialize=False):
+    register = not only_initialize
+    get_sutest_metrics(register)
+    get_driver_metrics(register)
+    get_rhods_metrics(register)

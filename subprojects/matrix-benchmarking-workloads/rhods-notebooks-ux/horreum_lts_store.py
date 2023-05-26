@@ -153,7 +153,7 @@ def _encode_json(src_obj, name, settings):
 
 
 def build_lts_payloads() -> dict:
-    prom.register() # this call populates the 'lts_metrics' structure
+    prom.register(only_initialize=True) # this call populates the 'lts_metrics' structure
 
     for entry in common.Matrix.processed_map.values():
         if entry.is_lts:
