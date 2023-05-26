@@ -60,7 +60,6 @@ def load_test_prepare():
 
     install_rhods()
     run("./run_toolbox.py rhods wait_ods")
-
     run("./run_toolbox.py cluster set_scale g5.2xlarge 2")    
     run("./run_toolbox.py nfd_operator deploy_from_operatorhub")
     run("./run_toolbox.py nfd wait_labels")
@@ -82,13 +81,16 @@ def loadtest_run():
     s3_creds_model_secret_path = WISDOM_SECRET_PATH / "s3-secret.yaml"
     quay_secret_path = WISDOM_SECRET_PATH / "quay-secret.yaml"
     protos_path = WISDOM_SECRET_PATH / "protos"
-    model_serving_config_template_path = WISDOM_SECRET_PATH / "model_serving_config.yml.j2"
-    serving_runtime_template_path = WISDOM_SECRET_PATH / "serving_runtime.yml.j2"
-    inference_service_template_path = WISDOM_SECRET_PATH / "inference_service.yml.j2"
     dataset_path = WISDOM_SECRET_PATH / "llm-load-test-dataset.json"
     s3_creds_results_secret_path = WISDOM_SECRET_PATH / "credentials"
 
-    test_cases = [(4, 32), (4, 64)] #[(1, 1), (1,2), (1, 4), (1, 8), (1, 16), (2, 16), (2, 32), (4, 32), (4, 64)]
+    test_namespace="wisdom"
+    tester_imagestream_name="llm-load-test"
+    tester_image_tag="wisdom-ci"
+
+    run(f"./run_toolbox.py utils build_push_image --namespace='{test_namespace}'  --git_repo='https://github.com/openshift-psap/llm-load-test.git' --git_ref='main' --dockerfile_path='build/Containerfile' --image_local_name='{tester_imagestream_name}' --tag='{tester_image_tag}'  --")
+
+    test_cases = [(2, 16), (2, 32)] #[(1, 1), (1,2), (1, 4), (1, 8), (1, 16), (2, 16), (2, 32), (4, 32), (4, 64)]
     replicas_list, concurrency_list = zip(*test_cases)
     
     # It takes > 5 minutes for a new GPU Node to become ready for GPU Pods, so
@@ -103,25 +105,33 @@ def loadtest_run():
 
         print(f"Configure ServingRuntime and InferenceService for replicas: {replicas}")
 
+        #TODO: USE TEST IMAGE BUILT IN PREPARE STEP
         run(f"./run_toolbox.py wisdom deploy_model {replicas} \
             {s3_creds_model_secret_path} \
             {quay_secret_path} \
             {protos_path} \
-            {model_serving_config_template_path} \
-            {serving_runtime_template_path} \
-            {inference_service_template_path}")
+            {tester_imagestream_name} \
+            {tester_image_tag} \
+            --namespace='{test_namespace}' \
+            --")
 
         # Warmup 
-        run(f"./run_toolbox.py wisdom warmup_model {protos_path}")
+        run(f"./run_toolbox.py wisdom warmup_model {protos_path} \
+            {tester_imagestream_name} \
+            {tester_image_tag} \
+            --namespace='{test_namespace}'")
         
         #Run test with total_requests and concurrency
         print(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and total_requests: {total_requests}")
         run(f"./run_toolbox.py wisdom run_llm_load_test {total_requests} \
-            {replicas} \
             {concurrency} \
+            {replicas} \
             {dataset_path} \
             {s3_creds_results_secret_path} \
-            {protos_path}")
+            {protos_path} \
+            {tester_imagestream_name} \
+            {tester_image_tag} \
+            --namespace='{test_namespace}'")
 
 
     pass

@@ -1,5 +1,4 @@
 ---
-wisdom_namespace: wisdom
 llm_load_test_config_template: 'templates/llm-load-test-config.json.j2'
-llm_load_test_pod: 'roles/wisdom_llm_load_test/files/llm-load-test_pod.yml'
+llm_load_test_pod_template: 'templates/llm-load-test_pod.yml.j2'
 

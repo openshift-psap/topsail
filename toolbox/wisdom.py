@@ -15,12 +15,13 @@ class Wisdom:
                      s3_secret_path, 
                      quay_pull_secret_path, 
                      protos_path, 
-                     model_serving_config_template_path, 
-                     serving_runtime_template_path, 
-                     inference_service_template_path):
+                     tester_imagestream_name,
+                     tester_image_tag,
+                     serving_runtime_name="wisdom-runtime",
+                     namespace="wisdom"
+                     ):
         """
         Deploy Ansible Wisdom model (ServingRuntime and InferenceService)
-        # TODO: Allow for configuring the runtime and model version at this level
 
         Args:
           replicas: Model Mesh Deployment replicas
@@ -29,10 +30,9 @@ class Wisdom:
           quay_pull_secret_path: File path to a yaml manifest for the Secret containing
                                  credentials for the quay repository containing the runtime image.
           protos_path: File path to the proto files needed to query the model
-          model_serving_config_template_path: File path to the template for the model-serving-config
-                                              ConfigMap
-          serving_runtime_template_path: File path to the template for the ServingRuntime YAML
-          inference_service_template_path: File path to the template for the InferenceService YAML
+          tester_imagestream_name: Name for the imagestream for the model validator Pod container image
+          tester_image_tag: Name for the tag for the model validator Pod container imagestream
+          namespace: Namespace to deploy the model 
         """
 
         return RunAnsibleRole(locals())
@@ -40,13 +40,23 @@ class Wisdom:
     
     @AnsibleRole("wisdom_warmup_model")
     @AnsibleMappedParams
-    def warmup_model(self, protos_path):
+    def warmup_model(self,
+                     protos_path,
+                     tester_imagestream_name,
+                     tester_image_tag,
+                     concurrency="16",
+                     total_requests="4096",
+                     namespace="wisdom"):
         """
         Deploy Ansible Wisdom model (ServingRuntime)
-        # TODO: Allow for configuring the runtime and model version at this level
 
         Args:
           protos_path: Path to protos directory to put into a ConfigMap, and mounted in Pod
+          tester_imagestream_name: Name for the imagestream for the model validator Pod container image
+          tester_image_tag: Name for the tag for the model validator Pod container imagestream
+          warmup_concurrency: Simulated concurrent users for the warmup
+          warmup_total_requests: Total maximum requests to send for the warmup phase.
+          namespace: Namespace to deploy the model 
         """
 
         return RunAnsibleRole(locals())
@@ -59,7 +69,10 @@ class Wisdom:
                           replicas, 
                           dataset_path, 
                           s3_secret_path, 
-                          protos_path):
+                          protos_path,
+                          tester_imagestream_name,
+                          tester_image_tag,
+                          namespace="wisdom"):
         """
         Deploy Ansible Wisdom model (ServingRuntime)
 
@@ -70,9 +83,9 @@ class Wisdom:
           dataset_path: File path to the json file containing the inputs to be used in the load test
           s3_secret_path: File path to an aws credentials file allowing llm-load-test to push the results to S3
           protos_path: File path to the proto files needed to query the model
+          tester_imagestream_name: Name for the imagestream for the model validator Pod container image
+          tester_image_tag: Name for the tag for the model validator Pod container imagestream
+          namespace: Namespace to deploy the model 
         """
 
         return RunAnsibleRole(locals())
-
-
-   

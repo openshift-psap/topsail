@@ -26,3 +26,14 @@ wisdom_llm_load_test_s3_secret_path:
 # Mandatory value
 wisdom_llm_load_test_protos_path:
 
+# Name for the imagestream for the model validator Pod container image
+# Mandatory value
+wisdom_llm_load_test_tester_imagestream_name:
+
+# Name for the tag for the model validator Pod container imagestream
+# Mandatory value
+wisdom_llm_load_test_tester_image_tag:
+
+# Namespace to deploy the model
+wisdom_llm_load_test_namespace: wisdom
+

@@ -2,14 +2,24 @@ apiVersion: v1
 kind: Pod
 metadata:
  name: llm-load-test
- namespace: wisdom # {{ wisdom_namespace }}
+ namespace: {{ wisdom_llm_load_test_namespace }}
 spec:
   containers:
   - name: llm-load-test
-    image: quay.io/dagray/llm-load-test:latest
+    image: {{ llm_load_test_image }}
     imagePullPolicy: Always
-    command: ["/bin/sh"]
-    args: ["-c", "cd /src/llm-load-test && python3 ghz_frontend.py --wisdom_experiment"]
+    command:
+    - bash
+    - -c
+    args:
+    - |
+      set -o errexit
+      set -o pipefail
+      set -o nounset
+      set -o errtrace
+      set -x
+      cd /src/llm-load-test
+      python3 ghz_frontend.py --wisdom_experiment
     env:
     - name: CONFIG_FILENAME
       value: "config.json"
@@ -31,13 +41,11 @@ spec:
       defaultMode: 0700
       name: llm-load-test-config
   - name: protos
-    configMap:
-      defaultMode: 0700
-      name: wisdom-protos
+    secret:
+      secretName: wisdom-protos
   - name: dataset
-    configMap:
-      defaultMode: 0700
-      name: llm-load-test-dataset
+    secret:
+      secretName: llm-load-test-dataset
   - name: aws-credentials
     secret:
       secretName: llm-load-test-s3-credentials

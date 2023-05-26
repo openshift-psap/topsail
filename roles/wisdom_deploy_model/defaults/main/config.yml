@@ -18,15 +18,17 @@ wisdom_deploy_model_quay_pull_secret_path:
 # Mandatory value
 wisdom_deploy_model_protos_path:
 
-# File path to the template for the model-serving-config ConfigMap
+# Name for the imagestream for the model validator Pod container image
 # Mandatory value
-wisdom_deploy_model_model_serving_config_template_path:
+wisdom_deploy_model_tester_imagestream_name:
 
-# File path to the template for the ServingRuntime YAML
+# Name for the tag for the model validator Pod container imagestream
 # Mandatory value
-wisdom_deploy_model_serving_runtime_template_path:
+wisdom_deploy_model_tester_image_tag:
 
-# File path to the template for the InferenceService YAML
-# Mandatory value
-wisdom_deploy_model_inference_service_template_path:
+# Missing documentation for serving_runtime_name
+wisdom_deploy_model_serving_runtime_name: wisdom-runtime
+
+# Namespace to deploy the model
+wisdom_deploy_model_namespace: wisdom
 
