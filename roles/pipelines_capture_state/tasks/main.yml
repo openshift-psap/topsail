@@ -26,6 +26,19 @@
        > "{{ artifact_extra_logs_dir }}/all.status"
   failed_when: false
 
+- name: Get the status of the events
+  shell:
+    oc get events
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/events.status"
+  failed_when: false
+
+- name: Get the json definition of the events
+  shell:
+    oc get events -ojson
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/events.json"
+
 - name: Save the pipeline status
   shell:
     oc get pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.status"
@@ -39,6 +52,21 @@
 - name: Save the pipeline definition
   shell:
     oc get -oyaml pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
+  failed_when: false
+
+- name: Save the taskrun status
+  shell:
+    oc get taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.status"
+  failed_when: false
+
+- name: Save the taskrun description
+  shell:
+    oc describe taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.desc"
+  failed_when: false
+
+- name: Save the taskrun definition
+  shell:
+    oc get -oyaml taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.yaml"
   failed_when: false
 
 - name: Save the status of the pods
@@ -55,13 +83,19 @@
        -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
   register: dspa_pod_names_cmd
 
+- name: Create the pods directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/pods"
+    state: directory
+    mode: '0755'
+
 - name: Capture the logs of the pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
   shell:
     oc logs pod/{{ item }}
        -n {{ namespace }}
        --all-containers --prefix
-       > "{{ artifact_extra_logs_dir }}/{{ item }}.log"
+       > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.log"
   failed_when: false
 
 - name: Capture the description of the application pods
@@ -69,7 +103,7 @@
   shell:
     oc describe pod/{{ item }}
        -n {{ namespace }}
-       > "{{ artifact_extra_logs_dir }}/{{ item }}.desc"
+       > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.desc"
   failed_when: false
 
 - name: Capture the definition of the pods
@@ -78,7 +112,7 @@
     oc get
        -n {{ namespace }}
        -oyaml pod/{{ item }}
-       > "{{ artifact_extra_logs_dir }}/{{ item }}.yaml"
+       > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.yaml"
   failed_when: false
 
 - name: Capture the DSP Application
@@ -94,3 +128,23 @@
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/notebooks.descr"
   failed_when: false
+
+- name: Get the status of the notebook resources
+  shell:
+    oc get notebooks
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/notebooks.status"
+  failed_when: false
+
+- name: Get the definition of the notebook resources
+  shell:
+    oc get notebooks -oyaml
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/notebooks.yaml"
+  failed_when: false
+
+- name: Get the json definition of the notebook resources
+  shell:
+    oc get notebooks -ojson
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/notebooks.json"

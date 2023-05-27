@@ -30,8 +30,8 @@ ci_presets:
     extends: [metal]
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
-    tests.pipelines.user_count: 50
-    tests.pipelines.sleep_factor: 5
+    tests.pipelines.user_count: 150
+    tests.pipelines.sleep_factor: 1
 secrets:
   dir:
     name: psap-ods-secret
@@ -103,7 +103,7 @@ rhods:
   pipelines:
     application:
       name: sample
-    namespace: data-science-test
+    namespace: pipelines-test
     namespace_label:
       key: dsp-scale-test
       value: "true"
