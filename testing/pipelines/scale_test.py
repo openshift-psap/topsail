@@ -3,12 +3,13 @@
 import sys, os
 import pathlib
 import subprocess
-import fire
 import logging
 logging.getLogger().setLevel(logging.INFO)
 import datetime
 import time
 import functools
+
+import fire
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 
