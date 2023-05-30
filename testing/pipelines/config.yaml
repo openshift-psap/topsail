@@ -34,11 +34,12 @@ ci_presets:
     tests.pipelines.sleep_factor: 1
 
   load_aware:
+    extends: [light_cluster]
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
-    tests.pipelines.user_count: 1
+    tests.pipelines.user_count: 5
     clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/load-aware
-    clusters.create.ocp.tags.TicketId: 87
+    clusters.create.ocp.tags.TicketId: 115
 
 secrets:
   dir:
