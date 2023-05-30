@@ -19,7 +19,7 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 LIGHT_PROFILE = "light"
 
 sys.path.append(str(TESTING_PIPELINES_DIR.parent))
-from common import env, config, run, rhods
+from common import env, config, run, rhods, visualize
 
 def init(ignore_secret_path=False):
     env.init()
@@ -357,6 +357,10 @@ def test_ci():
             pipelines_cleanup_cluster()
 
 
+@entrypoint
+def generate_plots_from_pr_args():
+    visualize.download_and_generate_visualizations()
+
 class Pipelines:
     """
     Commands for launching the Pipeline Perf & Scale tests
@@ -378,6 +382,7 @@ class Pipelines:
         self.prepare_ci = prepare_cluster
         self.test_ci = test_ci
 
+        self.generate_plots_from_pr_args = generate_plots_from_pr_args
 
 def main():
     # Print help rather than opening a pager
