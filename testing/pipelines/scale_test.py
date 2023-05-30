@@ -14,33 +14,39 @@ PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 
 TESTING_PIPELINES_DIR = pathlib.Path(__file__).absolute().parent
 TESTING_UTILS_DIR = TESTING_PIPELINES_DIR.parent / "utils"
-PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"])
+PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
 
 sys.path.append(str(TESTING_PIPELINES_DIR.parent))
 from common import env, config, run, rhods
 
-def init():
+def init(ignore_secret_path=False):
     env.init()
     config.init(TESTING_PIPELINES_DIR)
 
-    server = run.run("oc whoami --show-server", capture_stdout=True)
 
-    if server.stdout.strip().endswith("apps.bm.example.com:6443") or "kubernetes.default" in server:
+    if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
+        raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
+
+    server_url = run.run("oc whoami --show-server", capture_stdout=True).stdout.strip()
+
+    if server_url.endswith("apps.bm.example.com:6443") or "kubernetes.default" in server_url:
         config.ci_artifacts.apply_preset("icelake")
 
     if os.environ.get("JOB_NAME_SAFE", "").endswith("-light"):
-        logging.info(f"Running a light test, applying the {LIGHT_PROFILE}")
+        logging.info(f"Running a light test, applying the '{LIGHT_PROFILE}' profile")
         config.ci_artifacts.apply_preset(LIGHT_PROFILE)
 
 
-def entrypoint(fct):
-    @functools.wraps(fct)
-    def wrapper(*args, **kwargs):
-        init()
-        fct(*args, **kwargs)
+def entrypoint(ignore_secret_path=False):
+    def decorator(fct):
+        @functools.wraps(fct)
+        def wrapper(*args, **kwargs):
+            init(ignore_secret_path)
+            fct(*args, **kwargs)
 
-    return wrapper
+        return wrapper
+    return decorator
 # ---
 
 def customize_rhods():
@@ -76,7 +82,7 @@ def create_dsp_application():
     run.run("./run_toolbox.py from_config pipelines deploy_application")
 
 
-@entrypoint
+@entrypoint()
 def prepare_rhods():
     """
     Prepares the cluster for running RHODS pipelines scale tests.
@@ -122,7 +128,7 @@ def compute_node_requirement(driver=False, sutest=False):
     return proc.returncode
 
 
-@entrypoint
+@entrypoint()
 def prepare_pipelines_namespace():
     """
     Prepares the namespace for running a pipelines scale test.
@@ -150,7 +156,7 @@ def prepare_pipelines_namespace():
     create_dsp_application()
 
 
-@entrypoint
+@entrypoint()
 def prepare_test_driver_namespace():
     """
     Prepares the cluster for running the multi-user ci-artifacts operations
@@ -231,7 +237,7 @@ def prepare_test_driver_namespace():
     run.run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")
 
 
-@entrypoint
+@entrypoint()
 def prepare_sutest_scale_up():
     """
     Scales up the SUTest cluster with the right number of nodes
@@ -248,7 +254,7 @@ def prepare_sutest_scale_up():
 
     run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest {extra}")
 
-@entrypoint
+@entrypoint()
 def prepare_cluster():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
@@ -259,7 +265,7 @@ def prepare_cluster():
     prepare_rhods()
 
 
-@entrypoint
+@entrypoint()
 def pipelines_run_one():
     """
     Runs a single Pipeline scale test.
@@ -278,7 +284,7 @@ def pipelines_run_one():
         run.run(f"./run_toolbox.py from_config pipelines capture_state > /dev/null")
 
 
-@entrypoint
+@entrypoint()
 def pipelines_run_many():
     """
     Runs multiple concurrent Pipelines scale test.
@@ -290,7 +296,7 @@ def pipelines_run_many():
         run.run(f"./run_toolbox.py cluster capture_environment > /dev/null")
 
 
-@entrypoint
+@entrypoint()
 def cleanup_scale_test():
     """
     Cleanups the pipelines scale test namespaces
@@ -304,7 +310,7 @@ def cleanup_scale_test():
     run.run(f"oc delete ns -l{label_key}={label_value} --ignore-not-found")
 
 
-@entrypoint
+@entrypoint()
 def cleanup_cluster():
     """
     Restores the cluster to its original state
@@ -337,7 +343,7 @@ def cleanup_cluster():
     run.run(f"oc delete ns '{base_image_ns}' --ignore-not-found")
 
 
-@entrypoint
+@entrypoint()
 def test_ci():
     """
     Runs the Pipelines scale test from the CI
