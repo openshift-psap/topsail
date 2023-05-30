@@ -32,6 +32,14 @@ ci_presets:
     clusters.driver.compute.dedicated: false
     tests.pipelines.user_count: 150
     tests.pipelines.sleep_factor: 1
+
+  load_aware:
+    clusters.sutest.compute.dedicated: false
+    clusters.driver.compute.dedicated: false
+    tests.pipelines.user_count: 1
+    clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/load-aware
+    clusters.create.ocp.tags.TicketId: 87
+
 secrets:
   dir:
     name: psap-ods-secret
