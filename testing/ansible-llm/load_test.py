@@ -17,6 +17,7 @@ def run(command):
 
 TESTING_ANSIBLE_LLM_DIR = pathlib.Path(__file__).absolute().parent
 WISDOM_SECRET_PATH = pathlib.Path(os.environ["WISDOM_SECRET_PATH"])
+WISDOM_PROTOS_SECRET_PATH = pathlib.Path(os.environ["WISDOM_PROTOS_SECRET_PATH"])
 
 try:
     ARTIFACT_DIR = pathlib.Path(os.environ["ARTIFACT_DIR"])
@@ -78,9 +79,9 @@ def loadtest_run():
 
     """
     print("In loadtest_run")
+    protos_path = WISDOM_PROTOS_SECRET_PATH
     s3_creds_model_secret_path = WISDOM_SECRET_PATH / "s3-secret.yaml"
     quay_secret_path = WISDOM_SECRET_PATH / "quay-secret.yaml"
-    protos_path = WISDOM_SECRET_PATH / "protos"
     dataset_path = WISDOM_SECRET_PATH / "llm-load-test-dataset.json"
     s3_creds_results_secret_path = WISDOM_SECRET_PATH / "credentials"
 
@@ -90,16 +91,16 @@ def loadtest_run():
 
     run(f"./run_toolbox.py utils build_push_image --namespace='{test_namespace}'  --git_repo='https://github.com/openshift-psap/llm-load-test.git' --git_ref='main' --dockerfile_path='build/Containerfile' --image_local_name='{tester_imagestream_name}' --tag='{tester_image_tag}'  --")
 
-    test_cases = [(2, 16), (2, 32)] #[(1, 1), (1,2), (1, 4), (1, 8), (1, 16), (2, 16), (2, 32), (4, 32), (4, 64)]
+    test_cases = get_config("tests.ansible_llm.test_cases")
     replicas_list, concurrency_list = zip(*test_cases)
     
     # It takes > 5 minutes for a new GPU Node to become ready for GPU Pods, so
-    # scaleup at the beginning.
+    # scaleup once at the beginning.
     max_replicas = max(replicas_list)  
     run(f"./run_toolbox.py cluster set_scale g5.2xlarge {max_replicas}")
  
     #TODO: These test cases should be in a config.yaml, not hardcoded
-    for replicas, concurrency in [(1, 1), (1,2), (1, 4), (1, 8), (1, 16), (2, 16), (2, 32), (4, 32), (4, 64)]:
+    for replicas, concurrency in test_cases:
 
         total_requests = 32 * concurrency
 
