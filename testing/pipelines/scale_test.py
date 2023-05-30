@@ -24,13 +24,12 @@ def init():
     env.init()
     config.init(TESTING_PIPELINES_DIR)
 
-    console = run.run("oc whoami --show-console", capture_stdout=True)
+    server = run.run("oc whoami --show-server", capture_stdout=True)
 
-    if console.stdout.strip().endswith("apps.bm.example.com"):
+    if server.stdout.strip().endswith("apps.bm.example.com:6443") or "kubernetes.default" in server:
         config.ci_artifacts.apply_preset("icelake")
 
     if os.environ.get("JOB_NAME_SAFE", "").endswith("-light"):
-
         logging.info(f"Running a light test, applying the {LIGHT_PROFILE}")
         config.ci_artifacts.apply_preset(LIGHT_PROFILE)
 
