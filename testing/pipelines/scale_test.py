@@ -9,6 +9,7 @@ import datetime
 import time
 import functools
 
+import yaml
 import fire
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
@@ -265,7 +266,6 @@ def prepare_cluster():
     prepare_sutest_scale_up()
     prepare_rhods()
 
-
 @entrypoint()
 def pipelines_run_one():
     """
@@ -351,15 +351,29 @@ def test_ci():
     """
 
     try:
-        pipelines_run_many()
+        try:
+            pipelines_run_many()
+        finally:
+            next_count = env.next_artifact_index()
+            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
+                # visualize.prepare_matbench()
+                # generate_plots(env.ARTIFACT_DIR)
+
+                (env.ARTIFACT_DIR / "not_implemented").touch()
     finally:
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             pipelines_cleanup_cluster()
 
 
-@entrypoint
+@entrypoint(ignore_secret_path=True)
 def generate_plots_from_pr_args():
     visualize.download_and_generate_visualizations()
+
+
+@entrypoint(ignore_secret_path=True)
+def generate_plots(results_dirname):
+    visualize.generate_from_dir(str(results_dirname))
+
 
 class Pipelines:
     """
@@ -382,6 +396,7 @@ class Pipelines:
         self.prepare_ci = prepare_cluster
         self.test_ci = test_ci
 
+        self.generate_plots = generate_plots
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
 
 def main():
