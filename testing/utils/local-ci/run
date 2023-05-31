@@ -188,6 +188,9 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
         if pr_config is not None:
             extra["pr_config"] = pr_config
 
+        if pr_number:
+            extra["update_git"] = True
+
         try:
             run(f'./run_toolbox.py from_config local_ci run --suffix {command_group} --extra "{extra}"')
         except subprocess.CalledProcessError as e:
