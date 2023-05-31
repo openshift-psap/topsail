@@ -34,7 +34,9 @@ install: has_installer
 	"${OPENSHIFT_INSTALLER}" create ignition-configs --dir="${CLUSTER_PATH}" --log-level=debug 2> "${CLUSTER_PATH}/create_ignition_configs.log";
 	[[ "${METADATA_JSON_DEST}" ]] && cp "${CLUSTER_PATH}/metadata.json" "${METADATA_JSON_DEST}"
 
-	time "${OPENSHIFT_INSTALLER}" create cluster --dir="${CLUSTER_PATH}" --log-level=debug 2>&1 | tee "${CLUSTER_PATH}/install.log"
+	time "${OPENSHIFT_INSTALLER}" create cluster --dir="${CLUSTER_PATH}" --log-level=debug 2>&1 \
+		| grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' \
+		| tee "${CLUSTER_PATH}/install.log"
 
 config_new_install: has_installer
 	@mkdir "${CLUSTER_PATH}" -p
