@@ -298,9 +298,21 @@ def pipelines_run_many():
     Runs multiple concurrent Pipelines scale test.
     """
 
+    failed = True
     try:
         run.run(f"./run_toolbox.py from_config pipelines run_scale_test")
+        failed = False
     finally:
+        scale_test_dir = list(env.ARTIFACT_DIR.glob("*__local_ci__run_multi"))
+        if scale_test_dir:
+            user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+            with open(scale_test_dir[0] / "settings", "w") as f:
+                print(f"user_count={user_count}", file=f)
+            with open(scale_test_dir[0] / "exit_code", "w") as f:
+                print("1" if failed else "0", file=f)
+            with open(scale_test_dir[0] / "config.yaml", "w") as f:
+                yaml.dump(config.ci_artifacts.config, f, indent=4)
+
         run.run(f"./run_toolbox.py cluster capture_environment > /dev/null")
 
 
