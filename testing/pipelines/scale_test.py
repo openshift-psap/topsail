@@ -22,7 +22,14 @@ LIGHT_PROFILE = "light"
 sys.path.append(str(TESTING_PIPELINES_DIR.parent))
 from common import env, config, run, rhods, visualize
 
+initialize = False
 def init(ignore_secret_path=False):
+    global initialize
+    if initialize:
+        logging.info("Already initialized.")
+        return
+    initialized = True
+
     env.init()
     config.init(TESTING_PIPELINES_DIR)
 
