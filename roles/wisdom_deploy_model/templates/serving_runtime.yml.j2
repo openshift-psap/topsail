@@ -16,34 +16,48 @@ spec:
   containers:
     - name: runtime
       #TODO: Make this a variable
-      image: quay.io/rhods-wisdom/fmaas-runtime-wisdom-ansible:0.24.0_ubi8_py39
+      image: quay.io/rhods-wisdom/fmaas-runtime-wisdom-ansible:0.25.0_ubi8_py39
       env:
         - name: ACCEPT_LICENSE
           value: "true"
         - name: LOG_LEVEL
           value: debug3
-        - name: SERVICE_PORT
+        - name: RUNTIME_PORT
           value: "8087"
         - name: GATEWAY_PORT
           value: "8060"
-        - name: METRICS_PORT
+        - name: RUNTIME_METRICS_PORT
           value: "2113"
-        - name: LOCAL_MODELS_DIR
+        - name: RUNTIME_LOCAL_MODELS_DIR
           value: "/models/"
         # use RPM based scaling in ModelMesh
         # FIXME: these configs will be the default in the release after 0.21.0
-        - name: LATENCY_BASED_AUTOSCALING_ENABLED
+        - name: INFERENCE_PLUGIN_MODEL_MESH_LATENCY_BASED_AUTOSCALING_ENABLED
           value: "false"
-        - name: SERVER_THREAD_POOL_SIZE
+        - name: RUNTIME_SERVER_THREAD_POOL_SIZE
           value: "16"
+
         # limits model loads/unloads from ModelMesh
-        - name: MAX_LOADING_CONCURRENCY
+        - name: INFERENCE_PLUGIN_MODEL_MESH_MAX_LOADING_CONCURRENCY
           value: "1"
         # CAPACITY and DEFAULT_MODEL_SIZE numbers for pre-converted ONNX models with reported size ~41081MiB
-        - name: CAPACITY
+        - name: INFERENCE_PLUGIN_MODEL_MESH_CAPACITY
           value: "62914560000"
-        - name: DEFAULT_MODEL_SIZE
+        - name: INFERENCE_PLUGIN_MODEL_MESH_DEFAULT_MODEL_SIZE
           value: "31457280000"
+        # # CAPACITY and DEFAULT_MODEL_SIZE numbers for PyTorch models with size reported size ~14442MiB
+        # - name: CAPACITY
+        #   value: "20971520000"
+        # - name: DEFAULT_MODEL_SIZE
+        #   value: "10485760000"
+
+        # # load timeout defaults to 120 which is ok for the pre-converted ONNX
+        # # models; it must be increased if doing conversion at load time
+        # - name: DISTRIBUTED_CONFIG_BACKENDS_TGIS_LOCAL_LOAD_TIMEOUT
+        #   value: "400"
+        # - name: MODEL_LOADING_TIMEOUT_MS
+        #   value: "400005"
+
         # TGIS env vars
         - name: MAX_BATCH_SIZE
           value: "16"

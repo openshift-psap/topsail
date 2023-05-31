@@ -10,6 +10,7 @@ env
 PROMPT="- name: Install python-3.12 on RHEL"
 CONTEXT=""
 cd /etc/protos
+ls
    
 grpcurl -plaintext -proto wisdomextservice.proto \
     -d "{ \"prompt\": \"${PROMPT}\", \"context\": \"${CONTEXT}\" }" \

@@ -28,7 +28,7 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        #TicketId: #TODO
+        TicketId: 124
         Project: PSAP/RHODS/Wisdom
       deploy_cluster:
         target: cluster

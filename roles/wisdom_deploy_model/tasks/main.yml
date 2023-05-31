@@ -104,8 +104,8 @@
   command: oc delete secret/wisdom-protos --ignore-not-found -n {{ wisdom_deploy_model_namespace }}
 
 - name: Create the wisdom protos Secret
-  command: oc create secret generic wisdom-protos --from-file={{ wisdom_deploy_model_protos_path }} -n {{ wisdom_deploy_model_namespace }}
-
+  shell: oc create secret generic wisdom-protos --from-file=$(echo {{ wisdom_deploy_model_protos_path }}/* | tr ' ' ,) -n {{ wisdom_deploy_model_namespace }} --dry-run=client -oyaml | oc apply -f -
+  
 - name: Delete the entrypoint ConfigMap if it already exists
   command: oc delete --ignore-not-found configmap/wisdom-tester-entrypoint -n {{ wisdom_deploy_model_namespace }}
 
@@ -140,6 +140,9 @@
     until: tester_wait.stdout == "Succeeded" or tester_wait.stdout == "Error" or tester_wait.stdout == "Failed"
     retries: 10
     delay: 30
+
+- name: Save the wisdom test Pod logs
+  shell: oc logs pod/wisdom-tester  -n {{ wisdom_deploy_model_namespace }} > {{ artifact_extra_logs_dir }}/wisdom-tester-pod.log
 
 - name: Ensure that the tester Pod succeeded
   fail: msg="tester Pod failed"
