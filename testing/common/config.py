@@ -34,9 +34,17 @@ class Config:
                     logging.warning(f"apply_config_overrides: Invalid line: '{line.strip()}', ignoring it.")
                     continue
                 value = _value.strip("'")
-                logging.info(f"config override: {key} --> {value}")
-                self.set_config(key, value)
 
+                MAGIC_DEFAULT_VALUE = object()
+                current_value = self.get_config(key, MAGIC_DEFAULT_VALUE)
+                if current_value == MAGIC_DEFAULT_VALUE:
+                    if "." in key:
+                        raise ValueError(f"Config key '{key}' does not exist, and cannot create it at the moment :/")
+                    self.config[key] = None
+
+                self.set_config(key, value)
+                actual_value = self.get_config(key) # ensure that key has been set, raises an exception otherwise
+                logging.info(f"config override: {key} --> {actual_value}")
 
     def apply_preset(self, name):
         values = self.get_config(f"ci_presets.{name}")
@@ -75,6 +83,7 @@ class Config:
 
     def set_config(self, jsonpath, value):
         try:
+            self.get_config(jsonpath, value) # will raise an exception if the jsonpath does not exist
             jsonpath_ng.parse(jsonpath).update(self.config, value)
         except Exception as ex:
             logging.error(f"set_config: {jsonpath}={value} --> {ex}")
