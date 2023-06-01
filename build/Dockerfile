@@ -25,7 +25,7 @@ ARG CURL_OPTIONS="--silent --location --fail --show-error"
 
 
 # ARG OCP_CLI_URL=https://people.redhat.com/~kpouget/22-08-26/openshift-client-linux.tar.gz
-# OCM_CLI_URL=https://people.redhat.com/~kpouget/22-10-05/ocm-linux-amd64
+# ARG OCM_CLI_URL=https://people.redhat.com/~kpouget/22-10-05/ocm-linux-amd64
 
 ARG OCP_CLI_VERSION=latest
 ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
