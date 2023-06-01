@@ -336,7 +336,7 @@ def cleanup_cluster():
     Restores the cluster to its original state
     """
 
-    pipelines_cleanup_scale_test()
+    cleanup_scale_test()
 
     #
     # uninstall RHODS
