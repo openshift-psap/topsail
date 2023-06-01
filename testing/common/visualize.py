@@ -125,6 +125,7 @@ def generate_visualization(idx):
 
     os.environ["MATBENCH_RHODS_PIPELINES_CONFIG"] = config.ci_artifacts.get_config("matbench.config_file")
     os.environ["MATBENCH_RHODS_PIPELINES_CONFIG_ID"] = matbench_config.get_config(f"visualize[{idx}].id")
+    os.environ["PATH"] += ":/tmp/prometheus"
 
     if (prom_cfg := pathlib.Path("/tmp/prometheus.yml")).exists():
         shutil.copyfile(prom_cfg, "./prometheus.yml")
