@@ -26,7 +26,7 @@ initialized = False
 def init(ignore_secret_path=False):
     global initialized
     if initialized:
-        logging.info("Already initialized.")
+        logging.debug("Already initialized.")
         return
     initialized = True
 

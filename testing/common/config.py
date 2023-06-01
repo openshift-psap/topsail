@@ -143,4 +143,5 @@ def init(base_dir):
     config_path = _set_config_environ(base_dir)
     ci_artifacts = Config(config_path)
 
+    logging.info("config.init: apply the ci-artifacts config overrides")
     ci_artifacts.apply_config_overrides()
