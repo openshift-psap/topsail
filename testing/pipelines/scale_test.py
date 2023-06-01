@@ -23,7 +23,7 @@ sys.path.append(str(TESTING_PIPELINES_DIR.parent))
 from common import env, config, run, rhods, visualize
 
 initialized = False
-def init(ignore_secret_path=False):
+def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     global initialized
     if initialized:
         logging.debug("Already initialized.")
@@ -32,6 +32,9 @@ def init(ignore_secret_path=False):
 
     env.init()
     config.init(TESTING_PIPELINES_DIR)
+
+    if apply_preset_from_pr_args:
+        config.ci_artifacts.apply_preset_from_pr_args()
 
     if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
@@ -48,11 +51,11 @@ def init(ignore_secret_path=False):
         config.ci_artifacts.apply_preset(LIGHT_PROFILE)
 
 
-def entrypoint(ignore_secret_path=False):
+def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     def decorator(fct):
         @functools.wraps(fct)
         def wrapper(*args, **kwargs):
-            init(ignore_secret_path)
+            init(ignore_secret_path, apply_preset_from_pr_args)
             fct(*args, **kwargs)
 
         return wrapper
@@ -383,7 +386,7 @@ def test_ci():
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             pipelines_cleanup_cluster()
 
-
+@entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
     visualize.download_and_generate_visualizations()
 
