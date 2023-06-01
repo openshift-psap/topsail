@@ -94,7 +94,11 @@ workloads:
     test_args:
     - icelake
     steps:
-      cleanup:
-        command: pipelines scale_test cleanup_scale_test
+      #pre_cleanup_cluster:
+      #  command: pipelines scale_test cleanup_cluster
+      prepare:
+        command: pipelines scale_test prepare_ci
       test:
         command: pipelines scale_test run
+      post_cleanup_cluster:
+        command: pipelines scale_test cleanup_cluster
