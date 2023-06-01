@@ -146,7 +146,7 @@
 
   - name: Capture the status of the machinesets
     shell: |
-      oc get machines -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}' > {{ artifact_extra_logs_dir }}/machineset_{{ item }}.status
+      oc get machineset -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}' > {{ artifact_extra_logs_dir }}/machineset_{{ item }}.status
     failed_when: false
     loop: "{{ oc_get_machinesets.stdout_lines }}"
 
