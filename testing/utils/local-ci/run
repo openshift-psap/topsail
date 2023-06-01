@@ -162,25 +162,27 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
         pass
 
     logging.info("Cleanup up the workflow Pods ...")
-    for step in steps:
-        run(f"oc delete pod/{workload}-{step} -n {namespace} --ignore-not-found")
+    for step_idx, step_name in enumerate(steps):
+        run(f"oc delete pod/{workload}-{step_idx:03d}-{step_name} -n {namespace} --ignore-not-found")
 
     failed = []
-    for step in steps:
-        if failed and not workload_data["steps"][step].get("always_run", False):
-            print(f"Test step '{failed}' failed, skipping {step} ...")
+    for step_idx, step_name in enumerate(steps):
+        if failed and not workload_data["steps"][step_name].get("always_run", False):
+            print(f"Test step '{failed}' failed, skipping {step_name} ...")
             continue
 
-        os.environ["ARTIFACT_DIR"] = str(ci_artifact_base_dir / step)
-        command = workload_data["steps"][step]["command"]
+        step_dirname = f"{step_idx:03d}__{step_name}"
+
+        os.environ["ARTIFACT_DIR"] = str(ci_artifact_base_dir / step_dirname)
+        command = workload_data["steps"][step_name]["command"]
 
         extra = dict(
             ci_command=command,
             pr_number=pr_number,
-            export_identifier=f"{workload_identifier}/{step}",
+            export_identifier=f"{workload_identifier}/{step_dirname}",
             export_ts_id=f"{ts_id}",
             export=export,
-            pod_name=f"{workload}-{step}",
+            pod_name=f"{workload}-{step_idx:03d}-{step_name}".replace("_", "-"),
             test_name=workload,
             test_args=test_args
         )
@@ -194,8 +196,8 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
         try:
             run(f'./run_toolbox.py from_config local_ci run --suffix {command_group} --extra "{extra}"')
         except subprocess.CalledProcessError as e:
-            logging.error(f"Step {step} failed (command '{e.cmd}') --> {e.returncode}")
-            failed.append(step)
+            logging.error(f"Step {step_dirname} failed (command '{e.cmd}') --> {e.returncode}")
+            failed.append(step_dirname)
 
     if failed:
         logging.error(f"Steps [{', '.join(failed)}] of workload '{workload}' failed :/")
