@@ -381,7 +381,7 @@ def test_ci():
             results_artifacts_dir = env.ARTIFACT_DIR
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
                 visualize.prepare_matbench()
-                generate_plots(results_artifacts_dir)
+                # generate_plots(results_artifacts_dir)
     finally:
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             pipelines_cleanup_cluster()
