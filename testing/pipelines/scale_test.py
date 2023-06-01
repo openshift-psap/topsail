@@ -33,14 +33,15 @@ def init(ignore_secret_path=False):
     env.init()
     config.init(TESTING_PIPELINES_DIR)
 
-
     if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
     server_url = run.run("oc whoami --show-server", capture_stdout=True).stdout.strip()
 
     if server_url.endswith("apps.bm.example.com:6443") or "kubernetes.default" in server_url:
-        config.ci_artifacts.apply_preset("icelake")
+        ICELAKE_PROFILE = "icelake"
+        logging.info(f"Running in the Icelake cluster, applying the '{ICELAKE_PROFILE}' profile")
+        config.ci_artifacts.apply_preset(ICELAKE_PROFILE)
 
     if os.environ.get("JOB_NAME_SAFE", "").endswith("-light"):
         logging.info(f"Running a light test, applying the '{LIGHT_PROFILE}' profile")
