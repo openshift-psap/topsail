@@ -39,7 +39,7 @@ def uninstall():
 
 
 def uninstall_ldap():
-    ldap_installed_cmd = run("oc get ns/openldap --ignore-not-found -oname", capture_stdout=True)
+    ldap_installed_cmd = run.run("oc get ns/openldap --ignore-not-found -oname", capture_stdout=True)
 
     if "openldap" not in ldap_installed_cmd.stdout:
         logging.info("OpenLDAP is not installed")
