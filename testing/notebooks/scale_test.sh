@@ -233,6 +233,10 @@ main() {
             sutest_cleanup_rhods
             return 0
             ;;
+        "cleanup_clusters_ci")
+            connect_ci
+
+            ;& # fallthrough
         "cleanup_clusters")
             apply_preset cleanup_clusters_on_exit
             sutest_cleanup
