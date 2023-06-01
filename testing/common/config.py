@@ -99,6 +99,17 @@ class Config:
             with open(shared_dir_path / "config.yaml", "w") as f:
                 yaml.dump(self.config, f, indent=4)
 
+    def apply_preset_from_pr_args(self):
+        PR_ARG_KEY = "PR_POSITIONAL_ARG_"
+
+        idx = 1
+        while True:
+            preset = self.get_config(f"{PR_ARG_KEY}{idx}", None)
+            if not preset:
+                return
+
+            self.apply_preset(preset)
+            idx += 1
 
 def _set_config_environ(base_dir):
     config_path = env.ARTIFACT_DIR / "config.yaml"
@@ -143,4 +154,5 @@ def init(base_dir):
     config_path = _set_config_environ(base_dir)
     ci_artifacts = Config(config_path)
 
+    logging.info("config.init: apply the ci-artifacts config overrides")
     ci_artifacts.apply_config_overrides()

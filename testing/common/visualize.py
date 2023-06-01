@@ -88,9 +88,8 @@ def prepare_matbench():
     """)
 
     PROMETHEUS_VERSION = "2.36.0"
+    os.environ["PATH"] += ":/tmp/prometheus"
     run.run(f"""
-
-    export PATH=$PATH:/tmp/bin
     if which prometheus 2>/dev/null; then
        echo "Prometheus already available."
        exit 0
@@ -98,11 +97,10 @@ def prepare_matbench():
     cd /tmp
     wget --quiet "https://github.com/prometheus/prometheus/releases/download/v{PROMETHEUS_VERSION}/prometheus-{PROMETHEUS_VERSION}.linux-amd64.tar.gz" -O/tmp/prometheus.tar.gz
     tar xf "/tmp/prometheus.tar.gz" -C /tmp
-    mkdir -p /tmp/bin
-    ln -sf "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/bin
+    mkdir -p /tmp/prometheus/bin
+    ln -sf "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/prometheus/bin
     cp "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
     """)
-
 
 @entrypoint
 def generate_visualizations():
@@ -127,6 +125,7 @@ def generate_visualization(idx):
 
     os.environ["MATBENCH_RHODS_PIPELINES_CONFIG"] = config.ci_artifacts.get_config("matbench.config_file")
     os.environ["MATBENCH_RHODS_PIPELINES_CONFIG_ID"] = matbench_config.get_config(f"visualize[{idx}].id")
+    os.environ["PATH"] += ":/tmp/prometheus"
 
     if (prom_cfg := pathlib.Path("/tmp/prometheus.yml")).exists():
         shutil.copyfile(prom_cfg, "./prometheus.yml")

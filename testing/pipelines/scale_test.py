@@ -22,17 +22,19 @@ LIGHT_PROFILE = "light"
 sys.path.append(str(TESTING_PIPELINES_DIR.parent))
 from common import env, config, run, rhods, visualize
 
-initialize = False
-def init(ignore_secret_path=False):
-    global initialize
-    if initialize:
-        logging.info("Already initialized.")
+initialized = False
+def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
+    global initialized
+    if initialized:
+        logging.debug("Already initialized.")
         return
     initialized = True
 
     env.init()
     config.init(TESTING_PIPELINES_DIR)
 
+    if apply_preset_from_pr_args:
+        config.ci_artifacts.apply_preset_from_pr_args()
 
     if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
@@ -40,18 +42,20 @@ def init(ignore_secret_path=False):
     server_url = run.run("oc whoami --show-server", capture_stdout=True).stdout.strip()
 
     if server_url.endswith("apps.bm.example.com:6443") or "kubernetes.default" in server_url:
-        config.ci_artifacts.apply_preset("icelake")
+        ICELAKE_PROFILE = "icelake"
+        logging.info(f"Running in the Icelake cluster, applying the '{ICELAKE_PROFILE}' profile")
+        config.ci_artifacts.apply_preset(ICELAKE_PROFILE)
 
     if os.environ.get("JOB_NAME_SAFE", "").endswith("-light"):
         logging.info(f"Running a light test, applying the '{LIGHT_PROFILE}' profile")
         config.ci_artifacts.apply_preset(LIGHT_PROFILE)
 
 
-def entrypoint(ignore_secret_path=False):
+def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     def decorator(fct):
         @functools.wraps(fct)
         def wrapper(*args, **kwargs):
-            init(ignore_secret_path)
+            init(ignore_secret_path, apply_preset_from_pr_args)
             fct(*args, **kwargs)
 
         return wrapper
@@ -374,17 +378,15 @@ def test_ci():
             pipelines_run_many()
         finally:
             next_count = env.next_artifact_index()
+            results_artifacts_dir = env.ARTIFACT_DIR
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
-                # visualize.prepare_matbench()
-                # generate_plots(env.ARTIFACT_DIR)
-
-                (env.ARTIFACT_DIR / "not_implemented").touch()
+                visualize.prepare_matbench()
+                # generate_plots(results_artifacts_dir)
     finally:
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             pipelines_cleanup_cluster()
 
-
-@entrypoint(ignore_secret_path=True)
+@entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
     visualize.download_and_generate_visualizations()
 

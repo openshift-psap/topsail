@@ -142,7 +142,7 @@ tests:
 matbench:
   preset: null
   workload: rhods-pipelines
-  config_file: ...
+  config_file: scale_test.yaml
   download:
     mode: prefer_cache
     url:
