@@ -141,6 +141,16 @@ def compute_node_requirement(driver=False, sutest=False):
     return proc.returncode
 
 
+def apply_prefer_pr():
+    if not (config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr") and (pr_number := os.environ.get("PULL_NUMBER"))):
+        return
+
+    pr_ref = f"refs/pull/{pr_number}/head"
+
+    logging.info(f"Setting '{pr_ref}' as ref for building the base image")
+    config.ci_artifacts.set_config("base_image.repo.ref", pr_ref)
+    config.ci_artifacts.set_config("base_image.repo.tag", f"pr-{pr_number}")
+
 @entrypoint()
 def prepare_pipelines_namespace():
     """
@@ -207,12 +217,7 @@ def prepare_test_driver_namespace():
     # Prepare the container image
     #
 
-    if config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr") and (pr_number := os.environ.get("PULL_NUMBER")):
-        pr_ref = f"refs/pull/{pr_number}/head"
-
-        logging.info(f"Setting '{pr_ref}' as ref for building the base image")
-        config.ci_artifacts.set_config("base_image.repo.ref", pr_ref)
-        config.ci_artifacts.set_config("base_image.repo.tag", f"pr-{pr_number}")
+    apply_prefer_pr()
 
     istag = config.get_command_arg("utils build_push_image --prefix base_image", "_istag")
 
@@ -373,6 +378,8 @@ def test_ci():
     Runs the Pipelines scale test from the CI
     """
 
+    apply_prefer_pr()
+
     try:
         try:
             pipelines_run_many()
@@ -412,6 +419,8 @@ class Pipelines:
         self.run = pipelines_run_many
 
         self.cleanup_cluster = cleanup_cluster
+        self.cleanup_cluster_ci = cleanup_cluster
+
         self.cleanup_scale_test = cleanup_scale_test
 
         self.prepare_ci = prepare_cluster
