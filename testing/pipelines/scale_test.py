@@ -412,6 +412,8 @@ class Pipelines:
         self.run = pipelines_run_many
 
         self.cleanup_cluster = cleanup_cluster
+        self.cleanup_cluster_ci = cleanup_cluster
+
         self.cleanup_scale_test = cleanup_scale_test
 
         self.prepare_ci = prepare_cluster
