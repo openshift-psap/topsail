@@ -94,7 +94,7 @@ def _parse_local_env(dirname):
     # properly generate the error report links to the image.
     job_name = os.getenv("JOB_NAME_SAFE")
 
-    if job_name == "plot-notebooks":
+    if job_name.endswith("-plot"):
         # running independently of the test, the source_url file must be available
         if from_local_env.source_url is None:
             logging.warning(f"The source URL should be available when running from '{job_name}'")
