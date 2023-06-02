@@ -22,6 +22,8 @@ import matrix_benchmarking.store.prom_db as store_prom_db
 
 import matrix_benchmarking.cli_args as cli_args
 
+
+from . import models
 from . import k8s_quantity
 from . import store_theoretical
 from . import store_thresholds
@@ -85,6 +87,8 @@ IMPORTANT_FILES = [
 ARTIFACTS_VERSION = "2022-11-09"
 PARSER_VERSION = "2022-12-14"
 
+
+store.register_custom_schema(models.NotebookScalePayload)
 
 def is_mandatory_file(filename):
     return filename.name in ("settings", "exit_code", "config.yaml") or filename.name.startswith("settings.")
