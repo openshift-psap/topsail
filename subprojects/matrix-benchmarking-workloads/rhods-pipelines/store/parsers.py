@@ -280,7 +280,7 @@ def _parse_user_data(dirname, user_count):
             continue
 
         user_data[user_id] = data = types.SimpleNamespace()
-        data.artifact_dir = ci_pod_dirname
+        data.artifact_dir = ci_pod_dirname.relative_to(dirname)
         data.exit_code = _parse_user_exit_code(dirname, ci_pod_dirname)
         data.progress = _parse_user_progress(dirname, ci_pod_dirname)
         data.progress |= _parse_user_ansible_progress(dirname, ci_pod_dirname)
