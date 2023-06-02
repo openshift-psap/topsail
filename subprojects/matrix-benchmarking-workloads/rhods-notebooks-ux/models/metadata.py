@@ -12,6 +12,7 @@ class NotebookScaleSettings(BaseModel):
     test_case: str
     user_count: int
     exclude_tags: str
+    version: models.SemVer
 
 
 class InfraInfo(BaseModel):
