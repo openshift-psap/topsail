@@ -94,7 +94,7 @@ def _parse_local_env(dirname):
     # properly generate the error report links to the image.
     job_name = os.getenv("JOB_NAME_SAFE")
 
-    if job_name == "plot-notebooks":
+    if job_name.endswith("-plot"):
         # running independently of the test, the source_url file must be available
         if from_local_env.source_url is None:
             logging.warning(f"The source URL should be available when running from '{job_name}'")
@@ -280,7 +280,7 @@ def _parse_user_data(dirname, user_count):
             continue
 
         user_data[user_id] = data = types.SimpleNamespace()
-        data.artifact_dir = ci_pod_dirname
+        data.artifact_dir = ci_pod_dirname.relative_to(dirname)
         data.exit_code = _parse_user_exit_code(dirname, ci_pod_dirname)
         data.progress = _parse_user_progress(dirname, ci_pod_dirname)
         data.progress |= _parse_user_ansible_progress(dirname, ci_pod_dirname)
