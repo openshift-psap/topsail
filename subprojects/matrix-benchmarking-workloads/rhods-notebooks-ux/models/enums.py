@@ -2,6 +2,8 @@ from enum import auto
 
 import matrix_benchmarking.models as models
 
+from pydantic import ConstrainedStr
+
 class StepName(models.PSAPEnum):
     Open_the_Browser = auto()
     Login_to_RHODS_Dashboard = auto()

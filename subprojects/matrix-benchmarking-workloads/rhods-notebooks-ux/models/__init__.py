@@ -8,7 +8,7 @@ from pydantic import BaseModel, constr
 
 class NotebookScaleMetadata(models.Metadata):
     test: enums.TestName
-    cluster_info: BaseModel
+    cluster_info: metadata.ClusterInfo
     settings: metadata.NotebookScaleSettings
 
 
@@ -21,6 +21,6 @@ class NotebookScaleData(BaseModel):
     rhods_version: models.SemVer
 
 
-class NotebookScalePayload(models.PSAPPayload):
+class NotebookScalePayload(models.create_PSAPPayload('rhods-matbench-upload')):
     data: NotebookScaleData
     metadata: NotebookScaleMetadata
