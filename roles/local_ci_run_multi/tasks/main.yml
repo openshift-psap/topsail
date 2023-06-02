@@ -49,7 +49,6 @@
   command: oc delete -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml" --ignore-not-found=true
 
 - name: Cleanup the Prometheus database of the cluster
-  when: local_ci_run_multi_capture_prom_db | bool
   include_role:
     name: cluster_prometheus_db
   vars:
