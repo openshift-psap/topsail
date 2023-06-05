@@ -12,7 +12,7 @@ class NotebookScaleMetadata(models.Metadata):
     settings: metadata.NotebookScaleSettings
 
 
-class NotebookScaleData(BaseModel):
+class NotebookScaleData(models.ExclusiveModel):
     users: List[user.UserData]
     config: BaseModel
     metrics: Dict[str, models.PrometheusMetric]

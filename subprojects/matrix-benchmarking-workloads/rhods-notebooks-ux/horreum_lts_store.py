@@ -6,6 +6,7 @@ from collections import defaultdict, OrderedDict
 import logging
 
 from . import store_thresholds
+from . import models
 
 from .plotting import prom
 
@@ -41,32 +42,32 @@ def _recursive_create_namespace(obj: dict) -> types.SimpleNamespace:
 def _parse_lts_dir(add_to_matrix, dirname, import_settings):
     with open(dirname / "data.json") as f:
         payload = json.load(f)
-
+    model = models.NotebookScalePayload(**payload)
     data = payload['data']
     metadata = payload['metadata']
     settings = metadata['settings']
 
     results = types.SimpleNamespace(
-        start_time = datetime.datetime.fromisoformat(metadata['start']),
-        end_time = datetime.datetime.fromisoformat(metadata['end']),
+        start_time = model.metadata.start,
+        end_time = model.metadata.end,
 
-        thresholds = data['thresholds'] or store_thresholds.get_thresholds(import_settings),
-        settings = settings,
+        thresholds = model.data.thresholds.dict() or store_thresholds.get_thresholds(import_settings),
+        settings = model.metadata.settings.dict(),
 
-        sutest_ocp_version = data['ocp_version'],
-        rhods_cluster_info = _recursive_create_namespace(metadata['cluster_info']),
+        sutest_ocp_version = model.data.ocp_version,
+        rhods_cluster_info = _recursive_create_namespace(model.metadata.cluster_info.dict()),
         rhods_info = types.SimpleNamespace(
-            version = data['rhods_version']
+            version = model.data.rhods_version
         ),
 
         test_config = types.SimpleNamespace(
-            yaml_file = data['config']
+            yaml_file = model.data.config
         ),
-        users = data['users'],
+        users = [user.dict() for user in model.data.users],
         metrics = {
             'sutest': {
-                key: val['data'] \
-                    for key, val in data['metrics'].items()
+                key: [item.dict() for item in val.data] \
+                    for key, val in model.data.metrics.items()
             }
         }
     )

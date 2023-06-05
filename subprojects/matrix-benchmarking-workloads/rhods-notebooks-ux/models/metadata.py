@@ -7,7 +7,7 @@ import matrix_benchmarking.models as models
 from pydantic import BaseModel, constr
 
 
-class NotebookScaleSettings(BaseModel):
+class NotebookScaleSettings(models.ExclusiveModel):
     repeat: str
     test_case: str
     user_count: int
@@ -15,7 +15,7 @@ class NotebookScaleSettings(BaseModel):
     version: models.SemVer
 
 
-class InfraInfo(BaseModel):
+class InfraInfo(models.ExclusiveModel):
     name: str
     infra: bool
     managed: bool
@@ -26,7 +26,7 @@ class InfraInfo(BaseModel):
     test_pods_only: bool
 
 
-class ClusterInfo(BaseModel):
+class ClusterInfo(models.ExclusiveModel):
     infra: List[InfraInfo]
     node_count: List[InfraInfo]
     control_plane: List[InfraInfo]
