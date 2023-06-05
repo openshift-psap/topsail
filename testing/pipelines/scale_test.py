@@ -272,6 +272,7 @@ def prepare_sutest_scale_up():
 
     run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest {extra}")
 
+
 @entrypoint()
 def prepare_cluster():
     """
