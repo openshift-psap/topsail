@@ -53,8 +53,6 @@ class Pipelines:
         return RunAnsibleRole(locals())
 
 
-    run_scale_test = local_ci.Local_CI.run_multi
-
     @AnsibleRole("pipelines_capture_state")
     @AnsibleMappedParams
     def capture_state(self, dsp_application_name="", namespace=""):

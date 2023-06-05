@@ -309,7 +309,7 @@ def pipelines_run_many():
 
     failed = True
     try:
-        run.run(f"./run_toolbox.py from_config pipelines run_scale_test")
+        run.run(f"./run_toolbox.py from_config local-ci run_many")
         failed = False
     finally:
         scale_test_dir = list(env.ARTIFACT_DIR.glob("*__local_ci__run_multi"))
