@@ -40,7 +40,7 @@
 - name: Store the RHODS creation timestamp, if RHODS is installed
   shell:
     oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname -ojsonpath={.metadata.annotations.createdAt}
-      > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods.createdAt"
+      > "{{ artifact_extra_logs_dir }}/rhods.createdAt"
   when: has_rhods_csv_cmd.stdout | length > 0
 
 - name: Get the RHODS operator pod status
@@ -70,6 +70,15 @@
   shell:
     oc get nodes -oyaml > "{{ artifact_extra_logs_dir }}/nodes.yaml"
 
+- name: Get the cluster nodes json
+  shell:
+    oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/nodes.json"
+
 - name: Get the cluster machines status
   shell:
     oc get machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/machines.status"
+
+- name: Store OpenShift YAML version
+  shell:
+    oc version -oyaml
+       > {{ artifact_extra_logs_dir }}/ocp_version.yml
