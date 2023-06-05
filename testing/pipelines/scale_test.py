@@ -307,8 +307,19 @@ def pipelines_run_many():
     """
     Runs multiple concurrent Pipelines scale test.
     """
+    _not_used__test_artifact_dir_p = [None]
+    _pipelines_run_many(_not_used__test_artifact_dir_p)
 
+
+def _pipelines_run_many(test_artifact_dir_p):
     ARTIFACTS_VERSION = "2023-06-05"
+
+    # argument 'test_artifact_dir_p' is a pointer to
+    # 'test_artifact_dir', like by-reference arguments of C the reason
+    # for this C-ism is that this way, test_artifact_dir can be
+    # returned to the caller even if the test fails and raises an
+    # exception (so that we can run the visualization even if the test
+    # failed)
 
     def prepare_matbench_files():
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
@@ -321,15 +332,17 @@ def pipelines_run_many():
         with open(env.ARTIFACT_DIR / "artifacts_version", "w") as f:
             print(ARTIFACTS_VERSION, file=f)
 
+    next_count = env.next_artifact_index()
+    test_artifact_dir_p[0] = \
+        test_artifact_dir = env.ARTIFACT_DIR / f"{next_count:03d}__pipelines_run_many"
     try:
-        next_count = env.next_artifact_index()
-        with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__pipelines_run_many"):
+        with env.TempArtifactDir(test_artifact_dir):
 
             prepare_matbench_files()
 
             failed = True
             try:
-                run.run(f"./run_toolbox.py from_config local-ci run_many")
+                run.run(f"./run_toolbox.py from_config local_ci run_multi")
                 failed = False
             finally:
                 with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
@@ -339,6 +352,7 @@ def pipelines_run_many():
 
     finally:
         run.run(f"./run_toolbox.py cluster capture_environment > /dev/null", check=False)
+
 
 @entrypoint()
 def cleanup_scale_test():
@@ -396,14 +410,18 @@ def test_ci():
     apply_prefer_pr()
 
     try:
+        test_artifact_dir_p = [None]
         try:
-            pipelines_run_many()
+            _pipelines_run_many(test_artifact_dir_p)
         finally:
-            next_count = env.next_artifact_index()
-            results_artifacts_dir = env.ARTIFACT_DIR
-            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
-                visualize.prepare_matbench()
-                generate_plots(results_artifacts_dir)
+            if test_artifact_dir_p[0] is not None:
+                next_count = env.next_artifact_index()
+                with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
+                    visualize.prepare_matbench()
+                    generate_plots(test_artifact_dir_p[0])
+            else:
+                logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
+
     finally:
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             pipelines_cleanup_cluster()
