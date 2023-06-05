@@ -26,3 +26,6 @@ pipelines_run_kfp_notebook_stop_on_exit: true
 # If False, disable the post-test artifact collection.
 pipelines_run_kfp_notebook_capture_artifacts: true
 
+# If True, captures the Prometheus DB of the systems.
+pipelines_run_kfp_notebook_capture_prom_db: false
+
