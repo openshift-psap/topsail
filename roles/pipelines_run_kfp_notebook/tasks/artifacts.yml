@@ -1,0 +1,64 @@
+- name: Get the OpenShift Prometheus database
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: dump
+    cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_ocp
+  when: capture_prom_db | bool
+  ignore_errors: yes
+
+- name: Get the RHODS Prometheus database
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: dump
+    cluster_prometheus_db_label: deployment=prometheus
+    cluster_prometheus_db_namespace: redhat-ods-monitoring
+    cluster_prometheus_db_directory: /prometheus/data
+    cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_rhods
+  when: capture_prom_db | bool
+  ignore_errors: yes
+
+- name: Save the pods status
+  shell:
+    oc get pods -owide -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.status"
+  failed_when: false
+
+- name: Save the pods description
+  shell:
+    oc describe pods  -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.desc"
+  failed_when: false
+
+- name: Save the pods definition
+  shell:
+    oc get -oyaml pods  -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.yaml"
+  failed_when: false
+
+- name: Save the pipeline status
+  shell:
+    oc get pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.status"
+  failed_when: false
+
+- name: Save the pipeline description
+  shell:
+    oc describe pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.desc"
+  failed_when: false
+
+- name: Save the pipeline definition
+  shell:
+    oc get -oyaml pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
+  failed_when: false
+
+- name: Save the notebook execution logs
+  local_action:
+    module: copy
+    content: "{{ notebook_execution.stderr }}"
+    dest: "{{ artifact_extra_logs_dir }}/notebook_execution.stderr"
+  failed_when: false
+  when: notebook_execution is defined
+
+- name: Collect the execution artifacts
+  command:
+    oc cp "{{ notebook_namespace }}/{{ notebook_pod_name_cmd.stdout.split('/')[1] }}":results
+          "{{ artifact_extra_logs_dir }}/notebook-artifacts/"
+  when: notebook_pod_name_cmd is defined
