@@ -21,6 +21,7 @@ SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 IMPORTANT_FILES = [
+    "artifacts_version",
     "config.yaml",
     "000__local_ci__run_multi/success_count",
     "000__local_ci__run_multi/ci_job.yaml",
@@ -36,7 +37,8 @@ IMPORTANT_FILES = [
     "001__rhods__capture_state/rhods.createdAt",
 ]
 
-PARSER_VERSION = "2023-05-31"
+PARSER_VERSION = "2023-06-05"
+ARTIFACTS_VERSION = "2023-06-05"
 
 def ignore_file_not_found(fn):
     def decorator(*args, **kwargs):
@@ -56,6 +58,13 @@ def _parse_always(results, dirname, import_settings):
     results.test_config = _parse_test_config(dirname)
 
 def _parse_once(results, dirname):
+    results.artifacts_version = _parse_artifacts_version(dirname)
+    if results.artifacts_version != ARTIFACTS_VERSION:
+        if not results.artifacts_version:
+            logging.warning("Artifacts does not have a version...")
+        else:
+            logging.warning(f"Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
+
     results.user_count = results.test_config.get("tests.pipelines.user_count")
     results.nodes_info = _parse_nodes_info(dirname) or {}
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
@@ -337,3 +346,10 @@ def _extract_metrics(dirname):
         metrics[name] = store_prom_db.extract_metrics(prom_tarball, metric, dirname)
 
     return metrics
+
+@ignore_file_not_found
+def _parse_artifacts_version(dirname):
+    with open(dirname / "artifacts_version") as f:
+        artifacts_version = f.read().strip()
+
+    return artifacts_version
