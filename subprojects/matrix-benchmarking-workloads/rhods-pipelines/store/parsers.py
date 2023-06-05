@@ -21,21 +21,19 @@ SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 IMPORTANT_FILES = [
-    "_ansible.env",
     "config.yaml",
-    "success_count",
-    "ci_job.yaml",
+    "000__local_ci__run_multi/success_count",
+    "000__local_ci__run_multi/ci_job.yaml",
+    "000__local_ci__run_multi/prometheus_ocp.t*",
 
-    "prometheus_ocp.t*",
+    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/progress_ts.yaml",
+    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/test.exit_code",
+    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/*/_ansible.log",
 
-    "ci-pods_artifacts/ci-pod-*/*__pipelines__run_kfp_notebook/artifacts-sutest/nodes.json",
-    "ci-pods_artifacts/ci-pod-*/*__pipelines__run_kfp_notebook/artifacts-sutest/ocp_version.yml",
-    "ci-pods_artifacts/ci-pod-*/*__pipelines__run_kfp_notebook/artifacts-sutest/rhods.version",
-    "ci-pods_artifacts/ci-pod-*/*__pipelines__run_kfp_notebook/artifacts-sutest/rhods.createdAt",
-
-    "ci-pods_artifacts/ci-pod-*/progress_ts.yaml",
-    "ci-pods_artifacts/ci-pod-*/test.exit_code",
-    "ci-pods_artifacts/ci-pod-*/*/_ansible.log",
+    "001__rhods__capture_state/nodes.json",
+    "001__rhods__capture_state/ocp_version.yml",
+    "001__rhods__capture_state/rhods.version",
+    "001__rhods__capture_state/rhods.createdAt",
 ]
 
 PARSER_VERSION = "2023-05-31"
@@ -169,7 +167,7 @@ def _extract_rhods_cluster_info(nodes_info):
 def _parse_nodes_info(dirname, sutest_cluster=True):
     nodes_info = {}
 
-    filename = list(pathlib.Path(dirname).glob("ci-pods_artifacts/ci-pod-*/*__pipelines__run_kfp_notebook/artifacts-sutest/nodes.json"))[0].relative_to(dirname)
+    filename = "001__rhods__capture_state/nodes.json"
 
     with open(register_important_file(dirname, filename)) as f:
         nodeList = json.load(f)
@@ -196,7 +194,7 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
 
 @ignore_file_not_found
 def _parse_ocp_version(dirname):
-    filename = list(pathlib.Path(dirname).glob("ci-pods_artifacts/ci-pod-*/*__pipelines__run_kfp_notebook/artifacts-sutest/ocp_version.yml"))[0].relative_to(dirname)
+    filename = "001__rhods__capture_state/ocp_version.yml"
 
     with open(register_important_file(dirname, filename)) as f:
         sutest_ocp_version_yaml = yaml.safe_load(f)
@@ -206,7 +204,7 @@ def _parse_ocp_version(dirname):
 @ignore_file_not_found
 def _parse_rhods_info(dirname):
     rhods_info = types.SimpleNamespace()
-    artifact_dirname = list(pathlib.Path(dirname).glob("ci-pods_artifacts/ci-pod-*/*__pipelines__run_kfp_notebook/artifacts-sutest/ocp_version.yml"))[0].relative_to(dirname).parent
+    artifact_dirname = pathlib.Path("001__rhods__capture_state")
 
     with open(register_important_file(dirname, artifact_dirname / "rhods.version")) as f:
         rhods_info.version = f.read().strip()
@@ -224,7 +222,7 @@ def _parse_rhods_info(dirname):
 
 @ignore_file_not_found
 def _parse_success_count(dirname):
-    filename = pathlib.Path("success_count")
+    filename = pathlib.Path("000__local_ci__run_multi") / "success_count"
 
     with open(register_important_file(dirname, filename)) as f:
         content = f.readline()
@@ -274,9 +272,10 @@ def _parse_user_ansible_progress(dirname, ci_pod_dir):
 def _parse_user_data(dirname, user_count):
     user_data = {}
     for user_id in range(user_count):
-        ci_pod_dirname = dirname / "ci-pods_artifacts" / f"ci-pod-{user_id}"
+        ci_pod_dirname = dirname / "000__local_ci__run_multi" / "ci-pods_artifacts" / f"ci-pod-{user_id}"
         if not ci_pod_dirname.exists():
             user_data[user_id] = None
+            logging.warning(f"No user directory collector for user #{user_id}")
             continue
 
         user_data[user_id] = data = types.SimpleNamespace()
@@ -291,7 +290,7 @@ def _parse_user_data(dirname, user_count):
 def _parse_tester_job(dirname):
     job_info = types.SimpleNamespace()
 
-    with open(register_important_file(dirname, "ci_job.yaml")) as f:
+    with open(register_important_file(dirname, "000__local_ci__run_multi/ci_job.yaml")) as f:
         job = yaml.safe_load(f)
 
     job_info.creation_time = \
@@ -322,8 +321,8 @@ def _parse_tester_job(dirname):
 
 def _extract_metrics(dirname):
     METRICS = {
-        "sutest": ("prometheus_ocp.t*", rhods_pipelines_prom.get_sutest_metrics()),
-        "driver": ("prometheus_ocp.t*", rhods_pipelines_prom.get_driver_metrics()),
+        "sutest": ("000__local_ci__run_multi/prometheus_ocp.t*", rhods_pipelines_prom.get_sutest_metrics()),
+        "driver": ("000__local_ci__run_multi/prometheus_ocp.t*", rhods_pipelines_prom.get_driver_metrics()),
     }
 
     metrics = {}
