@@ -17,6 +17,12 @@ ci_artifacts = None # will be set in init()
 class Config:
     def __init__(self, config_path):
         self.config_path = config_path
+
+        if not self.config_path.exists():
+            msg = f"Configuration file '{self.config_path}' does not exist :/"
+            logging.error(msg)
+            raise ValueError(msg)
+
         with open(self.config_path) as config_f:
             self.config = yaml.safe_load(config_f)
 
