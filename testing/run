@@ -45,6 +45,17 @@ prechecks() {
         echo "Using ARTIFACT_DIR=$ARTIFACT_DIR."
     fi
 
+    if [ "${PERFLAB_CI:-}" == true ]; then
+        LOG_FILE=$ARTIFACT_DIR/run.log
+        if [[ -f "$LOG_FILE" ]]; then
+            mkdir -p "$ARTIFACT_DIR/_WARNING"
+            msg="WARNING: run: log file $LOG_FILE already exists"
+            echo $msg | tee -a "$run_log_file_already_exists"
+
+        fi
+        exec &> >(tee -a "$LOG_FILE")
+    fi
+
     if [ "${OPENSHIFT_CI:-}" == true ]; then
         DEST="${ARTIFACT_DIR}/variable_overrides"
         "$THIS_DIR/utils/openshift_ci/pr_args.sh" "$DEST"
