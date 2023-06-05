@@ -308,6 +308,8 @@ def pipelines_run_many():
     Runs multiple concurrent Pipelines scale test.
     """
 
+    ARTIFACTS_VERSION = "2023-06-05"
+
     def prepare_matbench_files():
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
@@ -315,6 +317,9 @@ def pipelines_run_many():
         user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
         with open(env.ARTIFACT_DIR / "settings", "w") as f:
             print(f"user_count={user_count}", file=f)
+
+        with open(env.ARTIFACT_DIR / "artifacts_version", "w") as f:
+            print(ARTIFACTS_VERSION, file=f)
 
     try:
         next_count = env.next_artifact_index()
