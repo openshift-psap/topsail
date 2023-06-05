@@ -308,23 +308,32 @@ def pipelines_run_many():
     Runs multiple concurrent Pipelines scale test.
     """
 
-    failed = True
+    def prepare_matbench_files():
+        with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+            yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+        user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+        with open(env.ARTIFACT_DIR / "settings", "w") as f:
+            print(f"user_count={user_count}", file=f)
+
     try:
-        run.run(f"./run_toolbox.py from_config local-ci run_many")
-        failed = False
+        next_count = env.next_artifact_index()
+        with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__pipelines_run_many"):
+
+            prepare_matbench_files()
+
+            failed = True
+            try:
+                run.run(f"./run_toolbox.py from_config local-ci run_many")
+                failed = False
+            finally:
+                with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
+                    print("1" if failed else "0", file=f)
+
+                run.run(f"./run_toolbox.py rhods capture_state > /dev/null", check=False)
+
     finally:
-        scale_test_dir = list(env.ARTIFACT_DIR.glob("*__local_ci__run_multi"))
-        if scale_test_dir:
-            user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
-            with open(scale_test_dir[0] / "settings", "w") as f:
-                print(f"user_count={user_count}", file=f)
-            with open(scale_test_dir[0] / "exit_code", "w") as f:
-                print("1" if failed else "0", file=f)
-            with open(scale_test_dir[0] / "config.yaml", "w") as f:
-                yaml.dump(config.ci_artifacts.config, f, indent=4)
-
-        run.run(f"./run_toolbox.py cluster capture_environment > /dev/null")
-
+        run.run(f"./run_toolbox.py cluster capture_environment > /dev/null", check=False)
 
 @entrypoint()
 def cleanup_scale_test():
