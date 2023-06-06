@@ -1,0 +1,96 @@
+ci_presets:
+  # name of the presets to apply, or null if no preset
+  name: null
+  # list of names of the presets to apply, or a single name, or null if no preset
+  names: null
+
+  single:
+    clusters.create.type: single
+
+  keep:
+    clusters.create.keep: true
+    clusters.create.ocp.tags.Project: PSAP/Project/Subproject
+    # clusters.create.ocp.tags.TicketId:
+
+  light_cluster:
+    clusters.create.ocp.deploy_cluster.target: cluster_light
+
+  light:
+    extends: [light_cluster]
+
+  metal:
+    clusters.sutest.is_metal: true
+    clusters.driver.is_metal: true
+
+  not_metal:
+    clusters.sutest.is_metal: false
+    clusters.driver.is_metal: false
+
+secrets:
+  dir:
+    name: psap-ods-secret
+    env_key: PSAP_ODS_SECRET_PATH
+  # name of the file containing the properties of LDAP secrets
+  s3_ldap_password_file: s3_ldap.passwords
+  keep_cluster_password_file: get_cluster.password
+  brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+clusters:
+  create:
+    type: single # can be: single, ocp, managed
+    keep: false
+    name_prefix: skeleton
+    ocp:
+      # list of tags to apply to the machineset when creating the cluster
+      tags:
+        # TicketId: "..."
+        Project: PSAP/Project/Subproject
+      deploy_cluster:
+        target: cluster
+      base_domain: psap.aws.rhperfscale.org
+      version: 4.12.12
+      region: us-west-2
+      control_plane:
+        type: m6a.xlarge
+      workers:
+        type: m6a.2xlarge
+        count: 2
+      compute:
+        type: m6i.2xlarge
+
+  sutest:
+    is_metal: false
+    compute:
+      dedicated: true
+      machineset:
+        name: workload-pods
+        count: null
+        taint:
+          key: only-workload-pods
+          value: "yes"
+          effect: NoSchedule
+  driver:
+    is_metal: false
+    compute:
+      dedicated: true
+      machineset:
+        name: test-pods
+        count: null
+        taint:
+          key: only-test-pods
+          value: "yes"
+          effect: NoSchedule
+  cleanup_on_exit: false
+
+matbench:
+  preset: null
+  workload: skeleton
+  config_file: plots.yaml
+  download:
+    mode: prefer_cache
+    url:
+    url_file:
+    # if true, copy the results downloaded by `matbench download` into the artifacts directory
+    save_to_artifacts: false
+  ignore_exit_code: true
+  # directory to plot. Set by testing/common/visualize.py before launching the visualization
+  test_directory: null
