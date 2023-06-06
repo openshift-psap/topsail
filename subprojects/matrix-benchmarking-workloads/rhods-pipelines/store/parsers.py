@@ -99,7 +99,7 @@ def _parse_local_env(dirname):
 
     # This must be parsed from the process env (not the file), to
     # properly generate the error report links to the image.
-    job_name = os.getenv("JOB_NAME_SAFE")
+    job_name = os.getenv("JOB_NAME_SAFE", "")
 
     if job_name.endswith("-plot"):
         # running independently of the test, the source_url file must be available
