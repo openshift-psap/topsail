@@ -2,7 +2,7 @@ from . import user, metadata
 
 from typing import List, Dict
 
-import matrix_benchmarking.models as models
+import matrix_benchmarking.models as matbench_models
 
 from pydantic import BaseModel, constr
 

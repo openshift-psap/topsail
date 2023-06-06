@@ -20,4 +20,4 @@ class StepStatus(models.PSAPEnum):
     FAIL = auto()
 
 class TestName(models.PSAPEnum):
-    rhods_notebooks_ux = 'rhods-notebooks-ux'
+    rhods_notebooks_ux = 'rhods-notebooks'
