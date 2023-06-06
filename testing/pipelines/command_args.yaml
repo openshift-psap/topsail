@@ -82,7 +82,7 @@ cluster deploy_redis_server:
 {% set redis_internal_address = "redis."+base_image.namespace+".svc" %}
   namespace: "{{ base_image.namespace }}"
 
-pipelines run_scale_test:
+local_ci run_multi:
   user_count: "{{ tests.pipelines.user_count }}"
   namespace: "{{ base_image.namespace }}"
   istag: "{{ base_image.imagestream }}:{{ base_image.repo.tag }}"

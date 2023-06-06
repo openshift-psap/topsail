@@ -21,13 +21,27 @@
        > "{{ artifact_extra_logs_dir }}/notebooks.yaml"
   failed_when: false
 
-- name: Get the RHODS CSV
+- name: Check if RHODS CSV exists
   shell:
-    oc get csv -n redhat-ods-operator -oyaml > "{{ artifact_extra_logs_dir }}/rhods.csv.yaml"
+    set -o pipefail;
+    oc get csv -n redhat-ods-operator -oname | grep rhods-operator
+  register: has_rhods_csv_cmd
 
-- name: Get the RHODS version
+- name: Save the RHODS CSV
   shell:
-    oc get csv -n redhat-ods-operator -ojsonpath={.items[0].spec.version} > "{{ artifact_extra_logs_dir }}/rhods.versionl"
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -oyaml > "{{ artifact_extra_logs_dir }}/rhods.csv.yaml"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
+- name: Get the RHODS version, if rhods is installed
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -ojsonpath={.spec.version} > "{{ artifact_extra_logs_dir }}/rhods.version"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
+- name: Store the RHODS creation timestamp, if RHODS is installed
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname -ojsonpath={.metadata.annotations.createdAt}
+      > "{{ artifact_extra_logs_dir }}/rhods.createdAt"
+  when: has_rhods_csv_cmd.stdout | length > 0
 
 - name: Get the RHODS operator pod status
   shell:
@@ -56,6 +70,15 @@
   shell:
     oc get nodes -oyaml > "{{ artifact_extra_logs_dir }}/nodes.yaml"
 
+- name: Get the cluster nodes json
+  shell:
+    oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/nodes.json"
+
 - name: Get the cluster machines status
   shell:
     oc get machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/machines.status"
+
+- name: Store OpenShift YAML version
+  shell:
+    oc version -oyaml
+       > {{ artifact_extra_logs_dir }}/ocp_version.yml
