@@ -8,6 +8,7 @@ from toolbox.benchmarking import Benchmarking
 from toolbox.utils import Utils
 from toolbox.rhods import RHODS
 from toolbox.pipelines import Pipelines
+from toolbox.wisdom import Wisdom
 from toolbox.from_config import FromConfig
 from toolbox.local_ci import Local_CI
 
@@ -35,3 +36,4 @@ class Toolbox:
         self.pipelines = Pipelines
         self.from_config = FromConfig.run
         self.local_ci = Local_CI
+        self.wisdom = Wisdom

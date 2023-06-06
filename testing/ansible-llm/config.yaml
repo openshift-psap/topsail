@@ -1,0 +1,56 @@
+ci_presets:
+  # name of the presets to apply, or null if no preset
+  name: null
+  # list of names of the presets to apply, or a single name, or null if no preset
+  names: null
+
+  light_cluster:
+    clusters.create.ocp.deploy_cluster.target: cluster_light
+
+  ansible_llm_light:
+    tests:
+      ansible_llm:
+        test_cases: [[1,1], [1,2], [1, 4], [1, 8], [1, 16]]
+  
+  light:
+    extends: [light_cluster, ansible_llm_light]
+
+  keep:
+    clusters.create.keep: true
+    clusters.create.ocp.tags.Project: PSAP/RHODS/Wisdom
+    #clusters.create.ocp.tags.TicketId: #TODO
+
+clusters:
+  create:
+    type: single # can be: single, ocp, managed
+    keep: false
+    name_prefix: wisdomci
+    ocp:
+      # list of tags to apply to the machineset when creating the cluster
+      tags:
+        TicketId: 124
+        Project: PSAP/RHODS/Wisdom
+      deploy_cluster:
+        target: cluster
+      base_domain: psap.aws.rhperfscale.org
+      version: 4.12.15
+      region: us-west-2
+      control_plane:
+        type: m6a.xlarge
+      workers:
+        type: m6a.2xlarge
+        count: 2
+      compute:
+        type: m6i.2xlarge
+tests:
+  ansible_llm:
+    test_cases:
+    - [1,1]
+    - [1,2]
+    - [1, 4]
+    - [1, 8]
+    - [1, 16]
+    - [2, 16]
+    - [2, 32]
+    - [4, 32]
+    - [4, 64]
