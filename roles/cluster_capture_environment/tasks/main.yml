@@ -58,3 +58,19 @@
     content: "{{ git_show.stdout }}"
     dest: "{{ artifact_extra_logs_dir }}/ci_artifact.git_commit"
     mode: 0644
+
+- name: Get the cluster nodes status
+  shell:
+    oc get nodes > "{{ artifact_extra_logs_dir }}/nodes.status"
+
+- name: Get the cluster nodes yaml
+  shell:
+    oc get nodes -oyaml > "{{ artifact_extra_logs_dir }}/nodes.yaml"
+
+- name: Get the cluster nodes json
+  shell:
+    oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/nodes.json"
+
+- name: Get the cluster machines status
+  shell:
+    oc get machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/machines.status"
