@@ -144,6 +144,11 @@ generate_matbench::generate_visualization() {
         retcode=1
     fi
 
+    if ! matbench export_schema --file $ARTIFACT_DIR/notebooks.schema.json |& tee > "$ARTIFACT_DIR/_matbench_export_schema.log"; then
+        _warning "An error happened while generating Notebook JSON Schema :/"
+        retcode=1
+    fi
+
     if test_config matbench.download.save_to_artifacts; then
         cp -rv "$MATBENCH_RESULTS_DIRNAME" "$ARTIFACT_DIR"
     fi
