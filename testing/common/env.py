@@ -22,7 +22,7 @@ class TempArtifactDir(object):
         self.previous_dirname = None
 
     def __enter__(self):
-        self.previous_dirname = os.environ["ARTIFACT_DIR"]
+        self.previous_dirname = pathlib.Path(os.environ["ARTIFACT_DIR"])
         os.environ["ARTIFACT_DIR"] = str(self.dirname)
         self.dirname.mkdir(exist_ok=True)
 

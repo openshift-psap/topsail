@@ -66,15 +66,54 @@ def prepare_ci():
     run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
 
 
+
+def _run_test(test_artifact_dir_p):
+    """
+    Runs the Load-Aware scale test from the CI
+    """
+
+    next_count = env.next_artifact_index()
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__dummy_test"):
+        test_artifact_dir_p[0] = env.ARTIFACT_DIR
+
+        with open(env.ARTIFACT_DIR / "settings", "w") as f:
+            print(f"dummy=true", file=f)
+
+        with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+            yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+        failed = True
+        try:
+            run.run("./run_toolbox.py cluster reset_prometheus_db")
+
+            logging.info("Waiting 5 minutes to capture some metrics in Prometheus ...")
+            time.sleep(5 * 60)
+
+            run.run("./run_toolbox.py cluster dump_prometheus_db")
+            failed = False
+        finally:
+            with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
+                print("1" if failed else "0", file=f)
+
+            run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
+
 @entrypoint()
 def test_ci():
     """
     Runs the Load-Aware scale test from the CI
     """
 
-    logging.info("Nothing to do to run the test.")
-
-    run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
+    try:
+        test_artifact_dir_p = [None]
+        _run_test(test_artifact_dir_p)
+    finally:
+        if test_artifact_dir_p[0] is not None:
+            next_count = env.next_artifact_index()
+            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
+                visualize.prepare_matbench()
+                generate_plots(test_artifact_dir_p[0])
+        else:
+            logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
@@ -95,6 +134,12 @@ def cleanup_cluster():
 
     logging.info("Nothing to do to cleanup the cluster.")
 
+
+@entrypoint(ignore_secret_path=True)
+def generate_plots(results_dirname):
+    visualize.generate_from_dir(str(results_dirname))
+
+
 # ---
 
 class Entrypoint:
@@ -109,7 +154,7 @@ class Entrypoint:
         self.test_ci = test_ci
 
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
-
+        self.generate_plots = generate_plots
 
 def main():
     # Print help rather than opening a pager
