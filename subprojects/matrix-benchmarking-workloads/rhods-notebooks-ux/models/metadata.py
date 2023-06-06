@@ -2,20 +2,20 @@ from . import user
 
 from typing import List, Dict
 
-import matrix_benchmarking.models as models
+import matrix_benchmarking.models as matbench_models
 
 from pydantic import BaseModel, constr
 
 
-class NotebookScaleSettings(models.ExclusiveModel):
+class NotebookScaleSettings(matbench_models.ExclusiveModel):
     repeat: str
     test_case: str
     user_count: int
     exclude_tags: str
-    version: models.SemVer
+    version: matbench_models.SemVer
 
 
-class InfraInfo(models.ExclusiveModel):
+class InfraInfo(matbench_models.ExclusiveModel):
     name: str
     infra: bool
     managed: bool
@@ -26,7 +26,7 @@ class InfraInfo(models.ExclusiveModel):
     test_pods_only: bool
 
 
-class ClusterInfo(models.ExclusiveModel):
+class ClusterInfo(matbench_models.ExclusiveModel):
     infra: List[InfraInfo]
     node_count: List[InfraInfo]
     control_plane: List[InfraInfo]

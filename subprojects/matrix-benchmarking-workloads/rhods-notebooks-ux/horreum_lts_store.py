@@ -176,7 +176,7 @@ def build_lts_payloads() -> dict:
                 'config': results.test_config.yaml_file
             },
             "metadata": {
-                "test": "rhods-notebooks-ux",
+                "test": "rhods-notebooks",
                 "start": start_time.isoformat(),
                 "end": end_time.isoformat(),
                 "settings": {'version': results.rhods_info.version, **_parse_entry(entry.settings)},
