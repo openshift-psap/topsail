@@ -145,13 +145,13 @@ def _get_container_mem_cpu(cluster_role, register, label_sets):
         all_metrics += mem
         all_metrics += cpu
 
-        if not register: continue
-
         if cluster_role == 'sutest':
             for metric in cpu:
                 for key in metric.keys():
                     if 'container=rhods-dashboard' in key:
                         register_lts_metric(cluster_role, metric)
+
+        if not register: continue
 
         container = labels.get("container", "all")
 
@@ -194,37 +194,36 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
                 continue
             yield metric
 
-    if register:
-        from ..horreum_lts_store import register_lts_metric
-        for metric in all_metrics:
-            name, rq = list(metric.items())[0]
+    for metric in all_metrics:
+        name, rq = list(metric.items())[0]
 
-            if 'CPU idle' in name and cluster_role == 'sutest':
-                register_lts_metric(cluster_role, metric)
+        if 'CPU idle' in name and cluster_role == 'sutest':
+            from ..horreum_lts_store import register_lts_metric
+            register_lts_metric(cluster_role, metric)
+        if register:
+            plotting_prom.Plot({name: rq},
+                                f"Prom: {name}",
+                                None,
+                                "Count",
+                                get_metrics=get_metrics(cluster_role),
+                                filter_metrics=only_control_plane_nodes,
+                                get_legend_name=get_legend_name,
+                                show_queries_in_title=True,
+                                show_legend=True,
+                                higher_better=True if "CPU idle" in name else False,
+                                as_timestamp=True)
 
             plotting_prom.Plot({name: rq},
-                               f"Prom: {name}",
-                               None,
-                               "Count",
-                               get_metrics=get_metrics(cluster_role),
-                               filter_metrics=only_control_plane_nodes,
-                               get_legend_name=get_legend_name,
-                               show_queries_in_title=True,
-                               show_legend=True,
-                               higher_better=True if "CPU idle" in name else False,
-                               as_timestamp=True)
-
-            plotting_prom.Plot({name: rq},
-                               f"Prom: {name}".replace("Control Plane", "Worker"),
-                               None,
-                               "Count",
-                               get_metrics=get_metrics(cluster_role),
-                               filter_metrics=no_control_plane_nodes,
-                               get_legend_name=get_legend_name,
-                               show_queries_in_title=True,
-                               show_legend=True,
-                               higher_better=True if "CPU idle" in name else False,
-                               as_timestamp=True)
+                                f"Prom: {name}".replace("Control Plane", "Worker"),
+                                None,
+                                "Count",
+                                get_metrics=get_metrics(cluster_role),
+                                filter_metrics=no_control_plane_nodes,
+                                get_legend_name=get_legend_name,
+                                show_queries_in_title=True,
+                                show_legend=True,
+                                higher_better=True if "CPU idle" in name else False,
+                                as_timestamp=True)
 
     return all_metrics
 
@@ -264,24 +263,24 @@ def _get_apiserver_errcodes(cluster_role, register):
         if metric_metric.get('subresource'):
             res += f"/{metric_metric['subresource']}"
         return res, None
-    if register:
-        from ..horreum_lts_store import register_lts_metric
-        for metric in apiserver_request_metrics:
-            name, rq = list(metric.items())[0]
+    
+    for metric in apiserver_request_metrics:
+        name, rq = list(metric.items())[0]
 
-            if 'server errors' in name and cluster_role == 'sutest':
-                register_lts_metric(cluster_role, metric)
-
+        if 'server errors' in name and cluster_role == 'sutest':
+            from ..horreum_lts_store import register_lts_metric
+            register_lts_metric(cluster_role, metric)
+        if register:
             plotting_prom.Plot({name: rq},
-                               f"Prom: {name}",
-                               None,
-                               "Count",
-                               get_metrics=get_metrics(cluster_role),
-                               get_legend_name=get_apiserver_request_metrics_legend_name,
-                               show_queries_in_title=True,
-                               show_legend=True,
-                               as_timestamp=True)
-
+                                f"Prom: {name}",
+                                None,
+                                "Count",
+                                get_metrics=get_metrics(cluster_role),
+                                get_legend_name=get_apiserver_request_metrics_legend_name,
+                                show_queries_in_title=True,
+                                show_legend=True,
+                                as_timestamp=True)
+    if register:
         for metric in apiserver_request_duration_metrics:
             name, rq = list(metric.items())[0]
             plotting_prom.Plot({name: rq},
