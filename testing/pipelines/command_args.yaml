@@ -63,6 +63,8 @@ driver/cluster set_project_annotation/test_toleration:
 pipelines run_kfp_notebook:
   namespace: {{ rhods.pipelines.namespace }}
   dsp_application_name: {{ rhods.pipelines.application.name }}
+  notebook_filename: {{ tests.pipelines.notebook_filename }}
+  notebook_directory: {{ tests.pipelines.notebook_directory }}
 
 pipelines capture_state:
   namespace: {{ rhods.pipelines.namespace }}
