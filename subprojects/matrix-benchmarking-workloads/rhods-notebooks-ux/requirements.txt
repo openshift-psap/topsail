@@ -3,3 +3,4 @@ xmltodict
 scipy
 
 jsonpath_ng
+pydantic
