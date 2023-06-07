@@ -53,7 +53,12 @@ class Config:
                 logging.info(f"config override: {key} --> {actual_value}")
 
     def apply_preset(self, name):
-        values = self.get_config(f"ci_presets.{name}")
+        try:
+            values = self.get_config(f"ci_presets.{name}")
+        except IndexError:
+            logging.error(f"Preset '{name}' does not exists :/")
+            raise
+
         logging.info(f"Appling preset '{name}' ==> {values}")
         if not values:
             raise ValueError("Preset '{name}' does not exists")
