@@ -115,14 +115,13 @@ class Config:
     def apply_preset_from_pr_args(self):
         PR_ARG_KEY = "PR_POSITIONAL_ARG_"
 
-        idx = 1
-        while True:
-            preset = self.get_config(f"{PR_ARG_KEY}{idx}", None)
-            if not preset:
-                return
+        for config_key in self.get_config("$", print=False).keys():
+            if not config_key.startswith(PR_ARG_KEY): continue
+            if config_key == f"{PR_ARG_KEY}0": continue
 
-            self.apply_preset(preset)
-            idx += 1
+            for preset in self.get_config(config_key).split(" "):
+                self.apply_preset(preset)
+
 
 def _set_config_environ(base_dir):
     config_path = env.ARTIFACT_DIR / "config.yaml"
