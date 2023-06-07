@@ -77,17 +77,19 @@ class Config:
             self.set_config(key, value)
 
 
-    def get_config(self, jsonpath, default_value=...):
+    def get_config(self, jsonpath, default_value=..., warn=True, print=True):
         try:
             value = jsonpath_ng.parse(jsonpath).find(self.config)[0].value
         except Exception as ex:
             if default_value != ...:
-                logging.warning(f"get_config: {jsonpath} --> missing. Returning the default value: {default_value}")
+                if warn:
+                    logging.warning(f"get_config: {jsonpath} --> missing. Returning the default value: {default_value}")
                 return default_value
             logging.error(f"get_config: {jsonpath} --> {ex}")
             raise ex
 
-        logging.info(f"get_config: {jsonpath} --> {value}")
+        if print:
+            logging.info(f"get_config: {jsonpath} --> {value}")
 
         return value
 
