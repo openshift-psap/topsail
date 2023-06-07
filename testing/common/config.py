@@ -53,7 +53,12 @@ class Config:
                 logging.info(f"config override: {key} --> {actual_value}")
 
     def apply_preset(self, name):
-        values = self.get_config(f"ci_presets.{name}")
+        try:
+            values = self.get_config(f"ci_presets.{name}")
+        except IndexError:
+            logging.error(f"Preset '{name}' does not exists :/")
+            raise
+
         logging.info(f"Appling preset '{name}' ==> {values}")
         if not values:
             raise ValueError("Preset '{name}' does not exists")
@@ -72,17 +77,19 @@ class Config:
             self.set_config(key, value)
 
 
-    def get_config(self, jsonpath, default_value=...):
+    def get_config(self, jsonpath, default_value=..., warn=True, print=True):
         try:
             value = jsonpath_ng.parse(jsonpath).find(self.config)[0].value
         except Exception as ex:
             if default_value != ...:
-                logging.warning(f"get_config: {jsonpath} --> missing. Returning the default value: {default_value}")
+                if warn:
+                    logging.warning(f"get_config: {jsonpath} --> missing. Returning the default value: {default_value}")
                 return default_value
             logging.error(f"get_config: {jsonpath} --> {ex}")
             raise ex
 
-        logging.info(f"get_config: {jsonpath} --> {value}")
+        if print:
+            logging.info(f"get_config: {jsonpath} --> {value}")
 
         return value
 
@@ -108,14 +115,13 @@ class Config:
     def apply_preset_from_pr_args(self):
         PR_ARG_KEY = "PR_POSITIONAL_ARG_"
 
-        idx = 1
-        while True:
-            preset = self.get_config(f"{PR_ARG_KEY}{idx}", None)
-            if not preset:
-                return
+        for config_key in self.get_config("$", print=False).keys():
+            if not config_key.startswith(PR_ARG_KEY): continue
+            if config_key == f"{PR_ARG_KEY}0": continue
 
-            self.apply_preset(preset)
-            idx += 1
+            for preset in self.get_config(config_key).split(" "):
+                self.apply_preset(preset)
+
 
 def _set_config_environ(base_dir):
     config_path = env.ARTIFACT_DIR / "config.yaml"

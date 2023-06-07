@@ -67,7 +67,7 @@ set_presets_from_pr_args() {
         # else it's already a list
     fi
 
-    local pr_args=$(flat_config | grep PR_POSITIONAL_ARG_ | grep -v PR_POSITIONAL_ARG_0 | cut -d= -f2)
+    local pr_args=$(flat_config | grep PR_POSITIONAL_ARG_ | grep -v PR_POSITIONAL_ARG_0 | cut -d= -f2 | tr ' ' '\n')
     if [[ -z "$pr_args" ]]; then
         echo "No PR positional args."
         return 0
