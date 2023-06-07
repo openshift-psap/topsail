@@ -173,7 +173,7 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
     ]
 
     def get_legend_name(metric_name, metric_metric):
-        name = metric_metric['mode'] + " | " + metric_metric['instance'].split(".")[0]
+        name = metric_metric['mode'] + " | " + metric_metric["instance"].split(".")[0]
         group = metric_metric['instance'].split(".")[0]
         return name, group
 
@@ -181,7 +181,7 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
         control_plane_nodes = [node.name for node in entry.results.rhods_cluster_info.control_plane]
 
         for metric in metrics:
-            if metric["metric"]["instance"] not in control_plane_nodes:
+            if metric.metric["instance"] not in control_plane_nodes:
                 continue
             yield metric
 
@@ -189,7 +189,7 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
         control_plane_nodes = [node.name for node in entry.results.rhods_cluster_info.control_plane]
 
         for metric in metrics:
-            if metric["metric"]["instance"] in control_plane_nodes:
+            if metric.metric["instance"] in control_plane_nodes:
                 continue
             yield metric
 
@@ -387,7 +387,7 @@ def get_driver_metrics(register=False):
 def get_metrics(name):
     def _get_metrics(entry, metric):
         try:
-            return entry.results.metrics[name][metric]
+            return getattr(entry.results.metrics, name)[metric]
         except KeyError:
             return []
 
