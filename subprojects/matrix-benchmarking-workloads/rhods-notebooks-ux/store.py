@@ -88,7 +88,7 @@ ARTIFACTS_VERSION = "2022-11-09"
 PARSER_VERSION = "2022-12-14"
 
 
-store.register_custom_schema(models.NotebookScalePayload)
+store.register_lts_schema(models.NotebookScalePayload)
 
 def is_mandatory_file(filename):
     return filename.name in ("settings", "exit_code", "config.yaml") or filename.name.startswith("settings.")
