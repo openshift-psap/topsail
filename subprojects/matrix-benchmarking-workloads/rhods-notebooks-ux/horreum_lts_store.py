@@ -10,10 +10,7 @@ from . import models
 
 from .plotting import prom
 
-import matrix_benchmarking.store as store
-import matrix_benchmarking.store.simple as store_simple
 import matrix_benchmarking.common as common
-import matrix_benchmarking.cli_args as cli_args
 
 lts_metrics = {
     'sutest': []

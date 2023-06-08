@@ -51,10 +51,7 @@ def _get_test_setup(entry):
 
     sutest_ocp_version = entry.results.sutest_ocp_version
 
-    version_ts = entry.results.rhods_info.createdAt.strftime("%Y-%m-%d") \
-        if entry.results.rhods_info.createdAt else entry.results.rhods_info.createdAt_raw
-
-    setup_info += [html.Li([html.B("RHODS "), html.B(html.Code(f"{entry.results.rhods_info.version}-{version_ts}")), f" running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
+    setup_info += [html.Li([html.B("RHODS "), html.B(html.Code(f"{entry.results.rhods_info.full_version}")), f" running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
 
     nodes_info = [
         html.Li([f"Total of {len(entry.results.rhods_cluster_info.node_count)} nodes in the cluster"]),

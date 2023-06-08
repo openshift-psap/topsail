@@ -227,6 +227,11 @@ def _parse_rhods_info(dirname):
         logging.error("Couldn't parse RHODS version timestamp: {e}")
         rhods_info.createdAt = None
 
+    rhods_info.full_version = (
+        f"{rhods_info.version}-" \
+        + (rhods_info.createdAt.strftime("%Y-%m-%d")
+           if rhods_info.createdAt else "0000-00-00"))
+
     return rhods_info
 
 @ignore_file_not_found
