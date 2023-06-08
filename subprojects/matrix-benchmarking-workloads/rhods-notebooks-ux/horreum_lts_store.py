@@ -236,7 +236,7 @@ def _gather_prom_metrics(entry) -> dict:
         for metric_name in metric_names:
             logging.info(f"Gathering {metric_name[0]}")
             output[metric_name[0]] = {
-                'data': prom.get_metrics('sutest')(entry, metric_name[0]),
+                'data': [promvalue.dict() for promvalue in prom.get_metrics('sutest')(entry, metric_name[0])],
                 'query': metric_name[1]
             }
 
