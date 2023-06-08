@@ -12,6 +12,9 @@ import functools
 import yaml
 import fire
 
+
+PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
+
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TESTING_UTILS_DIR = TESTING_THIS_DIR.parent / "utils"
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
@@ -61,7 +64,7 @@ def prepare_ci():
     Prepares the cluster and the namespace for running Load-Aware scale tests
     """
 
-    logging.info("Nothing to do to prepare the cluster.")
+    install_ocp_pipelines()
 
     run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
 
@@ -131,14 +134,34 @@ def cleanup_cluster():
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running on bare-metal environments.
+    logging.info("Cleaning up cluster and uninstall pipelines")
 
-    logging.info("Nothing to do to cleanup the cluster.")
+    uninstall_ocp_pipelines()
 
 
 @entrypoint(ignore_secret_path=True)
 def generate_plots(results_dirname):
     visualize.generate_from_dir(str(results_dirname))
 
+
+def install_ocp_pipelines():
+    installed_csv_cmd = run.run("oc get csv -oname", capture_stdout=True)
+    if PIPELINES_OPERATOR_MANIFEST_NAME in installed_csv_cmd.stdout:
+        logging.info(f"Operator '{PIPELINES_OPERATOR_MANIFEST_NAME}' is already installed.")
+        return
+
+    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_pipelines ./run_toolbox.py cluster deploy_operator redhat-operators {PIPELINES_OPERATOR_MANIFEST_NAME} all")
+
+def uninstall_ocp_pipelines():
+    installed_csv_cmd = run.run("oc get csv -oname", capture_stdout=True)
+    if PIPELINES_OPERATOR_MANIFEST_NAME not in installed_csv_cmd.stdout:
+        logging.info("Pipelines Operator is not installed")
+        return
+
+    run.run(f"oc delete tektonconfigs.operator.tekton.dev --all")
+    PIPELINES_OPERATOR_NAMESPACE = "openshift-operators"
+    run.run(f"oc delete sub/{PIPELINES_OPERATOR_MANIFEST_NAME} -n {PIPELINES_OPERATOR_NAMESPACE}")
+    run.run(f"oc delete csv -n {PIPELINES_OPERATOR_NAMESPACE} -loperators.coreos.com/{PIPELINES_OPERATOR_MANIFEST_NAME}.{PIPELINES_OPERATOR_NAMESPACE}")
 
 # ---
 
