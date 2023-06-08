@@ -21,13 +21,13 @@ class PipelinesScaleResults(matbench_models.ExclusiveModel):
     results: BaseModel
 
 
-class FromLocalEnv(BaseModel):
+class FromLocalEnv(matbench_models.ExclusiveModel):
     artifacts_basedir: pathlib.Path
     source_url: Union[str, pathlib.Path, None]
     is_interactive: bool
 
 
-class NodeItem(BaseModel):
+class NodeItem(matbench_models.ExclusiveModel):
     name: str
     sutest_cluster: bool
     managed: bool
@@ -38,7 +38,7 @@ class NodeItem(BaseModel):
     infra: bool
 
 
-class RhodsClusterInfo(BaseModel):
+class RhodsClusterInfo(matbench_models.ExclusiveModel):
     node_count: List[NodeItem]
     control_plane: List[NodeItem]
     infra: List[NodeItem]
@@ -46,35 +46,34 @@ class RhodsClusterInfo(BaseModel):
     test_pods_only: List[NodeItem]
 
 
-class RhodsInfo(BaseModel):
+class RhodsInfo(matbench_models.ExclusiveModel):
     version: str
     createdAt_raw: str
     createdAt: datetime.datetime
 
-
-class UserDataEntry(BaseModel):
+class UserDataEntry(matbench_models.ExclusiveModel):
     artifact_dir: pathlib.Path
     exit_code: int
     progress: Dict[str, datetime.datetime]
 
 
-class TesterJob(BaseModel):
+class TesterJob(matbench_models.ExclusiveModel):
     creation_time: datetime.datetime
     completion_time: datetime.datetime
     env: Dict[str, str]
 
 
-class MetricEntry(BaseModel):
+class MetricEntry(matbench_models.ExclusiveModel):
     metric: Dict[str, str]
     values: List[List[Union[int, str]]]
 
 
-class Metrics(BaseModel):
-    sutest: Dict[str, List[MetricEntry]]
-    driver: Dict[str, List[MetricEntry]]
+class Metrics(matbench_models.ExclusiveModel):
+    sutest: matbench_models.PrometheusNamedMetricValues
+    driver: matbench_models.PrometheusNamedMetricValues
 
 
-class ParsedResultsModel(BaseModel):
+class ParsedResultsModel(matbench_models.ExclusiveModel):
     parser_version: str
     artifacts_version: str
     from_local_env: FromLocalEnv
