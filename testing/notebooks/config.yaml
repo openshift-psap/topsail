@@ -366,9 +366,9 @@ rhods:
   deploy_from_catalog: true
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 498982
+    tag: 510656
     channel: beta
-    version: 1.27.0
+    version: 1.28.0
   addon:
     # only necessary/set when rhods.deploy_from_catalog is true
     email: SET_AT_RUNTIME
@@ -448,7 +448,7 @@ tests:
       test_mode: simple
       image:
         repo: https://github.com/openshift-psap/ods-ci.git
-        ref: notebook-scale-test.v1.27.0-rc3
+        ref: notebook-scale-test.v1.28.0-rc1
       # tags to exclude when running the robot test case
       excluded_tags: None
       # if true, only create the notebooks but don't start them
