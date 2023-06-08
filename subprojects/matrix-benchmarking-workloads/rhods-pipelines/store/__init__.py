@@ -8,6 +8,7 @@ import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 
 from . import parsers
+from .. import models
 
 CACHE_FILENAME = "cache.pickle"
 
@@ -51,6 +52,30 @@ def _rewrite_settings(settings_dict):
 ARTIFACTS_VERSION = "2023-05-31"
 
 
+def simpleNamespacetoModel(obj, model):
+    def _parse_entry(val):
+        return _parse_item(val) \
+            if type(val) in (types.SimpleNamespace, dict, list) \
+               else val
+
+    def _parse_item(obj):
+        if type(obj) == list:
+            return [_parse_entry(val) for val in obj]
+
+        elif type(obj) in (types.SimpleNamespace, dict):
+            return {key: _parse_entry(val) for key, val in (obj if type(obj) == dict else vars(obj)).items()}
+
+        else:
+             return obj
+
+    return model.parse_obj(_parse_entry(obj))
+
+
+
+def parsedObjectToModel(result):
+    return simpleNamespacetoModel(result, models.ParsedResultsModel)
+
+
 def load_cache(dirname):
     try:
         with open(dirname / CACHE_FILENAME, "rb") as f:
@@ -81,7 +106,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     if results:
         parsers._parse_always(results, dirname, import_settings)
 
-        fn_add_to_matrix(results)
+        modeled_results = parsedObjectToModel(results)
+        fn_add_to_matrix(modeled_results)
 
         return
 
@@ -99,7 +125,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     parsers._parse_always(results, dirname, import_settings)
     parsers._parse_once(results, dirname)
 
-    fn_add_to_matrix(results)
+    modeled_results = parsedObjectToModel(results)
+    fn_add_to_matrix(modeled_results)
 
     with open(dirname / CACHE_FILENAME, "wb") as f:
         get_config = results.test_config.get
