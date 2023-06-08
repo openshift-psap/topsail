@@ -20,3 +20,4 @@
     set -o pipefail;
     oc get istag -n redhat-ods-applications | grep "{{ item }}" > "{{ artifact_extra_logs_dir }}/image_{{ item }}.status"
   loop: "{{ rhods_wait_ods_images.split(',') }}"
+  ignore_errors: true
