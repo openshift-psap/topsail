@@ -17,7 +17,7 @@ def build_lts_payloads():
         lts_metadata = models_lts.PipelinesScaleTestMetadata(
             start = results.tester_job.creation_time,
             end = results.tester_job.completion_time,
-            presets = ["no preset yet"],
+            presets = results.test_config["get"]("ci_presets.names") or ["no_preset_defined"],
             settings = entry.settings.__dict__,
             ocp_version = results.sutest_ocp_version,
             rhods_version = results.rhods_info.full_version,
