@@ -50,6 +50,7 @@ class RhodsInfo(matbench_models.ExclusiveModel):
     version: str
     createdAt_raw: str
     createdAt: datetime.datetime
+    full_version: str
 
 class UserDataEntry(matbench_models.ExclusiveModel):
     artifact_dir: pathlib.Path
