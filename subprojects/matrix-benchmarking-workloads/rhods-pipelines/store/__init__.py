@@ -10,6 +10,10 @@ import matrix_benchmarking.store.simple as store_simple
 from . import parsers
 from .. import models
 
+from ..models import lts as models_lts
+
+store.register_lts_schema(models_lts.PipelinesScaleTestPayload)
+
 CACHE_FILENAME = "cache.pickle"
 
 IMPORTANT_FILES = parsers.IMPORTANT_FILES
