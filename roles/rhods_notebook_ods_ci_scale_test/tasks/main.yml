@@ -203,13 +203,6 @@
        --ignore-not-found
        -n {{ tester_namespace }}
 
-
-- name: Name the namespace privileged
-  command:
-    oc adm policy add-scc-to-user privileged
-       -z default
-       -n {{ tester_namespace }}
-
 # ---
 
 - name: Cleanup the Prometheus databases of the sutest cluster

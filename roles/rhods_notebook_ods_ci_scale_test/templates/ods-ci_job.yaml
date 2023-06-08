@@ -31,8 +31,6 @@ spec:
     metadata:
       name: ods-ci-loadtest
     spec:
-      securityContext:
-        runAsUser: 1001
       containers:
       - image: "{{ rhods_ods_ci_image }}"
         imagePullPolicy: Always
