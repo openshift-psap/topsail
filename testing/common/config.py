@@ -63,6 +63,10 @@ class Config:
         if not values:
             raise ValueError("Preset '{name}' does not exists")
 
+        presets = self.get_config("ci_presets.names") or []
+        if not name in presets:
+            self.set_config("ci_presets.names", presets + [name])
+
         for key, value in values.items():
             if key == "extends":
                 for extend_name in value:
