@@ -513,8 +513,8 @@ tests:
 
 matbench:
   preset: null
-  workload: rhods-notebooks-ux
-  config_file: notebook_scale_test_ods_ci.yaml # subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data
+  workload: rhods-notebooks
+  config_file: notebook_scale_test_ods_ci.yaml # visualizations/rhods-notebooks/data
   download:
     mode: prefer_cache
     url:

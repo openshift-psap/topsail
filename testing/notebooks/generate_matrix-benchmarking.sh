@@ -16,7 +16,7 @@ ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 export MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE=$(get_config matbench.ignore_exit_code)
 
 export MATBENCH_WORKLOAD=$(get_config matbench.workload)
-WORKLOAD_STORAGE_DIR="$TESTING_NOTEBOOKS_DIR/../../subprojects/matrix-benchmarking-workloads/$MATBENCH_WORKLOAD"
+WORKLOAD_STORAGE_DIR="$TESTING_NOTEBOOKS_DIR/../../visualizations/$MATBENCH_WORKLOAD"
 
 if [[ "$(get_config PR_POSITIONAL_ARG_0)" == ods-plot-* ]]; then
     set_config_from_pr_arg 1 "matbench.preset"
@@ -36,7 +36,7 @@ else
 fi
 
 get_matbench_config() {
-    CI_ARTIFACTS_FROM_CONFIG_FILE=$TESTING_NOTEBOOKS_DIR/../../subprojects/matrix-benchmarking-workloads/rhods-notebooks-ux/data/$(get_config matbench.config_file) \
+    CI_ARTIFACTS_FROM_CONFIG_FILE=$TESTING_NOTEBOOKS_DIR/../../visualizations/rhods-notebooks/data/$(get_config matbench.config_file) \
         get_config "$@"
 }
 
