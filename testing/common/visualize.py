@@ -47,7 +47,7 @@ def init():
     os.environ["MATBENCH_WORKLOAD"] = matbench_workload
     os.environ["MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE"] = "true" if config.ci_artifacts.get_config("matbench.ignore_exit_code") else "false"
 
-    workload_storage_dir = TESTING_COMMON_DIR.parent.parent / "subprojects/matrix-benchmarking-workloads" / matbench_workload
+    workload_storage_dir = TESTING_COMMON_DIR.parent.parent / "visualizations" / matbench_workload
 
     if config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "").endswith("-plot"):
         config.ci_artifacts.set_config("matbench.preset", config.ci_artifacts.get_config("PR_POSITIONAL_ARG_1", None))
