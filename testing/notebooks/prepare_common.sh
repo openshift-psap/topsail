@@ -131,7 +131,7 @@ prepare() {
         fi
     fi
 
-    if [[ "${JOB_NAME_SAFE:-}" == "notebooks-light" ]]; then
+    if [[ "${JOB_NAME_SAFE:-}" == "light" ||  "${JOB_NAME_SAFE:-}" == *"-light" ]]; then
         local user_count=$(get_config tests.notebooks.users.count)
         local light_test_user_count=$(get_config 'ci_presets.notebooks_light["tests.notebooks.users.count"]')
         if [[ "$user_count" -gt "$light_test_user_count" ]]; then
