@@ -380,14 +380,18 @@ def _parse_pod_times(dirname):
 
         if pod["metadata"]["labels"].get("component") == "data-science-pipelines":
             pod_friendly_name = pod["metadata"]["labels"]["app"]
+            pod_time.is_dspa = True
 
         elif pod["metadata"]["labels"].get("app.kubernetes.io/managed-by") == "tekton-pipelines":
             pod_friendly_name = pod["metadata"]["labels"]["tekton.dev/pipelineTask"]
+            pod_time.is_pipeline_task = True
 
         elif pod["metadata"].get("generateName"):
             pod_friendly_name = pod["metadata"]["generateName"]\
                 .replace("-"+pod["metadata"]["labels"]["pod-template-hash"]+"-", "")
 
+            if pod_friendly_name == "minio-deployment":
+                pod_time.is_dspa = True
         else:
             pod_name = pod["metadata"]["name"]
 

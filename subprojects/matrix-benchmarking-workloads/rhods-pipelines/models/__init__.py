@@ -87,6 +87,8 @@ class PodTime(matbench_models.ExclusiveModel):
     pod_scheduled: Union[datetime.datetime, None]
     container_finished: Union[datetime.datetime, None] # missing if the Pod is still Running
 
+    is_dspa: bool = Field(default_factory=lambda: False)
+    is_pipeline_task: bool = Field(default_factory=lambda: False)
 
 class ParsedResultsModel(matbench_models.ExclusiveModel):
     parser_version: str
