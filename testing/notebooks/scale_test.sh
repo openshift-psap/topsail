@@ -45,7 +45,7 @@ source "$TESTING_NOTEBOOKS_DIR"/single_notebook_performance_test.sh
 connect_ci() {
     "$TESTING_UTILS_DIR/ci_init_configure.sh"
 
-    if [[ "${JOB_NAME_SAFE:-}" == *"-light" ]]; then
+    if [[ "${JOB_NAME_SAFE:-}" == "light" ||  "${JOB_NAME_SAFE:-}" == *"-light" ]]; then
         local LIGHT_PROFILE="light"
         # running a light test (usually in a CI-provided cluster)
         _info "Running '$JOB_NAME_SAFE' test, applying '$LIGHT_PROFILE' extra preset."

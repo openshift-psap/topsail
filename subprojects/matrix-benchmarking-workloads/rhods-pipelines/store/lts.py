@@ -17,7 +17,7 @@ def build_lts_payloads():
         lts_metadata = models_lts.PipelinesScaleTestMetadata(
             start = results.tester_job.creation_time,
             end = results.tester_job.completion_time,
-            presets = ["no preset yet"],
+            presets = results.test_config["get"]("ci_presets.names") or ["no_preset_defined"],
             settings = entry.settings.__dict__,
             ocp_version = results.sutest_ocp_version,
             rhods_version = results.rhods_info.full_version,
@@ -26,7 +26,9 @@ def build_lts_payloads():
         )
 
         lts_results = models_lts.PipelinesScaleTestResults(
-            # nothing for now
+            metrics = models_lts.PipelinesScaleTestMetrics(
+                sutest = _gather_prom_metrics(entry.results.metrics.sutest, models_lts.PipelinesScaleTestSutestMetrics),
+            ),
         )
 
         lts_payload = models_lts.PipelinesScaleTestPayload(
@@ -42,3 +44,9 @@ def _parse_lts_dir(add_to_matrix, dirname, import_settings):
 
 def register_lts_metric(cluster_role, metric):
     pass
+
+def _gather_prom_metrics(metrics, model) -> dict:
+    data = {metric_name: metrics[metric_name]
+            for metric_name in model.schema()["properties"].keys()}
+
+    return model(**data)

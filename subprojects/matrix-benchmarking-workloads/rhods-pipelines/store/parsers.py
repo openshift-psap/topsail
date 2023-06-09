@@ -5,6 +5,7 @@ import yaml
 import os
 import json
 import datetime
+from collections import defaultdict
 
 import jsonpath_ng
 
@@ -30,6 +31,7 @@ IMPORTANT_FILES = [
     "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/progress_ts.yaml",
     "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/test.exit_code",
     "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/*/_ansible.log",
+    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/004__pipelines__capture_state/pods/*.json",
 
     "001__rhods__capture_state/nodes.json",
     "001__rhods__capture_state/ocp_version.yml",
@@ -74,6 +76,8 @@ def _parse_once(results, dirname):
     results.user_data = _parse_user_data(dirname, results.user_count)
     results.tester_job = _parse_tester_job(dirname)
     results.metrics = _extract_metrics(dirname)
+    results.pod_times = _parse_pod_times(dirname)
+
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -358,3 +362,57 @@ def _parse_artifacts_version(dirname):
         artifacts_version = f.read().strip()
 
     return artifacts_version
+
+
+@ignore_file_not_found
+def _parse_pod_times(dirname):
+    filenames = [fname.relative_to(dirname) for fname in
+                 (dirname / pathlib.Path("000__local_ci__run_multi/ci-pods_artifacts")
+                  ).glob("ci-pod-*/00*__pipelines__capture_state/pods/*.json")]
+
+    pod_times = []
+
+    def _parse_pod_times_file(filename, pod):
+        pod_name = pod["metadata"]["name"]
+        user_index = int(filename.parents[2].name.split("-")[-1])
+
+        pod_time = types.SimpleNamespace()
+        pod_times.append(pod_time)
+
+        pod_time.user_index = int(user_index)
+        pod_time.pod_name = pod_name
+        pod_time.pod_namespace = pod["metadata"]["namespace"]
+        pod_time.hostname = pod["spec"].get("nodeName")
+
+        start_time_str = pod["status"].get("startTime")
+        pod_time.start_time = None if not start_time_str else \
+            datetime.datetime.strptime(start_time_str, K8S_TIME_FMT)
+
+        for condition in pod["status"].get("conditions", []):
+            last_transition = datetime.datetime.strptime(condition["lastTransitionTime"], K8S_TIME_FMT)
+
+            if condition["type"] == "ContainersReady":
+                pod_time.containers_ready = last_transition
+
+            elif condition["type"] == "Initialized":
+                pod_time.pod_initialized = last_transition
+            elif condition["type"] == "PodScheduled":
+                pod_time.pod_scheduled = last_transition
+
+        for containerStatus in pod["status"].get("containerStatuses", []):
+            try:
+                finishedAt =  datetime.datetime.strptime(
+                    containerStatus["state"]["terminated"]["finishedAt"],
+                    K8S_TIME_FMT)
+            except KeyError: continue
+
+            # take the last container_finished found
+            if ("container_finished" not in pod_time.__dict__
+                or pod_time.container_finished < finishedAt):
+                pod_time.container_finished = finishedAt
+
+    for filename in filenames:
+        with open(register_important_file(dirname, filename)) as f:
+            _parse_pod_times_file(filename, json.load(f))
+
+    return pod_times

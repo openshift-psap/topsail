@@ -74,6 +74,19 @@ class Metrics(matbench_models.ExclusiveModel):
     driver: matbench_models.PrometheusNamedMetricValues
 
 
+class PodTime(matbench_models.ExclusiveModel):
+    user_index: int
+    pod_name: str
+    pod_namespace: str
+    hostname: Union[str, None] # missing if the Pod is still Pending
+
+    start_time: Union[datetime.datetime, None] # missing if the Pod is still Pending
+    containers_ready: Union[datetime.datetime, None]
+    pod_initialized: Union[datetime.datetime, None]
+    pod_scheduled: Union[datetime.datetime, None]
+    container_finished: Union[datetime.datetime, None] # missing if the Pod is still Running
+
+
 class ParsedResultsModel(matbench_models.ExclusiveModel):
     parser_version: str
     artifacts_version: str
@@ -88,6 +101,7 @@ class ParsedResultsModel(matbench_models.ExclusiveModel):
     tester_job: TesterJob
     metrics: Metrics
     test_config: Any
+    pod_times: List[PodTime]
 
 ParsedResultsModel.update_forward_refs()
 TesterJob.update_forward_refs()

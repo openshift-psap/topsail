@@ -63,6 +63,10 @@ class Config:
         if not values:
             raise ValueError("Preset '{name}' does not exists")
 
+        presets = self.get_config("ci_presets.names") or []
+        if not name in presets:
+            self.set_config("ci_presets.names", presets + [name])
+
         for key, value in values.items():
             if key == "extends":
                 for extend_name in value:
@@ -121,6 +125,19 @@ class Config:
 
             for preset in self.get_config(config_key).split(" "):
                 self.apply_preset(preset)
+
+    def detect_apply_light_profile(self, profile, name_suffix="light"):
+        job_name_safe = os.environ.get("JOB_NAME_SAFE", "")
+        if not job_name_safe:
+            logging.info(f"detect_apply_light_profile: JOB_NAME_SAFE not set, assuming not running in a CI environment.")
+            return
+
+        if job_name_safe != name_suffix and not job_name_safe.endswith(f"-{name_suffix}"):
+            return
+
+        logging.info(f"Running a '{name_suffix}' test ({job_name_safe}), applying the '{profile}' profile")
+
+        self.apply_preset(profile)
 
 
 def _set_config_environ(base_dir):
