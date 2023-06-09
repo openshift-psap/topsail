@@ -63,8 +63,8 @@ def install_rhods():
 def max_gpu_nodes():
     test_cases = config.ci_artifacts.get_config("tests.ansible_llm.test_cases")
     replicas_list, concurrency_list = zip(*test_cases)
-    
-    return max(replicas_list)  
+
+    return max(replicas_list)
 
 @entrypoint()
 def load_test_prepare():
@@ -73,8 +73,8 @@ def load_test_prepare():
     """
     install_rhods()
     run.run("./run_toolbox.py rhods wait_ods")
-    max_replicas = max_gpu_nodes()  
-    run.run(f"./run_toolbox.py cluster set_scale g5.2xlarge {max_replicas}")    
+    max_replicas = max_gpu_nodes()
+    run.run(f"./run_toolbox.py cluster set_scale g5.2xlarge {max_replicas}")
     run.run("./run_toolbox.py nfd_operator deploy_from_operatorhub")
     run.run("./run_toolbox.py nfd wait_labels")
     run.run("./run_toolbox.py gpu_operator deploy_from_operatorhub")
@@ -104,11 +104,11 @@ def load_test_run():
 
     run.run(f"./run_toolbox.py utils build_push_image --namespace='{test_namespace}'  --git_repo='https://github.com/openshift-psap/llm-load-test.git' --git_ref='main' --dockerfile_path='build/Containerfile' --image_local_name='{tester_imagestream_name}' --tag='{tester_image_tag}'  --")
 
-    max_replicas = max_gpu_nodes()  
+    max_replicas = max_gpu_nodes()
     run.run(f"./run_toolbox.py cluster set_scale g5.2xlarge {max_replicas}")
- 
+
     test_cases = config.ci_artifacts.get_config("tests.ansible_llm.test_cases")
-    
+
     #TODO: These test cases should be in a config.yaml, not hardcoded
     for replicas, concurrency in test_cases:
 
@@ -126,12 +126,12 @@ def load_test_run():
             --namespace='{test_namespace}' \
             --")
 
-        # Warmup 
+        # Warmup
         run.run(f"./run_toolbox.py wisdom warmup_model {protos_path} \
             {tester_imagestream_name} \
             {tester_image_tag} \
             --namespace='{test_namespace}'")
-        
+
         #Run test with total_requests and concurrency
         logging.info(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and total_requests: {total_requests}")
         run.run(f"./run_toolbox.py wisdom run_llm_load_test {total_requests} \
@@ -156,7 +156,7 @@ class LoadTest:
     def __init__(self):
         self.prepare = load_test_prepare
         self.run = load_test_run
-        
+
 def main():
     # Print help rather than opening a pager
     fire.core.Display = lambda lines, out: print(*lines, file=out)
