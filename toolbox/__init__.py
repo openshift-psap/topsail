@@ -11,6 +11,7 @@ from toolbox.pipelines import Pipelines
 from toolbox.wisdom import Wisdom
 from toolbox.from_config import FromConfig
 from toolbox.local_ci import Local_CI
+from toolbox.load_aware import LoadAware
 
 class Toolbox:
     """
@@ -37,3 +38,4 @@ class Toolbox:
         self.from_config = FromConfig.run
         self.local_ci = Local_CI
         self.wisdom = Wisdom
+        self.load_aware = LoadAware
