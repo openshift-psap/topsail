@@ -65,7 +65,7 @@ def prepare_ci():
     install_ocp_pipelines()
 
     run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
-
+    run.run("./run_toolbox.py load_aware deploy_trimaran")
 
 
 def _run_test(test_artifact_dir_p):

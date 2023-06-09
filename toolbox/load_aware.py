@@ -12,12 +12,10 @@ class LoadAware:
     @AnsibleMappedParams
     def deploy_trimaran(self):
         """
-        WIP Role to deploy the Trimaran load aware scheduler
+        Role to deploy the Trimaran load aware scheduler
 
         Args:
-            arg1: ...
-            arg2: ...
-            ...
+            None
         """
 
         return RunAnsibleRole(locals())

@@ -1,0 +1,2 @@
+user_applications_monitor_config: "roles/load_aware_deploy_trimaran/files/cluster-monitoring-config.yaml"
+trimaran_setup_config: "roles/load_aware_deploy_trimaran/files/trimaran.yaml"

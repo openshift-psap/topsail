@@ -1,0 +1,36 @@
+- name: Configure user application monitoring
+  command:
+    oc apply -f {{ user_applications_monitor_config }}
+
+- name: Ensure user monitoring enabled
+  shell:
+    set -o pipefail;
+
+    oc -n openshift-user-workload-monitoring get pod
+      | awk 'NR > 1 { print $3}'
+  register: monitoring_enabled
+  delay: 3
+  retries: 20
+  # until all of the pods are in the running state
+  until: "'Completed' not in monitoring_enabled.stdout and 'Failed' not in monitoring_enabled.stdout and 'Pending' not in monitoring_enabled.stdout" 
+
+- name: Deploy Trimaran scheduler
+  shell:
+    set -o errexit;
+    set -o pipefail;
+    set -o nounset;
+    set -o errtrace;
+
+    export MONITORING_SECRET=$(oc get secret -n openshift-user-workload-monitoring
+      | grep  prometheus-user-workload-token
+      | head -n 1
+      | awk '{print $1 }'
+    )
+
+    export MONITORING_TOKEN=$(echo $(oc get secret $MONITORING_SECRET -n openshift-user-workload-monitoring -o json | jq -r '.data.token')
+      | base64 -d)
+
+    export THANOS_MONITORING_ENDPOINT=$(oc get route thanos-querier -n openshift-monitoring -o json
+      | jq -r '.spec.host')
+
+    cat {{ trimaran_setup_config }} | envsubst | oc apply -f -
