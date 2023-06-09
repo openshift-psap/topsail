@@ -46,9 +46,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
         logging.info(f"Running in the Icelake cluster, applying the '{ICELAKE_PROFILE}' profile")
         config.ci_artifacts.apply_preset(ICELAKE_PROFILE)
 
-    if os.environ.get("JOB_NAME_SAFE", "").endswith("-light"):
-        logging.info(f"Running a light test, applying the '{LIGHT_PROFILE}' profile")
-        config.ci_artifacts.apply_preset(LIGHT_PROFILE)
+    config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
