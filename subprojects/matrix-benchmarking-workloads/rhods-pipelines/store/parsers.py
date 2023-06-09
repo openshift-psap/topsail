@@ -373,11 +373,23 @@ def _parse_pod_times(dirname):
     pod_times = []
 
     def _parse_pod_times_file(filename, pod):
-        pod_name = pod["metadata"]["name"]
         user_index = int(filename.parents[2].name.split("-")[-1])
 
         pod_time = types.SimpleNamespace()
         pod_times.append(pod_time)
+
+        if pod["metadata"]["labels"].get("component") == "data-science-pipelines":
+            pod_name = pod["metadata"]["labels"]["app"]
+
+        elif pod["metadata"]["labels"].get("app.kubernetes.io/managed-by") == "tekton-pipelines":
+            pod_name = pod["metadata"]["labels"]["tekton.dev/pipelineTask"]
+
+        elif pod["metadata"].get("generateName"):
+            pod_name = pod["metadata"]["generateName"]\
+                .replace("-"+pod["metadata"]["labels"]["pod-template-hash"]+"-", "")
+
+        else:
+            pod_name = pod["metadata"]["name"]
 
         pod_time.user_index = int(user_index)
         pod_time.pod_name = pod_name
