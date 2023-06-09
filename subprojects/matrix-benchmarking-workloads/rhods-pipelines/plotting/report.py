@@ -101,31 +101,9 @@ class PodNodeMappingReport():
         header += [html.P("""The Timeline plots are useful to validate that Pods started and finished on time.""")]
         header += [html.P("""The Distribution plots are useful to visualize how the Pods were scheduled on the different Nodes.""")]
 
-        for what in "Notebooks", "Test Pods":
-            header += [html.H1(what)]
-
-            header += [html.H2("Timeline")]
-            header += [Plot(f"Pod/Node timeline: {what}", args)]
-            header += [html.P(f"This plot shows the timeline of {what} mapping on the cluster's nodes, grouped by nodes. It can help understanding when the Pods started and finished their execution, as well as which users ran on the same node.")]
-
-            header += [Plot(f"Pod/Node timeline: {what}", set_config(dict(force_order_by_user_idx=True),
-                                                                         args))]
-            header += [html.P(f"This plot shows the timeline of {what} mapping on the cluster's nodes, ordered by user ID. It can help understanding when the Pods started and finished their execution, as well as which users ran on the same node.")]
-
-            header += [html.H2("Distribution")]
-            header += [Plot(f"Pod/Node distribution: {what}", args)]
-            header += [f"This plot shows the distribution of the {what} on the cluster's nodes. It provides the Node's name and machine-instance type."]
-
-            header += [html.H2("Performance")]
-            header += [Plot(f"Pod/Node performance index: {what}", args)]
-            header += [f"This plot shows the performance index of the {what} on the cluster's nodes."]
-
-            header += html.Br()
-            header += html.Br()
-
-        header += [html.H2("Test duration by test node")]
-        header += [Plot(f"Test nodes test duration", args)]
-        header += [f"This plot shows the duration of the user test on each of the test nodes. The duration should be more or less identical on all of them."]
+        header += [html.H2("Timeline")]
+        header += [Plot(f"Pod/Node timeline", args)]
+        header += [html.P(f"This plot shows the timeline of the user pod mapping on the cluster's nodes, grouped by user.")]
 
         return None, header
 
