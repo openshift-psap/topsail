@@ -106,12 +106,12 @@
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.desc"
   failed_when: false
 
-- name: Capture the definition of the pods
+- name: Capture the yaml definition of the pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
   shell:
-    oc get
+    oc get pod/{{ item }}
        -n {{ namespace }}
-       -oyaml pod/{{ item }}
+       -oyaml
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.yaml"
   failed_when: false
 
