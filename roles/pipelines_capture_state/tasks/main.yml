@@ -24,14 +24,14 @@
   shell:
     oc get all -lapp=ds-pipeline-{{ dspa_application_name }} -n "{{ namespace }}"
        > "{{ artifact_extra_logs_dir }}/all.status"
-  failed_when: false
+  ignore_errors: true
 
 - name: Get the status of the events
   shell:
     oc get events
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/events.status"
-  failed_when: false
+  ignore_errors: true
 
 - name: Get the json definition of the events
   shell:
@@ -42,32 +42,32 @@
 - name: Save the pipeline status
   shell:
     oc get pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.status"
-  failed_when: false
+  ignore_errors: true
 
 - name: Save the pipeline description
   shell:
     oc describe pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.desc"
-  failed_when: false
+  ignore_errors: true
 
 - name: Save the pipeline definition
   shell:
     oc get -oyaml pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
-  failed_when: false
+  ignore_errors: true
 
 - name: Save the taskrun status
   shell:
     oc get taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.status"
-  failed_when: false
+  ignore_errors: true
 
 - name: Save the taskrun description
   shell:
     oc describe taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.desc"
-  failed_when: false
+  ignore_errors: true
 
 - name: Save the taskrun definition
   shell:
     oc get -oyaml taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.yaml"
-  failed_when: false
+  ignore_errors: true
 
 - name: Save the status of the pods
   shell:
@@ -96,7 +96,7 @@
        -n {{ namespace }}
        --all-containers --prefix
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.log"
-  failed_when: false
+  ignore_errors: true
 
 - name: Capture the description of the application pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
@@ -104,7 +104,7 @@
     oc describe pod/{{ item }}
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.desc"
-  failed_when: false
+  ignore_errors: true
 
 - name: Capture the yaml definition of the pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
@@ -113,7 +113,7 @@
        -n {{ namespace }}
        -oyaml
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.yaml"
-  failed_when: false
+  ignore_errors: true
 
 - name: Capture the json definition of the pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
@@ -122,35 +122,35 @@
        -n {{ namespace }}
        -ojson
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.json"
-  failed_when: false
+  ignore_errors: true
 
 - name: Capture the DSP Application
   shell:
     oc get -oyaml dspa/{{ dspa_application_name }}
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/application.yaml"
-  failed_when: false
+  ignore_errors: true
 
 - name: Capture the Notebooks description
   shell:
     oc describe notebooks
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/notebooks.descr"
-  failed_when: false
+  ignore_errors: true
 
 - name: Get the status of the notebook resources
   shell:
     oc get notebooks
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/notebooks.status"
-  failed_when: false
+  ignore_errors: true
 
 - name: Get the definition of the notebook resources
   shell:
     oc get notebooks -oyaml
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/notebooks.yaml"
-  failed_when: false
+  ignore_errors: true
 
 - name: Get the json definition of the notebook resources
   shell:
