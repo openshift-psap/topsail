@@ -115,6 +115,15 @@
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.yaml"
   failed_when: false
 
+- name: Capture the json definition of the pods
+  loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
+  shell:
+    oc get pod/{{ item }}
+       -n {{ namespace }}
+       -ojson
+       > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.json"
+  failed_when: false
+
 - name: Capture the DSP Application
   shell:
     oc get -oyaml dspa/{{ dspa_application_name }}
