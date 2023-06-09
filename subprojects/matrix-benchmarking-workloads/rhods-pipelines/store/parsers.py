@@ -379,20 +379,21 @@ def _parse_pod_times(dirname):
         pod_times.append(pod_time)
 
         if pod["metadata"]["labels"].get("component") == "data-science-pipelines":
-            pod_name = pod["metadata"]["labels"]["app"]
+            pod_friendly_name = pod["metadata"]["labels"]["app"]
 
         elif pod["metadata"]["labels"].get("app.kubernetes.io/managed-by") == "tekton-pipelines":
-            pod_name = pod["metadata"]["labels"]["tekton.dev/pipelineTask"]
+            pod_friendly_name = pod["metadata"]["labels"]["tekton.dev/pipelineTask"]
 
         elif pod["metadata"].get("generateName"):
-            pod_name = pod["metadata"]["generateName"]\
+            pod_friendly_name = pod["metadata"]["generateName"]\
                 .replace("-"+pod["metadata"]["labels"]["pod-template-hash"]+"-", "")
 
         else:
             pod_name = pod["metadata"]["name"]
 
         pod_time.user_index = int(user_index)
-        pod_time.pod_name = pod_name
+        pod_time.pod_name = pod["metadata"]["name"]
+        pod_time.pod_friendly_name = pod_friendly_name
         pod_time.pod_namespace = pod["metadata"]["namespace"]
         pod_time.hostname = pod["spec"].get("nodeName")
 

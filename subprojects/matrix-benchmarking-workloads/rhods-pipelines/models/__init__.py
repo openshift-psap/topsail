@@ -77,6 +77,7 @@ class Metrics(matbench_models.ExclusiveModel):
 class PodTime(matbench_models.ExclusiveModel):
     user_index: int
     pod_name: str
+    pod_friendly_name: str
     pod_namespace: str
     hostname: Union[str, None] # missing if the Pod is still Pending
 
