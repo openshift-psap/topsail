@@ -34,12 +34,21 @@ ci_presets:
     tests.pipelines.sleep_factor: 1
 
   load_aware:
-    extends: [light_cluster]
+    extends: [light_cluster, pipeline_pi]
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
     tests.pipelines.user_count: 5
     clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/load-aware
     clusters.create.ocp.tags.TicketId: 115
+
+  pipeline_pi:
+    tests.pipelines.notebook_filename: kfp_pi.ipynb
+    tests.pipelines.notebook_directory: testing/pipelines/notebooks/pi
+
+  pipeline_hash:
+    tests.pipelines.notebook_filename: kfp_hash.ipynb
+    tests.pipelines.notebook_directory: testing/pipelines/notebooks/hash
+
 
 secrets:
   dir:
@@ -136,6 +145,8 @@ base_image:
     bucket_name: pipelines-scale-test-bucket
 tests:
   pipelines:
+    notebook_filename: kfp_hello_world.ipynb
+    notebook_directory: testing/pipelines/notebooks/hello-world
     user_count: 2
     sleep_factor: 1
     user_batch_size: 1

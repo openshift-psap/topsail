@@ -264,7 +264,7 @@
          -n "{{ notebook_namespace }}"
          | awk '{print $3}'
     register: pipelineruns_wait
-    retries: 60
+    retries: 120
     delay: 10
     until: ' pipelineruns_wait.stdout and "Running" not in pipelineruns_wait.stdout'
 
