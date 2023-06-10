@@ -31,5 +31,5 @@ API_ENDPOINT_CHECK=0 # 0 for yes, 1 for no
 MM_POD_COUNT=2
 
 # Plot
-export MATBENCH_WORKLOAD=rhods-notebooks-ux
+export MATBENCH_WORKLOAD=rhods-notebooks
 CURL_OPTIONS="--silent --location --fail --show-error --insecure"
