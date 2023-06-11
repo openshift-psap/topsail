@@ -94,7 +94,7 @@ local_ci run_multi:
   secret_name: "{{ secrets.dir.name }}"
   secret_env_key: "{{ secrets.dir.env_key }}"
 
-  ci_command: "pipelines scale_test run_one"
+  ci_command: "pipelines test run_one"
 
   retrieve_artifacts: true
   minio_bucket_name: "{{ base_image.minio.bucket_name }}"
