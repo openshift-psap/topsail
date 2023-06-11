@@ -14,7 +14,7 @@ source "$TESTING_UTILS_DIR/logging.sh"
 
 clusters_create__check_test_size() {
     if [[ "${OPENSHIFT_CI:-}" == true ]]; then
-        if [[ "$JOB_NAME_SAFE" != *-long ]]; then
+        if [[ "$JOB_NAME_SAFE" != *-long && "$JOB_NAME_SAFE" != long ]]; then
             # not running in a long test
 
             if [[ "$(get_config tests.notebooks.test_flavor)" == gating ]]; then
