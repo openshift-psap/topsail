@@ -138,6 +138,10 @@ def generate_visualization(idx):
         logging.warning("An error happened while generating the LTS payload ...")
         error = True
 
+    if run.run(f"matbench export_lts_schema --file {env.ARTIFACT_DIR}/lts_payload.schema.json |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts_schema.log", check=False).returncode != 0:
+        logging.warning("An error happened while generating the LTS payload schema...")
+        error = True
+
     if config.ci_artifacts.get_config("matbench.download.save_to_artifacts"):
         shutil.copytree(os.environ["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR)
 
