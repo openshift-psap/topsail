@@ -233,7 +233,7 @@ main() {
             sutest_cleanup_rhods
             return 0
             ;;
-        "cleanup_clusters_ci")
+        "cleanup_cluster_ci")
             connect_ci
 
             ;& # fallthrough
