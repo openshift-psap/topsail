@@ -44,7 +44,7 @@
          -n {{ pipelines_deploy_application_namespace }}
     register: deployments
     until: deployments.stdout | length > 0
-    retries: 6
+    retries: 30
     delay: 10
 
   - name: Wait for the deployments to be all available

@@ -83,6 +83,8 @@ clusters:
 
   sutest:
     is_metal: false
+    lab:
+      name: null
     compute:
       dedicated: true
       machineset:

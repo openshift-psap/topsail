@@ -3,6 +3,12 @@
 # kpouget: imported from
 # https://github.com/openshift/release/blob/8de7ecc42af9af62aa473b7f0468b07d92d5f74f/ci-operator/step-registry/gather/extra/gather-extra-commands.sh
 
+if [ "${PERFLAB_CI:-}" == true ]; then
+    LOG_FILE=$ARTIFACT_DIR/gather_extra.log
+    echo "Running in the PerfLab CI, mutting the gather-extra std output. See $LOG_FILE for details."
+    exec &> "$LOG_FILE"
+fi
+
 function queue() {
   local TARGET="${1}"
   shift
@@ -183,3 +189,11 @@ else
 fi
 
 wait
+
+echo "Extracting the gz files ..."
+
+if [ "${PERFLAB_CI:-}" == true ]; then
+    echo "Running in the PerfLab CI, extracting the gz files."
+
+   find "${ARTIFACT_DIR}" -name "*.gz" -exec gunzip {} \;
+fi
