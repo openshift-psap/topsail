@@ -189,3 +189,11 @@ else
 fi
 
 wait
+
+echo "Extracting the gz files ..."
+
+if [ "${PERFLAB_CI:-}" == true ]; then
+    echo "Running in the PerfLab CI, extracting the gz files."
+
+   find "${ARTIFACT_DIR}" -name "*.gz" -exec gunzip {} \;
+fi
