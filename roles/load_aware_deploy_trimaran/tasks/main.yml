@@ -34,3 +34,11 @@
       | jq -r '.spec.host')
 
     cat {{ trimaran_setup_config }} | envsubst | oc apply -f -
+
+- name: Ensure Trimaran is Running
+  shell:
+    oc get pods -n trimaran | awk 'NR > 1 {print $3}'
+  register: trimaran_running
+  delay: 3
+  retries: 20
+  until: "trimaran_running.stdout == 'Running'"

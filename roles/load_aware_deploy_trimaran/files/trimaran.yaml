@@ -5,11 +5,11 @@ metadata:
   name: trimaran
 ---
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
   name: trimaran-scheduler-config
   namespace: trimaran
-data:
+stringData:
   config.yaml: |
     apiVersion: kubescheduler.config.k8s.io/v1beta2
     kind: KubeSchedulerConfiguration
@@ -75,8 +75,8 @@ spec:
       serviceAccount: trimaran-scheduler
       volumes:
       - name: etckubernetes
-        configMap:
-          name: trimaran-scheduler-config
+        secret:
+          secretName: trimaran-scheduler-config
       containers:
         - name: trimaran-scheduler
           env:
