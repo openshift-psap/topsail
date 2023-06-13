@@ -134,13 +134,16 @@ def generate_visualization(idx):
 
     error = False
 
-    if run.run(f"matbench parse --output_lts {env.ARTIFACT_DIR}/lts_payload.json |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts.log", check=False).returncode != 0:
-        logging.warning("An error happened while generating the LTS payload ...")
-        error = True
+    if config.ci_artifacts.get_config("matbench.generate_lts", False):
+        if run.run(f"matbench parse --output_lts {env.ARTIFACT_DIR}/lts_payload.json |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts.log", check=False).returncode != 0:
+            logging.warning("An error happened while generating the LTS payload ...")
+            error = True
 
-    if run.run(f"matbench export_lts_schema --file {env.ARTIFACT_DIR}/lts_payload.schema.json |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts_schema.log", check=False).returncode != 0:
-        logging.warning("An error happened while generating the LTS payload schema...")
-        error = True
+        if run.run(f"matbench export_lts_schema --file {env.ARTIFACT_DIR}/lts_payload.schema.json |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts_schema.log", check=False).returncode != 0:
+            logging.warning("An error happened while generating the LTS payload schema...")
+            error = True
+    else:
+        logging.info("matbench.generate_lts not enabled, skipping LTS payload&schema generation.")
 
     if config.ci_artifacts.get_config("matbench.download.save_to_artifacts"):
         shutil.copytree(os.environ["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR)
