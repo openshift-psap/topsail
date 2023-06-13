@@ -48,12 +48,19 @@ create_cluster() {
     export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
     # ---
 
+    if [[ "${OPENSHIFT_CI:-}" == true ]]; then
+        local author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
+
+        if [[ -z "$author" ]]; then
+            _error "Couldn't figure out the test author from $JOB_SPEC ..."
+        fi
+    else
+        _error "Don't know how to find out the PR author outside of OpenShift CI ..."
+    fi
+
     local cluster_name="$(get_config clusters.create.name_prefix)"
     if test_config clusters.create.keep; then
-        local author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
         cluster_name="${author}-${cluster_role}-$(date +%Y%m%d-%Hh%M)"
-
-        export AWS_DEFAULT_PROFILE="${author}_ci-artifact"
     elif [[ "${PULL_NUMBER:-}" ]]; then
         cluster_name="${cluster_name}-pr${PULL_NUMBER}-${cluster_role}-${BUILD_ID}"
     else
@@ -114,7 +121,18 @@ create_cluster() {
         machine_tags=$((echo "$cluster_tags") | jq . --compact-output)
     fi
 
-    local
+    author_kerberos=$(cat OWNERS| yq ".cluster_create.$author" -r) # gh id -> RH kerb id
+    if [[ "$author_kerberos" == null ]]; then
+        _error "PR author '$author' not found in the OWNERS's file 'cluster_create' group."
+    fi
+
+    ticketId=$(echo "$machine_tags" | jq .TicketId)
+    if [[ "$ticketId" == null ]]; then
+        _error "clusters.create.ocp.tags.TicketId must be defined to create the cluster"
+    fi
+
+    machine_tags=$(echo "$machine_tags" | jq ". += {User: \"$author_kerberos\"}" --compact-output)
+
     # ensure that the cluster's 'metadata.json' is copied
     # to the CONFIG_DEST_DIR even in case of errors
     trap "save_install_artifacts error" ERR SIGTERM SIGINT
