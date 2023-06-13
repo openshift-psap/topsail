@@ -126,6 +126,11 @@ create_cluster() {
         _error "PR author '$author' not found in the OWNERS's file 'cluster_create' group."
     fi
 
+    ticketId=$(echo "$machine_tags" | jq .TicketId)
+    if [[ "$ticketId" == null ]]; then
+        _error "clusters.create.ocp.tags.TicketId must be defined to create the cluster"
+    fi
+
     machine_tags=$(echo "$machine_tags" | jq ". += {User: \"$author_kerberos\"}" --compact-output)
 
     # ensure that the cluster's 'metadata.json' is copied
