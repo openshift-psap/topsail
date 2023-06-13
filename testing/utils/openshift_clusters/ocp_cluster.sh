@@ -126,6 +126,8 @@ create_cluster() {
         _error "PR author '$author' not found in the OWNERS's file 'cluster_create' group."
     fi
 
+    machine_tags=$(echo "$machine_tags" | jq ". += {User: \"$author_kerberos\"}" --compact-output)
+
     # ensure that the cluster's 'metadata.json' is copied
     # to the CONFIG_DEST_DIR even in case of errors
     trap "save_install_artifacts error" ERR SIGTERM SIGINT
