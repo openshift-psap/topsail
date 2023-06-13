@@ -18,12 +18,12 @@ get_config() {
 }
 
 set_config() {
-    key=${1:-}
-    value=${2:-}
-
-    if [[ -z "$key" || -z "$value" ]]; then
-        _error "set_config key value are both mandatory"
+    if ! [[ -v 1 && -v 2 ]]; then
+        _error "set_config 'key' 'value' parameters are both mandatory"
     fi
+
+    key=${1}
+    value=${2}
 
     yq --yaml-roundtrip --in-place --argjson value "$(echo "$value" | yq)" ".$key = \$value" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
 
