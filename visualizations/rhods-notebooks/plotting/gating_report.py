@@ -8,11 +8,10 @@ import matrix_benchmarking.common as common
 from . import report
 
 def register():
-    GatingReport1()
-    GatingReport2()
-    GatingReport3()
+    GatingReportFunctionalSpawn()
+    GatingReportHealthCheck()
 
-class GatingReport1():
+class GatingReportFunctionalSpawn():
     def __init__(self):
         self.name = "gating report: Functional and Spawn Time"
         self.id_name = self.name.lower().replace(" ", "_")
@@ -43,7 +42,7 @@ class GatingReport1():
 
         return None, header
 
-class GatingReport3():
+class GatingReportHealthCheck():
     def __init__(self):
         self.name = "gating report: Health Check"
         self.id_name = self.name.lower().replace(" ", "_")
@@ -73,38 +72,6 @@ class GatingReport3():
         header += report.Plot_and_Text("Prom: RHODS Dashboard: CPU usage",
                                        report.set_config(dict(check_all_thresholds=True, show_lts=True), args))
         header += ["This plot shows the CPU usage of the Dashboard pods. Lower is better."]
-        header += html.Br()
-
-        return None, header
-
-class GatingReport2():
-    def __init__(self):
-        self.name = "gating report: Notebook Performance"
-        self.id_name = self.name.lower().replace(" ", "_")
-        self.no_graph = True
-        self.is_report = True
-
-        table_stats.TableStats._register_stat(self)
-
-    def do_plot(self, *args):
-        ordered_vars, settings, setting_lists, variables, cfg = args
-
-        header = []
-        header += [html.H2("Functional Test Results")]
-
-        for entry in common.Matrix.all_records(settings, setting_lists):
-            txt = f"results"
-            if entry.results.from_local_env.source_url:
-                txt = html.A(txt, target="_blank", href=entry.results.from_local_env.source_url)
-            if hasattr(entry.settings, "image"): 
-                header += [html.Ul(html.Li([f" {entry.settings.image} image: ", html.Ul(html.Li(txt))]))]
-
-        header += [html.H2("Gating Test Results (lower is better)")]
-
-        header += [html.H3("Python Performance")]
-        header += report.Plot_and_Text("Notebook Python Performance Comparison",
-                                       report.set_config(dict(check_all_thresholds=True), args))
-        header += ["This plot shows a Python compute performance indicator comparison. Lower is better."]
         header += html.Br()
 
         return None, header
