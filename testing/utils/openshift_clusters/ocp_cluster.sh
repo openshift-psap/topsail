@@ -48,9 +48,18 @@ create_cluster() {
     export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
     # ---
 
+    if [[ "${OPENSHIFT_CI:-}" == true ]]; then
+        local author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
+
+        if [[ -z "$author" ]]; then
+            _error "Couldn't figure out the test author from $JOB_SPEC ..."
+        fi
+    else
+        _error "Don't know how to find out the PR author outside of OpenShift CI ..."
+    fi
+
     local cluster_name="$(get_config clusters.create.name_prefix)"
     if test_config clusters.create.keep; then
-        local author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
         cluster_name="${author}-${cluster_role}-$(date +%Y%m%d-%Hh%M)"
     elif [[ "${PULL_NUMBER:-}" ]]; then
         cluster_name="${cluster_name}-pr${PULL_NUMBER}-${cluster_role}-${BUILD_ID}"
