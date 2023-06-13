@@ -121,6 +121,10 @@ create_cluster() {
         machine_tags=$((echo "$cluster_tags") | jq . --compact-output)
     fi
 
+    author_kerberos=$(cat OWNERS| yq ".cluster_create.$author" -r) # gh id -> RH kerb id
+    if [[ "$author_kerberos" == null ]]; then
+        _error "PR author '$author' not found in the OWNERS's file 'cluster_create' group."
+    fi
 
     # ensure that the cluster's 'metadata.json' is copied
     # to the CONFIG_DEST_DIR even in case of errors
