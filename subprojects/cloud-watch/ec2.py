@@ -99,7 +99,7 @@ def collect_instances(region=None):
             if tag["Value"] == "owned":
                 info["Cluster ID"] = tag["Key"].split("/")[-1]
                 continue
-            if tag["Key"] in ("Manager", "Duration", "User", "EstimatedCost", "UserCRO", "ApprovedManager", "Email"):
+            if tag["Key"] in ("Manager", "Duration", "EstimatedCost", "UserCRO", "ApprovedManager", "Email"):
                 continue
             cluster_tags[tag["Key"]] = tag["Value"]
 
