@@ -38,7 +38,7 @@
                -oyaml --dry-run=client \
                | oc apply -f-
     oc create secret generic addon-managed-odh-parameters -n redhat-ods-operator \
-               --from-literal=notification-email=not-an-email@local.host \
+               --from-literal=notification-email=not-an-email@local.com \
                -oyaml --dry-run=client \
                | oc apply -f-
     oc create secret generic redhat-rhods-smtp -n redhat-ods-monitoring \
