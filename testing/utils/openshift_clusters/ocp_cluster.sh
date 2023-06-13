@@ -114,7 +114,7 @@ create_cluster() {
         machine_tags=$((echo "$cluster_tags") | jq . --compact-output)
     fi
 
-    local
+
     # ensure that the cluster's 'metadata.json' is copied
     # to the CONFIG_DEST_DIR even in case of errors
     trap "save_install_artifacts error" ERR SIGTERM SIGINT
