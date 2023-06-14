@@ -102,8 +102,20 @@ class PodNodeMappingReport():
         header += [html.P("""The Distribution plots are useful to visualize how the Pods were scheduled on the different Nodes.""")]
 
         header += [html.H2("Timeline")]
-        header += [Plot(f"Pod/Node timeline", args)]
-        header += [html.P(f"This plot shows the timeline of the user pod mapping on the cluster's nodes, grouped by user.")]
+        header += [Plot(f"Pod/Node timeline", set_config({"pipeline_task_only": True}, args))]
+        header += [html.P(f"This plot shows the timeline of the user pod mapping on the cluster's nodes, grouped by user, for the Pods generated during the Pipeline execution")]
+
+        header += [Plot(f"Pod/Node timeline", set_config({"dspa_only": True}, args))]
+        header += [html.P(f"This plot shows the timeline of the user pod mapping on the cluster's nodes, grouped by user, for the Data Science Pipelines Application Pods")]
+
+
+        header += [html.H2("Pod lifespan duration")]
+
+        header += [Plot(f"Pod lifespan duration", set_config({"pipeline_task_only": True}, args))]
+        header += [html.P(f"This plot show the distribution of the Pod lifespan duration,for the Pods generated during the Pipeline execution")]
+
+        header += [Plot(f"Pod lifespan duration", set_config({"dspa_only": True}, args))]
+        header += [html.P(f"This plot show the distribution of the Pod lifespan duration,for the Data Science Pipelines Application Pods")]
 
         return None, header
 
