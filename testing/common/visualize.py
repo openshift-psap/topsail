@@ -129,7 +129,7 @@ def generate_visualization(idx):
     if (prom_cfg := pathlib.Path("/tmp/prometheus.yml")).exists():
         shutil.copyfile(prom_cfg, "./prometheus.yml")
 
-    if run.run(f"PATH=$PATH:/tmp/prometheus/bin matbench parse |& tee > {env.ARTIFACT_DIR}/_matbench_parse.log", check=False).returncode != 0:
+    if run.run(f"PATH=$PATH:/tmp/prometheus/bin matbench parse --output-matrix {env.ARTIFACT_DIR}/internal_matrix.json |& tee > {env.ARTIFACT_DIR}/_matbench_parse.log", check=False).returncode != 0:
         raise RuntimeError("Failed to parse the results ...")
 
     error = False

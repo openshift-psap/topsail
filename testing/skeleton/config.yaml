@@ -96,3 +96,4 @@ matbench:
   ignore_exit_code: true
   # directory to plot. Set by testing/common/visualize.py before launching the visualization
   test_directory: null
+  generate_lts: true

@@ -16,6 +16,9 @@ IMPORTANT_FILES = parsers.IMPORTANT_FILES
 PARSER_VERSION = parsers.PARSER_VERSION
 ARTIFACTS_VERSION = parsers.ARTIFACTS_VERSION
 
+from ..models import lts as models_lts
+
+store.register_lts_schema(models_lts.Payload)
 
 def is_mandatory_file(filename):
     return filename.name in ("settings", "exit_code", "config.yaml") or filename.name.startswith("settings.")
@@ -41,7 +44,7 @@ def is_cache_file(filename):
 def register_important_file(base_dirname, filename):
     if not is_important_file(filename):
         logging.warning(f"File '{filename}' not part of the important file list :/")
-        if filename.is_absolute():
+        if pathlib.Path(filename).is_absolute():
             logging.warning(f"File '{filename}' is an absolute path. Should be relative to {base_dirname}.")
     return base_dirname / filename
 

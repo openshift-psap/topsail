@@ -53,6 +53,7 @@ def _parse_once(results, dirname):
     results.cluster_info = _extract_cluster_info(results.nodes_info)
     results.sutest_ocp_version = _parse_ocp_version(dirname)
     results.metrics = _extract_metrics(dirname)
+    results.start_time, results.end_time = _parse_start_end_time(dirname)
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -198,3 +199,21 @@ def _extract_cluster_info(nodes_info):
                                 if node_info.sutest_cluster and node_info.infra]
 
     return cluster_info
+
+
+@ignore_file_not_found
+def _parse_start_end_time(dirname):
+    ANSIBLE_LOG_TIME_FMT = '%Y-%m-%d %H:%M:%S'
+    start_time = None
+    end_time = None
+    with open(register_important_file(dirname, "002__cluster__capture_environment/_ansible.log")) as f:
+        for line in f.readlines():
+            time_str = line.partition(",")[0] # ignore the MS
+            if start_time is None:
+                start_time = datetime.datetime.strptime(time_str, ANSIBLE_LOG_TIME_FMT)
+        if start_time is None:
+            raise ValueError("Ansible log file is empty :/")
+
+        end_time = datetime.datetime.strptime(time_str, ANSIBLE_LOG_TIME_FMT)
+
+    return start_time, end_time
