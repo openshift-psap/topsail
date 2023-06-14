@@ -41,7 +41,7 @@ def is_cache_file(filename):
 def register_important_file(base_dirname, filename):
     if not is_important_file(filename):
         logging.warning(f"File '{filename}' not part of the important file list :/")
-        if filename.is_absolute():
+        if pathlib.Path(filename).is_absolute():
             logging.warning(f"File '{filename}' is an absolute path. Should be relative to {base_dirname}.")
     return base_dirname / filename
 
