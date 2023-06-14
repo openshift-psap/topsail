@@ -151,6 +151,7 @@ ci_presets:
   notebook_performance:
     tests.notebooks.test_flavor: notebook-performance
     matbench.config_file: single_notebook_perf.yaml
+    matbench.workload: rhods-notebooks-performance
     tests.notebooks.notebook_performance.use_rhods: false
     tests.notebooks.users.count: 1
     clusters.sutest.compute.dedicated: true

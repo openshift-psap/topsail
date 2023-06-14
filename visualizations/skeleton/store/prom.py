@@ -6,8 +6,6 @@ import matrix_benchmarking.plotting.prom as plotting_prom
 import matrix_benchmarking.parsing.prom as parsing_prom
 import matrix_benchmarking.plotting.prom.cpu_memory as plotting_prom_cpu_memory
 
-from ..store import lts
-
 def _labels_to_string(labels, exclude=[]):
     values = []
     for k, vals in labels.items():
@@ -146,12 +144,6 @@ def _get_container_mem_cpu(cluster_role, register, label_sets):
 
         if not register: continue
 
-        if cluster_role == 'sutest':
-            for metric in cpu:
-                for key in metric.keys():
-                    if 'container=rhods-dashboard' in key:
-                        lts.register_lts_metric(cluster_role, metric)
-
         container = labels.get("container", "all")
 
         plotting_prom_cpu_memory.Plot(cpu, f"{plot_name}: CPU usage",
@@ -197,9 +189,6 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
     if register:
         for metric in all_metrics:
             name, rq = list(metric.items())[0]
-
-            if 'CPU idle' in name and cluster_role == 'sutest':
-                lts.register_lts_metric(cluster_role, metric)
 
             plotting_prom.Plot({name: rq},
                                f"Prom: {name}",
@@ -267,9 +256,6 @@ def _get_apiserver_errcodes(cluster_role, register):
 
         for metric in apiserver_request_metrics:
             name, rq = list(metric.items())[0]
-
-            if 'server errors' in name and cluster_role == 'sutest':
-                lts.register_lts_metric(cluster_role, metric)
 
             plotting_prom.Plot({name: rq},
                                f"Prom: {name}",

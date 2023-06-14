@@ -36,7 +36,7 @@ else
 fi
 
 get_matbench_config() {
-    CI_ARTIFACTS_FROM_CONFIG_FILE=$TESTING_NOTEBOOKS_DIR/../../visualizations/rhods-notebooks/data/$(get_config matbench.config_file) \
+    CI_ARTIFACTS_FROM_CONFIG_FILE=$TESTING_NOTEBOOKS_DIR/../../visualizations/$(get_config matbench.workload)/data/$(get_config matbench.config_file) \
         get_config "$@"
 }
 

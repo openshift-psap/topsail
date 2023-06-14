@@ -42,19 +42,16 @@ class PythonPerformance():
             if check_thresholds:
                 threshold_status_keys.add(entry_name)
 
-            threshold = float(entry.results.thresholds.get("py_perf_threshold", 0)) or None
+                threshold = float(entry.results.thresholds.get("py_perf_threshold", 0)) or None
+            else:
+                threshold = None
 
-            for user_idx, ods_ci in entry.results.ods_ci.items() if entry.results.ods_ci else []:
-                if not ods_ci.notebook_benchmark: continue
+            measures = entry.results.notebook_benchmark["measures"]
 
-                measures = ods_ci.notebook_benchmark["measures"]
-
-                for measure_idx, measure in enumerate(measures):
-                    data.append(dict(Test=entry_name,
-                                     Time=measure,
-                                     Threshold=threshold))
-
-
+            for measure_idx, measure in enumerate(measures):
+                data.append(dict(Test=entry_name,
+                                 Time=measure,
+                                 Threshold=threshold))
 
 
         if not data:

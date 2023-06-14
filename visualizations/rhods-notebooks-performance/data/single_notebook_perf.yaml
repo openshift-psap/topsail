@@ -1,4 +1,4 @@
 visualize:
 - id: single_notebook_perf
   generate:
-  - "Notebook Python Performance Comparison"
+  - "gating report: Notebook Performance"
