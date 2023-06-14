@@ -16,6 +16,9 @@ IMPORTANT_FILES = parsers.IMPORTANT_FILES
 PARSER_VERSION = parsers.PARSER_VERSION
 ARTIFACTS_VERSION = parsers.ARTIFACTS_VERSION
 
+from ..models import lts as models_lts
+
+store.register_lts_schema(models_lts.Payload)
 
 def is_mandatory_file(filename):
     return filename.name in ("settings", "exit_code", "config.yaml") or filename.name.startswith("settings.")
