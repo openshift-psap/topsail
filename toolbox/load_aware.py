@@ -19,3 +19,15 @@ class LoadAware:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("load_aware_undeploy_trimaran")
+    @AnsibleMappedParams
+    def undeploy_trimaran(self):
+        """
+        Role to undeploy the Trimaran load aware scheduler
+        
+        Args:
+            None
+        """
+
+        return RunAnsibleRole(locals())

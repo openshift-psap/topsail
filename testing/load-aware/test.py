@@ -133,7 +133,7 @@ def cleanup_cluster():
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running on bare-metal environments.
     logging.info("Cleaning up cluster and uninstall pipelines")
-
+    run.run("./run_toolbox.py load_aware undeploy_trimaran")
     uninstall_ocp_pipelines()
 
 
