@@ -73,7 +73,7 @@ class Config:
                     self.apply_preset(extend_name)
                 continue
 
-            msg = f"preset[{name}] --> {value}"
+            msg = f"preset[{name}] {key} --> {value}"
             logging.info(msg)
             with open(env.ARTIFACT_DIR / "presets_applied", "a") as f:
                 print(msg, file=f)
