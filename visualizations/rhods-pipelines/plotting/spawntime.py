@@ -13,6 +13,7 @@ import matrix_benchmarking.common as common
 def register():
     SpawnTime("User Execution Time")
     RunTimeDistribution("Median runtime timeline")
+    ResourceCreationDelay()
 
 def add_progress(entry, hide_failed_users, only_prefix=[], remove_prefix=True):
     data = []
@@ -197,3 +198,72 @@ class RunTimeDistribution():
         fig.update_layout(yaxis_title="", title_x=0.5,)
 
         return fig, msg
+
+
+class ResourceCreationDelay():
+    def __init__(self):
+        self.name = "Resource Creation Delay"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
+        if expe_cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            pass # entry is set
+
+        mapping = {
+            "DataSciencePipelinesApplication/sample": {
+                "Deployment": ["ds-pipeline-persistenceagent-sample", "ds-pipeline-sample", "ds-pipeline-scheduledworkflow-sample", "ds-pipeline-ui-sample", "mariadb-sample"],
+            },
+        }
+
+        data = []
+        for user_idx, user_data in entry.results.user_data.items():
+            for base_name, dependencies in mapping.items():
+
+                try:
+                    base_time = user_data.resource_times[base_name]
+                except KeyError: continue
+
+                for dep_kind, dep_names in dependencies.items():
+                    for dep_name in dep_names:
+                        try: dep_time = user_data.resource_times[f"{dep_kind}/{dep_name}"]
+                        except KeyError: continue
+
+                        duration = (dep_time - base_time).total_seconds()
+
+                        data.append({
+                            "Base": base_name,
+                            "Mapping Name": f"{base_name} -> {dep_kind}/{dep_name}",
+                            "Duration": duration,
+                            "User Index": user_idx,
+                            "User Name": f"User #{user_idx:03d}",
+                        })
+
+
+        if not data:
+            return None, "No data available"
+
+        df = pd.DataFrame(data).sort_values(by=["User Index", "Base"], ascending=True)
+
+        fig = px.line(df, x="Duration", y="User Name", color="Mapping Name", title="Resource creation duration")
+
+        fig.update_layout(xaxis_title="Resource creation duration, in seconds")
+        fig.update_layout(yaxis_title="User index")
+        fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
+        fig.update_xaxes(range=[0, df["Duration"].max()*1.1])
+
+        title = "Duration of the Resource Creation"
+
+        fig.update_layout(title=title, title_x=0.5,)
+
+        return fig, ""
