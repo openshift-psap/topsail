@@ -70,7 +70,7 @@ def _parse_once(results, dirname):
         else:
             logging.warning(f"Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
-    results.user_count = results.test_config.get("tests.pipelines.user_count")
+    results.user_count = int(results.test_config.get("tests.pipelines.user_count"))
     results.nodes_info = _parse_nodes_info(dirname) or {}
     results.rhods_cluster_info = _extract_rhods_cluster_info(results.nodes_info)
     results.sutest_ocp_version = _parse_ocp_version(dirname)
