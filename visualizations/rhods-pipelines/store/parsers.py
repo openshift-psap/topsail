@@ -473,7 +473,6 @@ def _parse_resource_times(dirname, ci_pod_dir):
                 name = generate_name # remove generated suffix
 
             all_resource_times[f"{kind}/{name}"] = creationTimestamp
-            print(f"{kind}/{name} => {creationTimestamp}")
 
     parse("applications.json")
     parse("deployments.json")
