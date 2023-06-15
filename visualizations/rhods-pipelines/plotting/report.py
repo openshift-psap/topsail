@@ -154,6 +154,15 @@ class UserExecutionOverviewReport():
                    "This range includes 50% of the users. ", html.Br(),
                    "Only the users who succeeded the step are included in the computation.", html.Br()]
 
+        header += [html.H2("Resource Creation timeline")]
+        header += [Plot(f"Resource Creation Timeline", args)]
+        header += ["This plot shows the timeline of the resources creation."]
+
+        header += [html.H2("Resource Creation Delay")]
+        header += [Plot(f"Resource Creation Delay", args)]
+        header += ["This plot shows the delay of the resources creation: the line 'A -> B' in the legend show the delay between the creation of resource A and the creation of the resource B. Lower is better."]
+
+
         return None, header
 
 
