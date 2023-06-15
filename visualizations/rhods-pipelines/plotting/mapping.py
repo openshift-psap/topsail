@@ -84,8 +84,6 @@ class MappingTimeline():
                                             dspa_only=cfg__dspa_only, pipeline_task_only=cfg__pipeline_task_only))
 
         if df.empty:
-            import pdb;pdb.set_trace()
-
             return None, "Not data available ..."
 
         df = df.sort_values(by=["PodStart"])
