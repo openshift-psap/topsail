@@ -441,7 +441,7 @@ def _parse_pod_times(dirname):
                 if (dirname/filename).stat().st_size == 0:
                     logging.warning(f"File '{filename}' is empty")
                     continue
-                logging.error("Couldn't parse file '{filename}': {e}")
+                logging.error(f"Couldn't parse file '{filename}': {e}")
                 continue
 
     return pod_times
