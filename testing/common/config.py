@@ -73,7 +73,7 @@ class Config:
                     self.apply_preset(extend_name)
                 continue
 
-            msg = f"preset[{name}] --> {value}"
+            msg = f"preset[{name}] {key} --> {value}"
             logging.info(msg)
             with open(env.ARTIFACT_DIR / "presets_applied", "a") as f:
                 print(msg, file=f)
@@ -123,7 +123,7 @@ class Config:
             if not config_key.startswith(PR_ARG_KEY): continue
             if config_key == f"{PR_ARG_KEY}0": continue
 
-            for preset in self.get_config(config_key).split(" "):
+            for preset in self.get_config(config_key).strip().split(" "):
                 self.apply_preset(preset)
 
     def detect_apply_light_profile(self, profile, name_suffix="light"):

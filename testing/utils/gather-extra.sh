@@ -112,6 +112,8 @@ queue ${ARTIFACT_DIR}/oc_cmds/packagemanifests $OC get packagemanifests --all-na
 
 # gather nodes first in parallel since they may contain the most relevant debugging info
 while IFS= read -r i; do
+  echo "WARNING: gathering of NODES journals/audit disabled (harcoded)"
+  continue
   mkdir -p ${ARTIFACT_DIR}/nodes/$i
   queue ${ARTIFACT_DIR}/nodes/$i/heap oc --insecure-skip-tls-verify get --request-timeout=20s --raw /api/v1/nodes/$i/proxy/debug/pprof/heap
   FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/journal.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false
@@ -128,6 +130,9 @@ done < /tmp/control_plan_nodes
 echo "INFO: gathering the audit logs for each master"
 paths=(openshift-apiserver kube-apiserver oauth-apiserver etcd)
 for path in "${paths[@]}" ; do
+  echo "WARNING: gathering the audit logs '$path' disabled (hardcoded)"
+  continue
+
   output_dir="${ARTIFACT_DIR}/audit_logs/$path"
   mkdir -p "$output_dir"
 

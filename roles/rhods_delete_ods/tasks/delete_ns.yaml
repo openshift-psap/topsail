@@ -1,4 +1,10 @@
 ---
+- name: Check if the cluster knows the KFDef crd
+  command:
+    oc get kfdef -n default
+  failed_when: false
+  register: has_kfdef_cmd
+
 - name: Patch the kfdef to remove the finalizers
   shell: |
     set -o pipefail;
@@ -10,11 +16,12 @@
          --type json \
          --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]'
     fi
-
+  when: has_kfdef_cmd.rc == 0
 
 - name: Delete the kfdef of the namespace
   command:
     oc delete kfdef --all -n {{ item }}
+  when: has_kfdef_cmd.rc == 0
 
 - name: Delete the operand namespace (blocking operation)
   command:

@@ -430,6 +430,13 @@ def _parse_pod_times(dirname):
 
     for filename in filenames:
         with open(register_important_file(dirname, filename)) as f:
-            _parse_pod_times_file(filename, json.load(f))
+            try:
+                _parse_pod_times_file(filename, json.load(f))
+            except Exception as e:
+                if (dirname/filename).stat().st_size == 0:
+                    logging.warning(f"File '{filename}' is empty")
+                    continue
+                logging.error("Couldn't parse file '{filename}': {e}")
+                continue
 
     return pod_times
