@@ -8,3 +8,13 @@
 
 cluster capture_environment/sample:
   _none: true # nothing to configure :/
+
+load_aware deploy_trimaran:
+  log_levl: {{ load_aware.log_levl }}
+  plugin: {{ load_aware.plugin }}
+  default_requests_cpu: {{ load_aware.default_requests_cpu }}
+  default_target_request_multiplier: {{ default_target_request_multiplier }}
+  target_utilization: {{ load_aware.target_utilization }}
+  safe_variance_margin: {{ load_aware.safe_variance_margin }}
+  safe_variance_sensitivity: {{ load_aware.safe_variance_sensitivity }}
+

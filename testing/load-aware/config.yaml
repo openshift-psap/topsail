@@ -26,6 +26,12 @@ ci_presets:
     clusters.sutest.is_metal: false
     clusters.driver.is_metal: false
 
+  target_load_packing:
+    load_aware.plugin: "TargetLoadPacking"
+  
+  load_variation_risk_balancing:
+    load_aware.plugin: "LoadVariationRiskBalancing"
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -96,3 +102,11 @@ matbench:
   ignore_exit_code: true
   # directory to plot. Set by testing/common/visualize.py before launching the visualization
   test_directory: null
+load_aware:
+  log_level: null
+  plugin: null
+  default_requests_cpu: null
+  default_target_request_multiplier: null
+  target_utilization: null
+  safe_variance_margin: null
+  safe_variance_sensitivity: null
