@@ -13,6 +13,7 @@ import matrix_benchmarking.common as common
 def register():
     SpawnTime("User Execution Time")
     RunTimeDistribution("Median runtime timeline")
+    ResourceCreationTimeline()
     ResourceCreationDelay()
 
 def add_progress(entry, hide_failed_users, only_prefix=[], remove_prefix=True):
@@ -198,6 +199,54 @@ class RunTimeDistribution():
         fig.update_layout(yaxis_title="", title_x=0.5,)
 
         return fig, msg
+
+class ResourceCreationTimeline():
+    def __init__(self):
+        self.name = "Resource Creation Timeline"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
+        if expe_cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            pass # entry is set
+
+        data = []
+        for user_idx, user_data in entry.results.user_data.items():
+            for resource_name, creation_time in user_data.resource_times.items():
+
+                data.append({
+                        "User Index": user_idx,
+                        "User Name": f"User #{user_idx:03d}",
+                        "Resource": resource_name,
+                        "Create Time": creation_time,
+                    })
+
+        if not data:
+            return None, "No data available"
+
+        df = pd.DataFrame(data).sort_values(by=["User Index", "Resource"], ascending=True)
+
+        fig = px.line(df, x="Create Time", y="User Name", color="Resource", title="Resource creation time")
+
+        fig.update_layout(xaxis_title="Timeline (in seconds)")
+        fig.update_layout(yaxis_title="")
+        fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
+
+        title = "Resources Creation Timeline"
+
+        fig.update_layout(title=title, title_x=0.5,)
+
+        return fig, ""
 
 
 class ResourceCreationDelay():
