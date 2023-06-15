@@ -54,6 +54,11 @@
     oc get -oyaml pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
   ignore_errors: true
 
+- name: Save the pipeline JSON definition
+  shell:
+    oc get -ojson pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.json"
+  ignore_errors: true
+
 - name: Save the taskrun status
   shell:
     oc get taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.status"
@@ -67,6 +72,11 @@
 - name: Save the taskrun definition
   shell:
     oc get -oyaml taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.yaml"
+  ignore_errors: true
+
+- name: Save the taskrun json definition
+  shell:
+    oc get -ojson taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.json"
   ignore_errors: true
 
 - name: Save the deployments definition
