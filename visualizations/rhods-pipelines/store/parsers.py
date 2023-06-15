@@ -33,6 +33,9 @@ IMPORTANT_FILES = [
     "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/*/_ansible.log",
     "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/004__pipelines__capture_state/pods/*.json",
 
+    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/applications.json",
+    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/deployments.json",
+
     "001__rhods__capture_state/nodes.json",
     "001__rhods__capture_state/ocp_version.yml",
     "001__rhods__capture_state/rhods.version",
@@ -302,6 +305,8 @@ def _parse_user_data(dirname, user_count):
         data.progress = _parse_user_progress(dirname, ci_pod_dirname)
         data.progress |= _parse_user_ansible_progress(dirname, ci_pod_dirname)
 
+        data.resource_times = _parse_resource_times(dirname, ci_pod_dirname)
+
     return user_data
 
 @ignore_file_not_found
@@ -440,3 +445,37 @@ def _parse_pod_times(dirname):
                 continue
 
     return pod_times
+
+
+def _parse_resource_times(dirname, ci_pod_dir):
+    all_resource_times = {}
+
+    @ignore_file_not_found
+    def parse(fname):
+        print(f"Parsing {fname} ...")
+        file_path = (ci_pod_dir / "004__pipelines__capture_state" / fname).resolve().relative_to(dirname)
+
+        with open(register_important_file(dirname, file_path)) as f:
+            data = yaml.safe_load(f)
+
+        for item in data["items"]:
+            metadata = item["metadata"]
+
+            kind = item["kind"]
+            creationTimestamp = datetime.datetime.strptime(
+                metadata["creationTimestamp"], K8S_TIME_FMT)
+
+            name = metadata["name"]
+            generate_name, found, suffix = name.rpartition("-")
+            remove_suffix = ((found and not suffix.isalpha()))
+
+            if remove_suffix:
+                name = generate_name # remove generated suffix
+
+            all_resource_times[f"{kind}/{name}"] = creationTimestamp
+            print(f"{kind}/{name} => {creationTimestamp}")
+
+    parse("applications.json")
+    parse("deployments.json")
+
+    return dict(all_resource_times)
