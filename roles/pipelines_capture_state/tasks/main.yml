@@ -69,6 +69,10 @@
     oc get -oyaml taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.yaml"
   ignore_errors: true
 
+- name: Save the deployments definition
+  shell:
+    oc get -ojson deployments -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/deployments.json"
+
 - name: Save the status of the pods
   shell:
     oc get pods -owide
@@ -131,6 +135,13 @@
        > "{{ artifact_extra_logs_dir }}/application.yaml"
   ignore_errors: true
 
+- name: Capture the DSP Applications
+  shell:
+    oc get -ojson dspa
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/applications.json"
+  ignore_errors: true
+
 - name: Capture the Notebooks description
   shell:
     oc describe notebooks
@@ -150,6 +161,13 @@
     oc get notebooks -oyaml
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/notebooks.yaml"
+  ignore_errors: true
+
+- name: Get the json definition of the notebook resources
+  shell:
+    oc get notebooks -ojson
+       -n {{ namespace }}
+       > "{{ artifact_extra_logs_dir }}/notebooks.json"
   ignore_errors: true
 
 - name: Get the json definition of the notebook resources
