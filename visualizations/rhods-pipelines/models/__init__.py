@@ -55,7 +55,7 @@ class UserDataEntry(matbench_models.ExclusiveModel, metaclass=matbench_models.Al
     artifact_dir: pathlib.Path
     exit_code: int
     progress: Dict[str, datetime.datetime]
-
+    resource_times: Dict[str, datetime.datetime]
 
 class TesterJob(matbench_models.ExclusiveModel, metaclass=matbench_models.AllOptional):
     creation_time: datetime.datetime
@@ -104,6 +104,7 @@ class ParsedResultsModel(matbench_models.ExclusiveModel, metaclass=matbench_mode
     metrics: Metrics
     test_config: Any
     pod_times: List[PodTime]
+
 
 ParsedResultsModel.update_forward_refs()
 TesterJob.update_forward_refs()
