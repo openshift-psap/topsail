@@ -37,6 +37,11 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
         else:
             finish = entry.results.tester_job.completion_time
 
+        try:
+            hostname_index = hostnames_index(hostname)
+        except ValueError:
+            hostname_index = -1
+
         user_index = f"User #{user_idx:02d}"
         data.append(dict(
             UserIndex = user_index,
@@ -46,8 +51,8 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
             PodStart = pod_time.start_time,
             PodFinish = finish,
             Duration = (finish - pod_time.start_time).total_seconds(),
-            NodeIndex = f"Node {hostnames_index(hostname)}",
-            NodeName = f"Node {hostnames_index(hostname)}<br>{shortname}",
+            NodeIndex = f"Node {hostname_index}",
+            NodeName = f"Node {hostname_index}<br>{shortname}",
             Count=1,
         ))
 
@@ -79,8 +84,6 @@ class MappingTimeline():
                                             dspa_only=cfg__dspa_only, pipeline_task_only=cfg__pipeline_task_only))
 
         if df.empty:
-            import pdb;pdb.set_trace()
-
             return None, "Not data available ..."
 
         df = df.sort_values(by=["PodStart"])

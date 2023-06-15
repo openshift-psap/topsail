@@ -246,7 +246,7 @@ class NotebookResourceCreationTimeline():
         fig.update_layout(yaxis_title="")
         fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
 
-        title = "Execution Time of the User Steps"
+        title = "Resources Creation Timeline"
 
         fig.update_layout(title=title, title_x=0.5,)
 
@@ -316,8 +316,8 @@ class NotebookResourceCreationDelay():
 
         fig = px.line(df, x="Duration", y="User Name", color="Name", title="Resource creation duration")
 
-        fig.update_layout(xaxis_title="User index")
-        fig.update_layout(yaxis_title="Resource creation duration, in seconds")
+        fig.update_layout(xaxis_title="Resource creation duration, in seconds")
+        fig.update_layout(yaxis_title="User index")
         fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
 
         title = "Duration of the Notebook Resource Creation"
