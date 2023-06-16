@@ -220,9 +220,29 @@ class ResourceCreationTimeline():
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass # entry is set
 
+        cfg__dspa_only = cfg.get("dspa_only", False)
+        cfg__pipeline_task_only = cfg.get("pipeline_task_only", False)
+
         data = []
         for user_idx, user_data in entry.results.user_data.items():
+
+            for pod_time in user_data.pod_times:
+                if cfg__dspa_only:
+                    continue
+
+                if not pod_time.is_pipeline_task:
+                    continue
+
+                data.append({
+                        "User Index": user_idx,
+                        "User Name": f"User #{user_idx:03d}",
+                        "Resource": f"Pod/{pod_time.pod_friendly_name}",
+                        "Create Time": pod_time.creation_time,
+                    })
+
             for resource_name, creation_time in user_data.resource_times.items():
+                if cfg__pipeline_task_only:
+                    continue
 
                 data.append({
                         "User Index": user_idx,
@@ -242,7 +262,13 @@ class ResourceCreationTimeline():
         fig.update_layout(yaxis_title="")
         fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
 
-        title = "Resources Creation Timeline"
+        what = ""
+        if cfg__dspa_only:
+            what = "DSPApplication "
+        if cfg__pipeline_task_only:
+            what = "Pipelines "
+
+        title = f"{what}Resources Creation Timeline"
 
         fig.update_layout(title=title, title_x=0.5,)
 
@@ -269,6 +295,9 @@ class ResourceCreationDelay():
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass # entry is set
 
+        cfg__dspa_only = cfg.get("dspa_only", False)
+        cfg__pipeline_task_only = cfg.get("pipeline_task_only", False)
+
         mapping = {
             "DataSciencePipelinesApplication/sample": {
                 "Deployment": ["ds-pipeline-persistenceagent-sample", "ds-pipeline-sample", "ds-pipeline-scheduledworkflow-sample", "ds-pipeline-ui-sample", "mariadb-sample"],
@@ -277,7 +306,10 @@ class ResourceCreationDelay():
 
         data = []
         for user_idx, user_data in entry.results.user_data.items():
+
             for base_name, dependencies in mapping.items():
+                if cfg__pipeline_task_only:
+                    continue
 
                 try:
                     base_time = user_data.resource_times[base_name]
@@ -298,6 +330,29 @@ class ResourceCreationDelay():
                             "User Name": f"User #{user_idx:03d}",
                         })
 
+            for pipelinerun_name in [k for k in user_data.resource_times.keys() if k.startswith("PipelineRun/")]:
+                if cfg__dspa_only:
+                    continue
+
+                base_name = pipelinerun_name
+                base_time = user_data.resource_times[base_name]
+
+                for pod_time in user_data.pod_times:
+                    if not pod_time.is_pipeline_task: continue
+
+                    dep_kind = "Pod"
+                    dep_name = pod_time.pod_friendly_name
+                    dep_time = pod_time.creation_time
+
+                    duration = (dep_time - base_time).total_seconds()
+
+                    data.append({
+                        "Base": base_name,
+                        "Mapping Name": f"{base_name} -> {dep_kind}/{dep_name}",
+                        "Duration": duration,
+                        "User Index": user_idx,
+                        "User Name": f"User #{user_idx:03d}",
+                    })
 
         if not data:
             return None, "No data available"
@@ -311,7 +366,12 @@ class ResourceCreationDelay():
         fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
         fig.update_xaxes(range=[0, df["Duration"].max()*1.1])
 
-        title = "Duration of the Resource Creation"
+        what = ""
+        if cfg__dspa_only:
+            what = "DSPApplication "
+        if cfg__pipeline_task_only:
+            what = "Pipelines "
+        title = f"Duration of the {what}Resource Creation"
 
         fig.update_layout(title=title, title_x=0.5,)
 
