@@ -20,41 +20,40 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
 
     hostnames_index = list(entry.results.nodes_info.keys()).index
 
-    for pod_time in entry.results.pod_times:
-        if dspa_only and not pod_time.is_dspa:
-            continue
-        if pipeline_task_only and not pod_time.is_pipeline_task:
-            continue
+    for user_idx, user_data in entry.results.user_data.items():
+        for pod_time in user_data.pod_times:
+            if dspa_only and not pod_time.is_dspa:
+                continue
+            if pipeline_task_only and not pod_time.is_pipeline_task:
+                continue
 
-        user_idx = pod_time.user_index
+            pod_name = pod_time.pod_friendly_name
+            hostname = pod_time.hostname
 
-        pod_name = pod_time.pod_friendly_name
-        hostname = pod_time.hostname
+            shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "").replace(".ec2.internal", "")
+            if pod_time.container_finished:
+                finish = pod_time.container_finished
+            else:
+                finish = entry.results.tester_job.completion_time
 
-        shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "").replace(".ec2.internal", "")
-        if pod_time.container_finished:
-            finish = pod_time.container_finished
-        else:
-            finish = entry.results.tester_job.completion_time
+            try:
+                hostname_index = hostnames_index(hostname)
+            except ValueError:
+                hostname_index = -1
 
-        try:
-            hostname_index = hostnames_index(hostname)
-        except ValueError:
-            hostname_index = -1
-
-        user_index = f"User #{user_idx:02d}"
-        data.append(dict(
-            UserIndex = user_index,
-            PodOwner = f"{pod_name} -- {user_index}",
-            PodName = pod_name,
-            UserIdx = user_idx,
-            PodStart = pod_time.start_time,
-            PodFinish = finish,
-            Duration = (finish - pod_time.start_time).total_seconds(),
-            NodeIndex = f"Node {hostname_index}",
-            NodeName = f"Node {hostname_index}<br>{shortname}",
-            Count=1,
-        ))
+            user_index = f"User #{user_idx:02d}"
+            data.append(dict(
+                UserIndex = user_index,
+                PodOwner = f"{pod_name} -- {user_index}",
+                PodName = pod_name,
+                UserIdx = user_idx,
+                PodStart = pod_time.start_time,
+                PodFinish = finish,
+                Duration = (finish - pod_time.start_time).total_seconds(),
+                NodeIndex = f"Node {hostname_index}",
+                NodeName = f"Node {hostname_index}<br>{shortname}",
+                Count=1,
+            ))
 
     return data
 

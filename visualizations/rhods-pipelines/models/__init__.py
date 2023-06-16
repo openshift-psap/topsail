@@ -51,11 +51,29 @@ class RhodsInfo(matbench_models.ExclusiveModel, metaclass=matbench_models.AllOpt
     createdAt: datetime.datetime
     full_version: str
 
+
+class PodTime(matbench_models.ExclusiveModel, metaclass=matbench_models.AllOptional):
+    pod_name: str
+    pod_friendly_name: str
+    pod_namespace: str
+    hostname: Union[str, None] # missing if the Pod is still Pending
+
+    start_time: Union[datetime.datetime, None] # missing if the Pod is still Pending
+    containers_ready: Union[datetime.datetime, None]
+    pod_initialized: Union[datetime.datetime, None]
+    pod_scheduled: Union[datetime.datetime, None]
+    container_finished: Union[datetime.datetime, None] # missing if the Pod is still Running
+
+    is_dspa: bool = Field(default_factory=lambda: False)
+    is_pipeline_task: bool = Field(default_factory=lambda: False)
+
+
 class UserDataEntry(matbench_models.ExclusiveModel, metaclass=matbench_models.AllOptional):
     artifact_dir: pathlib.Path
     exit_code: int
     progress: Dict[str, datetime.datetime]
     resource_times: Dict[str, datetime.datetime]
+    pod_times: List[PodTime]
 
 class TesterJob(matbench_models.ExclusiveModel, metaclass=matbench_models.AllOptional):
     creation_time: datetime.datetime
@@ -73,22 +91,6 @@ class Metrics(matbench_models.ExclusiveModel, metaclass=matbench_models.AllOptio
     driver: matbench_models.PrometheusNamedMetricValues
 
 
-class PodTime(matbench_models.ExclusiveModel, metaclass=matbench_models.AllOptional):
-    user_index: int
-    pod_name: str
-    pod_friendly_name: str
-    pod_namespace: str
-    hostname: Union[str, None] # missing if the Pod is still Pending
-
-    start_time: Union[datetime.datetime, None] # missing if the Pod is still Pending
-    containers_ready: Union[datetime.datetime, None]
-    pod_initialized: Union[datetime.datetime, None]
-    pod_scheduled: Union[datetime.datetime, None]
-    container_finished: Union[datetime.datetime, None] # missing if the Pod is still Running
-
-    is_dspa: bool = Field(default_factory=lambda: False)
-    is_pipeline_task: bool = Field(default_factory=lambda: False)
-
 class ParsedResultsModel(matbench_models.ExclusiveModel, metaclass=matbench_models.AllOptional):
     parser_version: str
     artifacts_version: str
@@ -103,7 +105,6 @@ class ParsedResultsModel(matbench_models.ExclusiveModel, metaclass=matbench_mode
     tester_job: TesterJob
     metrics: Metrics
     test_config: Any
-    pod_times: List[PodTime]
 
 
 ParsedResultsModel.update_forward_refs()

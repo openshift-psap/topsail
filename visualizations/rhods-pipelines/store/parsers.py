@@ -79,7 +79,6 @@ def _parse_once(results, dirname):
     results.user_data = _parse_user_data(dirname, results.user_count)
     results.tester_job = _parse_tester_job(dirname)
     results.metrics = _extract_metrics(dirname)
-    results.pod_times = _parse_pod_times(dirname)
 
 
 def _parse_local_env(dirname):
@@ -306,6 +305,7 @@ def _parse_user_data(dirname, user_count):
         data.progress |= _parse_user_ansible_progress(dirname, ci_pod_dirname)
 
         data.resource_times = _parse_resource_times(dirname, ci_pod_dirname)
+        data.pod_times = _parse_pod_times(dirname, ci_pod_dirname)
 
     return user_data
 
@@ -370,16 +370,13 @@ def _parse_artifacts_version(dirname):
 
 
 @ignore_file_not_found
-def _parse_pod_times(dirname):
+def _parse_pod_times(dirname, ci_pod_dir):
     filenames = [fname.relative_to(dirname) for fname in
-                 (dirname / pathlib.Path("000__local_ci__run_multi/ci-pods_artifacts")
-                  ).glob("ci-pod-*/00*__pipelines__capture_state/pods/*.json")]
+                 ci_pod_dir.glob("00*__pipelines__capture_state/pods/*.json")]
 
     pod_times = []
 
     def _parse_pod_times_file(filename, pod):
-        user_index = int(filename.parents[2].name.split("-")[-1])
-
         pod_time = types.SimpleNamespace()
         pod_times.append(pod_time)
 
@@ -393,14 +390,14 @@ def _parse_pod_times(dirname):
 
         elif pod["metadata"].get("generateName"):
             pod_friendly_name = pod["metadata"]["generateName"]\
-                .replace("-"+pod["metadata"]["labels"]["pod-template-hash"]+"-", "")
+                .replace("-"+pod["metadata"]["labels"].get("pod-template-hash", "")+"-", "")\
+                .strip("-")
 
             if pod_friendly_name == "minio-deployment":
                 pod_time.is_dspa = True
         else:
             pod_name = pod["metadata"]["name"]
 
-        pod_time.user_index = int(user_index)
         pod_time.pod_name = pod["metadata"]["name"]
         pod_time.pod_friendly_name = pod_friendly_name
         pod_time.pod_namespace = pod["metadata"]["namespace"]
