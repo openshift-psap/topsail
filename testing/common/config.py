@@ -35,6 +35,9 @@ class Config:
 
         with open(variable_overrides_path) as f:
             for line in f.readlines():
+                if not line.strip():
+                    continue
+
                 key, found, _value = line.strip().partition("=")
                 if not found:
                     logging.warning(f"apply_config_overrides: Invalid line: '{line.strip()}', ignoring it.")
