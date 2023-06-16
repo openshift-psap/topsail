@@ -58,6 +58,7 @@ class PodTime(matbench_models.ExclusiveModel, metaclass=matbench_models.AllOptio
     pod_namespace: str
     hostname: Union[str, None] # missing if the Pod is still Pending
 
+    creation_time: datetime.datetime
     start_time: Union[datetime.datetime, None] # missing if the Pod is still Pending
     containers_ready: Union[datetime.datetime, None]
     pod_initialized: Union[datetime.datetime, None]

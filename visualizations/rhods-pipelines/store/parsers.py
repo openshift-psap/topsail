@@ -403,6 +403,9 @@ def _parse_pod_times(dirname, ci_pod_dir):
         pod_time.pod_namespace = pod["metadata"]["namespace"]
         pod_time.hostname = pod["spec"].get("nodeName")
 
+        pod_time.creation_time = datetime.datetime.strptime(
+                pod["metadata"]["creationTimestamp"], K8S_TIME_FMT)
+
         start_time_str = pod["status"].get("startTime")
         pod_time.start_time = None if not start_time_str else \
             datetime.datetime.strptime(start_time_str, K8S_TIME_FMT)
