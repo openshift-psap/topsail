@@ -155,11 +155,13 @@ class UserExecutionOverviewReport():
                    "Only the users who succeeded the step are included in the computation.", html.Br()]
 
         header += [html.H2("Resource Creation timeline")]
-        header += [Plot(f"Resource Creation Timeline", args)]
+        header += [Plot(f"Resource Creation Timeline", set_config(dict(dspa_only=True), args))]
+        header += [Plot(f"Resource Creation Timeline", set_config(dict(pipeline_task_only=True), args))]
         header += ["This plot shows the timeline of the resources creation."]
 
         header += [html.H2("Resource Creation Delay")]
-        header += [Plot(f"Resource Creation Delay", args)]
+        header += [Plot(f"Resource Creation Delay", set_config(dict(dspa_only=True), args))]
+        header += [Plot(f"Resource Creation Delay", set_config(dict(pipeline_task_only=True), args))]
         header += ["This plot shows the delay of the resources creation: the line 'A -> B' in the legend show the delay between the creation of resource A and the creation of the resource B. Lower is better."]
 
 
