@@ -433,13 +433,18 @@ def _parse_pod_times(dirname, ci_pod_dir):
     for filename in filenames:
         with open(register_important_file(dirname, filename)) as f:
             try:
-                _parse_pod_times_file(filename, json.load(f))
+                json_file = json.load(f)
             except Exception as e:
                 if (dirname/filename).stat().st_size == 0:
                     logging.warning(f"File '{filename}' is empty")
                     continue
-                logging.error(f"Couldn't parse file '{filename}': {e}")
+                logging.error(f"Couldn't parse JSON file '{filename}': {e}")
                 continue
+
+        try:
+            _parse_pod_times_file(filename, json_file)
+        except Exception as e:
+            logging.error(f"Couldn't parse file '{filename}': {e.__class__.__name__}:{e}")
 
     return pod_times
 
