@@ -30,6 +30,8 @@ ci_presets:
     extends: [metal]
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
+
+  scale_test:
     tests.pipelines.user_count: 100
     tests.pipelines.sleep_factor: 1
 

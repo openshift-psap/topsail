@@ -8,6 +8,7 @@ logging.getLogger().setLevel(logging.INFO)
 import datetime
 import time
 import functools
+import re
 
 import yaml
 import fire
@@ -140,8 +141,23 @@ def compute_node_requirement(driver=False, sutest=False):
 
 
 def apply_prefer_pr():
-    if not (config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr") and (pr_number := os.environ.get("PULL_NUMBER"))):
+    if not config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr"):
         return
+
+    if os.environ.get("OPENSHIFT_CI"):
+        pr_number = os.environ.get("PULL_NUMBER")
+        if not pr_number:
+            logging.warning("apply_prefer_pr: OPENSHIFT_CI: base_image.repo.ref_prefer_pr is set but PULL_NUMBER is empty")
+            return
+
+    if os.environ.get("PERFLAB_CI"):
+        git_ref = os.environ.get("PERFLAB_GIT_REF")
+
+        try:
+            pr_number = int(re.compile("refs/pull/([0-9]+)/head").match(git_ref).groups()[0])
+        except Exception as e:
+            logging.warning("apply_prefer_pr: PERFLAB_CI: base_image.repo.ref_prefer_pr is set cannot parse PERFLAB_GIT_REF={git_erf}: {e.__class__.__name__}: {e}")
+            return
 
     pr_ref = f"refs/pull/{pr_number}/head"
 
