@@ -481,5 +481,6 @@ def _parse_resource_times(dirname, ci_pod_dir):
 
     parse("applications.json")
     parse("deployments.json")
+    parse("pipelines.json")
 
     return dict(all_resource_times)
