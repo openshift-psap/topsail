@@ -57,7 +57,7 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
 @entrypoint()
 def prepare_ci():
     """
-    Prepares the cluster and the namespace for running Load-Aware scale tests
+    Prepares the cluster and the namespace for running the tests
     """
 
     logging.info("Nothing to do to prepare the cluster.")
@@ -67,10 +67,6 @@ def prepare_ci():
 
 
 def _run_test(test_artifact_dir_p):
-    """
-    Runs the Load-Aware scale test from the CI
-    """
-
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__dummy_test"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
@@ -99,7 +95,7 @@ def _run_test(test_artifact_dir_p):
 @entrypoint()
 def test_ci():
     """
-    Runs the Load-Aware scale test from the CI
+    Runs the test from the CI
     """
 
     try:
@@ -118,7 +114,7 @@ def test_ci():
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
     """
-    Generates the Load-Aware plots from the PR arguments
+    Generates the visualization reports from the PR arguments
     """
 
     visualize.download_and_generate_visualizations()
@@ -129,7 +125,7 @@ def cleanup_cluster():
     """
     Restores the cluster to its original state
     """
-    # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running on bare-metal environments.
+    # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
     logging.info("Nothing to do to cleanup the cluster.")
 
@@ -143,7 +139,7 @@ def generate_plots(results_dirname):
 
 class Entrypoint:
     """
-    Commands for launching the Load-Aware CI tests
+    Commands for launching the CI tests
     """
 
     def __init__(self):
