@@ -85,7 +85,7 @@ clusters:
 
 matbench:
   preset: null
-  workload: skeleton
+  workload: codeflare
   config_file: plots.yaml
   download:
     mode: prefer_cache
