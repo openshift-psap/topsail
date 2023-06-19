@@ -62,9 +62,18 @@ def prepare_ci():
 
     logging.info("Nothing to do to prepare the cluster.")
 
-    run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
+    run.run("./run_toolbox.py cluster deploy_operator community-operators opendatahub-operator all")
+    run.run("./run_toolbox.py cluster deploy_operator community-operators codeflare-operator all")
 
+    odh_namespace = "opendatahub"
+    if run.run(f'oc get project "{odh_namespace}" 2>/dev/null', check=False).returncode != 0:
+        run.run(f'oc new-project "{odh_namespace}" --skip-config-write >/dev/null')
+    else:
+        logging.warning(f"Project {odh_namespace} already exists.")
+        (env.ARTIFACT_DIR / "ODH_PROJECT_ALREADY_EXISTS").touch()
 
+    run.run(f"oc apply -f https://raw.githubusercontent.com/opendatahub-io/odh-manifests/master/kfdef/odh-core.yaml -n {odh_namespace}")
+    run.run(f"oc apply -f https://raw.githubusercontent.com/opendatahub-io/distributed-workloads/main/codeflare-stack-kfdef.yaml -n {odh_namespace}")
 
 def _run_test(test_artifact_dir_p):
     next_count = env.next_artifact_index()
