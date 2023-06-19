@@ -110,6 +110,8 @@ def test_ci():
         else:
             logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
+        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+            cleanup_cluster()
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
