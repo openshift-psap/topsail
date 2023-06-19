@@ -118,7 +118,8 @@ def test_ci():
                 generate_plots(test_artifact_dir_p[0])
         else:
             logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
-
+        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+            cleanup_cluster()
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
@@ -136,7 +137,17 @@ def cleanup_cluster():
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    logging.info("Nothing to do to cleanup the cluster.")
+    odh_namespace = "opendatahub"
+    run.run(f"oc delete kfdef codeflare-stack -n {odh_namespace}")
+    run.run(f"oc delete kfdef/odh-core -n {odh_namespace}")
+
+    run.run("oc delete sub/codeflare-operator -n openshift-operators")
+    run.run("oc delete sub opendatahub-operator -n openshift-operators")
+
+    run.run(f"oc delete csv -loperators.coreos.com/codeflare-operator.openshift-operators= -n openshift-operators")
+    run.run(f"oc delete csv -loperators.coreos.com/opendatahub-operator.openshift-operators= -n openshift-operators")
+
+    run.run(f"oc delete ns {odh_namespace}")
 
 
 @entrypoint(ignore_secret_path=True)
