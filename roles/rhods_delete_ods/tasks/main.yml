@@ -72,3 +72,18 @@
   loop:
   - opendatahub.io
   - kubeflow.org
+
+- name: Delete the RHODS ClusterRoleBindings and ClusterRole
+  shell: |
+    set -o pipefail;
+    set -x;
+
+    crb=$(oc get ClusterRoleBinding -oname | grep rhods | tr '\n' ' ' || true)
+    if [[ "$crb" ]]; then
+      oc delete $crb
+    fi
+
+    cr=$(oc get ClusterRoleBinding -oname | grep rhods | tr '\n' ' ' || true)
+    if [[ "$cr" ]]; then
+      oc delete $cr
+    fi
