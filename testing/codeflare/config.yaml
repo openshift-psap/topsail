@@ -42,7 +42,7 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        # TicketId: "..."
+        TicketId: ""
         Project: PSAP/Project/Subproject
       deploy_cluster:
         target: cluster
