@@ -82,7 +82,18 @@ clusters:
           value: "yes"
           effect: NoSchedule
   cleanup_on_exit: false
-
+odh:
+  namespace: opendatahub
+  kfdefs:
+  - https://raw.githubusercontent.com/opendatahub-io/odh-manifests/master/kfdef/odh-core.yaml
+  - https://raw.githubusercontent.com/opendatahub-io/distributed-workloads/main/codeflare-stack-kfdef.yaml
+  operators:
+  - name: codeflare-operator
+    catalog: community-operators
+    namespace: all
+  - name: opendatahub-operator
+    catalog: community-operators
+    namespace: all
 matbench:
   preset: null
   workload: codeflare
