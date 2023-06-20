@@ -47,14 +47,18 @@
   retries: 30
   until: token_size.stdout | int > 1000 
 
+- name: Configure Trimaran options
+  template:
+    src: "{{ trimaran_setup_template }}"
+    dest: "{{ trimaran_setup_config }}"
+
 - name: Deploy Trimaran scheduler
   shell: | 
     set -o errexit;
     set -o pipefail;
     set -o nounset;
     set -o errtrace;
-   
-    export THANOS_MONITORING_ENDPOINT={{ thanos_endpoint.stdout }}
+
     echo "Route to thanos monitoring endpoint: {{ thanos_endpoint.stdout }}"
     export MONITORING_TOKEN=$(oc get secret {{ monitoring_secret.stdout }} -n openshift-user-workload-monitoring -o json | jq -r '.data.token' | base64 -d)
     cat {{ trimaran_setup_config }} | envsubst | oc apply -f -
@@ -89,7 +93,4 @@
     oc get pod trimaran-test -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.yaml"
     oc describe pod trimaran-test -n trimaran > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.desc"
     oc get all -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/all-trimaran.yaml"
-
-- name: Test
-  shell: |
-    echo "Using plugin: {{ load_aware_deploy_trimaran_plugin }}"
+    cp {{ trimaran_setup_config }} "{{ artifact_extra_logs_dir }}/trimaran-templated-config.yaml"

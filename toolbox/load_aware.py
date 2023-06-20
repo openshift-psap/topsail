@@ -12,7 +12,7 @@ class LoadAware:
     @AnsibleMappedParams
     def deploy_trimaran(self, log_level=1,
                         plugin="TargetLoadPacking", default_requests_cpu="2000m",
-                        default_target_request_multiplier="2", target_utilization=70,
+                        default_target_requests_multiplier="2", target_utilization=70,
                         safe_variance_margin=1, safe_variance_sensitivity=2
                         ):
         """
@@ -22,7 +22,7 @@ class LoadAware:
             log_level: log verbosity to set the scheduler to run with,
             plugin: TargetLoadPacking or LoadVariationRiskBalancing
             default_requests_cpu: TargetLoadPacking setting
-            default_target_request_multiplier: TargetLoadPacking setting
+            default_target_requests_multiplier: TargetLoadPacking setting
             target_utilization: TargetLoadPacking setting,
             safe_variance_margin: LoadVariationRiskBalancing setting
             safe_variance_sensitivity: LoadVariationRiskBalancing setting
@@ -37,7 +37,7 @@ class LoadAware:
 
         if plugin == "TargetLoadPacking":
             print(f"default_requests_cpu: {default_requests_cpu}")
-            print(f"default_target_request_multiplier: {default_target_request_multiplier}")
+            print(f"default_target_requests_multiplier: {default_target_requests_multiplier}")
             print(f"target_utilization: {target_utilization}")
         else:
             print(f"safe_variance_margin: {safe_variance_margin}")
