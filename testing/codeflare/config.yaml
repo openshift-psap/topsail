@@ -15,6 +15,9 @@ ci_presets:
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
 
+  full_cluster:
+    clusters.create.ocp.deploy_cluster.target: cluster
+
   light:
     extends: [light_cluster]
 
@@ -45,7 +48,7 @@ clusters:
         TicketId: ""
         Project: PSAP/CodeFlare/mcad
       deploy_cluster:
-        target: cluster
+        target: light_cluster
       base_domain: psap.aws.rhperfscale.org
       version: 4.12.12
       region: us-west-2
