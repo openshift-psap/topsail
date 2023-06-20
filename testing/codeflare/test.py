@@ -60,20 +60,19 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
 
-    logging.info("Nothing to do to prepare the cluster.")
-
-    run.run("./run_toolbox.py cluster deploy_operator community-operators opendatahub-operator all")
-    run.run("./run_toolbox.py cluster deploy_operator community-operators codeflare-operator all")
-
-    odh_namespace = "opendatahub"
-    if run.run(f'oc get project "{odh_namespace}" 2>/dev/null', check=False).returncode != 0:
+    odh_namespace = config.ci_artifacts.get_config("odh.namespace")
+    if run.run(f'oc get project -oname "{odh_namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{odh_namespace}" --skip-config-write >/dev/null')
     else:
         logging.warning(f"Project {odh_namespace} already exists.")
         (env.ARTIFACT_DIR / "ODH_PROJECT_ALREADY_EXISTS").touch()
 
-    run.run(f"oc apply -f https://raw.githubusercontent.com/opendatahub-io/odh-manifests/master/kfdef/odh-core.yaml -n {odh_namespace}")
-    run.run(f"oc apply -f https://raw.githubusercontent.com/opendatahub-io/distributed-workloads/main/codeflare-stack-kfdef.yaml -n {odh_namespace}")
+    for operator in config.ci_artifacts.get_config("odh.operators"):
+        run.run(f"./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
+
+    for resource in config.ci_artifacts.get_config("odh.kfdefs"):
+        run.run(f"oc apply -f {resource}  -n {odh_namespace}")
+
 
 def _run_test(test_artifact_dir_p):
     next_count = env.next_artifact_index()
@@ -101,6 +100,7 @@ def _run_test(test_artifact_dir_p):
 
             run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
 
+
 @entrypoint()
 def test_ci():
     """
@@ -121,6 +121,7 @@ def test_ci():
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 
+
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
     """
@@ -137,15 +138,15 @@ def cleanup_cluster():
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    odh_namespace = "opendatahub"
-    run.run(f"oc delete kfdef codeflare-stack -n {odh_namespace}")
-    run.run(f"oc delete kfdef/odh-core -n {odh_namespace}")
+    odh_namespace = config.ci_artifacts.get_config("odh.namespace")
 
-    run.run("oc delete sub/codeflare-operator -n openshift-operators")
-    run.run("oc delete sub opendatahub-operator -n openshift-operators")
+    for resource in config.ci_artifacts.get_config("odh.kfdefs"):
+        run.run(f"oc delete -f {resource}  -n {odh_namespace}")
 
-    run.run(f"oc delete csv -loperators.coreos.com/codeflare-operator.openshift-operators= -n openshift-operators")
-    run.run(f"oc delete csv -loperators.coreos.com/opendatahub-operator.openshift-operators= -n openshift-operators")
+    for operator in config.ci_artifacts.get_config("odh.operators"):
+        ns = "openshift-operators" if operator['namespace'] == "all" else operator['namespace']
+        run.run(f"oc delete sub {operator['name']} -n {ns}")
+        run.run(f"oc delete csv -loperators.coreos.com/{operator['name']}.{ns}= -n {ns}")
 
     run.run(f"oc delete ns {odh_namespace}")
 

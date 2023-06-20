@@ -9,11 +9,14 @@ ci_presets:
 
   keep:
     clusters.create.keep: true
-    clusters.create.ocp.tags.Project: PSAP/Project/Subproject
+    clusters.create.ocp.tags.Project: PSAP/CodeFlare/mcad/home-dev
     # clusters.create.ocp.tags.TicketId:
 
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
+
+  full_cluster:
+    clusters.create.ocp.deploy_cluster.target: cluster
 
   light:
     extends: [light_cluster]
@@ -42,10 +45,10 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        # TicketId: "..."
-        Project: PSAP/Project/Subproject
+        TicketId: ""
+        Project: PSAP/CodeFlare/mcad
       deploy_cluster:
-        target: cluster
+        target: light_cluster
       base_domain: psap.aws.rhperfscale.org
       version: 4.12.12
       region: us-west-2
@@ -82,7 +85,18 @@ clusters:
           value: "yes"
           effect: NoSchedule
   cleanup_on_exit: false
-
+odh:
+  namespace: opendatahub
+  kfdefs:
+  - https://raw.githubusercontent.com/opendatahub-io/odh-manifests/master/kfdef/odh-core.yaml
+  - https://raw.githubusercontent.com/opendatahub-io/distributed-workloads/main/codeflare-stack-kfdef.yaml
+  operators:
+  - name: codeflare-operator
+    catalog: community-operators
+    namespace: all
+  - name: opendatahub-operator
+    catalog: community-operators
+    namespace: all
 matbench:
   preset: null
   workload: codeflare
