@@ -47,6 +47,16 @@
   retries: 30
   until: token_size.stdout | int > 1000 
 
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Define location of Trimaran config
+  set_fact:
+    trimaran_setup_config: "{{ artifact_extra_logs_dir }}/src/trimaran-templated-config.yaml"
+
 - name: Configure Trimaran options
   template:
     src: "{{ trimaran_setup_template }}"
@@ -93,4 +103,3 @@
     oc get pod trimaran-test -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.yaml"
     oc describe pod trimaran-test -n trimaran > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.desc"
     oc get all -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/all-trimaran.yaml"
-    cp {{ trimaran_setup_config }} "{{ artifact_extra_logs_dir }}/trimaran-templated-config.yaml"

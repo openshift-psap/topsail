@@ -2,3 +2,24 @@
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: LoadAware.deploy_trimaran
 
+# log verbosity to set the scheduler to run with,
+load_aware_deploy_trimaran_log_level: 1
+
+# TargetLoadPacking or LoadVariationRiskBalancing
+load_aware_deploy_trimaran_plugin: TargetLoadPacking
+
+# TargetLoadPacking setting
+load_aware_deploy_trimaran_default_requests_cpu: 2000m
+
+# TargetLoadPacking setting
+load_aware_deploy_trimaran_default_target_requests_multiplier: '2'
+
+# TargetLoadPacking setting,
+load_aware_deploy_trimaran_target_utilization: 70
+
+# LoadVariationRiskBalancing setting
+load_aware_deploy_trimaran_safe_variance_margin: 1
+
+# LoadVariationRiskBalancing setting
+load_aware_deploy_trimaran_safe_variance_sensitivity: 2
+
