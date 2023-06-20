@@ -47,7 +47,7 @@ clusters:
         TicketId: 160
         Project: PSAP/CodeFlare/mcad
       deploy_cluster:
-        target: light_cluster
+        target: cluster_light
       base_domain: psap.aws.rhperfscale.org
       version: 4.12.12
       region: us-west-2
