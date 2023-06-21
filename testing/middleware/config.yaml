@@ -16,7 +16,7 @@ secrets:
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
 
 clusters:
-  cleanup_on_exit: false
+  cleanup_on_exit: true
 
 rhods:
   catalog:
