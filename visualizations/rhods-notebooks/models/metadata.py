@@ -7,14 +7,6 @@ import matrix_benchmarking.models as matbench_models
 from pydantic import BaseModel, constr
 
 
-class NotebookScaleSettings(matbench_models.ExclusiveModel):
-    repeat: str
-    test_case: str
-    user_count: int
-    exclude_tags: str
-    version: matbench_models.SemVer
-
-
 class InfraInfo(matbench_models.ExclusiveModel):
     name: str
     infra: bool
