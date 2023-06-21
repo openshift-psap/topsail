@@ -8,6 +8,13 @@
   set_fact:
     trimaran_setup_config: "{{ artifact_extra_logs_dir }}/src/trimaran-templated-config.yaml"
 
+- name: Define the same default settings from deploy role
+  include_vars: "{{ trimaran_deploy_defaults }}"
+
+- name: Dummy Thanos Endpoint
+  command: echo "NA"
+  register: thanos_endpoint
+
 - name: Configure Trimaran options
   template:
     src: "{{ trimaran_setup_template }}"

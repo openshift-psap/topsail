@@ -23,22 +23,22 @@ stringData:
           - name: NodeResourcesBalancedAllocation
           - name: NodeResourcesLeastAllocated
           enabled:
-          - name: {{ load_aware_deploy_trimaran_plugin | default('NA') }}
+          - name: {{ load_aware_deploy_trimaran_plugin }}
       pluginConfig:
-      - name: {{ load_aware_deploy_trimaran_plugin | default('NA') }}
+      - name: {{ load_aware_deploy_trimaran_plugin }}
         args:
-{% if load_aware_deploy_trimaran_plugin | default('NA') == "TargetLoadPacking" %}
+{% if load_aware_deploy_trimaran_plugin == "TargetLoadPacking" %}
           defaultRequests:
-            cpu: "{{ load_aware_deploy_trimaran_default_requests_cpu | default('NA') }}"
-          defaultRequestsMultiplier: "{{ load_aware_deploy_trimaran_default_target_requests_multiplier | default('NA') }}"
-          targetUtilization: {{ load_aware_deploy_trimaran_target_utilization | default('NA') }}
+            cpu: "{{ load_aware_deploy_trimaran_default_requests_cpu }}"
+          defaultRequestsMultiplier: "{{ load_aware_deploy_trimaran_default_target_requests_multiplier }}"
+          targetUtilization: {{ load_aware_deploy_trimaran_target_utilization }}
 {% else %}
-          safeVarianceMargin: {{ load_aware_deploy_trimaran_safe_variance_margin | default('NA') }}
-          safeVarianceSensitivity: {{ load_aware_deploy_trimaran_safe_variance_sensitivity | default('NA') }}
+          safeVarianceMargin: {{ load_aware_deploy_trimaran_safe_variance_margin }}
+          safeVarianceSensitivity: {{ load_aware_deploy_trimaran_safe_variance_sensitivity }}
 {% endif %}
           metricProvider:
             type: Prometheus
-            address: https://{{ thanos_endpoint.stdout | default('NA') }}
+            address: https://{{ thanos_endpoint.stdout }}
             token: $MONITORING_TOKEN
 ---
 apiVersion: v1
@@ -92,7 +92,7 @@ spec:
           args:
           - /bin/kube-scheduler
           - --config=/etc/kubernetes/config.yaml
-          - -v={{ load_aware_deploy_trimaran_log_level | default('NA') }}
+          - -v={{ load_aware_deploy_trimaran_log_level }}
           volumeMounts:
           - name: etckubernetes
             mountPath: /etc/kubernetes

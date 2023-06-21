@@ -10,11 +10,7 @@ class LoadAware:
 
     @AnsibleRole("load_aware_deploy_trimaran")
     @AnsibleMappedParams
-    def deploy_trimaran(self, log_level=1,
-                        plugin="TargetLoadPacking", default_requests_cpu="2000m",
-                        default_target_requests_multiplier="2", target_utilization=70,
-                        safe_variance_margin=1, safe_variance_sensitivity=2
-                        ):
+    def deploy_trimaran(self, log_level=1, plugin="TargetLoadPacking", default_requests_cpu="2000m", default_target_requests_multiplier="2", target_utilization=70, safe_variance_margin=1, safe_variance_sensitivity=2):
         """
         Role to deploy the Trimaran load aware scheduler
 
