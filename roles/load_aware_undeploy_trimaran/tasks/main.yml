@@ -11,10 +11,6 @@
 - name: Define the same default settings from deploy role
   include_vars: "{{ trimaran_deploy_defaults }}"
 
-- name: Dummy Thanos Endpoint
-  command: echo "NA"
-  register: thanos_endpoint
-
 - name: Configure Trimaran options
   template:
     src: "{{ trimaran_setup_template }}"

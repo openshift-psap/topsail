@@ -29,7 +29,11 @@
   shell:
     oc get route thanos-querier -n openshift-monitoring -o json
       | jq -r '.spec.host'
-  register: thanos_endpoint
+  register: thanos_endpoint_cmd
+
+- name: Format the Thanos Endpoint
+  set_fact:
+    thanos_endpoint: "https://{{ thanos_endpoint_cmd.stdout }}"
 
 - name: Checking monitoring token size
   shell:
@@ -69,7 +73,7 @@
     set -o nounset;
     set -o errtrace;
 
-    echo "Route to thanos monitoring endpoint: {{ thanos_endpoint.stdout }}"
+    echo "Route to thanos monitoring endpoint: {{ thanos_endpoint }}"
     export MONITORING_TOKEN=$(oc get secret {{ monitoring_secret.stdout }} -n openshift-user-workload-monitoring -o json | jq -r '.data.token' | base64 -d)
     cat {{ trimaran_setup_config }} | envsubst | oc apply -f -
 

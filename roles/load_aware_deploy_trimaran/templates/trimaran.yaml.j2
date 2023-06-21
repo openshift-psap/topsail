@@ -38,7 +38,7 @@ stringData:
 {% endif %}
           metricProvider:
             type: Prometheus
-            address: https://{{ thanos_endpoint.stdout }}
+            address: {{ thanos_endpoint }}
             token: $MONITORING_TOKEN
 ---
 apiVersion: v1
