@@ -25,6 +25,7 @@ ci_presets:
     tests.notebooks.test_flavor: ods-ci
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
     tests.notebooks.repeat: 2
+    tests.notebooks.identifier: scale_test
 
   notebook_scale_test_autoscaling:
     extends: [notebook_scale_test]
@@ -39,6 +40,7 @@ ci_presets:
     clusters.create.ocp.tags.Project: PSAP/RHODS/gating
     clusters.create.ocp.tags.TicketId: "86"
 
+    tests.notebooks.identifier: gating_test
     tests.notebooks.test_flavor: gating
     # modify the presets, as they will be applied by the gating test
     'ci_presets.notebook_scale_test["matbench.config_file"]': notebook_gating_notebook_scale_test.yaml
