@@ -57,7 +57,8 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
 
-    logging.info("Nothing to do to prepare the cluster.")
+    token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
+    rhods.install(token_file)
 
 
 @entrypoint()
@@ -75,10 +76,12 @@ def cleanup_cluster():
     """
     Restores the cluster to its original state
     """
-    # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    logging.info("Nothing to do to cleanup the cluster.")
+    #
+    # uninstall RHODS
+    #
 
+    rhods.uninstall()
 
 # ---
 
