@@ -1,0 +1,10 @@
+apiVersion: mcad.ibm.com/v1beta1
+kind: AppWrapper
+metadata:
+  name: ...
+  namespace: ...
+spec:
+  priority: ...
+  resources:
+    Items: []
+    GenericItems: []

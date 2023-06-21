@@ -1,0 +1,47 @@
+base_name: appwrapper
+namespace: default
+defaults:
+  priority: 10
+aw_resources:
+  - runtime: 30
+    resources:
+      cpu: 0.1
+      memory: 100Mi
+      # nvidia.com/gpu: 0
+    pods: 4
+    count: 1
+
+  - runtime: 60
+    resources:
+      cpu: 0.1
+      memory: 100Mi
+    pods: 2
+    count: 2
+
+job_template:
+  apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: ...
+    namespace: ...
+  spec:
+    activeDeadlineSeconds: 18000
+    template:
+      metadata:
+        name: ...
+      spec:
+        restartPolicy: Never
+        containers:
+        - name: main
+          command:
+          - bash
+          - -c
+          args:
+          - sleep $RUNTIME
+          env:
+          - name: RUNTIME # should say the 1st env in the list
+            value: ...
+          image: registry.access.redhat.com/ubi8/ubi
+          resources:
+            limits: {}
+            requests: {}
