@@ -29,7 +29,11 @@
   shell:
     oc get route thanos-querier -n openshift-monitoring -o json
       | jq -r '.spec.host'
-  register: thanos_endpoint
+  register: thanos_endpoint_cmd
+
+- name: Format the Thanos Endpoint
+  set_fact:
+    thanos_endpoint: "https://{{ thanos_endpoint_cmd.stdout }}"
 
 - name: Checking monitoring token size
   shell:
@@ -47,27 +51,43 @@
   retries: 30
   until: token_size.stdout | int > 1000 
 
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Define location of Trimaran config
+  set_fact:
+    trimaran_setup_config: "{{ artifact_extra_logs_dir }}/src/trimaran-templated-config.yaml"
+
+- name: Configure Trimaran options
+  template:
+    src: "{{ trimaran_setup_template }}"
+    dest: "{{ trimaran_setup_config }}"
+
 - name: Deploy Trimaran scheduler
   shell: | 
     set -o errexit;
     set -o pipefail;
     set -o nounset;
     set -o errtrace;
-   
-    export THANOS_MONITORING_ENDPOINT={{ thanos_endpoint.stdout }}
-    export MONITORING_SECRET={{ monitoring_secret.stdout }}
-    export MONITORING_TOKEN=$(echo $(oc get secret $MONITORING_SECRET -n openshift-user-workload-monitoring -o json | jq -r '.data.token') | base64 -d)
+
+    echo "Route to thanos monitoring endpoint: {{ thanos_endpoint }}"
+    export MONITORING_TOKEN=$(oc get secret {{ monitoring_secret.stdout }} -n openshift-user-workload-monitoring -o json | jq -r '.data.token' | base64 -d)
     cat {{ trimaran_setup_config }} | envsubst | oc apply -f -
 
   register: deploy_trimaran
 
 - name: Ensure Trimaran is Running
   shell:
-    oc get pods -n trimaran | awk 'NR > 1 {print $3}'
+    oc get pods -n trimaran
+      | grep "trimaran-scheduler"
+      | awk '{print $3}'
   register: trimaran_running
   delay: 3
   retries: 20
-  until: "trimaran_running.stdout == 'Running'"
+  until: trimaran_running.stdout == 'Running'
 
 - name: Deploy test pod with Trimaran
   shell:
@@ -81,3 +101,9 @@
   delay: 5
   retries: 20
   until: trimaran_test_pod_state.stdout == 'Completed'
+
+- name: Dump trimaran info
+  shell: |
+    oc get pod trimaran-test -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.yaml"
+    oc describe pod trimaran-test -n trimaran > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.desc"
+    oc get all -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/all-trimaran.yaml"

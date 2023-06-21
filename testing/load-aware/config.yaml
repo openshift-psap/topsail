@@ -26,6 +26,12 @@ ci_presets:
     clusters.sutest.is_metal: false
     clusters.driver.is_metal: false
 
+  target_load_packing:
+    load_aware.plugin: "TargetLoadPacking"
+  
+  load_variation_risk_balancing:
+    load_aware.plugin: "LoadVariationRiskBalancing"
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -82,7 +88,14 @@ clusters:
           value: "yes"
           effect: NoSchedule
   cleanup_on_exit: false
-
+load_aware:
+  log_level: null
+  plugin: null
+  default_requests_cpu: null
+  default_target_requests_multiplier: null
+  target_utilization: null
+  safe_variance_margin: null
+  safe_variance_sensitivity: null
 matbench:
   preset: null
   workload: load-aware
