@@ -1,3 +1,12 @@
+- name: Ensure that the MCAD controller is ready
+  shell:
+    set -o pipefail;
+    oc get deploy/mcad-controller-mcad -n opendatahub --no-headers | awk '{print $2}'
+  register: mcad_ready_cmd
+  delay: 10
+  retries: 10
+  until: mcad_ready_cmd.stdout == "1/1"
+
 - name: Create the src artifacts directory
   file:
     path: "{{ artifact_extra_logs_dir }}/src/"
