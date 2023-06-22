@@ -203,6 +203,7 @@ def _extract_cluster_info(nodes_info):
 
 @ignore_file_not_found
 def _parse_start_end_time(dirname):
+    return datetime.datetime.now(), datetime.datetime.now()
     ANSIBLE_LOG_TIME_FMT = '%Y-%m-%d %H:%M:%S'
     start_time = None
     end_time = None
