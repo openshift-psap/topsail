@@ -1,5 +1,5 @@
 base_name: appwrapper
-namespace: default
+namespace: mcad-load-test
 defaults:
   priority: 10
 aw_resources:
