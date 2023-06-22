@@ -127,13 +127,17 @@ def test_ci():
         test_artifact_dir_p = [None]
         _run_test(test_artifact_dir_p)
     finally:
-        if test_artifact_dir_p[0] is not None:
+        generate_reports = config.ci_artifacts.get_config("matbench.generate_reports")
+        if generate_reports and test_artifact_dir_p[0] is not None:
             next_count = env.next_artifact_index()
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
                 visualize.prepare_matbench()
                 generate_plots(test_artifact_dir_p[0])
+        elif not generate_reports:
+            logging.warning("Not generating the visualization because it is disabled in the configuration file.")
         else:
             logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
+
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 
