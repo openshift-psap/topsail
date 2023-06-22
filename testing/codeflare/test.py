@@ -54,6 +54,20 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
 
 # ---
 
+def prepare_mcad_test():
+    namespace = config.ci_artifacts.get_config("tests.mcad.namespace")
+    if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
+        run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
+    else:
+        logging.warning(f"Project {namespace} already exists.")
+        (env.ARTIFACT_DIR / "MCAD_PROJECT_ALREADY_EXISTS").touch()
+
+
+def cleanup_mcad_test():
+    namespace = config.ci_artifacts.get_config("tests.mcad.namespace")
+    run.run(f"oc delete namespace '{namespace}' --ignore-not-found")
+
+
 @entrypoint()
 def prepare_ci():
     """
@@ -73,6 +87,8 @@ def prepare_ci():
     for resource in config.ci_artifacts.get_config("odh.kfdefs"):
         run.run(f"oc apply -f {resource}  -n {odh_namespace}")
 
+    prepare_mcad_test()
+
 
 def _run_test(test_artifact_dir_p):
     next_count = env.next_artifact_index()
@@ -89,24 +105,8 @@ def _run_test(test_artifact_dir_p):
         try:
             run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
 
-            run.run('./subprojects/mcad-workload-generator/generator.py | tee "$ARTIFACT_DIR/mcad-workload.yaml" | oc apply -f- ')
+            run.run("./run_toolbox.py from_config codeflare generate_mcad_load")
 
-            retries = 20
-            time.sleep(60)
-            while True:
-                has_running_jobs = run.run("oc get jobs -n default --no-headers | grep -v 1/1", check=False, capture_stdout=True)
-                if not has_running_jobs.stdout.strip():
-                    break
-                time.sleep(10)
-                retries -= 1
-                if retries == 0:
-                    failed = True
-                    break
-
-            run.run('oc get appwrappers -oyaml -n default > "$ARTIFACT_DIR/mcad-appwrappers.yaml"')
-            run.run('oc get jobs -oyaml -n default > "$ARTIFACT_DIR/mcad-jobs.yaml"')
-            run.run('oc get pods -oyaml -n default > "$ARTIFACT_DIR/mcad-pods.yaml"')
-            run.run('oc get jobs,pods -n default > "$ARTIFACT_DIR/mcad-jobs.pods.status"')
             run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
 
             failed = False
@@ -165,6 +165,9 @@ def cleanup_cluster():
         run.run(f"oc delete csv -loperators.coreos.com/{operator['name']}.{ns}= -n {ns}")
 
     run.run(f"oc delete ns {odh_namespace}")
+
+
+    cleanup_mcad_test()
 
 
 @entrypoint(ignore_secret_path=True)

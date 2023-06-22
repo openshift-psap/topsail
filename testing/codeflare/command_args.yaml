@@ -8,3 +8,6 @@
 
 cluster capture_environment/sample:
   _none: true # nothing to configure :/
+
+codeflare generate_mcad_load:
+  namespace: {{ tests.mcad.namespace }}

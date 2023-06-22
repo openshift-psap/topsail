@@ -96,6 +96,9 @@ odh:
   - name: opendatahub-operator
     catalog: community-operators
     namespace: all
+tests:
+  mcad:
+    namespace: mcad-load-test
 matbench:
   preset: null
   workload: codeflare
