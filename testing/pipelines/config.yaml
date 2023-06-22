@@ -51,6 +51,9 @@ ci_presets:
     tests.pipelines.notebook_filename: kfp_hash.ipynb
     tests.pipelines.notebook_directory: testing/pipelines/notebooks/hash
 
+  pipeline_timed_multistage:
+    tests.pipelines.notebook_filename: kfp_timed_multistage.ipynb
+    tests.pipelines.notebook_directory: testing/pipelines/notebooks/timed-multistage
 
 secrets:
   dir:
