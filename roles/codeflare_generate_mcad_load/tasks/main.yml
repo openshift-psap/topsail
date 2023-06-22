@@ -58,8 +58,9 @@
     ignore_errors: true
 
   - name: Capture the logs of the MCAD controller
-    shell:
-      oc logs deploy/mcad-controller-mcad -n opendatahub > "{{ artifact_extra_logs_dir }}/mcad-controller.log"
+    shell: |
+      oc logs deploy/mcad-controller-mcad -n opendatahub > "{{ artifact_extra_logs_dir }}/mcad-controller.log";
+      oc logs deploy/mcad-controller-mcad -n opendatahub --previous 2>/dev/null > "{{ artifact_extra_logs_dir }}/mcad-controller.previous.log" || true
     ignore_errors: true
 
   - name: Capture the nodes of the cluster
