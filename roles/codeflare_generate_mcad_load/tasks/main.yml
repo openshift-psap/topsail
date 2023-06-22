@@ -21,7 +21,7 @@
   block:
   - name: Generate the MCAD load
     shell:
-      python3 "{{ mcad_load_generator }}" "{{ codeflare_generate_mcad_load_namespace }}" | tee "{{ artifact_extra_logs_dir }}/src/mcad-appwrappers.generated.yaml" | oc apply -f-
+      python3 "{{ mcad_load_generator }}" "{{ codeflare_generate_mcad_load_namespace }}" --dry-run=False
 
   - name: Wait for the AppWrappers to complete
     shell:
