@@ -92,11 +92,11 @@ def prepare_ci():
 
 def _run_test(test_artifact_dir_p):
     next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__dummy_test"):
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
 
         with open(env.ARTIFACT_DIR / "settings", "w") as f:
-            print(f"dummy=true", file=f)
+            print(f"mcad_load_test=true", file=f)
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
