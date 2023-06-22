@@ -46,6 +46,8 @@ ci_presets:
     'ci_presets.notebook_scale_test["matbench.config_file"]': notebook_gating_notebook_scale_test.yaml
     'ci_presets.notebook_performance["matbench.config_file"]': notebook_gating_notebook_performance.yaml
     'ci_presets.notebook_performance["tests.notebooks.notebook_performance.tests[0].instance_types"]': [m6i.2xlarge]
+    'ci_presets.notebook_scale_test["tests.notebooks.identifier"]': "notebook_gating_test:scale_test"
+    'ci_presets.notebook_performance["tests.notebooks.identifier"]': "notebook_gating_test:performance_test"
 
   notebook_gating_scale_test_light:
     extends: [notebook_gating_scale_test]
