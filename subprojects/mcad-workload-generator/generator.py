@@ -37,8 +37,8 @@ def set_config(config, jsonpath, value):
     jsonpath_ng.parse(jsonpath).update(config, value)
 
 def main():
+    namespace = sys.argv[1]
     base_name = get_config("base_name")
-    namespace = get_config("namespace")
 
     set_config(base_appwrapper, "metadata.name", base_name)
     set_config(base_appwrapper, "metadata.namespace", namespace)
