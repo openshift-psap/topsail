@@ -61,3 +61,7 @@
     shell:
       oc logs deploy/mcad-controller-mcad -n opendatahub > "{{ artifact_extra_logs_dir }}/mcad-controller.log"
     ignore_errors: true
+
+  - name: Capture the nodes of the cluster
+    shell:
+      oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/nodes.json"
