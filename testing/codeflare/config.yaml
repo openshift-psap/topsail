@@ -10,7 +10,6 @@ ci_presets:
   keep:
     clusters.create.keep: true
     clusters.create.ocp.tags.Project: PSAP/CodeFlare/mcad/home-dev
-    # clusters.create.ocp.tags.TicketId:
 
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
@@ -45,10 +44,10 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        TicketId: ""
+        TicketId: 160
         Project: PSAP/CodeFlare/mcad
       deploy_cluster:
-        target: light_cluster
+        target: cluster_light
       base_domain: psap.aws.rhperfscale.org
       version: 4.12.12
       region: us-west-2

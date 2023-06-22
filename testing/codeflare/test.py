@@ -87,18 +87,34 @@ def _run_test(test_artifact_dir_p):
 
         failed = True
         try:
-            run.run("./run_toolbox.py cluster reset_prometheus_db")
+            run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
 
-            logging.info("Waiting 5 minutes to capture some metrics in Prometheus ...")
-            time.sleep(5 * 60)
+            run.run('./subprojects/mcad-workload-generator/generator.py | tee "$ARTIFACT_DIR/mcad-workload.yaml" | oc apply -f- ')
 
-            run.run("./run_toolbox.py cluster dump_prometheus_db")
+            retries = 20
+            time.sleep(60)
+            while True:
+                has_running_jobs = run.run("oc get jobs -n default --no-headers | grep -v 1/1", check=False, capture_stdout=True)
+                if not has_running_jobs.stdout.strip():
+                    break
+                time.sleep(10)
+                retries -= 1
+                if retries == 0:
+                    failed = True
+                    break
+
+            run.run('oc get appwrappers -oyaml -n default > "$ARTIFACT_DIR/mcad-appwrappers.yaml"')
+            run.run('oc get jobs -oyaml -n default > "$ARTIFACT_DIR/mcad-jobs.yaml"')
+            run.run('oc get pods -oyaml -n default > "$ARTIFACT_DIR/mcad-pods.yaml"')
+            run.run('oc get jobs,pods -n default > "$ARTIFACT_DIR/mcad-jobs.pods.status"')
+            run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
+
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
 
-            run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
+            run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample >/dev/null")
 
 
 @entrypoint()
