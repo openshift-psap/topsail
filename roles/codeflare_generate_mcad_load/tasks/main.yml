@@ -1,0 +1,63 @@
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the namespace if it does not exist
+  shell:
+    oc create ns mcad-load-test -oyaml --dry-run=client | tee "{{ artifact_extra_logs_dir }}/src/namespace.yaml" | oc apply -f-
+
+- name: Generate MCAD load
+  block:
+  - name: Generate the MCAD load
+    shell:
+      python3 "{{ mcad_load_generator }}" "{{ codeflare_generate_mcad_load_namespace }}" | tee "{{ artifact_extra_logs_dir }}/src/mcad-appwrappers.generated.yaml" | oc apply -f-
+
+  - name: Wait for the AppWrappers to complete
+    shell:
+      set -o pipefail;
+      oc get appwrappers -n {{ codeflare_generate_mcad_load_namespace }} -ojson
+        | jq '(.items | length) - ([.items[] | select(.status.state == "Completed")] | length)'
+    register: appwrappers_not_completed
+    retries: 60
+    delay: 30
+    until: appwrappers_not_completed.stdout == "0"
+
+  - name: Count the number of completed AppWrappers, fail if zero
+    shell:
+      set -o pipefail;
+      oc get appwrappers -n {{ codeflare_generate_mcad_load_namespace }} -ojson
+        | jq '[.items[] | select(.status.state == "Completed")] | length'
+    register: appwrappers_completed
+    failed_when: appwrappers_completed.stdout == "0"
+
+  always:
+  - name: Capture the state of the AppWrappers
+    shell: |
+      oc get appwrappers -ojson -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.json"
+      oc get appwrappers -oyaml -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
+      oc get appwrappers -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.status"
+      oc describe appwrappers -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.desc"
+    ignore_errors: true
+
+  - name: Capture the state of the Jobs
+    shell: |
+      oc get Jobs -ojson -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.json"
+      oc get Jobs -oyaml -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.yaml"
+      oc describe Jobs -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.desc"
+      oc get Jobs -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.status"
+    ignore_errors: true
+
+  - name: Capture the state of the Pods
+    shell: |
+      oc get Pods -ojson -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.json"
+      oc get Pods -oyaml -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"
+      oc describe Pods -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
+      oc get Pods -owide -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.status"
+    ignore_errors: true
+
+  - name: Capture the logs of the MCAD controller
+    shell:
+      oc logs deploy/mcad-controller-mcad -n opendatahub > "{{ artifact_extra_logs_dir }}/mcad-controller.log"
+    ignore_errors: true

@@ -12,6 +12,7 @@ from toolbox.wisdom import Wisdom
 from toolbox.from_config import FromConfig
 from toolbox.local_ci import Local_CI
 from toolbox.load_aware import LoadAware
+from toolbox.codeflare import Codeflare
 
 class Toolbox:
     """
@@ -39,3 +40,4 @@ class Toolbox:
         self.local_ci = Local_CI
         self.wisdom = Wisdom
         self.load_aware = LoadAware
+        self.codeflare = Codeflare
