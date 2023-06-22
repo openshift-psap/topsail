@@ -40,7 +40,7 @@ clusters:
   create:
     type: single # can be: single, ocp, managed
     keep: false
-    name_prefix: skeleton
+    name_prefix: codeflare-ci
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
@@ -96,6 +96,9 @@ odh:
   - name: opendatahub-operator
     catalog: community-operators
     namespace: all
+tests:
+  mcad:
+    namespace: mcad-load-test
 matbench:
   preset: null
   workload: codeflare
@@ -109,4 +112,5 @@ matbench:
   ignore_exit_code: true
   # directory to plot. Set by testing/common/visualize.py before launching the visualization
   test_directory: null
-  generate_lts: true
+  generate_lts: false
+  generate_reports: false

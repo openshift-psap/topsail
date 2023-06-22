@@ -1,5 +1,4 @@
 base_name: appwrapper
-namespace: default
 defaults:
   priority: 10
 aw_resources:
