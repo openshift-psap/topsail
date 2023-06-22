@@ -1,4 +1,4 @@
-from . import user, metadata
+from . import user, metadata, prom
 
 from typing import List, Dict
 
@@ -7,20 +7,27 @@ import matrix_benchmarking.models as matbench_models
 from pydantic import BaseModel, constr
 
 class NotebookScaleMetadata(matbench_models.Metadata):
-    test: enums.TestName
-    cluster_info: metadata.ClusterInfo
-    settings: metadata.NotebookScaleSettings
+    presets: List[str]
+    test: str
+    settings: dict
 
 
 class NotebookScaleData(matbench_models.ExclusiveModel):
     users: List[user.UserData]
     config: BaseModel
-    metrics: Dict[str, matbench_models.PrometheusMetric]
+    metrics: prom.PromValues
     thresholds: BaseModel
     ocp_version: matbench_models.SemVer
     rhods_version: matbench_models.SemVer
+    cluster_info: metadata.ClusterInfo
 
 
-class NotebookScalePayload(matbench_models.create_PSAPPayload('rhods-matbench-upload')):
+class NotebookScalePayload(matbench_models.ExclusiveModel):
+    schema_name: matbench_models.create_schema_field("rhods-notebooks")
     data: NotebookScaleData
     metadata: NotebookScaleMetadata
+
+    class Config:
+        fields = {'schema_name': '$schema'}
+
+NotebookScalePayload.update_forward_refs()

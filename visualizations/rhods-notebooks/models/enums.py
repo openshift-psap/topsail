@@ -18,6 +18,3 @@ class StepName(matbench_models.PSAPEnum):
 class StepStatus(matbench_models.PSAPEnum):
     PASS = auto()
     FAIL = auto()
-
-class TestName(matbench_models.PSAPEnum):
-    rhods_notebooks_ux = 'rhods-notebooks'
