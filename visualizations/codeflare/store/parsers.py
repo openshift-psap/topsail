@@ -12,7 +12,7 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
 from . import prom as workload_prom
-
+from . import k8s_quantity
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -175,6 +175,13 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
 
         node_info.infra = \
             not node_info.control_plane
+
+        node_info.allocatable = types.SimpleNamespace()
+        node_info.allocatable.memory = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["memory"]))
+        node_info.allocatable.memory = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["memory"]))
+        node_info.allocatable.cpu = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["cpu"]))
+        node_info.allocatable.gpu = node["status"]["allocatable"].get("nvidia.com/gpu", 0)
+        node_info.allocatable.__dict__["nvidia.com/gpu"] = node_info.allocatable.gpu
 
     return nodes_info
 

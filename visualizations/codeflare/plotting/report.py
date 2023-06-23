@@ -9,6 +9,8 @@ import matrix_benchmarking.common as common
 
 def register():
     ControlPlaneReport()
+    NodeResourceAllocationReport()
+
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -146,6 +148,45 @@ class ControlPlaneReport():
             header += [html.H2(f"API Server HTTP return codes")]
             for what in ["successes", "client errors", "server errors"]:
                 header += Plot_and_Text(f"Prom: {cluster_role.title()} API Server Requests ({what})", args)
+                header += html.Br()
+                header += html.Br()
+
+        return None, header
+
+class NodeResourceAllocationReport():
+    def __init__(self):
+        self.name = "report: Node Resource Allocation"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+        cnt = common.Matrix.count_records(settings, setting_lists)
+        if cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            break
+
+        header = []
+
+        header += [html.H1("Node Resource Allocation")]
+
+
+        header += ["These plots shows the CPU, memory and GPU allocation in the worker nodes of the cluster."]
+
+        for node_name in sorted(entry.results.nodes_info):
+            node = entry.results.nodes_info[node_name]
+            if node.control_plane: continue
+
+            header += [html.H1(f"Node {node.name}")]
+            for what in "cpu", "memory", "gpu":
+                if what == "gpu": continue
+
+                header += Plot_and_Text(f"Resource Allocation", set_config(dict(what=what, instance=node.name), args))
                 header += html.Br()
                 header += html.Br()
 
