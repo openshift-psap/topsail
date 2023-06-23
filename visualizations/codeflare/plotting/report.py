@@ -9,7 +9,7 @@ import matrix_benchmarking.common as common
 
 def register():
     ControlPlaneReport()
-    NodeResourceAllocationReport()
+    ResourceAllocationReport()
 
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
@@ -153,9 +153,9 @@ class ControlPlaneReport():
 
         return None, header
 
-class NodeResourceAllocationReport():
+class ResourceAllocationReport():
     def __init__(self):
-        self.name = "report: Node Resource Allocation"
+        self.name = "report: Resource Allocation Timelines"
         self.id_name = self.name.lower().replace(" ", "_")
         self.no_graph = True
         self.is_report = True
@@ -173,8 +173,13 @@ class NodeResourceAllocationReport():
 
         header = []
 
-        header += [html.H1("Node Resource Allocation")]
+        header += [html.H1("Resources Timelines")]
 
+        header += Plot_and_Text(f"AppWrappers and Pods Timeline", args)
+
+        header += Plot_and_Text(f"Resource Mapping Timeline", args)
+
+        header += [html.H1("Node Resource Allocation")]
 
         header += ["These plots shows the CPU, memory and GPU allocation in the worker nodes of the cluster."]
 
