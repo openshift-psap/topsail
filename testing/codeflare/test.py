@@ -110,13 +110,6 @@ def _run_test(test_artifact_dir_p):
             run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
 
             failed = False
-        except Exception as ex:
-            import traceback
-
-            with open(env.ARTIFACT_DIR / "FAILED", "w") as f:
-                print(f"{ex.__class__.__name__}: {ex}", file=f)
-                print(''.join(traceback.format_exception(etype=type(ex), value=ex, tb=ex.__traceback__)), file=f)
-            raise
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
