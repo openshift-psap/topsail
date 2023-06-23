@@ -162,6 +162,10 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
     all_metrics = [
         {f"{cluster_role.title()} Control Plane Node CPU usage" : 'sum(irate(node_cpu_seconds_total[2m])) by (mode, instance) '},
         {f"{cluster_role.title()} Control Plane Node CPU idle" : 'sum(irate(node_cpu_seconds_total{mode="idle"}[2m])) by (mode, instance) '},
+        {f"{cluster_role} Control Plane Node Resource Request": "sum by (node, resource) (kube_pod_resource_request)"},
+        {f"{cluster_role} Control Plane Node Resource Limit": "sum by (node, resource) (kube_pod_resource_limit)"},
+        {f"{cluster_role} Control Plane Node Total CPU" : "instance:node_cpu:rate:sum"},
+        {f"{cluster_role} Control Plane Node Total Memory": "sum by(instance) (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)"},
     ]
 
     def get_legend_name(metric_name, metric_metric):
@@ -286,8 +290,13 @@ def _get_apiserver_errcodes(cluster_role, register):
 def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
+    container_labels = [
+        {"MCAD Controller": dict(namespace="opendatahub", pod="mcad-controller-mcad.*")},
+    ]
+
     all_metrics = []
     all_metrics += _get_cluster_mem_cpu(cluster_role, register)
+    all_metrics += _get_container_mem_cpu(cluster_role, register, container_labels)
     all_metrics += _get_plane_nodes(cluster_role, register)
     all_metrics += _get_apiserver_errcodes(cluster_role, register)
     all_metrics += _get_control_plane_nodes_cpu_usage(cluster_role, register)

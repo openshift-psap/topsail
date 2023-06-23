@@ -20,12 +20,25 @@ K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
+artifact_dirnames = types.SimpleNamespace()
+artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_db"
+artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
+artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR = "*__codeflare__generate_mcad_load"
+
+artifact_paths = None # store._parse_directory will turn it into a {str: pathlib.Path} dict base on ^^^
+
+
 IMPORTANT_FILES = [
     "config.yaml",
 
-    "001__cluster__dump_prometheus_db/prometheus.t*",
-    "002__cluster__capture_environment/nodes.json",
-    "002__cluster__capture_environment/ocp_version.yml"
+    f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",
+
+    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
+    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
+
+    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/pods.json",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/jobs.json",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/appwrappers.json",
 ]
 
 PARSER_VERSION = "2023-05-31"
@@ -48,12 +61,16 @@ def _parse_always(results, dirname, import_settings):
     results.from_local_env = _parse_local_env(dirname)
     results.test_config = _parse_test_config(dirname)
 
+
 def _parse_once(results, dirname):
     results.nodes_info = _parse_nodes_info(dirname) or {}
     results.cluster_info = _extract_cluster_info(results.nodes_info)
     results.sutest_ocp_version = _parse_ocp_version(dirname)
     results.metrics = _extract_metrics(dirname)
-    results.start_time, results.end_time = _parse_start_end_time(dirname)
+
+    results.pod_times = _parse_pod_times(dirname)
+    results.resource_times = _parse_resource_times(dirname)
+
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -137,7 +154,10 @@ def _parse_test_config(dirname):
 def _parse_nodes_info(dirname, sutest_cluster=True):
     nodes_info = {}
 
-    filename = pathlib.Path("002__cluster__capture_environment") / "nodes.json"
+    if not artifact_paths.CLUSTER_CAPTURE_ENV_DIR:
+        raise FileNotFoundError(artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR)
+
+    filename = artifact_paths.CLUSTER_CAPTURE_ENV_DIR / "nodes.json"
 
     with open(register_important_file(dirname, filename)) as f:
         nodeList = json.load(f)
@@ -161,16 +181,21 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
 
 @ignore_file_not_found
 def _parse_ocp_version(dirname):
+    if not artifact_paths.CLUSTER_CAPTURE_ENV_DIR:
+        raise FileNotFoundError(artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR)
 
-    with open(register_important_file(dirname, pathlib.Path("002__cluster__capture_environment") / "ocp_version.yml")) as f:
+    with open(register_important_file(dirname, artifact_paths.CLUSTER_CAPTURE_ENV_DIR / "ocp_version.yml")) as f:
         sutest_ocp_version_yaml = yaml.safe_load(f)
 
     return sutest_ocp_version_yaml["openshiftVersion"]
 
 
 def _extract_metrics(dirname):
+    if not artifact_paths.CLUSTER_CAPTURE_ENV_DIR:
+        raise FileNotFoundError(artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR)
+
     METRICS = {
-        "sutest": ("001__cluster__dump_prometheus_db/prometheus.t*", workload_prom.get_sutest_metrics()),
+        "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
     }
 
     metrics = {}
@@ -202,19 +227,93 @@ def _extract_cluster_info(nodes_info):
 
 
 @ignore_file_not_found
-def _parse_start_end_time(dirname):
-    return datetime.datetime.now(), datetime.datetime.now()
-    ANSIBLE_LOG_TIME_FMT = '%Y-%m-%d %H:%M:%S'
-    start_time = None
-    end_time = None
-    with open(register_important_file(dirname, "002__cluster__capture_environment/_ansible.log")) as f:
-        for line in f.readlines():
-            time_str = line.partition(",")[0] # ignore the MS
-            if start_time is None:
-                start_time = datetime.datetime.strptime(time_str, ANSIBLE_LOG_TIME_FMT)
-        if start_time is None:
-            raise ValueError("Ansible log file is empty :/")
+def _parse_pod_times(dirname):
+    filename = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / "pods.json"
 
-        end_time = datetime.datetime.strptime(time_str, ANSIBLE_LOG_TIME_FMT)
+    with open(register_important_file(dirname, filename)) as f:
+        try:
+            json_file = json.load(f)
+        except Exception as e:
+            logging.error(f"Couldn't parse JSON file '{filename}': {e}")
+            return
 
-    return start_time, end_time
+    pod_times = []
+    for pod in json_file["items"]:
+      pod_time = types.SimpleNamespace()
+      pod_times.append(pod_time)
+
+      pod_time.pod_name = pod["metadata"]["name"]
+      pod_friendly_name = pod_time.pod_name
+
+      pod_time.pod_friendly_name = pod_friendly_name
+      pod_time.hostname = pod["spec"].get("nodeName")
+
+      pod_time.creation_time = datetime.datetime.strptime(
+              pod["metadata"]["creationTimestamp"], K8S_TIME_FMT)
+
+      start_time_str = pod["status"].get("startTime")
+      pod_time.start_time = None if not start_time_str else \
+          datetime.datetime.strptime(start_time_str, K8S_TIME_FMT)
+
+      for condition in pod["status"].get("conditions", []):
+          last_transition = datetime.datetime.strptime(condition["lastTransitionTime"], K8S_TIME_FMT)
+
+          if condition["type"] == "ContainersReady":
+              pod_time.containers_ready = last_transition
+
+          elif condition["type"] == "Initialized":
+              pod_time.pod_initialized = last_transition
+          elif condition["type"] == "PodScheduled":
+              pod_time.pod_scheduled = last_transition
+
+      for containerStatus in pod["status"].get("containerStatuses", []):
+          try:
+              finishedAt =  datetime.datetime.strptime(
+                  containerStatus["state"]["terminated"]["finishedAt"],
+                  K8S_TIME_FMT)
+          except KeyError: continue
+
+          # take the last container_finished found
+          if ("container_finished" not in pod_time.__dict__
+              or pod_time.container_finished < finishedAt):
+              pod_time.container_finished = finishedAt
+
+    return pod_times
+
+
+@ignore_file_not_found
+def _parse_resource_times(dirname):
+    all_resource_times = {}
+
+    if not artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR:
+        raise FileNotFoundError(artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR)
+
+    @ignore_file_not_found
+    def parse(fname):
+        print(f"Parsing {fname} ...")
+        file_path = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / fname
+
+        with open(register_important_file(dirname, file_path)) as f:
+            data = yaml.safe_load(f)
+
+        for item in data["items"]:
+            metadata = item["metadata"]
+
+            kind = item["kind"]
+            creationTimestamp = datetime.datetime.strptime(
+                metadata["creationTimestamp"], K8S_TIME_FMT)
+
+            name = metadata["name"]
+            generate_name, found, suffix = name.rpartition("-")
+            remove_suffix = ((found and not suffix.isalpha()))
+
+            if remove_suffix:
+                name = generate_name # remove generated suffix
+
+            all_resource_times[f"{kind}/{name}"] = creationTimestamp
+
+    parse("appwrappers.json")
+    parse("jobs.json")
+    parse("pods.json")
+
+    return dict(all_resource_times)
