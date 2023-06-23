@@ -12,11 +12,13 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
 from . import prom as workload_prom
-
+from . import k8s_quantity
 
 register_important_file = None # will be when importing store/__init__.py
 
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
+K8S_TIME_MILLI_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
 SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
@@ -70,7 +72,7 @@ def _parse_once(results, dirname):
 
     results.pod_times = _parse_pod_times(dirname)
     results.resource_times = _parse_resource_times(dirname)
-
+    results.start_end_time = _parse_start_end_times(dirname)
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -176,6 +178,13 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
         node_info.infra = \
             not node_info.control_plane
 
+        node_info.allocatable = types.SimpleNamespace()
+        node_info.allocatable.memory = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["memory"]))
+        node_info.allocatable.memory = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["memory"]))
+        node_info.allocatable.cpu = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["cpu"]))
+        node_info.allocatable.gpu = node["status"]["allocatable"].get("nvidia.com/gpu", 0)
+        node_info.allocatable.__dict__["nvidia.com/gpu"] = node_info.allocatable.gpu
+
     return nodes_info
 
 
@@ -243,7 +252,7 @@ def _parse_pod_times(dirname):
       pod_times.append(pod_time)
 
       pod_time.pod_name = pod["metadata"]["name"]
-      pod_friendly_name = pod_time.pod_name
+      pod_friendly_name = pod["metadata"]["labels"]["job-name"]
 
       pod_time.pod_friendly_name = pod_friendly_name
       pod_time.hostname = pod["spec"].get("nodeName")
@@ -310,10 +319,64 @@ def _parse_resource_times(dirname):
             if remove_suffix:
                 name = generate_name # remove generated suffix
 
-            all_resource_times[f"{kind}/{name}"] = creationTimestamp
+            all_resource_times[f"{kind}/{name}"] = resource_times = types.SimpleNamespace()
+
+            resource_times.kind = kind
+            resource_times.name = name
+            resource_times.creation = creationTimestamp
+            if kind == "AppWrapper":
+                resource_times.completion = None
+                for condition in item["status"]["conditions"]:
+                    if condition.get("reason") != "PodsCompleted": continue
+                    if condition.get("status") != "True": continue
+                    if condition.get("type") != "Completed": continue
+                    resource_times.completion = \
+                        datetime.datetime.strptime(
+                            condition["lastUpdateMicroTime"],
+                            K8S_TIME_MILLI_FMT)
+                    break
+
+                resource_times.aw_conditions = {}
+
+                resource_times.aw_conditions["Created"] = resource_times.creation
+                for condition in item["status"]["conditions"]:
+                    resource_times.aw_conditions[condition["type"]] = \
+                        datetime.datetime.strptime(
+                            condition["lastUpdateMicroTime"],
+                            K8S_TIME_MILLI_FMT)
+
+            elif kind == "Job":
+                resource_times.completion = \
+                    datetime.datetime.strptime(
+                        item["status"].get("completionTime"),
+                        K8S_TIME_FMT)
+            else:
+                logging.Warning(f"Completion time parsing not supported for resource type {kind}.")
 
     parse("appwrappers.json")
     parse("jobs.json")
-    parse("pods.json")
 
     return dict(all_resource_times)
+
+@ignore_file_not_found
+def _parse_start_end_times(dirname):
+    ISO_FORMAT="%Y-%m-%d %H:%M:%S"
+
+    first = None
+    last = None
+    with open(register_important_file(dirname, artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / '_ansible.log')) as f:
+        for line in f.readlines():
+            if not first:
+                first = line
+            last = line
+
+    # first = "2023-04-14 17:19:19,808 p=770 u=psap-ci-runner n=ansible | ansible-playbook 2.9.27"
+    start_time = datetime.datetime.strptime(first.partition(',')[0], ISO_FORMAT)
+
+    # last = 2023-04-14 17:25:31,697 p=770 u=psap-ci-runner n=ansible |...
+    end_time = datetime.datetime.strptime(last.partition(',')[0], ISO_FORMAT)
+
+    logging.debug(f'Start time: {start_time}')
+    logging.debug(f'End time: {end_time}')
+
+    return (start_time, end_time)
