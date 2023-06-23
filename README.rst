@@ -3,7 +3,7 @@ playbooks for `OpenShift <https://www.openshift.com/>`_ for automating
 the interactions with the OpenShift operators under the responsibility
 Red Hat PSAP team.
 
-  * Performance & Latency Sensitive Application Platform
+  * Performance & Scale for AI Platforms
 
 To date, this includes:
 
