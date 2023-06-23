@@ -1,6 +1,7 @@
 import os
 import pathlib
 import time
+import traceback
 
 ARTIFACT_DIR = None
 
@@ -31,13 +32,19 @@ class TempArtifactDir(object):
 
         return True
 
-    def __exit__(self ,type, value, traceback):
-        os.environ["ARTIFACT_DIR"] = str(self.previous_dirname)
-
+    def __exit__(self, ex_type, ex_value, exc_traceback):
         global ARTIFACT_DIR
+
+        if ex_value:
+            logging.error(f"Caught exception {ex_type.__name__}: {ex_value}")
+            with open(ARTIFACT_DIR / "FAILED", "w") as f:
+                print(f"{ex_type.__name__}: {ex_value}", file=f)
+                print(''.join(traceback.format_exception(etype=ex_type, value=ex_value, tb=exc_traceback)), file=f)
+
+        os.environ["ARTIFACT_DIR"] = str(self.previous_dirname)
         ARTIFACT_DIR = self.previous_dirname
 
-        return False
+        return False # If we returned True here, any exception would be suppressed!
 
 def next_artifact_index():
     return len(list(ARTIFACT_DIR.glob("*__*")))
