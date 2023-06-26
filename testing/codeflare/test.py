@@ -68,6 +68,10 @@ def cleanup_mcad_test():
     run.run(f"oc delete namespace '{namespace}' --ignore-not-found")
 
 
+def prepare_cluster_scale():
+    #run.run("./run_toolbox.py from_config cluster fill_workernodes")
+
+
 @entrypoint()
 def prepare_ci():
     """
@@ -88,6 +92,9 @@ def prepare_ci():
         run.run(f"oc apply -f {resource}  -n {odh_namespace}")
 
     prepare_mcad_test()
+
+
+    prepare_cluster_scale()
 
 
 def _run_test(test_artifact_dir_p):
