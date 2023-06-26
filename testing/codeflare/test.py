@@ -95,6 +95,7 @@ def prepare_ci():
 
     prepare_mcad_test()
 
+    run.run("./run_toolbox.py from_config rhods wait_odh")
 
     prepare_cluster_scale()
 

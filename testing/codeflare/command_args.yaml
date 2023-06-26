@@ -17,3 +17,6 @@ cluster set_scale:
   instance_type: {{ clusters.sutest.compute.machineset.type }}
   name: {{ clusters.sutest.compute.machineset.name }}
   scale: {{ clusters.sutest.compute.machineset.count }}
+
+rhods wait_odh:
+  namespace: {{ odh.namespace }}
