@@ -11,6 +11,10 @@
   command:
     oc delete appwrappers --all -n "{{ codeflare_generate_mcad_load_namespace }}"
 
+- name: Ensure that there are no Jobs in the namespace
+  command:
+    oc delete jobs --all -n "{{ codeflare_generate_mcad_load_namespace }}"
+
 - name: Create the src artifacts directory
   file:
     path: "{{ artifact_extra_logs_dir }}/src/"
@@ -25,7 +29,7 @@
   block:
   - name: Generate the MCAD load
     shell:
-      python3 "{{ mcad_load_generator }}" "{{ codeflare_generate_mcad_load_namespace }}" --dry-run=False
+      python3 "{{ mcad_load_generator }}" "{{ codeflare_generate_mcad_load_namespace }}" --dry-run=False --job_mode={{ codeflare_generate_mcad_load_job_mode | string | title }}
 
   - name: Define the variables
     set_fact:
@@ -62,6 +66,39 @@
     until: appwrappers_completed.rc == 1 or appwrappers_completed.rc == 0
     # failed when fatal
     failed_when: appwrappers_completed.rc == 1
+
+  - name: Wait for the Jobs to complete
+    shell: |
+      set -o pipefail; set -e;
+      jobs_json=$(oc get jobs -n {{ codeflare_generate_mcad_load_namespace }} -ojson)
+
+      oc get jobs -n {{ codeflare_generate_mcad_load_namespace }}
+      oc get pods -ljob-name= -n {{ codeflare_generate_mcad_load_namespace }}
+
+      jobs_count=$(jq '.items | length' <<< $jobs_json)
+      jobs_active=$(jq '[.items[] | select(.status.active and .status.active != 0)] | length' <<< $jobs_json)
+      jobs_failed=$(jq '[.items[] | select(.status.failed and .status.failed != 0)] | length' <<< $jobs_json)
+
+      if [[ "$jobs_failed" != 0 ]]; then
+        echo "Found $jobs_failed failed Jobs(s), aborting."
+        exit 1 # fatal
+      fi
+
+      if [[ "$jobs_active" != 0 ]]; then
+         echo "$jobs_active Jobs still active. Continue waiting ...."
+         exit 2 # retry
+      fi
+
+      echo "All the Jobs have completed successfully. All done."
+      exit 0 # done
+    register: jobs_completed
+    retries: 60
+    delay: 30
+    # until fatal or done
+    until: jobs_completed.rc == 1 or jobs_completed.rc == 0
+    # failed when fatal
+    failed_when: jobs_completed.rc == 1
+    when: codeflare_generate_mcad_load_job_mode
 
   always:
   - name: Capture the state of the AppWrappers
