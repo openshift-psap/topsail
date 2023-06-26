@@ -91,7 +91,7 @@ class FromConfig:
         try:
             command_args = command_args[command_key].copy()
         except KeyError:
-            logging.error(f"key '{command_key}' not found. Available keys: \n-"
+            logging.error(f"key '{command_key}' not found. Available keys: \n- "
                           + "\n- ".join(sorted(command_args.keys())))
             raise SystemExit(1)
 
