@@ -13,6 +13,8 @@ logging.getLogger().setLevel(logging.INFO)
 
 import subprocess
 
+import k8s_quantity
+
 ARTIFACT_DIR = pathlib.Path(os.environ.get("ARTIFACT_DIR", "."))
 
 def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None):
@@ -34,22 +36,6 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
 
     return proc
 
-
-import k8s_quantity
-
-"""
-    number/type of nodes available,
-
-    number of AppWrappers,
-
-    number of Pod per AppWrappers,
-
-    amount of memory/CPU per Pod,
-    number of GPU per Pod
-
-    duration of the Pod execution
-
-"""
 
 with open(pathlib.Path(__file__).parent / "base_appwrapper.yaml") as f:
     base_appwrapper = yaml.safe_load(f)
@@ -130,7 +116,6 @@ def main(namespace=None, dry_run=True):
             job = copy.deepcopy(job_template)
             job_name = f"{appwrapper_name}-job"
             set_config(job, "metadata.name", job_name)
-            set_config(job, "spec.template.metadata.name", job_name + "-pod")
             set_config(job, "metadata.namespace", namespace)
             set_config(job, "spec.template.spec.containers[0].env[0].value", str(aw_pod_runtime))
             set_config(job, "spec.template.spec.containers[0].resources.limits", copy.deepcopy(aw_pod_resources))
@@ -163,8 +148,6 @@ def main(namespace=None, dry_run=True):
                 logging.info(f"DRY_RUN: {command}")
             else:
                 run(command)
-
-
 
     print(f"---\n# Summary: {total_aw_count} AppWrappers over {total_aws_configs} configurations")
     print("\n".join(summary))
