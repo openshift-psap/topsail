@@ -110,10 +110,10 @@ def _run_test(test_artifact_dir_p):
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
+        run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+
         failed = True
         try:
-            run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
-
             run.run("./run_toolbox.py from_config codeflare generate_mcad_load")
 
             failed = False
