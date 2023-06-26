@@ -6,3 +6,11 @@
 # Mandatory value
 codeflare_generate_mcad_load_namespace:
 
+# list of expected target states
+codeflare_generate_mcad_load_target_states:
+- Completed
+
+# list of states that fail the test
+codeflare_generate_mcad_load_fail_if_states:
+- Failed
+
