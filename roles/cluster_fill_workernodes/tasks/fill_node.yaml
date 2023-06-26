@@ -2,6 +2,10 @@
   fail: msg="Only 'cpu' resource type is currently supported"
   when: cluster_fill_workernodes_resource_name != "cpu"
 
+- name: Get the description of the node before fill it
+  shell:
+    oc describe node {{ node_name }} > "{{ artifact_extra_logs_dir }}/node_{{ node_name }}.before.desc"
+
 - name: Get the node allocatable amount of {{ cluster_fill_workernodes_resource_name }} on node {{ node_name }}
   command:
     oc get node {{ node_name }} -ojsonpath={.status.allocatable.cpu}
@@ -88,3 +92,7 @@
     shell:
       set -o pipefail;
       oc describe node {{ node_name }} | grep 'Allocated resources' -A4 | grep cpu | awk '{ print $2 }'
+
+  - name: Get the description of the node after fill it
+    shell:
+      oc describe node {{ node_name }} > "{{ artifact_extra_logs_dir }}/node_{{ node_name }}.after.desc"
