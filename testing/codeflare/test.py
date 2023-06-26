@@ -8,6 +8,7 @@ logging.getLogger().setLevel(logging.INFO)
 import datetime
 import time
 import functools
+import traceback
 
 import yaml
 import fire
@@ -106,22 +107,45 @@ def prepare_ci():
     prepare_cluster_scale()
 
 
-def _run_test(test_artifact_dir_p):
+def save_matbench_files(cfg):
+    with open(env.ARTIFACT_DIR / "settings", "w") as f:
+        print(f"mcad_load_test=true", file=f)
+        print(f"name={cfg['id']}", file=f)
+
+    with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+        yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+def _prepare_test(cfg):
+    pass
+
+def _run_test(cfg, test_artifact_dir_p):
     next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test"):
+    next_count = env.next_artifact_index()
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare__{cfg['id']}"):
+        _prepare_test(cfg)
+
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test__{cfg['id']}"):
+
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
+        save_matbench_files(cfg)
 
-        with open(env.ARTIFACT_DIR / "settings", "w") as f:
-            print(f"mcad_load_test=true", file=f)
-
-        with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-            yaml.dump(config.ci_artifacts.config, f, indent=4)
+        run.run("./run_toolbox.py cluster capture_environment >/dev/null")
 
         run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
 
+        extra = {}
         failed = True
         try:
-            run.run("./run_toolbox.py from_config codeflare generate_mcad_load")
+            if "target_states" in cfg:
+                extra["target_states"] = cfg["target_states"]
+            if "fail_if_states" in cfg:
+                extra["fail_if_states"] = cfg["fail_if_states"]
+
+            run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load  --extra {extra}")
+
+            if cfg.get("with_job_mode"):
+                extra["job_mode"] = True
+                run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load mcad-load-test --extra {extra}")
 
             failed = False
         finally:
@@ -129,9 +153,24 @@ def _run_test(test_artifact_dir_p):
                 print("1" if failed else "0", file=f)
 
             run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
-            run.run("./run_toolbox.py cluster capture_environment >/dev/null")
 
-    run.run("./run_toolbox.py codeflare generate_mcad_load mcad-load-test --job-mode=True")
+
+def _run_test_and_visualize(cfg):
+    try:
+        test_artifact_dir_p = [None]
+        _run_test(cfg, test_artifact_dir_p)
+    finally:
+        generate_reports = config.ci_artifacts.get_config("matbench.generate_reports")
+        if generate_reports and test_artifact_dir_p[0] is not None:
+            next_count = env.next_artifact_index()
+            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
+                visualize.prepare_matbench()
+                generate_plots(test_artifact_dir_p[0])
+
+        elif not generate_reports:
+            logging.warning("Not generating the visualization because it is disabled in the configuration file.")
+        else:
+            logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
 
 @entrypoint()
@@ -141,19 +180,24 @@ def test_ci():
     """
 
     try:
-        test_artifact_dir_p = [None]
-        _run_test(test_artifact_dir_p)
+        failed_tests = []
+        ex = None
+        for test_case_cfg in config.ci_artifacts.get_config("tests.mcad.test_cases"):
+            if test_case_cfg.get("disabled", False):
+                logging.info(f"Test '{test_case_cfg.get('id')}' is disabled, skipping it.")
+                continue
+
+            try:
+                _run_test_and_visualize(test_case_cfg)
+            except Exception as e:
+                ex = e
+                failed_tests.append(test_case_cfg.get("id"))
+                logging.error(f"*** Caught exception: {e.__class__.__name__}: {e}")
+                traceback.print_exc()
+        if ex:
+            logging.error(f"Caught exception(s) in [{', '.join(failed_tests)}], aborting.")
+            raise ex
     finally:
-        generate_reports = config.ci_artifacts.get_config("matbench.generate_reports")
-        if generate_reports and test_artifact_dir_p[0] is not None:
-            next_count = env.next_artifact_index()
-            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
-                visualize.prepare_matbench()
-                generate_plots(test_artifact_dir_p[0])
-        elif not generate_reports:
-            logging.warning("Not generating the visualization because it is disabled in the configuration file.")
-        else:
-            logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()

@@ -101,13 +101,13 @@ tests:
   mcad:
     namespace: mcad-load-test
     test_cases:
-    - name: unschedulable
+    - id: all_schedulable
+    - id: scheduling
+      with_job_mode: true
+    - id: unschedulable
       target_states: [Queueing, HeadOfLine]
       fail_if_states: [Dispatched, Running, Completed, Failed]
-    - name: all_scheduled
-    - name: scheduled
-    - name: job_scheduled
-      mode: Job
+
 matbench:
   preset: null
   workload: codeflare
