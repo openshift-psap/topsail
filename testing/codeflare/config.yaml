@@ -56,8 +56,6 @@ clusters:
       workers:
         type: m6a.2xlarge
         count: 2
-      compute:
-        type: m6i.2xlarge
 
   sutest:
     is_metal: false
@@ -67,7 +65,8 @@ clusters:
       dedicated: true
       machineset:
         name: workload-pods
-        count: null
+        type: m6i.2xlarge
+        count: 2
         taint:
           key: only-workload-pods
           value: "yes"
@@ -99,6 +98,14 @@ odh:
 tests:
   mcad:
     namespace: mcad-load-test
+    test_cases:
+    - name: unschedulable
+      target_states: [Queueing, HeadOfLine]
+      fail_if_states: [Dispatched, Running, Completed, Failed]
+    - name: all_scheduled
+    - name: scheduled
+    - name: job_scheduled
+      mode: Job
 matbench:
   preset: null
   workload: codeflare

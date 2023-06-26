@@ -9,3 +9,11 @@
 
 codeflare generate_mcad_load:
   namespace: {{ tests.mcad.namespace }}
+
+cluster fill_workernodes:
+  namespace: {{ tests.mcad.namespace }}
+
+cluster set_scale:
+  instance_type: {{ clusters.sutest.compute.machineset.type }}
+  name: {{ clusters.sutest.compute.machineset.name }}
+  scale: {{ clusters.sutest.compute.machineset.count }}

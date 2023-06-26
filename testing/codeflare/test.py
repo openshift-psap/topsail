@@ -68,6 +68,12 @@ def cleanup_mcad_test():
     run.run(f"oc delete namespace '{namespace}' --ignore-not-found")
 
 
+def prepare_cluster_scale():
+    #run.run("./run_toolbox.py from_config cluster fill_workernodes")
+
+    run.run(f"./run_toolbox.py from_config cluster set_scale")
+
+
 @entrypoint()
 def prepare_ci():
     """
@@ -90,6 +96,9 @@ def prepare_ci():
     prepare_mcad_test()
 
 
+    prepare_cluster_scale()
+
+
 def _run_test(test_artifact_dir_p):
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test"):
@@ -101,10 +110,10 @@ def _run_test(test_artifact_dir_p):
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
+        run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+
         failed = True
         try:
-            run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
-
             run.run("./run_toolbox.py from_config codeflare generate_mcad_load")
 
             failed = False
@@ -114,6 +123,8 @@ def _run_test(test_artifact_dir_p):
 
             run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
             run.run("./run_toolbox.py cluster capture_environment >/dev/null")
+
+    run.run("./run_toolbox.py codeflare generate_mcad_load mcad-load-test --job-mode=True")
 
 
 @entrypoint()

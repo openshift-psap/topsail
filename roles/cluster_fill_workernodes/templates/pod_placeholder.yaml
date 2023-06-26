@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: cluster_placeholder
+  name: {{ cluster_fill_workernodes_name }}-{{ node_name.split('.')[0] }}
+  namespace: {{ cluster_fill_workernodes_namespace }}
+spec:
+  restartPolicy: Never
+  # force the name of the node in which this pod should run
+  nodeName: "{{ node_name }}"
+  containers:
+  - image: registry.access.redhat.com/ubi8/ubi
+    name: main
+    command: [sleep, inf]
+    resources:
+      requests:
+        {{ cluster_fill_workernodes_resource_name }}: {{ resource_request_value }}
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
+    runAsNonRoot: true

@@ -13,6 +13,8 @@ logging.getLogger().setLevel(logging.INFO)
 
 import subprocess
 
+import k8s_quantity
+
 ARTIFACT_DIR = pathlib.Path(os.environ.get("ARTIFACT_DIR", "."))
 
 def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None):
@@ -35,22 +37,6 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
     return proc
 
 
-import k8s_quantity
-
-"""
-    number/type of nodes available,
-
-    number of AppWrappers,
-
-    number of Pod per AppWrappers,
-
-    amount of memory/CPU per Pod,
-    number of GPU per Pod
-
-    duration of the Pod execution
-
-"""
-
 with open(pathlib.Path(__file__).parent / "base_appwrapper.yaml") as f:
     base_appwrapper = yaml.safe_load(f)
 
@@ -64,7 +50,7 @@ def set_config(config, jsonpath, value):
     get_config(jsonpath, config=config) # will raise an exception if the jsonpath does not exist
     jsonpath_ng.parse(jsonpath).update(config, value)
 
-def main(namespace=None, dry_run=True):
+def main(namespace=None, dry_run=True, job_mode=True):
     if namespace is None:
         logging.info("Getting the current project name ...")
 
@@ -72,6 +58,9 @@ def main(namespace=None, dry_run=True):
             if not dry_run else "<DRY RUN>"
 
     logging.info(f"Using namespace '{namespace}' to deploy the workload.")
+
+    if job_mode:
+        logging.info("Running in Job mode")
 
     base_name = get_config("base_name")
 
@@ -130,7 +119,6 @@ def main(namespace=None, dry_run=True):
             job = copy.deepcopy(job_template)
             job_name = f"{appwrapper_name}-job"
             set_config(job, "metadata.name", job_name)
-            set_config(job, "spec.template.metadata.name", job_name + "-pod")
             set_config(job, "metadata.namespace", namespace)
             set_config(job, "spec.template.spec.containers[0].env[0].value", str(aw_pod_runtime))
             set_config(job, "spec.template.spec.containers[0].resources.limits", copy.deepcopy(aw_pod_resources))
@@ -154,17 +142,26 @@ def main(namespace=None, dry_run=True):
 #  - running for {aw_pod_runtime} seconds
 ---
 """)
-            src_file = ARTIFACT_DIR / f"{appwrapper_name}.yaml"
-            with open(src_file, "w") as f:
-                yaml.dump(appwrapper, f)
+
+            if job_mode:
+                src_file = ARTIFACT_DIR / f"job_{appwrapper_name}.yaml"
+                with open(src_file, "w") as f:
+                    for item in appwrapper["spec"]["resources"]["GenericItems"]:
+                        replica = item["replicas"] # currently ignored
+                        job = item["generictemplate"]
+
+                        yaml.dump(job, f)
+                        print("---", file=f)
+            else:
+                src_file = ARTIFACT_DIR / f"{appwrapper_name}.yaml"
+                with open(src_file, "w") as f:
+                    yaml.dump(appwrapper, f)
 
             command = f"oc apply -f {src_file}"
             if dry_run:
                 logging.info(f"DRY_RUN: {command}")
             else:
                 run(command)
-
-
 
     print(f"---\n# Summary: {total_aw_count} AppWrappers over {total_aws_configs} configurations")
     print("\n".join(summary))

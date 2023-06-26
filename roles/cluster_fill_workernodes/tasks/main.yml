@@ -1,0 +1,28 @@
+- name: Get the list of the worker nodes
+  shell:
+    oc get nodes
+       -l{{ cluster_fill_workernodes_label_selector }}
+       -oname
+       | cut -d/ -f2
+  register:
+    worker_node_names_cmd
+  failed_when: not worker_node_names_cmd.stdout
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create a place-holder pod on each of the worker nodes
+  loop: "{{ worker_node_names_cmd.stdout_lines }}"
+  loop_control:
+    loop_var: node_name
+  include_tasks: fill_node.yaml
+
+- name: Store the definition of the nodes
+  shell:
+    oc get nodes
+       -lnode-role.kubernetes.io/worker
+       -oyaml
+       > "{{ artifact_extra_logs_dir }}/nodes.yaml"

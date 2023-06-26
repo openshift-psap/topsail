@@ -25,9 +25,8 @@ job_template:
     namespace: ...
   spec:
     activeDeadlineSeconds: 18000
+    backoffLimit: 0
     template:
-      metadata:
-        name: ...
       spec:
         restartPolicy: Never
         containers:
@@ -44,3 +43,10 @@ job_template:
           resources:
             limits: {}
             requests: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          runAsNonRoot: true
