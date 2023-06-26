@@ -19,7 +19,7 @@
 
 - name: Create the namespace if it does not exist
   shell:
-    oc create ns mcad-load-test -oyaml --dry-run=client | tee "{{ artifact_extra_logs_dir }}/src/namespace.yaml" | oc apply -f-
+    oc create ns "{{ codeflare_generate_mcad_load_namespace }}" -oyaml --dry-run=client | tee "{{ artifact_extra_logs_dir }}/src/namespace.yaml" | oc apply -f-
 
 - name: Generate MCAD load
   block:
