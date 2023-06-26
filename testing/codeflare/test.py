@@ -69,7 +69,7 @@ def cleanup_mcad_test():
 
 
 def prepare_cluster_scale():
-    #run.run("./run_toolbox.py from_config cluster fill_workernodes")
+    run.run("./run_toolbox.py from_config cluster fill_workernodes")
 
     run.run(f"./run_toolbox.py from_config cluster set_scale")
 
