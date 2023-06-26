@@ -124,6 +124,8 @@ def _run_test(test_artifact_dir_p):
             run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
             run.run("./run_toolbox.py cluster capture_environment >/dev/null")
 
+    run.run("./run_toolbox.py codeflare generate_mcad_load mcad-load-test --job-mode=True")
+
 
 @entrypoint()
 def test_ci():
