@@ -50,7 +50,7 @@ def set_config(config, jsonpath, value):
     get_config(jsonpath, config=config) # will raise an exception if the jsonpath does not exist
     jsonpath_ng.parse(jsonpath).update(config, value)
 
-def main(namespace=None, dry_run=True):
+def main(namespace=None, dry_run=True, job_mode=True):
     if namespace is None:
         logging.info("Getting the current project name ...")
 
@@ -58,6 +58,9 @@ def main(namespace=None, dry_run=True):
             if not dry_run else "<DRY RUN>"
 
     logging.info(f"Using namespace '{namespace}' to deploy the workload.")
+
+    if job_mode:
+        logging.info("Running in Job mode")
 
     base_name = get_config("base_name")
 
@@ -139,9 +142,20 @@ def main(namespace=None, dry_run=True):
 #  - running for {aw_pod_runtime} seconds
 ---
 """)
-            src_file = ARTIFACT_DIR / f"{appwrapper_name}.yaml"
-            with open(src_file, "w") as f:
-                yaml.dump(appwrapper, f)
+
+            if job_mode:
+                src_file = ARTIFACT_DIR / f"job_{appwrapper_name}.yaml"
+                with open(src_file, "w") as f:
+                    for item in appwrapper["spec"]["resources"]["GenericItems"]:
+                        replica = item["replicas"] # currently ignored
+                        job = item["generictemplate"]
+
+                        yaml.dump(job, f)
+                        print("---", file=f)
+            else:
+                src_file = ARTIFACT_DIR / f"{appwrapper_name}.yaml"
+                with open(src_file, "w") as f:
+                    yaml.dump(appwrapper, f)
 
             command = f"oc apply -f {src_file}"
             if dry_run:
