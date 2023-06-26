@@ -1,0 +1,90 @@
+- name: Fail the resource is not 'cpu'
+  fail: msg="Only 'cpu' resource type is currently supported"
+  when: cluster_fill_workernodes_resource_name != "cpu"
+
+- name: Get the node allocatable amount of {{ cluster_fill_workernodes_resource_name }} on node {{ node_name }}
+  command:
+    oc get node {{ node_name }} -ojsonpath={.status.allocatable.cpu}
+  register: allocatable_cmd
+
+- name: Get the available amount of {{ cluster_fill_workernodes_resource_name }} on node {{ node_name }}
+  shell:
+    set -o pipefail;
+    oc describe node {{ node_name }} | grep 'Allocated resources' -A4 | grep cpu | awk '{ print $2 }'
+  register: allocated_cmd
+
+- name: Compute the available resource count
+  shell: |
+    python3 <<EOF
+    allocatable_cores_lines = "{{  allocatable_cmd.stdout }}"
+    allocatable_cores = int(allocatable_cores_lines.strip("m"))
+
+    allocated_cores_lines = "{{  allocated_cmd.stdout }}"
+    allocated_cores = int(allocated_cores_lines.strip("m"))
+
+    request_cores = allocatable_cores - allocated_cores - 10
+    print(f"{request_cores:.0f}m")
+    EOF
+  register: resource_request_value_cmd
+
+- name: Set the variables
+  set_fact:
+    resource_request_value: "{{ resource_request_value_cmd.stdout }}"
+
+- name: Create the Pod definition
+  template:
+    src: "{{ cluster_fill_workernodes_pod_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/pod_placeholder_{{ node_name }}.yaml"
+    mode: 0400
+
+- name: Check if the Pod already exists
+  command:
+    oc get -f "{{ artifact_extra_logs_dir }}/src/pod_placeholder_{{ node_name }}.yaml"
+       --ignore-not-found
+       -oname
+  failed_when: false
+  register: has_placeholder_pod
+
+- name: Set a flag if the Pod already exists
+  command:
+    touch "{{ artifact_extra_logs_dir }}/{{ node_name }}_ALREADY_EXISTS"
+  when: has_placeholder_pod.stdout | length > 0
+
+- name: Apply the Pod definition
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/pod_placeholder_{{ node_name }}.yaml"
+  when: not has_placeholder_pod.stdout
+
+- name: Wait for the placeholder Pod to start running
+  block:
+  - name: Wait for the placeholder Pod to start running
+    shell:
+      set -o pipefail;
+      oc get -f "{{ artifact_extra_logs_dir }}/src/pod_placeholder_{{ node_name }}.yaml"
+         -o custom-columns=:.status.phase
+         --no-headers
+    register: pod_status_wait
+    until: pod_status_wait.stdout == "Succeeded" or pod_status_wait.stdout == "Error" or pod_status_wait.stdout == "Failed" or pod_status_wait.stdout == "Running"
+    retries: 10
+    delay: 5
+    failed_when: pod_status_wait.stdout == "Error" or pod_status_wait.stdout == "Failed" or pod_status_wait.stdout == "Pending"
+  always:
+  - name: Save the placeholder Pod status
+    shell:
+      oc get -f "{{ artifact_extra_logs_dir }}/src/pod_placeholder_{{ node_name }}.yaml"
+         > "{{ artifact_extra_logs_dir }}/pod_placeholder_{{ node_name }}.status"
+
+  - name: Save the placeholder Pod YAML
+    shell:
+      oc get -oyaml -f "{{ artifact_extra_logs_dir }}/src/pod_placeholder_{{ node_name }}.yaml"
+         > "{{ artifact_extra_logs_dir }}/pod_placeholder_{{ node_name }}.yaml"
+
+  - name: Save the placeholder Pod description
+    shell:
+      oc describe -f "{{ artifact_extra_logs_dir }}/src/pod_placeholder_{{ node_name }}.yaml"
+         > "{{ artifact_extra_logs_dir }}/pod_placeholder_{{ node_name }}.desc"
+
+  - name: Get the available amount of {{ cluster_fill_workernodes_resource_name }} on node {{ node_name }}
+    shell:
+      set -o pipefail;
+      oc describe node {{ node_name }} | grep 'Allocated resources' -A4 | grep cpu | awk '{ print $2 }'
