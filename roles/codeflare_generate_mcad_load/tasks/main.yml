@@ -7,6 +7,10 @@
   retries: 10
   until: mcad_ready_cmd.stdout == "1/1"
 
+- name: Ensure that there are no AppWrappers in the namespace
+  command:
+    oc delete appwrappers --all -n "{{ codeflare_generate_mcad_load_namespace }}"
+
 - name: Create the src artifacts directory
   file:
     path: "{{ artifact_extra_logs_dir }}/src/"
