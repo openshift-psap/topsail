@@ -2,6 +2,7 @@ import os
 import pathlib
 import time
 import traceback
+import logging
 
 ARTIFACT_DIR = None
 
