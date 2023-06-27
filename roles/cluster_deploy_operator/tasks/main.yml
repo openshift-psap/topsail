@@ -283,6 +283,12 @@
          -oyaml
           -n "{{ cluster_deploy_operator_namespace }}"
           > {{ artifact_extra_logs_dir }}/operator_csv.yml
+  - name: Store the YAML of the subscription
+    shell:
+      oc get -f "{{ artifact_extra_logs_dir }}/src/002_sub.yml"
+         -oyaml
+         -n "{{ cluster_deploy_operator_namespace }}"
+         > {{ artifact_extra_logs_dir }}/operator_sub.yml
   rescue:
   - name: Capture the Catalog Operator logs (debug)
     shell:
