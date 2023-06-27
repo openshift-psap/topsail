@@ -1,0 +1,13 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: GPUOperator.enable_time_sharing
+
+# namespace in which the GPU Operator is deployed
+gpu_operator_enable_time_sharing_namespace: nvidia-gpu-operator
+
+# number of slices available for each of the GPUs
+gpu_operator_enable_time_sharing_replicas: 4
+
+# name of the ConfigMap where the configuration will be stored
+gpu_operator_enable_time_sharing_configmap_name: time-slicing-config-all
+

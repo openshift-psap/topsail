@@ -145,3 +145,18 @@ class GPUOperator:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("gpu_operator_enable_time_sharing")
+    @AnsibleMappedParams
+    def enable_time_sharing(self, namespace="nvidia-gpu-operator", replicas=4, configmap_name="time-slicing-config-all"):
+        """
+        Enable time-sharing in the GPU Operator ClusterPolicy
+
+        Args:
+          namespace: namespace in which the GPU Operator is deployed
+          replicas: number of slices available for each of the GPUs
+          configmap_name: name of the ConfigMap where the configuration will be stored
+        """
+
+        return RunAnsibleRole(locals())
