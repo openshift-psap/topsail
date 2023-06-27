@@ -69,7 +69,7 @@ def cleanup_mcad_test():
     run.run(f"oc delete namespace '{namespace}' --ignore-not-found")
 
 
-def prepare_cluster_scale():
+def prepare_worker_node_placeholders():
     worker_label = config.ci_artifacts.get_config("clusters.sutest.worker.label")
     if run.run(f"oc get nodes -oname -l{worker_label}", capture_stdout=True).stdout:
         logging.info(f"Cluster already has {worker_label} nodes. Not applying the labels.")
@@ -78,13 +78,15 @@ def prepare_cluster_scale():
 
     run.run("./run_toolbox.py from_config cluster fill_workernodes")
 
-    run.run(f"./run_toolbox.py from_config cluster set_scale")
-
 
 def prepare_gpu_operator():
     run.run("./run_toolbox.py nfd_operator deploy_from_operatorhub")
     run.run("./run_toolbox.py gpu_operator deploy_from_operatorhub")
     run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
+    run.run(f"./run_toolbox.py from_config cluster set_scale")
+
+    run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
+    run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
 
 
 def cleanup_gpu_operator():
@@ -121,7 +123,7 @@ def prepare_ci():
 
     prepare_gpu_operator()
 
-    prepare_cluster_scale()
+    prepare_worker_node_placeholders()
 
 
 def save_matbench_files(cfg):

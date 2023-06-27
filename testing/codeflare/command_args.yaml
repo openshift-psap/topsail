@@ -24,3 +24,8 @@ rhods wait_odh:
 
 gpu_operator enable_time_sharing:
   replicas: {{ gpu.time_sharing.replicas }}
+
+gpu_operator run_gpu_burn:
+  keep_resources: true
+  namespace: {{ tests.mcad.namespace }}
+  runtime: 30 #s
