@@ -18,6 +18,12 @@
   register: gpu_burn_gpu_nodes
   failed_when: gpu_burn_gpu_nodes.stdout == ""
 
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
 # Store the configmap into a file, for easy reproduction from artifacts
 - name: Create the entrypoint ConfigMap file
   shell:
@@ -26,11 +32,11 @@
        -n {{ gpu_operator_run_gpu_burn_namespace }}
        --dry-run=client
        -oyaml
-       > {{ artifact_extra_logs_dir }}/000_configmap_gpu_burn_entrypoint.yml
+       > {{ artifact_extra_logs_dir }}/src/000_configmap_gpu_burn_entrypoint.yml
 
 - name: Create the entrypoint ConfigMap resource
   command:
-    oc apply -f {{ artifact_extra_logs_dir }}/000_configmap_gpu_burn_entrypoint.yml
+    oc apply -f {{ artifact_extra_logs_dir }}/src/000_configmap_gpu_burn_entrypoint.yml
 
 # Store the configmap into a file, for easy reproduction from artifacts
 - name: Create the src ConfigMap file
@@ -40,10 +46,10 @@
        -n {{ gpu_operator_run_gpu_burn_namespace }}
        --dry-run=client
        -oyaml
-       > {{ artifact_extra_logs_dir }}/000_configmap_gpu_burn_src.yml
+       > {{ artifact_extra_logs_dir }}/src/000_configmap_gpu_burn_src.yml
 
 - name: Create the src ConfigMap resource
-  command: oc apply -f {{ artifact_extra_logs_dir }}/000_configmap_gpu_burn_src.yml
+  command: oc apply -f {{ artifact_extra_logs_dir }}/src/000_configmap_gpu_burn_src.yml
 
 - name: Delete possibly stalled GPU burn Pods
   command:
@@ -57,14 +63,14 @@
     loop_var: gpu_node_name
   template:
     src: "{{ gpu_burn_pod }}"
-    dest: "{{ artifact_extra_logs_dir }}/001_pod_gpu_burn_{{ gpu_node_name }}.yml"
+    dest: "{{ artifact_extra_logs_dir }}/src/001_pod_gpu_burn_{{ gpu_node_name }}.yml"
     mode: 0400
 
 - name: Create GPU Burn Pods from template
   loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
   loop_control:
     loop_var: gpu_node_name
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/001_pod_gpu_burn_{{ gpu_node_name }}.yml"
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_pod_gpu_burn_{{ gpu_node_name }}.yml"
 
 - name: Ensure that the GPU burn ran successfully
   block:
