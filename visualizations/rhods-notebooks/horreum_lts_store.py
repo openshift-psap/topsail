@@ -166,8 +166,6 @@ def build_lts_payloads() -> dict:
             "$schema": "urn:rhods-notebooks:1.0.0",
             "data": {
                 "users": _decode_users(results),
-                'rhods_version': results.rhods_info.version,
-                'ocp_version': results.sutest_ocp_version,
                 'metrics': _gather_prom_metrics(entry),
                 'thresholds': results.thresholds,
                 'config': results.test_config.yaml_file,
@@ -178,6 +176,8 @@ def build_lts_payloads() -> dict:
                 "test": results.test_config.get('tests.notebooks.identifier', "missing"),
                 "start": start_time.isoformat(),
                 "end": end_time.isoformat(),
+                'rhods_version': results.rhods_info.version,
+                'ocp_version': results.sutest_ocp_version,
                 "settings": {'version': results.rhods_info.version, **_parse_entry(entry.settings)},
             }
         }

@@ -9,6 +9,8 @@ from pydantic import BaseModel, constr
 class NotebookScaleMetadata(matbench_models.Metadata):
     presets: List[str]
     test: str
+    ocp_version: matbench_models.SemVer
+    rhods_version: matbench_models.SemVer
     settings: dict
 
 
@@ -17,8 +19,6 @@ class NotebookScaleData(matbench_models.ExclusiveModel):
     config: BaseModel
     metrics: prom.PromValues
     thresholds: BaseModel
-    ocp_version: matbench_models.SemVer
-    rhods_version: matbench_models.SemVer
     cluster_info: metadata.ClusterInfo
 
 
