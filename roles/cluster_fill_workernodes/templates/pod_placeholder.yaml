@@ -9,6 +9,11 @@ spec:
   restartPolicy: Never
   # force the name of the node in which this pod should run
   nodeName: "{{ node_name }}"
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+    runAsNonRoot: true
+    runAsUser: 1001
   containers:
   - image: registry.access.redhat.com/ubi8/ubi
     name: main
@@ -21,6 +26,4 @@ spec:
       allowPrivilegeEscalation: false
       capabilities:
         drop: ["ALL"]
-      seccompProfile:
-        type: RuntimeDefault
     runAsNonRoot: true
