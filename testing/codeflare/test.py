@@ -69,6 +69,12 @@ def cleanup_mcad_test():
 
 
 def prepare_cluster_scale():
+    worker_label = config.ci_artifacts.get_config("clusters.sutest.worker.label")
+    if run.run(f"oc get nodes -oname -l{worker_label}", capture_stdout=True).stdout:
+        logging.info(f"Cluster already has {worker_label} nodes. Not applying the labels.")
+    else:
+        run.run(f"oc label nodes -lnode-role.kubernetes.io/worker {worker_label}")
+
     run.run("./run_toolbox.py from_config cluster fill_workernodes")
 
     run.run(f"./run_toolbox.py from_config cluster set_scale")

@@ -12,6 +12,7 @@ codeflare generate_mcad_load:
 
 cluster fill_workernodes:
   namespace: {{ tests.mcad.namespace }}
+  label_selector: {{ clusters.sutest.worker.label
 
 cluster set_scale:
   instance_type: {{ clusters.sutest.compute.machineset.type }}

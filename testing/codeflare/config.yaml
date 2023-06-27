@@ -71,6 +71,8 @@ clusters:
           key: only-workload-pods
           value: "yes"
           effect: NoSchedule
+    worker:
+      label: initial_worker_node=true
   driver:
     is_metal: false
     compute:
