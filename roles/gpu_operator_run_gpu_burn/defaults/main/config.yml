@@ -1,0 +1,15 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: GPUOperator.run_gpu_burn
+
+# namespace in which GPU-burn will be executed
+gpu_operator_run_gpu_burn_namespace: default
+
+# How long to run the GPU for, in seconds
+# Type: Int
+gpu_operator_run_gpu_burn_runtime: 30
+
+# if true, do not delete the GPU-burn ConfigMaps
+# Type: Bool
+gpu_operator_run_gpu_burn_keep_resources: false
+

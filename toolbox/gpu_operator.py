@@ -88,7 +88,7 @@ class GPUOperator:
         print("Deploying the GPU Operator from OperatorHub.")
         return RunAnsibleRole(opts)
 
-    @AnsibleRole("gpu_operator_run_gpu-burn")
+    @AnsibleRole("gpu_operator_run_gpu_burn")
     def run_gpu_burn(self, runtime=None):
         """
         Runs the GPU burn on the cluster

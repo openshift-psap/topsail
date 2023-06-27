@@ -4,7 +4,7 @@ metadata:
   labels:
     app: gpu-burn
   name: gpu-burn-{{ gpu_node_name }}
-  namespace: default
+  namespace: {{ gpu_operator_run_gpu_burn_namespace }}
 spec:
   restartPolicy: Never
   # force the name of the node in which this pod should run
@@ -25,7 +25,7 @@ spec:
       readOnly: true
     env:
     - name: GPU_BURN_TIME
-      value: "{{ gpu_burn_time }}"
+      value: "{{ gpu_operator_run_gpu_burn_runtime }}"
     resources:
       limits:
         # '0' means 'get access to all the GPUs of the local node'
