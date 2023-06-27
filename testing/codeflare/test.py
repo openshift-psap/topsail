@@ -87,6 +87,15 @@ def prepare_gpu_operator():
     run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
 
 
+def cleanup_gpu_operator():
+    if run.run(f'oc get project -oname nvidia-gpu-operator 2>/dev/null', check=False).returncode != 0:
+        run.run("oc delete ns nvidia-gpu-operator")
+        run.run("oc delete clusterpolicy --all")
+
+    if run.run(f'oc get project -oname openshift-nfd 2>/dev/null', check=False).returncode != 0:
+        run.run("oc delete ns openshift-nfd")
+
+
 @entrypoint()
 def prepare_ci():
     """
@@ -239,8 +248,9 @@ def cleanup_cluster():
 
     run.run(f"oc delete ns {odh_namespace}")
 
-
     cleanup_mcad_test()
+
+    cleanup_gpu_operator()
 
 
 @entrypoint(ignore_secret_path=True)
