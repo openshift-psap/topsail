@@ -66,9 +66,6 @@
     loop_var: gpu_node_name
   command: oc apply -f "{{ artifact_extra_logs_dir }}/001_pod_gpu_burn_{{ gpu_node_name }}.yml"
 
-- name: "Let the GPU burn Pods run {{ gpu_burn_time }} seconds"
-  command: sleep "{{ gpu_burn_time }}"
-
 - name: Ensure that the GPU burn ran successfully
   block:
   - name: Wait for GPU burn Pods to complete
@@ -81,8 +78,8 @@
     register: gpu_burn_wait
     until: gpu_burn_wait.stdout == "Succeeded" or gpu_burn_wait.stdout == "Error" or gpu_burn_wait.stdout == "Failed"
     failed_when: gpu_burn_wait.stdout != "Succeeded"
-    retries: 20
-    delay: 30
+    retries: 50
+    delay: 10
 
   - name: Ensure that no GPU was faulty
     loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"

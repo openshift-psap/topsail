@@ -89,19 +89,22 @@ class GPUOperator:
         return RunAnsibleRole(opts)
 
     @AnsibleRole("gpu_operator_run_gpu_burn")
-    def run_gpu_burn(self, runtime=None):
+    @AnsibleMappedParams
+    def run_gpu_burn(self,
+                     namespace="default",
+                     runtime : int = 30,
+                     keep_resources: bool = False,
+                     ):
         """
         Runs the GPU burn on the cluster
 
         Args:
-            runtime: How long to run the GPU for, in seconds
+          namespace: namespace in which GPU-burn will be executed
+          runtime: How long to run the GPU for, in seconds
+          keep_resources: if true, do not delete the GPU-burn ConfigMaps
         """
-        opts = {}
-        if runtime is not None:
-            opts["gpu_burn_time"] = runtime
-            print(f"Running GPU Burn for {runtime} seconds.")
 
-        return RunAnsibleRole(opts)
+        return RunAnsibleRole(locals())
 
     @AnsibleRole("gpu_operator_undeploy_from_operatorhub")
     def undeploy_from_operatorhub(self):

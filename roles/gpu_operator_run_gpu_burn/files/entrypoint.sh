@@ -6,7 +6,8 @@ set -o nounset
 
 set -x
 
-cp /gpu-burn-src/* .
+cp /mnt/gpu-burn-src/* /tmp
+cd /tmp
 
 make
 
