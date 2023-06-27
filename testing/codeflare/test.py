@@ -81,6 +81,11 @@ def prepare_cluster_scale():
     run.run(f"./run_toolbox.py from_config cluster set_scale")
 
 
+def prepare_gpu_operator():
+    run.run("./run_toolbox.py nfd_operator deploy_from_operatorhub")
+    run.run("./run_toolbox.py gpu_operator deploy_from_operatorhub")
+
+
 @entrypoint()
 def prepare_ci():
     """
@@ -103,6 +108,8 @@ def prepare_ci():
     prepare_mcad_test()
 
     run.run("./run_toolbox.py from_config rhods wait_odh")
+
+    prepare_gpu_operator()
 
     prepare_cluster_scale()
 
