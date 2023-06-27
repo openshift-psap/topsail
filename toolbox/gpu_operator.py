@@ -1,8 +1,7 @@
 import sys
 import secrets
 
-from toolbox._common import RunAnsibleRole, AnsibleRole
-
+from toolbox._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
 class GPUOperator:
     """
@@ -134,3 +133,15 @@ class GPUOperator:
         """
 
         return RunAnsibleRole()
+
+    @AnsibleRole("gpu_operator_wait_stack_deployed")
+    @AnsibleMappedParams
+    def wait_stack_deployed(self, namespace="nvidia-gpu-operator"):
+        """
+        Waits for the GPU Operator stack to be deployed on the GPU nodes
+
+        Args:
+          namespace: namespace in which the GPU Operator is deployed
+        """
+
+        return RunAnsibleRole(locals())
