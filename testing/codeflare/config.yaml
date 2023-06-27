@@ -97,6 +97,9 @@ odh:
   - name: opendatahub-operator
     catalog: community-operators
     namespace: all
+gpu:
+  time_sharing:
+    replicas: 80
 tests:
   mcad:
     namespace: mcad-load-test

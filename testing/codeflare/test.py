@@ -84,6 +84,7 @@ def prepare_cluster_scale():
 def prepare_gpu_operator():
     run.run("./run_toolbox.py nfd_operator deploy_from_operatorhub")
     run.run("./run_toolbox.py gpu_operator deploy_from_operatorhub")
+    run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
 
 
 @entrypoint()

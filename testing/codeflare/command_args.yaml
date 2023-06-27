@@ -21,3 +21,6 @@ cluster set_scale:
 
 rhods wait_odh:
   namespace: {{ odh.namespace }}
+
+gpu_operator enable_time_sharing:
+  replicas: {{ gpu.time_sharing.replicas }}
