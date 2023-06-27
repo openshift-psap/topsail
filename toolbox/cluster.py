@@ -443,14 +443,13 @@ class Cluster:
 
     @AnsibleRole("cluster_fill_workernodes")
     @AnsibleMappedParams
-    def fill_workernodes(self, namespace="default", name="cpu.placeholder", resource_name="cpu", label_selector="node-role.kubernetes.io/worker"):
+    def fill_workernodes(self, namespace="default", name="resource-placeholder", label_selector="node-role.kubernetes.io/worker"):
         """
         Fills the worker nodes with place-holder Pods with the maximum available amount of a given resource name.
 
         Args:
           namespace: namespace in which the place-holder Pods should be deployed
           name: name prefix to use for the place-holder Pods
-          resource_name: name of the resource to request
           label_selector: label to use to select the nodes to fill
         """
 

@@ -15,7 +15,8 @@ spec:
     command: [sleep, inf]
     resources:
       requests:
-        {{ cluster_fill_workernodes_resource_name }}: {{ resource_request_value }}
+        cpu: {{ cpu_request_value }}
+        memory: {{ mem_request_value }}
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:

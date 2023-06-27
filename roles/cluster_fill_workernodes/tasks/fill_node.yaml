@@ -1,39 +1,69 @@
-- name: Fail the resource is not 'cpu'
-  fail: msg="Only 'cpu' resource type is currently supported"
-  when: cluster_fill_workernodes_resource_name != "cpu"
-
 - name: Get the description of the node before fill it
   shell:
     oc describe node {{ node_name }} > "{{ artifact_extra_logs_dir }}/node_{{ node_name }}.before.desc"
 
-- name: Get the node allocatable amount of {{ cluster_fill_workernodes_resource_name }} on node {{ node_name }}
+- name: Get the node allocatable amount of CPU on node {{ node_name }}
   command:
     oc get node {{ node_name }} -ojsonpath={.status.allocatable.cpu}
-  register: allocatable_cmd
+  register: allocatable_cpu_cmd
 
-- name: Get the available amount of {{ cluster_fill_workernodes_resource_name }} on node {{ node_name }}
+- name: Get the available amount of CPU on node {{ node_name }}
   shell:
     set -o pipefail;
     oc describe node {{ node_name }} | grep 'Allocated resources' -A4 | grep cpu | awk '{ print $2 }'
-  register: allocated_cmd
+  register: allocated_cpu_cmd
 
-- name: Compute the available resource count
+- name: Compute the amount of CPU to request
   shell: |
     python3 <<EOF
-    allocatable_cores_lines = "{{  allocatable_cmd.stdout }}"
-    allocatable_cores = int(allocatable_cores_lines.strip("m"))
+    allocatable_cpu_lines = "{{ allocatable_cpu_cmd.stdout }}"
+    allocatable_cpu = int(allocatable_cpu_lines.strip("m"))
 
-    allocated_cores_lines = "{{  allocated_cmd.stdout }}"
-    allocated_cores = int(allocated_cores_lines.strip("m"))
+    allocated_cpu_lines = "{{ allocated_cpu_cmd.stdout }}"
+    if allocated_cpu_lines.endswith("m"):
+      allocated_cpu = int(allocated_cpu_lines.strip("m"))
+    else:
+      allocated_cpu = int(allocated_cpu_lines) * 1000
 
-    request_cores = allocatable_cores - allocated_cores - 10
-    print(f"{request_cores:.0f}m")
+    requests_cpu = allocatable_cpu - allocated_cpu - 10
+    print(f"{requests_cpu:.0f}m")
     EOF
-  register: resource_request_value_cmd
+  register: cpu_request_value_cmd
+
+- name: Get the node allocatable amount of memory on node {{ node_name }}
+  command:
+    oc get node {{ node_name }} -ojsonpath={.status.allocatable.memory}
+  register: allocatable_mem_cmd
+
+- name: Get the available amount of memory on node {{ node_name }}
+  shell:
+    set -o pipefail;
+    oc describe node {{ node_name }} | grep 'Allocated resources' -A5 | grep memory | awk '{ print $2 }'
+  register: allocated_mem_cmd
+
+- name: Compute the amount of memory to request
+  shell: |
+    python3 <<EOF
+    allocatable_mem_lines = "{{ allocatable_mem_cmd.stdout }}"
+    allocatable_mem = int(allocatable_mem_lines.strip("Ki")) / 1024
+
+    allocated_mem_lines = "{{ allocated_mem_cmd.stdout }}"
+    if allocated_mem_lines.endswith("Mi"):
+      allocated_mem = int(allocated_mem_lines.strip("Mi"))
+    elif allocated_mem_lines.endswith("Ki"):
+      allocated_mem = int(allocated_mem_lines.strip("Ki")) / 1024
+    else:
+      allocated_mem = int(allocated_mem_lines) / 1024 / 1024
+
+    requests_mem = allocatable_mem - allocated_mem - 200 #Mi
+    print(f"{requests_mem:.0f}Mi")
+    EOF
+  register: mem_request_value_cmd
 
 - name: Set the variables
   set_fact:
-    resource_request_value: "{{ resource_request_value_cmd.stdout }}"
+    cpu_request_value: "{{ cpu_request_value_cmd.stdout }}"
+    mem_request_value: "{{ mem_request_value_cmd.stdout }}"
 
 - name: Create the Pod definition
   template:
@@ -88,10 +118,15 @@
       oc describe -f "{{ artifact_extra_logs_dir }}/src/pod_placeholder_{{ node_name }}.yaml"
          > "{{ artifact_extra_logs_dir }}/pod_placeholder_{{ node_name }}.desc"
 
-  - name: Get the available amount of {{ cluster_fill_workernodes_resource_name }} on node {{ node_name }}
+  - name: Get the available amount of CPU on node {{ node_name }}
     shell:
       set -o pipefail;
       oc describe node {{ node_name }} | grep 'Allocated resources' -A4 | grep cpu | awk '{ print $2 }'
+
+  - name: Get the available amount of memory on node {{ node_name }}
+    shell:
+      set -o pipefail;
+      oc describe node {{ node_name }} | grep 'Allocated resources' -A5 | grep memory | awk '{ print $2 }'
 
   - name: Get the description of the node after fill it
     shell:
