@@ -21,6 +21,6 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 510656
+    tag: 524781
     channel: beta
-    version: 1.28.0
+    version: 1.29.0
