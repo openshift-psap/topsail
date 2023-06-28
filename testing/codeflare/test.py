@@ -158,23 +158,22 @@ def _run_test(name, cfg, test_artifact_dir_p):
     capture_prom = config.ci_artifacts.get_config("tests.mcad.capture_prom")
     prepare_nodes = config.ci_artifacts.get_config("tests.mcad.prepare_nodes")
 
-    if prepare_nodes:
-        next_count = env.next_artifact_index()
-        with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare__{name}"):
+    next_count = env.next_artifact_index()
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare"):
+        if prepare_nodes:
             _prepare_test_nodes(name, cfg, dry_mode)
-    else:
-        logging.info("tests.mcad.prepare_nodes=False, skipping.")
+        else:
+            logging.info("tests.mcad.prepare_nodes=False, skipping.")
+
+        if not dry_mode and capture_prom:
+            run.run("./run_toolbox.py cluster capture_environment >/dev/null")
+            run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
 
     next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test__{name}"):
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test"):
 
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
         save_matbench_files(name, cfg)
-
-        if not dry_mode:
-            if capture_prom:
-                run.run("./run_toolbox.py cluster capture_environment >/dev/null")
-                run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
 
         extra = {}
         failed = True
@@ -284,17 +283,19 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
                 logging.info(f"Test '{name}' is disabled, skipping it.")
                 continue
 
-            try:
-                _run_test_and_visualize(name, test_case_cfg)
-            except Exception as e:
-                ex = e
-                failed_tests.append(name)
-                logging.error(f"*** Caught an exception during test {name}: {e.__class__.__name__}: {e}")
-                traceback.print_exc()
+            next_count = env.next_artifact_index()
+            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}_test-case_{name}"):
+                try:
+                    _run_test_and_visualize(name, test_case_cfg)
+                except Exception as e:
+                    ex = e
+                    failed_tests.append(name)
+                    logging.error(f"*** Caught an exception during test {name}: {e.__class__.__name__}: {e}")
+                    traceback.print_exc()
 
-                import bdb
-                if isinstance(e, bdb.BdbQuit):
-                    raise
+                    import bdb
+                    if isinstance(e, bdb.BdbQuit):
+                        raise
 
         if failed_tests:
             logging.error(f"Caught exception(s) in [{', '.join(failed_tests)}], aborting.")
