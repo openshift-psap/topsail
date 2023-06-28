@@ -1,22 +1,3 @@
-base_name: appwrapper
-defaults:
-  priority: 10
-aw_resources:
-  - runtime: 30
-    resources:
-      cpu: 100m
-      memory: 100Mi
-      # nvidia.com/gpu: 0
-    pods: 4
-    count: 1
-
-  - runtime: 60
-    resources:
-      cpu: 100m
-      memory: 100Mi
-    pods: 2
-    count: 2
-
 job_templates:
   sleeper:
     apiVersion: batch/v1
