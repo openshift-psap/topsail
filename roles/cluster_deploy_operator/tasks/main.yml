@@ -208,7 +208,7 @@
   - name: Mark the namespace for monitoring, if requested
     when: cluster_deploy_operator_namespace_monitoring | bool
     command:
-      oc label ns/{{ cluster_deploy_operator_namespace }} openshift.io/cluster-monitoring=true
+      oc label ns/{{ cluster_deploy_operator_namespace }} openshift.io/cluster-monitoring=true --overwrite
 
 - name: Create the OperatorGroup for deploying in a dedicated namespace
   when: cluster_deploy_operator_namespace != "openshift-operators"
