@@ -6,14 +6,33 @@
 # Mandatory value
 codeflare_generate_mcad_load_namespace:
 
+# name of the job template to use inside the AppWrapper
+codeflare_generate_mcad_load_job_template_name: sleeper
+
 # list of expected target states
-codeflare_generate_mcad_load_target_states:
+codeflare_generate_mcad_load_states_target:
 - Completed
 
 # list of states that fail the test
-codeflare_generate_mcad_load_fail_if_states:
+codeflare_generate_mcad_load_states_unexpected:
 - Failed
 
 # if true, create Jobs instead of AppWrappers
 codeflare_generate_mcad_load_job_mode: false
+
+# number of AppWrapper replicas to create
+codeflare_generate_mcad_load_aw_count: 3
+
+# number of Pods to create in each of the AppWrappers
+codeflare_generate_mcad_load_pod_count: 1
+
+# run time parameter to pass to the Pod
+codeflare_generate_mcad_load_pod_runtime: 30
+
+# requests to pass to the Pod definition
+codeflare_generate_mcad_load_pod_requests:
+  cpu: 100m
+
+# number of minutes over which the AppWrappers should be created
+codeflare_generate_mcad_load_timespan: 0
 
