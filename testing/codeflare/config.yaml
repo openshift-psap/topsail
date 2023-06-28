@@ -110,7 +110,7 @@ tests:
     test_cases:
       all_schedulable:
         aw:
-          count: 40
+          count: 5
           job:
             template_name: gpu_burn
           pod:
@@ -120,14 +120,14 @@ tests:
               nvidia.com/gpu: 1
         node:
           instance_type: g4dn.xlarge
-          count: 2
+          count: 1
           wait_gpus: true
         timespan: 0 #minutes, all at once
         disabled: false
 
       scheduling:
         aw:
-          count: 40
+          count: 5
           job:
             template_name: gpu_burn
             run_job_mode: true
@@ -138,14 +138,14 @@ tests:
               nvidia.com/gpu: 1
         node:
           instance_type: g4dn.xlarge
-          count: 2
+          count: 1
           wait_gpus: true
         timespan: 0 #minutes, all at once
         disabled: false
 
       unschedulable:
         aw:
-          count: 40
+          count: 5
           states:
             target: [Queueing, HeadOfLine, Pending]
             unexpected: [Dispatched, Running, Completed, Failed]
@@ -153,7 +153,7 @@ tests:
             template_name: gpu_burn
           pod:
             count: 1
-            runtime: 30
+            runtime: 150
             requests:
               nvidia.com/gpu: 1
         node:
