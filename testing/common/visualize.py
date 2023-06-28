@@ -183,8 +183,9 @@ def generate_visualization(idx):
         """)
 
     if error:
-        logging.error("An error happened during the report generation ...")
-        sys.exit(1)
+        msg = "An error happened during the report generation ..."
+        logging.error(msg)
+        raise RuntimeError(msg)
 
 
 @entrypoint
