@@ -54,3 +54,22 @@ class LoadAware:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("load_aware_scale_test")
+    @AnsibleMappedParams
+    def scale_test(self, distribution="poisson", duration=60.0, instances=10):
+        """
+        Role to deploy the Trimaran load aware scheduler
+
+        Args:
+            distribution: what distribution to generate the load according to (poisson, normal, bimodal, gamma, or uniform)
+            duration: how long the test should last (seconds)
+            instances: how many of the workload to launch, at the moment, this is the number of test pods
+        """
+
+        if distribution not in ("poisson", "normal", "bimodal", "gamma", "uniform"):
+            print(f"Can't run scale test using unknown distribution: {distribution}")
+            sys.exit(1)
+
+        return RunAnsibleRole(locals())

@@ -1,0 +1,63 @@
+- name: Generate load timeline
+  shell:
+    python3 {{ load_timeline_generator }} {{ load_aware_scale_test_distribution }} {{ load_aware_scale_test_duration}} {{ load_aware_scale_test_instances }} > "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.txt"
+
+- name: Create namespace for default test
+  command:
+    oc apply -f {{ load_aware_ns }}
+
+- name: Run test workload with default scheduler and load timeline
+  shell:
+    cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.txt"
+      | python3 {{ pod_start_scheduler }} default > "{{ artifact_extra_logs_dir }}/default_workload_scheduler.txt"
+
+- name: Wait for default workloads to finish
+  shell:
+    oc get pods -n load-aware | awk 'NR > 1 { print $3 }'
+  register: load_aware_workload
+  delay: 15
+  retries: 120
+  until:
+    "'Running' not in load_aware_workload.stdout
+      and 'Pending' not in load_aware_workload.stdout
+      and 'Failed' not in load_aware_workload.stdout
+      and 'ContainerCreating' not in load_aware_workload.stdout"
+
+- name: Dump info about default scheduler resources
+  shell:
+    oc get all -n load-aware -oyaml > "{{ artifact_extra_logs_dir }}/all_default_resources.yaml"
+
+- name: Cleanup namespace for default test
+  command:
+    oc delete -f {{ load_aware_ns }}
+
+- name: Create namespace for trimaran test
+  command:
+    oc apply -f {{ load_aware_ns }}
+
+
+- name: Run test pod with trimaran scheduler and load timeline
+  shell:
+    cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.txt"
+      | python3 {{ pod_start_scheduler }} trimaran > "{{ artifact_extra_logs_dir }}/trimaran_workload_scheduler.txt"
+
+- name: Wait for default workloads to finish
+  shell:
+    oc get pods -n load-aware | awk 'NR > 1 { print $3 }'
+  register: load_aware_workload
+  delay: 15
+  retries: 120
+  until:
+    "'Running' not in load_aware_workload.stdout
+      and 'Pending' not in load_aware_workload.stdout
+      and 'Failed' not in load_aware_workload.stdout
+      and 'ContainerCreating' not in load_aware_workload.stdout"
+
+
+- name: Dump info about trimaran resources
+  shell:
+    oc get all -n load-aware -oyaml > "{{ artifact_extra_logs_dir }}/all_trimaran_resources.yaml"
+
+- name: Cleanup namespace for test
+  command:
+    oc delete -f {{ load_aware_ns }}

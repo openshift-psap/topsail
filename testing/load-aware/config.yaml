@@ -32,6 +32,12 @@ ci_presets:
   load_variation_risk_balancing:
     load_aware.plugin: "LoadVariationRiskBalancing"
 
+  # launch 30 test pods over 5 minutes according to the poisson distribution 
+  small_poisson_load:
+    load_aware.scale_test.distribution: "poisson"
+    load_aware.scale_test.duration: 300.0
+    load_aware.scale_test.instances: 30
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -96,6 +102,10 @@ load_aware:
   target_utilization: null
   safe_variance_margin: null
   safe_variance_sensitivity: null
+  scale_test:
+    distribution: null
+    duration: null
+    instances: null
 matbench:
   preset: null
   workload: load-aware
