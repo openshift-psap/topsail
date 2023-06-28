@@ -50,7 +50,17 @@ def set_config(config, jsonpath, value):
     get_config(jsonpath, config=config) # will raise an exception if the jsonpath does not exist
     jsonpath_ng.parse(jsonpath).update(config, value)
 
-def main(namespace=None, dry_run=True, job_mode=True):
+def main(namespace=None, dry_run=True, job_mode=False, job_template_name="sleeper"):
+    """
+    Generates workload for the MCAD load test
+
+    Args:
+      namespace: namespace in which the workload should be instanciated
+      dry_run: if True (default), only prepares the resources. If False, instanciate them in the cluster
+      job_mode: if True, create Jobs instead of AppWrappers
+      job_template_name: job template to use in the config file
+    """
+
     if namespace is None:
         logging.info("Getting the current project name ...")
 
@@ -68,7 +78,12 @@ def main(namespace=None, dry_run=True, job_mode=True):
     set_config(base_appwrapper, "metadata.namespace", namespace)
     set_config(base_appwrapper, "spec.priority", get_config("defaults.priority"))
 
-    job_template = get_config("job_template")
+    job_templates = get_config("job_templates")
+
+    job_template = job_templates.get(job_template_name)
+    if not job_template:
+        logging.error(f"Could not find the requested job template '{job_template_name}'. Available names: {','.join(job_templates.keys())}")
+        sys.exit(1)
 
     summary = []
     total_aw_count = 0
