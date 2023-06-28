@@ -55,18 +55,12 @@ apply_preset() {
         echo "presets[$name] $key --> $value" >> "$ARTIFACT_DIR/presets_applied"
         set_config "$key" "$value"
     done
+
+    preset_names=$(get_config ci_presets.names | jq '. += ["'$name'"] | unique')
+    set_config ci_presets.names "$preset_names"
 }
 
 set_presets_from_pr_args() {
-    local ci_preset_names=$(get_config ci_presets.names)
-    if [[ "$ci_preset_names" == null ]]; then
-        ci_preset_names="[]"
-    elif [[ "$ci_preset_names" != "["* ]]; then
-        # it's simple entry, not a list
-        ci_preset_names='["'$ci_preset_names'"]'
-        # else it's already a list
-    fi
-
     local pr_args=$(flat_config | grep PR_POSITIONAL_ARG_ | grep -v PR_POSITIONAL_ARG_0 | cut -d= -f2 | tr ' ' '\n')
     if [[ -z "$pr_args" ]]; then
         echo "No PR positional args."
@@ -74,11 +68,9 @@ set_presets_from_pr_args() {
     fi
 
     while read pr_arg; do
-        echo "Adding '$pr_arg' to the ci_preset names from the PR positional args."
-        ci_preset_names=$(jq -c '. + ["'$pr_arg'"]'<<< "$ci_preset_names")
+        echo "Apply '$pr_arg' preset from the PR positional args."
+        apply_preset "$pr_arg"
     done <<< $pr_args
-    echo "New ci_preset names: $ci_preset_names"
-    set_config ci_presets.names "$ci_preset_names"
 }
 
 set_config_from_pr_arg() {
