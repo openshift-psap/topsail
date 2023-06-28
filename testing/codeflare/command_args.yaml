@@ -29,3 +29,4 @@ gpu_operator run_gpu_burn:
   keep_resources: true
   namespace: {{ tests.mcad.namespace }}
   runtime: 30 #s
+  ensure_has_gpu: false
