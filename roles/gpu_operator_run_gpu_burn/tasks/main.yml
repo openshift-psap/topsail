@@ -8,6 +8,7 @@
      || oc get nodes -oname -l feature.node.kubernetes.io/pci-0302_10de.present
      || oc get nodes -oname -l feature.node.kubernetes.io/pci-0300_10de.present
     ) | grep .
+  when: gpu_operator_run_gpu_burn_ensure_has_gpu
 
 - name: Get the list of nodes with GPUs
   command:
@@ -16,7 +17,7 @@
        -o custom-columns=NAME:metadata.name
        --no-headers
   register: gpu_burn_gpu_nodes
-  failed_when: gpu_burn_gpu_nodes.stdout == ""
+  failed_when: gpu_operator_run_gpu_burn_ensure_has_gpu and gpu_burn_gpu_nodes.stdout == ""
 
 - name: Create the src artifacts directory
   file:

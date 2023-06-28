@@ -94,6 +94,7 @@ class GPUOperator:
                      namespace="default",
                      runtime : int = 30,
                      keep_resources: bool = False,
+                     ensure_has_gpu: bool = True,
                      ):
         """
         Runs the GPU burn on the cluster
@@ -102,6 +103,7 @@ class GPUOperator:
           namespace: namespace in which GPU-burn will be executed
           runtime: How long to run the GPU for, in seconds
           keep_resources: if true, do not delete the GPU-burn ConfigMaps
+          ensure_has_gpu: if true, fails if no GPU is available in the cluster.
         """
 
         return RunAnsibleRole(locals())
