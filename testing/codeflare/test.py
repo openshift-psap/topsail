@@ -132,10 +132,10 @@ def prepare_ci():
         run.run("./run_toolbox.py from_config cluster fill_workernodes")
 
 
-def save_matbench_files(cfg):
+def save_matbench_files(name, cfg):
     with open(env.ARTIFACT_DIR / "settings", "w") as f:
         print(f"mcad_load_test=true", file=f)
-        print(f"name={cfg['id']}", file=f)
+        print(f"name={name}", file=f)
 
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
         yaml.dump(config.ci_artifacts.config, f, indent=4)
@@ -143,16 +143,16 @@ def save_matbench_files(cfg):
 def _prepare_test(cfg):
     pass
 
-def _run_test(cfg, test_artifact_dir_p):
+def _run_test(name, cfg, test_artifact_dir_p):
     next_count = env.next_artifact_index()
     next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare__{cfg['id']}"):
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare__{name}"):
         _prepare_test(cfg)
 
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test__{cfg['id']}"):
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test__{name}"):
 
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
-        save_matbench_files(cfg)
+        save_matbench_files(name, cfg)
 
         run.run("./run_toolbox.py cluster capture_environment >/dev/null")
 
@@ -180,10 +180,10 @@ def _run_test(cfg, test_artifact_dir_p):
             run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
 
 
-def _run_test_and_visualize(cfg):
+def _run_test_and_visualize(name, cfg):
     try:
         test_artifact_dir_p = [None]
-        _run_test(cfg, test_artifact_dir_p)
+        _run_test(name, cfg, test_artifact_dir_p)
     finally:
         generate_reports = config.ci_artifacts.get_config("matbench.generate_reports")
         if generate_reports and test_artifact_dir_p[0] is not None:
@@ -207,17 +207,17 @@ def test_ci():
     try:
         failed_tests = []
         ex = None
-        for test_case_cfg in config.ci_artifacts.get_config("tests.mcad.test_cases"):
+        for name, test_case_cfg in config.ci_artifacts.get_config("tests.mcad.test_cases").items():
             if test_case_cfg.get("disabled", False):
-                logging.info(f"Test '{test_case_cfg.get('id')}' is disabled, skipping it.")
+                logging.info(f"Test '{name}' is disabled, skipping it.")
                 continue
 
             try:
-                _run_test_and_visualize(test_case_cfg)
+                _run_test_and_visualize(name, test_case_cfg)
             except Exception as e:
                 ex = e
-                failed_tests.append(test_case_cfg.get("id"))
-                logging.error(f"*** Caught exception: {e.__class__.__name__}: {e}")
+                failed_tests.append(name)
+                logging.error(f"*** Caught an exception during test {name}: {e.__class__.__name__}: {e}")
                 traceback.print_exc()
         if ex:
             logging.error(f"Caught exception(s) in [{', '.join(failed_tests)}], aborting.")
