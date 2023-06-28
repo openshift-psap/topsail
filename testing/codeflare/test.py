@@ -148,7 +148,8 @@ def _prepare_test(name, cfg, dry_mode):
         logging.info(f"Scale up the cluster for the test '{name}': {extra} ")
     else:
         run.run(f"./run_toolbox.py from_config cluster set_scale --extra \"{extra}\"")
-        run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
+        if cfg["node"].get("wait_gpus", True):
+            run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
 
 def _run_test(name, cfg, test_artifact_dir_p, dry_mode):
     next_count = env.next_artifact_index()

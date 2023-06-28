@@ -115,6 +115,7 @@ tests:
         node:
           instance_type: g4dn.xlarge
           count: 2
+          wait_gpus: true
         timespan: 0 #minutes, all at once
         disabled: false
 
@@ -152,6 +153,7 @@ tests:
         node:
           instance_type: g4dn.xlarge
           count: 0
+          wait_gpus: false
         timespan: 0 #minutes, all at once
         disabled: false
 
