@@ -260,6 +260,8 @@ ci_presets:
     extends: [notebook_gating_scale_test, metal, icelake]
     tests.notebooks.users.count: 200
 
+  help:
+    tests.show_help: true
 secrets:
   dir:
     name: null
@@ -406,6 +408,8 @@ rhods:
     - view
     - odh-notebook-controller-notebooks-edit
 tests:
+  # if true, show the list of available presets and exits.
+  show_help: false
   notebooks:
     # The test flavor to run. Can be: ods-ci, locust, notebook-performance or gating
     test_flavor: ods-ci
