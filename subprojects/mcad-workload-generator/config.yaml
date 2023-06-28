@@ -50,3 +50,48 @@ job_templates:
               seccompProfile:
                 type: RuntimeDefault
             runAsNonRoot: true
+
+  gpu_burn:
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: ...
+      namespace: ...
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - image: nvcr.io/nvidia/cuda:11.2.2-devel-ubi8
+            name: gpu-burn-ctr
+            command:
+            - bash
+            - -e
+            - /mnt/gpu-burn-entrypoint/entrypoint.sh
+            volumeMounts:
+            - name: entrypoint
+              mountPath: /mnt/gpu-burn-entrypoint/entrypoint.sh
+              readOnly: true
+              subPath: entrypoint.sh
+            - name: src
+              mountPath: /mnt/gpu-burn-src
+              readOnly: true
+            env:
+            - name: GPU_BURN_TIME
+              value: ...
+            resources:
+              limits: {}
+              requests: {}
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+            runAsNonRoot: true
+          volumes:
+          - name: entrypoint
+            configMap:
+              name: gpu-burn-entrypoint
+          - name: src
+            configMap:
+              name: gpu-burn-src
