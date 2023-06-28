@@ -119,9 +119,6 @@ def prepare_ci():
 
     prepare_worker_node_labels()
 
-    run.run(f"./run_toolbox.py from_config cluster set_scale")
-
-    run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
     run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
 
     if config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.enabled"):
@@ -140,14 +137,24 @@ def save_matbench_files(name, cfg):
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
         yaml.dump(config.ci_artifacts.config, f, indent=4)
 
-def _prepare_test(cfg):
-    pass
 
-def _run_test(name, cfg, test_artifact_dir_p):
+def _prepare_test(name, cfg, dry_mode):
+    extra = {}
+
+    extra["instance_type"] = cfg["node"]["instance_type"]
+    extra["scale"] = cfg["node"]["count"]
+
+    if dry_mode:
+        logging.info(f"Scale up the cluster for the test '{name}': {extra} ")
+    else:
+        run.run(f"./run_toolbox.py from_config cluster set_scale --extra \"{extra}\"")
+        run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
+
+def _run_test(name, cfg, test_artifact_dir_p, dry_mode):
     next_count = env.next_artifact_index()
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare__{name}"):
-        _prepare_test(cfg)
+        _prepare_test(name, cfg, dry_mode)
 
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test__{name}"):
 

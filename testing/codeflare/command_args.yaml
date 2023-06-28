@@ -15,9 +15,9 @@ cluster fill_workernodes:
   label_selector: {{ clusters.sutest.worker.label }}
 
 cluster set_scale:
-  instance_type: {{ clusters.sutest.compute.machineset.type }}
   name: {{ clusters.sutest.compute.machineset.name }}
-  scale: {{ clusters.sutest.compute.machineset.count }}
+  instance_type: SET_AT_RUNTIME
+  scale: SET_AT_RUNTIME
 
 rhods wait_odh:
   namespace: {{ odh.namespace }}
