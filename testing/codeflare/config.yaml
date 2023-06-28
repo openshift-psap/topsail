@@ -101,6 +101,12 @@ gpu:
 tests:
   mcad:
     namespace: mcad-load-test
+
+    dry_mode: false
+    visualize: true
+    capture_prom: true
+    prepare_nodes: true
+
     test_cases:
       all_schedulable:
         aw:
@@ -171,4 +177,3 @@ matbench:
   # directory to plot. Set by testing/common/visualize.py before launching the visualization
   test_directory: null
   generate_lts: false
-  generate_reports: true

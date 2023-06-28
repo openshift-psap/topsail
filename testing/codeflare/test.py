@@ -138,33 +138,43 @@ def save_matbench_files(name, cfg):
         yaml.dump(config.ci_artifacts.config, f, indent=4)
 
 
-def _prepare_test(name, cfg, dry_mode):
+def _prepare_test_nodes(name, cfg, dry_mode):
     extra = {}
 
     extra["instance_type"] = cfg["node"]["instance_type"]
     extra["scale"] = cfg["node"]["count"]
 
     if dry_mode:
-        logging.info(f"Scale up the cluster for the test '{name}': {extra} ")
+        logging.info(f"dry_mode: scale up the cluster for the test '{name}': {extra} ")
+        return
+
+    run.run(f"./run_toolbox.py from_config cluster set_scale --extra \"{extra}\"")
+    if cfg["node"].get("wait_gpus", True):
+        run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
+
+
+def _run_test(name, cfg, test_artifact_dir_p):
+    dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
+    capture_prom = config.ci_artifacts.get_config("tests.mcad.capture_prom")
+    prepare_nodes = config.ci_artifacts.get_config("tests.mcad.prepare_nodes")
+
+    if prepare_nodes:
+        next_count = env.next_artifact_index()
+        with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare__{name}"):
+            _prepare_test_nodes(name, cfg, dry_mode)
     else:
-        run.run(f"./run_toolbox.py from_config cluster set_scale --extra \"{extra}\"")
-        if cfg["node"].get("wait_gpus", True):
-            run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
+        logging.info("tests.mcad.prepare_nodes=False, skipping.")
 
-def _run_test(name, cfg, test_artifact_dir_p, dry_mode):
     next_count = env.next_artifact_index()
-    next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare__{name}"):
-        _prepare_test(name, cfg, dry_mode)
-
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test__{name}"):
 
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
         save_matbench_files(name, cfg)
 
         if not dry_mode:
-            run.run("./run_toolbox.py cluster capture_environment >/dev/null")
-            run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+            if capture_prom:
+                run.run("./run_toolbox.py cluster capture_environment >/dev/null")
+                run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
 
         extra = {}
         failed = True
@@ -182,13 +192,12 @@ def _run_test(name, cfg, test_artifact_dir_p, dry_mode):
                 if not key in cfg["aw"].get(group, {}): continue
                 extra[f"{group}_{key}"] = cfg["aw"][group][key]
 
-            extra["duration"] = cfg["duration"]
+            extra["timespan"] = cfg["timespan"]
             extra["aw_count"] = cfg["aw"]["count"]
             extra["timespan"] = cfg["timespan"]
 
             if dry_mode:
                 logging.info(f"Running the load test '{name}' with {extra} ...")
-                run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load  --extra \"{extra}\"")
             else:
                 run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load  --extra \"{extra}\"")
 
@@ -204,39 +213,49 @@ def _run_test(name, cfg, test_artifact_dir_p, dry_mode):
                 print("1" if failed else "0", file=f)
 
             if not dry_mode:
-                run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
+                if capture_prom:
+                    run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
 
 
-def _run_test_and_visualize(name, cfg, dry_mode):
+def _run_test_and_visualize(name, cfg):
     try:
         test_artifact_dir_p = [None]
-        _run_test(name, cfg, test_artifact_dir_p, dry_mode)
+        _run_test(name, cfg, test_artifact_dir_p)
     finally:
-        generate_reports = config.ci_artifacts.get_config("matbench.generate_reports")
-        if dry_mode:
-            logging.info(f"Running in dry mode, skipping the visualization. {generate_reports=}")
+        dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
+        if not config.ci_artifacts.get_config("tests.mcad.visualize"):
+            logging.info(f"Visualization disabled.")
 
-        elif generate_reports and test_artifact_dir_p[0] is not None:
+        elif dry_mode:
+            logging.info(f"Running in dry mode, skipping the visualization.")
+
+        elif test_artifact_dir_p[0] is not None:
             next_count = env.next_artifact_index()
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
                 visualize.prepare_matbench()
                 generate_plots(test_artifact_dir_p[0])
-
-        elif not generate_reports:
-            logging.warning("Not generating the visualization because it is disabled in the configuration file.")
         else:
             logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
 
 @entrypoint()
-def test_ci(name=None, dry_mode=False):
+def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepare_nodes=True):
     """
     Runs the test from the CI
 
     Args:
       name: name of the test to run. If empty, run all the tests of the configuration file
       dry_mode: if True, do not execute the tests, only list what would be executed
+      visualize: if False, do not generate the visualization reports
+      capture_prom: if False, do not capture Prometheus database
+      prepare_nodes: if False, do not scale up the cluster nodes
     """
+
+
+    config.ci_artifacts.set_config("tests.mcad.dry_mode", dry_mode)
+    config.ci_artifacts.set_config("tests.mcad.visualize", visualize)
+    config.ci_artifacts.set_config("tests.mcad.capture_prom", capture_prom)
+    config.ci_artifacts.set_config("tests.mcad.prepare_nodes", prepare_nodes)
 
     try:
         failed_tests = []
@@ -256,7 +275,7 @@ def test_ci(name=None, dry_mode=False):
                 continue
 
             try:
-                _run_test_and_visualize(name, test_case_cfg, dry_mode)
+                _run_test_and_visualize(name, test_case_cfg)
             except Exception as e:
                 ex = e
                 failed_tests.append(name)
