@@ -99,8 +99,8 @@
          --no-headers
     register: pod_status_wait
     until: pod_status_wait.stdout == "Succeeded" or pod_status_wait.stdout == "Error" or pod_status_wait.stdout == "Failed" or pod_status_wait.stdout == "Running"
-    retries: 10
-    delay: 5
+    retries: 20
+    delay: 10
     failed_when: pod_status_wait.stdout == "Error" or pod_status_wait.stdout == "Failed" or pod_status_wait.stdout == "Pending"
   always:
   - name: Save the placeholder Pod status
