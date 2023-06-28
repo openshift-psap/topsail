@@ -82,6 +82,17 @@ connect_ci() {
     fi
 }
 
+show_help_and_exit() {
+    if ! test_config tests.show_help; then
+        return
+    fi
+
+    echo "Available presets:"
+    get_config ci_presets | jq 'to_entries | .[] | "- " + .key' -r
+
+    exit 0
+}
+
 generate_plots() {
     local artifact_next_dir_idx=$(ls "${ARTIFACT_DIR}/" | grep __ | wc -l)
     local plots_dirname="$(printf '%03d' "$artifact_next_dir_idx")__plots"
@@ -149,6 +160,8 @@ main() {
         "prepare_ci")
             connect_ci
 
+            show_help_and_exit
+
             prepare_ci
 
             prepare
@@ -158,6 +171,9 @@ main() {
             ;;
         "test_ci")
             connect_ci
+
+            show_help_and_exit
+
             local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
 
             process_ctrl__finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999__teardown'") # switch to the 'teardown' artifacts directory
@@ -235,6 +251,8 @@ main() {
             ;;
         "cleanup_cluster_ci")
             connect_ci
+
+            show_help_and_exit
 
             ;& # fallthrough
         "cleanup_clusters")
