@@ -196,18 +196,28 @@ def _run_test(name, cfg, test_artifact_dir_p):
             extra["aw_count"] = cfg["aw"]["count"]
             extra["timespan"] = cfg["timespan"]
 
-            if dry_mode:
-                logging.info(f"Running the load test '{name}' with {extra} ...")
-            else:
-                run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load  --extra \"{extra}\"")
+            job_mode = cfg["aw"]["job"].get("run_job_mode")
 
-            if cfg["aw"]["job"].get("run_job_mode"):
+            if dry_mode:
+                logging.info(f"Running the load test '{name}' with {extra}. Do job_mode: {job_mode} ...")
+                return
+
+            load_test_failed = False
+            job_load_test_failed = False
+            try:
+                run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load --extra \"{extra}\"")
+            except Exception as e:
+                load_test_failed = True
+
+            if job_mode:
                 extra["job_mode"] = True
                 logging.info("Running in Job mode ...")
-                if not dry_mode:
-                    run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load mcad-load-test --extra \"{extra}\"")
+                try:
+                    run.run(f"ARTIFACT_TOOLBOX_NAME_PREFIX=job_mode_ ./run_toolbox.py from_config codeflare generate_mcad_load --extra \"{extra}\"")
+                except Exception as e:
+                    job_load_test_failed = True
 
-            failed = False
+            failed = not load_test_failed and not job_load_test_failed
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
