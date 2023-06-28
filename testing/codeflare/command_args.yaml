@@ -11,7 +11,7 @@ codeflare generate_mcad_load:
   namespace: {{ tests.mcad.namespace }}
 
 cluster fill_workernodes:
-  namespace: {{ tests.mcad.namespace }}
+  namespace: {{ clusters.sutest.worker.fill_resources.namespace }}
   label_selector: {{ clusters.sutest.worker.label }}
 
 cluster set_scale:

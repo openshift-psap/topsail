@@ -68,6 +68,9 @@ clusters:
         count: 1
     worker:
       label: initial_worker_node=true
+      fill_resources:
+        enabled: true
+        namespace: worker-nodes-placeholder
   driver:
     is_metal: false
     compute:

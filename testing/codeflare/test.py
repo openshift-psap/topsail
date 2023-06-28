@@ -124,7 +124,12 @@ def prepare_ci():
     run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
     run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
 
-    run.run("./run_toolbox.py from_config cluster fill_workernodes")
+    if config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.enabled"):
+        namespace = config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.namespace")
+        if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
+            run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
+
+        run.run("./run_toolbox.py from_config cluster fill_workernodes")
 
 
 def save_matbench_files(cfg):
@@ -249,7 +254,9 @@ def cleanup_cluster():
         run.run(f"oc delete sub {operator['name']} -n {ns}")
         run.run(f"oc delete csv -loperators.coreos.com/{operator['name']}.{ns}= -n {ns}")
 
-    run.run(f"oc delete ns {odh_namespace}")
+    fill_namespace = config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.namespace")
+
+    run.run(f"oc delete ns {odh_namespace} {fill_namespace} --ignore-not-found")
 
     cleanup_mcad_test()
 
