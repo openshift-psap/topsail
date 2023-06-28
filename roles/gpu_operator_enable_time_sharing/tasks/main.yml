@@ -1,0 +1,46 @@
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the ConfigMap definition
+  template:
+    src: "{{ config_map_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/configmap.yaml"
+    mode: 0400
+
+- name: Instanciate the ConfigMap
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/configmap.yaml"
+
+- name: Cleanup the ClusterPolicy (to force the update in the next task)
+  command: |
+    oc patch clusterpolicy/gpu-cluster-policy \
+       --type merge \
+       -p '{"spec": {"devicePlugin": {"config": {"name": "", "default": "any"}}}}'
+
+- name: Update the ClusterPolicy
+  command: |
+    oc patch clusterpolicy/gpu-cluster-policy \
+       --type merge \
+       -p '{"spec": {"devicePlugin": {"config": {"name": "{{ gpu_operator_enable_time_sharing_configmap_name }}", "default": "any"}}}}'
+
+- name: Wait for the DaemonSets to be all available
+  shell:
+    set -o pipefail;
+    oc get daemonsets
+       -o=jsonpath="{range .items[*]}{.metadata.name}{' ='}{.status.numberUnavailable}{'=\n'}{end}"
+       -n {{ gpu_operator_enable_time_sharing_namespace }}
+       | grep -v "==" || true
+  register: daemonsets_not_ready
+  until: not daemonsets_not_ready.stdout
+  retries: 6
+  delay: 10
+  failed_when: daemonsets_not_ready.stdout | length > 0
+
+- name: Get the number of GPUs per node
+  shell:
+    set -o pipefail;
+    oc get node -lnvidia.com/gpu.present -ojson
+       | jq '.items[] | .metadata.name + " ==> "+ .status.allocatable["nvidia.com/gpu"] + " GPUs"' -r

@@ -1,0 +1,50 @@
+---
+- name: Wait for the deployments to be all available
+  block:
+  - name: Wait for the deployments to be created
+    command:
+      oc get deploy
+         --ignore-not-found
+         -n {{ rhods_wait_odh_namespace }}
+    register: deployments
+    until: deployments.stdout | length > 0
+    retries: 30
+    delay: 10
+
+  - name: Wait for the deployments to be all available
+    shell:
+      set -o pipefail;
+      oc get deploy
+         -o=jsonpath="{range .items[*]}{.metadata.name}{' ='}{.status.unavailableReplicas}{'=\n'}{end}"
+         -n {{ rhods_wait_odh_namespace }}
+         | grep -v "==" || true
+    register: deployments_not_ready
+    until: not deployments_not_ready.stdout
+    retries: 24
+    delay: 10
+    failed_when: deployments_not_ready.stdout | length > 0
+
+  always:
+  - name: Get the list of the deployments
+    shell:
+      oc get deploy
+         -n {{ rhods_wait_odh_namespace }}
+         > "{{ artifact_extra_logs_dir }}/deployments.status"
+
+  - name: Get the list of the pods
+    shell:
+      oc get pods
+        -n {{ rhods_wait_odh_namespace }}
+        > "{{ artifact_extra_logs_dir }}/pods.status"
+
+  - name: Get the yaml of the pods
+    shell:
+      oc get pods -oyaml
+        -n {{ rhods_wait_odh_namespace }}
+        > "{{ artifact_extra_logs_dir }}/pods.yaml"
+
+  - name: Get the description of the pods
+    shell:
+      oc describe pods
+        -n {{ rhods_wait_odh_namespace }}
+        > "{{ artifact_extra_logs_dir }}/pods.desc"

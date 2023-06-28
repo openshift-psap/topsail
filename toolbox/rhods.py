@@ -34,6 +34,18 @@ class RHODS:
 
         return RunAnsibleRole()
 
+    @AnsibleRole("rhods_wait_odh")
+    @AnsibleMappedParams
+    def wait_odh(self, namespace="opendatahub"):
+        """
+        Wait for ODH to finish its deployment
+
+        Args:
+          namespace: namespace in which ODH is deployed
+        """
+
+        return RunAnsibleRole()
+
     @AnsibleRole("ocm_deploy_addon")
     @AnsibleConstant("Identifier of the addon that should be deployed",
                      "ocm_deploy_addon_id", "managed-odh")

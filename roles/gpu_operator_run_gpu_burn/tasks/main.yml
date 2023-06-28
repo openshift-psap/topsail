@@ -8,6 +8,7 @@
      || oc get nodes -oname -l feature.node.kubernetes.io/pci-0302_10de.present
      || oc get nodes -oname -l feature.node.kubernetes.io/pci-0300_10de.present
     ) | grep .
+  when: gpu_operator_run_gpu_burn_ensure_has_gpu
 
 - name: Get the list of nodes with GPUs
   command:
@@ -16,37 +17,44 @@
        -o custom-columns=NAME:metadata.name
        --no-headers
   register: gpu_burn_gpu_nodes
-  failed_when: gpu_burn_gpu_nodes.stdout == ""
+  failed_when: gpu_operator_run_gpu_burn_ensure_has_gpu and gpu_burn_gpu_nodes.stdout == ""
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
 
 # Store the configmap into a file, for easy reproduction from artifacts
 - name: Create the entrypoint ConfigMap file
   shell:
     oc create configmap gpu-burn-entrypoint
        --from-file=entrypoint.sh={{ gpu_burn_entrypoint }}
-       -n default
+       -n {{ gpu_operator_run_gpu_burn_namespace }}
        --dry-run=client
        -oyaml
-       > {{ artifact_extra_logs_dir }}/000_configmap_gpu-burn_entrypoint.yml
+       > {{ artifact_extra_logs_dir }}/src/000_configmap_gpu_burn_entrypoint.yml
 
 - name: Create the entrypoint ConfigMap resource
   command:
-    oc apply -f {{ artifact_extra_logs_dir }}/000_configmap_gpu-burn_entrypoint.yml
+    oc apply -f {{ artifact_extra_logs_dir }}/src/000_configmap_gpu_burn_entrypoint.yml
 
 # Store the configmap into a file, for easy reproduction from artifacts
 - name: Create the src ConfigMap file
   shell:
     oc create configmap gpu-burn-src
        --from-file={{ gpu_burn_src_dir }}
-       -n default
+       -n {{ gpu_operator_run_gpu_burn_namespace }}
        --dry-run=client
        -oyaml
-       > {{ artifact_extra_logs_dir }}/000_configmap_gpu-burn_src.yml
+       > {{ artifact_extra_logs_dir }}/src/000_configmap_gpu_burn_src.yml
 
 - name: Create the src ConfigMap resource
-  command: oc apply -f {{ artifact_extra_logs_dir }}/000_configmap_gpu-burn_src.yml
+  command: oc apply -f {{ artifact_extra_logs_dir }}/src/000_configmap_gpu_burn_src.yml
 
 - name: Delete possibly stalled GPU burn Pods
-  command: oc --ignore-not-found=true delete pod/gpu-burn-{{ item }} -n default
+  command:
+    oc --ignore-not-found=true delete pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }}
   with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
   failed_when: false
 
@@ -56,17 +64,14 @@
     loop_var: gpu_node_name
   template:
     src: "{{ gpu_burn_pod }}"
-    dest: "{{ artifact_extra_logs_dir }}/001_pod_gpu-burn_{{ gpu_node_name }}.yml"
+    dest: "{{ artifact_extra_logs_dir }}/src/001_pod_gpu_burn_{{ gpu_node_name }}.yml"
     mode: 0400
 
 - name: Create GPU Burn Pods from template
   loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
   loop_control:
     loop_var: gpu_node_name
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/001_pod_gpu-burn_{{ gpu_node_name }}.yml"
-
-- name: "Let the GPU burn Pods run {{ gpu_burn_time }} seconds"
-  command: sleep "{{ gpu_burn_time }}"
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_pod_gpu_burn_{{ gpu_node_name }}.yml"
 
 - name: Ensure that the GPU burn ran successfully
   block:
@@ -74,47 +79,49 @@
     loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     command:
       oc get pod/gpu-burn-{{ item }}
-         -n default
+         -n {{ gpu_operator_run_gpu_burn_namespace }}
          -o custom-columns=:.status.phase
          --no-headers
     register: gpu_burn_wait
     until: gpu_burn_wait.stdout == "Succeeded" or gpu_burn_wait.stdout == "Error" or gpu_burn_wait.stdout == "Failed"
     failed_when: gpu_burn_wait.stdout != "Succeeded"
-    retries: 20
-    delay: 30
+    retries: 50
+    delay: 10
 
   - name: Ensure that no GPU was faulty
     loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     shell:
-      oc logs pod/gpu-burn-{{ item }} -n default | grep FAULTY
+      oc logs pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }} | grep FAULTY
     register: gpu_burn_test_faulty
     failed_when: gpu_burn_test_faulty.rc == 0
 
   always:
   - name: Save the logs of the GPU burn Pods
-    shell: oc logs pod/gpu-burn-{{ item }} -n default | grep -o "[^$(printf '\r')]*$"
+    shell: oc logs pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }} | grep -o "[^$(printf '\r')]*$"
     with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     failed_when: false
 
   - name: Save the description of the GPU burn Pods
-    shell: oc describe pod/gpu-burn-{{ item }} -n default > {{ artifact_extra_logs_dir }}/gpu_burn.{{ item }}.description.txt
+    shell: oc describe pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }} > {{ artifact_extra_logs_dir }}/gpu_burn.{{ item }}.description.txt
     with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     failed_when: false
 
   - name: Save the full logs of the GPU burn Pods
-    shell: oc logs pod/gpu-burn-{{ item }} -n default > {{ artifact_extra_logs_dir }}/gpu_burn.{{ item }}.log
+    shell: oc logs pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }} > {{ artifact_extra_logs_dir }}/gpu_burn.{{ item }}.log
     with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     failed_when: false
 
   - name: Cleanup the GPU burn Pods
-    command: oc --ignore-not-found=true delete pod/gpu-burn-{{ item }} -n default
+    command: oc --ignore-not-found=true delete pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }}
     with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     failed_when: false
 
   - name: Delete the entrypoint ConfigMap
-    command: oc --ignore-not-found=true delete configmap gpu-burn-entrypoint -n default
+    command: oc --ignore-not-found=true delete configmap gpu-burn-entrypoint -n {{ gpu_operator_run_gpu_burn_namespace }}
     failed_when: false
+    when: not gpu_operator_run_gpu_burn_keep_resources
 
   - name: Delete the src ConfigMap
-    command: oc --ignore-not-found=true delete configmap src -n default
+    command: oc --ignore-not-found=true delete configmap gpu-burn-src -n {{ gpu_operator_run_gpu_burn_namespace }}
     failed_when: false
+    when: not gpu_operator_run_gpu_burn_keep_resources

@@ -9,17 +9,21 @@ spec:
   restartPolicy: Never
   # force the name of the node in which this pod should run
   nodeName: "{{ node_name }}"
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+    runAsNonRoot: true
+    runAsUser: 1001
   containers:
   - image: registry.access.redhat.com/ubi8/ubi
     name: main
     command: [sleep, inf]
     resources:
       requests:
-        {{ cluster_fill_workernodes_resource_name }}: {{ resource_request_value }}
+        cpu: {{ cpu_request_value }}
+        memory: {{ mem_request_value }}
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
         drop: ["ALL"]
-      seccompProfile:
-        type: RuntimeDefault
     runAsNonRoot: true

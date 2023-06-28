@@ -4,38 +4,48 @@ metadata:
   labels:
     app: gpu-burn
   name: gpu-burn-{{ gpu_node_name }}
-  namespace: default
+  namespace: {{ gpu_operator_run_gpu_burn_namespace }}
 spec:
   restartPolicy: Never
   # force the name of the node in which this pod should run
   nodeName: "{{ gpu_node_name }}"
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+    runAsNonRoot: true
+    runAsUser: 1001
   containers:
   - image: nvcr.io/nvidia/cuda:11.2.2-devel-ubi8
     imagePullPolicy: Always
     name: gpu-burn-ctr
     command:
-    - /bin/entrypoint.sh
+    - bash
+    - -xe
+    - /mnt/gpu-burn-entrypoint/entrypoint.sh
     volumeMounts:
     - name: entrypoint
-      mountPath: /bin/entrypoint.sh
+      mountPath: /mnt/gpu-burn-entrypoint/entrypoint.sh
       readOnly: true
       subPath: entrypoint.sh
     - name: src
-      mountPath: /gpu-burn-src
+      mountPath: /mnt/gpu-burn-src
       readOnly: true
     env:
     - name: GPU_BURN_TIME
-      value: "{{ gpu_burn_time }}"
+      value: "{{ gpu_operator_run_gpu_burn_runtime }}"
     resources:
       limits:
         # '0' means 'get access to all the GPUs of the local node'
         nvidia.com/gpu: 0
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    runAsNonRoot: true
   volumes:
   - name: entrypoint
     configMap:
-      defaultMode: 0700
       name: gpu-burn-entrypoint
   - name: src
     configMap:
-      defaultMode: 0700
       name: gpu-burn-src

@@ -11,9 +11,22 @@ codeflare generate_mcad_load:
   namespace: {{ tests.mcad.namespace }}
 
 cluster fill_workernodes:
-  namespace: {{ tests.mcad.namespace }}
+  namespace: {{ clusters.sutest.worker.fill_resources.namespace }}
+  label_selector: {{ clusters.sutest.worker.label }}
 
 cluster set_scale:
-  instance_type: {{ clusters.sutest.compute.machineset.type }}
   name: {{ clusters.sutest.compute.machineset.name }}
-  scale: {{ clusters.sutest.compute.machineset.count }}
+  instance_type: SET_AT_RUNTIME
+  scale: SET_AT_RUNTIME
+
+rhods wait_odh:
+  namespace: {{ odh.namespace }}
+
+gpu_operator enable_time_sharing:
+  replicas: {{ gpu.time_sharing.replicas }}
+
+gpu_operator run_gpu_burn:
+  keep_resources: true
+  namespace: {{ tests.mcad.namespace }}
+  runtime: 30 #s
+  ensure_has_gpu: false

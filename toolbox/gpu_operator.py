@@ -1,8 +1,7 @@
 import sys
 import secrets
 
-from toolbox._common import RunAnsibleRole, AnsibleRole
-
+from toolbox._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
 class GPUOperator:
     """
@@ -89,20 +88,25 @@ class GPUOperator:
         print("Deploying the GPU Operator from OperatorHub.")
         return RunAnsibleRole(opts)
 
-    @AnsibleRole("gpu_operator_run_gpu-burn")
-    def run_gpu_burn(self, runtime=None):
+    @AnsibleRole("gpu_operator_run_gpu_burn")
+    @AnsibleMappedParams
+    def run_gpu_burn(self,
+                     namespace="default",
+                     runtime : int = 30,
+                     keep_resources: bool = False,
+                     ensure_has_gpu: bool = True,
+                     ):
         """
         Runs the GPU burn on the cluster
 
         Args:
-            runtime: How long to run the GPU for, in seconds
+          namespace: namespace in which GPU-burn will be executed
+          runtime: How long to run the GPU for, in seconds
+          keep_resources: if true, do not delete the GPU-burn ConfigMaps
+          ensure_has_gpu: if true, fails if no GPU is available in the cluster.
         """
-        opts = {}
-        if runtime is not None:
-            opts["gpu_burn_time"] = runtime
-            print(f"Running GPU Burn for {runtime} seconds.")
 
-        return RunAnsibleRole(opts)
+        return RunAnsibleRole(locals())
 
     @AnsibleRole("gpu_operator_undeploy_from_operatorhub")
     def undeploy_from_operatorhub(self):
@@ -134,3 +138,30 @@ class GPUOperator:
         """
 
         return RunAnsibleRole()
+
+    @AnsibleRole("gpu_operator_wait_stack_deployed")
+    @AnsibleMappedParams
+    def wait_stack_deployed(self, namespace="nvidia-gpu-operator"):
+        """
+        Waits for the GPU Operator stack to be deployed on the GPU nodes
+
+        Args:
+          namespace: namespace in which the GPU Operator is deployed
+        """
+
+        return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("gpu_operator_enable_time_sharing")
+    @AnsibleMappedParams
+    def enable_time_sharing(self, namespace="nvidia-gpu-operator", replicas=4, configmap_name="time-slicing-config-all"):
+        """
+        Enable time-sharing in the GPU Operator ClusterPolicy
+
+        Args:
+          namespace: namespace in which the GPU Operator is deployed
+          replicas: number of slices available for each of the GPUs
+          configmap_name: name of the ConfigMap where the configuration will be stored
+        """
+
+        return RunAnsibleRole(locals())

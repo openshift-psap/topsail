@@ -6,10 +6,7 @@
 cluster_fill_workernodes_namespace: default
 
 # name prefix to use for the place-holder Pods
-cluster_fill_workernodes_name: cpu.placeholder
-
-# name of the resource to request
-cluster_fill_workernodes_resource_name: cpu
+cluster_fill_workernodes_name: resource-placeholder
 
 # label to use to select the nodes to fill
 cluster_fill_workernodes_label_selector: node-role.kubernetes.io/worker
