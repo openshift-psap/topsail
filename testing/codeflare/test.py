@@ -229,15 +229,28 @@ def _run_test_and_visualize(name, cfg, dry_mode):
 
 
 @entrypoint()
-def test_ci(dry_mode=False):
+def test_ci(name=None, dry_mode=False):
     """
     Runs the test from the CI
+
+    Args:
+      name: name of the test to run. If empty, run all the tests of the configuration file
+      dry_mode: if True, do not execute the tests, only list what would be executed
     """
 
     try:
         failed_tests = []
         ex = None
-        for name, test_case_cfg in config.ci_artifacts.get_config("tests.mcad.test_cases").items():
+        tests = config.ci_artifacts.get_config("tests.mcad.test_cases")
+        if name:
+            test_names = ", ".join(tests.keys())
+            tests = {name: tests.get(name)}
+            if not tests[name]:
+                logging.error(f"Test '{name}' is not defined. Available tests: {test_names}")
+                return 1
+
+        for name, test_case_cfg in tests.items():
+
             if test_case_cfg.get("disabled", False):
                 logging.info(f"Test '{name}' is disabled, skipping it.")
                 continue
