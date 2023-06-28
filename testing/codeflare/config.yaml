@@ -97,20 +97,63 @@ odh:
     namespace: all
 gpu:
   time_sharing:
-    replicas: 80
+    replicas: 20
 tests:
   mcad:
     namespace: mcad-load-test
     test_cases:
       all_schedulable:
-        job_template: gpu_burn
+        aw:
+          count: 40
+          job:
+            template_name: gpu_burn
+          pod:
+            count: 1
+            runtime: 30
+            requests:
+              nvidia.com/gpu: 1
+        node:
+          instance_type: g4dn.xlarge
+          count: 2
+        timespan: 0 #minutes, all at once
+        disabled: false
+
       scheduling:
-        with_job_mode: true
-        job_template: gpu_burn
+        aw:
+          count: 40
+          job:
+            template_name: gpu_burn
+            run_job_mode: true
+          pod:
+            count: 1
+            runtime: 30
+            requests:
+              nvidia.com/gpu: 1
+        node:
+          instance_type: g4dn.xlarge
+          count: 2
+          wait_gpus: true
+        timespan: 0 #minutes, all at once
+        disabled: false
+
       unschedulable:
-        target_states: [Queueing, HeadOfLine]
-        fail_if_states: [Dispatched, Running, Completed, Failed]
-        job_template: gpu_burn
+        aw:
+          count: 40
+          states:
+            target: [Queueing, HeadOfLine, Pending]
+            unexpected: [Dispatched, Running, Completed, Failed]
+          job:
+            template_name: gpu_burn
+          pod:
+            count: 1
+            runtime: 30
+            requests:
+              nvidia.com/gpu: 1
+        node:
+          instance_type: g4dn.xlarge
+          count: 0
+        timespan: 0 #minutes, all at once
+        disabled: false
 
 matbench:
   preset: null

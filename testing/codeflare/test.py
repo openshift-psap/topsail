@@ -161,40 +161,61 @@ def _run_test(name, cfg, test_artifact_dir_p, dry_mode):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
         save_matbench_files(name, cfg)
 
-        run.run("./run_toolbox.py cluster capture_environment >/dev/null")
-
-        run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+        if not dry_mode:
+            run.run("./run_toolbox.py cluster capture_environment >/dev/null")
+            run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
 
         extra = {}
         failed = True
         try:
-            for key in "target_states", "fail_if_states", "job_template":
-                if not key in cfg:
-                    continue
+            configs = [
+                ("states", "target"),
+                ("states", "unexpected"),
+                ("job", "template_name"),
+                ("pod", "count"),
+                ("pod", "runtime"),
+                ("pod", "requests"),
+            ]
 
-                extra[key] = cfg[key]
+            for (group, key) in configs:
+                if not key in cfg["aw"].get(group, {}): continue
+                extra[f"{group}_{key}"] = cfg["aw"][group][key]
 
-            run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load  --extra {extra}")
+            extra["duration"] = cfg["duration"]
+            extra["aw_count"] = cfg["aw"]["count"]
+            extra["timespan"] = cfg["timespan"]
 
-            if cfg.get("with_job_mode"):
+            if dry_mode:
+                logging.info(f"Running the load test '{name}' with {extra} ...")
+                run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load  --extra \"{extra}\"")
+            else:
+                run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load  --extra \"{extra}\"")
+
+            if cfg["aw"]["job"].get("run_job_mode"):
                 extra["job_mode"] = True
-                run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load mcad-load-test --extra {extra}")
+                logging.info("Running in Job mode ...")
+                if not dry_mode:
+                    run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load mcad-load-test --extra \"{extra}\"")
 
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
 
-            run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
+            if not dry_mode:
+                run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
 
 
-def _run_test_and_visualize(name, cfg):
+def _run_test_and_visualize(name, cfg, dry_mode):
     try:
         test_artifact_dir_p = [None]
-        _run_test(name, cfg, test_artifact_dir_p)
+        _run_test(name, cfg, test_artifact_dir_p, dry_mode)
     finally:
         generate_reports = config.ci_artifacts.get_config("matbench.generate_reports")
-        if generate_reports and test_artifact_dir_p[0] is not None:
+        if dry_mode:
+            logging.info(f"Running in dry mode, skipping the visualization. {generate_reports=}")
+
+        elif generate_reports and test_artifact_dir_p[0] is not None:
             next_count = env.next_artifact_index()
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
                 visualize.prepare_matbench()
@@ -207,7 +228,7 @@ def _run_test_and_visualize(name, cfg):
 
 
 @entrypoint()
-def test_ci():
+def test_ci(dry_mode=False):
     """
     Runs the test from the CI
     """
@@ -221,13 +242,18 @@ def test_ci():
                 continue
 
             try:
-                _run_test_and_visualize(name, test_case_cfg)
+                _run_test_and_visualize(name, test_case_cfg, dry_mode)
             except Exception as e:
                 ex = e
                 failed_tests.append(name)
                 logging.error(f"*** Caught an exception during test {name}: {e.__class__.__name__}: {e}")
                 traceback.print_exc()
-        if ex:
+
+                import bdb
+                if isinstance(e, bdb.BdbQuit):
+                    raise
+
+        if failed_tests:
             logging.error(f"Caught exception(s) in [{', '.join(failed_tests)}], aborting.")
             raise ex
     finally:
