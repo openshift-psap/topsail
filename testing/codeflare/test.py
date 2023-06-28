@@ -161,10 +161,11 @@ def _run_test(name, cfg, test_artifact_dir_p):
         extra = {}
         failed = True
         try:
-            if "target_states" in cfg:
-                extra["target_states"] = cfg["target_states"]
-            if "fail_if_states" in cfg:
-                extra["fail_if_states"] = cfg["fail_if_states"]
+            for key in "target_states", "fail_if_states", "job_template":
+                if not key in cfg:
+                    continue
+
+                extra[key] = cfg[key]
 
             run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load  --extra {extra}")
 

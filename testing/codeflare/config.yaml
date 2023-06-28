@@ -102,12 +102,15 @@ tests:
   mcad:
     namespace: mcad-load-test
     test_cases:
-      all_schedulable: {}
+      all_schedulable:
+        job_template: gpu_burn
       scheduling:
         with_job_mode: true
+        job_template: gpu_burn
       unschedulable:
         target_states: [Queueing, HeadOfLine]
         fail_if_states: [Dispatched, Running, Completed, Failed]
+        job_template: gpu_burn
 
 matbench:
   preset: null
