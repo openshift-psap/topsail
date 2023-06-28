@@ -10,6 +10,7 @@ class Metadata(matbench_models.Metadata):
     presets: List[str]
     rhods_version: str
     ocp_version: str
+    test: str
     config: Any
 
 class BenchmarkMeasures(BaseModel):

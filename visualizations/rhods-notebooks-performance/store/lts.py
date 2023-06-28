@@ -23,6 +23,7 @@ def build_lts_payloads():
                 "rhods_version": results.rhods_info.version,
                 "ocp_version": results.sutest_ocp_version,
                 "settings": entry.settings.__dict__,
+                "test": results.test_config.get('tests.notebooks.identifier') or 'unknown'
             },
             "results": {
                 "benchmark_measures": results.notebook_benchmark,
