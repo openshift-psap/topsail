@@ -115,7 +115,7 @@ tests:
             template_name: gpu_burn
           pod:
             count: 1
-            runtime: 30
+            runtime: 150
             requests:
               nvidia.com/gpu: 1
         node:
@@ -145,7 +145,7 @@ tests:
 
       unschedulable:
         aw:
-          count: 5
+          count: 50
           states:
             target: [Queueing, HeadOfLine, Pending]
             unexpected: [Dispatched, Running, Completed, Failed]

@@ -26,6 +26,12 @@
     state: directory
     mode: '0755'
 
+- name: Create the generator artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/generator-artifacts/"
+    state: directory
+    mode: '0755'
+
 - name: Create the namespace if it does not exist
   shell:
     oc create ns "{{ codeflare_generate_mcad_load_namespace }}" -oyaml --dry-run=client | tee "{{ artifact_extra_logs_dir }}/src/namespace.yaml" | oc apply -f-
@@ -37,6 +43,8 @@
 
   - name: Generate the MCAD load
     shell: |
+      export ARTIFACT_DIR="{{ artifact_extra_logs_dir }}/generator-artifacts"
+
       python3 "{{ mcad_load_generator }}" \
         --dry_run "False" \
         --namespace "{{ codeflare_generate_mcad_load_namespace }}" \

@@ -48,7 +48,7 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
             Name = resource_name,
             Start = resource_times.creation,
             Finish = finish,
-            Duration = (finish - pod_time.start_time).total_seconds(),
+            Duration = (finish - resource_times.creation).total_seconds(),
             Type = f"{resource_times.kind}s",
         ))
 
@@ -132,7 +132,14 @@ class AppWrappersTimeline():
                     ))
                 current_name = condition_name
                 current_start = condition_ts
-                # last one, completed, is ignored, as it stays "active" forever
+
+            if current_name:
+                data.append(dict(
+                    Name=resource_times.name,
+                    State=current_name,
+                    Start=current_start,
+                    Finish=entry.results.start_end_time[1], # last state lives until the end of the test
+                ))
 
         for pod_time in entry.results.pod_times:
             finish = pod_time.container_finished or entry.results.start_end_time[1]

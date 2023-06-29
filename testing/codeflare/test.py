@@ -166,7 +166,6 @@ def _run_test(name, cfg, test_artifact_dir_p):
             logging.info("tests.mcad.prepare_nodes=False, skipping.")
 
         if not dry_mode and capture_prom:
-            run.run("./run_toolbox.py cluster capture_environment >/dev/null")
             run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
 
     next_count = env.next_artifact_index()
@@ -224,6 +223,9 @@ def _run_test(name, cfg, test_artifact_dir_p):
             if not dry_mode:
                 if capture_prom:
                     run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
+
+                # must be part of the test directory
+                run.run("./run_toolbox.py cluster capture_environment >/dev/null")
 
 
 def _run_test_and_visualize(name, cfg):

@@ -54,6 +54,9 @@ def get_data(entry, cfg__instance, memory=False, cpu=False, gpu=False):
                      )
             )
 
+    if not data:
+        return pd.DataFrame([])
+
     node = entry.results.nodes_info.get(cfg__instance)
     if not node:
         logging.error(f"No information about node '{cfg_instance}'")
@@ -110,6 +113,9 @@ class ResourceAllocation():
             return None, f"Invalid 'what' parameter received ({what})"
 
         df = get_data(entry, cfg__instance, memory=memory, gpu=gpu, cpu=cpu)
+
+        if df.empty:
+            return None, "Not data available ..."
 
         fig = px.line(df, x="ts", y="value", color='type')
         if memory:
