@@ -199,10 +199,10 @@ def _parse_ocp_version(dirname):
     return sutest_ocp_version_yaml["openshiftVersion"]
 
 
+@ignore_file_not_found
 def _extract_metrics(dirname):
-    if not artifact_paths.CLUSTER_CAPTURE_ENV_DIR:
-        raise FileNotFoundError(artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR)
-
+    if not artifact_paths.CLUSTER_DUMP_PROM_DB_DIR:
+        raise FileNotFoundError(artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR)
     METRICS = {
         "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
     }
