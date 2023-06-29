@@ -12,6 +12,7 @@ class Codeflare:
     @AnsibleMappedParams
     def generate_mcad_load(self,
                            namespace,
+                           aw_base_name="appwrapper",
                            job_template_name="sleeper",
                            states_target=["Completed"],
                            states_unexpected=["Failed"],
@@ -27,6 +28,7 @@ class Codeflare:
 
         Args:
           namespace: name of the namespace where the MCAD load will be generated
+          aw_base_name: name prefix for the AppWrapper resources
           job_template_name: name of the job template to use inside the AppWrapper
           job_mode: if true, create Jobs instead of AppWrappers
           pod_count: number of Pods to create in each of the AppWrappers

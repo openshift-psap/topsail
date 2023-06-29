@@ -48,6 +48,7 @@
       python3 "{{ mcad_load_generator }}" \
         --dry_run "False" \
         --namespace "{{ codeflare_generate_mcad_load_namespace }}" \
+        --aw_base_name "{{ codeflare_generate_mcad_load_aw_base_name }}" \
         --job_template_name "{{ codeflare_generate_mcad_load_job_template_name }}" \
         --job_mode "{{ codeflare_generate_mcad_load_job_mode }}" \
         --aw_count "{{ codeflare_generate_mcad_load_aw_count }}" \
