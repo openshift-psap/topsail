@@ -303,6 +303,7 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
             logging.error(f"Caught exception(s) in [{', '.join(failed_tests)}], aborting.")
             raise ex
     finally:
+        run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
 
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
