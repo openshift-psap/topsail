@@ -9,6 +9,7 @@ import datetime
 import time
 import functools
 import traceback
+import copy
 
 import yaml
 import fire
@@ -115,11 +116,13 @@ def prepare_ci():
 
     run.run("./run_toolbox.py from_config rhods wait_odh")
 
-    prepare_gpu_operator()
+    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
+        prepare_gpu_operator()
 
     prepare_worker_node_labels()
 
-    run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
+    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
+        run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
 
     if config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.enabled"):
         namespace = config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.namespace")
@@ -153,13 +156,46 @@ def _prepare_test_nodes(name, cfg, dry_mode):
         run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
 
 
-def _run_test(name, cfg, test_artifact_dir_p):
+def merge(a, b, path=None):
+    "updates a with b"
+    if path is None: path = []
+    for key in b:
+        if key in a and isinstance(a[key], dict) and isinstance(b[key], dict):
+            merge(a[key], b[key], path + [str(key)])
+        else:
+            a[key] = b[key]
+    return a
+
+def _run_test(name, test_artifact_dir_p):
     dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
     capture_prom = config.ci_artifacts.get_config("tests.mcad.capture_prom")
     prepare_nodes = config.ci_artifacts.get_config("tests.mcad.prepare_nodes")
 
+    test_templates = config.ci_artifacts.get_config("tests.mcad.test_templates")
+
+    parents_to_apply = [name]
+    cfg = {"templates": []}
+    while parents_to_apply:
+        template_name = parents_to_apply.pop()
+        cfg["templates"].insert(0, template_name)
+        logging.info(f"Applying test template {template_name} ...")
+        try:
+            test_template = test_templates[template_name]
+        except KeyError:
+            logging.error(f"Test template {template_name} does not exist. Available templates: {', '.join(test_templates.keys())}")
+            raise
+        cfg = merge(copy.deepcopy(test_template), cfg)
+        if "extends" in cfg:
+            parents_to_apply += cfg["extends"]
+            del cfg["extends"]
+
+    logging.info("Test configuration: \n"+yaml.dump(cfg))
+
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare"):
+        with open(env.ARTIFACT_DIR / "test_config.yaml", "w") as f:
+            yaml.dump(cfg, f)
+
         if prepare_nodes:
             _prepare_test_nodes(name, cfg, dry_mode)
         else:
@@ -228,10 +264,10 @@ def _run_test(name, cfg, test_artifact_dir_p):
                 run.run("./run_toolbox.py cluster capture_environment >/dev/null")
 
 
-def _run_test_and_visualize(name, cfg):
+def _run_test_and_visualize(name):
     try:
         test_artifact_dir_p = [None]
-        _run_test(name, cfg, test_artifact_dir_p)
+        _run_test(name, test_artifact_dir_p)
     finally:
         dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
         if not config.ci_artifacts.get_config("tests.mcad.visualize"):
@@ -271,24 +307,15 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
     try:
         failed_tests = []
         ex = None
-        tests = config.ci_artifacts.get_config("tests.mcad.test_cases")
-        if name:
-            test_names = ", ".join(tests.keys())
-            tests = {name: tests.get(name)}
-            if not tests[name]:
-                logging.error(f"Test '{name}' is not defined. Available tests: {test_names}")
-                return 1
+        tests_to_run = config.ci_artifacts.get_config("tests.mcad.tests_to_run") \
+            if not name else [name]
 
-        for name, test_case_cfg in tests.items():
-
-            if test_case_cfg.get("disabled", False):
-                logging.info(f"Test '{name}' is disabled, skipping it.")
-                continue
+        for name in tests_to_run:
 
             next_count = env.next_artifact_index()
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}_test-case_{name}"):
                 try:
-                    _run_test_and_visualize(name, test_case_cfg)
+                    _run_test_and_visualize(name)
                 except Exception as e:
                     ex = e
                     failed_tests.append(name)
@@ -341,7 +368,8 @@ def cleanup_cluster():
 
     cleanup_mcad_test()
 
-    cleanup_gpu_operator()
+    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
+        cleanup_gpu_operator()
 
 
 @entrypoint(ignore_secret_path=True)
