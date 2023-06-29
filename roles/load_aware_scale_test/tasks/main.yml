@@ -1,6 +1,6 @@
 - name: Generate load timeline
   shell:
-    python3 {{ load_timeline_generator }} {{ load_aware_scale_test_distribution }} {{ load_aware_scale_test_duration}} {{ load_aware_scale_test_instances }} > "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.txt"
+    python3 {{ load_timeline_generator }} {{ load_aware_scale_test_distribution }} {{ load_aware_scale_test_duration}} {{ load_aware_scale_test_instances }} > "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.log"
 
 - name: Create namespace for default test
   command:
@@ -8,8 +8,8 @@
 
 - name: Run test workload with default scheduler and load timeline
   shell:
-    cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.txt"
-      | python3 {{ pod_start_scheduler }} default > "{{ artifact_extra_logs_dir }}/default_workload_scheduler.txt"
+    cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.log"
+      | python3 {{ pod_start_scheduler }} default > "{{ artifact_extra_logs_dir }}/default_workload_scheduler.log"
 
 - name: Wait for default workloads to finish
   shell:
@@ -24,8 +24,9 @@
       and 'ContainerCreating' not in load_aware_workload.stdout"
 
 - name: Dump info about default scheduler resources
-  shell:
-    oc get all -n load-aware -oyaml > "{{ artifact_extra_logs_dir }}/all_default_resources.yaml"
+  shell: |
+    oc get pods -n load-aware > "{{ artifact_extra_logs_dir }}/all_default_pods.status" 
+    oc get pods -n load-aware -ojson > "{{ artifact_extra_logs_dir }}/all_default_pods.json"
 
 - name: Cleanup namespace for default test
   command:
@@ -38,8 +39,8 @@
 
 - name: Run test pod with trimaran scheduler and load timeline
   shell:
-    cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.txt"
-      | python3 {{ pod_start_scheduler }} trimaran > "{{ artifact_extra_logs_dir }}/trimaran_workload_scheduler.txt"
+    cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.log"
+      | python3 {{ pod_start_scheduler }} trimaran > "{{ artifact_extra_logs_dir }}/trimaran_workload_scheduler.log"
 
 - name: Wait for default workloads to finish
   shell:
@@ -55,8 +56,9 @@
 
 
 - name: Dump info about trimaran resources
-  shell:
-    oc get all -n load-aware -oyaml > "{{ artifact_extra_logs_dir }}/all_trimaran_resources.yaml"
+  shell: |
+    oc get pods -n load-aware > "{{ artifact_extra_logs_dir }}/all_trimaran_pods.status" 
+    oc get pods -n load-aware -ojson > "{{ artifact_extra_logs_dir }}/all_trimaran_pods.json"
 
 - name: Cleanup namespace for test
   command:

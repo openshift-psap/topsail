@@ -83,8 +83,8 @@ def _run_test(test_artifact_dir_p):
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
-        run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
-        
+        run.run("./run_toolbox.py cluster reset_prometheus_db")
+
         failed = True
         try:
 
@@ -95,8 +95,8 @@ def _run_test(test_artifact_dir_p):
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
 
-            run.run("./run_toolbox.py cluster dump_prometheus_db > /dev/null")
             run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
+            run.run("./run_toolbox.py cluster dump_prometheus_db")
 
 @entrypoint()
 def test_ci():
