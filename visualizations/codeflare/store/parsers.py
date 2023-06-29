@@ -43,6 +43,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/appwrappers.json",
 
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/_ansible.log",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-deployment.json",
 ]
 
 PARSER_VERSION = "2023-05-31"
@@ -75,6 +76,8 @@ def _parse_once(results, dirname):
     results.pod_times = _parse_pod_times(dirname)
     results.resource_times = _parse_resource_times(dirname)
     results.start_end_time = _parse_start_end_times(dirname)
+
+    results.mcad_version = _parse_mcad_version(dirname)
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -382,3 +385,16 @@ def _parse_start_end_times(dirname):
     logging.debug(f'End time: {end_time}')
 
     return (start_time, end_time)
+
+@ignore_file_not_found
+def _parse_mcad_version(dirname):
+    filename = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / "mcad-deployment.json"
+
+    with open(register_important_file(dirname, filename)) as f:
+        try:
+            json_file = json.load(f)
+        except Exception as e:
+            logging.error(f"Couldn't parse JSON file '{filename}': {e}")
+            return
+
+    return json_file["spec"]["template"]["spec"]["containers"][0]["image"]
