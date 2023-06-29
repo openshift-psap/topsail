@@ -48,7 +48,7 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
             Name = resource_name,
             Start = resource_times.creation,
             Finish = finish,
-            Duration = (finish - pod_time.start_time).total_seconds(),
+            Duration = (finish - resource_times.creation).total_seconds(),
             Type = f"{resource_times.kind}s",
         ))
 
