@@ -145,7 +145,7 @@ tests:
 
       unschedulable:
         aw:
-          count: 5
+          count: 50
           states:
             target: [Queueing, HeadOfLine, Pending]
             unexpected: [Dispatched, Running, Completed, Failed]
