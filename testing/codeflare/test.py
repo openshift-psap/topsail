@@ -226,6 +226,7 @@ def _run_test(name, test_artifact_dir_p):
                 if not key in cfg["aw"].get(group, {}): continue
                 extra[f"{group}_{key}"] = cfg["aw"][group][key]
 
+            extra["aw_base_name"] = name
             extra["timespan"] = cfg["timespan"]
             extra["aw_count"] = cfg["aw"]["count"]
             extra["timespan"] = cfg["timespan"]
