@@ -42,7 +42,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/jobs.json",
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/appwrappers.json",
 
-    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/_ansible.log",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/start_end_cm.yaml",
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-deployment.json",
 ]
 
@@ -75,7 +75,7 @@ def _parse_once(results, dirname):
 
     results.pod_times = _parse_pod_times(dirname)
     results.resource_times = _parse_resource_times(dirname)
-    results.start_end_time = _parse_start_end_times(dirname)
+    results.test_start_end_time = _parse_test_start_end_time(dirname)
 
     results.mcad_version = _parse_mcad_version(dirname)
 
@@ -364,27 +364,25 @@ def _parse_resource_times(dirname):
     return dict(all_resource_times)
 
 @ignore_file_not_found
-def _parse_start_end_times(dirname):
-    ISO_FORMAT="%Y-%m-%d %H:%M:%S"
+def _parse_test_start_end_time(dirname):
+    with open(register_important_file(dirname, artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / 'start_end_cm.yaml')) as f:
+        start_end_cm = yaml.safe_load(f)
 
-    first = None
-    last = None
-    with open(register_important_file(dirname, artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / '_ansible.log')) as f:
-        for line in f.readlines():
-            if not first:
-                first = line
-            last = line
+    test_start_end_time = types.SimpleNamespace()
+    test_start_end_time.start = None
+    test_start_end_time.end = None
 
-    # first = "2023-04-14 17:19:19,808 p=770 u=psap-ci-runner n=ansible | ansible-playbook 2.9.27"
-    start_time = datetime.datetime.strptime(first.partition(',')[0], ISO_FORMAT)
+    for cm in start_end_cm["items"]:
+        name = cm["metadata"]["name"]
+        ts = datetime.datetime.strptime(
+            cm["metadata"]["creationTimestamp"],
+            K8S_TIME_FMT)
+        test_start_end_time.__dict__[name] = ts
 
-    # last = 2023-04-14 17:25:31,697 p=770 u=psap-ci-runner n=ansible |...
-    end_time = datetime.datetime.strptime(last.partition(',')[0], ISO_FORMAT)
+    logging.debug(f'Start time: {test_start_end_time.start}')
+    logging.debug(f'End time: {test_start_end_time.end}')
 
-    logging.debug(f'Start time: {start_time}')
-    logging.debug(f'End time: {end_time}')
-
-    return (start_time, end_time)
+    return test_start_end_time
 
 @ignore_file_not_found
 def _parse_mcad_version(dirname):
