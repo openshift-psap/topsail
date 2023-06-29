@@ -33,6 +33,9 @@ def _get_test_setup(entry):
     else:
         setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE ({entry.results.from_local_env.source_url})")]
 
+    mcad_log_file = entry.results.from_local_env.artifacts_basedir / entry.results.file_locations.mcad_logs
+    setup_info += [html.Li(html.A("MCAD logs", href=str(mcad_log_file), target="_blank"))]
+
     managed = list(entry.results.cluster_info.control_plane)[0].managed \
         if entry.results.cluster_info.control_plane else False
 
@@ -70,7 +73,7 @@ def _get_test_setup(entry):
     test_duration = (entry.results.test_start_end_time.end - entry.results.test_start_end_time.start).total_seconds() / 60
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
 
-    setup_info += [html.Li(["Test-case configuration: ", html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
+    setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
     return setup_info
 
 class ErrorReport():

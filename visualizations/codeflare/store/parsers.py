@@ -45,6 +45,7 @@ IMPORTANT_FILES = [
 
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/start_end_cm.yaml",
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-deployment.json",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-controller.log",
 ]
 
 PARSER_VERSION = "2023-05-31"
@@ -80,6 +81,7 @@ def _parse_once(results, dirname):
 
     results.mcad_version = _parse_mcad_version(dirname)
     results.test_case_config = _parse_test_case_config(dirname)
+    results.file_locations = _parse_file_locations(dirname)
 
 
 def _parse_local_env(dirname):
@@ -408,3 +410,11 @@ def _parse_test_case_config(dirname):
         test_case_config = yaml.safe_load(f)
 
     return test_case_config
+
+def _parse_file_locations(dirname):
+    file_locations = types.SimpleNamespace()
+
+    file_locations.mcad_logs = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / "mcad-controller.log"
+    register_important_file(dirname, file_locations.mcad_logs)
+
+    return file_locations
