@@ -36,6 +36,11 @@
   shell:
     oc create ns "{{ codeflare_generate_mcad_load_namespace }}" -oyaml --dry-run=client | tee "{{ artifact_extra_logs_dir }}/src/namespace.yaml" | oc apply -f-
 
+- name: Create a configmap for the beginning of the test timestamp
+  shell:
+    oc delete cm start end -n "{{ codeflare_generate_mcad_load_namespace }}" --ignore-not-found;
+    oc create configmap start -n "{{ codeflare_generate_mcad_load_namespace }}" ;
+
 - name: Generate MCAD load
   block:
   - name: Run the load test
@@ -48,6 +53,7 @@
       python3 "{{ mcad_load_generator }}" \
         --dry_run "False" \
         --namespace "{{ codeflare_generate_mcad_load_namespace }}" \
+        --aw_base_name "{{ codeflare_generate_mcad_load_aw_base_name }}" \
         --job_template_name "{{ codeflare_generate_mcad_load_job_template_name }}" \
         --job_mode "{{ codeflare_generate_mcad_load_job_mode }}" \
         --aw_count "{{ codeflare_generate_mcad_load_aw_count }}" \
@@ -126,11 +132,16 @@
     when: codeflare_generate_mcad_load_job_mode
 
   always:
+  - name: Create a configmap for the end of the test timestamp
+    shell:
+      oc create configmap end -n "{{ codeflare_generate_mcad_load_namespace }}" ;
+      oc get cm start end -oyaml -n "{{ codeflare_generate_mcad_load_namespace }}" > "{{ artifact_extra_logs_dir }}/start_end_cm.yaml"
+
   - name: Capture the state of the AppWrappers
     shell: |
       oc get appwrappers -ojson -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.json"
       oc get appwrappers -oyaml -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
-      oc get appwrappers -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.status"
+      oc get appwrappers -n {{ codeflare_generate_mcad_load_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r >"{{ artifact_extra_logs_dir }}/appwrappers.status"
       oc describe appwrappers -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.desc"
     ignore_errors: true
 

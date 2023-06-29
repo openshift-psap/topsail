@@ -28,6 +28,13 @@ ci_presets:
     clusters.sutest.is_metal: false
     clusters.driver.is_metal: false
 
+  gpu:
+    tests.mcad.want_gpu: true
+    tests.mcad.tests_to_run: [gpu_all_schedulable, gpu_scheduling, gpu_unschedulable]
+
+  fill_workernodes:
+    clusters.sutest.worker.fill_resources.enabled: true
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -69,7 +76,7 @@ clusters:
     worker:
       label: initial_worker_node=true
       fill_resources:
-        enabled: true
+        enabled: false
         namespace: worker-nodes-placeholder
   driver:
     is_metal: false
@@ -97,7 +104,7 @@ odh:
     namespace: all
 gpu:
   time_sharing:
-    replicas: 20
+    replicas: 10
 tests:
   mcad:
     namespace: mcad-load-test
@@ -107,30 +114,14 @@ tests:
     capture_prom: true
     prepare_nodes: true
 
-    test_cases:
-      all_schedulable:
-        aw:
-          count: 5
-          job:
-            template_name: gpu_burn
-          pod:
-            count: 1
-            runtime: 150
-            requests:
-              nvidia.com/gpu: 1
-        node:
-          instance_type: g4dn.xlarge
-          count: 1
-          wait_gpus: true
-        timespan: 0 #minutes, all at once
-        disabled: false
+    want_gpu: false
+    tests_to_run: [cpu_light_all_schedulable, cpu_light_scheduling, cpu_light_unschedulable]
 
-      scheduling:
+    test_templates:
+      common_gpu:
         aw:
-          count: 5
           job:
             template_name: gpu_burn
-            run_job_mode: true
           pod:
             count: 1
             runtime: 30
@@ -138,30 +129,79 @@ tests:
               nvidia.com/gpu: 1
         node:
           instance_type: g4dn.xlarge
-          count: 1
           wait_gpus: true
         timespan: 0 #minutes, all at once
-        disabled: false
 
-      unschedulable:
+      common_cpu:
         aw:
-          count: 50
-          states:
-            target: [Queueing, HeadOfLine, Pending]
-            unexpected: [Dispatched, Running, Completed, Failed]
           job:
-            template_name: gpu_burn
+            template_name: sleeper
           pod:
             count: 1
-            runtime: 150
+            runtime: 30
             requests:
-              nvidia.com/gpu: 1
+              cpu: 100m
         node:
-          instance_type: g4dn.xlarge
-          count: 0
+          instance_type: m6i.2xlarge
           wait_gpus: false
         timespan: 0 #minutes, all at once
-        disabled: false
+
+      common_unschedulable:
+        aw:
+          states:
+            target: [Queueing, HeadOfLine, Pending, Failed]
+            unexpected: [Dispatched, Running, Completed]
+          pod:
+            runtime: 300
+        node:
+          count: 0
+          wait_gpus: false
+
+      common_scheduling:
+        aw:
+          job:
+            run_job_mode: true
+
+      gpu_all_schedulable:
+        extends: [common_gpu]
+        aw:
+          count: 10
+        node:
+          count: 1
+
+      gpu_scheduling:
+        extends: [common_gpu, common_scheduling]
+        aw:
+          count: 20
+        node:
+          count: 1
+
+      gpu_unschedulable:
+        extends: [common_gpu, common_unschedulable]
+        aw:
+          count: 50
+
+      common_light:
+        node:
+          count: 0
+
+      cpu_light_all_schedulable:
+        extends: [common_cpu, common_light]
+        aw:
+          count: 10
+
+      cpu_light_scheduling:
+        extends: [common_cpu, common_light, common_scheduling]
+        aw:
+          count: 20
+
+      cpu_light_unschedulable:
+        extends: [common_cpu, common_light, common_unschedulable]
+        aw:
+          count: 50
+          pod:
+            requests:
+              cpu: 150
 
 matbench:
   preset: null

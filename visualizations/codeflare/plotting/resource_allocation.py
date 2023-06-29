@@ -1,6 +1,7 @@
 from collections import defaultdict
 import datetime
 import statistics as stats
+import logging
 
 from dash import html
 import plotly.graph_objs as go
@@ -29,6 +30,10 @@ def get_data(entry, cfg__instance, memory=False, cpu=False, gpu=False):
     limit_metric_name = "Sutest Control Plane Node Resource Limit"
 
     data = []
+
+    if not entry.results.metrics:
+        logging.error("No metric available ...")
+        return pd.DataFrame([])
 
     for metric in entry.results.metrics[cluster_role][request_metric_name]:
         if cfg__instance != metric.metric.get("node", ""): continue
