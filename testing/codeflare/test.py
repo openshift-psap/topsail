@@ -322,12 +322,19 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
                     logging.error(f"*** Caught an exception during test {name}: {e.__class__.__name__}: {e}")
                     traceback.print_exc()
 
+                    with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
+                        print(traceback.format_exc(), file=f)
+
                     import bdb
                     if isinstance(e, bdb.BdbQuit):
                         raise
 
         if failed_tests:
+            with open(env.ARTIFACT_DIR / "FAILED_TESTS", "w") as f:
+                print("\n".join(failed_tests), file=f)
+
             logging.error(f"Caught exception(s) in [{', '.join(failed_tests)}], aborting.")
+
             raise ex
     finally:
         run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
