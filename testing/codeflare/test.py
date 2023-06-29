@@ -256,7 +256,7 @@ def _run_test(name, test_artifact_dir_p):
                 except Exception as e:
                     job_load_test_failed = True
 
-            failed = not load_test_failed and not job_load_test_failed
+            failed = load_test_failed or job_load_test_failed
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
