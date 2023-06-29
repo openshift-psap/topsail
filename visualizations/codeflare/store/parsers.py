@@ -41,6 +41,8 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/pods.json",
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/jobs.json",
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/appwrappers.json",
+
+    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/_ansible.log",
 ]
 
 PARSER_VERSION = "2023-05-31"
