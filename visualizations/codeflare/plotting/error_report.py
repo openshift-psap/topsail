@@ -4,6 +4,7 @@ from collections import defaultdict
 import os
 import base64
 import pathlib
+import yaml
 
 from dash import html
 from dash import dcc
@@ -69,6 +70,7 @@ def _get_test_setup(entry):
     test_duration = (entry.results.test_start_end_time.end - entry.results.test_start_end_time.start).total_seconds() / 60
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
 
+    setup_info += [html.Li(["Test-case configuration: ", html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
     return setup_info
 
 class ErrorReport():

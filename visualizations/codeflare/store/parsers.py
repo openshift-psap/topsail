@@ -32,6 +32,7 @@ artifact_paths = None # store._parse_directory will turn it into a {str: pathlib
 
 IMPORTANT_FILES = [
     "config.yaml",
+    "test_case_config.yaml",
 
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",
 
@@ -78,6 +79,8 @@ def _parse_once(results, dirname):
     results.test_start_end_time = _parse_test_start_end_time(dirname)
 
     results.mcad_version = _parse_mcad_version(dirname)
+    results.test_case_config = _parse_test_case_config(dirname)
+
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -396,3 +399,12 @@ def _parse_mcad_version(dirname):
             return
 
     return json_file["spec"]["template"]["spec"]["containers"][0]["image"]
+
+@ignore_file_not_found
+def _parse_test_case_config(dirname):
+    filename =  "test_case_config.yaml"
+
+    with open(register_important_file(dirname, filename)) as f:
+        test_case_config = yaml.safe_load(f)
+
+    return test_case_config
