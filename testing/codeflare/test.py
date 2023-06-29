@@ -152,8 +152,12 @@ def _prepare_test_nodes(name, cfg, dry_mode):
         return
 
     run.run(f"./run_toolbox.py from_config cluster set_scale --extra \"{extra}\"")
+
     if cfg["node"].get("wait_gpus", True):
-        run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
+        if not config.ci_artifacts.get_config("tests.mcad.want_gpu"):
+            logging.error("Cannot wait for GPUs when tests.mcad.want_gpu is disabled ...")
+        else:
+            run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
 
 
 def merge(a, b, path=None):
