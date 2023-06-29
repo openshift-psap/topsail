@@ -131,7 +131,7 @@
     shell: |
       oc get appwrappers -ojson -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.json"
       oc get appwrappers -oyaml -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
-      oc get appwrappers -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.status"
+      oc get appwrappers -n {{ codeflare_generate_mcad_load_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r >"{{ artifact_extra_logs_dir }}/appwrappers.status"
       oc describe appwrappers -n {{ codeflare_generate_mcad_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.desc"
     ignore_errors: true
 
