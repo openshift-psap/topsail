@@ -28,6 +28,13 @@ ci_presets:
     clusters.sutest.is_metal: false
     clusters.driver.is_metal: false
 
+  gpu:
+    tests.mcad.want_gpu: true
+    tests.mcad.tests_to_run: [gpu_all_schedulable, gpu_scheduling, gpu_unschedulable]
+
+  fill_workernodes:
+    clusters.sutest.worker.fill_resources.enabled: true
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -69,7 +76,7 @@ clusters:
     worker:
       label: initial_worker_node=true
       fill_resources:
-        enabled: true
+        enabled: false
         namespace: worker-nodes-placeholder
   driver:
     is_metal: false
@@ -107,8 +114,8 @@ tests:
     capture_prom: true
     prepare_nodes: true
 
-    want_gpu: true
-    tests_to_run: [gpu_all_schedulable, gpu_scheduling, gpu_unschedulable]
+    want_gpu: false
+    tests_to_run: [cpu_light_all_schedulable, cpu_light_scheduling, cpu_light_unschedulable]
 
     test_templates:
       common_gpu:
@@ -123,6 +130,20 @@ tests:
         node:
           instance_type: g4dn.xlarge
           wait_gpus: true
+        timespan: 0 #minutes, all at once
+
+      common_cpu:
+        aw:
+          job:
+            template_name: sleeper
+          pod:
+            count: 1
+            runtime: 30
+            requests:
+              cpu: 100m
+        node:
+          instance_type: m6i.2xlarge
+          wait_gpus: false
         timespan: 0 #minutes, all at once
 
       common_unschedulable:
@@ -159,6 +180,28 @@ tests:
         extends: [common_gpu, common_unschedulable]
         aw:
           count: 50
+
+      common_light:
+        node:
+          count: 0
+
+      cpu_light_all_schedulable:
+        extends: [common_cpu, common_light]
+        aw:
+          count: 10
+
+      cpu_light_scheduling:
+        extends: [common_cpu, common_light, common_scheduling]
+        aw:
+          count: 20
+
+      cpu_light_unschedulable:
+        extends: [common_cpu, common_light, common_unschedulable]
+        aw:
+          count: 50
+          pod:
+            requests:
+              cpu: 150
 
 matbench:
   preset: null
