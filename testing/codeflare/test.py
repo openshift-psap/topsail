@@ -318,7 +318,7 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
         for name in tests_to_run:
 
             next_count = env.next_artifact_index()
-            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}_test-case_{name}"):
+            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test-case_{name}"):
                 try:
                     _run_test_and_visualize(name)
                 except Exception as e:
