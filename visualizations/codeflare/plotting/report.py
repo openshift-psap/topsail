@@ -63,7 +63,20 @@ def Plot(name, args, msg_p=None):
         logging.error(f"Report: Stats '{name}' does not exist. Skipping it.")
         stats = None
 
-    fig, msg = stats.do_plot(*args) if stats else (None, f"Stats '{name}' does not exit :/")
+    try:
+        fig, msg = stats.do_plot(*args) if stats else (None, f"Stats '{name}' does not exit :/")
+    except Exception as e:
+        msg = f"*** Caught an exception during test {name}: {e.__class__.__name__}: {e}"
+        logging.error(msg)
+        import traceback
+        traceback.print_exc()
+        if msg_p is not None: msg_p.append(msg)
+
+        import bdb
+        if isinstance(e, bdb.BdbQuit):
+            raise
+
+        return dcc.Graph(figure={})
 
     if msg_p is not None: msg_p.append(msg)
 
