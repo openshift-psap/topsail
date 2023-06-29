@@ -64,6 +64,11 @@ def _get_test_setup(entry):
 
     setup_info += [html.Ul(nodes_info)]
 
+    setup_info += [html.Li(["MCAD version: ", html.B(entry.results.mcad_version)])]
+
+    test_duration = (entry.results.start_end_time[1] - entry.results.start_end_time[0]).total_seconds() / 60
+    setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
+
     return setup_info
 
 class ErrorReport():
