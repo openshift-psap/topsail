@@ -26,7 +26,7 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
         hostname = pod_time.hostname
 
         shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "").replace(".ec2.internal", "")
-        finish = pod_time.container_finished or entry.results.start_end_time[1]
+        finish = pod_time.container_finished or entry.results.test_start_end_time.end
 
         try:
             hostname_index = hostnames_index(hostname)
@@ -43,7 +43,7 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
         ))
 
     for resource_name, resource_times in entry.results.resource_times.items():
-        finish = resource_times.completion or entry.results.start_end_time[1]
+        finish = resource_times.completion or entry.results.test_start_end_time.end
         data.append(dict(
             Name = resource_name,
             Start = resource_times.creation,
@@ -138,11 +138,11 @@ class AppWrappersTimeline():
                     Name=resource_times.name,
                     State=current_name,
                     Start=current_start,
-                    Finish=entry.results.start_end_time[1], # last state lives until the end of the test
+                    Finish=entry.results.test_start_end_time.end, # last state lives until the end of the test
                 ))
 
         for pod_time in entry.results.pod_times:
-            finish = pod_time.container_finished or entry.results.start_end_time[1]
+            finish = pod_time.container_finished or entry.results.test_start_end_time.end
 
             data.append(dict(
                 Name = f"{pod_time.pod_friendly_name} (Pod)",
