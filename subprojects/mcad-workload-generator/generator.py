@@ -15,7 +15,7 @@ import subprocess
 
 import k8s_quantity
 
-ARTIFACT_DIR = pathlib.Path(os.environ.get("ARTIFACT_EXTRA_LOGS_DIR", os.environ.get("ARTIFACT_DIR", ".")))
+ARTIFACT_DIR = pathlib.Path(os.environ.get("ARTIFACT_DIR", "."))
 
 def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None):
     logging.info(f"run: {command}")
