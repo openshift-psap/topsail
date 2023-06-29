@@ -140,6 +140,9 @@ def save_matbench_files(name, cfg):
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
         yaml.dump(config.ci_artifacts.config, f, indent=4)
 
+    with open(env.ARTIFACT_DIR / "test_case_config.yaml", "w") as f:
+        yaml.dump(cfg, f)
+
 
 def _prepare_test_nodes(name, cfg, dry_mode):
     extra = {}
@@ -197,9 +200,6 @@ def _run_test(name, test_artifact_dir_p):
 
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare"):
-        with open(env.ARTIFACT_DIR / "test_config.yaml", "w") as f:
-            yaml.dump(cfg, f)
-
         if prepare_nodes:
             _prepare_test_nodes(name, cfg, dry_mode)
         else:
