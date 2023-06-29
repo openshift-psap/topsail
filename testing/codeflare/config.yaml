@@ -149,8 +149,8 @@ tests:
       common_unschedulable:
         aw:
           states:
-            target: [Queueing, HeadOfLine, Pending]
-            unexpected: [Dispatched, Running, Completed, Failed]
+            target: [Queueing, HeadOfLine, Pending, Failed]
+            unexpected: [Dispatched, Running, Completed]
           pod:
             runtime: 300
         node:
