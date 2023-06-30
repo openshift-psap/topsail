@@ -35,6 +35,10 @@ ci_presets:
   fill_workernodes:
     clusters.sutest.worker.fill_resources.enabled: true
 
+
+  cpu_light_unschedulable:
+    tests.mcad.tests_to_run: [cpu_light_unschedulable]
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -198,7 +202,7 @@ tests:
       cpu_light_unschedulable:
         extends: [common_cpu, common_light, common_unschedulable]
         aw:
-          count: 50
+          count: 200
           pod:
             requests:
               cpu: 150
