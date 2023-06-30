@@ -39,6 +39,10 @@ ci_presets:
   cpu_light_unschedulable:
     tests.mcad.tests_to_run: [cpu_light_unschedulable]
 
+  cpu_light_scheduling:
+    tests.mcad.tests_to_run: [cpu_light_scheduling]
+    tests.mcad.test_templates.cpu_light_scheduling.aw.count: 100
+
 secrets:
   dir:
     name: psap-ods-secret
