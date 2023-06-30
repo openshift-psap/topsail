@@ -366,13 +366,17 @@ def cleanup_cluster():
 
     odh_namespace = config.ci_artifacts.get_config("odh.namespace")
 
-    for resource in config.ci_artifacts.get_config("odh.kfdefs"):
-        run.run(f"oc delete -f {resource}  -n {odh_namespace}")
+    has_kfdef = run.run("oc get kfdef -n not-a-namespace --ignore-not-found", check=False).returncode == 0
+    if has_kfdef:
+        for resource in config.ci_artifacts.get_config("odh.kfdefs"):
+            run.run(f"oc delete -f {resource} --ignore-not-found -n {odh_namespace}")
+    else:
+        logging.info("Cluster doesn't know the Kfdef CRD, skipping KFDef deletion")
 
     for operator in config.ci_artifacts.get_config("odh.operators"):
         ns = "openshift-operators" if operator['namespace'] == "all" else operator['namespace']
-        run.run(f"oc delete sub {operator['name']} -n {ns}")
-        run.run(f"oc delete csv -loperators.coreos.com/{operator['name']}.{ns}= -n {ns}")
+        run.run(f"oc delete sub {operator['name']} -n {ns} --ignore-not-found ")
+        run.run(f"oc delete csv -loperators.coreos.com/{operator['name']}.{ns}= -n {ns} --ignore-not-found ")
 
     fill_namespace = config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.namespace")
 

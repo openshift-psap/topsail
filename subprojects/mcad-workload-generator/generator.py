@@ -112,7 +112,7 @@ def main(dry_run=True,
 
     for aw_index in range(aw_count):
         appwrapper = copy.deepcopy(base_appwrapper)
-        appwrapper_name = f"{aw_base_name}{aw_index:03d}-{pod_runtime}s".replace("_", "-")
+        appwrapper_name = f"aw-{aw_base_name}{aw_index:03d}-{pod_runtime}s".replace("_", "-")
 
         set_config(appwrapper, "metadata.name", appwrapper_name)
 
