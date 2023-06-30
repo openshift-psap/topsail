@@ -35,13 +35,15 @@ ci_presets:
   fill_workernodes:
     clusters.sutest.worker.fill_resources.enabled: true
 
-
   cpu_light_unschedulable:
     tests.mcad.tests_to_run: [cpu_light_unschedulable]
 
   cpu_light_scheduling:
     tests.mcad.tests_to_run: [cpu_light_scheduling]
     tests.mcad.test_templates.cpu_light_scheduling.aw.count: 100
+
+  icelake:
+    extends: [metal]
 
 secrets:
   dir:
