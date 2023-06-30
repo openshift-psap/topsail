@@ -15,6 +15,7 @@ def build_lts_payloads():
         end_time = results.end_time
 
         lts_payload = {
+            "$schema": "urn:rhods-notebooks-perf:1.0.0",
             "metadata": {
                 "start": start_time,
                 "end": end_time,

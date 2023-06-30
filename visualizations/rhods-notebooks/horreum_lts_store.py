@@ -184,7 +184,7 @@ def build_lts_payloads() -> dict:
         
         output: models.NotebookScalePayload = models.NotebookScalePayload.parse_obj(payload)
 
-        yield dict(output), start_time, end_time
+        yield output.dict(by_alias=True), start_time, end_time
 
 
 def _decode_users(results):
@@ -236,7 +236,7 @@ def _gather_prom_metrics(entry) -> dict:
         for metric_name in metric_names:
             logging.info(f"Gathering {metric_name[0]}")
             output[metric_name[0]] = {
-                'data': [promvalue.dict() for promvalue in prom.get_metrics('sutest')(entry, metric_name[0])],
+                'data': [promvalue for promvalue in prom.get_metrics('sutest')(entry, metric_name[0])],
                 'query': metric_name[1]
             }
 

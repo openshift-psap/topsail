@@ -4,7 +4,7 @@ from typing import List, Dict
 
 import matrix_benchmarking.models as matbench_models
 
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, constr, Field
 
 class NotebookScaleMetadata(matbench_models.Metadata):
     presets: List[str]
@@ -23,7 +23,7 @@ class NotebookScaleData(matbench_models.ExclusiveModel):
 
 
 class NotebookScalePayload(matbench_models.ExclusiveModel):
-    schema_name: matbench_models.create_schema_field("rhods-notebooks")
+    schema_name: matbench_models.create_schema_field("rhods-notebooks") = Field(alias="$schema")
     data: NotebookScaleData
     metadata: NotebookScaleMetadata
 
