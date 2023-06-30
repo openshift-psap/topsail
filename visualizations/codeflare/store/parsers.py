@@ -335,8 +335,12 @@ def _parse_resource_times(dirname):
             resource_times.name = name
             resource_times.creation = creationTimestamp
             if kind == "AppWrapper":
+                resource_times.aw_conditions = {}
+                resource_times.aw_conditions["Created"] = resource_times.creation
                 resource_times.completion = None
-                for condition in item["status"]["conditions"]:
+                if not item.get("status"): continue
+
+                for condition in item["status"].get("conditions", []):
                     if condition.get("reason") != "PodsCompleted": continue
                     if condition.get("status") != "True": continue
                     if condition.get("type") != "Completed": continue
@@ -346,9 +350,6 @@ def _parse_resource_times(dirname):
                             K8S_TIME_MILLI_FMT)
                     break
 
-                resource_times.aw_conditions = {}
-
-                resource_times.aw_conditions["Created"] = resource_times.creation
                 for condition in item["status"]["conditions"]:
                     resource_times.aw_conditions[condition["type"]] = \
                         datetime.datetime.strptime(
