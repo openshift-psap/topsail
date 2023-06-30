@@ -100,7 +100,6 @@ def main(dry_run=True,
 
     logging.info(f"Running with a timespan of {timespan} minutes.")
 
-    set_config(base_appwrapper, "metadata.name", aw_base_name)
     set_config(base_appwrapper, "metadata.namespace", namespace)
     set_config(base_appwrapper, "spec.priority", aw_priority)
 
@@ -113,7 +112,7 @@ def main(dry_run=True,
 
     for aw_index in range(aw_count):
         appwrapper = copy.deepcopy(base_appwrapper)
-        appwrapper_name = f"aw{aw_index:03d}-{pod_runtime}s"
+        appwrapper_name = f"{aw_base_name}{aw_index:03d}-{pod_runtime}s".replace("_", "-")
 
         set_config(appwrapper, "metadata.name", appwrapper_name)
 
