@@ -22,6 +22,7 @@ class Codeflare:
                            pod_runtime=30,
                            pod_requests={"cpu": "100m"},
                            timespan=0,
+                           distribution="poisson",
                            ):
         """
         Generate MCAD load
@@ -38,6 +39,7 @@ class Codeflare:
           states_unexpected: list of states that fail the test
           aw_count: number of AppWrapper replicas to create
           timespan: number of minutes over which the AppWrappers should be created
+          distribution: the distribution method to use to spread the resource creation over the requested timespan
         """
 
         return RunAnsibleRole(locals())

@@ -60,7 +60,8 @@
         --pod_count "{{ codeflare_generate_mcad_load_pod_count }}" \
         --pod_runtime "{{ codeflare_generate_mcad_load_pod_runtime }}" \
         --pod_requests "{{ codeflare_generate_mcad_load_pod_requests }}" \
-        --timespan "{{ codeflare_generate_mcad_load_timespan}}"
+        --timespan "{{ codeflare_generate_mcad_load_timespan}}" \
+        --distribution "{{ codeflare_generate_mcad_load_distribution}}"
 
   - name: Define the variables
     set_fact:

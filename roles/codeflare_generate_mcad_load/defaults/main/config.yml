@@ -6,6 +6,9 @@
 # Mandatory value
 codeflare_generate_mcad_load_namespace:
 
+# name prefix for the AppWrapper resources
+codeflare_generate_mcad_load_aw_base_name: appwrapper
+
 # name of the job template to use inside the AppWrapper
 codeflare_generate_mcad_load_job_template_name: sleeper
 
@@ -35,4 +38,7 @@ codeflare_generate_mcad_load_pod_requests:
 
 # number of minutes over which the AppWrappers should be created
 codeflare_generate_mcad_load_timespan: 0
+
+# the distribution method to use to spread the resource creation over the requested timespan
+codeflare_generate_mcad_load_distribution: poisson
 
