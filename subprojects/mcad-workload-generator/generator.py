@@ -4,24 +4,28 @@ import fire
 import sys, os
 import yaml
 import pathlib
-import jsonpath_ng
+import yaml, json
 import copy
 from collections import defaultdict
-
+import datetime
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
 import subprocess
 
+import jsonpath_ng
+
 import k8s_quantity
+import scheduler
 
 ARTIFACT_DIR = pathlib.Path(os.environ.get("ARTIFACT_DIR", "."))
 
-def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None):
+def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None, input=None):
     logging.info(f"run: {command}")
     args = {}
 
     args["cwd"] = cwd
+    args["input"] = input.encode()
     if capture_stdout: args["stdout"] = subprocess.PIPE
     if capture_stderr: args["stderr"] = subprocess.PIPE
     if check: args["check"] = True
@@ -33,6 +37,16 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
 
     if capture_stdout: proc.stdout = proc.stdout.decode("utf8")
     if capture_stderr: proc.stderr = proc.stderr.decode("utf8")
+
+    return proc
+
+def run_in_background(command, input=None):
+    logging.info(f"run in background: {command}")
+    args = {}
+
+    proc = subprocess.Popen(command, stdin=subprocess.PIPE)
+    proc.stdin.write(input.encode())
+    proc.stdin.close()
 
     return proc
 
@@ -69,6 +83,7 @@ def main(dry_run=True,
          aw_priority=10,
          aw_count=3,
          timespan=0,
+         distribution="poisson"
          ):
     """
     Generates workload for the MCAD load test
@@ -85,6 +100,7 @@ def main(dry_run=True,
       aw_priority: priority to set in the AppWrapper
       aw_count: number of AppWrapper replicas to create
       timespan: number of minutes over which the AppWrappers should be created
+      distribution: the distribution method to use to spread the resource creation over the requested timespan
     """
 
     if namespace is None:
@@ -99,6 +115,7 @@ def main(dry_run=True,
         logging.info("Running in Job mode")
 
     logging.info(f"Running with a timespan of {timespan} minutes.")
+    timespan_sec = timespan * 60
 
     set_config(base_appwrapper, "metadata.namespace", namespace)
     set_config(base_appwrapper, "spec.priority", aw_priority)
@@ -110,7 +127,7 @@ def main(dry_run=True,
         logging.error(f"Could not find the requested job template '{job_template_name}'. Available names: {','.join(job_templates.keys())}")
         sys.exit(1)
 
-    for aw_index in range(aw_count):
+    def create_appwrapper(aw_index):
         appwrapper = copy.deepcopy(base_appwrapper)
         appwrapper_name = f"aw-{aw_base_name}{aw_index:03d}-{pod_runtime}s".replace("_", "-")
 
@@ -136,32 +153,83 @@ def main(dry_run=True,
         )]
         set_config(appwrapper, "spec.resources.GenericItems", aw_genericitems)
 
+        resource = appwrapper
         if job_mode:
-            src_file = ARTIFACT_DIR / f"job_{appwrapper_name}.yaml"
-            with open(src_file, "w") as f:
-                for item in appwrapper["spec"]["resources"]["GenericItems"]:
-                    replica = item["replicas"] # currently ignored
-                    job = item["generictemplate"]
+            resource = []
+            for item in appwrapper["spec"]["resources"]["GenericItems"]:
+                replica = item["replicas"] # currently ignored
+                job = item["generictemplate"]
 
-                    yaml.dump(job, f)
-                    print("---", file=f)
-        else:
-            src_file = ARTIFACT_DIR / f"{appwrapper_name}.yaml"
-            with open(src_file, "w") as f:
-                yaml.dump(appwrapper, f)
+                resource.append(job)
 
-        command = f"oc apply -f {src_file}"
-        if dry_run:
-            logging.info(f"DRY_RUN: {command}")
-        else:
-            run(command)
+        if aw_index == 0:
+            src_file = ARTIFACT_DIR / f"resource_sample.yaml"
+            logging.info(f"Saving resource #0 into {src_file}")
+            with open(src_file, "w") as f:
+                yaml.dump(resource, f)
+
+        resource_name = job_name if job_mode else appwrapper_name
+        json_resource = json.dumps(resource)
+
+        if aw_index == 0:
+            logging.info(f"Resource #0: {json_resource}")
+
+        logging.info(f"Creating resource #{aw_index} {resource_name} ...")
+
+        if not dry_run:
+            nonlocal processes
+            processes += [run_in_background("oc apply -f-".split(" "), input=json_resource)]
+
+        return resource_name
+
+    processes = []
+    data = []
+    def _create_appwrapper(aw_index, delay):
+        time_fct = (lambda : "{:.2f} minutes".format(float(scheduler.dry_run_time) / 60)) if dry_run \
+            else (lambda : datetime.datetime.now().time())
+
+        create_ts = str(time_fct())
+        name = create_appwrapper(aw_index)
+        created_ts = str(time_fct())
+
+        data.append(dict(
+            create=create_ts,
+            created=created_ts,
+            name=name,
+            delay=float(delay),
+            index=aw_index
+        ))
+
+    times, schedule = scheduler.prepare(_create_appwrapper, distribution, timespan_sec, aw_count,
+                                        dry_run=dry_run)
+
+    schedule_plan_dest = ARTIFACT_DIR / f"schedule_plan.yaml"
+
+    logging.info(f"Saving the schedule plan in {schedule_plan_dest}")
+    times_list = times.tolist()
+    with open(schedule_plan_dest, "w") as f:
+        yaml.dump(dict(zip(range(len(times_list)), times_list)), f)
 
     print(f"""---\n# Summary: {aw_count} AppWrappers, with each:
 #  - {pod_count} Pods with {pod_requests}
 #  - running for {pod_runtime} seconds
 ---
 """)
+    schedule.run()
 
+    schedule_result_dest = ARTIFACT_DIR / f"schedule_result.yaml"
+
+    logging.info(f"Saving the schedule result in {schedule_result_dest}")
+    times_list = times.tolist()
+    with open(schedule_result_dest, "w") as f:
+        yaml.dump(data, f)
+
+
+    start_wait = datetime.datetime.now()
+    for proc in processes:
+        proc.wait()
+    end_wait = datetime.datetime.now()
+    logging.info(f"Had to wait a total of {(end_wait - start_wait).total_seconds():.1f}s to join all the {len(processes)} background processes.")
 
 if __name__ == "__main__":
     try:
@@ -175,4 +243,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print() # empty line after ^C
         logging.error(f"Interrupted.")
+        raise e
         sys.exit(1)
