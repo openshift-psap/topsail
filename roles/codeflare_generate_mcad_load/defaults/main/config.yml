@@ -6,6 +6,9 @@
 # Mandatory value
 codeflare_generate_mcad_load_namespace:
 
+# name prefix for the AppWrapper resources
+codeflare_generate_mcad_load_aw_base_name: appwrapper
+
 # name of the job template to use inside the AppWrapper
 codeflare_generate_mcad_load_job_template_name: sleeper
 
