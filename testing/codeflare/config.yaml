@@ -126,6 +126,7 @@ tests:
 
     want_gpu: false
     tests_to_run: [cpu_light_all_schedulable, cpu_light_scheduling, cpu_light_unschedulable]
+    distribution: poisson
 
     test_templates:
       common_gpu:

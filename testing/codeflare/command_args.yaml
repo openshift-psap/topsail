@@ -9,6 +9,7 @@
 
 codeflare generate_mcad_load:
   namespace: {{ tests.mcad.namespace }}
+  distribution: {{ tests.mcad.distribution }}
   # the other parameters are passed at runtime with the --extra flag.
 
 cluster fill_workernodes:
