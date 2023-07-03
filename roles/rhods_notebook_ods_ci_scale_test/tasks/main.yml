@@ -62,9 +62,14 @@
     command: oc whoami --show-server
     register: oc_api_url_cmd
 
+  - name: Get the RHODS CSV name
+    shell:
+      oc get csv -oname -n redhat-ods-operator | grep rhods-operator
+    register: rhods_csv_cmd
+
   - name: Get the RHODS version
     shell:
-      oc get csv -n redhat-ods-operator -ojsonpath={.items[0].spec.version}
+      oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
     register: rhods_version_cmd
 
   - name: Get the Dashboard Product name (to distinguish RHODS from ODH). Currently hardcoded to RHODS.
