@@ -144,6 +144,8 @@ def apply_prefer_pr():
     if not config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr"):
         return
 
+    pr_number = None
+
     if os.environ.get("OPENSHIFT_CI"):
         pr_number = os.environ.get("PULL_NUMBER")
         if not pr_number:
@@ -158,6 +160,10 @@ def apply_prefer_pr():
         except Exception as e:
             logging.warning("apply_prefer_pr: PERFLAB_CI: base_image.repo.ref_prefer_pr is set cannot parse PERFLAB_GIT_REF={git_erf}: {e.__class__.__name__}: {e}")
             return
+
+    if not pr_number:
+        logging.warning("apply_prefer_pr: Could not figure out the PR number. Keeping the default value.")
+        return
 
     pr_ref = f"refs/pull/{pr_number}/head"
 
