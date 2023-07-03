@@ -141,7 +141,7 @@ tests:
         node:
           instance_type: g4dn.xlarge
           wait_gpus: true
-        timespan: 0 #minutes, all at once
+        timespan: 5 #minutes, all at once
 
       common_cpu:
         aw:
@@ -155,7 +155,7 @@ tests:
         node:
           instance_type: m6i.2xlarge
           wait_gpus: false
-        timespan: 0 #minutes, all at once
+        timespan: 5 #minutes, all at once
 
       common_unschedulable:
         aw:
