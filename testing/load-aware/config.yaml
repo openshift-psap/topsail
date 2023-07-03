@@ -95,17 +95,17 @@ clusters:
           effect: NoSchedule
   cleanup_on_exit: false
 load_aware:
-  log_level: null
-  plugin: null
-  default_requests_cpu: null
-  default_target_requests_multiplier: null
-  target_utilization: null
-  safe_variance_margin: null
-  safe_variance_sensitivity: null
+  log_level: 1
+  plugin: "TargetLoadPacking" 
+  default_requests_cpu: "2000m"
+  default_target_requests_multiplier: "2"
+  target_utilization: 70
+  safe_variance_margin: 1
+  safe_variance_sensitivity: 2
   scale_test:
-    distribution: null
-    duration: null
-    instances: null
+    distribution: "poisson"
+    duration: 60.0
+    instances: 10
 matbench:
   preset: null
   workload: load-aware
