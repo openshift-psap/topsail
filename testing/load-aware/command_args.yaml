@@ -18,3 +18,7 @@ load_aware deploy_trimaran:
   safe_variance_margin: {{ load_aware.safe_variance_margin }}
   safe_variance_sensitivity: {{ load_aware.safe_variance_sensitivity }}
 
+load_aware scale_test:
+  distribution: {{ load_aware.scale_test.distribution }}
+  duration: {{ load_aware.scale_test.duration }}
+  instances: {{ load_aware.scale_test.instances }}

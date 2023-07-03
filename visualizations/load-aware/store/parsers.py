@@ -23,9 +23,9 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 IMPORTANT_FILES = [
     "config.yaml",
 
-    "001__cluster__dump_prometheus_db/prometheus.t*",
     "002__cluster__capture_environment/nodes.json",
-    "002__cluster__capture_environment/ocp_version.yml"
+    "002__cluster__capture_environment/ocp_version.yml",
+    "003__cluster__dump_prometheus_db/prometheus.t*"
 ]
 
 PARSER_VERSION = "2023-05-31"
@@ -169,7 +169,7 @@ def _parse_ocp_version(dirname):
 
 def _extract_metrics(dirname):
     METRICS = {
-        "sutest": ("001__cluster__dump_prometheus_db/prometheus.t*", workload_prom.get_sutest_metrics()),
+        "sutest": ("003__cluster__dump_prometheus_db/prometheus.t*", workload_prom.get_sutest_metrics()),
     }
 
     metrics = {}
