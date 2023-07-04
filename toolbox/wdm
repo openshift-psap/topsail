@@ -1,6 +1,0 @@
-#! /bin/bash
-
-THIS_DIR=$(dirname "$(realpath ${BASH_SOURCE[0]})")
-
-export PYTHONPATH=${THIS_DIR}/../subprojects/wdm/
-exec python3 -m wdm "$@"
