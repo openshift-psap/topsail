@@ -23,17 +23,10 @@ RUN yum install -y --quiet \
 
 ARG CURL_OPTIONS="--silent --location --fail --show-error"
 
-
 # ARG OCP_CLI_URL=https://people.redhat.com/~kpouget/22-08-26/openshift-client-linux.tar.gz
-# ARG OCM_CLI_URL=https://people.redhat.com/~kpouget/22-10-05/ocm-linux-amd64
 
 ARG OCP_CLI_VERSION=latest
 ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
-
-ARG OCM_CLI_VERSION=v0.1.63
-ARG OCM_CLI_URL=https://github.com/openshift-online/ocm-cli/releases/download/${OCM_CLI_VERSION}/ocm-linux-amd64
-
-# RUN curl ${CURL_OPTIONS}  ${OCM_CLI_URL} --output /usr/local/bin/ocm && chmod +x /usr/local/bin/ocm
 
 RUN curl ${CURL_OPTIONS}  ${OCP_CLI_URL}  | tar xfz - -C /usr/local/bin oc
 
@@ -56,9 +49,8 @@ ENV USER_NAME=psap-ci-runner \
 COPY . ${HOME}/
 
 # Install Python requirements
+
 RUN pip install --quiet --no-cache-dir -r ${HOME}/requirements.txt && \
-    pip install --quiet --no-cache-dir -r ${HOME}/subprojects/wdm/requirements.txt && \
-    pip install --quiet --no-cache-dir -r ${HOME}/subprojects/cloud-watch/requirements.txt && \
     (cd ${HOME} && ./testing/common/visualize.py prepare_matbench && mv /tmp/prometheus/bin/prometheus /usr/local/bin)
 
 # Prepare the CI `run` entrypoint
