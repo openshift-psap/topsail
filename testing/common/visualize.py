@@ -24,13 +24,17 @@ workload_storage_dir = None # will be set in init()
 
 
 
-def init():
+def init(allow_no_config_file=False):
     global matbench_config, matbench_workload, workload_storage_dir
 
     env.init()
     config_file = os.environ.get("CI_ARTIFACTS_FROM_CONFIG_FILE")
-    if not config_file:
+    if not config_file and not allow_no_config_file:
         raise RuntimeError("CI_ARTIFACTS_FROM_CONFIG_FILE must be set. Please source your `configure.sh` before running this file.")
+
+    if not config_file:
+        logging.info("Running without CI_ARTIFACTS_FROM_CONFIG_FILE, skipping most of the initialization")
+        return
 
     config.init(pathlib.Path(config_file).parent)
 
@@ -64,29 +68,35 @@ def init():
     matbench_config = config.Config(workload_storage_dir / "data" / config.ci_artifacts.get_config("matbench.config_file"))
 
 
-def entrypoint():
+def entrypoint(allow_no_config_file=False):
     def decorator(fct):
         @functools.wraps(fct)
         def wrapper(*args, **kwargs):
-            init()
+            init(allow_no_config_file)
             fct(*args, **kwargs)
 
         return wrapper
     return decorator
 
 
-@entrypoint()
+@entrypoint(allow_no_config_file=True)
 def prepare_matbench():
 
     run.run(f"""
-    WORKLOAD_RUN_DIR="{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/workloads/{matbench_workload}"
-
-    rm -f "$WORKLOAD_RUN_DIR"
-    ln -s "{workload_storage_dir}" "$WORKLOAD_RUN_DIR"
-
     pip install --quiet --requirement "{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/requirements.txt"
-    pip install --quiet --requirement "{workload_storage_dir}/requirements.txt"
     """)
+
+    if workload_storage_dir:
+        run.run(f"""
+        WORKLOAD_RUN_DIR="{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/workloads/{matbench_workload}"
+
+        rm -f "$WORKLOAD_RUN_DIR"
+        ln -s "{workload_storage_dir}" "$WORKLOAD_RUN_DIR"
+
+        pip install --quiet --requirement "{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/requirements.txt"
+        """)
+    else:
+        logging.info("Running without workload configuration, skipping the workload preparation")
 
     PROMETHEUS_VERSION = "2.36.0"
     os.environ["PATH"] += ":/tmp/prometheus"
