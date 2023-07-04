@@ -64,17 +64,18 @@ def init():
     matbench_config = config.Config(workload_storage_dir / "data" / config.ci_artifacts.get_config("matbench.config_file"))
 
 
-def entrypoint(fct):
-    @functools.wraps(fct)
-    def wrapper(*args, **kwargs):
-        if matbench_config is None:
+def entrypoint():
+    def decorator(fct):
+        @functools.wraps(fct)
+        def wrapper(*args, **kwargs):
             init()
-        fct(*args, **kwargs)
+            fct(*args, **kwargs)
 
-    return wrapper
+        return wrapper
+    return decorator
 
 
-@entrypoint
+@entrypoint()
 def prepare_matbench():
 
     run.run(f"""
@@ -102,7 +103,7 @@ def prepare_matbench():
     cp "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
     """)
 
-@entrypoint
+@entrypoint()
 def generate_visualizations():
     if not os.environ.get("MATBENCH_RESULTS_DIRNAME"):
         raise ValueError("MATBENCH_RESULTS_DIRNAME should have been set ...")
@@ -188,7 +189,7 @@ def generate_visualization(idx):
         raise RuntimeError(msg)
 
 
-@entrypoint
+@entrypoint()
 def generate_from_dir(results_dirname):
     os.environ["MATBENCH_RESULTS_DIRNAME"] = results_dirname
 
@@ -216,7 +217,7 @@ def download():
     run.run(f"matbench download --do-download |& tee > {env.ARTIFACT_DIR}/_matbench_download.log")
 
 
-@entrypoint
+@entrypoint()
 def download_and_generate_visualizations():
     prepare_matbench()
     os.environ["MATBENCH_RESULTS_DIRNAME"] = "/tmp/matrix_benchmarking_results"
