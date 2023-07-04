@@ -1,4 +1,3 @@
-openshift
 yq
 pyyaml
 fire
