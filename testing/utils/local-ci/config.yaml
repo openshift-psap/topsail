@@ -95,11 +95,11 @@ workloads:
     - icelake
     steps:
       pre_cleanup_cluster:
-        command: pipelines scale_test cleanup_cluster_ci
+        command: pipelines test cleanup_cluster_ci
       prepare:
-        command: pipelines scale_test prepare_ci
+        command: pipelines test prepare_ci
       test:
-        command: pipelines scale_test test_ci
+        command: pipelines test test_ci
       post_cleanup_cluster:
-        command: pipelines scale_test cleanup_cluster_ci
+        command: pipelines test cleanup_cluster_ci
         alway_run: true
