@@ -56,9 +56,8 @@ ENV USER_NAME=psap-ci-runner \
 COPY . ${HOME}/
 
 # Install Python requirements
+
 RUN pip install --quiet --no-cache-dir -r ${HOME}/requirements.txt && \
-    pip install --quiet --no-cache-dir -r ${HOME}/subprojects/wdm/requirements.txt && \
-    pip install --quiet --no-cache-dir -r ${HOME}/subprojects/cloud-watch/requirements.txt && \
     (cd ${HOME} && ./testing/common/visualize.py prepare_matbench && mv /tmp/prometheus/bin/prometheus /usr/local/bin)
 
 # Prepare the CI `run` entrypoint
