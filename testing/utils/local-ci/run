@@ -83,7 +83,8 @@ def local_ci_prepare():
 
 
 def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None, export=True, step=None,
-                 check_clean_diff=True, check_branch_synced=True, pr_config=None, retrieve_artifacts=True):
+                 check_clean_diff=True, check_branch_synced=True, pr_config=None, retrieve_artifacts=True,
+                 test_args=None):
     """
     Runs a CI workload.
 
@@ -98,6 +99,7 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
       check_branch_synced: If True, bail out if the git branch isn't synced with its upstream branch.
       pr_config: Optional path to a PR config file (avoids fetching Github PR json).
       retrieve_artifacts: If False, do not retrieve locally the test artifacts.
+      test_args: List of arguments to give to the test. Overrides what is found in the configuration file.
     """
     namespace = get_config("base_image.namespace")
 
@@ -135,10 +137,13 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
 
     workload_data = workloads[workload]
     command_group = workload_data["command_group"]
-    test_args = workload_data.get("test_args", [])
+
+    _test_args = test_args or workload_data.get("test_args", []) or []
     if isinstance(test_args, str):
-        logging.error(f"Invalid test args {test_args} for workload {workload}. Expected a list of strings.")
+        logging.error(f"Invalid test args {_test_args} for workload {workload}. Expected a list of strings. In the CLI, add [] around the single element if needed.")
         sys.exit(1)
+
+    test_args = list(_test_args)
 
     if workload_identifier is None:
         workload_identifier = workload
