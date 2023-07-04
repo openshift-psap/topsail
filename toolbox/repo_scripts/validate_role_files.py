@@ -13,7 +13,7 @@ TOP_DIR = THIS_DIR.parent.parent
 # go to top directory
 os.chdir(TOP_DIR)
 
-ROLES_VARS_GLOB = "roles/*/vars/*/*"
+ROLES_VARS_GLOB = "roles/*/*/vars/*/*"
 FILE_PREFIX = "roles/"
 
 def validate_role_vars_files(yaml_doc):
@@ -27,7 +27,7 @@ def validate_role_vars_files(yaml_doc):
                 continue
         except AttributeError: # value.startswith
             print()
-            print(f"{key}: --> no a string, ignoring.")
+            print(f"{key}:{value} --> not a string ({value.__class__.__name__}), ignoring.")
             continue
 
         if not pathlib.Path(value).exists():

@@ -1,2 +1,0 @@
----
-local_ci_run_multi_job_template: roles/local_ci_run_multi/templates/job.yaml.j2

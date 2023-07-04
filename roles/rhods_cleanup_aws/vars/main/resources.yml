@@ -1,1 +1,0 @@
-rhods_cleanup_aws_metadata_json: roles/rhods_cleanup_aws/templates/metadata.json.j2

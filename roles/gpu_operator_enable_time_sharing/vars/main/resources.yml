@@ -1,1 +1,0 @@
-config_map_template: roles/gpu_operator_enable_time_sharing/templates/configmap.yaml.j2

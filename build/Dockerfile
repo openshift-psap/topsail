@@ -30,21 +30,12 @@ ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp
 
 RUN curl ${CURL_OPTIONS}  ${OCP_CLI_URL}  | tar xfz - -C /usr/local/bin oc
 
-# Set up Ansible
-RUN mkdir -p /etc/ansible \
-    && echo "localhost ansible_connection=local" > /etc/ansible/hosts
-COPY config/ansible.cfg /etc/ansible/ansible.cfg
-COPY config/inventory/hosts /etc/ansible/inventory/hosts
-
-RUN sed -i 's|roles/|/opt/ci-artifacts/roles/|' /etc/ansible/ansible.cfg \
- && sed -i 's|callback_plugins = ../|callback_plugins = /opt/ci-artifacts/src/|' /etc/ansible/ansible.cfg
-
 # Set up the runner user
 ENV USER_NAME=psap-ci-runner \
     USER=psap-ci-runner \
     HOME=/opt/ci-artifacts/src \
-    ANSIBLE_CONFIG="/etc/ansible/ansible.cfg" \
     INSIDE_CI_IMAGE="y"
+ENV ANSIBLE_CONFIG="${HOME}/config/ansible.cfg"
 
 COPY . ${HOME}/
 

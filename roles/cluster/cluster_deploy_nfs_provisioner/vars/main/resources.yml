@@ -1,0 +1,2 @@
+---
+nfs_provisioner_files: "roles/cluster/cluster_deploy_nfs_provisioner/files/nfs-server-and-provisioner/deploy"
