@@ -13,7 +13,7 @@ TOP_DIR = THIS_DIR.parent.parent
 # go to top directory
 os.chdir(TOP_DIR)
 
-ROLES_VARS_GLOB = "roles/*/vars/*/*"
+ROLES_VARS_GLOB = "roles/*/*/vars/*/*"
 FILE_PREFIX = "roles/"
 
 def validate_role_vars_files(yaml_doc):
