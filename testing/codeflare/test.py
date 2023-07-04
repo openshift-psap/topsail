@@ -268,11 +268,15 @@ def _run_test(name, test_artifact_dir_p):
                 # must be part of the test directory
                 run.run("./run_toolbox.py cluster capture_environment >/dev/null")
 
+    logging.info(f"Test '{name}' {'failed' if failed else 'passed'}.")
+
+    return failed
 
 def _run_test_and_visualize(name):
+    failed = True
     try:
         test_artifact_dir_p = [None]
-        _run_test(name, test_artifact_dir_p)
+        failed = _run_test(name, test_artifact_dir_p)
     finally:
         dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
         if not config.ci_artifacts.get_config("tests.mcad.visualize"):
@@ -289,6 +293,8 @@ def _run_test_and_visualize(name):
         else:
             logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
+    logging.info(f"Test '{name}' {'failed' if failed else 'passed'}.")
+    return failed
 
 @entrypoint()
 def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepare_nodes=True):
@@ -311,7 +317,6 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
 
     try:
         failed_tests = []
-        ex = None
         tests_to_run = config.ci_artifacts.get_config("tests.mcad.tests_to_run") \
             if not name else [name]
 
@@ -320,9 +325,10 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
             next_count = env.next_artifact_index()
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test-case_{name}"):
                 try:
-                    _run_test_and_visualize(name)
+                    failed = _run_test_and_visualize(name)
+                    if failed:
+                        failed_tests.append(name)
                 except Exception as e:
-                    ex = e
                     failed_tests.append(name)
                     logging.error(f"*** Caught an exception during test {name}: {e.__class__.__name__}: {e}")
                     traceback.print_exc()
@@ -334,13 +340,18 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
                     if isinstance(e, bdb.BdbQuit):
                         raise
 
+                if failed and config.ci_artifacts.get_config("tests.mcad.stop_on_error"):
+                    logging.info("Error detected, and tests.mcad.stop_on_error is set. Aborting.")
+                    break
+
         if failed_tests:
             with open(env.ARTIFACT_DIR / "FAILED_TESTS", "w") as f:
                 print("\n".join(failed_tests), file=f)
 
-            logging.error(f"Caught exception(s) in [{', '.join(failed_tests)}], aborting.")
+            msg = f"Caught exception(s) in [{', '.join(failed_tests)}], aborting."
+            logging.error(msg)
 
-            raise ex
+            raise RuntimeError(msg)
     finally:
         run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
 

@@ -24,13 +24,17 @@ workload_storage_dir = None # will be set in init()
 
 
 
-def init():
+def init(allow_no_config_file=False):
     global matbench_config, matbench_workload, workload_storage_dir
 
     env.init()
     config_file = os.environ.get("CI_ARTIFACTS_FROM_CONFIG_FILE")
-    if not config_file:
+    if not config_file and not allow_no_config_file:
         raise RuntimeError("CI_ARTIFACTS_FROM_CONFIG_FILE must be set. Please source your `configure.sh` before running this file.")
+
+    if not config_file:
+        logging.info("Running without CI_ARTIFACTS_FROM_CONFIG_FILE, skipping most of the initialization")
+        return
 
     config.init(pathlib.Path(config_file).parent)
 
@@ -64,28 +68,35 @@ def init():
     matbench_config = config.Config(workload_storage_dir / "data" / config.ci_artifacts.get_config("matbench.config_file"))
 
 
-def entrypoint(fct):
-    @functools.wraps(fct)
-    def wrapper(*args, **kwargs):
-        if matbench_config is None:
-            init()
-        fct(*args, **kwargs)
+def entrypoint(allow_no_config_file=False):
+    def decorator(fct):
+        @functools.wraps(fct)
+        def wrapper(*args, **kwargs):
+            init(allow_no_config_file)
+            fct(*args, **kwargs)
 
-    return wrapper
+        return wrapper
+    return decorator
 
 
-@entrypoint
+@entrypoint(allow_no_config_file=True)
 def prepare_matbench():
 
     run.run(f"""
-    WORKLOAD_RUN_DIR="{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/workloads/{matbench_workload}"
-
-    rm -f "$WORKLOAD_RUN_DIR"
-    ln -s "{workload_storage_dir}" "$WORKLOAD_RUN_DIR"
-
     pip install --quiet --requirement "{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/requirements.txt"
-    pip install --quiet --requirement "{workload_storage_dir}/requirements.txt"
     """)
+
+    if workload_storage_dir:
+        run.run(f"""
+        WORKLOAD_RUN_DIR="{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/workloads/{matbench_workload}"
+
+        rm -f "$WORKLOAD_RUN_DIR"
+        ln -s "{workload_storage_dir}" "$WORKLOAD_RUN_DIR"
+
+        pip install --quiet --requirement "{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/requirements.txt"
+        """)
+    else:
+        logging.info("Running without workload configuration, skipping the workload preparation")
 
     PROMETHEUS_VERSION = "2.36.0"
     os.environ["PATH"] += ":/tmp/prometheus"
@@ -102,7 +113,7 @@ def prepare_matbench():
     cp "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
     """)
 
-@entrypoint
+@entrypoint()
 def generate_visualizations():
     if not os.environ.get("MATBENCH_RESULTS_DIRNAME"):
         raise ValueError("MATBENCH_RESULTS_DIRNAME should have been set ...")
@@ -188,7 +199,7 @@ def generate_visualization(idx):
         raise RuntimeError(msg)
 
 
-@entrypoint
+@entrypoint()
 def generate_from_dir(results_dirname):
     os.environ["MATBENCH_RESULTS_DIRNAME"] = results_dirname
 
@@ -216,7 +227,7 @@ def download():
     run.run(f"matbench download --do-download |& tee > {env.ARTIFACT_DIR}/_matbench_download.log")
 
 
-@entrypoint
+@entrypoint()
 def download_and_generate_visualizations():
     prepare_matbench()
     os.environ["MATBENCH_RESULTS_DIRNAME"] = "/tmp/matrix_benchmarking_results"

@@ -1,1 +1,4 @@
 fire
+jsonpath_ng
+pandas
+plotly

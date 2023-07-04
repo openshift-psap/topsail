@@ -123,6 +123,7 @@ tests:
     visualize: true
     capture_prom: true
     prepare_nodes: true
+    stop_on_error: true
 
     want_gpu: false
     tests_to_run: [cpu_light_all_schedulable, cpu_light_scheduling, cpu_light_unschedulable]
