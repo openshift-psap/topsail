@@ -83,7 +83,8 @@ def main(dry_run=True,
          aw_priority=10,
          aw_count=3,
          timespan=0,
-         distribution="poisson"
+         distribution="poisson",
+         visualize=True,
          ):
     """
     Generates workload for the MCAD load test
@@ -101,6 +102,7 @@ def main(dry_run=True,
       aw_count: number of AppWrapper replicas to create
       timespan: number of minutes over which the AppWrappers should be created
       distribution: the distribution method to use to spread the resource creation over the requested timespan
+      visualize: activate or deactive the visualization of the generator load distribution
     """
 
     if namespace is None:
@@ -127,10 +129,10 @@ def main(dry_run=True,
         logging.error(f"Could not find the requested job template '{job_template_name}'. Available names: {','.join(job_templates.keys())}")
         sys.exit(1)
 
-    def create_appwrapper(aw_index):
+    def prepare_appwrapper():
         appwrapper = copy.deepcopy(base_appwrapper)
-        appwrapper_name = f"aw-{aw_base_name}{aw_index:03d}-{pod_runtime}s".replace("_", "-")
 
+        appwrapper_name = f"aw-{aw_base_name}{{AW-INDEX}}-{pod_runtime}s".replace("_", "-") # template name for create_appwrapper function
         set_config(appwrapper, "metadata.name", appwrapper_name)
 
         job = copy.deepcopy(job_template)
@@ -162,28 +164,34 @@ def main(dry_run=True,
 
                 resource.append(job)
 
-        if aw_index == 0:
-            src_file = ARTIFACT_DIR / f"resource_sample.yaml"
-            logging.info(f"Saving resource #0 into {src_file}")
-            with open(src_file, "w") as f:
-                yaml.dump(resource, f)
+        src_file = ARTIFACT_DIR / f"resource_template.yaml"
+        logging.info(f"Saving resource template into {src_file}")
+        with open(src_file, "w") as f:
+            yaml.dump(resource, f)
 
         resource_name = job_name if job_mode else appwrapper_name
         json_resource = json.dumps(resource)
 
-        if aw_index == 0:
-            logging.info(f"Resource #0: {json_resource}")
+        return resource_name, json_resource
 
-        logging.info(f"Creating resource #{aw_index} {resource_name} ...")
+    resource_name_template, resource_json_template = prepare_appwrapper()
+
+    verbose_resource_creation = aw_count < 250
+
+    def create_appwrapper(aw_index):
+        resource_json = resource_json_template.replace("{AW-INDEX}", f"{aw_index:03d}")
+        resource_name = resource_name_template.replace("{AW-INDEX}", f"{aw_index:03d}")
+        if verbose_resource_creation:
+            logging.info(f"Creating resource #{aw_index} {resource_name} ...")
 
         if not dry_run:
             nonlocal processes
-            processes += [run_in_background("oc apply -f-".split(" "), input=json_resource)]
+            processes += [run_in_background("oc apply -f-".split(" "), input=resource_json)]
 
         return resource_name
 
     processes = []
-    data = []
+    schedule_result = []
     def _create_appwrapper(aw_index, delay):
         time_fct = (lambda : "{:.2f} minutes".format(float(scheduler.dry_run_time) / 60)) if dry_run \
             else (lambda : datetime.datetime.now().time())
@@ -192,7 +200,7 @@ def main(dry_run=True,
         name = create_appwrapper(aw_index)
         created_ts = str(time_fct())
 
-        data.append(dict(
+        schedule_result.append(dict(
             create=create_ts,
             created=created_ts,
             name=name,
@@ -201,7 +209,8 @@ def main(dry_run=True,
         ))
 
     times, schedule = scheduler.prepare(_create_appwrapper, distribution, timespan_sec, aw_count,
-                                        dry_run=dry_run)
+                                        dry_run=dry_run,
+                                        verbose_dry_run=verbose_resource_creation)
 
     schedule_plan_dest = ARTIFACT_DIR / f"schedule_plan.yaml"
 
@@ -217,19 +226,21 @@ def main(dry_run=True,
 """)
     schedule.run()
 
-    schedule_result_dest = ARTIFACT_DIR / f"schedule_result.yaml"
-
-    logging.info(f"Saving the schedule result in {schedule_result_dest}")
-    times_list = times.tolist()
-    with open(schedule_result_dest, "w") as f:
-        yaml.dump(data, f)
-
-
     start_wait = datetime.datetime.now()
     for proc in processes:
         proc.wait()
     end_wait = datetime.datetime.now()
     logging.info(f"Had to wait a total of {(end_wait - start_wait).total_seconds():.1f}s to join all the {len(processes)} background processes.")
+
+    schedule_result_dest = ARTIFACT_DIR / f"schedule_result.json"
+
+    logging.info(f"Saving the schedule result in {schedule_result_dest}")
+    with open(schedule_result_dest, "w") as f:
+        json.dump(schedule_result, f)
+
+    if visualize:
+        import visualize_schedule
+        visualize_schedule.main(ARTIFACT_DIR, schedule_result)
 
 if __name__ == "__main__":
     try:
@@ -243,5 +254,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print() # empty line after ^C
         logging.error(f"Interrupted.")
-        raise e
         sys.exit(1)

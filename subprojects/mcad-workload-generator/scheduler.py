@@ -45,7 +45,7 @@ class Timelines:
 
 dry_run_time = 0.0
 
-def prepare(method, distribution, timespan, instances, rng_seed=RNG_SEED, dry_run=False):
+def prepare(method, distribution, timespan, instances, rng_seed=RNG_SEED, dry_run=False, verbose_dry_run=True):
     distribution_func = getattr(Timelines, distribution, None)
     if distribution_func is None:
         raise ValueError(f"Invalid distribution name '{distribution}'. "
@@ -62,8 +62,9 @@ def prepare(method, distribution, timespan, instances, rng_seed=RNG_SEED, dry_ru
         if not delay:
             return
 
-        logging.info(f"Wait {delay/60:.2f} minutes")
-        logging.info(f"Time elapsed: {dry_run_time/60:.2f} minutes")
+        if verbose_dry_run:
+            logging.info(f"Wait {delay/60:.2f} minutes")
+            logging.info(f"Time elapsed: {dry_run_time/60:.2f} minutes")
 
     params = (time_monotonic, time_sleep) if dry_run \
         else (time.monotonic, time.sleep)
