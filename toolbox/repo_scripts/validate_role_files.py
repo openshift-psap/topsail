@@ -27,7 +27,7 @@ def validate_role_vars_files(yaml_doc):
                 continue
         except AttributeError: # value.startswith
             print()
-            print(f"{key}: --> no a string, ignoring.")
+            print(f"{key}:{value} --> not a string ({value.__class__.__name__}), ignoring.")
             continue
 
         if not pathlib.Path(value).exists():
