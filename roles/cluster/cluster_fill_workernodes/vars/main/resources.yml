@@ -1,1 +1,1 @@
-cluster_fill_workernodes_pod_template: roles/cluster_fill_workernodes/templates/pod_placeholder.yaml
+cluster_fill_workernodes_pod_template: roles/cluster/cluster_fill_workernodes/templates/pod_placeholder.yaml

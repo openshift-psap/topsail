@@ -1,3 +1,3 @@
-gpu_burn_entrypoint: roles/gpu_operator_run_gpu_burn/files/entrypoint.sh
-gpu_burn_pod: roles/gpu_operator_run_gpu_burn/templates/gpu_burn_pod.yml
-gpu_burn_src_dir: roles/gpu_operator_run_gpu_burn/files/gpu-burn
+gpu_burn_entrypoint: roles/gpu_operator/gpu_operator_run_gpu_burn/files/entrypoint.sh
+gpu_burn_pod: roles/gpu_operator/gpu_operator_run_gpu_burn/templates/gpu_burn_pod.yml
+gpu_burn_src_dir: roles/gpu_operator/gpu_operator_run_gpu_burn/files/gpu-burn

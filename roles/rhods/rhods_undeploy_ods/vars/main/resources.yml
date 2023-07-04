@@ -1,1 +1,1 @@
-rhods_undeploy_ods_delete_cm: "roles/rhods_undeploy_ods/files/cm_delete.yml"
+rhods_undeploy_ods_delete_cm: "roles/rhods/rhods_undeploy_ods/files/cm_delete.yml"

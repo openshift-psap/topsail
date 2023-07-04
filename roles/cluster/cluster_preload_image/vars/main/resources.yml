@@ -1,2 +1,2 @@
 ---
-cluster_preload_image_ds_template: roles/cluster_preload_image/templates/daemonset.yaml.j2
+cluster_preload_image_ds_template: roles/cluster/cluster_preload_image/templates/daemonset.yaml.j2
