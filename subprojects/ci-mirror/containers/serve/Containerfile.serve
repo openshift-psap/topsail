@@ -1,5 +1,0 @@
-FROM registry.access.redhat.com/ubi8/nginx-118:latest
-
-USER root
-
-ENTRYPOINT ["nginx", "-g", "daemon off; error_log /dev/stdout info;"]
