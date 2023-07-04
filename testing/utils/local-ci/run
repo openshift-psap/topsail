@@ -82,7 +82,7 @@ def local_ci_prepare():
     return None
 
 
-def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None, export=True, step=None,
+def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True, step=None,
                  check_clean_diff=True, check_branch_synced=True, pr_config=None, retrieve_artifacts=True,
                  test_args=None):
     """
@@ -91,7 +91,6 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
     Args:
       workload: The name of the workload to execute
       workload_identifier: An identifier to use when exporting the artifacts (default: the workload name)
-      ts_id: A timestamp identifier to use when exporting the artifacts (default: the current date/time)
       export: A flag to disable exporting the artifacts
       pr_number: The GitHub PR number to use for running the command (default: the 'main' branch)
       step: The pipeline step to execute. If empty (default), execute all the steps of the pipeline.
@@ -148,8 +147,7 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
     if workload_identifier is None:
         workload_identifier = workload
 
-    if ts_id is None:
-        ts_id = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    ts_id = datetime.datetime.now().strftime("%Y%m%d_%H%M")
 
     if step and step not in workload_data["steps"]:
         logging.error(f"Invalid step name {step} for workload {workload}. Expected one of '{', '.join(workload_data['steps'])}'")
@@ -184,11 +182,10 @@ def local_ci_run(workload, workload_identifier=None, ts_id=None, pr_number=None,
         extra = dict(
             ci_command=command,
             pr_number=pr_number,
-            export_identifier=f"{workload_identifier}/{step_dirname}",
-            export_ts_id=f"{ts_id}",
+            export_test_run_identifier=f"{ts_id}/{step_dirname}",
             export=export,
             pod_name=f"{workload}-{step_idx:03d}-{step_name}".replace("_", "-"),
-            test_name=workload,
+            test_name=f"{command_group}/{workload_identifier}",
             test_args=test_args
         )
 

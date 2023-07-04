@@ -55,8 +55,7 @@ local_ci run/codeflare:
   secret_name: "psap-ods-secret"
   secret_env_key: "{{ secrets['psap-ods-secret'].env_key }}"
 
-  export_identifier: SET_AT_RUNTIME
-  export_ts_id: SET_AT_RUNTIME
+  export_test_run_identifier: SET_AT_RUNTIME
   export_bucket_name: rhods-baremetal-results
 
   ci_command: SET_AT_RUNTIME
