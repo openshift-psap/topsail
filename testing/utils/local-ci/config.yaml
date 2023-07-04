@@ -103,3 +103,10 @@ workloads:
       post_cleanup_cluster:
         command: pipelines test cleanup_cluster_ci
         alway_run: true
+
+  codeflare-light:
+    command_group: codeflare
+    test_args:
+    steps:
+      test:
+        command: codeflare test test_ci

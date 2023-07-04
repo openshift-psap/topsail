@@ -44,3 +44,21 @@ local_ci run/pipelines:
   ci_command: SET_AT_RUNTIME
   pr_number: null # set at runtime
   pr_config: null # set at runtime if required
+
+local_ci run/codeflare:
+  namespace: "{{ base_image.namespace }}"
+  istag: "{{ base_image.imagestream }}:{{ base_image.repo.ref }}"
+  service_account: "{{ base_image.user.service_account }}"
+  test_name: SET_AT_RUNTIME
+  test_args: SET_AT_RUNTIME
+
+  secret_name: "psap-ods-secret"
+  secret_env_key: "{{ secrets['psap-ods-secret'].env_key }}"
+
+  export_identifier: SET_AT_RUNTIME
+  export_ts_id: SET_AT_RUNTIME
+  export_bucket_name: rhods-baremetal-results
+
+  ci_command: SET_AT_RUNTIME
+  pr_number: null # set at runtime
+  pr_config: null # set at runtime if required
