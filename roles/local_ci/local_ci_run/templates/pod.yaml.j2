@@ -32,12 +32,6 @@ spec:
 
       git submodule update --init
 {% endif %}
-
-{% if local_ci_run_pr_config %}
-      cat > "${ARTIFACT_DIR}/variable_overrides" << EOF
-      {{ local_ci_run_pr_config_content_cmd.stdout | indent(6) }}
-      EOF
-{% endif %}
     env:
     - name: GIT_REPO
       value: "{{ local_ci_run_git_repo }}"
@@ -81,9 +75,12 @@ spec:
 
       cat > "$ARTIFACT_DIR/variable_overrides" <<EOF
       PR_POSITIONAL_ARG_0="{{ local_ci_run_test_name }}"
-{% for element in local_ci_run_test_args %}
+{% for element in local_ci_run_test_args or [] %}
       PR_POSITIONAL_ARG_{{loop.index}}="{{ element }}"
 {% endfor %}
+{% if local_ci_run_pr_config %}
+      {{ local_ci_run_pr_config_content_cmd.stdout | indent(6) }}
+{% endif %}
       EOF
 
 {% if local_ci_run_init_command %}
