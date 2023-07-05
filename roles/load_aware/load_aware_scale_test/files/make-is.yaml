@@ -1,0 +1,10 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: coreutils-make
+  namespace: coreutils
+  annotations:
+    openshift.io/display-name: coreutils-make
+spec:
+  lookupPolicy:
+    local: true

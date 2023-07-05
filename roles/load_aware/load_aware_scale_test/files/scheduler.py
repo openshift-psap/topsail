@@ -1,44 +1,36 @@
-import time, sys, sched, yaml
+import time, sys, os, sched, yaml
 import subprocess as sp
 import numpy as np
 
+print(os.getcwd())
+
 scheduler = sys.argv[1]
 
+make_pod_config = ""
+test_pod_config = ""
+
+with open("roles/load_aware/load_aware_scale_test/files/coreutils-make-pod.yaml", "r") as f:
+    make_pod_config = f.read() 
+
+with open("roles/load_aware/load_aware_scale_test/files/coreutils-test-pod.yaml", "r") as f:
+    test_pod_config = f.read()
+
 def run_pod(n, scheduler_name):
-    pod_config = {
-        "apiVersion": "v1",
-        "kind": "Pod",
-        "metadata": {
-            "name": f"test-pod-{scheduler_name}-n{n}",
-        },
-        "spec": {
-            "containers": [
-                {
-                    "name": "test",
-                    "image": "registry.access.redhat.com/ubi8/ubi",
-                    "command": ["echo", "UBI Started"],
-                },
-            ],
-            "restartPolicy": "Never",
-        },
-    }
-
-    if scheduler == "trimaran":
-        pod_config["spec"]["schedulerName"] = "trimaran-scheduler"
-
-    yaml_pod_config = yaml.dump(pod_config, default_flow_style=False)
-    start_command = ["oc", "apply", "-n", "load-aware", "-f", "-"]
-    print(f"launching workload n{n} at {time.time()}")
-    p = sp.run(start_command, input=yaml_pod_config.encode(), stdout=sp.PIPE)
-    
+    make_pod = make_pod_config.format(n, scheduler_name)
+    start_command = ["oc", "apply", "-f", "-"]
+    print(f"launching make-pod n{n} at {time.time()}")
+    p = sp.run(start_command, input=make_pod.encode(), stdout=sp.PIPE)
+    # for now only launch the make_pod
 
 times = list(map(float, sys.stdin.read().split(",")))
 
 s = sched.scheduler(time.monotonic, time.sleep)
 
+scheduler_name = "trimaran-scheduler" if scheduler == "trimaran" else "default-scheduler"
+
 for i, t in enumerate(times):
     print(f"adding n{i} to the schedule at delay={t}")
-    s.enter(t, 1, run_pod, argument=(i, scheduler))
+    s.enter(t, 1, run_pod, argument=(i, scheduler_name))
 
 print(f"running schedule at {time.time()}")
 s.run()
