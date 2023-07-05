@@ -245,8 +245,11 @@ def main(dry_run=True,
     schedule.run()
 
     start_wait = datetime.datetime.now()
-    for proc in processes:
-        proc.wait()
+    for idx, proc in enumerate(processes):
+        if (ret := proc.wait()) != 0:
+            logging.error(f"Background call #{idx} to '{' '.join(proc.args)}' returned {ret} :/")
+            sys.exit(1)
+
     end_wait = datetime.datetime.now()
     logging.info(f"Had to wait a total of {(end_wait - start_wait).total_seconds():.1f}s to join all the {len(processes)} background processes.")
 
