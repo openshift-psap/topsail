@@ -9,8 +9,9 @@ import matrix_benchmarking.common as common
 
 def register():
     ControlPlaneReport()
+    WorkerNodesReport()
     ResourceAllocationReport()
-
+    TimeInStateDistributionReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -144,14 +145,6 @@ class ControlPlaneReport():
             header += html.Br()
             header += html.Br()
 
-            header += Plot_and_Text(f"Prom: {cluster_role.title()} Worker Node CPU usage", args)
-            header += html.Br()
-            header += html.Br()
-
-            header += Plot_and_Text(f"Prom: {cluster_role.title()} Worker Node CPU idle", args)
-            header += html.Br()
-            header += html.Br()
-
             header += [html.H2(f"APIServer requests duration")]
             for verb in ["LIST", "GET", "PUT", "PATCH"]:
                 header += Plot_and_Text(f"Prom: {cluster_role.title()} API Server {verb} Requests duration", args)
@@ -165,6 +158,52 @@ class ControlPlaneReport():
                 header += html.Br()
 
         return None, header
+
+
+class WorkerNodesReport():
+    def __init__(self):
+        self.name = "report: Worker Nodes Load"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.H1("Worker Nodes Load")]
+
+        header += Plot_and_Text(f"Prom: Sutest Worker Node CPU usage", args)
+        header += html.Br()
+        header += html.Br()
+
+        header += Plot_and_Text(f"Prom: Sutest Worker Node CPU idle", args)
+        header += html.Br()
+        header += html.Br()
+
+        header += [html.H1("Node Resource Allocation")]
+
+        header += ["These plots shows the CPU, memory and GPU allocation in the worker nodes of the cluster."]
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            break
+
+        for node_name in sorted(entry.results.nodes_info):
+            node = entry.results.nodes_info[node_name]
+            if node.control_plane: continue
+
+            header += [html.H1(f"Node {node.name}")]
+            for what in "cpu", "memory", "gpu":
+                if what == "gpu": continue
+
+                header += Plot_and_Text(f"Node Resource Allocation", set_config(dict(what=what, instance=node.name), args))
+                header += html.Br()
+                header += html.Br()
+
+        return None, header
+
 
 class ResourceAllocationReport():
     def __init__(self):
@@ -181,31 +220,59 @@ class ResourceAllocationReport():
         if cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
 
-        for entry in common.Matrix.all_records(settings, setting_lists):
-            break
-
         header = []
 
         header += [html.H1("Resources Timelines")]
 
-        header += Plot_and_Text(f"AppWrappers and Pods Timeline", args)
+        header += Plot_and_Text(f"AppWrappers Timeline", args)
+
+        header += Plot_and_Text(f"AppWrappers in State Timeline", args)
 
         header += Plot_and_Text(f"Resource Mapping Timeline", args)
 
-        header += [html.H1("Node Resource Allocation")]
+        return None, header
 
-        header += ["These plots shows the CPU, memory and GPU allocation in the worker nodes of the cluster."]
 
-        for node_name in sorted(entry.results.nodes_info):
-            node = entry.results.nodes_info[node_name]
-            if node.control_plane: continue
+class TimeInStateDistributionReport():
+    def __init__(self):
+        self.name = "report: Time in AppWrapper State Distribution"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
 
-            header += [html.H1(f"Node {node.name}")]
-            for what in "cpu", "memory", "gpu":
-                if what == "gpu": continue
+        table_stats.TableStats._register_stat(self)
 
-                header += Plot_and_Text(f"Resource Allocation", set_config(dict(what=what, instance=node.name), args))
-                header += html.Br()
-                header += html.Br()
+    def do_plot(self, *args):
+
+        header = []
+        header += [html.P("These plots show the distribution of time spent in the different AppWrappers states.")]
+
+        header += [html.H2("Overview of the Execution time distribution")]
+        header += Plot_and_Text("Execution time distribution", args)
+        header += [html.Br()]
+        header += [html.Br()]
+
+        header += ["The plots below show the break down of the execution timelength for the different steps."]
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        if not common.Matrix.has_records(settings, setting_lists):
+            return None, "No experiments available"
+
+        header += [html.H2("Time in state for each of the states")]
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            break
+
+        state_names = [] # set() do not preserve the order
+        for resource_name, resource_times in entry.results.resource_times.items():
+            if resource_times.kind != "AppWrapper": continue
+            for condition_name, condition_ts in resource_times.aw_conditions.items():
+                if condition_name not in state_names:
+                    state_names.append(condition_name)
+
+        for state_name in state_names:
+            header += Plot_and_Text("Execution time distribution",
+                            set_config(dict(state=state_name), args))
 
         return None, header

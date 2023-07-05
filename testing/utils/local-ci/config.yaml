@@ -17,29 +17,29 @@ workloads:
     command_group: notebooks
     test_args:
     - icelake
-    - notebook_scale_test_burst
+    - notebook_test_burst
     steps:
       test:
-        command: notebooks scale_test run_tests_and_plots
+        command: notebooks test run_tests_and_plots
 
   notebook-gating:
     command_group: notebooks
     test_args:
     - icelake
-    - notebook_gating_scale_test
+    - notebook_gating_test
     steps:
       test:
-        command: notebooks scale_test run_tests_and_plots
+        command: notebooks test run_tests_and_plots
 
   notebook-scale-test:
     command_group: notebooks
     test_args:
-    - icelake_notebook_scale_test
+    - icelake_notebook_test
     steps:
       prepare:
-        command: notebooks scale_test cleanup_rhods
+        command: notebooks test cleanup_rhods
       test:
-        command: notebooks scale_test run_tests_and_plots
+        command: notebooks test run_tests_and_plots
       gather:
         command: utils gather-extra
         always_run: true
@@ -47,31 +47,31 @@ workloads:
   notebook-just-scale-test:
     command_group: notebooks
     test_args:
-    - icelake_notebook_scale_test
+    - icelake_notebook_test
     steps:
       test:
-        command: notebooks scale_test run_tests_and_plots
+        command: notebooks test run_tests_and_plots
 
   notebook-scale-test-light:
     command_group: notebooks
     test_args:
     - notebooks_light
-    - notebook_scale_test
+    - notebook_test
     steps:
       prepare:
-        command: notebooks scale_test cleanup_rhods
+        command: notebooks test cleanup_rhods
       test:
-        command: notebooks scale_test run_tests_and_plots
+        command: notebooks test run_tests_and_plots
 
   notebook-scale-test-scaleup:
     command_group: notebooks
     test_args:
-    - icelake_notebook_scale_test_scaleup
+    - icelake_notebook_test_scaleup
     steps:
       cleanup:
-        command: notebooks scale_test cleanup_rhods
+        command: notebooks test cleanup_rhods
       test:
-        command: notebooks scale_test run_tests_and_plots
+        command: notebooks test run_tests_and_plots
       gather:
         command: utils gather-extra
         alway_run: true
@@ -79,12 +79,12 @@ workloads:
   notebook-scale-test-burst:
     command_group: notebooks
     test_args:
-    - icelake_notebook_scale_test_burst
+    - icelake_notebook_test_burst
     steps:
       cleanup:
-        command: notebooks scale_test cleanup_rhods
+        command: notebooks test cleanup_rhods
       test:
-        command: notebooks scale_test run_tests_and_plots
+        command: notebooks test run_tests_and_plots
       gather:
         command: utils gather-extra
         alway_run: true
@@ -95,11 +95,18 @@ workloads:
     - icelake
     steps:
       pre_cleanup_cluster:
-        command: pipelines scale_test cleanup_cluster_ci
+        command: pipelines test cleanup_cluster_ci
       prepare:
-        command: pipelines scale_test prepare_ci
+        command: pipelines test prepare_ci
       test:
-        command: pipelines scale_test test_ci
+        command: pipelines test test_ci
       post_cleanup_cluster:
-        command: pipelines scale_test cleanup_cluster_ci
+        command: pipelines test cleanup_cluster_ci
         alway_run: true
+
+  codeflare-light:
+    command_group: codeflare
+    test_args:
+    steps:
+      test:
+        command: codeflare test test_ci

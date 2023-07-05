@@ -99,6 +99,10 @@ class FromConfig:
             logging.error(f"--extra must be a dictionnary. Got '{extra}', type '{extra.__class__.__name__}'.")
             raise SystemExit(1)
 
+        for k, v in extra.items():
+            if isinstance(v, tuple):
+                extra[k] = list(v)
+
         command_args.update(extra)
 
         if show_args:

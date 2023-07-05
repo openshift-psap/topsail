@@ -12,7 +12,7 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 def register():
-    ResourceAllocation()
+    NodeResourceAllocation()
 
 def get_data(entry, cfg__instance, memory=False, cpu=False, gpu=False):
     cluster_role = "sutest"
@@ -75,11 +75,11 @@ def get_data(entry, cfg__instance, memory=False, cpu=False, gpu=False):
             dict(type="1. Total", ts=end_ts, value=total_value),
         ]
 
-    return pd.DataFrame(data).sort_values(by=["type"])
+    return pd.DataFrame(data).sort_values(by=["type", "ts"])
 
-class ResourceAllocation():
+class NodeResourceAllocation():
     def __init__(self):
-        self.name = "Resource Allocation"
+        self.name = "Node Resource Allocation"
         self.id_name = self.name
 
         table_stats.TableStats._register_stat(self)
@@ -134,7 +134,7 @@ class ResourceAllocation():
             title_what = "GPU"
 
         fig.update_xaxes(title="Timeline")
-        fig.update_layout(title=f"{title_what} usage of the Node '{cfg__instance}'", title_x=0.5)
+        fig.update_layout(title=f"<b>{title_what} usage</b> of <br> Node '{cfg__instance}'", title_x=0.5)
         fig.update_yaxes(range=[0, df["value"].max()*1.1])
 
         return fig, ""

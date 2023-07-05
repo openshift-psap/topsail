@@ -30,7 +30,7 @@ ci_presets:
 
   gpu:
     tests.mcad.want_gpu: true
-    tests.mcad.tests_to_run: [gpu_all_schedulable, gpu_scheduling, gpu_unschedulable]
+    tests.mcad.tests_to_run: [gpu_all_schedulable, gpu_scheduling, gpu_scheduling_job_mode, gpu_unschedulable]
 
   fill_workernodes:
     clusters.sutest.worker.fill_resources.enabled: true
@@ -39,7 +39,7 @@ ci_presets:
     tests.mcad.tests_to_run: [cpu_light_unschedulable]
 
   cpu_light_scheduling:
-    tests.mcad.tests_to_run: [cpu_light_scheduling]
+    tests.mcad.tests_to_run: [cpu_light_scheduling, cpu_light_scheduling_job_mode]
     tests.mcad.test_templates.cpu_light_scheduling.aw.count: 100
 
   icelake:
@@ -126,7 +126,7 @@ tests:
     stop_on_error: true
 
     want_gpu: false
-    tests_to_run: [cpu_light_all_schedulable, cpu_light_scheduling, cpu_light_unschedulable]
+    tests_to_run: [cpu_light_all_schedulable, cpu_light_scheduling, cpu_light_scheduling_job_mode, cpu_light_unschedulable]
     distribution: poisson
 
     test_templates:
@@ -169,10 +169,12 @@ tests:
           count: 0
           wait_gpus: false
 
-      common_scheduling:
-        aw:
-          job:
-            run_job_mode: true
+      common_scheduling: {}
+
+      common_job_mode:
+         aw:
+           job:
+             run_job_mode: true
 
       gpu_all_schedulable:
         extends: [common_gpu]
@@ -187,6 +189,9 @@ tests:
           count: 20
         node:
           count: 1
+
+      gpu_scheduling_job_mode:
+        extends: [gpu_scheduling, common_job_mode]
 
       gpu_unschedulable:
         extends: [common_gpu, common_unschedulable]
@@ -206,6 +211,9 @@ tests:
         extends: [common_cpu, common_light, common_scheduling]
         aw:
           count: 20
+
+      cpu_light_scheduling_job_mode:
+        extends: [cpu_light_scheduling, common_job_mode]
 
       cpu_light_unschedulable:
         extends: [common_cpu, common_light, common_unschedulable]

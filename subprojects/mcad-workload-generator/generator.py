@@ -40,8 +40,10 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
 
     return proc
 
-def run_in_background(command, input=None):
-    logging.info(f"run in background: {command}")
+def run_in_background(command, input=None, verbose=True, capture_stdout=False):
+    if verbose:
+        logging.info(f"run in background: {command}")
+
     args = {}
 
     proc = subprocess.Popen(command, stdin=subprocess.PIPE)
@@ -134,11 +136,13 @@ def main(dry_run=True,
 
         appwrapper_name = f"aw-{aw_base_name}{{AW-INDEX}}-{pod_runtime}s".replace("_", "-") # template name for create_appwrapper function
         set_config(appwrapper, "metadata.name", appwrapper_name)
+        set_config(appwrapper, "metadata.annotations.scheduleTime", "{SCHEDULE-TIME}")
 
         job = copy.deepcopy(job_template)
         job_name = f"{appwrapper_name}-job"
         set_config(job, "metadata.name", job_name)
         set_config(job, "metadata.namespace", namespace)
+        set_config(job, "metadata.annotations.scheduleTime", "{SCHEDULE-TIME}")
         set_config(job, "spec.template.spec.containers[0].env[0].value", str(pod_runtime))
         set_config(job, "spec.template.spec.containers[0].resources.limits", copy.deepcopy(pod_requests))
         set_config(job, "spec.template.spec.containers[0].resources.requests", copy.deepcopy(pod_requests))
@@ -155,22 +159,27 @@ def main(dry_run=True,
         )]
         set_config(appwrapper, "spec.resources.GenericItems", aw_genericitems)
 
-        resource = appwrapper
+
         if job_mode:
-            resource = []
+            resources = []
             for item in appwrapper["spec"]["resources"]["GenericItems"]:
                 replica = item["replicas"] # currently ignored
                 job = item["generictemplate"]
 
-                resource.append(job)
+                resources.append(job)
+        else:
+            resources = [appwrapper]
 
         src_file = ARTIFACT_DIR / f"resource_template.yaml"
         logging.info(f"Saving resource template into {src_file}")
-        with open(src_file, "w") as f:
-            yaml.dump(resource, f)
+        src_file.unlink(missing_ok=True)
+        for res in resources:
+            with open(src_file, "a") as f:
+                yaml.dump(res, f)
+                print("---", file=f)
 
         resource_name = job_name if job_mode else appwrapper_name
-        json_resource = json.dumps(resource)
+        json_resource = "\n".join([json.dumps(res) for res in resources])
 
         return resource_name, json_resource
 
@@ -179,14 +188,23 @@ def main(dry_run=True,
     verbose_resource_creation = aw_count < 250
 
     def create_appwrapper(aw_index):
-        resource_json = resource_json_template.replace("{AW-INDEX}", f"{aw_index:03d}")
+        K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
+        schedule_time = datetime.datetime.now().strftime(K8S_TIME_FMT)
+        resource_json = resource_json_template
+        resource_json = resource_json.replace("{SCHEDULE-TIME}", schedule_time)
+        resource_json = resource_json.replace("{AW-INDEX}", f"{aw_index:03d}")
+
         resource_name = resource_name_template.replace("{AW-INDEX}", f"{aw_index:03d}")
+
         if verbose_resource_creation:
             logging.info(f"Creating resource #{aw_index} {resource_name} ...")
 
+        if aw_index == 0:
+            logging.info(f"First resource: {resource_json}")
+
         if not dry_run:
             nonlocal processes
-            processes += [run_in_background("oc apply -f-".split(" "), input=resource_json)]
+            processes += [run_in_background("oc apply -f-".split(" "), input=resource_json, verbose=verbose_resource_creation, capture_stdout=not verbose_resource_creation)]
 
         return resource_name
 
@@ -227,8 +245,11 @@ def main(dry_run=True,
     schedule.run()
 
     start_wait = datetime.datetime.now()
-    for proc in processes:
-        proc.wait()
+    for idx, proc in enumerate(processes):
+        if (ret := proc.wait()) != 0:
+            logging.error(f"Background call #{idx} to '{' '.join(proc.args)}' returned {ret} :/")
+            sys.exit(1)
+
     end_wait = datetime.datetime.now()
     logging.info(f"Had to wait a total of {(end_wait - start_wait).total_seconds():.1f}s to join all the {len(processes)} background processes.")
 

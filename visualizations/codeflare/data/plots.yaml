@@ -2,6 +2,8 @@ visualize:
 - id: scale_test
   generate:
   - "report: Error report"
+  - "report: Resource Allocation Timelines"
+  - "report: Time in AppWrapper State Distribution"
   - "report: Sutest Cluster CPU/Memory Usage"
   - "report: Control Plane Nodes Load"
-  - "report: Resource Allocation Timelines"
+  - "report: Worker Nodes Load"

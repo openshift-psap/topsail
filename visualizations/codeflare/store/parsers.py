@@ -315,6 +315,7 @@ def _parse_resource_times(dirname):
         with open(register_important_file(dirname, file_path)) as f:
             data = yaml.safe_load(f)
 
+        missing_label_warning_printed = False
         for item in data["items"]:
             metadata = item["metadata"]
 
@@ -336,9 +337,25 @@ def _parse_resource_times(dirname):
             resource_times.creation = creationTimestamp
             if kind == "AppWrapper":
                 resource_times.aw_conditions = {}
-                resource_times.aw_conditions["Created"] = resource_times.creation
+
+                if "annotations" in item["metadata"] and "scheduleTime" in item["metadata"]["annotations"]:
+                    resource_times.aw_conditions["OC Created"] = datetime.datetime.strptime(
+                        item["metadata"]["annotations"]["scheduleTime"],
+                        K8S_TIME_FMT)
+
+                elif not missing_label_warning_printed:
+                    missing_label_warning_printed = True
+                    logging.warning(f"scheduleTime label missing in AppWrapper {name} ...")
+
+                resource_times.aw_conditions["ETCD Created"] = resource_times.creation
+
                 resource_times.completion = None
                 if not item.get("status"): continue
+
+                if "controllerfirsttimestamp" in item["status"]:
+                    resource_times.aw_conditions["Discovered"] = datetime.datetime.strptime(
+                        item["status"]["controllerfirsttimestamp"],
+                        K8S_TIME_MILLI_FMT)
 
                 for condition in item["status"].get("conditions", []):
                     if condition.get("reason") != "PodsCompleted": continue

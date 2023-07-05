@@ -13,8 +13,8 @@
     oc get deploy mcad-controller-mcad -ojson -n opendatahub > "{{ artifact_extra_logs_dir }}/mcad-deployment.json"
 
 - name: Ensure that there are no AppWrappers in the namespace
-  command:
-    oc delete appwrappers --all -n "{{ codeflare_generate_mcad_load_namespace }}"
+  shell:
+    oc delete appwrappers --all -n "{{ codeflare_generate_mcad_load_namespace }}" > /dev/null
 
 - name: Ensure that there are no Jobs in the namespace
   command:
@@ -44,7 +44,7 @@
 - name: Generate MCAD load
   block:
   - name: Run the load test
-    debug: msg="Load generator running in the next task, expect some delays ..."
+    debug: msg="Load generator running in the next task, expect some delays (timespan={{ codeflare_generate_mcad_load_timespan }}min)... (job_mode={{ codeflare_generate_mcad_load_job_mode }})"
 
   - name: Generate the MCAD load
     shell: |
@@ -60,8 +60,8 @@
         --pod_count "{{ codeflare_generate_mcad_load_pod_count }}" \
         --pod_runtime "{{ codeflare_generate_mcad_load_pod_runtime }}" \
         --pod_requests "{{ codeflare_generate_mcad_load_pod_requests }}" \
-        --timespan "{{ codeflare_generate_mcad_load_timespan}}" \
-        --distribution "{{ codeflare_generate_mcad_load_distribution}}"
+        --timespan "{{ codeflare_generate_mcad_load_timespan }}" \
+        --distribution "{{ codeflare_generate_mcad_load_distribution }}"
 
   - name: Define the variables
     set_fact:
@@ -73,7 +73,11 @@
       set -o pipefail; set -e;
       appwrappers_json=$(oc get appwrappers -n {{ codeflare_generate_mcad_load_namespace }} -ojson)
 
-      jq '.items[] | .metadata.name + " ==> "+ .status.state' -r <<< $appwrappers_json
+      if [[ {{ codeflare_generate_mcad_load_aw_count }} -lt 50 ]]; then
+        jq '.items[] | .metadata.name + " ==> "+ .status.state' -r <<< $appwrappers_json
+      else
+        echo "Too many appwrappers, hiding the individual status ..."
+      fi
 
       appwrapper_count=$(jq '.items | length' <<< $appwrappers_json)
       appwrapper_successes=$(jq '[.items[] | select(.status.state | IN({{ success_states }}))] | length' <<< $appwrappers_json)
