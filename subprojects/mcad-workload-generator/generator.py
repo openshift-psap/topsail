@@ -40,8 +40,10 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
 
     return proc
 
-def run_in_background(command, input=None):
-    logging.info(f"run in background: {command}")
+def run_in_background(command, input=None, verbose=True, capture_stdout=False):
+    if verbose:
+        logging.info(f"run in background: {command}")
+
     args = {}
 
     proc = subprocess.Popen(command, stdin=subprocess.PIPE)
@@ -186,7 +188,7 @@ def main(dry_run=True,
 
         if not dry_run:
             nonlocal processes
-            processes += [run_in_background("oc apply -f-".split(" "), input=resource_json)]
+            processes += [run_in_background("oc apply -f-".split(" "), input=resource_json, verbose=verbose_resource_creation, capture_stdout=not verbose_resource_creation)]
 
         return resource_name
 
