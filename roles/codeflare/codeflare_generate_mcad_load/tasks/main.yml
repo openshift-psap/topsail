@@ -44,7 +44,7 @@
 - name: Generate MCAD load
   block:
   - name: Run the load test
-    debug: msg="Load generator running in the next task, expect some delays (timespan={{ codeflare_generate_mcad_load_timespan }}min)..."
+    debug: msg="Load generator running in the next task, expect some delays (timespan={{ codeflare_generate_mcad_load_timespan }}min)... (job_mode={{ codeflare_generate_mcad_load_job_mode }})"
 
   - name: Generate the MCAD load
     shell: |
