@@ -3,7 +3,7 @@ import secrets
 
 from toolbox._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
-class GPUOperator:
+class GPU_Operator:
     """
     Commands for deploying, building and testing the GPU operator in various ways
     """

@@ -3,7 +3,7 @@ import sys
 from toolbox._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
 
-class LoadAware:
+class Load_Aware:
     """
     Commands relating to Trimaran and LoadAware testing
     """

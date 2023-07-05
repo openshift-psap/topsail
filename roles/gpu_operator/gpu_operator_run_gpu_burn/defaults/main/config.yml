@@ -1,6 +1,6 @@
 # Auto-generated file, do not edit manually ... 
 # Toolbox generate command: repo generate_ansible_default_settings
-# Source component: GPUOperator.run_gpu_burn
+# Source component: GPU_Operator.run_gpu_burn
 
 # namespace in which GPU-burn will be executed
 gpu_operator_run_gpu_burn_namespace: default
