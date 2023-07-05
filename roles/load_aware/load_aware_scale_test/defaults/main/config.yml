@@ -1,6 +1,6 @@
 # Auto-generated file, do not edit manually ... 
 # Toolbox generate command: repo generate_ansible_default_settings
-# Source component: LoadAware.scale_test
+# Source component: Load_Aware.scale_test
 
 # what distribution to generate the load according to (poisson, normal, bimodal, gamma, or uniform)
 load_aware_scale_test_distribution: poisson
