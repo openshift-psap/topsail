@@ -3,6 +3,7 @@ import re
 import logging
 import datetime
 import math
+import copy
 
 import plotly.graph_objs as go
 import pandas as pd
@@ -40,18 +41,8 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
             Duration = (finish - pod_time.start_time).total_seconds(),
             Type = f"Pod on Node {hostname_index}",
             NodeName = f"Node {hostname_index}<br>{shortname}",
+            Count = 1,
         ))
-
-    for resource_name, resource_times in entry.results.resource_times.items():
-        finish = resource_times.completion or entry.results.test_start_end_time.end
-        data.append(dict(
-            Name = resource_name,
-            Start = resource_times.creation,
-            Finish = finish,
-            Duration = (finish - resource_times.creation).total_seconds(),
-            Type = f"{resource_times.kind}s",
-        ))
-
 
     return data
 
@@ -70,18 +61,37 @@ class ResourceMappingTimeline():
         if common.Matrix.count_records(settings, setting_lists) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
-        df = None
         for entry in common.Matrix.all_records(settings, setting_lists):
-            df = pd.DataFrame(generate_data(entry, cfg))
+            src_data = generate_data(entry, cfg)
 
-        if df.empty:
+        if not src_data:
             return None, "Not data available ..."
 
-        df = df.sort_values(by=["Start"])
+        histogram_data = []
 
-        fig = px.timeline(df,
-                          x_start="Start", x_end="Finish",
-                          y="Name")
+        def mytruncate(x, base=5):
+            return base * int(x/base)
+
+        TIME_DELTA = 20 # seconds
+        for src_entry in src_data:
+            current = copy.deepcopy(src_entry["Start"])
+            current = current.replace(second=mytruncate(current.second, TIME_DELTA))
+            current += datetime.timedelta(seconds=TIME_DELTA) # avoid counting the state twice
+
+            while current < src_entry["Finish"]:
+                histogram_data.append(dict(
+                    NodeName = src_entry["NodeName"],
+                    Time = current,
+                    Count = 1,
+                ))
+
+                current += datetime.timedelta(seconds=TIME_DELTA)
+
+        df = pd.DataFrame(histogram_data).groupby(["NodeName", "Time"]).count().reset_index()
+        fig = px.line(df,
+                      x="Time", y="Count",
+                      color="NodeName",
+                      )
 
         for fig_data in fig.data:
             if fig_data.x[0].__class__ is datetime.timedelta:
@@ -89,10 +99,9 @@ class ResourceMappingTimeline():
                 # TypeError: Object of type timedelta is not JSON serializable
                 fig_data.x = [v.total_seconds() * 1000 for v in fig_data.x]
 
-        fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
-        fig.update_layout(barmode='stack', title=f"Mapping of the Resources on the nodes", title_x=0.5,)
-        fig.update_layout(yaxis_title="")
-        fig.update_layout(xaxis_title="Timeline (by date)")
+        fig.update_layout(title=f"Timeline of the Pod Count running on the Nodes", title_x=0.5,)
+        fig.update_layout(yaxis_title="Pod count")
+        fig.update_layout(xaxis_title=f"Timeline (by date, by step of {TIME_DELTA}s)")
 
         return fig, ""
 
