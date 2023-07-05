@@ -11,7 +11,7 @@ def register():
     ControlPlaneReport()
     WorkerNodesReport()
     ResourceAllocationReport()
-
+    TimeInStateDistributionReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -229,5 +229,50 @@ class ResourceAllocationReport():
         header += Plot_and_Text(f"AppWrappers in State Timeline", args)
 
         header += Plot_and_Text(f"Resource Mapping Timeline", args)
+
+        return None, header
+
+
+class TimeInStateDistributionReport():
+    def __init__(self):
+        self.name = "report: Time in AppWrapper State Distribution"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+
+        header = []
+        header += [html.P("These plots show the distribution of time spent in the different AppWrappers states.")]
+
+        header += [html.H2("Overview of the Execution time distribution")]
+        header += Plot_and_Text("Execution time distribution", args)
+        header += [html.Br()]
+        header += [html.Br()]
+
+        header += ["The plots below show the break down of the execution timelength for the different steps."]
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        if not common.Matrix.has_records(settings, setting_lists):
+            return None, "No experiments available"
+
+        header += [html.H2("Time in state for each of the states")]
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            break
+
+        state_names = [] # set() do not preserve the order
+        for resource_name, resource_times in entry.results.resource_times.items():
+            if resource_times.kind != "AppWrapper": continue
+            for condition_name, condition_ts in resource_times.aw_conditions.items():
+                if condition_name not in state_names:
+                    state_names.append(condition_name)
+
+        for state_name in state_names:
+            header += Plot_and_Text("Execution time distribution",
+                            set_config(dict(state=state_name), args))
 
         return None, header
