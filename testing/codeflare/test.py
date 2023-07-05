@@ -215,7 +215,7 @@ def _run_test(name, test_artifact_dir_p):
         save_matbench_files(name, cfg)
 
         extra = {}
-        failed = True
+        failed = False
         try:
             configs = [
                 ("states", "target"),
@@ -237,26 +237,19 @@ def _run_test(name, test_artifact_dir_p):
 
             job_mode = cfg["aw"]["job"].get("run_job_mode")
 
+            if job_mode in (True, False): # skip if None
+                extra["job_mode"] = job_mode
+
             if dry_mode:
-                logging.info(f"Running the load test '{name}' with {extra}. Do job_mode: {job_mode} ...")
+                logging.info(f"Running the load test '{name}' with {extra} {'in Job mode' if job_mode else ''} ...")
                 return
 
-            load_test_failed = False
-            job_load_test_failed = False
             try:
                 run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load --extra \"{extra}\"")
             except Exception as e:
-                load_test_failed = True
+                failed = True
+                logging.error(f"*** Caught an exception during generate_mcad_load({name}): {e.__class__.__name__}: {e}")
 
-            if job_mode:
-                extra["job_mode"] = True
-                logging.info("Running in Job mode ...")
-                try:
-                    run.run(f"ARTIFACT_TOOLBOX_NAME_PREFIX=job_mode_ ./run_toolbox.py from_config codeflare generate_mcad_load --extra \"{extra}\"")
-                except Exception as e:
-                    job_load_test_failed = True
-
-            failed = load_test_failed or job_load_test_failed
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
@@ -321,7 +314,6 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
             if not name else [name]
 
         for name in tests_to_run:
-
             next_count = env.next_artifact_index()
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test-case_{name}"):
                 try:
@@ -330,7 +322,7 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
                         failed_tests.append(name)
                 except Exception as e:
                     failed_tests.append(name)
-                    logging.error(f"*** Caught an exception during test {name}: {e.__class__.__name__}: {e}")
+                    logging.error(f"*** Caught an exception during _run_test_and_visualize({name}): {e.__class__.__name__}: {e}")
                     traceback.print_exc()
 
                     with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
@@ -340,7 +332,7 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
                     if isinstance(e, bdb.BdbQuit):
                         raise
 
-                if failed and config.ci_artifacts.get_config("tests.mcad.stop_on_error"):
+                if failed_tests and config.ci_artifacts.get_config("tests.mcad.stop_on_error"):
                     logging.info("Error detected, and tests.mcad.stop_on_error is set. Aborting.")
                     break
 
