@@ -12,7 +12,7 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 def register():
-    ResourceAllocation()
+    NodeResourceAllocation()
 
 def get_data(entry, cfg__instance, memory=False, cpu=False, gpu=False):
     cluster_role = "sutest"
@@ -77,9 +77,9 @@ def get_data(entry, cfg__instance, memory=False, cpu=False, gpu=False):
 
     return pd.DataFrame(data).sort_values(by=["type"])
 
-class ResourceAllocation():
+class NodeResourceAllocation():
     def __init__(self):
-        self.name = "Resource Allocation"
+        self.name = "Node Resource Allocation"
         self.id_name = self.name
 
         table_stats.TableStats._register_stat(self)

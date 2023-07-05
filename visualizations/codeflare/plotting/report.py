@@ -204,7 +204,7 @@ class ResourceAllocationReport():
             for what in "cpu", "memory", "gpu":
                 if what == "gpu": continue
 
-                header += Plot_and_Text(f"Resource Allocation", set_config(dict(what=what, instance=node.name), args))
+                header += Plot_and_Text(f"Node Resource Allocation", set_config(dict(what=what, instance=node.name), args))
                 header += html.Br()
                 header += html.Br()
 
