@@ -165,7 +165,7 @@ spec:
         exit 1
       fi
 
-      dest="s3://$BUCKET_NAME/local-ci/$EXPORT_TS_ID/$EXPORT_IDENTIFIER"
+      dest="s3://$BUCKET_NAME/local-ci/$TEST_NAME/$TEST_RUN_IDENTIFIER"
       echo "Pushing to '$dest'"
       aws s3 cp "$ARTIFACT_DIR" "$dest" --recursive --acl public-read
 
@@ -197,12 +197,12 @@ spec:
     - name: {{ local_ci_run_secret_env_key }}
       value: /secrets/{{ local_ci_run_secret_name }}
 {% endif %}
-    - name: EXPORT_IDENTIFIER
-      value: "{{ local_ci_run_export_identifier }}"
-    - name: EXPORT_TS_ID
-      value: "{{ local_ci_run_export_ts_id }}"
+    - name: TEST_RUN_IDENTIFIER
+      value: "{{ local_ci_run_export_test_run_identifier }}"
     - name: BUCKET_NAME
       value: "{{ local_ci_run_export_bucket_name }}"
+    - name: TEST_NAME
+      value: "{{ local_ci_run_test_name }}"
     - name: JOB_NAME
       value: local-ci
     - name: ARTIFACT_DIR

@@ -25,8 +25,7 @@ class Local_CI:
             test_args=[],
             init_command=None,
             export_bucket_name=None,
-            export_identifier="default",
-            export_ts_id=None,
+            export_test_run_identifier="default",
             export=True,
             retrieve_artifacts=True,
             pr_config=None,
@@ -50,8 +49,7 @@ class Local_CI:
             test_args: List of arguments to give to the test.
             init_command: Command to run in the container before running anything else.
             export_bucket_name: Name of the S3 bucket where the artifacts should be exported.
-            export_identifier: Identifier of the test being executed (will be a dirname).
-            export_ts_id: Timestamp identifier of the test being executed (will be a dirname).
+            export_test_run_identifier: Identifier of the test being executed (will be a dirname).
             export: If False, do not run the export command.
             retrieve_artifacts: If False, do not retrieve locally the test artifacts.
             pr_config: Optional path to a PR config file (avoids fetching Github PR json).
@@ -61,9 +59,6 @@ class Local_CI:
         if pr_number and not update_git:
             logging.error(f"Cannot have --pr-number={pr_number} without --update-git")
             sys.exit(1)
-
-        if not export_ts_id:
-            export_ts_id = datetime.datetime.now().strftime("%Y%m%d_%H%M")
 
         if export and not export_bucket_name:
             logging.error("Cannot have --export without --export-bucket-name")

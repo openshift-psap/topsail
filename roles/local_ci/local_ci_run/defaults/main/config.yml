@@ -46,10 +46,7 @@ local_ci_run_init_command: null
 local_ci_run_export_bucket_name: null
 
 # Identifier of the test being executed (will be a dirname).
-local_ci_run_export_identifier: default
-
-# Timestamp identifier of the test being executed (will be a dirname).
-local_ci_run_export_ts_id: null
+local_ci_run_export_test_run_identifier: default
 
 # If False, do not run the export command.
 local_ci_run_export: true
