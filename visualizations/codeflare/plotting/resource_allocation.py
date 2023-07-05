@@ -75,7 +75,7 @@ def get_data(entry, cfg__instance, memory=False, cpu=False, gpu=False):
             dict(type="1. Total", ts=end_ts, value=total_value),
         ]
 
-    return pd.DataFrame(data).sort_values(by=["type"])
+    return pd.DataFrame(data).sort_values(by=["type", "ts"])
 
 class NodeResourceAllocation():
     def __init__(self):
