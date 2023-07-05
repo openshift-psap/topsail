@@ -106,9 +106,39 @@ class ResourceMappingTimeline():
         return fig, ""
 
 
+
+def generateAppWrappersTimeline(entry):
+    data = []
+    for resource_name, resource_times in entry.results.resource_times.items():
+        if resource_times.kind != "AppWrapper": continue
+
+        current_name = None
+        current_start = None
+        for condition_name, condition_ts in resource_times.aw_conditions.items():
+            if current_name:
+                data.append(dict(
+                    Name=resource_times.name,
+                    StateTransition=f"{current_name} -> {condition_name}",
+                    State=f"{current_name}",
+                    Start=current_start,
+                    Finish=condition_ts,
+                ))
+            current_name = condition_name
+            current_start = condition_ts
+
+        if current_name:
+            data.append(dict(
+                Name=resource_times.name,
+                State=current_name,
+                StateTransition=current_name,
+                Start=current_start,
+                Finish=entry.results.test_start_end_time.end, # last state lives until the end of the test
+            ))
+    return data
+
 class AppWrappersTimeline():
     def __init__(self):
-        self.name = "AppWrappers and Pods Timeline"
+        self.name = "AppWrappers Timeline"
         self.id_name = self.name
 
         table_stats.TableStats._register_stat(self)
@@ -125,42 +155,7 @@ class AppWrappersTimeline():
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass
 
-        data = []
-        for resource_name, resource_times in entry.results.resource_times.items():
-            if resource_times.kind != "AppWrapper": continue
-
-            current_name = None
-            current_start = None
-            for condition_name, condition_ts in resource_times.aw_conditions.items():
-                if current_name:
-                    data.append(dict(
-                        Name=resource_times.name,
-                        State=current_name,
-                        Start=current_start,
-                        Finish=condition_ts,
-                    ))
-                current_name = condition_name
-                current_start = condition_ts
-
-            if current_name:
-                data.append(dict(
-                    Name=resource_times.name,
-                    State=current_name,
-                    Start=current_start,
-                    Finish=entry.results.test_start_end_time.end, # last state lives until the end of the test
-                ))
-
-        for pod_time in entry.results.pod_times:
-            finish = pod_time.container_finished or entry.results.test_start_end_time.end
-
-            data.append(dict(
-                Name = f"{pod_time.pod_friendly_name} (Pod)",
-                Start = pod_time.start_time,
-                Finish = finish,
-                State = "Running",
-            ))
-
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(generateAppWrappersTimeline(entry))
         if df.empty:
             return None, "Not data available ..."
 
@@ -177,7 +172,9 @@ class AppWrappersTimeline():
                 fig_data.x = [v.total_seconds() * 1000 for v in fig_data.x]
 
         fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
-        fig.update_layout(barmode='stack', title=f"Timeline of the AppWrappers and their Pods", title_x=0.5,)
+        fig.update_layout(barmode='stack')
+        aw_count = entry.results.test_case_config["aw"]["count"]
+        fig.update_layout(title=f"Timeline of the {aw_count} AppWrappers <br>progressing over the different States", title_x=0.5,)
         fig.update_layout(yaxis_title="")
         fig.update_layout(xaxis_title="Timeline (by date)")
 
