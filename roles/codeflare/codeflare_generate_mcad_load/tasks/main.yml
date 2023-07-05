@@ -73,7 +73,11 @@
       set -o pipefail; set -e;
       appwrappers_json=$(oc get appwrappers -n {{ codeflare_generate_mcad_load_namespace }} -ojson)
 
-      jq '.items[] | .metadata.name + " ==> "+ .status.state' -r <<< $appwrappers_json
+      if [[ {{ codeflare_generate_mcad_load_aw_count }} -lt 50 ]]; then
+        jq '.items[] | .metadata.name + " ==> "+ .status.state' -r <<< $appwrappers_json
+      else
+        echo "Too many appwrappers, hiding the individual status ..."
+      fi
 
       appwrapper_count=$(jq '.items | length' <<< $appwrappers_json)
       appwrapper_successes=$(jq '[.items[] | select(.status.state | IN({{ success_states }}))] | length' <<< $appwrappers_json)
