@@ -134,7 +134,7 @@ class NodeResourceAllocation():
             title_what = "GPU"
 
         fig.update_xaxes(title="Timeline")
-        fig.update_layout(title=f"{title_what} usage of the Node '{cfg__instance}'", title_x=0.5)
+        fig.update_layout(title=f"<b>{title_what} usage</b> of <br> Node '{cfg__instance}'", title_x=0.5)
         fig.update_yaxes(range=[0, df["value"].max()*1.1])
 
         return fig, ""
