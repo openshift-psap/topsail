@@ -9,6 +9,7 @@ import matrix_benchmarking.common as common
 
 def register():
     ControlPlaneReport()
+    WorkerNodesReport()
     ResourceAllocationReport()
 
 
@@ -144,14 +145,6 @@ class ControlPlaneReport():
             header += html.Br()
             header += html.Br()
 
-            header += Plot_and_Text(f"Prom: {cluster_role.title()} Worker Node CPU usage", args)
-            header += html.Br()
-            header += html.Br()
-
-            header += Plot_and_Text(f"Prom: {cluster_role.title()} Worker Node CPU idle", args)
-            header += html.Br()
-            header += html.Br()
-
             header += [html.H2(f"APIServer requests duration")]
             for verb in ["LIST", "GET", "PUT", "PATCH"]:
                 header += Plot_and_Text(f"Prom: {cluster_role.title()} API Server {verb} Requests duration", args)
@@ -165,6 +158,52 @@ class ControlPlaneReport():
                 header += html.Br()
 
         return None, header
+
+
+class WorkerNodesReport():
+    def __init__(self):
+        self.name = "report: Worker Nodes Load"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.H1("Worker Nodes Load")]
+
+        header += Plot_and_Text(f"Prom: Sutest Worker Node CPU usage", args)
+        header += html.Br()
+        header += html.Br()
+
+        header += Plot_and_Text(f"Prom: Sutest Worker Node CPU idle", args)
+        header += html.Br()
+        header += html.Br()
+
+        header += [html.H1("Node Resource Allocation")]
+
+        header += ["These plots shows the CPU, memory and GPU allocation in the worker nodes of the cluster."]
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            break
+
+        for node_name in sorted(entry.results.nodes_info):
+            node = entry.results.nodes_info[node_name]
+            if node.control_plane: continue
+
+            header += [html.H1(f"Node {node.name}")]
+            for what in "cpu", "memory", "gpu":
+                if what == "gpu": continue
+
+                header += Plot_and_Text(f"Node Resource Allocation", set_config(dict(what=what, instance=node.name), args))
+                header += html.Br()
+                header += html.Br()
+
+        return None, header
+
 
 class ResourceAllocationReport():
     def __init__(self):
@@ -181,31 +220,14 @@ class ResourceAllocationReport():
         if cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
 
-        for entry in common.Matrix.all_records(settings, setting_lists):
-            break
-
         header = []
 
         header += [html.H1("Resources Timelines")]
 
-        header += Plot_and_Text(f"AppWrappers and Pods Timeline", args)
+        header += Plot_and_Text(f"AppWrappers Timeline", args)
+
+        header += Plot_and_Text(f"AppWrappers in State Timeline", args)
 
         header += Plot_and_Text(f"Resource Mapping Timeline", args)
-
-        header += [html.H1("Node Resource Allocation")]
-
-        header += ["These plots shows the CPU, memory and GPU allocation in the worker nodes of the cluster."]
-
-        for node_name in sorted(entry.results.nodes_info):
-            node = entry.results.nodes_info[node_name]
-            if node.control_plane: continue
-
-            header += [html.H1(f"Node {node.name}")]
-            for what in "cpu", "memory", "gpu":
-                if what == "gpu": continue
-
-                header += Plot_and_Text(f"Node Resource Allocation", set_config(dict(what=what, instance=node.name), args))
-                header += html.Br()
-                header += html.Br()
 
         return None, header
