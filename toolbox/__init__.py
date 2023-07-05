@@ -1,6 +1,6 @@
 from toolbox.cluster import Cluster
 from toolbox.entitlement import Entitlement
-from toolbox.gpu_operator import GPUOperator
+from toolbox.gpu_operator import GPU_Operator
 from toolbox.nfd import NFD
 from toolbox.nfd_operator import NFDOperator
 from toolbox.repo import Repo
@@ -28,7 +28,7 @@ class Toolbox:
     def __init__(self):
         self.cluster = Cluster
         self.entitlement = Entitlement
-        self.gpu_operator = GPUOperator
+        self.gpu_operator = GPU_Operator
         self.nfd_operator = NFDOperator
         self.nfd = NFD
         self.repo = Repo
