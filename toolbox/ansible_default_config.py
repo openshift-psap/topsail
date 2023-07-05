@@ -33,7 +33,9 @@ def _generate_config(component):
     for arg in doc.args or {}:
         args[arg.name] = arg
 
-    dest = pathlib.Path("roles") / component.ansible_role / "defaults" / "main" / "config.yml"
+    classname = component.__qualname__.partition(".")[0].lower()
+
+    dest = pathlib.Path("roles") / classname / component.ansible_role / "defaults" / "main" / "config.yml"
     dest.parent.mkdir(parents=True, exist_ok=True)
     print(f"{component.__qualname__}\n- generating {dest} ...\n")
 
