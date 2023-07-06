@@ -112,6 +112,7 @@ load_aware:
     distribution: "poisson"
     duration: 60.0
     instances: 10
+    namespace: "load-aware"
 matbench:
   preset: null
   workload: load-aware

@@ -58,7 +58,7 @@ class Load_Aware:
 
     @AnsibleRole("load_aware_scale_test")
     @AnsibleMappedParams
-    def scale_test(self, distribution="poisson", duration=60.0, instances=10):
+    def scale_test(self, distribution="poisson", duration=60.0, instances=10, namespace="load-aware"):
         """
         Role to deploy the Trimaran load aware scheduler
 

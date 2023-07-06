@@ -22,3 +22,4 @@ load_aware scale_test:
   distribution: {{ load_aware.scale_test.distribution }}
   duration: {{ load_aware.scale_test.duration }}
   instances: {{ load_aware.scale_test.instances }}
+  namespace: {{ load_aware.scale_test.namespace }}

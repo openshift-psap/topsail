@@ -1,26 +1,26 @@
-- name: Create coreutils ns
+- name: Create test namespace
   command:
-    oc apply -f {{ coreutils_ns }}
+    oc create ns {{ load_aware_scale_test_namespace }}
 
 - name: Create coreutils-deps image stream
   command:
-    oc apply -f {{ deps_imagestream }}
+    oc apply -f {{ deps_imagestream }} -n {{ load_aware_scale_test_namespace }}
 
 - name: Create coreutils-make image stream
   command:
-    oc apply -f {{ make_imagestream }}
+    oc apply -f {{ make_imagestream }} -n {{ load_aware_scale_test_namespace }}
 
 - name: Create make buildconfig
   command:
-    oc apply -f {{ make_buildconfig }}
+    oc apply -f {{ make_buildconfig }} -n {{ load_aware_scale_test_namespace }}
 
 - name: Create deps buildconfig
   command:
-    oc apply -f {{ deps_buildconfig }}
+    oc apply -f {{ deps_buildconfig }} -n {{ load_aware_scale_test_namespace }}
 
 - name: Wait for coreutils-deps to finish building
   shell:
-    oc get istag/coreutils-deps:latest -n coreutils
+    oc get istag/coreutils-deps:latest -n {{ load_aware_scale_test_namespace }}
       | awk 'NR > 1 {print $1}'
   register: deps_image
   delay: 15
@@ -29,7 +29,7 @@
 
 - name: Wait for coreutils-make to finish building
   shell:
-    oc get istag/coreutils-make:latest -n coreutils
+    oc get istag/coreutils-make:latest -n {{ load_aware_scale_test_namespace }}
       | awk 'NR > 1 {print $1}'
   register: make_image
   delay: 15
@@ -43,11 +43,11 @@
 - name: Run test workload with default scheduler and load timeline
   shell:
     cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.log"
-      | python3 {{ pod_start_scheduler }} default > "{{ artifact_extra_logs_dir }}/default_workload_scheduler.log"
+      | python3 {{ pod_start_scheduler }} default {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/default_workload_scheduler.log"
 
 - name: Wait for default workloads to finish
   shell:
-    oc get pods -n coreutils | awk 'NR > 1 { print $3 }'
+    oc get pods -n {{ load_aware_scale_test_namespace }} | awk 'NR > 1 { print $3 }'
   register: load_aware_workload
   delay: 60
   retries: 120
@@ -59,21 +59,21 @@
 
 - name: Dump info about default scheduler resources
   shell: |
-    oc get pods -n coreutils > "{{ artifact_extra_logs_dir }}/all_default_pods.status" 
-    oc get pods -n coreutils -ojson > "{{ artifact_extra_logs_dir }}/all_default_pods.json"
+    oc get pods -n {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/all_default_pods.status" 
+    oc get pods -n {{ load_aware_scale_test_namespace }} -ojson > "{{ artifact_extra_logs_dir }}/all_default_pods.json"
 
 - name: Cleanup pods from default test
   command:
-    oc delete pods --all -n coreutils
+    oc delete pods --all -n {{ load_aware_scale_test_namespace }}
 
 - name: Run test pod with trimaran scheduler and load timeline
   shell:
     cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.log"
-      | python3 {{ pod_start_scheduler }} trimaran > "{{ artifact_extra_logs_dir }}/trimaran_workload_scheduler.log"
+      | python3 {{ pod_start_scheduler }} trimaran {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/trimaran_workload_scheduler.log"
 
 - name: Wait for default workloads to finish
   shell:
-    oc get pods -n coreutils | awk 'NR > 1 { print $3 }'
+    oc get pods -n {{ load_aware_scale_test_namespace }} | awk 'NR > 1 { print $3 }'
   register: load_aware_workload
   delay: 60
   retries: 120
@@ -86,9 +86,9 @@
 
 - name: Dump info about trimaran resources
   shell: |
-    oc get pods -n coreutils > "{{ artifact_extra_logs_dir }}/all_trimaran_pods.status" 
-    oc get pods -n coreutils -ojson > "{{ artifact_extra_logs_dir }}/all_trimaran_pods.json"
+    oc get pods -n {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/all_trimaran_pods.status" 
+    oc get pods -n {{ load_aware_scale_test_namespace }} -ojson > "{{ artifact_extra_logs_dir }}/all_trimaran_pods.json"
 
-- name: Cleanup namespace for coreutils
+- name: Cleanup test namespace
   command:
-    oc delete -f {{ coreutils_ns }}
+    oc delete ns {{ load_aware_scale_test_namespace }}
