@@ -192,7 +192,8 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
         node_info.allocatable.memory = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["memory"]))
         node_info.allocatable.memory = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["memory"]))
         node_info.allocatable.cpu = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["cpu"]))
-        node_info.allocatable.gpu = node["status"]["allocatable"].get("nvidia.com/gpu", 0)
+
+        node_info.allocatable.gpu = int(node["status"]["allocatable"].get("nvidia.com/gpu", 0))
         node_info.allocatable.__dict__["nvidia.com/gpu"] = node_info.allocatable.gpu
 
     return nodes_info
