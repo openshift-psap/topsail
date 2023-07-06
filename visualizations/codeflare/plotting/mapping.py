@@ -18,7 +18,7 @@ def register():
     AppWrappersTimeline()
     AppWrappersInStateTimeline()
 
-def generate_data(entry, cfg):
+def ResourceMappingTimeline_generate_data(entry):
     data = []
 
     hostnames_index = list(entry.results.nodes_info.keys()).index
@@ -36,13 +36,50 @@ def generate_data(entry, cfg):
             hostname_index = -1
 
         data.append(dict(
-            Name = f"Pod/{pod_name}",
-            Start = pod_time.start_time,
-            Finish = finish,
-            Duration = (finish - pod_time.start_time).total_seconds(),
-            Type = f"Pod on Node {hostname_index}",
+            Time = pod_time.start_time,
+            Inc = 1,
             NodeName = f"Node {hostname_index}<br>{shortname}",
-            Count = 1,
+            PodName = pod_name,
+        ))
+
+        data.append(dict(
+            Time = finish,
+            Inc = -1,
+            NodeName = f"Node {hostname_index}<br>{shortname}",
+            PodName = pod_name,
+        ))
+
+    if not data:
+        return []
+
+    df = pd.DataFrame(data).sort_values(by="Time")
+    YOTA = datetime.timedelta(microseconds=1)
+    node_pod_count = defaultdict(int)
+    data = []
+    for index, row in df.iterrows():
+        data.append(dict(
+            Time = row.Time - YOTA,
+            Count = node_pod_count[row.NodeName],
+            NodeName = row.NodeName,
+        ))
+        node_pod_count[row.NodeName] += row.Inc
+        data.append(dict(
+            Time = row.Time,
+            Count = node_pod_count[row.NodeName],
+            NodeName = row.NodeName,
+        ))
+
+    for node in node_pod_count.keys():
+        data.insert(0, dict(
+            Time =entry.results.test_start_end_time.start,
+            Count = 0,
+            NodeName = node,
+        ))
+
+        data.append(dict(
+            Time =entry.results.test_start_end_time.end,
+            Count = 0,
+            NodeName = node,
         ))
 
     return data
@@ -63,32 +100,13 @@ class ResourceMappingTimeline():
             return {}, "ERROR: only one experiment must be selected"
 
         for entry in common.Matrix.all_records(settings, setting_lists):
-            src_data = generate_data(entry, cfg)
+            data = ResourceMappingTimeline_generate_data(entry)
 
-        if not src_data:
+        if not data:
             return None, "Not data available ..."
 
-        histogram_data = []
+        df = pd.DataFrame(data)
 
-        def mytruncate(x, base=5):
-            return base * int(x/base)
-
-        TIME_DELTA = 20 # seconds
-        for src_entry in src_data:
-            current = copy.deepcopy(src_entry["Start"])
-            current = current.replace(second=mytruncate(current.second, TIME_DELTA))
-            current += datetime.timedelta(seconds=TIME_DELTA) # avoid counting the state twice
-
-            while current < src_entry["Finish"]:
-                histogram_data.append(dict(
-                    NodeName = src_entry["NodeName"],
-                    Time = current,
-                    Count = 1,
-                ))
-
-                current += datetime.timedelta(seconds=TIME_DELTA)
-
-        df = pd.DataFrame(histogram_data).groupby(["NodeName", "Time"]).count().reset_index()
         fig = px.line(df,
                       x="Time", y="Count",
                       color="NodeName",
@@ -102,11 +120,9 @@ class ResourceMappingTimeline():
 
         fig.update_layout(title=f"Timeline of the Pod Count running on the Nodes", title_x=0.5,)
         fig.update_layout(yaxis_title="Pod count")
-        fig.update_layout(xaxis_title=f"Timeline (by date, by step of {TIME_DELTA}s)")
+        fig.update_layout(xaxis_title=f"Timeline (by date)")
 
         return fig, ""
-
-
 
 def generateAppWrappersTimeline(entry):
     data = []
