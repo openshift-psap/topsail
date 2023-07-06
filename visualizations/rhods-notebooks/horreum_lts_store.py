@@ -237,17 +237,12 @@ def _generate_pod_timings(pod_times, start, end):
 
 
 def _gather_prom_metrics(entry) -> dict:
-    replace_chars = ["=", "*", ".", "-", " "]
     output = {}
     for cluster_role, metric_names in lts_metrics.items():
         for metric_name in metric_names:
             logging.info(f"Gathering {metric_name[0]}")
-            name: str = metric_name[0]
 
-            for char in replace_chars:
-                name = name.replace(char, "_")
-
-            output[name] = {
+            output[metric_name[0]] = {
                 'data': [promvalue for promvalue in prom.get_metrics('sutest')(entry, metric_name[0])],
                 'query': metric_name[1]
             }
