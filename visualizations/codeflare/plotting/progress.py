@@ -17,7 +17,7 @@ def register():
 def generate_data(entry):
     data = []
 
-    aw_count = entry.results.test_case_config["aw"]["count"]
+    total_pod_count = entry.results.test_case_properties.total_pod_count
 
     start_time = entry.results.test_start_end_time.start
 
@@ -40,25 +40,26 @@ def generate_data(entry):
         data.append(dict(
             Delta = delta(pod_time.container_finished),
             Count = count,
-            Percentage = count / aw_count,
+            Percentage = count / total_pod_count,
             Timestamp = pod_time.container_finished,
         ))
         count += 1
         data.append(dict(
             Delta = delta(pod_time.container_finished),
             Count = count,
-            Percentage = count / aw_count,
+            Percentage = count / total_pod_count,
             Timestamp = pod_time.container_finished,
         ))
 
     data.append(dict(
         Delta = delta(entry.results.test_start_end_time.end),
         Count = count,
-        Percentage = count / aw_count,
+        Percentage = count / total_pod_count,
         Timestamp = entry.results.test_start_end_time.end,
     ))
 
     return data
+
 
 class PodProgress():
     def __init__(self):
@@ -87,9 +88,9 @@ class PodProgress():
 
         fig = px.area(df, x="Delta", y="Percentage" if cfg__percentage else "Count", hover_data=df.columns)
 
-        aw_count = entry.results.test_case_config["aw"]["count"]
+        total_pod_count = entry.results.test_case_properties.total_pod_count
         fig.update_xaxes(title="Timeline, in minutes after the start time")
-        fig.update_layout(title=f"Pod Completion Progress<br>for a total of {aw_count} Pods", title_x=0.5)
+        fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} Pods", title_x=0.5)
 
         if cfg__percentage:
             fig.layout.yaxis.tickformat = ',.0%'

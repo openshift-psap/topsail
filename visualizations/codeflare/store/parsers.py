@@ -81,6 +81,7 @@ def _parse_once(results, dirname):
 
     results.mcad_version = _parse_mcad_version(dirname)
     results.test_case_config = _parse_test_case_config(dirname)
+    results.test_case_properties = _parse_test_case_properties(results.test_case_config)
     results.file_locations = _parse_file_locations(dirname)
 
 
@@ -429,6 +430,15 @@ def _parse_test_case_config(dirname):
         test_case_config = yaml.safe_load(f)
 
     return test_case_config
+
+def _parse_test_case_properties(test_case_config):
+    test_case_properties = types.SimpleNamespace()
+
+    test_case_properties.aw_count = test_case_config["aw"]["count"]
+    test_case_properties.aw_pod_count = test_case_config["aw"]["pod"]["count"]
+    test_case_properties.total_pod_count = test_case_properties.aw_count *test_case_properties.aw_pod_count
+
+    return test_case_properties
 
 def _parse_file_locations(dirname):
     file_locations = types.SimpleNamespace()
