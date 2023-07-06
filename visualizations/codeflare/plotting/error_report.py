@@ -73,7 +73,9 @@ def _get_test_setup(entry):
     setup_info += [html.Li(["MCAD version: ", html.B(entry.results.mcad_version)])]
 
     test_duration = (entry.results.test_start_end_time.end - entry.results.test_start_end_time.start).total_seconds() / 60
+    test_speed = entry.results.test_case_properties.total_pod_count / test_duration
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
+    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} Pod/minute")]))]
 
     setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
     return setup_info
