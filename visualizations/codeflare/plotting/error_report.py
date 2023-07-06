@@ -85,7 +85,9 @@ class ErrorReport():
 
         table_stats.TableStats._register_stat(self)
 
-    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
         if common.Matrix.count_records(settings, setting_lists) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
@@ -116,5 +118,12 @@ class ErrorReport():
         header += [html.Ul(
             setup_info
         )]
+
+
+        header += [html.H2("Pod Completion Progress")]
+
+        header += report.Plot_and_Text(f"Pod Completion Progress", args)
+        header += html.Br()
+        header += html.Br()
 
         return None, header
