@@ -18,7 +18,7 @@ def register():
     AppWrappersTimeline()
     AppWrappersInStateTimeline()
 
-def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
+def generate_data(entry, cfg):
     data = []
 
     hostnames_index = list(entry.results.nodes_info.keys()).index
