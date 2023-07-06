@@ -35,6 +35,8 @@ def _get_test_setup(entry):
 
     mcad_log_file = entry.results.from_local_env.artifacts_basedir / entry.results.file_locations.mcad_logs
     setup_info += [html.Li(html.A("MCAD logs", href=str(mcad_log_file), target="_blank"))]
+    test_config_file = entry.results.from_local_env.artifacts_basedir / entry.results.file_locations.test_config_file
+    setup_info += [html.Li(html.A("Test configuration", href=str(test_config_file), target="_blank"))]
 
     managed = list(entry.results.cluster_info.control_plane)[0].managed \
         if entry.results.cluster_info.control_plane else False

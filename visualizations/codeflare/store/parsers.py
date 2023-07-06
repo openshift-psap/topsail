@@ -436,4 +436,7 @@ def _parse_file_locations(dirname):
     file_locations.mcad_logs = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / "mcad-controller.log"
     register_important_file(dirname, file_locations.mcad_logs)
 
+    file_locations.test_config_file = pathlib.Path("config.yaml")
+    register_important_file(dirname, file_locations.test_config_file)
+
     return file_locations
