@@ -224,7 +224,8 @@ class AppWrappersInStateTimeline():
         def mytruncate(x, base=5):
             return base * int(x/base)
 
-        TIME_DELTA = 10 # seconds
+        YOTA = datetime.timedelta(microseconds=1)
+        TIME_DELTA = 1 # seconds
         for src_entry in src_data:
             current = copy.deepcopy(src_entry["Start"])
             current = current.replace(second=mytruncate(current.second, TIME_DELTA)).replace(microsecond=0)
@@ -234,6 +235,11 @@ class AppWrappersInStateTimeline():
                 histogram_data.append(dict(
                     State = src_entry["State"],
                     Time = current,
+                    Count = 1,
+                ))
+                histogram_data.append(dict(
+                    State = src_entry["State"],
+                    Time = current + datetime.timedelta(seconds=TIME_DELTA) - YOTA,
                     Count = 1,
                 ))
 
