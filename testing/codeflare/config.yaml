@@ -136,7 +136,7 @@ tests:
             template_name: gpu_burn
           pod:
             count: 1
-            runtime: 30
+            runtime: 300
             requests:
               nvidia.com/gpu: 1
         node:
@@ -150,7 +150,7 @@ tests:
             template_name: sleeper
           pod:
             count: 1
-            runtime: 30
+            runtime: 300
             requests:
               cpu: 100m
         node:
@@ -163,8 +163,6 @@ tests:
           states:
             target: [Queueing, HeadOfLine, Pending, Failed]
             unexpected: [Dispatched, Running, Completed]
-          pod:
-            runtime: 300
         node:
           count: 0
           wait_gpus: false
@@ -172,9 +170,6 @@ tests:
       common_scheduling: {}
 
       common_all_schedulable:
-        aw:
-          pod:
-            runtime: 300
         timespan: 1 #minutes
 
       common_job_mode:
