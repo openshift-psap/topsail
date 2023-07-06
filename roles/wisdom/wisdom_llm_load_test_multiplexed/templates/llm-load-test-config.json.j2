@@ -29,8 +29,9 @@
       "vmodel_id": "ansible-wisdom",
       "query": "",
       "context": "",
-      "concurrency": {{ wisdom_llm_load_test_concurrency }},
-      "requests": {{ wisdom_llm_load_test_requests }}
+      "concurrency": {{ wisdom_llm_load_test_multiplexed_concurrency }},
+      "requests": {{ wisdom_llm_load_test_multiplexed_requests }},
+      "max_duration": {{ wisdom_llm_load_test_multiplexed_max_duration }},
     },
     "input_dataset": {
       "filename": "/etc/load_test_dataset/dataset.json",
@@ -42,7 +43,7 @@
     "platform_type": "ocp",
     "modelmesh_pods_per_node": 1,
     "max_batch_size": 16,
-    "nodes": {{ wisdom_llm_load_test_replicas }},
+    "nodes": {{ wisdom_llm_load_test_multiplexed_replicas }},
     "instance_type": "g5.2xlarge",
     "instance_gpu_count": 1,
     "runtime_version": "watson_v0.27.0",

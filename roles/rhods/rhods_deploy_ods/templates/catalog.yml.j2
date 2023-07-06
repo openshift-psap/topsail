@@ -8,5 +8,7 @@ spec:
   image: {{ rhods_deploy_ods_catalog_image }}:{{ rhods_deploy_ods_tag }}
   publisher: {{ rhods_catalog_publish }}
   sourceType: grpc
+  grpcPodConfig:
+    securityContextConfig: restricted
   secrets:
   - modh-idh-cluster-image-puller-pull-secret
