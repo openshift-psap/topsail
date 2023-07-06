@@ -1,21 +1,55 @@
+- name: Create test namespace
+  command:
+    oc create ns {{ load_aware_scale_test_namespace }}
+
+- name: Create coreutils-deps image stream
+  command:
+    oc apply -f {{ deps_imagestream }} -n {{ load_aware_scale_test_namespace }}
+
+- name: Create coreutils-make image stream
+  command:
+    oc apply -f {{ make_imagestream }} -n {{ load_aware_scale_test_namespace }}
+
+- name: Create make buildconfig
+  command:
+    oc apply -f {{ make_buildconfig }} -n {{ load_aware_scale_test_namespace }}
+
+- name: Create deps buildconfig
+  command:
+    oc apply -f {{ deps_buildconfig }} -n {{ load_aware_scale_test_namespace }}
+
+- name: Wait for coreutils-deps to finish building
+  shell:
+    oc get istag/coreutils-deps:latest -n {{ load_aware_scale_test_namespace }}
+      | awk 'NR > 1 {print $1}'
+  register: deps_image
+  delay: 15
+  retries: 80
+  until: deps_image.stdout == "coreutils-deps:latest"
+
+- name: Wait for coreutils-make to finish building
+  shell:
+    oc get istag/coreutils-make:latest -n {{ load_aware_scale_test_namespace }}
+      | awk 'NR > 1 {print $1}'
+  register: make_image
+  delay: 15
+  retries: 80
+  until: make_image.stdout == "coreutils-make:latest"
+
 - name: Generate load timeline
   shell:
     python3 {{ load_timeline_generator }} {{ load_aware_scale_test_distribution }} {{ load_aware_scale_test_duration}} {{ load_aware_scale_test_instances }} > "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.log"
 
-- name: Create namespace for default test
-  command:
-    oc apply -f {{ load_aware_ns }}
-
 - name: Run test workload with default scheduler and load timeline
   shell:
     cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.log"
-      | python3 {{ pod_start_scheduler }} default > "{{ artifact_extra_logs_dir }}/default_workload_scheduler.log"
+      | python3 {{ pod_start_scheduler }} default {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/default_workload_scheduler.log"
 
 - name: Wait for default workloads to finish
   shell:
-    oc get pods -n load-aware | awk 'NR > 1 { print $3 }'
+    oc get pods -n {{ load_aware_scale_test_namespace }} | awk 'NR > 1 { print $3 }'
   register: load_aware_workload
-  delay: 15
+  delay: 60
   retries: 120
   until:
     "'Running' not in load_aware_workload.stdout
@@ -25,28 +59,23 @@
 
 - name: Dump info about default scheduler resources
   shell: |
-    oc get pods -n load-aware > "{{ artifact_extra_logs_dir }}/all_default_pods.status" 
-    oc get pods -n load-aware -ojson > "{{ artifact_extra_logs_dir }}/all_default_pods.json"
+    oc get pods -n {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/all_default_pods.status" 
+    oc get pods -n {{ load_aware_scale_test_namespace }} -ojson > "{{ artifact_extra_logs_dir }}/all_default_pods.json"
 
-- name: Cleanup namespace for default test
+- name: Cleanup pods from default test
   command:
-    oc delete -f {{ load_aware_ns }}
-
-- name: Create namespace for trimaran test
-  command:
-    oc apply -f {{ load_aware_ns }}
-
+    oc delete pods --all -n {{ load_aware_scale_test_namespace }}
 
 - name: Run test pod with trimaran scheduler and load timeline
   shell:
     cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.log"
-      | python3 {{ pod_start_scheduler }} trimaran > "{{ artifact_extra_logs_dir }}/trimaran_workload_scheduler.log"
+      | python3 {{ pod_start_scheduler }} trimaran {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/trimaran_workload_scheduler.log"
 
 - name: Wait for default workloads to finish
   shell:
-    oc get pods -n load-aware | awk 'NR > 1 { print $3 }'
+    oc get pods -n {{ load_aware_scale_test_namespace }} | awk 'NR > 1 { print $3 }'
   register: load_aware_workload
-  delay: 15
+  delay: 60
   retries: 120
   until:
     "'Running' not in load_aware_workload.stdout
@@ -57,9 +86,9 @@
 
 - name: Dump info about trimaran resources
   shell: |
-    oc get pods -n load-aware > "{{ artifact_extra_logs_dir }}/all_trimaran_pods.status" 
-    oc get pods -n load-aware -ojson > "{{ artifact_extra_logs_dir }}/all_trimaran_pods.json"
+    oc get pods -n {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/all_trimaran_pods.status" 
+    oc get pods -n {{ load_aware_scale_test_namespace }} -ojson > "{{ artifact_extra_logs_dir }}/all_trimaran_pods.json"
 
-- name: Cleanup namespace for test
+- name: Cleanup test namespace
   command:
-    oc delete -f {{ load_aware_ns }}
+    oc delete ns {{ load_aware_scale_test_namespace }}

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: coreutils-make-pod-n{}
+  annotations:
+    alpha.image.policy.openshift.io/resolve-names: '*'
+spec:
+  schedulerName: "{}"
+  containers:
+  - name: make-container
+    image: load-aware/coreutils-deps:latest
+    imagePullPolicy: Always
+    command: ["make"]
+  restartPolicy: Never

@@ -32,11 +32,17 @@ ci_presets:
   load_variation_risk_balancing:
     load_aware.plugin: "LoadVariationRiskBalancing"
 
-  # launch 30 test pods over 5 minutes according to the poisson distribution 
+  # launch 30 build pods over 5 minutes according to the poisson distribution 
   small_poisson_load:
     load_aware.scale_test.distribution: "poisson"
     load_aware.scale_test.duration: 300.0
     load_aware.scale_test.instances: 30
+
+  # launch 90 build pods over 10 minutes according to the normal distribution
+  medium_normal_load:
+    load_aware.scale_test.distribution: "normal"
+    load_aware.scale_test.duration: 600.0
+    load_aware.scale_test.instances: 90
 
 secrets:
   dir:
@@ -106,6 +112,7 @@ load_aware:
     distribution: "poisson"
     duration: 60.0
     instances: 10
+    namespace: "load-aware"
 matbench:
   preset: null
   workload: load-aware
