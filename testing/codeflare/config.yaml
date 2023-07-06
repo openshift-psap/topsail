@@ -171,13 +171,19 @@ tests:
 
       common_scheduling: {}
 
+      common_all_schedulable:
+        aw:
+          pod:
+            runtime: 300
+        timespan: 1 #minutes
+
       common_job_mode:
          aw:
            job:
              run_job_mode: true
 
       gpu_all_schedulable:
-        extends: [common_gpu]
+        extends: [common_gpu, common_all_schedulable]
         aw:
           count: 10
         node:
@@ -203,7 +209,7 @@ tests:
           count: 0
 
       cpu_light_all_schedulable:
-        extends: [common_cpu, common_light]
+        extends: [common_cpu, common_light, common_all_schedulable]
         aw:
           count: 10
 
