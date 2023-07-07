@@ -22,14 +22,15 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 IMPORTANT_FILES = [
     "config.yaml",
-
+    "001__load__aware__scale__test/all_default_pods.json",
+    "001__load__aware__scale__test/all_trimaran_pods.json",
     "002__cluster__capture_environment/nodes.json",
     "002__cluster__capture_environment/ocp_version.yml",
     "003__cluster__dump_prometheus_db/prometheus.t*"
 ]
 
-PARSER_VERSION = "2023-05-31"
-ARTIFACTS_VERSION = "2023-05-31"
+PARSER_VERSION = "2023-07-07"
+ARTIFACTS_VERSION = "2023-07-07"
 
 def ignore_file_not_found(fn):
     def decorator(*args, **kwargs):
