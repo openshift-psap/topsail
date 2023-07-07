@@ -107,18 +107,18 @@ class ResourceMappingTimeline():
 
         df = pd.DataFrame(data)
 
-        fig = px.line(df,
-                      x="Time", y="Count",
-                      color="NodeName",
-                      )
+        fig = go.Figure()
+        for name in df.NodeName.unique():
+            df_name = df[df.NodeName == name]
+            fig.add_trace(go.Scatter(x=df_name.Time,
+                                     y=df_name.Count,
+                                     fill="tozeroy",
+                                     mode='lines',
+                                     name=name,
+                                 ))
+        fig.update_layout(showlegend=True)
 
-        for fig_data in fig.data:
-            if fig_data.x[0].__class__ is datetime.timedelta:
-                # workaround for Py3.9 error:
-                # TypeError: Object of type timedelta is not JSON serializable
-                fig_data.x = [v.total_seconds() * 1000 for v in fig_data.x]
-
-        fig.update_layout(title=f"Timeline of the Pod Count running on the Nodes", title_x=0.5,)
+        fig.update_layout(title=f"Timeline of the Pod Count running on the cluster nodes", title_x=0.5,)
         fig.update_layout(yaxis_title="Pod count")
         fig.update_layout(xaxis_title=f"Timeline (by date)")
 
