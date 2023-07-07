@@ -66,6 +66,8 @@ class Load_Aware:
             distribution: what distribution to generate the load according to (poisson, normal, bimodal, gamma, or uniform)
             duration: how long the test should last (seconds)
             instances: how many of the workload to launch, at the moment, this is the number of test pods
+            namespace: which namespace to run the scale test in (must already exist)
+            scheduler: name of the scheduler to use (default, trimaran)
         """
 
         if distribution not in ("poisson", "normal", "bimodal", "gamma", "uniform"):

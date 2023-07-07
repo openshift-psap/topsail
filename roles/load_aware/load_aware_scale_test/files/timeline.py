@@ -1,9 +1,10 @@
-import sys, time
+import sys, time, yaml
 import numpy as np
 
 distribution = sys.argv[1]
 duration = float(sys.argv[2])
 instances = int(sys.argv[3])
+plan_file = sys.argv[4]
 
 # https://arxiv.org/pdf/1607.05356.pdf
 # scale is 1/lamda, or target time between requests
@@ -36,26 +37,24 @@ def bimodal_times(n, rng, mean1=-1.0, mean2=1.0, stddev=0.3, start=0.0, end=60.0
     times = times - times.min()
     return times * (end/times.max()) + start
 
-def serialize(a):
-    return ",".join(np.char.mod("%f", a))
-
 
 rng = np.random.default_rng(123456789)
 
 times = ""
 
 if distribution == "poisson":
-    times = serialize(poisson_times(instances, rng, end=duration))
+    times = poisson_times(instances, rng, end=duration)
 elif distribution == "uniform":
-    times = serialize(uniform_times(instances, rng, end=duration))
+    times = uniform_times(instances, rng, end=duration)
 elif distribution == "gamma":
-    times = serialize(gamma_times(instances, rng, end=duration))
+    times = gamma_times(instances, rng, end=duration)
 elif distribution == "normal":
-    times = serialize(normal_times(instances, rng, end=duration))
+    times = normal_times(instances, rng, end=duration)
 elif distribution == "bimodal":
-    times = serialize(bimodal_times(instances, rng, end=duration))
+    times = bimodal_times(instances, rng, end=duration)
 else:
     print("unknown distribution")
     sys.exit(1)
 
-print(times)
+with open(plan_file, "w") as plan_yaml:
+    yaml.dump(np.sort(times).tolist(), plan_yaml)

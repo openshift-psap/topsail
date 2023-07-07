@@ -97,7 +97,7 @@ def _run_test(test_artifact_dir_p, scheduler_name):
         try:
             extra = {}
             extra["scheduler"] = scheduler_name
-            run.run(f"./run_toolbox.py from_config load_aware scale_test --extra=\"{extra}\"")
+            run.run(f'./run_toolbox.py from_config load_aware scale_test --extra "{extra}"')
 
             failed = False
         finally:
@@ -114,7 +114,7 @@ def test_ci():
     """
    
     try:
-        for scheduler_name in config.ci_artifacts.get_config("load_aware.tests"):
+        for scheduler_name in config.ci_artifacts.get_config("load_aware.schedulers"):
             try:
                 test_artifact_dir_p = [None]
                 _run_test(test_artifact_dir_p, scheduler_name)

@@ -1,11 +1,10 @@
 - name: Generate load timeline
   shell:
-    python3 {{ load_timeline_generator }} {{ load_aware_scale_test_distribution }} {{ load_aware_scale_test_duration}} {{ load_aware_scale_test_instances }} > "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.log"
+    python3 {{ load_timeline_generator }} {{ load_aware_scale_test_distribution }} {{ load_aware_scale_test_duration}} {{ load_aware_scale_test_instances }} "{{ artifact_extra_logs_dir }}/schedule_plan.yaml"
 
 - name: Run test workload with scheduler and load timeline
   shell:
-    cat "{{ artifact_extra_logs_dir }}/load_aware_load_timeline.log"
-      | python3 {{ pod_start_scheduler }} {{ load_aware_scale_test_scheduler }} {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/workload_scheduler.log"
+    python3 {{ pod_start_scheduler }} {{ load_aware_scale_test_scheduler }} {{ load_aware_scale_test_namespace }} "{{ artifact_extra_logs_dir }}/schedule_plan.yaml" "{{ artifact_extra_logs_dir }}/schedule_execution.yaml"
 
 - name: Wait for workloads to finish
   shell:

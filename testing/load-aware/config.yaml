@@ -119,7 +119,7 @@ load_aware:
     instances: 10
     namespace: load-aware
     scheduler: default
-  tests:
+  schedulers:
   - default
   - trimaran
 matbench:
