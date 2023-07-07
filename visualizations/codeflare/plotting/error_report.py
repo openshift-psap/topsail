@@ -144,4 +144,6 @@ class ErrorReport():
         header += html.Br()
         header += html.Br()
 
+        header += report.Plot_and_Text(f"Resource Mapping Timeline", args)
+
         return None, header
