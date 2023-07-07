@@ -9,7 +9,7 @@ ci_presets:
 
   keep:
     clusters.create.keep: true
-    clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/home-dev
+    clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/load-aware/home-dev
     clusters.create.ocp.tags.TicketId: 87
 
   light_cluster:
@@ -28,11 +28,11 @@ ci_presets:
 
   target_load_packing:
     load_aware.plugin: "TargetLoadPacking"
-  
+
   load_variation_risk_balancing:
     load_aware.plugin: "LoadVariationRiskBalancing"
 
-  # launch 30 build pods over 5 minutes according to the poisson distribution 
+  # launch 30 build pods over 5 minutes according to the poisson distribution
   small_poisson_load:
     load_aware.scale_test.distribution: "poisson"
     load_aware.scale_test.duration: 300.0
@@ -56,12 +56,12 @@ clusters:
   create:
     type: single # can be: single, ocp, managed
     keep: false
-    name_prefix: odsci
+    name_prefix: load-aware-ci
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
         TicketId: "115"
-        Project: PSAP/RHODS/Pipelines/load-aware
+        Project: PSAP/RHODS/Pipelines/load-aware/ci-dev
       deploy_cluster:
         target: cluster
       base_domain: psap.aws.rhperfscale.org
@@ -102,7 +102,7 @@ clusters:
   cleanup_on_exit: false
 load_aware:
   log_level: 1
-  plugin: "TargetLoadPacking" 
+  plugin: "TargetLoadPacking"
   default_requests_cpu: "2000m"
   default_target_requests_multiplier: "2"
   target_utilization: 70
