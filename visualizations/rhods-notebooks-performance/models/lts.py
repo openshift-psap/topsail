@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Union, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import matrix_benchmarking.models as matbench_models
 
@@ -25,5 +25,9 @@ class Results(BaseModel):
 
 
 class Payload(BaseModel):
+    schema_name: matbench_models.create_schema_field("rhods-notebooks-perf") = Field(alias="$schema")
     metadata: Metadata
     results: Results
+
+    class Config:
+        fields = {'schema_name': '$schema'}

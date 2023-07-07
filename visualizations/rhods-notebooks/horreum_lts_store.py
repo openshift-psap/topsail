@@ -4,6 +4,7 @@ import json
 from pathlib import PosixPath
 from collections import defaultdict, OrderedDict
 import logging
+import pytz
 
 from . import store_thresholds
 from . import models
@@ -162,6 +163,11 @@ def build_lts_payloads() -> dict:
         start_time: datetime.datetime = results.start_time
         end_time: datetime.datetime = results.end_time
 
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=pytz.UTC)
+        if end_time.tzinfo is None:
+            end_time = end_time.replace(tzinfo=pytz.UTC)
+
         payload = {
             "$schema": "urn:rhods-notebooks:1.0.0",
             "data": {
@@ -184,7 +190,7 @@ def build_lts_payloads() -> dict:
         
         output: models.NotebookScalePayload = models.NotebookScalePayload.parse_obj(payload)
 
-        yield dict(output), start_time, end_time
+        yield output.dict(by_alias=True), start_time, end_time
 
 
 def _decode_users(results):
@@ -235,8 +241,9 @@ def _gather_prom_metrics(entry) -> dict:
     for cluster_role, metric_names in lts_metrics.items():
         for metric_name in metric_names:
             logging.info(f"Gathering {metric_name[0]}")
+
             output[metric_name[0]] = {
-                'data': [promvalue.dict() for promvalue in prom.get_metrics('sutest')(entry, metric_name[0])],
+                'data': [promvalue for promvalue in prom.get_metrics('sutest')(entry, metric_name[0])],
                 'query': metric_name[1]
             }
 
