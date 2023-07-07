@@ -4,6 +4,7 @@ cluster_sno:
 	@make config_base_install
 	@make config_sno
 	@make config_tags
+	@make config_fips
 	@make diff
 	@make manifest
 	@make manifest_entitle

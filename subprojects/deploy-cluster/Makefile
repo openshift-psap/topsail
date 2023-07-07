@@ -25,3 +25,4 @@ include cluster_sno.mk
 include entitlement.mk
 include spot.mk
 include tags.mk
+include fips.mk

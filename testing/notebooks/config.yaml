@@ -233,6 +233,9 @@ ci_presets:
   not_metal:
     clusters.sutest.is_metal: false
 
+  fips:
+    clusters.create.ocp.use_fips: true
+
   icelake:
     extends: [metal]
     clusters.driver.compute.dedicated: false
@@ -304,6 +307,7 @@ clusters:
 
       deploy_cluster:
         target: cluster
+      use_fips: false
       base_domain: psap.aws.rhperfscale.org
       version: 4.12.12
       region: us-west-2

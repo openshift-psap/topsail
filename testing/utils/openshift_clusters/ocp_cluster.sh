@@ -114,6 +114,11 @@ create_cluster() {
 
     local deploy_cluster_target=$(get_config clusters.create.ocp.deploy_cluster.target)
 
+    cluster_use_fips=""
+    if test_config clusters.create.ocp.use_fips; then
+        local cluster_use_fips="true"
+    fi
+
     local cluster_tags=$(get_config clusters.create.ocp.tags)
     if [[ "$cluster_tags" == "null" || "$cluster_tags" == "{}" ]]; then
         machine_tags="{}"
@@ -145,6 +150,7 @@ create_cluster() {
           METADATA_JSON_DEST="${CONFIG_DEST_DIR}/${cluster_role}_ocp_metadata.json" \
           DIFF_TOOL= \
           USE_SPOT= \
+          USE_FIPS="${cluster_use_fips}" \
           MACHINE_TAGS="${machine_tags}" \
          | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/${cluster_role}_ocp_install.log"
     )
