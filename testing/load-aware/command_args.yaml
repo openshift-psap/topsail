@@ -23,3 +23,4 @@ load_aware scale_test:
   duration: {{ load_aware.scale_test.duration }}
   instances: {{ load_aware.scale_test.instances }}
   namespace: {{ load_aware.scale_test.namespace }}
+  scheduler: {{ load_aware.scale_test.scheduler }}

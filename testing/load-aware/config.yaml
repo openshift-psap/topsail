@@ -102,17 +102,21 @@ clusters:
   cleanup_on_exit: false
 load_aware:
   log_level: 1
-  plugin: "TargetLoadPacking"
-  default_requests_cpu: "2000m"
+  plugin: TargetLoadPacking
+  default_requests_cpu: 2000m
   default_target_requests_multiplier: "2"
   target_utilization: 70
   safe_variance_margin: 1
   safe_variance_sensitivity: 2
   scale_test:
-    distribution: "poisson"
+    distribution: poisson
     duration: 60.0
     instances: 10
-    namespace: "load-aware"
+    namespace: load-aware
+    scheduler: default
+  schedulers:
+    - default
+    - trimaran
 matbench:
   preset: null
   workload: load-aware
