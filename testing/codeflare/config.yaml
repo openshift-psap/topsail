@@ -136,13 +136,13 @@ tests:
             template_name: gpu_burn
           pod:
             count: 1
-            runtime: 30
+            runtime: 300
             requests:
               nvidia.com/gpu: 1
         node:
           instance_type: g4dn.xlarge
           wait_gpus: true
-        timespan: 5 #minutes, all at once
+        timespan: 5 #minutes
 
       common_cpu:
         aw:
@@ -150,26 +150,27 @@ tests:
             template_name: sleeper
           pod:
             count: 1
-            runtime: 30
+            runtime: 300
             requests:
               cpu: 100m
         node:
           instance_type: m6i.2xlarge
           wait_gpus: false
-        timespan: 5 #minutes, all at once
+        timespan: 5 #minutes
 
       common_unschedulable:
         aw:
           states:
             target: [Queueing, HeadOfLine, Pending, Failed]
             unexpected: [Dispatched, Running, Completed]
-          pod:
-            runtime: 300
         node:
           count: 0
           wait_gpus: false
 
       common_scheduling: {}
+
+      common_all_schedulable:
+        timespan: 1 #minutes
 
       common_job_mode:
          aw:
@@ -177,7 +178,7 @@ tests:
              run_job_mode: true
 
       gpu_all_schedulable:
-        extends: [common_gpu]
+        extends: [common_gpu, common_all_schedulable]
         aw:
           count: 10
         node:
@@ -203,7 +204,7 @@ tests:
           count: 0
 
       cpu_light_all_schedulable:
-        extends: [common_cpu, common_light]
+        extends: [common_cpu, common_light, common_all_schedulable]
         aw:
           count: 10
 

@@ -101,7 +101,7 @@
     # until fatal or done
     until: appwrappers_completed.rc == 1 or appwrappers_completed.rc == 0
     # failed when fatal
-    failed_when: appwrappers_completed.rc == 1
+    failed_when: appwrappers_completed.rc != 0
 
   - name: Wait for the Jobs to complete
     shell: |

@@ -55,6 +55,18 @@
          -n {{ gpu_operator_wait_stack_deployed_namespace }}
          > "{{ artifact_extra_logs_dir }}/daemonsets.status"
 
+  - name: Get the YAML of the daemonsets
+    shell:
+      oc get daemonsets -oyaml
+         -n {{ gpu_operator_wait_stack_deployed_namespace }}
+         > "{{ artifact_extra_logs_dir }}/daemonsets.yaml"
+
+  - name: Get the description of the daemonsets
+    shell:
+      oc describe daemonsets
+         -n {{ gpu_operator_wait_stack_deployed_namespace }}
+         > "{{ artifact_extra_logs_dir }}/daemonsets.desc"
+
   - name: Get the list of the pods
     shell:
       oc get pods
@@ -81,4 +93,9 @@
   - name: Get the yaml of the GPU nodes
     shell:
       oc get nodes -lnvidia.com/gpu.present=true -oyaml
+        > "{{ artifact_extra_logs_dir }}/gpu-nodes.yaml"
+
+  - name: Get the description of the GPU nodes
+    shell:
+      oc describe nodes -lnvidia.com/gpu.present=true
         > "{{ artifact_extra_logs_dir }}/gpu-nodes.yaml"

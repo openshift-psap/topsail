@@ -193,10 +193,13 @@ class WorkerNodesReport():
         for node_name in sorted(entry.results.nodes_info):
             node = entry.results.nodes_info[node_name]
             if node.control_plane: continue
-
             header += [html.H1(f"Node {node.name}")]
+
             for what in "cpu", "memory", "gpu":
-                if what == "gpu": continue
+
+                if what == "gpu" and node.allocatable.gpu == 0:
+                    header += [html.P("No GPU on this node."), html.Br()]
+                    continue
 
                 header += Plot_and_Text(f"Node Resource Allocation", set_config(dict(what=what, instance=node.name), args))
                 header += html.Br()

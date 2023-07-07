@@ -4,6 +4,7 @@ from . import prom_report
 from . import resource_allocation
 from . import mapping
 from . import time_distribution
+from . import progress
 
 def register():
     error_report.register()
@@ -13,3 +14,4 @@ def register():
     resource_allocation.register()
     mapping.register()
     time_distribution.register()
+    progress.register()

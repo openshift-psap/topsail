@@ -81,6 +81,7 @@ def _parse_once(results, dirname):
 
     results.mcad_version = _parse_mcad_version(dirname)
     results.test_case_config = _parse_test_case_config(dirname)
+    results.test_case_properties = _parse_test_case_properties(results.test_case_config)
     results.file_locations = _parse_file_locations(dirname)
 
 
@@ -192,7 +193,8 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
         node_info.allocatable.memory = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["memory"]))
         node_info.allocatable.memory = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["memory"]))
         node_info.allocatable.cpu = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["cpu"]))
-        node_info.allocatable.gpu = node["status"]["allocatable"].get("nvidia.com/gpu", 0)
+
+        node_info.allocatable.gpu = int(node["status"]["allocatable"].get("nvidia.com/gpu", 0))
         node_info.allocatable.__dict__["nvidia.com/gpu"] = node_info.allocatable.gpu
 
     return nodes_info
@@ -429,10 +431,22 @@ def _parse_test_case_config(dirname):
 
     return test_case_config
 
+def _parse_test_case_properties(test_case_config):
+    test_case_properties = types.SimpleNamespace()
+
+    test_case_properties.aw_count = test_case_config["aw"]["count"]
+    test_case_properties.aw_pod_count = test_case_config["aw"]["pod"]["count"]
+    test_case_properties.total_pod_count = test_case_properties.aw_count *test_case_properties.aw_pod_count
+
+    return test_case_properties
+
 def _parse_file_locations(dirname):
     file_locations = types.SimpleNamespace()
 
     file_locations.mcad_logs = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / "mcad-controller.log"
     register_important_file(dirname, file_locations.mcad_logs)
+
+    file_locations.test_config_file = pathlib.Path("config.yaml")
+    register_important_file(dirname, file_locations.test_config_file)
 
     return file_locations

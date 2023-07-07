@@ -35,6 +35,8 @@ def _get_test_setup(entry):
 
     mcad_log_file = entry.results.from_local_env.artifacts_basedir / entry.results.file_locations.mcad_logs
     setup_info += [html.Li(html.A("MCAD logs", href=str(mcad_log_file), target="_blank"))]
+    test_config_file = entry.results.from_local_env.artifacts_basedir / entry.results.file_locations.test_config_file
+    setup_info += [html.Li(html.A("Test configuration", href=str(test_config_file), target="_blank"))]
 
     managed = list(entry.results.cluster_info.control_plane)[0].managed \
         if entry.results.cluster_info.control_plane else False
@@ -71,7 +73,9 @@ def _get_test_setup(entry):
     setup_info += [html.Li(["MCAD version: ", html.B(entry.results.mcad_version)])]
 
     test_duration = (entry.results.test_start_end_time.end - entry.results.test_start_end_time.start).total_seconds() / 60
+    test_speed = entry.results.test_case_properties.total_pod_count / test_duration
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
+    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} Pod/minute")]))]
 
     setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
     return setup_info
@@ -85,7 +89,9 @@ class ErrorReport():
 
         table_stats.TableStats._register_stat(self)
 
-    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
         if common.Matrix.count_records(settings, setting_lists) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
@@ -116,5 +122,12 @@ class ErrorReport():
         header += [html.Ul(
             setup_info
         )]
+
+
+        header += [html.H2("Pod Completion Progress")]
+
+        header += report.Plot_and_Text(f"Pod Completion Progress", args)
+        header += html.Br()
+        header += html.Br()
 
         return None, header

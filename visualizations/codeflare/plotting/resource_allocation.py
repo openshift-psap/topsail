@@ -69,6 +69,7 @@ def get_data(entry, cfg__instance, memory=False, cpu=False, gpu=False):
         df = pd.DataFrame(data)
         start_ts = pd.DataFrame(data)["ts"].min()
         end_ts = pd.DataFrame(data)["ts"].max()
+
         total_value = entry.results.nodes_info[cfg__instance].allocatable.__dict__[resource_name] / value_divisor
         data += [
             dict(type="1. Total", ts=start_ts, value=total_value),
@@ -134,7 +135,7 @@ class NodeResourceAllocation():
             title_what = "GPU"
 
         fig.update_xaxes(title="Timeline")
-        fig.update_layout(title=f"<b>{title_what} usage</b> of <br> Node '{cfg__instance}'", title_x=0.5)
+        fig.update_layout(title=f"<b>{title_what} usage</b><br>of Node '{cfg__instance}'", title_x=0.5)
         fig.update_yaxes(range=[0, df["value"].max()*1.1])
 
         return fig, ""

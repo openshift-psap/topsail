@@ -96,12 +96,20 @@ class ExecutionDistribution():
             q100 = df.Duration.max()
 
             def time(sec):
-                if sec <= 120:
+                if sec < 0.001:
+                    return f"0 seconds"
+                elif sec < 5:
+                    return f"{sec:.3f} seconds"
+                if sec < 20:
+                    return f"{sec:.1f} seconds"
+                elif sec <= 120:
                     return f"{sec:.0f} seconds"
                 else:
                     return f"{sec/60:.1f} minutes"
 
             msg += [f"{len(df)} AppWrappers went in the ", html.B(cfg__show_only_state), " state."]
+            msg.append(html.Br())
+            msg += [f"It took them ", html.B(f"between {time(df.Duration.min())} and {time(df.Duration.max())}"), " to complete this step."]
             msg.append(html.Br())
             msg.append(f"25% of the AppWrappers were in this state during {time(q1)} [Q1]")
             msg.append(html.Br())
