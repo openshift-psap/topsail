@@ -16,7 +16,7 @@ ci_presets:
     clusters.create.ocp.deploy_cluster.target: cluster_light
 
   light:
-    extends: [light_cluster]
+    extends: [light_cluster, tiny_uniform_load]
 
   metal:
     clusters.sutest.is_metal: true
@@ -31,6 +31,11 @@ ci_presets:
 
   load_variation_risk_balancing:
     load_aware.plugin: "LoadVariationRiskBalancing"
+
+  tiny_uniform_load:
+    load_aware.scale_test.distribution: "uniform"
+    load_aware.scale_test.duration: 10.0
+    load_aware.scale_test.instances: 2
 
   # launch 30 build pods over 5 minutes according to the poisson distribution
   small_poisson_load:
@@ -115,8 +120,8 @@ load_aware:
     namespace: load-aware
     scheduler: default
   tests:
-    - default
-    - trimaran
+  - default
+  - trimaran
 matbench:
   preset: null
   workload: load-aware
