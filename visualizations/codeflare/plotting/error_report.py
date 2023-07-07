@@ -19,6 +19,15 @@ def register():
     ErrorReport()
 
 
+def _get_time_to_last_schedule(entry):
+    pod_time = sorted(entry.results.pod_times, key=lambda t: t.pod_scheduled)[-1]
+
+    start_time = entry.results.test_start_end_time.start
+
+    last_schedule = pod_time.pod_scheduled
+    return (last_schedule - start_time).total_seconds() / 60
+
+
 def _get_test_setup(entry):
     if entry.is_lts:
         return []
@@ -76,6 +85,11 @@ def _get_test_setup(entry):
     test_speed = entry.results.test_case_properties.total_pod_count / test_duration
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
     setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} Pod/minute")]))]
+
+    time_to_last_schedule = _get_time_to_last_schedule(entry)
+
+    setup_info += [html.Li(["Time to last Pod schedule: ", html.Code(f"{time_to_last_schedule:.1f} minutes")])]
+    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{time_to_last_schedule:.2f} Pod/minute")]))]
 
     setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
     return setup_info
