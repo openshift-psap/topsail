@@ -24,3 +24,19 @@ load_aware scale_test:
   instances: {{ load_aware.scale_test.instances }}
   namespace: {{ load_aware.scale_test.namespace }}
   scheduler: {{ load_aware.scale_test.scheduler }}
+
+utils build_push_image/deps:
+  namespace: {{ load_aware.scale_test.namespace }}
+  image_local_name: coreutils-deps
+  tag: latest
+  git_repo: git://git.sv.gnu.org/coreutils
+  git_ref: master
+  dockerfile_path: testing/load-aware/images/Containerfile.deps
+
+utils build_push_image/make:
+  namespace: {{ load_aware.scale_test.namespace }}
+  image_local_name: coreutils-make
+  tag: latest
+  git_repo: git://git.sv.gnu.org/coreutils
+  git_ref: master
+  dockerfile_path: testing/load-aware/images/Containerfile.make

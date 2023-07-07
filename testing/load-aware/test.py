@@ -67,6 +67,10 @@ def prepare_ci():
     run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
     run.run("./run_toolbox.py from_config load_aware deploy_trimaran")
 
+    test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
+    run.run(f"oc create ns {test_namespace}")
+    run.run("./run_toolbox.py from_config utils build_push_image --suffix deps")
+    run.run("./run_toolbox.py from_config utils build_push_image --suffix make")
 
 def _run_test(test_artifact_dir_p, scheduler_name):
     """
@@ -79,6 +83,7 @@ def _run_test(test_artifact_dir_p, scheduler_name):
 
         with open(env.ARTIFACT_DIR / "settings", "w") as f:
             print(f"load_aware_scale_test=true", file=f)
+            print(f"scheduler={scheduler_name}", file=f)
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
@@ -87,8 +92,9 @@ def _run_test(test_artifact_dir_p, scheduler_name):
 
         failed = True
         try:
-
-            run.run(f"./run_toolbox.py from_config load_aware scale_test --scheduler={scheduler_name}")
+            extra = {}
+            extra["scheduler"] = scheduler_name
+            run.run(f"./run_toolbox.py from_config load_aware scale_test --extra=\"{extra}\"")
 
             failed = False
         finally:
@@ -105,7 +111,7 @@ def test_ci():
     """
    
     try:
-        for scheduler_name in config.ci_artifacts.get_config("load_aware.schedulers"):
+        for scheduler_name in config.ci_artifacts.get_config("load_aware.tests"):
             try:
                 test_artifact_dir_p = [None]
                 _run_test(test_artifact_dir_p, scheduler_name)
@@ -137,6 +143,8 @@ def cleanup_cluster():
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running on bare-metal environments.
     logging.info("Cleaning up cluster and uninstall pipelines")
+    test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
+    run.run("oc delete ns {test_namespace} --ignore-not-found")
     run.run("./run_toolbox.py load_aware undeploy_trimaran")
     uninstall_ocp_pipelines()
 
