@@ -56,7 +56,7 @@ clusters:
   create:
     type: single # can be: single, ocp, managed
     keep: false
-    name_prefix: odsci
+    name_prefix: load-aware-ci
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
