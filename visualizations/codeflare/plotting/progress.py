@@ -14,7 +14,7 @@ import matrix_benchmarking.common as common
 def register():
     PodProgress()
 
-def generate_data(entry):
+def generate_progress_data(entry, key):
     data = []
 
     total_pod_count = entry.results.test_case_properties.total_pod_count
@@ -34,18 +34,19 @@ def generate_data(entry):
     count = 0
     YOTA = datetime.timedelta(microseconds=1)
     for pod_time in sorted(entry.results.pod_times, key=lambda t: t.container_finished):
-        if not getattr(pod_time, "container_finished", False):
-            continue # not finished, ignore
+        if not getattr(pod_time, key, False):
+            continue
 
+        time_delta = delta(getattr(pod_time, key))
         data.append(dict(
-            Delta = delta(pod_time.container_finished),
+            Delta = time_delta,
             Count = count,
             Percentage = count / total_pod_count,
             Timestamp = pod_time.container_finished,
         ))
         count += 1
         data.append(dict(
-            Delta = delta(pod_time.container_finished),
+            Delta = time_delta,
             Count = count,
             Percentage = count / total_pod_count,
             Timestamp = pod_time.container_finished,
@@ -80,7 +81,7 @@ class PodProgress():
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass # entry is set
 
-        data = generate_data(entry)
+        data = generate_progress_data(entry, "container_finished")
 
         df = pd.DataFrame(data)
 
