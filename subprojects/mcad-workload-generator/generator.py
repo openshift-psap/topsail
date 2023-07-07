@@ -216,11 +216,9 @@ def main(dry_run=True,
 
         create_ts = str(time_fct())
         name = create_appwrapper(aw_index)
-        created_ts = str(time_fct())
 
         schedule_result.append(dict(
             create=create_ts,
-            created=created_ts,
             name=name,
             delay=float(delay),
             index=aw_index
