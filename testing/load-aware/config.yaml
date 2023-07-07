@@ -9,7 +9,7 @@ ci_presets:
 
   keep:
     clusters.create.keep: true
-    clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/home-dev
+    clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/load-aware/home-dev
     clusters.create.ocp.tags.TicketId: 87
 
   light_cluster:
@@ -61,7 +61,7 @@ clusters:
       # list of tags to apply to the machineset when creating the cluster
       tags:
         TicketId: "115"
-        Project: PSAP/RHODS/Pipelines/load-aware
+        Project: PSAP/RHODS/Pipelines/load-aware/ci-dev
       deploy_cluster:
         target: cluster
       base_domain: psap.aws.rhperfscale.org
