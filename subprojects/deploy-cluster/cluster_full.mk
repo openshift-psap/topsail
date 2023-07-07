@@ -3,6 +3,7 @@ cluster_full_entitled:
 	@make has_installer
 	@make config_base_install
 	@make config_tags
+	@make config_fips
 	@make diff
 	@make manifest
 	@make manifest_entitle
