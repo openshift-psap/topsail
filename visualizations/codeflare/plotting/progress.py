@@ -14,7 +14,7 @@ import matrix_benchmarking.common as common
 def register():
     PodProgress()
 
-def generate_progress_data(entry, key):
+def generate_pod_progress_data(entry, key):
     data = []
 
     total_pod_count = entry.results.test_case_properties.total_pod_count
@@ -69,6 +69,53 @@ def generate_progress_data(entry, key):
     return data
 
 
+def generate_launch_progress_data(entry):
+    data = []
+
+    total_resource_count = entry.results.test_case_properties.aw_count
+
+    start_time = entry.results.test_start_end_time.start
+
+    def delta(ts):
+        return (ts - start_time).total_seconds() / 60
+
+    target_kind = "Job" if entry.results.test_case_properties.job_mode else "AppWrapper"
+    name = f"{target_kind}s launched"
+
+    data.append(dict(
+        Delta = delta(start_time),
+        Count = 0,
+        Percentage = 0,
+        Timestamp = start_time,
+        Name = name,
+    ))
+
+    count = 0
+    YOTA = datetime.timedelta(microseconds=1)
+
+    for resource_time in entry.results.resource_times.values():
+        if resource_time.kind != target_kind: continue
+
+        count += 1
+        data.append(dict(
+            Delta = delta(resource_time.creation),
+            Count = count,
+            Percentage = count / total_resource_count,
+            Timestamp = resource_time.creation,
+            Name = name,
+        ))
+
+
+    data.append(dict(
+        Delta = delta(entry.results.test_start_end_time.end),
+        Count = count,
+        Percentage = count / total_resource_count,
+        Timestamp = entry.results.test_start_end_time.end,
+        Name = name,
+    ))
+
+    return data
+
 class PodProgress():
     def __init__(self):
         self.name = "Pod Completion Progress"
@@ -89,15 +136,16 @@ class PodProgress():
             pass # entry is set
 
         data = []
+        data += generate_launch_progress_data(entry)
         for key in "pod_scheduled", "container_finished":
-            data += generate_progress_data(entry, key)
+            data += generate_pod_progress_data(entry, key)
 
         df = pd.DataFrame(data)
 
         fig = go.Figure()
         for name in df.Name.unique():
             df_name = df[df.Name == name]
-            fig.add_trace(go.Scatter(x=df_name.Time,
+            fig.add_trace(go.Scatter(x=df_name.Timestamp,
                                      y=df_name.Percentage,
                                      fill="tozeroy",
                                      mode='lines',
