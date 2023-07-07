@@ -88,6 +88,9 @@ def _run_test(test_artifact_dir_p, scheduler_name):
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
+        # clean up pods from previous test
+        test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
+        run.run(f"oc delete pods --all -n {test_namespace} --ignore-not-found")
         run.run("./run_toolbox.py cluster reset_prometheus_db")
 
         failed = True
