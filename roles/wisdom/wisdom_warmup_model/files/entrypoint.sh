@@ -17,7 +17,7 @@ echo "CONTEXT: ${CONTEXT}"
 cd /etc/protos 
 
 ghz --insecure --proto ./wisdomextservice.proto \
-  --call caikit.runtime.WisdomExt.WisdomExtService/AnsiblePredict \
+  --call caikit.runtime.WisdomExt.WisdomExtService/CodeGenerationTaskPredict \
   -d "{ \"prompt\": \"${PROMPT}\", \"context\": \"${CONTEXT}\" }" \
   modelmesh-serving.${WISDOM_NAMESPACE}.svc:8033 \
   --metadata="{\"mm-vmodel-id\":\"ansible-wisdom\"}" \

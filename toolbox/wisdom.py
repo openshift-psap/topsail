@@ -74,7 +74,37 @@ class Wisdom:
                           tester_image_tag,
                           namespace="wisdom"):
         """
-        Deploy Ansible Wisdom model (ServingRuntime)
+        Load test the wisdom model
+
+        Args:
+          requests: Requests sent for each model input in the dataset (will be set in llm-load-test config.json)
+          concurrency: Number of concurrent simulated users sending requests
+          replicas: Model Mesh Deployment replicas currently configured (to be attached as metadata to the results)
+          dataset_path: File path to the json file containing the inputs to be used in the load test
+          s3_secret_path: File path to an aws credentials file allowing llm-load-test to push the results to S3
+          protos_path: File path to the proto files needed to query the model
+          tester_imagestream_name: Name for the imagestream for the model validator Pod container image
+          tester_image_tag: Name for the tag for the model validator Pod container imagestream
+          namespace: Namespace to deploy the model 
+        """
+
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("wisdom_llm_load_test_multiplexed")
+    @AnsibleMappedParams
+    def run_llm_load_test_multiplexed(self, 
+                          requests, 
+                          concurrency, 
+                          replicas, 
+                          max_duration,
+                          dataset_path, 
+                          s3_secret_path, 
+                          protos_path,
+                          tester_imagestream_name,
+                          tester_image_tag,
+                          namespace="wisdom"):
+        """
+        Load test the wisdom model with multiplexed requests.
 
         Args:
           requests: Requests sent for each model input in the dataset (will be set in llm-load-test config.json)

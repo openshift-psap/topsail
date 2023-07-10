@@ -19,7 +19,7 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 LIGHT_PROFILE = "light"
 
 sys.path.append(str(TESTING_ANSIBLE_LLM_DIR.parent))
-from common import env, config, run, rhods, visualize
+from common import env, config, run, rhods
 
 initialized = False
 def init(ignore_secret_path=False):
@@ -50,13 +50,12 @@ def entrypoint(ignore_secret_path=False):
 # ---
 
 def install_rhods():
-    try:
-        run.run("oc get csv -n redhat-ods-operator -oname | grep rhods-operator --quiet")
-        logging.warning("RHODS is already installed, do not reinstall it.")
-        return
-    except Exception: pass # RHODS isn't installed, proceed
+    token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
+    rhods.install(token_file)
 
-    run.run("./run_toolbox.py cluster deploy_operator redhat-operators rhods-operator redhat-ods-operator --all_namespaces")
+    run.run("./run_toolbox.py rhods wait_ods")
+
+    # run.run("./run_toolbox.py from_config cluster deploy_ldap")
 
 def max_gpu_nodes():
     test_cases = config.ci_artifacts.get_config("tests.ansible_llm.test_cases")
@@ -65,7 +64,7 @@ def max_gpu_nodes():
     return max(replicas_list)
 
 @entrypoint()
-def load_test_prepare():
+def prepare_ci():
     """
     Prepares the cluster for running pipelines scale tests.
     """
@@ -83,22 +82,39 @@ def load_test_prepare():
 
     return None
 
+protos_path = WISDOM_PROTOS_SECRET_PATH
+s3_creds_model_secret_path = WISDOM_SECRET_PATH / "s3-secret.yaml"
+quay_secret_path = WISDOM_SECRET_PATH / "quay-secret.yaml"
+dataset_path = WISDOM_SECRET_PATH / "llm-load-test-dataset.json"
+s3_creds_results_secret_path = WISDOM_SECRET_PATH / "credentials"
+
+test_namespace="wisdom"
+tester_imagestream_name="llm-load-test"
+tester_image_tag="wisdom-ci"
+
+def deploy_and_warmup_model(replicas):
+    run.run(f"./run_toolbox.py wisdom deploy_model {replicas} \
+        {s3_creds_model_secret_path} \
+        {quay_secret_path} \
+        {protos_path} \
+        {tester_imagestream_name} \
+        {tester_image_tag} \
+        --namespace='{test_namespace}' \
+        --")
+
+        # Warmup
+    run.run(f"./run_toolbox.py wisdom warmup_model {protos_path} \
+        {tester_imagestream_name} \
+        {tester_image_tag} \
+        --namespace='{test_namespace}'")
+
 @entrypoint()
-def load_test_run():
+def run_ci():
     """
     Runs a CI workload.
 
     """
     logging.info("In loadtest_run")
-    protos_path = WISDOM_PROTOS_SECRET_PATH
-    s3_creds_model_secret_path = WISDOM_SECRET_PATH / "s3-secret.yaml"
-    quay_secret_path = WISDOM_SECRET_PATH / "quay-secret.yaml"
-    dataset_path = WISDOM_SECRET_PATH / "llm-load-test-dataset.json"
-    s3_creds_results_secret_path = WISDOM_SECRET_PATH / "credentials"
-
-    test_namespace="wisdom"
-    tester_imagestream_name="llm-load-test"
-    tester_image_tag="wisdom-ci"
 
     run.run(f"./run_toolbox.py utils build_push_image --namespace='{test_namespace}'  --git_repo='https://github.com/openshift-psap/llm-load-test.git' --git_ref='main' --dockerfile_path='build/Containerfile' --image_local_name='{tester_imagestream_name}' --tag='{tester_image_tag}'  --")
 
@@ -106,32 +122,15 @@ def load_test_run():
     run.run(f"./run_toolbox.py cluster set_scale g5.2xlarge {max_replicas}")
 
     test_cases = config.ci_artifacts.get_config("tests.ansible_llm.test_cases")
-
-    #TODO: These test cases should be in a config.yaml, not hardcoded
     for replicas, concurrency in test_cases:
+        global dataset_path 
+
+        deploy_and_warmup_model(replicas)
 
         total_requests = 32 * concurrency
 
-        logging.info(f"Configure ServingRuntime and InferenceService for replicas: {replicas}")
-
-        #TODO: USE TEST IMAGE BUILT IN PREPARE STEP
-        run.run(f"./run_toolbox.py wisdom deploy_model {replicas} \
-            {s3_creds_model_secret_path} \
-            {quay_secret_path} \
-            {protos_path} \
-            {tester_imagestream_name} \
-            {tester_image_tag} \
-            --namespace='{test_namespace}' \
-            --")
-
-        # Warmup
-        run.run(f"./run_toolbox.py wisdom warmup_model {protos_path} \
-            {tester_imagestream_name} \
-            {tester_image_tag} \
-            --namespace='{test_namespace}'")
-
-        #Run test with total_requests and concurrency
         logging.info(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and total_requests: {total_requests}")
+
         run.run(f"./run_toolbox.py wisdom run_llm_load_test {total_requests} \
             {concurrency} \
             {replicas} \
@@ -141,7 +140,31 @@ def load_test_run():
             {tester_imagestream_name} \
             {tester_image_tag} \
             --namespace='{test_namespace}'")
+        
+    dataset_path = WISDOM_SECRET_PATH / "llm-load-test-multiplexed-dataset.json"
+    multiplexed_test_cases = config.ci_artifacts.get_config("tests.ansible_llm.multiplexed_test_cases")
+    for replicas, concurrency in multiplexed_test_cases:
+        deploy_and_warmup_model(replicas)
 
+        # There will be <concurrency> num instances of ghz. However, some instances
+        # requests will be much smaller and will be answered more quickly.
+        # To ensure that the requests are multiplexed throughout the run, 
+        # we set max requests high, and rely on the timeout after 15m to end the test.
+        requests_per_instance = 256
+        max_duration = "15m"
+
+        logging.info(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and total_requests: {total_requests}")
+
+        run.run(f"./run_toolbox.py wisdom run_llm_load_test_multiplexed {requests_per_instance} \
+            {concurrency} \
+            {replicas} \
+            {max_duration} \
+            {dataset_path} \
+            {s3_creds_results_secret_path} \
+            {protos_path} \
+            {tester_imagestream_name} \
+            {tester_image_tag} \
+            --namespace='{test_namespace}'")
 
     pass
 
@@ -152,8 +175,8 @@ class LoadTest:
     """
 
     def __init__(self):
-        self.prepare = load_test_prepare
-        self.run = load_test_run
+        self.prepare_ci = prepare_ci
+        self.run_ci = run_ci
 
 def main():
     # Print help rather than opening a pager

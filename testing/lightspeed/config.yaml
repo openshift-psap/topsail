@@ -11,6 +11,7 @@ ci_presets:
     tests:
       ansible_llm:
         test_cases: [[1,1], [1,2], [1, 4], [1, 8], [1, 16]]
+        multiplexed_test_cases: [[1, 8], [1, 16]]
   
   light:
     extends: [light_cluster, ansible_llm_light]
@@ -42,12 +43,33 @@ clusters:
         count: 2
       compute:
         type: m6i.2xlarge
+rhods:
+  catalog:
+    image: brew.registry.redhat.io/rh-osbs/iib
+    tag: 524781
+    channel: beta
+    version: 1.29.0
+secrets:
+  dir:
+    name: psap-ods-secret
+    env_key: PSAP_ODS_SECRET_PATH
+  # name of the file containing the properties of LDAP secrets
+  s3_ldap_password_file: s3_ldap.passwords
+  keep_cluster_password_file: get_cluster.password
+  brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
 tests:
   ansible_llm:
     test_cases:
-    - [1,1]
-    - [1,2]
+    - [1, 1]
+    - [1, 2]
     - [1, 4]
+    - [1, 8]
+    - [1, 16]
+    - [2, 16]
+    - [2, 32]
+    - [4, 32]
+    - [4, 64]
+    multiplexed_test_cases:
     - [1, 8]
     - [1, 16]
     - [2, 16]

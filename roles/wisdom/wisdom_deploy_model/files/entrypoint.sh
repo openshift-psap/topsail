@@ -16,4 +16,4 @@ grpcurl -plaintext -proto wisdomextservice.proto \
     -d "{ \"prompt\": \"${PROMPT}\", \"context\": \"${CONTEXT}\" }" \
     -H "mm-vmodel-id: ansible-wisdom" \
     modelmesh-serving.${WISDOM_NAMESPACE}.svc:8033 \
-    caikit.runtime.WisdomExt.WisdomExtService/AnsiblePredict
+    caikit.runtime.WisdomExt.WisdomExtService/CodeGenerationTaskPredict
