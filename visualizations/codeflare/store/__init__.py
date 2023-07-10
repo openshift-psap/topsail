@@ -79,6 +79,12 @@ parsers.register_important_file = register_important_file
 
 
 def _rewrite_settings(settings_dict):
+    for key, value in settings_dict.items():
+        try:
+            settings_dict[key] = int(value)
+        except Exception:
+            pass # ignore, keep value as a string
+
     return settings_dict
 
 
