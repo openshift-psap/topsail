@@ -106,13 +106,14 @@ class Config:
     def get_config(self, jsonpath, default_value=..., warn=True, print=True):
         try:
             value = jsonpath_ng.parse(jsonpath).find(self.config)[0].value
-        except Exception as ex:
+        except IndexError as ex:
             if default_value != ...:
                 if warn:
                     logging.warning(f"get_config: {jsonpath} --> missing. Returning the default value: {default_value}")
                 return default_value
+
             logging.error(f"get_config: {jsonpath} --> {ex}")
-            raise ex
+            raise KeyError(f"Key '{jsonpath}' not found in {self.config_path}")
 
         if print:
             logging.info(f"get_config: {jsonpath} --> {value}")
