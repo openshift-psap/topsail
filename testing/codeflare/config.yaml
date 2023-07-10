@@ -129,6 +129,12 @@ tests:
     tests_to_run: [cpu_light_all_schedulable, cpu_light_scheduling, cpu_light_scheduling_job_mode, cpu_light_unschedulable]
     distribution: poisson
 
+    test_multiple_values:
+      enabled: false
+      matbench_config_file: plot_multiple_tests.yaml
+      settings:
+        aw.count: [50, 100, 150, 200]
+
     test_templates:
       common_gpu:
         aw:
