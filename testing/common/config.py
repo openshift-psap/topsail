@@ -196,6 +196,14 @@ def get_command_arg(command, args):
     return proc.stdout.decode("utf-8").strip()
 
 
+def set_jsonpath(config, jsonpath, value):
+    get_jsonpath(config, jsonpath) # will raise an exception if the jsonpath does not exist
+    jsonpath_ng.parse(jsonpath).update(config, value)
+
+def get_jsonpath(config, jsonpath):
+    return jsonpath_ng.parse(jsonpath).find(config)[0].value
+
+
 def init(base_dir):
     global ci_artifacts
 
