@@ -14,6 +14,25 @@ VARIABLE_OVERRIDES_FILENAME = "variable_overrides"
 
 ci_artifacts = None # will be set in init()
 
+class TempValue(object):
+    def __init__(self, config, key, value):
+        self.config = config
+        self.key = key
+        self.value = value
+        self.prev_value = None
+
+    def __enter__(self):
+        self.prev_value = self.config.get_config(self.key)
+        self.config.set_config(self.key, self.value)
+
+        return True
+
+    def __exit__(self, ex_type, ex_value, exc_traceback):
+        self.config.set_config(self.key, self.prev_value)
+
+        return False # If we returned True here, any exception would be suppressed!
+
+
 class Config:
     def __init__(self, config_path):
         self.config_path = config_path
