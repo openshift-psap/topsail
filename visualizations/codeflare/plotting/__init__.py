@@ -5,6 +5,8 @@ from . import resource_allocation
 from . import mapping
 from . import time_distribution
 from . import progress
+from . import compare_test_speed
+from . import compare_report
 
 def register():
     error_report.register()
@@ -15,3 +17,5 @@ def register():
     mapping.register()
     time_distribution.register()
     progress.register()
+    compare_test_speed.register()
+    compare_report.register()

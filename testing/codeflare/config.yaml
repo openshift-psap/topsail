@@ -37,6 +37,8 @@ ci_presets:
 
   cpu_light_unschedulable:
     tests.mcad.tests_to_run: [cpu_light_unschedulable]
+    tests.mcad.test_multiple_values.enabled: true
+    tests.mcad.test_multiple_values.settings["aw.count"]: [200, 500, 750, 875, 1000]
 
   cpu_light_scheduling:
     tests.mcad.tests_to_run: [cpu_light_scheduling, cpu_light_scheduling_job_mode]
@@ -126,8 +128,14 @@ tests:
     stop_on_error: true
 
     want_gpu: false
-    tests_to_run: [cpu_light_all_schedulable, cpu_light_scheduling, cpu_light_scheduling_job_mode, cpu_light_unschedulable]
+    tests_to_run: [cpu_light_unschedulable]
     distribution: poisson
+
+    test_multiple_values:
+      enabled: false
+      matbench_config_file: plot_multiple_tests.yaml
+      settings:
+        aw.count: [200, 500, 750, 1000]
 
     test_templates:
       common_gpu:

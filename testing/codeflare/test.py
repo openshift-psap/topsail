@@ -173,7 +173,43 @@ def merge(a, b, path=None):
             a[key] = b[key]
     return a
 
-def _run_test(name, test_artifact_dir_p):
+
+def _run_test_multiple_values(name, test_artifact_dir_p):
+    failed_tests = []
+
+    next_count = env.next_artifact_index()
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test_multiple_values"):
+        test_artifact_dir_p[0] = env.ARTIFACT_DIR
+
+        for key, values in config.ci_artifacts.get_config("tests.mcad.test_multiple_values.settings").items():
+                logging.info(f"Running the test with multiple values: {key} -> {values}")
+
+                for value in values:
+                    next_count = env.next_artifact_index()
+                    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test_value__{key}={value}"):
+                        logging.info(f"Running the test with value: {key} -> {value}")
+                        with open(env.ARTIFACT_DIR / "settings.test_override_value", "w") as f:
+                            print(f"{key}={value}", file=f)
+
+                        try:
+                            _run_test_and_visualize(name, {key: value})
+                        except Exception as e:
+                            import bdb
+                            if isinstance(e, bdb.BdbQuit):
+                                raise
+
+                            failed_tests.append(f"{name}|{key}={value}")
+                            if config.ci_artifacts.get_config("tests.mcad.stop_on_error"):
+                                logging.info("Error detected, and tests.mcad.stop_on_error is set. Aborting.")
+                                raise
+
+    if failed_tests:
+        logging.error(f"_run_test_multiple_values: caught exception(s) in [{', '.join(failed_tests)}].")
+
+    return bool(failed_tests)
+
+
+def _run_test(name, test_artifact_dir_p, test_override_value=None):
     dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
     capture_prom = config.ci_artifacts.get_config("tests.mcad.capture_prom")
     prepare_nodes = config.ci_artifacts.get_config("tests.mcad.prepare_nodes")
@@ -195,6 +231,10 @@ def _run_test(name, test_artifact_dir_p):
         if "extends" in cfg:
             parents_to_apply += cfg["extends"]
             del cfg["extends"]
+
+    if test_override_value:
+        for key, value in test_override_value.items():
+            config.set_jsonpath(cfg, key, value)
 
     logging.info("Test configuration: \n"+yaml.dump(cfg))
 
@@ -265,11 +305,15 @@ def _run_test(name, test_artifact_dir_p):
 
     return failed
 
-def _run_test_and_visualize(name):
+def _run_test_and_visualize(name, test_override_value=None):
     failed = True
+    do_test_multiple_values = test_override_value is None and config.ci_artifacts.get_config("tests.mcad.test_multiple_values.enabled")
     try:
         test_artifact_dir_p = [None]
-        failed = _run_test(name, test_artifact_dir_p)
+        if do_test_multiple_values:
+            failed = _run_test_multiple_values(name, test_artifact_dir_p)
+        else:
+            failed = _run_test(name, test_artifact_dir_p, test_override_value)
     finally:
         dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
         if not config.ci_artifacts.get_config("tests.mcad.visualize"):
@@ -282,7 +326,13 @@ def _run_test_and_visualize(name):
             next_count = env.next_artifact_index()
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
                 visualize.prepare_matbench()
-                generate_plots(test_artifact_dir_p[0])
+
+                if do_test_multiple_values:
+                    matbench_config_file = config.ci_artifacts.get_config("tests.mcad.test_multiple_values.matbench_config_file")
+                    with config.TempValue(config.ci_artifacts, "matbench.config_file", matbench_config_file):
+                        generate_plots(test_artifact_dir_p[0])
+                else:
+                    generate_plots(test_artifact_dir_p[0])
         else:
             logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 

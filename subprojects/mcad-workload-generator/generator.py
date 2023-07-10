@@ -185,7 +185,7 @@ def main(dry_run=True,
 
     resource_name_template, resource_json_template = prepare_appwrapper()
 
-    verbose_resource_creation = aw_count < 250
+    verbose_resource_creation = aw_count < 50
 
     def create_appwrapper(aw_index):
         K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"

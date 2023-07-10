@@ -12,6 +12,7 @@ from dash import dcc
 from matrix_benchmarking.common import Matrix
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
+import matrix_benchmarking.cli_args as cli_args
 
 from . import report
 
@@ -101,19 +102,20 @@ def _get_test_setup(entry):
     test_speed = entry.results.test_case_properties.total_pod_count / test_duration
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
 
-    setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} Pod/minute")]))]
-    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} Pod/minute")]))]
+    setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} Pods/minute")]))]
+    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} Pods/minute")]))]
 
     time_to_last_schedule, last_schedule_time = _get_time_to_last_schedule(entry)
     time_to_last_launch, last_launch_time = _get_time_to_last_launch(entry)
 
     if last_schedule_time:
         setup_info += [html.Li(["Time to last Pod schedule: ", html.Code(f"{time_to_last_schedule:.1f} minutes")])]
-        setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{time_to_last_schedule:.2f} Pod/minute")]))]
+        setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{time_to_last_schedule:.2f} Pods/minute")]))]
         setup_info += [html.Ul(html.Li(["Time between the last resource launch and its schedule: ", html.Code(f"{(last_schedule_time - last_launch_time).total_seconds()} seconds")]))]
 
     setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
     return setup_info
+
 
 class ErrorReport():
     def __init__(self):
@@ -124,17 +126,47 @@ class ErrorReport():
 
         table_stats.TableStats._register_stat(self)
 
+    def _do_plot_multi(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+        header += [html.P("This report shows a summary of the test setups.")]
+        header += [html.H1("Error Report")]
+
+        header += [html.Ul(html.Li(f"{common.Matrix.count_records(settings, setting_lists)} tests are taken into account in this batch."))]
+
+        results_dirname = pathlib.Path(cli_args.kwargs["results_dirname"])
+
+        settings_list = []
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            test_location = html.Span(str(entry.location.relative_to(results_dirname)))
+            entry_settings = html.Code(", ".join(([f"{key}={value}" for key, value in entry.settings.__dict__.items() if len(common.Matrix.settings[key]) > 1])))
+
+            settings_list.append(html.Ul([html.Li(entry_settings), html.Ul(html.Li(test_location))]))
+
+        header += [html.Ul(settings_list)]
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            header += [html.Hr()]
+            entry_settings = html.Code(", ".join(([f"{key}={value}" for key, value in entry.settings.__dict__.items() if len(common.Matrix.settings[key]) > 1])))
+
+            header += [html.H2(entry_settings)]
+
+            header += _get_test_setup(entry)
+
+        return None, header
+
     def do_plot(self, *args):
         ordered_vars, settings, setting_lists, variables, cfg = args
 
         if common.Matrix.count_records(settings, setting_lists) != 1:
-            return {}, "ERROR: only one experiment must be selected"
+            return self._do_plot_multi(*args)
 
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass
 
         header = []
-        header += [html.P("This report shows the list of users who failed the test, with a link to their execution report and the last screenshot taken by the Robot.")]
+        header += [html.P("This report shows a summary of the test setup and some key performance indicators.")]
         header += [html.H1("Error Report")]
 
         setup_info = _get_test_setup(entry)

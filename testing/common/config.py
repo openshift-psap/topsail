@@ -14,6 +14,25 @@ VARIABLE_OVERRIDES_FILENAME = "variable_overrides"
 
 ci_artifacts = None # will be set in init()
 
+class TempValue(object):
+    def __init__(self, config, key, value):
+        self.config = config
+        self.key = key
+        self.value = value
+        self.prev_value = None
+
+    def __enter__(self):
+        self.prev_value = self.config.get_config(self.key)
+        self.config.set_config(self.key, self.value)
+
+        return True
+
+    def __exit__(self, ex_type, ex_value, exc_traceback):
+        self.config.set_config(self.key, self.prev_value)
+
+        return False # If we returned True here, any exception would be suppressed!
+
+
 class Config:
     def __init__(self, config_path):
         self.config_path = config_path
@@ -87,13 +106,14 @@ class Config:
     def get_config(self, jsonpath, default_value=..., warn=True, print=True):
         try:
             value = jsonpath_ng.parse(jsonpath).find(self.config)[0].value
-        except Exception as ex:
+        except IndexError as ex:
             if default_value != ...:
                 if warn:
                     logging.warning(f"get_config: {jsonpath} --> missing. Returning the default value: {default_value}")
                 return default_value
+
             logging.error(f"get_config: {jsonpath} --> {ex}")
-            raise ex
+            raise KeyError(f"Key '{jsonpath}' not found in {self.config_path}")
 
         if print:
             logging.info(f"get_config: {jsonpath} --> {value}")
@@ -174,6 +194,14 @@ def get_command_arg(command, args):
         raise
 
     return proc.stdout.decode("utf-8").strip()
+
+
+def set_jsonpath(config, jsonpath, value):
+    get_jsonpath(config, jsonpath) # will raise an exception if the jsonpath does not exist
+    jsonpath_ng.parse(jsonpath).update(config, value)
+
+def get_jsonpath(config, jsonpath):
+    return jsonpath_ng.parse(jsonpath).find(config)[0].value
 
 
 def init(base_dir):
