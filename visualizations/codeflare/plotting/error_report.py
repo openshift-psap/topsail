@@ -102,15 +102,15 @@ def _get_test_setup(entry):
     test_speed = entry.results.test_case_properties.total_pod_count / test_duration
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
 
-    setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} Pod/minute")]))]
-    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} Pod/minute")]))]
+    setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} Pods/minute")]))]
+    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} Pods/minute")]))]
 
     time_to_last_schedule, last_schedule_time = _get_time_to_last_schedule(entry)
     time_to_last_launch, last_launch_time = _get_time_to_last_launch(entry)
 
     if last_schedule_time:
         setup_info += [html.Li(["Time to last Pod schedule: ", html.Code(f"{time_to_last_schedule:.1f} minutes")])]
-        setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{time_to_last_schedule:.2f} Pod/minute")]))]
+        setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{time_to_last_schedule:.2f} Pods/minute")]))]
         setup_info += [html.Ul(html.Li(["Time between the last resource launch and its schedule: ", html.Code(f"{(last_schedule_time - last_launch_time).total_seconds()} seconds")]))]
 
     setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
