@@ -44,6 +44,14 @@ ci_presets:
     tests.mcad.tests_to_run: [cpu_light_scheduling, cpu_light_scheduling_job_mode]
     tests.mcad.test_templates.cpu_light_scheduling.aw.count: 100
 
+  cpu_all_schedulable:
+    clusters.sutest.worker.fill_resources.enabled: true
+    tests.mcad.test_templates.common_light.node.count: 4
+
+    tests.mcad.tests_to_run: [cpu_light_all_schedulable]
+    tests.mcad.test_multiple_values.enabled: true
+    tests.mcad.test_multiple_values.settings["aw.count"]: [100, 300]
+
   icelake:
     extends: [metal]
 

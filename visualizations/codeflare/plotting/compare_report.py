@@ -26,4 +26,18 @@ class CompareSpeedReport():
 
         header += report.Plot_and_Text("Compare Test Speed", args)
 
+        header += ["The plot above shows the time it took for the MCAD scale test to run, divided by the number of Pods/AppWrappers that had to be created (giving a processing speed, in Pods per minutes). Higher is better)",
+                   html.Br(),
+                   "The ", html.I("Launch speed"), "  is the speed at which the resources are created in the ETCD database.",
+                   html.Br(),
+                   "The ", html.I("Processing speed"), " is the speed at which the test completed, including the Pod execution time (if any).",
+                                      html.Br(),
+                   "The ", html.I("Speed to last schedule"), " is the speed at which the test executed, excluding the last Pod execution (if any).",
+                   ]
+
+
+        header += report.Plot_and_Text("Compare Launch Speed", args)
+
+        header += ["The plot above shows the number of resources (AppWrappers or Jobs) actually created in the ETCD database, plotted against the time since the beginning of the test. It helps understanding if the resources were created at a normal pace, or, if there are unexpected detays during the creation phase."]
+
         return None, header

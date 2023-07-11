@@ -379,7 +379,8 @@ def _parse_resource_times(dirname):
                 resource_times.completion = \
                     datetime.datetime.strptime(
                         item["status"].get("completionTime"),
-                        K8S_TIME_FMT)
+                        K8S_TIME_FMT) \
+                        if item["status"].get("completionTime") else None
             else:
                 logging.Warning(f"Completion time parsing not supported for resource type {kind}.")
 
