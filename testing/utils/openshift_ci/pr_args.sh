@@ -36,13 +36,29 @@ elif [[ "${OPENSHIFT_CI:-}" == true ]]; then
     JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-${PULL_BASE_REF}
     test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 
+    if [[ -z "${SHARED_DIR:-}" ]]; then
+        echo "ERROR: running in OpenShift CI, but SHARED_DIR not defined." >&2
+        exit 1
+    fi
+
 else
     echo "ERROR: not running in OpenShift CI and TEST_NAME not defined." >&2
     exit 1
 fi
 
 echo "PR URL: $PR_URL" >&2
-pr_json=$(curl -sSf "$PR_URL")
+if [[ "${OPENSHIFT_CI:-}" == true ]]; then
+    PR_FILE="${SHARED_DIR}/pr.json"
+    if [[ ! -e "$PR_FILE" ]]; then
+        echo "PR file '$PR_FILE' does not exist. Downloading it from Github ..."
+        curl -sSf "$PR_URL" -o "$PR_FILE"
+    fi
+    pr_json=$(cat "$PR_FILE")
+
+else
+    pr_json=$(curl -sSf "$PR_URL")
+fi
+
 pr_body=$(jq -r .body <<< "$pr_json")
 pr_comments=$(jq -r .comments <<< "$pr_json")
 
@@ -57,8 +73,22 @@ last_comment_page=$(($pr_comments / $COMMENTS_PER_PAGE))
 [[ $(($pr_comments % $COMMENTS_PER_PAGE)) != 0 ]] && last_comment_page=$(($last_comment_page + 1))
 
 
+PR_LAST_COMMENT_PAGE_URL="$PR_COMMENTS_URL?page=$last_comment_page"
+
+if [[ "${OPENSHIFT_CI:-}" == true ]]; then
+    LAST_COMMENT_PAGE_FILE="${SHARED_DIR}/pr_last_comment_page.json"
+    if [[ ! -e "$LAST_COMMENT_PAGE_FILE" ]]; then
+        echo "PR last comment file page '$LAST_COMMENT_PAGE_FILE' does not exist. Downloading it from Github ..."
+        curl -sSf "$PR_LAST_COMMENT_PAGE_URL" -o "$LAST_COMMENT_PAGE_FILE"
+    fi
+    last_comment_page_json=$(cat "$LAST_COMMENT_PAGE_FILE")
+
+else
+    last_comment_page_json=$(curl -sSf "$PR_LAST_COMMENT_PAGE_URL")
+fi
+
 echo "PR comments URL: $PR_COMMENTS_URL" >&2
-last_user_test_comment=$(curl -sSf "$PR_COMMENTS_URL?page=$last_comment_page" \
+last_user_test_comment=$(echo "$last_comment_page_json" \
                              | jq '.[] | select(.user.login == "'$pr_author'") | .body' \
                              | (grep "$test_name" || true) \
                              | tail -1 | jq -r)
