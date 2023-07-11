@@ -22,7 +22,7 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 IMPORTANT_FILES = [
     "config.yaml",
-    "001__load__aware__scale__test/pods.json",
+    "001__load_aware__scale_test/all_pods.json",
     "002__cluster__capture_environment/nodes.json",
     "002__cluster__capture_environment/ocp_version.yml",
     "003__cluster__dump_prometheus_db/prometheus.t*"
@@ -44,12 +44,11 @@ def ignore_file_not_found(fn):
 
 def _parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
-
+    results.pods_info = _parse_pod_times(dirname) or {}
     results.from_local_env = _parse_local_env(dirname)
     results.test_config = _parse_test_config(dirname)
 
 def _parse_once(results, dirname):
-    results.pods_info = _parse_pod_times(dirname) or {}
     results.nodes_info = _parse_nodes_info(dirname) or {}
     results.cluster_info = _extract_cluster_info(results.nodes_info)
     results.sutest_ocp_version = _parse_ocp_version(dirname)
@@ -135,7 +134,7 @@ def _parse_test_config(dirname):
 
 @ignore_file_not_found
 def _parse_pod_times(dirname):
-    filename = artifact_paths.LOAD_AWARE_SCHEDULER_TEST_DIR / "all_pods.json"
+    filename = "001__load_aware__scale_test/all_pods.json"
 
     with open(register_important_file(dirname, filename)) as f:
         try:

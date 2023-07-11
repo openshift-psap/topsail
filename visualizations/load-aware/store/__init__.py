@@ -74,11 +74,12 @@ def load_cache(dirname):
 
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
+    print(f"parse directory: {dirname}")
     try:
         results = load_cache(dirname)
     except FileNotFoundError:
         results = None # Cache file doesn't exit, ignore and parse the artifacts
-
+     
     if results:
         parsers._parse_always(results, dirname, import_settings)
 

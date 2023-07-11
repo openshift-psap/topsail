@@ -1,57 +1,74 @@
+from collections import defaultdict
+
+import statistics as stats
+
+import plotly.graph_objs as go
+import pandas as pd
+import plotly.express as px
 from dash import html
 
-from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
+import matrix_benchmarking.common as common
 
 def register():
-    PodTimesReport()
+    PodTimes()
 
+def generatePodTimes(entry):
+    data = []
+    for resource_name, resource_times in entry.results.resource_times.items():
+        print(resource_name)
+        print(resource_times)
+        if resource_times.kind != "Pod": continue
 
-def add_pod_cpu_mem_usage(header, what, args, mem_only=False, cpu_only=False):
-    if mem_only:
-        header += [html.H2(f"{what} Memory usage")]
-        descr = "memory"
-        these_plots_show = "This plot shows"
-    elif cpu_only:
-        header += [html.H2(f"{what} CPU usage")]
-        descr = "CPU"
-        these_plots_show = "This plot shows"
-    else:
-        header += [html.H2(f"{what} CPU and Memory usage")]
-        descr = "CPU and memory"
-        these_plots_show = "These plots show"
+    return data
 
-    if not cpu_only:
-        header += [report.Plot(f"Prom: {what}: Mem usage", args)]
-    if not mem_only:
-        header += [report.Plot(f"Prom: {what}: CPU usage", args)]
-
-    header += [f"{these_plots_show} the {descr} usage of {what} Pods. "]
-    header += ["The ", html.Code("requests"), " and ", html.Code("limits"),
-                   " values are shown with a dashed line, ", html.I("if they are defined"), " in the Pod spec."]
-    header += html.Br()
-    header += html.Br()
-
-
-class PodTimesReport():
+class PodTimes():
     def __init__(self):
-        self.name = "report: Distribution of Pod Times"
-        self.id_name = self.name.lower().replace("/", "-")
-        self.no_graph = True
-        self.is_report = True
+        self.name = "Pod time distribution"
+        self.id_name = self.name
 
         table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
 
-    def do_plot(self, *args):
-        header = []
-        header += [html.P("These plots show an overview of the CPU and Memory usage during the execution of the test, for the cluster, the nodes, and various relevant Pods.")]
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
 
-        header += [html.H2("SUTest Cluster")]
-        header += [report.Plot("Prom: sutest cluster memory usage", args)]
-        header += [report.Plot("Prom: sutest cluster CPU usage", args)]
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
 
-        header += ["These plots show the CPU and memory capacity of the SUTest cluster."]
-        header += html.Br()
-        header += html.Br()
+        cnt = common.Matrix.count_records(settings, setting_lists)
+        if cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
 
-        return None, header
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            break
+
+        cfg__show_only_state = cfg.get("state", False)
+
+        data = generatePodTimes(entry)
+
+        if not data:
+            return None, "No data to plot ..."
+
+        df = pd.DataFrame(data)
+
+        if cfg__show_only_state:
+            df = df[df.State == cfg__show_only_state]
+
+        fig = px.histogram(df, x="Duration",
+                           color="State",
+                           marginal="box",
+                           barmode="overlay",
+                           hover_data=df.columns)
+        fig.update_layout(xaxis_title="Step timelength (in seconds)")
+
+        if cfg__show_only_state:
+            title = f"Distribution of the time spent<br>in the <b>{cfg__show_only_state}</b> AppWrapper state"
+            fig.layout.update(showlegend=False)
+        else:
+            title = f"Distribution of the time spent in each of the different AppWrappers state"
+
+        fig.update_layout(title=title, title_x=0.5)
+
+        msg = []
+
+        return fig, msg
