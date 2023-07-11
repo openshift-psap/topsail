@@ -96,7 +96,7 @@
       echo "All the AppWrappers have completed successfully. All done."
       exit 0 # done
     register: appwrappers_completed
-    retries: 60
+    retries: 120
     delay: 30
     # until fatal or done
     until: appwrappers_completed.rc == 1 or appwrappers_completed.rc == 0
