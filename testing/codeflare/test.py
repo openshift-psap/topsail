@@ -333,7 +333,7 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
                 # must be part of the test directory
                 run.run("./run_toolbox.py cluster capture_environment >/dev/null")
 
-    logging.info(f"Test '{name}' {'failed' if failed else 'passed'}.")
+    logging.info(f"_run_test: Test '{name}' {'failed' if failed else 'passed'}.")
 
     return failed
 
@@ -368,7 +368,7 @@ def _run_test_and_visualize(name, test_override_value=None):
         else:
             logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
-    logging.info(f"Test '{name}' {'failed' if failed else 'passed'}.")
+    logging.info(f"_run_test_and_visualize: Test '{name}' {'failed' if failed else 'passed'}.")
     return failed
 
 @entrypoint()
