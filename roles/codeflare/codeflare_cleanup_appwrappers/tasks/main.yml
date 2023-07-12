@@ -1,0 +1,68 @@
+- name: List all the AppWrappers in the namespace
+  shell: |
+    oc get appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r > "{{ artifact_extra_logs_dir }}/appwrappers.status"
+    oc get appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
+
+- name: Count the AppWrappers in the namespace
+  shell:
+    oc get appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} -oname | wc -l
+
+- name: Create a configmap for the beginning of the test timestamp
+  shell:
+    oc delete cm start deleted end -n "{{ codeflare_cleanup_appwrappers_namespace }}" --ignore-not-found;
+    oc create configmap start -n "{{ codeflare_cleanup_appwrappers_namespace }}" ;
+
+- name: Delete all the AppWrappers in the namespace
+  shell:
+    oc delete appwrappers --all -n "{{ codeflare_cleanup_appwrappers_namespace }}" > /dev/null
+
+- name: Create a configmap after the deletion of the AppWrappers
+  shell:
+    oc create configmap deleted -n "{{ codeflare_cleanup_appwrappers_namespace }}" ;
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Prepare the template AppWrapper
+  template:
+    src: "{{ codeclare_cleanup_mcad_canary_appwrapper_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
+    mode: 0400
+
+- name: Create the canary AppWrapper
+  shell:
+    oc create
+       -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
+
+- name: Wait for the canary AppWrapper to be discovered
+  block:
+  - name: Wait for the canary AppWrapper to be discovered
+    command:
+      oc get
+         -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
+    register: deployments
+    until: deployments.stdout | length > 0
+    retries: 100
+    delay: 15
+  always:
+  - name: Create a configmap for the end of the test timestamp
+    shell: |
+      oc create configmap end -n "{{ codeflare_cleanup_appwrappers_namespace }}" ;
+      oc get cm start end -oyaml -n "{{ codeflare_cleanup_appwrappers_namespace }}" > "{{ artifact_extra_logs_dir }}/start_end_cm.yaml"
+      oc delete cm start deleted end -n "{{ codeflare_cleanup_appwrappers_namespace }}" --ignore-not-found;
+
+  - name: Capture the state of the AppWrappers
+    shell: |
+      oc get appwrappers -oyaml -n {{ codeflare_cleanup_appwrappers_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
+      oc get appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r >"{{ artifact_extra_logs_dir }}/appwrappers.status"
+      oc describe appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.desc"
+    ignore_errors: true
+
+  - name: Delete the canary AppWrapper in the namespace
+    command:
+      oc delete
+         --ignore-not-found
+         -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"

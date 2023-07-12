@@ -84,6 +84,29 @@ def prepare_gpu_operator():
     run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
 
 
+
+def prepare_odh_customization():
+    odh_stopped = False
+    customized = False
+    if config.ci_artifacts.get_config("odh.customize.operator.stop"):
+        logging.info("Stopping the ODH operator ...")
+        run.run("oc scale deploy/codeflare-operator-manager --replicas=0 -n openshift-operators")
+        odh_stopped = True
+
+    if config.ci_artifacts.get_config("odh.customize.mcad.controller_image.enabled"):
+        if not odh_stopped:
+            raise RuntimeError("Cannot customize MCAD controller image if the ODH operator isn't stopped ...")
+        customized = True
+
+        odh_namespace = config.ci_artifacts.get_config("odh.namespace")
+        image = config.ci_artifacts.get_config("odh.customize.mcad.controller_image.image")
+        tag = config.ci_artifacts.get_config("odh.customize.mcad.controller_image.tag")
+        logging.info(f"Setting MCAD controller image to {image}:{tag} ...")
+        run.run(f"oc set image deploy/mcad-controller-mcad mcad-controller={image}:{tag} -n {odh_namespace}")
+
+    if customized:
+        run.run("./run_toolbox.py from_config rhods wait_odh")
+
 def cleanup_gpu_operator():
     if run.run(f'oc get project -oname nvidia-gpu-operator 2>/dev/null', check=False).returncode != 0:
         run.run("oc delete ns nvidia-gpu-operator")
@@ -115,6 +138,8 @@ def prepare_ci():
     prepare_mcad_test()
 
     run.run("./run_toolbox.py from_config rhods wait_odh")
+
+    prepare_odh_customization()
 
     if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
         prepare_gpu_operator()
@@ -192,7 +217,9 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
                             print(f"{key}={value}", file=f)
 
                         try:
-                            _run_test_and_visualize(name, {key: value})
+                            failed = _run_test_and_visualize(name, {key: value})
+                            if failed:
+                                failed_tests.append(f"{name}|{key}={value}")
                         except Exception as e:
                             import bdb
                             if isinstance(e, bdb.BdbQuit):
@@ -245,8 +272,11 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
         else:
             logging.info("tests.mcad.prepare_nodes=False, skipping.")
 
-        if not dry_mode and capture_prom:
-            run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+        if not dry_mode:
+            if capture_prom:
+                run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+
+            run.run(f"./run_toolbox.py from_config codeflare cleanup_appwrappers")
 
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test"):
@@ -295,13 +325,15 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
                 print("1" if failed else "0", file=f)
 
             if not dry_mode:
+                run.run(f"./run_toolbox.py from_config codeflare cleanup_appwrappers")
+
                 if capture_prom:
                     run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
 
                 # must be part of the test directory
                 run.run("./run_toolbox.py cluster capture_environment >/dev/null")
 
-    logging.info(f"Test '{name}' {'failed' if failed else 'passed'}.")
+    logging.info(f"_run_test: Test '{name}' {'failed' if failed else 'passed'}.")
 
     return failed
 
@@ -336,7 +368,7 @@ def _run_test_and_visualize(name, test_override_value=None):
         else:
             logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
-    logging.info(f"Test '{name}' {'failed' if failed else 'passed'}.")
+    logging.info(f"_run_test_and_visualize: Test '{name}' {'failed' if failed else 'passed'}.")
     return failed
 
 @entrypoint()

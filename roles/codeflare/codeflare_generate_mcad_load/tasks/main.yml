@@ -1,3 +1,11 @@
+- name: Ensure that there are no AppWrappers in the namespace
+  shell:
+    oc delete appwrappers --all -n "{{ codeflare_generate_mcad_load_namespace }}" > /dev/null
+
+- name: Reset the MCAD controller
+  command:
+    oc delete pod -lapp=mcad-mcad -n opendatahub
+
 - name: Ensure that the MCAD controller is ready
   shell:
     set -o pipefail;
@@ -12,9 +20,10 @@
     oc get deploy mcad-controller-mcad -oyaml -n opendatahub > "{{ artifact_extra_logs_dir }}/mcad-deployment.yaml"
     oc get deploy mcad-controller-mcad -ojson -n opendatahub > "{{ artifact_extra_logs_dir }}/mcad-deployment.json"
 
-- name: Ensure that there are no AppWrappers in the namespace
-  shell:
-    oc delete appwrappers --all -n "{{ codeflare_generate_mcad_load_namespace }}" > /dev/null
+- name: Save the MCAD controller Pods
+  shell: |
+    oc get pod -lapp=mcad-mcad -n opendatahub -oyaml > "{{ artifact_extra_logs_dir }}/mcad-pods.yaml"
+    oc get pod -lapp=mcad-mcad -n opendatahub -ojson > "{{ artifact_extra_logs_dir }}/mcad-pods.json"
 
 - name: Ensure that there are no Jobs in the namespace
   command:

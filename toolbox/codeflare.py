@@ -43,3 +43,17 @@ class Codeflare:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("codeflare_cleanup_appwrappers")
+    @AnsibleMappedParams
+    def cleanup_appwrappers(self,
+                            namespace
+                            ):
+        """
+        Clean up the AppWrappers and track MCAD recovery time
+
+        Args:
+          namespace: name of the namespace where the AppWrappers are deployed
+        """
+
+        return RunAnsibleRole(locals())
