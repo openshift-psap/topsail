@@ -217,7 +217,9 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
                             print(f"{key}={value}", file=f)
 
                         try:
-                            _run_test_and_visualize(name, {key: value})
+                            failed = _run_test_and_visualize(name, {key: value})
+                            if failed:
+                                failed_tests.append(f"{name}|{key}={value}")
                         except Exception as e:
                             import bdb
                             if isinstance(e, bdb.BdbQuit):
