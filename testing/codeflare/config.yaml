@@ -55,6 +55,10 @@ ci_presets:
   icelake:
     extends: [metal]
 
+  use_mcad_main_branch:
+    odh.customize.operator.stop: true
+    odh.customize.mcad.controller_image.enabled: true
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -122,6 +126,15 @@ odh:
   - name: opendatahub-operator
     catalog: community-operators
     namespace: all
+  customize:
+    operator:
+      stop: false
+    mcad:
+      controller_image:
+        enabled: false
+        image: quay.io/project-codeflare/mcad-controller
+        tag: main-v1.32.0
+
 gpu:
   time_sharing:
     replicas: 10
