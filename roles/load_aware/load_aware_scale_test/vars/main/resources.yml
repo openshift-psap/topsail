@@ -2,7 +2,3 @@ load_timeline_generator: "roles/load_aware/load_aware_scale_test/files/timeline.
 pod_start_scheduler: "roles/load_aware/load_aware_scale_test/files/scheduler.py"
 coreutils_make_pod: "roles/load_aware/load_aware_scale_test/files/coreutils-make-pod.yaml"
 coreutils_test_pod: "roles/load_aware/load_aware_scale_test/files/coreutils-test-pod.yaml"
-deps_imagestream: "roles/load_aware/load_aware_scale_test/files/deps-is.yaml"
-deps_buildconfig: "roles/load_aware/load_aware_scale_test/files/deps.yaml"
-make_imagestream: "roles/load_aware/load_aware_scale_test/files/make-is.yaml"
-make_buildconfig: "roles/load_aware/load_aware_scale_test/files/make.yaml"

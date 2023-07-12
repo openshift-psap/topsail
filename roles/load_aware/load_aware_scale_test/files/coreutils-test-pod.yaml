@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: coreutils-test-pod
+  name: coreutils-test-pod-n{}
   annotations:
     alpha.image.policy.openshift.io/resolve-names: '*'
 spec:
-  schedulerName: "trimaran-scheduler"
+  schedulerName: "{}"
   containers:
   - name: test-container
-    image: load-aware/coreutils-make:latest
+    image: load-aware/coreutils:make
     imagePullPolicy: Always
     command: ["make", "test"]
   restartPolicy: Never

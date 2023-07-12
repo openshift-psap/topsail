@@ -14,3 +14,6 @@ load_aware_scale_test_instances: 10
 # Missing documentation for namespace
 load_aware_scale_test_namespace: load-aware
 
+# Missing documentation for scheduler
+load_aware_scale_test_scheduler: default
+

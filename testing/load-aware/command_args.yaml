@@ -23,3 +23,16 @@ load_aware scale_test:
   duration: {{ load_aware.scale_test.duration }}
   instances: {{ load_aware.scale_test.instances }}
   namespace: {{ load_aware.scale_test.namespace }}
+  scheduler: {{ load_aware.scale_test.scheduler }}
+
+utils build_push_image/deps:
+  namespace: {{ load_aware.scale_test.namespace }}
+  image_local_name: coreutils
+  tag: deps
+  dockerfile_path: testing/load-aware/images/Containerfile.deps
+
+utils build_push_image/make:
+  namespace: {{ load_aware.scale_test.namespace }}
+  image_local_name: coreutils
+  tag: make
+  dockerfile_path: testing/load-aware/images/Containerfile.make

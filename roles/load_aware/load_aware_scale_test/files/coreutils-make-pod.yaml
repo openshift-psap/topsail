@@ -8,7 +8,7 @@ spec:
   schedulerName: "{}"
   containers:
   - name: make-container
-    image: load-aware/coreutils-deps:latest
+    image: load-aware/coreutils:deps
     imagePullPolicy: Always
     command: ["make"]
   restartPolicy: Never

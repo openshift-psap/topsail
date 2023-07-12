@@ -67,28 +67,37 @@ def prepare_ci():
     run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
     run.run("./run_toolbox.py from_config load_aware deploy_trimaran")
 
+    test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
+    run.run(f"oc create ns {test_namespace}")
+    run.run("./run_toolbox.py from_config utils build_push_image --suffix deps")
+    run.run("./run_toolbox.py from_config utils build_push_image --suffix make")
 
-def _run_test(test_artifact_dir_p):
+def _run_test(test_artifact_dir_p, scheduler_name):
     """
     Runs the Load-Aware scale test from the CI
     """
 
     next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__load_aware_scale_test"):
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__load_aware_scale_test_{scheduler_name}_scheduler"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
 
         with open(env.ARTIFACT_DIR / "settings", "w") as f:
             print(f"load_aware_scale_test=true", file=f)
+            print(f"scheduler={scheduler_name}", file=f)
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
+        # clean up pods from previous test
+        test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
+        run.run(f"oc delete pods --all -n {test_namespace} --ignore-not-found")
         run.run("./run_toolbox.py cluster reset_prometheus_db")
 
         failed = True
         try:
-
-            run.run("./run_toolbox.py from_config load_aware scale_test")
+            extra = {}
+            extra["scheduler"] = scheduler_name
+            run.run(f'./run_toolbox.py from_config load_aware scale_test --extra "{extra}"')
 
             failed = False
         finally:
@@ -103,19 +112,21 @@ def test_ci():
     """
     Runs the Load-Aware scale test from the CI
     """
-
+   
     try:
-        test_artifact_dir_p = [None]
-        _run_test(test_artifact_dir_p)
-    finally:
-        if test_artifact_dir_p[0] is not None:
-            next_count = env.next_artifact_index()
-            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
-                visualize.prepare_matbench()
-                generate_plots(test_artifact_dir_p[0])
-        else:
-            logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
-
+        for scheduler_name in config.ci_artifacts.get_config("load_aware.schedulers"):
+            try:
+                test_artifact_dir_p = [None]
+                _run_test(test_artifact_dir_p, scheduler_name)
+            finally:
+                if test_artifact_dir_p[0] is not None:
+                    next_count = env.next_artifact_index()
+                    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
+                        visualize.prepare_matbench()
+                        generate_plots(test_artifact_dir_p[0])
+                else:
+                    logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
+    finally: 
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 
@@ -135,6 +146,8 @@ def cleanup_cluster():
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running on bare-metal environments.
     logging.info("Cleaning up cluster and uninstall pipelines")
+    test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
+    run.run("oc delete ns {test_namespace} --ignore-not-found")
     run.run("./run_toolbox.py load_aware undeploy_trimaran")
     uninstall_ocp_pipelines()
 
