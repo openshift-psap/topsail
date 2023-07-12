@@ -62,7 +62,7 @@
   - name: Create a configmap for the end of the test timestamp
     shell: |
       oc create configmap end -n "{{ codeflare_cleanup_appwrappers_namespace }}" ;
-      oc get cm start end -oyaml -n "{{ codeflare_cleanup_appwrappers_namespace }}" > "{{ artifact_extra_logs_dir }}/start_end_cm.yaml"
+      oc get cm start deleted end -oyaml -n "{{ codeflare_cleanup_appwrappers_namespace }}" > "{{ artifact_extra_logs_dir }}/start_end_cm.yaml"
       oc delete cm start deleted end -n "{{ codeflare_cleanup_appwrappers_namespace }}" --ignore-not-found;
 
   - name: Capture the state of the AppWrappers
