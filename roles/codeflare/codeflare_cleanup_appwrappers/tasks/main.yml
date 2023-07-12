@@ -43,8 +43,19 @@
     command:
       oc get
          -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
-    register: deployments
-    until: deployments.stdout | length > 0
+         -ojsonpath={.status.controllerfirsttimestamp}
+    register: has_controllerfirsttimestamp_cmd
+    until: has_controllerfirsttimestamp_cmd.stdout | length > 0
+    retries: 100
+    delay: 15
+
+  - name: Wait for the canary AppWrapper to be scheduled
+    command:
+      oc get
+         -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
+         -ojsonpath={.status.state}
+    register: aw_state_cmd
+    until: aw_state_cmd.stdout == "Completed"
     retries: 100
     delay: 15
   always:
