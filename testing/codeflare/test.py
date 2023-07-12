@@ -270,8 +270,11 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
         else:
             logging.info("tests.mcad.prepare_nodes=False, skipping.")
 
-        if not dry_mode and capture_prom:
-            run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+        if not dry_mode:
+            if capture_prom:
+                run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+
+            run.run(f"./run_toolbox.py from_config codeflare cleanup_appwrappers")
 
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test"):
@@ -320,6 +323,8 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
                 print("1" if failed else "0", file=f)
 
             if not dry_mode:
+                run.run(f"./run_toolbox.py from_config codeflare cleanup_appwrappers")
+
                 if capture_prom:
                     run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
 
