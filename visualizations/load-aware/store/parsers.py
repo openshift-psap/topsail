@@ -149,9 +149,7 @@ def _parse_pod_times(dirname):
       pod_times.append(pod_time)
 
       pod_time.pod_name = pod["metadata"]["name"]
-      pod_friendly_name = pod["metadata"]["labels"]["job-name"]
 
-      pod_time.pod_friendly_name = pod_friendly_name
       pod_time.hostname = pod["spec"].get("nodeName")
 
       pod_time.creation_time = datetime.datetime.strptime(
