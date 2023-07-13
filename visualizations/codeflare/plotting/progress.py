@@ -155,7 +155,8 @@ class PodProgress():
         total_pod_count = entry.results.test_case_properties.total_pod_count
         fig.update_yaxes(title="Percentage")
         fig.update_xaxes(title="Timeline, in minutes after the start time")
-        fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} Pods", title_x=0.5)
+        schedule_object_kind = "Job" if entry.results.test_case_properties.job_mode else "AppWrapper"
+        fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} {schedule_object_kind}s", title_x=0.5)
 
         fig.layout.yaxis.tickformat = ',.0%'
 
