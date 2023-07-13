@@ -104,7 +104,8 @@ def _get_test_setup(entry):
 
     setup_info += [html.Ul(nodes_info)]
 
-    setup_info += [html.Li(["MCAD version: ", html.B(entry.results.mcad_version)])]
+    setup_info += [html.Li(["MCAD image: ", html.B(entry.results.mcad_image.image)])]
+    setup_info += [html.Ul(html.Li(html.I(entry.results.mcad_image.image_id)))]
 
     test_duration = (entry.results.test_start_end_time.end - entry.results.test_start_end_time.start).total_seconds() / 60
     test_speed = entry.results.test_case_properties.total_pod_count / test_duration

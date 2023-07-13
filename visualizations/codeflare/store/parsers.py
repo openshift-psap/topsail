@@ -83,7 +83,7 @@ def _parse_once(results, dirname):
     results.test_start_end_time = _parse_test_start_end_time(dirname)
     results.cleanup_times = _parse_cleanup_start_end_time(dirname)
 
-    results.mcad_version = _parse_mcad_version(dirname)
+    results.mcad_image = _parse_mcad_image(dirname)
     results.test_case_config = _parse_test_case_config(dirname)
     results.test_case_properties = _parse_test_case_properties(results.test_case_config)
     results.file_locations = _parse_file_locations(dirname)
@@ -435,9 +435,11 @@ def _parse_cleanup_start_end_time(dirname):
 
     return cleanup_times
 
+
 @ignore_file_not_found
-def _parse_mcad_version(dirname):
-    filename = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / "mcad-deployment.json"
+def _parse_mcad_image(dirname):
+    filename = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / "mcad-pods.json"
+    mcad_image = types.SimpleNamespace()
 
     with open(register_important_file(dirname, filename)) as f:
         try:
@@ -445,8 +447,11 @@ def _parse_mcad_version(dirname):
         except Exception as e:
             logging.error(f"Couldn't parse JSON file '{filename}': {e}")
             return
+    mcad_image.image_id = json_file["items"][0]["status"]["containerStatuses"][0]["imageID"]
+    mcad_image.image = json_file["items"][0]["spec"]["containers"][0]["image"]
 
-    return json_file["spec"]["template"]["spec"]["containers"][0]["image"]
+    return mcad_image
+
 
 @ignore_file_not_found
 def _parse_test_case_config(dirname):
