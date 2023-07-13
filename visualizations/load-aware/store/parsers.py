@@ -20,12 +20,19 @@ K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
+artifact_dirnames = types.SimpleNamespace()
+artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_db"
+artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
+artifact_dirnames.LOAD_AWARE_SCALE_TEST_DIR = "*__load_aware__scale_test"
+
+artifact_paths = None # store._parse_directory will turn it into a {str: pathlib.Path} dict base on ^^^
+
 IMPORTANT_FILES = [
     "config.yaml",
-    "001__load_aware__scale_test/all_pods.json",
-    "002__cluster__capture_environment/nodes.json",
-    "002__cluster__capture_environment/ocp_version.yml",
-    "003__cluster__dump_prometheus_db/prometheus.t*"
+    f"{artifact_dirnames.LOAD_AWARE_SCALE_TEST_DIR}/all_pods.json",
+    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
+    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
+    f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*"
 ]
 
 PARSER_VERSION = "2023-07-07"
@@ -44,11 +51,11 @@ def ignore_file_not_found(fn):
 
 def _parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
-    results.pods_info = _parse_pod_times(dirname) or {}
     results.from_local_env = _parse_local_env(dirname)
     results.test_config = _parse_test_config(dirname)
 
 def _parse_once(results, dirname):
+    results.pods_info = _parse_pod_times(dirname) or {}
     results.nodes_info = _parse_nodes_info(dirname) or {}
     results.cluster_info = _extract_cluster_info(results.nodes_info)
     results.sutest_ocp_version = _parse_ocp_version(dirname)
@@ -134,7 +141,8 @@ def _parse_test_config(dirname):
 
 @ignore_file_not_found
 def _parse_pod_times(dirname):
-    filename = "001__load_aware__scale_test/all_pods.json"
+
+    filename = artifact_paths.LOAD_AWARE_SCALE_TEST_DIR / "all_pods.json"
 
     with open(register_important_file(dirname, filename)) as f:
         try:
@@ -188,7 +196,10 @@ def _parse_pod_times(dirname):
 def _parse_nodes_info(dirname, sutest_cluster=True):
     nodes_info = {}
 
-    filename = pathlib.Path("002__cluster__capture_environment") / "nodes.json"
+    if not artifact_paths.CLUSTER_CAPTURE_ENV_DIR:
+        raise FileNotFoundError(artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR)
+
+    filename = artifact_paths.CLUSTER_CAPTURE_ENV_DIR / "nodes.json"
 
     with open(register_important_file(dirname, filename)) as f:
         nodeList = json.load(f)
@@ -213,15 +224,19 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
 @ignore_file_not_found
 def _parse_ocp_version(dirname):
 
-    with open(register_important_file(dirname, pathlib.Path("002__cluster__capture_environment") / "ocp_version.yml")) as f:
+    with open(register_important_file(dirname, pathlib.Path(artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR) / "ocp_version.yml")) as f:
         sutest_ocp_version_yaml = yaml.safe_load(f)
 
     return sutest_ocp_version_yaml["openshiftVersion"]
 
-
+@ignore_file_not_found
 def _extract_metrics(dirname):
+
+    if not artifact_paths.CLUSTER_DUMP_PROM_DB_DIR:
+        raise FileNotFoundError(artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR)
+
     METRICS = {
-        "sutest": ("003__cluster__dump_prometheus_db/prometheus.t*", workload_prom.get_sutest_metrics()),
+        "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
     }
 
     metrics = {}
