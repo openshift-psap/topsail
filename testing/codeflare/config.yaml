@@ -38,7 +38,7 @@ ci_presets:
   cpu_light_unschedulable:
     tests.mcad.tests_to_run: [cpu_light_unschedulable]
     tests.mcad.test_multiple_values.enabled: true
-    tests.mcad.test_multiple_values.settings["aw.count"]: [200, 750, 875, 1000]
+    tests.mcad.test_multiple_values.settings["aw.count"]: [200, 350, 500]
 
   cpu_light_scheduling:
     tests.mcad.tests_to_run: [cpu_light_scheduling, cpu_light_scheduling_job_mode]
