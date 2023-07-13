@@ -20,6 +20,14 @@ def register():
     ErrorReport()
 
 
+def _get_time_to_cleanup(entry):
+    start = entry.results.cleanup_times.start
+    end = entry.results.cleanup_times.end
+    if not (start and end):
+        return 0
+
+    return (end - start).total_seconds(), start, end
+
 def _get_time_to_last_launch(entry):
     if not entry.results.resource_times:
         return 0, None
@@ -112,6 +120,10 @@ def _get_test_setup(entry):
         setup_info += [html.Li(["Time to last Pod schedule: ", html.Code(f"{time_to_last_schedule:.1f} minutes")])]
         setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{time_to_last_schedule:.2f} Pods/minute")]))]
         setup_info += [html.Ul(html.Li(["Time between the last resource launch and its schedule: ", html.Code(f"{(last_schedule_time - last_launch_time).total_seconds()} seconds")]))]
+
+    time_to_cleanup, start, end = _get_time_to_cleanup(entry)
+
+    setup_info += [html.Ul(html.Li([f"Time to cleanup: ", html.Code(f"{time(time_to_cleanup)}")]))]
 
     setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
     return setup_info

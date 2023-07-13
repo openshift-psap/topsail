@@ -26,6 +26,7 @@ artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_db"
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
 artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR = "*__codeflare__generate_mcad_load"
+artifact_dirnames.CODEFLARE_CLEANUP_APPWRAPPERS_DIR = "*__codeflare__cleanup_appwrappers"
 
 artifact_paths = None # store._parse_directory will turn it into a {str: pathlib.Path} dict base on ^^^
 
@@ -46,6 +47,8 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/start_end_cm.yaml",
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-deployment.json",
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-controller.log",
+
+    f"{artifact_dirnames.CODEFLARE_CLEANUP_APPWRAPPERS_DIR}/start_end_cm.yaml",
 ]
 
 PARSER_VERSION = "2023-05-31"
@@ -78,6 +81,7 @@ def _parse_once(results, dirname):
     results.pod_times = _parse_pod_times(dirname)
     results.resource_times = _parse_resource_times(dirname)
     results.test_start_end_time = _parse_test_start_end_time(dirname)
+    results.cleanup_times = _parse_cleanup_start_end_time(dirname)
 
     results.mcad_version = _parse_mcad_version(dirname)
     results.test_case_config = _parse_test_case_config(dirname)
@@ -409,6 +413,27 @@ def _parse_test_start_end_time(dirname):
     logging.debug(f'End time: {test_start_end_time.end}')
 
     return test_start_end_time
+
+@ignore_file_not_found
+def _parse_cleanup_start_end_time(dirname):
+    with open(register_important_file(dirname, artifact_paths.CODEFLARE_CLEANUP_APPWRAPPERS_DIR / 'start_end_cm.yaml')) as f:
+        configmaps = yaml.safe_load(f)
+
+    cleanup_times = types.SimpleNamespace()
+    cleanup_times.start = None
+    cleanup_times.end = None
+
+    for cm in configmaps["items"]:
+        name = cm["metadata"]["name"]
+        ts = datetime.datetime.strptime(
+            cm["metadata"]["creationTimestamp"],
+            K8S_TIME_FMT)
+        cleanup_times.__dict__[name] = ts
+
+    logging.debug(f'Start time: {cleanup_times.start}')
+    logging.debug(f'End time: {cleanup_times.end}')
+
+    return cleanup_times
 
 @ignore_file_not_found
 def _parse_mcad_version(dirname):

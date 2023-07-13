@@ -18,7 +18,7 @@ from . import progress
 def register():
     CompareTestSpeed()
     CompareLaunchSpeed()
-
+    CompareCleanupSpeed()
 
 class CompareTestSpeed():
     def __init__(self):
@@ -115,5 +115,59 @@ class CompareLaunchSpeed():
         fig.update_layout(title=f"Comparison of the <i>actual</i> launch progress<br>for different {variable} values", title_x=0.5,)
         fig.update_layout(yaxis_title="Number of resources ETCD-created")
         fig.update_layout(xaxis_title="Time since the beginning (in minutes)")
+
+        return fig, html.P(text)
+
+
+class CompareCleanupSpeed():
+    def __init__(self):
+        self.name = "Compare Cleanup Speed"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        if len(variables) != 1:
+            return None, f"{self.name} only works with one variable. Got {len(variables)}: {', '.join(variables)}"
+
+        variable = list(variables)[0]
+
+        text = []
+
+        data = []
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            name = entry.get_name(variables)
+            prev_time = None
+            prev_event = None
+            test_cfg_setting = entry.settings.__dict__[variable]
+
+            text += [html.Code(f"{variable}={test_cfg_setting}")]
+
+            for event, time in sorted(entry.results.cleanup_times.__dict__.items(), key=lambda kv: kv[1]):
+                if prev_time is not None:
+                    duration = (time - prev_time).total_seconds() / 60
+
+                    data.append(dict(
+                        Name = name,
+                        Duration = duration,
+                        Event = f"{prev_event} -> {event}",
+                    ))
+                    data[-1][variable] = test_cfg_setting
+                    text.append(f" | {prev_event} -> {event}: {duration:.1f} minutes")
+                prev_time = time
+                prev_event = event
+            text.append(html.Br())
+
+        df = pd.DataFrame(data)
+        fig = px.area(df, x=variable, y="Duration", color="Event", markers=True)
+
+        fig.update_layout(title=f"Comparison of the AppWrapper cleanup time<br>for different {variable} values", title_x=0.5,)
+        fig.update_layout(yaxis_title=f"⏴ Clean up time")
+        fig.update_layout(xaxis_title=variable)
 
         return fig, html.P(text)
