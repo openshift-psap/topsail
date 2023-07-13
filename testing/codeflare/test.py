@@ -325,10 +325,18 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
                 print("1" if failed else "0", file=f)
 
             if not dry_mode:
-                run.run(f"./run_toolbox.py from_config codeflare cleanup_appwrappers")
+                try:
+                    run.run(f"./run_toolbox.py from_config codeflare cleanup_appwrappers")
+                except Exception as e:
+                    logging.error(f"*** Caught an exception during cleanup_appwrappers({name}): {e.__class__.__name__}: {e}")
+                    failed = True
 
                 if capture_prom:
-                    run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
+                    try:
+                        run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
+                    except Exception as e:
+                        logging.error(f"*** Caught an exception during dump_prometheus_db({name}): {e.__class__.__name__}: {e}")
+                        failed = True
 
                 # must be part of the test directory
                 run.run("./run_toolbox.py cluster capture_environment >/dev/null")
@@ -336,6 +344,7 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
     logging.info(f"_run_test: Test '{name}' {'failed' if failed else 'passed'}.")
 
     return failed
+
 
 def _run_test_and_visualize(name, test_override_value=None):
     failed = True
