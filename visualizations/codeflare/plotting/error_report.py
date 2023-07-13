@@ -20,6 +20,14 @@ def register():
     ErrorReport()
 
 
+def _get_time_to_cleanup(entry):
+    start = entry.results.cleanup_times.start
+    end = entry.results.cleanup_times.end
+    if not (start and end):
+        return 0
+
+    return (end - start).total_seconds(), start, end
+
 def _get_time_to_last_launch(entry):
     if not entry.results.resource_times:
         return 0, None
@@ -96,22 +104,36 @@ def _get_test_setup(entry):
 
     setup_info += [html.Ul(nodes_info)]
 
-    setup_info += [html.Li(["MCAD version: ", html.B(entry.results.mcad_version)])]
+    setup_info += [html.Li(["MCAD image: ", html.B(entry.results.mcad_image.image)])]
+    setup_info += [html.Ul(html.Li(html.I(entry.results.mcad_image.image_id)))]
 
     test_duration = (entry.results.test_start_end_time.end - entry.results.test_start_end_time.start).total_seconds() / 60
     test_speed = entry.results.test_case_properties.total_pod_count / test_duration
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
 
-    setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} Pods/minute")]))]
-    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} Pods/minute")]))]
+    schedule_object_kind = "Job" if entry.results.test_case_properties.job_mode else "AppWrapper"
+
+    setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} {schedule_object_kind}/minute")]))]
+    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} {schedule_object_kind}/minute")]))]
 
     time_to_last_schedule, last_schedule_time = _get_time_to_last_schedule(entry)
     time_to_last_launch, last_launch_time = _get_time_to_last_launch(entry)
+
+
+    def time(sec):
+        if sec <= 120:
+            return f"{sec:.0f} seconds"
+        else:
+            return f"{sec/60:.1f} minutes"
 
     if last_schedule_time:
         setup_info += [html.Li(["Time to last Pod schedule: ", html.Code(f"{time_to_last_schedule:.1f} minutes")])]
         setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{time_to_last_schedule:.2f} Pods/minute")]))]
         setup_info += [html.Ul(html.Li(["Time between the last resource launch and its schedule: ", html.Code(f"{(last_schedule_time - last_launch_time).total_seconds()} seconds")]))]
+
+    time_to_cleanup, start, end = _get_time_to_cleanup(entry)
+
+    setup_info += [html.Ul(html.Li([f"Time to cleanup: ", html.Code(f"{time(time_to_cleanup)}")]))]
 
     setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
     return setup_info
@@ -190,8 +212,8 @@ class ErrorReport():
             setup_info
         )]
 
-
-        header += [html.H2("Pod Completion Progress")]
+        schedule_object_kind = "Job" if entry.results.test_case_properties.job_mode else "AppWrapper"
+        header += [html.H2(f"{schedule_object_kind} Completion Progress")]
 
         header += report.Plot_and_Text(f"Pod Completion Progress", args)
         header += html.Br()

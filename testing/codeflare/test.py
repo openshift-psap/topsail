@@ -20,8 +20,9 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 LIGHT_PROFILE = "light"
 
 sys.path.append(str(TESTING_THIS_DIR.parent))
-from common import env, config, run, rhods, visualize
+from common import env, config, run, visualize
 
+import prepare
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -56,107 +57,6 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
 
 # ---
 
-def prepare_mcad_test():
-    namespace = config.ci_artifacts.get_config("tests.mcad.namespace")
-    if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
-        run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
-    else:
-        logging.warning(f"Project {namespace} already exists.")
-        (env.ARTIFACT_DIR / "MCAD_PROJECT_ALREADY_EXISTS").touch()
-
-
-def cleanup_mcad_test():
-    namespace = config.ci_artifacts.get_config("tests.mcad.namespace")
-    run.run(f"oc delete namespace '{namespace}' --ignore-not-found")
-
-
-def prepare_worker_node_labels():
-    worker_label = config.ci_artifacts.get_config("clusters.sutest.worker.label")
-    if run.run(f"oc get nodes -oname -l{worker_label}", capture_stdout=True).stdout:
-        logging.info(f"Cluster already has {worker_label} nodes. Not applying the labels.")
-    else:
-        run.run(f"oc label nodes -lnode-role.kubernetes.io/worker {worker_label}")
-
-
-def prepare_gpu_operator():
-    run.run("./run_toolbox.py nfd_operator deploy_from_operatorhub")
-    run.run("./run_toolbox.py gpu_operator deploy_from_operatorhub")
-    run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
-
-
-
-def prepare_odh_customization():
-    odh_stopped = False
-    customized = False
-    if config.ci_artifacts.get_config("odh.customize.operator.stop"):
-        logging.info("Stopping the ODH operator ...")
-        run.run("oc scale deploy/codeflare-operator-manager --replicas=0 -n openshift-operators")
-        odh_stopped = True
-
-    if config.ci_artifacts.get_config("odh.customize.mcad.controller_image.enabled"):
-        if not odh_stopped:
-            raise RuntimeError("Cannot customize MCAD controller image if the ODH operator isn't stopped ...")
-        customized = True
-
-        odh_namespace = config.ci_artifacts.get_config("odh.namespace")
-        image = config.ci_artifacts.get_config("odh.customize.mcad.controller_image.image")
-        tag = config.ci_artifacts.get_config("odh.customize.mcad.controller_image.tag")
-        logging.info(f"Setting MCAD controller image to {image}:{tag} ...")
-        run.run(f"oc set image deploy/mcad-controller-mcad mcad-controller={image}:{tag} -n {odh_namespace}")
-
-    if customized:
-        run.run("./run_toolbox.py from_config rhods wait_odh")
-
-def cleanup_gpu_operator():
-    if run.run(f'oc get project -oname nvidia-gpu-operator 2>/dev/null', check=False).returncode != 0:
-        run.run("oc delete ns nvidia-gpu-operator")
-        run.run("oc delete clusterpolicy --all")
-
-    if run.run(f'oc get project -oname openshift-nfd 2>/dev/null', check=False).returncode != 0:
-        run.run("oc delete ns openshift-nfd")
-
-
-@entrypoint()
-def prepare_ci():
-    """
-    Prepares the cluster and the namespace for running the tests
-    """
-
-    odh_namespace = config.ci_artifacts.get_config("odh.namespace")
-    if run.run(f'oc get project -oname "{odh_namespace}" 2>/dev/null', check=False).returncode != 0:
-        run.run(f'oc new-project "{odh_namespace}" --skip-config-write >/dev/null')
-    else:
-        logging.warning(f"Project {odh_namespace} already exists.")
-        (env.ARTIFACT_DIR / "ODH_PROJECT_ALREADY_EXISTS").touch()
-
-    for operator in config.ci_artifacts.get_config("odh.operators"):
-        run.run(f"./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
-
-    for resource in config.ci_artifacts.get_config("odh.kfdefs"):
-        run.run(f"oc apply -f {resource}  -n {odh_namespace}")
-
-    prepare_mcad_test()
-
-    run.run("./run_toolbox.py from_config rhods wait_odh")
-
-    prepare_odh_customization()
-
-    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
-        prepare_gpu_operator()
-
-    prepare_worker_node_labels()
-
-    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
-        run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
-
-    if config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.enabled"):
-        namespace = config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.namespace")
-        if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
-            run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
-
-        run.run("./run_toolbox.py from_config cluster fill_workernodes")
-
-
 def save_matbench_files(name, cfg):
     with open(env.ARTIFACT_DIR / "settings", "w") as f:
         print(f"mcad_load_test=true", file=f)
@@ -167,25 +67,6 @@ def save_matbench_files(name, cfg):
 
     with open(env.ARTIFACT_DIR / "test_case_config.yaml", "w") as f:
         yaml.dump(cfg, f)
-
-
-def _prepare_test_nodes(name, cfg, dry_mode):
-    extra = {}
-
-    extra["instance_type"] = cfg["node"]["instance_type"]
-    extra["scale"] = cfg["node"]["count"]
-
-    if dry_mode:
-        logging.info(f"dry_mode: scale up the cluster for the test '{name}': {extra} ")
-        return
-
-    run.run(f"./run_toolbox.py from_config cluster set_scale --extra \"{extra}\"")
-
-    if cfg["node"].get("wait_gpus", True):
-        if not config.ci_artifacts.get_config("tests.mcad.want_gpu"):
-            logging.error("Cannot wait for GPUs when tests.mcad.want_gpu is disabled ...")
-        else:
-            run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
 
 
 def merge(a, b, path=None):
@@ -268,7 +149,7 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare"):
         if prepare_nodes:
-            _prepare_test_nodes(name, cfg, dry_mode)
+            prepare.prepare_test_nodes(name, cfg, dry_mode)
         else:
             logging.info("tests.mcad.prepare_nodes=False, skipping.")
 
@@ -325,10 +206,18 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
                 print("1" if failed else "0", file=f)
 
             if not dry_mode:
-                run.run(f"./run_toolbox.py from_config codeflare cleanup_appwrappers")
+                try:
+                    run.run(f"./run_toolbox.py from_config codeflare cleanup_appwrappers")
+                except Exception as e:
+                    logging.error(f"*** Caught an exception during cleanup_appwrappers({name}): {e.__class__.__name__}: {e}")
+                    failed = True
 
                 if capture_prom:
-                    run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
+                    try:
+                        run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
+                    except Exception as e:
+                        logging.error(f"*** Caught an exception during dump_prometheus_db({name}): {e.__class__.__name__}: {e}")
+                        failed = True
 
                 # must be part of the test directory
                 run.run("./run_toolbox.py cluster capture_environment >/dev/null")
@@ -336,6 +225,7 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
     logging.info(f"_run_test: Test '{name}' {'failed' if failed else 'passed'}.")
 
     return failed
+
 
 def _run_test_and_visualize(name, test_override_value=None):
     failed = True
@@ -372,7 +262,7 @@ def _run_test_and_visualize(name, test_override_value=None):
     return failed
 
 @entrypoint()
-def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepare_nodes=True):
+def test_ci(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_nodes=None):
     """
     Runs the test from the CI
 
@@ -385,10 +275,14 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
     """
 
 
-    config.ci_artifacts.set_config("tests.mcad.dry_mode", dry_mode)
-    config.ci_artifacts.set_config("tests.mcad.visualize", visualize)
-    config.ci_artifacts.set_config("tests.mcad.capture_prom", capture_prom)
-    config.ci_artifacts.set_config("tests.mcad.prepare_nodes", prepare_nodes)
+    if dry_mode is not None:
+        config.ci_artifacts.set_config("tests.mcad.dry_mode", dry_mode)
+    if visualize is not None:
+        config.ci_artifacts.set_config("tests.mcad.visualize", visualize)
+    if capture_prom is not None:
+        config.ci_artifacts.set_config("tests.mcad.capture_prom", capture_prom)
+    if prepare_nodes is not None:
+        config.ci_artifacts.set_config("tests.mcad.prepare_nodes", prepare_nodes)
 
     try:
         failed_tests = []
@@ -432,6 +326,7 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 
+# ---
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
@@ -442,41 +337,29 @@ def generate_plots_from_pr_args():
     visualize.download_and_generate_visualizations()
 
 
+@entrypoint(ignore_secret_path=True)
+def generate_plots(results_dirname):
+    visualize.generate_from_dir(str(results_dirname))
+
+
+# ---
+
+@entrypoint()
+def prepare_ci():
+    """
+    Prepares the cluster and the namespace for running the tests
+    """
+
+    return prepare.prepare_ci()
+
+
 @entrypoint()
 def cleanup_cluster():
     """
     Restores the cluster to its original state
     """
-    # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    odh_namespace = config.ci_artifacts.get_config("odh.namespace")
-
-    has_kfdef = run.run("oc get kfdef -n not-a-namespace --ignore-not-found", check=False).returncode == 0
-    if has_kfdef:
-        for resource in config.ci_artifacts.get_config("odh.kfdefs"):
-            run.run(f"oc delete -f {resource} --ignore-not-found -n {odh_namespace}")
-    else:
-        logging.info("Cluster doesn't know the Kfdef CRD, skipping KFDef deletion")
-
-    for operator in config.ci_artifacts.get_config("odh.operators"):
-        ns = "openshift-operators" if operator['namespace'] == "all" else operator['namespace']
-        run.run(f"oc delete sub {operator['name']} -n {ns} --ignore-not-found ")
-        run.run(f"oc delete csv -loperators.coreos.com/{operator['name']}.{ns}= -n {ns} --ignore-not-found ")
-
-    fill_namespace = config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.namespace")
-
-    run.run(f"oc delete ns {odh_namespace} {fill_namespace} --ignore-not-found")
-
-    cleanup_mcad_test()
-
-    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
-        cleanup_gpu_operator()
-
-
-@entrypoint(ignore_secret_path=True)
-def generate_plots(results_dirname):
-    visualize.generate_from_dir(str(results_dirname))
-
+    return prepare.cleanup_cluster()
 
 # ---
 

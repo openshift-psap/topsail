@@ -43,15 +43,26 @@
     command:
       oc get
          -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
-    register: deployments
-    until: deployments.stdout | length > 0
-    retries: 100
+         -ojsonpath={.status.controllerfirsttimestamp}
+    register: has_controllerfirsttimestamp_cmd
+    until: has_controllerfirsttimestamp_cmd.stdout | length > 0
+    retries: 200
+    delay: 15
+
+  - name: Wait for the canary AppWrapper to be scheduled
+    command:
+      oc get
+         -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
+         -ojsonpath={.status.state}
+    register: aw_state_cmd
+    until: aw_state_cmd.stdout == "Completed"
+    retries: 200
     delay: 15
   always:
   - name: Create a configmap for the end of the test timestamp
     shell: |
       oc create configmap end -n "{{ codeflare_cleanup_appwrappers_namespace }}" ;
-      oc get cm start end -oyaml -n "{{ codeflare_cleanup_appwrappers_namespace }}" > "{{ artifact_extra_logs_dir }}/start_end_cm.yaml"
+      oc get cm start deleted end -oyaml -n "{{ codeflare_cleanup_appwrappers_namespace }}" > "{{ artifact_extra_logs_dir }}/start_end_cm.yaml"
       oc delete cm start deleted end -n "{{ codeflare_cleanup_appwrappers_namespace }}" --ignore-not-found;
 
   - name: Capture the state of the AppWrappers

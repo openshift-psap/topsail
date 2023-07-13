@@ -40,4 +40,8 @@ class CompareSpeedReport():
 
         header += ["The plot above shows the number of resources (AppWrappers or Jobs) actually created in the ETCD database, plotted against the time since the beginning of the test. It helps understanding if the resources were created at a normal pace, or, if there are unexpected detays during the creation phase."]
 
+        header += report.Plot_and_Text("Compare Cleanup Speed", args)
+
+        header += ["The plot above shows the number of AppWrappers deleted per seconds.", html.B("This is a _tentative_ to show the cleanup duration (based on the processing of a canary AppWrapper)."), "The actual progress of the clean up is hard to track without MCAD-internal metrics."]
+
         return None, header
