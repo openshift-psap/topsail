@@ -4,3 +4,5 @@ visualize:
   - "report: Error report"
   - "report: Sutest Cluster CPU/Memory Usage"
   - "report: Control Plane Nodes Load"
+  - "Pod execution timeline"
+  - "Pod time distribution"
