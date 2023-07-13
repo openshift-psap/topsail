@@ -46,7 +46,7 @@
          -ojsonpath={.status.controllerfirsttimestamp}
     register: has_controllerfirsttimestamp_cmd
     until: has_controllerfirsttimestamp_cmd.stdout | length > 0
-    retries: 100
+    retries: 200
     delay: 15
 
   - name: Wait for the canary AppWrapper to be scheduled
@@ -56,7 +56,7 @@
          -ojsonpath={.status.state}
     register: aw_state_cmd
     until: aw_state_cmd.stdout == "Completed"
-    retries: 100
+    retries: 200
     delay: 15
   always:
   - name: Create a configmap for the end of the test timestamp
