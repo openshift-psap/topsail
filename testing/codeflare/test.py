@@ -262,7 +262,7 @@ def _run_test_and_visualize(name, test_override_value=None):
     return failed
 
 @entrypoint()
-def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepare_nodes=True):
+def test_ci(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_nodes=None):
     """
     Runs the test from the CI
 
@@ -275,10 +275,14 @@ def test_ci(name=None, dry_mode=False, visualize=True, capture_prom=True, prepar
     """
 
 
-    config.ci_artifacts.set_config("tests.mcad.dry_mode", dry_mode)
-    config.ci_artifacts.set_config("tests.mcad.visualize", visualize)
-    config.ci_artifacts.set_config("tests.mcad.capture_prom", capture_prom)
-    config.ci_artifacts.set_config("tests.mcad.prepare_nodes", prepare_nodes)
+    if dry_mode is not None:
+        config.ci_artifacts.set_config("tests.mcad.dry_mode", dry_mode)
+    if visualize is not None:
+        config.ci_artifacts.set_config("tests.mcad.visualize", visualize)
+    if capture_prom is not None:
+        config.ci_artifacts.set_config("tests.mcad.capture_prom", capture_prom)
+    if prepare_nodes is not None:
+        config.ci_artifacts.set_config("tests.mcad.prepare_nodes", prepare_nodes)
 
     try:
         failed_tests = []
