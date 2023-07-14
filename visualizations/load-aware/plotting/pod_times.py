@@ -17,15 +17,39 @@ def register():
 def generatePodTimes(entry):
     data = []
     for p in entry.results.pods_info:
-        print(p)
-        pod = { 
-            "Start": p.start_time,
+        workload_phase = { 
+            "Start": p.creation_time,
             "End": p.container_finished,
-            "Duration": (p.container_finished - p.start_time).seconds,
+            "Duration": (p.container_finished - p.creation_time).seconds,
             "Pod": p.pod_name,
             "Node": p.hostname
         }
-        data.append(pod)
+        data.append(workload_phase)
+
+    return data
+
+def generatePodTimeline(entry):
+    data = []
+    for p in entry.results.pods_info:
+        print(p)
+        startup_phase = {
+            "Start": p.creation_time,
+            "End": p.containers_ready,
+            "Duration": (p.containers_ready - p.creation_time).seconds,
+            "Pod": p.pod_name,
+            "Node": p.hostname,
+            "Phase": "Preparing"
+        }
+        data.append(startup_phase)
+        workload_phase = { 
+            "Start": p.containers_ready,
+            "End": p.container_finished,
+            "Duration": (p.container_finished - p.containers_ready).seconds,
+            "Pod": p.pod_name,
+            "Node": p.hostname,
+            "Phase": "Running"
+        }
+        data.append(workload_phase)
 
     return data
 
@@ -90,7 +114,7 @@ class ExecutionTimeline():
         for entry in common.Matrix.all_records(settings, setting_lists):
             break
 
-        data = generatePodTimes(entry)
+        data = generatePodTimeline(entry)
 
         if not data:
             return None, "No data to plot ..."
@@ -100,6 +124,7 @@ class ExecutionTimeline():
 
         fig = px.timeline(df, x_start="Start",
                           x_end="End", y="Pod",
+                          color="Phase",
                           hover_data=["Start", "End", "Duration", "Pod", "Node"],
                           category_orders={"Pod": df["Pod"].tolist()})
         fig.update_layout(xaxis_title="Time")
