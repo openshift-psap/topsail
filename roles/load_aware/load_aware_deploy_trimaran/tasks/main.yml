@@ -30,7 +30,6 @@
     oc get route thanos-querier -n openshift-monitoring -o json
       | jq -r '.spec.host'
   register: thanos_endpoint_cmd
-
 - name: Format the Thanos Endpoint
   set_fact:
     thanos_endpoint: "https://{{ thanos_endpoint_cmd.stdout }}"
@@ -89,21 +88,27 @@
   retries: 20
   until: trimaran_running.stdout == 'Running'
 
-- name: Deploy test pod with Trimaran
-  shell:
-    oc apply -f {{ trimaran_test_pod }} -n trimaran
+- name: Ensure a pod can be scheduled
+  block:
+  - name: Deploy test pod with Trimaran
+    shell:
+      oc apply -f {{ trimaran_test_pod }} -n trimaran
 
-- name: Ensure the Trimaran test pods completes
-  shell:
-    oc get pod trimaran-test -n trimaran
-      | awk 'NR > 1 {print $3}'
-  register: trimaran_test_pod_state
-  delay: 5
-  retries: 20
-  until: trimaran_test_pod_state.stdout == 'Completed'
+  - name: Ensure the Trimaran test pods completes
+    shell:
+      oc get pod trimaran-test -n trimaran
+        | awk 'NR > 1 {print $3}'
+    register: trimaran_test_pod_state
+    delay: 5
+    retries: 20
+    until: trimaran_test_pod_state.stdout == 'Completed'
+  always:
+  - name: Dump trimaran info
+    shell: |
+      oc get pod trimaran-test -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.yaml"
+      oc describe pod trimaran-test -n trimaran > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.desc"
+      oc get all -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/all-trimaran.yaml"
 
-- name: Dump trimaran info
-  shell: |
-    oc get pod trimaran-test -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.yaml"
-    oc describe pod trimaran-test -n trimaran > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.desc"
-    oc get all -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/all-trimaran.yaml"
+  - name: Dump cluster events
+    shell:
+      oc get ev -oyaml -n trimaran > "{{ artifact_extra_logs_dir }}/events.yaml"
