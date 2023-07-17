@@ -34,7 +34,8 @@ def generatePodTimeline(entry):
         print(p)
         startup_phase = {
             "Start": p.creation_time,
-            "End": p.containers_ready,
+            "End": p.container_started,
+            "Creation": p.creation_time,
             "Duration": (p.containers_ready - p.creation_time).seconds,
             "Pod": p.pod_name,
             "Node": p.hostname,
@@ -42,8 +43,9 @@ def generatePodTimeline(entry):
         }
         data.append(startup_phase)
         workload_phase = { 
-            "Start": p.containers_ready,
+            "Start": p.container_started,
             "End": p.container_finished,
+            "Creation": p.creation_time,
             "Duration": (p.container_finished - p.containers_ready).seconds,
             "Pod": p.pod_name,
             "Node": p.hostname,

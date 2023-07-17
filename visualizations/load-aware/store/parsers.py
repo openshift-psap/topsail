@@ -183,12 +183,20 @@ def _parse_pod_times(dirname):
               finishedAt =  datetime.datetime.strptime(
                   containerStatus["state"]["terminated"]["finishedAt"],
                   K8S_TIME_FMT)
+              startedAt = datetime.datetime.strptime(
+                      containerStatus["state"]["terminated"]["startedAt"],
+                      K8S_TIME_FMT)
           except KeyError: continue
 
           # take the last container_finished found
           if ("container_finished" not in pod_time.__dict__
               or pod_time.container_finished < finishedAt):
               pod_time.container_finished = finishedAt
+
+        # take the last container_finished found
+          if ("container_started" not in pod_time.__dict__
+              or pod_time.container_started < startedAt):
+              pod_time.container_started = startedAt
 
     return pod_times
 
