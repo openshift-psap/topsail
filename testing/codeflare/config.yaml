@@ -38,7 +38,8 @@ ci_presets:
   cpu_light_unschedulable:
     tests.mcad.tests_to_run: [cpu_light_unschedulable]
     tests.mcad.test_multiple_values.enabled: true
-    tests.mcad.test_multiple_values.settings["aw.count"]: [200, 350, 500]
+    tests.mcad.test_multiple_values.settings:
+      "aw.count": [200, 350, 500]
 
   cpu_light_scheduling:
     tests.mcad.tests_to_run: [cpu_light_scheduling, cpu_light_scheduling_job_mode]
@@ -50,7 +51,8 @@ ci_presets:
 
     tests.mcad.tests_to_run: [cpu_light_all_schedulable]
     tests.mcad.test_multiple_values.enabled: true
-    tests.mcad.test_multiple_values.settings["aw.count"]: [100, 300]
+    tests.mcad.test_multiple_values.settings:
+      "aw.count": [100, 300]
 
   icelake:
     extends: [metal]
