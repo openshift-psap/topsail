@@ -26,8 +26,8 @@
     oc get pod -lapp=mcad-mcad -n opendatahub -ojson > "{{ artifact_extra_logs_dir }}/mcad-pods.json"
 
 - name: Ensure that there are no Jobs in the namespace
-  command:
-    oc delete jobs --all -n "{{ codeflare_generate_mcad_load_namespace }}"
+  shell:
+    oc delete jobs --all -n "{{ codeflare_generate_mcad_load_namespace }}" > /dev/null
 
 - name: Create the src artifacts directory
   file:
