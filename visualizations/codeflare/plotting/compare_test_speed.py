@@ -32,29 +32,35 @@ class CompareTestSpeed():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        if not ordered_vars:
+            return {}, "This plot cannot run without any variables ..."
 
-        if len(variables) != 1:
-            return None, f"{self.name} only works with one variable. Got {len(variables)}: {', '.join(variables)}"
-
-        variable = list(variables)[0]
+        first_variable = ordered_vars[0]
+        variables.remove(first_variable)
 
         text = []
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
             schedule_object_kind = "Job" if entry.results.test_case_properties.job_mode else "AppWrapper"
 
-            test_cfg_setting = entry.settings.__dict__[variable]
+            test_cfg_setting = entry.settings.__dict__[first_variable]
 
             test_duration = (entry.results.test_start_end_time.end - entry.results.test_start_end_time.start).total_seconds() / 60
+            name = entry.get_name(variables)
+            text += [html.Code(f"{first_variable}={test_cfg_setting}{f' {name}' if variables else ''}"), html.Br()]
 
-            text += [html.Code(f"{variable}={test_cfg_setting}")]
-            def add_data(what, speed):
+            def add_data(_what, speed):
+                nonlocal text
+
+                what = _what if not variables else \
+                    f"{_what} | {name}"
+
                 data.append(dict(
                     speed = speed,
                     what = what,
                 ))
-                data[-1][variable] = test_cfg_setting
-                text.append(f" | {what}: {speed:.2f} {schedule_object_kind}s/minutes")
+                data[-1][first_variable] = test_cfg_setting
+                text += [f"• {_what}: {speed:.2f} {schedule_object_kind}s/minute", html.Br()]
 
             launch_speed = entry.results.test_case_properties.aw_count / entry.results.test_case_properties.launch_duration
             add_data("Launch speed", launch_speed)
@@ -71,11 +77,11 @@ class CompareTestSpeed():
             text += [html.Br()]
 
         df = pd.DataFrame(data)
-        fig = px.line(df, x=variable, y="speed", color="what", markers=True)
+        fig = px.line(df, x=first_variable, y="speed", color="what", markers=True)
 
-        fig.update_layout(title=f"Comparison of the processing speed<br>over different {variable} values", title_x=0.5,)
-        fig.update_layout(yaxis_title=f"Processing speed, in {schedule_object_kind}s/minutes ▸")
-        fig.update_layout(xaxis_title=variable)
+        fig.update_layout(title=f"Comparison of the processing speed<br>over different {first_variable} values", title_x=0.5,)
+        fig.update_layout(yaxis_title=f"Processing speed, in resources/minute ▸")
+        fig.update_layout(xaxis_title=first_variable)
 
         return fig, html.P(text)
 
@@ -92,12 +98,6 @@ class CompareLaunchSpeed():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-
-        if len(variables) != 1:
-            return None, f"{self.name} only works with one variable. Got {len(variables)}: {', '.join(variables)}"
-
-        variable = list(variables)[0]
-
         text = []
 
         data = []
@@ -112,7 +112,8 @@ class CompareLaunchSpeed():
         df = pd.DataFrame(data)
         fig = px.line(df, x="Delta", y="Count", color="Name")
 
-        fig.update_layout(title=f"Comparison of the <i>actual</i> launch progress<br>for different {variable} values", title_x=0.5,)
+        var_list = ", ".join(variables)
+        fig.update_layout(title=f"Comparison of the <i>actual</i> launch progress<br>for different {{{var_list}}} values", title_x=0.5,)
         fig.update_layout(yaxis_title="Number of resources ETCD-created")
         fig.update_layout(xaxis_title="Time since the beginning (in minutes)")
 
@@ -131,11 +132,11 @@ class CompareCleanupSpeed():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        if not ordered_vars:
+            return {}, "This plot cannot run without any variables ..."
 
-        if len(variables) != 1:
-            return None, f"{self.name} only works with one variable. Got {len(variables)}: {', '.join(variables)}"
-
-        variable = list(variables)[0]
+        first_variable = ordered_vars[0]
+        variables.remove(first_variable)
 
         text = []
 
@@ -144,30 +145,41 @@ class CompareCleanupSpeed():
             name = entry.get_name(variables)
             prev_time = None
             prev_event = None
-            test_cfg_setting = entry.settings.__dict__[variable]
+            test_cfg_setting = entry.settings.__dict__[first_variable]
 
-            text += [html.Code(f"{variable}={test_cfg_setting}")]
+            text += [html.Code(f"{first_variable}={test_cfg_setting}{f' {name}' if variables else ''}"), html.Br()]
+
+            if entry.results.test_case_properties.job_mode:
+                text += ["• Job mode enabled, cleanup time not relevant.", html.Br(), html.Br()]
+                continue
 
             for event, time in sorted(entry.results.cleanup_times.__dict__.items(), key=lambda kv: kv[1]):
                 if prev_time is not None:
                     duration = (time - prev_time).total_seconds() / 60
+                    event_name = f"{prev_event} -> {event}"
+                    if variables:
+                        event_name += f" | {entry.get_name(variables)}"
 
                     data.append(dict(
                         Name = name,
                         Duration = duration,
-                        Event = f"{prev_event} -> {event}",
+                        Event = event_name,
                     ))
-                    data[-1][variable] = test_cfg_setting
-                    text.append(f" | {prev_event} -> {event}: {duration:.1f} minutes")
+                    data[-1][first_variable] = test_cfg_setting
+                    text += [f"• {prev_event} -> {event}: {duration:.1f} minutes", html.Br()]
                 prev_time = time
                 prev_event = event
             text.append(html.Br())
 
         df = pd.DataFrame(data)
-        fig = px.area(df, x=variable, y="Duration", color="Event", markers=True)
+        if len(ordered_vars) == 1:
+            fig = px.area(df, x=first_variable, y="Duration", color="Event", markers=True)
+        else:
+            fig = px.line(df, x=first_variable, y="Duration", color="Event", markers=True)
 
-        fig.update_layout(title=f"Comparison of the AppWrapper cleanup time<br>for different {variable} values", title_x=0.5,)
+        var_list = ", ".join(ordered_vars)
+        fig.update_layout(title=f"Comparison of the resource cleanup time<br>for different {{{var_list}}} values", title_x=0.5,)
         fig.update_layout(yaxis_title=f"⏴ Clean up time")
-        fig.update_layout(xaxis_title=variable)
+        fig.update_layout(xaxis_title=first_variable)
 
         return fig, html.P(text)
