@@ -64,6 +64,9 @@ def Plot(name, args, msg_p=None):
         logging.error(f"Report: Stats '{name}' does not exist. Skipping it.")
         stats = None
 
+    ordered_vars, settings, setting_lists, variables, cfg = args
+    args = list(ordered_vars), dict(settings), copy.deepcopy(setting_lists), list(variables), cfg
+
     try:
         fig, msg = stats.do_plot(*args) if stats else (None, f"Stats '{name}' does not exit :/")
     except Exception as e:
