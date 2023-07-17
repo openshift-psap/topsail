@@ -45,8 +45,9 @@ def run_in_background(command, input=None, verbose=True, capture_stdout=False):
         logging.info(f"run in background: {command}")
 
     args = {}
-
-    proc = subprocess.Popen(command, stdin=subprocess.PIPE)
+    args["stdin"] = subprocess.PIPE
+    if capture_stdout: args["stdout"] = subprocess.PIPE
+    proc = subprocess.Popen(command, **args)
     proc.stdin.write(input.encode())
     proc.stdin.close()
 
