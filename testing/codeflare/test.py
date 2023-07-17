@@ -260,6 +260,24 @@ def _run_test_and_visualize(name, test_override_values=None):
     return failed
 
 @entrypoint()
+def run_one_matbench():
+    with open("settings.yaml") as f:
+        settings = yaml.safe_load(f)
+
+    with open("skip", "w") as f:
+        print("Results are in a subdirectory, not here.", file=f)
+
+    name = settings.pop("name")
+
+    with env.TempArtifactDir(os.getcwd()):
+        os.chdir(CI_ARTIFACTS_BASE_DIR)
+
+        failed = _run_test_and_visualize(name, settings)
+
+    sys.exit(1 if failed else 0)
+
+
+@entrypoint()
 def test_ci(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_nodes=None):
     """
     Runs the test from the CI
@@ -374,6 +392,8 @@ class Entrypoint:
 
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
         self.generate_plots = generate_plots
+
+        self.run_one_matbench = run_one_matbench
 
 def main():
     # Print help rather than opening a pager
