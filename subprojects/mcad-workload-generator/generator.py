@@ -205,7 +205,7 @@ def main(dry_run=True,
 
         if not dry_run:
             nonlocal processes
-            processes += [run_in_background("oc apply -f-".split(" "), input=resource_json, verbose=verbose_resource_creation, capture_stdout=not verbose_resource_creation)]
+            processes += [run_in_background("oc create -f-".split(" "), input=resource_json, verbose=verbose_resource_creation, capture_stdout=not verbose_resource_creation)]
 
         return resource_name
 
