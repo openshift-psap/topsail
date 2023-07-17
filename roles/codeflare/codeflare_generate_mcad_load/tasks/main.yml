@@ -117,8 +117,11 @@
       set -o pipefail; set -e;
       jobs_json=$(oc get jobs -n {{ codeflare_generate_mcad_load_namespace }} -ojson)
 
-      oc get jobs -n {{ codeflare_generate_mcad_load_namespace }}
-      oc get pods -ljob-name= -n {{ codeflare_generate_mcad_load_namespace }}
+      if [[ {{ codeflare_generate_mcad_load_aw_count }} -lt 50 ]]; then
+        oc get jobs,pods -n {{ codeflare_generate_mcad_load_namespace }} --no-headers
+      else
+        echo "Too many Jobs, hiding the individual status ..."
+      fi
 
       jobs_count=$(jq '.items | length' <<< $jobs_json)
       jobs_active=$(jq '[.items[] | select(.status.active and .status.active != 0)] | length' <<< $jobs_json)
