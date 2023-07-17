@@ -145,7 +145,7 @@
     # until fatal or done
     until: jobs_completed.rc == 1 or jobs_completed.rc == 0
     # failed when fatal
-    failed_when: jobs_completed.rc == 1
+    failed_when: jobs_completed.rc != 0
     when: codeflare_generate_mcad_load_job_mode
 
   always:
