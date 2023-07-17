@@ -117,7 +117,7 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
     return bool(failed_tests)
 
 
-def _run_test(name, test_artifact_dir_p, test_override_value=None):
+def _run_test(name, test_artifact_dir_p, test_override_values=None):
     dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
     capture_prom = config.ci_artifacts.get_config("tests.mcad.capture_prom")
     prepare_nodes = config.ci_artifacts.get_config("tests.mcad.prepare_nodes")
@@ -135,13 +135,14 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
         except KeyError:
             logging.error(f"Test template {template_name} does not exist. Available templates: {', '.join(test_templates.keys())}")
             raise
+
         cfg = merge(copy.deepcopy(test_template), cfg)
         if "extends" in cfg:
             parents_to_apply += cfg["extends"]
             del cfg["extends"]
 
-    if test_override_value:
-        for key, value in test_override_value.items():
+    if test_override_values:
+        for key, value in test_override_values.items():
             config.set_jsonpath(cfg, key, value)
 
     logging.info("Test configuration: \n"+yaml.dump(cfg))
@@ -226,15 +227,15 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
     return failed
 
 
-def _run_test_and_visualize(name, test_override_value=None):
+def _run_test_and_visualize(name, test_override_values=None):
     failed = True
-    do_test_multiple_values = test_override_value is None and config.ci_artifacts.get_config("tests.mcad.test_multiple_values.enabled")
+    do_test_multiple_values = test_override_values is None and config.ci_artifacts.get_config("tests.mcad.test_multiple_values.enabled")
     try:
         test_artifact_dir_p = [None]
         if do_test_multiple_values:
             failed = _run_test_multiple_values(name, test_artifact_dir_p)
         else:
-            failed = _run_test(name, test_artifact_dir_p, test_override_value)
+            failed = _run_test(name, test_artifact_dir_p, test_override_values)
     finally:
         dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
         if not config.ci_artifacts.get_config("tests.mcad.visualize"):
