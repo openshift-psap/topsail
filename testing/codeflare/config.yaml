@@ -157,9 +157,16 @@ tests:
       matbench_config_file: plot_multiple_tests.yaml
       settings:
         aw.count: [200, 500, 750, 1000]
+        aw.job.job_mode: [true, false]
 
     test_templates:
+      common:
+        aw:
+          job:
+            job_mode: false
+
       common_gpu:
+        extends: [common]
         aw:
           job:
             template_name: gpu_burn
@@ -174,6 +181,7 @@ tests:
         timespan: 5 #minutes
 
       common_cpu:
+        extends: [common]
         aw:
           job:
             template_name: sleeper
@@ -202,9 +210,9 @@ tests:
         timespan: 1 #minutes
 
       common_job_mode:
-         aw:
-           job:
-             run_job_mode: true
+        aw:
+          job:
+            job_mode: true
 
       gpu_all_schedulable:
         extends: [common_gpu, common_all_schedulable]
