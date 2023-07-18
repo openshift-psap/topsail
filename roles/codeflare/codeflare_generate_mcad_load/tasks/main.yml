@@ -26,8 +26,8 @@
     oc get pod -lapp=mcad-mcad -n opendatahub -ojson > "{{ artifact_extra_logs_dir }}/mcad-pods.json"
 
 - name: Ensure that there are no Jobs in the namespace
-  command:
-    oc delete jobs --all -n "{{ codeflare_generate_mcad_load_namespace }}"
+  shell:
+    oc delete jobs --all -n "{{ codeflare_generate_mcad_load_namespace }}" > /dev/null
 
 - name: Create the src artifacts directory
   file:
@@ -117,8 +117,11 @@
       set -o pipefail; set -e;
       jobs_json=$(oc get jobs -n {{ codeflare_generate_mcad_load_namespace }} -ojson)
 
-      oc get jobs -n {{ codeflare_generate_mcad_load_namespace }}
-      oc get pods -ljob-name= -n {{ codeflare_generate_mcad_load_namespace }}
+      if [[ {{ codeflare_generate_mcad_load_aw_count }} -lt 50 ]]; then
+        oc get jobs,pods -n {{ codeflare_generate_mcad_load_namespace }} --no-headers
+      else
+        echo "Too many Jobs, hiding the individual status ..."
+      fi
 
       jobs_count=$(jq '.items | length' <<< $jobs_json)
       jobs_active=$(jq '[.items[] | select(.status.active and .status.active != 0)] | length' <<< $jobs_json)
@@ -142,7 +145,7 @@
     # until fatal or done
     until: jobs_completed.rc == 1 or jobs_completed.rc == 0
     # failed when fatal
-    failed_when: jobs_completed.rc == 1
+    failed_when: jobs_completed.rc != 0
     when: codeflare_generate_mcad_load_job_mode
 
   always:

@@ -20,7 +20,7 @@ def init():
 
 class TempArtifactDir(object):
     def __init__(self, dirname):
-        self.dirname = dirname
+        self.dirname = pathlib.Path(dirname)
         self.previous_dirname = None
 
     def __enter__(self):

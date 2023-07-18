@@ -32,7 +32,7 @@ job_templates:
                 drop: ["ALL"]
               seccompProfile:
                 type: RuntimeDefault
-            runAsNonRoot: true
+              runAsNonRoot: true
 
   gpu_burn:
     apiVersion: batch/v1
@@ -72,7 +72,9 @@ job_templates:
               allowPrivilegeEscalation: false
               capabilities:
                 drop: ["ALL"]
-            runAsNonRoot: true
+              seccompProfile:
+                type: RuntimeDefault
+              runAsNonRoot: true
           volumes:
           - name: entrypoint
             configMap:

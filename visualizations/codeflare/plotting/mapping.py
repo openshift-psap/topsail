@@ -25,10 +25,11 @@ def ResourceMappingTimeline_generate_data(entry):
 
     for pod_time in entry.results.pod_times:
         pod_name = pod_time.pod_friendly_name
-        hostname = pod_time.hostname
 
+        hostname = pod_time.hostname or "No hostname"
         shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "").replace(".ec2.internal", "")
-        finish = pod_time.container_finished or entry.results.test_start_end_time.end
+
+        finish = getattr(pod_time, "container_finished", False) or entry.results.test_start_end_time.end
 
         try:
             hostname_index = hostnames_index(hostname)

@@ -36,7 +36,7 @@ def generate_pod_progress_data(entry, key):
 
     count = 0
     YOTA = datetime.timedelta(microseconds=1)
-    for pod_time in sorted(entry.results.pod_times, key=lambda t: getattr(t, key)):
+    for pod_time in sorted(entry.results.pod_times, key=lambda t: getattr(t, key, 0)):
         if not getattr(pod_time, key, False):
             continue
 

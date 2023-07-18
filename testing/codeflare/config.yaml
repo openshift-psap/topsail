@@ -38,7 +38,8 @@ ci_presets:
   cpu_light_unschedulable:
     tests.mcad.tests_to_run: [cpu_light_unschedulable]
     tests.mcad.test_multiple_values.enabled: true
-    tests.mcad.test_multiple_values.settings["aw.count"]: [200, 350, 500]
+    tests.mcad.test_multiple_values.settings:
+      "aw.count": [200, 350, 500]
 
   cpu_light_scheduling:
     tests.mcad.tests_to_run: [cpu_light_scheduling, cpu_light_scheduling_job_mode]
@@ -50,7 +51,20 @@ ci_presets:
 
     tests.mcad.tests_to_run: [cpu_light_all_schedulable]
     tests.mcad.test_multiple_values.enabled: true
-    tests.mcad.test_multiple_values.settings["aw.count"]: [100, 300]
+    tests.mcad.test_multiple_values.settings:
+      aw.count: [100, 150]
+      aw.job.job_mode: [true, false]
+
+  gpu_all_schedulable:
+    clusters.sutest.worker.fill_resources.enabled: false
+    tests.mcad.want_gpu: true
+    gpu.time_sharing.replicas: 100
+    tests.mcad.tests_to_run: [gpu_all_schedulable]
+    tests.mcad.test_multiple_values.enabled: true
+    tests.mcad.test_multiple_values.settings:
+      aw.count: [1, 33, 66, 100, 200]
+      aw.job.job_mode: [true, false]
+      node.count: 2
 
   icelake:
     extends: [metal]
@@ -157,9 +171,16 @@ tests:
       matbench_config_file: plot_multiple_tests.yaml
       settings:
         aw.count: [200, 500, 750, 1000]
+        aw.job.job_mode: [true, false]
 
     test_templates:
+      common:
+        aw:
+          job:
+            job_mode: false
+
       common_gpu:
+        extends: [common]
         aw:
           job:
             template_name: gpu_burn
@@ -174,6 +195,7 @@ tests:
         timespan: 5 #minutes
 
       common_cpu:
+        extends: [common]
         aw:
           job:
             template_name: sleeper
@@ -202,9 +224,9 @@ tests:
         timespan: 1 #minutes
 
       common_job_mode:
-         aw:
-           job:
-             run_job_mode: true
+        aw:
+          job:
+            job_mode: true
 
       gpu_all_schedulable:
         extends: [common_gpu, common_all_schedulable]

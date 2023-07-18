@@ -16,11 +16,13 @@ import fire
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TESTING_UTILS_DIR = TESTING_THIS_DIR.parent / "utils"
+CI_ARTIFACTS_BASE_DIR = TESTING_THIS_DIR.parent.parent
+
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
 
 sys.path.append(str(TESTING_THIS_DIR.parent))
-from common import env, config, run, visualize
+from common import env, config, run, visualize, matbenchmark
 
 import prepare
 
@@ -81,43 +83,39 @@ def merge(a, b, path=None):
 
 
 def _run_test_multiple_values(name, test_artifact_dir_p):
-    failed_tests = []
+    visualize.prepare_matbench()
 
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test_multiple_values"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
+        benchmark_values = config.ci_artifacts.get_config("tests.mcad.test_multiple_values.settings")
 
-        for key, values in config.ci_artifacts.get_config("tests.mcad.test_multiple_values.settings").items():
-                logging.info(f"Running the test with multiple values: {key} -> {values}")
+        path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()]) + "_"
 
-                for value in values:
-                    next_count = env.next_artifact_index()
-                    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test_value__{key}={value}"):
-                        logging.info(f"Running the test with value: {key} -> {value}")
-                        with open(env.ARTIFACT_DIR / "settings.test_override_value", "w") as f:
-                            print(f"{key}={value}", file=f)
+        expe_name = "expe"
+        json_benchmark_file = matbenchmark.prepare_benchmark_file(
+            path_tpl=path_tpl,
+            script_tpl=f"{sys.argv[0]} run_one_matbench",
+            stop_on_error=config.ci_artifacts.get_config("tests.mcad.stop_on_error"),
+            common_settings=dict(name=name),
+            expe_name=expe_name,
+            benchmark_values=benchmark_values
+        )
 
-                        try:
-                            failed = _run_test_and_visualize(name, {key: value})
-                            if failed:
-                                failed_tests.append(f"{name}|{key}={value}")
-                        except Exception as e:
-                            import bdb
-                            if isinstance(e, bdb.BdbQuit):
-                                raise
+        logging.info(f"Benchmark configuration to run: \n{yaml.dump(json_benchmark_file, sort_keys=False)}")
 
-                            failed_tests.append(f"{name}|{key}={value}")
-                            if config.ci_artifacts.get_config("tests.mcad.stop_on_error"):
-                                logging.info("Error detected, and tests.mcad.stop_on_error is set. Aborting.")
-                                raise
+        benchmark_file = matbenchmark.save_benchmark_file(json_benchmark_file)
 
-    if failed_tests:
-        logging.error(f"_run_test_multiple_values: caught exception(s) in [{', '.join(failed_tests)}].")
+        args = matbenchmark.set_benchmark_args(benchmark_file, expe_name)
 
-    return bool(failed_tests)
+        failed = matbenchmark.run_benchmark(args)
+        if failed:
+            logging.error(f"_run_test_multiple_values: matbench benchmark failed :/")
+
+    return failed
 
 
-def _run_test(name, test_artifact_dir_p, test_override_value=None):
+def _run_test(name, test_artifact_dir_p, test_override_values=None):
     dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
     capture_prom = config.ci_artifacts.get_config("tests.mcad.capture_prom")
     prepare_nodes = config.ci_artifacts.get_config("tests.mcad.prepare_nodes")
@@ -135,13 +133,14 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
         except KeyError:
             logging.error(f"Test template {template_name} does not exist. Available templates: {', '.join(test_templates.keys())}")
             raise
+
         cfg = merge(copy.deepcopy(test_template), cfg)
         if "extends" in cfg:
             parents_to_apply += cfg["extends"]
             del cfg["extends"]
 
-    if test_override_value:
-        for key, value in test_override_value.items():
+    if test_override_values:
+        for key, value in test_override_values.items():
             config.set_jsonpath(cfg, key, value)
 
     logging.info("Test configuration: \n"+yaml.dump(cfg))
@@ -186,10 +185,9 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
             extra["aw_count"] = cfg["aw"]["count"]
             extra["timespan"] = cfg["timespan"]
 
-            job_mode = cfg["aw"]["job"].get("run_job_mode")
+            job_mode = cfg["aw"]["job"].get("job_mode")
 
-            if job_mode in (True, False): # skip if None
-                extra["job_mode"] = job_mode
+            extra["job_mode"] = bool(job_mode)
 
             if dry_mode:
                 logging.info(f"Running the load test '{name}' with {extra} {'in Job mode' if job_mode else ''} ...")
@@ -227,15 +225,15 @@ def _run_test(name, test_artifact_dir_p, test_override_value=None):
     return failed
 
 
-def _run_test_and_visualize(name, test_override_value=None):
+def _run_test_and_visualize(name, test_override_values=None):
     failed = True
-    do_test_multiple_values = test_override_value is None and config.ci_artifacts.get_config("tests.mcad.test_multiple_values.enabled")
+    do_test_multiple_values = test_override_values is None and config.ci_artifacts.get_config("tests.mcad.test_multiple_values.enabled")
     try:
         test_artifact_dir_p = [None]
         if do_test_multiple_values:
             failed = _run_test_multiple_values(name, test_artifact_dir_p)
         else:
-            failed = _run_test(name, test_artifact_dir_p, test_override_value)
+            failed = _run_test(name, test_artifact_dir_p, test_override_values)
     finally:
         dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
         if not config.ci_artifacts.get_config("tests.mcad.visualize"):
@@ -260,6 +258,24 @@ def _run_test_and_visualize(name, test_override_value=None):
 
     logging.info(f"_run_test_and_visualize: Test '{name}' {'failed' if failed else 'passed'}.")
     return failed
+
+@entrypoint()
+def run_one_matbench():
+    with open("settings.yaml") as f:
+        settings = yaml.safe_load(f)
+
+    with open("skip", "w") as f:
+        print("Results are in a subdirectory, not here.", file=f)
+
+    name = settings.pop("name")
+
+    with env.TempArtifactDir(os.getcwd()):
+        os.chdir(CI_ARTIFACTS_BASE_DIR)
+
+        failed = _run_test_and_visualize(name, settings)
+
+    sys.exit(1 if failed else 0)
+
 
 @entrypoint()
 def test_ci(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_nodes=None):
@@ -376,6 +392,8 @@ class Entrypoint:
 
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
         self.generate_plots = generate_plots
+
+        self.run_one_matbench = run_one_matbench
 
 def main():
     # Print help rather than opening a pager

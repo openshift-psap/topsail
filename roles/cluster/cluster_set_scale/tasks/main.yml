@@ -36,21 +36,21 @@
   debug:
     msg: "Current sum of replicas is {{ current_replicas_sum }}, wanted {{ scale }}"
 
+- name: Get the names of existing worker machinesets with type {{ machineset_instance_type }}
+  command:
+    oc get machineset -n openshift-machine-api
+    {% if machineset_name | length > 0 %}
+           "{{ machineset_name }}"
+           -ojsonpath={.metadata.name}
+    {% else %}
+       -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.metadata.name}{"\n"}{end}'
+    {% endif %}
+  register: oc_get_machinesets
+  failed_when: not oc_get_machinesets.stdout
+
 - when: current_replicas_sum != scale
   name: Change all {{ machineset_instance_type }} machinesets replicas to have sum {{ scale }}
   block:
-  - name: Get the names of existing worker machinesets with type {{ machineset_instance_type }}
-    command:
-      oc get machineset -n openshift-machine-api
-      {% if machineset_name | length > 0 %}
-             "{{ machineset_name }}"
-             -ojsonpath={.metadata.name}
-      {% else %}
-         -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.metadata.name}{"\n"}{end}'
-      {% endif %}
-    register: oc_get_machinesets
-    failed_when: not oc_get_machinesets.stdout
-
   - name: Do not downscale any machinesets other than the first one, unless the user used force
     block:
     - name: Calculate sum of replicas of machinesets with type {{ machineset_instance_type }}, except for the first one
@@ -146,7 +146,7 @@
 
   - name: Capture the status of the machinesets
     shell: |
-      oc get machineset -n openshift-machine-api -l 'machine.openshift.io/cluster-api-machineset={{ item }}' > {{ artifact_extra_logs_dir }}/machineset_{{ item }}.status
+      oc get machineset/{{ item }} -n openshift-machine-api  > {{ artifact_extra_logs_dir }}/machineset_{{ item }}.status
     failed_when: false
     loop: "{{ oc_get_machinesets.stdout_lines }}"
 
