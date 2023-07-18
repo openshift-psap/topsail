@@ -16,7 +16,9 @@ ci_presets:
     clusters.create.ocp.deploy_cluster.target: cluster_light
 
   light:
-    extends: [light_cluster, tiny_uniform_load]
+    extends: [light_cluster]
+    load_aware.scale_test.duration: 60.0
+    load_aware.scale_test.instances: 5
 
   metal:
     clusters.sutest.is_metal: true
@@ -34,8 +36,8 @@ ci_presets:
 
   tiny_uniform_load:
     load_aware.scale_test.distribution: "uniform"
-    load_aware.scale_test.duration: 10.0
-    load_aware.scale_test.instances: 2
+    load_aware.scale_test.duration: 30.0
+    load_aware.scale_test.instances: 3
 
   # launch 30 build pods over 5 minutes according to the poisson distribution
   small_poisson_load:
