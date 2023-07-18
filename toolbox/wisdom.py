@@ -119,3 +119,4 @@ class Wisdom:
         """
 
         return RunAnsibleRole(locals())
+

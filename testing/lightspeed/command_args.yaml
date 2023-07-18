@@ -12,13 +12,36 @@ rhods deploy_ods:
   channel: {{ rhods.catalog.channel }}
   version: {{ rhods.catalog.version }}
 
-wisdom_deploy_model:
-  replicas: {{replicas}}
-  s3_secret_path: {{s3_creds_model_secret_path}}
-  quay_pull_secret_path: {{quay_secret_path}}
-  protos_path: {{protos_path}}
-  tester_imagestream_name: {{tester_imagestream_name}}
-  tester_image_tag: {{tester_image_tag}}
+wisdom deploy_model:
+  replicas: {{tests.config.replicas}}
+  s3_secret_path: {{tests.config.s3_creds_model_secret_path}}
+  quay_pull_secret_path: {{tests.config.quay_secret_path}}
+  protos_path: {{tests.config.protos_path}}
+  tester_imagestream_name: {{tests.config.tester_imagestream_name}}
+  tester_image_tag: {{tests.config.tester_image_tag}}
+  
+wisdom warmup_model:
+  protos_path: {{tests.config.protos_path}}
+  tester_imagestream_name: {{tests.config.tester_imagestream_name}}
+  tester_image_tag: {{tests.config.tester_image_tag}}
 
+wisdom run_llm_load_test:
+  requests: {{tests.config.requests}}
+  concurrency: {{tests.config.concurrency}}
+  replicas: {{tests.config.replicas}}
+  dataset_path: {{tests.config.dataset_path}}
+  s3_secret_path: {{tests.config.s3_creds_results_secret_path}}
+  protos_path: {{tests.config.protos_path}}
+  tester_imagestream_name: {{tests.config.tester_imagestream_name}}
+  tester_image_tag: {{tests.config.tester_image_tag}}
 
-            --namespace='{test_namespace}' \
+wisdom run_llm_load_test_multiplexed:
+  requests: {{tests.config.requests}}
+  concurrency: {{tests.config.concurrency}}
+  replicas: {{tests.config.replicas}}
+  max_duration: {{tests.config.max_duration}} #TODO
+  dataset_path: {{tests.config.dataset_path}}
+  s3_secret_path: {{tests.config.s3_creds_results_secret_path}}
+  protos_path: {{tests.config.protos_path}}
+  tester_imagestream_name: {{tests.config.tester_imagestream_name}}
+  tester_image_tag: {{tests.config.tester_image_tag}}

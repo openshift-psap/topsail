@@ -22,6 +22,16 @@ spec:
           value: "true"
         - name: LOG_LEVEL
           value: debug3
+        # CAPACITY and DEFAULT_MODEL_SIZE numbers for pre-converted ONNX models with reported size ~41081MiB
+        - name: INFERENCE_PLUGIN_MODEL_MESH_CAPACITY
+          value: "62914560000"
+        - name: INFERENCE_PLUGIN_MODEL_MESH_DEFAULT_MODEL_SIZE
+          value: "31457280000"
+
+        # limits model loads/unloads from ModelMesh
+        - name: INFERENCE_PLUGIN_MODEL_MESH_MAX_LOADING_CONCURRENCY
+          value: "1"
+
         - name: RUNTIME_PORT
           value: "8087"
         - name: GATEWAY_PORT
@@ -30,6 +40,7 @@ spec:
           value: "2113"
         - name: RUNTIME_LOCAL_MODELS_DIR
           value: "/models/"
+
         # use RPM based scaling in ModelMesh
         # FIXME: these configs will be the default in the release after 0.21.0
         - name: INFERENCE_PLUGIN_MODEL_MESH_LATENCY_BASED_AUTOSCALING_ENABLED
@@ -37,38 +48,19 @@ spec:
         - name: RUNTIME_SERVER_THREAD_POOL_SIZE
           value: "16"
 
-        # limits model loads/unloads from ModelMesh
-        - name: INFERENCE_PLUGIN_MODEL_MESH_MAX_LOADING_CONCURRENCY
-          value: "1"
-        # CAPACITY and DEFAULT_MODEL_SIZE numbers for pre-converted ONNX models with reported size ~41081MiB
-        - name: INFERENCE_PLUGIN_MODEL_MESH_CAPACITY
-          value: "62914560000"
-        - name: INFERENCE_PLUGIN_MODEL_MESH_DEFAULT_MODEL_SIZE
-          value: "31457280000"
-        # # CAPACITY and DEFAULT_MODEL_SIZE numbers for PyTorch models with size reported size ~14442MiB
-        # - name: CAPACITY
-        #   value: "20971520000"
-        # - name: DEFAULT_MODEL_SIZE
-        #   value: "10485760000"
-
-        # # load timeout defaults to 120 which is ok for the pre-converted ONNX
-        # # models; it must be increased if doing conversion at load time
-        # - name: DISTRIBUTED_CONFIG_BACKENDS_TGIS_LOCAL_LOAD_TIMEOUT
-        #   value: "400"
-        # - name: MODEL_LOADING_TIMEOUT_MS
-        #   value: "400005"
-
         # TGIS env vars
+        - name: CUDA_PAD_TO_MULT_OF_8
+          value: "false"
         - name: MAX_BATCH_SIZE
           value: "16"
         - name: MAX_SEQUENCE_LENGTH
           value: "2048"
         - name: NUM_GPUS
           value: "1"
-        - name: CUDA_VISIBLE_DEVICES
-          value: "0"
         - name: MERGE_ONNX_GRAPHS
           value: "true"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
         - name: TRANSFORMERS_CACHE
           value: /tmp/transformers_cache
         - name: HUGGINGFACE_HUB_CACHE

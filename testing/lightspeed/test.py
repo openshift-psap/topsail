@@ -22,15 +22,18 @@ sys.path.append(str(TESTING_ANSIBLE_LLM_DIR.parent))
 from common import env, config, run, rhods
 
 initialized = False
-def init(ignore_secret_path=False):
+def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     global initialized
     if initialized:
-        logging.info("Already initialized.")
+        logging.debug("Already initialized.")
         return
     initialized = True
 
     env.init()
     config.init(TESTING_ANSIBLE_LLM_DIR)
+
+    if apply_preset_from_pr_args:
+        config.ci_artifacts.apply_preset_from_pr_args()
 
     if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
@@ -38,11 +41,11 @@ def init(ignore_secret_path=False):
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
 
 
-def entrypoint(ignore_secret_path=False):
+def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     def decorator(fct):
         @functools.wraps(fct)
         def wrapper(*args, **kwargs):
-            init(ignore_secret_path)
+            init(ignore_secret_path, apply_preset_from_pr_args)
             fct(*args, **kwargs)
 
         return wrapper
@@ -68,6 +71,7 @@ def prepare_ci():
     """
     Prepares the cluster for running pipelines scale tests.
     """
+
     install_rhods()
     run.run("./run_toolbox.py rhods wait_ods")
     max_replicas = max_gpu_nodes()
@@ -82,31 +86,21 @@ def prepare_ci():
 
     return None
 
-protos_path = WISDOM_PROTOS_SECRET_PATH
-s3_creds_model_secret_path = WISDOM_SECRET_PATH / "s3-secret.yaml"
-quay_secret_path = WISDOM_SECRET_PATH / "quay-secret.yaml"
-dataset_path = WISDOM_SECRET_PATH / "llm-load-test-dataset.json"
-s3_creds_results_secret_path = WISDOM_SECRET_PATH / "credentials"
+def init_config():
+    config.ci_artifacts.set_config("tests.config.s3_creds_model_secret_path", str(WISDOM_SECRET_PATH / "s3-secret.yaml"))
+    config.ci_artifacts.set_config("tests.config.quay_secret_path", str(WISDOM_SECRET_PATH / "quay-secret.yaml"))
+    config.ci_artifacts.set_config("tests.config.protos_path", str(WISDOM_PROTOS_SECRET_PATH))
 
-test_namespace="wisdom"
-tester_imagestream_name="llm-load-test"
-tester_image_tag="wisdom-ci"
+    config.ci_artifacts.set_config("tests.config.s3_creds_results_secret_path", str(WISDOM_SECRET_PATH / "credentials"))
+    config.ci_artifacts.set_config("tests.config.dataset_path", str(WISDOM_SECRET_PATH / "llm-load-test-dataset.json"))
+
 
 def deploy_and_warmup_model(replicas):
-    run.run(f"./run_toolbox.py wisdom deploy_model {replicas} \
-        {s3_creds_model_secret_path} \
-        {quay_secret_path} \
-        {protos_path} \
-        {tester_imagestream_name} \
-        {tester_image_tag} \
-        --namespace='{test_namespace}' \
-        --")
+    config.ci_artifacts.set_config("tests.config.replicas", replicas)
+    run.run(f"./run_toolbox.py from_config wisdom deploy_model")
 
-        # Warmup
-    run.run(f"./run_toolbox.py wisdom warmup_model {protos_path} \
-        {tester_imagestream_name} \
-        {tester_image_tag} \
-        --namespace='{test_namespace}'")
+    # Warmup
+    run.run(f"./run_toolbox.py from_config wisdom warmup_model")
 
 @entrypoint()
 def run_ci():
@@ -115,6 +109,16 @@ def run_ci():
 
     """
     logging.info("In loadtest_run")
+
+    init_config()
+
+    test_namespace=config.ci_artifacts.get_config("tests.config.test_namespace")
+    tester_imagestream_name=config.ci_artifacts.get_config("tests.config.tester_imagestream_name")
+    tester_image_tag=config.ci_artifacts.get_config("tests.config.tester_image_tag")
+
+    # Purely to test:
+    protos_path=config.ci_artifacts.get_config("tests.config.protos_path")
+    print(f"Protos path: {protos_path}")
 
     run.run(f"./run_toolbox.py utils build_push_image --namespace='{test_namespace}'  --git_repo='https://github.com/openshift-psap/llm-load-test.git' --git_ref='main' --dockerfile_path='build/Containerfile' --image_local_name='{tester_imagestream_name}' --tag='{tester_image_tag}'  --")
 
@@ -128,18 +132,12 @@ def run_ci():
         deploy_and_warmup_model(replicas)
 
         total_requests = 32 * concurrency
+        config.ci_artifacts.set_config("tests.config.concurrency", concurrency)
+        config.ci_artifacts.set_config("tests.config.requests", total_requests)
 
         logging.info(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and total_requests: {total_requests}")
 
-        run.run(f"./run_toolbox.py wisdom run_llm_load_test {total_requests} \
-            {concurrency} \
-            {replicas} \
-            {dataset_path} \
-            {s3_creds_results_secret_path} \
-            {protos_path} \
-            {tester_imagestream_name} \
-            {tester_image_tag} \
-            --namespace='{test_namespace}'")
+        run.run(f"./run_toolbox.py from_config wisdom run_llm_load_test")
         
     dataset_path = WISDOM_SECRET_PATH / "llm-load-test-multiplexed-dataset.json"
     multiplexed_test_cases = config.ci_artifacts.get_config("tests.ansible_llm.multiplexed_test_cases")
@@ -152,19 +150,11 @@ def run_ci():
         # we set max requests high, and rely on the timeout after 15m to end the test.
         requests_per_instance = 256
         max_duration = "15m"
+        config.ci_artifacts.set_config("tests.config.max_duration", max_duration)
 
-        logging.info(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and total_requests: {total_requests}")
+        logging.info(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and requests_per_instance: {requests_per_instance}")
 
-        run.run(f"./run_toolbox.py wisdom run_llm_load_test_multiplexed {requests_per_instance} \
-            {concurrency} \
-            {replicas} \
-            {max_duration} \
-            {dataset_path} \
-            {s3_creds_results_secret_path} \
-            {protos_path} \
-            {tester_imagestream_name} \
-            {tester_image_tag} \
-            --namespace='{test_namespace}'")
+        run.run(f"./run_toolbox.py from_config wisdom run_llm_load_test_multiplexed")
 
     pass
 

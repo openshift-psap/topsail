@@ -31,7 +31,7 @@
       "context": "",
       "concurrency": {{ wisdom_llm_load_test_multiplexed_concurrency }},
       "requests": {{ wisdom_llm_load_test_multiplexed_requests }},
-      "max_duration": {{ wisdom_llm_load_test_multiplexed_max_duration }},
+      "max_duration": "{{ wisdom_llm_load_test_multiplexed_max_duration }}"
     },
     "input_dataset": {
       "filename": "/etc/load_test_dataset/dataset.json",
