@@ -82,7 +82,6 @@ def _run_test(test_artifact_dir_p, scheduler_name):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
 
         with open(env.ARTIFACT_DIR / "settings", "w") as f:
-            print(f"load_aware_scale_test=true", file=f)
             print(f"scheduler={scheduler_name}", file=f)
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:

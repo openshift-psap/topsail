@@ -102,6 +102,10 @@
     delay: 5
     retries: 20
     until: trimaran_test_pod_state.stdout == 'Completed'
+  rescue:
+    - name: Ensure error is raised
+      fail:
+        msg: "{{ ansible_failed_result }}"
   always:
   - name: Dump trimaran info
     shell: |

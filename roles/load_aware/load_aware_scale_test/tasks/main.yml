@@ -18,7 +18,13 @@
       "'Running' not in load_aware_workload.stdout
         and 'Pending' not in load_aware_workload.stdout
         and 'Failed' not in load_aware_workload.stdout
-        and 'ContainerCreating' not in load_aware_workload.stdout"
+        and 'ContainerCreating' not in load_aware_workload.stdout
+        and 'ImagePullBackOff' not in load_aware_workload.stdout"
+
+  rescue:
+    - name: Ensure error is raised
+      fail:
+        msg: "{{ ansible_failed_result }}"
   always:
   - name: Dump info about scheduler resources
     shell: |
