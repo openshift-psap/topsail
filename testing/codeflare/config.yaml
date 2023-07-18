@@ -62,7 +62,7 @@ ci_presets:
     tests.mcad.tests_to_run: [gpu_all_schedulable]
     tests.mcad.test_multiple_values.enabled: true
     tests.mcad.test_multiple_values.settings:
-      aw.count: [100, 200]
+      aw.count: [1, 33, 66, 100, 200]
       aw.job.job_mode: [true, false]
       node.count: 2
 
