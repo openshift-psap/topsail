@@ -133,7 +133,7 @@
       fi
 
       if [[ "$jobs_active" != 0 ]]; then
-         echo "$jobs_active Jobs still active. Continue waiting ...."
+         echo "$jobs_active/$jobs_count Jobs still active. Continue waiting ...."
          exit 2 # retry
       fi
 
