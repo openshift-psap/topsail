@@ -35,7 +35,7 @@
        | grep -v "==" || true
   register: daemonsets_not_ready
   until: not daemonsets_not_ready.stdout
-  retries: 6
+  retries: 30
   delay: 10
   failed_when: daemonsets_not_ready.stdout | length > 0
 
