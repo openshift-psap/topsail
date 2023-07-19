@@ -56,7 +56,7 @@ else:
 
 with open(plan_file, "w") as plan_yaml:
     times_list = np.sort(times).tolist()
-    workloads = ["make"] * (instances+1)//2 + ["sleep"] * instances//2
-    permutation = rng.permutation(workloads)
-    schedule = [{"time": time_pair[0], "workload": time_pair[1]} for time_pair in zip(times_list, workloads]
+    workloads = ["make"] * ((instances+1)//2) + ["sleep"] * (instances//2)
+    permutation = rng.permutation(np.array(workloads)).tolist()
+    schedule = [{"time": time_pair[0], "workload": time_pair[1]} for time_pair in zip(times_list, permutation)]
     yaml.dump(schedule, plan_yaml)

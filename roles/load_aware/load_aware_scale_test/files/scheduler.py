@@ -42,7 +42,7 @@ s = sched.scheduler(time.monotonic, time.sleep)
 scheduler_name = "trimaran-scheduler" if scheduler == "trimaran" else "default-scheduler"
 
 for i, event in enumerate(schedule_times):
-    print(f"adding n{i} to the schedule at delay={t}")
+    print(f"adding n{i} to the schedule at {event}")
     s.enter(event["time"], 1, run_pod, argument=(i, scheduler_name, event["workload"]))
 
 print(f"running schedule at {time.time()}")
