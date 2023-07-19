@@ -17,3 +17,6 @@ load_aware_scale_test_namespace: load-aware
 # name of the scheduler to use (default, trimaran)
 load_aware_scale_test_scheduler: default
 
+# how long the sleep pod should sleep
+load_aware_scale_test_sleep_duration: 180
+
