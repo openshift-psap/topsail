@@ -9,6 +9,6 @@ spec:
   containers:
   - name: test-container
     image: load-aware/coreutils:make
-    imagePullPolicy: Always
+    imagePullPolicy: IfNotPresent
     command: ["make", "test"]
   restartPolicy: Never
