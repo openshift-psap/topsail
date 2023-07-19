@@ -121,6 +121,7 @@ load_aware:
     instances: 10
     namespace: load-aware
     scheduler: default
+    sleep_duration: 180
   schedulers:
   - default
   - trimaran

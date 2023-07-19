@@ -24,6 +24,7 @@ load_aware scale_test:
   instances: {{ load_aware.scale_test.instances }}
   namespace: {{ load_aware.scale_test.namespace }}
   scheduler: {{ load_aware.scale_test.scheduler }}
+  sleep_duration: {{ load_aware.scale_test.sleep_duration }}
 
 utils build_push_image/deps:
   namespace: {{ load_aware.scale_test.namespace }}
