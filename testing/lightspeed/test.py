@@ -147,9 +147,9 @@ def run_ci():
         # There will be <concurrency> num instances of ghz. However, some instances
         # requests will be much smaller and will be answered more quickly.
         # To ensure that the requests are multiplexed throughout the run, 
-        # we set max requests high, and rely on the timeout after 15m to end the test.
+        # we set max requests high, and rely on the timeout after 10m to end the test.
         requests_per_instance = 256
-        max_duration = "15m"
+        max_duration = "10m"
         config.ci_artifacts.set_config("tests.config.max_duration", max_duration)
 
         logging.info(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and requests_per_instance: {requests_per_instance}")
