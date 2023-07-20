@@ -6,6 +6,13 @@
 
 # ---
 
+__aliases:
+  sutest_preload_image: &sutest_preload_image
+    node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
+    node_selector_value: "{{ clusters.sutest.compute.machineset.taint.value }}"
+    pod_toleration_effect: {{ clusters.sutest.compute.machineset.taint.effect }}
+    pod_toleration_key: {{ clusters.sutest.compute.machineset.taint.key }}
+
 cluster capture_environment/sample:
   _none: true # nothing to configure :/
 
@@ -42,11 +49,13 @@ cluster preload_image/deps:
   namespace: {{ load_aware.scale_test.namespace }}
   name: deps
   image: coreutils:deps
+  <<: *sutest_preload_image
 
 cluster preload_image/make:
   namespace: {{ load_aware.scale_test.namespace }}
   name: make
   image: coreutils:make
+  <<: *sutest_preload_image
 
 sutest/cluster set_project_annotation/node_selector:
   key: openshift.io/node-selector

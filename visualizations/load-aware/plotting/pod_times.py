@@ -17,6 +17,8 @@ def register():
 def generatePodTimes(entry):
     data = []
     for p in entry.results.pods_info:
+        # We will need to generate different plots for each workload type in the future
+        if "sleep" in p.pod_name: continue
         workload_phase = { 
             "Start": p.creation_time,
             "End": p.container_finished,
