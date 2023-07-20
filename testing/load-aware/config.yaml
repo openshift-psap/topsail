@@ -22,11 +22,9 @@ ci_presets:
 
   metal:
     clusters.sutest.is_metal: true
-    clusters.driver.is_metal: true
 
   not_metal:
     clusters.sutest.is_metal: false
-    clusters.driver.is_metal: false
 
   target_load_packing:
     load_aware.plugin: "TargetLoadPacking"
