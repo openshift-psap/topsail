@@ -46,6 +46,9 @@ class PythonPerformance():
             else:
                 threshold = None
 
+            if not entry.results.notebook_benchmark:
+                continue
+            
             measures = entry.results.notebook_benchmark["measures"]
 
             for measure_idx, measure in enumerate(measures):

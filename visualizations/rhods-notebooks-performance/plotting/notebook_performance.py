@@ -42,6 +42,9 @@ class NotebookPerformance():
         if cfg__show_user_details:
             times_data = []
 
+        if not entry.results.notebook_benchmark:
+            return
+        
         measures = entry.results.notebook_benchmark["measures"]
 
         for measure_idx, measure in enumerate(measures):
