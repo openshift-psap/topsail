@@ -37,3 +37,32 @@ utils build_push_image/make:
   image_local_name: coreutils
   tag: make
   dockerfile_path: testing/load-aware/images/Containerfile.make
+
+cluster preload_image/deps:
+  namespace: {{ load_aware.scale_test.namespace }}
+  name: deps
+  image: coreutils:deps
+
+cluster preload_image/make:
+  namespace: {{ load_aware.scale_test.namespace }}
+  name: make
+  image: coreutils:make
+
+sutest/cluster set_project_annotation/node_selector:
+  key: openshift.io/node-selector
+  value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"
+  project: {{ load_aware.scale_test.namespace }}
+
+sutest/cluster set_project_annotation/toleration:
+  key: scheduler.alpha.kubernetes.io/defaultTolerations
+  value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.driver.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
+  project: {{ load_aware.scale_test.namespace }}
+
+sutest/cluster set_scale:
+  instance_type: {{ clusters.create.ocp.compute.type }}
+  name: {{ clusters.sutest.compute.machineset.name }}
+{% if clusters.sutest.compute.dedicated %}
+  taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
+{% endif %}
+  spot: {{ clusters.sutest.compute.machineset.spot }}
+  scale: {{ clusters.sutest.compute.machineset.count }}
