@@ -59,6 +59,12 @@ cluster preload_image/make:
   image: {{ scale_test_imagestream }}:make
   <<: *sutest_preload_image
 
+cluster preload_image/sleep:
+  namespace: {{ load_aware.scale_test.namespace }}
+  name: sleep
+  image: fedora:latest
+  <<: *sutest_preload_image
+
 sutest/cluster set_project_annotation/node_selector:
   key: openshift.io/node-selector
   value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"

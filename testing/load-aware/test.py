@@ -78,6 +78,7 @@ def prepare_ci():
     run.run("./run_toolbox.py from_config utils build_push_image --suffix make")
     run.run("./run_toolbox.py from_config cluster preload_image --suffix deps")
     run.run("./run_toolbox.py from_config cluster preload_image --suffix make")
+    run.run("./run_toolbox.py from_config cluster preload_image --suffix sleep") # The sleep image is just fedora:latest
 
 def _run_test(test_artifact_dir_p, scheduler_name):
     """
