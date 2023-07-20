@@ -171,7 +171,7 @@
          -n "{{ notebook_namespace }}"
          --no-headers | awk '{print $3}'
     register: wait_notebook_pod_start
-    retries: 20
+    retries: 60
     delay: 15
     until: wait_notebook_pod_start.stdout == "Running" or wait_notebook_pod_start.stdout == "CrashLoopBackOff"
     failed_when: wait_notebook_pod_start.stdout != "Running"
