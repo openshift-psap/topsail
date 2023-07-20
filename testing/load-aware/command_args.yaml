@@ -1,3 +1,5 @@
+{% set scale_test_imagestream = "image-registry.openshift-image-registry.svc:5000/"+ load_aware.scale_test.namespace +"/coreutils" %}
+
 {% set secrets_location = false | or_env(secrets.dir.env_key) %}
 {% if not secrets_location %}
   {{ ("ERROR: secrets_location must be defined (secrets.dir.name="+ secrets.dir.name|string +" or env(secrets.dir.env_key=" + secrets.dir.env_key|string + ")) ") | raise_exception }}
@@ -48,13 +50,13 @@ utils build_push_image/make:
 cluster preload_image/deps:
   namespace: {{ load_aware.scale_test.namespace }}
   name: deps
-  image: coreutils:deps
+  image: {{ scale_test_imagestream }}:deps
   <<: *sutest_preload_image
 
 cluster preload_image/make:
   namespace: {{ load_aware.scale_test.namespace }}
   name: make
-  image: coreutils:make
+  image: {{ scale_test_imagestream }}:make
   <<: *sutest_preload_image
 
 sutest/cluster set_project_annotation/node_selector:
