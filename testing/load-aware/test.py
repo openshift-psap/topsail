@@ -62,6 +62,9 @@ def prepare_ci():
     Prepares the cluster and the namespace for running Load-Aware scale tests
     """
 
+    test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
+    run.run(f"oc create ns {test_namespace}")
+
     run.run("./run_toolbox.py from_config cluster set_scale --prefix='sutest'")
     run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector")
     run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration")
@@ -71,8 +74,6 @@ def prepare_ci():
     run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
     run.run("./run_toolbox.py from_config load_aware deploy_trimaran")
 
-    test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
-    run.run(f"oc create ns {test_namespace}")
     run.run("./run_toolbox.py from_config utils build_push_image --suffix deps")
     run.run("./run_toolbox.py from_config utils build_push_image --suffix make")
     run.run("./run_toolbox.py from_config cluster preload_image --suffix deps")
