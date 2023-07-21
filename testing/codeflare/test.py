@@ -120,7 +120,9 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
     capture_prom = config.ci_artifacts.get_config("tests.mcad.capture_prom")
     prepare_nodes = config.ci_artifacts.get_config("tests.mcad.prepare_nodes")
 
-    test_templates = config.ci_artifacts.get_config("tests.mcad.test_templates")
+    test_templates_file = TESTING_THIS_DIR / config.ci_artifacts.get_config("tests.mcad.test_templates_file")
+    with open(test_templates_file) as f:
+        test_templates = yaml.safe_load(f)
 
     parents_to_apply = [name]
     cfg = {"templates": []}
