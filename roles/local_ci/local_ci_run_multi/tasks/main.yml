@@ -62,7 +62,7 @@
     cluster_prometheus_db_mode: reset
     cluster_prometheus_db_label: deployment=prometheus
     cluster_prometheus_db_namespace: redhat-ods-monitoring
-  when: local_ci_run_multi_capture_prom_db | bool
+  when: local_ci_run_multi_capture_rhods_prom_db | bool
 
 - name: Create the CI Job
   command: oc apply -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
@@ -104,7 +104,7 @@
     cluster_prometheus_db_namespace: redhat-ods-monitoring
     cluster_prometheus_db_directory: /prometheus/data
     cluster_prometheus_db_dump_name_prefix: prometheus_rhods
-  when: local_ci_run_multi_capture_prom_db | bool
+  when: local_ci_run_multi_capture_rhods_prom_db | bool
   ignore_errors: yes
 
 - name: Get the status of the CI Job
