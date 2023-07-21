@@ -35,3 +35,9 @@ utils_build_push_image_context_dir: /
 # Type: Float
 utils_build_push_image_memory:
 
+# Base image to use, instead of the FROM image specified in the Dockerfile.
+utils_build_push_image_from_image: null
+
+# Base imagestreamtag to use, instead of the FROM image specified in the Dockerfile.
+utils_build_push_image_from_imagetag: null
+
