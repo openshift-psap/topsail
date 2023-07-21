@@ -58,10 +58,9 @@ def generatePodTimeline(entry):
     return data
 
 class PodTimes():
-    def __init__(self, workload):
-        self.name = f"Pod time distribution ({workload})"
+    def __init__(self):
+        self.name = f"Pod time distribution"
         self.id_name = self.name
-        self.workload = workload
 
         table_stats.TableStats._register_stat(self)
         common.Matrix.settings["stats"].add(self.name)
