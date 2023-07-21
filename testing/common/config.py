@@ -132,7 +132,7 @@ class Config:
         logging.info(f"set_config: {jsonpath} --> {value}")
 
         with open(self.config_path, "w") as f:
-            yaml.dump(self.config, f, indent=4)
+            yaml.dump(self.config, f, indent=4, default_flow_style=False, sort_keys=False)
 
         if (shared_dir := os.environ.get("SHARED_DIR")) and (shared_dir_path := pathlib.Path(shared_dir)) and shared_dir_path.exists():
 
