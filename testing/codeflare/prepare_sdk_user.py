@@ -14,7 +14,8 @@ def prepare():
     
     namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
     prepare_user_pods.prepare_user_pods(namespace)
-    
+
+
 def cleanup_cluster():
     """
     Restores the cluster to its original state

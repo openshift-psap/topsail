@@ -133,7 +133,11 @@ def cleanup_cluster():
 @entrypoint()
 def mcad_run_one_matbench():
     test_mcad.run_one_matbench()
-    
+
+
+@entrypoint()
+def sdk_user_run_one():
+    test_sdk_user.run_one()
 
 # ---
 
@@ -153,6 +157,8 @@ class Entrypoint:
         self.generate_plots = generate_plots
 
         self.mcad_run_one_matbench = mcad_run_one_matbench
+        self.sdk_user_run_one = sdk_user_run_one
+
 
 def main():
     # Print help rather than opening a pager

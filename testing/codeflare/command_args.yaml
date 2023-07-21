@@ -67,3 +67,30 @@ cluster deploy_minio_s3_server:
   namespace: "{{ base_image.namespace }}"
   secret_properties_file: {{ s3_ldap_password_location }}
   bucket_name: {{ base_image.minio.bucket_name }}
+
+#
+# Test Codeflare/SDK user
+#
+
+local_ci run_multi/sdk_user:
+  user_count: "{{ tests.sdk_user.user_count }}"
+  namespace: "{{ base_image.namespace }}"
+  istag: "{{ base_image.imagestream }}:{{ base_image.extend.tag }}"
+  service_account: "{{ base_image.user.service_account }}"
+  state_signal_redis_server: {{ redis_internal_address }}
+
+  secret_name: "{{ secrets.dir.name }}"
+  secret_env_key: "{{ secrets.dir.env_key }}"
+
+  ci_command: "codeflare test sdk_user_run_one"
+
+  retrieve_artifacts: true
+  minio_bucket_name: "{{ base_image.minio.bucket_name }}"
+  minio_namespace: "{{ base_image.namespace }}"
+  minio_secret_key_key: s3_ldap.passwords
+
+  sleep_factor: {{ tests.sdk_user.sleep_factor }}
+  user_batch_size: {{ tests.sdk_user.user_batch_size }}
+
+  git_pull: null #refs/pull/716/head
+  capture_prom_db: "{{ tests.capture_prom }}"
