@@ -84,7 +84,7 @@ class Utils:
                 sys.exit(1)
 
         if "/" in tag or "_" in tag:
-            logging.error("the tag cannot contain '/' or '_' characters")
+            logging.error(f"the tag ('{tag}') cannot contain '/' or '_' characters")
             sys.exit(1)
 
         toolbox_name_suffix = os.environ.get("ARTIFACT_TOOLBOX_NAME_SUFFIX", "")
