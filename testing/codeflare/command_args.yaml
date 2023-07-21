@@ -50,6 +50,15 @@ base_image/utils build_push_image:
   git_ref: "{{ base_image.repo.ref }}" # may be overwritten at runtime with the PR ref
   dockerfile_path: "{{ base_image.repo.dockerfile_path }}"
 
+extended_image/utils build_push_image:
+  namespace: "{{ base_image.namespace }}"
+  image_local_name: "{{ base_image.imagestream }}"
+  tag: "{{ base_image.extend.tag }}"
+  _istag: "{{ base_image.imagestream }}:{{ base_image.extend.tag }}"
+
+  dockerfile_path: "{{ base_image.extend.local_dockerfile_path }}"
+  from_imagetag: "{{ base_image.imagestream }}:{{ base_image.repo.tag }}"
+  
 cluster deploy_redis_server:
 {% set redis_internal_address = "redis."+base_image.namespace+".svc" %}
   namespace: "{{ base_image.namespace }}"

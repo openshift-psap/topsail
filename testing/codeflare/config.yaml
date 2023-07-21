@@ -162,6 +162,10 @@ base_image: # only used in sdk_user test mode
     ref: main
     ref_prefer_pr: true
     dockerfile_path: build/Dockerfile
+  extend:
+    enabled: true
+    local_dockerfile_path: testing/codeflare/images/Containerfile.codeflare_sdk
+    tag: codeflare-sdk
   user:
     service_account: ci-artifacts
     role: cluster-admin

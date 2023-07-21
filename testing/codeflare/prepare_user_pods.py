@@ -43,6 +43,12 @@ def prepare_base_image_container(namespace):
     else:
         run.run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
 
+    if not config.ci_artifacts.get_config("base_image.extend.enabled"):
+        logging.info("Base image extention not enabled.")
+        return
+
+    run.run(f"./run_toolbox.py from_config utils build_push_image --prefix extended_image")
+
         
 def prepare_user_pods(namespace):
     config.ci_artifacts.set_config("base_image.namespace", namespace)
