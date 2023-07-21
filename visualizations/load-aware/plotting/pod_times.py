@@ -17,14 +17,13 @@ def register():
 def generatePodTimes(entry):
     data = []
     for p in entry.results.pods_info:
-        # We will need to generate different plots for each workload type in the future
-        if "sleep" in p.pod_name: continue
         workload_phase = { 
             "Start": p.creation_time,
             "End": p.container_finished,
             "Duration": (p.container_finished - p.creation_time).seconds,
             "Pod": p.pod_name,
-            "Node": p.hostname
+            "Node": p.hostname,
+            "Workload": p.workload
         }
         data.append(workload_phase)
 
@@ -33,7 +32,6 @@ def generatePodTimes(entry):
 def generatePodTimeline(entry):
     data = []
     for p in entry.results.pods_info:
-        print(p)
         startup_phase = {
             "Start": p.creation_time,
             "End": p.container_started,
@@ -41,6 +39,7 @@ def generatePodTimeline(entry):
             "Duration": (p.container_started - p.creation_time).seconds,
             "Pod": p.pod_name,
             "Node": p.hostname,
+            "Workload": p.workload,
             "Phase": "Preparing"
         }
         data.append(startup_phase)
@@ -51,6 +50,7 @@ def generatePodTimeline(entry):
             "Duration": (p.container_finished - p.container_started).seconds,
             "Pod": p.pod_name,
             "Node": p.hostname,
+            "Workload": p.workload,
             "Phase": "Running"
         }
         data.append(workload_phase)
@@ -58,9 +58,10 @@ def generatePodTimeline(entry):
     return data
 
 class PodTimes():
-    def __init__(self):
-        self.name = "Pod time distribution"
+    def __init__(self, workload):
+        self.name = f"Pod time distribution ({workload})"
         self.id_name = self.name
+        self.workload = workload
 
         table_stats.TableStats._register_stat(self)
         common.Matrix.settings["stats"].add(self.name)
@@ -69,7 +70,7 @@ class PodTimes():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        print(settings)
+
         cnt = common.Matrix.count_records(settings, setting_lists)
         if cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
@@ -77,7 +78,8 @@ class PodTimes():
         for entry in common.Matrix.all_records(settings, setting_lists):
             break
 
-        data = generatePodTimes(entry)
+        cfg__workload = cfg.get("workload", False)
+        data = filter(lambda pod: pod["Workload"] == cfg__workload, generatePodTimes(entry))
 
         if not data:
             return None, "No data to plot ..."
@@ -90,7 +92,7 @@ class PodTimes():
                            hover_data=df.columns)
         fig.update_layout(xaxis_title="Pod time to complete (seconds)")
 
-        title = f"Distribution of the runtime for coreutils build pods"
+        title = f"Distribution of the runtime for {cfg__workload} pods"
 
         fig.update_layout(title=title, title_x=0.5)
 

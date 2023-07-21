@@ -2,13 +2,15 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: sleep-pod-n{}
+  labels:
+    workload: sleep
   annotations:
     alpha.image.policy.openshift.io/resolve-names: '*'
 spec:
   schedulerName: "{}"
   containers:
   - name: sleep-container
-    image: fedora:latest
+    image: registry.access.redhat.com/ubi8/ubi
     imagePullPolicy: IfNotPresent
     command: ["sleep", "{}"]
   restartPolicy: Never

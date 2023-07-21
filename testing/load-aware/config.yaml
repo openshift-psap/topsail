@@ -17,6 +17,7 @@ ci_presets:
     
   light:
     extends: [light_cluster]
+    cluster.sutest.compute.machineset.count: 1
     load_aware.scale_test.duration: 60.0
     load_aware.scale_test.instances: 5
 

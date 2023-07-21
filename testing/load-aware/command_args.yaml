@@ -62,7 +62,7 @@ cluster preload_image/make:
 cluster preload_image/sleep:
   namespace: {{ load_aware.scale_test.namespace }}
   name: sleep
-  image: fedora:latest
+  image: registry.access.redhat.com/ubi8/ubi
   <<: *sutest_preload_image
 
 sutest/cluster set_project_annotation/node_selector:

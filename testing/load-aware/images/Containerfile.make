@@ -1,4 +1,4 @@
-FROM fedora:latest
+FROM registry.fedoraproject.org/fedora:latest
 
 RUN dnf update -y && \
   dnf install -y make git gettext-devel autoconf automake bison gettext gperf m4 texinfo texinfo-tex patch wget xz gcc
