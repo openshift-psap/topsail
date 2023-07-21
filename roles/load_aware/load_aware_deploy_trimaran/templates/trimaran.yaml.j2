@@ -32,9 +32,14 @@ stringData:
             cpu: "{{ load_aware_deploy_trimaran_default_requests_cpu }}"
           defaultRequestsMultiplier: "{{ load_aware_deploy_trimaran_default_target_requests_multiplier }}"
           targetUtilization: {{ load_aware_deploy_trimaran_target_utilization }}
-{% else %}
+{% elif load_aware_deploy_trimaran_plugin == "LoadVariationRiskBalancing" %}
           safeVarianceMargin: {{ load_aware_deploy_trimaran_safe_variance_margin }}
           safeVarianceSensitivity: {{ load_aware_deploy_trimaran_safe_variance_sensitivity }}
+{% else %}
+          smoothingWindowSize: {{ load_aware_deploy_trimaran_smoothing_window_size }}
+          riskLimitWeights:
+            cpu: {{ load_aware_deploy_trimaran_risk_limit_weights_cpu }}
+            memory: {{ load_aware_deploy_trimaran_risk_limit_weights_memory }}
 {% endif %}
           metricProvider:
             type: Prometheus

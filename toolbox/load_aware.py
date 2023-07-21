@@ -10,7 +10,17 @@ class Load_Aware:
 
     @AnsibleRole("load_aware_deploy_trimaran")
     @AnsibleMappedParams
-    def deploy_trimaran(self, log_level=1, plugin="TargetLoadPacking", default_requests_cpu="2000m", default_target_requests_multiplier="2", target_utilization=70, safe_variance_margin=1, safe_variance_sensitivity=2):
+    def deploy_trimaran(self, log_level=1,
+                        plugin="TargetLoadPacking",
+                        default_requests_cpu="2000m",
+                        default_target_requests_multiplier="2",
+                        target_utilization=70,
+                        safe_variance_margin=1,
+                        safe_variance_sensitivity=2,
+                        smoothing_window_size=5,
+                        risk_limit_weights_cpu=0.5,
+                        risk_limit_weights_memory=0.5
+                        ):
         """
         Role to deploy the Trimaran load aware scheduler
 
@@ -24,7 +34,7 @@ class Load_Aware:
             safe_variance_sensitivity: LoadVariationRiskBalancing setting
         """
 
-        if plugin not in ("TargetLoadPacking", "LoadVariationRiskBalancing"):
+        if plugin not in ("TargetLoadPacking", "LoadVariationRiskBalancing", "LowRiskOverCommitment"):
             print(f"Can't deploy Trimaran with unknown plugin: {plugin}")
             sys.exit(1)
 
@@ -35,9 +45,13 @@ class Load_Aware:
             print(f"default_requests_cpu: {default_requests_cpu}")
             print(f"default_target_requests_multiplier: {default_target_requests_multiplier}")
             print(f"target_utilization: {target_utilization}")
-        else:
+        elif plugin == "LoadVariationRiskBalancing":
             print(f"safe_variance_margin: {safe_variance_margin}")
             print(f"safe_variance_sensitivity: {safe_variance_sensitivity}")
+        else:
+            print(f"smoothing_window_size: {smoothing_window_size}")
+            print(f"risk_limit_weights_cpu: {risk_limit_weights_cpu}")
+            print(f"risk_limit_weights_memory: {risk_limit_weights_memory}")
 
         print(f"Deploying Trimaran with log level {log_level}")
 
