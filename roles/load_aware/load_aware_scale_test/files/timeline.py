@@ -37,9 +37,7 @@ def bimodal_times(n, rng, mean1=-1.0, mean2=1.0, stddev=0.3, start=0.0, end=60.0
     times = times - times.min()
     return times * (end/times.max()) + start
 
-
 rng = np.random.default_rng(123456789)
-
 times = ""
 
 if distribution == "poisson":
@@ -57,4 +55,8 @@ else:
     sys.exit(1)
 
 with open(plan_file, "w") as plan_yaml:
-    yaml.dump(np.sort(times).tolist(), plan_yaml)
+    times_list = np.sort(times).tolist()
+    workloads = ["make"] * ((instances+1)//2) + ["sleep"] * (instances//2)
+    permutation = rng.permutation(np.array(workloads)).tolist()
+    schedule = [{"time": time_pair[0], "workload": time_pair[1]} for time_pair in zip(times_list, permutation)]
+    yaml.dump(schedule, plan_yaml)

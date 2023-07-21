@@ -6,7 +6,7 @@
   block:
   - name: Run test workload with scheduler and load timeline
     shell:
-      python3 {{ pod_start_scheduler }} {{ load_aware_scale_test_scheduler }} {{ load_aware_scale_test_namespace }} "{{ artifact_extra_logs_dir }}/schedule_plan.yaml" "{{ artifact_extra_logs_dir }}/schedule_execution.yaml"
+      python3 {{ pod_start_scheduler }} {{ load_aware_scale_test_scheduler }} {{ load_aware_scale_test_namespace }} "{{ artifact_extra_logs_dir }}/schedule_plan.yaml" "{{ artifact_extra_logs_dir }}/schedule_execution.yaml" {{ load_aware_scale_test_sleep_duration }}
 
   - name: Wait for workloads to finish
     shell:

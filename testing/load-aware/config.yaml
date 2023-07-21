@@ -14,19 +14,18 @@ ci_presets:
 
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
-
+    
   light:
     extends: [light_cluster]
+    cluster.sutest.compute.machineset.count: 1
     load_aware.scale_test.duration: 60.0
     load_aware.scale_test.instances: 5
 
   metal:
     clusters.sutest.is_metal: true
-    clusters.driver.is_metal: true
 
   not_metal:
     clusters.sutest.is_metal: false
-    clusters.driver.is_metal: false
 
   target_load_packing:
     load_aware.plugin: "TargetLoadPacking"
@@ -89,23 +88,13 @@ clusters:
     compute:
       dedicated: true
       machineset:
-        name: rhods-pipelines
-        count: null
+        name: workload-pods
+        count: 3
         taint:
-          key: only-rhods-pipelines
+          key: only-workload-pods
           value: "yes"
           effect: NoSchedule
-  driver:
-    is_metal: false
-    compute:
-      dedicated: true
-      machineset:
-        name: test-pods
-        count: null
-        taint:
-          key: only-test-pods
-          value: "yes"
-          effect: NoSchedule
+
   cleanup_on_exit: false
 load_aware:
   log_level: 1
@@ -121,6 +110,7 @@ load_aware:
     instances: 10
     namespace: load-aware
     scheduler: default
+    sleep_duration: 180
   schedulers:
   - default
   - trimaran

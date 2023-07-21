@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: coreutils-test-pod-n{}
+  name: sleep-pod-n{}
   labels:
-    workload: test
+    workload: sleep
   annotations:
     alpha.image.policy.openshift.io/resolve-names: '*'
 spec:
   schedulerName: "{}"
   containers:
-  - name: test-container
-    image: load-aware/coreutils:make
+  - name: sleep-container
+    image: registry.access.redhat.com/ubi8/ubi
     imagePullPolicy: IfNotPresent
-    command: ["make", "test"]
+    command: ["sleep", "{}"]
   restartPolicy: Never

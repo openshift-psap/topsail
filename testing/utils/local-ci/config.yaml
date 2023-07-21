@@ -110,3 +110,10 @@ workloads:
     steps:
       test:
         command: codeflare test test_ci
+
+  load-aware-light:
+    command_group: load-aware
+    test_args:
+    steps:
+      test:
+        command: load-aware test test_ci

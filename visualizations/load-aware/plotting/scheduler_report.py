@@ -98,10 +98,17 @@ class SchedulerReport():
         header += [html.H1("Performance of Load-Aware Scheduling")]
         header += ["Performance metrics to evaluate load-aware scheduling"]
 
-        for plot in ["Pod time distribution", "Pod execution timeline"]:
-            header += [html.H1(f"{plot}")]
-            header += Plot_and_Text(plot, args)
+        header += [html.H1(f"Pod time distribution")]
+
+        for workload in ["make", "sleep"]:
+            header += [html.H2(f"{workload} workload pods")]
+            header += Plot_and_Text("Pod time distribution", set_config(dict(workload=workload), args))
             header += html.Br()
             header += html.Br()
+
+        header += [html.H1(f"Pod execution timeline")]
+        header += Plot_and_Text("Pod execution timeline", args)
+        header += html.Br()
+        header += html.Br()
 
         return None, header

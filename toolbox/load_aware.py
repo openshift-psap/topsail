@@ -58,7 +58,7 @@ class Load_Aware:
 
     @AnsibleRole("load_aware_scale_test")
     @AnsibleMappedParams
-    def scale_test(self, distribution="poisson", duration=60.0, instances=10, namespace="load-aware", scheduler="default"):
+    def scale_test(self, distribution="poisson", duration=60.0, instances=10, namespace="load-aware", scheduler="default", sleep_duration=180):
         """
         Role to run a scale test with a given scheduler
 
@@ -68,6 +68,7 @@ class Load_Aware:
             instances: how many of the workload to launch, at the moment, this is the number of test pods
             namespace: which namespace to run the scale test in (must already exist)
             scheduler: name of the scheduler to use (default, trimaran)
+            sleep_duration: how long the sleep pod should sleep
         """
 
         if distribution not in ("poisson", "normal", "bimodal", "gamma", "uniform"):
