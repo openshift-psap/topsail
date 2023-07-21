@@ -77,3 +77,7 @@
 
 - name: Delete the llm-load-test Pod if it exists
   command: oc delete --ignore-not-found -f "{{ artifact_extra_logs_dir }}/src/001_llm_load_test_pod.yml" -n {{ wisdom_llm_load_test_multiplexed_namespace }}
+
+- name: Ensure that llm-load-test Pod succeeded
+  fail: msg="llm-load-test Pod failed"
+  when: load_test_wait.stdout == "Error" or load_test_wait.stdout == "Failed"
