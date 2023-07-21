@@ -18,7 +18,7 @@ sys.path.append(str(TESTING_THIS_DIR.parent))
 from common import env, config
 
 import prepare_mcad, test_mcad
-
+import prepare_sdk_user, test_sdk_user
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -62,11 +62,12 @@ def test_ci():
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode == "mcad":
         return test_mcad.test()
-
+    elif test_mode == "sdk_user":
+        return test_sdk_user.test()
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
-    
+
 @entrypoint()
 def mcad_test(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_nodes=None):
     """
@@ -81,7 +82,7 @@ def mcad_test(name=None, dry_mode=None, visualize=None, capture_prom=None, prepa
     """
 
     test_mcad.test(name, dry_mode, visualize, capture_prom, prepare_nodes)
-    
+
 # ---
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
@@ -108,7 +109,8 @@ def prepare_ci():
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode == "mcad":
         prepare_mcad.prepare()
-
+    elif test_mode == "sdk_user":
+        return prepare_sdk_user.prepare()
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
@@ -122,10 +124,12 @@ def cleanup_cluster():
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode == "mcad":
         return prepare_mcad.cleanup_cluster()
-
+    elif test_mode == "sdk_user":
+        return prepare_sdk_user.cleanup_cluster()
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
-    
+
+
 @entrypoint()
 def mcad_run_one_matbench():
     test_mcad.run_one_matbench()
@@ -144,7 +148,7 @@ class Entrypoint:
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
         self.mcad_test = mcad_test
-        
+
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
         self.generate_plots = generate_plots
 
