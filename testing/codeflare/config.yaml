@@ -153,6 +153,8 @@ gpu:
   time_sharing:
     replicas: 10
 tests:
+  mode: mcad
+
   dry_mode: false
   visualize: true
   capture_prom: true
