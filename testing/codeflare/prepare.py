@@ -79,8 +79,8 @@ def prepare_test_nodes(name, cfg, dry_mode):
     run.run(f"./run_toolbox.py from_config cluster set_scale --extra \"{extra}\"")
 
     if cfg["node"].get("wait_gpus", True):
-        if not config.ci_artifacts.get_config("tests.mcad.want_gpu"):
-            logging.error("Cannot wait for GPUs when tests.mcad.want_gpu is disabled ...")
+        if not config.ci_artifacts.get_config("tests.want_gpu"):
+            logging.error("Cannot wait for GPUs when tests.want_gpu is disabled ...")
         else:
             run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
 
@@ -109,12 +109,12 @@ def prepare_ci():
 
     prepare_odh_customization()
 
-    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
+    if config.ci_artifacts.get_config("tests.want_gpu"):
         prepare_gpu_operator()
 
     prepare_worker_node_labels()
 
-    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
+    if config.ci_artifacts.get_config("tests.want_gpu"):
         run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
 
     if config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.enabled"):
@@ -150,5 +150,5 @@ def cleanup_cluster():
 
     cleanup_mcad_test()
 
-    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
+    if config.ci_artifacts.get_config("tests.want_gpu"):
         cleanup_gpu_operator()

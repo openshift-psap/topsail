@@ -153,16 +153,17 @@ gpu:
   time_sharing:
     replicas: 10
 tests:
+  dry_mode: false
+  visualize: true
+  capture_prom: true
+  want_gpu: false
+
   mcad:
     namespace: mcad-load-test
 
-    dry_mode: false
-    visualize: true
-    capture_prom: true
     prepare_nodes: true
     stop_on_error: true
 
-    want_gpu: false
     tests_to_run: [cpu_light_unschedulable]
     distribution: poisson
 

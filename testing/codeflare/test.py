@@ -116,14 +116,14 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
 
 
 def _run_test(name, test_artifact_dir_p, test_override_values=None):
-    dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
-    capture_prom = config.ci_artifacts.get_config("tests.mcad.capture_prom")
+    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
+    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
     prepare_nodes = config.ci_artifacts.get_config("tests.mcad.prepare_nodes")
 
     test_templates_file = TESTING_THIS_DIR / config.ci_artifacts.get_config("tests.mcad.test_templates_file")
     with open(test_templates_file) as f:
         test_templates = yaml.safe_load(f)
-
+        
     parents_to_apply = [name]
     cfg = {"templates": []}
     while parents_to_apply:
@@ -237,8 +237,8 @@ def _run_test_and_visualize(name, test_override_values=None):
         else:
             failed = _run_test(name, test_artifact_dir_p, test_override_values)
     finally:
-        dry_mode = config.ci_artifacts.get_config("tests.mcad.dry_mode")
-        if not config.ci_artifacts.get_config("tests.mcad.visualize"):
+        dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
+        if not config.ci_artifacts.get_config("tests.visualize"):
             logging.info(f"Visualization disabled.")
 
         elif dry_mode:
@@ -294,11 +294,11 @@ def test_ci(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare
 
 
     if dry_mode is not None:
-        config.ci_artifacts.set_config("tests.mcad.dry_mode", dry_mode)
+        config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
     if visualize is not None:
-        config.ci_artifacts.set_config("tests.mcad.visualize", visualize)
+        config.ci_artifacts.set_config("tests.visualize", visualize)
     if capture_prom is not None:
-        config.ci_artifacts.set_config("tests.mcad.capture_prom", capture_prom)
+        config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
     if prepare_nodes is not None:
         config.ci_artifacts.set_config("tests.mcad.prepare_nodes", prepare_nodes)
 
