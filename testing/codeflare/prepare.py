@@ -1,4 +1,5 @@
 import logging
+import pathlib
 
 from common import env, config, run
 
@@ -97,7 +98,13 @@ def prepare_odh():
         run.run(f"./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
 
     for resource in config.ci_artifacts.get_config("odh.kfdefs"):
-        run.run(f"oc apply -f {resource}  -n {odh_namespace}")
+        if not resource.startswith("http"):
+            run.run(f"oc apply -f {resource} -n {odh_namespace}")
+            continue
+        
+        filename = "kfdef__" + pathlib.Path(resource).name
+        
+        run.run(f"curl -Ssf {resource} | tee '{env.ARTIFACT_DIR / filename}' | oc apply -f- -n {odh_namespace}")
 
         
 def prepare_mcad():
