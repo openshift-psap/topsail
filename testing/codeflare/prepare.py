@@ -85,11 +85,7 @@ def prepare_test_nodes(name, cfg, dry_mode):
             run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
 
 
-def prepare_ci():
-    """
-    Prepares the cluster and the namespace for running the tests
-    """
-
+def prepare_odh():
     odh_namespace = config.ci_artifacts.get_config("odh.namespace")
     if run.run(f'oc get project -oname "{odh_namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{odh_namespace}" --skip-config-write >/dev/null')
@@ -103,6 +99,13 @@ def prepare_ci():
     for resource in config.ci_artifacts.get_config("odh.kfdefs"):
         run.run(f"oc apply -f {resource}  -n {odh_namespace}")
 
+        
+def prepare_mcad():
+    """
+    Prepares the cluster and the namespace for running the MCAD tests
+    """
+    prepare_odh()
+    
     prepare_mcad_test()
 
     run.run("./run_toolbox.py from_config rhods wait_odh")
@@ -125,6 +128,14 @@ def prepare_ci():
         run.run("./run_toolbox.py from_config cluster fill_workernodes")
 
 
+def prepare_ci():
+    """
+    Prepares the cluster and the namespace for running the MCAD tests
+    """
+    
+    prepare_mcad()
+    
+    
 def cleanup_cluster():
     """
     Restores the cluster to its original state
