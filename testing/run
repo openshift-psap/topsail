@@ -97,19 +97,6 @@ prechecks() {
         false
     fi
 
-    if ! which kubectl &>/dev/null;
-    then
-        echo "kubectl not found, symlinking to oc"
-        mkdir -p bin
-        cd bin
-        if [[ ! -f kubectl ]]; then
-            ln --symbolic $(which oc) kubectl
-        fi
-        export PATH=$PWD:$PATH
-        which kubectl # fail is still not working
-        cd ..
-    fi
-
     # avoid incorrect error reporting (mostly for outside of CI)
     rm -f "${ARTIFACT_DIR}/FAILURE"
 
