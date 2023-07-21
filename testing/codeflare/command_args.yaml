@@ -35,3 +35,26 @@ gpu_operator run_gpu_burn:
   namespace: {{ tests.mcad.namespace }}
   runtime: 30 #s
   ensure_has_gpu: false
+
+#
+# Prepare User Pods
+#
+  
+base_image/utils build_push_image:
+  namespace: "{{ base_image.namespace }}"
+  image_local_name: "{{ base_image.imagestream }}"
+  tag: "{{ base_image.repo.tag }}"
+  _istag: "{{ base_image.imagestream }}:{{ base_image.repo.tag }}"
+
+  git_repo: "{{ base_image.repo.url }}"
+  git_ref: "{{ base_image.repo.ref }}" # may be overwritten at runtime with the PR ref
+  dockerfile_path: "{{ base_image.repo.dockerfile_path }}"
+
+cluster deploy_redis_server:
+{% set redis_internal_address = "redis."+base_image.namespace+".svc" %}
+  namespace: "{{ base_image.namespace }}"
+
+cluster deploy_minio_s3_server:
+  namespace: "{{ base_image.namespace }}"
+  secret_properties_file: {{ s3_ldap_password_location }}
+  bucket_name: {{ base_image.minio.bucket_name }}

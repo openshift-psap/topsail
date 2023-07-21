@@ -152,6 +152,22 @@ odh:
 gpu:
   time_sharing:
     replicas: 10
+
+base_image: # only used in sdk_user test mode
+  namespace: SET_AT_RUNTIME
+  imagestream: ci-artifacts
+  repo:
+    url: https://github.com/openshift-psap/ci-artifacts/
+    tag: main
+    ref: main
+    ref_prefer_pr: true
+    dockerfile_path: build/Dockerfile
+  user:
+    service_account: ci-artifacts
+    role: cluster-admin
+  minio:
+    bucket_name: pipelines-scale-test-bucket
+    
 tests:
   mode: mcad
 
@@ -177,6 +193,10 @@ tests:
         aw.job.job_mode: [true, false]
     test_templates_file: test_templates.yaml # relative to testing/codeflare directory
 
+  sdk_user:
+    namespace: codeflare-sdk-user-test
+
+    
 matbench:
   preset: null
   workload: codeflare

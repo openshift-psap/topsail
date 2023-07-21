@@ -1,3 +1,5 @@
+import prepare_sdk_user
+
 def test(name=None, dry_mode=None, visualize=None, capture_prom=None):
     """
     Runs the test from the CI
@@ -8,5 +10,6 @@ def test(name=None, dry_mode=None, visualize=None, capture_prom=None):
       visualize: if False, do not generate the visualization reports
       capture_prom: if False, do not capture Prometheus database
     """
-
+    
+    test.apply_prefer_pr()
     pass
