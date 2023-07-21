@@ -10,7 +10,7 @@ ci_presets:
   keep:
     clusters.create.keep: true
     clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/load-aware/home-dev
-    clusters.create.ocp.tags.TicketId: 87
+    clusters.create.ocp.tags.TicketId: "115"
 
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
