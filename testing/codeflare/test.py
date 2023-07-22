@@ -96,7 +96,7 @@ def generate_plots_from_pr_args():
 
 @entrypoint(ignore_secret_path=True)
 def generate_plots(results_dirname):
-    visualize.generate_from_dir(str(results_dirname))
+    visualize.generate_from_dir(results_dirname)
 
 # ---
 
