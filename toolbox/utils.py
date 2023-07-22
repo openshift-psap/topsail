@@ -23,6 +23,8 @@ class Utils:
             dockerfile_path="Dockerfile",
             context_dir="/",
             memory: float = "",
+            from_image = None,
+            from_imagetag = None,
     ):
         """
         Build and publish an image to quay using either a Dockerfile or
@@ -41,6 +43,8 @@ class Utils:
             context_dir: Context dir inside the git repository.
             dockerfile_path: Path/Name of Dockerfile if used as source. If 'git_repo' is undefined, this path will be resolved locally, and the Dockerfile will be injected in the image BuildConfig.
             memory: Flag to specify the required memory to build the image (in Gb).
+            from_image: Base image to use, instead of the FROM image specified in the Dockerfile.
+            from_imagetag: Base imagestreamtag to use, instead of the FROM image specified in the Dockerfile.
         """
 
         if not git_repo and not dockerfile_path:
@@ -80,7 +84,7 @@ class Utils:
                 sys.exit(1)
 
         if "/" in tag or "_" in tag:
-            logging.error("the tag cannot contain '/' or '_' characters")
+            logging.error(f"the tag ('{tag}') cannot contain '/' or '_' characters")
             sys.exit(1)
 
         toolbox_name_suffix = os.environ.get("ARTIFACT_TOOLBOX_NAME_SUFFIX", "")
@@ -89,4 +93,8 @@ class Utils:
 
         del both_or_none
 
+        if from_image and from_imagetag:
+            logging.error(f"the --from-image={from_image} and --from-imagetag={from_imagetag} flags cannot be used at the same time.")
+            sys.exit(1)            
+        
         return RunAnsibleRole(locals())

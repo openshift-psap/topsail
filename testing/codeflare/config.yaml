@@ -73,6 +73,9 @@ ci_presets:
     odh.customize.operator.stop: true
     odh.customize.mcad.controller_image.enabled: true
 
+  sdk_user:
+    tests.mode: sdk_user
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -122,6 +125,7 @@ clusters:
       dedicated: true
       machineset:
         name: test-pods
+        type: m6i.2xlarge
         count: null
         taint:
           key: only-test-pods
@@ -152,18 +156,41 @@ odh:
 gpu:
   time_sharing:
     replicas: 10
+
+base_image: # only used in sdk_user test mode
+  namespace: SET_AT_RUNTIME
+  imagestream: ci-artifacts
+  repo:
+    url: https://github.com/openshift-psap/ci-artifacts/
+    tag: main
+    ref: main
+    ref_prefer_pr: true
+    dockerfile_path: build/Dockerfile
+  extend:
+    enabled: true
+    local_dockerfile_path: testing/codeflare/images/Containerfile.codeflare_sdk
+    tag: codeflare-sdk
+  user:
+    service_account: ci-artifacts
+    role: cluster-admin
+  minio:
+    bucket_name: pipelines-scale-test-bucket
+
 tests:
+  mode: mcad
+
+  dry_mode: false
+  visualize: true
+  capture_prom: true
+  want_gpu: false
+
   mcad:
     namespace: mcad-load-test
 
-    dry_mode: false
-    visualize: true
-    capture_prom: true
     prepare_nodes: true
     stop_on_error: true
 
-    want_gpu: false
-    tests_to_run: [cpu_light_unschedulable]
+    tests_to_run: [cpu_light_all_schedulable]
     distribution: poisson
 
     test_multiple_values:
@@ -172,108 +199,13 @@ tests:
       settings:
         aw.count: [200, 500, 750, 1000]
         aw.job.job_mode: [true, false]
+    test_templates_file: test_templates.yaml # relative to testing/codeflare directory
 
-    test_templates:
-      common:
-        aw:
-          job:
-            job_mode: false
-
-      common_gpu:
-        extends: [common]
-        aw:
-          job:
-            template_name: gpu_burn
-          pod:
-            count: 1
-            runtime: 300
-            requests:
-              nvidia.com/gpu: 1
-        node:
-          instance_type: g4dn.xlarge
-          wait_gpus: true
-        timespan: 5 #minutes
-
-      common_cpu:
-        extends: [common]
-        aw:
-          job:
-            template_name: sleeper
-          pod:
-            count: 1
-            runtime: 300
-            requests:
-              cpu: 100m
-        node:
-          instance_type: m6i.2xlarge
-          wait_gpus: false
-        timespan: 5 #minutes
-
-      common_unschedulable:
-        aw:
-          states:
-            target: [Queueing, HeadOfLine, Pending, Failed]
-            unexpected: [Dispatched, Running, Completed]
-        node:
-          count: 0
-          wait_gpus: false
-
-      common_scheduling: {}
-
-      common_all_schedulable:
-        timespan: 1 #minutes
-
-      common_job_mode:
-        aw:
-          job:
-            job_mode: true
-
-      gpu_all_schedulable:
-        extends: [common_gpu, common_all_schedulable]
-        aw:
-          count: 10
-        node:
-          count: 1
-
-      gpu_scheduling:
-        extends: [common_gpu, common_scheduling]
-        aw:
-          count: 20
-        node:
-          count: 1
-
-      gpu_scheduling_job_mode:
-        extends: [gpu_scheduling, common_job_mode]
-
-      gpu_unschedulable:
-        extends: [common_gpu, common_unschedulable]
-        aw:
-          count: 50
-
-      common_light:
-        node:
-          count: 0
-
-      cpu_light_all_schedulable:
-        extends: [common_cpu, common_light, common_all_schedulable]
-        aw:
-          count: 10
-
-      cpu_light_scheduling:
-        extends: [common_cpu, common_light, common_scheduling]
-        aw:
-          count: 20
-
-      cpu_light_scheduling_job_mode:
-        extends: [cpu_light_scheduling, common_job_mode]
-
-      cpu_light_unschedulable:
-        extends: [common_cpu, common_light, common_unschedulable]
-        aw:
-          count: 200
-          pod:
-            requests:
-              cpu: 150
+  sdk_user:
+    namespace: codeflare-sdk-user-test
+    user_count: 10
+    sleep_factor: 1
+    user_batch_size: 1
 
 matbench:
   preset: null

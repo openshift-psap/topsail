@@ -1,4 +1,5 @@
 import logging
+import pathlib
 
 from common import env, config, run
 
@@ -79,17 +80,13 @@ def prepare_test_nodes(name, cfg, dry_mode):
     run.run(f"./run_toolbox.py from_config cluster set_scale --extra \"{extra}\"")
 
     if cfg["node"].get("wait_gpus", True):
-        if not config.ci_artifacts.get_config("tests.mcad.want_gpu"):
-            logging.error("Cannot wait for GPUs when tests.mcad.want_gpu is disabled ...")
+        if not config.ci_artifacts.get_config("tests.want_gpu"):
+            logging.error("Cannot wait for GPUs when tests.want_gpu is disabled ...")
         else:
             run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
 
 
-def prepare_ci():
-    """
-    Prepares the cluster and the namespace for running the tests
-    """
-
+def prepare_odh():
     odh_namespace = config.ci_artifacts.get_config("odh.namespace")
     if run.run(f'oc get project -oname "{odh_namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{odh_namespace}" --skip-config-write >/dev/null')
@@ -101,20 +98,33 @@ def prepare_ci():
         run.run(f"./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
 
     for resource in config.ci_artifacts.get_config("odh.kfdefs"):
-        run.run(f"oc apply -f {resource}  -n {odh_namespace}")
+        if not resource.startswith("http"):
+            run.run(f"oc apply -f {resource} -n {odh_namespace}")
+            continue
+        
+        filename = "kfdef__" + pathlib.Path(resource).name
+        
+        run.run(f"curl -Ssf {resource} | tee '{env.ARTIFACT_DIR / filename}' | oc apply -f- -n {odh_namespace}")
 
+        
+def prepare_mcad():
+    """
+    Prepares the cluster and the namespace for running the MCAD tests
+    """
+    prepare_odh()
+    
     prepare_mcad_test()
 
     run.run("./run_toolbox.py from_config rhods wait_odh")
 
     prepare_odh_customization()
 
-    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
+    if config.ci_artifacts.get_config("tests.want_gpu"):
         prepare_gpu_operator()
 
     prepare_worker_node_labels()
 
-    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
+    if config.ci_artifacts.get_config("tests.want_gpu"):
         run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
 
     if config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.enabled"):
@@ -125,6 +135,14 @@ def prepare_ci():
         run.run("./run_toolbox.py from_config cluster fill_workernodes")
 
 
+def prepare_ci():
+    """
+    Prepares the cluster and the namespace for running the MCAD tests
+    """
+    
+    prepare_mcad()
+    
+    
 def cleanup_cluster():
     """
     Restores the cluster to its original state
@@ -150,5 +168,5 @@ def cleanup_cluster():
 
     cleanup_mcad_test()
 
-    if config.ci_artifacts.get_config("tests.mcad.want_gpu"):
+    if config.ci_artifacts.get_config("tests.want_gpu"):
         cleanup_gpu_operator()

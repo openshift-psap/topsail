@@ -201,7 +201,7 @@ def generate_visualization(idx):
 
 @entrypoint()
 def generate_from_dir(results_dirname):
-    os.environ["MATBENCH_RESULTS_DIRNAME"] = results_dirname
+    os.environ["MATBENCH_RESULTS_DIRNAME"] = str(results_dirname)
 
     generate_visualizations()
 

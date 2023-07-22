@@ -116,12 +116,13 @@ spec:
           allowPrivilegeEscalation: false
           capabilities:
             drop: [ALL]
+          runAsNonRoot: true
           seccompProfile:
             type: RuntimeDefault
         runAsNonRoot: True
         resources:
           requests:
-            cpu: 1000m
+            cpu: 250m
             memory: 2Gi
         env:
         - name: ARTIFACT_DIR
