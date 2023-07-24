@@ -203,7 +203,7 @@ tests:
 
   sdk_user:
     namespace: codeflare-sdk-user-test
-    user_count: 10
+    user_count: 2
     sleep_factor: 1
     user_batch_size: 1
 
