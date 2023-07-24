@@ -132,11 +132,19 @@ def cleanup_cluster():
 
 @entrypoint()
 def mcad_run_one_matbench():
+    """
+    Runs one MCAD test as part of a MatrixBenchmark benchmark
+    """
+
     test_mcad.run_one_matbench()
 
 
 @entrypoint()
 def sdk_user_run_one():
+    """
+    Runs one codeflare SDK user test
+    """
+
     test_sdk_user.run_one()
 
 # ---
