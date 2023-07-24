@@ -18,6 +18,32 @@ def register():
     ErrorReport()
 
 
+def _get_time_to_last_completion(entry):
+    if not entry.results.pods_info:
+        return 0
+
+    first_creation_time = sorted([t.creation_time for t in entry.results.pods_info])[0]
+    last_completion_time = sorted([t.container_finished for t in entry.results.pods_info])[-1]
+
+    return (last_completion_time - first_creation_time).total_seconds()
+
+
+def _get_time_to_launch(entry):
+    if not entry.results.pods_info:
+        return 0
+
+    creation_times = sorted([t.creation_time for t in entry.results.pods_info])
+    first_creation_time, last_creation_time = creation_times[0], creation_times[-1]
+
+    return (last_creation_time - first_creation_time).total_seconds()
+
+
+def _get_hostnames(entry):
+    if not entry.results.pods_info:
+        return set()
+
+    return set([t.hostname for t in entry.results.pods_info])
+
 def _get_test_setup(entry):
     if entry.is_lts:
         return []
@@ -63,6 +89,19 @@ def _get_test_setup(entry):
         nodes_info += [html.Li(nodes_info_li)]
 
     setup_info += [html.Ul(nodes_info)]
+
+    test_duration = _get_time_to_last_completion(entry)
+
+
+    setup_info += [html.Li(["Launched ", html.B(f"{len(entry.results.pods_info)} Pods")])]
+
+    launch_info = []
+    launch_info += [html.Li(["over ", html.B(f"{_get_time_to_launch(entry)/60:.1f} minutes")])]
+    launch_info += [html.Li(["scheduled on ", html.B(f"{len(_get_hostnames(entry))} Nodes")])]
+    launch_info += [html.Li(["by the ", html.B(entry.settings.scheduler), "scheduler."])]
+    setup_info += [html.Ul(launch_info)]
+
+    setup_info += [html.Li(["The test took ", html.B(f"{test_duration / 60:.1f} minutes to complete.")])]
 
     return setup_info
 

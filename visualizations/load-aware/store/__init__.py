@@ -49,7 +49,7 @@ def resolve_artifact_dirnames(dirname, artifact_dirnames):
             # all good
             resolved_dir = direct_resolution
         elif not resolutions:
-            logging.error(f"Cannot resolve {artifact_dirname} glob '{unresolved_dirname}' in '{dirname}'")
+            logging.warning(f"Cannot resolve {artifact_dirname} glob '{unresolved_dirname}' in '{dirname}'")
         else:
             if len(resolutions) > 1:
                 logging.error(f"Could multiple resolutions for {artifact_dirname} glob '{unresolved_dirname}' in '{dirname}': {resolutions}. Taking the first one")

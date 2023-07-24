@@ -17,7 +17,7 @@ def register():
 def generatePodTimes(entry):
     data = []
     for p in entry.results.pods_info:
-        workload_phase = { 
+        workload_phase = {
             "Start": p.creation_time,
             "End": p.container_finished,
             "Duration": (p.container_finished - p.creation_time).seconds,
@@ -43,7 +43,7 @@ def generatePodTimeline(entry):
             "Phase": "Preparing"
         }
         data.append(startup_phase)
-        workload_phase = { 
+        workload_phase = {
             "Start": p.container_started,
             "End": p.container_finished,
             "Creation": p.creation_time,
@@ -97,6 +97,39 @@ class PodTimes():
 
         msg = []
 
+        q1, med, q3 = stats.quantiles(df.Duration)
+        q90 = stats.quantiles(df.Duration, n=10)[8] # 90th percentile
+        q100 = df.Duration.max()
+
+        def time(sec):
+            if sec < 0.001:
+                return f"0 seconds"
+            elif sec < 5:
+                return f"{sec:.3f} seconds"
+            if sec < 20:
+                return f"{sec:.1f} seconds"
+            elif sec <= 120:
+                return f"{sec:.0f} seconds"
+            else:
+                return f"{sec/60:.1f} minutes"
+
+        msg.append(html.Br())
+
+        msg += [f"The {len(df)} ", html.B([html.Code(cfg__workload), " Pods"]), " took ", html.B(f"between {time(df.Duration.min())} and {time(df.Duration.max())}"), " to run with the ", html.B(entry.settings.scheduler), "scheduler"]
+        msg.append(html.Br())
+        msg.append(f"25% ran in less than {time(q1)} [Q1]")
+        msg.append(html.Br())
+        msg.append(f"50% ran in less than {time(med)} (+ {time(med-q1)}) [median]")
+        msg.append(html.Br())
+        msg.append(f"75% ran in less than {time(q3)} (+ {time(q3-med)}) [Q3]")
+        msg.append(html.Br())
+        msg.append(f"90% ran in less than {time(q90)} (+ {time(q90-q3)}) [90th quantile]")
+        msg.append(html.Br())
+        msg.append(f"There are {time(q3 - q1)} between Q1 and Q3.")
+        msg.append(html.Br())
+        msg.append(f"There are {time(q100 - q3)} between Q3 and Q4.")
+        msg.append(html.Br())
+
         return fig, msg
 
 class ExecutionTimeline():
@@ -111,7 +144,6 @@ class ExecutionTimeline():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        print(settings)
         cnt = common.Matrix.count_records(settings, setting_lists)
         if cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
@@ -125,7 +157,6 @@ class ExecutionTimeline():
             return None, "No data to plot ..."
 
         df = pd.DataFrame(data).sort_values(by=["Start"])
-        print(df)
 
         fig = px.timeline(df, x_start="Start",
                           x_end="End", y="Pod",

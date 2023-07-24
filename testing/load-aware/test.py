@@ -119,7 +119,7 @@ def test_ci():
     """
     Runs the Load-Aware scale test from the CI
     """
-   
+
     try:
         for scheduler_name in config.ci_artifacts.get_config("load_aware.schedulers"):
             try:
@@ -128,12 +128,12 @@ def test_ci():
             finally:
                 if test_artifact_dir_p[0] is not None:
                     next_count = env.next_artifact_index()
-                    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
+                    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__{scheduler_name}_plots"):
                         visualize.prepare_matbench()
                         generate_plots(test_artifact_dir_p[0])
                 else:
                     logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
-    finally: 
+    finally:
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 
