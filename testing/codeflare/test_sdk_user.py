@@ -13,7 +13,7 @@ def _run_many(test_artifact_dir_p):
     # exception (so that we can run the visualization even if the test
     # failed)
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
-    
+
     def prepare_matbench_files():
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
@@ -26,7 +26,7 @@ def _run_many(test_artifact_dir_p):
     next_count = env.next_artifact_index()
     test_artifact_dir_p[0] = \
         test_artifact_dir = env.ARTIFACT_DIR / f"{next_count:03d}__sdk_user_run_many"
-    
+
     with env.TempArtifactDir(test_artifact_dir):
 
         prepare_matbench_files()
@@ -37,7 +37,7 @@ def _run_many(test_artifact_dir_p):
                 logging.info("local_ci run_multi --suffix sdk_user ==> skipped")
             else:
                 run.run(f"./run_toolbox.py from_config local_ci run_multi --suffix sdk_user")
-                
+
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
@@ -57,18 +57,18 @@ def test(dry_mode=None, visualize=None, capture_prom=None):
       visualize: if False, do not generate the visualization reports
       capture_prom: if False, do not capture Prometheus database
     """
-    
+
     prepare_user_pods.apply_prefer_pr()
     namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
     config.ci_artifacts.set_config("base_image.namespace", namespace)
-    
+
     if visualize is not None:
         config.ci_artifacts.set_config("tests.visualize", visualize)
     if capture_prom is not None:
         config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
     if dry_mode is not None:
         config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
-        
+
     try:
         test_artifact_dir_p = [None]
         try:
