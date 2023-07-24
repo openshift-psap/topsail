@@ -2,6 +2,9 @@ from dash import html
 
 from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
+import matrix_benchmarking.common as common
+
+from . import error_report
 
 def register():
     SutestCpuMemoryReport()
@@ -44,6 +47,11 @@ class SutestCpuMemoryReport():
 
     def do_plot(self, *args):
         header = []
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            header += error_report._get_test_setup(entry)
+
         header += [html.P("These plots show an overview of the CPU and Memory usage during the execution of the test, for the cluster, the nodes, and various relevant Pods.")]
 
         header += [html.H2("SUTest Cluster")]
