@@ -238,6 +238,17 @@ def _parse_ocp_version(dirname):
 
     return sutest_ocp_version_yaml["openshiftVersion"]
 
+def _parse_file_locations(dirname):
+    file_locations = types.SimpleNamespace()
+
+    file_locations.trimaran_log = artifact_paths.LOAD_AWARE_SCALE_TEST_DIR / "trimaran_scheduler.log"
+    register_important_file(dirname, file_locations.trimaran_log)
+
+    file_locations.test_config_file = pathlib.Path("config.yaml")
+    register_important_file(dirname, file_locations.test_config_file)
+
+    return file_locations
+
 @ignore_file_not_found
 def _extract_metrics(dirname):
 
