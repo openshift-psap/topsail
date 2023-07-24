@@ -60,6 +60,7 @@ def _parse_once(results, dirname):
     results.cluster_info = _extract_cluster_info(results.nodes_info)
     results.sutest_ocp_version = _parse_ocp_version(dirname)
     results.metrics = _extract_metrics(dirname)
+    results.file_locations = _parse_file_locations(dirname)
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
