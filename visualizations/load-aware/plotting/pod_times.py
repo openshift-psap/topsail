@@ -42,6 +42,7 @@ def generatePodTimeline(entry):
             "Workload": p.workload,
             "Phase": "Scheduling"
         }
+        data.append(scheduling_phase)
         startup_phase = {
             "Start": p.pod_scheduled,
             "End": p.container_started,

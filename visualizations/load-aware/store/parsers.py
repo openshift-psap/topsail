@@ -29,7 +29,7 @@ artifact_paths = None # store._parse_directory will turn it into a {str: pathlib
 
 IMPORTANT_FILES = [
     "config.yaml",
-    f"{artifact_dirnames.LOAD_AWARE_SCALE_TEST_DIR}/all_pods.json",
+    f"{artifact_dirnames.LOAD_AWARE_SCALE_TEST_DIR}/scale_test_pods.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*"
@@ -143,7 +143,7 @@ def _parse_test_config(dirname):
 @ignore_file_not_found
 def _parse_pod_times(dirname):
 
-    filename = artifact_paths.LOAD_AWARE_SCALE_TEST_DIR / "all_pods.json"
+    filename = artifact_paths.LOAD_AWARE_SCALE_TEST_DIR / "scale_test_pods.json"
 
     with open(register_important_file(dirname, filename)) as f:
         try:
@@ -234,7 +234,9 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
 @ignore_file_not_found
 def _parse_ocp_version(dirname):
 
-    with open(register_important_file(dirname, pathlib.Path(artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR) / "ocp_version.yml")) as f:
+    filename = artifact_paths.CLUSTER_CAPTURE_ENV_DIR / "ocp_version.yml"
+
+    with open(register_important_file(dirname, filename)) as f:
         sutest_ocp_version_yaml = yaml.safe_load(f)
 
     return sutest_ocp_version_yaml["openshiftVersion"]
