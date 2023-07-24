@@ -17,7 +17,7 @@ def register():
 def generatePodTimes(entry):
     data = []
     for p in entry.results.pods_info:
-        workload_phase = { 
+        workload_phase = {
             "Start": p.creation_time,
             "End": p.container_finished,
             "Duration": (p.container_finished - p.creation_time).seconds,
@@ -43,7 +43,7 @@ def generatePodTimeline(entry):
             "Phase": "Preparing"
         }
         data.append(startup_phase)
-        workload_phase = { 
+        workload_phase = {
             "Start": p.container_started,
             "End": p.container_finished,
             "Creation": p.creation_time,
@@ -111,7 +111,6 @@ class ExecutionTimeline():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        print(settings)
         cnt = common.Matrix.count_records(settings, setting_lists)
         if cnt != 1:
             return {}, f"ERROR: only one experiment must be selected. Found {cnt}."
@@ -125,7 +124,6 @@ class ExecutionTimeline():
             return None, "No data to plot ..."
 
         df = pd.DataFrame(data).sort_values(by=["Start"])
-        print(df)
 
         fig = px.timeline(df, x_start="Start",
                           x_end="End", y="Pod",
