@@ -207,6 +207,12 @@ tests:
     sleep_factor: 1
     user_batch_size: 1
 
+    user_index: null # will be set at runtime
+
+    user_code:
+      directory: sample
+      entrypoint: sample
+
 matbench:
   preset: null
   workload: codeflare
