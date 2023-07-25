@@ -58,6 +58,9 @@ def _get_test_setup(entry):
     else:
         setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE ({entry.results.from_local_env.source_url})")]
 
+    trimaran_log_file = entry.results.from_local_env.artifacts_basedir / entry.results.file_locations.trimaran_log
+    setup_info += [html.Li(html.A("Trimaran scheduler log", href=str(trimaran_log_file), target="_blank"))]
+
     managed = list(entry.results.cluster_info.control_plane)[0].managed \
         if entry.results.cluster_info.control_plane else False
 

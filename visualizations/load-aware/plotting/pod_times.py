@@ -16,11 +16,12 @@ def register():
 
 def generatePodTimes(entry):
     data = []
+
     for p in entry.results.pods_info:
         workload_phase = {
             "Start": p.creation_time,
             "End": p.container_finished,
-            "Duration": (p.container_finished - p.creation_time).seconds,
+            "Duration": (p.container_finished - p.creation_time).total_seconds(),
             "Pod": p.pod_name,
             "Node": p.hostname,
             "Workload": p.workload
@@ -31,12 +32,26 @@ def generatePodTimes(entry):
 
 def generatePodTimeline(entry):
     data = []
+
     for p in entry.results.pods_info:
-        startup_phase = {
+
+        scheduling_phase = {
             "Start": p.creation_time,
+            "End": p.pod_scheduled,
+            "Creation": p.creation_time,
+            "Duration": (p.pod_scheduled - p.creation_time).total_seconds(),
+            "Pod": p.pod_name,
+            "Node": p.hostname,
+            "Workload": p.workload,
+            "Phase": "Scheduling"
+        }
+
+        data.append(scheduling_phase)
+        startup_phase = {
+            "Start": p.pod_scheduled,
             "End": p.container_started,
             "Creation": p.creation_time,
-            "Duration": (p.container_started - p.creation_time).seconds,
+            "Duration": (p.container_started - p.pod_scheduled).total_seconds(),
             "Pod": p.pod_name,
             "Node": p.hostname,
             "Workload": p.workload,
@@ -51,7 +66,7 @@ def generatePodTimeline(entry):
             "Pod": p.pod_name,
             "Node": p.hostname,
             "Workload": p.workload,
-            "Phase": "Running"
+            "Phase": f"Running {p.workload}"
         }
         data.append(workload_phase)
 
@@ -80,10 +95,10 @@ class PodTimes():
         cfg__workload = cfg.get("workload", False)
         data = filter(lambda pod: pod["Workload"] == cfg__workload, generatePodTimes(entry))
 
-        if not data:
-            return None, "No data to plot ..."
-
         df = pd.DataFrame(data)
+
+        if df.empty:
+            return None, "No data to plot ..."
 
         fig = px.histogram(df, x="Duration",
                            marginal="box",
@@ -168,7 +183,38 @@ class ExecutionTimeline():
         title = f"Pod execution timeline"
 
         fig.update_layout(title=title, title_x=0.5)
-
+       
+        scheduling_phase = df[df.Phase == "Scheduling"]
+        q1, med, q3 = stats.quantiles(scheduling_phase.Duration)
+        sched_min = scheduling_phase["Duration"].min()
+        sched_max = scheduling_phase["Duration"].max()
+        
         msg = []
+
+        def time(sec):
+            if sec < 0.001:
+                return f"0 seconds"
+            elif sec < 5:
+                return f"{sec:.3f} seconds"
+            if sec < 20:
+                return f"{sec:.1f} seconds"
+            elif sec <= 120:
+                return f"{sec:.0f} seconds"
+            else:
+                return f"{sec/60:.1f} minutes"
+
+        msg.append(html.Br())
+        msg.append(f"Time spend in the scheduling phase across all workloads")
+        msg.append(html.Br())
+        msg.append(f"Minimum: {time(sched_min)}")
+        msg.append(html.Br())
+        msg.append(f"25% ran in less than {time(q1)} [Q1]")
+        msg.append(html.Br())
+        msg.append(f"50% ran in less than {time(med)} (+ {time(med-q1)}) [median]")
+        msg.append(html.Br())
+        msg.append(f"75% ran in less than {time(q3)} (+ {time(q3-med)}) [Q3]")
+        msg.append(html.Br())
+        msg.append(f"Maximum: {time(sched_max)}")
+        msg.append(html.Br())
 
         return fig, msg
