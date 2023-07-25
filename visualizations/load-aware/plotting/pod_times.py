@@ -16,11 +16,12 @@ def register():
 
 def generatePodTimes(entry):
     data = []
+
     for p in entry.results.pods_info:
         workload_phase = {
             "Start": p.creation_time,
             "End": p.container_finished,
-            "Duration": (p.container_finished - p.creation_time).seconds,
+            "Duration": (p.container_finished - p.creation_time).total_seconds(),
             "Pod": p.pod_name,
             "Node": p.hostname,
             "Workload": p.workload
@@ -31,23 +32,26 @@ def generatePodTimes(entry):
 
 def generatePodTimeline(entry):
     data = []
+
     for p in entry.results.pods_info:
+
         scheduling_phase = {
             "Start": p.creation_time,
             "End": p.pod_scheduled,
             "Creation": p.creation_time,
-            "Duration": (p.pod_scheduled - p.creation_time).seconds,
+            "Duration": (p.pod_scheduled - p.creation_time).total_seconds(),
             "Pod": p.pod_name,
             "Node": p.hostname,
             "Workload": p.workload,
             "Phase": "Scheduling"
         }
+
         data.append(scheduling_phase)
         startup_phase = {
             "Start": p.pod_scheduled,
             "End": p.container_started,
             "Creation": p.creation_time,
-            "Duration": (p.container_started - p.pod_scheduled).seconds,
+            "Duration": (p.container_started - p.pod_scheduled).total_seconds(),
             "Pod": p.pod_name,
             "Node": p.hostname,
             "Workload": p.workload,
