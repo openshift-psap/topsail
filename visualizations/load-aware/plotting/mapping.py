@@ -17,6 +17,20 @@ def register():
     ResourceMappingTimeline()
 
 
+def ResourceMappingTimeline_generate_metric_data(entry, _metric_name, cluster_role="sutest"):
+    data = []
+    for _metric in entry.results.metrics[cluster_role].get(_metric_name):
+        metric_labels = _metric.metric
+
+        for metric in _metric.values:
+            data.append(dict(
+                Instance = metric_labels["instance"],
+                Time = datetime.datetime.utcfromtimestamp(metric[0]),
+                Value = float(metric[1]),
+            ))
+
+    return data
+
 def ResourceMappingTimeline_generate_data(entry, workload):
     data = []
 
@@ -46,6 +60,7 @@ def ResourceMappingTimeline_generate_data(entry, workload):
             Inc = 1,
             NodeName = f"Node {hostname_index}<br>{shortname}",
             PodName = pod_name,
+            Instance = hostname,
         ))
 
         data.append(dict(
@@ -53,6 +68,7 @@ def ResourceMappingTimeline_generate_data(entry, workload):
             Inc = -1,
             NodeName = f"Node {hostname_index}<br>{shortname}",
             PodName = pod_name,
+            Instance = hostname,
         ))
 
     if not data:
@@ -67,12 +83,14 @@ def ResourceMappingTimeline_generate_data(entry, workload):
             Time = row.Time - YOTA,
             Count = node_pod_count[row.NodeName],
             NodeName = row.NodeName,
+            Instance = row.Instance,
         ))
         node_pod_count[row.NodeName] += row.Inc
         data.append(dict(
             Time = row.Time,
             Count = node_pod_count[row.NodeName],
             NodeName = row.NodeName,
+            Instance = row.Instance,
         ))
 
     for node in node_pod_count.keys():
@@ -108,28 +126,63 @@ class ResourceMappingTimeline():
             return {}, "ERROR: only one experiment must be selected"
 
         cfg__workload = cfg.get("workload", False)
+        cfg__instance = cfg.get("instance", False)
 
         for entry in common.Matrix.all_records(settings, setting_lists):
             data = ResourceMappingTimeline_generate_data(entry, cfg__workload)
+            metric_data = ResourceMappingTimeline_generate_metric_data(entry, "Sutest Node CPU Utilisation rate")
 
         if not data:
             return None, "Not data available ..."
 
         df = pd.DataFrame(data)
+        df_metric = pd.DataFrame(metric_data)
 
-        fig = go.Figure()
-        for name in df.NodeName.unique():
-            df_name = df[df.NodeName == name]
+        from plotly.subplots import make_subplots
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+
+        for idx, instance_name in enumerate(df.Instance.unique()):
+            color = px.colors.qualitative.Plotly[idx % len(px.colors.qualitative.Plotly)]
+
+            if cfg__instance and cfg__instance != instance_name:
+                continue
+
+            df_name = df[df.Instance == instance_name]
+            name = df_name.NodeName.unique()[0]
             fig.add_trace(go.Scatter(x=df_name.Time,
                                      y=df_name.Count,
                                      fill="tozeroy",
                                      mode='lines',
-                                     name=name,
+                                     line_color=color,
+                                     name="Pod count",
+                                     legendgroup=name,
+                                     legendgrouptitle_text=name,
                                  ))
+            if df_metric.empty:
+                continue
+            if not cfg__instance:
+                continue
+
+            df_metric_name = df_metric[df_metric.Instance == instance_name]
+
+            fig.add_trace(go.Scatter(x=df_metric_name.Time,
+                                     y=df_metric_name.Value,
+                                     mode='lines',
+                                     line_color=color,
+                                     name="Node CPU",
+                                     legendgroup=name,
+                                     legendgrouptitle_text=name,
+                                     ),
+                          secondary_y=True,
+                          )
+
         fig.update_layout(showlegend=True)
 
-        fig.update_layout(title=f"Timeline of the {cfg__workload or ''}Pod Count running on the cluster nodes with the {entry.settings.scheduler} scheduler", title_x=0.5,)
+        fig.update_layout(title=f"Timeline of the {cfg__workload or ''} Pod Count running on the cluster nodes with the {entry.settings.scheduler} scheduler", title_x=0.5,)
         fig.update_layout(yaxis_title="Pod count")
         fig.update_layout(xaxis_title=f"Timeline (by date)")
+
+        fig.update_yaxes(title_text="Node CPU utilization rate [1min]", secondary_y=True, range=[0, 1])
 
         return fig, ""
