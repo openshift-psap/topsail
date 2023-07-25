@@ -66,7 +66,7 @@ def generatePodTimeline(entry):
             "Pod": p.pod_name,
             "Node": p.hostname,
             "Workload": p.workload,
-            "Phase": "Running"
+            "Phase": f"Running {p.workload}"
         }
         data.append(workload_phase)
 
