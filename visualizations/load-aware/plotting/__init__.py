@@ -3,6 +3,7 @@ from ..store import prom
 from . import prom_report
 from . import pod_times
 from . import scheduler_report
+from . import mapping
 
 def register():
     error_report.register()
@@ -11,3 +12,4 @@ def register():
     prom_report.register()
     pod_times.register()
     scheduler_report.register()
+    mapping.register()
