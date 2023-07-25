@@ -1,6 +1,7 @@
 import types
 import datetime
 import logging
+import pytz
 
 import matrix_benchmarking.common as common
 
@@ -13,6 +14,11 @@ def build_lts_payloads():
 
         start_time = results.start_time
         end_time = results.end_time
+
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=pytz.UTC)
+        if end_time.tzinfo is None:
+            end_time = end_time.replace(tzinfo=pytz.UTC)
 
         lts_payload = {
             "$schema": "urn:rhods-notebooks-perf:1.0.0",
