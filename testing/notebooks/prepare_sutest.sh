@@ -284,8 +284,8 @@ sutest_wait_rhods_launch() {
 
     # preload the notebook image only if auto-scaling is disabled
     if ! test_config clusters.sutest.compute.autoscaling.enabled; then
-        local rhods_notebook_image_name=$(get_config tests.notebooks.notebook.image_name)
-        local rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
+        rhods_notebook_image_name=$(get_config tests.notebooks.notebook.image_name)
+        rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
                                              | cut -d/ -f2 \
                                              | grep "$rhods_notebook_image_name" \
                                              | cut -d: -f2 \
@@ -293,7 +293,7 @@ sutest_wait_rhods_launch() {
 
         notebook_image="image-registry.openshift-image-registry.svc:5000/redhat-ods-applications/$rhods_notebook_image_name:$rhods_notebook_image_tag"
         ./run_toolbox.py from_config cluster preload_image --suffix "notebook" \
-                         --extra "{image:'$notebook_image',name:'$rhods_notebook_image_name'}"
+                         --extra "{image:'$notebook_image', name:'$rhods_notebook_image_name'}"
     fi
 
     # for the rhods-notebooks project
