@@ -17,7 +17,7 @@ def main():
 
     # Create our cluster and submit appwrapper
     cluster = Cluster(ClusterConfiguration(
-        namespace=namespace, name='mnisttest',
+        namespace=namespace, name=f"mnisttest-user{user_idx}",
         min_worker=2, max_worker=2,
         min_cpus=2, max_cpus=2,
         min_memory=4, max_memory=4,
