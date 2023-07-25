@@ -297,6 +297,47 @@ def _get_apiserver_errcodes(cluster_role, register):
 
 # ---
 
+def _get_load_aware_metrics(cluster_role, register):
+    all_metrics = []
+
+    resource_utilisation_metrics = [
+        {f"{cluster_role.title()} Node CPU Utilisation rate": 'instance:node_cpu_utilisation:rate1m'},
+    ]
+
+
+    def get_legend_name(metric_name, metric_metric):
+        return metric_metric["instance"], None
+
+
+    def only_workload_nodes(entry, metrics):
+        workload_nodes = [node.name for node in entry.results.cluster_info.workload]
+
+        for metric in metrics:
+            if metric.metric["instance"] not in workload_nodes:
+                continue
+            yield metric
+
+    all_metrics += resource_utilisation_metrics
+
+    if register:
+        for metric in resource_utilisation_metrics:
+            name, rq = list(metric.items())[0]
+            plotting_prom.Plot({name: rq},
+                               f"Prom: {name}",
+                               None,
+                               "1 minute rate",
+                               get_metrics=get_metrics(cluster_role),
+                               filter_metrics=only_workload_nodes,
+                               get_legend_name=get_legend_name,
+                               show_queries_in_title=True,
+                               show_legend=True,
+                               as_timestamp=True)
+
+    return all_metrics
+
+
+# ---
+
 def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
@@ -305,6 +346,8 @@ def get_sutest_metrics(register=False):
     all_metrics += _get_plane_nodes(cluster_role, register)
     all_metrics += _get_apiserver_errcodes(cluster_role, register)
     all_metrics += _get_control_plane_nodes_cpu_usage(cluster_role, register)
+
+    all_metrics += _get_load_aware_metrics(cluster_role, register)
 
     return all_metrics
 

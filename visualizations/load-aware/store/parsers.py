@@ -226,8 +226,9 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
 
         node_info.control_plane = "node-role.kubernetes.io/control-plane" in node["metadata"]["labels"] or "node-role.kubernetes.io/master" in node["metadata"]["labels"]
 
-        node_info.infra = \
-            not node_info.control_plane
+        node_info.infra = not node_info.control_plane
+
+        node_info.workload = node["metadata"]["labels"].get("only-workload-pods")
 
     return nodes_info
 
@@ -287,5 +288,8 @@ def _extract_cluster_info(nodes_info):
 
     cluster_info.infra = [node_info for node_info in nodes_info.values() \
                                 if node_info.sutest_cluster and node_info.infra]
+
+    cluster_info.workload = [node_info for node_info in nodes_info.values() \
+                             if node_info.sutest_cluster and node_info.workload]
 
     return cluster_info

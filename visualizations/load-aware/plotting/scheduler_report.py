@@ -11,6 +11,7 @@ from . import error_report
 
 def register():
     SchedulerReport()
+    NodeUtilisationReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -117,5 +118,45 @@ class SchedulerReport():
         header += Plot_and_Text("Pod execution timeline", args)
         header += html.Br()
         header += html.Br()
+
+        header += [html.H1(f"Resource Mapping Timeline")]
+
+        header += Plot_and_Text("Resource Mapping Timeline", args)
+        header += html.Br()
+        header += html.Br()
+
+        for workload in ["make", "sleep"]:
+            header += [html.H3(f"Timeline of the '{workload}' Pods")]
+            header += Plot_and_Text("Resource Mapping Timeline", set_config(dict(workload=workload), args))
+            header += html.Br()
+            header += html.Br()
+
+        return None, header
+
+class NodeUtilisationReport():
+    def __init__(self):
+        self.name = "report: Node Utilisation"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            header += error_report._get_test_setup(entry)
+
+        header += [html.H1(f"Pod/Node utilisation")]
+
+        for node in entry.results.cluster_info.workload:
+            header += Plot_and_Text("Resource Mapping Timeline", set_config(dict(instance=node.name), args))
+
+        header += [html.H1(f"Make Node utilisation")]
+
+        for node in entry.results.cluster_info.workload:
+            header += Plot_and_Text("Resource Mapping Timeline", set_config(dict(workload="make", instance=node.name), args))
 
         return None, header

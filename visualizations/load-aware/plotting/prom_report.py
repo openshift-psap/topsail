@@ -62,4 +62,12 @@ class SutestCpuMemoryReport():
         header += html.Br()
         header += html.Br()
 
+        header += [html.H2("SUTest Nodes")]
+
+        header += [report.Plot("Prom: Sutest Node CPU Utilisation rate", args)]
+
+        header += ["These plots show the CPU utilisation rate (over 1 minute) of the SUTest nodes, with the metrics used by Trimaran."]
+        header += html.Br()
+        header += html.Br()
+
         return None, header
