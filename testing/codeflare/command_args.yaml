@@ -47,7 +47,7 @@ driver/cluster set_scale:
   taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
 {% endif %}
   scale: SET_AT_RUNTIME
-  
+
 driver/cluster set_project_annotation/test_node_selector:
   key: openshift.io/node-selector
   value: "{{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}"
@@ -57,8 +57,8 @@ driver/cluster set_project_annotation/test_toleration:
   key: scheduler.alpha.kubernetes.io/defaultTolerations
   value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.driver.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.driver.compute.machineset.taint.key }}\"}]'
   project: {{ base_image.namespace }}
-  
-  
+
+
 base_image/utils build_push_image:
   namespace: "{{ base_image.namespace }}"
   image_local_name: "{{ base_image.imagestream }}"
@@ -77,7 +77,7 @@ extended_image/utils build_push_image:
 
   dockerfile_path: "{{ base_image.extend.local_dockerfile_path }}"
   from_imagetag: "{{ base_image.imagestream }}:{{ base_image.repo.tag }}"
-  
+
 cluster deploy_redis_server:
 {% set redis_internal_address = "redis."+base_image.namespace+".svc" %}
   namespace: "{{ base_image.namespace }}"
@@ -113,4 +113,3 @@ local_ci run_multi/sdk_user:
 
   git_pull: null #refs/pull/716/head
   capture_prom_db: "{{ tests.capture_prom }}"
-

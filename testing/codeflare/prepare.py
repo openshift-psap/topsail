@@ -101,18 +101,18 @@ def prepare_odh():
         if not resource.startswith("http"):
             run.run(f"oc apply -f {resource} -n {odh_namespace}")
             continue
-        
+
         filename = "kfdef__" + pathlib.Path(resource).name
-        
+
         run.run(f"curl -Ssf {resource} | tee '{env.ARTIFACT_DIR / filename}' | oc apply -f- -n {odh_namespace}")
 
-        
+
 def prepare_mcad():
     """
     Prepares the cluster and the namespace for running the MCAD tests
     """
     prepare_odh()
-    
+
     prepare_mcad_test()
 
     run.run("./run_toolbox.py from_config rhods wait_odh")
@@ -139,10 +139,10 @@ def prepare_ci():
     """
     Prepares the cluster and the namespace for running the MCAD tests
     """
-    
+
     prepare_mcad()
-    
-    
+
+
 def cleanup_cluster():
     """
     Restores the cluster to its original state
