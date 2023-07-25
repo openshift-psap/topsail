@@ -157,30 +157,30 @@ def _parse_pod_times(dirname):
     for pod in json_file["items"]:
         pod_time = types.SimpleNamespace()
         pod_times.append(pod_time)
-  
+
         pod_time.pod_name = pod["metadata"]["name"]
         pod_time.workload = pod["metadata"]["labels"]["workload"]
-  
+
         pod_time.hostname = pod["spec"].get("nodeName")
-  
+
         pod_time.creation_time = datetime.datetime.strptime(
                 pod["metadata"]["creationTimestamp"], K8S_TIME_FMT)
-  
+
         start_time_str = pod["status"].get("startTime")
         pod_time.start_time = None if not start_time_str else \
             datetime.datetime.strptime(start_time_str, K8S_TIME_FMT)
-  
+
         for condition in pod["status"].get("conditions", []):
             last_transition = datetime.datetime.strptime(condition["lastTransitionTime"], K8S_TIME_FMT)
-  
+
             if condition["type"] == "ContainersReady":
                 pod_time.containers_ready = last_transition
-  
+
             elif condition["type"] == "Initialized":
                 pod_time.pod_initialized = last_transition
             elif condition["type"] == "PodScheduled":
                 pod_time.pod_scheduled = last_transition
-  
+
         for containerStatus in pod["status"].get("containerStatuses", []):
             try:
                 finishedAt =  datetime.datetime.strptime(
@@ -190,17 +190,17 @@ def _parse_pod_times(dirname):
                         containerStatus["state"]["terminated"]["startedAt"],
                         K8S_TIME_FMT)
             except KeyError: continue
-  
+
             # take the last container_finished found
             if ("container_finished" not in pod_time.__dict__
                 or pod_time.container_finished < finishedAt):
                 pod_time.container_finished = finishedAt
-  
+
           # take the last container_finished found
             if ("container_started" not in pod_time.__dict__
                 or pod_time.container_started < startedAt):
                 pod_time.container_started = startedAt
-  
+
     return pod_times
 
 @ignore_file_not_found
