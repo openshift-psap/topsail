@@ -180,10 +180,10 @@ class ExecutionTimeline():
 
         fig.update_layout(title=title, title_x=0.5)
        
-        scheduling_phase = df.where(df["Phase"] == "Scheduling")
+        scheduling_phase = df[df.Phase == "Scheduling"]
         q1, med, q3 = stats.quantiles(scheduling_phase.Duration)
-        sched_min = scheduling_phase.min()
-        sched_max = scheduling_phase.max()
+        sched_min = scheduling_phase["Duration"].min()
+        sched_max = scheduling_phase["Duration"].max()
         
         msg = []
 

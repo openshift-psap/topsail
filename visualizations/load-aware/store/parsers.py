@@ -29,6 +29,7 @@ artifact_paths = None # store._parse_directory will turn it into a {str: pathlib
 
 IMPORTANT_FILES = [
     "config.yaml",
+    f"{artifact_dirnames.LOAD_AWARE_SCALE_TEST_DIR}/trimaran_scheduler.log",
     f"{artifact_dirnames.LOAD_AWARE_SCALE_TEST_DIR}/scale_test_pods.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
