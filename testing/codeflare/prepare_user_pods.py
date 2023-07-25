@@ -60,9 +60,12 @@ def compute_node_requirement(driver=False, sutest=False):
 
     if sutest:
         cluster_role = "sutest"
-        raise NotImplemented("compute_node_requirement(sutest=True) isn't implemented yet")
 
-    if driver:
+        cpu_count = 1
+        memory = 2
+        machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type")
+
+    elif driver:
         cluster_role = "driver"
         # must match 'roles/local_ci/local_ci_run_multi/templates/job.yaml.j2'
         cpu_count = 0.250

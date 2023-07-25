@@ -110,10 +110,15 @@ clusters:
     lab:
       name: null
     compute:
+      dedicated: true
       machineset:
         name: workload-pods
-        type: g4dn.xlarge
+        type: m6i.2xlarge
         count: 1
+        taint:
+          key: only-workload-pods
+          value: "yes"
+          effect: NoSchedule
     worker:
       label: initial_worker_node=true
       fill_resources:
@@ -177,7 +182,7 @@ base_image: # only used in sdk_user test mode
     bucket_name: pipelines-scale-test-bucket
 
 tests:
-  mode: mcad
+  mode: sdk_user
 
   dry_mode: false
   visualize: true

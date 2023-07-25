@@ -88,6 +88,29 @@ cluster deploy_minio_s3_server:
   bucket_name: {{ base_image.minio.bucket_name }}
 
 #
+# Prepare workload nodes
+#
+
+sutest/cluster set_scale:
+  instance_type: {{ clusters.sutest.compute.machineset.type }}
+  name: {{ clusters.sutest.compute.machineset.name }}
+{% if clusters.sutest.compute.dedicated %}
+  taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
+{% endif %}
+  scale: SET_AT_RUNTIME
+
+sutest/cluster set_project_annotation/user_sdk_node_selector:
+  key: openshift.io/node-selector
+  value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"
+  project: {{ tests.sdk_user.namespace }}
+
+sutest/cluster set_project_annotation/user_sdk_toleration:
+  key: scheduler.alpha.kubernetes.io/defaultTolerations
+  value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
+  project: {{ tests.sdk_user.namespace }}
+
+
+#
 # Test Codeflare/SDK user
 #
 
