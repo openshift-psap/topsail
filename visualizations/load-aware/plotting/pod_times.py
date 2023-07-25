@@ -95,10 +95,10 @@ class PodTimes():
         cfg__workload = cfg.get("workload", False)
         data = filter(lambda pod: pod["Workload"] == cfg__workload, generatePodTimes(entry))
 
-        if not data:
-            return None, "No data to plot ..."
-
         df = pd.DataFrame(data)
+
+        if df.empty:
+            return None, "No data to plot ..."
 
         fig = px.histogram(df, x="Duration",
                            marginal="box",
