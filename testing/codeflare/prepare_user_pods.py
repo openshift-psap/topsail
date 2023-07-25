@@ -39,7 +39,7 @@ def apply_prefer_pr():
     config.ci_artifacts.set_config("base_image.repo.tag", f"pr-{pr_number}")
 
 
-def prepare_base_image_container(namespace):    
+def prepare_base_image_container(namespace):
     istag = config.get_command_arg("utils build_push_image --prefix base_image", "_istag")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
@@ -60,9 +60,12 @@ def compute_node_requirement(driver=False, sutest=False):
 
     if sutest:
         cluster_role = "sutest"
-        raise NotImplemented("compute_node_requirement(sutest=True) isn't implemented yet")
 
-    if driver:
+        cpu_count = 1
+        memory = 2
+        machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type")
+
+    elif driver:
         cluster_role = "driver"
         # must match 'roles/local_ci/local_ci_run_multi/templates/job.yaml.j2'
         cpu_count = 0.250
@@ -73,15 +76,15 @@ def compute_node_requirement(driver=False, sutest=False):
 
     logfile = env.ARTIFACT_DIR / f'sizing_{cluster_role}'
     proc = run.run(f"{TESTING_UTILS_DIR / 'sizing' / 'sizing'} {machine_type} {user_count} {cpu_count} {memory} > {logfile}", check=False)
-    
+
     if proc.returncode == 0:
         raise ValueError(f"Could not compute the number of nodes required for {machine_type} {user_count} {cpu_count} {memory} :/ Check {logfile} for information.")
-    
+
     return proc.returncode
-    
+
 def prepare_user_pods(namespace):
     config.ci_artifacts.set_config("base_image.namespace", namespace)
-    
+
     service_account = config.ci_artifacts.get_config("base_image.user.service_account")
     role = config.ci_artifacts.get_config("base_image.user.role")
 
@@ -106,15 +109,15 @@ def prepare_user_pods(namespace):
         extra = ""
         if nodes_count is None:
             node_count = compute_node_requirement(driver=True)
-            
+
             extra = f"--extra '{{scale: {node_count}}}'"
 
         run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
-    
+
     #
     # Prepare the container image
     #
-    
+
     apply_prefer_pr()
 
     prepare_base_image_container(namespace)
@@ -138,7 +141,7 @@ def prepare_user_pods(namespace):
     run.run(f"oc create serviceaccount {service_account} -n {namespace} --dry-run=client -oyaml | oc apply -f-")
     run.run(f"oc adm policy add-cluster-role-to-user {role} -z {service_account} -n {namespace}")
 
-    
+
     #
     # Prepare the Secret
     #
@@ -147,4 +150,3 @@ def prepare_user_pods(namespace):
     secret_env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
 
     run.run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")
-

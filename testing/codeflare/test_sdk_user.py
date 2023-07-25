@@ -114,6 +114,12 @@ def run_one():
         logging.warning(f"Project '{namespace}' already exists.")
         (env.ARTIFACT_DIR / "USER_PROJECT_ALREADY_EXISTS").touch()
 
+    dedicated = "{}" if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated") \
+        else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
+
+    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix user_sdk_node_selector --extra '{dedicated}'")
+    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix user_sdk_toleration --extra '{dedicated}'")
+
     if user_index := config.ci_artifacts.get_config("tests.sdk_user.user_index") is not None:
         msg = f"The user index 'tests.sdk_user.user_index' should have been null at this point. Value: {user_index}"
         logging.error(msg)
