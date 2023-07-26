@@ -45,6 +45,10 @@
     delay: 30
     until: numberReady_cmd.stdout == desiredNumberScheduled_cmd.stdout
 
+  - name: Fail if the image has been preloaded on 0 nodes
+    fail: msg="The node selector '{{ cluster_preload_image_node_selector_key }}={{ cluster_preload_image_node_selector_value }}' did not match any node"
+    when: desiredNumberScheduled_cmd.stdout == "0"
+
   always:
   - name: Get the description of the preload Pods
     shell:
