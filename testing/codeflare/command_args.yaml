@@ -109,6 +109,15 @@ sutest/cluster set_project_annotation/user_sdk_toleration:
   value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
   project: {{ tests.sdk_user.namespace }}
 
+sutest/cluster preload_image/sdk_user:
+  namespace: {{ tests.sdk_user.namespace }}
+  name: sdk-user-image
+  image: {{ tests.sdk_user.ray_cluster.image }}
+
+  node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
+  node_selector_value: "{{ clusters.sutest.compute.machineset.taint.value }}"
+  pod_toleration_effect: {{ clusters.sutest.compute.machineset.taint.effect }}
+  pod_toleration_key: {{ clusters.sutest.compute.machineset.taint.key }}
 
 #
 # Test Codeflare/SDK user

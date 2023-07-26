@@ -17,6 +17,7 @@ def prepare():
 
     prepare_sutest_scale_up()
 
+    run.run("./run_toolbox.py from_config cluster preload_image --prefix sutest --suffix sdk_user")
 
 def cleanup_cluster():
     """
