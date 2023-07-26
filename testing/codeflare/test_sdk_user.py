@@ -62,7 +62,7 @@ def test(dry_mode=None, visualize=None, capture_prom=None):
     """
 
     prepare_user_pods.apply_prefer_pr()
-    namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
+
     config.ci_artifacts.set_config("base_image.namespace", namespace)
 
     if visualize is not None:

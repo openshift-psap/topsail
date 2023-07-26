@@ -163,7 +163,7 @@ gpu:
     replicas: 10
 
 base_image: # only used in sdk_user test mode
-  namespace: SET_AT_RUNTIME
+  namespace: codeflare-sdk-user-test-driver
   imagestream: ci-artifacts
   repo:
     url: https://github.com/openshift-psap/ci-artifacts/
