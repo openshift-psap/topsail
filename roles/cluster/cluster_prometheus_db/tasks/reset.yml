@@ -5,7 +5,10 @@
   failed_when: not prometheus_pod_name_cmd.stdout
 
 - name: Delete Prometheus Pod (openshift-monitoring only)
-  command: oc delete {{ prometheus_pod_name_cmd.stdout }} -n {{ cluster_prometheus_db_namespace }}
+  command:
+    oc delete {{ prometheus_pod_name_cmd.stdout }}
+       -n {{ cluster_prometheus_db_namespace }}
+       --timeout=60s
   when: 'cluster_prometheus_db_namespace == "openshift-monitoring"'
 
 - name: Delete Prometheus Pod and PVC (redhat-ods-monitoring only)
