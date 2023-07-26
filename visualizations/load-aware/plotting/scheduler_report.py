@@ -133,6 +133,7 @@ class SchedulerReport():
 
         return None, header
 
+
 class NodeUtilisationReport():
     def __init__(self):
         self.name = "report: Node Utilisation"
@@ -148,6 +149,11 @@ class NodeUtilisationReport():
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += error_report._get_test_setup(entry)
+
+        header += [html.H1(f"Pod/Node distribution")]
+
+        for workload in [False, "make", "sleep"]:
+            header += Plot_and_Text("Pod/Node distribution", set_config(dict(workload=workload), args))
 
         header += [html.H1(f"Pod/Node utilisation")]
 

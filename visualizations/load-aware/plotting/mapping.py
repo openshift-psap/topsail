@@ -15,7 +15,7 @@ import matrix_benchmarking.common as common
 
 def register():
     ResourceMappingTimeline()
-
+    MappingDistribution()
 
 def ResourceMappingTimeline_generate_metric_data(entry, _metric_name, cluster_role="sutest"):
     data = []
@@ -185,4 +185,77 @@ class ResourceMappingTimeline():
 
         fig.update_yaxes(title_text="Node CPU utilization rate [1min]", secondary_y=True, range=[0, 1])
 
+        return fig, ""
+
+def MappingDistribution_generate_data(entry, workload=False):
+    test_nodes = {}
+    entry_results = entry.results
+
+    data = []
+
+    hostnames_index = list(entry.results.nodes_info.keys()).index
+
+    for pod_time in entry.results.pods_info:
+        if workload and pod_time.workload != workload:
+            continue
+
+        pod_name = pod_time.pod_name
+        pod_index = int(pod_time.pod_name.split("-")[-1].replace("n", ""))
+
+        hostname = pod_time.hostname
+        shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "")
+        hostname_index = hostnames_index(hostname)
+
+        try:
+            instance_type = entry.results.nodes_info[hostname].instance_type
+        except (AttributeError, KeyError):
+            instance_type = ""
+
+        data.append(dict(
+            PodIndex = pod_index,
+            NodeIndex = f"Node {hostname_index}",
+            NodeName = f"Node {hostname_index}<br>{shortname}" + (f"<br>{instance_type}" if instance_type != "N/A" else ""),
+            Count=1,
+            Workload=pod_time.workload,
+        ))
+
+    return data
+
+
+class MappingDistribution():
+    def __init__(self):
+        self.name = "Pod/Node distribution"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        if common.Matrix.count_records(settings, setting_lists) != 1:
+            return {}, "ERROR: only one experiment must be selected"
+
+        cfg__workload = cfg.get("workload", False)
+
+        df = None
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            df = pd.DataFrame(MappingDistribution_generate_data(entry, cfg__workload))
+
+        if df.empty:
+            return None, "Nothing to plot (no data)"
+
+        # sort by UserIndex to improve readability
+        df = df.sort_values(by=["PodIndex", "NodeName"])
+
+        what = f"<b>{cfg__workload}</b> " if cfg__workload else ""
+
+        fig = px.bar(df, x="NodeName", y="Count", color="PodIndex",
+                     title=f"Distribution of {'<b>all</b> ' if not cfg__workload else ''}the {what}Pods on the nodes")
+
+        fig.update_layout(title_x=0.5,)
+        fig.update_layout(xaxis_title="")
+        fig.update_layout(yaxis_title="Pod count")
+        fig.update_yaxes(tick0=0, dtick=1)
         return fig, ""
