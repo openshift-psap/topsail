@@ -218,6 +218,17 @@ tests:
       directory: sample
       entrypoint: sample
 
+    ray_cluster:
+      name: mnisttest
+      workers: 2
+      cpu: 1
+      memory: 2
+      gpu: 0
+
+    job:
+      name: mnisttest
+      script: mnist.py
+
 matbench:
   preset: null
   workload: codeflare
