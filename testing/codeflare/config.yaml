@@ -220,6 +220,7 @@ tests:
 
     ray_cluster:
       name: mnisttest
+      image: "quay.io/project-codeflare/ray:2.5.0-py38-cu116"
       workers: 2
       cpu: 1
       memory: 2

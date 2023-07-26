@@ -21,10 +21,12 @@ def main():
     memory = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.memory")
     gpu = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.gpu")
 
+    image = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.image")
 
     # Create our cluster and submit appwrapper
     cluster = Cluster(ClusterConfiguration(
         namespace=namespace, name=f"{name}-user{user_idx}",
+        image=image,
         min_worker=workers, max_worker=workers,
         min_cpus=cpu, max_cpus=cpu,
         min_memory=memory, max_memory=memory,
