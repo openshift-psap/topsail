@@ -163,7 +163,7 @@ gpu:
     replicas: 10
 
 base_image: # only used in sdk_user test mode
-  namespace: SET_AT_RUNTIME
+  namespace: codeflare-sdk-user-test-driver
   imagestream: ci-artifacts
   repo:
     url: https://github.com/openshift-psap/ci-artifacts/
@@ -217,6 +217,18 @@ tests:
     user_code:
       directory: sample
       entrypoint: sample
+
+    ray_cluster:
+      name: mnisttest
+      image: "quay.io/project-codeflare/ray:2.5.0-py38-cu116"
+      workers: 2
+      cpu: 1
+      memory: 2
+      gpu: 0
+
+    job:
+      name: mnisttest
+      script: mnist.py
 
 matbench:
   preset: null

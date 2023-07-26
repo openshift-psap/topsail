@@ -15,22 +15,37 @@ def main():
 
     logging.info(f"Hello world, working with namespace {namespace} with {user_idx}/{user_count}")
 
+    name = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.name")
+    workers = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.workers")
+    cpu = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.cpu")
+    memory = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.memory")
+    gpu = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.gpu")
+
+    image = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.image")
+
     # Create our cluster and submit appwrapper
     cluster = Cluster(ClusterConfiguration(
-        namespace=namespace, name='mnisttest',
-        min_worker=2, max_worker=2,
-        min_cpus=2, max_cpus=2,
-        min_memory=4, max_memory=4,
-        gpu=0,
-        instascale=False))
+        namespace=namespace, name=f"{name}-user{user_idx}",
+        image=image,
+        min_worker=workers, max_worker=workers,
+        min_cpus=cpu, max_cpus=cpu,
+        min_memory=memory, max_memory=memory,
+        gpu=gpu, instascale=False))
+
+
     # Bring up the cluster
     cluster.up()
     cluster.wait_ready()
     cluster.status()
     cluster.details()
 
+    job_name = config.ci_artifacts.get_config("tests.sdk_user.job.name")
+    job_script = config.ci_artifacts.get_config("tests.sdk_user.job.script")
 
-    job_def = DDPJobDefinition(name="mnisttest", script="mnist.py", workspace=".", scheduler_args={"requirements": "./requirements.txt"})
+    job_def = DDPJobDefinition(name=job_name,
+                               script=job_script,
+                               workspace=".",
+                               scheduler_args={"requirements": "./requirements.txt"})
     job = job_def.submit(cluster)
 
     finished = False

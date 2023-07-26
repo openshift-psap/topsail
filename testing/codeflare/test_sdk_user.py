@@ -62,8 +62,6 @@ def test(dry_mode=None, visualize=None, capture_prom=None):
     """
 
     prepare_user_pods.apply_prefer_pr()
-    namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
-    config.ci_artifacts.set_config("base_image.namespace", namespace)
 
     if visualize is not None:
         config.ci_artifacts.set_config("tests.visualize", visualize)
@@ -107,18 +105,7 @@ def run_one():
     else:
         job_index = 0
 
-    namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
-    if run.run(f'oc get project -oname "{namespace}" 2>/dev/null', check=False).returncode != 0:
-        run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
-    else:
-        logging.warning(f"Project '{namespace}' already exists.")
-        (env.ARTIFACT_DIR / "USER_PROJECT_ALREADY_EXISTS").touch()
-
-    dedicated = "{}" if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated") \
-        else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
-
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix user_sdk_node_selector --extra '{dedicated}'")
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix user_sdk_toleration --extra '{dedicated}'")
+    prepare_sdk_user.prepare_user_namespace()
 
     if user_index := config.ci_artifacts.get_config("tests.sdk_user.user_index") is not None:
         msg = f"The user index 'tests.sdk_user.user_index' should have been null at this point. Value: {user_index}"
