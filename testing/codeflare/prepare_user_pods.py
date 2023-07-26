@@ -2,7 +2,7 @@ import logging
 import os
 import pathlib
 
-from common import env, config, run
+from common import env, config, run, sizing
 
 TESTING_CODEFLARE_DIR = pathlib.Path(__file__).absolute().parent
 TESTING_UTILS_DIR = TESTING_CODEFLARE_DIR.parent / "utils"
@@ -54,33 +54,20 @@ def prepare_base_image_container(namespace):
     run.run(f"./run_toolbox.py from_config utils build_push_image --prefix extended_image")
 
 
-def compute_node_requirement(driver=False, sutest=False):
-    if (not driver and not sutest) or (sutest and driver):
-        raise ValueError("compute_node_requirement must be called with driver=True or sutest=True")
+def compute_driver_node_requirement():
+    # must match 'roles/local_ci/local_ci_run_multi/templates/job.yaml.j2'
+    kwargs = dict(
+        cpu = 0.250,
+        memory = 2,
+        machine_type = config.ci_artifacts.get_config("clusters.driver.compute.machineset.type"),
+        user_count = config.ci_artifacts.get_config("tests.sdk_user.user_count"),
+        )
 
-    if sutest:
-        cluster_role = "sutest"
+    return sizing.main(**kwargs)
 
-        cpu_count = 1
-        memory = 2
-        machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type")
 
-    elif driver:
-        cluster_role = "driver"
-        # must match 'roles/local_ci/local_ci_run_multi/templates/job.yaml.j2'
-        cpu_count = 0.250
-        memory = 2
-        machine_type = config.ci_artifacts.get_config("clusters.driver.compute.machineset.type")
-
-    user_count = config.ci_artifacts.get_config("tests.sdk_user.user_count")
-
-    logfile = env.ARTIFACT_DIR / f'sizing_{cluster_role}'
-    proc = run.run(f"{TESTING_UTILS_DIR / 'sizing' / 'sizing'} {machine_type} {user_count} {cpu_count} {memory} > {logfile}", check=False)
-
-    if proc.returncode == 0:
-        raise ValueError(f"Could not compute the number of nodes required for {machine_type} {user_count} {cpu_count} {memory} :/ Check {logfile} for information.")
-
-    return proc.returncode
+def compute_node_requirement(**kwargs):
+    return sizing.main(**kwargs)
 
 def prepare_user_pods(namespace):
     config.ci_artifacts.set_config("base_image.namespace", namespace)
@@ -108,7 +95,7 @@ def prepare_user_pods(namespace):
         nodes_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
         extra = ""
         if nodes_count is None:
-            node_count = compute_node_requirement(driver=True)
+            node_count = compute_driver_node_requirement()
 
             extra = f"--extra '{{scale: {node_count}}}'"
 

@@ -35,7 +35,12 @@ def prepare_sutest_scale_up():
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
         return
 
-    node_count = prepare_user_pods.compute_node_requirement(sutest=True)
+    node_count = prepare_user_pods.compute_node_requirement(
+        cpu = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.cpu"),
+        memory = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.memory"),
+        machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type"),
+        user_count = config.ci_artifacts.get_config("tests.sdk_user.user_count"),
+    )
 
     extra = {}
     extra["scale"] = node_count
