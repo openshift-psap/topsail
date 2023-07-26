@@ -133,6 +133,7 @@ class SchedulerReport():
 
         return None, header
 
+
 class NodeUtilisationReport():
     def __init__(self):
         self.name = "report: Node Utilisation"
@@ -149,14 +150,21 @@ class NodeUtilisationReport():
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += error_report._get_test_setup(entry)
 
+        header += [html.H1(f"Pod/Node distribution")]
+
+        for workload in [False, "make", "sleep"]:
+            header += Plot_and_Text("Pod/Node distribution", set_config(dict(workload=workload), args))
+
         header += [html.H1(f"Pod/Node utilisation")]
 
         for node in entry.results.cluster_info.workload:
+            header += [html.H3(f"All the pods on {node.name}")]
             header += Plot_and_Text("Resource Mapping Timeline", set_config(dict(instance=node.name), args))
 
         header += [html.H1(f"Make Node utilisation")]
 
         for node in entry.results.cluster_info.workload:
+            header += [html.H3(f"Make pods on {node.name}")]
             header += Plot_and_Text("Resource Mapping Timeline", set_config(dict(workload="make", instance=node.name), args))
 
         return None, header
