@@ -8,10 +8,16 @@ driver_build_and_preload_image() {
                         ./run_toolbox.py from_config utils build_push_image \
                         --suffix "$suffix"
 
-    if ! test_config clusters.driver.compute.autoscaling.enabled; then
-        ./run_toolbox.py from_config cluster preload_image \
-                         --suffix "$suffix"
+    if test_config clusters.driver.compute.autoscaling.enabled; then
+        return
     fi
+
+    if ! test_config clusters.driver.compute.dedicated; then
+        return
+    fi
+
+    ./run_toolbox.py from_config cluster preload_image \
+                     --suffix "$suffix"
 }
 
 driver_build_and_preload_ods_ci_image() {

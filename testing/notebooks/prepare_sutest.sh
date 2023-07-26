@@ -281,9 +281,8 @@ sutest_wait_rhods_launch() {
         ./run_toolbox.py rhods wait_ods
     fi
 
-
     # preload the notebook image only if auto-scaling is disabled
-    if ! test_config clusters.sutest.compute.autoscaling.enabled; then
+    if test_config clusters.sutest.compute.dedicated && ! test_config clusters.sutest.compute.autoscaling.enabled; then
         rhods_notebook_image_name=$(get_config tests.notebooks.notebook.image_name)
         rhods_notebook_image_tag=$(oc get istag -n redhat-ods-applications -oname \
                                              | cut -d/ -f2 \
