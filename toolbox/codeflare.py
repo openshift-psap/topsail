@@ -57,3 +57,18 @@ class Codeflare:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("codeflare_capture_state")
+    @AnsibleMappedParams
+    def capture_state(self,
+                            namespace
+                            ):
+        """
+        Capture the state of the codeflare stack
+
+        Args:
+          namespace: name of the namespace where the Codeflare stack ran
+        """
+
+        return RunAnsibleRole(locals())
