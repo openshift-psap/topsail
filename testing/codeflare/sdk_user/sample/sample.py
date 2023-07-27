@@ -35,16 +35,7 @@ def main():
 
     # Bring up the cluster
     cluster.up()
-    while True:
-        try:
-            cluster.wait_ready()
-            break
-        except TypeError as e:
-            # there's a timeout in the calling script
-            logging.warning(f"cluster.wait_ready() failed with {e}")
-            import time
-            time.sleep(5)
-
+    cluster.wait_ready()
     cluster.status()
     cluster.details()
 
