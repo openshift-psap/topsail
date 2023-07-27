@@ -1,0 +1,23 @@
+- name: Grab kepler-operator source
+  command:
+    git clone https://github.com/sustainable-computing-io/kepler-operator "{{ artifact_extra_logs_dir }}/kepler"
+
+- name: Deploy kepler-operator
+  shell:
+    cd "{{ artifact_extra_logs_dir }}/kepler"; make deploy OPERATOR_IMG=quay.io/sustainable_computing_io/kepler-operator:latest
+
+- name: Deploy kepler exporters
+  shell:
+    oc apply -k "{{ artifact_extra_logs_dir }}/kepler/config/samples/"
+
+- name: Ensure kepler was deployed
+  shell:
+    oc get -n openshift-kepler-operator svc -oname
+  register: kepler_deployed
+  delay: 5
+  retries: 30
+  until: kepler_deployed.stdout == "service/kepler-exporter-svc"
+
+- name: Create the service monitor to connect Kepler metrics
+  command:
+    oc apply -f {{ kepler_service_monitor }}

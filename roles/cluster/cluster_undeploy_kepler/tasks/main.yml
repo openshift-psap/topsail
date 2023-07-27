@@ -1,0 +1,15 @@
+- name: Grab kepler-operator source
+  command:
+    git clone https://github.com/sustainable-computing-io/kepler-operator "{{ artifact_extra_logs_dir }}/kepler"
+
+- name: Undeploy kepler-operator
+  shell:
+    cd "{{ artifact_extra_logs_dir }}/kepler"; make uninstall; make undeploy &2>1
+
+- name: Delete kepler-monitor ServiceMonitor
+  shell:
+    oc delete -n openshift-kepler-operator servicemonitor kepler-monitor --ignore-not-found
+
+- name: Delete kepler namespaces
+  shell:
+    oc delete ns openshift-kepler-operator kepler-operator-system --ignore-not-found

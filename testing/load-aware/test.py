@@ -74,6 +74,8 @@ def prepare_ci():
     run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
     run.run("./run_toolbox.py from_config load_aware deploy_trimaran")
 
+    run.run("./run_toolbox.py from_config cluster deploy_kepler")
+
     run.run("./run_toolbox.py from_config utils build_push_image --suffix deps")
     run.run("./run_toolbox.py from_config utils build_push_image --suffix make")
     run.run("./run_toolbox.py from_config cluster preload_image --suffix deps")
@@ -165,6 +167,8 @@ def cleanup_cluster():
     test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
     run.run("oc delete ns {test_namespace} --ignore-not-found")
     run.run("./run_toolbox.py load_aware undeploy_trimaran")
+    run.run("./run_toolbox.py cluster undeploy_kepler")
+
     uninstall_ocp_pipelines()
 
 
