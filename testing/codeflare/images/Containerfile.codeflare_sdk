@@ -2,4 +2,5 @@
 FROM ci-artifacts:main
 
 RUN pip install --no-cache-dir  \
-           codeflare_sdk
+           -e git+https://github.com/project-codeflare/codeflare-sdk.git@refs/pull/271/head#egg=codeflare-sdk
+RUN pip install -r https://raw.githubusercontent.com/project-codeflare/codeflare-sdk/main/requirements.txt
