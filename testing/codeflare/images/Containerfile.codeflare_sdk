@@ -1,5 +1,5 @@
 # not used by the buildconfig should not be prefix with the image registry location
-FROM ci-artifacts:main 
+FROM ci-artifacts:main
 
-RUN pip install --quiet --no-cache-dir  \
+RUN pip install --no-cache-dir  \
            codeflare_sdk
