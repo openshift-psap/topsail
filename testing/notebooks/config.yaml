@@ -255,6 +255,10 @@ ci_presets:
     extends: [notebook_gating_scale_test, metal, icelake]
     tests.notebooks.users.count: 200
 
+  psap_ods_ci:
+    tests.notebooks.ods_ci.image.repo: https://github.com/openshift-psap/ods-ci.git
+    tests.notebooks.ods_ci.image.ref: notebook-scale-test.v1.30.0-rc1
+
   help:
     tests.show_help: true
 secrets:
