@@ -8,4 +8,7 @@
     | jq .[0] > "{{ artifact_extra_logs_dir }}/003_operator_cr.json"
 
 - name: Create the operator CR
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/003_operator_cr.json"
+  command:
+    oc apply
+       -f "{{ artifact_extra_logs_dir }}/003_operator_cr.json"
+       -n "{{ cluster_deploy_operator_namespace }}"
