@@ -451,8 +451,8 @@ tests:
       # can be: null, simple (default), burst or scaleup
       test_mode: simple
       image:
-        repo: https://github.com/openshift-psap/ods-ci.git
-        ref: notebook-scale-test.v1.30.0-rc1
+        repo: https://github.com/red-hat-data-services/ods-ci.git
+        ref: master
       # tags to exclude when running the robot test case
       excluded_tags: None
       # if true, only create the notebooks but don't start them
