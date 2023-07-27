@@ -105,6 +105,7 @@ def run_one():
     else:
         job_index = 0
 
+    namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
     prepare_sdk_user.prepare_user_namespace()
 
     if user_index := config.ci_artifacts.get_config("tests.sdk_user.user_index") is not None:
