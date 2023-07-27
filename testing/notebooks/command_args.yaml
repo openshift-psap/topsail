@@ -109,20 +109,6 @@ cluster preload_image/artifacts-exporter:
   image: {{ scale_test_imagestream }}:{{ artifacts_exporter_tag }}
   <<: *driver_preload_image
 
-utils build_push_image/locust:
-  namespace: {{ tests.notebooks.namespace }}
-  dockerfile_path: testing/notebooks/images/Containerfile.locust
-{% set locust_tag = "locust" %}
-  tag: {{ locust_tag }}
-  image_local_name: {{ tests.notebooks.imagestream_name }}
-
-cluster preload_image/locust:
-  namespace: {{ tests.notebooks.namespace }}
-  name: {{ locust_tag }}
-  image: {{ scale_test_imagestream }}:{{ locust_tag }}
-  <<: *driver_preload_image
-
-
 utils build_push_image/ods-ci:
   namespace: {{ tests.notebooks.namespace }}
   git_repo: {{ tests.notebooks.ods_ci.image.repo }}
@@ -199,32 +185,6 @@ rhods notebook_ods_ci_scale_test:
   only_create_notebooks: {{ tests.notebooks.ods_ci.only_create_notebooks }}
   stop_notebooks_on_exit: {{ tests.notebooks.ods_ci.stop_notebooks_on_exit }}
   driver_running_on_spot: {{ clusters.driver.compute.machineset.spot or false}}
-
-rhods notebook_locust_scale_test:
-  namespace: {{ tests.notebooks.namespace }}
-  idp_name: {{ ldap.idp_name }}
-  secret_properties_file: {{ s3_ldap_password_location }}
-  locust_istag: "{{ tests.notebooks.imagestream_name }}:{{ locust_tag }}"
-  artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_tag }}"
-  minio_namespace: {{ minio_namespace }}
-  minio_bucket_name: {{ tests.notebooks.minio_bucket_name }}
-
-  test_name: all
-  username_prefix: {{ ldap.users.prefix }}
-  user_count: {{ tests.notebooks.users.count }}
-  user_index_offset: {{ tests.notebooks.users.start_offset }}
-  user_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
-
-  run_time: {{ tests.notebooks.locust.run_time }}
-  spawn_rate: {{ tests.notebooks.locust.spawn_rate }}
-  cpu_count: {{ tests.notebooks.locust.cpu_count }}
-
-  notebook_image_name: {{ tests.notebooks.notebook.image_name }}
-  notebook_size_name: {{ tests.notebooks.notebook.size_name }}
-  toleration_key: {{ clusters.driver.compute.machineset.taint.key }}
-  capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
-
-  sut_cluster_kubeconfig: # set at runtime if necessary
 
 sutest/cluster set_scale/cleanup:
   instance_type: not-used

@@ -42,18 +42,12 @@ cluster_helpers::get_compute_node_count() {
             return
         fi
 
-        local test_flavor=$(get_config tests.notebooks.test_flavor)
-        if [[ "$test_flavor" == "locust" ]]; then
-            local notebook_size="1 2" # 'cpu mem', must match roles/rhods_notebook_locust_scale_test/templates/locust_job.yaml
-            local user_count=$(($(get_config tests.notebooks.locust.cpu_count) + 1))
-        else
-            local notebook_size="$(get_config tests.notebooks.test_pods.size.cpu) $(get_config tests.notebooks.test_pods.size.mem_gi)"
-            local user_count=$(get_config tests.notebooks.users.count)
+        local notebook_size="$(get_config tests.notebooks.test_pods.size.cpu) $(get_config tests.notebooks.test_pods.size.mem_gi)"
+        local user_count=$(get_config tests.notebooks.users.count)
 
-            local test_mode=$(get_config tests.notebooks.ods_ci.test_mode)
-            if [[ "$test_mode" == burst || "$test_mode" == batch ]]; then
-                user_count=$(get_config tests.notebooks.users.batch_size)
-            fi
+        local test_mode=$(get_config tests.notebooks.ods_ci.test_mode)
+        if [[ "$test_mode" == burst || "$test_mode" == batch ]]; then
+            user_count=$(get_config tests.notebooks.users.batch_size)
         fi
 
         local instance_type="$(get_config clusters.create.ocp.compute.type)"

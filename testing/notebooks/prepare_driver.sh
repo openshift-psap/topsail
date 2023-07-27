@@ -49,7 +49,6 @@ prepare_driver_cluster() {
     set_dedicated_node_annotations
 
     process_ctrl::run_in_bg driver_build_and_preload_ods_ci_image
-    process_ctrl::run_in_bg driver_build_and_preload_image "locust"
     process_ctrl::run_in_bg driver_build_and_preload_image "artifacts-exporter"
 
     process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_minio_s3_server
