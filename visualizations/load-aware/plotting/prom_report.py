@@ -51,6 +51,7 @@ class SutestCpuMemoryReport():
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += error_report._get_test_setup(entry)
+            header += [html.Hr()]
 
         header += [html.P("These plots show an overview of the CPU and Memory usage during the execution of the test, for the cluster, the nodes, and various relevant Pods.")]
 

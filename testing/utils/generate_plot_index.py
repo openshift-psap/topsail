@@ -13,8 +13,12 @@ def report_index_to_html(report_index):
     report_dir = report_index.parent
 
     report_parent = report_dir.parent
+
+    relative_name = report_dir.name() if report_parent == ARTIFACT_DIR \
+        else report_parent.relative_to(ARTIFACT_DIR)
+
     print()
-    print(f"<h1>{report_parent.relative_to(ARTIFACT_DIR)}</h1>")
+    print(f"<h1>{relative_name}</h1>")
     print("<ul>")
     for report_file in sorted(report_dir.glob("*.html")):
         if report_file.name == "reports_index.html": continue

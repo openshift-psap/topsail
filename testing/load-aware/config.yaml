@@ -114,6 +114,7 @@ load_aware:
   schedulers:
   - default
   - trimaran
+  matbench_comparison_file: load-aware_multi.yaml
 matbench:
   preset: null
   workload: load-aware

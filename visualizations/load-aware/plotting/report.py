@@ -11,6 +11,7 @@ from . import error_report
 
 def register():
     ControlPlaneReport()
+    ComparisonReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -101,6 +102,7 @@ class ControlPlaneReport():
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += error_report._get_test_setup(entry)
+            header += [html.Hr()]
 
         header += [html.H1("Control Plane Nodes Load")]
 
@@ -155,5 +157,30 @@ class ControlPlaneReport():
                 header += Plot_and_Text(f"Prom: {cluster_role.title()} API Server Requests ({what})", args)
                 header += html.Br()
                 header += html.Br()
+
+        return None, header
+
+
+class ComparisonReport():
+    def __init__(self):
+        self.name = "report: Comparison report"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            header += error_report._get_test_setup(entry)
+            header += [html.Hr()]
+
+        header += [html.H1("Comparison report")]
+
+        header += Plot_and_Text(f"Completion time comparison", args)
+        header += Plot_and_Text(f"Execution time comparison", args)
 
         return None, header

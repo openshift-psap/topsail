@@ -4,6 +4,7 @@ from collections import defaultdict
 import os
 import base64
 import pathlib
+import yaml
 
 from dash import html
 from dash import dcc
@@ -108,6 +109,16 @@ def _get_test_setup(entry):
 
     return setup_info
 
+
+def _get_test_details(entry):
+    test_details = []
+
+    test_configuration = dict(load_aware=entry.results.test_config.yaml_file["load_aware"])
+    test_details += [html.Li(["Test-case configuration: ", html.Code(yaml.dump(test_configuration), style={"white-space": "pre-wrap"})])]
+
+    return test_details
+
+
 class ErrorReport():
     def __init__(self):
         self.name = "report: Error report"
@@ -118,35 +129,20 @@ class ErrorReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        if common.Matrix.count_records(settings, setting_lists) != 1:
-            return {}, "ERROR: only one experiment must be selected"
-
-        for entry in common.Matrix.all_records(settings, setting_lists):
-            pass
+        has_one_expe = common.Matrix.count_records(settings, setting_lists) == 1
 
         header = []
         header += [html.P("This report shows the list of users who failed the test, with a link to their execution report and the last screenshot taken by the Robot.")]
         header += [html.H1("Error Report")]
 
-        setup_info = _get_test_setup(entry)
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            if not has_one_expe:
+                header += [html.H1(entry.location.name)]
 
-        if entry.results.from_local_env.is_interactive:
-            # running in interactive mode
-            def artifacts_link(path):
-                if path.suffix != ".png":
-                    return f"file://{entry.results.from_local_env.artifacts_basedir / path}"
-                try:
-                    with open (entry.results.from_local_env.artifacts_basedir / path, "rb") as f:
-                        encoded_image = base64.b64encode(f.read()).decode("ascii")
-                        return f"data:image/png;base64,{encoded_image}"
-                except FileNotFoundError:
-                    return f"file://{entry.results.from_local_env.artifacts_basedir / path}#file_not_found"
-        else:
-            artifacts_link = lambda path: entry.results.from_local_env.artifacts_basedir / path
+            header += _get_test_setup(entry)
+            header += _get_test_details(entry)
 
-
-        header += [html.Ul(
-            setup_info
-        )]
+            if not has_one_expe:
+                header += [html.Hr()]
 
         return None, header

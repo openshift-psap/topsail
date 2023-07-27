@@ -102,6 +102,7 @@ class SchedulerReport():
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += error_report._get_test_setup(entry)
+            header += [html.Hr()]
 
         header += [html.H1("Performance of Load-Aware Scheduling")]
         header += ["Performance metrics to evaluate load-aware scheduling"]
