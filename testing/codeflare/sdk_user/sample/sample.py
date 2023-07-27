@@ -65,7 +65,9 @@ def main():
         finished = (str(status.state) == "SUCCEEDED")
         failed = (str(status.state) == "FAILED")
 
-    print(job.logs())
+    with open(f"{name}-{job_name}.log", "w") as f:
+        print(job.logs(), file=f)
+
     print(status)
 
     cluster.down()
