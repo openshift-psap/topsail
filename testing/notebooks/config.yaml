@@ -44,7 +44,6 @@ ci_presets:
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
     'ci_presets.notebook_scale_test["tests.notebooks.repeat"]': 1
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
-    tests.notebooks.gating_tests: [notebook_scale_test_dsg, rhods_notebook_performance]
 
   notebook_large_scale_test:
     extends: [notebook_scale_test]
@@ -255,6 +254,10 @@ ci_presets:
     extends: [notebook_gating_scale_test, metal, icelake]
     tests.notebooks.users.count: 200
 
+  psap_ods_ci:
+    tests.notebooks.ods_ci.image.repo: https://github.com/openshift-psap/ods-ci.git
+    tests.notebooks.ods_ci.image.ref: notebook-scale-test.v1.30.0-rc1
+
   help:
     tests.show_help: true
 secrets:
@@ -451,8 +454,8 @@ tests:
       # can be: null, simple (default), burst or scaleup
       test_mode: simple
       image:
-        repo: https://github.com/openshift-psap/ods-ci.git
-        ref: notebook-scale-test.v1.30.0-rc1
+        repo: https://github.com/red-hat-data-services/ods-ci.git
+        ref: master
       # tags to exclude when running the robot test case
       excluded_tags: None
       # if true, only create the notebooks but don't start them
