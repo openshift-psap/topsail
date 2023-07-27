@@ -35,7 +35,16 @@ def main():
 
     # Bring up the cluster
     cluster.up()
-    cluster.wait_ready()
+    while True:
+        try:
+            cluster.wait_ready()
+            break
+        except TypeError as e:
+            # there's a timeout in the calling script
+            logging.warning(f"cluster.wait_ready() failed with {e}")
+            import time
+            time.sleep(5)
+
     cluster.status()
     cluster.details()
 
@@ -56,7 +65,9 @@ def main():
         finished = (str(status.state) == "SUCCEEDED")
         failed = (str(status.state) == "FAILED")
 
-    print(job.logs())
+    with open(f"{name}-{job_name}.log", "w") as f:
+        print(job.logs(), file=f)
+
     print(status)
 
     cluster.down()
