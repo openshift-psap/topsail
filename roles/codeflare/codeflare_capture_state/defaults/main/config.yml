@@ -1,0 +1,8 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Codeflare.cleanup_appwrappers
+
+# name of the namespace where the Codeflare stack ran
+# Mandatory value
+codeflare_capture_state_namespace:
+

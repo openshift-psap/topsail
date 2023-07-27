@@ -105,6 +105,7 @@ def run_one():
     else:
         job_index = 0
 
+    namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
     prepare_sdk_user.prepare_user_namespace()
 
     if user_index := config.ci_artifacts.get_config("tests.sdk_user.user_index") is not None:
@@ -155,3 +156,10 @@ def run_one():
         finally:
             sys.path.pop()
             os.chdir(orig_wd)
+
+        run.run(f"./run_toolbox.py codeflare capture_state --namespace {namespace}")
+
+        run.run(f"./run_toolbox.py codeflare cleanup_appwrappers --namespace {namespace}")
+        run.run(f"oc delete rayclusters --all -n {namespace}")
+
+    logging.info("All done.")
