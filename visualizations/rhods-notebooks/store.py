@@ -77,7 +77,6 @@ IMPORTANT_FILES = [
 
     "src/000_rhods_notebook.yaml",
 
-    "locust-scale-test/locust-notebook-scale-test-*/locust_scale_test_worker*_progress.csv"
     "metrics/*",
 
     "config.yaml",
@@ -485,8 +484,6 @@ def _parse_pod_times(dirname, test_config=None, is_notebook=False):
             elif "ods-ci-" in pod_name:
                 user_index = int(pod_name.rpartition("-")[0].replace("ods-ci-", "")) \
                     - test_config.get("tests.notebooks.users.start_offset")
-            elif "locust-notebook-scale-test" in pod_name:
-                user_index = pod_name.split("-")[-2]
             else:
                 logging.warning(f"Unexpected pod name: {pod_name}")
                 continue
@@ -724,20 +721,6 @@ def _parse_ods_ci_pods_directory(dirname, output_dir):
 
     return ods_ci
 
-
-@ignore_file_not_found
-def _parse_locust_progress(dirname, output_dir, user_idx):
-    with open(register_important_file(dirname, output_dir / f"locust_scale_test_worker{user_idx}_progress.csv")) as f:
-        return pd.read_csv(f)
-
-
-def _parse_locust_pods_directory(dirname, output_dir, user_idx):
-    locust = types.SimpleNamespace()
-
-    locust.progress = _parse_locust_progress(dirname, output_dir, user_idx)
-
-    return locust
-
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     try:
@@ -823,19 +806,6 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
                 if (dirname / output_dir).exists() else None
     else:
         results.ods_ci = None
-
-    # Locust
-    if (dirname / "locust-scale-test").exists():
-        results.locust = {}
-
-        for user_idx, pod_times in results.testpod_times.items():
-            pod_hostname = pod_times.pod_name.rpartition("-")[0]
-
-            output_dir = pathlib.Path("locust-scale-test") / pod_hostname
-            results.locust[user_idx] = _parse_locust_pods_directory(dirname, output_dir, user_idx) \
-                if (dirname / output_dir).exists() else None
-    else:
-        results.locust = None
 
     # notebook performance
     if (dirname / "notebook-artifacts").exists():
