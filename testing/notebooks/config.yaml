@@ -44,7 +44,6 @@ ci_presets:
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
     'ci_presets.notebook_scale_test["tests.notebooks.repeat"]': 1
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
-    tests.notebooks.gating_tests: [notebook_scale_test_dsg, rhods_notebook_performance]
 
   notebook_large_scale_test:
     extends: [notebook_scale_test]
