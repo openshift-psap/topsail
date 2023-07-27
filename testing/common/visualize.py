@@ -201,6 +201,7 @@ def generate_visualization(idx):
 
 @entrypoint()
 def generate_from_dir(results_dirname):
+    logging.info(f"Generating the visualization from '{results_dirname}' ...")
     os.environ["MATBENCH_RESULTS_DIRNAME"] = str(results_dirname)
 
     generate_visualizations()
