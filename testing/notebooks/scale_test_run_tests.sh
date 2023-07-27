@@ -45,14 +45,6 @@ run_normal_tests_and_plots() {
     return 0
 }
 
-run_locust_test() {
-    switch_driver_cluster
-    ./run_toolbox.py from_config rhods notebook_locust_scale_test
-
-    local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
-    set_config matbench.test_directory "$last_test_dir"
-}
-
 run_gating_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
@@ -137,8 +129,6 @@ run_test() {
 
     if [[ "$test_flavor" == "ods-ci" ]]; then
         run_ods_ci_test || return 1
-    elif [[ "$test_flavor" == "locust" ]]; then
-        run_locust_test "$repeat_idx" || return 1
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
         run_single_notebook_tests "$repeat_idx" || return 1
     elif [[ "$test_flavor" == "gating" ]]; then

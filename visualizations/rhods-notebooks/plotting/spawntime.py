@@ -113,35 +113,6 @@ def add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide):
             data.append(entry_data)
     return data
 
-
-def add_locust_progress(entry):
-    data = []
-
-    for _worker_index, locust_data in entry.results.locust.items():
-        if locust_data.progress is None: continue
-
-        steps_index = locust_data.progress["step_name"].unique().tolist().index
-        for index, row in locust_data.progress.reset_index().iterrows():
-            if row["type"] != "STEP": continue
-
-            step_idx = steps_index(row["step_name"])
-            user_idx = int(row["user_name"].replace("psapuser", ""))
-            step_name = row["step_name"]
-            step_start = datetime.datetime.fromtimestamp(row["start"])
-            step_finish = datetime.datetime.fromtimestamp(row["stop"])
-
-            entry_data = {}
-            entry_data["step_index"] = step_idx
-            entry_data["Step Index"] = 100 + step_idx * 10
-            entry_data["User Index"] = user_idx
-            entry_data["User Name"] = f"User #{user_idx}"
-            entry_data["Step Name"] = f"{step_idx} - {step_name}"
-            entry_data["Step Duration"] = (step_finish - step_start).total_seconds()
-            data.append(entry_data)
-
-    return data
-
-
 class SpawnTime():
     def __init__(self, name):
         self.name = name
@@ -172,9 +143,6 @@ class SpawnTime():
         if entry.results.ods_ci:
             data += add_ods_ci_progress(entry, hide_failed_users)
             data += add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide)
-
-        if entry.results.locust:
-            data += add_locust_progress(entry)
 
         if not data:
             return None, "No data available"
