@@ -134,6 +134,13 @@ def test_ci():
                 else:
                     logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
     finally:
+        results_dir = env.ARTIFACT_DIR
+        matbench_config_file = config.ci_artifacts.get_config("load_aware.matbench_comparison_file")
+        next_count = env.next_artifact_index()
+        with (env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__comparison_plots"),
+              config.TempValue(config.ci_artifacts, "matbench.config_file", matbench_config_file)):
+            visualize.generate_from_dir(results_dir)
+
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 
