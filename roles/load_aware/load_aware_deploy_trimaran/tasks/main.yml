@@ -110,6 +110,11 @@
       oc describe pod trimaran-test -n trimaran > "{{ artifact_extra_logs_dir }}/trimaran-test.pod.desc"
       oc get all -n trimaran -oyaml > "{{ artifact_extra_logs_dir }}/all-trimaran.yaml"
 
+  - name: Dump trimaran scheduler log
+    shell: |
+      oc logs -n trimaran $(oc get pod -n trimaran -l "app=trimaran-scheduler" | awk 'NR > 1 {print $1}') > "{{ artifact_extra_logs_dir }}/trimaran_scheduler.log"
+    ignore_errors: true
+
   - name: Dump cluster events
     shell:
       oc get ev -oyaml -n trimaran > "{{ artifact_extra_logs_dir }}/events.yaml"

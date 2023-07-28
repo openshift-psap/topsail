@@ -111,10 +111,14 @@ class PodTimes():
         fig.update_layout(title=title, title_x=0.5)
 
         msg = []
-
-        q1, med, q3 = stats.quantiles(df.Duration)
-        q90 = stats.quantiles(df.Duration, n=10)[8] # 90th percentile
-        q100 = df.Duration.max()
+        
+        q1, med, q3 = (0.0, 0.0, 0.0)
+        q90 = 0.0
+        q100 = 0.0
+        if len(df) >= 2:
+            q1, med, q3 = stats.quantiles(df.Duration)
+            q90 = stats.quantiles(df.Duration, n=10)[8] # 90th percentile
+            q100 = df.Duration.max()
 
         def time(sec):
             if sec < 0.001:
@@ -185,9 +189,9 @@ class ExecutionTimeline():
         fig.update_layout(title=title, title_x=0.5)
        
         scheduling_phase = df[df.Phase == "Scheduling"]
-        q1, med, q3 = stats.quantiles(scheduling_phase.Duration)
-        sched_min = scheduling_phase["Duration"].min()
-        sched_max = scheduling_phase["Duration"].max()
+        q1, med, q3 = (0, 0, 0) if len(df) < 2 else stats.quantiles(scheduling_phase.Duration)
+        sched_min = 0 if len(df) < 1 else scheduling_phase["Duration"].min()
+        sched_max = 0 if len(df) < 1 else scheduling_phase["Duration"].max()
         
         msg = []
 
