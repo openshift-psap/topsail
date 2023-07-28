@@ -74,7 +74,7 @@ def prepare_ci():
     run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
     run.run("./run_toolbox.py from_config load_aware deploy_trimaran")
 
-    run.run("./run_toolbox.py from_config cluster deploy_kepler")
+    run.run("./run_toolbox.py cluster deploy_kepler")
 
     run.run("./run_toolbox.py from_config utils build_push_image --suffix deps")
     run.run("./run_toolbox.py from_config utils build_push_image --suffix make")
