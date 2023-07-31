@@ -18,8 +18,8 @@ ci_presets:
   light:
     extends: [light_cluster]
     cluster.sutest.compute.machineset.count: 1
-    load_aware.scale_test.duration: 60.0
-    load_aware.scale_test.instances: 5
+    load_aware.scale_test.duration: 10.0
+    load_aware.scale_test.instances: 1
 
   metal:
     clusters.sutest.is_metal: true

@@ -86,9 +86,13 @@ def ExecutionTimeComparison_generatePodTimes(entry, variables, exclude_workload=
 
 def ExecutionTimeComparison_generateStats(entry, variables, data):
     df = pd.DataFrame(data)
-    q1, med, q3 = stats.quantiles(df.Duration)
-    q90 = stats.quantiles(df.Duration, n=10)[8] # 90th percentile
-    q100 = df.Duration.max()
+    q1, med, q3 = (0.0, 0.0, 0.0)
+    q90 = 0.0
+    q100 = 0.0
+    if len(df) >= 2:
+        q1, med, q3 = stats.quantiles(df.Duration)
+        q90 = stats.quantiles(df.Duration, n=10)[8] # 90th percentile
+        q100 = df.Duration.max()
 
     def time(sec):
         if sec < 0.001:

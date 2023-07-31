@@ -10,7 +10,7 @@
 
   - name: Wait for workloads to finish
     shell:
-      oc get pods -n {{ load_aware_scale_test_namespace }} | awk 'NR > 1 { print $3 }'
+      oc get pods -n {{ load_aware_scale_test_namespace }} --no-headers | awk '{ print $3 }'
     register: load_aware_workload
     delay: 60
     retries: 120
@@ -30,5 +30,5 @@
 
   - name: Dump trimaran scheduler log
     shell: |
-      oc logs -n trimaran $(oc get pod -n trimaran -l "app=trimaran-scheduler" | awk 'NR > 1 {print $1}') > "{{ artifact_extra_logs_dir }}/trimaran_scheduler.log"
+      oc logs -n trimaran $(oc get pod -n trimaran -l "app=trimaran-scheduler" --no-headers | awk '{print $1}') > "{{ artifact_extra_logs_dir }}/trimaran_scheduler.log"
     ignore_errors: true
