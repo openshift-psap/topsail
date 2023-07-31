@@ -6,8 +6,8 @@
   shell:
     set -o pipefail;
 
-    oc -n openshift-user-workload-monitoring get pod
-      | awk 'NR > 1 { print $3}'
+    oc -n openshift-user-workload-monitoring get pod --no-headers
+      | awk '{ print $3}'
   register: monitoring_enabled
   delay: 3
   retries: 20
@@ -96,8 +96,8 @@
 
   - name: Ensure the Trimaran test pods completes
     shell:
-      oc get pod trimaran-test -n trimaran
-        | awk 'NR > 1 {print $3}'
+      oc get pod trimaran-test -n trimaran --no-headers
+        | awk '{print $3}'
     register: trimaran_test_pod_state
     delay: 5
     retries: 20
@@ -112,7 +112,7 @@
 
   - name: Dump trimaran scheduler log
     shell: |
-      oc logs -n trimaran $(oc get pod -n trimaran -l "app=trimaran-scheduler" | awk 'NR > 1 {print $1}') > "{{ artifact_extra_logs_dir }}/trimaran_scheduler.log"
+      oc logs -n trimaran $(oc get pod -n trimaran -l "app=trimaran-scheduler" --no-headers | awk '{print $1}') > "{{ artifact_extra_logs_dir }}/trimaran_scheduler.log"
     ignore_errors: true
 
   - name: Dump cluster events
