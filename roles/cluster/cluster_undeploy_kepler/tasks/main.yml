@@ -3,11 +3,6 @@
     which go
   register: check_go
 
-- name: Install go if needed
-  command:
-    dnf install go-toolset
-  when: check_go.rc != 0
-
 - name: Grab kepler-operator source
   shell:
     git clone https://github.com/sustainable-computing-io/kepler-operator "/tmp/kepler" 2>&1
@@ -21,7 +16,7 @@
     git --git-dir "/tmp/kepler/.git" show
 
 - name: Undeploy kepler-operator
-  shell:
+  shell: 
     cd "/tmp/kepler"; make uninstall; make undeploy 2>&1
   register: undeploy_kepler
   failed_when:

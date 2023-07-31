@@ -3,11 +3,6 @@
     which go
   register: check_go
 
-- name: Install go if needed
-  command:
-    dnf install go-toolset
-  when: check_go.rc != 0
-
 - name: Grab kepler-operator source
   shell:
     git clone https://github.com/sustainable-computing-io/kepler-operator "/tmp/kepler" 2>&1
@@ -21,7 +16,7 @@
     git --git-dir "/tmp/kepler/.git" show
 
 - name: Deploy kepler-operator
-  shell:
+  shell: 
     cd "/tmp/kepler"; make deploy OPERATOR_IMG=quay.io/sustainable_computing_io/kepler-operator:latest
   register: deploy_kepler
   delay: 3
@@ -31,10 +26,6 @@
   shell:
     oc apply -k "/tmp/kepler/config/samples/"
 
-- name: Create the service monitor to connect Kepler metrics
-  command:
-    oc apply -f {{ kepler_service_monitor }}
-
 - name: Ensure kepler was deployed
   command:
     oc get -n openshift-kepler-operator svc -oname
@@ -42,3 +33,7 @@
   delay: 5
   retries: 30
   until: kepler_deployed.stdout == "service/kepler-exporter-svc"
+
+- name: Create the service monitor to connect Kepler metrics
+  command:
+    oc apply -f {{ kepler_service_monitor }}
