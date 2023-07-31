@@ -9,13 +9,24 @@
   when: check_go.rc != 0
 
 - name: Grab kepler-operator source
-  shell: |
-    git clone --quiet https://github.com/sustainable-computing-io/kepler-operator "/tmp/kepler" &2>1
+  shell:
+    git clone https://github.com/sustainable-computing-io/kepler-operator "/tmp/kepler" 2>&1
+  register: kepler_clone
+  failed_when:
+    - kepler_clone.rc != 0
+    - '"already exists and is not an empty directory" not in kepler_clone.stdout'
+
+- name: Show kepler-operator commit
+  command:
     git --git-dir "/tmp/kepler/.git" show
 
 - name: Undeploy kepler-operator
   shell:
-    cd "/tmp/kepler"; make uninstall; make undeploy &2>1
+    cd "/tmp/kepler"; make uninstall; make undeploy 2>&1
+  register: undeploy_kepler
+  failed_when:
+    - undeploy_kepler.rc != 0
+    - '"NotFound" not in undeploy_kepler.stdout'
 
 - name: Delete kepler-monitor ServiceMonitor
   shell:
