@@ -1,23 +1,37 @@
-- name: Grab kepler-operator source
+- name: Check if go is installed
   command:
-    git clone https://github.com/sustainable-computing-io/kepler-operator "{{ artifact_extra_logs_dir }}/kepler"
+    which go
+  register: check_go
+
+- name: Install go if needed
+  command:
+    dnf install go-toolset
+  when: check_go.rc != 0
+
+- name: Grab kepler-operator source
+  shell:
+    git clone --quiet https://github.com/sustainable-computing-io/kepler-operator "/tmp/kepler" &2>1
+
+- name: Show kepler-operator commit
+  command:
+    git --git-dir "/tmp/kepler/.git" show
 
 - name: Deploy kepler-operator
   shell:
-    cd "{{ artifact_extra_logs_dir }}/kepler"; make deploy OPERATOR_IMG=quay.io/sustainable_computing_io/kepler-operator:latest
+    cd "/tmp/kepler"; make deploy OPERATOR_IMG=quay.io/sustainable_computing_io/kepler-operator:latest
 
 - name: Deploy kepler exporters
   shell:
-    oc apply -k "{{ artifact_extra_logs_dir }}/kepler/config/samples/"
+    oc apply -k "/tmp/kepler/config/samples/" -n openshift-operators
+
+- name: Create the service monitor to connect Kepler metrics
+  command:
+    oc apply -f {{ kepler_service_monitor }}
 
 - name: Ensure kepler was deployed
-  shell:
+  command:
     oc get -n openshift-kepler-operator svc -oname
   register: kepler_deployed
   delay: 5
   retries: 30
   until: kepler_deployed.stdout == "service/kepler-exporter-svc"
-
-- name: Create the service monitor to connect Kepler metrics
-  command:
-    oc apply -f {{ kepler_service_monitor }}
