@@ -23,10 +23,6 @@
     - undeploy_kepler.rc != 0
     - '"NotFound" not in undeploy_kepler.stdout'
 
-- name: Delete kepler-monitor ServiceMonitor
-  shell:
-    oc delete -n openshift-kepler-operator servicemonitor kepler-monitor --ignore-not-found
-
 - name: Delete kepler namespaces
   shell:
     oc delete ns openshift-kepler-operator kepler-operator-system --ignore-not-found
