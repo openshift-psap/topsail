@@ -5,7 +5,7 @@
 
 - name: Grab kepler-operator source
   shell:
-    git clone https://github.com/sustainable-computing-io/kepler-operator "/tmp/kepler" 2>&1
+    git clone https://github.com/sustainable-computing-io/kepler-operator "{{ kepler_location }}" 2>&1
   register: kepler_clone
   failed_when:
     - kepler_clone.rc != 0
@@ -13,18 +13,18 @@
 
 - name: Show kepler-operator commit
   command:
-    git --git-dir "/tmp/kepler/.git" show
+    git --git-dir "{{ kepler_location }}/.git" show
 
 - name: Deploy kepler-operator
   shell: 
-    cd "/tmp/kepler"; make deploy OPERATOR_IMG=quay.io/sustainable_computing_io/kepler-operator:latest
+    cd "{{ kepler_location }}"; make deploy OPERATOR_IMG=quay.io/sustainable_computing_io/kepler-operator:latest
   register: deploy_kepler
   delay: 3
   retries: 10
 
 - name: Deploy kepler exporters
   shell:
-    oc apply -k "/tmp/kepler/config/samples/"
+    oc apply -k "{{ kepler_location }}/config/samples/"
 
 - name: Ensure kepler was deployed
   command:
