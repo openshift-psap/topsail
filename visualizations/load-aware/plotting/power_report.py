@@ -15,7 +15,7 @@ class PowerReport():
         self.id_name = self.name.lower().replace("/", "-")
         self.no_graph = True
         self.is_report = True
-table_stats.TableStats._register_stat(self)
+        table_stats.TableStats._register_stat(self)
 
     def do_plot(self, *args):
         header = []
