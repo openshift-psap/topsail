@@ -75,6 +75,16 @@ sutest/cluster set_project_annotation/toleration:
   value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
   project: {{ load_aware.scale_test.namespace }}
 
+kepler/cluster set_project_annotation/node_selector:
+  key: openshift.io/node-selector
+  value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"
+  project: openshift-kepler-operator
+
+kepler/cluster set_project_annotation/toleration:
+  key: scheduler.alpha.kubernetes.io/defaultTolerations
+  value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
+  project: openshift-kepler-operator
+
 sutest/cluster set_scale:
   instance_type: {{ clusters.create.ocp.compute.type }}
   name: {{ clusters.sutest.compute.machineset.name }}

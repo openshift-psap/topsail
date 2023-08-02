@@ -367,3 +367,37 @@ def get_metrics(name):
 def register(only_initialize=False):
     register = not only_initialize
     get_sutest_metrics(register)
+
+# ---
+
+def _get_kepler_metrics():
+    all_metrics = []
+
+    watt_per_second_to_kWh = 0.000000277777777777778
+
+    power_metrics = [
+        {f"Power Consumption Per Node (kWh)": 'sum(irate(kepler_node_core_joules_total[1h]) * {watt_per_second_to_kWh}) by (exported_instance)'},
+        {f"Power Consumption for Cluster (kWh)": 'sum(sum(irate(kepler_node_core_joules_total[1h]), * {watt_per_second_to_kWh}) by (exported_instance))'},
+        {f"Power Consumption Total (J)": 'sum(sum(kepler_node_core_joules_total) by (exported_instance))'},
+    ]
+
+    def get_legend_name(metric_name, metric_metric):
+        return metric_metric["exported_instance"], None
+
+
+    all_metrics += power_metrics
+
+    if register:
+        for metric in power_metrics:
+            name, rq = list(metric.items())[0]
+            plotting_prom.Plot({name: rq},
+                               f"Prom: {name}",
+                               None,
+                               "1 minute rate",
+                               get_metrics=get_metrics(cluster_role),
+                               get_legend_name=get_legend_name,
+                               show_queries_in_title=True,
+                               show_legend=True,
+                               as_timestamp=True)
+
+    return all_metrics

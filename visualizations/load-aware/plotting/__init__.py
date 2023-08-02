@@ -5,6 +5,7 @@ from . import pod_times
 from . import scheduler_report
 from . import mapping
 from . import comparison
+from . import power_report
 
 def register():
     error_report.register()
@@ -15,3 +16,4 @@ def register():
     scheduler_report.register()
     mapping.register()
     comparison.register()
+    power_report.register()
