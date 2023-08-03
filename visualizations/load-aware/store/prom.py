@@ -348,6 +348,7 @@ def get_sutest_metrics(register=False):
     all_metrics += _get_control_plane_nodes_cpu_usage(cluster_role, register)
 
     all_metrics += _get_load_aware_metrics(cluster_role, register)
+    all_metrics += _get_kepler_metrics()
 
     return all_metrics
 
