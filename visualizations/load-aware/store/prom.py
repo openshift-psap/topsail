@@ -348,7 +348,7 @@ def get_sutest_metrics(register=False):
     all_metrics += _get_control_plane_nodes_cpu_usage(cluster_role, register)
 
     all_metrics += _get_load_aware_metrics(cluster_role, register)
-    all_metrics += _get_kepler_metrics()
+    all_metrics += _get_kepler_metrics(cluster_role, register)
 
     return all_metrics
 
@@ -371,7 +371,7 @@ def register(only_initialize=False):
 
 # ---
 
-def _get_kepler_metrics():
+def _get_kepler_metrics(cluster_role, register):
     all_metrics = []
 
     watt_per_second_to_kWh = 0.000000277777777777778
