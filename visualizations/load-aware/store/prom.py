@@ -383,9 +383,6 @@ def _get_kepler_metrics(cluster_role, register):
         {f"Power Test": 'instance:node_cpu_utilisation:rate1m'},
     ]
 
-    def get_legend_name(metric_name, metric_metric):
-        return metric_metric["exported_instance"], None
-
     def all_nodes(entry, metrics):
         workload_nodes = [node.name for node in entry.results.cluster_info.workload]
 
@@ -403,7 +400,6 @@ def _get_kepler_metrics(cluster_role, register):
                                "1 minute rate",
                                get_metrics=get_metrics(cluster_role),
                                filter_metrics=all_nodes,
-                               get_legend_name=get_legend_name,
                                show_queries_in_title=True,
                                show_legend=True,
                                as_timestamp=True)
