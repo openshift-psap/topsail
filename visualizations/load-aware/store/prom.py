@@ -380,11 +380,17 @@ def _get_kepler_metrics(cluster_role, register):
         {f"Power Consumption Per Node (kWh)": 'sum(irate(kepler_node_core_joules_total[1h]) * {watt_per_second_to_kWh}) by (exported_instance)'},
         {f"Power Consumption for Cluster (kWh)": 'sum(sum(irate(kepler_node_core_joules_total[1h]), * {watt_per_second_to_kWh}) by (exported_instance))'},
         {f"Power Consumption Total (J)": 'sum(sum(kepler_node_core_joules_total) by (exported_instance))'},
+        {f"Power Test": 'instance:node_cpu_utilisation:rate1m'},
     ]
 
     def get_legend_name(metric_name, metric_metric):
         return metric_metric["exported_instance"], None
 
+    def all_nodes(entry, metrics):
+        workload_nodes = [node.name for node in entry.results.cluster_info.workload]
+
+        for metric in metrics:
+            yield metric
 
     all_metrics += power_metrics
 
@@ -396,6 +402,7 @@ def _get_kepler_metrics(cluster_role, register):
                                None,
                                "1 minute rate",
                                get_metrics=get_metrics(cluster_role),
+                               filter_metrics=all_nodes,
                                get_legend_name=get_legend_name,
                                show_queries_in_title=True,
                                show_legend=True,

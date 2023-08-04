@@ -32,5 +32,7 @@ class PowerReport():
         header += html.Br()
         header += [report.Plot("Prom: Power Consumption Total (J)", args)]
         header += html.Br()
+        header += [report.Plot("Prom: Power Test", args)]
+        header += html.Br()
 
         return None, header
