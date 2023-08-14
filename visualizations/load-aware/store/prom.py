@@ -348,6 +348,7 @@ def get_sutest_metrics(register=False):
     all_metrics += _get_control_plane_nodes_cpu_usage(cluster_role, register)
 
     all_metrics += _get_load_aware_metrics(cluster_role, register)
+    all_metrics += _get_kepler_metrics(cluster_role, register)
 
     return all_metrics
 
@@ -367,3 +368,40 @@ def get_metrics(name):
 def register(only_initialize=False):
     register = not only_initialize
     get_sutest_metrics(register)
+
+# ---
+
+def _get_kepler_metrics(cluster_role, register):
+    all_metrics = []
+
+    watt_per_second_to_kWh = 0.000000277777777777778
+
+    power_metrics = [
+        {"Power Consumption Per Node (kWh)": f"sum(irate(kepler_node_core_joules_total[1h]) * {watt_per_second_to_kWh}) by (exported_instance)"},
+        {"Power Consumption for Cluster (kWh)": f"sum(sum(irate(kepler_node_core_joules_total[1h]) * {watt_per_second_to_kWh}) by (exported_instance))"},
+        {"Power Consumption Total (J)": f"sum(sum(kepler_node_core_joules_total) by (exported_instance))"},
+        {"Power Test": "instance:node_cpu_utilisation:rate1m"},
+    ]
+
+    def all_nodes(entry, metrics):
+        workload_nodes = [node.name for node in entry.results.cluster_info.workload]
+
+        for metric in metrics:
+            yield metric
+
+    all_metrics += power_metrics
+
+    if register:
+        for metric in power_metrics:
+            name, rq = list(metric.items())[0]
+            plotting_prom.Plot({name: rq},
+                               f"Prom: {name}",
+                               None,
+                               "1 minute rate",
+                               get_metrics=get_metrics(cluster_role),
+                               filter_metrics=all_nodes,
+                               show_queries_in_title=True,
+                               show_legend=True,
+                               as_timestamp=True)
+
+    return all_metrics

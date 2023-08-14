@@ -6,3 +6,4 @@ visualize:
   - "report: Node Utilisation"
   - "report: Sutest Cluster CPU/Memory Usage"
   - "report: Control Plane Nodes Load"
+  - "report: Power Usage Statistics"
