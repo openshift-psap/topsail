@@ -166,7 +166,7 @@ base_image: # only used in sdk_user test mode
   namespace: codeflare-sdk-user-test-driver
   imagestream: ci-artifacts
   repo:
-    url: https://github.com/openshift-psap/ci-artifacts/
+    url: https://github.com/openshift-psap/topsail/
     tag: main
     ref: main
     ref_prefer_pr: true
