@@ -27,10 +27,10 @@ def main():
     cluster = Cluster(ClusterConfiguration(
         namespace=namespace, name=f"{name}-user{user_idx}",
         image=image,
-        min_worker=workers, max_worker=workers,
+        num_workers=workers,
         min_cpus=cpu, max_cpus=cpu,
         min_memory=memory, max_memory=memory,
-        gpu=gpu, instascale=False))
+        num_gpus=gpu, instascale=False))
 
 
     # Bring up the cluster
