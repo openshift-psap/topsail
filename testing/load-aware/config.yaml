@@ -33,6 +33,9 @@ ci_presets:
   load_variation_risk_balancing:
     load_aware.plugin: "LoadVariationRiskBalancing"
 
+  low_risk_over_commitment:
+    load_aware.plugin: "LowRiskOverCommitment"
+
   tiny_uniform_load:
     load_aware.scale_test.distribution: "uniform"
     load_aware.scale_test.duration: 30.0
@@ -99,11 +102,19 @@ clusters:
 load_aware:
   log_level: 1
   plugin: TargetLoadPacking
-  default_requests_cpu: 2000m
-  default_target_requests_multiplier: "2"
-  target_utilization: 70
-  safe_variance_margin: 1
-  safe_variance_sensitivity: 2
+  args:
+    TargetLoadPacking:
+      default_requests_cpu: 1000m
+      default_target_requests_multiplier: "1.5"
+      target_utilization: 40
+    LoadVariationRiskBalancing:
+      safe_variance_margin: 1
+      safe_variance_sensitivity: 1
+    LowRiskOverCommitment:
+      smoothing_window_size: 5
+      risk_limit_weights:
+        cpu: 0.5
+        memory: 0.5
   scale_test:
     distribution: poisson
     duration: 60.0

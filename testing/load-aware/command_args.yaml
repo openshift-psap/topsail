@@ -21,11 +21,14 @@ cluster capture_environment/sample:
 load_aware deploy_trimaran:
   log_level: {{ load_aware.log_level }}
   plugin: {{ load_aware.plugin }}
-  default_requests_cpu: {{ load_aware.default_requests_cpu }}
-  default_target_requests_multiplier: {{ load_aware.default_target_requests_multiplier }}
-  target_utilization: {{ load_aware.target_utilization }}
-  safe_variance_margin: {{ load_aware.safe_variance_margin }}
-  safe_variance_sensitivity: {{ load_aware.safe_variance_sensitivity }}
+  default_requests_cpu: {{ load_aware.args.TargetLoadPacking.default_requests_cpu }}
+  default_target_requests_multiplier: {{ load_aware.args.TargetLoadPacking.default_target_requests_multiplier }}
+  target_utilization: {{ load_aware.args.TargetLoadPacking.target_utilization }}
+  safe_variance_margin: {{ load_aware.args.LoadVariationRiskBalancing.safe_variance_margin }}
+  safe_variance_sensitivity: {{ load_aware.args.LoadVariationRiskBalancing.safe_variance_sensitivity }}
+  smoothing_window_size: {{ load_aware.args.LowRiskOverCommitment.smoothing_window_size }}
+  risk_limit_weights_cpu: {{ load_aware.args.LowRiskOverCommitment.risk_limit_weights.cpu }}
+  risk_limit_weights_memory: {{ load_aware.args.LowRiskOverCommitment.risk_limit_weights.memory }}
 
 load_aware scale_test:
   distribution: {{ load_aware.scale_test.distribution }}
