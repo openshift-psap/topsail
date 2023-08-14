@@ -1,0 +1,28 @@
+- name: Check if go is installed
+  command:
+    which go
+  register: check_go
+
+- name: Grab kepler-operator source
+  shell:
+    git clone https://github.com/sustainable-computing-io/kepler-operator "{{ kepler_location }}" 2>&1
+  register: kepler_clone
+  failed_when:
+    - kepler_clone.rc != 0
+    - '"already exists and is not an empty directory" not in kepler_clone.stdout'
+
+- name: Show kepler-operator commit
+  command:
+    git --git-dir "{{ kepler_location }}/.git" show
+
+- name: Undeploy kepler-operator
+  shell: 
+    cd "{{ kepler_location }}"; make uninstall; make undeploy 2>&1
+  register: undeploy_kepler
+  failed_when:
+    - undeploy_kepler.rc != 0
+    - '"NotFound" not in undeploy_kepler.stdout'
+
+- name: Delete kepler namespaces
+  shell:
+    oc delete ns openshift-kepler-operator kepler-operator-system --ignore-not-found

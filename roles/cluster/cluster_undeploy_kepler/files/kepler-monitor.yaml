@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    k8s-app: kepler-monitor
+  name: kepler-monitor
+  namespace: openshift-kepler-operator
+spec:
+  endpoints:
+  - interval: 15s
+    port: http
+    scheme: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: exporter
+      app.kubernetes.io/managed-by: kepler-operator
+      app.kubernetes.io/part-of: kepler
+      sustainable-computing.io/app: kepler

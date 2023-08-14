@@ -12,7 +12,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN yum install -y --quiet \
 	        git jq vim wget rsync time gettext httpd-tools make \
-		python3.9 python3-pip python3-setuptools procps \
+		python3.9 python3-pip python3-setuptools procps go-toolset \
   && yum clean all \
   && pip install virtualenv \
   && rm -rf $HOME/.cache && rm -rf /var/cache/yum \
@@ -62,6 +62,8 @@ exec ${HOME}/testing/run "$@" \n\
  && mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R \
  && chgrp -R 0 "${VIRTUAL_ENV}" \
  && chmod -R g=u "${VIRTUAL_ENV}"
+
+RUN ln -s $(which oc) /usr/bin/kubectl
 
 # Disable git dubious ownership detection in the image
 RUN git config --global --add safe.directory '*'
