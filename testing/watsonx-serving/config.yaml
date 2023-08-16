@@ -42,7 +42,7 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        # TicketId: "..."
+        TicketId: 229
         Project: PSAP/Watsonx/serving/scale/ci-dev
       deploy_cluster:
         target: cluster
@@ -81,6 +81,21 @@ clusters:
           value: "yes"
           effect: NoSchedule
   cleanup_on_exit: false
+
+prepare:
+  operators:
+  - name: servicemeshoperator
+    catalog: redhat-operators
+    namespace: all
+  - name: kiali-ossm
+    catalog: redhat-operators
+    namespace: all
+  - name: jaeger-product
+    catalog: redhat-operators
+    namespace: all
+  - name: serverless-operator
+    catalog: redhat-operators
+    namespace: all
 
 tests:
   mode: scale

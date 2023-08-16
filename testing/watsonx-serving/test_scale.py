@@ -28,19 +28,23 @@ def test(test_artifact_dir_p=None):
         failed = True
         try:
             if capture_prom:
-                run.run("./run_toolbox.py cluster reset_prometheus_db")
+                run.run("./run_toolbox.py cluster reset_prometheus_db",
+                        capture_stdout=True)
 
-            logging.info("Waiting 5 minutes to capture some metrics in Prometheus ...")
-
-            if not dry_mode:
-                time.sleep(5 * 60)
+            run_test()
 
             if capture_prom:
-                run.run("./run_toolbox.py cluster dump_prometheus_db")
+                run.run("./run_toolbox.py cluster dump_prometheus_db",
+                        capture_stdout=True)
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
 
             if not dry_mode:
-                run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
+                run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample",
+                        capture_stdout=True)
+
+def run_test():
+    run.run("testing/watsonx-serving/poc/deploy-model.sh | tee $ARTIFACT_DIR/000_deploy-model_sh.log")
+    run.run("testing/watsonx-serving/poc/try_kserve.sh | tee $ARTIFACT_DIR/001_try_kserve_sh.log")
