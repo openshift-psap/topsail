@@ -10,11 +10,11 @@ ci_presets:
   keep:
     clusters.create.keep: true
     clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/load-aware/home-dev
-    clusters.create.ocp.tags.TicketId: "115"
+    clusters.create.ocp.tags.TicketId: ""
 
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
-    
+
   light:
     extends: [light_cluster]
     cluster.sutest.compute.machineset.count: 1
@@ -69,7 +69,7 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        TicketId: "115"
+        TicketId: ""
         Project: PSAP/RHODS/Pipelines/load-aware/ci-dev
       deploy_cluster:
         target: cluster
