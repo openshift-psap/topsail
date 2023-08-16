@@ -68,6 +68,11 @@ RUN ln -s $(which oc) /usr/bin/kubectl
 # Disable git dubious ownership detection in the image
 RUN git config --global --add safe.directory '*'
 
+# Required for watsonx-serving tests
+ARG GRPCURL_VERSION=1.8.7
+RUN curl -L https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz | tar xz && \
+    chmod 777 grpcurl && mv grpcurl /usr/local/bin/
+
 WORKDIR ${HOME}
 
 ENTRYPOINT ["bash"]
