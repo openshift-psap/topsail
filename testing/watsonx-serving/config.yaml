@@ -82,6 +82,14 @@ clusters:
           effect: NoSchedule
   cleanup_on_exit: false
 
+tests:
+  mode: scale
+
+  dry_mode: false
+  visualize: true
+  capture_prom: true
+  want_gpu: false
+
 matbench:
   preset: null
   workload: watsonx-serving-scale
