@@ -14,7 +14,7 @@ def report_index_to_html(report_index):
 
     report_parent = report_dir.parent
 
-    relative_name = report_dir.name() if report_parent == ARTIFACT_DIR \
+    relative_name = report_dir.name if report_parent == ARTIFACT_DIR \
         else report_parent.relative_to(ARTIFACT_DIR)
 
     print()
