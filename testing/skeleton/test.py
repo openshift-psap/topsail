@@ -102,16 +102,20 @@ def test_ci():
         test_artifact_dir_p = [None]
         _run_test(test_artifact_dir_p)
     finally:
-        if test_artifact_dir_p[0] is not None:
-            next_count = env.next_artifact_index()
-            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
-                visualize.prepare_matbench()
-                generate_plots(test_artifact_dir_p[0])
-        else:
-            logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
+        try:
+            if test_artifact_dir_p[0] is not None:
+                next_count = env.next_artifact_index()
+                with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
+                    visualize.prepare_matbench()
+                    generate_plots(test_artifact_dir_p[0])
+            else:
+                logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
-        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
-            cleanup_cluster()
+        finally:
+            run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
+
+            if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+                cleanup_cluster()
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
