@@ -54,8 +54,6 @@ clusters:
       workers:
         type: m6a.2xlarge
         count: 2
-      compute:
-        type: m6i.2xlarge
 
   sutest:
     is_metal: false
@@ -65,6 +63,7 @@ clusters:
       dedicated: true
       machineset:
         name: workload-pods
+        type: m6i.2xlarge
         count: null
         taint:
           key: only-workload-pods
@@ -77,6 +76,7 @@ clusters:
       machineset:
         name: test-pods
         count: null
+        type: m6i.2xlarge
         taint:
           key: only-test-pods
           value: "yes"
