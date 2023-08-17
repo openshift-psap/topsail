@@ -6,5 +6,10 @@
 
 # ---
 
+sutest/cluster set_scale:
+  name: {{ clusters.sutest.compute.machineset.name }}
+  instance_type: {{ clusters.sutest.compute.machineset.type }}
+  scale: {{ clusters.sutest.compute.machineset.count }}
+
 cluster capture_environment/sample:
   _none: true # nothing to configure :/

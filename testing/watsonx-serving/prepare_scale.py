@@ -10,6 +10,8 @@ def prepare():
 
     run.run("./testing/utils/brew.registry.redhat.io/setup.sh $PSAP_ODS_SECRET_PATH/brew.registry.redhat.io.token")
 
+    run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest")
+
     if config.ci_artifacts.get_config("tests.want_gpu"):
         prepare_gpu.prepare_gpu_operator()
 

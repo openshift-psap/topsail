@@ -60,10 +60,11 @@ clusters:
     lab:
       name: null
     compute:
-      dedicated: true
+      dedicated: false
       machineset:
         name: workload-pods
-        count: null
+        type: m6i.2xlarge
+        count: 1
         taint:
           key: only-workload-pods
           value: "yes"
@@ -75,6 +76,7 @@ clusters:
       dedicated: true
       machineset:
         name: test-pods
+        type: m6i.2xlarge
         count: null
         taint:
           key: only-test-pods
