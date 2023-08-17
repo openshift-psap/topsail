@@ -20,6 +20,7 @@ LIGHT_PROFILE = "light"
 sys.path.append(str(TESTING_THIS_DIR.parent))
 from common import env, config, run, rhods, visualize
 
+import prepare_scale, test_scale
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -60,37 +61,12 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
 
-    logging.info("Nothing to do to prepare the cluster.")
+    test_mode = config.ci_artifacts.get_config("tests.mode")
+    if test_mode == "scale":
+        prepare_scale.prepare()
+    else:
+        raise KeyError(f"Invalid test mode: {test_mode}")
 
-    run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
-
-
-
-def _run_test(test_artifact_dir_p):
-    next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__dummy_test"):
-        test_artifact_dir_p[0] = env.ARTIFACT_DIR
-
-        with open(env.ARTIFACT_DIR / "settings", "w") as f:
-            print(f"dummy=true", file=f)
-
-        with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-            yaml.dump(config.ci_artifacts.config, f, indent=4)
-
-        failed = True
-        try:
-            run.run("./run_toolbox.py cluster reset_prometheus_db")
-
-            logging.info("Waiting 5 minutes to capture some metrics in Prometheus ...")
-            time.sleep(5 * 60)
-
-            run.run("./run_toolbox.py cluster dump_prometheus_db")
-            failed = False
-        finally:
-            with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
-                print("1" if failed else "0", file=f)
-
-            run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
 
 @entrypoint()
 def test_ci():
@@ -98,12 +74,16 @@ def test_ci():
     Runs the test from the CI
     """
 
+    do_visualize = config.ci_artifacts.get_config("tests.visualize")
+
     try:
         test_artifact_dir_p = [None]
-        _run_test(test_artifact_dir_p)
+        _run_test(test_artifact_dir_p=test_artifact_dir_p)
     finally:
         try:
-            if test_artifact_dir_p[0] is not None:
+            if not do_visualize:
+                logging.info("Not generating the visualization because it isn't activated.")
+            elif test_artifact_dir_p[0] is not None:
                 next_count = env.next_artifact_index()
                 with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
                     visualize.prepare_matbench()
@@ -112,10 +92,42 @@ def test_ci():
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
         finally:
-            run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
+            if do_visualize:
+                run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
 
             if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
                 cleanup_cluster()
+
+@entrypoint()
+def scale_test(dry_mode=None, capture_prom=None, do_visualize=None):
+    """
+    Runs the test from the CI
+
+    Args:
+      do_visualize: if False, do not generate the visualization reports
+      dry_mode: if True, do not execute the tests, only list what would be executed
+      capture_prom: if False, do not capture Prometheus database
+    """
+
+    if dry_mode is not None:
+        config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
+
+    if capture_prom is not None:
+        config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
+
+    if do_visualize is not None:
+        config.ci_artifacts.set_config("tests.visualize", do_visualize)
+
+    test_scale.test()
+
+
+def _run_test(test_artifact_dir_p):
+    test_mode = config.ci_artifacts.get_config("tests.mode")
+    if test_mode == "scale":
+        test_scale.test()
+    else:
+        raise KeyError(f"Invalid test mode: {test_mode}")
+
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
@@ -153,7 +165,7 @@ class Entrypoint:
 
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
-
+        self.scale_test = scale_test
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
         self.generate_plots = generate_plots
 
