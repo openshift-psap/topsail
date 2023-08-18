@@ -124,7 +124,7 @@ def scale_test(dry_mode=None, capture_prom=None, do_visualize=None):
 def _run_test(test_artifact_dir_p):
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode == "scale":
-        test_scale.test()
+        test_scale.test(test_artifact_dir_p)
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 

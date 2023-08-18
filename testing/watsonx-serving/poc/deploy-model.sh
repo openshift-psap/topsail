@@ -12,14 +12,17 @@ echo "Deploying the model ..."
 
 TEST_NS=kserve-demo
 
+mkdir -p $ARTIFACT_DIR/src
+
 oc create ns ${TEST_NS} -oyaml --dry-run=client | oc apply -f-
 
 oc get smmr/default -n istio-system -ojson \
     | jq '.spec.members = (.spec.members + ["'$TEST_NS'"] | unique)' \
+    | tee $ARTIFACT_DIR/src/smmr-default.json \
     | oc apply -f-
 
 # ./custom-manifests/caikit/caikit-servingruntime.yaml
-cat <<EOF | oc apply -f- -n ${TEST_NS}
+cat <<EOF | tee $ARTIFACT_DIR/src/ServingRuntime.yaml | oc apply -f- -n ${TEST_NS}
 apiVersion: serving.kserve.io/v1alpha1
 kind: ServingRuntime
 metadata:
@@ -51,7 +54,9 @@ oc get secret/storage-config -n minio -ojson \
     | jq 'del(.metadata.namespace) | del(.metadata.uid) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion)' \
     | oc apply -f- -n ${TEST_NS}
 
-cat <<EOF | oc apply -f- -n ${TEST_NS}
+oc describe secret/storage-config -n ${TEST_NS} > $ARTIFACT_DIR/src/storage-config.desc
+
+cat <<EOF | tee $ARTIFACT_DIR/src/ServiceAccount.yaml | oc apply -f- -n ${TEST_NS}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -61,7 +66,7 @@ secrets:
 EOF
 
 # ./custom-manifests/caikit/caikit-isvc.yaml
-cat <<EOF | oc apply -f- -n ${TEST_NS}
+cat <<EOF | tee $ARTIFACT_DIR/src/InferenceService.yaml | oc apply -f- -n ${TEST_NS}
 apiVersion: serving.kserve.io/v1beta1
 kind: InferenceService
 metadata:
@@ -85,7 +90,7 @@ EOF
 # The metrics service in this repo is configured to work with the example model. If you are deploying a different model or using a different model name, change the label accordingly.
 
 # custom-manifests/metrics/caikit-metrics-service.yaml
-cat <<EOF | oc apply -f- -n ${TEST_NS}
+cat <<EOF | tee $ARTIFACT_DIR/src/Service.yaml | oc apply -f- -n ${TEST_NS}
 kind: Service
 apiVersion: v1
 metadata:
@@ -104,7 +109,7 @@ spec:
 EOF
 
 # custom-manifests/metrics/caikit-metrics-servicemonitor.yaml
-cat <<EOF | oc apply -f- -n ${TEST_NS}
+cat <<EOF | tee $ARTIFACT_DIR/src/ServiceMonitor.yaml | oc apply -f- -n ${TEST_NS}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
