@@ -48,3 +48,10 @@ def test(test_artifact_dir_p=None):
 def run_test():
     run.run("testing/watsonx-serving/poc/deploy-model.sh | tee $ARTIFACT_DIR/000_deploy-model_sh.log")
     run.run("testing/watsonx-serving/poc/try_kserve.sh | tee $ARTIFACT_DIR/001_try_kserve_sh.log")
+
+    run.run("mkdir -p $ARTIFACT_DIR/artifacts")
+    run.run("oc get all -n kserve-demo > $ARTIFACT_DIR/artifacts/all.status")
+    run.run("oc get pods -owide -n kserve-demo > $ARTIFACT_DIR/artifacts/pods.status")
+
+    for what in "all", "pods", "deployments", "serving", "inferenceservice", "servingruntime":
+        run.run(f"oc get {what} -oyaml -n kserve-demo > $ARTIFACT_DIR/artifacts/{what}.yaml", check=False)
