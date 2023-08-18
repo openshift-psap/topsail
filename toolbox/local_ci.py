@@ -95,6 +95,7 @@ class Local_CI:
 
         Args:
             ci_command: The CI command to run.
+            user_count: Batch job parallelism count.
             namespace: The namespace in which the image.
             istag: The imagestream tag to use.
             job_name: The name to give to the Job running the CI command.

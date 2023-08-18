@@ -29,7 +29,7 @@ source "$TESTING_MM_DIR/../process_ctrl.sh"
 source "$TESTING_NOTEBOOKS_DIR/configure.sh"
 source "$TESTING_NOTEBOOKS_DIR/cluster_helpers.sh"
 export CI_ARTIFACTS_FROM_CONFIG_FILE=${TESTING_MM_DIR}/config.yaml
-export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_MM_DIR}/command_args.yaml
+export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_MM_DIR}/command_args.yml.j2
 
 KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-$KUBECONFIG}" # cluster driving the test
 KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-$KUBECONFIG}" # system under test

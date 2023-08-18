@@ -19,7 +19,7 @@ def run(command):
 TESTING_UTILS_LOCALCI_DIR = pathlib.Path(__file__).absolute().parent
 
 os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(TESTING_UTILS_LOCALCI_DIR / "config.yaml")
-os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_UTILS_LOCALCI_DIR / "command_args.yaml")
+os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(TESTING_UTILS_LOCALCI_DIR / "command_args.yml.j2")
 
 with open(os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"]) as config_f:
     config = yaml.safe_load(config_f)

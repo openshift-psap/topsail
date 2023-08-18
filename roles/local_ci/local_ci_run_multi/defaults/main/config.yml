@@ -6,7 +6,7 @@
 # Mandatory value
 local_ci_run_multi_ci_command:
 
-# Missing documentation for user_count
+# Batch job parallelism count.
 # Type: Int
 local_ci_run_multi_user_count: 1
 

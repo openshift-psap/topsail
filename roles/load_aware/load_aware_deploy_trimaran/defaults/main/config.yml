@@ -23,3 +23,12 @@ load_aware_deploy_trimaran_safe_variance_margin: 1
 # LoadVariationRiskBalancing setting
 load_aware_deploy_trimaran_safe_variance_sensitivity: 2
 
+# The window size
+load_aware_deploy_trimaran_smoothing_window_size: 5
+
+# CPU Limit
+load_aware_deploy_trimaran_risk_limit_weights_cpu: 0.5
+
+# Memory limit
+load_aware_deploy_trimaran_risk_limit_weights_memory: 0.5
+

@@ -32,6 +32,7 @@ class Wisdom:
           protos_path: File path to the proto files needed to query the model
           tester_imagestream_name: Name for the imagestream for the model validator Pod container image
           tester_image_tag: Name for the tag for the model validator Pod container imagestream
+          serving_runtime_name: Name for the wisdom serving runtime.
           namespace: Namespace to deploy the model 
         """
 
@@ -54,6 +55,8 @@ class Wisdom:
           protos_path: Path to protos directory to put into a ConfigMap, and mounted in Pod
           tester_imagestream_name: Name for the imagestream for the model validator Pod container image
           tester_image_tag: Name for the tag for the model validator Pod container imagestream
+          concurrency: Concurrency value for the wisdom-warmup Pod
+          total_requests: Total_requests value for the wisdom-warmup Pod
           warmup_concurrency: Simulated concurrent users for the warmup
           warmup_total_requests: Total maximum requests to send for the warmup phase.
           namespace: Namespace to deploy the model 
@@ -110,6 +113,7 @@ class Wisdom:
           requests: Requests sent for each model input in the dataset (will be set in llm-load-test config.json)
           concurrency: Number of concurrent simulated users sending requests
           replicas: Model Mesh Deployment replicas currently configured (to be attached as metadata to the results)
+          max_duration: Max duration value for the launcher
           dataset_path: File path to the json file containing the inputs to be used in the load test
           s3_secret_path: File path to an aws credentials file allowing llm-load-test to push the results to S3
           protos_path: File path to the proto files needed to query the model

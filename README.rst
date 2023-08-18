@@ -1,3 +1,10 @@
+TOPSAIL
+=======
+
+Test Orchestrator for Performance and Scalability of AI pLatforms
+
+|lint| |nbsp| |consistency| |nbsp| |render_ansible| |nbsp| |render_docs|
+
 This repository contains `Ansible <https://www.ansible.com/>`_ roles and
 playbooks for `OpenShift <https://www.openshift.com/>`_ for automating
 the interactions with the OpenShift operators under the responsibility
@@ -22,7 +29,7 @@ Documentation
 -------------
 
 See the `documentation pages
-<https://openshift-psap.github.io/ci-artifacts/index.html>`_.
+<https://openshift-psap.github.io/topsail/index.html>`_.
 
 Dependencies
 ------------
@@ -852,4 +859,17 @@ sro
     NOTES
         You can also use flags syntax for POSITIONAL ARGUMENTS
 
-
+.. |lint| image:: https://github.com/openshift-psap/topsail/actions/workflows/ansible-lint.yml/badge.svg?event=schedule
+    :alt: Linters build status
+    :target: https://github.com/openshift-psap/topsail/actions/workflows/ansible-lint.yml
+.. |consistency| image:: https://github.com/openshift-psap/topsail/actions/workflows/check_consistency.yml/badge.svg?event=schedule
+    :alt: Consistency build status
+    :target: https://github.com/openshift-psap/topsail/actions/workflows/check_consistency.yml
+.. |render_ansible| image:: https://github.com/openshift-psap/topsail/actions/workflows/check_generated_ansible.yml/badge.svg?event=schedule
+    :alt: Render Ansible build status
+    :target: https://github.com/openshift-psap/topsail/actions/workflows/check_generated_ansible.yml
+.. |render_docs| image:: https://github.com/openshift-psap/topsail/actions/workflows/build_docs.yml/badge.svg?event=schedule
+    :alt: Render docs build status
+    :target: https://github.com/openshift-psap/topsail/actions/workflows/build_docs.yml
+.. |nbsp| unicode:: 0xA0 
+   :trim:

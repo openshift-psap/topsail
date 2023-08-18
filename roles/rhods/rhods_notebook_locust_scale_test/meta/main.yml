@@ -1,3 +1,3 @@
 ---
 dependencies:
-  #- role: check_deps
+  - role: check_deps

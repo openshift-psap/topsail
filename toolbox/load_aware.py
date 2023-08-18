@@ -32,6 +32,9 @@ class Load_Aware:
             target_utilization: TargetLoadPacking setting,
             safe_variance_margin: LoadVariationRiskBalancing setting
             safe_variance_sensitivity: LoadVariationRiskBalancing setting
+            smoothing_window_size: The window size
+            risk_limit_weights_cpu: CPU Limit
+            risk_limit_weights_memory: Memory limit
         """
 
         if plugin not in ("TargetLoadPacking", "LoadVariationRiskBalancing", "LowRiskOverCommitment"):
