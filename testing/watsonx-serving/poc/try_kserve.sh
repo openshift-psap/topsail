@@ -95,8 +95,9 @@ ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp}
 export TEST_NS=kserve-demo
 echo
 echo "Wait until runtime is READY"
-
+set +x
 wait_for_pods_ready "serving.kserve.io/inferenceservice=caikit-example-isvc" "${TEST_NS}"
+set -x
 oc wait --for=condition=ready pod -l serving.kserve.io/inferenceservice=caikit-example-isvc -n ${TEST_NS} --timeout=300s
 
 export KSVC_HOSTNAME=$(oc get ksvc caikit-example-isvc-predictor -n ${TEST_NS} -o jsonpath='{.status.url}' | cut -d'/' -f3)
