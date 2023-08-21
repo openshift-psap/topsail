@@ -107,6 +107,9 @@ tests:
   capture_prom: true
   want_gpu: false
 
+  scale:
+    namespace: watsonx-serving-scale-test
+
 matbench:
   preset: null
   workload: watsonx-serving-scale
