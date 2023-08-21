@@ -20,7 +20,7 @@ def test(test_artifact_dir_p=None):
             test_artifact_dir_p[0] = env.ARTIFACT_DIR
 
         with open(env.ARTIFACT_DIR / "settings", "w") as f:
-            print("scale_test=true", f)
+            print("scale_test=true", file=f)
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
