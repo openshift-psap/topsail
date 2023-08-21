@@ -20,12 +20,20 @@ K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
 SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
+artifact_dirnames = types.SimpleNamespace()
+artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_db"
+artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
+artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR = "*__local_ci__run_multi"
+
+artifact_paths = None # store._parse_directory will turn it into a {str: pathlib.Path} dict base on ^^^
+
 IMPORTANT_FILES = [
     "config.yaml",
 
-    "001__cluster__dump_prometheus_db/prometheus.t*",
-    "002__cluster__capture_environment/nodes.json",
-    "002__cluster__capture_environment/ocp_version.yml"
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci_job.yaml",
+    f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",
+    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
+    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml"
 ]
 
 PARSER_VERSION = "2023-05-31"
@@ -53,7 +61,7 @@ def _parse_once(results, dirname):
     results.cluster_info = _extract_cluster_info(results.nodes_info)
     results.sutest_ocp_version = _parse_ocp_version(dirname)
     results.metrics = _extract_metrics(dirname)
-    results.start_time, results.end_time = _parse_start_end_time(dirname)
+    results.test_start_end_time = _parse_start_end_time(dirname)
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -137,7 +145,7 @@ def _parse_test_config(dirname):
 def _parse_nodes_info(dirname, sutest_cluster=True):
     nodes_info = {}
 
-    filename = pathlib.Path("002__cluster__capture_environment") / "nodes.json"
+    filename = artifact_paths.CLUSTER_CAPTURE_ENV_DIR / "nodes.json"
 
     with open(register_important_file(dirname, filename)) as f:
         nodeList = json.load(f)
@@ -162,15 +170,18 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
 @ignore_file_not_found
 def _parse_ocp_version(dirname):
 
-    with open(register_important_file(dirname, pathlib.Path("002__cluster__capture_environment") / "ocp_version.yml")) as f:
+    with open(register_important_file(dirname, artifact_paths.CLUSTER_CAPTURE_ENV_DIR / "ocp_version.yml")) as f:
         sutest_ocp_version_yaml = yaml.safe_load(f)
 
     return sutest_ocp_version_yaml["openshiftVersion"]
 
 
 def _extract_metrics(dirname):
+    if not artifact_paths.CLUSTER_DUMP_PROM_DB_DIR:
+        raise FileNotFoundError(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR)
+
     METRICS = {
-        "sutest": ("001__cluster__dump_prometheus_db/prometheus.t*", workload_prom.get_sutest_metrics()),
+        "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
     }
 
     metrics = {}
@@ -203,17 +214,24 @@ def _extract_cluster_info(nodes_info):
 
 @ignore_file_not_found
 def _parse_start_end_time(dirname):
-    ANSIBLE_LOG_TIME_FMT = '%Y-%m-%d %H:%M:%S'
-    start_time = None
-    end_time = None
-    with open(register_important_file(dirname, "002__cluster__capture_environment/_ansible.log")) as f:
-        for line in f.readlines():
-            time_str = line.partition(",")[0] # ignore the MS
-            if start_time is None:
-                start_time = datetime.datetime.strptime(time_str, ANSIBLE_LOG_TIME_FMT)
-        if start_time is None:
-            raise ValueError("Ansible log file is empty :/")
+    test_start_end_time = types.SimpleNamespace()
+    test_start_end_time.start = None
+    test_start_end_time.end = None
 
-        end_time = datetime.datetime.strptime(time_str, ANSIBLE_LOG_TIME_FMT)
+    with open(register_important_file(dirname, artifact_paths.LOCAL_CI_RUN_MULTI_DIR / "ci_job.yaml")) as f:
+        job = yaml.safe_load(f)
 
-    return start_time, end_time
+    test_start_end_time.start = \
+        datetime.datetime.strptime(
+            job["status"]["startTime"],
+            K8S_TIME_FMT)
+
+    if job["status"].get("completionTime"):
+        test_start_end_time.end = \
+            datetime.datetime.strptime(
+                job["status"]["completionTime"],
+                K8S_TIME_FMT)
+    else:
+        test_start_end_time.end = test_start_end_time.start + datetime.timedelta(hours=1)
+
+    return test_start_end_time
