@@ -99,6 +99,25 @@ prepare:
     catalog: redhat-operators
     namespace: all
 
+base_image:
+  namespace: watsonx-serving-user-test-driver
+  imagestream: topsail
+  repo:
+    url: https://github.com/openshift-psap/topsail/
+    tag: main
+    ref: main
+    ref_prefer_pr: true
+    dockerfile_path: build/Dockerfile
+  extend:
+    enabled: true
+    local_dockerfile_path: testing/watsonx-serving/images/Containerfile.scale_test_user
+    tag: scale-test-user
+  user:
+    service_account: ci-artifacts
+    role: cluster-admin
+  minio:
+    bucket_name: watsonx-serving-scale-test-bucket
+
 tests:
   mode: scale
 
@@ -109,6 +128,9 @@ tests:
 
   scale:
     namespace: watsonx-serving-scale-test
+    user_count: 1
+    sleep_factor: 1
+    user_batch_size: 1
 
 matbench:
   preset: null

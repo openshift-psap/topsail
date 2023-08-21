@@ -31,11 +31,13 @@ def test(test_artifact_dir_p=None):
                 run.run("./run_toolbox.py cluster reset_prometheus_db",
                         capture_stdout=True)
 
-            run_test()
+            try:
+                run_test(dry_mode)
+            finally:
+                if capture_prom:
+                    run.run("./run_toolbox.py cluster dump_prometheus_db",
+                            capture_stdout=True)
 
-            if capture_prom:
-                run.run("./run_toolbox.py cluster dump_prometheus_db",
-                        capture_stdout=True)
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
@@ -45,8 +47,11 @@ def test(test_artifact_dir_p=None):
                 run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample",
                         capture_stdout=True)
 
-def run_test():
-    run_one()
+def run_test(dry_mode):
+    if dry_mode:
+        logging.info("local_ci run_multi --suffix sdk_user ==> skipped")
+    else:
+        run.run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale")
 
 
 def prepare_user_namespace(namespace):
