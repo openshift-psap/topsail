@@ -13,6 +13,7 @@ from toolbox.from_config import FromConfig
 from toolbox.local_ci import Local_CI
 from toolbox.load_aware import Load_Aware
 from toolbox.codeflare import Codeflare
+from toolbox.watsonx_serving import Watsonx_Serving
 
 class Toolbox:
     """
@@ -41,3 +42,4 @@ class Toolbox:
         self.wisdom = Wisdom
         self.load_aware = Load_Aware
         self.codeflare = Codeflare
+        self.watsonx_serving = Watsonx_Serving
