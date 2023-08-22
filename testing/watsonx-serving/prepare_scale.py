@@ -4,14 +4,18 @@ import pathlib
 from common import env, config, run, sizing, prepare_gpu_operator, prepare_user_pods
 
 def compute_sutest_node_requirement():
+    user_count = config.ci_artifacts.get_config("tests.scale.user_count")
     kwargs = dict(
-        cpu = 6.9,
+        cpu = 7,
         memory = 10,
         machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type"),
-        user_count = config.ci_artifacts.get_config("tests.scale.user_count"),
+        user_count = user_count,
         )
 
-    return sizing.main(**kwargs)
+    machine_count = sizing.main(**kwargs)
+
+    # the sutest Pods must fit in one machine.
+    return min(user_count, machine_count)
 
 def prepare():
     """
