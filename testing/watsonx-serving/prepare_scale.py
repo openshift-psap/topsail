@@ -23,7 +23,7 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 
 def prepare():
     """
-    Prepares the cluster and the namespace for running the MCAD tests
+    Prepares the cluster and the namespace for running the Watsonx scale tests
     """
 
     if not PSAP_ODS_SECRET_PATH.exists():
