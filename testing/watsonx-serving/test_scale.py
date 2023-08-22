@@ -3,6 +3,7 @@ import pathlib
 import yaml
 import time
 import os
+import datetime
 
 from common import env, config, run
 
@@ -171,7 +172,7 @@ spec:
 
     save_and_create("InferenceService.yaml", inference_service, namespace)
 
-    retries_left = 30
+    retries_left = 60
     target_model_state = "<not queried>"
     while True:
         retries_left -= 1
@@ -184,7 +185,7 @@ spec:
 
         logging.info(f"Waiting for the model state to be 'Loaded'. Current state: {target_model_state}")
         logging.info(f"{retries_left} retries left")
-        time.sleep(10)
+        time.sleep(5)
 
 
 def validate_model_deployment(namespace):
