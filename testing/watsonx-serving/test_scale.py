@@ -44,7 +44,7 @@ def test(test_artifact_dir_p=None):
                 print("1" if failed else "0", file=f)
 
             if not dry_mode:
-                run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample",
+                run.run("./run_toolbox.py cluster capture_environment",
                         capture_stdout=True)
 
 def run_test(dry_mode):
