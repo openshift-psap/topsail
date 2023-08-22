@@ -84,6 +84,13 @@ clusters:
           effect: NoSchedule
   cleanup_on_exit: false
 
+rhods:
+  catalog:
+    image: brew.registry.redhat.io/rh-osbs/iib
+    tag: 560052
+    channel: alpha
+    version: 2.1.0 # rc2
+
 prepare:
   operators:
   - name: servicemeshoperator
