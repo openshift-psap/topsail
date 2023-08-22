@@ -18,3 +18,14 @@ class Watsonx_Serving:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("watsonx_serving_capture_operators_state")
+    @AnsibleMappedParams
+    def capture_operators_state(self):
+        """
+        Captures the state of the operators of the WatsonX serving stack
+
+        Args:
+        """
+
+        return RunAnsibleRole(locals())
