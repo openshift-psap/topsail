@@ -44,8 +44,12 @@ def test(test_artifact_dir_p=None):
                 print("1" if failed else "0", file=f)
 
             if not dry_mode:
-                run.run("./run_toolbox.py cluster capture_environment",
-                        capture_stdout=True)
+                try:
+                    run.run("./run_toolbox.py watsonx_serving capture_operators_state",
+                            capture_stdout=True)
+                finally:
+                    run.run("./run_toolbox.py cluster capture_environment",
+                            capture_stdout=True)
 
 def run_test(dry_mode):
     if dry_mode:
