@@ -1,0 +1,22 @@
+---
+- name: Save the state of the datasciencecluster configuration
+  shell:
+    oc get datasciencecluster -oyaml
+       > "{{ artifact_extra_logs_dir }}/DataScienceCluster.yaml"
+  ignore_errors: true
+
+- name: Save the state of the kserve configuration
+  shell: |
+    oc get smmr/default -n istio-system -oyaml \
+       > "{{ artifact_extra_logs_dir }}/smmr_default.yaml"
+  ignore_errors: true
+
+- name: Capture the Pods logs
+  include_tasks: capture_pods.yaml
+  loop:
+  - openshift-operators
+  - knative-serving
+  - redhat-ods-applications
+  - istio-system
+  loop_control:
+    loop_var: namespace

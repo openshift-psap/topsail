@@ -1,0 +1,42 @@
+- name: Create the pod logs directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/{{ namespace }}/logs"
+    state: directory
+    mode: '0755'
+
+- name: Get the status of the pods
+  shell:
+    oc get pods -owide
+       -n "{{ namespace }}"
+       > "{{ artifact_extra_logs_dir }}/{{ namespace }}/all.status"
+
+- name: Get the json of the pods
+  shell:
+    oc get pods -ojson
+       -n "{{ namespace }}"
+       > "{{ artifact_extra_logs_dir }}/{{ namespace }}/all.json"
+
+- name: Get the names of the pods
+  command:
+    oc get pods
+       -n "{{ namespace }}"
+       -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+  register: pod_names_cmd
+
+- name: Capture the yaml of the pods
+  loop: "{{ pod_names_cmd.stdout_lines }}"
+  shell:
+    oc get pod/{{ item }}
+       -n {{ namespace }}
+       -oyaml
+       > "{{ artifact_extra_logs_dir }}/{{ namespace }}/{{ item }}.yaml"
+  ignore_errors: true
+
+- name: Capture the logs of the pods
+  loop: "{{ pod_names_cmd.stdout_lines }}"
+  shell:
+    oc logs pod/{{ item }}
+       -n {{ namespace }}
+       --all-containers --prefix
+       > "{{ artifact_extra_logs_dir }}/{{ namespace }}/logs/{{ item }}.log"
+  ignore_errors: true

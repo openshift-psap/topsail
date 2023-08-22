@@ -61,7 +61,8 @@ class Config:
                 if not found:
                     logging.warning(f"apply_config_overrides: Invalid line: '{line.strip()}', ignoring it.")
                     continue
-                value = _value.strip("'")
+
+                value = yaml.safe_load(_value) # convert the string as YAML would do
 
                 MAGIC_DEFAULT_VALUE = object()
                 current_value = self.get_config(key, MAGIC_DEFAULT_VALUE)

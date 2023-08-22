@@ -121,6 +121,34 @@ def scale_test(dry_mode=None, capture_prom=None, do_visualize=None):
     test_scale.test()
 
 
+@entrypoint()
+def run_one(dry_mode=None, capture_prom=None, do_visualize=None):
+    """
+    Runs the test with single user
+
+    Args:
+      do_visualize: if False, do not generate the visualization reports
+      dry_mode: if True, do not execute the tests, only list what would be executed
+      capture_prom: if False, do not capture Prometheus database
+    """
+
+    test_mode = config.ci_artifacts.get_config("tests.mode")
+
+    if test_mode != "scale":
+        raise KeyError(f"Invalid test mode: {test_mode}")
+
+    if dry_mode is not None:
+        config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
+
+    if capture_prom is not None:
+        config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
+
+    if do_visualize is not None:
+        config.ci_artifacts.set_config("tests.visualize", do_visualize)
+
+    test_scale.run_one()
+
+
 def _run_test(test_artifact_dir_p):
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode == "scale":
@@ -166,6 +194,7 @@ class Entrypoint:
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
         self.scale_test = scale_test
+        self.run_one = run_one
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
         self.generate_plots = generate_plots
 

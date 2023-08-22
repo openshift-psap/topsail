@@ -100,14 +100,14 @@ fi
 pos_args=$(echo "$last_user_test_comment" |
                (grep "$test_name" || true) | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
 if [[ "$pos_args" ]]; then
-    echo "PR_POSITIONAL_ARGS='$pos_args'" >> "$DEST"
+    echo "PR_POSITIONAL_ARGS=$pos_args" >> "$DEST"
     i=1
     for pos_arg in $pos_args; do
-        echo "PR_POSITIONAL_ARG_$i='$pos_arg'" >> "$DEST"
+        echo "PR_POSITIONAL_ARG_$i=$pos_arg" >> "$DEST"
         i=$((i + 1))
     done
 fi
-echo "PR_POSITIONAL_ARG_0='$test_name'" >> "$DEST"
+echo "PR_POSITIONAL_ARG_0=$test_name" >> "$DEST"
 
 while read line; do
     [[ $line != "/var "* ]] && continue
@@ -116,5 +116,5 @@ while read line; do
     key=$(echo "$line" | cut -d" " -f2- | cut -d= -f1)
     value=$(echo "$line" | cut -d= -f2 | tr -d '\n' | tr -d '\r')
 
-    echo "$key='$value'" >> "$DEST"
+    echo "$key=$value" >> "$DEST"
 done <<< $(echo "$pr_body"; echo "$last_user_test_comment")
