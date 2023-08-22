@@ -1,7 +1,8 @@
 import logging
 import pathlib
+import os
 
-from common import env, config, run, sizing, prepare_gpu_operator, prepare_user_pods
+from common import env, config, run, sizing, prepare_gpu_operator, prepare_user_pods, rhods
 
 def compute_sutest_node_requirement():
     user_count = config.ci_artifacts.get_config("tests.scale.user_count")
@@ -17,12 +18,19 @@ def compute_sutest_node_requirement():
     # the sutest Pods must fit in one machine.
     return min(user_count, machine_count)
 
+
+PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
+
 def prepare():
     """
-    Prepares the cluster and the namespace for running the MCAD tests
+    Prepares the cluster and the namespace for running the Watsonx scale tests
     """
 
-    run.run("./testing/utils/brew.registry.redhat.io/setup.sh $PSAP_ODS_SECRET_PATH/brew.registry.redhat.io.token")
+    if not PSAP_ODS_SECRET_PATH.exists():
+        raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
+
+    token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
+    rhods.install(token_file)
 
     if not config.ci_artifacts.get_config("clusters.driver.is_metal"):
         node_count = compute_sutest_node_requirement()

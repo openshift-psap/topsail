@@ -32,22 +32,8 @@ if [ "$input" = "y" ]; then
       export TARGET_OPERATOR_TYPE=$(getOpType $TARGET_OPERATOR)
     fi
 
-    if [[ ! -n ${BREW_TAG} ]]
-    then
-      read -p "BREW_TAG is not set, what is BREW_TAG?" brew_tag
-      if [[ $brew_tag =~ ^[0-9]+$ ]]
-      then
-        export BREW_TAG=$brew_tag
-      else
-        echo "[ERR] BREW_TAG must be number only"
-        exit 1
-      fi
-    fi
-
-    export KSERVE_OPERATOR_NS=$(getKserveNS)
     export TARGET_OPERATOR_NS=$(getOpNS ${TARGET_OPERATOR})
     echo
-    echo "Let's install KServe"
 else
     echo "ERROR: Please check the configmap and execute this script again"
     exit 1
@@ -160,32 +146,6 @@ export COMMON_NAME=$(oc get ingresses.config.openshift.io cluster -o jsonpath='{
 # Create the Knative gateways
 oc create secret tls wildcard-certs --cert=${BASE_CERT_DIR}/wildcard.crt --key=${BASE_CERT_DIR}/wildcard.key -n istio-system -oyaml --dry-run=client | oc apply -f-
 oc apply -f custom-manifests/serverless/gateways.yaml
-
-# Create brew catalogsource
-if [[ ${TARGET_OPERATOR} == "brew" ]];
-then
-  echo
-  echo "[INFO] Create catalogsource for brew registry"
-  echo
-  sed "s/<%brew_tag%>/$BREW_TAG/g" custom-manifests/brew/catalogsource.yaml |oc apply -f -
-
-  wait_for_pods_ready "olm.catalogSource=rhods-catalog-dev" "openshift-marketplace"
-  oc wait --for=condition=ready pod -l olm.catalogSource=rhods-catalog-dev -n openshift-marketplace --timeout=60s
-fi
-
-# Deploy odh/rhods operator
-echo
-echo "[INFO] Deploy odh/rhods operator"
-echo
-if [[ ${TARGET_OPERATOR_TYPE} == "rhods" ]];
-then
-  oc create ns ${TARGET_OPERATOR_NS} -oyaml --dry-run=client | oc apply -f-
-  oc::wait::object::availability "oc get project ${TARGET_OPERATOR_NS} " 2 60
-fi
-oc apply -f custom-manifests/opendatahub/${TARGET_OPERATOR}-operators-2.0.yaml
-
-wait_for_pods_ready "name=rhods-operator" "${TARGET_OPERATOR_NS}"
-oc wait --for=condition=ready pod -l name=rhods-operator -n ${TARGET_OPERATOR_NS} --timeout=300s
 
 echo
 echo "[INFO] Deploy KServe"

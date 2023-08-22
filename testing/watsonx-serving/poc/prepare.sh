@@ -10,11 +10,10 @@ set -x
 # and https://github.com/opendatahub-io/caikit-tgis-serving/blob/8e9104109bb1bc79e57bc50933dc7363b73f5715/demo/kserve/scripts/install/kserve-install.sh
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp}
-GIT_REPO=Jooho/caikit-tgis-serving
-GIT_REF=script-enhance
+GIT_REPO=opendatahub-io/caikit-tgis-serving
+GIT_REF=main
 
 export TARGET_OPERATOR=brew # Set this among odh, rhods or brew, if you want to skip the question in the script.
-export BREW_TAG=554196 # brew is a registry where WIP images are published. You need to ask the tag to use and it changes for every build
 export CHECK_UWM=false # Set this to "false", if you want to skip the User Workload Configmap check message
 
 # Enable User Workload Monitoring
