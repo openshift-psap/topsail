@@ -193,7 +193,35 @@ def validate_model_deployment(namespace):
     logging.info(f"KSVC hostname: {ksvc_hostname}")
 
     logging.info(f"Querying the TextGenerationTaskPredict endpoint ...")
-    run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict > {env.ARTIFACT_DIR}/TextGenerationTaskPredict.answer""")
+
+    tries = 0
+    retries_left = 600
+    start_time = datetime.datetime.now()
+    while True:
+        tries += 1
+        retcode = run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict > {env.ARTIFACT_DIR}/TextGenerationTaskPredict.answer""", check=False).returncode
+
+        if retcode == 0:
+            break
+
+        if tries == 1:
+            run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict > {env.ARTIFACT_DIR}/TextGenerationTaskPredict.answer &> {env.ARTIFACT_DIR}/Invalid.answer""", check=False)
+
+        time.sleep(0.5)
+
+        retries_left -= 1
+        if retries_left == 0:
+            raise RuntimeError(f"The model in {namespace} did not respond properly... Started at {start_time.time()}, stopped at {datetime.datetime.now().time()}. Tried {tries} times.")
+
+    end_time = datetime.datetime.now()
+    model_ready = dict(start_time=start_time, end_time=end_time,
+                       tries=tries,
+                       duration_s=(end_time - start_time).total_seconds())
+
+    with open(env.ARTIFACT_DIR / "model_ready.yaml", "w") as f:
+        yaml.dump(model_ready, f, indent=4)
+
+    logging.info(f"The model responded properly after {model_ready['duration_s']:.0f} seconds.")
 
     logging.info(f"Querying the ServerStreamingTextGenerationTaskPredict endpoint ...")
     run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/ServerStreamingTextGenerationTaskPredict > {env.ARTIFACT_DIR}/ServerStreamingTextGenerationTaskPredict.answer""")
