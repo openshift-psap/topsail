@@ -211,8 +211,11 @@ def run_one():
     (env.ARTIFACT_DIR / "src").mkdir(exist_ok=True)
 
     namespace = config.ci_artifacts.get_config("tests.scale.namespace")
-    prepare_user_namespace(namespace)
+    try:
+        prepare_user_namespace(namespace)
 
-    deploy_serving_runtime(namespace)
-    deploy_inference_service(namespace)
-    validate_model_deployment(namespace)
+        deploy_serving_runtime(namespace)
+        deploy_inference_service(namespace)
+        validate_model_deployment(namespace)
+    finally:
+        run.run(f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
