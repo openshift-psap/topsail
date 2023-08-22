@@ -58,25 +58,25 @@ rhods_notebook_ods_ci_scale_test_ods_ci_istag:
 # Tags to exclude in the ODS-CI test case.
 rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags: None
 
-# Missing documentation for ods_ci_test_case
+# Robot test case name.
 rhods_notebook_ods_ci_scale_test_ods_ci_test_case: notebook_dsg_test.robot
 
 # Imagestream tag of the artifacts exporter side-car container image.
 rhods_notebook_ods_ci_scale_test_artifacts_exporter_istag:
 
-# Missing documentation for notebook_image_name
+# Notebook image name.
 rhods_notebook_ods_ci_scale_test_notebook_image_name: s2i-generic-data-science-notebook
 
-# Missing documentation for notebook_size_name
+# Notebook size.
 rhods_notebook_ods_ci_scale_test_notebook_size_name: Small
 
-# Missing documentation for notebook_benchmark_name
+# Benchmark script file name to execute in the notebook.
 rhods_notebook_ods_ci_scale_test_notebook_benchmark_name: pyperf_bm_go.py
 
-# Missing documentation for notebook_benchmark_number
+# Number of the benchmarks executions per repeat.
 rhods_notebook_ods_ci_scale_test_notebook_benchmark_number: 20
 
-# Missing documentation for notebook_benchmark_repeat
+# Number of the benchmark repeats to execute.
 rhods_notebook_ods_ci_scale_test_notebook_benchmark_repeat: 2
 
 # Hostname and port of the Redis server for StateSignal synchronization (for the synchronization of the beginning of the user simulation)

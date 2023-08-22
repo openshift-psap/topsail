@@ -14,7 +14,7 @@ wisdom_llm_load_test_multiplexed_concurrency:
 # Mandatory value
 wisdom_llm_load_test_multiplexed_replicas:
 
-# Missing documentation for max_duration
+# Max duration value for the launcher
 # Mandatory value
 wisdom_llm_load_test_multiplexed_max_duration:
 

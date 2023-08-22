@@ -60,7 +60,7 @@ rhods_notebook_locust_scale_test_sut_cluster_kubeconfig:
 # Name of the RHODS image to use when launching the notebooks.
 rhods_notebook_locust_scale_test_notebook_image_name: s2i-generic-data-science-notebook
 
-# Missing documentation for notebook_size_name
+# Size name of the notebook.
 rhods_notebook_locust_scale_test_notebook_size_name: Small
 
 # Toleration key to use for the test Pods.

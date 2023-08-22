@@ -14,10 +14,10 @@ wisdom_warmup_model_tester_imagestream_name:
 # Mandatory value
 wisdom_warmup_model_tester_image_tag:
 
-# Missing documentation for concurrency
+# Concurrency value for the wisdom-warmup Pod
 wisdom_warmup_model_concurrency: '16'
 
-# Missing documentation for total_requests
+# Total_requests value for the wisdom-warmup Pod
 wisdom_warmup_model_total_requests: '4096'
 
 # Namespace to deploy the model

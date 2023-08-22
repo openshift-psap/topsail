@@ -122,8 +122,14 @@ class RHODS:
           user_batch_size: Number of users to launch at the same time.
           ods_ci_istag: Imagestream tag of the ODS-CI container image.
           ods_ci_scale_test_case: ODS-CI test case to execute.
+          ods_ci_test_case: Robot test case name.
           ods_ci_exclude_tags: Tags to exclude in the ODS-CI test case.
           artifacts_exporter_istag: Imagestream tag of the artifacts exporter side-car container image.
+          notebook_image_name: Notebook image name.
+          notebook_size_name: Notebook size.
+          notebook_benchmark_name: Benchmark script file name to execute in the notebook.
+          notebook_benchmark_number: Number of the benchmarks executions per repeat.
+          notebook_benchmark_repeat: Number of the benchmark repeats to execute.
           ods_ci_notebook_image_name: Name of the RHODS image to use when launching the notebooks.
           ods_ci_notebook_size_name: Name of the RHODS notebook size to select when launching the notebook.
           ods_ci_notebook_benchmark_name: Name of the benchmark to execute in the notebook.
@@ -197,6 +203,7 @@ class RHODS:
           user_count: Number of users to run in parallel.
           user_index_offset: Offset to add to the user index to compute the user name.
           notebook_image_name: Name of the RHODS image to use when launching the notebooks.
+          notebook_size_name: Size name of the notebook.
           locust_istag: Imagestream tag of the locust container.
           run_time: Test run time (eg, 300s, 20m, 3h, 1h30m, etc.)
           spawn_rate: Rate to spawn users at (users per second)

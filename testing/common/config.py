@@ -167,7 +167,7 @@ def _set_config_environ(base_dir):
     config_path = env.ARTIFACT_DIR / "config.yaml"
 
     os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
-    os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yaml")
+    os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yml.j2")
 
     # make sure we're using a clean copy of the configuration file
     config_path.unlink(missing_ok=True)

@@ -1,28 +1,48 @@
-name: "Ensure that Ansible 'default' files match the Python entrypoint"
+# Ensure Ansible 'default' files match the Python entrypoint
+name: Ansible defaults match
 
 on:
+  # Triggers the workflow on push or pull request events but only for the main branch
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 */8 * * *'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install dependencies
         run: |
-          python -m pip install fire pyyaml
+          python3 -m pip install fire pyyaml
 
       - name: "Ensure that Ansible 'default' files match the Python entrypoint"
-        run: ./run_toolbox.py repo generate_ansible_default_settings
+        run: |
+          ./run_toolbox.py repo generate_ansible_default_settings
 
       - name: Show the difference between the commited files and the regenerated Ansible files
-        run: git diff
+        run: |
+          git diff
 
       - name: "Ensure that there is no missing Ansible documentation"
-        run: ! grep 'Missing documentation' . -R --include 'config.yml'
+        run: |
+          ! grep 'Missing documentation' . -R --include 'config.yml'
 
-      - name: Fail the test if the diff is not empty
-        run: git diff --quiet
+      - name: Fail the test if there is a mismatch between the roles defaults and the Python entrypoints
+        run: |
+          changes=$(git diff | wc -l)
+          if [ "$changes" -ne "0" ]; then
+              echo "
+              There is a mismatch between the roles
+              defaults and the Python entrypoints.
+              Make sure you run:
+              ./run_toolbox.py repo generate_ansible_default_settings
+              When making changes to the Python entrypoints.
+              "
+              exit  1
+          fi
