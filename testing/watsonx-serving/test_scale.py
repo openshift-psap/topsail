@@ -177,7 +177,7 @@ spec:
     save_and_create("InferenceService.yaml", inference_service, namespace)
 
     tries = 0
-    retries_left = 60
+    retries_left = 60 * 3 # 15 min
     target_model_state = "<not queried>"
     start_time = datetime.datetime.now()
     while True:
