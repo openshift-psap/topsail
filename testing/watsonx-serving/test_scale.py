@@ -212,7 +212,7 @@ spec:
 
     logging.info(f"The InferenceService turned to the 'Loaded' state after {inferenceservice_ready['duration_s']:.0f} seconds.")
 
-    with open(env.ARTIFACT_DIR / "inferenceservice_ready.yaml", "w") as f:
+    with open(env.ARTIFACT_DIR / 'progress' / "inferenceservice_ready.yaml", "w") as f:
         yaml.dump(inferenceservice_ready, f, indent=4)
 
 def validate_model_deployment(namespace):
@@ -226,13 +226,13 @@ def validate_model_deployment(namespace):
     start_time = datetime.datetime.now()
     while True:
         tries += 1
-        retcode = run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict > {env.ARTIFACT_DIR}/TextGenerationTaskPredict.answer""", check=False).returncode
+        retcode = run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict > {env.ARTIFACT_DIR}/artifacts/TextGenerationTaskPredict.answer""", check=False).returncode
 
         if retcode == 0:
             break
 
         if tries == 1:
-            run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict > {env.ARTIFACT_DIR}/TextGenerationTaskPredict.answer &> {env.ARTIFACT_DIR}/Invalid.answer""", check=False)
+            run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict &> {env.ARTIFACT_DIR}/artifacts/Invalid.answer""", check=False)
 
         time.sleep(0.5)
 
@@ -245,13 +245,13 @@ def validate_model_deployment(namespace):
                        tries=tries,
                        duration_s=(end_time - start_time).total_seconds())
 
-    with open(env.ARTIFACT_DIR / "model_ready.yaml", "w") as f:
+    with open(env.ARTIFACT_DIR / 'progress' / "model_ready.yaml", "w") as f:
         yaml.dump(model_ready, f, indent=4)
 
     logging.info(f"The model responded properly after {model_ready['duration_s']:.0f} seconds.")
 
     logging.info(f"Querying the ServerStreamingTextGenerationTaskPredict endpoint ...")
-    run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/ServerStreamingTextGenerationTaskPredict > {env.ARTIFACT_DIR}/ServerStreamingTextGenerationTaskPredict.answer""")
+    run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/ServerStreamingTextGenerationTaskPredict > {env.ARTIFACT_DIR}/artifacts/ServerStreamingTextGenerationTaskPredict.answer""")
 
     logging.info("All done :)")
 
@@ -269,6 +269,8 @@ def run_one():
         job_index = 0
 
     (env.ARTIFACT_DIR / "src").mkdir(exist_ok=True)
+    (env.ARTIFACT_DIR / "progress").mkdir(exist_ok=True)
+    (env.ARTIFACT_DIR / "artifacts").mkdir(exist_ok=True)
 
     namespace = config.ci_artifacts.get_config("tests.scale.namespace")
     try:
