@@ -39,9 +39,22 @@ sutest/cluster set_project_annotation/scale_test_toleration:
   project: {{ tests.scale.namespace }}
 
 #
-# Scale test - Prepare User Pods
+# Scale test - Prepare Watsonx-Serving
 #
 
+sutest/cluster preload_image/watsonx-serving-runtime:
+  namespace: {{ tests.scale.namespace }}
+  name: caikit-image
+  image: {{ watsonx_serving.serving_runtime.image }}
+
+  node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
+  node_selector_value: "{{ clusters.sutest.compute.machineset.taint.value }}"
+  pod_toleration_effect: {{ clusters.sutest.compute.machineset.taint.effect }}
+  pod_toleration_key: {{ clusters.sutest.compute.machineset.taint.key }}
+
+#
+# Scale test - Prepare User Pods
+#
 
 driver/cluster set_scale:
   instance_type: {{ clusters.driver.compute.machineset.type }}

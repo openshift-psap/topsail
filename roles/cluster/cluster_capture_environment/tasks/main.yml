@@ -74,3 +74,12 @@
 - name: Get the cluster machines status
   shell:
     oc get machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/machines.status"
+
+- name: Get the cluster CSV
+  shell:
+    oc get csv -A --show-labels | grep -v olm.copiedFrom > "{{ artifact_extra_logs_dir }}/csv.status"
+  ignore_errors: true
+
+- name: Get the cluster CSV in json
+  shell:
+    oc get csv -A -ojson > "{{ artifact_extra_logs_dir }}/csv.json"

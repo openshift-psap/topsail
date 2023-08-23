@@ -21,6 +21,7 @@ sys.path.append(str(TESTING_THIS_DIR.parent))
 from common import env, config, run, rhods, visualize
 
 import prepare_scale, test_scale
+import prepare_watsonx_serving
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -181,6 +182,10 @@ def generate_plots(results_dirname):
     visualize.generate_from_dir(str(results_dirname))
 
 
+@entrypoint()
+def _prepare_watsonx_serving():
+    return prepare_watsonx_serving.prepare()
+
 # ---
 
 class Entrypoint:
@@ -192,6 +197,8 @@ class Entrypoint:
         self.cleanup_cluster_ci = cleanup_cluster
 
         self.prepare_ci = prepare_ci
+        self.prepare_watsonx_serving = _prepare_watsonx_serving
+
         self.test_ci = test_ci
         self.scale_test = scale_test
         self.run_one = run_one
