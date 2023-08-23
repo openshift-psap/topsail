@@ -107,6 +107,7 @@
 
 - name: Compute the DSP application name
   shell:
+    set -o pipefail;
     oc get dspa -oname -n "{{ notebook_namespace }}" | head -1 | cut -d/ -f2
   register: dspa_name_cmd
   when: not pipelines_run_kfp_notebook_dsp_application_name
@@ -162,7 +163,7 @@
     set -o pipefail;
     oc adm policy add-cluster-role-to-user "{{ sa_cluster_role }}"
        -n "{{ notebook_namespace }}"
-       -z "{{ sa_name}}"
+       -z "{{ sa_name }}"
        --dry-run=client -oyaml
        | tee "{{ artifact_extra_logs_dir }}/src/clusterrolebinding.yaml"
        | oc apply -f-
@@ -193,7 +194,7 @@
   - name: Create the secret token
     shell:
       oc create secret generic "{{ secret_token_name }}"
-         "--from-literal=token=$(oc create token '{{ sa_name}}' -n '{{ notebook_namespace }}')"
+         "--from-literal=token=$(oc create token '{{ sa_name }}' -n '{{ notebook_namespace }}')"
          -n "{{ notebook_namespace }}"
     register: create_secret_token_cmd
     failed_when: '"no token is currently in use for this session" in create_secret_token_cmd.stderr'

@@ -37,8 +37,6 @@
   command:
     git describe HEAD --long --always
   register: git_version
-  args:
-    warn: false # don't warn about using git here
 
 - name: Store ci-artifact version from Git
   copy:
@@ -50,8 +48,6 @@
   command:
     git show --no-patch
   register: git_show
-  args:
-    warn: false # don't warn about using git here
 
 - name: Store ci-artifact last git commit
   copy:

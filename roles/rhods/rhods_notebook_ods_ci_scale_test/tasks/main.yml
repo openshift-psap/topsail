@@ -21,7 +21,7 @@
 
 - name: Update the Exclude tags if necessary
   set_fact:
-    rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags: "{% if rhods_notebook_ods_ci_scale_test_only_create_notebooks|bool %}JupyterLabORWait{% else %}{{ rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags }}{% endif %}"
+    rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags: "{% if rhods_notebook_ods_ci_scale_test_only_create_notebooks | bool %}JupyterLabORWait{% else %}{{ rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags }}{% endif %}"
 
 - name: Define the test environments
   set_fact:
@@ -64,11 +64,13 @@
 
   - name: Get the RHODS CSV name
     shell:
+      set -o pipefail;
       oc get csv -oname -n redhat-ods-operator | grep rhods-operator
     register: rhods_csv_cmd
 
   - name: Get the RHODS version
     shell:
+      set -o pipefail;
       oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
     register: rhods_version_cmd
 

@@ -45,7 +45,8 @@
   command:
     oc create -f "{{ artifact_extra_logs_dir }}/001_pod_run-mlperf-ssd.yml"
 
-- block:
+- name: Make sure the benchmark completes
+  block:
   - name: Wait for the benchmark completion
     command:
       oc get pod/{{ benchmarking_run_mlperf_ssd_name }}

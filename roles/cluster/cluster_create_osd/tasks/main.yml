@@ -121,7 +121,7 @@
     ocm edit machinepool
              {{ cluster_create_osd_machinepool_name }}
              --cluster={{ cluster_create_osd_cluster_name }}
-             --replicas={{ [2, cluster_create_osd_compute_nodes|int] |max }}
+             --replicas={{ [2, cluster_create_osd_compute_nodes | int] | max }}
 
 - name: Wait for the desired worker node count
   shell: |

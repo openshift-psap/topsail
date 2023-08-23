@@ -113,7 +113,8 @@
 - name: Instantiate the OperatorHub subscription
   command: oc create -f "{{ artifact_extra_logs_dir }}/gpu_operator_sub.yml"
 
-- block:
+- name: Install the GPU Operator
+  block:
   - name: Find the GPU Operator OperatorHub InstallPlan
     command:
       oc get InstallPlan

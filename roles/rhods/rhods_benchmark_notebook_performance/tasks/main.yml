@@ -40,7 +40,7 @@
 
   - name: Save the imagestream tag
     set_fact:
-      image_tag: "{% if rhods_benchmark_notebook_performance_imagestream_tag | string  %}{{ rhods_benchmark_notebook_performance_imagestream_tag }}{% else %}{{ image_tag_cmd.stdout }}{% endif %}"
+      image_tag: "{% if rhods_benchmark_notebook_performance_imagestream_tag | string %}{{ rhods_benchmark_notebook_performance_imagestream_tag }}{% else %}{{ image_tag_cmd.stdout }}{% endif %}"
 
   - name: Get the image address
     command:
@@ -54,6 +54,7 @@
   block:
   - name: Compute the imagestream filename
     shell:
+      set -o pipefail;
       echo -n "{{ rhods_benchmark_notebook_performance_imagestream }}" | sed 's/^s2i-//g' | sed 's/-notebook//g';
       echo "-notebook-imagestream.yaml"
     register: imagestream_filename_cmd

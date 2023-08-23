@@ -3,11 +3,8 @@ name: Run ansible-lint
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   pull_request:
-    branches: [main]
   push:
-    branches: [main]
   schedule:
     - cron: '0 */8 * * *'
   # Allows you to run this workflow manually from the Actions tab

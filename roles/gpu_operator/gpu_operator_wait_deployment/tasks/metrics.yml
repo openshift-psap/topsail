@@ -1,5 +1,6 @@
 ---
-- block:
+- name: Create the GPU operator requirements
+  block:
   - name: Check if the GPU Operator namespace has the openshift.io/cluster-monitoring label
     shell:
       set -o pipefail;

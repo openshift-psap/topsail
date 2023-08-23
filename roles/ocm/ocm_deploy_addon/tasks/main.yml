@@ -26,7 +26,7 @@
 - name: Check if addon is already installed
   shell:
     set -o pipefail;
-    ocm get /api/clusters_mgmt/v1/clusters/{{ cluster_id }}/addons/{{ ocm_deploy_addon_id  }} |& jq -r '.kind' || true
+    ocm get /api/clusters_mgmt/v1/clusters/{{ cluster_id }}/addons/{{ ocm_deploy_addon_id }} |& jq -r '.kind' || true
   register: ocm_addon_precheck
 
 - name: Create ocm addon install payload
@@ -36,11 +36,11 @@
     mode: 0400
   when: '"Error" in ocm_addon_precheck.stdout'
 
-- name: "Install addon {{ ocm_deploy_addon_id }} via OCM API"
+- name: Install addon {{ ocm_deploy_addon_id }} via OCM API
   shell: |
     set -o pipefail;
     url="/api/clusters_mgmt/v1/clusters/{{ cluster_id }}/addons"
-    body="{{ artifact_extra_logs_dir }}/addon_{{ ocm_deploy_addon_id  }}.json"
+    body="{{ artifact_extra_logs_dir }}/addon_{{ ocm_deploy_addon_id }}.json"
     output=$(ocm post "$url" --body=$body 2>&1);
     echo "$output" >&2; # for observation
     echo "$output" | jq -r '.kind'

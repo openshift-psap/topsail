@@ -145,6 +145,7 @@
 
   - name: Get the cluster ID
     shell:
+      set -o pipefail;
       ocm describe cluster "{{ cluster_deploy_ldap_cluster_name }}" --json | jq .id -r
     register: cluster_id_cmd
 
