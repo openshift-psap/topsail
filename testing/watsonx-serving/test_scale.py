@@ -1,6 +1,6 @@
 import logging
 import pathlib
-import yaml
+import yaml, json
 import time
 import os
 import datetime
@@ -118,6 +118,9 @@ secrets:
 
     # Serving Runtime
 
+    serving_runtime_image = config.ci_artifacts.get_config("watsonx_serving.serving_runtime.image")
+    serving_runtime_resource_request = json.dumps(config.ci_artifacts.get_config("watsonx_serving.serving_runtime.resource_request"))
+
     serving_runtime = f"""\
 apiVersion: serving.kserve.io/v1alpha1
 kind: ServingRuntime
@@ -128,7 +131,7 @@ spec:
   - env:
     - name: RUNTIME_LOCAL_MODELS_DIR
       value: /mnt/models
-    image: quay.io/opendatahub/caikit-tgis-serving:stable-4d0134e
+    image: {serving_runtime_image}
     name: kserve-container
     ports:
     # Note, KServe only allows a single port, this is the gRPC port. Subject to change in the future
@@ -136,9 +139,7 @@ spec:
       name: h2c
       protocol: TCP
     resources:
-      requests:
-        cpu: 4
-        memory: 8Gi
+      requests: {serving_runtime_resource_request}
   multiModel: false
   supportedModelFormats:
   # Note: this currently *only* supports caikit format models
@@ -151,6 +152,9 @@ spec:
 
 def deploy_inference_service(namespace):
     # Inference Service
+    name = "caikit-example-isvc"
+    storageUri = "s3://modelmesh-example-models/llm/models"
+
     inference_service = f"""\
 apiVersion: serving.kserve.io/v1beta1
 kind: InferenceService
@@ -159,7 +163,7 @@ metadata:
     serving.knative.openshift.io/enablePassthrough: "true"
     sidecar.istio.io/inject: "true"
     sidecar.istio.io/rewriteAppHTTPProbers: "true"
-  name: caikit-example-isvc
+  name: {name}
 spec:
   predictor:
     serviceAccountName: sa
@@ -167,7 +171,7 @@ spec:
       modelFormat:
         name: caikit
       runtime: caikit-runtime
-      storageUri: s3://modelmesh-example-models/llm/models
+      storageUri: {storageUri}
 """
 
     save_and_create("InferenceService.yaml", inference_service, namespace)
