@@ -176,21 +176,44 @@ spec:
 
     save_and_create("InferenceService.yaml", inference_service, namespace)
 
+    tries = 0
     retries_left = 60
     target_model_state = "<not queried>"
+    start_time = datetime.datetime.now()
     while True:
-        retries_left -= 1
-        if retries_left == 0:
-            raise RuntimeError(f"The InferenceService never got ready :/ Current state: {target_model_state}")
+        tries += 1
+
         target_model_state = run.run(f"oc get inferenceservice/caikit-example-isvc -ojsonpath={{.status.modelStatus.states.targetModelState}} -n {namespace}", capture_stdout=True).stdout
+
         if target_model_state == "Loaded":
             logging.info("The InferenceService is ready :)")
+            break
+
+        retries_left -= 1
+        if retries_left == 0:
             break
 
         logging.info(f"Waiting for the model state to be 'Loaded'. Current state: {target_model_state}")
         logging.info(f"{retries_left} retries left")
         time.sleep(5)
 
+    end_time = datetime.datetime.now()
+
+
+    inferenceservice_ready = dict(start_time=start_time, end_time=end_time,
+                                  tries=tries,
+                                  duration_s=(end_time - start_time).total_seconds(),
+                                  final_target_model_state=target_model_state)
+
+    if retries_left == 0:
+        raise RuntimeError(f"The InferenceService never got ready :/ Current state: {target_model_state}")
+
+
+
+    logging.info(f"The InferenceService turned to the 'Loaded' state after {inferenceservice_ready['duration_s']:.0f} seconds.")
+
+    with open(env.ARTIFACT_DIR / "inferenceservice_ready.yaml", "w") as f:
+        yaml.dump(inferenceservice_ready, f, indent=4)
 
 def validate_model_deployment(namespace):
     ksvc_hostname = run.run(f"oc get ksvc caikit-example-isvc-predictor -n {namespace} -o jsonpath='{{.status.url}}' | sed 's|https://||'", capture_stdout=True).stdout.strip()
