@@ -60,7 +60,7 @@ clusters:
     lab:
       name: null
     compute:
-      dedicated: false
+      dedicated: true
       machineset:
         name: workload-pods
         type: m6i.2xlarge
