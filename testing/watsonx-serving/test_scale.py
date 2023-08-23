@@ -15,6 +15,10 @@ def test(test_artifact_dir_p=None):
     if dry_mode:
         capture_prom = False
 
+    if capture_prom:
+        run.run("./run_toolbox.py cluster reset_prometheus_db",
+                capture_stdout=True)
+
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__scale_test"):
         if test_artifact_dir_p is not None:
@@ -28,10 +32,6 @@ def test(test_artifact_dir_p=None):
 
         failed = True
         try:
-            if capture_prom:
-                run.run("./run_toolbox.py cluster reset_prometheus_db",
-                        capture_stdout=True)
-
             try:
                 run_test(dry_mode)
             finally:
