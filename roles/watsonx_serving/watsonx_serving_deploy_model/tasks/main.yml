@@ -13,6 +13,16 @@
 
 # SMMR
 
+- name: Delete the tracking timestamps
+  command:
+    oc delete cm -ltopsail.time-tracking -n {{ watsonx_serving_deploy_model_namespace }}
+
+- name: Save timestamp
+  shell: |
+    NAME=start-deploy-model
+    oc create configmap $NAME -n {{ watsonx_serving_deploy_model_namespace }}
+    oc label cm/$NAME topsail.time-tracking=yes -n {{ watsonx_serving_deploy_model_namespace }}
+
 - name: Prepare the SMMR
   block:
   - name: Patch the SMMR
@@ -42,6 +52,12 @@
     retries: 60
     delay: 10
     until: smmr_registered_namespace_cmd.stdout != "null"
+
+  - name: Save timestamp
+    shell: |
+      NAME=smmr-registered-namespace
+      oc create configmap $NAME -n {{ watsonx_serving_deploy_model_namespace }}
+      oc label cm/$NAME topsail.time-tracking=yes -n {{ watsonx_serving_deploy_model_namespace }}
 
   always:
   - name: Capture the SMMR resource
@@ -88,9 +104,22 @@
     delay: 5
     until: inference_service_state_cmd.stdout == "Loaded"
 
+  - name: Save timestamp
+    shell: |
+      NAME=inference-service-loaded
+      oc create configmap $NAME -n {{ watsonx_serving_deploy_model_namespace }}
+      oc label cm/$NAME topsail.time-tracking=yes -n {{ watsonx_serving_deploy_model_namespace }}
+
   always:
   - name: Capture the state of the InferenceService resource
     shell:
       oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
          -oyaml
          > {{ artifact_extra_logs_dir }}/artifacts/inference_service.yaml
+
+  - name: Save the timestamp configmaps
+    shell:
+      oc get cm -oyaml
+         -ltopsail.time-tracking=yes
+         -n {{ watsonx_serving_deploy_model_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/time_tracking_cm.yaml
