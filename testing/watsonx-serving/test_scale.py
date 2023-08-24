@@ -69,8 +69,8 @@ def prepare_user_namespace(namespace, register_namespace_smmr=True):
 
     dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
     if dedicated:
-        run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_node_selector")
-        run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration")
+        run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_node_selector", capture_stdout=True)
+        run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration", capture_stdout=True)
 
     if not register_namespace_smmr:
         return
