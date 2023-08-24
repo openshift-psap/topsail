@@ -9,6 +9,11 @@ set -x
 TESTING_UTILS_OCP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 TESTING_UTILS_DIR="${TESTING_UTILS_OCP_DIR}/.."
 
+if [[ -z "${CI_ARTIFACTS_FROM_CONFIG_FILE:-}" ]]; then
+    echo "WARNING: CI_ARTIFACTS_FROM_CONFIG_FILE is not set. Commands relying on 'get_config' won't work ..."
+    export CI_ARTIFACTS_FROM_CONFIG_FILE="/CI_ARTIFACTS_FROM_CONFIG_FILE/not/set"
+fi
+
 source "$TESTING_UTILS_DIR/process_ctrl.sh"
 source "$TESTING_UTILS_DIR/logging.sh"
 source "$TESTING_UTILS_DIR/configure.sh"
@@ -116,30 +121,6 @@ create_clusters() {
         local KUBECONFIG_DRIVER="${CONFIG_DEST_DIR}/driver_kubeconfig" # cluster driving the test
         local KUBECONFIG_SUTEST="${CONFIG_DEST_DIR}/sutest_kubeconfig" # system under test
 
-        keep_cluster() {
-            local cluster_role=$1
-            local cluster_region=$2
-
-            echo "Keeping the $cluster_role cluster ..."
-            oc create cm keep-cluster -n default --from-literal=keep=true
-
-            local pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
-            local keep_cluster_password_file="$PSAP_ODS_SECRET_PATH/$(get_config secrets.keep_cluster_password_file)"
-            ./run_toolbox.py cluster create_htpasswd_adminuser "$pr_author" "$keep_cluster_password_file"
-
-            oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
-            cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
-source "\$PSAP_ODS_SECRET_PATH/get_cluster.password"
-oc login $(oc whoami --show-server) --insecure-skip-tls-verify --username=$pr_author --password="\$password"
-EOF
-
-            local cluster_tag=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
-
-            cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_destroy_cluster.cmd"
-./run_toolbox.py cluster destroy_ocp $cluster_region $cluster_tag
-EOF
-        }
-
         local ocp_region=$(get_config clusters.create.ocp.region)
 
         # * 'osd' clusters already have their kubeadmin password
@@ -147,10 +128,10 @@ EOF
         # * 'single' clusters already have been modified with the
         # keep_cluster call of the sutest cluster.
         if [[ "$cluster_type" == "single" ]]; then
-            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster sutest "$ocp_region"
+            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster sutest
         elif [[ "$cluster_type" == "ocp" ]]; then
-            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster sutest "$ocp_region"
-            KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster driver "$ocp_region"
+            KUBECONFIG=$KUBECONFIG_SUTEST keep_cluster sutest
+            KUBECONFIG=$KUBECONFIG_DRIVER keep_cluster driver
         fi
     fi
 }
@@ -160,6 +141,30 @@ destroy_clusters() {
     process_ctrl::run_in_bg destroy_cluster driver
 
     process_ctrl::wait_bg_processes
+}
+
+keep_cluster() {
+    local cluster_role=$1
+
+    echo "Keeping the $cluster_role cluster ..."
+    oc create cm keep-cluster -n default --from-literal=keep=true -oyaml --dry-run=client | oc apply -f-
+
+    local pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
+    local keep_cluster_password_file="$PSAP_ODS_SECRET_PATH/$(get_config secrets.keep_cluster_password_file)"
+    ./run_toolbox.py cluster create_htpasswd_adminuser "$pr_author" "$keep_cluster_password_file"
+
+    oc whoami --show-console > "$ARTIFACT_DIR/${cluster_role}_console.link"
+    cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_oc-login.cmd"
+source "\$PSAP_ODS_SECRET_PATH/get_cluster.password"
+oc login $(oc whoami --show-server) --insecure-skip-tls-verify --username=$pr_author --password="\$password"
+EOF
+
+    local cluster_region=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.placement.region})
+    local cluster_tag=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
+
+    cat <<EOF > "$ARTIFACT_DIR/${cluster_role}_destroy_cluster.cmd"
+./run_toolbox.py cluster destroy_ocp $cluster_region $cluster_tag
+EOF
 }
 
 # ---
@@ -211,6 +216,17 @@ main() {
 
             destroy_clusters
             exit 0
+            ;;
+        "keep")
+            if [[ -z "${PSAP_ODS_SECRET_PATH:-}" ]]; then
+                echo "PSAP_ODS_SECRET_PATH is not set, using the default value."
+                export PSAP_ODS_SECRET_PATH=/run/psap-ods-secret-1
+            fi
+            if ! [[ -d $PSAP_ODS_SECRET_PATH ]]; then
+                echo "ERROR: PSAP_ODS_SECRET_PATH=$PSAP_ODS_SECRET_PATH is not a directory ..."
+                exit 1
+            fi
+            keep_cluster cluster
             ;;
         *)
             _error "Unknown action '$action'"

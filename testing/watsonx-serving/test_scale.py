@@ -59,13 +59,21 @@ def run_test(dry_mode):
         run.run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale")
 
 
-def prepare_user_namespace(namespace):
+def prepare_user_namespace(namespace, register_namespace_smmr=True):
     if run.run(f'oc get project "{namespace}" -oname 2>/dev/null', check=False).returncode == 0:
         logging.warning(f"Project {namespace} already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
         return
 
     run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
+
+    dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
+    if dedicated:
+        run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_node_selector", capture_stdout=True)
+        run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration", capture_stdout=True)
+
+    if not register_namespace_smmr:
+        return
 
     if run.run("""oc patch smmr/default -n istio-system --type=json -p="[{'op': 'add', 'path': '/spec/members/-', 'value': \""""+namespace+"""\"}]" """, check=False).returncode != 0:
         smmr_members = run.run("oc get smmr/default -n istio-system  -ojsonpath={.spec.members} | jq .[] -r", capture_stdout=True).stdout
@@ -77,12 +85,8 @@ def prepare_user_namespace(namespace):
         logging.warning(f"Namespace '{namespace}' was already in the SMMR members. Continuing.")
 
 
-    run.run(f"oc get smmr/default -n istio-system -oyaml > {env.ARTIFACT_DIR / 'istio-system_smmr-default.yaml'}")
-
-    dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
-    if dedicated:
-        run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_node_selector")
-        run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration")
+    (env.ARTIFACT_DIR / 'artifacts').mkdir(exist_ok=True)
+    run.run(f"oc get smmr/default -n istio-system -oyaml > {env.ARTIFACT_DIR / 'artifacts' / 'istio-system_smmr-default.yaml'}")
 
 
 def save_and_create(name, content, namespace):

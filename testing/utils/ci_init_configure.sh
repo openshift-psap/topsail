@@ -19,7 +19,9 @@ else
     elif [[ ! -d "$PSAP_ODS_SECRET_PATH" ]]; then
         _error "the PSAP_ODS_SECRET_PATH does not point to a valid directory"
     fi
-    sha256sum "$PSAP_ODS_SECRET_PATH"/* > "$ARTIFACT_DIR/secrets.sha256sum"
+    if [[ "${ARTIFACT_DIR:-}" ]]; then
+        sha256sum "$PSAP_ODS_SECRET_PATH"/* > "$ARTIFACT_DIR/secrets.sha256sum"
+    fi
 fi
 if [[ "${CONFIG_DEST_DIR:-}" ]]; then
     echo "Using CONFIG_DEST_DIR=$CONFIG_DEST_DIR ..."
