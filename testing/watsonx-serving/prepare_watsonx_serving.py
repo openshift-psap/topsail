@@ -42,6 +42,6 @@ def prepare():
     if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
         # this is required to properly create the namespace used to preload the image
         test_namespace = config.ci_artifacts.get_config("tests.scale.namespace")
-        test_scale.prepare_user_namespace(test_namespace)
+        test_scale.prepare_user_namespace(test_namespace, register_namespace_smmr=False)
 
         run.run("./run_toolbox.py from_config cluster preload_image --prefix sutest --suffix watsonx-serving-runtime")
