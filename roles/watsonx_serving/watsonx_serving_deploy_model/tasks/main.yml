@@ -1,0 +1,96 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+# SMMR
+
+- name: Prepare the SMMR
+  block:
+  - name: Patch the SMMR
+    command: |
+      oc patch smmr/default \
+         -n istio-system \
+         --type=json \
+         -p="[{'op': 'add', 'path': '/spec/members/-', 'value': \"{{ watsonx_serving_deploy_model_namespace }}\"}]"
+    register: patch_smmr_cmd
+    failed_when: false
+
+  - name: Check that the namespace is already registered
+    when: patch_smmr_cmd.rc != 0
+    shell:
+      oc get smmr/default -n istio-system  -ojsonpath={.spec.members} | jq .[] -r
+    register: smmr_members_cmd
+    failed_when: watsonx_serving_deploy_model_namespace not in smmr_members_cmd.stdout_lines
+
+  - name: Wait for the namespace to be registered
+    shell:
+      set -o pipefail;
+      oc get smmr/default
+         -n istio-system
+         -ojsonpath={.status.configuredMembers}
+         | jq '. | index("{{ watsonx_serving_deploy_model_namespace }}")'
+    register: smmr_registered_namespace_cmd
+    retries: 60
+    delay: 10
+    until: smmr_registered_namespace_cmd.stdout != "null"
+
+  always:
+  - name: Capture the SMMR resource
+    shell:
+      oc get smmr/default
+         -n istio-system
+         -oyaml
+         > {{ artifact_extra_logs_dir }}/artifacts/istio-system_smmr-default.yaml
+
+# Serving Runtime
+
+- name: Prepare the ServingRuntime template
+  template:
+    src: "{{ serving_runtime_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/serving_runtime.yaml"
+    mode: 0400
+
+- name: Create the ServingRuntime
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/serving_runtime.yaml"
+
+# Inference Service
+
+- name: Prepare the InferenceService template
+  template:
+    src: "{{ inference_service_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
+    mode: 0400
+
+- name: Create the InferenceService
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
+
+- name: Prepare the InferenceService
+  block:
+  - name: Wait for the InferenceService to be loaded
+    shell:
+      set -o pipefail;
+      oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
+         -ojsonpath={.status.modelStatus.states.targetModelState}
+    register: inference_service_state_cmd
+    # wait 20 minutes
+    retries: 240
+    delay: 5
+    until: inference_service_state_cmd.stdout == "Loaded"
+
+  always:
+  - name: Capture the state of the InferenceService resource
+    shell:
+      oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
+         -oyaml
+         > {{ artifact_extra_logs_dir }}/artifacts/inference_service.yaml

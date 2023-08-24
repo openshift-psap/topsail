@@ -1,0 +1,32 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Watsonx_Serving.deploy_model
+
+# the namespace in which the model should be deployed
+# Mandatory value
+watsonx_serving_deploy_model_namespace:
+
+# the name to give to the serving runtime
+# Mandatory value
+watsonx_serving_deploy_model_serving_runtime_name:
+
+# the image of the serving runtime
+# Mandatory value
+watsonx_serving_deploy_model_serving_runtime_image:
+
+# the resource request of the serving runtime
+# Mandatory value
+watsonx_serving_deploy_model_serving_runtime_resource_request:
+
+# the name to give to the inference service
+# Mandatory value
+watsonx_serving_deploy_model_inference_service_name:
+
+# [S3] URI where the model is stored
+# Mandatory value
+watsonx_serving_deploy_model_storage_uri:
+
+# name of the service account to use for running the Pod
+# Mandatory value
+watsonx_serving_deploy_model_sa_name:
+
