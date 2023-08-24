@@ -128,3 +128,18 @@ local_ci run_multi/scale:
 
   git_pull: null #refs/pull/716/head
   capture_prom_db: "{{ tests.capture_prom }}"
+
+#
+# Test WatsonX Serving scale: run one
+#
+
+watsonx_serving deploy_model:
+  namespace: {{ tests.scale.namespace }}
+  sa_name: {{ watsonx_serving.sa_name }}
+
+  serving_runtime_name: {{ watsonx_serving.serving_runtime.name }}
+  serving_runtime_image: {{ watsonx_serving.serving_runtime.image }}
+  serving_runtime_resource_request: {{ watsonx_serving.serving_runtime.resource_request }}
+
+  inference_service_name: {{ watsonx_serving.inference_service.name }}
+  storage_uri: {{ watsonx_serving.inference_service.storage_uri }}

@@ -126,11 +126,16 @@ base_image:
     bucket_name: watsonx-serving-scale-test-bucket
 
 watsonx_serving:
+  sa_name: sa
   serving_runtime:
+    name: caikit-runtime
     image: quay.io/opendatahub/caikit-tgis-serving:stable
     resource_request:
       cpu: 4
       memory: 8Gi
+  inference_service:
+    name: caikit-isvc
+    storage_uri: "s3://modelmesh-example-models/llm/models"
 
 tests:
   mode: scale

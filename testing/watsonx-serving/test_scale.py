@@ -59,7 +59,7 @@ def run_test(dry_mode):
         run.run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale")
 
 
-def prepare_user_namespace(namespace, register_namespace_smmr=True):
+def prepare_user_namespace(namespace):
     if run.run(f'oc get project "{namespace}" -oname 2>/dev/null', check=False).returncode == 0:
         logging.warning(f"Project {namespace} already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
@@ -72,22 +72,6 @@ def prepare_user_namespace(namespace, register_namespace_smmr=True):
         run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_node_selector", capture_stdout=True)
         run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration", capture_stdout=True)
 
-    if not register_namespace_smmr:
-        return
-
-    if run.run("""oc patch smmr/default -n istio-system --type=json -p="[{'op': 'add', 'path': '/spec/members/-', 'value': \""""+namespace+"""\"}]" """, check=False).returncode != 0:
-        smmr_members = run.run("oc get smmr/default -n istio-system  -ojsonpath={.spec.members} | jq .[] -r", capture_stdout=True).stdout
-        if namespace not in smmr_members.split("\n"):
-            msg = f"Could not patch the SMMR :/. Current members: {smmr_members}"
-            logging.error(msg)
-            raise RuntimeError(msg)
-
-        logging.warning(f"Namespace '{namespace}' was already in the SMMR members. Continuing.")
-
-
-    (env.ARTIFACT_DIR / 'artifacts').mkdir(exist_ok=True)
-    run.run(f"oc get smmr/default -n istio-system -oyaml > {env.ARTIFACT_DIR / 'artifacts' / 'istio-system_smmr-default.yaml'}")
-
 
 def save_and_create(name, content, namespace):
     with open(env.ARTIFACT_DIR / "src" / name, "w") as f:
@@ -96,10 +80,7 @@ def save_and_create(name, content, namespace):
     with open(env.ARTIFACT_DIR / "src" / name) as f:
         run.run(f"oc apply -f- -n {namespace}", stdin_file=f)
 
-
-def deploy_serving_runtime(namespace):
-    # Storage Secret
-
+def deploy_storage_configuration(namespace):
     # warning: do not use save_and_create() as this handles a secret
     storage_secret = run.run(f"""oc get secret/storage-config -n minio -ojson \
             | jq 'del(.metadata.namespace) | del(.metadata.uid) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion)' \
@@ -109,118 +90,22 @@ def deploy_serving_runtime(namespace):
 
     # Service Account
 
-    service_account = """\
+    service_account_name = config.ci_artifacts.get_config("watsonx_serving.sa_name")
+    service_account = f"""\
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: sa
+  name: {service_account_name}
 secrets:
 - name: storage-config
 """
 
     save_and_create("ServiceAccount.yaml", service_account, namespace)
 
-    # Serving Runtime
-
-    serving_runtime_image = config.ci_artifacts.get_config("watsonx_serving.serving_runtime.image")
-    serving_runtime_resource_request = json.dumps(config.ci_artifacts.get_config("watsonx_serving.serving_runtime.resource_request"))
-
-    serving_runtime = f"""\
-apiVersion: serving.kserve.io/v1alpha1
-kind: ServingRuntime
-metadata:
-  name: caikit-runtime
-spec:
-  containers:
-  - env:
-    - name: RUNTIME_LOCAL_MODELS_DIR
-      value: /mnt/models
-    image: {serving_runtime_image}
-    name: kserve-container
-    ports:
-    # Note, KServe only allows a single port, this is the gRPC port. Subject to change in the future
-    - containerPort: 8085
-      name: h2c
-      protocol: TCP
-    resources:
-      requests: {serving_runtime_resource_request}
-  multiModel: false
-  supportedModelFormats:
-  # Note: this currently *only* supports caikit format models
-  - autoSelect: true
-    name: caikit
-"""
-
-    save_and_create("ServingRuntime.yaml", serving_runtime, namespace)
-
-
-def deploy_inference_service(namespace):
-    # Inference Service
-    name = "caikit-example-isvc"
-    storageUri = "s3://modelmesh-example-models/llm/models"
-
-    inference_service = f"""\
-apiVersion: serving.kserve.io/v1beta1
-kind: InferenceService
-metadata:
-  annotations:
-    serving.knative.openshift.io/enablePassthrough: "true"
-    sidecar.istio.io/inject: "true"
-    sidecar.istio.io/rewriteAppHTTPProbers: "true"
-  name: {name}
-spec:
-  predictor:
-    serviceAccountName: sa
-    model:
-      modelFormat:
-        name: caikit
-      runtime: caikit-runtime
-      storageUri: {storageUri}
-"""
-
-    save_and_create("InferenceService.yaml", inference_service, namespace)
-
-    tries = 0
-    retries_left = 60 * 3 # 15 min
-    target_model_state = "<not queried>"
-    start_time = datetime.datetime.now()
-    while True:
-        tries += 1
-
-        target_model_state = run.run(f"oc get inferenceservice/caikit-example-isvc -ojsonpath={{.status.modelStatus.states.targetModelState}} -n {namespace}", capture_stdout=True).stdout
-
-        if target_model_state == "Loaded":
-            logging.info("The InferenceService is ready :)")
-            break
-
-        retries_left -= 1
-        if retries_left == 0:
-            break
-
-        logging.info(f"Waiting for the model state to be 'Loaded'. Current state: {target_model_state}")
-        logging.info(f"{retries_left} retries left")
-        time.sleep(5)
-
-    end_time = datetime.datetime.now()
-
-
-    inferenceservice_ready = dict(start_time=start_time, end_time=end_time,
-                                  tries=tries,
-                                  duration_s=(end_time - start_time).total_seconds(),
-                                  final_target_model_state=target_model_state)
-
-    if retries_left == 0:
-        raise RuntimeError(f"The InferenceService never got ready :/ Current state: {target_model_state}")
-
-
-
-    logging.info(f"The InferenceService turned to the 'Loaded' state after {inferenceservice_ready['duration_s']:.0f} seconds.")
-
-    with open(env.ARTIFACT_DIR / 'progress' / "inferenceservice_ready.yaml", "w") as f:
-        yaml.dump(inferenceservice_ready, f, indent=4)
 
 def validate_model_deployment(namespace):
-    ksvc_hostname = run.run(f"oc get ksvc caikit-example-isvc-predictor -n {namespace} -o jsonpath='{{.status.url}}' | sed 's|https://||'", capture_stdout=True).stdout.strip()
+    inference_service_name = config.ci_artifacts.get_config("watsonx_serving.inference_service.name")
+    ksvc_hostname = run.run(f"oc get ksvc -lserving.kserve.io/inferenceservice={inference_service_name} -n {namespace} -ojsonpath='{{.items[0].status.url}}' | sed 's|https://||'", capture_stdout=True).stdout.strip()
     logging.info(f"KSVC hostname: {ksvc_hostname}")
 
     logging.info(f"Querying the TextGenerationTaskPredict endpoint ...")
@@ -279,9 +164,10 @@ def run_one():
     namespace = config.ci_artifacts.get_config("tests.scale.namespace")
     try:
         prepare_user_namespace(namespace)
+        deploy_storage_configuration(namespace)
 
-        deploy_serving_runtime(namespace)
-        deploy_inference_service(namespace)
+        run.run("./run_toolbox.py from_config watsonx_serving deploy_model")
+
         validate_model_deployment(namespace)
     finally:
         run.run(f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
