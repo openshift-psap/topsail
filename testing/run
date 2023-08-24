@@ -146,7 +146,7 @@ postchecks() {
         if [ ! -e "$ARTIFACT_DIR/FAILURES" ]; then
             echo "$(date) Test of '$@' succeeded $duration." | tee "$ARTIFACT_DIR/FINISHED"
         else
-            echo "$(date) Test of '$@' failed after $duration." | tee "$ARTIFACT_DIR/FINISHED"
+            echo "$(date) Test of '$@' failed $duration." | tee "$ARTIFACT_DIR/FINISHED"
         fi
     fi
 }
