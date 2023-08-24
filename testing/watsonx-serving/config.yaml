@@ -34,6 +34,7 @@ secrets:
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+  aws_cred: .awscred
 clusters:
   create:
     type: single # can be: single, ocp, managed
@@ -133,10 +134,14 @@ watsonx_serving:
     resource_request:
       cpu: 4
       memory: 8Gi
+  storage_config:
+    name: storage-config
+    region: us-east-1
+    endpoint: s3.amazonaws.com
+    use_https: 1
   inference_service:
     name: caikit-isvc
-    storage_uri: "s3://modelmesh-example-models/llm/models"
-
+    storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/"
 tests:
   mode: scale
 

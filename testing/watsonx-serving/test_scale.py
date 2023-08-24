@@ -73,20 +73,60 @@ def prepare_user_namespace(namespace):
         run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration", capture_stdout=True)
 
 
-def save_and_create(name, content, namespace):
-    with open(env.ARTIFACT_DIR / "src" / name, "w") as f:
-        print(content, file=f)
+def save_and_create(name, content, namespace, is_secret=False):
+    file_path = pathlib.Path("/tmp") / name if is_secret \
+        else env.ARTIFACT_DIR / "src" / name
 
-    with open(env.ARTIFACT_DIR / "src" / name) as f:
-        run.run(f"oc apply -f- -n {namespace}", stdin_file=f)
+    try:
+        with open(file_path, "w") as f:
+            print(content, file=f)
+
+        with open(file_path) as f:
+            run.run(f"oc apply -f- -n {namespace}", stdin_file=f)
+    finally:
+        if is_secret:
+            file_path.unlink(missing_ok=True)
 
 def deploy_storage_configuration(namespace):
-    # warning: do not use save_and_create() as this handles a secret
-    storage_secret = run.run(f"""oc get secret/storage-config -n minio -ojson \
-            | jq 'del(.metadata.namespace) | del(.metadata.uid) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion)' \
-            | oc apply -f- -n {namespace}""")
+    storage_secret_name = config.ci_artifacts.get_config("watsonx_serving.storage_config.name")
+    region = config.ci_artifacts.get_config("watsonx_serving.storage_config.region")
+    endpoint = config.ci_artifacts.get_config("watsonx_serving.storage_config.endpoint")
+    use_https = config.ci_artifacts.get_config("watsonx_serving.storage_config.use_https")
 
-    run.run(f"oc describe secret/storage-config -n {namespace} > {env.ARTIFACT_DIR / 'src' / 'storage-config.desc'}") # oc describe secret is safe
+    access_key = None
+    secret_key = None
+
+    vault_key = config.ci_artifacts.get_config("secrets.dir.env_key")
+    aws_cred_filename = config.ci_artifacts.get_config("secrets.aws_cred")
+    aws_cred_file = pathlib.Path(os.environ[vault_key]) / aws_cred_filename
+    logging.info(f"Reading AWS credentials from '{aws_cred_filename}' ...")
+    with open(aws_cred_file) as f:
+        for line in f.readlines():
+            if line.startswith("aws_access_key_id "):
+                access_key = line.rpartition("=")[-1].strip()
+            if line.startswith("aws_secret_access_key "):
+                secret_key = line.rpartition("=")[-1].strip()
+
+    if None in (access_key, secret_key):
+        raise ValueError(f"aws_access_key_id or aws_secret_access_key not found in {aws_cred_file} ...")
+
+    storage_secret = f"""\
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    serving.kserve.io/s3-region: "{region}"
+    serving.kserve.io/s3-endpoint: "{endpoint}"
+    serving.kserve.io/s3-usehttps: "{use_https}"
+  name: {storage_secret_name}
+stringData:
+  AWS_ACCESS_KEY_ID: "{access_key}"
+  AWS_SECRET_ACCESS_KEY: "{secret_key}"
+"""
+    save_and_create("storage_secret.yaml", storage_secret, namespace, is_secret=True)
+
+    # oc describe secret is safe
+    run.run(f"oc describe secret/{storage_secret_name} -n {namespace} > {env.ARTIFACT_DIR / 'src' / 'storage-config.desc'}")
 
     # Service Account
 
@@ -97,7 +137,7 @@ kind: ServiceAccount
 metadata:
   name: {service_account_name}
 secrets:
-- name: storage-config
+- name: {storage_secret_name}
 """
 
     save_and_create("ServiceAccount.yaml", service_account, namespace)
