@@ -17,3 +17,9 @@ def cleanup_gpu_operator():
 
     if run.run(f'oc get project -oname openshift-nfd 2>/dev/null', check=False).returncode != 0:
         run.run("oc delete ns openshift-nfd")
+
+def add_toleration(effect, key):
+    run.run("""\
+    oc patch clusterpolicy/gpu-cluster-policy  \
+             --type=json -p='{"spec":{"daemonsets":{"tolerations":[{"effect":\""""+effect+"""\","key":\""""+key+"""\","operator":"Exists"}]}}}' \
+             --type merge""")
