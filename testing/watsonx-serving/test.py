@@ -38,7 +38,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
         config.ci_artifacts.apply_preset_from_pr_args()
 
     if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
-        raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
+        raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
 
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
