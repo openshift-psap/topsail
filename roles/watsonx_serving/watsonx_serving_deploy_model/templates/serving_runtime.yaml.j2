@@ -1,0 +1,25 @@
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: {{ watsonx_serving_deploy_model_serving_runtime_name }}
+  namespace: {{ watsonx_serving_deploy_model_namespace }}
+spec:
+  containers:
+  - env:
+    - name: RUNTIME_LOCAL_MODELS_DIR
+      value: /mnt/models
+    image: {{ watsonx_serving_deploy_model_serving_runtime_image }}
+    name: kserve-container
+    ports:
+    # Note, KServe only allows a single port, this is the gRPC port. Subject to change in the future
+    - containerPort: 8085
+      name: h2c
+      protocol: TCP
+    resources:
+      requests:
+        {{ watsonx_serving_deploy_model_serving_runtime_resource_request }}
+  multiModel: false
+  supportedModelFormats:
+  # Note: this currently *only* supports caikit format models
+  - autoSelect: true
+    name: caikit

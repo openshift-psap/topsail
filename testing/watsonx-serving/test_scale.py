@@ -59,7 +59,7 @@ def run_test(dry_mode):
         run.run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale")
 
 
-def prepare_user_namespace(namespace, register_namespace_smmr=True):
+def prepare_user_namespace(namespace):
     if run.run(f'oc get project "{namespace}" -oname 2>/dev/null', check=False).returncode == 0:
         logging.warning(f"Project {namespace} already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
@@ -72,155 +72,80 @@ def prepare_user_namespace(namespace, register_namespace_smmr=True):
         run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_node_selector", capture_stdout=True)
         run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration", capture_stdout=True)
 
-    if not register_namespace_smmr:
-        return
 
-    if run.run("""oc patch smmr/default -n istio-system --type=json -p="[{'op': 'add', 'path': '/spec/members/-', 'value': \""""+namespace+"""\"}]" """, check=False).returncode != 0:
-        smmr_members = run.run("oc get smmr/default -n istio-system  -ojsonpath={.spec.members} | jq .[] -r", capture_stdout=True).stdout
-        if namespace not in smmr_members.split("\n"):
-            msg = f"Could not patch the SMMR :/. Current members: {smmr_members}"
-            logging.error(msg)
-            raise RuntimeError(msg)
+def save_and_create(name, content, namespace, is_secret=False):
+    file_path = pathlib.Path("/tmp") / name if is_secret \
+        else env.ARTIFACT_DIR / "src" / name
 
-        logging.warning(f"Namespace '{namespace}' was already in the SMMR members. Continuing.")
+    try:
+        with open(file_path, "w") as f:
+            print(content, file=f)
 
+        with open(file_path) as f:
+            run.run(f"oc apply -f- -n {namespace}", stdin_file=f)
+    finally:
+        if is_secret:
+            file_path.unlink(missing_ok=True)
 
-    (env.ARTIFACT_DIR / 'artifacts').mkdir(exist_ok=True)
-    run.run(f"oc get smmr/default -n istio-system -oyaml > {env.ARTIFACT_DIR / 'artifacts' / 'istio-system_smmr-default.yaml'}")
+def deploy_storage_configuration(namespace):
+    storage_secret_name = config.ci_artifacts.get_config("watsonx_serving.storage_config.name")
+    region = config.ci_artifacts.get_config("watsonx_serving.storage_config.region")
+    endpoint = config.ci_artifacts.get_config("watsonx_serving.storage_config.endpoint")
+    use_https = config.ci_artifacts.get_config("watsonx_serving.storage_config.use_https")
 
+    access_key = None
+    secret_key = None
 
-def save_and_create(name, content, namespace):
-    with open(env.ARTIFACT_DIR / "src" / name, "w") as f:
-        print(content, file=f)
+    vault_key = config.ci_artifacts.get_config("secrets.dir.env_key")
+    aws_cred_filename = config.ci_artifacts.get_config("secrets.aws_cred")
+    aws_cred_file = pathlib.Path(os.environ[vault_key]) / aws_cred_filename
+    logging.info(f"Reading AWS credentials from '{aws_cred_filename}' ...")
+    with open(aws_cred_file) as f:
+        for line in f.readlines():
+            if line.startswith("aws_access_key_id "):
+                access_key = line.rpartition("=")[-1].strip()
+            if line.startswith("aws_secret_access_key "):
+                secret_key = line.rpartition("=")[-1].strip()
 
-    with open(env.ARTIFACT_DIR / "src" / name) as f:
-        run.run(f"oc apply -f- -n {namespace}", stdin_file=f)
+    if None in (access_key, secret_key):
+        raise ValueError(f"aws_access_key_id or aws_secret_access_key not found in {aws_cred_file} ...")
 
+    storage_secret = f"""\
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    serving.kserve.io/s3-region: "{region}"
+    serving.kserve.io/s3-endpoint: "{endpoint}"
+    serving.kserve.io/s3-usehttps: "{use_https}"
+  name: {storage_secret_name}
+stringData:
+  AWS_ACCESS_KEY_ID: "{access_key}"
+  AWS_SECRET_ACCESS_KEY: "{secret_key}"
+"""
+    save_and_create("storage_secret.yaml", storage_secret, namespace, is_secret=True)
 
-def deploy_serving_runtime(namespace):
-    # Storage Secret
-
-    # warning: do not use save_and_create() as this handles a secret
-    storage_secret = run.run(f"""oc get secret/storage-config -n minio -ojson \
-            | jq 'del(.metadata.namespace) | del(.metadata.uid) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion)' \
-            | oc apply -f- -n {namespace}""")
-
-    run.run(f"oc describe secret/storage-config -n {namespace} > {env.ARTIFACT_DIR / 'src' / 'storage-config.desc'}") # oc describe secret is safe
+    # oc describe secret is safe
+    run.run(f"oc describe secret/{storage_secret_name} -n {namespace} > {env.ARTIFACT_DIR / 'src' / 'storage-config.desc'}")
 
     # Service Account
 
-    service_account = """\
+    service_account_name = config.ci_artifacts.get_config("watsonx_serving.sa_name")
+    service_account = f"""\
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: sa
+  name: {service_account_name}
 secrets:
-- name: storage-config
+- name: {storage_secret_name}
 """
 
     save_and_create("ServiceAccount.yaml", service_account, namespace)
 
-    # Serving Runtime
-
-    serving_runtime_image = config.ci_artifacts.get_config("watsonx_serving.serving_runtime.image")
-    serving_runtime_resource_request = json.dumps(config.ci_artifacts.get_config("watsonx_serving.serving_runtime.resource_request"))
-
-    serving_runtime = f"""\
-apiVersion: serving.kserve.io/v1alpha1
-kind: ServingRuntime
-metadata:
-  name: caikit-runtime
-spec:
-  containers:
-  - env:
-    - name: RUNTIME_LOCAL_MODELS_DIR
-      value: /mnt/models
-    image: {serving_runtime_image}
-    name: kserve-container
-    ports:
-    # Note, KServe only allows a single port, this is the gRPC port. Subject to change in the future
-    - containerPort: 8085
-      name: h2c
-      protocol: TCP
-    resources:
-      requests: {serving_runtime_resource_request}
-  multiModel: false
-  supportedModelFormats:
-  # Note: this currently *only* supports caikit format models
-  - autoSelect: true
-    name: caikit
-"""
-
-    save_and_create("ServingRuntime.yaml", serving_runtime, namespace)
-
-
-def deploy_inference_service(namespace):
-    # Inference Service
-    name = "caikit-example-isvc"
-    storageUri = "s3://modelmesh-example-models/llm/models"
-
-    inference_service = f"""\
-apiVersion: serving.kserve.io/v1beta1
-kind: InferenceService
-metadata:
-  annotations:
-    serving.knative.openshift.io/enablePassthrough: "true"
-    sidecar.istio.io/inject: "true"
-    sidecar.istio.io/rewriteAppHTTPProbers: "true"
-  name: {name}
-spec:
-  predictor:
-    serviceAccountName: sa
-    model:
-      modelFormat:
-        name: caikit
-      runtime: caikit-runtime
-      storageUri: {storageUri}
-"""
-
-    save_and_create("InferenceService.yaml", inference_service, namespace)
-
-    tries = 0
-    retries_left = 60 * 3 # 15 min
-    target_model_state = "<not queried>"
-    start_time = datetime.datetime.now()
-    while True:
-        tries += 1
-
-        target_model_state = run.run(f"oc get inferenceservice/caikit-example-isvc -ojsonpath={{.status.modelStatus.states.targetModelState}} -n {namespace}", capture_stdout=True).stdout
-
-        if target_model_state == "Loaded":
-            logging.info("The InferenceService is ready :)")
-            break
-
-        retries_left -= 1
-        if retries_left == 0:
-            break
-
-        logging.info(f"Waiting for the model state to be 'Loaded'. Current state: {target_model_state}")
-        logging.info(f"{retries_left} retries left")
-        time.sleep(5)
-
-    end_time = datetime.datetime.now()
-
-
-    inferenceservice_ready = dict(start_time=start_time, end_time=end_time,
-                                  tries=tries,
-                                  duration_s=(end_time - start_time).total_seconds(),
-                                  final_target_model_state=target_model_state)
-
-    if retries_left == 0:
-        raise RuntimeError(f"The InferenceService never got ready :/ Current state: {target_model_state}")
-
-
-
-    logging.info(f"The InferenceService turned to the 'Loaded' state after {inferenceservice_ready['duration_s']:.0f} seconds.")
-
-    with open(env.ARTIFACT_DIR / 'progress' / "inferenceservice_ready.yaml", "w") as f:
-        yaml.dump(inferenceservice_ready, f, indent=4)
 
 def validate_model_deployment(namespace):
-    ksvc_hostname = run.run(f"oc get ksvc caikit-example-isvc-predictor -n {namespace} -o jsonpath='{{.status.url}}' | sed 's|https://||'", capture_stdout=True).stdout.strip()
+    inference_service_name = config.ci_artifacts.get_config("watsonx_serving.inference_service.name")
+    ksvc_hostname = run.run(f"oc get ksvc -lserving.kserve.io/inferenceservice={inference_service_name} -n {namespace} -ojsonpath='{{.items[0].status.url}}' | sed 's|https://||'", capture_stdout=True).stdout.strip()
     logging.info(f"KSVC hostname: {ksvc_hostname}")
 
     logging.info(f"Querying the TextGenerationTaskPredict endpoint ...")
@@ -236,7 +161,7 @@ def validate_model_deployment(namespace):
             break
 
         if tries == 1:
-            run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict &> {env.ARTIFACT_DIR}/artifacts/Invalid.answer""", check=False)
+            run.run(f"""grpcurl -vv -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict &> {env.ARTIFACT_DIR}/artifacts/Invalid.answer""", check=False)
 
         time.sleep(0.5)
 
@@ -279,9 +204,10 @@ def run_one():
     namespace = config.ci_artifacts.get_config("tests.scale.namespace")
     try:
         prepare_user_namespace(namespace)
+        deploy_storage_configuration(namespace)
 
-        deploy_serving_runtime(namespace)
-        deploy_inference_service(namespace)
+        run.run("./run_toolbox.py from_config watsonx_serving deploy_model")
+
         validate_model_deployment(namespace)
     finally:
         run.run(f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")

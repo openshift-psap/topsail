@@ -91,11 +91,10 @@ git checkout FETCH_HEAD
 
 git show --no-patch | tee $ARTIFACT_DIR/caikit-tgis-serving.commit
 
-cp ${TOPSAIL_DIR}/testing/watsonx-serving/poc/{kserve-install.sh,deploy-minio.sh} \
+cp ${TOPSAIL_DIR}/testing/watsonx-serving/poc/kserve-install.sh \
    scripts/install/
 
 cp ${TOPSAIL_DIR}/testing/watsonx-serving/poc/deploy-model.sh \
    scripts/test/
 
 bash -ex scripts/install/kserve-install.sh
-bash -ex scripts/install/deploy-minio.sh

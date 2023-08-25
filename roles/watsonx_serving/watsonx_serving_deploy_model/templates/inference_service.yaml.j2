@@ -1,0 +1,17 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  annotations:
+    serving.knative.openshift.io/enablePassthrough: "true"
+    sidecar.istio.io/inject: "true"
+    sidecar.istio.io/rewriteAppHTTPProbers: "true"
+  name: {{ watsonx_serving_deploy_model_inference_service_name }}
+  namespace: {{ watsonx_serving_deploy_model_namespace }}
+spec:
+  predictor:
+    serviceAccountName: {{ watsonx_serving_deploy_model_sa_name }}
+    model:
+      modelFormat:
+        name: caikit
+      runtime: {{ watsonx_serving_deploy_model_serving_runtime_name }}
+      storageUri: {{ watsonx_serving_deploy_model_storage_uri }}
