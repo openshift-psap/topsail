@@ -67,8 +67,9 @@ def prepare_user_namespace(namespace):
 
     run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
 
+    metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
     dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
-    if dedicated:
+    if not metal and dedicated:
         run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_node_selector", capture_stdout=True)
         run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration", capture_stdout=True)
 
