@@ -35,7 +35,7 @@ def prepare():
     run.run("testing/watsonx-serving/poc/prepare.sh | tee -a $ARTIFACT_DIR/000_prepare_sh.log")
 
 
-def prepare_sutest():
+def scale_up_sutest():
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
         return
 
@@ -44,17 +44,24 @@ def prepare_sutest():
 
     run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest")
 
-    if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
-        # this is required to properly create the namespace used to preload the image
-        test_namespace = config.ci_artifacts.get_config("tests.scale.namespace")
-        test_scale.prepare_user_namespace(test_namespace)
 
-        RETRIES = 3
-        for i in range(RETRIES):
-            try:
-                run.run("./run_toolbox.py from_config cluster preload_image --prefix sutest --suffix watsonx-serving-runtime")
-                break
-            except Exception:
-                logging.warning("Watsonx Serving Runtime image preloading try #{i}/{RETRIES} failed :/")
-                if i == RETRIES:
-                    raise
+def preload_image():
+    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+        return
+
+    if not config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
+        return
+
+    # this is required to properly create the namespace used to preload the image
+    test_namespace = config.ci_artifacts.get_config("tests.scale.namespace")
+    test_scale.prepare_user_namespace(test_namespace)
+
+    RETRIES = 3
+    for i in range(RETRIES):
+        try:
+            run.run("./run_toolbox.py from_config cluster preload_image --prefix sutest --suffix watsonx-serving-runtime")
+            break
+        except Exception:
+            logging.warning("Watsonx Serving Runtime image preloading try #{i}/{RETRIES} failed :/")
+            if i == RETRIES:
+                raise
