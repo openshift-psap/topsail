@@ -11,6 +11,12 @@ OCP_PULL_SECRET="secret/pull-secret -n openshift-config"
 SERVER=brew.registry.redhat.io
 IMAGE_CONTENT_SOURCE_POLICY="$THIS_DIR/brew-registry-icsp.yaml"
 
+echo "Checking if the ICSP already exists ..."
+if oc get -f ./brew-registry-icsp.yaml 2>/dev/null; then
+    echo "Brew ICSP already exists, assuming that Brew is already configured."
+    exit 0
+fi
+
 TOKEN_FILE=${1:-}
 if [[ -z "${TOKEN_FILE}" || ! -e "${TOKEN_FILE}" ]]; then
     echo "ERROR: $0 expects the path to the $SERVER token file "
