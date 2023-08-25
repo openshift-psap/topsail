@@ -4,7 +4,6 @@ import sys, os
 import pathlib
 import subprocess
 import logging
-logging.getLogger().setLevel(logging.INFO)
 import datetime
 import time
 import functools
@@ -18,7 +17,8 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 LIGHT_PROFILE = "light"
 
 sys.path.append(str(TESTING_THIS_DIR.parent))
-from common import env, config, run, rhods, visualize
+from common import env, config, run, rhods, visualize, configure_logging
+configure_logging()
 
 import prepare_scale, test_scale
 import prepare_watsonx_serving
