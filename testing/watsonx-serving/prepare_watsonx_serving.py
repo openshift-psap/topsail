@@ -34,6 +34,8 @@ def prepare():
 
     run.run("testing/watsonx-serving/poc/prepare.sh | tee -a $ARTIFACT_DIR/000_prepare_sh.log")
 
+
+def prepare_sutest():
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
         return
 
