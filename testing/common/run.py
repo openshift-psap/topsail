@@ -1,7 +1,14 @@
+import sys, os, signal
+import traceback
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
 import subprocess
+
+import joblib
+
+# create new process group, become its leader
+os.setpgrp()
 
 def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None, stdin_file=None):
     logging.info(f"run: {command}")
@@ -27,3 +34,38 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
     if capture_stderr: proc.stderr = proc.stderr.decode("utf8")
 
     return proc
+
+class Parallel(object):
+    def __init__(self, exit_on_exception=True):
+        self.parallel_tasks = None
+        self.exit_on_exception = exit_on_exception
+
+    def __enter__(self):
+        self.parallel_tasks = []
+
+        return self
+
+    def delayed(self, function, *args, **kwargs):
+        self.parallel_tasks += [joblib.delayed(function)(*args, **kwargs)]
+
+    def __exit__(self, ex_type, ex_value, exc_traceback):
+
+        if ex_value:
+            logging.warning("An exception occured while preparing the Parallel execution ...")
+            return False
+
+        try:
+            joblib.Parallel(n_jobs=-1, backend="threading")(self.parallel_tasks)
+        except Exception as e:
+            if not self.exit_on_exception:
+                raise e
+
+            traceback.print_exc()
+
+            logging.error(f"Exception caught during the parallel execution. Exiting.")
+            # kill all processes in my group
+            # (the group was started with the os.setpgrp() above)
+            os.killpg(0, signal.SIGKILL)
+            sys.exit(1)
+
+        return False # If we returned True here, any exception would be suppressed!
