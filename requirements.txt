@@ -7,6 +7,7 @@ flake8
 pylint
 awscli
 numpy
+joblib
 
 jsonpath_ng
 state-signals==0.5.2
