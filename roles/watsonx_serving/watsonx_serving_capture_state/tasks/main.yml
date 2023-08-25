@@ -9,6 +9,16 @@
   set_fact:
     namespace: "{% if watsonx_serving_capture_state_namespace | length > 0 %}{{ watsonx_serving_capture_state_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
 
+- name: Save the state of the pods
+  shell: |
+    oc get pods -n "{{ namespace }}" -owide \
+       > "{{ artifact_extra_logs_dir }}/pods.status"
+    oc get pods -n "{{ namespace }}" -oyaml \
+       > "{{ artifact_extra_logs_dir }}/pods.yaml"
+    oc describe pods -n "{{ namespace }}" \
+       > "{{ artifact_extra_logs_dir }}/pods.desc"
+  ignore_errors: true
+
 - name: Save the state of all the resources
   shell: |
     oc get all -n "{{ namespace }}" \
@@ -33,24 +43,24 @@
        > "{{ artifact_extra_logs_dir }}/serving.desc"
   ignore_errors: true
 
-- name: Create the pods directory
+- name: Create the logs directory
   file:
-    path: "{{ artifact_extra_logs_dir }}/pods"
+    path: "{{ artifact_extra_logs_dir }}/logs"
     state: directory
     mode: '0755'
 
-- name: Get the names of the pods
+- name: Get the names of the deployments
   command:
-    oc get pods
+    oc get deployments
        -n "{{ namespace }}"
        -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-  register: pod_names_cmd
+  register: deploy_names_cmd
 
-- name: Capture the logs of the pods
-  loop: "{{ pod_names_cmd.stdout_lines }}"
+- name: Capture the logs of the deployments
+  loop: "{{ deploy_names_cmd.stdout_lines }}"
   shell:
-    oc logs pod/{{ item }}
+    oc logs deploy/{{ item }}
        -n {{ namespace }}
        --all-containers --prefix
-       > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.log"
+       > "{{ artifact_extra_logs_dir }}/logs/{{ item }}.log"
   ignore_errors: true

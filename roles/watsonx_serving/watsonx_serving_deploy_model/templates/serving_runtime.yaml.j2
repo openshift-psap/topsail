@@ -18,6 +18,8 @@ spec:
     resources:
       requests:
         {{ watsonx_serving_deploy_model_serving_runtime_resource_request }}
+      limits:
+        {{ watsonx_serving_deploy_model_serving_runtime_resource_request }}
   multiModel: false
   supportedModelFormats:
   # Note: this currently *only* supports caikit format models

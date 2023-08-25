@@ -53,6 +53,13 @@ sutest/cluster preload_image/watsonx-serving-runtime:
   pod_toleration_key: {{ clusters.sutest.compute.machineset.taint.key }}
 
 #
+# Scale Test - Prepare GPU
+#
+
+gpu_operator enable_time_sharing:
+  replicas: {{ gpu.time_sharing.replicas }}
+
+#
 # Scale test - Prepare User Pods
 #
 

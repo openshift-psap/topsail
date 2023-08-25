@@ -1,5 +1,6 @@
 import pathlib
 import os
+import logging
 
 from common import env, config, run, rhods, sizing
 import test_scale
@@ -33,11 +34,15 @@ def prepare():
 
     run.run("testing/watsonx-serving/poc/prepare.sh | tee -a $ARTIFACT_DIR/000_prepare_sh.log")
 
-    if not config.ci_artifacts.get_config("clusters.sutest.is_metal"):
-        node_count = compute_sutest_node_requirement()
-        config.ci_artifacts.set_config("clusters.sutest.compute.machineset.count ", node_count)
 
-        run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest")
+def prepare_sutest():
+    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+        return
+
+    node_count = compute_sutest_node_requirement()
+    config.ci_artifacts.set_config("clusters.sutest.compute.machineset.count ", node_count)
+
+    run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest")
 
     if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
         # this is required to properly create the namespace used to preload the image
