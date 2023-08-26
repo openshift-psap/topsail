@@ -163,6 +163,8 @@ def validate_model_deployment(namespace):
 
         if tries == 1:
             run.run(f"""grpcurl -vv -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict &> {env.ARTIFACT_DIR}/artifacts/Invalid.answer""", check=False)
+            run.run(f"oc get pods -n {namespace} > {env.ARTIFACT_DIR}/artifacts/Invalid.answer.pod.status")
+            run.run(f"oc get pods -n {namespace} -oyaml > {env.ARTIFACT_DIR}/artifacts/Invalid.answer.pod.yaml")
 
         time.sleep(0.5)
 
@@ -179,6 +181,7 @@ def validate_model_deployment(namespace):
         yaml.dump(model_ready, f, indent=4)
 
     logging.info(f"The model responded properly after {model_ready['duration_s']:.0f} seconds.")
+    run.run(f"oc get pods -n {namespace} -oyaml > {env.ARTIFACT_DIR}/artifacts/Valid.answer.pod.yaml")
 
     logging.info(f"Querying the ServerStreamingTextGenerationTaskPredict endpoint ...")
     run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/ServerStreamingTextGenerationTaskPredict > {env.ARTIFACT_DIR}/artifacts/ServerStreamingTextGenerationTaskPredict.answer""")
