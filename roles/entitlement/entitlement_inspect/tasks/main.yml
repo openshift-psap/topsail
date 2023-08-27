@@ -2,7 +2,7 @@
 - name: Run the entitlement test taskbook
   include_role:
     name: entitlement_test_wait_deployment
-  when: _entitlement_inspect_called_from_testwait == "no"
+  when: entitlement_inspect_called_from_testwait == "no"
 
 - name: List entitlement MachineConfig objects
   command: oc get MachineConfig 50-entitlement-key-pem 50-entitlement-pem 50-rhsm-conf

@@ -1,5 +1,5 @@
 ---
-- name: "Check if the cluster already has a {{ machineset_instance_type }} machineset"
+- name: Check if the cluster already has a machineset of type {{ machineset_instance_type }}
   shell:
     set -o pipefail;
     oc get machineset -n openshift-machine-api

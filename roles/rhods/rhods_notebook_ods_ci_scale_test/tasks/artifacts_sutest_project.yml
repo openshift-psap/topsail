@@ -8,7 +8,7 @@
   register: has_notebooks_crd
   failed_when: false
 
-- name: Count the notebooks in the {{ rhods_notebook_namespace }} namespace
+- name: Count the notebooks in the namespace {{ rhods_notebook_namespace }} 
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   shell:
@@ -32,12 +32,12 @@
   register: dsg_namespaces_pod_count_cmd
 
 
-- name: Capture the artifacts of the {{ rhods_notebook_namespace }} sutest project
+- name: Capture the artifacts of the sutest project {{ rhods_notebook_namespace }}
   when: notebook_namespace_pod_count_cmd.stdout != "0"
   environment:
     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   block:
-  - name: Create the sutest {{ rhods_notebook_namespace }} artifacts directory
+  - name: Create the sutest artifacts directory {{ rhods_notebook_namespace }}
     file:
       path: "{{ project_artifacts_dir }}"
       state: directory

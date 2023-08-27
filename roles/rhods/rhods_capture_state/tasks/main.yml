@@ -1,5 +1,5 @@
 ---
-- name: Capture the content of the {{ namespace }} namespace
+- name: Capture the content of the namespace {{ namespace }}
   include_tasks: capture_namespace.yml
   loop:
   - redhat-ods-monitoring

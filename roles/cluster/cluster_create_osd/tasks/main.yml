@@ -4,7 +4,7 @@
     set -o pipefail;
     test $(cat "{{ cluster_create_osd_kubeconfig }}" | wc -c) == 0
 
-- name: Ensure that the secret file '{{ cluster_create_osd_secret_file }}' exists
+- name: Ensure that following secret file exists {{ cluster_create_osd_secret_file }}
   stat:
     path: "{{ cluster_create_osd_secret_file }}"
 

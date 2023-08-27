@@ -1,5 +1,5 @@
 ---
-- name: "Ensure that the entitlement file 'entitlement_pem={{ entitlement_pem }}' exists"
+- name: Ensure that the entitlement file exists entitlement_pem={{ entitlement_pem }}
   stat:
     path: '{{ entitlement_pem }}'
   register: entitlement_pem_stat

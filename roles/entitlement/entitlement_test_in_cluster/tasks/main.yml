@@ -1,11 +1,11 @@
 ---
-- name: "Ensure that the entitlement file 'entitlement_pem={{ entitlement_pem }}' exists"
+- name: Ensure that the entitlement file exists entitlement_pem={{ entitlement_pem }}
   stat:
     path: '{{ entitlement_pem }}'
   register: entitlement_pem_stat
   failed_when: not entitlement_pem_stat.stat.exists
 
-- name: "Ensure that the entitlement RHSM file 'entitlement_rhsm={{ entitlement_rhsm }}' exists"
+- name: Ensure that the entitlement RHSM file exists entitlement_rhsm={{ entitlement_rhsm }}
   stat:
     path: '{{ entitlement_rhsm }}'
   register: entitlement_rhsm_stat

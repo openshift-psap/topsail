@@ -9,7 +9,7 @@
     path: "{{ rhods_benchmark_notebook_performance_notebook_directory }}"
   register: directory_stats
 
-- name: Fail if {{ rhods_benchmark_notebook_performance_notebook_directory }} is not a directory
+- name: Fail if the following dir is not a directory {{ rhods_benchmark_notebook_performance_notebook_directory }}
   fail: msg="'{{ rhods_benchmark_notebook_performance_notebook_directory }}' isn't a reachable directory."
   when: not directory_stats.stat.exists or not directory_stats.stat.isdir
 

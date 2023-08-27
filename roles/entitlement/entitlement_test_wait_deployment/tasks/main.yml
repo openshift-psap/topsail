@@ -1,10 +1,10 @@
 ---
-- name: "Set the number of retry loop to 0 as waiting not requested"
+- name: Set the number of retry loop to 0 as waiting not requested
   set_fact:
     entitlement_retries: 0
   when: entitlement_test_and_wait != 'yes'
 
-- name: "Set the number of retry loop to {{ entitlement_nb_wait_retries }} as waiting is requested"
+- name: As waiting is requested set the number of retry loop to {{ entitlement_nb_wait_retries }}
   set_fact:
     entitlement_retries: "{{ entitlement_nb_wait_retries }}"
   when: entitlement_test_and_wait == 'yes'
@@ -53,7 +53,7 @@
     include_role:
       name: entitlement_inspect
     vars:
-      _entitlement_inspect_called_from_testwait: "yes"
+      entitlement_inspect_called_from_testwait: "yes"
     when: entitlement_inspect_on_failure == 'yes'
 
   - name: Store the description of the test Pod (debug)

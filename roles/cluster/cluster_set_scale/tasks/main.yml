@@ -48,12 +48,12 @@
   register: oc_get_machinesets
   failed_when: not oc_get_machinesets.stdout
 
-- name: Change all {{ machineset_instance_type }} machinesets replicas to have sum {{ scale }}
+- name: Change all {{ machineset_instance_type + 'machinesets replicas to have sum' + scale | string }}
   when: current_replicas_sum != scale
   block:
   - name: Do not downscale any machinesets other than the first one, unless the user used force
     block:
-    - name: Calculate sum of replicas of machinesets with type {{ machineset_instance_type }}, except for the first one
+    - name: Calculate except for the first one, the sum of replicas of machinesets with type {{ machineset_instance_type }}
       set_fact:
         current_replicas_sum_non_first: "{{ machineset_replicas.stdout_lines[1:] | map('int') | sum(start=0) }}"
 
@@ -66,7 +66,7 @@
         - name: End play
           fail: msg="Missing force flag"
 
-  - name: Set the replicas of all {{ machineset_instance_type }} machinesets to 0 except the first
+  - name: Set the replicas of all machinesets to 0 except the first for {{ machineset_instance_type }}
     command: |
       oc patch machineset -n openshift-machine-api {{ item }} --patch '{"spec": {"replicas": 0 }}' --type merge
     loop: "{{ oc_get_machinesets.stdout_lines[1:] }}"
@@ -75,14 +75,14 @@
     set_fact:
       first_machineset: "{{ oc_get_machinesets.stdout_lines[0] }}"
 
-  - name: Set the replicas of the first {{ machineset_instance_type }} machineset ({{ first_machineset }}) to {{ scale }}
+  - name: Set the replicas of the first {{ machineset_instance_type + 'machineset (' + first_machineset + ') to ' + scale | string }}
     command: >
       oc patch machineset -n openshift-machine-api {{ first_machineset }}
       --patch '{"spec": {"replicas": {{ scale }} }}' --type merge
 
 - name: Make sure the machinesets are ready
   block:
-  - name: Wait for all machinesets with type {{ machineset_instance_type }} to be ready
+  - name: Wait for readiness for all machinesets with type {{ machineset_instance_type }}
     # This is done by verifying that at the availableReplicas
 
     # jq purpose, respectively:

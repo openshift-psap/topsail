@@ -26,7 +26,7 @@
        -o json
        > {{ artifact_extra_logs_dir }}/source_machineset.json
 
-- name: Update the MachineSet with the requested instance type ({{ machineset_instance_type }}) and store in a file
+- name: Update and store in a file the MachineSet with the requested instance type {{ machineset_instance_type }}
   shell:
     "{{ reconfigure_machineset }}
       {{ artifact_extra_logs_dir }}/source_machineset.json
@@ -35,7 +35,7 @@
       {{ machineset_taint }}
       > {{ artifact_extra_logs_dir }}/new_machineset.json"
 
-- name: Update the MachineSet {% if cluster_ensure_machineset_spot %}with{% else %}without{% endif %} the Spot instance flag
+- name: Update the MachineSet spotMarketOptions spec to be {% if cluster_ensure_machineset_spot %}added{% else %}deleted{% endif %}
   shell:
     set -o pipefail;
 

@@ -36,7 +36,7 @@
     mode: 0400
   when: '"Error" in ocm_addon_precheck.stdout'
 
-- name: Install addon {{ ocm_deploy_addon_id }} via OCM API
+- name: Install the following addon via OCM API {{ ocm_deploy_addon_id }}
   shell: |
     set -o pipefail;
     url="/api/clusters_mgmt/v1/clusters/{{ cluster_id }}/addons"
