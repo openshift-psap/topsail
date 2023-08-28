@@ -32,6 +32,10 @@ ci_presets:
     watsonx_serving.serving_runtime.resource_request["nvidia.com/gpu"]: 1
     clusters.sutest.compute.machineset.type: g5.2xlarge
 
+  scale:
+    tests.scale.namespace_count: 10
+    tests.scale.models_per_namespace: 3
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -138,8 +142,8 @@ watsonx_serving:
     name: caikit-runtime
     image: quay.io/opendatahub/caikit-tgis-serving:stable
     resource_request:
-      cpu: 4
-      memory: 8Gi
+      cpu: 350m
+      memory: 1.5Gi
       nvidia.com/gpu: 0
   storage_config:
     name: storage-config
@@ -152,7 +156,7 @@ watsonx_serving:
 
 gpu:
   time_sharing:
-    replicas: 10
+    replicas: 16
 
 tests:
   mode: scale
@@ -164,9 +168,9 @@ tests:
 
   scale:
     namespace: watsonx-serving-scale-test
-    user_count: 1
+    namespace_count: 1
+    models_per_namespace: 16
     sleep_factor: 1
-    user_batch_size: 1
 
 matbench:
   preset: null

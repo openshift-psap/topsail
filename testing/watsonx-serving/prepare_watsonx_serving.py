@@ -8,18 +8,20 @@ import test_scale
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
 def compute_sutest_node_requirement():
-    user_count = config.ci_artifacts.get_config("tests.scale.user_count")
+    ns_count = config.ci_artifacts.get_config("tests.scale.namespace_count")
+    models_per_ns = config.ci_artifacts.get_config("tests.scale.models_per_namespace")
+    models_count = ns_count * models_per_ns
     kwargs = dict(
         cpu = 7,
         memory = 10,
         machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type"),
-        user_count = user_count,
+        user_count = models_count,
         )
 
     machine_count = sizing.main(**kwargs)
 
     # the sutest Pods must fit in one machine.
-    return min(user_count, machine_count)
+    return min(models_count, machine_count)
 
 
 def prepare():

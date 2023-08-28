@@ -114,7 +114,7 @@ cluster deploy_minio_s3_server:
 #
 
 local_ci run_multi/scale:
-  user_count: "{{ tests.scale.user_count }}"
+  user_count: "{{ tests.scale.namespace_count }}"
   namespace: "{{ base_image.namespace }}"
   istag: "{{ base_image.imagestream }}:{{ base_image.extend.tag }}"
   service_account: "{{ base_image.user.service_account }}"
@@ -131,7 +131,7 @@ local_ci run_multi/scale:
   minio_secret_key_key: s3_ldap.passwords
 
   sleep_factor: {{ tests.scale.sleep_factor }}
-  user_batch_size: {{ tests.scale.user_batch_size }}
+  user_batch_size: 1
 
   git_pull: null #refs/pull/716/merge
   capture_prom_db: "{{ tests.capture_prom }}"

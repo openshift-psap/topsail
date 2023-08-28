@@ -144,8 +144,7 @@ secrets:
     save_and_create("ServiceAccount.yaml", service_account, namespace)
 
 
-def validate_model_deployment(namespace):
-    inference_service_name = config.ci_artifacts.get_config("watsonx_serving.inference_service.name")
+def validate_model_deployment(inference_service_name, namespace):
     ksvc_hostname = run.run(f"oc get ksvc -lserving.kserve.io/inferenceservice={inference_service_name} -n {namespace} -ojsonpath='{{.items[0].status.url}}' | sed 's|https://||'", capture_stdout=True).stdout.strip()
     logging.info(f"KSVC hostname: {ksvc_hostname}")
 
@@ -156,13 +155,13 @@ def validate_model_deployment(namespace):
     start_time = datetime.datetime.now()
     while True:
         tries += 1
-        retcode = run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict > {env.ARTIFACT_DIR}/artifacts/TextGenerationTaskPredict.answer""", check=False).returncode
+        retcode = run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict > {env.ARTIFACT_DIR}/artifacts/{inference_service_name}_TextGenerationTaskPredict.answer""", check=False).returncode
 
         if retcode == 0:
             break
 
         if tries == 1:
-            run.run(f"""grpcurl -vv -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict &> {env.ARTIFACT_DIR}/artifacts/Invalid.answer""", check=False)
+            run.run(f"""grpcurl -vv -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict &> {env.ARTIFACT_DIR}/artifacts/{inference_service_name}_Invalid.answer""", check=False)
             run.run(f"oc get pods -n {namespace} > {env.ARTIFACT_DIR}/artifacts/Invalid.answer.pod.status")
             run.run(f"oc get pods -n {namespace} -oyaml > {env.ARTIFACT_DIR}/artifacts/Invalid.answer.pod.yaml")
 
@@ -170,7 +169,7 @@ def validate_model_deployment(namespace):
 
         retries_left -= 1
         if retries_left == 0:
-            raise RuntimeError(f"The model in {namespace} did not respond properly... Started at {start_time.time()}, stopped at {datetime.datetime.now().time()}. Tried {tries} times.")
+            raise RuntimeError(f"The model '{inference_service_name}' in '{namespace}' did not respond properly... Started at {start_time.time()}, stopped at {datetime.datetime.now().time()}. Tried {tries} times.")
 
     end_time = datetime.datetime.now()
     model_ready = dict(start_time=start_time, end_time=end_time,
@@ -180,11 +179,11 @@ def validate_model_deployment(namespace):
     with open(env.ARTIFACT_DIR / 'progress' / "model_ready.yaml", "w") as f:
         yaml.dump(model_ready, f, indent=4)
 
-    logging.info(f"The model responded properly after {model_ready['duration_s']:.0f} seconds.")
+    logging.info(f"The model '{inference_service_name}' responded properly after {model_ready['duration_s']:.0f} seconds.")
     run.run(f"oc get pods -n {namespace} -oyaml > {env.ARTIFACT_DIR}/artifacts/Valid.answer.pod.yaml")
 
     logging.info(f"Querying the ServerStreamingTextGenerationTaskPredict endpoint ...")
-    run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/ServerStreamingTextGenerationTaskPredict > {env.ARTIFACT_DIR}/artifacts/ServerStreamingTextGenerationTaskPredict.answer""")
+    run.run(f"""grpcurl -insecure -d '{{"text": "At what temperature does liquid Nitrogen boil?"}}' -H "mm-model-id: flan-t5-small-caikit" {ksvc_hostname}:443 caikit.runtime.Nlp.NlpService/ServerStreamingTextGenerationTaskPredict > {env.ARTIFACT_DIR}/artifacts/{inference_service_name}_ServerStreamingTextGenerationTaskPredict.answer""")
 
     logging.info("All done :)")
 
@@ -195,7 +194,7 @@ def run_one():
     job_index = os.environ.get("JOB_COMPLETION_INDEX")
     if job_index is not None:
         namespace = config.ci_artifacts.get_config("tests.scale.namespace")
-        new_namespace = f"{namespace}-user-{job_index}"
+        new_namespace = f"{namespace}-u{job_index}"
         logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
         config.ci_artifacts.set_config("tests.scale.namespace", new_namespace)
     else:
@@ -210,8 +209,18 @@ def run_one():
         prepare_user_namespace(namespace)
         deploy_storage_configuration(namespace)
 
-        run.run("./run_toolbox.py from_config watsonx_serving deploy_model")
+        models_per_namespace = config.ci_artifacts.get_config("tests.scale.models_per_namespace")
+        inference_service_basename = config.ci_artifacts.get_config("watsonx_serving.inference_service.name")
+        all_inference_service_names = []
+        for model_id in range(models_per_namespace):
+            inference_service_name = f"{inference_service_basename}-m{model_id}"
+            extra = dict(inference_service_name=inference_service_name)
+            run.run(f"./run_toolbox.py from_config watsonx_serving deploy_model --extra \"{extra}\"")
+            validate_model_deployment(inference_service_name, namespace)
+            all_inference_service_names += [inference_service_name]
 
-        validate_model_deployment(namespace)
+        for inference_service_name in all_inference_service_names:
+            validate_model_deployment(inference_service_name, namespace)
+
     finally:
         run.run(f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
