@@ -172,7 +172,7 @@ tests:
   scale:
     namespace: watsonx-serving-scale-test
     namespace_count: 1
-    models_per_namespace: 16
+    models_per_namespace: 1
     sleep_factor: 1
 
 matbench:
