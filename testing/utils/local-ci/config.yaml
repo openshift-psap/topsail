@@ -54,3 +54,10 @@ workloads:
     steps:
       test:
         command: load-aware test test_ci
+
+  watsonx-serving:
+    command_group: rhods
+    test_args:
+    steps:
+      test:
+        command: watsonx-serving test test_ci
