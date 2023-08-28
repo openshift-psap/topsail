@@ -39,4 +39,5 @@ def prepare():
         parallel.delayed(prepare_sutest)
 
         namespace = config.ci_artifacts.get_config("base_image.namespace")
-        parallel.delayed(prepare_user_pods.prepare_user_pods, namespace)
+        user_count = config.ci_artifacts.get_config("tests.scale.namespace_count")
+        parallel.delayed(prepare_user_pods.prepare_user_pods, namespace, user_count)

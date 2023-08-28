@@ -1,0 +1,59 @@
+---
+- name: Ensure that GRPCurl is available
+  shell:
+    which grpcurl
+
+- name: Create the artifact directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}"
+    state: directory
+    mode: '0755'
+
+- name: Get the name of the KSVC
+  shell:
+    set -o pipefail;
+    oc get ksvc
+       -lserving.kserve.io/inferenceservice={{ watsonx_serving_validate_model_inference_service_name }}
+       -n {{ watsonx_serving_validate_model_namespace }}
+       -ojsonpath='{.items[0].status.url}'
+       | sed 's|https://||'
+  register: ksvc_hostname_cmd
+
+
+- name: Wait for the model to answer successfully
+  shell: |
+    set -o pipefail
+    GRPCURL_DATA=$(echo "{{ watsonx_serving_validate_model_query_data }}" | sed "s/'/\"/g")
+    grpcurl \
+      -insecure \
+      -d "$GRPCURL_DATA" \
+      -H "mm-model-id: {{ watsonx_serving_validate_model_model_id }}" \
+      {{ ksvc_hostname_cmd.stdout }}:443 \
+      caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict \
+      > {{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/TextGenerationTaskPredict.answer
+  register: grpc_working_cmd
+  until: grpc_working_cmd.rc == 0
+  retries: 600
+  delay: 1
+
+- name: Save the number of attempts
+  local_action:
+    copy content={{ grpc_working_cmd }} dest={{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts.json
+
+- name: Prettify the file
+  shell: |
+    set -o pipefail
+    content=$(cat "{{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts.json")
+    echo "$content" | jq > "{{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts.json"
+
+- name: Query the model 2nd endpoint
+  shell: |
+    set -o pipefail
+    GRPCURL_DATA=$(echo "{{ watsonx_serving_validate_model_query_data }}" | sed "s/'/\"/g")
+    grpcurl \
+      -insecure \
+      -d "$GRPCURL_DATA" \
+      -H "mm-model-id: {{ watsonx_serving_validate_model_model_id }}" \
+      {{ ksvc_hostname_cmd.stdout }}:443 \
+      caikit.runtime.Nlp.NlpService/ServerStreamingTextGenerationTaskPredict \
+      > {{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/ServerStreamingTextGenerationTaskPredict.answer

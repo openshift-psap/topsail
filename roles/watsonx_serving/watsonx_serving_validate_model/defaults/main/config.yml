@@ -1,0 +1,19 @@
+# Auto-generated file, do not edit manually ... 
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Watsonx_Serving.validate_model
+
+# a list of names of the inference service to validate
+# Mandatory value
+watsonx_serving_validate_model_inference_service_names:
+
+# the model-id to pass to the inference service
+# Mandatory value
+watsonx_serving_validate_model_model_id:
+
+# the data to pass to the model query
+# Mandatory value
+watsonx_serving_validate_model_query_data:
+
+# the namespace in which the Serving stack was deployed. If empty, use the current project.
+watsonx_serving_validate_model_namespace:
+

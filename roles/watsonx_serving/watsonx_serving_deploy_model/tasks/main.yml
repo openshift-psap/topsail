@@ -94,16 +94,46 @@
 
 - name: Prepare the InferenceService
   block:
+  - name: Wait for the InferenceService Pod to appear
+    command:
+      oc get pod
+      -oname
+      -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
+      -n {{ watsonx_serving_deploy_model_namespace }}
+    register: inference_service_pod_name
+    # wait 5 minutes
+    retries: 30
+    delay: 10
+    until: inference_service_pod_name.stdout | length > 0
+
+  - name: Wait for the InferenceService Pod to be scheduled
+    command:
+      oc get pod
+      -ojsonpath={.items[0].spec.nodeName}
+      -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
+      -n {{ watsonx_serving_deploy_model_namespace }}
+    register: inference_service_pod_nodename
+    # wait 1 minutes
+    retries: 6
+    delay: 10
+    until: inference_service_pod_nodename.stdout | length > 0
+
   - name: Wait for the InferenceService to be loaded
     shell:
       set -o pipefail;
       oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
          -ojsonpath={.status.modelStatus.states.targetModelState}
     register: inference_service_state_cmd
-    # wait 20 minutes
-    retries: 240
-    delay: 5
+    # wait 15 minutes
+    retries: 90
+    delay: 10
     until: inference_service_state_cmd.stdout == "Loaded"
+
+  - name: Capture the state of the InferenceService Pod resource
+    shell:
+      oc get pod
+         -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
+         -owide
 
   - name: Save timestamp
     shell: |
@@ -112,6 +142,19 @@
       oc label cm/$NAME topsail.time-tracking=yes -n {{ watsonx_serving_deploy_model_namespace }}
 
   always:
+  - name: Capture the state of the InferenceService Pod resource
+    shell:
+      oc get pod
+         -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
+         -owide
+         -n {{ watsonx_serving_deploy_model_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.status;
+      oc describe pod
+         -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
+         -n {{ watsonx_serving_deploy_model_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
+    ignore_errors: true
+
   - name: Capture the state of the InferenceService resource
     shell:
       oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"

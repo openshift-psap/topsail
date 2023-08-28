@@ -13,24 +13,6 @@ secrets:
     env_key: PSAP_ODS_SECRET_PATH
 
 workloads:
-  notebook-burst:
-    command_group: notebooks
-    test_args:
-    - icelake
-    - notebook_test_burst
-    steps:
-      test:
-        command: notebooks test run_tests_and_plots
-
-  notebook-gating:
-    command_group: notebooks
-    test_args:
-    - icelake
-    - notebook_gating_test
-    steps:
-      test:
-        command: notebooks test run_tests_and_plots
-
   notebook-scale-test:
     command_group: notebooks
     test_args:
@@ -44,53 +26,8 @@ workloads:
         command: utils gather-extra
         always_run: true
 
-  notebook-just-scale-test:
-    command_group: notebooks
-    test_args:
-    - icelake_notebook_test
-    steps:
-      test:
-        command: notebooks test run_tests_and_plots
-
-  notebook-scale-test-light:
-    command_group: notebooks
-    test_args:
-    - notebooks_light
-    - notebook_test
-    steps:
-      prepare:
-        command: notebooks test cleanup_rhods
-      test:
-        command: notebooks test run_tests_and_plots
-
-  notebook-scale-test-scaleup:
-    command_group: notebooks
-    test_args:
-    - icelake_notebook_test_scaleup
-    steps:
-      cleanup:
-        command: notebooks test cleanup_rhods
-      test:
-        command: notebooks test run_tests_and_plots
-      gather:
-        command: utils gather-extra
-        alway_run: true
-
-  notebook-scale-test-burst:
-    command_group: notebooks
-    test_args:
-    - icelake_notebook_test_burst
-    steps:
-      cleanup:
-        command: notebooks test cleanup_rhods
-      test:
-        command: notebooks test run_tests_and_plots
-      gather:
-        command: utils gather-extra
-        alway_run: true
-
   pipelines:
-    command_group: pipelines
+    command_group: rhods
     test_args:
     - icelake
     steps:
@@ -105,15 +42,22 @@ workloads:
         alway_run: true
 
   codeflare-light:
-    command_group: codeflare
+    command_group: rhods
     test_args:
     steps:
       test:
         command: codeflare test test_ci
 
   load-aware-light:
-    command_group: load-aware
+    command_group: rhods
     test_args:
     steps:
       test:
         command: load-aware test test_ci
+
+  watsonx-serving:
+    command_group: rhods
+    test_args:
+    steps:
+      test:
+        command: watsonx-serving test test_ci
