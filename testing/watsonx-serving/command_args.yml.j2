@@ -150,3 +150,10 @@ watsonx_serving deploy_model:
 
   inference_service_name: {{ watsonx_serving.inference_service.name }}
   storage_uri: {{ watsonx_serving.inference_service.storage_uri }}
+
+watsonx_serving validate_model:
+  namespace: {{ tests.scale.namespace }}
+  inference_service_names: [{{ watsonx_serving.inference_service.name }}]
+
+  model_id: {{ watsonx_serving.model.id }}
+  query_data: {{ watsonx_serving.model.query_data }}

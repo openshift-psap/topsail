@@ -153,6 +153,9 @@ watsonx_serving:
   inference_service:
     name: caikit-isvc
     storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/"
+  model:
+    id: flan-t5-small-caikit
+    query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'
 
 gpu:
   time_sharing:
