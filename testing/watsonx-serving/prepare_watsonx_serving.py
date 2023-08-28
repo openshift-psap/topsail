@@ -11,9 +11,13 @@ def compute_sutest_node_requirement():
     ns_count = config.ci_artifacts.get_config("tests.scale.namespace_count")
     models_per_ns = config.ci_artifacts.get_config("tests.scale.models_per_namespace")
     models_count = ns_count * models_per_ns
+
+    cpu_rq = config.ci_artifacts.get_config("watsonx_serving.serving_runtime.resource_request.cpu")
+    mem_rq = config.ci_artifacts.get_config("watsonx_serving.serving_runtime.resource_request.memory")
+
     kwargs = dict(
-        cpu = 7,
-        memory = 10,
+        cpu = cpu_rq,
+        memory = mem_rq,
         machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type"),
         user_count = models_count,
         )
