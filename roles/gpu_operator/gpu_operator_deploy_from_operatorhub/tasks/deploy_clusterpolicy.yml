@@ -10,7 +10,8 @@
   retries: 15
   delay: 30
 
-- block:
+- name: Make sure the GPU Operator ClusterPolicy is ready
+  block:
   - name: Wait for the GPU Operator ClusterPolicy CRD to appear
     command: oc get crd clusterpolicies.nvidia.com
     register: has_clusterpolicy_crd

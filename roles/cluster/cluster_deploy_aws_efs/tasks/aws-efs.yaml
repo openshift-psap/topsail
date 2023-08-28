@@ -96,11 +96,11 @@
 
 - name: Populate the tags dict
   set_fact:
-    tags: "{{ tags | default({}) | combine ({ item.key : item.value }) }}"
+    tags: "{{ tags | default({}) | combine({item.key: item.value}) }}"
   with_items:
-      - { 'key': 'Name' , 'value': '{{ cluster_name_cmd.stdout }}'}
-      - { 'key': '{{ cluster_name_tag_cmd.stdout }}' , 'value': 'owned'}
-      - { 'key': 'Purpose', 'value': ''}
+      - {'key': 'Name' , 'value': '{{ cluster_name_cmd.stdout }}'}
+      - {'key': '{{ cluster_name_tag_cmd.stdout }}' , 'value': 'owned'}
+      - {'key': 'Purpose', 'value': ''}
 
 - name: Get the SecurityGroup content
   amazon.aws.ec2_group_info:

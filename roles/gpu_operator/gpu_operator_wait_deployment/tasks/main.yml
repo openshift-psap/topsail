@@ -78,7 +78,8 @@
     retries: 15
     delay: 60
 
-- block:
+- name: Wait for the nodes labeling
+  block:
   - name: Wait for the gpu-feature-discovery Pod to label the nodes
     command: oc get nodes -l nvidia.com/gpu.count -oname
     register: has_gpu_feature_discovery_labels

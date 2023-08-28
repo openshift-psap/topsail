@@ -1,5 +1,6 @@
 - name: Get the list of the worker nodes
   shell:
+    set -o pipefail;
     oc get nodes
        -l{{ cluster_fill_workernodes_label_selector }}
        -oname

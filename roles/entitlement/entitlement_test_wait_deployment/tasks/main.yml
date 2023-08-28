@@ -9,7 +9,8 @@
     entitlement_retries: "{{ entitlement_nb_wait_retries }}"
   when: entitlement_test_and_wait == 'yes'
 
-- block:
+- name: Make sure the entitlement Pod is deployed
+  block:
   - name: Wait for the entitlement Pod to succeed
     shell: |
       set -o errexit;

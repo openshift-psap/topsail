@@ -31,20 +31,21 @@
 - name: "Deploy RHSM from file '{{ entitlement_rhsm }}'"
   shell:
     set -o pipefail;
-    cat "{{ entitlement_mc_rhsm }}" 
-    | python3 "{{ entitlement_py_apply }}" BASE64_ENCODED_RHSM_FILE @"{{ entitlement_rhsm }}" 
+    cat "{{ entitlement_mc_rhsm }}"
+    | python3 "{{ entitlement_py_apply }}" BASE64_ENCODED_RHSM_FILE @"{{ entitlement_rhsm }}"
     | python3 "{{ entitlement_py_apply }}" MACHINE_CONFIG_ROLE "{{ machine_config_role }}"
     | oc apply -f-
 
 - name: "Deploy the pem and key-pem from file '{{ entitlement_pem }}'"
   shell:
     set -o pipefail;
-    cat "{{ entitlement_mc_pem }}" 
+    cat "{{ entitlement_mc_pem }}"
     | python3 "{{ entitlement_py_apply }}" BASE64_ENCODED_PEM_FILE @"{{ entitlement_pem }}"
     | python3 "{{ entitlement_py_apply }}" MACHINE_CONFIG_ROLE "{{ machine_config_role }}"
     | oc apply -f-
 
 - name: "Deploy the repo CA from file '{{ entitlement_mc_rhsm_ca }}' if requested"
+  when: entitlement_repo_ca | default('', true) | trim != ''
   block:
   - name: Compute the md5sum of the CA file (debug)
     command: md5sum '{{ entitlement_repo_ca }}'
@@ -52,8 +53,7 @@
   - name: "Deploy the repo CA from file '{{ entitlement_mc_rhsm_ca }}'"
     shell:
       set -o pipefail;
-      cat "{{ entitlement_mc_rhsm_ca }}" 
+      cat "{{ entitlement_mc_rhsm_ca }}"
       | python3 "{{ entitlement_py_apply }}" BASE64_ENCODED_RHSM_CA_FILE @"{{ entitlement_repo_ca }}"
       | python3 "{{ entitlement_py_apply }}" MACHINE_CONFIG_ROLE "{{ machine_config_role }}"
       | oc apply -f-
-  when: entitlement_repo_ca | default('', true) | trim != ''

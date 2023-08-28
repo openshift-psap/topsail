@@ -48,8 +48,8 @@
   register: oc_get_machinesets
   failed_when: not oc_get_machinesets.stdout
 
-- when: current_replicas_sum != scale
-  name: Change all {{ machineset_instance_type }} machinesets replicas to have sum {{ scale }}
+- name: Change all {{ machineset_instance_type }} machinesets replicas to have sum {{ scale }}
+  when: current_replicas_sum != scale
   block:
   - name: Do not downscale any machinesets other than the first one, unless the user used force
     block:
@@ -80,7 +80,8 @@
       oc patch machineset -n openshift-machine-api {{ first_machineset }}
       --patch '{"spec": {"replicas": {{ scale }} }}' --type merge
 
-- block:
+- name: Make sure the machinesets are ready
+  block:
   - name: Wait for all machinesets with type {{ machineset_instance_type }} to be ready
     # This is done by verifying that at the availableReplicas
 
@@ -92,6 +93,7 @@
     #    for more information.
     # 3. Perform some extra formatting for nicer logging
     shell: >-
+      set -o pipefail;
       oc get machinesets -n openshift-machine-api \
       {% if machineset_name | length > 0 %}
              "{{ machineset_name }}" -ojson \
@@ -110,6 +112,10 @@
     until: not non_ready_replicas.stdout_lines
     retries: 120
     delay: 30
+
+  rescue:
+  - name: Fail because the cluster machineset creation failed
+    fail: msg="Failing because cluster machineset creation failed"
 
   always:
   # info about the 'machines'
@@ -150,7 +156,4 @@
     failed_when: false
     loop: "{{ oc_get_machinesets.stdout_lines }}"
 
-  rescue:
 
-  - name: Fail because the cluster machineset creation failed
-    fail: msg="Failing because cluster machineset creation failed"

@@ -26,7 +26,8 @@
 - name: Delete the entitlement tester Pod if it exists
   command: oc delete  --ignore-not-found=true -f "{{ entitlement_tester_pod }}"
 
-- block:
+- name: Make sure the entitlement Pod is created
+  block:
   - name: Create the entitlement tester Pod
     command: oc create -f "{{ entitlement_tester_pod }}"
 

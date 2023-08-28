@@ -55,8 +55,8 @@
     echo "- deleting the project  $test_project_name ..."
     oc delete ns "$test_project_name" >/dev/null
     echo "--> project annotation value: $project_annotation_value"
-    echo "==> expected value:           "'{{ cluster_set_project_annotation_value or "null"}}'
-    [[ "$project_annotation_value" == '{{ cluster_set_project_annotation_value or "null"}}' ]]
+    echo "==> expected value:           "'{{ cluster_set_project_annotation_value or "null" }}'
+    [[ "$project_annotation_value" == '{{ cluster_set_project_annotation_value or "null" }}' ]]
   retries: 120
   delay: 5
   register: wait_project_template_active

@@ -1,10 +1,12 @@
 - name: List all the AppWrappers in the namespace
   shell: |
+    set -o pipefail;
     oc get appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r > "{{ artifact_extra_logs_dir }}/appwrappers.status"
     oc get appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
 
 - name: Count the AppWrappers in the namespace
   shell:
+    set -o pipefail;
     oc get appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} -oname | wc -l
 
 - name: Create a configmap for the beginning of the test timestamp

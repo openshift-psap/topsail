@@ -37,6 +37,7 @@
   - name: Check that the namespace is already registered
     when: patch_smmr_cmd.rc != 0
     shell:
+      set -o pipefail;
       oc get smmr/default -n istio-system  -ojsonpath={.spec.members} | jq .[] -r
     register: smmr_members_cmd
     failed_when: watsonx_serving_deploy_model_namespace not in smmr_members_cmd.stdout_lines

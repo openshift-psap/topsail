@@ -13,7 +13,9 @@
   command: oc delete secret/wisdom-protos --ignore-not-found -n {{ wisdom_llm_load_test_namespace }}
 
 - name: Create the wisdom protos Secret
-  shell: oc create secret generic wisdom-protos --from-file=$(echo {{ wisdom_llm_load_test_protos_path }}/* | tr ' ' ,) -n {{ wisdom_llm_load_test_namespace }} --dry-run=client -oyaml | oc apply -f -
+  shell:
+    set -o pipefail;
+    oc create secret generic wisdom-protos --from-file=$(echo {{ wisdom_llm_load_test_protos_path }}/* | tr ' ' ,) -n {{ wisdom_llm_load_test_namespace }} --dry-run=client -oyaml | oc apply -f -
 
 # The results need to be pushed to S3 after the run, put S3 credentials in a Secret
 - name: Delete the S3 push secret for results if it exists

@@ -1,6 +1,6 @@
 - name: Generate load timeline
   shell:
-    python3 {{ load_timeline_generator }} {{ load_aware_scale_test_distribution }} {{ load_aware_scale_test_duration}} {{ load_aware_scale_test_instances }} "{{ artifact_extra_logs_dir }}/schedule_plan.yaml"
+    python3 {{ load_timeline_generator }} {{ load_aware_scale_test_distribution }} {{ load_aware_scale_test_duration }} {{ load_aware_scale_test_instances }} "{{ artifact_extra_logs_dir }}/schedule_plan.yaml"
 
 - name: Run workload and dump stats
   block:
@@ -10,6 +10,7 @@
 
   - name: Wait for workloads to finish
     shell:
+      set -o pipefail;
       oc get pods -n {{ load_aware_scale_test_namespace }} --no-headers | awk '{ print $3 }'
     register: load_aware_workload
     delay: 60

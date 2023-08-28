@@ -43,6 +43,7 @@
 
 - name: Create the namespace if it does not exist
   shell:
+    set -o pipefail;
     oc create ns "{{ codeflare_generate_mcad_load_namespace }}" -oyaml --dry-run=client | tee "{{ artifact_extra_logs_dir }}/src/namespace.yaml" | oc apply -f-
 
 - name: Create a configmap for the beginning of the test timestamp

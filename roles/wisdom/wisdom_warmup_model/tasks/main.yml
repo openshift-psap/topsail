@@ -20,8 +20,10 @@
   command: oc delete secret/wisdom-protos --ignore-not-found -n {{ wisdom_warmup_model_namespace }}
 
 - name: Create the wisdom protos Secret
-  shell: oc create secret generic wisdom-protos --from-file=$(echo {{ wisdom_warmup_model_protos_path }}/* | tr ' ' ,) -n {{ wisdom_warmup_model_namespace }} --dry-run=client -oyaml | oc apply -f -
-  
+  shell:
+    set -o pipefail;
+    oc create secret generic wisdom-protos --from-file=$(echo {{ wisdom_warmup_model_protos_path }}/* | tr ' ' ,) -n {{ wisdom_warmup_model_namespace }} --dry-run=client -oyaml | oc apply -f -
+
 - name: Apply the warmup Pod template
   template:
     src: "{{ wisdom_warmup_pod_template }}"

@@ -104,8 +104,10 @@
   command: oc delete secret/wisdom-protos --ignore-not-found -n {{ wisdom_deploy_model_namespace }}
 
 - name: Create the wisdom protos Secret
-  shell: oc create secret generic wisdom-protos --from-file=$(echo {{ wisdom_deploy_model_protos_path }}/* | tr ' ' ,) -n {{ wisdom_deploy_model_namespace }} --dry-run=client -oyaml | oc apply -f -
-  
+  shell:
+    set -o pipefail;
+    oc create secret generic wisdom-protos --from-file=$(echo {{ wisdom_deploy_model_protos_path }}/* | tr ' ' ,) -n {{ wisdom_deploy_model_namespace }} --dry-run=client -oyaml | oc apply -f -
+
 - name: Delete the entrypoint ConfigMap if it already exists
   command: oc delete --ignore-not-found configmap/wisdom-tester-entrypoint -n {{ wisdom_deploy_model_namespace }}
 
@@ -129,17 +131,16 @@
   command: oc create -f "{{ artifact_extra_logs_dir }}/src/003_wisdom_tester_pod.yml" -n {{ wisdom_deploy_model_namespace }}
 
 # Wait for model to respond without error
-- block:
-  - name: Wait for the wisdom test Pod to terminate
-    command:
-      oc get pod/wisdom-tester
-         -n {{ wisdom_deploy_model_namespace }}
-         -o custom-columns=:.status.phase
-         --no-headers
-    register: tester_wait
-    until: tester_wait.stdout == "Succeeded" or tester_wait.stdout == "Error" or tester_wait.stdout == "Failed"
-    retries: 10
-    delay: 30
+- name: Wait for the wisdom test Pod to terminate
+  command:
+    oc get pod/wisdom-tester
+        -n {{ wisdom_deploy_model_namespace }}
+        -o custom-columns=:.status.phase
+        --no-headers
+  register: tester_wait
+  until: tester_wait.stdout == "Succeeded" or tester_wait.stdout == "Error" or tester_wait.stdout == "Failed"
+  retries: 10
+  delay: 30
 
 - name: Save the wisdom test Pod logs
   shell: oc logs pod/wisdom-tester  -n {{ wisdom_deploy_model_namespace }} > {{ artifact_extra_logs_dir }}/wisdom-tester-pod.log

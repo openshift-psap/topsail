@@ -214,6 +214,7 @@
 
 - name: Store the success count
   shell:
+    set -o pipefail;
     echo "{{ success_count_cmd.stdout_lines[0] }}/{{ local_ci_run_multi_user_count }}"
          | tee "{{ artifact_extra_logs_dir }}/success_count"
 

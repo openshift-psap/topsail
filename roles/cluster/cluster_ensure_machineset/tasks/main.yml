@@ -1,6 +1,7 @@
 ---
 - name: "Check if the cluster already has a {{ machineset_instance_type }} machineset"
   shell:
+    set -o pipefail;
     oc get machineset -n openshift-machine-api
     {% if machineset_name | length > 0 %}
       -ojson | jq '.items[] | select(.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}" and .metadata.name=="{{ machineset_name }}") | .metadata.name' -r

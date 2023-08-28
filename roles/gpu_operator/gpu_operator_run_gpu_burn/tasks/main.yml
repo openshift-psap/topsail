@@ -91,13 +91,16 @@
   - name: Ensure that no GPU was faulty
     loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     shell:
+      set -o pipefail;
       oc logs pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }} | grep FAULTY
     register: gpu_burn_test_faulty
     failed_when: gpu_burn_test_faulty.rc == 0
 
   always:
   - name: Save the logs of the GPU burn Pods
-    shell: oc logs pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }} | grep -o "[^$(printf '\r')]*$"
+    shell:
+      set -o pipefail;
+      oc logs pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }} | grep -o "[^$(printf '\r')]*$"
     with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     failed_when: false
 
