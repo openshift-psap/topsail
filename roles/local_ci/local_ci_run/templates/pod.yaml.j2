@@ -20,7 +20,7 @@ spec:
       git config --global --add safe.directory "$PWD"
 
       if [[ "$PULL_NUMBER" ]]; then
-        git fetch origin refs/pull/$PULL_NUMBER/head:pull_$PULL_NUMBER
+        git fetch origin refs/pull/$PULL_NUMBER/merge:pull_$PULL_NUMBER
         git switch pull_$PULL_NUMBER
         git show --quiet --oneline main..HEAD
       elif [[ "$GIT_REF" ]]; then
