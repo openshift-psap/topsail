@@ -15,6 +15,12 @@ set -x
 source "$(dirname "$(realpath "$0")")/../env.sh"
 source "$(dirname "$(realpath "$0")")/../utils.sh"
 
+_wait_for_pods_ready() {
+  set +x
+  wait_for_pods_ready "$@"
+  set -x
+}
+
 input=y
 if [ "$input" = "y" ]; then
     if [[ ! -n ${TARGET_OPERATOR} ]]
@@ -62,10 +68,10 @@ oc create ns istio-system -oyaml --dry-run=client | oc apply -f-
 oc::wait::object::availability "oc get project istio-system" 2 60
 
 oc apply -f custom-manifests/service-mesh/smcp.yaml
-wait_for_pods_ready "app=istiod" "istio-system"
-wait_for_pods_ready "app=istio-ingressgateway" "istio-system"
-wait_for_pods_ready "app=istio-egressgateway" "istio-system"
-wait_for_pods_ready "app=jaeger" "istio-system"
+_wait_for_pods_ready "app=istiod" "istio-system"
+_wait_for_pods_ready "app=istio-ingressgateway" "istio-system"
+_wait_for_pods_ready "app=istio-egressgateway" "istio-system"
+_wait_for_pods_ready "app=jaeger" "istio-system"
 
 oc wait --for=condition=ready pod -l app=istiod -n istio-system --timeout=300s
 oc wait --for=condition=ready pod -l app=istio-ingressgateway -n istio-system --timeout=300s
@@ -99,9 +105,9 @@ echo
 #oc apply -f custom-manifests/serverless/operators.yaml
 wait_for_csv_installed serverless-operator openshift-operators
 
-wait_for_pods_ready "name=knative-openshift" "openshift-operators"
-wait_for_pods_ready "name=knative-openshift-ingress" "openshift-operators"
-wait_for_pods_ready "name=knative-operator" "openshift-operators"
+_wait_for_pods_ready "name=knative-openshift" "openshift-operators"
+_wait_for_pods_ready "name=knative-openshift-ingress" "openshift-operators"
+_wait_for_pods_ready "name=knative-operator" "openshift-operators"
 oc wait --for=condition=ready pod -l name=knative-openshift -n openshift-operators --timeout=300s
 oc wait --for=condition=ready pod -l name=knative-openshift-ingress -n openshift-operators --timeout=300s
 oc wait --for=condition=ready pod -l name=knative-operator -n openshift-operators --timeout=300s
@@ -112,16 +118,16 @@ echo "[INFO] Create a Knative Serving installation"
 echo
 oc apply -f custom-manifests/serverless/knativeserving-istio.yaml
 
-wait_for_pods_ready "app=controller" "knative-serving"
-wait_for_pods_ready "app=net-istio-controller" "knative-serving"
-wait_for_pods_ready "app=net-istio-webhook" "knative-serving"
-wait_for_pods_ready "app=autoscaler-hpa" "knative-serving"
-wait_for_pods_ready "app=domain-mapping" "knative-serving"
-wait_for_pods_ready "app=webhook" "knative-serving"
+_wait_for_pods_ready "app=controller" "knative-serving"
+_wait_for_pods_ready "app=net-istio-controller" "knative-serving"
+_wait_for_pods_ready "app=net-istio-webhook" "knative-serving"
+_wait_for_pods_ready "app=autoscaler-hpa" "knative-serving"
+_wait_for_pods_ready "app=domain-mapping" "knative-serving"
+_wait_for_pods_ready "app=webhook" "knative-serving"
 oc delete pod -n knative-serving -l app=activator --force --grace-period=0
 oc delete pod -n knative-serving -l app=autoscaler --force --grace-period=0
-wait_for_pods_ready "app=activator" "knative-serving"
-wait_for_pods_ready "app=autoscaler" "knative-serving"
+_wait_for_pods_ready "app=activator" "knative-serving"
+_wait_for_pods_ready "app=autoscaler" "knative-serving"
 
 oc wait --for=condition=ready pod -l app=controller -n knative-serving --timeout=300s
 oc wait --for=condition=ready pod -l app=net-istio-controller -n knative-serving --timeout=300s
