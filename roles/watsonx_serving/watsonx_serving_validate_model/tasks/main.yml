@@ -1,0 +1,6 @@
+---
+- name: Validate the models
+  loop: "{{ watsonx_serving_validate_model_inference_service_names }}"
+  loop_control:
+    loop_var: watsonx_serving_validate_model_inference_service_name
+  include_tasks: validate_model.yaml
