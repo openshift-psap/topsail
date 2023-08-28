@@ -59,19 +59,19 @@ def prepare_base_image_container(namespace):
     run.run(f"./run_toolbox.py from_config utils build_push_image --prefix extended_image")
 
 
-def compute_driver_node_requirement():
+def compute_driver_node_requirement(user_count):
     # must match 'roles/local_ci/local_ci_run_multi/templates/job.yaml.j2'
     kwargs = dict(
         cpu = 0.250,
         memory = 2,
         machine_type = config.ci_artifacts.get_config("clusters.driver.compute.machineset.type"),
-        user_count = config.ci_artifacts.get_config("tests.scale.user_count"),
+        user_count = user_count,
         )
 
     return sizing.main(**kwargs)
 
 
-def prepare_user_pods(namespace):
+def prepare_user_pods(namespace, user_count):
     config.ci_artifacts.set_config("base_image.namespace", namespace)
 
     service_account = config.ci_artifacts.get_config("base_image.user.service_account")
@@ -97,7 +97,7 @@ def prepare_user_pods(namespace):
         nodes_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
         extra = ""
         if nodes_count is None:
-            node_count = compute_driver_node_requirement()
+            node_count = compute_driver_node_requirement(user_count)
 
             extra = f"--extra '{{scale: {node_count}}}'"
 
