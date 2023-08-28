@@ -22,7 +22,7 @@ def apply_prefer_pr():
         git_ref = os.environ.get("PERFLAB_GIT_REF")
 
         try:
-            pr_number = int(re.compile("refs/pull/([0-9]+)/head").match(git_ref).groups()[0])
+            pr_number = int(re.compile("refs/pull/([0-9]+)/merge").match(git_ref).groups()[0])
         except Exception as e:
             logging.warning("apply_prefer_pr: PERFLAB_CI: base_image.repo.ref_prefer_pr is set cannot parse PERFLAB_GIT_REF={git_erf}: {e.__class__.__name__}: {e}")
             return
@@ -37,7 +37,7 @@ def apply_prefer_pr():
         logging.warning("apply_prefer_pr: Could not figure out the PR number. Keeping the default value.")
         return
 
-    pr_ref = f"refs/pull/{pr_number}/head"
+    pr_ref = f"refs/pull/{pr_number}/merge"
 
     logging.info(f"Setting '{pr_ref}' as ref for building the base image")
     config.ci_artifacts.set_config("base_image.repo.ref", pr_ref)

@@ -104,7 +104,7 @@ local_ci run_multi:
   sleep_factor: {{ tests.pipelines.sleep_factor }}
   user_batch_size: {{ tests.pipelines.user_batch_size }}
 
-  git_pull: null #refs/pull/716/head
+  git_pull: null #refs/pull/716/merge
 
 cluster deploy_minio_s3_server:
   namespace: "{{ base_image.namespace }}"
