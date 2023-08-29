@@ -49,7 +49,7 @@ def scale_up_sutest():
     node_count = compute_sutest_node_requirement()
     config.ci_artifacts.set_config("clusters.sutest.compute.machineset.count ", node_count)
 
-    run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest")
+    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_sutest ./run_toolbox.py from_config cluster set_scale --prefix=sutest")
 
 
 def preload_image():
