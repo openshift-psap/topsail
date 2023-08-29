@@ -71,6 +71,19 @@ def compute_driver_node_requirement(user_count):
     return sizing.main(**kwargs)
 
 
+def cluster_scale_up(namespace, user_count):
+    if config.ci_artifacts.get_config("clusters.driver.is_metal"):
+        return
+
+    nodes_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
+    extra = ""
+    if nodes_count is None:
+        node_count = compute_driver_node_requirement(user_count)
+
+        extra = f"--extra '{{scale: {node_count}}}'"
+
+    run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
+
 def prepare_user_pods(namespace, user_count):
     config.ci_artifacts.set_config("base_image.namespace", namespace)
 
@@ -93,15 +106,7 @@ def prepare_user_pods(namespace, user_count):
     # Prepare the driver machineset
     #
 
-    if not config.ci_artifacts.get_config("clusters.driver.is_metal"):
-        nodes_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
-        extra = ""
-        if nodes_count is None:
-            node_count = compute_driver_node_requirement(user_count)
-
-            extra = f"--extra '{{scale: {node_count}}}'"
-
-        run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
+    cluster_scale_up(namespace, user_count)
 
     #
     # Prepare the container image
