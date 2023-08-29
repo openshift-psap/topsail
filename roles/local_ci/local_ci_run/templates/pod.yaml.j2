@@ -33,6 +33,8 @@ spec:
       git submodule update --init
 {% endif %}
     env:
+    - name: HOMELAB_CI
+      value: "yes"
     - name: GIT_REPO
       value: "{{ local_ci_run_git_repo }}"
     - name: GIT_REF
