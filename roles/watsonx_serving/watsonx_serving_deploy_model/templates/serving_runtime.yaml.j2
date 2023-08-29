@@ -17,9 +17,13 @@ spec:
       protocol: TCP
     resources:
       requests:
-        {{ watsonx_serving_deploy_model_serving_runtime_resource_request }}
+        cpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.cpu }}"
+        memory: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.memory }}Gi"
+        nvidia.com/gpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] }}"
       limits:
-        {{ watsonx_serving_deploy_model_serving_runtime_resource_request }}
+        cpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.cpu }}"
+        memory: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.memory }}Gi"
+        nvidia.com/gpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] }}"
   multiModel: false
   supportedModelFormats:
   # Note: this currently *only* supports caikit format models
