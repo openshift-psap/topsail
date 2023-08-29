@@ -205,6 +205,16 @@ def cluster_scale_down():
     """
     return prepare_scale.cluster_scale_down()
 
+
+@entrypoint()
+def cleanup_sutest_ns():
+    """
+    Cleans up the SUTest namespaces
+    """
+
+    label = config.ci_artifacts.get_config("tests.scale.namespace_label")
+    run.run(f"oc delete ns -l{label}")
+
 # ---
 
 class Entrypoint:
@@ -225,6 +235,8 @@ class Entrypoint:
         self.run_one = run_one
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
         self.generate_plots = generate_plots
+
+        self.cleanup_sutest_ns = cleanup_sutest_ns
 
 def main():
     # Print help rather than opening a pager
