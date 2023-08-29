@@ -41,3 +41,24 @@ def prepare():
         namespace = config.ci_artifacts.get_config("base_image.namespace")
         user_count = config.ci_artifacts.get_config("tests.scale.namespace_count")
         parallel.delayed(prepare_user_pods.prepare_user_pods, namespace, user_count)
+        parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
+
+
+def cluster_scale_up():
+    def prepare_sutest_scale():
+        prepare_watsonx_serving.scale_up_sutest()
+        prepare_watsonx_serving.preload_image()
+
+    with run.Parallel() as parallel:
+        namespace = config.ci_artifacts.get_config("base_image.namespace")
+        user_count = config.ci_artifacts.get_config("tests.scale.namespace_count")
+        parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
+
+        parallel.delayed(prepare_sutest_scale)
+
+
+def cluster_scale_down():
+    extra = dict(scale=1)
+    with run.Parallel() as parallel:
+        parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=sutest --extra \"{extra}\"")
+        parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=driver --extra \"{extra}\"")

@@ -186,6 +186,22 @@ def generate_plots(results_dirname):
 def _prepare_watsonx_serving():
     return prepare_watsonx_serving.prepare()
 
+
+@entrypoint()
+def cluster_scale_up():
+    """
+    Scales up the cluster SUTest and Driver machinesets
+    """
+    return prepare_scale.cluster_scale_up()
+
+
+@entrypoint()
+def cluster_scale_down():
+    """
+    Scales down the cluster SUTest and Driver machinesets
+    """
+    return prepare_scale.cluster_scale_down()
+
 # ---
 
 class Entrypoint:
@@ -198,6 +214,8 @@ class Entrypoint:
 
         self.prepare_ci = prepare_ci
         self.prepare_watsonx_serving = _prepare_watsonx_serving
+        self.cluster_scale_up = cluster_scale_up
+        self.cluster_scale_down = cluster_scale_down
 
         self.test_ci = test_ci
         self.scale_test = scale_test
