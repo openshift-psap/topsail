@@ -66,6 +66,8 @@ def prepare_user_namespace(namespace):
         return
 
     run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
+    label = config.ci_artifacts.get_config("tests.scale.namespace_label")
+    run.run(f"oc label ns/{namespace} {label} --overwrite")
 
     metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
     dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")

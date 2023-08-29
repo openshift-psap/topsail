@@ -33,8 +33,8 @@ ci_presets:
     clusters.sutest.compute.machineset.type: g5.2xlarge
 
   scale:
-    tests.scale.namespace_count: 10
-    tests.scale.models_per_namespace: 3
+    tests.scale.namespace_count: 60
+    tests.scale.models_per_namespace: 5
 
 secrets:
   dir:
@@ -142,8 +142,8 @@ watsonx_serving:
     name: caikit-runtime
     image: quay.io/opendatahub/caikit-tgis-serving:stable
     resource_request:
-      cpu: 350m
-      memory: 1.5Gi
+      cpu: 0.350
+      memory: 1.5 # in Gi
       nvidia.com/gpu: 0
   storage_config:
     name: storage-config
@@ -171,8 +171,9 @@ tests:
 
   scale:
     namespace: watsonx-serving-scale-test
+    namespace_label: topsail.scale-test=true
     namespace_count: 1
-    models_per_namespace: 16
+    models_per_namespace: 1
     sleep_factor: 1
 
 matbench:

@@ -11,9 +11,13 @@ def compute_sutest_node_requirement():
     ns_count = config.ci_artifacts.get_config("tests.scale.namespace_count")
     models_per_ns = config.ci_artifacts.get_config("tests.scale.models_per_namespace")
     models_count = ns_count * models_per_ns
+
+    cpu_rq = config.ci_artifacts.get_config("watsonx_serving.serving_runtime.resource_request.cpu")
+    mem_rq = config.ci_artifacts.get_config("watsonx_serving.serving_runtime.resource_request.memory")
+
     kwargs = dict(
-        cpu = 7,
-        memory = 10,
+        cpu = cpu_rq,
+        memory = mem_rq,
         machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type"),
         user_count = models_count,
         )
@@ -45,7 +49,7 @@ def scale_up_sutest():
     node_count = compute_sutest_node_requirement()
     config.ci_artifacts.set_config("clusters.sutest.compute.machineset.count ", node_count)
 
-    run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest")
+    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_sutest ./run_toolbox.py from_config cluster set_scale --prefix=sutest")
 
 
 def preload_image():
