@@ -62,7 +62,7 @@
     oc delete ns "{{ rhods_delete_ods_namespace }}"
        --ignore-not-found
 
-- name: Delete all the {{ item }} CRDs
+- name: Delete all the following CRDs {{ item }}
   shell: |
     set -o pipefail;
     CRDs=$(oc get crd -oname | grep {{ item }})

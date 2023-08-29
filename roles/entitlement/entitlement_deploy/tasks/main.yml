@@ -1,11 +1,11 @@
 ---
-- name: "Ensure that the entitlement file 'entitlement_pem={{ entitlement_pem }}' exists"
+- name: Ensure that the entitlement file exists entitlement_pem={{ entitlement_pem }}
   stat:
     path: '{{ entitlement_pem }}'
   register: entitlement_pem_stat
   failed_when: not entitlement_pem_stat.stat.exists
 
-- name: "Ensure that the entitlement RHSM file 'entitlement_rhsm={{ entitlement_rhsm }}' exists"
+- name: Ensure that the entitlement RHSM file exists entitlement_rhsm={{ entitlement_rhsm }}
   stat:
     path: '{{ entitlement_rhsm }}'
   register: entitlement_rhsm_stat
@@ -28,7 +28,7 @@
   set_fact:
       machine_config_role: worker
 
-- name: "Deploy RHSM from file '{{ entitlement_rhsm }}'"
+- name: Deploy RHSM from file {{ entitlement_rhsm }}
   shell:
     set -o pipefail;
     cat "{{ entitlement_mc_rhsm }}"
@@ -36,7 +36,7 @@
     | python3 "{{ entitlement_py_apply }}" MACHINE_CONFIG_ROLE "{{ machine_config_role }}"
     | oc apply -f-
 
-- name: "Deploy the pem and key-pem from file '{{ entitlement_pem }}'"
+- name: Deploy the pem and key-pem from file {{ entitlement_pem }}
   shell:
     set -o pipefail;
     cat "{{ entitlement_mc_pem }}"
@@ -44,7 +44,7 @@
     | python3 "{{ entitlement_py_apply }}" MACHINE_CONFIG_ROLE "{{ machine_config_role }}"
     | oc apply -f-
 
-- name: "Deploy the repo CA from file '{{ entitlement_mc_rhsm_ca }}' if requested"
+- name: If requested deploy the repo CA from file {{ entitlement_mc_rhsm_ca }}
   when: entitlement_repo_ca | default('', true) | trim != ''
   block:
   - name: Compute the md5sum of the CA file (debug)

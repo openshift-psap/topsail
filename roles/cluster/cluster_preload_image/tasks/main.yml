@@ -41,10 +41,10 @@
       oc get ds/{{ cluster_preload_image_name }}
          '-ojsonpath={.status.desiredNumberScheduled}'
          -n {{ cluster_preload_image_namespace }}
-    register: desiredNumberScheduled_cmd
+    register: desired_number_scheduled_cmd
     retries: 3
     delay: 15
-    until: desiredNumberScheduled_cmd or "0" | int > 0
+    until: desired_number_scheduled_cmd or "0" | int > 0
 
   - name: Wait for the pods to be scheduled
     shell:
@@ -53,10 +53,10 @@
          -ojson
          -n {{ cluster_preload_image_namespace }}
          | jq '.status.desiredNumberScheduled - .status.currentNumberScheduled'
-    register: currentNumberNotScheduled_cmd
+    register: current_number_not_scheduled_cmd
     retries: 3
     delay: 15
-    until: currentNumberNotScheduled_cmd.stdout | int == 0
+    until: current_number_not_scheduled_cmd.stdout | int == 0
 
   - name: Wait for the pods to be ready
     shell:
@@ -65,21 +65,21 @@
          -ojson
          -n {{ cluster_preload_image_namespace }}
          | jq '.status.desiredNumberScheduled - .status.numberReady'
-    register: currentNumberNotReady_cmd
+    register: current_number_not_ready_cmd
     retries: 20
     delay: 30
-    until: currentNumberNotReady_cmd.stdout | int == 0
+    until: current_number_not_ready_cmd.stdout | int == 0
 
   - name: Get the final desired number
     command:
       oc get ds/{{ cluster_preload_image_name }}
          '-ojsonpath={.status.desiredNumberScheduled}'
          -n {{ cluster_preload_image_namespace }}
-    register: finalDesiredNumberScheduled_cmd
+    register: final_desired_number_scheduled_cmd
 
   - name: Fail if the image has been preloaded on 0 nodes
     fail: msg="The node selector '{{ cluster_preload_image_node_selector_key }}={{ cluster_preload_image_node_selector_value }}' did not match any node"
-    when: finalDesiredNumberScheduled_cmd.stdout | int == 0
+    when: final_desired_number_scheduled_cmd.stdout | int == 0
 
   always:
   - name: Get the description of the preload Pods

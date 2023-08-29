@@ -12,7 +12,7 @@
     path: "{{ cluster_deploy_nginx_server_directory }}"
   register: directory_stats
 
-- name: Fail if {{ cluster_deploy_nginx_server_directory }} is not a directory
+- name: Fail if the following path is not a directory {{ cluster_deploy_nginx_server_directory }}
   fail: msg="'{{ cluster_deploy_nginx_server_directory }}' isn't a reachable directory."
   when: not directory_stats.stat.exists or not directory_stats.stat.isdir
 

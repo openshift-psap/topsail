@@ -12,28 +12,28 @@
 
 # ---
 
-- name: "Get the GPU Operator Pod in {{ gpu_operator_operator_namespace }} (list)"
+- name: Get the GPU Operator Pod as a list from {{ gpu_operator_operator_namespace }}
   shell:
     oc get pods -lapp=gpu-operator
        -n {{ gpu_operator_operator_namespace }} -owide
        > {{ artifact_extra_logs_dir }}/gpu_operator_pod.list
   failed_when: false
 
-- name: "Get the GPU Operator Pod in {{ gpu_operator_operator_namespace }} (yaml)"
+- name: Get the GPU Operator Pod as yaml from {{ gpu_operator_operator_namespace }}
   shell:
     oc get pods -lapp=gpu-operator
        -n {{ gpu_operator_operator_namespace }} -oyaml
        > {{ artifact_extra_logs_dir }}/gpu_operator_pod.yaml
   failed_when: false
 
-- name: "Get the Pods in {{ gpu_operator_namespace }} (list)"
+- name: Get the Pods as a list from {{ gpu_operator_namespace }}
   shell:
     oc get pods -owide
        -n {{ gpu_operator_namespace }}
        > {{ artifact_extra_logs_dir }}/all_gpu_pods.list
   failed_when: false
 
-- name: "Get the Pods in {{ gpu_operator_namespace }} (yaml)"
+- name: Get the Pods as yaml from {{ gpu_operator_namespace }}
   shell:
     oc get pods -oyaml
        -n {{ gpu_operator_namespace }}
@@ -52,14 +52,14 @@
     done
   failed_when: false
 
-- name: "Get the DaemonSets in {{ gpu_operator_namespace }} (list)"
+- name: Get the following DaemonSets as a list from {{ gpu_operator_namespace }}
   shell:
     oc get ds
        -n {{ gpu_operator_namespace }}
        > {{ artifact_extra_logs_dir }}/all_gpu_ds.list
   failed_when: false
 
-- name: "Get the DaemonSets in {{ gpu_operator_namespace }} (yaml)"
+- name: Get the following DaemonSets in yaml from {{ gpu_operator_namespace }}
   shell:
     oc get ds -oyaml
        -n {{ gpu_operator_namespace }}

@@ -4,13 +4,13 @@
   fail: msg="Bailing out. This role requires 'pipelines_run_kfp_notebook_notebook_directory'"
   when: not pipelines_run_kfp_notebook_notebook_directory
 
-- name: Ensure that {{ pipelines_run_kfp_notebook_notebook_directory }} is a directory
+- name: Ensure that the following path is a directory {{ pipelines_run_kfp_notebook_notebook_directory }}
   stat:
     path: "{{ pipelines_run_kfp_notebook_notebook_directory }}"
   register: directory_stats
   failed_when: not directory_stats.stat.exists or not directory_stats.stat.isdir
 
-- name: Ensure that {{ pipelines_run_kfp_notebook_notebook_directory }}/{{ pipelines_run_kfp_notebook_notebook_filename }} is a file
+- name: Ensure that the following path is a file {{ pipelines_run_kfp_notebook_notebook_directory + '/' + pipelines_run_kfp_notebook_notebook_filename }}
   stat:
     path: "{{ pipelines_run_kfp_notebook_notebook_directory }}/{{ pipelines_run_kfp_notebook_notebook_filename }}"
   register: file_stats
@@ -21,7 +21,7 @@
     path: "{{ pipelines_run_kfp_notebook_notebook_directory }}"
   register: directory_stats
 
-- name: Fail if {{ pipelines_run_kfp_notebook_notebook_directory }} is not a directory
+- name: Fail if the following path is not a directory {{ pipelines_run_kfp_notebook_notebook_directory }}
   fail: msg="'{{ pipelines_run_kfp_notebook_notebook_directory }}' isn't a reachable directory."
   when: not directory_stats.stat.exists or not directory_stats.stat.isdir
 

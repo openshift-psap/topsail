@@ -1,7 +1,7 @@
 ---
 - name: Get the operator version
   block:
-  - name: check if env is available
+  - name: Check if env is available
     shell: echo "$GPU_OPERATOR_VERSION"
     register: gpu_operator_csv_version_cmd
     failed_when: gpu_operator_csv_version_cmd.stdout | length == 0
@@ -36,10 +36,10 @@
     register: gpu_operator_csv_version_cmd
     failed_when: gpu_operator_csv_version_cmd.stdout | length == 0
 
-- name: Store the version '{{ gpu_operator_csv_version_cmd.stdout }}' as an ansible variable
+- name: Store the version as an ansible variable '{{ gpu_operator_csv_version_cmd.stdout }}'
   set_fact:
     gpu_operator_version: '{{ gpu_operator_csv_version_cmd.stdout }}'
 
-- name: Store the veersion '{{ gpu_operator_csv_version_cmd.stdout }}' as an artifacts file
+- name: Store the version as an artifacts file '{{ gpu_operator_csv_version_cmd.stdout }}' 
   shell:
     echo '{{ gpu_operator_version }}' > {{ artifact_extra_logs_dir }}/gpu_operator.version

@@ -96,7 +96,7 @@
 
 - name: Populate the tags dict
   set_fact:
-    tags: "{{ tags | default({}) | combine({item.key: item.value}) }}"
+    cluster_tags: "{{ cluster_tags | default({}) | combine({item.key: item.value}) }}"
   with_items:
       - {'key': 'Name' , 'value': '{{ cluster_name_cmd.stdout }}'}
       - {'key': '{{ cluster_name_tag_cmd.stdout }}' , 'value': 'owned'}
@@ -130,7 +130,7 @@
     region: "{{ cluster_region }}"
     state: present
     name: "EFS {{ cluster_name_cmd.stdout }}"
-    tags: "{{ tags }}"
+    tags: "{{ cluster_tags }}"
     targets: "{{ targets }}"
   register: aws_efs_fs
 

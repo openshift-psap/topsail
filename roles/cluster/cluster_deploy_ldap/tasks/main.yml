@@ -3,7 +3,7 @@
 # content are secrets (passwords). With Python+envsubst, we're sure
 # that the secrets won't be printed in clear.
 
-- name: Ensure that the secret properties file '{{ cluster_deploy_ldap_secret_properties_file }}' exists and is a file
+- name: Ensure that the following secret properties path exists and it is a file {{ cluster_deploy_ldap_secret_properties_file }}
   stat:
     path: "{{ cluster_deploy_ldap_secret_properties_file }}"
   register: secret_props_file_stat
@@ -82,7 +82,7 @@
 - name: Get LDAP Bind DN
   command:
     yq .ldap.bindDN "{{ artifact_extra_logs_dir }}/oauth_ldap.yaml"
-  register: ldap_bindDN_cmd
+  register: ldap_bind_dn_cmd
 
 - name: Deploy on OCP
   when: not cluster_deploy_ldap_use_ocm
@@ -120,7 +120,7 @@
           --cluster "{{ cluster_deploy_ldap_cluster_name }}" \
           --name "{{ cluster_deploy_ldap_idp_name }}" \
           --url "{{ ldap_url_cmd.stdout }}" \
-          --bind-dn "{{ ldap_bindDN_cmd.stdout }}" \
+          --bind-dn "{{ ldap_bind_dn_cmd.stdout }}" \
           --bind-password $(echo "$cluster_ldap_adminpassword") \
           --insecure
 
@@ -137,7 +137,7 @@
           --cluster "{{ cluster_deploy_ldap_cluster_name }}" \
           --name "{{ cluster_deploy_ldap_idp_name }}" \
           --url "{{ ldap_url_cmd.stdout }}" \
-          --bind-dn "{{ ldap_bindDN_cmd.stdout }}" \
+          --bind-dn "{{ ldap_bind_dn_cmd.stdout }}" \
           --bind-password $(echo "$cluster_ldap_adminpassword")
           # need to add --insecure here, when available in `ocm`.
 
