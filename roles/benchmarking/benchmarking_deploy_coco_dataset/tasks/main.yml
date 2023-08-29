@@ -36,7 +36,7 @@
   template:
     src: "{{ coco_dataset_pvc }}"
     dest: "{{ artifact_extra_logs_dir }}/001_pvc_coco-dataset.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Check if the PVC already exists
   command: oc get -f "{{ artifact_extra_logs_dir }}/001_pvc_coco-dataset.yml" -oname
@@ -52,7 +52,7 @@
   template:
     src: "{{ coco_dataset_pod }}"
     dest: "{{ artifact_extra_logs_dir }}/002_pod_coco-dataset.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete the Pod, if it exists
   command:

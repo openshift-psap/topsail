@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Load_Aware.deploy_trimaran
 
+# Parameters
 # log verbosity to set the scheduler to run with,
 load_aware_deploy_trimaran_log_level: 1
 
@@ -31,4 +32,3 @@ load_aware_deploy_trimaran_risk_limit_weights_cpu: 0.5
 
 # Memory limit
 load_aware_deploy_trimaran_risk_limit_weights_memory: 0.5
-

@@ -176,7 +176,7 @@
   template:
     src: "{{ rhods_notebook_ods_ci_scale_test_job }}"
     dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_ods_ci_scale_test.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete the RHODS test entrypoint, if it exists
   command:

@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Pipelines.run_kfp_notebook
 
+# Parameters
 # Namespace in which the notebook will be deployed, if not deploying with RHODS. If empty, use the project return by 'oc project --short'.
 pipelines_run_kfp_notebook_namespace:
 
@@ -28,4 +29,3 @@ pipelines_run_kfp_notebook_capture_artifacts: true
 
 # If True, captures the Prometheus DB of the systems.
 pipelines_run_kfp_notebook_capture_prom_db: false
-

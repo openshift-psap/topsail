@@ -3,13 +3,13 @@
     set -o pipefail;
     (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep '^0$' || true) | wc -l
   register: success_count_cmd
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Count failed tests
   shell:
     set -o pipefail;
     (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep -v '^0$' || true) | wc -l
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Count the number of workarounds required for Jira/RHODS-{{ bug_id }}
   shell:
@@ -17,7 +17,7 @@
     (ls "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/bug_{{ bug_id }}*.png || true)
       | nl
       | tee "{{ artifact_extra_logs_dir }}"/workarounds_rhods-{{ bug_id }}.txt
-  ignore_errors: yes
+  ignore_errors: true
   loop:
   - 5912
   loop_control:
@@ -31,7 +31,7 @@
       grep 'FAIL' $f | grep -v "^| FAIL|" | head -1
       echo ""
     done > "{{ artifact_extra_logs_dir }}"/failed_tests
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Save the success count and failed tests
   shell:
@@ -47,12 +47,12 @@
     exclude_tags={{ rhods_notebook_ods_ci_scale_test_ods_ci_exclude_tags }}
     user_count={{ rhods_notebook_ods_ci_scale_test_user_count }}
     EOF
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Generate MatrixBenchmark exit code file
   shell:
     (test -z "$(oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ rhods_notebook_ods_ci_scale_test_namespace }})" && echo 0 || echo 1) > "{{ artifact_extra_logs_dir }}/exit_code"
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Save the artifacts version
   shell:

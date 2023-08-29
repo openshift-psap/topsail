@@ -10,4 +10,3 @@ spec:
     apiVersion: machine.openshift.io/v1beta1
     kind: MachineSet
     name: MACHINESET_NAME
-

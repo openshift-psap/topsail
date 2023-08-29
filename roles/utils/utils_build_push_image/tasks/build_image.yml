@@ -8,7 +8,7 @@
   template:
     src: "{{ utils_image_buildconfig }}"
     dest: "{{ artifact_extra_logs_dir }}/src/002_image_buildconfig.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete old image BuildConfig if exists
   command:

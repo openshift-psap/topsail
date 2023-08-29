@@ -21,7 +21,7 @@ spec:
   volumes:
   - name: entrypoint
     configMap:
-      defaultMode: 0700
+      defaultMode: '0700'
       name: entitlement-tester-entrypoint
   - name: host-etc-os-release
     hostPath:

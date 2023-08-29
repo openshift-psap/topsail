@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Cluster.create_htpasswd_adminuser
 
+# Parameters
 # Username of the htpasswd user.
 # Mandatory value
 cluster_create_htpasswd_user_username:
@@ -13,6 +14,7 @@ cluster_create_htpasswd_user_passwordfile:
 # If True, waits for the user to be able to login into the cluster.
 cluster_create_htpasswd_user_wait: false
 
+# Constants
 # Name of the secret that will contain the htpasswd passwords
 # Defined as a constant in Cluster.create_htpasswd_adminuser
 cluster_create_htpasswd_user_secret_name: htpasswd-secret
@@ -28,4 +30,3 @@ cluster_create_htpasswd_user_role: cluster-admin
 # Name of the group that will be created for the user
 # Defined as a constant in Cluster.create_htpasswd_adminuser
 cluster_create_htpasswd_user_groupname: local-admins
-

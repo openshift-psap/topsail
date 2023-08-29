@@ -51,7 +51,7 @@
   template:
     src: "{{ nfd_operator_operatorhub_sub }}"
     dest: "{{ artifact_extra_logs_dir }}/nfd_operator_sub.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: "Create the OperatorHub subscription for the NFD Operator (nfd_channel = {{ nfd_channel }})"
   command: oc apply -f "{{ artifact_extra_logs_dir }}/nfd_operator_sub.yml"

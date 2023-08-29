@@ -9,7 +9,7 @@
   template:
     src: "{{ cluster_preload_image_ds_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/preload_daemonset.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete the DaemonSet, it it exists
   command:

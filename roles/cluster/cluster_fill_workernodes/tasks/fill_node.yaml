@@ -69,7 +69,7 @@
   template:
     src: "{{ cluster_fill_workernodes_pod_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/pod_placeholder_{{ node_name }}.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Check if the Pod already exists
   command:

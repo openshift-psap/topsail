@@ -36,7 +36,7 @@
   template:
     src: "{{ codeclare_cleanup_mcad_canary_appwrapper_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Create the canary AppWrapper
   shell:

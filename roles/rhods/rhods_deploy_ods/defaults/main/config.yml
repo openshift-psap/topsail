@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: RHODS.deploy_ods
 
+# Parameters
 # Container image containing the RHODS bundle.
 # Mandatory value
 rhods_deploy_ods_catalog_image:
@@ -15,4 +16,3 @@ rhods_deploy_ods_channel:
 
 # The version to deploy. Let empty to install the last version available.
 rhods_deploy_ods_version:
-

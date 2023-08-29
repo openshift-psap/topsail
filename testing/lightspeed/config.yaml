@@ -10,14 +10,14 @@ ci_presets:
   ansible_llm_light:
     tests.ansible_llm.test_cases: [[1, 16]]
     tests.ansible_llm.multiplexed_test_cases: [[1, 16]]
-  
+
   light:
     extends: [light_cluster, ansible_llm_light]
 
   keep:
     clusters.create.keep: true
     clusters.create.ocp.tags.Project: PSAP/RHODS/Wisdom
-    #clusters.create.ocp.tags.TicketId: #TODO
+    # clusters.create.ocp.tags.TicketId: #TODO
 
 clusters:
   create:
@@ -61,8 +61,8 @@ tests:
     tester_imagestream_name: "llm-load-test"
     tester_image_tag: "wisdom-ci"
     test_namespace: "wisdom"
-    model_ver: "v11.4.4" #TODO use these
-    runtime_ver: "v0.27.0" #TODO use these
+    model_ver: "v11.4.4" # TODO use these
+    runtime_ver: "v0.27.0" # TODO use these
     s3_creds_model_secret_path: "/work/secrets/wisdom/s3-secret.yaml"
     quay_secret_path: "/work/secrets/wisdom/quay-secret.yaml"
     protos_path: "/work/secrets/wisdom-protos"

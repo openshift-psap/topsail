@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Cluster.preload_image
 
+# Parameters
 # Name to give to the DaemonSet used for preloading the image.
 # Mandatory value
 cluster_preload_image_name:
@@ -24,4 +25,3 @@ cluster_preload_image_pod_toleration_key:
 
 # Pod toleration to apply to the DaemonSet.
 cluster_preload_image_pod_toleration_effect:
-

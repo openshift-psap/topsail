@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Load_Aware.scale_test
 
+# Parameters
 # what distribution to generate the load according to (poisson, normal, bimodal, gamma, or uniform)
 load_aware_scale_test_distribution: poisson
 
@@ -19,4 +20,3 @@ load_aware_scale_test_scheduler: default
 
 # how long the sleep pod should sleep
 load_aware_scale_test_sleep_duration: 180
-

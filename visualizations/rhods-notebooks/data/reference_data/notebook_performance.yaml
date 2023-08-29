@@ -4,11 +4,11 @@
     version: 1.16
     mode: notebook_perf
     machine: m5a.2xlarge
-    benchmark_name      : pyperf_bm_go.py
-    benchmark_number    : 20
-    benchmark_repeat    : 5
-    notebook_file_name  : benchmark_entrypoint.ipynb
-    instance_type       : m5.xlarge
+    benchmark_name: pyperf_bm_go.py
+    benchmark_number: 20
+    benchmark_repeat: 5
+    notebook_file_name: benchmark_entrypoint.ipynb
+    instance_type: m5.xlarge
 
 - url: https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test/pr-logs/pull/openshift-psap_ci-artifacts/558/pull-ci-openshift-psap-ci-artifacts-main-ods-notebooks/1584559474750787584/artifacts/notebooks/test/artifacts/001_test_run/000__driver_rhods__notebook_ux_e2e_scale_test/
   dest_dir: notebook_perf/1.17

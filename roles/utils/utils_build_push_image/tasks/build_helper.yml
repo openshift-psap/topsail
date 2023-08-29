@@ -2,7 +2,7 @@
   template:
     src: "{{ utils_helper_image_buildconfig }}"
     dest: "{{ artifact_extra_logs_dir }}/003_helper_buildconfig.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Apply helper image BuildConfig
   command:

@@ -83,7 +83,7 @@
     notebook_namespace: "{% if rhods_benchmark_notebook_performance_use_rhods | bool %}rhods-notebooks{% else %}{{ rhods_benchmark_notebook_performance_namespace }}{% endif %}"
     notebook_src_template_dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook.yaml"
     notebook_file_cm_name: rhods-notebook-files
-    capture_prom_db: no
+    capture_prom_db: false
     notebook_image_address: "{% if rhods_benchmark_notebook_performance_use_rhods | bool %}{{ rhods_image_address_cmd.stdout }}{% else %}{{ from_source_image_address_cmd.stdout }}{% endif %}"
 
 - name: Define the test environment
@@ -116,7 +116,7 @@
   template:
     src: "{{ rhods_benchmark_notebook_performance_benchmark_notebook_template }}"
     dest: "{{ notebook_src_template_dest }}"
-    mode: 0700
+    mode: '0700'
 
 - name: Transform the Notebook into a Pod
   when: not rhods_benchmark_notebook_performance_use_rhods | bool

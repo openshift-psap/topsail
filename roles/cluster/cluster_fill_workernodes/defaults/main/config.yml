@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Cluster.fill_workernodes
 
+# Parameters
 # namespace in which the place-holder Pods should be deployed
 cluster_fill_workernodes_namespace: default
 
@@ -10,4 +11,3 @@ cluster_fill_workernodes_name: resource-placeholder
 
 # label to use to select the nodes to fill
 cluster_fill_workernodes_label_selector: node-role.kubernetes.io/worker
-

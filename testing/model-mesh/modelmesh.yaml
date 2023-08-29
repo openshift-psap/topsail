@@ -25,4 +25,3 @@ spec:
   - name: manifests
     uri: https://github.com/opendatahub-io/odh-manifests/tarball/master
   version: master
-

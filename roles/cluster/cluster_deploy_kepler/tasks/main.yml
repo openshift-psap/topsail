@@ -16,7 +16,7 @@
     git --git-dir "{{ kepler_location }}/.git" show
 
 - name: Deploy kepler-operator
-  shell: 
+  shell:
     cd "{{ kepler_location }}"; make deploy OPERATOR_IMG=quay.io/sustainable_computing_io/kepler-operator:latest
   register: deploy_kepler
   delay: 3

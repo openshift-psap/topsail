@@ -8,7 +8,7 @@
   template:
     src: "{{ config_map_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/configmap.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Instanciate the ConfigMap
   command:

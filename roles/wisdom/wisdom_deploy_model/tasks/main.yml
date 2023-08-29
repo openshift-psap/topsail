@@ -25,7 +25,7 @@
     state: directory
     mode: '0755'
 
-#TODO: Create the S3 and Quay secret using YAML from the vault
+# TODO: Create the S3 and Quay secret using YAML from the vault
 - name: Ensure that the S3 secret file exists
   stat:
     path: "{{ wisdom_deploy_model_s3_secret_path }}"
@@ -37,7 +37,7 @@
 - name: Delete the S3 secret, if it exists
   command: oc delete -f {{ wisdom_deploy_model_s3_secret_path }} --ignore-not-found -n {{ wisdom_deploy_model_namespace }}
 
-- name: Create the S3 secret 
+- name: Create the S3 secret
   command: oc create -f {{ wisdom_deploy_model_s3_secret_path }} -n {{ wisdom_deploy_model_namespace }}
 
 - name: Delete the quay pull secret, if it exists
@@ -51,9 +51,9 @@
   template:
     src: "{{ model_serving_config_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/000_model_serving_config.yml"
-    mode: 0400
+    mode: '0400'
 
-- name: Create or update the ConfigMap "model-serving-config" 
+- name: Create or update the ConfigMap "model-serving-config"
   command: oc apply -f "{{ artifact_extra_logs_dir }}/src/000_model_serving_config.yml"
 
 # ServingRuntime
@@ -61,7 +61,7 @@
   template:
     src: "{{ serving_runtime_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/001_serving_runtime.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Create or update ServingRuntime
   command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_serving_runtime.yml"
@@ -71,7 +71,7 @@
   template:
     src: "{{ inference_service_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/002_inference_service.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Create or update InferenceService
   command: oc apply -f "{{ artifact_extra_logs_dir }}/src/002_inference_service.yml"
@@ -81,9 +81,9 @@
     set -o pipefail
     oc patch serviceaccount modelmesh-serving-sa -n {{ wisdom_deploy_model_namespace }} -p '{"imagePullSecrets": [{"name": "quay-io"}]}'
     oc delete pods --all --force -n {{ wisdom_deploy_model_namespace }}
-  
 
-# Wait for wisdom Pods to be ready. 
+
+# Wait for wisdom Pods to be ready.
 # Max time is 15 minutes to give time for the GPU operator stack and image pull to complete.
 - name: Wait for wisdom model mesh Pods to be ready
   block:
@@ -122,8 +122,8 @@
   template:
     src: "{{ wisdom_tester_pod }}"
     dest: "{{ artifact_extra_logs_dir }}/src/003_wisdom_tester_pod.yml"
-    mode: 0400
-  
+    mode: '0400'
+
 - name: Delete the wisdom tester Pod if it exists
   command: oc delete  --ignore-not-found -f "{{ artifact_extra_logs_dir }}/src/003_wisdom_tester_pod.yml" -n {{ wisdom_deploy_model_namespace }}
 

@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Wisdom.deploy_model
 
+# Parameters
 # Model Mesh Deployment replicas
 # Mandatory value
 wisdom_deploy_model_replicas:
@@ -31,4 +32,3 @@ wisdom_deploy_model_serving_runtime_name: wisdom-runtime
 
 # Namespace to deploy the model
 wisdom_deploy_model_namespace: wisdom
-

@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: RHODS.notebook_ods_ci_scale_test
 
+# Parameters
 # Namespace in which the scale test should be deployed.
 # Mandatory value
 rhods_notebook_ods_ci_scale_test_namespace:
@@ -100,4 +101,3 @@ rhods_notebook_ods_ci_scale_test_only_create_notebooks: false
 # If True, consider that the driver Pods are running on Spot instances and can disappear at any time.
 # Type: Bool
 rhods_notebook_ods_ci_scale_test_driver_running_on_spot: false
-

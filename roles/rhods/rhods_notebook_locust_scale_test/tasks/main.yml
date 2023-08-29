@@ -54,7 +54,7 @@
   template:
     src: "{{ rhods_notebook_locust_scale_test_job }}"
     dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook_locust_scale_test.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete the RHODS test entrypoint, if it exists
   command:
@@ -205,7 +205,7 @@
       (grep "{{ rhods_notebook_locust_scale_test_username_prefix }}" || true) |
        xargs --no-run-if-empty
           oc delete -n {{ rhods_notebook_namespace }}
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Cleanup the notebooks Pods and PVCs
   environment:
@@ -216,7 +216,7 @@
        (grep "{{ rhods_notebook_locust_scale_test_username_prefix }}" || true) |
        xargs --no-run-if-empty
          oc delete -n {{ rhods_notebook_namespace }}
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Capture the driver cluster artifacts
   include_tasks: artifacts_driver.yml
@@ -230,12 +230,12 @@
     date=$(date +%Y-%m-%d_%H:%M:%S)
     user_count={{ rhods_notebook_locust_scale_test_user_count }}
     EOF
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Generate MatrixBenchmark exit code file
   shell:
     (test -z "$(oc get jobs/{{ tester_job_name }} -ojsonpath={.status.failed} -n {{ rhods_notebook_locust_scale_test_namespace }})" && echo 0 || echo 1) > "{{ artifact_extra_logs_dir }}/exit_code"
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Test if the RHODS test job crashed
   command:

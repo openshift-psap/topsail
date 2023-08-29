@@ -40,6 +40,7 @@
   ansible.builtin.copy:
     src: "{{ pipelines_run_kfp_notebook_notebook_directory }}/"
     dest: "{{ artifact_extra_logs_dir }}/src/notebook-files"
+    mode: '0644'
 
 - name: Lookup the imagestream tag
   when: pipelines_run_kfp_notebook_imagestream_tag | length == 0
@@ -129,7 +130,7 @@
   template:
     src: "{{ pipelines_run_kfp_notebook_benchmark_notebook_template }}"
     dest: "{{ notebook_src_template_dest }}"
-    mode: 0700
+    mode: '0700'
 
 - name: Delete the notebook, if it exists
   command:

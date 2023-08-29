@@ -28,7 +28,7 @@
   template:
     src: "{{ pipelines_deploy_application_app_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/000_dsp_application.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Create the application
   command:

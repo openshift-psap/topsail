@@ -38,7 +38,7 @@ spec:
   volumes:
   - name: entrypoint
     configMap:
-      defaultMode: 0700
+      defaultMode: '0700'
       name: entitlement-tester-entrypoint
   - name: host-etc-os-release
     hostPath:
@@ -46,13 +46,13 @@ spec:
 
   - name: entitlement-rhsm
     secret:
-      defaultMode: 0400
+      defaultMode: '0400'
       secretName: entitlement-tester-secret-files
   - name: entitlement-pem
     secret:
-      defaultMode: 0400
+      defaultMode: '0400'
       secretName: entitlement-tester-secret-files
   - name: entitlement-pem-key
     secret:
-      defaultMode: 0400
+      defaultMode: '0400'
       secretName: entitlement-tester-secret-files

@@ -25,7 +25,7 @@
   always:
   - name: Dump info about scale test resources
     shell: |
-      oc get pods -n {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/scale_test_pods.status" 
+      oc get pods -n {{ load_aware_scale_test_namespace }} > "{{ artifact_extra_logs_dir }}/scale_test_pods.status"
       oc get pods -n {{ load_aware_scale_test_namespace }} -ojson > "{{ artifact_extra_logs_dir }}/scale_test_pods.json"
     ignore_errors: true
 

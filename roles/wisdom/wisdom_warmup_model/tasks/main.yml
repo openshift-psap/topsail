@@ -28,7 +28,7 @@
   template:
     src: "{{ wisdom_warmup_pod_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/000_wisdom_warmup_pod.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete the wisdom warmup Pod if it exists
   command: oc delete  --ignore-not-found -f "{{ artifact_extra_logs_dir }}/src/000_wisdom_warmup_pod.yml" -n {{ wisdom_warmup_model_namespace }}

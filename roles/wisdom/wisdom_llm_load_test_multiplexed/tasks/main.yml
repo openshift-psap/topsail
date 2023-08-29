@@ -40,7 +40,7 @@
   template:
     src: "{{ llm_load_test_config_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/000_llm_load_test_config.json"
-    mode: 0400
+    mode: '0400'
 
 - name: Create the llm-load-test-config ConfigMap
   command: oc create configmap llm-load-test-config --from-file=config.json="{{ artifact_extra_logs_dir }}/src/000_llm_load_test_config.json" -n {{ wisdom_llm_load_test_multiplexed_namespace }}
@@ -53,11 +53,11 @@
   template:
     src: "{{ llm_load_test_pod_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/001_llm_load_test_pod.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete the llm-load-test Pod if it exists
   command: oc delete --ignore-not-found -f "{{ artifact_extra_logs_dir }}/src/001_llm_load_test_pod.yml" -n {{ wisdom_llm_load_test_multiplexed_namespace }}
-  
+
 - name: Create the llm-load-test Pod
   command: oc create -f "{{ artifact_extra_logs_dir }}/src/001_llm_load_test_pod.yml" -n {{ wisdom_llm_load_test_multiplexed_namespace }}
 

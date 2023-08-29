@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Cluster.deploy_ldap
 
+# Parameters
 # Name of the LDAP identity provider.
 # Mandatory value
 cluster_deploy_ldap_idp_name:
@@ -31,7 +32,7 @@ cluster_deploy_ldap_cluster_name: null
 # If True, waits for the first user (0) to be able to login into the cluster.
 cluster_deploy_ldap_wait: false
 
+# Constants
 # Name of the admin user
 # Defined as a constant in Cluster.deploy_ldap
 cluster_deploy_ldap_admin_user: admin
-
