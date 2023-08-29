@@ -184,6 +184,9 @@ def generate_plots(results_dirname):
 
 @entrypoint()
 def _prepare_watsonx_serving():
+    """
+    Installs Watsonx-serving stack on the cluster
+    """
     return prepare_watsonx_serving.prepare()
 
 
