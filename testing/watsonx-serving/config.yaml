@@ -142,8 +142,8 @@ watsonx_serving:
     name: caikit-runtime
     image: quay.io/opendatahub/caikit-tgis-serving:stable
     resource_request:
-      cpu: 350m
-      memory: 1.5Gi
+      cpu: 0.350
+      memory: 1.5 # in Gi
       nvidia.com/gpu: 0
   storage_config:
     name: storage-config
