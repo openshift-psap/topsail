@@ -5,7 +5,7 @@
     cluster_prometheus_db_mode: dump
     cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_ocp
   when: capture_prom_db | bool
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Get the RHODS Prometheus database
   include_role:
@@ -17,7 +17,7 @@
     cluster_prometheus_db_directory: /prometheus/data
     cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_rhods
   when: capture_prom_db | bool
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Save the pods status
   shell:
@@ -54,6 +54,7 @@
     module: copy
     content: "{{ notebook_execution.stderr }}"
     dest: "{{ artifact_extra_logs_dir }}/notebook_execution.stderr"
+    mode: '0644'
   failed_when: false
   when: notebook_execution is defined
 

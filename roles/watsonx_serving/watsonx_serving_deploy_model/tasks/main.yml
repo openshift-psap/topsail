@@ -74,7 +74,7 @@
   template:
     src: "{{ serving_runtime_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/serving_runtime.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Create the ServingRuntime
   command:
@@ -86,7 +86,7 @@
   template:
     src: "{{ inference_service_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Create the InferenceService
   command:

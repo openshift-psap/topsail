@@ -51,10 +51,9 @@ ci_presets:
     clusters.create.type: ocp
     clusters.create.ocp.tags.Project: PSAP/RHODS/large_scale
     clusters.create.ocp.tags.TicketId: "85"
-    clusters.create.ocp.workers.count: 3
+    clusters.create.ocp.workers.count: 4
     clusters.create.ocp.workers.type: m6i.4xlarge
     clusters.create.ocp.compute.type: m6i.8xlarge
-    clusters.create.ocp.workers.count: 4
     clusters.driver.compute.autoscaling.enabled: false
     clusters.sutest.compute.machineset.spot: true
     clusters.sutest.compute.autoscaling.enabled: true
@@ -313,7 +312,7 @@ clusters:
         type: m6i.2xlarge
 
   cleanup:
-    max_age: 4 #hours
+    max_age: 4 # hours
 
   sutest:
     is_metal: false

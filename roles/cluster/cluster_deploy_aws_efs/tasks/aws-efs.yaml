@@ -98,8 +98,8 @@
   set_fact:
     cluster_tags: "{{ cluster_tags | default({}) | combine({item.key: item.value}) }}"
   with_items:
-      - {'key': 'Name' , 'value': '{{ cluster_name_cmd.stdout }}'}
-      - {'key': '{{ cluster_name_tag_cmd.stdout }}' , 'value': 'owned'}
+      - {'key': 'Name', 'value': '{{ cluster_name_cmd.stdout }}'}
+      - {'key': '{{ cluster_name_tag_cmd.stdout }}', 'value': 'owned'}
       - {'key': 'Purpose', 'value': ''}
 
 - name: Get the SecurityGroup content

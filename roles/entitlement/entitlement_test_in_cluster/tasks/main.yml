@@ -50,7 +50,7 @@
     copy:
       content: "{{ entitlement_tester_logs.stdout }}"
       dest: "{{ artifact_extra_logs_dir }}/entitlement_tester.log"
-      mode: 0644
+      mode: '0644'
 
   always:
   - name: Delete the entitlement secret

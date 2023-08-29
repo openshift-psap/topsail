@@ -40,6 +40,6 @@
   set_fact:
     gpu_operator_version: '{{ gpu_operator_csv_version_cmd.stdout }}'
 
-- name: Store the version as an artifacts file '{{ gpu_operator_csv_version_cmd.stdout }}' 
+- name: Store the version as an artifacts file '{{ gpu_operator_csv_version_cmd.stdout }}'
   shell:
     echo '{{ gpu_operator_version }}' > {{ artifact_extra_logs_dir }}/gpu_operator.version

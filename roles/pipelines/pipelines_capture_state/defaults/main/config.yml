@@ -1,10 +1,10 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Pipelines.capture_state
 
+# Parameters
 # the name of the application
 pipelines_capture_state_dsp_application_name:
 
 # the namespace in which the application was deployed
 pipelines_capture_state_namespace:
-

@@ -33,7 +33,7 @@
   template:
     src: "{{ ocm_deploy_addon_template }}"
     dest: "{{ artifact_extra_logs_dir }}/addon_{{ ocm_deploy_addon_id }}.json"
-    mode: 0400
+    mode: '0400'
   when: '"Error" in ocm_addon_precheck.stdout'
 
 - name: Install the following addon via OCM API {{ ocm_deploy_addon_id }}

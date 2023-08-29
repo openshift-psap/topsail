@@ -1,7 +1,11 @@
+exclude_paths:
+  - .github
+
 skip_list:
   # Hide "wrong indentation: expected 4 but found 2 (indentation)"
   # until we find out how to properly configure it
-  - 'yaml'
+  - 'yaml[indentation]'
+  - 'yaml[line-length]'
   # Do not force galaxy info in meta/main.yml
   - 'meta-no-info'
   # Hide "Commands should not change things if nothing needs doing"
@@ -16,8 +20,5 @@ skip_list:
   - 'deprecated-local-action'
   - 'no-free-form'
   - 'chema[meta]'
-  - 'yaml[truthy]'
-  - 'risky-file-permissions'
   - 'ignore-errors'
-  - 'no-changed-when'
   - 'fqcn'

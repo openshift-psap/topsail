@@ -4,7 +4,7 @@
     nfd_wait_gpu_retries: 0
   when: nfd_wait_gpu_nodes != 'yes'
 
-- name: Set the number of retry loop if waiting is requested to {{ nfd_wait_gpu_nb_retries }} 
+- name: Set the number of retry loop if waiting is requested to {{ nfd_wait_gpu_nb_retries }}
   set_fact:
     nfd_wait_gpu_retries: "{{ nfd_wait_gpu_nb_retries }}"
   when: nfd_wait_gpu_nodes == 'yes'

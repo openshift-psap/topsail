@@ -23,7 +23,7 @@
   copy:
     content: "{{ entitlement_tester_pod_logs.stdout }}"
     dest: "{{ artifact_extra_logs_dir }}/entitlement_test_in_podman.log"
-    mode: 0644
+    mode: '0644'
 
 - name: Fail when the test execution failed
   fail: msg="PEM key testing failed."

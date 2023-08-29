@@ -40,15 +40,18 @@ def _generate_config(component):
     print(f"{component.__qualname__}\n- generating {dest} ...\n")
 
     with open(dest, "w") as f:
-        print("# Auto-generated file, do not edit manually ... ", file=f)
+        print("# Auto-generated file, do not edit manually ...", file=f)
         print(f"# Toolbox generate command: {' '.join(sys.argv[1:])}", file=f)
         print(f"# Source component: {component.__qualname__}", file=f)
-        print("", file=f)
 
         mapped_params = args_with_no_defaults + args_with_defaults \
             if ansible_mapped_params else []
 
-        for arg in mapped_params:
+        if len(mapped_params) > 0:
+            print("", file=f)
+            print("# Parameters", file=f)
+
+        for i, arg in enumerate(mapped_params):
             try:
                 description = args[arg].description
             except KeyError:
@@ -69,16 +72,22 @@ def _generate_config(component):
             ansible_arg_name = f"{component.ansible_role}_{arg}"
             print(yaml.dump({ansible_arg_name: default_value}).strip() if default_value != "" \
                   else f"{ansible_arg_name}:", file=f)
+            if i < len(mapped_params)-1:
+                print("", file=f)
+        
+        if len(ansible_constants) > 0:
             print("", file=f)
+            print("# Constants", file=f)
 
-        for constant in ansible_constants:
+        for i, constant in enumerate(ansible_constants):
             if not constant["description"]:
                 logging.error(f"Shouldn't generate a config file with an empty constant description :/ Is @AnsibleSkipConfigGeneration missing on {component.__qualname__}?")
 
             print(f"# {constant['description']}", file=f)
             print(f"# Defined as a constant in {component.__qualname__}", file=f)
             print(yaml.dump({f"{component.ansible_role}_{constant['name']}": constant["value"]}).strip(), file=f)
-            print("", file=f)
+            if i < len(ansible_constants)-1:
+                print("", file=f)
 
 def generate_all(group):
     for key in dir(group):

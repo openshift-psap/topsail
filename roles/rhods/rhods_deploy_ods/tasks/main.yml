@@ -18,7 +18,7 @@
   template:
     src: "{{ rhods_install_ods_catalog }}"
     dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_catalog.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete the RHODS catalog if it exists
   command: oc delete -f "{{ artifact_extra_logs_dir }}/src/000_rhods_catalog.yml" --ignore-not-found

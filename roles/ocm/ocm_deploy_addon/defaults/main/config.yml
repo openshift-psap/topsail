@@ -11,4 +11,3 @@ ocm_deploy_addon_cluster_name:
 
 # If true (default), will cause the role to wait until addon reports ready state. (Can time out)
 ocm_deploy_addon_wait_for_ready_state: true
-

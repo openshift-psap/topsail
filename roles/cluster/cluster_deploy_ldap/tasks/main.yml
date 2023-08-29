@@ -72,7 +72,7 @@
   template:
     src: "{{ cluster_deploy_ldap_oauth }}"
     dest: "{{ artifact_extra_logs_dir }}/oauth_ldap.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Get LDAP URL
   command:
@@ -168,6 +168,7 @@
   ansible.builtin.file:
     path: /tmp/user_kubeconfig
     state: touch
+    mode: '0644'
 
 - name: Wait for the authentication to work
   when: cluster_deploy_ldap_wait | bool

@@ -34,7 +34,7 @@
   template:
     src: "{{ benchmarking_mlperf_ssd_pod }}"
     dest: "{{ artifact_extra_logs_dir }}/001_pod_run-mlperf-ssd.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete the Pod, if it exists
   command:

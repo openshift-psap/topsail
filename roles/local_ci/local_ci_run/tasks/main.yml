@@ -18,7 +18,7 @@
   template:
     src: "{{ local_ci_run_pod_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/000_pod.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete any stalled CI execution Pod
   command: oc delete -f "{{ artifact_extra_logs_dir }}/src/000_pod.yaml" --ignore-not-found=true

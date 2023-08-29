@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Cluster.deploy_operator
 
+# Parameters
 # Name of the catalog containing the operator.
 # Mandatory value
 cluster_deploy_operator_catalog:
@@ -37,4 +38,3 @@ cluster_deploy_operator_namespace_monitoring: false
 # If set, deploy the CSV in all the namespaces.
 # Type: Bool
 cluster_deploy_operator_all_namespaces: false
-

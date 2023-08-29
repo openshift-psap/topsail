@@ -42,7 +42,7 @@
   copy:
     content: "{{ git_version.stdout }}"
     dest: "{{ artifact_extra_logs_dir }}/ci_artifact.git_version"
-    mode: 0644
+    mode: '0644'
 
 - name: Fetch ci-artifact last git commit
   command:
@@ -53,7 +53,7 @@
   copy:
     content: "{{ git_show.stdout }}"
     dest: "{{ artifact_extra_logs_dir }}/ci_artifact.git_commit"
-    mode: 0644
+    mode: '0644'
 
 - name: Get the cluster nodes status
   shell:

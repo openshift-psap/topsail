@@ -16,7 +16,8 @@
   template:
     src: "{{ trimaran_setup_template }}"
     dest: "{{ trimaran_setup_config }}"
+    mode: '0644'
 
 - name: Delete Trimaran resources
-  command: 
+  command:
     oc delete -f {{ trimaran_setup_config }} --ignore-not-found

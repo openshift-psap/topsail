@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Local_CI.run
 
+# Parameters
 # The CI command to run.
 # Mandatory value
 local_ci_run_ci_command:
@@ -59,4 +60,3 @@ local_ci_run_pr_config: null
 
 # If True, updates the git repo with the latest main/PR before running the test.
 local_ci_run_update_git: true
-

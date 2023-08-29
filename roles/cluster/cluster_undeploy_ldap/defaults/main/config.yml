@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Cluster.undeploy_ldap
 
+# Parameters
 # Name of the LDAP identity provider.
 # Mandatory value
 cluster_undeploy_ldap_idp_name:
@@ -14,4 +15,3 @@ cluster_undeploy_ldap_use_rosa: false
 
 # Cluster to use when using OCM or ROSA.
 cluster_undeploy_ldap_cluster_name: null
-

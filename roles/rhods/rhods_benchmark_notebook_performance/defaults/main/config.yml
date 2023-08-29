@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: RHODS.benchmark_notebook_performance
 
+# Parameters
 # Namespace in which the notebook will be deployed, if not deploying with RHODS.
 rhods_benchmark_notebook_performance_namespace: rhods-notebooks
 
@@ -32,7 +33,7 @@ rhods_benchmark_notebook_performance_benchmark_repeat: 1
 # Type: Int
 rhods_benchmark_notebook_performance_benchmark_number: 1
 
+# Constants
 # Address where the imagestreams are stored. Used only when use_rhods=false.
 # Defined as a constant in RHODS.benchmark_notebook_performance
 rhods_benchmark_notebook_performance_imagestream_source_location: https://raw.githubusercontent.com/red-hat-data-services/odh-manifests/master/jupyterhub/notebook-images/overlays/additional
-

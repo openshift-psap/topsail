@@ -16,7 +16,7 @@
     git --git-dir "{{ kepler_location }}/.git" show
 
 - name: Undeploy kepler-operator
-  shell: 
+  shell:
     cd "{{ kepler_location }}"; make uninstall; make undeploy 2>&1
   register: undeploy_kepler
   failed_when:

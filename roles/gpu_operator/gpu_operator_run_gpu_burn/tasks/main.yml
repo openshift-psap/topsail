@@ -65,7 +65,7 @@
   template:
     src: "{{ gpu_burn_pod }}"
     dest: "{{ artifact_extra_logs_dir }}/src/001_pod_gpu_burn_{{ gpu_node_name }}.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Create GPU Burn Pods from template
   loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"

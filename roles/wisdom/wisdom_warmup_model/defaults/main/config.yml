@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Wisdom.warmup_model
 
+# Parameters
 # Path to protos directory to put into a ConfigMap, and mounted in Pod
 # Mandatory value
 wisdom_warmup_model_protos_path:
@@ -22,4 +23,3 @@ wisdom_warmup_model_total_requests: '4096'
 
 # Namespace to deploy the model
 wisdom_warmup_model_namespace: wisdom
-

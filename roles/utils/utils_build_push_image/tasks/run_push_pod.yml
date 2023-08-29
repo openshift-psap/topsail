@@ -49,7 +49,7 @@
   template:
     src: "{{ utils_helper_image_push_pod }}"
     dest: "{{ artifact_extra_logs_dir }}/005_push-helper-pod.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Delete image push pod if already exists
   command:

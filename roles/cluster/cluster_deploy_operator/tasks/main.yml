@@ -193,7 +193,7 @@
     template:
       src: "{{ cluster_deploy_operator_res_ns }}"
       dest: "{{ artifact_extra_logs_dir }}/src/000_namespace.yml"
-      mode: 0400
+      mode: '0400'
 
   - name: Check if the namespace exists
     command: oc get "ns/{{ cluster_deploy_operator_namespace }}"
@@ -217,7 +217,7 @@
     template:
       src: "{{ cluster_deploy_operator_res_group }}"
       dest: "{{ artifact_extra_logs_dir }}/src/001_operator_group.yml"
-      mode: 0400
+      mode: '0400'
 
   - name: Instantiate the OperatorHub OperatorGroup resource
     command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_operator_group.yml"
@@ -226,7 +226,7 @@
   template:
     src: "{{ cluster_deploy_operator_res_sub }}"
     dest: "{{ artifact_extra_logs_dir }}/src/002_sub.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Instantiate the Subscription
   command: oc apply -f "{{ artifact_extra_logs_dir }}/src/002_sub.yml"

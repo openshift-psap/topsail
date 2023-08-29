@@ -33,7 +33,7 @@
   template:
     src: "{{ cluster_create_htpasswd_user_oauth }}"
     dest: "{{ artifact_extra_logs_dir }}/oauth_htpasswd.yaml"
-    mode: 0400
+    mode: '0400'
 
 - name: Append the htpasswd OAuth identity provider
   shell:
@@ -74,6 +74,7 @@
   ansible.builtin.file:
     path: /tmp/user_kubeconfig
     state: touch
+    mode: '0644'
 
 - name: Wait for the authentication to work
   when: cluster_create_htpasswd_user_wait | bool

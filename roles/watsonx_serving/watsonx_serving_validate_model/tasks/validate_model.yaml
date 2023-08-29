@@ -38,7 +38,7 @@
 
 - name: Save the number of attempts
   local_action:
-    copy content={{ grpc_working_cmd }} dest={{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts.json
+    copy content={{ grpc_working_cmd }} dest={{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts.json mode='0644'
 
 - name: Prettify the file
   shell: |

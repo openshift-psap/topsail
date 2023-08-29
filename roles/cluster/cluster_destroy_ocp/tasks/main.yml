@@ -37,7 +37,7 @@
   template:
     src: "{{ cluster_destroy_ocp_metadata_json }}"
     dest: "{{ artifact_extra_logs_dir }}/metadata.json"
-    mode: 0400
+    mode: '0400'
 
 - name: Show metadata.json (debug)
   command:

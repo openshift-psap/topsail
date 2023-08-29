@@ -155,5 +155,3 @@
       oc get machineset/{{ item }} -n openshift-machine-api  > {{ artifact_extra_logs_dir }}/machineset_{{ item }}.status
     failed_when: false
     loop: "{{ oc_get_machinesets.stdout_lines }}"
-
-

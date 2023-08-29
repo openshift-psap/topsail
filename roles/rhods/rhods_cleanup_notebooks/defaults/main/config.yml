@@ -1,8 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: RHODS.cleanup_notebooks
 
+# Parameters
 # Prefix of the usernames who created the resources.
 # Mandatory value
 rhods_cleanup_notebooks_username_prefix:
-

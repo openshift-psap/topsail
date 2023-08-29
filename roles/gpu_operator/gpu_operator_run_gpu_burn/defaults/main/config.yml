@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: GPU_Operator.run_gpu_burn
 
+# Parameters
 # namespace in which GPU-burn will be executed
 gpu_operator_run_gpu_burn_namespace: default
 
@@ -16,4 +17,3 @@ gpu_operator_run_gpu_burn_keep_resources: false
 # if true, fails if no GPU is available in the cluster.
 # Type: Bool
 gpu_operator_run_gpu_burn_ensure_has_gpu: true
-

@@ -26,7 +26,7 @@
   template:
     src: "{{ cluster_deploy_aws_efs_csi_driver }}"
     dest: "{{ artifact_extra_logs_dir }}/csi-driver.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Create the ClusterCSIDriver resource
   command: oc apply -f "{{ artifact_extra_logs_dir }}/csi-driver.yml"
@@ -35,7 +35,7 @@
   template:
     src: "{{ cluster_deploy_aws_efs_storage_class }}"
     dest: "{{ artifact_extra_logs_dir }}/storage-class.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Create the StorageClass resource
   command: oc apply -f "{{ artifact_extra_logs_dir }}/storage-class.yml"

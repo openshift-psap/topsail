@@ -88,7 +88,7 @@
     template:
       src: "{{ rhods_cleanup_aws_metadata_json }}"
       dest: "{{ artifact_extra_logs_dir }}/metadata.json"
-      mode: 0400
+      mode: '0400'
 
   - name: Get the path of the openshift-installer
     when: not rhods_cleanup_aws_openshift_installer

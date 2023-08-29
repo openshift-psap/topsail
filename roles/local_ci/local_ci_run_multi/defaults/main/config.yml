@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Local_CI.run_multi
 
+# Parameters
 # The CI command to run.
 # Mandatory value
 local_ci_run_multi_ci_command:
@@ -69,4 +70,3 @@ local_ci_run_multi_user_batch_size: 1
 
 # If true, let the Job abort the parallel execution on the first Pod failure. If false, ignore the process failure and track the overall failure count with a flag.
 local_ci_run_multi_abort_on_failure: false
-

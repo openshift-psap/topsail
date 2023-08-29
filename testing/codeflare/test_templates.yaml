@@ -16,7 +16,7 @@ common_gpu:
   node:
     instance_type: g4dn.xlarge
     wait_gpus: true
-  timespan: 5 #minutes
+  timespan: 5 # minutes
 
 common_cpu:
   extends: [common]
@@ -31,7 +31,7 @@ common_cpu:
   node:
     instance_type: m6i.2xlarge
     wait_gpus: false
-  timespan: 5 #minutes
+  timespan: 5 # minutes
 
 common_unschedulable:
   aw:
@@ -45,7 +45,7 @@ common_unschedulable:
 common_scheduling: {}
 
 common_all_schedulable:
-  timespan: 1 #minutes
+  timespan: 1 # minutes
 
 common_job_mode:
   aw:

@@ -99,7 +99,7 @@
     template:
       src: "{{ gpu_operator_operatorhub_group }}"
       dest: "{{ artifact_extra_logs_dir }}/gpu_operator_group.yml"
-      mode: 0400
+      mode: '0400'
 
   - name: Instantiate the OperatorHub OperatorGroup resource
     command: oc apply -f "{{ artifact_extra_logs_dir }}/gpu_operator_group.yml"
@@ -108,7 +108,7 @@
   template:
     src: "{{ gpu_operator_operatorhub_sub }}"
     dest: "{{ artifact_extra_logs_dir }}/gpu_operator_sub.yml"
-    mode: 0400
+    mode: '0400'
 
 - name: Instantiate the OperatorHub subscription
   command: oc create -f "{{ artifact_extra_logs_dir }}/gpu_operator_sub.yml"

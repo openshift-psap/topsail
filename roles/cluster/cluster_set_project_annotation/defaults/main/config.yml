@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Cluster.set_project_annotation
 
+# Parameters
 # The annotation key
 # Mandatory value
 cluster_set_project_annotation_key:
@@ -14,4 +15,3 @@ cluster_set_project_annotation_project: null
 
 # If set, the annotation will be set for any new project.
 cluster_set_project_annotation_all: false
-

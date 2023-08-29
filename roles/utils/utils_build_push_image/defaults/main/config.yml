@@ -1,7 +1,8 @@
-# Auto-generated file, do not edit manually ... 
+# Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Utils.build_push_image
 
+# Parameters
 # Name of locally built image.
 # Mandatory value
 utils_build_push_image_image_local_name:
@@ -40,4 +41,3 @@ utils_build_push_image_from_image: null
 
 # Base imagestreamtag to use, instead of the FROM image specified in the Dockerfile.
 utils_build_push_image_from_imagetag: null
-

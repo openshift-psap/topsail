@@ -28,7 +28,7 @@ spec:
         - /data1
       env:
         - name: MINIO_ACCESS_KEY
-          value:  THEACCESSKEY
+          value: THEACCESSKEY
         - name: MINIO_SECRET_KEY
           value: <secretkey>
       image: quay.io/opendatahub/modelmesh-minio-examples:v0.8.0
