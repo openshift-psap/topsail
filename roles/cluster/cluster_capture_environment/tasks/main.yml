@@ -67,9 +67,21 @@
   shell:
     oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/nodes.json"
 
+- name: Get the cluster nodes description
+  shell:
+    oc describe nodes > "{{ artifact_extra_logs_dir }}/nodes.descr"
+
 - name: Get the cluster machines status
   shell:
-    oc get machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/machines.status"
+    oc get machines -n openshift-machine-api -owide > "{{ artifact_extra_logs_dir }}/machines.status"
+
+- name: Get the cluster machines yaml
+  shell:
+    oc get machines -n openshift-machine-api -oyaml > "{{ artifact_extra_logs_dir }}/machines.yaml"
+
+- name: Get the cluster machines description
+  shell:
+    oc describe machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/machines.desc"
 
 - name: Get the cluster CSV
   shell:

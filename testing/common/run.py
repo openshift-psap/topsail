@@ -7,6 +7,8 @@ import subprocess
 
 import joblib
 
+from . import env
+
 # create new process group, become its leader
 os.setpgrp()
 
@@ -36,7 +38,8 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
     return proc
 
 class Parallel(object):
-    def __init__(self, exit_on_exception=True):
+    def __init__(self, name, exit_on_exception=True):
+        self.name = name
         self.parallel_tasks = None
         self.exit_on_exception = exit_on_exception
 
@@ -51,21 +54,23 @@ class Parallel(object):
     def __exit__(self, ex_type, ex_value, exc_traceback):
 
         if ex_value:
-            logging.warning("An exception occured while preparing the Parallel execution ...")
+            logging.warning(f"An exception occured while preparing the '{self.name}' Parallel execution ...")
             return False
 
-        try:
-            joblib.Parallel(n_jobs=-1, backend="threading")(self.parallel_tasks)
-        except Exception as e:
-            if not self.exit_on_exception:
-                raise e
+        next_count = env.next_artifact_index()
+        with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__{self.name}"):
+            try:
+                joblib.Parallel(n_jobs=-1, backend="threading")(self.parallel_tasks)
+            except Exception as e:
+                if not self.exit_on_exception:
+                    raise e
 
-            traceback.print_exc()
+                traceback.print_exc()
 
-            logging.error(f"Exception caught during the parallel execution. Exiting.")
-            # kill all processes in my group
-            # (the group was started with the os.setpgrp() above)
-            os.killpg(0, signal.SIGKILL)
-            sys.exit(1)
+                logging.error(f"Exception caught during the '{self.name}' Parallel execution. Exiting.")
+                # kill all processes in my group
+                # (the group was started with the os.setpgrp() above)
+                os.killpg(0, signal.SIGKILL)
+                sys.exit(1)
 
         return False # If we returned True here, any exception would be suppressed!

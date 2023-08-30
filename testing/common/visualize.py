@@ -106,8 +106,8 @@ def prepare_matbench():
        exit 0
     fi
     cd /tmp
-    wget --quiet "https://github.com/prometheus/prometheus/releases/download/v{PROMETHEUS_VERSION}/prometheus-{PROMETHEUS_VERSION}.linux-amd64.tar.gz" -O/tmp/prometheus.tar.gz
-    tar xf "/tmp/prometheus.tar.gz" -C /tmp
+
+
     mkdir -p /tmp/prometheus/bin
     ln -sf "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/prometheus/bin
     cp "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
@@ -136,9 +136,6 @@ def generate_visualization(idx):
 
     os.environ["MATBENCH_RHODS_PIPELINES_CONFIG"] = config.ci_artifacts.get_config("matbench.config_file")
     os.environ["MATBENCH_RHODS_PIPELINES_CONFIG_ID"] = matbench_config.get_config(f"visualize[{idx}].id")
-
-    if (prom_cfg := pathlib.Path("/tmp/prometheus.yml")).exists():
-        shutil.copyfile(prom_cfg, "./prometheus.yml")
 
     if run.run(f"PATH=$PATH:/tmp/prometheus/bin matbench parse --output-matrix {env.ARTIFACT_DIR}/internal_matrix.json |& tee > {env.ARTIFACT_DIR}/_matbench_parse.log", check=False).returncode != 0:
         raise RuntimeError("Failed to parse the results ...")

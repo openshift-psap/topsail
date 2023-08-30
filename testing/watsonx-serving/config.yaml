@@ -36,6 +36,12 @@ ci_presets:
     tests.scale.namespace_count: 60
     tests.scale.models_per_namespace: 5
 
+  customize_kserve:
+    rhods.operator.stop: true
+    rhods.operator.customize.kserve.enabled: true
+    rhods.operator.customize.kserve.cpu: 500m
+    rhods.operator.customize.kserve.memory: 500Mi
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -101,6 +107,15 @@ rhods:
     tag: 560052
     channel: alpha
     version: 2.1.0 # rc2
+  operator:
+    # set to true to stop the RHODS operator
+    stop: false
+    customize:
+      kserve:
+        enabled: false
+        cpu: 500m
+        memory: 500Mi
+
 
 prepare:
   operators:
@@ -159,7 +174,7 @@ watsonx_serving:
 
 gpu:
   time_sharing:
-    replicas: 16
+    replicas: 17
 
 tests:
   mode: scale
