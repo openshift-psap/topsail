@@ -11,6 +11,27 @@
        > "{{ artifact_extra_logs_dir }}/smmr_default.yaml"
   ignore_errors: true
 
+- name: Get the json of the pods
+  shell:
+    oc get pods -ojson
+       -lcomponent=predictor
+       -A
+       > "{{ artifact_extra_logs_dir }}/predictor_pods.json"
+
+- name: Get the yaml of the pods
+  shell:
+    oc get pods -oyaml
+       -lcomponent=predictor
+       -A
+       > "{{ artifact_extra_logs_dir }}/predictor_pods.yaml"
+
+- name: Get the status of the pods
+  shell:
+    oc get pods -owide
+       -lcomponent=predictor
+       -A
+       > "{{ artifact_extra_logs_dir }}/predictor_pods.status"
+
 - name: Capture the Pods logs
   include_tasks: capture_pods.yaml
   loop:
