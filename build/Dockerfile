@@ -11,7 +11,7 @@ ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN yum install -y --quiet \
-	        git jq vim wget rsync time gettext httpd-tools make \
+	        git jq vim wget rsync time gettext httpd-tools make file psmisc \
 		python3.9 python3-pip python3-setuptools procps go-toolset \
   && yum clean all \
   && pip install virtualenv \
@@ -29,6 +29,13 @@ ARG OCP_CLI_VERSION=latest
 ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
 
 RUN curl ${CURL_OPTIONS}  ${OCP_CLI_URL}  | tar xfz - -C /usr/local/bin oc
+
+# Install Prometheus
+ARG PROMETHEUS_VERSION=2.36.0
+RUN wget --quiet "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz" -O/tmp/prometheus.tar.gz \
+  && tar xf "/tmp/prometheus.tar.gz" -C /tmp \
+  && mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus /usr/local/bin \
+  && mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml /etc
 
 # Set up the runner user
 ENV USER_NAME=psap-ci-runner \
