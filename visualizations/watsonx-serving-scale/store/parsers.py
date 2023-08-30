@@ -21,7 +21,6 @@ SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 artifact_dirnames = types.SimpleNamespace()
-artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_db"
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
 artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR = "*__local_ci__run_multi"
 
@@ -31,7 +30,7 @@ IMPORTANT_FILES = [
     "config.yaml",
 
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci_job.yaml",
-    f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/prometheus.t*",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml"
 ]
@@ -177,11 +176,8 @@ def _parse_ocp_version(dirname):
 
 
 def _extract_metrics(dirname):
-    if not artifact_paths.CLUSTER_DUMP_PROM_DB_DIR:
-        raise FileNotFoundError(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR)
-
     METRICS = {
-        "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
+        "sutest": (str(artifact_paths.LOCAL_CI_RUN_MULTI_DIR / "prometheus_ocp.t*"), workload_prom.get_sutest_metrics()),
     }
 
     metrics = {}
