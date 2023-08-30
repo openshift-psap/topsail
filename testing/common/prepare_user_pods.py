@@ -102,12 +102,6 @@ def prepare_user_pods(namespace, user_count):
     with run.Parallel() as parallel:
 
         #
-        # Prepare the driver machineset
-        #
-
-        parallel.delayed(cluster_scale_up, namespace, user_count)
-
-        #
         # Prepare the container image
         #
 
