@@ -159,7 +159,7 @@ watsonx_serving:
 
 gpu:
   time_sharing:
-    replicas: 16
+    replicas: 17
 
 tests:
   mode: scale
