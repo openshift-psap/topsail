@@ -99,34 +99,40 @@ def prepare_user_pods(namespace, user_count):
     dedicated = "{}" if config.ci_artifacts.get_config("clusters.driver.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
+    with run.Parallel() as parallel:
+
+        #
+        # Prepare the driver machineset
+        #
+
+        parallel.delayed(cluster_scale_up, namespace, user_count)
+
+        #
+        # Prepare the container image
+        #
+
+        apply_prefer_pr()
+
+        parallel.delayed(prepare_base_image_container, namespace)
+
+        #
+        # Deploy Redis server for Pod startup synchronization
+        #
+
+        parallel.delayed(run.run, "./run_toolbox.py from_config cluster deploy_redis_server")
+
+        #
+        # Deploy Minio
+        #
+
+        parallel.delayed(run.run, f"./run_toolbox.py from_config cluster deploy_minio_s3_server")
+
+    #
+    # Prepare the driver namespace annotations
+    #
+
     run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix test_node_selector --extra '{dedicated}'")
     run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix test_toleration --extra '{dedicated}'")
-
-    #
-    # Prepare the driver machineset
-    #
-
-    cluster_scale_up(namespace, user_count)
-
-    #
-    # Prepare the container image
-    #
-
-    apply_prefer_pr()
-
-    prepare_base_image_container(namespace)
-
-    #
-    # Deploy Redis server for Pod startup synchronization
-    #
-
-    run.run("./run_toolbox.py from_config cluster deploy_redis_server")
-
-    #
-    # Deploy Minio
-    #
-
-    run.run(f"./run_toolbox.py from_config cluster deploy_minio_s3_server")
 
     #
     # Prepare the ServiceAccount
