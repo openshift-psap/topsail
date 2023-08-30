@@ -31,20 +31,14 @@
       {{ ksvc_hostname_cmd.stdout }}:443 \
       caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict \
       > {{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/TextGenerationTaskPredict.answer
-  register: grpc_working_cmd
-  until: grpc_working_cmd.rc == 0
+  register: grpc1_working_cmd
+  until: grpc1_working_cmd.rc == 0
   retries: 600
   delay: 1
 
-- name: Save the number of attempts
+- name: Save the number of attempts of the first call
   local_action:
-    copy content={{ grpc_working_cmd }} dest={{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts.json mode='0644'
-
-- name: Prettify the file
-  shell: |
-    set -o pipefail
-    content=$(cat "{{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts.json")
-    echo "$content" | jq > "{{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts.json"
+    copy content={{ grpc1_working_cmd }} dest={{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts_1.json mode='0644'
 
 - name: Query the model 2nd endpoint
   shell: |
@@ -57,3 +51,11 @@
       {{ ksvc_hostname_cmd.stdout }}:443 \
       caikit.runtime.Nlp.NlpService/ServerStreamingTextGenerationTaskPredict \
       > {{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/ServerStreamingTextGenerationTaskPredict.answer
+  register: grpc2_working_cmd
+  until: grpc2_working_cmd.rc == 0
+  retries: 600
+  delay: 1
+
+- name: Save the number of attempts of the second call
+  local_action:
+    copy content={{ grpc2_working_cmd }} dest={{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts_2.json mode='0644'
