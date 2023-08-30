@@ -57,7 +57,7 @@ def prepare():
 
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
 
-    with run.Parallel() as parallel:
+    with run.Parallel("prepare_watsonx_serving") as parallel:
         parallel.delayed(rhods.install, token_file)
 
         for operator in config.ci_artifacts.get_config("prepare.operators"):
