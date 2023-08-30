@@ -1,6 +1,7 @@
 import pathlib
 import os
 import logging
+import time
 
 from common import env, config, run, rhods, sizing
 import test_scale
@@ -28,6 +29,28 @@ def compute_sutest_node_requirement():
     return min(models_count, machine_count)
 
 
+def customize_rhods():
+    if not config.ci_artifacts.get_config("rhods.operator.stop"):
+        return
+
+    run.run("oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator")
+    tries = 60
+    while True:
+        if not run.run("oc get pods -n redhat-ods-operator -lname=rhods-operator -oname", capture_stdout=True).stdout:
+            break
+        tries -= 1
+        if tries == 0:
+            raise RuntimeException("RHODS Operator pod didn't disappear ...")
+        time.sleep(2)
+
+    if config.ci_artifacts.get_config("rhods.operator.customize.kserve.enabled"):
+        cpu = config.ci_artifacts.get_config("rhods.operator.customize.kserve.cpu")
+        mem = config.ci_artifacts.get_config("rhods.operator.customize.kserve.memory")
+        run.run(f"oc get deploy/kserve-controller-manager -n redhat-ods-applications -ojson "
+                f"| jq --arg mem '{mem}' --arg cpu '{cpu}' '.spec.template.spec.containers[0].resources.limits.cpu = $cpu | .spec.template.spec.containers[0].resources.limits.memory = $mem' "
+                f"| oc apply -f-")
+
+
 def prepare():
     if not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
@@ -41,6 +64,8 @@ def prepare():
             parallel.delayed(run.run, f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{operator['name']} ./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
 
     run.run("testing/watsonx-serving/poc/prepare.sh |& tee -a $ARTIFACT_DIR/000_prepare_sh.log")
+
+    customize_rhods()
 
 
 def scale_up_sutest():
