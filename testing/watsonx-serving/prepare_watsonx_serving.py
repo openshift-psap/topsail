@@ -33,9 +33,10 @@ def prepare():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
-    rhods.install(token_file)
 
     with run.Parallel() as parallel:
+        parallel.delayed(rhods.install, token_file)
+
         for operator in config.ci_artifacts.get_config("prepare.operators"):
             parallel.delayed(run.run, f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{operator['name']} ./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
 
