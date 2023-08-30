@@ -35,7 +35,8 @@ ARG PROMETHEUS_VERSION=2.36.0
 RUN wget --quiet "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz" -O/tmp/prometheus.tar.gz \
   && tar xf "/tmp/prometheus.tar.gz" -C /tmp \
   && mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus /usr/local/bin \
-  && mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml /etc
+  && mkdir -p /etc/prometheus/ \
+  && mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml /etc/prometheus/prometheus.yml
 
 # Set up the runner user
 ENV USER_NAME=psap-ci-runner \
@@ -49,7 +50,7 @@ COPY . ${HOME}/
 # Install Python requirements
 
 RUN pip install --quiet --no-cache-dir -r ${HOME}/requirements.txt && \
-    (cd ${HOME} && ./testing/common/visualize.py prepare_matbench && mv /tmp/prometheus/bin/prometheus /usr/local/bin)
+    (cd ${HOME} && ./testing/common/visualize.py prepare_matbench)
 
 # Prepare the CI `run` entrypoint
 
