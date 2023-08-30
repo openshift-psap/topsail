@@ -99,7 +99,7 @@ def prepare_user_pods(namespace, user_count):
     dedicated = "{}" if config.ci_artifacts.get_config("clusters.driver.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
-    with run.Parallel() as parallel:
+    with run.Parallel("prepare_user_pods") as parallel:
 
         #
         # Prepare the container image
