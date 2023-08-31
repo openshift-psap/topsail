@@ -97,4 +97,7 @@ cp ${TOPSAIL_DIR}/testing/watsonx-serving/poc/kserve-install.sh \
 cp ${TOPSAIL_DIR}/testing/watsonx-serving/poc/deploy-model.sh \
    scripts/test/
 
+cp ${TOPSAIL_DIR}/testing/watsonx-serving/poc/kserve-dsc.yaml \
+   custom-manifests/opendatahub/
+
 bash -ex scripts/install/kserve-install.sh
