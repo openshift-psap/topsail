@@ -108,9 +108,9 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 560052
+    tag: 567053
     channel: alpha
-    version: 2.1.0 # rc2
+    version: 2.1.0 # rc6
   operator:
     # set to true to stop the RHODS operator
     stop: false
