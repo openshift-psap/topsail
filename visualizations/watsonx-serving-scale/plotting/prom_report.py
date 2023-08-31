@@ -3,6 +3,8 @@ from dash import html
 from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
 
+from ..store import prom
+
 def register():
     SutestCpuMemoryReport()
 
@@ -53,5 +55,12 @@ class SutestCpuMemoryReport():
         header += ["These plots show the CPU and memory capacity of the SUTest cluster."]
         header += html.Br()
         header += html.Br()
+
+        for metric_spec in prom.SUTEST_CONTAINER_LABELS:
+            plot_name = list(metric_spec.keys())[0]
+            header += [html.H2(plot_name)]
+            header += [report.Plot(f"Prom: {plot_name}: CPU usage", args)]
+            header += [report.Plot(f"Prom: {plot_name}: Mem usage", args)]
+
 
         return None, header

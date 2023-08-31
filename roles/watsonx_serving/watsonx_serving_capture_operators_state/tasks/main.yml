@@ -38,6 +38,7 @@
   - openshift-operators
   - knative-serving
   - redhat-ods-applications
+  - redhat-ods-operator
   - istio-system
   loop_control:
     loop_var: namespace
