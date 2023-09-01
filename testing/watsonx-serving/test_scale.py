@@ -161,7 +161,7 @@ def run_one():
         inference_service_basename = config.ci_artifacts.get_config("watsonx_serving.inference_service.name")
         all_inference_service_names = []
         for model_idx in range(models_per_namespace):
-            inference_service_name = f"{inference_service_basename}-m{model_idx}"
+            inference_service_name = f"{inference_service_basename}-u{job_index}-m{model_idx}"
 
             extra = dict(inference_service_name=inference_service_name)
             run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{inference_service_name} ./run_toolbox.py from_config watsonx_serving deploy_model --extra \"{extra}\"")
