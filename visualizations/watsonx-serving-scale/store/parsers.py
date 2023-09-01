@@ -5,6 +5,7 @@ import yaml
 import os
 import json
 import datetime
+import dateutil
 
 import jsonpath_ng
 
@@ -37,6 +38,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/test.exit_code",
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/test.exit_code",
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/*__watsonx_serving__capture_state/serving.json",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/*__watsonx_serving__validate_model_caikit-isvc-u*-m*/caikit-isvc-u*-m*/call_*.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
     f"{artifact_dirnames.WATSONX_SERVING_CAPTURE_OPERATORS_STATE_DIR}/rhods.createdAt",
@@ -325,6 +327,7 @@ def _parse_user_data(dirname, user_count):
         data.exit_code = _parse_user_exit_code(dirname, ci_pod_dirpath)
         data.progress = _parse_user_progress(dirname, ci_pod_dirpath)
         data.resource_times = _parse_user_resource_times(dirname, ci_pod_dirpath)
+        data.grpc_calls = _parse_user_grpc_calls(dirname, ci_pod_dirpath)
 
     return user_data
 
@@ -356,15 +359,15 @@ def _parse_pod_times(dirname):
 
       pod_time.namespace = pod["metadata"]["namespace"]
       pod_time.pod_name = pod["metadata"]["name"]
-      pod_friendly_name = pod["metadata"]["labels"]["app"]
 
-      pod_time.pod_friendly_name = pod_friendly_name
       pod_time.hostname = pod["spec"].get("nodeName")
 
       pod_time.creation_time = datetime.datetime.strptime(
               pod["metadata"]["creationTimestamp"], K8S_TIME_FMT)
 
       pod_time.user_idx = int(pod_time.namespace.split("-u")[-1])
+      pod_time.model_id = pod["metadata"]["name"].split("-m")[1].split("-")[0]
+      pod_time.pod_friendly_name = f"model_{pod_time.model_id}"
 
       start_time_str = pod["status"].get("startTime")
       pod_time.start_time = None if not start_time_str else \
@@ -417,11 +420,18 @@ def _parse_user_resource_times(dirname, ci_pod_dir):
         namespace = metadata["namespace"]
         generate_name, found, suffix = name.rpartition("-")
         remove_suffix = ((found and not suffix.isalpha()))
+
+        def isvc_name_to_friendly_name(isvc_name):
+            model_id = isvc_name.split("-m")[1].split("-")[0]
+            return f"model_{model_id}"
+
         if kind == "InferenceService":
+            name = isvc_name_to_friendly_name(name)
             remove_suffix = False
 
         if kind in ("Revision", "Configuration", "Service", "Route"):
-            name = metadata["labels"]["serving.kserve.io/inferenceservice"]
+            isvc_name = metadata["labels"]["serving.kserve.io/inferenceservice"]
+            name = isvc_name_to_friendly_name(isvc_name)
             remove_suffix = False
 
         if remove_suffix:
@@ -435,3 +445,29 @@ def _parse_user_resource_times(dirname, ci_pod_dir):
         obj_resource_times.creation = creationTimestamp
 
     return dict(resource_times)
+
+@ignore_file_not_found
+def _parse_user_grpc_calls(dirname, ci_pod_dir):
+    grpc_calls = []
+
+    files_path = (dirname / ci_pod_dir).glob("*__watsonx_serving__validate_model_caikit-isvc-u*-m*/caikit-isvc-u*-m*/call_*.json")
+
+    today = datetime.datetime.today()
+    today_min = datetime.datetime.combine(today, datetime.time.min)
+
+    for _file_path in files_path:
+        file_path = _file_path.relative_to(dirname)
+
+        with open(register_important_file(dirname, file_path)) as f:
+            data = json.load(f)
+
+            grpc_call = types.SimpleNamespace()
+            grpc_call.name = file_path.stem.replace("call_", "")
+            delta = datetime.datetime.combine(today, dateutil.parser.parse(data["delta"]).time()) - today_min
+            grpc_call.duration = delta
+
+            grpc_call.attempts = data["attempts"]
+            grpc_call.isvc = file_path.parent.name
+            grpc_calls.append(grpc_call)
+
+    return grpc_calls

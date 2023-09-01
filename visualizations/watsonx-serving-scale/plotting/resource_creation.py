@@ -104,10 +104,11 @@ class ResourceCreationDelay():
         serving_runtime_name = entry.results.test_config.get("watsonx_serving.serving_runtime.name")
         mapping = dict()
         mapping[f"ServingRuntime/{serving_runtime_name}"] = []
+
         for model_id in range(models_per_ns):
             if cfg__model_id is not None and cfg__model_id != model_id: continue
 
-            isvc_name = f"{isvc_basename}-m{model_id}"
+            isvc_name = f"model_{model_id}"
             #mapping[f"ServingRuntime/{serving_runtime_name}"].append(f"InferenceService/{isvc_name}")
             mapping[f"InferenceService/{isvc_name}"] = [
                 #f"Route/{isvc_name}",
@@ -117,6 +118,7 @@ class ResourceCreationDelay():
             ]
 
         data = []
+
         for user_idx, user_data in entry.results.user_data.items():
             for base_name, dependencies in mapping.items():
                 try:
