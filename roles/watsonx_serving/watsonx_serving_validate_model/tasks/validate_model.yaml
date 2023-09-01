@@ -38,7 +38,7 @@
 
 - name: Save the number of attempts of the first call
   local_action:
-    copy content={{ grpc1_working_cmd }} dest={{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts_1.json mode='0644'
+    copy content={{ grpc1_working_cmd }} dest={{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/call_TextGenerationTaskPredict.json mode='0644'
 
 - name: Query the model 2nd endpoint
   shell: |
@@ -58,4 +58,4 @@
 
 - name: Save the number of attempts of the second call
   local_action:
-    copy content={{ grpc2_working_cmd }} dest={{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/attempts_2.json mode='0644'
+    copy content={{ grpc2_working_cmd }} dest={{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/call_ServerStreamingTextGenerationTaskPredict.json mode='0644'
