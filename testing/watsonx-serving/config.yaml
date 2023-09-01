@@ -110,7 +110,8 @@ rhods:
     image: brew.registry.redhat.io/rh-osbs/iib
     tag: 567053
     channel: alpha
-    version: 2.1.0 # rc6
+    version: 2.1.0
+    version_name: RC6
   operator:
     # set to true to stop the RHODS operator
     stop: false
