@@ -192,8 +192,8 @@ tests:
   scale:
     namespace: watsonx-serving-scale-test
     namespace_label: topsail.scale-test=true
-    namespace_count: 1
-    models_per_namespace: 1
+    namespace_count: 2
+    models_per_namespace: 2
     sleep_factor: 1
 
 matbench:
