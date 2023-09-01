@@ -139,8 +139,8 @@ secrets:
 
 
 def run_one():
-
     logging.info("Runs one WatsonX user scale test")
+
     job_index = os.environ.get("JOB_COMPLETION_INDEX")
     if job_index is not None:
         namespace = config.ci_artifacts.get_config("tests.scale.namespace")
@@ -153,24 +153,29 @@ def run_one():
     namespace = config.ci_artifacts.get_config("tests.scale.namespace")
     try:
         prepare_user_namespace(namespace)
+        run.run('echo "namespace_prepared: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"')
         deploy_storage_configuration(namespace)
+        run.run('echo "storage_configured: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"')
 
         models_per_namespace = config.ci_artifacts.get_config("tests.scale.models_per_namespace")
         inference_service_basename = config.ci_artifacts.get_config("watsonx_serving.inference_service.name")
         all_inference_service_names = []
-        for model_id in range(models_per_namespace):
-            inference_service_name = f"{inference_service_basename}-m{model_id}"
+        for model_idx in range(models_per_namespace):
+            inference_service_name = f"{inference_service_basename}-m{model_idx}"
 
             extra = dict(inference_service_name=inference_service_name)
-            run.run(f"./run_toolbox.py from_config watsonx_serving deploy_model --extra \"{extra}\"")
+            run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{inference_service_name} ./run_toolbox.py from_config watsonx_serving deploy_model --extra \"{extra}\"")
+            run.run(f'echo "model_{model_idx}_deployed: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
 
             extra = dict(inference_service_names=[inference_service_name])
             run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{inference_service_name} ./run_toolbox.py from_config watsonx_serving validate_model --extra \"{extra}\"")
+            run.run(f'echo "model_{model_idx}_validated: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
 
             all_inference_service_names += [inference_service_name]
 
             extra = dict(inference_service_names=all_inference_service_names)
         run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_all ./run_toolbox.py from_config watsonx_serving validate_model --extra \"{extra}\"")
+        run.run(f'echo "model_all_validated: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
 
     finally:
         run.run(f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
