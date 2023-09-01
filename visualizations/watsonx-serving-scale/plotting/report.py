@@ -7,8 +7,11 @@ from dash import dcc
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+from . import error_report
+
 def register():
     ControlPlaneReport()
+    UserProgressReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -148,5 +151,27 @@ class ControlPlaneReport():
                 header += Plot_and_Text(f"Prom: {cluster_role.title()} API Server Requests ({what})", args)
                 header += html.Br()
                 header += html.Br()
+
+        return None, header
+
+
+class UserProgressReport():
+    def __init__(self):
+        self.name = "report: User Progress"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+
+        header += error_report._get_all_tests_setup(args)
+
+        header += [html.H1("User Progress")]
+
+        header += [Plot(f"User progress", args)]
+        header += [Plot(f"User progress", set_config(dict(hide_launch_delay=False), args))]
 
         return None, header
