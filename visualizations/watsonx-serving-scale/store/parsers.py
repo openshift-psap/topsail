@@ -209,7 +209,6 @@ def _parse_rhods_info(dirname):
     try:
         rhods_info.createdAt = datetime.datetime.strptime(rhods_info.createdAt_raw, K8S_TIME_FMT)
     except ValueError as e:
-        import pdb;pdb.set_trace()
         logging.error(f"Couldn't parse RHODS version timestamp: {e}")
         rhods_info.createdAt = None
 
