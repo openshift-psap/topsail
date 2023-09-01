@@ -110,7 +110,8 @@ rhods:
     image: brew.registry.redhat.io/rh-osbs/iib
     tag: 567053
     channel: alpha
-    version: 2.1.0 # rc6
+    version: 2.1.0
+    version_name: RC6
   operator:
     # set to true to stop the RHODS operator
     stop: false
@@ -191,8 +192,8 @@ tests:
   scale:
     namespace: watsonx-serving-scale-test
     namespace_label: topsail.scale-test=true
-    namespace_count: 1
-    models_per_namespace: 1
+    namespace_count: 2
+    models_per_namespace: 2
     sleep_factor: 1
 
 matbench:

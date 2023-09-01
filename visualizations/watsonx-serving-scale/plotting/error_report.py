@@ -4,6 +4,7 @@ from collections import defaultdict
 import os
 import base64
 import pathlib
+import yaml
 
 from dash import html
 from dash import dcc
@@ -16,6 +17,17 @@ from . import report
 
 def register():
     ErrorReport()
+
+
+def _get_all_tests_setup(args):
+    header = []
+
+    ordered_vars, settings, setting_lists, variables, cfg = args
+    for entry in common.Matrix.all_records(settings, setting_lists):
+        header += _get_test_setup(entry)
+        header += [html.Hr()]
+
+    return header
 
 
 def _get_test_setup(entry):
@@ -32,13 +44,17 @@ def _get_test_setup(entry):
     else:
         setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE ({entry.results.from_local_env.source_url})")]
 
+    setup_info += [html.Br()]
+
     managed = list(entry.results.cluster_info.control_plane)[0].managed \
         if entry.results.cluster_info.control_plane else False
 
     sutest_ocp_version = entry.results.sutest_ocp_version
 
+    version_ts = entry.results.rhods_info.createdAt.strftime("%Y-%m-%d") \
+        if entry.results.rhods_info.createdAt else entry.results.rhods_info.createdAt_raw
 
-    setup_info += [html.Li(["Test running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
+    setup_info += [html.Li([html.B("RHODS "), html.B(html.Code(f"{entry.results.rhods_info.version}-{version_ts}")), f" running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
 
     nodes_info = [
         html.Li([f"Total of {len(entry.results.cluster_info.node_count)} nodes in the cluster"]),
@@ -63,6 +79,17 @@ def _get_test_setup(entry):
         nodes_info += [html.Li(nodes_info_li)]
 
     setup_info += [html.Ul(nodes_info)]
+
+    test_config_file = entry.results.from_local_env.artifacts_basedir / entry.results.file_locations.test_config_file
+
+    setup_info += [html.Br()]
+
+    total_users = entry.results.user_count
+    success_users = entry.results.success_count
+    setup_info += [html.Li(f"{success_users}/{total_users} users succeeded")]
+    setup_info += [html.Br()]
+
+    setup_info += [html.Li([html.A("Test configuration:", href=str(test_config_file), target="_blank"), html.Code(yaml.dump(dict(tests=dict(scale=entry.results.test_config.yaml_file["tests"]["scale"]))), style={"white-space": "pre-wrap"})])]
 
     return setup_info
 
@@ -102,9 +129,38 @@ class ErrorReport():
         else:
             artifacts_link = lambda path: entry.results.from_local_env.artifacts_basedir / path
 
-
         header += [html.Ul(
             setup_info
         )]
+
+        setup_info += [html.Li(["RHODS configuration: ", html.Code(yaml.dump(dict(rhods=entry.results.test_config.yaml_file["rhods"])), style={"white-space": "pre-wrap"})])]
+
+        setup_info += [html.Li(["Watsonx configuration: ", html.Code(yaml.dump(dict(watsonx_serving=entry.results.test_config.yaml_file["watsonx_serving"])), style={"white-space": "pre-wrap"})])]
+
+        failed_users = []
+        successful_users = []
+
+        for user_index, user_data in entry.results.user_data.items():
+             content = []
+             content.append(html.H3(f"User #{user_index}"))
+             user_links = []
+             user_links.append(html.Li(html.A("Execution logs", target="_blank", href=artifacts_link(user_data.artifact_dir / "run.log"))))
+             user_links.append(html.Li(html.A("Execution artifacts", target="_blank", href=artifacts_link(user_data.artifact_dir))))
+             content.append(html.Ul(user_links))
+             content.append(html.Br())
+
+             dest = successful_users if user_data.exit_code == 0 else failed_users
+             dest.append(content)
+
+        if failed_users:
+            header.append(html.H2(f"Failed users x {len(failed_users)}"))
+            for user in failed_users:
+                header += user
+
+        if successful_users:
+            header.append(html.H2(f"Successful users x {len(successful_users)}"))
+            for user in successful_users:
+                header += user
+
 
         return None, header

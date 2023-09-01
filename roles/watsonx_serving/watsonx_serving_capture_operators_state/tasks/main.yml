@@ -1,4 +1,26 @@
 ---
+- name: Check if RHODS CSV exists
+  shell:
+    set -o pipefail;
+    oc get csv -n redhat-ods-operator -oname | grep rhods-operator
+  register: has_rhods_csv_cmd
+
+- name: Save the RHODS CSV
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -oyaml > "{{ artifact_extra_logs_dir }}/rhods.csv.yaml"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
+- name: Get the RHODS version, if rhods is installed
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -ojsonpath={.spec.version} > "{{ artifact_extra_logs_dir }}/rhods.version"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
+- name: Store the RHODS creation timestamp, if RHODS is installed
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname -ojsonpath={.metadata.annotations.createdAt}
+      > "{{ artifact_extra_logs_dir }}/rhods.createdAt"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
 - name: Save the state of the datasciencecluster configuration
   shell:
     oc get datasciencecluster -oyaml
