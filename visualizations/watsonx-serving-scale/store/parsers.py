@@ -23,6 +23,7 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
 artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR = "*__local_ci__run_multi"
+artifact_dirnames.WATSONX_SERVING_CAPTURE_OPERATORS_STATE_DIR = "*__watsonx_serving__capture_operators_state"
 
 artifact_paths = None # store._parse_directory will turn it into a {str: pathlib.Path} dict base on ^^^
 
@@ -30,9 +31,14 @@ IMPORTANT_FILES = [
     "config.yaml",
 
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci_job.yaml",
-    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/prometheus.t*",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/prometheus_ocp.t*",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/success_count",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/progress_ts.yaml",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/test.exit_code",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
-    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml"
+    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
+    f"{artifact_dirnames.WATSONX_SERVING_CAPTURE_OPERATORS_STATE_DIR}/rhods.createdAt",
+    f"{artifact_dirnames.WATSONX_SERVING_CAPTURE_OPERATORS_STATE_DIR}/rhods.version",
 ]
 
 PARSER_VERSION = "2023-05-31"
@@ -55,12 +61,19 @@ def _parse_always(results, dirname, import_settings):
     results.from_local_env = _parse_local_env(dirname)
     results.test_config = _parse_test_config(dirname)
 
+
 def _parse_once(results, dirname):
+    results.user_count = int(results.test_config.get("tests.scale.namespace_count"))
+
     results.nodes_info = _parse_nodes_info(dirname) or {}
     results.cluster_info = _extract_cluster_info(results.nodes_info)
     results.sutest_ocp_version = _parse_ocp_version(dirname)
     results.metrics = _extract_metrics(dirname)
     results.test_start_end_time = _parse_start_end_time(dirname)
+    results.user_data = _parse_user_data(dirname, results.user_count)
+    results.success_count = _parse_success_count(dirname)
+    results.file_locations = _parse_file_locations(dirname)
+    results.rhods_info = _parse_rhods_info(dirname)
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -175,6 +188,31 @@ def _parse_ocp_version(dirname):
     return sutest_ocp_version_yaml["openshiftVersion"]
 
 
+@ignore_file_not_found
+def _parse_rhods_info(dirname):
+    rhods_info = types.SimpleNamespace()
+    artifact_dirname = pathlib.Path("001__rhods__capture_state")
+
+    with open(register_important_file(dirname, artifact_paths.WATSONX_SERVING_CAPTURE_OPERATORS_STATE_DIR / "rhods.version")) as f:
+        rhods_info.version = f.read().strip()
+
+    with open(register_important_file(dirname, artifact_paths.WATSONX_SERVING_CAPTURE_OPERATORS_STATE_DIR / "rhods.createdAt")) as f:
+        rhods_info.createdAt_raw = f.read().strip()
+
+    try:
+        rhods_info.createdAt = datetime.datetime.strptime(rhods_info.createdAt_raw, K8S_TIME_FMT)
+    except ValueError as e:
+        import pdb;pdb.set_trace()
+        logging.error(f"Couldn't parse RHODS version timestamp: {e}")
+        rhods_info.createdAt = None
+
+    rhods_info.full_version = (
+        f"{rhods_info.version}-" \
+        + (rhods_info.createdAt.strftime("%Y-%m-%d")
+           if rhods_info.createdAt else "0000-00-00"))
+
+    return rhods_info
+
 def _extract_metrics(dirname):
     METRICS = {
         "sutest": (str(artifact_paths.LOCAL_CI_RUN_MULTI_DIR / "prometheus_ocp.t*"), workload_prom.get_sutest_metrics()),
@@ -231,3 +269,64 @@ def _parse_start_end_time(dirname):
         test_start_end_time.end = test_start_end_time.start + datetime.timedelta(hours=1)
 
     return test_start_end_time
+
+
+@ignore_file_not_found
+def _parse_success_count(dirname):
+    filename = pathlib.Path("000__local_ci__run_multi") / "success_count"
+
+    with open(register_important_file(dirname, filename)) as f:
+        content = f.readline()
+
+    success_count = int(content.split("/")[0])
+
+    return success_count
+
+
+@ignore_file_not_found
+def _parse_user_exit_code(dirname, ci_pod_dir):
+    filename = (ci_pod_dir / "test.exit_code").relative_to(dirname)
+    with open(register_important_file(dirname, filename)) as f:
+        exit_code = int(f.readline())
+
+    return exit_code
+
+
+@ignore_file_not_found
+def _parse_user_progress(dirname, ci_pod_dir):
+    filename = (ci_pod_dir / "progress_ts.yaml").relative_to(dirname)
+    with open(register_important_file(dirname, filename)) as f:
+        progress_src = yaml.safe_load(f)
+
+    progress = {}
+    for idx, (key, date_str) in enumerate(progress_src.items()):
+        progress[f"progress_ts.{idx:03d}__{key}"] = datetime.datetime.strptime(date_str, SHELL_DATE_TIME_FMT)
+
+    return progress
+
+
+def _parse_user_data(dirname, user_count):
+    user_data = {}
+    for user_id in range(user_count):
+        ci_pod_dirname = artifact_paths.LOCAL_CI_RUN_MULTI_DIR / "ci-pods_artifacts" / f"ci-pod-{user_id}"
+        ci_pod_dirpath = dirname / ci_pod_dirname
+        if not (dirname / ci_pod_dirname).exists():
+            user_data[user_id] = None
+            logging.warning(f"No user directory collected for user #{user_id} ({ci_pod_dirname})")
+            continue
+
+        user_data[user_id] = data = types.SimpleNamespace()
+        data.artifact_dir = ci_pod_dirname
+        data.exit_code = _parse_user_exit_code(dirname, ci_pod_dirpath)
+        data.progress = _parse_user_progress(dirname, ci_pod_dirpath)
+
+    return user_data
+
+
+def _parse_file_locations(dirname):
+    file_locations = types.SimpleNamespace()
+
+    file_locations.test_config_file = pathlib.Path("config.yaml")
+    register_important_file(dirname, file_locations.test_config_file)
+
+    return file_locations
