@@ -4,6 +4,7 @@ from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
 
 from ..store import prom
+from . import error_report
 
 def register():
     SutestCpuMemoryReport()
@@ -46,6 +47,9 @@ class SutestCpuMemoryReport():
 
     def do_plot(self, *args):
         header = []
+
+        header += error_report._get_all_tests_setup(args)
+
         header += [html.P("These plots show an overview of the CPU and Memory usage during the execution of the test, for the cluster, the nodes, and various relevant Pods.")]
 
         header += [html.H2("SUTest Cluster")]

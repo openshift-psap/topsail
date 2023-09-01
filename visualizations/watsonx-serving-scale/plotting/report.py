@@ -98,6 +98,9 @@ class ControlPlaneReport():
 
     def do_plot(self, *args):
         header = []
+
+        header += error_report._get_all_tests_setup(args)
+
         header += [html.H1("Control Plane Nodes Load")]
 
         for cluster_role in ["sutest"]:
