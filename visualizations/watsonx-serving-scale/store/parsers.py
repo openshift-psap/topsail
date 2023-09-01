@@ -421,8 +421,9 @@ def _parse_user_resource_times(dirname, ci_pod_dir):
         remove_suffix = ((found and not suffix.isalpha()))
 
         def isvc_name_to_friendly_name(isvc_name):
-            model_id = isvc_name.split("-m")[1].split("-")[0]
-            return f"model_{model_id}"
+            model_id = int(isvc_name.split("-m")[1].split("-")[0])
+
+            return f"model_{model_id:03d}"
 
         if kind == "InferenceService":
             name = isvc_name_to_friendly_name(name)

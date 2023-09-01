@@ -94,7 +94,7 @@ class ResourceCreationDelay():
             return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
 
         cfg__model_id = cfg.get("model_id", None)
-
+        cfg__as_distribution = cfg.get("as_distribution", False)
 
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass # entry is set
@@ -108,13 +108,9 @@ class ResourceCreationDelay():
         for model_id in range(models_per_ns):
             if cfg__model_id is not None and cfg__model_id != model_id: continue
 
-            isvc_name = f"model_{model_id}"
-            #mapping[f"ServingRuntime/{serving_runtime_name}"].append(f"InferenceService/{isvc_name}")
+            isvc_name = f"model_{model_id:03d}"
             mapping[f"InferenceService/{isvc_name}"] = [
-                #f"Route/{isvc_name}",
-                #f"Configuration/{isvc_name}",
                 f"Service/{isvc_name}",
-                #f"Revision/{isvc_name}"
             ]
 
         data = []
@@ -134,6 +130,7 @@ class ResourceCreationDelay():
                     data.append({
                         "Base Time": base_time,
                         "Mapping Name": f"{base_name} -> {dep_name}",
+                        "Model": dep_name,
                         "Duration": duration,
                         "User Index": user_idx,
                         "User Name": f"User #{user_idx:03d}",
@@ -142,14 +139,22 @@ class ResourceCreationDelay():
         if not data:
             return None, "No data available"
 
-        df = pd.DataFrame(data).sort_values(by=["Duration"], ascending=True)
 
-        fig = px.line(df, x="Duration", y="User Name", color="Mapping Name", title="Resource creation duration")
 
-        fig.update_layout(xaxis_title="Resource creation duration, in seconds")
-        fig.update_layout(yaxis_title="User index")
-        fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
-        fig.update_xaxes(range=[0, df["Duration"].max()*1.1])
+        if cfg__as_distribution:
+            df = pd.DataFrame(data).sort_values(by=["Model"], ascending=True)
+            fig = px.histogram(df, x="Model", y="Duration", color="User Name",
+                               barmode="overlay",
+                               title="Resource creation duration distribution")
+        else:
+            df = pd.DataFrame(data).sort_values(by=["Duration"], ascending=True)
+
+            fig = px.line(df, x="Duration", y="User Name", color="Mapping Name", title="Resource creation duration")
+            fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
+
+            fig.update_layout(xaxis_title="Resource creation duration, in seconds")
+            fig.update_layout(yaxis_title="User index")
+            fig.update_xaxes(range=[0, df["Duration"].max()*1.1])
 
         title = f"Duration of the KServe Resource Creation"
 

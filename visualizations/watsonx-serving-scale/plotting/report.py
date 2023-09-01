@@ -177,6 +177,8 @@ class UserProgressReport():
         header += [Plot(f"User progress", args)]
         header += [Plot(f"User progress", set_config(dict(hide_launch_delay=False), args))]
 
+        header += Plot_and_Text(f"Resource Creation Delay", set_config(dict(as_distribution=True), args))
+
         header += [html.H1("GRPC calls distribution")]
         header += Plot_and_Text(f"GRPC calls distribution", set_config(dict(show_attempts=False), args))
         header += Plot_and_Text(f"GRPC calls distribution", set_config(dict(show_attempts=True), args))
@@ -184,6 +186,9 @@ class UserProgressReport():
         header += [html.H1("Resource Creation")]
 
         header += Plot_and_Text(f"Resource Creation Timeline", args)
+
+        header += Plot_and_Text(f"Resource Creation Delay", set_config(dict(model_id=None), args))
+
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
             models_per_ns = entry.results.test_config.get("tests.scale.models_per_namespace")

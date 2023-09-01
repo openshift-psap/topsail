@@ -22,7 +22,7 @@ def generateGrpcCallsDistribution(entry):
 
         for grpc_call in user_data.grpc_calls:
             data.append(dict(
-                Name = f"{grpc_call.isvc} - {grpc_call.name}",
+                Name = f"{grpc_call.name}",
                 Duration = grpc_call.duration.total_seconds(),
                 Isvc = grpc_call.isvc,
                 Attempts = grpc_call.attempts,
