@@ -365,7 +365,7 @@ def _parse_pod_times(dirname):
               pod["metadata"]["creationTimestamp"], K8S_TIME_FMT)
 
       pod_time.user_idx = int(pod_time.namespace.split("-u")[-1])
-      pod_time.model_id = pod["metadata"]["name"].split("-m")[1].split("-")[0]
+      pod_time.model_id = int(pod["metadata"]["name"].split("-m")[1].split("-")[0])
       pod_time.pod_friendly_name = f"model_{pod_time.model_id}"
 
       start_time_str = pod["status"].get("startTime")
@@ -420,19 +420,27 @@ def _parse_user_resource_times(dirname, ci_pod_dir):
         generate_name, found, suffix = name.rpartition("-")
         remove_suffix = ((found and not suffix.isalpha()))
 
-        def isvc_name_to_friendly_name(isvc_name):
-            model_id = int(isvc_name.split("-m")[1].split("-")[0])
+        def isvc_name_to_model_id(isvc_name):
+            return int(isvc_name.split("-m")[1].split("-")[0])
 
-            return f"model_{model_id:03d}"
+        def isvc_name_to_friendly_name(isvc_name):
+            model_id = isvc_name_to_model_id(isvc_name)
+
+            return f"model_{model_id}"
 
         if kind == "InferenceService":
             name = isvc_name_to_friendly_name(name)
+            model_id = isvc_name_to_model_id(isvc_name)
             remove_suffix = False
 
         if kind in ("Revision", "Configuration", "Service", "Route"):
             isvc_name = metadata["labels"]["serving.kserve.io/inferenceservice"]
             name = isvc_name_to_friendly_name(isvc_name)
             remove_suffix = False
+            model_id = isvc_name_to_model_id(isvc_name)
+
+        if kind == "ServingRuntime":
+            model_id = -1
 
         if remove_suffix:
             name = generate_name # remove generated suffix
@@ -443,6 +451,7 @@ def _parse_user_resource_times(dirname, ci_pod_dir):
         obj_resource_times.name = name
         obj_resource_times.namespace = namespace
         obj_resource_times.creation = creationTimestamp
+        obj_resource_times.model_id = model_id
 
     return dict(resource_times)
 
