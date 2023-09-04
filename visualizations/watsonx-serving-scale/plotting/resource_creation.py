@@ -38,7 +38,7 @@ class ResourceCreationTimeline():
         for pod_time in entry.results.pod_times:
             data.append({
                 "Namespace": pod_time.namespace,
-                "Resource": f"Pod/{pod_time.pod_friendly_name}",
+                "Resource": f"Model {pod_time.model_id:03d} | Pod",
                 "Create Time": pod_time.creation_time,
                 "Kind": "Pod",
                 "User Name": f"User {pod_time.user_idx}",
@@ -49,7 +49,7 @@ class ResourceCreationTimeline():
             for resource_name, resource_times in user_data.resource_times.items():
                 data.append({
                     "Namespace" : resource_times.namespace,
-                    "Resource": f"{resource_times.kind}/{resource_times.name}",
+                    "Resource": f"Model {resource_times.model_id:03d} | {resource_times.kind}",
                     "Create Time": resource_times.creation,
                     "Kind": resource_times.kind,
                     "User Name": f"User {user_idx}",
@@ -103,18 +103,16 @@ class ResourceCreationDelay():
         isvc_basename = entry.results.test_config.get("watsonx_serving.inference_service.name")
         serving_runtime_name = entry.results.test_config.get("watsonx_serving.serving_runtime.name")
         mapping = dict()
-        mapping[f"ServingRuntime/{serving_runtime_name}"] = []
 
         for model_id in range(models_per_ns):
             if cfg__model_id is not None and cfg__model_id != model_id: continue
 
-            isvc_name = f"model_{model_id:03d}"
+            isvc_name = f"model_{model_id}"
             mapping[f"InferenceService/{isvc_name}"] = [
                 f"Service/{isvc_name}",
             ]
 
         data = []
-
         for user_idx, user_data in entry.results.user_data.items():
             for base_name, dependencies in mapping.items():
                 try:
@@ -126,11 +124,11 @@ class ResourceCreationDelay():
                     except KeyError: continue
 
                     duration = (dep_time - base_time).total_seconds()
-
+                    model_id = user_data.resource_times[dep_name].model_id
                     data.append({
                         "Base Time": base_time,
-                        "Mapping Name": f"{base_name} -> {dep_name}",
-                        "Model": dep_name,
+                        "Mapping Name": f"Model {-1 if model_id is None else model_id:03d} | {base_name.split('/')[0]} -> {dep_name.split('/')[0]}",
+                        "Model": f"Model {model_id:03d}",
                         "Duration": duration,
                         "User Index": user_idx,
                         "User Name": f"User #{user_idx:03d}",
@@ -143,11 +141,12 @@ class ResourceCreationDelay():
 
         if cfg__as_distribution:
             df = pd.DataFrame(data).sort_values(by=["Model"], ascending=True)
+
             fig = px.histogram(df, x="Model", y="Duration", color="User Name",
                                barmode="overlay",
                                title="Resource creation duration distribution")
         else:
-            df = pd.DataFrame(data).sort_values(by=["Duration"], ascending=True)
+            df = pd.DataFrame(data).sort_values(by=["Model"], ascending=True)
 
             fig = px.line(df, x="Duration", y="User Name", color="Mapping Name", title="Resource creation duration")
             fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up

@@ -365,7 +365,7 @@ def _parse_pod_times(dirname):
               pod["metadata"]["creationTimestamp"], K8S_TIME_FMT)
 
       pod_time.user_idx = int(pod_time.namespace.split("-u")[-1])
-      pod_time.model_id = pod["metadata"]["name"].split("-m")[1].split("-")[0]
+      pod_time.model_id = int(pod["metadata"]["name"].split("-m")[1].split("-")[0])
       pod_time.pod_friendly_name = f"model_{pod_time.model_id}"
 
       start_time_str = pod["status"].get("startTime")
@@ -420,12 +420,16 @@ def _parse_user_resource_times(dirname, ci_pod_dir):
         generate_name, found, suffix = name.rpartition("-")
         remove_suffix = ((found and not suffix.isalpha()))
 
-        def isvc_name_to_friendly_name(isvc_name):
-            model_id = int(isvc_name.split("-m")[1].split("-")[0])
+        def isvc_name_to_model_id(isvc_name):
+            return int(isvc_name.split("-m")[1].split("-")[0])
 
-            return f"model_{model_id:03d}"
+        def isvc_name_to_friendly_name(isvc_name):
+            model_id = isvc_name_to_model_id(isvc_name)
+
+            return f"model_{model_id}"
 
         if kind == "InferenceService":
+            model_id = isvc_name_to_model_id(name)
             name = isvc_name_to_friendly_name(name)
             remove_suffix = False
 
@@ -433,18 +437,34 @@ def _parse_user_resource_times(dirname, ci_pod_dir):
             isvc_name = metadata["labels"]["serving.kserve.io/inferenceservice"]
             name = isvc_name_to_friendly_name(isvc_name)
             remove_suffix = False
+            model_id = isvc_name_to_model_id(isvc_name)
+
+        if kind == "ServingRuntime":
+            model_id = -1
 
         if remove_suffix:
             name = generate_name # remove generated suffix
 
         resource_times[f"{kind}/{name}"] = obj_resource_times = types.SimpleNamespace()
+        user_idx = int(namespace.split("-u")[-1])
 
         obj_resource_times.kind = kind
         obj_resource_times.name = name
         obj_resource_times.namespace = namespace
         obj_resource_times.creation = creationTimestamp
+        obj_resource_times.model_id = model_id
+        obj_resource_times.user_idx = user_idx
+
+        if kind in ("InferenceService", "Revision"):
+            obj_resource_times.conditions = {}
+            for condition in item["status"].get("conditions", []):
+                if not condition["status"]: continue
+
+                ts = datetime.datetime.strptime(condition["lastTransitionTime"], K8S_TIME_FMT)
+                obj_resource_times.conditions[condition["type"]] = ts
 
     return dict(resource_times)
+
 
 @ignore_file_not_found
 def _parse_user_grpc_calls(dirname, ci_pod_dir):
