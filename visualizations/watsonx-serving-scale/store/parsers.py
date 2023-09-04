@@ -429,8 +429,8 @@ def _parse_user_resource_times(dirname, ci_pod_dir):
             return f"model_{model_id}"
 
         if kind == "InferenceService":
+            model_id = isvc_name_to_model_id(name)
             name = isvc_name_to_friendly_name(name)
-            model_id = isvc_name_to_model_id(isvc_name)
             remove_suffix = False
 
         if kind in ("Revision", "Configuration", "Service", "Route"):
@@ -446,14 +446,25 @@ def _parse_user_resource_times(dirname, ci_pod_dir):
             name = generate_name # remove generated suffix
 
         resource_times[f"{kind}/{name}"] = obj_resource_times = types.SimpleNamespace()
+        user_idx = int(namespace.split("-u")[-1])
 
         obj_resource_times.kind = kind
         obj_resource_times.name = name
         obj_resource_times.namespace = namespace
         obj_resource_times.creation = creationTimestamp
         obj_resource_times.model_id = model_id
+        obj_resource_times.user_idx = user_idx
+
+        if kind in ("InferenceService", "Revision"):
+            obj_resource_times.conditions = {}
+            for condition in item["status"].get("conditions", []):
+                if not condition["status"]: continue
+
+                ts = datetime.datetime.strptime(condition["lastTransitionTime"], K8S_TIME_FMT)
+                obj_resource_times.conditions[condition["type"]] = ts
 
     return dict(resource_times)
+
 
 @ignore_file_not_found
 def _parse_user_grpc_calls(dirname, ci_pod_dir):

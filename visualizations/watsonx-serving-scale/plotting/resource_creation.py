@@ -128,7 +128,7 @@ class ResourceCreationDelay():
                     data.append({
                         "Base Time": base_time,
                         "Mapping Name": f"Model {-1 if model_id is None else model_id:03d} | {base_name.split('/')[0]} -> {dep_name.split('/')[0]}",
-                        "Model": model_id,
+                        "Model": f"Model {model_id:03d}",
                         "Duration": duration,
                         "User Index": user_idx,
                         "User Name": f"User #{user_idx:03d}",

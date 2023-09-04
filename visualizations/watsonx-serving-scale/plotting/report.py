@@ -186,10 +186,18 @@ class UserProgressReport():
 
         header += [html.H1("Resource Creation")]
 
+        header += Plot_and_Text(f"Interval Between Creations", args)
+
         header += Plot_and_Text(f"Resource Creation Timeline", args)
 
         header += Plot_and_Text(f"Resource Creation Delay", set_config(dict(model_id=None), args))
 
+        header += [html.H1("Resource Conditions")]
+
+        for kind in ("InferenceService", "Revision"):
+            header += Plot_and_Text(f"Conditions Timeline", set_config(dict(kind=kind), args))
+
+            header += Plot_and_Text(f"Conditions in State Timeline", set_config(dict(kind=kind), args))
 
         return None, header
 
