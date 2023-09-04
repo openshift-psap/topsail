@@ -3,5 +3,6 @@ visualize:
   generate:
   - "report: Error report"
   - "report: User Progress"
+  - "report: User Progress Details"
   - "report: Sutest Cluster CPU/Memory Usage"
   - "report: Control Plane Nodes Load"

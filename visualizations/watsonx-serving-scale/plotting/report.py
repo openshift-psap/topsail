@@ -12,6 +12,7 @@ from . import error_report
 def register():
     ControlPlaneReport()
     UserProgressReport()
+    UserProgressDetailsReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -188,6 +189,26 @@ class UserProgressReport():
         header += Plot_and_Text(f"Resource Creation Timeline", args)
 
         header += Plot_and_Text(f"Resource Creation Delay", set_config(dict(model_id=None), args))
+
+
+        return None, header
+
+
+class UserProgressDetailsReport():
+    def __init__(self):
+        self.name = "report: User Progress Details"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+
+        header += error_report._get_all_tests_setup(args)
+
+        header += [html.H1("Resource Creation")]
 
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
