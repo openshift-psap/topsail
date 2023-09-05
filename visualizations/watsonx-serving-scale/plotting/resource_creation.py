@@ -41,7 +41,7 @@ class ResourceCreationTimeline():
                 "Resource": f"Model {pod_time.model_id:03d} | Pod",
                 "Create Time": pod_time.creation_time,
                 "Kind": "Pod",
-                "User Name": f"User {pod_time.user_idx}",
+                "User Name": f"User #{pod_time.user_idx:03}",
                 "User Index": pod_time.user_idx,
             })
 
@@ -52,16 +52,16 @@ class ResourceCreationTimeline():
                     "Resource": f"Model {resource_times.model_id:03d} | {resource_times.kind}",
                     "Create Time": resource_times.creation,
                     "Kind": resource_times.kind,
-                    "User Name": f"User {user_idx}",
+                    "User Name": f"User #{user_idx:03}",
                     "User Index": user_idx,
                 })
 
         if not data:
             return None, "No data available"
 
-        df = pd.DataFrame(data).sort_values(by=["Create Time"], ascending=True)
+        df = pd.DataFrame(data).sort_values(by=["User Index", "Resource"], ascending=True)
 
-        fig = px.scatter(df, x="Create Time", y="Namespace", title="Resource creation time", color="Resource")
+        fig = px.line(df, x="Create Time", y="User Name", title="Resource creation time", color="Resource")
 
         fig.update_layout(xaxis_title="Timeline (in seconds)")
         fig.update_layout(yaxis_title="")
@@ -146,7 +146,7 @@ class ResourceCreationDelay():
                                barmode="overlay",
                                title="Resource creation duration distribution")
         else:
-            df = pd.DataFrame(data).sort_values(by=["Model"], ascending=True)
+            df = pd.DataFrame(data).sort_values(by=["User Name", "Model"], ascending=True)
 
             fig = px.line(df, x="Duration", y="User Name", color="Mapping Name", title="Resource creation duration")
             fig.update_yaxes(autorange="reversed") # otherwise users are listed from the bottom up
