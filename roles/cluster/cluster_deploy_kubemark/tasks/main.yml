@@ -1,0 +1,137 @@
+- name: Enable Tech
+  shell: |
+    set -o pipefail;
+    cat <<EOF | kubectl apply -f -
+    apiVersion: config.openshift.io/v1
+    kind: FeatureGate
+    metadata:
+      name: cluster
+    spec:
+      featureSet: TechPreviewNoUpgrade
+    EOF
+
+- name: Install clusterctl
+  shell: |
+    curl -sSf --silent -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.4.3/clusterctl-linux-amd64 -o /tmp/clusterctl
+    chmod +x /tmp/clusterctl
+
+- name: Prepare the config file
+  shell: |
+    cat <<EOF > {{ artifact_extra_logs_dir }}/clusterctl.yaml
+    providers:
+    - name: "kubemark"
+      url: "https://github.com/kubernetes-sigs/cluster-api-provider-kubemark/releases/v0.6.0/infrastructure-components.yaml"
+      type: "InfrastructureProvider"
+    EOF
+
+- name: Check if the capi-system namespace exits
+  shell:
+    oc get ns capi-system -oname 2>/dev/null
+  register: has_capi_system_namespace_cmd
+  failed_when: false
+
+- name: Initialize kubemark provider
+  shell:
+    /tmp/clusterctl init
+       --infrastructure kubemark
+       --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+  when: has_capi_system_namespace_cmd.rc != 0
+
+# Workarounds
+
+- name: Wait for the capi-system namespace to appear
+  shell:
+    oc get ns capi-system -oname 2>/dev/null
+  register: has_namespace_cmd
+  until: has_namespace_cmd.rc == 0
+  retries: 20
+  delay: 10
+
+- name: Apply the workaround 1
+  shell: |
+    oc adm policy add-scc-to-user privileged -z capi-manager -n capi-system
+    oc delete replicaset --all  -n capi-system --ignore-not-found
+
+# Workaround 2
+- name: Wait for the capi-kubeadm-bootstrap-system namespace to appear
+  shell:
+    oc get ns capi-kubeadm-bootstrap-system -oname 2>/dev/null
+  register: has_namespace_cmd
+  until: has_namespace_cmd.rc == 0
+  retries: 20
+  delay: 10
+
+- name: Apply the workaround 2
+  shell: |
+    oc adm policy add-scc-to-user privileged -z capi-kubeadm-bootstrap-manager -n capi-kubeadm-bootstrap-system
+    oc delete replicaset --all -n capi-kubeadm-bootstrap-system
+
+# Workaround 3
+- name: Apply the workaround 3
+  shell: |
+    oc adm policy add-scc-to-user privileged -z capi-kubeadm-control-plane-manager -n capi-kubeadm-control-plane-system
+    oc delete replicaset --all  -n capi-kubeadm-control-plane-system
+
+# End of the work around
+
+- name: Wait for the deployment to be ready
+  command:
+    oc get deploy/capi-controller-manager -n capi-system -ojsonpath={.status.readyReplicas}
+  register: deployments_ready
+  retries: 20
+  delay: 10
+  until: deployments_ready.stdout | length > 0
+
+- name: Wait for the deployment to be ready
+  command:
+    oc get deploy/capi-kubeadm-bootstrap-controller-manager -n capi-kubeadm-bootstrap-system -ojsonpath={.status.readyReplicas}
+  register: deployments_ready
+  retries: 20
+  delay: 10
+  until: deployments_ready.stdout | length > 0
+
+- name: Generate the kubemark template
+  shell:
+    /tmp/clusterctl generate cluster wow
+        --infrastructure kubemark
+        --kubernetes-version 1.26.6
+        --control-plane-machine-count=1
+        --worker-machine-count=4
+        --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+        > "{{ artifact_extra_logs_dir }}/kubemark_template.yaml"
+
+- name: Apply the kubemark template
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/kubemark_template.yaml"
+
+- name: Prepare the kubemark cluster
+  shell: |
+    set -o pipefail;
+
+    CLUSTER_NAME=wow
+    NAMESPACE=capi-system
+
+    cat <<EOF | tee "{{ artifact_extra_logs_dir }}/kubemark_cluster.yaml" | oc apply -f- --dry-run=server
+    apiVersion: cluster.x-k8s.io/v1beta1
+    kind: Cluster
+    metadata:
+      name: "${CLUSTER_NAME}"
+      namespace: "${NAMESPACE}"
+    spec:
+      clusterNetwork:
+        services:
+          cidrBlocks: ${SERVICE_CIDR:=["10.128.0.0/12"]}
+        pods:
+          cidrBlocks: ${POD_CIDR:=["192.168.0.0/16"]}
+        serviceDomain: ${SERVICE_DOMAIN:="cluster.local"}
+      infrastructureRef: {}
+      #   apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      #   kind: DockerCluster
+      #   name: "${CLUSTER_NAME}"
+      #   namespace: "${NAMESPACE}"
+      controlPlaneRef:
+        kind: KubeadmControlPlane
+        apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+        name: "${CLUSTER_NAME}-control-plane"
+        namespace: "${NAMESPACE}"
+    EOF
