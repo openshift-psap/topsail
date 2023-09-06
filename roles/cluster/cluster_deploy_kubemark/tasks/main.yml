@@ -12,7 +12,7 @@
 
 - name: Install clusterctl
   shell: |
-    curl -sSf --silent -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.4.3/clusterctl-linux-amd64 -o /tmp/clusterctl
+    curl -sSf --silent -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.5.1/clusterctl-linux-amd64 -o /tmp/clusterctl
     chmod +x /tmp/clusterctl
 
 - name: Prepare the config file
