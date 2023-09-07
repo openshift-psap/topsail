@@ -1,3 +1,20 @@
+- name: Define versions and properties
+  set_fact:
+    clusterctl_version: v1.5.1
+    capi_kubemark_version: v0.6.0
+    capi_operator_version: main
+    k8s_version: 1.26.6
+    kubemark_worker_machine_count: 4
+
+- name: Get the name of the cluster
+  command:
+    oc get infrastructure cluster -o jsonpath="{.status.infrastructureName}"
+  register: cluster_name_cmd
+
+- name: Save the cluster name
+  set_fact:
+    cluster_name: "{{ cluster_name_cmd.stdout }}"
+
 - name: Enable Tech
   shell: |
     set -o pipefail;
@@ -12,7 +29,7 @@
 
 - name: Install clusterctl
   shell: |
-    curl -sSf --silent -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.5.1/clusterctl-linux-amd64 -o /tmp/clusterctl
+    curl -sSf --silent -L https://github.com/kubernetes-sigs/cluster-api/releases/download/{{ clusterctl_version }}/clusterctl-linux-amd64 -o /tmp/clusterctl
     chmod +x /tmp/clusterctl
 
 - name: Prepare the config file
@@ -20,7 +37,7 @@
     cat <<EOF > {{ artifact_extra_logs_dir }}/clusterctl.yaml
     providers:
     - name: "kubemark"
-      url: "https://github.com/kubernetes-sigs/cluster-api-provider-kubemark/releases/v0.6.0/infrastructure-components.yaml"
+      url: "https://github.com/kubernetes-sigs/cluster-api-provider-kubemark/releases/{{ capi_kubemark_version }}/infrastructure-components.yaml"
       type: "InfrastructureProvider"
     EOF
 
@@ -37,7 +54,9 @@
        --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
   when: has_capi_system_namespace_cmd.rc != 0
 
-# Workarounds
+# Beginning of the work arounds
+
+# Workaround 1
 
 - name: Wait for the capi-system namespace to appear
   shell:
@@ -90,16 +109,40 @@
   delay: 10
   until: deployments_ready.stdout | length > 0
 
-- name: Generate the kubemark template
+# ---
+
+- name: Get the CAPI AWS cluster template
   shell:
-    /tmp/clusterctl generate cluster wow
+    curl -Ssf https://raw.githubusercontent.com/openshift/cluster-capi-operator/{{ capi_operator_version }}/hack/clusters/templates/aws.yaml > "{{ artifact_extra_logs_dir }}/capi_aws_template.yaml"
+
+- name: Get the CAPI AWS cluster template
+  shell:
+    curl -Ssf https://raw.githubusercontent.com/openshift/cluster-capi-operator/{{ capi_operator_version }}/hack/clusters/templates/core.yaml > "{{ artifact_extra_logs_dir }}/capi_core_template.yaml"
+
+- name: Create the AWSCluster and Cluster resources
+  shell: |
+    set -o pipefail;
+
+    # based on https://github.com/openshift/cluster-capi-operator/blob/main/hack/clusters/create-aws.sh
+
+    export CLUSTER_NAME="{{ cluster_name }}"
+    export AWS_REGION=$(oc get machineset.machine.openshift.io -n openshift-machine-api -o jsonpath="{.items[0].spec.template.spec.providerSpec.value.placement.region}")
+    export INFRASTRUCTURE_KIND=AWSCluster
+
+    cat "{{ artifact_extra_logs_dir }}/capi_aws_template.yaml" | envsubst | oc apply -f-
+    cat "{{ artifact_extra_logs_dir }}/capi_core_template.yaml" | envsubst | oc apply -f-
+
+# ---
+
+- name: Generate the kubemark cluster resources
+  shell:
+    /tmp/clusterctl generate cluster "{{ cluster_name }}"
         --infrastructure kubemark
-        --kubernetes-version 1.26.6
-        --control-plane-machine-count=1
-        --worker-machine-count=4
+        --kubernetes-version {{ k8s_version }}
+        --worker-machine-count={{kubemark_worker_machine_count}}
         --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
-        > "{{ artifact_extra_logs_dir }}/kubemark_template.yaml"
+        > "{{ artifact_extra_logs_dir }}/kubemark_cluster.yaml"
 
 - name: Apply the kubemark template
   command:
-    oc apply -f "{{ artifact_extra_logs_dir }}/kubemark_template.yaml"
+    oc apply -f "{{ artifact_extra_logs_dir }}/kubemark_cluster.yaml"
