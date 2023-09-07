@@ -38,10 +38,11 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
     return proc
 
 class Parallel(object):
-    def __init__(self, name, exit_on_exception=True):
+    def __init__(self, name, exit_on_exception=True, dedicated_dir=True):
         self.name = name
         self.parallel_tasks = None
         self.exit_on_exception = exit_on_exception
+        self.dedicated_dir = dedicated_dir
 
     def __enter__(self):
         self.parallel_tasks = []
@@ -57,8 +58,13 @@ class Parallel(object):
             logging.warning(f"An exception occured while preparing the '{self.name}' Parallel execution ...")
             return False
 
-        next_count = env.next_artifact_index()
-        with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__{self.name}"):
+        if self.dedicated_dir:
+            next_count = env.next_artifact_index()
+            context = env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__{self.name}")
+        else:
+            context = open("/dev/null") # dummy context
+
+        with context:
             try:
                 joblib.Parallel(n_jobs=-1, backend="threading")(self.parallel_tasks)
             except Exception as e:
