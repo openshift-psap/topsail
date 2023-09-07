@@ -4,6 +4,7 @@
     capi_kubemark_version: v0.6.0
     capi_operator_version: main
     kubemark_worker_machine_count: 4
+    capi_namespace: openshift-cluster-api
 
 - name: Get the name of the cluster
   command:
@@ -125,6 +126,14 @@
   shell:
     curl -Ssf https://raw.githubusercontent.com/openshift/cluster-capi-operator/{{ capi_operator_version }}/hack/clusters/templates/core.yaml > "{{ artifact_extra_logs_dir }}/capi_core_template.yaml"
 
+- name: Wait for the capi namespace to appear
+  shell:
+    oc get ns "{{ capi_namespace }}" -oname 2>/dev/null
+  register: has_namespace_cmd
+  until: has_namespace_cmd.rc == 0
+  retries: 20
+  delay: 10
+
 - name: Create the AWSCluster and Cluster resources
   shell: |
     set -o pipefail;
@@ -135,18 +144,21 @@
     export AWS_REGION=$(oc get machineset.machine.openshift.io -n openshift-machine-api -o jsonpath="{.items[0].spec.template.spec.providerSpec.value.placement.region}")
     export INFRASTRUCTURE_KIND=AWSCluster
 
-    cat "{{ artifact_extra_logs_dir }}/capi_aws_template.yaml" | envsubst | oc apply -f-
-    cat "{{ artifact_extra_logs_dir }}/capi_core_template.yaml" | envsubst | oc apply -f-
+    cat "{{ artifact_extra_logs_dir }}/capi_aws_template.yaml" | envsubst | oc apply -f- -n "{{ capi_namespace }}"
+    cat "{{ artifact_extra_logs_dir }}/capi_core_template.yaml" | envsubst | oc apply -f- -n "{{ capi_namespace }}"
 
 # ---
 
 - name: Generate the kubemark cluster resources
   shell:
+    set -o pipefail;
+
     /tmp/clusterctl generate cluster "{{ cluster_name }}"
         --infrastructure kubemark
         --kubernetes-version {{ k8s_version }}
         --worker-machine-count={{kubemark_worker_machine_count}}
         --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+      | yq '.metadata.namespace = "{{ capi_namespace }}"'
         > "{{ artifact_extra_logs_dir }}/kubemark_cluster.yaml"
 
 - name: Apply the kubemark template
