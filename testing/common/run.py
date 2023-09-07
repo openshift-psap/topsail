@@ -12,8 +12,10 @@ from . import env
 # create new process group, become its leader
 os.setpgrp()
 
-def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None, stdin_file=None):
-    logging.info(f"run: {command}")
+def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None, stdin_file=None, log_command=True):
+    if log_command:
+        logging.info(f"run: {command}")
+
     args = {}
 
     args["cwd"] = cwd
