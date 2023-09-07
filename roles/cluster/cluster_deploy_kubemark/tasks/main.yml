@@ -3,7 +3,6 @@
     clusterctl_version: v1.5.1
     capi_kubemark_version: v0.6.0
     capi_operator_version: main
-    k8s_version: 1.26.6
     kubemark_worker_machine_count: 4
 
 - name: Get the name of the cluster
@@ -11,9 +10,16 @@
     oc get infrastructure cluster -o jsonpath="{.status.infrastructureName}"
   register: cluster_name_cmd
 
+- name: Get the K9s version of the cluster
+  shell:
+    set -o pipefail;
+    oc version -ojson | jq -r .serverVersion.gitVersion | cut -d+ -f1 | cut -b2-
+  register: k8s_version_cmd
+
 - name: Save the cluster name
   set_fact:
     cluster_name: "{{ cluster_name_cmd.stdout }}"
+    k8s_version: "{{ k8s_version_cmd.stdout }}"
 
 - name: Enable Tech
   shell: |
