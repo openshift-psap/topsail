@@ -134,6 +134,11 @@ def generate_visualization(idx):
 
     generate_url = "stats=" + "&stats=".join(generate_list)
 
+    mode = config.ci_artifacts.get_config("matbench.download.mode")
+    if mode != "prefer_cache":
+        logging.info(f"Download mode set to '{mode}', ignoring the parser cache.")
+        os.environ["MATBENCH_STORE_IGNORE_CACHE"] = "y"
+
     if run.run(f"PATH=$PATH:/tmp/prometheus/bin matbench parse --output-matrix {env.ARTIFACT_DIR}/internal_matrix.json |& tee > {env.ARTIFACT_DIR}/_matbench_parse.log", check=False).returncode != 0:
         raise RuntimeError("Failed to parse the results ...")
 
