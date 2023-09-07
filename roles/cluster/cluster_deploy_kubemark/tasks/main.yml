@@ -134,9 +134,18 @@
   retries: 20
   delay: 10
 
+- name: Wait for the AWSCluster CRD to appear
+  shell:
+    oc get crd awsclusters.infrastructure.cluster.x-k8s.io -oname 2>/dev/null
+  register: has_crd_cmd
+  until: has_crd_cmd.rc == 0
+  retries: 30
+  delay: 10
+
 - name: Create the AWSCluster and Cluster resources
   shell: |
     set -o pipefail;
+    set -e
 
     # based on https://github.com/openshift/cluster-capi-operator/blob/main/hack/clusters/create-aws.sh
 
