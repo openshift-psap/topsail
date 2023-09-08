@@ -476,3 +476,15 @@ class Cluster:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("cluster_deploy_kubemark")
+    @AnsibleMappedParams
+    def deploy_kubemark(self):
+        """
+        Deploy the Kubemark Cluster-API provider
+
+        Args:
+        """
+
+        return RunAnsibleRole(locals())
