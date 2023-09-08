@@ -49,6 +49,11 @@ ci_presets:
     rhods.operator.customize.kserve.cpu: 500m
     rhods.operator.customize.kserve.memory: 500Mi
 
+  customize_smmr:
+    watsonx_serving.customize.serverless.enabled: true
+    watsonx_serving.customize.serverless.pilot.limits.cpu: 1500m
+    watsonx_serving.customize.serverless.pilot.limits.memory: 1Gi
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -179,6 +184,13 @@ watsonx_serving:
   model:
     id: flan-t5-small-caikit
     query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'
+  customize:
+    serverless:
+      enabled: false
+      pilot:
+        limits:
+          cpu: 1500m
+          memory: 1Gi
 
 gpu:
   time_sharing:

@@ -27,12 +27,6 @@
        > "{{ artifact_extra_logs_dir }}/DataScienceCluster.yaml"
   ignore_errors: true
 
-- name: Save the state of the kserve configuration
-  shell: |
-    oc get smmr/default -n istio-system -oyaml \
-       > "{{ artifact_extra_logs_dir }}/smmr_default.yaml"
-  ignore_errors: true
-
 - name: Get the json of the pods
   shell:
     oc get pods -ojson
@@ -53,6 +47,9 @@
        -lcomponent=predictor
        -A
        > "{{ artifact_extra_logs_dir }}/predictor_pods.status"
+
+- name: Capture the Serverless state
+  include_tasks: serverless.yaml
 
 - name: Capture the Pods logs
   include_tasks: capture_pods.yaml

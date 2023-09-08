@@ -1,0 +1,40 @@
+---
+- name: serverless | Create the artifact directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/serverless"
+    state: directory
+    mode: '0755'
+
+- name: serverless | Capture the ServiceMeshMemberRoll
+  shell:
+    oc get smmr/default
+       -n istio-system
+       -oyaml
+       > "{{ artifact_extra_logs_dir }}/serverless/smmr.yaml"
+  ignore_errors: true
+
+- name: serverless | Capture the SMCP
+  shell:
+    oc get smcp/minimal
+       -n istio-system
+       -oyaml
+       > "{{ artifact_extra_logs_dir }}/serverless/smcp.yaml"
+
+- name: serverless | Capture the knative-serving
+  shell:
+    oc get knativeserving/knative-serving
+       -n knative-serving
+       -oyaml
+       > "{{ artifact_extra_logs_dir }}/serverless/knative-serving.yaml"
+
+- name: serverless | Capture the gateway
+  shell:
+    oc get gateway -n knative-serving
+       -oyaml
+       > "{{ artifact_extra_logs_dir }}/serverless/gateways.yaml"
+
+- name: serverless | Capture the VirtualService
+  shell:
+    oc get VirtualService -A
+       -oyaml
+       > "{{ artifact_extra_logs_dir }}/serverless/virtualservice.yaml"
