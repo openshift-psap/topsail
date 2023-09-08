@@ -49,7 +49,20 @@ def customize_rhods():
         run.run(f"oc get deploy/kserve-controller-manager -n redhat-ods-applications -ojson "
                 f"| jq --arg mem '{mem}' --arg cpu '{cpu}' '.spec.template.spec.containers[0].resources.limits.cpu = $cpu | .spec.template.spec.containers[0].resources.limits.memory = $mem' "
                 f"| oc apply -f-")
+        run.run("oc get deploy/kserve-controller-manager -n redhat-ods-applications -oyaml > $ARTIFACT_DIR/deploy_kserve-controller-manager.customized.yaml")
 
+
+def customize_watsonx_serving():
+
+    if config.ci_artifacts.get_config("watsonx_serving.customize.serverless.enabled"):
+        cpu = config.ci_artifacts.get_config("watsonx_serving.customize.serverless.pilot.limits.cpu")
+        mem = config.ci_artifacts.get_config("watsonx_serving.customize.serverless.pilot.limits.memory")
+        run.run(f"oc get smcp/minimal -n istio-system -ojson "
+                f"| jq --arg mem '{mem}' --arg cpu '{cpu}'"
+                "'.spec.runtime.components.pilot.container.resources.limits.cpu = $cpu | "
+                ".spec.runtime.components.pilot.container.resources.limits.memory = $mem' "
+                f"| oc apply -f-")
+        run.run("oc get smcp/minimal -n istio-system -oyaml > $ARTIFACT_DIR/smcp_minimal.customized.yaml")
 
 def prepare():
     if not PSAP_ODS_SECRET_PATH.exists():
@@ -66,6 +79,7 @@ def prepare():
     run.run("testing/watsonx-serving/poc/prepare.sh |& tee -a $ARTIFACT_DIR/000_prepare_sh.log")
 
     customize_rhods()
+    customize_watsonx_serving()
 
 
 def scale_up_sutest():
