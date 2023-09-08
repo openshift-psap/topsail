@@ -173,3 +173,7 @@
 - name: Apply the kubemark template
   command:
     oc apply -f "{{ artifact_extra_logs_dir }}/kubemark_cluster.yaml"
+
+- name: Save the deployments of the capi namespace
+  shell:
+    oc get deploy -n {{ capi_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/capi_deployments.yaml"
