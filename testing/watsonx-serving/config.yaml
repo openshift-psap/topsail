@@ -27,6 +27,9 @@ ci_presets:
     clusters.sutest.is_metal: false
     clusters.driver.is_metal: false
 
+  kubemark:
+    tests.mode: kubemark
+
   gpu:
     tests.want_gpu: true
     watsonx_serving.serving_runtime.resource_request["nvidia.com/gpu"]: 1
