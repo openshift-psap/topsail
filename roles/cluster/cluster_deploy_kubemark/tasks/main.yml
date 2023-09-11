@@ -192,6 +192,19 @@
      | oc replace -f-
 
 # ---
+
+- name: Wait for the CAPI deployments to be ready
+  shell:
+    set -o pipefail;
+    oc get deploy -n "{{ capi_namespace }}" -ojsonpath='{range .items[*]}{.metadata.name}{" ="}{.status.unavailableReplicas}{"=\n"}{end}' | grep -v "=="
+  register: has_unavailable_deployment
+  until: not has_unavailable_deployment.rc != 1
+  failed_when: has_unavailable_deployment.rc != 1
+  retries: 90
+  delay: 30
+
+# ---
+
 - name: Create the CAPI AWSCluster
   shell: |
     set -o pipefail;
@@ -233,7 +246,6 @@
 - name: Create the kubemark cluster resources
   shell:
     set -o pipefail;
-
     /tmp/clusterctl generate cluster "{{ cluster_name }}"
         -v10
         --infrastructure kubemark:{{ capi_kubemark_version }}
