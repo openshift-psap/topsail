@@ -113,12 +113,37 @@
 
 - name: Initialize kubemark provider
   shell:
+    set -o pipefail;
+    set -e;
+
     /tmp/clusterctl init
+       -v10
        --target-namespace {{ capi_namespace }}
-       --infrastructure kubemark
+       --config {{ artifact_extra_logs_dir }}/clusterctl.yaml;
+
+    /tmp/clusterctl generate provider
+       -v10
+       --target-namespace {{ capi_namespace }}
        --bootstrap kubeadm
+       --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+       | tee "{{ artifact_extra_logs_dir }}/src/stack_bs_kubeadm.yaml"
+       | oc apply -f-;
+
+    /tmp/clusterctl generate provider
+       -v10
+       --target-namespace {{ capi_namespace }}
        --control-plane kubeadm
        --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+       | tee "{{ artifact_extra_logs_dir }}/src/stack_cp_kubemark.yaml"
+       | oc apply -f-;
+
+   /tmp/clusterctl generate provider
+       -v10
+       --target-namespace {{ capi_namespace }}
+       --infrastructure kubemark
+       --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+       | tee "{{ artifact_extra_logs_dir }}/src/stack_infra_kubemark.yaml"
+       | oc apply -f-;
 
 # ---
 
@@ -187,6 +212,8 @@
 
 - name: Get the CAPI Core cluster template
   shell: |
+    set -o pipefail
+
     cat <<EOF | tee "{{ artifact_extra_logs_dir }}/src/capi_core_cluster.yaml" | oc apply -f-
     apiVersion: cluster.x-k8s.io/v1beta1
     kind: Cluster
@@ -208,7 +235,8 @@
     set -o pipefail;
 
     /tmp/clusterctl generate cluster "{{ cluster_name }}"
-        --infrastructure kubemark
+        -v10
+        --infrastructure kubemark:{{ capi_kubemark_version }}
         --kubernetes-version {{ k8s_version }}
         --worker-machine-count={{kubemark_worker_machine_count}}
         --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
@@ -218,40 +246,44 @@
 
 # ---
 
-- name: Wait for the AWCluster to turn ready
-  command:
-    oc get awscluster/"{{ cluster_name }}"
-       -n {{ capi_namespace }}
-       -ojsonpath={.status.ready}
-  register: aws_cluster_ready_cmd
-  until: aws_cluster_ready_cmd.stdout == "true"
-  retries: 30
-  delay: 20
+- name: Wait for the AWCluster to turn ready and capture artifacts
+  block:
+  - name: Wait for the AWCluster to turn ready
+    command:
+      oc get awscluster/"{{ cluster_name }}"
+         -n {{ capi_namespace }}
+         -ojsonpath={.status.ready}
+    register: aws_cluster_ready_cmd
+    until: aws_cluster_ready_cmd.stdout == "true"
+    retries: 30
+    delay: 20
+  always:
+  - name: Capture the state of the cluster
+    shell:
+      set -e
 
-# ---
+      /tmp/clusterctl describe cluster "{{ cluster_name }}"
+          --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+          -n {{ capi_namespace }}
+          > "{{ artifact_extra_logs_dir }}/artifacts/cluster.desc";
 
+      oc get cluster/"{{ cluster_name }}"
+         -oyaml
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/cluster.yaml";
 
-- name: Capture the state of the cluster
-  shell:
-    set -e
+      oc get awscluster/"{{ cluster_name }}"
+         -oyaml
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/aws_cluster.yaml";
 
-    /tmp/clusterctl describe cluster "{{ cluster_name }}"
-        --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
-        -n {{ capi_namespace }}
-        > "{{ artifact_extra_logs_dir }}/cluster.desc";
+      oc get machinedeployments.cluster.x-k8s.io
+         -oyaml
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/machinedeployments.yaml";
 
-    oc get cluster/"{{ cluster_name }}"
-       -oyaml
-       -n {{ capi_namespace }}
-       > "{{ artifact_extra_logs_dir }}/cluster.yaml";
-
-    oc get machinedeployments.cluster.x-k8s.io
-       -oyaml
-       -n {{ capi_namespace }}
-       > "{{ artifact_extra_logs_dir }}/machinedeployments.yaml";
-
-- name: Capture the state of the pods
-  shell:
-    oc get pods
-       -n {{ capi_namespace }}
-       > "{{ artifact_extra_logs_dir }}/capi_pods.status"
+  - name: Capture the state of the pods
+    shell:
+      oc get pods
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/capi_pods.status"
