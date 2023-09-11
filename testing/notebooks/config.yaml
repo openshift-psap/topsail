@@ -28,7 +28,7 @@ ci_presets:
     clusters.create.ocp.control_plane.type: m6i.2xlarge
     clusters.create.ocp.workers.type: m6i.2xlarge
     clusters.create.ocp.tags.Project: PSAP/RHODS/gating
-    clusters.create.ocp.tags.TicketId: "86"
+    clusters.create.ocp.tags.TicketId:
 
     tests.notebooks.identifier: gating_test
     tests.notebooks.test_flavor: gating
@@ -50,7 +50,7 @@ ci_presets:
 
     clusters.create.type: ocp
     clusters.create.ocp.tags.Project: PSAP/RHODS/large_scale
-    clusters.create.ocp.tags.TicketId: "85"
+    clusters.create.ocp.tags.TicketId:
     clusters.create.ocp.workers.count: 4
     clusters.create.ocp.workers.type: m6i.4xlarge
     clusters.create.ocp.compute.type: m6i.8xlarge
