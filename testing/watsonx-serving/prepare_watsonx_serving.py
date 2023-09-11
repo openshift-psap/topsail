@@ -58,9 +58,8 @@ def customize_watsonx_serving():
         cpu = config.ci_artifacts.get_config("watsonx_serving.customize.serverless.pilot.limits.cpu")
         mem = config.ci_artifacts.get_config("watsonx_serving.customize.serverless.pilot.limits.memory")
         run.run(f"oc get smcp/minimal -n istio-system -ojson "
-                f"| jq --arg mem '{mem}' --arg cpu '{cpu}'"
-                "'.spec.runtime.components.pilot.container.resources.limits.cpu = $cpu | "
-                ".spec.runtime.components.pilot.container.resources.limits.memory = $mem' "
+                f"| jq --arg mem '{mem}' --arg cpu '{cpu}' "
+                "'.spec.runtime.components.pilot.container.resources.limits.cpu = $cpu | .spec.runtime.components.pilot.container.resources.limits.memory = $mem' "
                 f"| oc apply -f-")
         run.run("oc get smcp/minimal -n istio-system -oyaml > $ARTIFACT_DIR/smcp_minimal.customized.yaml")
 
