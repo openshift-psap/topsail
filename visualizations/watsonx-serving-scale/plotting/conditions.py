@@ -22,6 +22,7 @@ def register():
 def generateCreationData(entry, kind):
     data = []
     for user_idx, user_data in entry.results.user_data.items():
+        if not user_data.resource_times: continue
 
         previous_creation = None
         for resource_name, resource_times in sorted(user_data.resource_times.items(), key=lambda kv:kv[1].model_id):
@@ -49,6 +50,8 @@ def generateCreationData(entry, kind):
 def generateConditionsTimeline(entry, kind, user_in_owner=False, user_in_state=False):
     data = []
     for user_idx, user_data in entry.results.user_data.items():
+        if not user_data.resource_times: continue
+
         for resource_name, resource_times in user_data.resource_times.items():
             if kind and resource_times.kind != kind: continue
             if not hasattr(resource_times, "conditions"): continue

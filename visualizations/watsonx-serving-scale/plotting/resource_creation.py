@@ -46,6 +46,8 @@ class ResourceCreationTimeline():
             })
 
         for user_idx, user_data in entry.results.user_data.items():
+            if not user_data.resource_times: continue
+
             for resource_name, resource_times in user_data.resource_times.items():
                 data.append({
                     "Namespace" : resource_times.namespace,
@@ -115,13 +117,14 @@ class ResourceCreationDelay():
         data = []
         for user_idx, user_data in entry.results.user_data.items():
             for base_name, dependencies in mapping.items():
-                try:
-                    base_time = user_data.resource_times[base_name].creation
+                try: base_time = user_data.resource_times[base_name].creation
                 except KeyError: continue
+                except TypeError: continue
 
                 for dep_name in dependencies:
                     try: dep_time = user_data.resource_times[dep_name].creation
                     except KeyError: continue
+                    except TypeError: continue
 
                     duration = (dep_time - base_time).total_seconds()
                     model_id = user_data.resource_times[dep_name].model_id
