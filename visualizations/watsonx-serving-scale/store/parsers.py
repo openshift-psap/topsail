@@ -402,7 +402,11 @@ def _parse_pod_times(dirname):
 def _parse_user_resource_times(dirname, ci_pod_dir):
     resource_times = {}
 
-    _file_path = list((dirname / ci_pod_dir).glob("*__watsonx_serving__capture_state"))[0] / "serving.json"
+    glob_expansion = list((dirname / ci_pod_dir).glob("*__watsonx_serving__capture_state"))
+    if not glob_expansion:
+        raise FileNotFoundError(f"'*__watsonx_serving__capture_state' not found in {ci_pod_dir}")
+
+    _file_path = glob_expansion[0] / "serving.json"
     file_path = _file_path.relative_to(dirname)
 
     with open(register_important_file(dirname, file_path)) as f:
