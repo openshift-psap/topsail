@@ -110,16 +110,21 @@ queue ${ARTIFACT_DIR}/oc_cmds/clusterserviceversions $OC get clusterserviceversi
 queue ${ARTIFACT_DIR}/packagemanifests.json $OC get packagemanifests --all-namespaces -o json
 queue ${ARTIFACT_DIR}/oc_cmds/packagemanifests $OC get packagemanifests --all-namespaces
 
+queue ${ARTIFACT_DIR}/infrastructure.yaml $OC get infrastructure/cluster
+
 # gather nodes first in parallel since they may contain the most relevant debugging info
-while IFS= read -r i; do
-  echo "WARNING: gathering of NODES journals/audit disabled (harcoded)"
-  continue
-  mkdir -p ${ARTIFACT_DIR}/nodes/$i
-  queue ${ARTIFACT_DIR}/nodes/$i/heap oc --insecure-skip-tls-verify get --request-timeout=20s --raw /api/v1/nodes/$i/proxy/debug/pprof/heap
-  FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/journal.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false
-  FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/journal-previous.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false --boot=-1
-  FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/audit.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false --path=audit/audit.log
-done < /tmp/nodes
+platform_type=$(oc get infrastructure/cluster -ojsonpath={.status.platformStatus.type})
+if [[ "$platform_type" == "BareMetal" ]]; then
+    echo "WARNING: gathering of node logs disabled on bare-metal platforms"
+else
+    while IFS= read -r i; do
+        mkdir -p ${ARTIFACT_DIR}/nodes/$i
+        queue ${ARTIFACT_DIR}/nodes/$i/heap oc --insecure-skip-tls-verify get --request-timeout=20s --raw /api/v1/nodes/$i/proxy/debug/pprof/heap
+        FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/journal.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false
+        FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/journal-previous.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false --boot=-1
+        FILTER=gzip queue ${ARTIFACT_DIR}/nodes/$i/audit.gz oc --insecure-skip-tls-verify adm node-logs $i --unify=false --path=audit/audit.log
+    done < /tmp/nodes
+fi
 
 # gather nodes first in parallel since they may contain the most relevant debugging info
 while IFS= read -r i; do
@@ -130,9 +135,10 @@ done < /tmp/control_plan_nodes
 echo "INFO: gathering the audit logs for each master"
 paths=(openshift-apiserver kube-apiserver oauth-apiserver etcd)
 for path in "${paths[@]}" ; do
-  echo "WARNING: gathering the audit logs '$path' disabled (hardcoded)"
-  continue
-
+  if [[ "$platform_type" == "BareMetal" ]]; then
+      echo "WARNING: gathering of audit logs on the master disabled on baremetal platforms."
+      continue
+  fi
   output_dir="${ARTIFACT_DIR}/audit_logs/$path"
   mkdir -p "$output_dir"
 
