@@ -186,6 +186,8 @@ class UserProgressReport():
 
         header += [html.H1("Resource Creation")]
 
+        header += Plot_and_Text(f"Inference Services Progress", args)
+
         header += Plot_and_Text(f"Interval Between Creations", args)
 
         header += Plot_and_Text(f"Resource Creation Timeline", args)
