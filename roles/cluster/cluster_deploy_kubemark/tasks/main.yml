@@ -220,6 +220,8 @@
     metadata:
       name: {{ cluster_name }}
       namespace: {{ capi_namespace }}
+      annotations:
+        cluster.x-k8s.io/managed-by: ""
     spec:
       region: ${AWS_REGION}
     EOF
