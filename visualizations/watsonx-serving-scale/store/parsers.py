@@ -6,6 +6,7 @@ import os
 import json
 import datetime
 import dateutil
+import urllib.parse
 
 import jsonpath_ng
 
@@ -92,9 +93,11 @@ def _parse_local_env(dirname):
     try:
         with open(dirname / "source_url") as f: # not an important file
             from_local_env.source_url = f.read().strip()
-            from_local_env.artifacts_basedir = pathlib.Path(from_local_env.source_url.replace("https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/", "/"))
+            from_local_env.artifacts_basedir = pathlib.Path(urllib.parse.urlparse(from_local_env.source_url).path)
     except FileNotFoundError as e:
         pass
+
+    logging.info(f"Source_url: {from_local_env.source_url}, artifacts_basedir: {from_local_env.artifacts_basedir}")
 
     if not cli_args.kwargs.get("generate"):
         # running in interactive mode
