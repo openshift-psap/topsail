@@ -254,7 +254,7 @@
         -v10
         --infrastructure kubemark:{{ capi_kubemark_version }}
         --kubernetes-version {{ k8s_version }}
-        --worker-machine-count={{kubemark_worker_machine_count}}
+        --worker-machine-count={{ kubemark_worker_machine_count }}
         --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
       | yq -Y '.metadata.namespace = "{{ capi_namespace }}"'
       | tee "{{ artifact_extra_logs_dir }}/src/kubemark_cluster.yaml"
@@ -276,12 +276,13 @@
   always:
   - name: Capture the state of the cluster
     shell:
-      set -e
+      set -o pipefail;
+      set -e;
 
       /tmp/clusterctl describe cluster "{{ cluster_name }}"
           --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
           -n {{ capi_namespace }}
-          > "{{ artifact_extra_logs_dir }}/artifacts/cluster.desc";
+          | tee "{{ artifact_extra_logs_dir }}/artifacts/cluster.desc";
 
       oc get cluster/"{{ cluster_name }}"
          -oyaml
