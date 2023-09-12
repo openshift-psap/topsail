@@ -24,7 +24,7 @@
     oc get infrastructure cluster -o jsonpath="{.status.infrastructureName}"
   register: cluster_name_cmd
 
-- name: Get the K9s version of the cluster
+- name: Get the K8s version of the cluster
   shell:
     set -o pipefail;
     oc version -ojson | jq -r .serverVersion.gitVersion | cut -d+ -f1 | cut -b2-
@@ -45,23 +45,13 @@
        | tee {{ artifact_extra_logs_dir }}/artifacts/tpnu.json
        | oc apply -f-
 
-- name: Wait for the nodes to be upgraded
-  shell:
-    set -o pipefail;
-    oc get mcp -ojsonpath='{range .items[*]}{.metadata.name}{" ="}{.status.unavailableMachineCount}{"=\n"}{end}' | grep -v "=0="
-  register: has_unavailable_machines
-  until: not has_unavailable_machines.rc != 1
-  failed_when: has_unavailable_machines.rc != 1
-  retries: 90
-  delay: 30
-
 - name: Wait for TPNU to create the openshift-cluster-api namespace
   shell:
     oc get ns openshift-cluster-api -oname 2>/dev/null
   register: has_namespace_cmd
   until: has_namespace_cmd.rc == 0
-  retries: 90
-  delay: 10
+  retries: 30
+  delay: 30
 
 - name: Wait for the coreprovider CRD to appear
   command:
@@ -94,6 +84,18 @@
   until: has_aws_api_cmd.stdout | length > 0
   retries: 30
   delay: 10
+
+- name: Wait for the worker nodes to be upgraded
+  shell:
+    set -o pipefail;
+    oc get mcp -lpools.operator.machineconfiguration.openshift.io/worker
+       -ojsonpath='{range .items[*]}{.metadata.name}{" ="}{.status.unavailableMachineCount}{"=\n"}{end}'
+       | grep -v "=0="
+  register: has_unavailable_machines
+  until: not has_unavailable_machines.rc != 1
+  failed_when: has_unavailable_machines.rc != 1
+  retries: 90
+  delay: 30
 
 # ---
 
