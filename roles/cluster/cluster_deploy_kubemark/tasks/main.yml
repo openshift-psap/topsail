@@ -1,3 +1,16 @@
+---
+- name: Create the source directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
 - name: Define versions and properties
   set_fact:
     clusterctl_version: v1.5.1
@@ -22,17 +35,67 @@
     cluster_name: "{{ cluster_name_cmd.stdout }}"
     k8s_version: "{{ k8s_version_cmd.stdout }}"
 
-- name: Enable Tech
-  shell: |
+# ---
+
+- name: Enable TechPreview
+  shell:
     set -o pipefail;
-    cat <<EOF | kubectl apply -f -
-    apiVersion: config.openshift.io/v1
-    kind: FeatureGate
-    metadata:
-      name: cluster
-    spec:
-      featureSet: TechPreviewNoUpgrade
-    EOF
+    oc get FeatureGate/cluster -ojson
+       | jq '.spec.featureSet = "TechPreviewNoUpgrade"'
+       | tee {{ artifact_extra_logs_dir }}/artifacts/tpnu.json
+       | oc apply -f-
+
+- name: Wait for the nodes to be upgraded
+  shell:
+    set -o pipefail;
+    oc get mcp -ojsonpath='{range .items[*]}{.metadata.name}{" ="}{.status.unavailableMachineCount}{"=\n"}{end}' | grep -v "=0="
+  register: has_unavailable_machines
+  until: not has_unavailable_machines.rc != 1
+  failed_when: has_unavailable_machines.rc != 1
+  retries: 90
+  delay: 30
+
+- name: Wait for TPNU to create the openshift-cluster-api namespace
+  shell:
+    oc get ns openshift-cluster-api -oname 2>/dev/null
+  register: has_namespace_cmd
+  until: has_namespace_cmd.rc == 0
+  retries: 90
+  delay: 10
+
+- name: Wait for the coreprovider CRD to appear
+  command:
+    oc get crd/coreproviders.operator.cluster.x-k8s.io
+       -oname
+       --ignore-not-found
+  register: has_crd_cmd
+  until: has_crd_cmd.stdout | length > 0
+  retries: 60
+  delay: 20
+
+- name: Wait for the cluster-api to be installed
+  shell:
+    oc get coreprovider/cluster-api
+       -n {{ capi_namespace }}
+       -ojsonpath={.status.installedVersion}
+       --ignore-not-found
+  register: has_cluster_api_cmd
+  until: has_cluster_api_cmd.stdout | length > 0
+  retries: 30
+  delay: 10
+
+- name: Wait for the aws provider to be installed
+  shell:
+    oc get infrastructureproviders/aws
+    -n {{ capi_namespace }}
+    -ojsonpath={.status.installedVersion}
+    --ignore-not-found
+  register: has_aws_api_cmd
+  until: has_aws_api_cmd.stdout | length > 0
+  retries: 30
+  delay: 10
+
+# ---
 
 - name: Install clusterctl
   shell: |
@@ -48,132 +111,191 @@
       type: "InfrastructureProvider"
     EOF
 
-- name: Check if the capi-system namespace exits
-  shell:
-    oc get ns capi-system -oname 2>/dev/null
-  register: has_capi_system_namespace_cmd
-  failed_when: false
-
 - name: Initialize kubemark provider
   shell:
+    set -o pipefail;
+    set -e;
+
     /tmp/clusterctl init
+       -v10
+       --target-namespace {{ capi_namespace }}
+       --config {{ artifact_extra_logs_dir }}/clusterctl.yaml;
+
+    /tmp/clusterctl generate provider
+       -v10
+       --target-namespace {{ capi_namespace }}
+       --bootstrap kubeadm
+       --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+       | tee "{{ artifact_extra_logs_dir }}/src/stack_bs_kubeadm.yaml"
+       | oc apply -f-;
+
+    /tmp/clusterctl generate provider
+       -v10
+       --target-namespace {{ capi_namespace }}
+       --control-plane kubeadm
+       --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+       | tee "{{ artifact_extra_logs_dir }}/src/stack_cp_kubemark.yaml"
+       | oc apply -f-;
+
+   /tmp/clusterctl generate provider
+       -v10
+       --target-namespace {{ capi_namespace }}
        --infrastructure kubemark
        --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
-  when: has_capi_system_namespace_cmd.rc != 0
-
-# Beginning of the work arounds
-
-# Workaround 1
-
-- name: Wait for the capi-system namespace to appear
-  shell:
-    oc get ns capi-system -oname 2>/dev/null
-  register: has_namespace_cmd
-  until: has_namespace_cmd.rc == 0
-  retries: 20
-  delay: 10
-
-- name: Apply the workaround 1
-  shell: |
-    oc adm policy add-scc-to-user privileged -z capi-manager -n capi-system
-    oc delete replicaset --all  -n capi-system --ignore-not-found
-
-# Workaround 2
-- name: Wait for the capi-kubeadm-bootstrap-system namespace to appear
-  shell:
-    oc get ns capi-kubeadm-bootstrap-system -oname 2>/dev/null
-  register: has_namespace_cmd
-  until: has_namespace_cmd.rc == 0
-  retries: 20
-  delay: 10
-
-- name: Apply the workaround 2
-  shell: |
-    oc adm policy add-scc-to-user privileged -z capi-kubeadm-bootstrap-manager -n capi-kubeadm-bootstrap-system
-    oc delete replicaset --all -n capi-kubeadm-bootstrap-system
-
-# Workaround 3
-- name: Apply the workaround 3
-  shell: |
-    oc adm policy add-scc-to-user privileged -z capi-kubeadm-control-plane-manager -n capi-kubeadm-control-plane-system
-    oc delete replicaset --all  -n capi-kubeadm-control-plane-system
-
-# End of the work around
-
-- name: Wait for the deployment to be ready
-  command:
-    oc get deploy/capi-controller-manager -n capi-system -ojsonpath={.status.readyReplicas}
-  register: deployments_ready
-  retries: 20
-  delay: 10
-  until: deployments_ready.stdout | length > 0
-
-- name: Wait for the deployment to be ready
-  command:
-    oc get deploy/capi-kubeadm-bootstrap-controller-manager -n capi-kubeadm-bootstrap-system -ojsonpath={.status.readyReplicas}
-  register: deployments_ready
-  retries: 20
-  delay: 10
-  until: deployments_ready.stdout | length > 0
+       | tee "{{ artifact_extra_logs_dir }}/src/stack_infra_kubemark.yaml"
+       | oc apply -f-;
 
 # ---
 
-- name: Get the CAPI AWS cluster template
-  shell:
-    curl -Ssf https://raw.githubusercontent.com/openshift/cluster-capi-operator/{{ capi_operator_version }}/hack/clusters/templates/aws.yaml > "{{ artifact_extra_logs_dir }}/capi_aws_template.yaml"
+# Beginning of the work arounds
 
-- name: Get the CAPI AWS cluster template
-  shell:
-    curl -Ssf https://raw.githubusercontent.com/openshift/cluster-capi-operator/{{ capi_operator_version }}/hack/clusters/templates/core.yaml > "{{ artifact_extra_logs_dir }}/capi_core_template.yaml"
+# Workaround
+- name: Apply the workarounds (controller dying because of OOM)
+  shell: |
+    oc set resources deploy/capk-controller-manager --limits="cpu=0.5,memory=200Mi" -n {{ capi_namespace }}
 
-- name: Wait for the capi namespace to appear
+- name: Apply the workarounds (Pods not starting because of missing privileges)
+  shell: |
+    oc adm policy add-scc-to-user privileged -z capi-kubeadm-bootstrap-manager -n {{ capi_namespace }}
+    oc adm policy add-scc-to-user privileged -z capi-kubeadm-control-plane-manager -n {{ capi_namespace }}
+
+    oc delete replicaset --all -n {{ capi_namespace }}
+
+# ---
+
+# workaround (invalid AWS credentials)
+- name: Wait for the capAWS secret to be created
   shell:
-    oc get ns "{{ capi_namespace }}" -oname 2>/dev/null
-  register: has_namespace_cmd
-  until: has_namespace_cmd.rc == 0
-  retries: 20
+    oc get secret capa-manager-bootstrap-credentials
+       -oname
+       -n {{ capi_namespace }}
+  register: has_secret_cmd
+  until: has_secret_cmd.rc == 0
+  retries: 60
   delay: 10
 
-- name: Wait for the AWSCluster CRD to appear
+- name: Create the capAWS secret
   shell:
-    oc get crd awsclusters.infrastructure.cluster.x-k8s.io -oname 2>/dev/null
-  register: has_crd_cmd
-  until: has_crd_cmd.rc == 0
-  retries: 30
-  delay: 10
+    set -o pipefail;
+    set -e
 
-- name: Create the AWSCluster and Cluster resources
+    AWS_CREDS_FILE=$PSAP_ODS_SECRET_PATH/.awscred;
+    key_id=$(cat "$AWS_CREDS_FILE" | grep aws_access_key_id | head -1 | cut -d" " -f3-);
+    access_key=$(cat "$AWS_CREDS_FILE" | grep aws_secret_access_key | head -1 | cut -d" " -f3-);
+    oc create secret generic capa-manager-bootstrap-credentials
+       --from-file=credentials="$AWS_CREDS_FILE"
+       --from-literal=aws_access_key_id="$key_id"
+       --from-literal=aws_secret_access_key="$access_key"
+       -n "{{ capi_namespace }}"
+       -oyaml
+       --dry-run=client
+     | oc replace -f-
+
+# ---
+
+- name: Wait for the CAPI deployments to be ready
+  shell:
+    set -o pipefail;
+    oc get deploy -n "{{ capi_namespace }}" -ojsonpath='{range .items[*]}{.metadata.name}{" ="}{.status.unavailableReplicas}{"=\n"}{end}' | grep -v "=="
+  register: has_unavailable_deployment
+  until: not has_unavailable_deployment.rc != 1
+  failed_when: has_unavailable_deployment.rc != 1
+  retries: 90
+  delay: 30
+
+# ---
+
+- name: Create the CAPI AWSCluster
   shell: |
     set -o pipefail;
     set -e
 
-    # based on https://github.com/openshift/cluster-capi-operator/blob/main/hack/clusters/create-aws.sh
+    AWS_REGION=$(oc get machineset.machine.openshift.io -n openshift-machine-api -o jsonpath="{.items[0].spec.template.spec.providerSpec.value.placement.region}")
 
-    export CLUSTER_NAME="{{ cluster_name }}"
-    export AWS_REGION=$(oc get machineset.machine.openshift.io -n openshift-machine-api -o jsonpath="{.items[0].spec.template.spec.providerSpec.value.placement.region}")
-    export INFRASTRUCTURE_KIND=AWSCluster
+    cat <<EOF | tee "{{ artifact_extra_logs_dir }}/src/capi_aws_cluster.yaml" | oc apply -f-
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: AWSCluster
+    metadata:
+      name: {{ cluster_name }}
+      namespace: {{ capi_namespace }}
+    spec:
+      region: ${AWS_REGION}
+    EOF
 
-    cat "{{ artifact_extra_logs_dir }}/capi_aws_template.yaml" | envsubst | oc apply -f- -n "{{ capi_namespace }}"
-    cat "{{ artifact_extra_logs_dir }}/capi_core_template.yaml" | envsubst | oc apply -f- -n "{{ capi_namespace }}"
+
+- name: Get the CAPI Core cluster template
+  shell: |
+    set -o pipefail
+
+    cat <<EOF | tee "{{ artifact_extra_logs_dir }}/src/capi_core_cluster.yaml" | oc apply -f-
+    apiVersion: cluster.x-k8s.io/v1beta1
+    kind: Cluster
+    metadata:
+      name: {{ cluster_name }}
+      namespace: {{ capi_namespace }}
+    spec:
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: AWSCluster
+        name: {{ cluster_name }}
+        namespace: {{ capi_namespace }}
+    EOF
 
 # ---
 
-- name: Generate the kubemark cluster resources
+- name: Create the kubemark cluster resources
   shell:
     set -o pipefail;
-
     /tmp/clusterctl generate cluster "{{ cluster_name }}"
-        --infrastructure kubemark
+        -v10
+        --infrastructure kubemark:{{ capi_kubemark_version }}
         --kubernetes-version {{ k8s_version }}
         --worker-machine-count={{kubemark_worker_machine_count}}
         --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
-      | yq '.metadata.namespace = "{{ capi_namespace }}"'
-        > "{{ artifact_extra_logs_dir }}/kubemark_cluster.yaml"
+      | yq -Y '.metadata.namespace = "{{ capi_namespace }}"'
+      | tee "{{ artifact_extra_logs_dir }}/src/kubemark_cluster.yaml"
+      | oc apply -f-
 
-- name: Apply the kubemark template
-  command:
-    oc apply -f "{{ artifact_extra_logs_dir }}/kubemark_cluster.yaml"
+# ---
 
-- name: Save the deployments of the capi namespace
-  shell:
-    oc get deploy -n {{ capi_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/capi_deployments.yaml"
+- name: Wait for the AWCluster to turn ready and capture artifacts
+  block:
+  - name: Wait for the AWCluster to turn ready
+    command:
+      oc get awscluster/"{{ cluster_name }}"
+         -n {{ capi_namespace }}
+         -ojsonpath={.status.ready}
+    register: aws_cluster_ready_cmd
+    until: aws_cluster_ready_cmd.stdout == "true"
+    retries: 30
+    delay: 20
+  always:
+  - name: Capture the state of the cluster
+    shell:
+      set -e
+
+      /tmp/clusterctl describe cluster "{{ cluster_name }}"
+          --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+          -n {{ capi_namespace }}
+          > "{{ artifact_extra_logs_dir }}/artifacts/cluster.desc";
+
+      oc get cluster/"{{ cluster_name }}"
+         -oyaml
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/cluster.yaml";
+
+      oc get awscluster/"{{ cluster_name }}"
+         -oyaml
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/aws_cluster.yaml";
+
+      oc get machinedeployments.cluster.x-k8s.io
+         -oyaml
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/machinedeployments.yaml";
+
+  - name: Capture the state of the pods
+    shell:
+      oc get pods
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/capi_pods.status"
