@@ -176,22 +176,22 @@
   retries: 60
   delay: 10
 
-- name: Create the capAWS secret
-  shell:
-    set -o pipefail;
-    set -e
+# - name: Create the capAWS secret
+#   shell:
+#     set -o pipefail;
+#     set -e
 
-    AWS_CREDS_FILE=$PSAP_ODS_SECRET_PATH/.awscred;
-    key_id=$(cat "$AWS_CREDS_FILE" | grep aws_access_key_id | head -1 | cut -d" " -f3- | sed 's/ //g');
-    access_key=$(cat "$AWS_CREDS_FILE" | grep aws_secret_access_key | head -1 | cut -d" " -f3-);
-    oc create secret generic capa-manager-bootstrap-credentials
-       --from-literal=credentials="$(echo -n "[default]\naws_access_key_id = $key_id\naws_secret_access_key=$access_key\n")"
-       --from-literal=aws_access_key_id="$key_id"
-       --from-literal=aws_secret_access_key="$access_key"
-       -n "{{ capi_namespace }}"
-       -oyaml
-       --dry-run=client
-     | oc replace -f-
+#     AWS_CREDS_FILE=$PSAP_ODS_SECRET_PATH/.awscred;
+#     key_id=$(cat "$AWS_CREDS_FILE" | grep aws_access_key_id | head -1 | cut -d" " -f3- | sed 's/ //g');
+#     access_key=$(cat "$AWS_CREDS_FILE" | grep aws_secret_access_key | head -1 | cut -d" " -f3-);
+#     oc create secret generic capa-manager-bootstrap-credentials
+#        --from-literal=credentials="$(echo -n "[default]\naws_access_key_id = $key_id\naws_secret_access_key=$access_key\n")"
+#        --from-literal=aws_access_key_id="$key_id"
+#        --from-literal=aws_secret_access_key="$access_key"
+#        -n "{{ capi_namespace }}"
+#        -oyaml
+#        --dry-run=client
+#      | oc replace -f-
 
 # ---
 
