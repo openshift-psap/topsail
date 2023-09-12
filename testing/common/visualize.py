@@ -156,7 +156,7 @@ def generate_visualization(idx):
         logging.info("matbench.generate_lts not enabled, skipping LTS payload&schema generation.")
 
     if config.ci_artifacts.get_config("matbench.download.save_to_artifacts"):
-        shutil.copytree(os.environ["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR)
+        shutil.copytree(os.environ["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
 
     filters = matbench_config.get_config(f"visualize[{idx}]").get("filters", [None])
     for filters_to_apply in filters:
