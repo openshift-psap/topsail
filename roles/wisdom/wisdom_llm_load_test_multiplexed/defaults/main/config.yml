@@ -3,13 +3,13 @@
 # Source component: Wisdom.run_llm_load_test_multiplexed
 
 # Parameters
-# Requests sent for each model input in the dataset (will be set in llm-load-test config.json)
-# Mandatory value
-wisdom_llm_load_test_multiplexed_requests:
-
 # Number of concurrent simulated users sending requests
 # Mandatory value
 wisdom_llm_load_test_multiplexed_concurrency:
+
+# Missing documentation for threads
+# Mandatory value
+wisdom_llm_load_test_multiplexed_threads:
 
 # Model Mesh Deployment replicas currently configured (to be attached as metadata to the results)
 # Mandatory value

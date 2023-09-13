@@ -30,20 +30,20 @@
 
 - name: Create the dataset Secret
   command: oc create secret generic llm-load-test-dataset --from-file=dataset.json="{{ wisdom_llm_load_test_dataset_path }}" -n {{ wisdom_llm_load_test_namespace }}
-  # The Pod will mount llm-load-test-dataset in /etc/load_test_dataset. The config.json expects the dataset.json at /etc/load_test_dataset/dataset.json.
+  # The Pod will mount llm-load-test-dataset in /etc/load_test_dataset. The config.yaml expects the dataset.json at /etc/load_test_dataset/dataset.json.
 
-# Templatize the run configuration into config.json and embed it in a ConfigMap
-- name: Delete the llm-load-test config.json ConfigMap if it exists
+# Templatize the run configuration into config.yaml and embed it in a ConfigMap
+- name: Delete the llm-load-test config.yaml ConfigMap if it exists
   command: oc delete --ignore-not-found configmap/llm-load-test-config -n {{ wisdom_llm_load_test_namespace }}
 
-- name: Apply the llm-load-test config.json template
+- name: Apply the llm-load-test config.yaml template
   template:
     src: "{{ llm_load_test_config_template }}"
-    dest: "{{ artifact_extra_logs_dir }}/src/000_llm_load_test_config.json"
+    dest: "{{ artifact_extra_logs_dir }}/src/000_llm_load_test_config.yaml"
     mode: '0400'
 
 - name: Create the llm-load-test-config ConfigMap
-  command: oc create configmap llm-load-test-config --from-file=config.json="{{ artifact_extra_logs_dir }}/src/000_llm_load_test_config.json" -n {{ wisdom_llm_load_test_namespace }}
+  command: oc create configmap llm-load-test-config --from-file=config.yaml="{{ artifact_extra_logs_dir }}/src/000_llm_load_test_config.yaml" -n {{ wisdom_llm_load_test_namespace }}
 
 - name: Define the test image
   set_fact:

@@ -96,8 +96,8 @@ class Wisdom:
     @AnsibleRole("wisdom_llm_load_test_multiplexed")
     @AnsibleMappedParams
     def run_llm_load_test_multiplexed(self, 
-                          requests, 
                           concurrency, 
+                          threads, 
                           replicas, 
                           max_duration,
                           dataset_path, 

@@ -19,10 +19,11 @@ spec:
       set -o errtrace
       set -x
       cd /src/llm-load-test
-      python3 ghz_frontend.py --wisdom_experiment
+      mkdir output
+      python3 ghz_frontend.py --experiment
     env:
     - name: CONFIG_FILENAME
-      value: "config.json"
+      value: "config.yaml"
     - name: CONFIG_PATH
       value: "/etc/load_test_config"
     volumeMounts:

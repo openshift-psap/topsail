@@ -44,9 +44,9 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 537294
+    tag: 568801
     channel: beta
-    version: 1.30.0
+    version: 1.32.0
 secrets:
   dir:
     name: psap-ods-secret
@@ -62,7 +62,7 @@ tests:
     tester_image_tag: "wisdom-ci"
     test_namespace: "wisdom"
     model_ver: "v11.4.4" # TODO use these
-    runtime_ver: "v0.27.0" # TODO use these
+    runtime_ver: "v0.29.0" # TODO use these
     s3_creds_model_secret_path: "/work/secrets/wisdom/s3-secret.yaml"
     quay_secret_path: "/work/secrets/wisdom/quay-secret.yaml"
     protos_path: "/work/secrets/wisdom-protos"
@@ -71,6 +71,7 @@ tests:
     replicas: 1
     concurrency: 16
     requests: 16
+    threads: 1
     max_duration: "15m"
   ansible_llm:
     test_cases:

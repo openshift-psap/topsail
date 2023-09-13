@@ -36,7 +36,7 @@ wisdom run_llm_load_test:
   tester_image_tag: {{tests.config.tester_image_tag}}
 
 wisdom run_llm_load_test_multiplexed:
-  requests: {{tests.config.requests}}
+  threads: {{tests.config.threads}}
   concurrency: {{tests.config.concurrency}}
   replicas: {{tests.config.replicas}}
   max_duration: {{tests.config.max_duration}} #TODO

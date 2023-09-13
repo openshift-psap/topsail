@@ -1,0 +1,42 @@
+output_dir: "./output"
+warmup: false
+storage:
+  type: s3
+  s3_params:
+    s3_host: ""
+    s3_use_https: true
+    s3_access_key: ""
+    s3_secret_key": ""
+    s3_bucket: "wisdom-perf-data-test"
+    s3_result_path: "WatsonRuntime_v0.29.0/Wisdom_v11"
+    s3_region: "us-east-1"
+load_generator:
+  type: "ghz"
+  ghz_params:
+    host: "modelmesh-serving.wisdom.svc:8033"
+    skipTLS: true
+    insecure: true
+    disable-template-data: true
+    proto: "/etc/load_test_protos/wisdomextservice.proto"
+    call: "caikit.runtime.WisdomExt.WisdomExtService/CodeGenerationTaskPredict"
+    # metadata is additional headers attached to the grpc request
+    metadata:
+      mm-vmodel-id: "ansible-wisdom"
+    concurrency: {{ wisdom_llm_load_test_multiplexed_concurrency }}
+    duration: "{{ wisdom_llm_load_test_multiplexed_max_duration }}"
+    timeout: "240s"
+  multiplexed: true
+  threads: {{ wisdom_llm_load_test_multiplexed_threads }}
+  input_dataset:
+    filename: "/etc/load_test_dataset/dataset.json"
+    max_size: 8
+metadata:
+  platform_type: "ocp"
+  modelmesh_pods_per_node: 1
+  max_batch_size: 16
+  nodes: {{ wisdom_llm_load_test_multiplexed_replicas }}
+  instance_type: g5.2xlarge
+  instance_gpu_count: 1
+  runtime_version: "watson_v0.29.0"
+  model_version: "ansible_wisdom_v11"
+

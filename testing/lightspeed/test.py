@@ -146,21 +146,15 @@ def run_ci():
     config.ci_artifacts.set_config("tests.config.dataset_path", str(WISDOM_SECRET_PATH / "llm-load-test-multiplexed-dataset.json"))
     multiplexed_test_cases = config.ci_artifacts.get_config("tests.ansible_llm.multiplexed_test_cases")
     for replicas, concurrency in multiplexed_test_cases:
-
-        # There will be <concurrency> num instances of ghz. However, some instances
-        # requests will be much smaller and will be answered more quickly.
-        # To ensure that the requests are multiplexed throughout the run, 
-        # we set max requests high, and rely on the timeout after 10m to end the test.
-        requests_per_instance = 400
         max_duration = "10m"
 
-        logging.info(f"Running multiplexed load_test with replicas: {replicas}, total concurrency: {concurrency} and requests_per_instance: {requests_per_instance}")
+        logging.info(f"Running multiplexed load_test with replicas: {replicas}, total concurrency: {concurrency} and duration: {max_duration}")
 
         deploy_and_warmup_model(replicas)
 
+        config.ci_artifacts.set_config("tests.config.threads", 8)
         # There are 8 threads running the same configuration, so the total concurrency should be divided by 8
         config.ci_artifacts.set_config("tests.config.concurrency", int(concurrency/8))
-        config.ci_artifacts.set_config("tests.config.requests", requests_per_instance)
         config.ci_artifacts.set_config("tests.config.max_duration", max_duration)
 
         run.run(f"./run_toolbox.py from_config wisdom run_llm_load_test_multiplexed")
