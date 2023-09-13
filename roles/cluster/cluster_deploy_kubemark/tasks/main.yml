@@ -293,7 +293,7 @@
     shell:
       set -o pipefail;
       oc create secret generic {{ cluster_name }}-kubemark-kubeconfig
-         --from-literal=kubeconfig="$(oc get secret/{{ cluster_name }}-kubeconfig -ojsonpath="{.data.value}" | base64 -d)"
+         --from-file=kubeconfig=$KUBECONFIG
          --dry-run=client -oyaml
          -n {{ capi_namespace }}
          | oc apply -f-
