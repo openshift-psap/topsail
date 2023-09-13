@@ -3,11 +3,11 @@
 # Source component: Wisdom.run_llm_load_test_multiplexed
 
 # Parameters
-# Number of concurrent simulated users sending requests
+# Number of concurrent simulated users sending requests per ghz instance
 # Mandatory value
 wisdom_llm_load_test_multiplexed_concurrency:
 
-# Missing documentation for threads
+# Number of ghz instances
 # Mandatory value
 wisdom_llm_load_test_multiplexed_threads:
 

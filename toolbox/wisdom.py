@@ -110,8 +110,8 @@ class Wisdom:
         Load test the wisdom model with multiplexed requests.
 
         Args:
-          requests: Requests sent for each model input in the dataset (will be set in llm-load-test config.json)
-          concurrency: Number of concurrent simulated users sending requests
+          concurrency: Number of concurrent simulated users sending requests per ghz instance
+          threads: Number of ghz instances 
           replicas: Model Mesh Deployment replicas currently configured (to be attached as metadata to the results)
           max_duration: Max duration value for the launcher
           dataset_path: File path to the json file containing the inputs to be used in the load test
