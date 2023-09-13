@@ -289,6 +289,90 @@
     delay: 10
     ignore_errors: true
 
+  - name: Workaround | Create a working kubeconfig secret
+    shell:
+      set -o pipefail;
+      oc create secret generic {{ cluster_name }}-kubemark-kubeconfig
+         --from-literal=kubeconfig="$(oc get secret/{{ cluster_name }}-kubeconfig -ojsonpath="{.data.value}" | base64 -d)"
+         --dry-run=client -oyaml
+         -n {{ capi_namespace }}
+         | oc apply -f-
+
+  - name: Workaround | Take the name of the first Kubemark Pod
+    shell:
+      set -o pipefail;
+      oc get pods -lapp=hollow-node -oname -n {{ capi_namespace }}
+         | cut -d/ -f2
+         | grep -v 'workaround'
+    register: kubemark_pod_names_cmd
+
+  - name: Workaround | Strip the Pod defininition
+    shell:
+      set -o pipefail;
+      oc get pod/{{ kubemark_pod_name }} -n {{ capi_namespace }} -oyaml
+         | yq -Y 'del(.status) | del(.spec.volumes[] | select(.name | startswith("kube-api-access-"))) | del(.spec.containers[0].volumeMounts[] | select(.name | startswith("kube-api-access-"))) | del(.spec.nodeName) | del(.metadata.uid) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion) | del(.metadata.annotations) | del(.spec.tolerations)'
+         | yq -Y '.metadata.name += "-workaround"' | yq -Y '.spec.volumes[0].secret.secretName = "{{ cluster_name }}-kubemark-kubeconfig"'
+         | tee "{{ artifact_extra_logs_dir }}/src/kubemark_pod.yaml"
+         | oc apply -f-
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
+  - name: Wait for the kubemark node to appear
+    shell:
+      oc get node/{{ kubemark_pod_name }} --ignore-not-found
+    register: has_hollow_node
+    until: has_hollow_node.stdout | length > 0
+    retries: 3
+    delay: 10
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
+  - name: Create a fake test Pod
+    shell: |
+      set -o pipefail;
+
+      cat <<EOF | tee "{{ artifact_extra_logs_dir }}/src/kubemark_dummy_pod-{{ kubemark_pod_name }}.yaml" | oc apply -f- -n {{ capi_namespace }}
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: test-pod-{{ kubemark_pod_name }}
+        labels:
+          kubemark: "true"
+      spec:
+        containers:
+        - name: cnt
+          image: registry.access.redhat.com/ubi9/ubi
+          command: [ "do", "nothing"]
+        nodeSelector:
+           kubernetes.io/hostname: {{ kubemark_pod_name }}
+      EOF
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
+  - name: Wait for the Pod to start running
+    shell:
+      set -o pipefail;
+
+      oc get pod/test-pod-{{ kubemark_pod_name }} -n {{ capi_namespace }} | grep Running
+    register: dummy_pod_running
+    until: dummy_pod_running.rc == 0
+    retries: 3
+    delay: 10
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
+  - name: Capture the description of the Kubemark node
+    shell:
+      oc describe node {{ kubemark_pod_name }} > "{{ artifact_extra_logs_dir }}/artifacts/kubemark_node_{{ kubemark_pod_name }}.descr";
+      oc logs pod/{{ kubemark_pod_name }} -n {{ capi_namespace }}  > "{{ artifact_extra_logs_dir }}/artifacts/kubemark_pod_{{ kubemark_pod_name }}.log";
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
   always:
   - name: Capture the state of the cluster
     shell:
