@@ -147,6 +147,10 @@
        | tee "{{ artifact_extra_logs_dir }}/src/stack_infra_kubemark.yaml"
        | oc apply -f-;
 
+- name: Workaround | Give more memory to CAPK (was dying because of OOM)
+  shell: |
+    oc set resources deploy/capk-controller-manager --limits="cpu=0.5,memory=200Mi" -n {{ capi_namespace }}
+
 # ---
 
 # Beginning of the work arounds
@@ -162,36 +166,6 @@
     oc adm policy add-scc-to-user privileged -z capi-kubeadm-control-plane-manager -n {{ capi_namespace }}
 
     oc delete replicaset --all -n {{ capi_namespace }}
-
-# ---
-
-# workaround (invalid AWS credentials)
-- name: Wait for the capAWS secret to be created
-  shell:
-    oc get secret capa-manager-bootstrap-credentials
-       -oname
-       -n {{ capi_namespace }}
-  register: has_secret_cmd
-  until: has_secret_cmd.rc == 0
-  retries: 60
-  delay: 10
-
-# - name: Create the capAWS secret
-#   shell:
-#     set -o pipefail;
-#     set -e
-
-#     AWS_CREDS_FILE=$PSAP_ODS_SECRET_PATH/.awscred;
-#     key_id=$(cat "$AWS_CREDS_FILE" | grep aws_access_key_id | head -1 | cut -d" " -f3- | sed 's/ //g');
-#     access_key=$(cat "$AWS_CREDS_FILE" | grep aws_secret_access_key | head -1 | cut -d" " -f3-);
-#     oc create secret generic capa-manager-bootstrap-credentials
-#        --from-literal=credentials="$(echo -n "[default]\naws_access_key_id = $key_id\naws_secret_access_key=$access_key\n")"
-#        --from-literal=aws_access_key_id="$key_id"
-#        --from-literal=aws_secret_access_key="$access_key"
-#        -n "{{ capi_namespace }}"
-#        -oyaml
-#        --dry-run=client
-#      | oc replace -f-
 
 # ---
 
@@ -247,21 +221,6 @@
 
 # ---
 
-- name: Create the kubemark cluster resources
-  shell:
-    set -o pipefail;
-    /tmp/clusterctl generate cluster "{{ cluster_name }}"
-        -v10
-        --infrastructure kubemark:{{ capi_kubemark_version }}
-        --kubernetes-version {{ k8s_version }}
-        --worker-machine-count={{kubemark_worker_machine_count}}
-        --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
-      | yq -Y '.metadata.namespace = "{{ capi_namespace }}"'
-      | tee "{{ artifact_extra_logs_dir }}/src/kubemark_cluster.yaml"
-      | oc apply -f-
-
-# ---
-
 - name: Wait for the AWCluster to turn ready and capture artifacts
   block:
   - name: Wait for the AWCluster to turn ready
@@ -273,15 +232,157 @@
     until: aws_cluster_ready_cmd.stdout == "true"
     retries: 30
     delay: 20
+
+  # ---
+
+  - name: Create the kubemark cluster resources
+    shell:
+      set -o pipefail;
+      /tmp/clusterctl generate cluster "{{ cluster_name }}"
+          -v10
+          --infrastructure kubemark:{{ capi_kubemark_version }}
+          --kubernetes-version {{ k8s_version }}
+          --worker-machine-count={{ kubemark_worker_machine_count }}
+          --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+        | yq -Y '.metadata.namespace = "{{ capi_namespace }}"'
+        | yq -Y 'select(.kind =="MachineDeployment") .spec.template.spec.bootstrap.dataSecretName = "worker-user-data"'
+        | yq -Y 'select(.kind =="KubemarkMachineTemplate") .spec.template.spec.extraMounts[0].hostPath = "/run/crio/crio.sock"'
+        | tee "{{ artifact_extra_logs_dir }}/src/kubemark_cluster.yaml"
+        | oc apply -f-
+
+
+  - name: Workaround | Create the cluster CA secret
+    shell:
+      set -o pipefail;
+      set -e;
+
+      oc create secret generic "{{ cluster_name }}-ca"
+         -n {{ capi_namespace }}
+         --from-literal=tls.crt="$(oc get secret/capi-webhook-service-cert -ojsonpath="{.data.tls\.crt}" -n {{ capi_namespace }} | base64 -d)"
+         --from-literal=tls.key="$(oc get secret/capi-webhook-service-cert -ojsonpath="{.data.tls\.key}" -n {{ capi_namespace }} | base64 -d)"
+         --dry-run=client
+         -oyaml
+         | oc apply -f-
+
+  - name: Wait for the hollow node Pods to be created
+    command:
+      oc get pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+    register: has_hollow_node_pods
+    until: has_hollow_node_pods.stdout | length > 0
+    retries: 30
+    delay: 10
+
+  - name: Wait for the hollow node Pods to start running
+    shell:
+      set -o pipefail;
+
+      oc get pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+         | grep Running
+
+    register: has_hollow_node_pods
+    until: has_hollow_node_pods.stdout | length > 0
+    retries: 3
+    delay: 10
+    ignore_errors: true
+
+  - name: Workaround | Create a working kubeconfig secret
+    shell:
+      set -o pipefail;
+      oc create secret generic {{ cluster_name }}-kubemark-kubeconfig
+         --from-file=kubeconfig=$KUBECONFIG
+         --dry-run=client -oyaml
+         -n {{ capi_namespace }}
+         | oc apply -f-
+
+  - name: Workaround | Take the name of the first Kubemark Pod
+    shell:
+      set -o pipefail;
+      oc get pods -lapp=hollow-node -oname -n {{ capi_namespace }}
+         | cut -d/ -f2
+         | grep -v 'workaround'
+    register: kubemark_pod_names_cmd
+
+  - name: Workaround | Strip the Pod defininition
+    shell:
+      set -o pipefail;
+      oc get pod/{{ kubemark_pod_name }} -n {{ capi_namespace }} -oyaml
+         | yq -Y 'del(.status) | del(.spec.volumes[] | select(.name | startswith("kube-api-access-"))) | del(.spec.containers[0].volumeMounts[] | select(.name | startswith("kube-api-access-"))) | del(.spec.nodeName) | del(.metadata.uid) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion) | del(.metadata.annotations) | del(.spec.tolerations)'
+         | yq -Y '.metadata.name += "-workaround"' | yq -Y '.spec.volumes[0].secret.secretName = "{{ cluster_name }}-kubemark-kubeconfig"'
+         | tee "{{ artifact_extra_logs_dir }}/src/kubemark_pod.yaml"
+         | oc apply -f-
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
+  - name: Wait for the kubemark node to appear
+    shell:
+      oc get node/{{ kubemark_pod_name }} --ignore-not-found
+    register: has_hollow_node
+    until: has_hollow_node.stdout | length > 0
+    retries: 3
+    delay: 10
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
+  - name: Create a fake test Pod
+    shell: |
+      set -o pipefail;
+
+      cat <<EOF | tee "{{ artifact_extra_logs_dir }}/src/kubemark_dummy_pod-{{ kubemark_pod_name }}.yaml" | oc apply -f- -n {{ capi_namespace }}
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: test-pod-{{ kubemark_pod_name }}
+        labels:
+          kubemark: "true"
+      spec:
+        containers:
+        - name: cnt
+          image: registry.access.redhat.com/ubi9/ubi
+          command: [ "do", "nothing"]
+        nodeSelector:
+           kubernetes.io/hostname: {{ kubemark_pod_name }}
+      EOF
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
+  - name: Wait for the Pod to start running
+    shell:
+      set -o pipefail;
+
+      oc get pod/test-pod-{{ kubemark_pod_name }} -n {{ capi_namespace }} | grep Running
+    register: dummy_pod_running
+    until: dummy_pod_running.rc == 0
+    retries: 3
+    delay: 10
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
+  - name: Capture the description of the Kubemark node
+    shell:
+      oc describe node {{ kubemark_pod_name }} > "{{ artifact_extra_logs_dir }}/artifacts/kubemark_node_{{ kubemark_pod_name }}.descr";
+      oc logs pod/{{ kubemark_pod_name }} -n {{ capi_namespace }}  > "{{ artifact_extra_logs_dir }}/artifacts/kubemark_pod_{{ kubemark_pod_name }}.log";
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
   always:
   - name: Capture the state of the cluster
     shell:
-      set -e
+      set -o pipefail;
+      set -e;
 
       /tmp/clusterctl describe cluster "{{ cluster_name }}"
           --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
           -n {{ capi_namespace }}
-          > "{{ artifact_extra_logs_dir }}/artifacts/cluster.desc";
+          | tee "{{ artifact_extra_logs_dir }}/artifacts/cluster.desc";
 
       oc get cluster/"{{ cluster_name }}"
          -oyaml
@@ -298,8 +399,24 @@
          -n {{ capi_namespace }}
          > "{{ artifact_extra_logs_dir }}/artifacts/machinedeployments.yaml";
 
+      oc get machines.cluster.x-k8s.io
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/machines.status";
+
   - name: Capture the state of the pods
     shell:
       oc get pods
          -n {{ capi_namespace }}
          > "{{ artifact_extra_logs_dir }}/artifacts/capi_pods.status"
+
+  - name: Capture the description of the hollow node pods
+    shell:
+      oc describe pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/hollow_node_pods.desc";
+
+      oc get pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/hollow_node_pods.status"
