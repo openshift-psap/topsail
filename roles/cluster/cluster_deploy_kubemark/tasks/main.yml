@@ -147,6 +147,10 @@
        | tee "{{ artifact_extra_logs_dir }}/src/stack_infra_kubemark.yaml"
        | oc apply -f-;
 
+- name: Workaround | Give more memory to CAPK (was dying because of OOM)
+  shell: |
+    oc set resources deploy/capk-controller-manager --limits="cpu=0.5,memory=200Mi" -n {{ capi_namespace }}
+
 # ---
 
 # Beginning of the work arounds
@@ -247,21 +251,6 @@
 
 # ---
 
-- name: Create the kubemark cluster resources
-  shell:
-    set -o pipefail;
-    /tmp/clusterctl generate cluster "{{ cluster_name }}"
-        -v10
-        --infrastructure kubemark:{{ capi_kubemark_version }}
-        --kubernetes-version {{ k8s_version }}
-        --worker-machine-count={{ kubemark_worker_machine_count }}
-        --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
-      | yq -Y '.metadata.namespace = "{{ capi_namespace }}"'
-      | tee "{{ artifact_extra_logs_dir }}/src/kubemark_cluster.yaml"
-      | oc apply -f-
-
-# ---
-
 - name: Wait for the AWCluster to turn ready and capture artifacts
   block:
   - name: Wait for the AWCluster to turn ready
@@ -273,6 +262,63 @@
     until: aws_cluster_ready_cmd.stdout == "true"
     retries: 30
     delay: 20
+
+  # ---
+
+  - name: Create the kubemark cluster resources
+    shell:
+      set -o pipefail;
+      /tmp/clusterctl generate cluster "{{ cluster_name }}"
+          -v10
+          --infrastructure kubemark:{{ capi_kubemark_version }}
+          --kubernetes-version {{ k8s_version }}
+          --worker-machine-count={{ kubemark_worker_machine_count }}
+          --config {{ artifact_extra_logs_dir }}/clusterctl.yaml
+        | yq -Y '.metadata.namespace = "{{ capi_namespace }}"'
+        | yq -Y 'select(.kind =="MachineDeployment") .spec.template.spec.bootstrap.dataSecretName = "worker-user-data"'
+        | yq -Y 'select(.kind =="KubemarkMachineTemplate") .spec.template.spec.extraMounts[0].hostPath = "/run/crio/crio.sock"'
+        | tee "{{ artifact_extra_logs_dir }}/src/kubemark_cluster.yaml"
+        | oc apply -f-
+
+
+  - name: workaround | Create the cluster CA secret
+    shell:
+      set -o pipefail;
+      set -e;
+
+      oc create secret generic "{{ cluster_name }}-ca"
+         -n {{ capi_namespace }}
+         --from-literal=tls.crt="$(oc get secret/capi-webhook-service-cert -ojsonpath="{.data.tls\.crt}" -n {{ capi_namespace }} | base64 -d)"
+         --from-literal=tls.key="$(oc get secret/capi-webhook-service-cert -ojsonpath="{.data.tls\.key}" -n {{ capi_namespace }} | base64 -d)"
+         --dry-run=client
+         -oyaml
+         | oc apply -f-
+
+  - name: Wait for the hollow node Pods to be created
+    command:
+      oc get pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+    register: has_hollow_node_pods
+    until: has_hollow_node_pods.stdout | length > 0
+    retries: 30
+    delay: 10
+
+  - name: Wait for the hollow node Pods to start running
+    shell:
+      set -o pipefail;
+
+      oc get pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+         | grep Running
+
+    register: has_hollow_node_pods
+    until: has_hollow_node_pods.stdout | length > 0
+    retries: 3
+    delay: 10
+    ignore_errors: true
+
   always:
   - name: Capture the state of the cluster
     shell:
