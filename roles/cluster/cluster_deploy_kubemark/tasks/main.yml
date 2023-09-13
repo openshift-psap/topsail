@@ -281,7 +281,7 @@
         | oc apply -f-
 
 
-  - name: workaround | Create the cluster CA secret
+  - name: Workaround | Create the cluster CA secret
     shell:
       set -o pipefail;
       set -e;
@@ -345,8 +345,24 @@
          -n {{ capi_namespace }}
          > "{{ artifact_extra_logs_dir }}/artifacts/machinedeployments.yaml";
 
+      oc get machines.cluster.x-k8s.io
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/machines.status";
+
   - name: Capture the state of the pods
     shell:
       oc get pods
          -n {{ capi_namespace }}
          > "{{ artifact_extra_logs_dir }}/artifacts/capi_pods.status"
+
+  - name: Capture the description of the hollow node pods
+    shell:
+      oc describe pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/hollow_node_pods.desc";
+
+      oc get pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/hollow_node_pods.status"
