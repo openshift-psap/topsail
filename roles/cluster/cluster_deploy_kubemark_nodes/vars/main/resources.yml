@@ -1,0 +1,1 @@
+kubemark_cluster_template: templates/cluster-template.yaml.j2

@@ -1,0 +1,267 @@
+---
+- name: Create the source directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Get the name of the cluster
+  command:
+    oc get infrastructure cluster -o jsonpath="{.status.infrastructureName}"
+  register: cluster_name_cmd
+
+- name: Get the K8s version of the cluster
+  shell:
+    set -o pipefail;
+    oc version -ojson | jq -r .serverVersion.gitVersion | cut -d+ -f1 | cut -b2-
+  register: k8s_version_cmd
+
+- name: Define versions and properties
+  set_fact:
+    capi_namespace: openshift-cluster-api
+
+    kubemark_node_resource: {"cpu": "1", "memory": "4G"}
+
+    kubemark_node_labels: kubemark=true only-workload-pods=yes node-role.kubernetes.io/workload=
+    kubemark_node_taint_key: only-workload-pods
+    kubemark_node_taint_value: "yes"
+    kubemark_node_taint_effect: NoSchedule
+
+    cluster_name: "{{ cluster_name_cmd.stdout }}"
+    kubernetes_version: "{{ k8s_version_cmd.stdout }}"
+# ---
+
+- name: Prepare the cluster template
+  template:
+    src: "{{ kubemark_cluster_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/kubemark_cluster.yaml"
+    mode: '0400'
+
+- name: Create and await the Kubemark hollow nodes
+  block:
+  - name: Create the kubemark cluster resources
+    command:
+      oc apply
+         -f "{{ artifact_extra_logs_dir }}/src/kubemark_cluster.yaml"
+         -n "{{ cluster_deploy_kubemark_nodes_namespace }}"
+
+  - name: Wait for the hollow node Pods to be created
+    command:
+      oc get pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+    register: has_hollow_node_pods
+    until: has_hollow_node_pods.stdout | length > 0
+    retries: 30
+    delay: 10
+
+  - name: Wait for the hollow node Pods to start running
+    shell:
+      set -o pipefail;
+      oc get pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+         | grep "{{ cluster_deploy_kubemark_nodes_deployment_name }}"
+         | grep Running
+
+    register: has_hollow_node_pods
+    until: has_hollow_node_pods.stdout | length > 0
+    retries: 3
+    delay: 10
+
+  # this step is expected to fail at the moment
+  - name: Wait for the kubemark nodes to appear | Failure expected
+    shell:
+      set -o pipefail;
+
+      oc get node | grep "{{ cluster_deploy_kubemark_nodes_deployment_name }}"
+    register: has_hollow_node
+    until: has_hollow_node.stdout_lines | length == cluster_deploy_kubemark_nodes_count
+    retries: 3
+    delay: 10
+
+  - name: Indicate that Kubemark test passed
+    shell:
+      touch "{{ artifact_extra_logs_dir }}/CAPK_WORKED";
+      touch "{{ artifact_extra_logs_dir }}/../CAPK_WORKED";
+
+  - name: Abort if we reach this step, this is not expected so far
+    meta: end_play
+
+  rescue:
+  - name: Workaround | Create a working kubeconfig secret
+    shell:
+      set -o pipefail;
+      oc create secret generic {{ cluster_name }}-kubemark-kubeconfig
+         --from-file=kubeconfig=$KUBECONFIG
+         --dry-run=client -oyaml
+         -n {{ capi_namespace }}
+         | oc apply -f-
+
+  - name: Workaround | Take the name of the Kubemark Pods
+    shell:
+      set -o pipefail;
+      oc get pods -lapp=hollow-node -oname -n {{ capi_namespace }}
+         | cut -d/ -f2
+         | grep "{{ cluster_deploy_kubemark_nodes_deployment_name }}"
+         | grep -v 'workaround'
+    register: kubemark_pod_names_cmd
+
+  - name: Workaround | Strip the Pod defininition
+    shell:
+      set -o pipefail;
+      oc get pod/{{ kubemark_pod_name }} -n {{ capi_namespace }} -oyaml
+         | yq -Y 'del(.status) | del(.spec.volumes[] | select(.name | startswith("kube-api-access-"))) | del(.spec.containers[0].volumeMounts[] | select(.name | startswith("kube-api-access-"))) | del(.spec.nodeName) | del(.metadata.uid) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion) | del(.metadata.annotations) | del(.spec.tolerations)'
+         | yq -Y '.metadata.name += "-workaround"' | yq -Y '.spec.volumes[0].secret.secretName = "{{ cluster_name }}-kubemark-kubeconfig"'
+         | tee "{{ artifact_extra_logs_dir }}/src/kubemark_pod.yaml"
+         | oc apply -f-
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
+  - name: Wait for the kubemark node to appear
+    shell:
+      oc get node/{{ kubemark_pod_name }} --ignore-not-found
+    register: has_hollow_node
+    until: has_hollow_node.stdout | length > 0
+    retries: 3
+    delay: 10
+    loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: kubemark_pod_name
+
+  always:
+  - name: Capture the state of the cluster
+    shell:
+      set -o pipefail;
+      set -e;
+
+      oc get cluster/"{{ cluster_name }}"
+         -oyaml
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/cluster.yaml";
+
+      oc get awscluster/"{{ cluster_name }}"
+         -oyaml
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/aws_cluster.yaml";
+
+      oc get machinedeployments.cluster.x-k8s.io
+         -oyaml
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/machinedeployments.yaml";
+
+      oc get machines.cluster.x-k8s.io
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/machines.status";
+
+  - name: Capture the status of the CAPI pods
+    shell:
+      oc get pods
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/capi_pods.status"
+
+  - name: Capture the description of the hollow node pods
+    shell:
+      oc describe pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/hollow_node_pods.desc";
+
+      oc get pods
+         -lapp=hollow-node
+         -n {{ capi_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/hollow_node_pods.status"
+
+- name: Take the name of the Kubemark Nodes
+  shell:
+    set -o pipefail;
+    oc get nodes -oname
+      | grep "{{ cluster_deploy_kubemark_nodes_deployment_name }}"
+      | cut -d/ -f2
+  register: kubemark_node_names_cmd
+
+- name: Taint the kubemark nodes
+  shell:
+    oc adm taint node --overwrite
+      {{ kubemark_node_names_cmd.stdout_lines | join(' ')}}
+      {{ kubemark_node_taint_key }}={{ kubemark_node_taint_value }}:{{ kubemark_node_taint_effect }}
+  when: kubemark_node_taint_key and kubemark_node_taint_key | length > 0
+
+- name: Label the kubemark nodes
+  shell:
+    oc label node --overwrite
+       {{ kubemark_node_names_cmd.stdout_lines | join(' ')}}
+       {{ kubemark_node_labels }}
+  when: kubemark_node_labels and kubemark_node_labels | length > 0
+
+# ---
+
+- name: Create test Pods on the Kubemark nodes
+  shell: |
+    set -o pipefail;
+
+    cat <<EOF | tee "{{ artifact_extra_logs_dir }}/src/kubemark_dummy_pod-{{ kubemark_node_name }}.yaml" | oc apply -f- -n {{ capi_namespace }}
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: test-pod-{{ kubemark_node_name }}
+      labels:
+        kubemark: "true"
+    spec:
+      containers:
+      - name: cnt
+        image: registry.access.redhat.com/ubi9/ubi
+        command: [ "do", "nothing"]
+      nodeSelector:
+         kubernetes.io/hostname: {{ kubemark_node_name }}
+      tolerations:
+      - key: {{ kubemark_node_taint_key }}
+        operator: "Exists"
+        effect: {{ kubemark_node_taint_effect }}
+
+    EOF
+  loop: "{{ kubemark_node_names_cmd.stdout_lines }}"
+  loop_control:
+    loop_var: kubemark_node_name
+
+- name: Wait for the Pods to start running
+  shell:
+    set -o pipefail;
+
+    oc get pod/test-pod-{{ kubemark_node_name }} -n {{ capi_namespace }} | grep Running
+  register: dummy_pod_running
+  until: dummy_pod_running.rc == 0
+  retries: 3
+  delay: 10
+  loop: "{{ kubemark_node_names_cmd.stdout_lines }}"
+  loop_control:
+    loop_var: kubemark_node_name
+
+- name: Get the description of the Pod and delete it
+  shell:
+    set -e;
+
+    oc describe pod/test-pod-{{ kubemark_node_name }} -n {{ capi_namespace }} > "{{ artifact_extra_logs_dir }}/artifacts/kubemark_test_pod_{{ kubemark_node_name }}.desc";
+    oc delete pod/test-pod-{{ kubemark_node_name }} -n {{ capi_namespace }} ;
+  register: dummy_pod_running
+  until: dummy_pod_running.rc == 0
+  retries: 3
+  delay: 10
+  loop: "{{ kubemark_node_names_cmd.stdout_lines }}"
+  loop_control:
+    loop_var: kubemark_node_name
+
+- name: Capture the description of the Kubemark nodes
+  shell:
+    oc describe node/{{ kubemark_node_name }} > "{{ artifact_extra_logs_dir }}/artifacts/kubemark_node_{{ kubemark_node_name }}.descr";
+    oc logs pod/{{ kubemark_node_name }}-workaround -n {{ capi_namespace }}  > "{{ artifact_extra_logs_dir }}/artifacts/kubemark_pod_{{ kubemark_node_name }}.log";
+  loop: "{{ kubemark_node_names_cmd.stdout_lines }}"
+  loop_control:
+    loop_var: kubemark_node_name
