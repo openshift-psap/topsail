@@ -19,6 +19,8 @@
     kubemark_worker_machine_count: 4
     capi_namespace: openshift-cluster-api
 
+    kubemark_node_resource: {"cpu": "1", "memory": "4G", "nvidia.com/gpu": "1"}
+
     kubemark_node_labels: kubemark=true only-workload-pods=yes node-role.kubernetes.io/workload=
     kubemark_node_taint_key: only-workload-pods
     kubemark_node_taint_value: "yes"
@@ -275,6 +277,8 @@
         | yq -Y '.metadata.namespace = "{{ capi_namespace }}"'
         | yq -Y 'select(.kind =="MachineDeployment") .spec.template.spec.bootstrap.dataSecretName = "worker-user-data"'
         | yq -Y 'select(.kind =="KubemarkMachineTemplate") .spec.template.spec.extraMounts[0].hostPath = "/run/crio/crio.sock"'
+        | yq -Y 'select(.kind =="KubemarkMachineTemplate") .spec.template.spec.kubemarkOptions.extendedResources = {{ kubemark_node_resource }}'
+
         | tee "{{ artifact_extra_logs_dir }}/src/kubemark_cluster.yaml"
         | oc apply -f-
 
