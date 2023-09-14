@@ -19,6 +19,11 @@
     kubemark_worker_machine_count: 4
     capi_namespace: openshift-cluster-api
 
+    kubemark_node_labels: kubemark=true only-workload-pods=yes node-role.kubernetes.io/workload=
+    kubemark_node_taint_key: only-workload-pods
+    kubemark_node_taint_value: "yes"
+    kubemark_node_taint_effect: NoSchedule
+
 - name: Get the name of the cluster
   command:
     oc get infrastructure cluster -o jsonpath="{.status.infrastructureName}"
@@ -412,6 +417,22 @@
       | cut -d/ -f2
   register: kubemark_node_names_cmd
 
+- name: Taint the kubemark nodes
+  shell:
+    oc adm taint node --overwrite
+      {{ kubemark_node_names_cmd.stdout_lines | join(' ')}}
+      {{ kubemark_node_taint_key }}={{ kubemark_node_taints_value }}:{{ kubemark_node_taints_effect }}
+  when: kubemark_node_taints and kubemark_node_taints | length > 0
+
+- name: Label the kubemark nodes
+  shell:
+    oc label node --overwrite
+       {{ kubemark_node_names_cmd.stdout_lines | join(' ')}}
+       {{ kubemark_node_labels }}
+  when: kubemark_node_labels and kubemark_node_labels | length > 0
+
+# ---
+
 - name: Create test Pods on the Kubemark nodes
   shell: |
     set -o pipefail;
@@ -430,6 +451,11 @@
         command: [ "do", "nothing"]
       nodeSelector:
          kubernetes.io/hostname: {{ kubemark_node_name }}
+      tolerations:
+      - key: {{ kubemark_node_taint_key }}
+        operator: "Exists"
+        effect: {{ kubemark_node_taint_effect }}
+
     EOF
   loop: "{{ kubemark_node_names_cmd.stdout_lines }}"
   loop_control:
