@@ -66,7 +66,8 @@ def prepare_ci():
     if test_mode == "scale":
         prepare_scale.prepare()
     elif test_mode == "kubemark":
-        run.run("./run_toolbox.py cluster deploy_kubemark")
+        run.run("./run_toolbox.py cluster deploy_kubemark_capi_provider")
+        run.run("./run_toolbox.py cluster deploy_kubemark_nodes")
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
