@@ -119,7 +119,7 @@
       oc get pod/{{ kubemark_pod_name }} -n {{ capi_namespace }} -oyaml
          | yq -Y 'del(.status) | del(.spec.volumes[] | select(.name | startswith("kube-api-access-"))) | del(.spec.containers[0].volumeMounts[] | select(.name | startswith("kube-api-access-"))) | del(.spec.nodeName) | del(.metadata.uid) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion) | del(.metadata.annotations) | del(.spec.tolerations)'
          | yq -Y '.metadata.name += "-workaround"' | yq -Y '.spec.volumes[0].secret.secretName = "{{ cluster_name }}-kubemark-kubeconfig"'
-         | tee "{{ artifact_extra_logs_dir }}/src/kubemark_pod.yaml"
+         | tee "{{ artifact_extra_logs_dir }}/src/kubemark_pod_{{ kubemark_pod_name }}.yaml"
          | oc apply -f-
     loop: "{{ kubemark_pod_names_cmd.stdout_lines }}"
     loop_control:
