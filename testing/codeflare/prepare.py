@@ -31,33 +31,6 @@ def prepare_gpu_operator():
     run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
 
 
-def prepare_odh_customization():
-    odh_stopped = False
-    customized = False
-    if config.ci_artifacts.get_config("odh.customize.operator.stop"):
-        logging.info("Stopping the ODH operator ...")
-        run.run("oc scale deploy/codeflare-operator-manager --replicas=0 -n openshift-operators")
-        odh_stopped = True
-
-    if config.ci_artifacts.get_config("odh.customize.mcad.controller_image.enabled"):
-        if not odh_stopped:
-            raise RuntimeError("Cannot customize MCAD controller image if the ODH operator isn't stopped ...")
-        customized = True
-
-        odh_namespace = config.ci_artifacts.get_config("odh.namespace")
-        image = config.ci_artifacts.get_config("odh.customize.mcad.controller_image.image")
-        tag = config.ci_artifacts.get_config("odh.customize.mcad.controller_image.tag")
-        logging.info(f"Setting MCAD controller image to {image}:{tag} ...")
-        run.run(f"oc set image deploy/mcad-controller-mcad mcad-controller={image}:{tag} -n {odh_namespace}")
-
-        run.run("oc delete appwrappers -A --all # delete all appwrappers")
-        run.run("oc delete crd appwrappers.mcad.ibm.com")
-        run.run("oc apply -f https://raw.githubusercontent.com/project-codeflare/multi-cluster-app-dispatcher/main/config/crd/bases/mcad.ibm.com_appwrappers.yaml")
-
-    if customized:
-        run.run("./run_toolbox.py from_config rhods wait_odh")
-
-
 def cleanup_gpu_operator():
     if run.run(f'oc get project -oname nvidia-gpu-operator 2>/dev/null', check=False).returncode != 0:
         run.run("oc delete ns nvidia-gpu-operator")
@@ -117,7 +90,7 @@ def prepare_mcad():
 
     run.run("./run_toolbox.py from_config rhods wait_odh")
 
-    prepare_odh_customization()
+    prepare_odh.prepare_odh_customization()
 
     if config.ci_artifacts.get_config("tests.want_gpu"):
         prepare_gpu_operator()
