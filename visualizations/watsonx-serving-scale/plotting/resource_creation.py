@@ -101,9 +101,9 @@ class ResourceCreationDelay():
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass # entry is set
 
-        models_per_ns = entry.results.test_config.get("tests.scale.models_per_namespace")
-        isvc_basename = entry.results.test_config.get("watsonx_serving.inference_service.name")
-        serving_runtime_name = entry.results.test_config.get("watsonx_serving.serving_runtime.name")
+        models_per_ns = entry.results.test_config.get("tests.scale.model.replicas")
+        isvc_basename = entry.results.test_config.get("tests.scale.model.inference_service.name")
+        serving_runtime_name = entry.results.test_config.get("tests.scale.model.serving_runtime.name")
         mapping = dict()
 
         for model_id in range(models_per_ns):

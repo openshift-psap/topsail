@@ -222,7 +222,7 @@ class UserProgressDetailsReport():
 
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
-            models_per_ns = entry.results.test_config.get("tests.scale.models_per_namespace")
+            models_per_ns = entry.results.test_config.get("tests.scale.model.replicas")
             for model_id in range(models_per_ns):
                 header += Plot_and_Text(f"Resource Creation Delay", set_config(dict(model_id=model_id), args))
 

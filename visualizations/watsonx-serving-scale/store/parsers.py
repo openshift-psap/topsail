@@ -69,7 +69,7 @@ def _parse_always(results, dirname, import_settings):
 
 
 def _parse_once(results, dirname):
-    results.user_count = int(results.test_config.get("tests.scale.namespace_count"))
+    results.user_count = int(results.test_config.get("tests.scale.namespace.replicas"))
 
     results.nodes_info = _parse_nodes_info(dirname) or {}
     results.cluster_info = _extract_cluster_info(results.nodes_info)
