@@ -9,12 +9,12 @@ import test_scale
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
 def compute_sutest_node_requirement():
-    ns_count = config.ci_artifacts.get_config("tests.scale.namespace_count")
-    models_per_ns = config.ci_artifacts.get_config("tests.scale.models_per_namespace")
+    ns_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
+    models_per_ns = config.ci_artifacts.get_config("tests.scale.model.replicas")
     models_count = ns_count * models_per_ns
 
-    cpu_rq = config.ci_artifacts.get_config("watsonx_serving.serving_runtime.resource_request.cpu")
-    mem_rq = config.ci_artifacts.get_config("watsonx_serving.serving_runtime.resource_request.memory")
+    cpu_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.resource_request.cpu")
+    mem_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.resource_request.memory")
 
     kwargs = dict(
         cpu = cpu_rq,
@@ -99,7 +99,7 @@ def preload_image():
         return
 
     # this is required to properly create the namespace used to preload the image
-    test_namespace = config.ci_artifacts.get_config("tests.scale.namespace")
+    test_namespace = config.ci_artifacts.get_config("tests.scale.namespace.name")
     test_scale.prepare_user_namespace(test_namespace)
 
     RETRIES = 3

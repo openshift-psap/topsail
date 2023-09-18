@@ -31,21 +31,21 @@ rhods deploy_ods:
 sutest/cluster set_project_annotation/scale_test_node_selector:
   key: openshift.io/node-selector
   value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"
-  project: {{ tests.scale.namespace }}
+  project: {{ tests.scale.namespace.name }}
 
 sutest/cluster set_project_annotation/scale_test_toleration:
   key: scheduler.alpha.kubernetes.io/defaultTolerations
   value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
-  project: {{ tests.scale.namespace }}
+  project: {{ tests.scale.namespace.name }}
 
 #
 # Scale test - Prepare Watsonx-Serving
 #
 
 sutest/cluster preload_image/watsonx-serving-runtime:
-  namespace: {{ tests.scale.namespace }}
+  namespace: {{ tests.scale.namespace.name }}
   name: caikit-image
-  image: {{ watsonx_serving.serving_runtime.image }}
+  image: {{ tests.scale.model.serving_runtime.image }}
 
   node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
   node_selector_value: "{{ clusters.sutest.compute.machineset.taint.value }}"
@@ -114,7 +114,7 @@ cluster deploy_minio_s3_server:
 #
 
 local_ci run_multi/scale:
-  user_count: "{{ tests.scale.namespace_count }}"
+  user_count: "{{ tests.scale.namespace.replicas }}"
   namespace: "{{ base_image.namespace }}"
   istag: "{{ base_image.imagestream }}:{{ base_image.extend.tag }}"
   service_account: "{{ base_image.user.service_account }}"
@@ -141,19 +141,19 @@ local_ci run_multi/scale:
 #
 
 watsonx_serving deploy_model:
-  namespace: {{ tests.scale.namespace }}
+  namespace: {{ tests.scale.namespace.name }}
   sa_name: {{ watsonx_serving.sa_name }}
 
-  serving_runtime_name: {{ watsonx_serving.serving_runtime.name }}
-  serving_runtime_image: {{ watsonx_serving.serving_runtime.image }}
-  serving_runtime_resource_request: {{ watsonx_serving.serving_runtime.resource_request }}
+  serving_runtime_name: {{ tests.scale.model.serving_runtime.name }}
+  serving_runtime_image: {{ tests.scale.model.serving_runtime.image }}
+  serving_runtime_resource_request: {{ tests.scale.model.serving_runtime.resource_request }}
 
-  inference_service_name: {{ watsonx_serving.inference_service.name }}
-  storage_uri: {{ watsonx_serving.inference_service.storage_uri }}
+  inference_service_name: {{ tests.scale.model.inference_service.name }}
+  storage_uri: {{ tests.scale.model.inference_service.storage_uri }}
 
 watsonx_serving validate_model:
-  namespace: {{ tests.scale.namespace }}
-  inference_service_names: [{{ watsonx_serving.inference_service.name }}]
+  namespace: {{ tests.scale.namespace.name }}
+  inference_service_names: [{{ tests.scale.model.inference_service.name }}]
 
-  model_id: {{ watsonx_serving.model.id }}
-  query_data: {{ watsonx_serving.model.query_data }}
+  model_id: {{ tests.scale.model.id }}
+  query_data: {{ tests.scale.model.inference_service.query_data }}
