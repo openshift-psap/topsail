@@ -31,7 +31,7 @@ ci_presets:
     tests.mode: kubemark
 
   gpu:
-    tests.want_gpu: true
+    gpu.prepare_cluster: true
     watsonx_serving.serving_runtime.resource_request["nvidia.com/gpu"]: 1
     clusters.sutest.compute.machineset.type: g5.2xlarge
 
@@ -193,6 +193,7 @@ watsonx_serving:
           memory: 1Gi
 
 gpu:
+  prepare_cluster: false
   time_sharing:
     replicas: 17
 
@@ -202,7 +203,6 @@ tests:
   dry_mode: false
   visualize: true
   capture_prom: true
-  want_gpu: false
 
   scale:
     namespace: watsonx-serving-scale-test

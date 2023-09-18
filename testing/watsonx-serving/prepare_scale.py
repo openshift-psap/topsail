@@ -17,7 +17,7 @@ def prepare_sutest():
 
 
 def prepare_gpu():
-    if not config.ci_artifacts.get_config("tests.want_gpu"):
+    if not config.ci_artifacts.get_config("gpu.prepare_cluster"):
         return
 
     prepare_gpu_operator.prepare_gpu_operator()
