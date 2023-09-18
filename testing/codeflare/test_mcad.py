@@ -289,7 +289,8 @@ def run_one_matbench():
     name = settings.pop("name")
 
     with env.TempArtifactDir(os.getcwd()):
-        os.chdir(CI_ARTIFACTS_BASE_DIR)
+        ci_artifacts_base_dir = TESTING_THIS_DIR.parent.parent
+        os.chdir(ci_artifacts_base_dir)
 
         failed = _run_test_and_visualize(name, settings)
 
