@@ -100,7 +100,7 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        TicketId:
+        TicketId: 248
         Project: PSAP/CodeFlare/mcad
       deploy_cluster:
         target: cluster_light
