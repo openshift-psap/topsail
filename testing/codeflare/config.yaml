@@ -190,7 +190,7 @@ base_image: # only used in sdk_user test mode
     bucket_name: pipelines-scale-test-bucket
 
 tests:
-  mode: sdk_user
+  mode: mcad
 
   dry_mode: false
   visualize: true

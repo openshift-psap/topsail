@@ -80,42 +80,6 @@ def prepare_odh():
         run.run(f"curl -Ssf {resource} | tee '{env.ARTIFACT_DIR / filename}' | oc apply -f- -n {odh_namespace}")
 
 
-def prepare_mcad():
-    """
-    Prepares the cluster and the namespace for running the MCAD tests
-    """
-    prepare_odh()
-
-    prepare_mcad_test()
-
-    run.run("./run_toolbox.py from_config rhods wait_odh")
-
-    prepare_odh.prepare_odh_customization()
-
-    if config.ci_artifacts.get_config("tests.want_gpu"):
-        prepare_gpu_operator()
-
-    prepare_worker_node_labels()
-
-    if config.ci_artifacts.get_config("tests.want_gpu"):
-        run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
-
-    if config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.enabled"):
-        namespace = config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.namespace")
-        if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
-            run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
-
-        run.run("./run_toolbox.py from_config cluster fill_workernodes")
-
-
-def prepare_ci():
-    """
-    Prepares the cluster and the namespace for running the MCAD tests
-    """
-
-    prepare_mcad()
-
-
 def cleanup_cluster():
     """
     Restores the cluster to its original state
