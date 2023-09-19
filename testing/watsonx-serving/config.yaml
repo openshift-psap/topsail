@@ -17,7 +17,8 @@ ci_presets:
 
   light:
     extends: [light_cluster]
-    ci_presets.gpu["clusters.sutest.compute.machineset.type"]: g4dn.xlarge
+    ci_presets.gpu_scale["clusters.sutest.compute.machineset.type"]: g4dn.xlarge
+    ci_presets.gpu_load["clusters.sutest.compute.machineset.type"]: g4dn.xlarge
 
   metal:
     clusters.sutest.is_metal: true
@@ -30,15 +31,31 @@ ci_presets:
   kubemark:
     tests.mode: kubemark
 
-  gpu:
-    tests.want_gpu: true
-    watsonx_serving.serving_runtime.resource_request["nvidia.com/gpu"]: 1
+  gpu_scale:
+    gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g5.2xlarge
+    tests.scale.model.name: flan-t5-small-caikit-gpu
+    gpu.time_sharing.replicas: 17
 
-  scale:
-    tests.scale.namespace_count: 60
-    tests.scale.models_per_namespace: 5
+  gpu_load:
+    gpu.prepare_cluster: true
+    clusters.sutest.compute.machineset.type: g5.2xlarge
+    gpu.time_sharing.replicas: 17
 
+  load_test:
+    extends: [gpu_load]
+    tests.mode: load
+    base_image.extend.local_dockerfile_path: testing/watsonx-serving/images/Containerfile.load_test_user
+    base_image.extend.tag: load-test-user
+
+  scale_test:
+    tests.mode: scale
+    base_image.extend.local_dockerfile_path: testing/watsonx-serving/images/Containerfile.scale_test_user
+    base_image.extend.tag: scale-test-user
+
+  at_scale:
+    tests.scale.namespace.replicas: 60
+    tests.scale.model.replicas: 5
 
   delayed:
     tests.scale.sleep_factor: 10 # 10s between each of the users
@@ -156,34 +173,24 @@ base_image:
     dockerfile_path: build/Dockerfile
   extend:
     enabled: true
-    local_dockerfile_path: testing/watsonx-serving/images/Containerfile.scale_test_user
-    tag: scale-test-user
+    local_dockerfile_path: testing/watsonx-serving/images/Containerfile.load_test_user
+    tag: load-test-user
   user:
     service_account: ci-artifacts
     role: cluster-admin
   minio:
-    bucket_name: watsonx-serving-scale-test-bucket
+    bucket_name: watsonx-serving-test-bucket
 
 watsonx_serving:
   sa_name: sa
-  serving_runtime:
-    name: caikit-runtime
-    image: quay.io/opendatahub/caikit-tgis-serving:stable
-    resource_request:
-      cpu: 0.350
-      memory: 1.5 # in Gi
-      nvidia.com/gpu: 0
   storage_config:
     name: storage-config
     region: us-east-1
     endpoint: s3.amazonaws.com
     use_https: 1
-  inference_service:
-    name: caikit-isvc
-    storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/"
   model:
-    id: flan-t5-small-caikit
-    query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'
+    serving_runtime:
+      image: quay.io/opendatahub/caikit-tgis-serving:stable
   customize:
     serverless:
       enabled: false
@@ -193,6 +200,7 @@ watsonx_serving:
           memory: 1Gi
 
 gpu:
+  prepare_cluster: false
   time_sharing:
     replicas: 17
 
@@ -202,14 +210,28 @@ tests:
   dry_mode: false
   visualize: true
   capture_prom: true
-  want_gpu: false
 
   scale:
-    namespace: watsonx-serving-scale-test
-    namespace_label: topsail.scale-test=true
-    namespace_count: 2
-    models_per_namespace: 2
     sleep_factor: 1
+    namespace:
+      name: watsonx-serving-scale-test
+      label: topsail.scale-test=true
+      replicas: 2
+
+    model:
+      name: flan-t5-small-caikit-cpu
+      replicas: 2
+      inference_service:
+        name: caikit-isvc
+      serving_runtime:
+        name: caikit-runtime
+
+  load:
+    models:
+    - flan-t5-small-caikit-cpu
+    - flan-t5-small-caikit-gpu:
+        model:
+          replicas: 2
 
 matbench:
   preset: null

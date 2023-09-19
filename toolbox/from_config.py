@@ -2,6 +2,7 @@ import sys, os
 import yaml
 import io
 import logging
+import traceback
 
 import jinja2
 import jinja2.filters
@@ -49,9 +50,6 @@ class FromConfig:
         import toolbox
         toolbox = toolbox.Toolbox()
 
-        group_obj = getattr(toolbox, group)
-        command_obj = getattr(group_obj, command.replace("-", "_"))
-
         with open(config_file) as f:
             config = yaml.safe_load(f)
 
@@ -78,7 +76,20 @@ class FromConfig:
         jinja2.filters.FILTERS["raise_exception"] = raise_exception
 
         command_args_tpl = jinja2.Template(command_args)
-        command_args_rendered = command_args_tpl.render(config)
+        try:
+            command_args_rendered = command_args_tpl.render(config)
+        except jinja2.exceptions.UndefinedError as e:
+            template_frame = traceback.extract_tb(e.__traceback__)[-2]
+            if template_frame.filename != "<template>":
+                raise e
+            msg = f"Error at line {template_frame.lineno} of file {command_args_file}: {e.message}"
+            logging.error("Failed to render the Jinja template.")
+            logging.error(msg)
+            raise jinja2.exceptions.UndefinedError(msg)
+
+        if group == "dump" and command == "config":
+            print(command_args_rendered)
+            raise SystemExit(0)
 
         command_args = yaml.safe_load(command_args_rendered)
 
@@ -116,6 +127,9 @@ class FromConfig:
         for key in list(command_args):
             if key.startswith("_"):
                 del command_args[key]
+
+        group_obj = getattr(toolbox, group)
+        command_obj = getattr(group_obj, command.replace("-", "_"))
 
         try:
             run_ansible_role = command_obj(None, **command_args)

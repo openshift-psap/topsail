@@ -20,7 +20,7 @@ sys.path.append(str(TESTING_THIS_DIR.parent))
 from common import env, config, run, rhods, visualize, configure_logging
 configure_logging()
 
-import prepare_scale, test_scale
+import prepare_scale, test_scale, test_load
 import prepare_watsonx_serving
 
 initialized = False
@@ -63,7 +63,7 @@ def prepare_ci():
     """
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode == "scale":
+    if test_mode in ("scale", "load"):
         prepare_scale.prepare()
     elif test_mode == "kubemark":
         run.run("./run_toolbox.py cluster deploy_kubemark_capi_provider")
@@ -82,6 +82,12 @@ def test_ci():
     if test_mode == "kubemark":
         run.run("echo hello world")
         return
+
+    if test_mode == "load":
+        test_load.test()
+        return
+
+    assert test_mode == "scale"
 
     do_visualize = config.ci_artifacts.get_config("tests.visualize")
 
@@ -220,7 +226,7 @@ def cleanup_sutest_ns():
     Cleans up the SUTest namespaces
     """
 
-    label = config.ci_artifacts.get_config("tests.scale.namespace_label")
+    label = config.ci_artifacts.get_config("tests.scale.namespace.label")
     run.run(f"oc delete ns -l{label}")
 
 # ---

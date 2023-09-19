@@ -152,6 +152,10 @@ class Config:
         with open(self.config_path, "w") as f:
             yaml.dump(self.config, f, indent=4, default_flow_style=False, sort_keys=False)
 
+        command_template = get_command_arg("dump config", None)
+        with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
+            print(command_template, file=f)
+
         if (shared_dir := os.environ.get("SHARED_DIR")) and (shared_dir_path := pathlib.Path(shared_dir)) and shared_dir_path.exists():
 
             with open(shared_dir_path / "config.yaml", "w") as f:

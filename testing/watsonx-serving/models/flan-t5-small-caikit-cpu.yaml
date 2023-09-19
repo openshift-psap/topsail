@@ -1,0 +1,10 @@
+id: flan-t5-small-caikit
+serving_runtime:
+  resource_request:
+    cpu: 0.350
+    memory: 1.5 # in Gi
+    nvidia.com/gpu: 0 # in Gi of GPU memory
+
+inference_service:
+  storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/"
+  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'

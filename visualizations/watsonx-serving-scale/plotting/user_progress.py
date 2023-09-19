@@ -129,8 +129,8 @@ class InferenceServicesProgress():
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass # entry is set
 
-        total_resource_count = (entry.results.test_config.get("tests.scale.namespace_count")
-                                * entry.results.test_config.get("tests.scale.models_per_namespace"))
+        total_resource_count = (entry.results.test_config.get("tests.scale.namespace.replicas")
+                                * entry.results.test_config.get("tests.scale.model.replicas"))
 
         data = generate_inferenceservice_progress_data(entry)
 

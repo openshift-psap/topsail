@@ -6,7 +6,7 @@ import os
 import datetime
 
 from common import env, config, run
-
+import prepare_scale
 
 def test(test_artifact_dir_p=None):
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
@@ -57,7 +57,7 @@ def prepare_user_namespace(namespace):
         return
 
     run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
-    label = config.ci_artifacts.get_config("tests.scale.namespace_label")
+    label = config.ci_artifacts.get_config("tests.scale.namespace.label")
     run.run(f"oc label ns/{namespace} {label} --overwrite")
 
     metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
@@ -81,6 +81,7 @@ def save_and_create(name, content, namespace, is_secret=False):
     finally:
         if is_secret:
             file_path.unlink(missing_ok=True)
+
 
 def deploy_storage_configuration(namespace):
     storage_secret_name = config.ci_artifacts.get_config("watsonx_serving.storage_config.name")
@@ -137,23 +138,26 @@ secrets:
 
     save_and_create("ServiceAccount.yaml", service_account, namespace)
 
+
 def run_one():
     logging.info("Runs one WatsonX user scale test")
 
     job_index = os.environ.get("JOB_COMPLETION_INDEX")
     if job_index is not None:
-        namespace = config.ci_artifacts.get_config("tests.scale.namespace")
+        namespace = config.ci_artifacts.get_config("tests.scale.namespace.name")
         new_namespace = f"{namespace}-u{job_index}"
         logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
-        config.ci_artifacts.set_config("tests.scale.namespace", new_namespace)
+        config.ci_artifacts.set_config("tests.scale.namespace.name", new_namespace)
     else:
         job_index = 0
 
-    namespace = config.ci_artifacts.get_config("tests.scale.namespace")
+    namespace = config.ci_artifacts.get_config("tests.scale.namespace.name")
     sync_file = pathlib.Path("/tmp/test_done")
     sync_file.unlink(missing_ok=True)
 
     try:
+        prepare_scale.consolidate_model_config("tests.scale.model")
+
         prepare_user_namespace(namespace)
 
         def watch_failures(namespaces):
@@ -184,13 +188,14 @@ def run_one():
         run.run(f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
         sync_file.unlink(missing_ok=True)
 
+
 def run_one_test(namespace, job_index):
     run.run('echo "namespace_prepared: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"')
     deploy_storage_configuration(namespace)
     run.run('echo "storage_configured: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"')
 
-    models_per_namespace = config.ci_artifacts.get_config("tests.scale.models_per_namespace")
-    inference_service_basename = config.ci_artifacts.get_config("watsonx_serving.inference_service.name")
+    models_per_namespace = config.ci_artifacts.get_config("tests.scale.model.replicas")
+    inference_service_basename = config.ci_artifacts.get_config("tests.scale.model.inference_service.name")
     all_inference_service_names = []
     for model_idx in range(models_per_namespace):
         inference_service_name = f"{inference_service_basename}-u{job_index}-m{model_idx}"

@@ -73,6 +73,9 @@ ci_presets:
     odh.customize.operator.stop: true
     odh.customize.mcad.controller_image.enabled: true
 
+  mcad:
+    tests.mode: mcad
+
   sdk_user:
     tests.mode: sdk_user
 
