@@ -133,10 +133,10 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 568803
+    tag: 577505
     channel: alpha
-    version: 2.1.0
-    version_name: RC7
+    version: 2.2.0
+    version_name: RC1
   operator:
     # set to true to stop the RHODS operator
     stop: false
