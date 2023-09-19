@@ -31,27 +31,34 @@ ci_presets:
   kubemark:
     tests.mode: kubemark
 
-  gpu_scale:
-    gpu.prepare_cluster: true
-    clusters.sutest.compute.machineset.type: g5.2xlarge
-    tests.scale.model.name: flan-t5-small-caikit-gpu
-    gpu.time_sharing.replicas: 17
-
-  gpu_load:
-    gpu.prepare_cluster: true
-    clusters.sutest.compute.machineset.type: g5.2xlarge
-    gpu.time_sharing.replicas: 17
-
-  load_test:
-    extends: [gpu_load]
-    tests.mode: load
-    base_image.extend.local_dockerfile_path: testing/watsonx-serving/images/Containerfile.load_test_user
-    base_image.extend.tag: load-test-user
+  # ---
 
   scale_test:
     tests.mode: scale
     base_image.extend.local_dockerfile_path: testing/watsonx-serving/images/Containerfile.scale_test_user
     base_image.extend.tag: scale-test-user
+
+  gpu_scale:
+    extends: [scale_test]
+    gpu.prepare_cluster: true
+    clusters.sutest.compute.machineset.type: g5.2xlarge
+    tests.scale.model.name: flan-t5-small-caikit-gpu
+    gpu.time_sharing.replicas: 17
+
+  # ---
+
+  gpu_load:
+    extends: [load_test]
+    gpu.prepare_cluster: true
+    clusters.sutest.compute.machineset.type: g5.2xlarge
+    gpu.time_sharing.replicas: 17
+
+  load_test:
+    tests.mode: load
+    base_image.extend.local_dockerfile_path: testing/watsonx-serving/images/Containerfile.load_test_user
+    base_image.extend.tag: load-test-user
+
+  # ---
 
   at_scale:
     tests.scale.namespace.replicas: 60
