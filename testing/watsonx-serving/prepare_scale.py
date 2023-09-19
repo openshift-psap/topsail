@@ -85,9 +85,15 @@ def consolidate_model_config(config_location, _model_name=None, show=True, save=
     if not model_name:
         raise RuntimeError(f"Couldn't find a name for consolidating the model configuration ... {config_location}={test_config} and model_name={_model_name}")
 
+    def get_file_config(file_model_name):
+        with open(TESTING_THIS_DIR / "models" / f"{file_model_name}.yaml") as f:
+            return yaml.safe_load(f)
+
     # base = testing/models/<model_name>
-    with open(TESTING_THIS_DIR / "models" / f"{model_name}.yaml") as f:
-        base_config = yaml.safe_load(f)
+    base_config = get_file_config(model_name)
+    if extends_name := base_config.pop("extends", False):
+        config_to_extend = get_file_config(extends_name)
+        base_config = merge_dicts(config_to_extend, base_config)
 
     # watsonx = config(watsonx_serving.model)
     watsonx_config = config.ci_artifacts.get_config("watsonx_serving.model")
