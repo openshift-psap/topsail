@@ -18,7 +18,7 @@ ci_presets:
   light:
     extends: [light_cluster]
     ci_presets.gpu_scale["clusters.sutest.compute.machineset.type"]: g4dn.xlarge
-    ci_presets.gpu_load["clusters.sutest.compute.machineset.type"]: g4dn.xlarge
+    ci_presets.gpu_e2e["clusters.sutest.compute.machineset.type"]: g4dn.xlarge
 
   metal:
     clusters.sutest.is_metal: true
@@ -33,30 +33,30 @@ ci_presets:
 
   # ---
 
+  e2e:
+    tests.mode: e2e
+    base_image.extend.local_dockerfile_path: testing/watsonx-serving/images/Containerfile.e2e_test_user
+    base_image.extend.tag: e2e-test-user
+
+  e2e_gpu:
+    extends: [e2e_test]
+    gpu.prepare_cluster: true
+    clusters.sutest.compute.machineset.type: g5.2xlarge
+    gpu.time_sharing.replicas: 100
+
+  # ---
+
   scale_test:
     tests.mode: scale
     base_image.extend.local_dockerfile_path: testing/watsonx-serving/images/Containerfile.scale_test_user
     base_image.extend.tag: scale-test-user
 
-  gpu_scale:
+  scale_gpu:
     extends: [scale_test]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g5.2xlarge
     tests.scale.model.name: flan-t5-small-caikit-gpu
     gpu.time_sharing.replicas: 17
-
-  # ---
-
-  gpu_load:
-    extends: [load_test]
-    gpu.prepare_cluster: true
-    clusters.sutest.compute.machineset.type: g5.2xlarge
-    gpu.time_sharing.replicas: 17
-
-  load_test:
-    tests.mode: load
-    base_image.extend.local_dockerfile_path: testing/watsonx-serving/images/Containerfile.load_test_user
-    base_image.extend.tag: load-test-user
 
   # ---
 
@@ -180,8 +180,8 @@ base_image:
     dockerfile_path: build/Dockerfile
   extend:
     enabled: true
-    local_dockerfile_path: testing/watsonx-serving/images/Containerfile.load_test_user
-    tag: load-test-user
+    local_dockerfile_path: testing/watsonx-serving/images/Containerfile.scale_test_user
+    tag: scale-test-user
   user:
     service_account: ci-artifacts
     role: cluster-admin
@@ -233,7 +233,7 @@ tests:
       serving_runtime:
         name: caikit-runtime
 
-  load:
+  e2e:
     models:
     - flan-t5-small-caikit-cpu
     - flan-t5-small-caikit-gpu:

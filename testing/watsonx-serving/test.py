@@ -20,7 +20,7 @@ sys.path.append(str(TESTING_THIS_DIR.parent))
 from common import env, config, run, rhods, visualize, configure_logging
 configure_logging()
 
-import prepare_scale, test_scale, test_load
+import prepare_scale, test_scale, test_e2e
 import prepare_watsonx_serving
 
 initialized = False
@@ -63,7 +63,7 @@ def prepare_ci():
     """
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode in ("scale", "load"):
+    if test_mode in ("scale", "e2e"):
         prepare_scale.prepare()
     elif test_mode == "kubemark":
         run.run("./run_toolbox.py cluster deploy_kubemark_capi_provider")
@@ -83,8 +83,8 @@ def test_ci():
         run.run("echo hello world")
         return
 
-    if test_mode == "load":
-        test_load.test()
+    if test_mode == "e2e":
+        test_e2e.test()
         return
 
     assert test_mode == "scale"

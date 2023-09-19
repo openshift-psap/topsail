@@ -40,8 +40,8 @@ def prepare():
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode == "scale":
         user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
-    elif test_mode == "load":
-        user_count = len(config.ci_artifacts.get_config("tests.load.models"))
+    elif test_mode == "e2e":
+        user_count = len(config.ci_artifacts.get_config("tests.e2e.models"))
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
