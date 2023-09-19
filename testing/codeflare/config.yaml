@@ -30,7 +30,7 @@ ci_presets:
 
   gpu:
     extends: [mcad]
-    tests.mcad.want_gpu: true
+    tests.want_gpu: true
     tests.mcad.tests_to_run: [gpu_all_schedulable, gpu_scheduling, gpu_scheduling_job_mode, gpu_unschedulable]
 
   fill_workernodes:
@@ -65,7 +65,7 @@ ci_presets:
   gpu_all_schedulable:
     extends: [mcad]
     clusters.sutest.worker.fill_resources.enabled: false
-    tests.mcad.want_gpu: true
+    tests.want_gpu: true
     gpu.time_sharing.replicas: 100
     tests.mcad.tests_to_run: [gpu_all_schedulable]
     tests.mcad.test_multiple_values.enabled: true
