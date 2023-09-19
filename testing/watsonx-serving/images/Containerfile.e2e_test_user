@@ -8,8 +8,8 @@ RUN curl -L https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL
     chmod 777 grpcurl && mv grpcurl /usr/local/bin/
 
 
-RUN git clone https://github.com/dagrayvid/ghz.git && \
-    cd ghz/cmd/ghz && \
+RUN git clone https://github.com/dagrayvid/ghz.git /src/ghz && \
+    cd /src/ghz/cmd/ghz && \
     go build . && \
     mv ghz /usr/local/bin/
 
