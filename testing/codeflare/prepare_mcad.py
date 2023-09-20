@@ -37,17 +37,16 @@ def prepare_test_nodes(name, cfg, dry_mode):
         else:
             run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
 
-        
+
 def prepare():
     """
     Prepares the cluster and the namespace for running the MCAD tests
     """
-    
-    prepare_common.prepare_common()
-    
-    prepare_mcad_test()
 
-    
+    prepare_mcad_test()
+    prepare_common.prepare_common()
+
+
 def cleanup_cluster():
     """
     Restores the cluster to its original state

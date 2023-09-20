@@ -46,8 +46,8 @@ def prepare_odh_customization():
         run.run(f"oc set image deploy/mcad-controller-mcad mcad-controller={image}:{tag} -n {odh_namespace}")
 
         run.run("oc delete appwrappers -A --all # delete all appwrappers")
-        run.run("oc delete crd appwrappers.mcad.ibm.com")
-        run.run("oc apply -f https://raw.githubusercontent.com/project-codeflare/multi-cluster-app-dispatcher/main/config/crd/bases/mcad.ibm.com_appwrappers.yaml")
+        run.run("oc delete crd appwrappers.workload.codeflare.dev")
+        run.run("oc apply -f https://raw.githubusercontent.com/project-codeflare/multi-cluster-app-dispatcher/main/config/crd/bases/workload.codeflare.dev_appwrappers.yaml")
 
     if customized:
         run.run("./run_toolbox.py from_config rhods wait_odh")

@@ -31,33 +31,6 @@ def prepare_gpu_operator():
     run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
 
 
-def prepare_odh_customization():
-    odh_stopped = False
-    customized = False
-    if config.ci_artifacts.get_config("odh.customize.operator.stop"):
-        logging.info("Stopping the ODH operator ...")
-        run.run("oc scale deploy/codeflare-operator-manager --replicas=0 -n openshift-operators")
-        odh_stopped = True
-
-    if config.ci_artifacts.get_config("odh.customize.mcad.controller_image.enabled"):
-        if not odh_stopped:
-            raise RuntimeError("Cannot customize MCAD controller image if the ODH operator isn't stopped ...")
-        customized = True
-
-        odh_namespace = config.ci_artifacts.get_config("odh.namespace")
-        image = config.ci_artifacts.get_config("odh.customize.mcad.controller_image.image")
-        tag = config.ci_artifacts.get_config("odh.customize.mcad.controller_image.tag")
-        logging.info(f"Setting MCAD controller image to {image}:{tag} ...")
-        run.run(f"oc set image deploy/mcad-controller-mcad mcad-controller={image}:{tag} -n {odh_namespace}")
-
-        run.run("oc delete appwrappers -A --all # delete all appwrappers")
-        run.run("oc delete crd appwrappers.mcad.ibm.com")
-        run.run("oc apply -f https://raw.githubusercontent.com/project-codeflare/multi-cluster-app-dispatcher/main/config/crd/bases/mcad.ibm.com_appwrappers.yaml")
-
-    if customized:
-        run.run("./run_toolbox.py from_config rhods wait_odh")
-
-
 def cleanup_gpu_operator():
     if run.run(f'oc get project -oname nvidia-gpu-operator 2>/dev/null', check=False).returncode != 0:
         run.run("oc delete ns nvidia-gpu-operator")
@@ -105,42 +78,6 @@ def prepare_odh():
         filename = "kfdef__" + pathlib.Path(resource).name
 
         run.run(f"curl -Ssf {resource} | tee '{env.ARTIFACT_DIR / filename}' | oc apply -f- -n {odh_namespace}")
-
-
-def prepare_mcad():
-    """
-    Prepares the cluster and the namespace for running the MCAD tests
-    """
-    prepare_odh()
-
-    prepare_mcad_test()
-
-    run.run("./run_toolbox.py from_config rhods wait_odh")
-
-    prepare_odh_customization()
-
-    if config.ci_artifacts.get_config("tests.want_gpu"):
-        prepare_gpu_operator()
-
-    prepare_worker_node_labels()
-
-    if config.ci_artifacts.get_config("tests.want_gpu"):
-        run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
-
-    if config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.enabled"):
-        namespace = config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.namespace")
-        if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
-            run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
-
-        run.run("./run_toolbox.py from_config cluster fill_workernodes")
-
-
-def prepare_ci():
-    """
-    Prepares the cluster and the namespace for running the MCAD tests
-    """
-
-    prepare_mcad()
 
 
 def cleanup_cluster():

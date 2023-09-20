@@ -29,23 +29,30 @@ ci_presets:
     clusters.driver.is_metal: false
 
   gpu:
-    tests.mcad.want_gpu: true
+    extends: [mcad]
+    tests.want_gpu: true
     tests.mcad.tests_to_run: [gpu_all_schedulable, gpu_scheduling, gpu_scheduling_job_mode, gpu_unschedulable]
 
   fill_workernodes:
     clusters.sutest.worker.fill_resources.enabled: true
 
+  mcad:
+    tests.mode: mcad
+
   cpu_light_unschedulable:
+    extends: [mcad]
     tests.mcad.tests_to_run: [cpu_light_unschedulable]
     tests.mcad.test_multiple_values.enabled: true
     tests.mcad.test_multiple_values.settings:
       "aw.count": [200, 350, 500]
 
   cpu_light_scheduling:
+    extends: [mcad]
     tests.mcad.tests_to_run: [cpu_light_scheduling, cpu_light_scheduling_job_mode]
     tests.mcad.test_templates.cpu_light_scheduling.aw.count: 100
 
   cpu_all_schedulable:
+    extends: [mcad]
     clusters.sutest.worker.fill_resources.enabled: true
     tests.mcad.test_templates.common_light.node.count: 4
 
@@ -56,8 +63,9 @@ ci_presets:
       aw.job.job_mode: [true, false]
 
   gpu_all_schedulable:
+    extends: [mcad]
     clusters.sutest.worker.fill_resources.enabled: false
-    tests.mcad.want_gpu: true
+    tests.want_gpu: true
     gpu.time_sharing.replicas: 100
     tests.mcad.tests_to_run: [gpu_all_schedulable]
     tests.mcad.test_multiple_values.enabled: true
@@ -72,9 +80,6 @@ ci_presets:
   use_mcad_main_branch:
     odh.customize.operator.stop: true
     odh.customize.mcad.controller_image.enabled: true
-
-  mcad:
-    tests.mode: mcad
 
   sdk_user:
     tests.mode: sdk_user
@@ -95,7 +100,7 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        TicketId:
+        TicketId: 248
         Project: PSAP/CodeFlare/mcad
       deploy_cluster:
         target: cluster_light
@@ -185,7 +190,7 @@ base_image: # only used in sdk_user test mode
     bucket_name: pipelines-scale-test-bucket
 
 tests:
-  mode: sdk_user
+  mode: mcad
 
   dry_mode: false
   visualize: true

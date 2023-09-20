@@ -76,7 +76,7 @@ gpu_unschedulable:
 
 common_light:
   node:
-    count: 0
+    count: 1
 
 cpu_light_all_schedulable:
   extends: [common_cpu, common_light, common_all_schedulable]
