@@ -236,9 +236,8 @@ tests:
   e2e:
     models:
     - flan-t5-small-caikit-cpu
-    - flan-t5-small-caikit-gpu:
-        model:
-          replicas: 2
+    - flan-t5-small-caikit-gpu
+    consolidated_models: {} # will be filled at runtime
 
 matbench:
   preset: null
