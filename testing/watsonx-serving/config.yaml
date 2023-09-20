@@ -226,14 +226,11 @@ tests:
       replicas: 2
 
     model:
+      consolidated: false
       name: flan-t5-small-caikit-cpu
       replicas: 2
-      inference_service:
-        name: caikit-isvc
-      serving_runtime:
-        name: caikit-runtime
-
   e2e:
+    namespace: watsonx-serving-e2e
     models:
     - flan-t5-small-caikit-cpu
     - flan-t5-small-caikit-gpu

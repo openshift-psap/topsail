@@ -45,7 +45,7 @@ sutest/cluster set_project_annotation/scale_test_toleration:
 sutest/cluster preload_image/watsonx-serving-runtime:
   namespace: {{ tests.scale.namespace.name }}
   name: caikit-image
-  image: {{ tests.scale.model.serving_runtime.image }}
+  image: {{ watsonx_serving.model.serving_runtime.image }}
 
   node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
   node_selector_value: "{{ clusters.sutest.compute.machineset.taint.value }}"
@@ -136,6 +136,8 @@ local_ci run_multi/scale:
   git_pull: null #refs/pull/716/merge
   capture_prom_db: "{{ tests.capture_prom }}"
 
+{% if tests.mode == "scale" and tests.scale.model.consolidated %}
+
 #
 # Test WatsonX Serving scale: run one
 #
@@ -144,19 +146,21 @@ watsonx_serving deploy_model:
   namespace: {{ tests.scale.namespace.name }}
   sa_name: {{ watsonx_serving.sa_name }}
 
-  serving_runtime_name: {{ tests.scale.model.serving_runtime.name }}
-  serving_runtime_image: {{ tests.scale.model.serving_runtime.image }}
+  serving_runtime_name: {{ tests.scale.model.name }}
+  serving_runtime_image: {{ watsonx_serving.model.serving_runtime.image }}
+
   serving_runtime_resource_request: {{ tests.scale.model.serving_runtime.resource_request }}
 
-  inference_service_name: {{ tests.scale.model.inference_service.name }}
+  inference_service_name: {{ tests.scale.model.name }}
   storage_uri: {{ tests.scale.model.inference_service.storage_uri }}
 
 watsonx_serving validate_model:
   namespace: {{ tests.scale.namespace.name }}
-  inference_service_names: [{{ tests.scale.model.inference_service.name }}]
+  inference_service_names: [{{ tests.scale.model.name }}]
 
   model_id: {{ tests.scale.model.id }}
   query_data: {{ tests.scale.model.inference_service.query_data }}
+{% endif %}
 
 #
 # Test WatsonX Serving e2e
@@ -184,13 +188,12 @@ __e2e_aliases:
 local_ci run_multi/deploy_concurrently:
   <<: *local_ci_run_multi_e2e
   ci_command: "watsonx-serving test_e2e deploy_models_concurrently"
-  sleep_factor: 1
-  user_count: 1
+  sleep_factor: 0
 
 
-local_ci run_multi/test_sequencially:
+local_ci run_multi/test_sequentially:
   <<: *local_ci_run_multi_e2e
-  ci_command: "watsonx-serving test_e2e test_models_sequencially"
+  ci_command: "watsonx-serving test_e2e test_models_sequentially"
   sleep_factor: 0
   user_count: 1
 

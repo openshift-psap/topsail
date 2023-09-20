@@ -17,7 +17,7 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 LIGHT_PROFILE = "light"
 
 sys.path.append(str(TESTING_THIS_DIR.parent))
-from common import env, config, run, rhods, visualize, configure_logging
+from common import env, config, run, rhods, visualize, configure_logging, prepare_user_pods
 configure_logging()
 
 import prepare_scale, test_scale, test_e2e
@@ -84,7 +84,7 @@ def test_ci():
         return
 
     if test_mode == "e2e":
-        test_e2e.test()
+        test_e2e.test_ci()
         return
 
     assert test_mode == "scale"
