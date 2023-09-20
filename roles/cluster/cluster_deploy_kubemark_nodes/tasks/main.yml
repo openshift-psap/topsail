@@ -190,14 +190,14 @@
 - name: Taint the kubemark nodes
   shell:
     oc adm taint node --overwrite
-      {{ kubemark_node_names_cmd.stdout_lines | join(' ')}}
+      {{ kubemark_node_names_cmd.stdout_lines | join(' ') }}
       {{ kubemark_node_taint_key }}={{ kubemark_node_taint_value }}:{{ kubemark_node_taint_effect }}
   when: kubemark_node_taint_key and kubemark_node_taint_key | length > 0
 
 - name: Label the kubemark nodes
   shell:
     oc label node --overwrite
-       {{ kubemark_node_names_cmd.stdout_lines | join(' ')}}
+       {{ kubemark_node_names_cmd.stdout_lines | join(' ') }}
        {{ kubemark_node_labels }}
   when: kubemark_node_labels and kubemark_node_labels | length > 0
 

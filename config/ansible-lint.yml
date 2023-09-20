@@ -22,3 +22,4 @@ skip_list:
   - 'chema[meta]'
   - 'ignore-errors'
   - 'fqcn'
+  - 'var-naming[no-role-prefix]'
