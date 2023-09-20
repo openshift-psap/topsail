@@ -229,6 +229,11 @@ def cleanup_sutest_ns():
     label = config.ci_artifacts.get_config("tests.scale.namespace.label")
     run.run(f"oc delete ns -l{label}")
 
+@entrypoint()
+def rebuild_driver_image(pr_number):
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    prepare_user_pods.rebuild_driver_image(namespace, pr_number)
+
 # ---
 
 class Entrypoint:
@@ -243,6 +248,7 @@ class Entrypoint:
         self.prepare_watsonx_serving = _prepare_watsonx_serving
         self.cluster_scale_up = cluster_scale_up
         self.cluster_scale_down = cluster_scale_down
+        self.rebuild_driver_image = rebuild_driver_image
 
         self.test_ci = test_ci
         self.scale_test = scale_test

@@ -168,6 +168,11 @@ def prepare():
     import test
     test.prepare_ci()
 
+def rebuild_driver_image(pr_number):
+    """Deletes and rebuilds the Driver image required for running the e2e test"""
+    import test
+    test.rebuild_driver_image(pr_number)
+
 class Entrypoint:
     """
     Commands for launching the CI tests
@@ -180,6 +185,7 @@ class Entrypoint:
         self.deploy_models_concurrently = deploy_models_concurrently
         self.test_models_sequentially = test_models_sequentially
         self.test_models_concurrently = test_models_concurrently
+        self.rebuild_driver_image = rebuild_driver_image
 
 def main():
     # Print help rather than opening a pager

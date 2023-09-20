@@ -64,6 +64,9 @@ def rebuild_driver_image(namespace, pr_number):
     istag = config.get_command_arg("utils build_push_image --prefix base_image", "_istag")
 
     run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
+    if config.ci_artifacts.get_config("base_image.extend.enabled"):
+        istag = config.get_command_arg("utils build_push_image --prefix extended_image", "_istag")
+        run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
 
     prepare_base_image_container(namespace)
 
