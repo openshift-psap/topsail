@@ -106,6 +106,8 @@ def consolidate_model_config(config_location=None, _model_name=None, show=True, 
     # base += test
     model_config = merge_dicts(model_config, test_config)
 
+    model_config["name"] = model_name
+
     if config_location:
         config.ci_artifacts.set_config(config_location, model_config)
 
