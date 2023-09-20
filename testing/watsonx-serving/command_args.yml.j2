@@ -187,7 +187,7 @@ __e2e_aliases:
 
 local_ci run_multi/deploy_concurrently:
   <<: *local_ci_run_multi_e2e
-  ci_command: "watsonx-serving test_e2e deploy_models_concurrently"
+  ci_command: "watsonx-serving test_e2e deploy_one_model --use-job-index"
   sleep_factor: 0
 
 
@@ -200,5 +200,5 @@ local_ci run_multi/test_sequentially:
 
 local_ci run_multi/test_concurrently:
   <<: *local_ci_run_multi_e2e
-  ci_command: "watsonx-serving test_e2e test_models_concurrently"
+  ci_command: "watsonx-serving test_e2e test_one_model --use-job-index"
   sleep_factor: 0

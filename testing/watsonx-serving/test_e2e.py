@@ -24,20 +24,24 @@ def consolidate_model(index):
     model_name = config.ci_artifacts.get_config("tests.e2e.models")[index]
     return prepare_scale.consolidate_model_config(_model_name=model_name, index=index)
 
-def consolidate_models(use_job_index=False):
+
+def consolidate_models(index=None, use_job_index=False):
     consolidated_models = []
-    if use_job_index:
-        job_index = os.environ.get("JOB_COMPLETION_INDEX", None)
-        if job_index is None:
-            job_index = 0
-            logging.warning("No JOB_COMPLETION_INDEX env var. Using {job_index}.")
-        job_index = int(job_index)
-        consolidated_models.append(consolidate_model(job_index))
+    if index or use_job_index:
+        if use_job_index:
+            index = os.environ.get("JOB_COMPLETION_INDEX", None)
+            if index is None:
+                raise RuntimeError("No JOB_COMPLETION_INDEX env variable available :/")
+
+            index = int(index)
+
+        consolidated_models.append(consolidate_model(index))
     else:
         for index in range(len(config.ci_artifacts.get_config("tests.e2e.models"))):
             consolidated_models.append(consolidate_model(index))
 
     config.ci_artifacts.set_config("tests.e2e.consolidated_models", consolidated_models)
+
 
 def dict_to_run_toolbox_args(args_dict):
     args = []
@@ -56,11 +60,11 @@ def dict_to_run_toolbox_args(args_dict):
 def test_ci():
     "Executes the full e2e test"
 
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=deploy ./run_toolbox.py from_config local_ci run_multi --suffix deploy_concurrently")
+    deploy_models_concurrently()
 
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
+    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
 
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=test_concurrently ./run_toolbox.py from_config local_ci run_multi --suffix test_concurrently")
+    test_models_concurrently()
 
 
 def deploy_models_sequentially():
@@ -75,7 +79,13 @@ def deploy_models_concurrently():
     "Deploys all the configured models concurrently (all at the same time)"
 
     logging.info("Deploy the models concurrently")
-    consolidate_models(use_job_index=True)
+    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_deploy ./run_toolbox.py from_config local_ci run_multi --suffix deploy_concurrently")
+
+
+def deploy_one_model(index=None, use_job_index=False):
+    "Deploys one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
+
+    consolidate_models(index=index, use_job_index=use_job_index)
     deploy_consolidated_models()
 
 
@@ -91,7 +101,13 @@ def test_models_concurrently():
     "Tests all the configured models concurrently (all at the same time)"
 
     logging.info("Test the models concurrently")
-    consolidate_models(use_job_index=True)
+    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_concurrently ./run_toolbox.py from_config local_ci run_multi --suffix test_concurrently")
+
+
+def test_one_model(index=None, use_job_index=False):
+    "Tests one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
+
+    consolidate_models(index=index, use_job_index=True)
     test_consolidated_models()
 
 # ---
@@ -139,6 +155,7 @@ def test_consolidated_models():
         with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test_{consolidated_model['name']}"):
             test_consolidated_model(consolidated_model)
 
+
 def test_consolidated_model(consolidated_model):
     logging.info(f"Testing model '{consolidated_model['name']}")
 
@@ -163,15 +180,18 @@ def test():
     import test
     test.test_ci()
 
+
 def prepare():
     """Prepares the e2e test from end to end"""
     import test
     test.prepare_ci()
 
+
 def rebuild_driver_image(pr_number):
     """Deletes and rebuilds the Driver image required for running the e2e test"""
     import test
     test.rebuild_driver_image(pr_number)
+
 
 class Entrypoint:
     """
@@ -183,9 +203,14 @@ class Entrypoint:
         self.prepare = prepare
         self.deploy_models_sequentially = deploy_models_sequentially
         self.deploy_models_concurrently = deploy_models_concurrently
+        self.deploy_one_model = deploy_one_model
+
         self.test_models_sequentially = test_models_sequentially
         self.test_models_concurrently = test_models_concurrently
+        self.test_one_model = test_one_model
+
         self.rebuild_driver_image = rebuild_driver_image
+
 
 def main():
     # Print help rather than opening a pager
