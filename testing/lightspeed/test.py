@@ -134,7 +134,7 @@ def run_ci():
 
         deploy_and_warmup_model(replicas)
 
-        total_requests = 32 * concurrency
+        total_requests = 25 * concurrency
         config.ci_artifacts.set_config("tests.config.concurrency", concurrency)
         config.ci_artifacts.set_config("tests.config.requests", total_requests)
 
@@ -146,7 +146,7 @@ def run_ci():
     config.ci_artifacts.set_config("tests.config.dataset_path", str(WISDOM_SECRET_PATH / "llm-load-test-multiplexed-dataset.json"))
     multiplexed_test_cases = config.ci_artifacts.get_config("tests.ansible_llm.multiplexed_test_cases")
     for replicas, concurrency in multiplexed_test_cases:
-        max_duration = "10m"
+        max_duration = "8m"
 
         logging.info(f"Running multiplexed load_test with replicas: {replicas}, total concurrency: {concurrency} and duration: {max_duration}")
 

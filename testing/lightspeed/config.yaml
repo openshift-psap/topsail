@@ -72,7 +72,7 @@ tests:
     concurrency: 16
     requests: 16
     threads: 1
-    max_duration: "15m"
+    max_duration: "8m"
   ansible_llm:
     test_cases:
     - [1, 1]
