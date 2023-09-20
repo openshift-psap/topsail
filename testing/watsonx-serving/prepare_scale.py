@@ -11,7 +11,7 @@ TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 def prepare_sutest():
     with run.Parallel("prepare_sutest_1") as parallel:
         parallel.delayed(prepare_watsonx_serving.prepare)
-        parallel.delayed(prepare_watsonx_serving.scale_up_sutest)
+        parallel.delayed(scale_up_sutest)
 
     with run.Parallel("prepare_sutest_2") as parallel:
         parallel.delayed(prepare_watsonx_serving.preload_image)
@@ -36,12 +36,14 @@ def prepare():
     """
     Prepares the cluster and the namespace for running the Watsonx scale tests
     """
-    consolidate_model_config("tests.scale.model")
+
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode == "scale":
+        consolidate_model_config("tests.scale.model")
+        config.ci_artifacts.set_config("tests.scale.model.consolidated", True)
         user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
-    elif test_mode == "load":
-        user_count = len(config.ci_artifacts.get_config("tests.load.models"))
+    elif test_mode == "e2e":
+        user_count = len(config.ci_artifacts.get_config("tests.e2e.models"))
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
@@ -57,17 +59,55 @@ def prepare():
         parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
 
 
+def scale_compute_sutest_node_requirement():
+    ns_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
+    models_per_ns = config.ci_artifacts.get_config("tests.scale.model.replicas")
+    models_count = ns_count * models_per_ns
+
+    cpu_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.resource_request.cpu")
+    mem_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.resource_request.memory")
+
+    kwargs = dict(
+        cpu = cpu_rq,
+        memory = mem_rq,
+        machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type"),
+        user_count = models_count,
+        )
+
+    machine_count = sizing.main(**kwargs)
+
+    # the sutest Pods must fit in one machine.
+    return min(models_count, machine_count)
+
+
+def e2e_compute_sutest_node_requirement():
+    return 1
+
+def scale_up_sutest():
+    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+        return
+
+    test_mode = config.ci_artifacts.get_config("tests.mode")
+    if test_mode == "scale":
+        node_count = scale_compute_sutest_node_requirement()
+    elif test_mode == "e2e":
+        node_count = e2e_compute_sutest_node_requirement()
+    else:
+        raise KeyError(f"Invalid test mode: {test_mode}")
+
+    config.ci_artifacts.set_config("clusters.sutest.compute.machineset.count ", node_count)
+
+    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_sutest ./run_toolbox.py from_config cluster set_scale --prefix=sutest")
+
+
 def cluster_scale_up():
-    def prepare_sutest_scale():
-        prepare_watsonx_serving.scale_up_sutest()
-        prepare_watsonx_serving.preload_image()
 
     with run.Parallel("cluster_scale_up") as parallel:
         namespace = config.ci_artifacts.get_config("base_image.namespace")
         user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
         parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
 
-        parallel.delayed(prepare_sutest_scale)
+        parallel.delayed(prepare_sutest)
 
 
 def cluster_scale_down():
@@ -77,9 +117,10 @@ def cluster_scale_down():
         parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=driver --extra \"{extra}\"")
 
 
-def consolidate_model_config(config_location, _model_name=None, show=True, save=True):
+def consolidate_model_config(config_location=None, _model_name=None, index=None, show=True, save=True):
     # test = <config_location>
-    test_config = config.ci_artifacts.get_config(config_location)
+    test_config = config.ci_artifacts.get_config(config_location) if config_location \
+        else {}
 
     model_name = _model_name or test_config.get("name")
     if not model_name:
@@ -105,7 +146,12 @@ def consolidate_model_config(config_location, _model_name=None, show=True, save=
     # base += test
     model_config = merge_dicts(model_config, test_config)
 
-    config.ci_artifacts.set_config(config_location, model_config)
+    model_config["name"] = model_name
+    if index is not None:
+        model_config["index"] = index
+
+    if config_location:
+        config.ci_artifacts.set_config(config_location, model_config)
 
     if show or save:
         dump = yaml.dump(model_config,  default_flow_style=False, sort_keys=False).strip()
@@ -115,3 +161,5 @@ def consolidate_model_config(config_location, _model_name=None, show=True, save=
         if save:
             with open(env.ARTIFACT_DIR / "model_config.yaml", "w") as f:
                 print(dump, file=f)
+
+    return model_config

@@ -8,26 +8,6 @@ import test_scale
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
-def compute_sutest_node_requirement():
-    ns_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
-    models_per_ns = config.ci_artifacts.get_config("tests.scale.model.replicas")
-    models_count = ns_count * models_per_ns
-
-    cpu_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.resource_request.cpu")
-    mem_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.resource_request.memory")
-
-    kwargs = dict(
-        cpu = cpu_rq,
-        memory = mem_rq,
-        machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type"),
-        user_count = models_count,
-        )
-
-    machine_count = sizing.main(**kwargs)
-
-    # the sutest Pods must fit in one machine.
-    return min(models_count, machine_count)
-
 
 def customize_rhods():
     if not config.ci_artifacts.get_config("rhods.operator.stop"):
@@ -81,16 +61,6 @@ def prepare():
     customize_watsonx_serving()
 
 
-def scale_up_sutest():
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
-        return
-
-    node_count = compute_sutest_node_requirement()
-    config.ci_artifacts.set_config("clusters.sutest.compute.machineset.count ", node_count)
-
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_sutest ./run_toolbox.py from_config cluster set_scale --prefix=sutest")
-
-
 def preload_image():
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
         return
@@ -100,7 +70,7 @@ def preload_image():
 
     # this is required to properly create the namespace used to preload the image
     test_namespace = config.ci_artifacts.get_config("tests.scale.namespace.name")
-    test_scale.prepare_user_namespace(test_namespace)
+    test_scale.prepare_user_sutest_namespace(test_namespace)
 
     RETRIES = 3
     for i in range(RETRIES):

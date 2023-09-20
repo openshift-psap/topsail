@@ -17,10 +17,10 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 LIGHT_PROFILE = "light"
 
 sys.path.append(str(TESTING_THIS_DIR.parent))
-from common import env, config, run, rhods, visualize, configure_logging
+from common import env, config, run, rhods, visualize, configure_logging, prepare_user_pods
 configure_logging()
 
-import prepare_scale, test_scale, test_load
+import prepare_scale, test_scale, test_e2e
 import prepare_watsonx_serving
 
 initialized = False
@@ -63,7 +63,7 @@ def prepare_ci():
     """
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode in ("scale", "load"):
+    if test_mode in ("scale", "e2e"):
         prepare_scale.prepare()
     elif test_mode == "kubemark":
         run.run("./run_toolbox.py cluster deploy_kubemark_capi_provider")
@@ -83,8 +83,8 @@ def test_ci():
         run.run("echo hello world")
         return
 
-    if test_mode == "load":
-        test_load.test()
+    if test_mode == "e2e":
+        test_e2e.test_ci()
         return
 
     assert test_mode == "scale"
@@ -229,6 +229,11 @@ def cleanup_sutest_ns():
     label = config.ci_artifacts.get_config("tests.scale.namespace.label")
     run.run(f"oc delete ns -l{label}")
 
+@entrypoint()
+def rebuild_driver_image(pr_number):
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    prepare_user_pods.rebuild_driver_image(namespace, pr_number)
+
 # ---
 
 class Entrypoint:
@@ -243,6 +248,7 @@ class Entrypoint:
         self.prepare_watsonx_serving = _prepare_watsonx_serving
         self.cluster_scale_up = cluster_scale_up
         self.cluster_scale_down = cluster_scale_down
+        self.rebuild_driver_image = rebuild_driver_image
 
         self.test_ci = test_ci
         self.scale_test = scale_test

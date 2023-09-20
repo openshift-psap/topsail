@@ -50,7 +50,7 @@ def run_test(dry_mode):
         run.run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale")
 
 
-def prepare_user_namespace(namespace):
+def prepare_user_sutest_namespace(namespace):
     if run.run(f'oc get project "{namespace}" -oname 2>/dev/null', check=False).returncode == 0:
         logging.warning(f"Project {namespace} already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
@@ -157,8 +157,9 @@ def run_one():
 
     try:
         prepare_scale.consolidate_model_config("tests.scale.model")
+        config.ci_artifacts.set_config("tests.scale.model.consolidated", True)
 
-        prepare_user_namespace(namespace)
+        prepare_user_sutest_namespace(namespace)
 
         def watch_failures(namespaces):
             logging.info(f"watch_internal: launching the watch loop")
