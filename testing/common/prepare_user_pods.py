@@ -6,19 +6,19 @@ import yaml
 
 from common import env, config, run, sizing
 
-def apply_prefer_pr():
+def apply_prefer_pr(pr_number=None):
     if not config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr"):
         return
 
-    pr_number = None
-
-    if os.environ.get("OPENSHIFT_CI"):
+    if pr_number is not None:
+        pass
+    elif os.environ.get("OPENSHIFT_CI"):
         pr_number = os.environ.get("PULL_NUMBER")
         if not pr_number:
             logging.warning("apply_prefer_pr: OPENSHIFT_CI: base_image.repo.ref_prefer_pr is set but PULL_NUMBER is empty")
             return
 
-    if os.environ.get("PERFLAB_CI"):
+    elif os.environ.get("PERFLAB_CI"):
         git_ref = os.environ.get("PERFLAB_GIT_REF")
 
         try:
@@ -27,13 +27,12 @@ def apply_prefer_pr():
             logging.warning("apply_prefer_pr: PERFLAB_CI: base_image.repo.ref_prefer_pr is set cannot parse PERFLAB_GIT_REF={git_erf}: {e.__class__.__name__}: {e}")
             return
 
-    if os.environ.get("HOMELAB_CI"):
+    elif os.environ.get("HOMELAB_CI"):
         pr_number = os.environ.get("PULL_NUMBER")
 
         if not pr_number:
             raise RuntimeError("apply_prefer_pr: HOMELAB_CI: base_image.repo.ref_prefer_pr is set but PULL_NUMBER is empty")
-
-    if not pr_number:
+    else:
         logging.warning("apply_prefer_pr: Could not figure out the PR number. Keeping the default value.")
         return
 
@@ -57,6 +56,16 @@ def prepare_base_image_container(namespace):
         return
 
     run.run(f"./run_toolbox.py from_config utils build_push_image --prefix extended_image")
+
+
+def rebuild_driver_image(namespace, pr_number):
+    apply_prefer_pr(pr_number)
+
+    istag = config.get_command_arg("utils build_push_image --prefix base_image", "_istag")
+
+    run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
+
+    prepare_base_image_container(namespace)
 
 
 def compute_driver_node_requirement(user_count):
