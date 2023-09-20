@@ -105,7 +105,7 @@ class Config:
 
         presets = self.get_config("ci_presets.names") or []
         if not name in presets:
-            self.set_config("ci_presets.names", presets + [name])
+            self.set_config("ci_presets.names", presets + [name], dump_command_args=False)
 
         for key, value in values.items():
             if key == "extends":
@@ -118,8 +118,9 @@ class Config:
             with open(env.ARTIFACT_DIR / "presets_applied", "a") as f:
                 print(msg, file=f)
 
-            self.set_config(key, value)
+            self.set_config(key, value, dump_command_args=False)
 
+        self.dump_command_args()
 
     def get_config(self, jsonpath, default_value=..., warn=True, print=True):
         try:
@@ -139,7 +140,7 @@ class Config:
         return value
 
 
-    def set_config(self, jsonpath, value):
+    def set_config(self, jsonpath, value, dump_command_args=True):
         try:
             self.get_config(jsonpath, value) # will raise an exception if the jsonpath does not exist
             jsonpath_ng.parse(jsonpath).update(self.config, value)
@@ -152,14 +153,18 @@ class Config:
         with open(self.config_path, "w") as f:
             yaml.dump(self.config, f, indent=4, default_flow_style=False, sort_keys=False)
 
-        command_template = get_command_arg("dump config", None)
-        with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
-            print(command_template, file=f)
+        if dump_command_args:
+            self.dump_command_args()
 
         if (shared_dir := os.environ.get("SHARED_DIR")) and (shared_dir_path := pathlib.Path(shared_dir)) and shared_dir_path.exists():
 
             with open(shared_dir_path / "config.yaml", "w") as f:
                 yaml.dump(self.config, f, indent=4)
+
+    def dump_command_args(self):
+        command_template = get_command_arg("dump config", None)
+        with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
+            print(command_template, file=f)
 
     def apply_preset_from_pr_args(self):
         for config_key in self.get_config("$", print=False).keys():
