@@ -178,7 +178,7 @@ __e2e_aliases:
     minio_secret_key_key: s3_ldap.passwords
 
     user_batch_size: 1
-
+    capture_prom_db: {{ tests.capture_prom }}
     git_pull: null #refs/pull/716/merge
 
 local_ci run_multi/deploy_concurrently:
@@ -186,18 +186,16 @@ local_ci run_multi/deploy_concurrently:
   ci_command: "watsonx-serving test_e2e deploy_models_concurrently"
   sleep_factor: 1
   user_count: 1
-  capture_prom_db: true
+
 
 local_ci run_multi/test_sequencially:
   <<: *local_ci_run_multi_e2e
   ci_command: "watsonx-serving test_e2e test_models_sequencially"
-  sleep_factor: 1
+  sleep_factor: 0
   user_count: 1
-  capture_prom_db: true
+
 
 local_ci run_multi/test_concurrently:
   <<: *local_ci_run_multi_e2e
   ci_command: "watsonx-serving test_e2e test_models_concurrently"
   sleep_factor: 0
-
-  capture_prom_db: true
