@@ -11,6 +11,7 @@ class Watsonx_Serving:
     @AnsibleMappedParams
     def deploy_model(self,
                      namespace,
+                     model_name,
                      serving_runtime_name, serving_runtime_image, serving_runtime_resource_request,
                      inference_service_name,
                      storage_uri,
@@ -23,6 +24,7 @@ class Watsonx_Serving:
         Args:
           name: the name of the resource to create
           namespace: the namespace in which the model should be deployed
+          model_name: the full name of the model
 
           serving_runtime_name: the name to give to the serving runtime
           serving_runtime_image: the image of the serving runtime

@@ -8,6 +8,18 @@ spec:
   - env:
     - name: RUNTIME_LOCAL_MODELS_DIR
       value: /mnt/models
+{% if watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] %}
+    - name: NUM_GPUS
+      value: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] }}"
+{% endif %}
+    - name: MODEL_NAME
+      value: "{{ watsonx_serving_deploy_model_model_name }}"
+
+    - name: TRANSFORMERS_CACHE
+      value: /shared_model_storage/transformers_cache
+    - name: HUGGINGFACE_HUB_CACHE
+      value: /shared_model_storage/transformers_cache
+
     image: {{ watsonx_serving_deploy_model_serving_runtime_image }}
     name: kserve-container
     ports:
