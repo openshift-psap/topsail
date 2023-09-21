@@ -68,7 +68,32 @@
          -oyaml
          > {{ artifact_extra_logs_dir }}/artifacts/istio-system_smmr-default.yaml
 
+# Secret
+
+- name: Prepare the secret parameters
+  shell: |
+    set -o pipefail;
+    set -e
+
+    secret_data=$(cat "{{ watsonx_serving_deploy_model_secret_env_file_name }}" \
+     | yq '.["{{ watsonx_serving_deploy_model_secret_env_file_key }}"] | to_entries | map( { key: .key, value: .value|tostring|@base64 }) | from_entries')
+
+    oc create secret generic {{ watsonx_serving_deploy_model_serving_runtime_name }}-secret -ojson --dry-run=client | jq --argjson data "$secret_data" '.data = $data' | oc apply -f-
+  when: watsonx_serving_deploy_model_secret_env_file_name != None
+
 # Serving Runtime
+
+- name: Prepare the secret parameters
+  shell:
+    set -o pipefail;
+    {% if watsonx_serving_deploy_model_secret_env_file_name is not none %}
+    cat "{{ watsonx_serving_deploy_model_secret_env_file_name }}" | yq -r '.["{{ watsonx_serving_deploy_model_secret_env_file_key }}"] | to_entries | .[].key'
+    {% endif %}
+  register: secret_env_keys_cmd
+
+- name: Save the env keys
+  set_fact:
+    secret_env_keys: "{{ secret_env_keys_cmd.stdout_lines }}"
 
 - name: Prepare the ServingRuntime template
   template:

@@ -20,6 +20,14 @@ spec:
     - name: HUGGINGFACE_HUB_CACHE
       value: /shared_model_storage/transformers_cache
 
+{% for secret_env_key in secret_env_keys %}
+    - name: {{ secret_env_key }}
+      valueFrom:
+        secretKeyRef:
+          name: {{ watsonx_serving_deploy_model_serving_runtime_name }}-secret
+          key: {{ secret_env_key }}
+{% endfor %}
+
     image: {{ watsonx_serving_deploy_model_serving_runtime_image }}
     name: kserve-container
     ports:

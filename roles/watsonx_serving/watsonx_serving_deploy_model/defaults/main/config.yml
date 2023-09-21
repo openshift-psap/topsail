@@ -38,3 +38,9 @@ watsonx_serving_deploy_model_sa_name:
 # the minimum number of replicas. If none, the field is left unset.
 # Type: Int
 watsonx_serving_deploy_model_inference_service_min_replicas: null
+
+# name of the YAML file containing the secret environment key/values
+watsonx_serving_deploy_model_secret_env_file_name: null
+
+# key to the secret environment key/values in the secret file
+watsonx_serving_deploy_model_secret_env_file_key: null

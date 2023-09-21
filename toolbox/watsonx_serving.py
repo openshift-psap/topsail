@@ -17,6 +17,8 @@ class Watsonx_Serving:
                      storage_uri,
                      sa_name,
                      inference_service_min_replicas : int = None,
+                     secret_env_file_name=None,
+                     secret_env_file_key=None,
                      ):
         """
         Deploy a WatsonX-Serving model
@@ -34,6 +36,9 @@ class Watsonx_Serving:
           inference_service_min_replicas: the minimum number of replicas. If none, the field is left unset.
           sa_name: name of the service account to use for running the Pod
           storage_uri: [S3] URI where the model is stored
+
+          secret_env_file_name: name of the YAML file containing the secret environment key/values
+          secret_env_file_key: key to the secret environment key/values in the secret file
         """
 
         return RunAnsibleRole(locals())
