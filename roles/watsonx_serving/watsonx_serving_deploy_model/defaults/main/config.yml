@@ -30,3 +30,7 @@ watsonx_serving_deploy_model_storage_uri:
 # name of the service account to use for running the Pod
 # Mandatory value
 watsonx_serving_deploy_model_sa_name:
+
+# the minimum number of replicas. If none, the field is left unset.
+# Type: Int
+watsonx_serving_deploy_model_inference_service_min_replicas: null

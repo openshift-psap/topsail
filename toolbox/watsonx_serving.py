@@ -14,7 +14,9 @@ class Watsonx_Serving:
                      serving_runtime_name, serving_runtime_image, serving_runtime_resource_request,
                      inference_service_name,
                      storage_uri,
-                     sa_name):
+                     sa_name,
+                     inference_service_min_replicas : int = None,
+                     ):
         """
         Deploy a WatsonX-Serving model
 
@@ -27,7 +29,7 @@ class Watsonx_Serving:
           serving_runtime_resource_request: the resource request of the serving runtime
 
           inference_service_name: the name to give to the inference service
-
+          inference_service_min_replicas: the minimum number of replicas. If none, the field is left unset.
           sa_name: name of the service account to use for running the Pod
           storage_uri: [S3] URI where the model is stored
         """
