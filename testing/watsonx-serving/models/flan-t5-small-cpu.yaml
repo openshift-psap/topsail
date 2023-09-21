@@ -8,6 +8,7 @@ serving_runtime:
     memory: 1.5 # in Gi
     nvidia.com/gpu: 0 # in Gi of GPU memory
   runtime_config: false
+  extra_env:
 
 inference_service:
   storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/"

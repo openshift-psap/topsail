@@ -171,6 +171,11 @@ def deploy_consolidated_model(consolidated_model):
         if not args_dict["runtime_config_file"].exists():
             raise FileNotFoundError(f"Unexpected error: {args_dict['runtime_config_file']} does not exist :/")
 
+    if (extra_env := consolidated_model["serving_runtime"].get("extra_env")):
+        if not isinstance(extra_env, dict):
+            raise ValueError(f"serving_runtime.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
+        args_dict["env_extra_values"] = extra_env
+
     run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
 
 
