@@ -33,7 +33,7 @@ def consolidate_model(index):
 def consolidate_models(index=None, use_job_index=False):
     consolidated_models = []
     if index or use_job_index:
-        if use_job_index:
+        if index is None and use_job_index:
             index = os.environ.get("JOB_COMPLETION_INDEX", None)
             if index is None:
                 raise RuntimeError("No JOB_COMPLETION_INDEX env variable available :/")
