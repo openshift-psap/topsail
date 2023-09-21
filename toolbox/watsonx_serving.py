@@ -19,6 +19,7 @@ class Watsonx_Serving:
                      inference_service_min_replicas : int = None,
                      secret_env_file_name=None,
                      secret_env_file_key=None,
+                     env_extra_values : dict = {},
                      runtime_config_file=None,
                      ):
         """
@@ -40,7 +41,7 @@ class Watsonx_Serving:
 
           secret_env_file_name: name of the YAML file containing the secret environment key/values
           secret_env_file_key: key to the secret environment key/values in the secret file
-
+          env_extra_values: extra key/value pairs (will override the values from the secret file)
           runtime_config_file: path to a CAIKIT config file
         """
 

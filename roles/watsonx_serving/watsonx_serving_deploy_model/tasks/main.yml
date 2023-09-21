@@ -95,23 +95,12 @@
 
 # Serving Runtime
 
-- name: Prepare the secret parameters
-  shell:
-    set -o pipefail;
-    {% if watsonx_serving_deploy_model_secret_env_file_name is not none %}
-    cat "{{ watsonx_serving_deploy_model_secret_env_file_name }}" | yq -r '.["{{ watsonx_serving_deploy_model_secret_env_file_key }}"] | to_entries | .[].key'
-    {% endif %}
-  register: secret_env_keys_cmd
-
-- name: Save the env keys
-  set_fact:
-    secret_env_keys: "{{ secret_env_keys_cmd.stdout_lines }}"
-
 - name: Prepare the runtime config file configmap
   shell:
     set -o pipefail;
 
     oc create cm {{ watsonx_serving_deploy_model_serving_runtime_name }}-runtime-config
+       -n {{ watsonx_serving_deploy_model_namespace }}
        --from-file=runtime_config.yaml="{{ watsonx_serving_deploy_model_runtime_config_file }}"
        -oyaml
        --dry-run=client

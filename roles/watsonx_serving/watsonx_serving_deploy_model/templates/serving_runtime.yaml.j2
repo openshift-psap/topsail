@@ -5,7 +5,8 @@ metadata:
   namespace: {{ watsonx_serving_deploy_model_namespace }}
 spec:
   containers:
-  - env:
+  - name: kserve-container
+    env:
     - name: RUNTIME_LOCAL_MODELS_DIR
       value: /mnt/models
 {% if watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] %}
@@ -20,16 +21,17 @@ spec:
     - name: HUGGINGFACE_HUB_CACHE
       value: /shared_model_storage/transformers_cache
 
-{% for secret_env_key in secret_env_keys %}
-    - name: {{ secret_env_key }}
-      valueFrom:
-        secretKeyRef:
-          name: {{ watsonx_serving_deploy_model_serving_runtime_name }}-secret
-          key: {{ secret_env_key }}
+{% for env_key, env_value in watsonx_serving_deploy_model_env_extra_values.items() %}
+    - name: "{{ env_key }}"
+      value: "{{ env_value }}"
 {% endfor %}
+    envFrom:
+{% if watsonx_serving_deploy_model_secret_env_file_name is not none %}
+    - secretRef:
+        name: {{ watsonx_serving_deploy_model_serving_runtime_name }}-secret
+{% endif %}
 
     image: {{ watsonx_serving_deploy_model_serving_runtime_image }}
-    name: kserve-container
     ports:
     # Note, KServe only allows a single port, this is the gRPC port. Subject to change in the future
     - containerPort: 8085
