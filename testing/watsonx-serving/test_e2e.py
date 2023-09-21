@@ -21,7 +21,12 @@ import prepare_scale, test_scale
 # ---
 
 def consolidate_model(index):
-    model_name = config.ci_artifacts.get_config("tests.e2e.models")[index]
+    model_list = config.ci_artifacts.get_config("tests.e2e.models")
+    if index >= len(model_list):
+        raise IndexError(f"Requested model index #{index}, but only {len(model_list)} are defined. {model_list}")
+
+    model_name = model_list[index]
+
     return prepare_scale.consolidate_model_config(_model_name=model_name, index=index)
 
 
@@ -133,8 +138,10 @@ def deploy_consolidated_model(consolidated_model):
     test_scale.prepare_user_sutest_namespace(namespace)
     test_scale.deploy_storage_configuration(namespace)
 
+    # mandatory fields
     args_dict = dict(
         namespace=namespace,
+        model_name=consolidated_model["full_name"],
         serving_runtime_name=model_name,
         serving_runtime_image=consolidated_model["serving_runtime"]["image"],
         serving_runtime_resource_request=consolidated_model["serving_runtime"]["resource_request"],
@@ -143,6 +150,11 @@ def deploy_consolidated_model(consolidated_model):
         storage_uri=consolidated_model["inference_service"]["storage_uri"],
         sa_name=config.ci_artifacts.get_config("watsonx_serving.sa_name"),
     )
+
+    # optional fields
+    try: args_dict["min_replicas"] = consolidated_model["inference_service"]["min_replicas"]
+    except KeyError: pass
+
     run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
 
 

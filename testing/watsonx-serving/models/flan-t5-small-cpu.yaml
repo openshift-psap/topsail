@@ -1,4 +1,5 @@
 id: flan-t5-small-caikit
+full_name: google/flan-t5-small
 serving_runtime:
   resource_request:
     cpu: 0.350
