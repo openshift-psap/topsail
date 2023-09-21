@@ -44,3 +44,6 @@ watsonx_serving_deploy_model_secret_env_file_name: null
 
 # key to the secret environment key/values in the secret file
 watsonx_serving_deploy_model_secret_env_file_key: null
+
+# path to a CAIKIT config file
+watsonx_serving_deploy_model_runtime_config_file: null

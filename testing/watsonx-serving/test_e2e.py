@@ -155,6 +155,22 @@ def deploy_consolidated_model(consolidated_model):
     try: args_dict["min_replicas"] = consolidated_model["inference_service"]["min_replicas"]
     except KeyError: pass
 
+    if (secret_key := consolidated_model.get("secret_key")) != None:
+        import test
+        secret_env_file = test.PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.watsonx_model_secret_settings")
+        if not secret_env_file.exists():
+            raise FileNotFoundError("Watsonx model secret settings file does not exist :/ {secret_env_file}")
+
+        args_dict["secret_env_file_name"] = secret_env_file
+        args_dict["secret_env_file_key"] = secret_key
+    else:
+        logging.warning("No secret env key defined for this model")
+
+    if (runtime_config := consolidated_model["serving_runtime"].get("runtime_config")) == True:
+        args_dict["runtime_config_file"] = TESTING_THIS_DIR / "models" / "resources" / "runtime_config.yaml"
+        if not args_dict["runtime_config_file"].exists():
+            raise FileNotFoundError(f"Unexpected error: {args_dict['runtime_config_file']} does not exist :/")
+
     run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
 
 

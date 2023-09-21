@@ -1,10 +1,13 @@
 id: flan-t5-small-caikit
 full_name: google/flan-t5-small
+secret_key: flan-t5-small
+
 serving_runtime:
   resource_request:
     cpu: 0.350
     memory: 1.5 # in Gi
     nvidia.com/gpu: 0 # in Gi of GPU memory
+  runtime_config: false
 
 inference_service:
   storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/"

@@ -19,6 +19,7 @@ class Watsonx_Serving:
                      inference_service_min_replicas : int = None,
                      secret_env_file_name=None,
                      secret_env_file_key=None,
+                     runtime_config_file=None,
                      ):
         """
         Deploy a WatsonX-Serving model
@@ -39,6 +40,8 @@ class Watsonx_Serving:
 
           secret_env_file_name: name of the YAML file containing the secret environment key/values
           secret_env_file_key: key to the secret environment key/values in the secret file
+
+          runtime_config_file: path to a CAIKIT config file
         """
 
         return RunAnsibleRole(locals())

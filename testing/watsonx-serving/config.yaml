@@ -87,6 +87,7 @@ secrets:
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   aws_cred: .awscred
+  watsonx_model_secret_settings: watsonx-models.yaml
 clusters:
   create:
     type: single # can be: single, ocp, managed
