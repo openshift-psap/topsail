@@ -14,6 +14,7 @@ from toolbox.local_ci import Local_CI
 from toolbox.load_aware import Load_Aware
 from toolbox.codeflare import Codeflare
 from toolbox.watsonx_serving import Watsonx_Serving
+from toolbox.llm_load_test import Llm_load_test
 
 class Toolbox:
     """
@@ -43,3 +44,4 @@ class Toolbox:
         self.load_aware = Load_Aware
         self.codeflare = Codeflare
         self.watsonx_serving = Watsonx_Serving
+        self.llm_load_test = Llm_load_test

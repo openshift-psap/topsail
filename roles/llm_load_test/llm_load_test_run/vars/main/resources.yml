@@ -1,0 +1,2 @@
+---
+llm_load_test_config_template: 'templates/llm-load-test-config.yaml.j2'

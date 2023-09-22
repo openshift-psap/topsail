@@ -5,6 +5,7 @@ import pathlib
 import yaml
 import shutil
 import subprocess
+import threading
 
 import jsonpath_ng
 
@@ -88,7 +89,7 @@ class Config:
                         raise ValueError(f"Config key '{key}' does not exist, and cannot create it at the moment :/")
                     self.config[key] = None
 
-                self.set_config(key, value)
+                self.set_config(key, value, dump_command_args=False)
                 actual_value = self.get_config(key) # ensure that key has been set, raises an exception otherwise
                 logging.info(f"config override: {key} --> {actual_value}")
 
@@ -141,6 +142,15 @@ class Config:
 
 
     def set_config(self, jsonpath, value, dump_command_args=True):
+        if threading.current_thread().name != "MainThread":
+            msg = f"set_config({jsonpath}, {value}) cannot be called from a thread, to avoid race conditions."
+            if os.environ.get("OPENSHIFT_CI") or os.environ.get("PERFLAB_CI"):
+                logging.error(msg)
+                with open(env.ARTIFACT_DIR / "SET_CONFIG_CALLED_FROM_THREAD", "a") as f:
+                    print(msg, file=f)
+            else:
+                raise RuntimeError(msg)
+
         try:
             self.get_config(jsonpath, value) # will raise an exception if the jsonpath does not exist
             jsonpath_ng.parse(jsonpath).update(self.config, value)
@@ -162,7 +172,15 @@ class Config:
                 yaml.dump(self.config, f, indent=4)
 
     def dump_command_args(self):
-        command_template = get_command_arg("dump config", None)
+        try:
+            command_template = get_command_arg("dump config", None)
+        except Exception as e:
+            import traceback
+            with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
+                traceback.print_exc(file=f)
+            logging.warning("Could not dump the command_args template.")
+            return
+
         with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
             print(command_template, file=f)
 

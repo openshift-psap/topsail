@@ -9,6 +9,7 @@ import tempfile
 import functools
 import inspect
 import shutil
+import shlex
 
 top_dir = Path(__file__).resolve().parent.parent
 
@@ -193,7 +194,7 @@ class RunAnsibleRole:
                 print(f"{k}={v}", file=f)
 
         with open(artifact_extra_logs_dir / "_python.cmd", "w") as f:
-            print(" ".join(sys.argv), file=f)
+            print(" ".join(map(shlex.quote, sys.argv)), file=f)
 
         sys.stdout.flush()
         sys.stderr.flush()

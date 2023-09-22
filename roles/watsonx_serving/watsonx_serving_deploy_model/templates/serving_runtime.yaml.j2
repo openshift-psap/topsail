@@ -5,11 +5,33 @@ metadata:
   namespace: {{ watsonx_serving_deploy_model_namespace }}
 spec:
   containers:
-  - env:
+  - name: kserve-container
+    env:
     - name: RUNTIME_LOCAL_MODELS_DIR
       value: /mnt/models
+{% if watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] %}
+    - name: NUM_GPUS
+      value: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] }}"
+{% endif %}
+    - name: MODEL_NAME
+      value: "{{ watsonx_serving_deploy_model_model_name }}"
+
+    - name: TRANSFORMERS_CACHE
+      value: /shared_model_storage/transformers_cache
+    - name: HUGGINGFACE_HUB_CACHE
+      value: /shared_model_storage/transformers_cache
+
+{% for env_key, env_value in watsonx_serving_deploy_model_env_extra_values.items() %}
+    - name: "{{ env_key }}"
+      value: "{{ env_value }}"
+{% endfor %}
+    envFrom:
+{% if watsonx_serving_deploy_model_secret_env_file_name is not none %}
+    - secretRef:
+        name: {{ watsonx_serving_deploy_model_serving_runtime_name }}-secret
+{% endif %}
+
     image: {{ watsonx_serving_deploy_model_serving_runtime_image }}
-    name: kserve-container
     ports:
     # Note, KServe only allows a single port, this is the gRPC port. Subject to change in the future
     - containerPort: 8085
@@ -24,6 +46,23 @@ spec:
         cpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.cpu }}"
         memory: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.memory }}Gi"
         nvidia.com/gpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] }}"
+    volumeMounts:
+    - mountPath: /shared_model_storage/transformers_cache
+      name: cache-volume
+{% if watsonx_serving_deploy_model_runtime_config_file is not none %}
+    - name: runtime-config
+      subPath: runtime_config.yaml
+      mountPath: "/caikit/config/caikit-tgis.yml"
+{% endif %}
+  volumes:
+  - name:  cache-volume
+    emptyDir:
+      sizeLimit: 180Gi
+{% if watsonx_serving_deploy_model_runtime_config_file is not none %}
+  - name: runtime-config
+    configMap:
+      name: {{ watsonx_serving_deploy_model_serving_runtime_name }}-runtime-config
+{% endif %}
   multiModel: false
   supportedModelFormats:
   # Note: this currently *only* supports caikit format models

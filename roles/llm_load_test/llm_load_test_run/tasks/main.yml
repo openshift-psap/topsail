@@ -1,0 +1,35 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the output directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/output"
+    state: directory
+    mode: '0755'
+
+- name: Ensure that ghz is available
+  command: which ghz
+
+- name: Apply the llm-load-test config.yaml template
+  template:
+    src: "{{ llm_load_test_config_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml"
+    mode: '0400'
+
+- name: Inform | Next task runs the load test
+  debug: msg="Next task runs the load test. It takes a while to complete. Artifacts will be saved into '{{ artifact_extra_logs_dir }}/output'."
+
+- name: Run llm-load-test
+  shell: |
+    set -e
+    cd "{{ llm_load_test_run_llm_path }}"
+
+    export CONFIG_FILENAME=llm_load_test.config.yaml
+    export CONFIG_PATH="{{ artifact_extra_logs_dir }}/src/"
+    export AWS_SHARED_CREDENTIALS_FILE="$PSAP_ODS_SECRET_PATH/.awscred" # workaround until llm-load-test is properly unlinked from AWS S3
+
+    python3 ghz_frontend.py --parallel_experiment

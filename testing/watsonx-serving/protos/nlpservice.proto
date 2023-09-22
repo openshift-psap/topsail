@@ -1,0 +1,55 @@
+
+/*------------------------------------------------------------------------------
+ * caikit.runtime.WisdomExt.WisdomExtService/CodeGenerationTaskPredict
+ * caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.Nlp;
+
+import "generatedresult.proto";
+
+message TextGenerationTaskRequest {
+  string text = 1;
+  oneof _preserve_input_text {
+    bool preserve_input_text = 2;
+  }
+  oneof _max_new_tokens {
+    int64 max_new_tokens = 3;
+  }
+  oneof _min_new_tokens {
+    int64 min_new_tokens = 4;
+  }
+  oneof _device {
+    string device = 5;
+  }
+}
+
+message ServerStreamingTextGenerationTaskRequest {
+  string text = 1;
+  oneof _preserve_input_text {
+    bool preserve_input_text = 2;
+  }
+  oneof _max_new_tokens {
+    int64 max_new_tokens = 3;
+  }
+  oneof _min_new_tokens {
+    int64 min_new_tokens = 4;
+  }
+}
+
+/*-- SERVICES ----------------------------------------------------------------*/
+/*
+*   rpc ServerStreamingTextGenerationTaskPredict ( .caikit.runtime.Nlp.ServerStreamingTextGenerationTaskRequest ) returns ( stream .caikit_data_model.nlp.GeneratedTextStreamResult );
+*   rpc TextClassificationTaskPredict ( .caikit.runtime.Nlp.TextClassificationTaskRequest ) returns ( .caikit_data_model.caikit_nlp.ClassificationResult );
+*     rpc TokenClassificationTaskPredict ( .caikit.runtime.Nlp.TokenClassificationTaskRequest ) returns ( .caikit_data_model.caikit_nlp.TokenClassificationResult );
+*     rpc TokenizationTaskPredict ( .caikit.runtime.Nlp.TokenizationTaskRequest ) returns ( .caikit_data_model.caikit_nlp.TokenizationResult );
+*   ..etc
+*/
+service NlpService {
+  rpc TextGenerationTaskPredict ( caikit.runtime.Nlp.TextGenerationTaskRequest ) returns (caikit_data_model.nlp.GeneratedTextResult );
+  rpc ServerStreamingTextGenerationTaskPredict ( caikit.runtime.Nlp.ServerStreamingTextGenerationTaskRequest ) returns ( stream caikit_data_model.nlp.GeneratedTextStreamResult );
+}
+
+
+

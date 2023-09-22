@@ -7,6 +7,10 @@
 # Mandatory value
 watsonx_serving_deploy_model_namespace:
 
+# the full name of the model
+# Mandatory value
+watsonx_serving_deploy_model_model_name:
+
 # the name to give to the serving runtime
 # Mandatory value
 watsonx_serving_deploy_model_serving_runtime_name:
@@ -30,3 +34,20 @@ watsonx_serving_deploy_model_storage_uri:
 # name of the service account to use for running the Pod
 # Mandatory value
 watsonx_serving_deploy_model_sa_name:
+
+# the minimum number of replicas. If none, the field is left unset.
+# Type: Int
+watsonx_serving_deploy_model_inference_service_min_replicas: null
+
+# name of the YAML file containing the secret environment key/values
+watsonx_serving_deploy_model_secret_env_file_name: null
+
+# key to the secret environment key/values in the secret file
+watsonx_serving_deploy_model_secret_env_file_key: null
+
+# extra key/value pairs (will override the values from the secret file)
+# Type: Dict
+watsonx_serving_deploy_model_env_extra_values: {}
+
+# path to a CAIKIT config file
+watsonx_serving_deploy_model_runtime_config_file: null

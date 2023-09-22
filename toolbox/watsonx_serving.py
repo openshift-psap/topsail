@@ -11,25 +11,38 @@ class Watsonx_Serving:
     @AnsibleMappedParams
     def deploy_model(self,
                      namespace,
+                     model_name,
                      serving_runtime_name, serving_runtime_image, serving_runtime_resource_request,
                      inference_service_name,
                      storage_uri,
-                     sa_name):
+                     sa_name,
+                     inference_service_min_replicas : int = None,
+                     secret_env_file_name=None,
+                     secret_env_file_key=None,
+                     env_extra_values : dict = {},
+                     runtime_config_file=None,
+                     ):
         """
         Deploy a WatsonX-Serving model
 
         Args:
           name: the name of the resource to create
           namespace: the namespace in which the model should be deployed
+          model_name: the full name of the model
 
           serving_runtime_name: the name to give to the serving runtime
           serving_runtime_image: the image of the serving runtime
           serving_runtime_resource_request: the resource request of the serving runtime
 
           inference_service_name: the name to give to the inference service
-
+          inference_service_min_replicas: the minimum number of replicas. If none, the field is left unset.
           sa_name: name of the service account to use for running the Pod
           storage_uri: [S3] URI where the model is stored
+
+          secret_env_file_name: name of the YAML file containing the secret environment key/values
+          secret_env_file_key: key to the secret environment key/values in the secret file
+          env_extra_values: extra key/value pairs (will override the values from the secret file)
+          runtime_config_file: path to a CAIKIT config file
         """
 
         return RunAnsibleRole(locals())

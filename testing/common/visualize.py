@@ -43,7 +43,7 @@ def init(allow_no_config_file=False):
         if not pr_arg_1:
             raise ValueError("PR_POSITIONAL_ARG_1 should have been set ...")
 
-        config.ci_artifacts.set_config("matbench.preset", pr_arg_1)
+        config.ci_artifacts.set_config("matbench.preset", pr_arg_1, dump_command_args=False)
 
 
     matbench_workload =  config.ci_artifacts.get_config("matbench.workload")
@@ -54,16 +54,16 @@ def init(allow_no_config_file=False):
     workload_storage_dir = TESTING_COMMON_DIR.parent.parent / "visualizations" / matbench_workload
 
     if config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "").endswith("-plot"):
-        config.ci_artifacts.set_config("matbench.preset", config.ci_artifacts.get_config("PR_POSITIONAL_ARG_1", None))
+        config.ci_artifacts.set_config("matbench.preset", config.ci_artifacts.get_config("PR_POSITIONAL_ARG_1", None), dump_command_args=False)
 
     matbench_preset = config.ci_artifacts.get_config("matbench.preset")
     if not matbench_preset:
         pass # no preset defined, nothing to do
     elif str(matbench_preset).startswith("https://"):
-        config.ci_artifacts.set_config("matbench.download.url", matbench_preset)
+        config.ci_artifacts.set_config("matbench.download.url", matbench_preset, dump_command_args=False)
     else:
-        config.ci_artifacts.set_config("matbench.config_file", f"{matbench_preset}.yaml")
-        config.ci_artifacts.set_config("matbench.download.url_file", workload_storage_dir / "data" / f"{matbench_preset}.yaml")
+        config.ci_artifacts.set_config("matbench.config_file", f"{matbench_preset}.yaml", dump_command_args=False)
+        config.ci_artifacts.set_config("matbench.download.url_file", workload_storage_dir / "data" / f"{matbench_preset}.yaml", dump_command_args=False)
 
     matbench_config = config.Config(workload_storage_dir / "data" / config.ci_artifacts.get_config("matbench.config_file"))
 

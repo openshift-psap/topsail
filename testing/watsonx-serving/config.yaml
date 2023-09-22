@@ -39,9 +39,10 @@ ci_presets:
     base_image.extend.tag: e2e-test-user
 
   e2e_gpu:
-    extends: [e2e_test]
+    extends: [e2e]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g5.2xlarge
+    tests.e2e.models[1]: flan-t5-small-gpu
     gpu.time_sharing.replicas: 100
 
   # ---
@@ -87,6 +88,7 @@ secrets:
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   aws_cred: .awscred
+  watsonx_model_secret_settings: watsonx-models.yaml
 clusters:
   create:
     type: single # can be: single, ocp, managed
@@ -227,7 +229,7 @@ tests:
 
     model:
       consolidated: false
-      name: flan-t5-small-caikit-cpu
+      name: flan-t5-small-cpu
       replicas: 2
   e2e:
     namespace: watsonx-e2e
@@ -235,7 +237,14 @@ tests:
     - flan-t5-small-cpu
     - flan-t5-small-cpu
     consolidated_models: {} # will be filled at runtime
+    llm_load_test:
+      enabled: true
+      src_path: /src/llm-load-test/
+      duration: 1m
+      protos_file: nlpservice.proto
+      protos_dir: testing/watsonx-serving/protos/
 
+      call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
 matbench:
   preset: null
   workload: watsonx-serving-scale

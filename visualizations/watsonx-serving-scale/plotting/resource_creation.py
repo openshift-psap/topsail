@@ -102,8 +102,8 @@ class ResourceCreationDelay():
             pass # entry is set
 
         models_per_ns = entry.results.test_config.get("tests.scale.model.replicas")
-        isvc_basename = entry.results.test_config.get("tests.scale.model.inference_service.name")
-        serving_runtime_name = entry.results.test_config.get("tests.scale.model.serving_runtime.name")
+        isvc_basename = entry.results.test_config.get("tests.scale.model.name")
+        serving_runtime_name = entry.results.test_config.get("tests.scale.model.name")
         mapping = dict()
 
         for model_id in range(models_per_ns):
