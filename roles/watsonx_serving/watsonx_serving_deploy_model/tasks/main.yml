@@ -80,6 +80,10 @@
     secret_data=$(cat "{{ watsonx_serving_deploy_model_secret_env_file_name }}" \
      | yq '.["{{ watsonx_serving_deploy_model_secret_env_file_key }}"] | to_entries | map( { key: .key, value: .value|tostring|@base64 }) | from_entries')
 
+    if [[ -z "$secret_data" ]]; then
+      echo "Could not find key '{{ watsonx_serving_deploy_model_secret_env_file_key }}' in file {{ watsonx_serving_deploy_model_secret_env_file_name }}. Aborting."
+      exit 1
+    fi
     oc create secret generic {{ watsonx_serving_deploy_model_serving_runtime_name }}-secret \
        -n {{ watsonx_serving_deploy_model_namespace }} \
        -ojson \
