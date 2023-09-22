@@ -241,7 +241,7 @@ tests:
       src_path: /src/llm-load-test/
       duration: 1m
       protos_file: nlpservice.proto
-      protos_dir: "$PSAP_ODS_SECRET_PATH"
+      protos_dir: testing/watsonx-serving/protos/
 
       call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
 matbench:

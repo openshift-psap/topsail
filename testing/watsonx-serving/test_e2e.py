@@ -205,14 +205,15 @@ def test_consolidated_model(consolidated_model):
         host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
         host = host_url.lstrip("https://") + ":443"
         llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
-        protos_dir = llm_config["protos_dir"]
-        if protos_dir.startswith("$"):
-            protos_dir = os.environ[protos_dir.lstrip("$")]
-        protos_path = pathlib.Path(protos_dir) / llm_config["protos_file"]
+
+        protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
+        if not protos_path.exists():
+            raise RuntimeError("Protos do not exist at {protos_path}")
+
         args_dict = dict(
             host=host,
             duration=llm_config["duration"],
-            protos_path=protos_path,
+            protos_path=protos_path.absolute(),
             call=llm_config["call"],
             model_id=consolidated_model["id"],
             llm_path=llm_config["src_path"],
