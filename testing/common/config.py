@@ -5,6 +5,7 @@ import pathlib
 import yaml
 import shutil
 import subprocess
+import threading
 
 import jsonpath_ng
 
@@ -141,6 +142,15 @@ class Config:
 
 
     def set_config(self, jsonpath, value, dump_command_args=True):
+        if threading.current_thread().name != "MainThread":
+            msg = f"set_config({jsonpath}, {value}) cannot be called from a thread, to avoid race conditions."
+            if os.environ.get("OPENSHIFT_CI") or os.environ.get("PERFLAB_CI"):
+                logging.error(msg)
+                with open(env.ARTIFACT_DIR / "SET_CONFIG_CALLED_FROM_THREAD", "a") as f:
+                    print(msg, file=f)
+            else:
+                raise RuntimeError(msg)
+
         try:
             self.get_config(jsonpath, value) # will raise an exception if the jsonpath does not exist
             jsonpath_ng.parse(jsonpath).update(self.config, value)
