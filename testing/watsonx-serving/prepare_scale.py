@@ -3,7 +3,7 @@ import pathlib
 import os
 import yaml
 
-from common import env, config, run, prepare_gpu_operator, prepare_user_pods, prepare_gpu_operator, merge_dicts
+from common import env, config, run, prepare_gpu_operator, prepare_user_pods, prepare_gpu_operator, merge_dicts, sizing
 import prepare_watsonx_serving
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -55,7 +55,7 @@ def prepare():
         # prepare the driver cluster
         namespace = config.ci_artifacts.get_config("base_image.namespace")
 
-        parallel.delayed(prepare_user_pods.prepare_user_pods, namespace, user_count)
+        parallel.delayed(prepare_user_pods.prepare_user_pods, user_count)
         parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
 
 
@@ -95,9 +95,8 @@ def scale_up_sutest():
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
-    config.ci_artifacts.set_config("clusters.sutest.compute.machineset.count ", node_count)
-
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_sutest ./run_toolbox.py from_config cluster set_scale --prefix=sutest")
+    extra = dict(scale=node_count)
+    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_sutest ./run_toolbox.py from_config cluster set_scale --prefix=sutest --extra \"{extra}\"")
 
 
 def cluster_scale_up():

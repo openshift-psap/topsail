@@ -135,6 +135,8 @@ def deploy_consolidated_model(consolidated_model):
     model_index = consolidated_model["index"]
     namespace = f"{namespace_prefix}-{model_index}-{model_name}"
 
+    logging.info(f"Deploying a consolidated model. Changing the test namespace to '{namespace}'")
+
     test_scale.prepare_user_sutest_namespace(namespace)
     test_scale.deploy_storage_configuration(namespace)
 

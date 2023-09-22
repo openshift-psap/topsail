@@ -63,8 +63,9 @@ def prepare_user_sutest_namespace(namespace):
     metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
     dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
     if not metal and dedicated:
-        run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_node_selector", capture_stdout=True)
-        run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration", capture_stdout=True)
+        extra = dict(project=namespace)
+        run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_node_selector --extra \"{extra}\"", capture_stdout=True)
+        run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration --extra \"{extra}\"", capture_stdout=True)
 
 
 def save_and_create(name, content, namespace, is_secret=False):
@@ -146,7 +147,7 @@ def run_one():
     if job_index is not None:
         namespace = config.ci_artifacts.get_config("tests.scale.namespace.name")
         new_namespace = f"{namespace}-u{job_index}"
-        logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
+        logging.info(f"Running in a parallel job. Changing the test namespace to '{new_namespace}'")
         config.ci_artifacts.set_config("tests.scale.namespace.name", new_namespace)
     else:
         job_index = 0
