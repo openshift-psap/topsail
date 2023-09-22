@@ -39,7 +39,7 @@ ci_presets:
     base_image.extend.tag: e2e-test-user
 
   e2e_gpu:
-    extends: [e2e_test]
+    extends: [e2e]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g5.2xlarge
     tests.e2e.models[1]: flan-t5-small-gpu
