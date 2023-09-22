@@ -1,0 +1,27 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Llm_load_test.run
+
+# Parameters
+# the host endpoint of the GRPC call
+# Mandatory value
+llm_load_test_run_host:
+
+# the duration of the load testing
+# Mandatory value
+llm_load_test_run_duration:
+
+# File path to the proto files needed to query the model
+# Mandatory value
+llm_load_test_run_protos_path:
+
+# GRPC call to perform
+# Mandatory value
+llm_load_test_run_call:
+
+# The ID of the model to pass along with the GRPC call
+# Mandatory value
+llm_load_test_run_model_id:
+
+# Path where llm-load-test has been cloned
+llm_load_test_run_llm_path: /src/llm-load-test/
