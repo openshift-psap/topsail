@@ -199,6 +199,12 @@
          -oyaml
          > {{ artifact_extra_logs_dir }}/artifacts/inference_service.yaml
 
+  - name: Capture the state of the ServingRuntime resource
+    shell:
+      oc get -f "{{ artifact_extra_logs_dir }}/src/serving_runtime.yaml"
+         -oyaml
+         > {{ artifact_extra_logs_dir }}/artifacts/serving_runtime.yaml
+
   - name: Save the timestamp configmaps
     shell:
       oc get cm -oyaml
