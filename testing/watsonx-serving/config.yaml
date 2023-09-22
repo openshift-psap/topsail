@@ -228,7 +228,7 @@ tests:
 
     model:
       consolidated: false
-      name: flan-t5-small-caikit-cpu
+      name: flan-t5-small-cpu
       replicas: 2
   e2e:
     namespace: watsonx-e2e
