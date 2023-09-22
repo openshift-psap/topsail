@@ -13,7 +13,8 @@ def prepare():
     prepare_common.prepare_common()
 
     namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
-    prepare_user_pods.prepare_user_pods(namespace)
+    config.ci_artifacts.set_config("base_image.namespace", namespace)
+    prepare_user_pods.prepare_user_pods()
 
     prepare_sutest_scale_up()
 
