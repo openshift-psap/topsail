@@ -236,7 +236,14 @@ tests:
     - flan-t5-small-cpu
     - flan-t5-small-cpu
     consolidated_models: {} # will be filled at runtime
+    llm_load_test:
+      enabled: true
+      src_path: /src/llm-load-test/
+      duration: 1m
+      protos_file: nlpservice.proto
+      protos_dir: "$PSAP_ODS_SECRET_PATH"
 
+      call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
 matbench:
   preset: null
   workload: watsonx-serving-scale

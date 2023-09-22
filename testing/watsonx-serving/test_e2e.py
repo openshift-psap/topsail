@@ -20,6 +20,12 @@ import prepare_scale, test_scale
 
 # ---
 
+def consolidate_model_namespace(consolidated_model):
+    namespace_prefix = config.ci_artifacts.get_config("tests.e2e.namespace")
+    model_name = consolidated_model["name"]
+    model_index = consolidated_model["index"]
+    return f"{namespace_prefix}-{model_index}-{model_name}"
+
 def consolidate_model(index):
     model_list = config.ci_artifacts.get_config("tests.e2e.models")
     if index >= len(model_list):
@@ -67,9 +73,9 @@ def test_ci():
 
     deploy_models_concurrently()
 
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
-
     test_models_concurrently()
+
+    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
 
 
 def deploy_models_sequentially():
@@ -130,10 +136,8 @@ def deploy_consolidated_models():
 def deploy_consolidated_model(consolidated_model):
     logging.info(f"Deploying model '{consolidated_model['name']}'")
 
-    namespace_prefix = config.ci_artifacts.get_config("tests.e2e.namespace")
     model_name = consolidated_model["name"]
-    model_index = consolidated_model["index"]
-    namespace = f"{namespace_prefix}-{model_index}-{model_name}"
+    namespace = consolidate_model_namespace(consolidated_model)
 
     logging.info(f"Deploying a consolidated model. Changing the test namespace to '{namespace}'")
 
@@ -194,19 +198,36 @@ def test_consolidated_models():
 def test_consolidated_model(consolidated_model):
     logging.info(f"Testing model '{consolidated_model['name']}")
 
-    namespace_prefix = config.ci_artifacts.get_config("tests.e2e.namespace")
     model_name = consolidated_model["name"]
-    model_index = consolidated_model["index"]
-    namespace = f"{namespace_prefix}-{model_index}-{model_name}"
+    namespace = consolidate_model_namespace(consolidated_model)
 
-    args_dict = dict(
-        namespace=namespace,
-        inference_service_names=[model_name],
-        model_id=consolidated_model["id"],
-        query_data=consolidated_model["inference_service"]["query_data"],
-    )
+    if (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
+        host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
+        host = host_url.lstrip("https://") + ":443"
+        llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
+        protos_dir = llm_config["protos_dir"]
+        if protos_dir.startswith("$"):
+            protos_dir = os.environ[protos_dir.lstrip("$")]
+        protos_path = pathlib.Path(protos_dir) / llm_config["protos_file"]
+        args_dict = dict(
+            host=host,
+            duration=llm_config["duration"],
+            protos_path=protos_path,
+            call=llm_config["call"],
+            model_id=consolidated_model["id"],
+            llm_path=llm_config["src_path"],
+        )
 
-    run.run(f"./run_toolbox.py watsonx_serving validate_model {dict_to_run_toolbox_args(args_dict)}")
+        run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
+    else:
+        args_dict = dict(
+            namespace=namespace,
+            inference_service_names=[model_name],
+            model_id=consolidated_model["id"],
+            query_data=consolidated_model["inference_service"]["query_data"],
+        )
+
+        run.run(f"./run_toolbox.py watsonx_serving validate_model {dict_to_run_toolbox_args(args_dict)}")
 
 # ---
 
