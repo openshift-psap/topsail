@@ -89,7 +89,7 @@ class Config:
                         raise ValueError(f"Config key '{key}' does not exist, and cannot create it at the moment :/")
                     self.config[key] = None
 
-                self.set_config(key, value)
+                self.set_config(key, value, dump_command_args=False)
                 actual_value = self.get_config(key) # ensure that key has been set, raises an exception otherwise
                 logging.info(f"config override: {key} --> {actual_value}")
 
@@ -172,7 +172,15 @@ class Config:
                 yaml.dump(self.config, f, indent=4)
 
     def dump_command_args(self):
-        command_template = get_command_arg("dump config", None)
+        try:
+            command_template = get_command_arg("dump config", None)
+        except Exception as e:
+            import traceback
+            with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
+                traceback.print_exc(file=f)
+            logging.warning("Could not dump the command_args template.")
+            return
+
         with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
             print(command_template, file=f)
 
