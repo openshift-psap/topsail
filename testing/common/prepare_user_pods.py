@@ -96,8 +96,8 @@ def cluster_scale_up(namespace, user_count):
 
     run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_driver ./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
 
-def prepare_user_pods(namespace, user_count):
-    config.ci_artifacts.set_config("base_image.namespace", namespace)
+def prepare_user_pods(user_count):
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
 
     service_account = config.ci_artifacts.get_config("base_image.user.service_account")
     role = config.ci_artifacts.get_config("base_image.user.role")
