@@ -6,6 +6,11 @@ metadata:
 spec:
   containers:
   - name: kserve-container
+    command: [bash, -cex]
+    args:
+    - |
+      echo "Starting Caikit-serving without logs ..."
+      exec ./start-serving.sh &> /dev/null
     env:
     - name: RUNTIME_LOCAL_MODELS_DIR
       value: /mnt/models
