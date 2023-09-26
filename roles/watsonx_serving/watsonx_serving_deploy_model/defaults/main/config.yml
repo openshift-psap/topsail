@@ -11,6 +11,10 @@ watsonx_serving_deploy_model_namespace:
 # Mandatory value
 watsonx_serving_deploy_model_model_name:
 
+# the ID of the model, for the validation step
+# Mandatory value
+watsonx_serving_deploy_model_model_id:
+
 # the name to give to the serving runtime
 # Mandatory value
 watsonx_serving_deploy_model_serving_runtime_name:
@@ -51,3 +55,6 @@ watsonx_serving_deploy_model_env_extra_values: {}
 
 # path to a CAIKIT config file
 watsonx_serving_deploy_model_runtime_config_file: null
+
+# a JSON payload used to validate the model deployment
+watsonx_serving_deploy_model_query_data: null

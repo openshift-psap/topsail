@@ -12,6 +12,7 @@ class Watsonx_Serving:
     def deploy_model(self,
                      namespace,
                      model_name,
+                     model_id,
                      serving_runtime_name, serving_runtime_image, serving_runtime_resource_request,
                      inference_service_name,
                      storage_uri,
@@ -21,6 +22,7 @@ class Watsonx_Serving:
                      secret_env_file_key=None,
                      env_extra_values : dict = {},
                      runtime_config_file=None,
+                     query_data=None,
                      ):
         """
         Deploy a WatsonX-Serving model
@@ -29,6 +31,7 @@ class Watsonx_Serving:
           name: the name of the resource to create
           namespace: the namespace in which the model should be deployed
           model_name: the full name of the model
+          model_id: the ID of the model, for the validation step
 
           serving_runtime_name: the name to give to the serving runtime
           serving_runtime_image: the image of the serving runtime
@@ -43,6 +46,8 @@ class Watsonx_Serving:
           secret_env_file_key: key to the secret environment key/values in the secret file
           env_extra_values: extra key/value pairs (will override the values from the secret file)
           runtime_config_file: path to a CAIKIT config file
+
+          query_data: a JSON payload used to validate the model deployment
         """
 
         return RunAnsibleRole(locals())
