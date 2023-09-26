@@ -144,6 +144,9 @@ watsonx_serving deploy_model:
   namespace: {{ tests.scale.namespace.name }}
   sa_name: {{ watsonx_serving.sa_name }}
 
+  model_id: {{ tests.scale.model.id }}
+  model_name: {{ tests.scale.model.full_name }}
+
   serving_runtime_name: {{ tests.scale.model.name }}
   serving_runtime_image: {{ watsonx_serving.model.serving_runtime.image }}
 

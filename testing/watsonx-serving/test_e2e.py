@@ -153,6 +153,7 @@ def deploy_consolidated_model(consolidated_model):
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
+        model_id=consolidated_model["id"],
         model_name=consolidated_model["full_name"],
         serving_runtime_name=model_name,
         serving_runtime_image=consolidated_model["serving_runtime"]["image"],
@@ -161,6 +162,8 @@ def deploy_consolidated_model(consolidated_model):
         inference_service_name=model_name,
         storage_uri=consolidated_model["inference_service"]["storage_uri"],
         sa_name=config.ci_artifacts.get_config("watsonx_serving.sa_name"),
+
+        query_data=consolidated_model["inference_service"].get("query_data"),
     )
 
     # optional fields
