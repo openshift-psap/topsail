@@ -27,26 +27,31 @@ def consolidate_model_namespace(consolidated_model):
     return f"{namespace_prefix}-{model_index}"
 
 
-def consolidate_model(index):
-    model_list = config.ci_artifacts.get_config("tests.e2e.models")
-    if index >= len(model_list):
-        raise IndexError(f"Requested model index #{index}, but only {len(model_list)} are defined. {model_list}")
+def consolidate_model(index, name=None):
+    if name is None:
+        model_list = config.ci_artifacts.get_config("tests.e2e.models")
+        if index >= len(model_list):
+            raise IndexError(f"Requested model index #{index}, but only {len(model_list)} are defined. {model_list}")
 
-    model_name = model_list[index]
+        model_name = model_list[index]
+    else:
+        model_name = name
 
     return prepare_scale.consolidate_model_config(_model_name=model_name, index=index)
 
 
-def consolidate_models(index=None, use_job_index=False):
+def consolidate_models(index=None, use_job_index=False, model_name=None):
     consolidated_models = []
-    if index or use_job_index:
-        if index is None and use_job_index:
-            index = os.environ.get("JOB_COMPLETION_INDEX", None)
-            if index is None:
-                raise RuntimeError("No JOB_COMPLETION_INDEX env variable available :/")
+    if index is not None and model_name:
+        consolidated_models.append(consolidate_model(index, model_name))
+    elif index is not None:
+        consolidated_models.append(consolidate_model(index))
+    elif use_job_index:
+        index = os.environ.get("JOB_COMPLETION_INDEX", None)
+        if index is None:
+            raise RuntimeError("No JOB_COMPLETION_INDEX env variable available :/")
 
-            index = int(index)
-
+        index = int(index)
         consolidated_models.append(consolidate_model(index))
     else:
         for index in range(len(config.ci_artifacts.get_config("tests.e2e.models"))):
@@ -94,10 +99,10 @@ def deploy_models_concurrently():
     run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_deploy ./run_toolbox.py from_config local_ci run_multi --suffix deploy_concurrently")
 
 
-def deploy_one_model(index=None, use_job_index=False):
+def deploy_one_model(index: int = None, use_job_index: bool = False, model_name: str = None):
     "Deploys one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
 
-    consolidate_models(index=index, use_job_index=use_job_index)
+    consolidate_models(index=index, use_job_index=use_job_index, model_name=model_name)
     deploy_consolidated_models()
 
 
@@ -116,10 +121,10 @@ def test_models_concurrently():
     run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_concurrently ./run_toolbox.py from_config local_ci run_multi --suffix test_concurrently")
 
 
-def test_one_model(index=None, use_job_index=False):
+def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None):
     "Tests one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
 
-    consolidate_models(index=index, use_job_index=True)
+    consolidate_models(index=index, use_job_index=True, model_name=model_name)
     test_consolidated_models()
 
 # ---
