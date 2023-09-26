@@ -53,8 +53,5 @@ watsonx_serving_deploy_model_secret_env_file_key: null
 # Type: Dict
 watsonx_serving_deploy_model_env_extra_values: {}
 
-# path to a CAIKIT config file
-watsonx_serving_deploy_model_runtime_config_file: null
-
 # a JSON payload used to validate the model deployment
 watsonx_serving_deploy_model_query_data: null
