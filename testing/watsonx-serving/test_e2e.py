@@ -181,11 +181,6 @@ def deploy_consolidated_model(consolidated_model):
     else:
         logging.warning("No secret env key defined for this model")
 
-    if (runtime_config := consolidated_model["serving_runtime"].get("runtime_config")) == True:
-        args_dict["runtime_config_file"] = TESTING_THIS_DIR / "models" / "resources" / "runtime_config.yaml"
-        if not args_dict["runtime_config_file"].exists():
-            raise FileNotFoundError(f"Unexpected error: {args_dict['runtime_config_file']} does not exist :/")
-
     if (extra_env := consolidated_model["serving_runtime"].get("extra_env")):
         if not isinstance(extra_env, dict):
             raise ValueError(f"serving_runtime.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
