@@ -223,13 +223,18 @@
     shell:
       oc get pod
          -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
+         -oyaml
+         -n {{ watsonx_serving_deploy_model_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/predictor-pod.yaml;
+      oc get pod
+         -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
          -owide
          -n {{ watsonx_serving_deploy_model_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/pod.status;
+         > {{ artifact_extra_logs_dir }}/artifacts/predictor-pod.status;
       oc describe pod
          -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
          -n {{ watsonx_serving_deploy_model_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
+         > {{ artifact_extra_logs_dir }}/artifacts/predictor-pod.desc
     ignore_errors: true
 
   - name: Capture the state of the InferenceService resource
