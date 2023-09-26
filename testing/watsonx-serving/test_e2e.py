@@ -282,7 +282,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        os.environ["TOPSAIL_PR_ARGS"] = "e2e"
+        os.environ["TOPSAIL_PR_ARGS"] = "e2e_gpu"
         from test import init
         init(ignore_secret_path=False, apply_preset_from_pr_args=True)
 
