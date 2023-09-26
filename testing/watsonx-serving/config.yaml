@@ -42,8 +42,8 @@ ci_presets:
     extends: [e2e]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g5.2xlarge
-    tests.e2e.models[1]: flan-t5-small-gpu
-    gpu.time_sharing.replicas: 100
+    tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, mpt-7b-instruct2]
+    gpu.time_sharing.replicas: 22
 
   # ---
 
