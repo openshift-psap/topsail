@@ -11,6 +11,21 @@
     state: directory
     mode: '0755'
 
+# Cleanup the namespace
+- name: Delete the InferenceServices
+  command: oc delete InferenceServices,ServingRuntime --all -n {{ watsonx_serving_deploy_model_namespace }}
+
+- name: Wait for the Pods to disappear
+  command:
+    oc get pods
+       --no-headers
+       -lcomponent=predictor
+       -n {{ watsonx_serving_deploy_model_namespace }}
+  register: ns_had_predictor_pods_cmd
+  retries: 60
+  delay: 10
+  until: '"No resources found" in ns_had_predictor_pods_cmd.stderr'
+
 # SMMR
 
 - name: Delete the tracking timestamps
