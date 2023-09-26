@@ -22,9 +22,10 @@ import prepare_scale, test_scale
 
 def consolidate_model_namespace(consolidated_model):
     namespace_prefix = config.ci_artifacts.get_config("tests.e2e.namespace")
-    model_name = consolidated_model["name"]
+
     model_index = consolidated_model["index"]
-    return f"{namespace_prefix}-{model_index}-{model_name}"
+    return f"{namespace_prefix}-{model_index}"
+
 
 def consolidate_model(index):
     model_list = config.ci_artifacts.get_config("tests.e2e.models")
