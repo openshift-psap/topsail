@@ -16,7 +16,7 @@ spec:
       value: /mnt/models
 {% if watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] %}
     - name: NUM_GPUS
-      value: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] }}"
+      value: "1"
 {% endif %}
     - name: MODEL_NAME
       value: "{{ watsonx_serving_deploy_model_model_name }}"
@@ -46,11 +46,15 @@ spec:
       requests:
         cpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.cpu }}"
         memory: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.memory }}Gi"
+{% if watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] %}
         nvidia.com/gpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] }}"
+{% endif %}
       limits:
         cpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.cpu }}"
         memory: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.memory }}Gi"
+{% if watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] %}
         nvidia.com/gpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] }}"
+{% endif %}
     volumeMounts:
     - mountPath: /shared_model_storage/transformers_cache
       name: cache-volume
