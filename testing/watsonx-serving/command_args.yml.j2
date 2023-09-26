@@ -156,6 +156,8 @@ watsonx_serving deploy_model:
   inference_service_name: {{ tests.scale.model.name }}
   storage_uri: {{ tests.scale.model.inference_service.storage_uri }}
 
+  mute_serving_logs: {{ watsonx_serving.model.serving_runtime.mute_logs }}
+
 watsonx_serving validate_model:
   namespace: {{ tests.scale.namespace.name }}
   inference_service_names: [{{ tests.scale.model.name }}]

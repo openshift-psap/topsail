@@ -164,6 +164,8 @@ def deploy_consolidated_model(consolidated_model):
         sa_name=config.ci_artifacts.get_config("watsonx_serving.sa_name"),
 
         query_data=consolidated_model["inference_service"].get("query_data"),
+
+        mute_serving_logs=config.ci_artifacts.get_config("watsonx_serving.model.serving_runtime.mute_logs"),
     )
 
     # optional fields
