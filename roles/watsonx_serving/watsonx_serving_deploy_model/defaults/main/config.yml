@@ -55,3 +55,6 @@ watsonx_serving_deploy_model_env_extra_values: {}
 
 # a JSON payload used to validate the model deployment
 watsonx_serving_deploy_model_query_data: null
+
+# if True, mute the serving runtime container logs
+watsonx_serving_deploy_model_mute_serving_logs: false

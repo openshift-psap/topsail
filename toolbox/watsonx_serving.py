@@ -22,6 +22,7 @@ class Watsonx_Serving:
                      secret_env_file_key=None,
                      env_extra_values : dict = {},
                      query_data=None,
+                     mute_serving_logs=False,
                      ):
         """
         Deploy a WatsonX-Serving model
@@ -46,6 +47,8 @@ class Watsonx_Serving:
           env_extra_values: extra key/value pairs (will override the values from the secret file)
 
           query_data: a JSON payload used to validate the model deployment
+
+          mute_serving_logs: if True, mute the serving runtime container logs
         """
 
         return RunAnsibleRole(locals())
