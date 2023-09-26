@@ -125,6 +125,15 @@ def consolidate_model_config(config_location=None, _model_name=None, index=None,
     if not model_name:
         raise RuntimeError(f"Couldn't find a name for consolidating the model configuration ... {config_location}={test_config} and model_name={_model_name}")
 
+
+    if model_name == "help":
+        logging.info("")
+        logging.info("Available models:")
+        for a_model_name in (TESTING_THIS_DIR / "models").glob("*.yaml"):
+            logging.info(f"- {a_model_name.stem}")
+
+        raise SystemExit(0)
+
     def get_file_config(file_model_name):
         with open(TESTING_THIS_DIR / "models" / f"{file_model_name}.yaml") as f:
             return yaml.safe_load(f)
