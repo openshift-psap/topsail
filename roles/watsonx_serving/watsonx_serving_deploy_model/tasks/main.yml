@@ -22,7 +22,7 @@
        -lcomponent=predictor
        -n {{ watsonx_serving_deploy_model_namespace }}
   register: ns_had_predictor_pods_cmd
-  retries: 60
+  retries: 12
   delay: 10
   until: '"No resources found" in ns_had_predictor_pods_cmd.stderr'
 
