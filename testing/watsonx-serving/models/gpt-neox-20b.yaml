@@ -1,0 +1,14 @@
+id: gpt-neox-20b
+full_name: EleutherAI/gpt-neox-20b
+secret_key: gpt-neox-20b
+
+serving_runtime:
+  resource_request:
+    cpu: 7
+    memory: 30 # in Gi
+    nvidia.com/gpu: 30 # in Gi of GPU memory
+  extra_env: {}
+  min_replicas: 2
+inference_service:
+  storage_uri: "s3://psap-watsonx-models/gpt-neox-20b/"
+  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'
