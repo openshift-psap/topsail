@@ -242,7 +242,7 @@ tests:
     llm_load_test:
       enabled: true
       src_path: subprojects/llm-load-test/
-      duration: 1m
+      duration: 5m
       protos_file: nlpservice.proto
       protos_dir: testing/watsonx-serving/protos/
 
