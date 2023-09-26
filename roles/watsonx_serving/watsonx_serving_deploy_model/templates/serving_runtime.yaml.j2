@@ -10,6 +10,9 @@ spec:
     args:
     - |
       echo "Starting Caikit-serving without logs ..."
+      TGIS_CONFIG_TEMPLATE="/caikit/config/caikit-tgis.template.yml"
+      EXTENDED_TIMEOUT=2000
+      sed -i 's/load_timeout: .*/load_timeout: '$EXTENDED_TIMEOUT'/' /caikit/config/caikit-tgis.template.yml
       exec ./start-serving.sh &> /dev/null
     env:
     - name: RUNTIME_LOCAL_MODELS_DIR
