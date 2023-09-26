@@ -168,9 +168,9 @@
       oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
          -ojsonpath={.status.modelStatus.states.targetModelState}
     register: inference_service_state_cmd
-    # wait 15 minutes
+    # wait 37.5 minutes
     retries: 90
-    delay: 10
+    delay: 25
     until: inference_service_state_cmd.stdout == "Loaded"
 
   - name: Capture the state of the InferenceService Pod resource
