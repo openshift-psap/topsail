@@ -120,6 +120,7 @@ clusters:
         name: workload-pods
         type: m6i.2xlarge
         count: 1
+        disk_size: 400 # GB for the root partition
         taint:
           key: only-workload-pods
           value: "yes"

@@ -12,6 +12,7 @@ sutest/cluster set_scale:
 {% if clusters.sutest.compute.dedicated %}
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
 {% endif %}
+  disk_size: {{ clusters.sutest.compute.machineset.disk_size }}
   scale: SET_AT_RUNTIME
 
 #
