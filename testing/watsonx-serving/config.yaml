@@ -45,17 +45,18 @@ ci_presets:
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g5.2xlarge
     tests.e2e.models:
+    - flan-t5-small-cpu
+    - flan-t5-small-cpu-2x:
+        name: flan-t5-small-cpu
+        inference_service:
+          min_replicas: 2
+    - flan-t5-small-gpu
     - flan-t5-small-gpu-2x:
         name: flan-t5-small-gpu
         inference_service:
           min_replicas: 2
-    - flan-t5-large-gpu-2x:
-        name: flan-t5-large-gpu
-        inference_service:
-          min_replicas: 2
-    - flan-t5-small-gpu
-    - flan-t5-large-gpu
-    gpu.time_sharing.replicas: 1
+    gpu.time_sharing.replicas: 3
+    clusters.sutest.compute.machineset.count: 1
 
   # ---
 
