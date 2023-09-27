@@ -176,7 +176,7 @@ def deploy_consolidated_model(consolidated_model):
     )
 
     # optional fields
-    try: args_dict["min_replicas"] = consolidated_model["inference_service"]["min_replicas"]
+    try: args_dict["inference_service_min_replicas"] = consolidated_model["inference_service"]["min_replicas"]
     except KeyError: pass
 
     if (secret_key := consolidated_model.get("secret_key")) != None:
