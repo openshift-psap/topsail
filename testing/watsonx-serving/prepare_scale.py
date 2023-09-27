@@ -81,7 +81,7 @@ def scale_compute_sutest_node_requirement():
 
 
 def e2e_compute_sutest_node_requirement():
-    return 1
+    return len(config.ci_artifacts.get_config("tests.e2e.models"))
 
 def scale_up_sutest():
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
