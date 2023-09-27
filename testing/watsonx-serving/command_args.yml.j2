@@ -161,6 +161,7 @@ watsonx_serving deploy_model:
   storage_uri: {{ tests.scale.model.inference_service.storage_uri }}
 
   mute_serving_logs: {{ watsonx_serving.model.serving_runtime.mute_logs }}
+  delete_others: {{ tests.e2e.delete_others }}
 
 watsonx_serving validate_model:
   namespace: {{ tests.scale.namespace.name }}
