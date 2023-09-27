@@ -153,6 +153,10 @@ def deploy_consolidated_model(consolidated_model):
     test_scale.prepare_user_sutest_namespace(namespace)
     test_scale.deploy_storage_configuration(namespace)
 
+    gpu_count = consolidated_model["serving_runtime"]["resource_request"].get("nvidia.com/gpu", 0)
+    if config.ci_artifacts.get_config("tests.e2e.request_one_gpu") and gpu_count != 0:
+        consolidated_model["serving_runtime"]["resource_request"]["nvidia.com/gpu"] = 1
+
     # mandatory fields
     args_dict = dict(
         namespace=namespace,

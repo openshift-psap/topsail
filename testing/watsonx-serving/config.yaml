@@ -55,7 +55,7 @@ ci_presets:
           min_replicas: 2
     - flan-t5-small-gpu
     - flan-t5-large-gpu
-    gpu.time_sharing.replicas: 22
+    gpu.time_sharing.replicas: 1
 
   # ---
 
@@ -251,6 +251,8 @@ tests:
     - flan-t5-small-cpu
     - flan-t5-small-cpu
     consolidated_models: {} # will be filled at runtime
+    request_one_gpu: true
+    delete_others: true
     llm_load_test:
       enabled: true
       src_path: subprojects/llm-load-test/
