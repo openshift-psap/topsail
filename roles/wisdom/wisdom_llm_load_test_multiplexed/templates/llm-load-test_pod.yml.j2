@@ -20,7 +20,7 @@ spec:
       set -x
       cd /src/llm-load-test
       mkdir output
-      python3 ghz_frontend.py --parallel_experiment
+      python3 load_test.py
     env:
     - name: CONFIG_FILENAME
       value: "config.yaml"

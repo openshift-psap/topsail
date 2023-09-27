@@ -14,72 +14,119 @@ spec:
     - autoSelect: true
       name: wisdom
   containers:
-    - name: runtime
-      #TODO: Make this a variable
-      image: quay.io/rhods-wisdom/fmaas-runtime-wisdom-ansible:0.30.0_ubi8_py39
-      env:
-        - name: ACCEPT_LICENSE
-          value: "true"
-        - name: LOG_LEVEL
-          value: debug3
-        # CAPACITY and DEFAULT_MODEL_SIZE numbers for pre-converted ONNX models with reported size ~41081MiB
-        - name: INFERENCE_PLUGIN_MODEL_MESH_CAPACITY
-          value: "62914560000"
-        - name: INFERENCE_PLUGIN_MODEL_MESH_DEFAULT_MODEL_SIZE
-          value: "31457280000"
+  - name: runtime
+    #TODO: Make this a variable
+    image: quay.io/rhods-wisdom/fmaas-runtime-wisdom-ansible:0.31.0_ubi8_py39
+    env:
+      - name: ACCEPT_LICENSE
+        value: "true"
+      - name: LOG_LEVEL
+        value: debug3
+      # CAPACITY and DEFAULT_MODEL_SIZE numbers for pre-converted ONNX models with reported size ~41081MiB
+      - name: INFERENCE_PLUGIN_MODEL_MESH_CAPACITY
+        value: "62914560000"
+      - name: INFERENCE_PLUGIN_MODEL_MESH_DEFAULT_MODEL_SIZE
+        value: "31457280000"
 
-        # limits model loads/unloads from ModelMesh
-        - name: INFERENCE_PLUGIN_MODEL_MESH_MAX_LOADING_CONCURRENCY
-          value: "1"
+      # limits model loads/unloads from ModelMesh
+      - name: INFERENCE_PLUGIN_MODEL_MESH_MAX_LOADING_CONCURRENCY
+        value: "1"
 
-        - name: RUNTIME_PORT
-          value: "8087"
-        - name: GATEWAY_PORT
-          value: "8060"
-        - name: RUNTIME_METRICS_PORT
-          value: "2113"
-        - name: RUNTIME_LOCAL_MODELS_DIR
-          value: "/models/"
+      - name: RUNTIME_PORT
+        value: "8087"
+      - name: GATEWAY_PORT
+        value: "8060"
+      - name: RUNTIME_METRICS_PORT
+        value: "2113"
+      - name: RUNTIME_LOCAL_MODELS_DIR
+        value: "/models/"
 
-        # use RPM based scaling in ModelMesh
-        # FIXME: these configs will be the default in the release after 0.21.0
-        - name: INFERENCE_PLUGIN_MODEL_MESH_LATENCY_BASED_AUTOSCALING_ENABLED
-          value: "false"
-        - name: RUNTIME_SERVER_THREAD_POOL_SIZE
-          value: "16"
+      # use RPM based scaling in ModelMesh
+      # FIXME: these configs will be the default in the release after 0.21.0
+      - name: INFERENCE_PLUGIN_MODEL_MESH_LATENCY_BASED_AUTOSCALING_ENABLED
+        value: "false"
+      - name: RUNTIME_SERVER_THREAD_POOL_SIZE
+        value: "16"
 
-        # TGIS env vars
-        - name: CUDA_PAD_TO_MULT_OF_8
-          value: "false"
-        - name: MAX_BATCH_SIZE
-          value: "16"
-        - name: MAX_SEQUENCE_LENGTH
-          value: "2048"
-        - name: NUM_GPUS
-          value: "1"
-        - name: MERGE_ONNX_GRAPHS
-          value: "true"
-        - name: CUDA_VISIBLE_DEVICES
-          value: "0"
-        - name: TRANSFORMERS_CACHE
-          value: /tmp/transformers_cache
-        - name: HUGGINGFACE_HUB_CACHE
-          value: /tmp/transformers_cache
-        - name: MAX_CONCURRENT_REQUESTS
-          value: "64"
-        - name: DEPLOYMENT_FRAMEWORK
-          value: hf_optimum_ort
-      ports:
-        - containerPort: 8087
-          name: runtime-grpc
-          protocol: TCP
-        - containerPort: 8060
-          name: runtime-rest
-          protocol: TCP
-      resources:
-        limits:
-          nvidia.com/gpu: "1"
-        requests:
-          cpu: 4
-          memory: "8Gi"
-          nvidia.com/gpu: "1"
+      # TGIS env vars
+      - name: CUDA_PAD_TO_MULT_OF_8
+        value: "false"
+      - name: MAX_BATCH_SIZE
+        value: "16"
+      - name: MAX_SEQUENCE_LENGTH
+        value: "2048"
+      - name: NUM_GPUS
+        value: "1"
+      - name: MERGE_ONNX_GRAPHS
+        value: "true"
+      - name: CUDA_VISIBLE_DEVICES
+        value: "0"
+      - name: TRANSFORMERS_CACHE
+        value: /tmp/transformers_cache
+      - name: HUGGINGFACE_HUB_CACHE
+        value: /tmp/transformers_cache
+      - name: MAX_CONCURRENT_REQUESTS
+        value: "64"
+      - name: DEPLOYMENT_FRAMEWORK
+        value: hf_transformers # FOR PT2_COMPILE
+        #value: hf_optimum_ort
+      - name: PT2_COMPILE # FOR PT2_COMPILE
+        value: "true"
+      - name: INFERENCE_STRATEGY # needed for v0.30+
+        value: "bos_sep_newline"
+    ports:
+      - containerPort: 8087
+        name: runtime-grpc
+        protocol: TCP
+      - containerPort: 8060
+        name: runtime-rest
+        protocol: TCP
+    resources:
+      limits:
+        nvidia.com/gpu: "1"
+      requests:
+        cpu: 4
+        memory: "8Gi"
+        nvidia.com/gpu: "1"
+    volumeMounts:
+    - name: runtime-config
+      subPath: runtime_config.yaml
+      mountPath: "/app/runtime_config.yaml"
+  volumes:
+  - name: runtime-config
+    configMap:
+      name: runtime-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: runtime-config
+  namespace: {{ wisdom_deploy_model_namespace }}
+data:
+  runtime_config.yaml: |
+    # its contents configure the TGIS server & caikit
+    jvm_options: []
+    runtime:
+      batching:
+        standalone-model:
+          size: 0 # Set to batch size for batching
+      server_thread_pool_size: 16
+    inference_plugin:
+      model_mesh:
+        max_loading_concurrency: 1
+        latency_based_autoscaling_enabled: false
+        model_loading_timeout_ms: 3600000
+    module_backends:
+      load_priority:
+        - type: TGIS
+          config:
+            local:
+              load_timeout: 3600
+              grpc_port: null
+              http_port: null
+              health_poll_delay: 1.0
+            connection:
+              hostname: ""
+              ca_cert_file: null
+              client_cert_file: null
+              client_key_file: null

@@ -8,7 +8,7 @@ storage:
     s3_access_key: ""
     s3_secret_key": ""
     s3_bucket: "wisdom-perf-data-test"
-    s3_result_path: "WatsonRuntime_v0.30.0/Wisdom_v11"
+    s3_result_path: "WatsonRuntime_v0.31.0/Wisdom_v11"
     s3_region: "us-east-1"
 load_generator:
   type: "ghz"
@@ -37,6 +37,6 @@ metadata:
   nodes: {{ wisdom_llm_load_test_multiplexed_replicas }}
   instance_type: g5.2xlarge
   instance_gpu_count: 1
-  runtime_version: "watson_v0.30.0"
+  runtime_version: "watson_v0.31.0"
   model_version: "ansible_wisdom_v11"
 
