@@ -197,7 +197,7 @@ local_ci run_multi/deploy_concurrently:
   <<: *local_ci_run_multi_e2e
   ci_command: "watsonx-serving test_e2e deploy_one_model --use-job-index"
   sleep_factor: 0
-
+  need_all_success: true
 
 local_ci run_multi/test_sequentially:
   <<: *local_ci_run_multi_e2e
