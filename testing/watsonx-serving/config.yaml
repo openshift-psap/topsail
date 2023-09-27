@@ -42,8 +42,8 @@ ci_presets:
     extends: [e2e]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g5.2xlarge
-    tests.e2e.models[1]: flan-t5-small-gpu
-    gpu.time_sharing.replicas: 100
+    tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, mpt-7b-instruct2]
+    gpu.time_sharing.replicas: 22
 
   # ---
 
@@ -120,6 +120,7 @@ clusters:
         name: workload-pods
         type: m6i.2xlarge
         count: 1
+        disk_size: 400 # GB for the root partition
         taint:
           key: only-workload-pods
           value: "yes"
@@ -200,6 +201,7 @@ watsonx_serving:
   model:
     serving_runtime:
       image: quay.io/opendatahub/caikit-tgis-serving:stable
+      mute_logs: true
   customize:
     serverless:
       enabled: false
@@ -239,8 +241,8 @@ tests:
     consolidated_models: {} # will be filled at runtime
     llm_load_test:
       enabled: true
-      src_path: /src/llm-load-test/
-      duration: 1m
+      src_path: subprojects/llm-load-test/
+      duration: 5m
       protos_file: nlpservice.proto
       protos_dir: testing/watsonx-serving/protos/
 

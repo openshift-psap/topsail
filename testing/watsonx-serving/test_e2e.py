@@ -22,30 +22,36 @@ import prepare_scale, test_scale
 
 def consolidate_model_namespace(consolidated_model):
     namespace_prefix = config.ci_artifacts.get_config("tests.e2e.namespace")
-    model_name = consolidated_model["name"]
+
     model_index = consolidated_model["index"]
-    return f"{namespace_prefix}-{model_index}-{model_name}"
+    return f"{namespace_prefix}-{model_index}"
 
-def consolidate_model(index):
-    model_list = config.ci_artifacts.get_config("tests.e2e.models")
-    if index >= len(model_list):
-        raise IndexError(f"Requested model index #{index}, but only {len(model_list)} are defined. {model_list}")
 
-    model_name = model_list[index]
+def consolidate_model(index, name=None):
+    if name is None:
+        model_list = config.ci_artifacts.get_config("tests.e2e.models")
+        if index >= len(model_list):
+            raise IndexError(f"Requested model index #{index}, but only {len(model_list)} are defined. {model_list}")
+
+        model_name = model_list[index]
+    else:
+        model_name = name
 
     return prepare_scale.consolidate_model_config(_model_name=model_name, index=index)
 
 
-def consolidate_models(index=None, use_job_index=False):
+def consolidate_models(index=None, use_job_index=False, model_name=None):
     consolidated_models = []
-    if index or use_job_index:
-        if index is None and use_job_index:
-            index = os.environ.get("JOB_COMPLETION_INDEX", None)
-            if index is None:
-                raise RuntimeError("No JOB_COMPLETION_INDEX env variable available :/")
+    if index is not None and model_name:
+        consolidated_models.append(consolidate_model(index, model_name))
+    elif index is not None:
+        consolidated_models.append(consolidate_model(index))
+    elif use_job_index:
+        index = os.environ.get("JOB_COMPLETION_INDEX", None)
+        if index is None:
+            raise RuntimeError("No JOB_COMPLETION_INDEX env variable available :/")
 
-            index = int(index)
-
+        index = int(index)
         consolidated_models.append(consolidate_model(index))
     else:
         for index in range(len(config.ci_artifacts.get_config("tests.e2e.models"))):
@@ -93,10 +99,10 @@ def deploy_models_concurrently():
     run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_deploy ./run_toolbox.py from_config local_ci run_multi --suffix deploy_concurrently")
 
 
-def deploy_one_model(index=None, use_job_index=False):
+def deploy_one_model(index: int = None, use_job_index: bool = False, model_name: str = None):
     "Deploys one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
 
-    consolidate_models(index=index, use_job_index=use_job_index)
+    consolidate_models(index=index, use_job_index=use_job_index, model_name=model_name)
     deploy_consolidated_models()
 
 
@@ -115,10 +121,10 @@ def test_models_concurrently():
     run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_concurrently ./run_toolbox.py from_config local_ci run_multi --suffix test_concurrently")
 
 
-def test_one_model(index=None, use_job_index=False):
+def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None):
     "Tests one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
 
-    consolidate_models(index=index, use_job_index=True)
+    consolidate_models(index=index, use_job_index=True, model_name=model_name)
     test_consolidated_models()
 
 # ---
@@ -147,6 +153,7 @@ def deploy_consolidated_model(consolidated_model):
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
+        model_id=consolidated_model["id"],
         model_name=consolidated_model["full_name"],
         serving_runtime_name=model_name,
         serving_runtime_image=consolidated_model["serving_runtime"]["image"],
@@ -155,6 +162,10 @@ def deploy_consolidated_model(consolidated_model):
         inference_service_name=model_name,
         storage_uri=consolidated_model["inference_service"]["storage_uri"],
         sa_name=config.ci_artifacts.get_config("watsonx_serving.sa_name"),
+
+        query_data=consolidated_model["inference_service"].get("query_data"),
+
+        mute_serving_logs=config.ci_artifacts.get_config("watsonx_serving.model.serving_runtime.mute_logs"),
     )
 
     # optional fields
@@ -171,11 +182,6 @@ def deploy_consolidated_model(consolidated_model):
         args_dict["secret_env_file_key"] = secret_key
     else:
         logging.warning("No secret env key defined for this model")
-
-    if (runtime_config := consolidated_model["serving_runtime"].get("runtime_config")) == True:
-        args_dict["runtime_config_file"] = TESTING_THIS_DIR / "models" / "resources" / "runtime_config.yaml"
-        if not args_dict["runtime_config_file"].exists():
-            raise FileNotFoundError(f"Unexpected error: {args_dict['runtime_config_file']} does not exist :/")
 
     if (extra_env := consolidated_model["serving_runtime"].get("extra_env")):
         if not isinstance(extra_env, dict):
@@ -278,7 +284,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        os.environ["TOPSAIL_PR_ARGS"] = "e2e"
+        os.environ["TOPSAIL_PR_ARGS"] = "e2e_gpu"
         from test import init
         init(ignore_secret_path=False, apply_preset_from_pr_args=True)
 

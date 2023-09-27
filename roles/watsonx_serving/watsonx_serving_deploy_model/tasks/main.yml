@@ -11,6 +11,21 @@
     state: directory
     mode: '0755'
 
+# Cleanup the namespace
+- name: Delete the InferenceServices
+  command: oc delete InferenceServices,ServingRuntime --all -n {{ watsonx_serving_deploy_model_namespace }}
+
+- name: Wait for the Pods to disappear
+  command:
+    oc get pods
+       --no-headers
+       -lcomponent=predictor
+       -n {{ watsonx_serving_deploy_model_namespace }}
+  register: ns_had_predictor_pods_cmd
+  retries: 12
+  delay: 10
+  until: '"No resources found" in ns_had_predictor_pods_cmd.stderr'
+
 # SMMR
 
 - name: Delete the tracking timestamps
@@ -99,19 +114,6 @@
 
 # Serving Runtime
 
-- name: Prepare the runtime config file configmap
-  shell:
-    set -o pipefail;
-
-    oc create cm {{ watsonx_serving_deploy_model_serving_runtime_name }}-runtime-config
-       -n {{ watsonx_serving_deploy_model_namespace }}
-       --from-file=runtime_config.yaml="{{ watsonx_serving_deploy_model_runtime_config_file }}"
-       -oyaml
-       --dry-run=client
-       | tee "{{ artifact_extra_logs_dir }}/src/caikit_runtime_config.yaml"
-       | oc apply -f-
-  when: watsonx_serving_deploy_model_runtime_config_file != None
-
 - name: Prepare the ServingRuntime template
   template:
     src: "{{ serving_runtime_template }}"
@@ -166,9 +168,9 @@
       oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
          -ojsonpath={.status.modelStatus.states.targetModelState}
     register: inference_service_state_cmd
-    # wait 15 minutes
+    # wait 37.5 minutes
     retries: 90
-    delay: 10
+    delay: 25
     until: inference_service_state_cmd.stdout == "Loaded"
 
   - name: Capture the state of the InferenceService Pod resource
@@ -183,18 +185,43 @@
       oc create configmap $NAME -n {{ watsonx_serving_deploy_model_namespace }}
       oc label cm/$NAME topsail.time-tracking=yes -n {{ watsonx_serving_deploy_model_namespace }}
 
+  - name: Ensure that grpcurl is available
+    command: which grpcurl
+
+  - name: Validate the model deployment
+    when: watsonx_serving_deploy_model_query_data is not none
+    shell: |
+      set -o pipefail
+      set -e
+
+      GRPCURL_DATA=$(echo "{{ watsonx_serving_deploy_model_query_data }}" | sed "s/'/\"/g")
+      HOSTNAME=$(oc get isvc -ojsonpath={.items[0].status.components.predictor.url} -n {{ watsonx_serving_deploy_model_namespace }} | cut -d/ -f3)
+
+      grpcurl -insecure \
+              -d "$GRPCURL_DATA" \
+              -H "mm-model-id: {{ watsonx_serving_deploy_model_model_id }}" \
+              "$HOSTNAME:443" \
+              caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict \
+    register: grpc_validation_cmd
+    failed_when: '"ERROR" in grpc_validation_cmd.stderr'
+
   always:
   - name: Capture the state of the InferenceService Pod resource
     shell:
       oc get pod
          -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
+         -oyaml
+         -n {{ watsonx_serving_deploy_model_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/predictor-pod.yaml;
+      oc get pod
+         -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
          -owide
          -n {{ watsonx_serving_deploy_model_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/pod.status;
+         > {{ artifact_extra_logs_dir }}/artifacts/predictor-pod.status;
       oc describe pod
          -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
          -n {{ watsonx_serving_deploy_model_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
+         > {{ artifact_extra_logs_dir }}/artifacts/predictor-pod.desc
     ignore_errors: true
 
   - name: Capture the state of the InferenceService resource

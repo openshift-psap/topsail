@@ -12,6 +12,7 @@ sutest/cluster set_scale:
 {% if clusters.sutest.compute.dedicated %}
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
 {% endif %}
+  disk_size: {{ clusters.sutest.compute.machineset.disk_size }}
   scale: SET_AT_RUNTIME
 
 #
@@ -144,6 +145,9 @@ watsonx_serving deploy_model:
   namespace: {{ tests.scale.namespace.name }}
   sa_name: {{ watsonx_serving.sa_name }}
 
+  model_id: {{ tests.scale.model.id }}
+  model_name: {{ tests.scale.model.full_name }}
+
   serving_runtime_name: {{ tests.scale.model.name }}
   serving_runtime_image: {{ watsonx_serving.model.serving_runtime.image }}
 
@@ -151,6 +155,8 @@ watsonx_serving deploy_model:
 
   inference_service_name: {{ tests.scale.model.name }}
   storage_uri: {{ tests.scale.model.inference_service.storage_uri }}
+
+  mute_serving_logs: {{ watsonx_serving.model.serving_runtime.mute_logs }}
 
 watsonx_serving validate_model:
   namespace: {{ tests.scale.namespace.name }}

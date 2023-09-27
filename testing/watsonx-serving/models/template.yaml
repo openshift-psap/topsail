@@ -1,0 +1,15 @@
+id: <id in the storage>
+full_name: <origin>/<name>
+secret_key: <key in watsonx-models.yaml>
+
+serving_runtime:
+  resource_request:
+    cpu: 0
+    memory: 0 # in Gi
+    nvidia.com/gpu: 0 # in Gi of GPU memory
+  extra_env:
+    key: value
+  min_replicas: 1
+inference_service:
+  storage_uri: "s3://<bucket>/<path>"
+  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'

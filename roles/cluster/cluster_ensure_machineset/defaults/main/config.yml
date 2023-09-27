@@ -8,3 +8,5 @@ machineset_taint:
 cluster_ensure_machineset_base_machineset:
 
 cluster_ensure_machineset_spot: false
+
+cluster_ensure_machineset_disk_size: nil

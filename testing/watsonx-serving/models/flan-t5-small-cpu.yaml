@@ -1,15 +1,6 @@
-id: flan-t5-small-caikit
-full_name: google/flan-t5-small
-secret_key: flan-t5-small
-
+extends: flan-t5-small-gpu
 serving_runtime:
   resource_request:
-    cpu: 0.350
-    memory: 1.5 # in Gi
-    nvidia.com/gpu: 0 # in Gi of GPU memory
-  runtime_config: false
-  extra_env:
-
-inference_service:
-  storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/"
-  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'
+    nvidia.com/gpu: 0
+    cpu: 7
+    memory: 2

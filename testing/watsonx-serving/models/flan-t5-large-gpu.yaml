@@ -1,0 +1,13 @@
+id: flan-t5-large
+full_name: google/flan-t5-large
+secret_key: flan-t5-large
+
+serving_runtime:
+  resource_request:
+    cpu: 2
+    memory: 8 # in Gi
+    nvidia.com/gpu: 7 # in Gi of GPU memory
+  extra_env: {}
+inference_service:
+  storage_uri: "s3://psap-watsonx-models/flan-t5-large/"
+  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'
