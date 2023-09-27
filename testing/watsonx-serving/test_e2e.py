@@ -81,7 +81,7 @@ def test_ci():
 
     test_models_concurrently()
 
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
+    test_models_sequentially(locally=False)
 
 
 def deploy_models_sequentially():
@@ -106,12 +106,15 @@ def deploy_one_model(index: int = None, use_job_index: bool = False, model_name:
     deploy_consolidated_models()
 
 
-def test_models_sequentially():
+def test_models_sequentially(locally=False):
     "Tests all the configured models sequentially (one after the other)"
 
-    logging.info("Test the models sequentially")
-    consolidate_models()
-    test_consolidated_models()
+    logging.info(f"Test the models sequentially (locally={locally})")
+    if locally:
+        consolidate_models()
+        test_consolidated_models()
+    else:
+        run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
 
 
 def test_models_concurrently():
