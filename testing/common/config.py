@@ -10,6 +10,7 @@ import threading
 import jsonpath_ng
 
 from . import env
+from . import run
 
 VARIABLE_OVERRIDES_FILENAME = "variable_overrides"
 PR_ARG_KEY = "PR_POSITIONAL_ARG_"
@@ -202,6 +203,18 @@ class Config:
             return
 
         logging.info(f"Running a '{name_suffix}' test ({job_name_safe}), applying the '{profile}' profile")
+
+        self.apply_preset(profile)
+
+
+    def detect_apply_metal_profile(self, profile):
+        platform_type = run.run("oc get infrastructure/cluster -ojsonpath={.status.platformStatus.type}", capture_stdout=True).stdout
+
+        logging.info(f"detect_apply_metal_profile: infrastructure/cluster.status.platformStatus.type = {platform_type}")
+        if platform_type not in ("BareMetal", "None"):
+            logging.info("detect_apply_metal_profile: Assuming not running in a bare-metal environment.")
+            return
+        logging.info(f"detect_apply_metal_profile: Assuming running in a bare-metal environment. Applying the '{profile}' profile.")
 
         self.apply_preset(profile)
 
