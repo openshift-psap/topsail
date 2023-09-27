@@ -89,6 +89,7 @@ class Local_CI:
                   sleep_factor=0.0,
                   user_batch_size=1,
                   abort_on_failure=False,
+                  need_all_success=False,
                   ):
         """
         Runs a given CI command in parallel from multiple Pods
@@ -115,6 +116,7 @@ class Local_CI:
             sleep_factor: Delay (in seconds) between the start of each of the users.
             user_batch_size: Number of users to launch after the sleep delay.
             abort_on_failure: If true, let the Job abort the parallel execution on the first Pod failure. If false, ignore the process failure and track the overall failure count with a flag.
+            need_all_success: if true, fails the execution if any of the Pods failed. If false, fails it if none of the Pods succeed.
         """
 
         if retrieve_artifacts and not (minio_namespace and minio_bucket_name):
