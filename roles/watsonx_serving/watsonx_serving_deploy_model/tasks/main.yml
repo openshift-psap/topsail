@@ -14,6 +14,7 @@
 # Cleanup the namespace
 - name: Delete the InferenceServices
   command: oc delete InferenceServices,ServingRuntime --all -n {{ watsonx_serving_deploy_model_namespace }}
+  when: watsonx_serving_deploy_model_delete_others | bool
 
 - name: Wait for the Pods to disappear
   command:
@@ -25,6 +26,7 @@
   retries: 12
   delay: 10
   until: '"No resources found" in ns_had_predictor_pods_cmd.stderr'
+  when: watsonx_serving_deploy_model_delete_others | bool
 
 # SMMR
 
