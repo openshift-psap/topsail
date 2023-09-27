@@ -214,36 +214,39 @@ def test_consolidated_model(consolidated_model):
     model_name = consolidated_model["name"]
     namespace = consolidate_model_namespace(consolidated_model)
 
-    if (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
-        host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
-        host = host_url.lstrip("https://") + ":443"
-        if host == ":443":
-            raise RuntimeError(f"Failed to get the hostname for InferenceServince {namespace}/{model_name}")
-        llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
+    args_dict = dict(
+        namespace=namespace,
+        inference_service_names=[model_name],
+        model_id=consolidated_model["id"],
+        query_data=consolidated_model["inference_service"]["query_data"],
+    )
 
-        protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
-        if not protos_path.exists():
-            raise RuntimeError("Protos do not exist at {protos_path}")
+    run.run(f"./run_toolbox.py watsonx_serving validate_model {dict_to_run_toolbox_args(args_dict)}")
 
-        args_dict = dict(
-            host=host,
-            duration=llm_config["duration"],
-            protos_path=protos_path.absolute(),
-            call=llm_config["call"],
-            model_id=consolidated_model["id"],
-            llm_path=llm_config["src_path"],
-        )
+    if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
+        logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
+        return
 
-        run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
-    else:
-        args_dict = dict(
-            namespace=namespace,
-            inference_service_names=[model_name],
-            model_id=consolidated_model["id"],
-            query_data=consolidated_model["inference_service"]["query_data"],
-        )
+    host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
+    host = host_url.lstrip("https://") + ":443"
+    if host == ":443":
+        raise RuntimeError(f"Failed to get the hostname for InferenceServince {namespace}/{model_name}")
+    llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
 
-        run.run(f"./run_toolbox.py watsonx_serving validate_model {dict_to_run_toolbox_args(args_dict)}")
+    protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
+    if not protos_path.exists():
+        raise RuntimeError("Protos do not exist at {protos_path}")
+
+    args_dict = dict(
+        host=host,
+        duration=llm_config["duration"],
+        protos_path=protos_path.absolute(),
+        call=llm_config["call"],
+        model_id=consolidated_model["id"],
+        llm_path=llm_config["src_path"],
+    )
+
+    run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
 
 # ---
 
