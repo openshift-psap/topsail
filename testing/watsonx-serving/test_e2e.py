@@ -217,6 +217,8 @@ def test_consolidated_model(consolidated_model):
     if (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
         host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
         host = host_url.lstrip("https://") + ":443"
+        if host == ":443":
+            raise RuntimeError(f"Failed to get the hostname for InferenceServince {namespace}/{model_name}")
         llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
 
         protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
