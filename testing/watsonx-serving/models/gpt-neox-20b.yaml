@@ -6,7 +6,7 @@ serving_runtime:
   resource_request:
     cpu: 7
     memory: 30 # in Gi
-    nvidia.com/gpu: 30 # in Gi of GPU memory
+    nvidia.com/gpu: 40 # in Gi of GPU memory
   extra_env: {}
   min_replicas: 2
 inference_service:
