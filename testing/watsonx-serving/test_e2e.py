@@ -77,11 +77,19 @@ def dict_to_run_toolbox_args(args_dict):
 def test_ci():
     "Executes the full e2e test"
 
-    deploy_models_concurrently()
+    try:
+        deploy_models_concurrently()
 
-    test_models_concurrently()
+        test_models_concurrently()
 
-    test_models_sequentially(locally=False)
+        test_models_sequentially(locally=False)
+    finally:
+        try:
+            run.run("./run_toolbox.py watsonx_serving capture_operators_state",
+                    capture_stdout=True)
+        finally:
+            run.run("./run_toolbox.py cluster capture_environment",
+                    capture_stdout=True)
 
 
 def deploy_models_sequentially():
