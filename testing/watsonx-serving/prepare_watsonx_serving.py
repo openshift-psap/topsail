@@ -69,8 +69,8 @@ def preload_image():
         return
 
     # this is required to properly create the namespace used to preload the image
-    test_namespace = config.ci_artifacts.get_config("tests.scale.namespace.name")
-    test_scale.prepare_user_sutest_namespace(test_namespace)
+    namespace = config.get_command_arg("cluster preload_image --prefix sutest --suffix watsonx-serving-runtime", "namespace")
+    test_scale.prepare_user_sutest_namespace(namespace)
 
     RETRIES = 3
     for i in range(RETRIES):

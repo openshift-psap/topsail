@@ -238,3 +238,7 @@
 - name: Fail if none of the Pods succeeded
   when: success_count_cmd.stdout == "0"
   fail: msg="None of the Pods succeeded"
+
+- name: Fail if not all the Pods succeeded
+  when: local_ci_run_multi_need_all_success | bool and success_count_cmd.stdout != local_ci_run_multi_user_count | string
+  fail: msg="{{ success_count_cmd.stdout }}/{{ local_ci_run_multi_user_count }} Pods succeeded"

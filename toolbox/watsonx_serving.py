@@ -23,6 +23,7 @@ class Watsonx_Serving:
                      env_extra_values : dict = {},
                      query_data=None,
                      mute_serving_logs=False,
+                     delete_others=True,
                      ):
         """
         Deploy a WatsonX-Serving model
@@ -49,6 +50,8 @@ class Watsonx_Serving:
           query_data: a JSON payload used to validate the model deployment
 
           mute_serving_logs: if True, mute the serving runtime container logs
+
+          delete_others: if True, deletes the other serving runtime/inference services of the namespace
         """
 
         return RunAnsibleRole(locals())

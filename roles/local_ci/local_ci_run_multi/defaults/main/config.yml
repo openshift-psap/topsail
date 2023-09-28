@@ -70,3 +70,6 @@ local_ci_run_multi_user_batch_size: 1
 
 # If true, let the Job abort the parallel execution on the first Pod failure. If false, ignore the process failure and track the overall failure count with a flag.
 local_ci_run_multi_abort_on_failure: false
+
+# if true, fails the execution if any of the Pods failed. If false, fails it if none of the Pods succeed.
+local_ci_run_multi_need_all_success: false

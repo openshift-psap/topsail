@@ -87,12 +87,12 @@ def cluster_scale_up(namespace, user_count):
     if config.ci_artifacts.get_config("clusters.driver.is_metal"):
         return
 
-    nodes_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
-    extra = ""
-    if nodes_count is None:
+    node_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
+
+    if node_count is None:
         node_count = compute_driver_node_requirement(user_count)
 
-        extra = f"--extra '{{scale: {node_count}}}'"
+    extra = f"--extra '{{scale: {node_count}}}'"
 
     run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_driver ./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
 

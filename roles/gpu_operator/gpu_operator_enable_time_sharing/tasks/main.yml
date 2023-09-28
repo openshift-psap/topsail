@@ -13,6 +13,12 @@
 - name: Instanciate the ConfigMap
   command:
     oc apply -f "{{ artifact_extra_logs_dir }}/src/configmap.yaml"
+  when: gpu_operator_enable_time_sharing_replicas != 1
+
+- name: Delete the ConfigMap when only 1 replica is requested
+  command:
+    oc delete -f "{{ artifact_extra_logs_dir }}/src/configmap.yaml" --ignore-not-found
+  when: gpu_operator_enable_time_sharing_replicas == 1
 
 - name: Cleanup the ClusterPolicy (to force the update in the next task)
   command: |
@@ -25,6 +31,7 @@
     oc patch clusterpolicy/gpu-cluster-policy \
        --type merge \
        -p '{"spec": {"devicePlugin": {"config": {"name": "{{ gpu_operator_enable_time_sharing_configmap_name }}", "default": "any"}}}}'
+  when: gpu_operator_enable_time_sharing_replicas != 1
 
 - name: Wait for the DaemonSets to be all available
   shell:

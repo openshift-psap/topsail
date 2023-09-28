@@ -8,6 +8,7 @@ import datetime
 import time
 import functools
 import json
+import yaml
 
 import fire
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -77,11 +78,19 @@ def dict_to_run_toolbox_args(args_dict):
 def test_ci():
     "Executes the full e2e test"
 
-    deploy_models_concurrently()
+    try:
+        deploy_models_concurrently()
 
-    test_models_concurrently()
+        test_models_concurrently()
 
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
+        test_models_sequentially(locally=False)
+    finally:
+        try:
+            run.run("./run_toolbox.py watsonx_serving capture_operators_state",
+                    capture_stdout=True)
+        finally:
+            run.run("./run_toolbox.py cluster capture_environment",
+                    capture_stdout=True)
 
 
 def deploy_models_sequentially():
@@ -106,12 +115,17 @@ def deploy_one_model(index: int = None, use_job_index: bool = False, model_name:
     deploy_consolidated_models()
 
 
-def test_models_sequentially():
+def test_models_sequentially(locally=False):
     "Tests all the configured models sequentially (one after the other)"
 
-    logging.info("Test the models sequentially")
-    consolidate_models()
-    test_consolidated_models()
+    logging.info(f"Test the models sequentially (locally={locally})")
+    if locally:
+        with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
+            yaml.dump(dict(mode="sequential"), f, indent=4)
+        consolidate_models()
+        test_consolidated_models()
+    else:
+        run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
 
 
 def test_models_concurrently():
@@ -123,6 +137,10 @@ def test_models_concurrently():
 
 def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None):
     "Tests one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
+
+    if use_job_index:
+        with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
+            yaml.dump(dict(mode="concurrent"), f, indent=4)
 
     consolidate_models(index=index, use_job_index=True, model_name=model_name)
     test_consolidated_models()
@@ -150,6 +168,10 @@ def deploy_consolidated_model(consolidated_model):
     test_scale.prepare_user_sutest_namespace(namespace)
     test_scale.deploy_storage_configuration(namespace)
 
+    gpu_count = consolidated_model["serving_runtime"]["resource_request"].get("nvidia.com/gpu", 0)
+    if config.ci_artifacts.get_config("tests.e2e.request_one_gpu") and gpu_count != 0:
+        consolidated_model["serving_runtime"]["resource_request"]["nvidia.com/gpu"] = 1
+
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
@@ -169,7 +191,7 @@ def deploy_consolidated_model(consolidated_model):
     )
 
     # optional fields
-    try: args_dict["min_replicas"] = consolidated_model["inference_service"]["min_replicas"]
+    try: args_dict["inference_service_min_replicas"] = consolidated_model["inference_service"]["min_replicas"]
     except KeyError: pass
 
     if (secret_key := consolidated_model.get("secret_key")) != None:
@@ -198,7 +220,22 @@ def test_consolidated_models():
     for consolidated_model in consolidated_models:
         next_count = env.next_artifact_index()
         with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test_{consolidated_model['name']}"):
-            test_consolidated_model(consolidated_model)
+            with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+                settings = dict(
+                    e2e_test=True,
+                    model_name=consolidated_model['name'],
+                    model_id=consolidated_model['id'],
+                )
+                yaml.dump(settings, f, indent=4)
+
+            with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+                yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+            exit_code = 1
+            try: exit_code = test_consolidated_model(consolidated_model)
+            finally:
+                with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
+                    print(f"{exit_code}", file=f)
 
 
 def test_consolidated_model(consolidated_model):
@@ -207,34 +244,41 @@ def test_consolidated_model(consolidated_model):
     model_name = consolidated_model["name"]
     namespace = consolidate_model_namespace(consolidated_model)
 
-    if (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
-        host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
-        host = host_url.lstrip("https://") + ":443"
-        llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
+    args_dict = dict(
+        namespace=namespace,
+        inference_service_names=[model_name],
+        model_id=consolidated_model["id"],
+        query_data=consolidated_model["inference_service"]["query_data"],
+    )
 
-        protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
-        if not protos_path.exists():
-            raise RuntimeError("Protos do not exist at {protos_path}")
+    run.run(f"./run_toolbox.py watsonx_serving validate_model {dict_to_run_toolbox_args(args_dict)}")
 
-        args_dict = dict(
-            host=host,
-            duration=llm_config["duration"],
-            protos_path=protos_path.absolute(),
-            call=llm_config["call"],
-            model_id=consolidated_model["id"],
-            llm_path=llm_config["src_path"],
-        )
+    if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
+        logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
+        return
 
-        run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
-    else:
-        args_dict = dict(
-            namespace=namespace,
-            inference_service_names=[model_name],
-            model_id=consolidated_model["id"],
-            query_data=consolidated_model["inference_service"]["query_data"],
-        )
+    host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
+    host = host_url.lstrip("https://") + ":443"
+    if host == ":443":
+        raise RuntimeError(f"Failed to get the hostname for InferenceServince {namespace}/{model_name}")
+    llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
 
-        run.run(f"./run_toolbox.py watsonx_serving validate_model {dict_to_run_toolbox_args(args_dict)}")
+    protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
+    if not protos_path.exists():
+        raise RuntimeError("Protos do not exist at {protos_path}")
+
+    args_dict = dict(
+        host=host,
+        duration=llm_config["duration"],
+        protos_path=protos_path.absolute(),
+        call=llm_config["call"],
+        model_id=consolidated_model["id"],
+        llm_path=llm_config["src_path"],
+    )
+
+    run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
+
+    return 0
 
 # ---
 

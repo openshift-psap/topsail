@@ -15,6 +15,7 @@ TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TESTING_UTILS_DIR = TESTING_THIS_DIR.parent / "utils"
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
+METAL_PROFILE = "metal"
 
 sys.path.append(str(TESTING_THIS_DIR.parent))
 from common import env, config, run, rhods, visualize, configure_logging, prepare_user_pods
@@ -40,8 +41,8 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
+    config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):

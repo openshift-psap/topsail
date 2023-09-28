@@ -42,7 +42,11 @@ sutest/cluster set_project_annotation/scale_test_toleration:
 #
 
 sutest/cluster preload_image/watsonx-serving-runtime:
+{% if tests.mode == "scale" %}
   namespace: {{ tests.scale.namespace.name }}
+{% elif tests.mode == "e2e" %}
+  namespace: {{ tests.e2e.namespace }}
+{% endif %}
   name: caikit-image
   image: {{ watsonx_serving.model.serving_runtime.image }}
 
@@ -157,6 +161,7 @@ watsonx_serving deploy_model:
   storage_uri: {{ tests.scale.model.inference_service.storage_uri }}
 
   mute_serving_logs: {{ watsonx_serving.model.serving_runtime.mute_logs }}
+  delete_others: {{ tests.e2e.delete_others }}
 
 watsonx_serving validate_model:
   namespace: {{ tests.scale.namespace.name }}
@@ -189,15 +194,17 @@ __e2e_aliases:
     capture_prom_db: {{ tests.capture_prom }}
     git_pull: null #refs/pull/716/merge
 
+    use_local_config: true
+
 local_ci run_multi/deploy_concurrently:
   <<: *local_ci_run_multi_e2e
   ci_command: "watsonx-serving test_e2e deploy_one_model --use-job-index"
   sleep_factor: 0
-
+  need_all_success: true
 
 local_ci run_multi/test_sequentially:
   <<: *local_ci_run_multi_e2e
-  ci_command: "watsonx-serving test_e2e test_models_sequentially"
+  ci_command: "watsonx-serving test_e2e test_models_sequentially --locally"
   sleep_factor: 0
   user_count: 1
 

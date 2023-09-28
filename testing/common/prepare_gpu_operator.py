@@ -5,8 +5,16 @@ from common import env, config, run
 
 
 def prepare_gpu_operator():
-    run.run("./run_toolbox.py nfd_operator deploy_from_operatorhub")
-    run.run("./run_toolbox.py gpu_operator deploy_from_operatorhub")
+    if run.run("oc get csv -loperators.coreos.com/nfd.openshift-nfd= -n openshift-nfd -oname", check=False, capture_stdout=True).stdout:
+        logging.info("The NFD Operator is already installed.")
+    else:
+        run.run("./run_toolbox.py nfd_operator deploy_from_operatorhub")
+
+    if run.run(f"oc get csv -loperators.coreos.com/gpu-operator-certified.nvidia-gpu-operator= -n nvidia-gpu-operator -oname", capture_stdout=True).stdout:
+        logging.info("The NVIDIA GPU Operator is already installed.")
+    else:
+        run.run("./run_toolbox.py gpu_operator deploy_from_operatorhub")
+
     run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
 
 

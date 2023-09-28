@@ -14,6 +14,7 @@
 # Cleanup the namespace
 - name: Delete the InferenceServices
   command: oc delete InferenceServices,ServingRuntime --all -n {{ watsonx_serving_deploy_model_namespace }}
+  when: watsonx_serving_deploy_model_delete_others | bool
 
 - name: Wait for the Pods to disappear
   command:
@@ -25,6 +26,7 @@
   retries: 12
   delay: 10
   until: '"No resources found" in ns_had_predictor_pods_cmd.stderr'
+  when: watsonx_serving_deploy_model_delete_others | bool
 
 # SMMR
 
@@ -162,7 +164,19 @@
     delay: 10
     until: inference_service_pod_nodename.stdout | length > 0
 
-  - name: Wait for the InferenceService to be loaded
+  - name: Wait for the InferenceService Pod to be fetch the model from S3
+    command:
+      oc get pod
+      -ojsonpath={.items[0].status.initContainerStatuses[0].state.terminated}
+      -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
+      -n {{ watsonx_serving_deploy_model_namespace }}
+    register: inference_service_pod_fetching_cmd
+    # wait 30 minutes
+    retries: 60
+    delay: 30
+    until: inference_service_pod_fetching_cmd.stdout | length > 0
+
+  - name: Wait for the InferenceService Pod to initialize the model
     shell:
       set -o pipefail;
       oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"

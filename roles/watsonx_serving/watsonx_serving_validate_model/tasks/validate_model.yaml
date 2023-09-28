@@ -19,8 +19,14 @@
        | sed 's|https://||'
   register: ksvc_hostname_cmd
 
-
 - name: Wait for the model to answer successfully
+  shell: |
+    curl -Ssf -k "{{ ksvc_hostname_cmd.stdout }}"
+  register: curl_working_cmd
+  retries: 60
+  delay: 5
+
+- name: Query the model 1st endpoint
   shell: |
     set -o pipefail
     GRPCURL_DATA=$(echo "{{ watsonx_serving_validate_model_query_data }}" | sed "s/'/\"/g")
@@ -33,8 +39,8 @@
       > {{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/TextGenerationTaskPredict.answer
   register: grpc1_working_cmd
   until: grpc1_working_cmd.rc == 0
-  retries: 600
-  delay: 1
+  retries: 60
+  delay: 5
 
 - name: Save the number of attempts of the first call
   local_action:
@@ -53,8 +59,8 @@
       > {{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}/ServerStreamingTextGenerationTaskPredict.answer
   register: grpc2_working_cmd
   until: grpc2_working_cmd.rc == 0
-  retries: 600
-  delay: 1
+  retries: 60
+  delay: 5
 
 - name: Save the number of attempts of the second call
   local_action:

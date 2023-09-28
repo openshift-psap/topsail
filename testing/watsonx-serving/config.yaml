@@ -23,6 +23,8 @@ ci_presets:
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
+    clusters.sutest.compute.dedicated: false
+    clusters.driver.compute.dedicated: false
 
   not_metal:
     clusters.sutest.is_metal: false
@@ -42,8 +44,19 @@ ci_presets:
     extends: [e2e]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g5.2xlarge
-    tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, mpt-7b-instruct2]
-    gpu.time_sharing.replicas: 22
+    tests.e2e.models:
+    - flan-t5-small-cpu
+    - flan-t5-small-cpu-2x:
+        name: flan-t5-small-cpu
+        inference_service:
+          min_replicas: 2
+    - flan-t5-small-gpu
+    - flan-t5-small-gpu-2x:
+        name: flan-t5-small-gpu
+        inference_service:
+          min_replicas: 2
+    gpu.time_sharing.replicas: 3
+    clusters.sutest.compute.machineset.count: 1
 
   # ---
 
@@ -239,6 +252,8 @@ tests:
     - flan-t5-small-cpu
     - flan-t5-small-cpu
     consolidated_models: {} # will be filled at runtime
+    request_one_gpu: true
+    delete_others: true
     llm_load_test:
       enabled: true
       src_path: subprojects/llm-load-test/

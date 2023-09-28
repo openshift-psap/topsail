@@ -81,7 +81,7 @@ def scale_compute_sutest_node_requirement():
 
 
 def e2e_compute_sutest_node_requirement():
-    return 1
+    return len(config.ci_artifacts.get_config("tests.e2e.models"))
 
 def scale_up_sutest():
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
@@ -122,9 +122,16 @@ def consolidate_model_config(config_location=None, _model_name=None, index=None,
         else {}
 
     model_name = _model_name or test_config.get("name")
+    if isinstance(model_name, dict):
+        __model_name = list(model_name.keys())[0]
+        test_config = merge_dicts(test_config, model_name[__model_name])
+        model_name = test_config.get("name")
+        test_config["name"] = __model_name
+    else:
+        test_config["name"] = model_name
+
     if not model_name:
         raise RuntimeError(f"Couldn't find a name for consolidating the model configuration ... {config_location}={test_config} and model_name={_model_name}")
-
 
     if model_name == "help":
         logging.info("")
@@ -154,7 +161,6 @@ def consolidate_model_config(config_location=None, _model_name=None, index=None,
     # base += test
     model_config = merge_dicts(model_config, test_config)
 
-    model_config["name"] = model_name
     if index is not None:
         model_config["index"] = index
 
