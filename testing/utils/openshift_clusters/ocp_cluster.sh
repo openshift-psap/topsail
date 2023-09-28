@@ -144,6 +144,19 @@ create_cluster() {
 
     machine_tags=$(echo "$machine_tags" | jq ". += {User: \"$author_kerberos\"}" --compact-output)
 
+    launch_time=$(date "+%Y/%m/%d %H:%M:%S %Z")
+    machine_tags=$(echo "$machine_tags" | jq ". += {LaunchTime: \"$launch_time\"}" --compact-output)
+
+    duration=$(echo "$machine_tags" | jq .Duration)
+    if [[ "$duration" == null ]]; then
+        duration="12 hours"
+        echo "WARNING: 'Duration' tag not found. Setting the default duration: $duration"
+        machine_tags=$(echo "$machine_tags" | jq ". += {Duration: \"$duration\"}" --compact-output)
+    else
+        echo "INFO: Found the 'Duration' tag: '$duration'"
+    fi
+    echo "$duration" > "${ARTIFACT_DIR}/${cluster_role}_duration_tag"
+
     # ensure that the cluster's 'metadata.json' is copied
     # to the CONFIG_DEST_DIR even in case of errors
     trap "save_install_artifacts error" ERR SIGTERM SIGINT
