@@ -29,10 +29,6 @@ ${NOTEBOOK_URL}                %{NOTEBOOK_URL}
 ${NOTEBOOK_CLONE_WAIT_TIME}    3 minutes
 ${NOTEBOOK_EXEC_WAIT_TIME}     1 minutes
 
-&{browser logging capability}    browser=ALL
-&{capabilities}    browserName=chrome    version=${EMPTY}    platform=ANY    goog:loggingPrefs=${browser logging capability}
-
-
 *** Test Cases ***
 
 Open the Browser
