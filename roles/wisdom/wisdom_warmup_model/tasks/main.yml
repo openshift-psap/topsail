@@ -49,17 +49,19 @@
       set -o errtrace
       set -x
       for pod in $(oc get pod -oname -n {{ wisdom_warmup_model_namespace }}  | grep 'modelmesh-serving'); do
-          if oc exec -n {{ wisdom_warmup_model_namespace }}  $pod -c puller -- du -h -s /models | grep -q '^0\s'; then
-            echo "At least one wisdom Pod ($pod) still hasn't loaded the model"
-            exit 1
+          if ! oc logs -n {{ wisdom_warmup_model_namespace }}  $pod -c runtime | grep -q 'Successfully loaded'; then
+            if ! oc logs -n {{ wisdom_warmup_model_namespace }}  $pod -c runtime | grep -q 'Request generated'; then
+              echo "At least one wisdom Pod ($pod) still hasn't loaded the model"
+              exit 1
+            fi
           fi
       done
     register: model_loaded
     until:
     - model_loaded.rc == 0
     - not model_loaded.stdout
-    retries: 15
-    delay: 30
+    retries: 40
+    delay: 60
 
 - name: Delete the wisdom warmup Pod if it exists
   command: oc delete  --ignore-not-found=true -f "{{ artifact_extra_logs_dir }}/src/000_wisdom_warmup_pod.yml" -n {{ wisdom_warmup_model_namespace }}

@@ -124,10 +124,6 @@
     dest: "{{ artifact_extra_logs_dir }}/src/003_wisdom_tester_pod.yml"
     mode: '0400'
 
-- name: Pause for 20 minutes for PT2_COMPILE
-  ansible.builtin.pause:
-    minutes: 20
-
 - name: Delete the wisdom tester Pod if it exists
   command: oc delete  --ignore-not-found -f "{{ artifact_extra_logs_dir }}/src/003_wisdom_tester_pod.yml" -n {{ wisdom_deploy_model_namespace }}
 
@@ -144,7 +140,7 @@
   register: tester_wait
   until: tester_wait.stdout == "Succeeded" or tester_wait.stdout == "Error" or tester_wait.stdout == "Failed"
   retries: 30
-  delay: 30
+  delay: 60
 
 - name: Save the wisdom test Pod logs
   shell: oc logs pod/wisdom-tester  -n {{ wisdom_deploy_model_namespace }} > {{ artifact_extra_logs_dir }}/wisdom-tester-pod.log
