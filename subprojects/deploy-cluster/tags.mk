@@ -1,9 +1,9 @@
 config_tags:
-	@if [ "${MACHINE_TAGS}" ]; then \
-	  make _config_tags; \
-	else \
-	  echo "MACHINE_TAGS not defined, not setting custom machine tags."; \
-	fi
+ifneq ($(MACHINE_TAGS),)
+	make _config_tags;
+else
+	echo "MACHINE_TAGS not defined, not setting custom machine tags."
+endif
 
 _config_tags:
 	@echo "Setting the AWS user tags."
