@@ -8,6 +8,7 @@ import datetime
 import time
 import functools
 import json
+import yaml
 
 import fire
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -119,6 +120,8 @@ def test_models_sequentially(locally=False):
 
     logging.info(f"Test the models sequentially (locally={locally})")
     if locally:
+        with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
+            yaml.dump(dict(mode="sequential"), f, indent=4)
         consolidate_models()
         test_consolidated_models()
     else:
@@ -134,6 +137,10 @@ def test_models_concurrently():
 
 def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None):
     "Tests one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
+
+    if use_job_index:
+        with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
+            yaml.dump(dict(mode="concurrent"), f, indent=4)
 
     consolidate_models(index=index, use_job_index=True, model_name=model_name)
     test_consolidated_models()
@@ -213,7 +220,22 @@ def test_consolidated_models():
     for consolidated_model in consolidated_models:
         next_count = env.next_artifact_index()
         with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test_{consolidated_model['name']}"):
-            test_consolidated_model(consolidated_model)
+            with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+                settings = dict(
+                    e2e_test=True,
+                    model_name=consolidated_model['name'],
+                    model_id=consolidated_model['id'],
+                )
+                yaml.dump(settings, f, indent=4)
+
+            with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+                yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+            exit_code = 1
+            try: exit_code = test_consolidated_model(consolidated_model)
+            finally:
+                with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
+                    print(f"{exit_code}", file=f)
 
 
 def test_consolidated_model(consolidated_model):
@@ -255,6 +277,8 @@ def test_consolidated_model(consolidated_model):
     )
 
     run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
+
+    return 0
 
 # ---
 
