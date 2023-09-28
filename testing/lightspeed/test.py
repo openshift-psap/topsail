@@ -129,10 +129,13 @@ def run_ci():
     run.run(f"./run_toolbox.py cluster set_scale g5.2xlarge {max_replicas}")
 
     test_cases = config.ci_artifacts.get_config("tests.ansible_llm.test_cases")
+    last_deployed_replicas=0
     for replicas, concurrency in test_cases:
         global dataset_path 
 
-        deploy_and_warmup_model(replicas)
+        if replicas != last_deployed_replicas:
+            deploy_and_warmup_model(replicas)
+        last_deployed_replicas=replicas
 
         total_requests = 25 * concurrency
         config.ci_artifacts.set_config("tests.config.concurrency", concurrency)
@@ -150,7 +153,9 @@ def run_ci():
 
         logging.info(f"Running multiplexed load_test with replicas: {replicas}, total concurrency: {concurrency} and duration: {max_duration}")
 
-        deploy_and_warmup_model(replicas)
+        if replicas != last_deployed_replicas:
+            deploy_and_warmup_model(replicas)
+        last_deployed_replicas=replicas
 
         config.ci_artifacts.set_config("tests.config.threads", 8)
         # There are 8 threads running the same configuration, so the total concurrency should be divided by 8
