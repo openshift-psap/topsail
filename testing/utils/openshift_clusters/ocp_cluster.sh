@@ -58,13 +58,19 @@ create_cluster() {
         _error "Don't know how to find out the PR author outside of OpenShift CI ..."
     fi
 
-    local cluster_name="$(get_config clusters.create.name_prefix)"
+    local cluster_name_prefix="$(get_config clusters.create.name_prefix)"
     if test_config clusters.create.keep; then
-        cluster_name="${author}-${cluster_role}-$(date +%Y%m%d-%Hh%M)"
+        cluster_name="${cluster_name_prefix}-"
+        cluster_date="$(date +%Y%m%d-%Hh%M)"
+        if [[ $(get_config clusters.create.type) == single ]]; then
+            cluster_name="${cluster_date}-${cluster_name_prefix}-${author}"
+        else
+            cluster_name="${cluster_date}-${cluster_role}-${author}"
+        fi
     elif [[ "${PULL_NUMBER:-}" ]]; then
-        cluster_name="${cluster_name}-pr${PULL_NUMBER}-${cluster_role}-${BUILD_ID}"
+        cluster_name="${cluster_name_prefix}-pr${PULL_NUMBER}-${cluster_role}-${BUILD_ID}"
     else
-        cluster_name="${cluster_name}-${cluster_role}-$(date +%Hh%M)"
+        cluster_name="${cluster_name_prefix}-${cluster_role}-$(date +%Hh%M)"
     fi
 
     export AWS_PROFILE=$AWS_DEFAULT_PROFILE
