@@ -193,6 +193,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         query_data=consolidated_model["inference_service"].get("query_data"),
 
         mute_serving_logs=mute_logs,
+        delete_others=delete_others,
     )
 
     # optional fields
