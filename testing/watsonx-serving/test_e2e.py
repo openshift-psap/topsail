@@ -157,7 +157,7 @@ def deploy_consolidated_models():
             deploy_consolidated_model(consolidated_model)
 
 
-def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None):
+def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None, delete_others=None):
     logging.info(f"Deploying model '{consolidated_model['name']}'")
 
     model_name = consolidated_model["name"]
@@ -173,6 +173,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
     if mute_logs is None:
         mute_logs = config.ci_artifacts.get_config("watsonx_serving.model.serving_runtime.mute_logs")
+
+    if delete_others is None:
+        delete_others = config.ci_artifacts.get_config("tests.e2e.delete_others")
 
     # mandatory fields
     args_dict = dict(
