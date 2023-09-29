@@ -157,7 +157,7 @@ def deploy_consolidated_models():
             deploy_consolidated_model(consolidated_model)
 
 
-def deploy_consolidated_model(consolidated_model, namespace=None):
+def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None):
     logging.info(f"Deploying model '{consolidated_model['name']}'")
 
     model_name = consolidated_model["name"]
@@ -170,6 +170,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None):
     gpu_count = consolidated_model["serving_runtime"]["resource_request"].get("nvidia.com/gpu", 0)
     if config.ci_artifacts.get_config("tests.e2e.request_one_gpu") and gpu_count != 0:
         consolidated_model["serving_runtime"]["resource_request"]["nvidia.com/gpu"] = 1
+
+    if mute_logs is None:
+        mute_logs = config.ci_artifacts.get_config("watsonx_serving.model.serving_runtime.mute_logs")
 
     # mandatory fields
     args_dict = dict(
@@ -186,7 +189,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None):
 
         query_data=consolidated_model["inference_service"].get("query_data"),
 
-        mute_serving_logs=config.ci_artifacts.get_config("watsonx_serving.model.serving_runtime.mute_logs"),
+        mute_serving_logs=mute_logs,
     )
 
     # optional fields
