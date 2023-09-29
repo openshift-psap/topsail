@@ -28,7 +28,7 @@ def consolidate_model_namespace(consolidated_model):
     return f"{namespace_prefix}-{model_index}"
 
 
-def consolidate_model(index, name=None):
+def consolidate_model(index, name=None, show=True):
     if name is None:
         model_list = config.ci_artifacts.get_config("tests.e2e.models")
         if index >= len(model_list):
@@ -38,7 +38,7 @@ def consolidate_model(index, name=None):
     else:
         model_name = name
 
-    return prepare_scale.consolidate_model_config(_model_name=model_name, index=index)
+    return prepare_scale.consolidate_model_config(_model_name=model_name, index=index, show=show)
 
 
 def consolidate_models(index=None, use_job_index=False, model_name=None):
@@ -157,20 +157,25 @@ def deploy_consolidated_models():
             deploy_consolidated_model(consolidated_model)
 
 
-def deploy_consolidated_model(consolidated_model):
+def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None, delete_others=None):
     logging.info(f"Deploying model '{consolidated_model['name']}'")
 
     model_name = consolidated_model["name"]
-    namespace = consolidate_model_namespace(consolidated_model)
+
+    if namespace is None:
+        namespace = consolidate_model_namespace(consolidated_model)
 
     logging.info(f"Deploying a consolidated model. Changing the test namespace to '{namespace}'")
-
-    test_scale.prepare_user_sutest_namespace(namespace)
-    test_scale.deploy_storage_configuration(namespace)
 
     gpu_count = consolidated_model["serving_runtime"]["resource_request"].get("nvidia.com/gpu", 0)
     if config.ci_artifacts.get_config("tests.e2e.request_one_gpu") and gpu_count != 0:
         consolidated_model["serving_runtime"]["resource_request"]["nvidia.com/gpu"] = 1
+
+    if mute_logs is None:
+        mute_logs = config.ci_artifacts.get_config("watsonx_serving.model.serving_runtime.mute_logs")
+
+    if delete_others is None:
+        delete_others = config.ci_artifacts.get_config("tests.e2e.delete_others")
 
     # mandatory fields
     args_dict = dict(
@@ -187,7 +192,7 @@ def deploy_consolidated_model(consolidated_model):
 
         query_data=consolidated_model["inference_service"].get("query_data"),
 
-        mute_serving_logs=config.ci_artifacts.get_config("watsonx_serving.model.serving_runtime.mute_logs"),
+        mute_serving_logs=mute_logs,
     )
 
     # optional fields
@@ -209,6 +214,9 @@ def deploy_consolidated_model(consolidated_model):
         if not isinstance(extra_env, dict):
             raise ValueError(f"serving_runtime.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
         args_dict["env_extra_values"] = extra_env
+
+    test_scale.prepare_user_sutest_namespace(namespace)
+    test_scale.deploy_storage_configuration(namespace)
 
     run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
 
