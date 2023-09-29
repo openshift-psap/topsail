@@ -28,7 +28,7 @@ def consolidate_model_namespace(consolidated_model):
     return f"{namespace_prefix}-{model_index}"
 
 
-def consolidate_model(index, name=None):
+def consolidate_model(index, name=None, show=True):
     if name is None:
         model_list = config.ci_artifacts.get_config("tests.e2e.models")
         if index >= len(model_list):
@@ -38,7 +38,7 @@ def consolidate_model(index, name=None):
     else:
         model_name = name
 
-    return prepare_scale.consolidate_model_config(_model_name=model_name, index=index)
+    return prepare_scale.consolidate_model_config(_model_name=model_name, index=index, show=show)
 
 
 def consolidate_models(index=None, use_job_index=False, model_name=None):
