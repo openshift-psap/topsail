@@ -7,7 +7,9 @@ serving_runtime:
     cpu: 2
     memory: 8 # in Gi
     nvidia.com/gpu: 7 # in Gi of GPU memory
-  extra_env: {}
+  extra_env:
+    DTYPE_STR: float16
+    PT2_COMPILE: false
 inference_service:
   storage_uri: "s3://psap-watsonx-models/flan-t5-large/"
   query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'
