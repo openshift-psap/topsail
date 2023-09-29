@@ -157,16 +157,15 @@ def deploy_consolidated_models():
             deploy_consolidated_model(consolidated_model)
 
 
-def deploy_consolidated_model(consolidated_model):
+def deploy_consolidated_model(consolidated_model, namespace=None):
     logging.info(f"Deploying model '{consolidated_model['name']}'")
 
     model_name = consolidated_model["name"]
-    namespace = consolidate_model_namespace(consolidated_model)
+
+    if namespace is None:
+        namespace = consolidate_model_namespace(consolidated_model)
 
     logging.info(f"Deploying a consolidated model. Changing the test namespace to '{namespace}'")
-
-    test_scale.prepare_user_sutest_namespace(namespace)
-    test_scale.deploy_storage_configuration(namespace)
 
     gpu_count = consolidated_model["serving_runtime"]["resource_request"].get("nvidia.com/gpu", 0)
     if config.ci_artifacts.get_config("tests.e2e.request_one_gpu") and gpu_count != 0:
@@ -209,6 +208,9 @@ def deploy_consolidated_model(consolidated_model):
         if not isinstance(extra_env, dict):
             raise ValueError(f"serving_runtime.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
         args_dict["env_extra_values"] = extra_env
+
+    test_scale.prepare_user_sutest_namespace(namespace)
+    test_scale.deploy_storage_configuration(namespace)
 
     run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
 
