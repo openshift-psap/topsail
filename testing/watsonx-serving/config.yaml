@@ -38,6 +38,10 @@ ci_presets:
 
   # ---
 
+  e2e_perf:
+    extends: [e2e_gpu]
+    tests.e2e.perf_mode: true
+
   e2e:
     tests.mode: e2e
     base_image.extend.local_dockerfile_path: testing/watsonx-serving/images/Containerfile.e2e_test_user
@@ -245,6 +249,7 @@ tests:
       replicas: 2
   e2e:
     namespace: watsonx-e2e
+    perf_mode: false
     models:
     - flan-t5-small-cpu
     consolidated_models: {} # will be filled at runtime
