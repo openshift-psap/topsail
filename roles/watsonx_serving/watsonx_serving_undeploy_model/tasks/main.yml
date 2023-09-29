@@ -1,0 +1,27 @@
+---
+# Cleanup the namespace
+- name: Delete the InferenceService and ServingRuntime
+  command:
+    oc delete
+    {% if watsonx_serving_undeploy_model_all %}
+       InferenceService,ServingRuntime --all
+    {% else %}
+       InferenceService/{{ watsonx_serving_undeploy_model_inference_service_name }}
+       ServingRuntime/{{ watsonx_serving_undeploy_model_serving_runtime_name }}
+    {% endif %}
+       -n {{ watsonx_serving_undeploy_model_namespace }}
+       --ignore-not-found
+
+- name: Wait for the Pods to disappear
+  command:
+    oc get pods
+       --no-headers
+       -lcomponent=predictor
+    {% if not watsonx_serving_undeploy_model_all %}
+       -lserving.kserve.io/inferenceservice={{ watsonx_serving_undeploy_model_inference_service_name }}
+    {% endif %}
+       -n {{ watsonx_serving_undeploy_model_namespace }}
+  register: ns_had_predictor_pods_cmd
+  retries: 12
+  delay: 10
+  until: '"No resources found" in ns_had_predictor_pods_cmd.stderr'
