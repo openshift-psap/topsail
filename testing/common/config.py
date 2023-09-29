@@ -208,8 +208,13 @@ class Config:
 
 
     def detect_apply_metal_profile(self, profile):
-        platform_type = run.run("oc get infrastructure/cluster -ojsonpath={.status.platformStatus.type}", capture_stdout=True).stdout
+        platform_type_cmd = run.run("oc get infrastructure/cluster -ojsonpath={.status.platformStatus.type}", capture_stdout=True, capture_stderr=True, check=False)
+        if platform_type_cmd.returncode != 0:
+            logging.warning(f"Failed to get the platform type: {platform_type_cmd.stderr.strip()}")
+            logging.warning("Ignoring the metal profile check.")
+            return
 
+        platform_type = platform_type_cmd.stdout
         logging.info(f"detect_apply_metal_profile: infrastructure/cluster.status.platformStatus.type = {platform_type}")
         if platform_type not in ("BareMetal", "None"):
             logging.info("detect_apply_metal_profile: Assuming not running in a bare-metal environment.")
