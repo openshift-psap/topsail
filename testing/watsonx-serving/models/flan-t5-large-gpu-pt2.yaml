@@ -1,0 +1,6 @@
+extends: flan-t5-large-gpu
+serving_runtime:
+  resource_request:
+    nvidia.com/gpu: 10
+  extra_env:
+    PT2_COMPILE: true
