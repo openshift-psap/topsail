@@ -41,7 +41,7 @@ def consolidate_model(index, name=None, show=True):
     return prepare_scale.consolidate_model_config(_model_name=model_name, index=index, show=show)
 
 
-def consolidate_models(index=None, use_job_index=False, model_name=None):
+def consolidate_models(index=None, use_job_index=False, model_name=None, namespace=None):
     consolidated_models = []
     if index is not None and model_name:
         consolidated_models.append(consolidate_model(index, model_name))
@@ -58,7 +58,13 @@ def consolidate_models(index=None, use_job_index=False, model_name=None):
         for index in range(len(config.ci_artifacts.get_config("tests.e2e.models"))):
             consolidated_models.append(consolidate_model(index))
 
+    if namespace is not None:
+        for consolidated_model in consolidated_models:
+            consolidated_model["namespace"] = namespace
+
     config.ci_artifacts.set_config("tests.e2e.consolidated_models", consolidated_models)
+
+    return consolidated_models
 
 
 def dict_to_run_toolbox_args(args_dict):
@@ -79,11 +85,14 @@ def test_ci():
     "Executes the full e2e test"
 
     try:
-        deploy_models_concurrently()
+        if config.ci_artifacts.get_config("tests.e2e.perf_mode"):
+            deploy_and_test_models_sequentially(locally=False)
+        else:
+            deploy_models_concurrently()
 
-        test_models_concurrently()
+            test_models_concurrently()
 
-        test_models_sequentially(locally=False)
+            test_models_sequentially(locally=False)
     finally:
         try:
             run.run("./run_toolbox.py watsonx_serving capture_operators_state",
@@ -128,6 +137,30 @@ def test_models_sequentially(locally=False):
         run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
 
 
+def deploy_and_test_models_sequentially(locally=False):
+    "Deploy and test all the configured models sequentially (one after the other)"
+
+    logging.info(f"Deploy and test the models sequentially (locally={locally})")
+    if not locally:
+        return run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=e2e_perf_test ./run_toolbox.py from_config local_ci run_multi --suffix deploy_and_test_sequentially")
+
+
+    with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
+        yaml.dump(dict(mode="alone"), f, indent=4)
+
+    namespace = config.ci_artifacts.get_config("tests.e2e.namespace") + "-perf"
+    consolidated_models = consolidate_models(namespace=namespace)
+
+    run.run(f"./run_toolbox.py watsonx_serving undeploy_model --namespace {namespace} --all")
+
+    for consolidated_model in consolidated_models:
+        try:
+            launch_deploy_consolidated_model(consolidated_model)
+            launch_test_consolidated_model(consolidated_model)
+        finally:
+            undeploy_consolidated_model(consolidated_model)
+
+
 def test_models_concurrently():
     "Tests all the configured models concurrently (all at the same time)"
 
@@ -152,15 +185,22 @@ def deploy_consolidated_models():
     model_count = len(consolidated_models)
     logging.info(f"Found {model_count} models to deploy")
     for consolidated_model in consolidated_models:
-        next_count = env.next_artifact_index()
-        with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__deploy_{consolidated_model['name']}"):
-            deploy_consolidated_model(consolidated_model)
+        launch_deploy_consolidated_model(consolidated_model)
+
+
+def launch_deploy_consolidated_model(consolidated_model):
+    next_count = env.next_artifact_index()
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__deploy_{consolidated_model['name']}"):
+        deploy_consolidated_model(consolidated_model)
 
 
 def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None, delete_others=None):
     logging.info(f"Deploying model '{consolidated_model['name']}'")
 
     model_name = consolidated_model["name"]
+
+    if namespace is None:
+        namespace = consolidated_model.get("namespace")
 
     if namespace is None:
         namespace = consolidate_model_namespace(consolidated_model)
@@ -222,36 +262,58 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
 
 
+def undeploy_consolidated_model(consolidated_model, namespace=None):
+    if namespace is None:
+        namespace = consolidated_model.get("namespace")
+
+    if namespace is None:
+        namespace = consolidate_model_namespace(consolidated_model)
+
+    model_name = consolidated_model["name"]
+    args_dict = dict(
+        namespace=namespace,
+        serving_runtime_name=model_name,
+        inference_service_name=model_name,
+    )
+
+    run.run(f"./run_toolbox.py watsonx_serving undeploy_model {dict_to_run_toolbox_args(args_dict)}")
+
 def test_consolidated_models():
     consolidated_models = config.ci_artifacts.get_config("tests.e2e.consolidated_models")
     model_count = len(consolidated_models)
     logging.info(f"Found {model_count} models to test")
     for consolidated_model in consolidated_models:
-        next_count = env.next_artifact_index()
-        with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test_{consolidated_model['name']}"):
-            with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
-                settings = dict(
-                    e2e_test=True,
-                    model_name=consolidated_model['name'],
-                    model_id=consolidated_model['id'],
-                )
-                yaml.dump(settings, f, indent=4)
+        launch_test_consolidated_model(consolidated_model)
 
-            with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-                yaml.dump(config.ci_artifacts.config, f, indent=4)
+def launch_test_consolidated_model(consolidated_model):
+    next_count = env.next_artifact_index()
+    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test_{consolidated_model['name']}"):
+        with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+            settings = dict(
+                e2e_test=True,
+                model_name=consolidated_model['name'],
+                model_id=consolidated_model['id'],
+            )
+            yaml.dump(settings, f, indent=4)
 
-            exit_code = 1
-            try: exit_code = test_consolidated_model(consolidated_model)
-            finally:
-                with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
-                    print(f"{exit_code}", file=f)
+        with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+            yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+        exit_code = 1
+        try: exit_code = test_consolidated_model(consolidated_model)
+        finally:
+            with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
+                print(f"{exit_code}", file=f)
 
 
-def test_consolidated_model(consolidated_model):
+def test_consolidated_model(consolidated_model, namespace=None):
     logging.info(f"Testing model '{consolidated_model['name']}")
 
     model_name = consolidated_model["name"]
-    namespace = consolidate_model_namespace(consolidated_model)
+    if namespace is None:
+        namespace = consolidated_model.get("namespace")
+    if namespace is None:
+        namespace = consolidate_model_namespace(consolidated_model)
 
     args_dict = dict(
         namespace=namespace,
@@ -320,6 +382,7 @@ class Entrypoint:
         self.deploy_models_sequentially = deploy_models_sequentially
         self.deploy_models_concurrently = deploy_models_concurrently
         self.deploy_one_model = deploy_one_model
+        self.deploy_and_test_models_sequentially = deploy_and_test_models_sequentially
 
         self.test_models_sequentially = test_models_sequentially
         self.test_models_concurrently = test_models_concurrently

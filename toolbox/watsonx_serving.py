@@ -57,6 +57,26 @@ class Watsonx_Serving:
         return RunAnsibleRole(locals())
 
 
+    @AnsibleRole("watsonx_serving_undeploy_model")
+    @AnsibleMappedParams
+    def undeploy_model(self,
+                       namespace,
+                       serving_runtime_name="",
+                       inference_service_name="",
+                       all=False,
+                     ):
+        """
+        Undeploy a WatsonX-Serving model
+
+        Args:
+          namespace: the namespace in which the model should be deployed
+          serving_runtime_name: the name to give to the serving runtime
+          inference_service_name: the name to give to the inference service
+          all: delete all the inference services/servingruntime of the namespace
+        """
+
+        return RunAnsibleRole(locals())
+
 
     @AnsibleRole("watsonx_serving_validate_model")
     @AnsibleMappedParams
