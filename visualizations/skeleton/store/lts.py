@@ -9,8 +9,11 @@ def build_lts_payloads():
     for entry in common.Matrix.processed_map.values():
         results = entry.results
 
-        start_time = results.start_time
-        end_time = results.end_time
+        if results.test_start_end_time:
+            start_time = results.test_start_end_time.start
+            end_time = results.test_start_end_time.end
+        else:
+            start_time = end_time = None
 
         # To know the available metrics:
         # _=[print(m) for m in results.metrics["sutest"].keys()]
