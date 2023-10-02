@@ -39,9 +39,6 @@ ${NOTEBOOK_EXEC_WAIT_TIME}     15 minutes
 
 ${ODH_DASHBOARD_DO_NOT_WAIT_FOR_SPINNER_PAGE}  ${true}
 
-&{browser logging capability}    browser=ALL
-&{capabilities}    browserName=chrome    version=${EMPTY}    platform=ANY    goog:loggingPrefs=${browser logging capability}
-
 *** Test Cases ***
 
 Open the Browser

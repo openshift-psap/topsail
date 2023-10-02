@@ -109,7 +109,7 @@
   shell:
     oc debug istag/{{ rhods_notebook_ods_ci_scale_test_ods_ci_istag }}
        -n {{ tester_namespace }}
-       -- cat ods_ci/test-variables.yml.model > /tmp/test-variables.yml.model
+       -- cat ods_ci/test-variables.yml > /tmp/test-variables.yml.example
 
 - name: Apply the ODS-CI template
   shell: |
@@ -127,20 +127,16 @@
 
     RHODS_VERSION="{{ rhods_version_cmd.stdout }}";
 
-    BROWSER_OPTIONS="add_argument('--ignore-certificate-errors');add_argument('window-size=1920,1024');add_argument('--disable-dev-shm-usage');add_argument('--no-sandbox')"
-
     TEST_VAR_SAFE={{ artifact_extra_logs_dir }}/test-variables_safe.yml
     TEST_VAR_FULL=/tmp/test-variables.yml
 
-    cat /tmp/test-variables.yml.model | \
+    cat /tmp/test-variables.yml.example | \
       yq -y .OCP_CONSOLE_URL=\"${OCP_CONSOLE_URL}\" | \
       yq -y .OCP_API_URL=\"${OCP_API_URL}\" | \
       yq -y .ODH_DASHBOARD_URL=\"${ODH_DASHBOARD_URL}\" | \
       yq -y .RHODS_VERSION=\"${RHODS_VERSION}\" | \
       yq -y .TEST_USER.AUTH_TYPE=\"${TEST_USER_AUTH_TYPE}\" | \
-      yq -y .TEST_USER.USERNAME=\"${TEST_USER_USERNAME}\" | \
-      yq -y .BROWSER.NAME=\"headlesschrome\" | \
-      yq -y ".BROWSER.OPTIONS=\"$BROWSER_OPTIONS\"" \
+      yq -y .TEST_USER.USERNAME=\"${TEST_USER_USERNAME}\" \
         > "$TEST_VAR_SAFE"
 
     cp "$TEST_VAR_SAFE" "$TEST_VAR_FULL"

@@ -6,7 +6,7 @@ Resource            tests/Resources/RHOSi.resource
 Setup
   Set Library Search Order  SeleniumLibrary
   Protect Sensitive Variables In Keywords
-  Open Browser  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}  desired_capabilities=${capabilities}
+  Open Browser  browser=${BROWSER.NAME}  options=${BROWSER.OPTIONS}
 
 Tear Down
   ${browser log entries}=    Get Browser Console Log Entries
