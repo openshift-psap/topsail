@@ -81,6 +81,18 @@ def dict_to_run_toolbox_args(args_dict):
 
 # ---
 
+def run_and_catch(exc, fct, *args, **kwargs):
+    if not (exc is None or isinstance(exc, Exception)):
+        raise ValueException(f"exc={exc} should be None or an Exception")
+
+    try:
+        fct(*args, **kwargs)
+    except Exception as e:
+        logging.error(f"{e.__class__.__name__}: {e}")
+        exc = exc or e
+    return exc
+
+
 def test_ci():
     "Executes the full e2e test"
 
@@ -88,19 +100,21 @@ def test_ci():
         if config.ci_artifacts.get_config("tests.e2e.perf_mode"):
             deploy_and_test_models_sequentially(locally=False)
         else:
-            deploy_models_concurrently()
-
-            test_models_concurrently()
-
-            test_models_sequentially(locally=False)
+            deploy_and_test_models_e2e()
     finally:
-        try:
-            run.run("./run_toolbox.py watsonx_serving capture_operators_state",
-                    capture_stdout=True)
-        finally:
-            run.run("./run_toolbox.py cluster capture_environment",
-                    capture_stdout=True)
+        exc = None
 
+        exc = run_and_catch(
+            exc,
+            run.run, "./run_toolbox.py watsonx_serving capture_operators_state", capture_stdout=True
+        )
+
+        exc = run_and_catch(
+            exc,
+            run.run, "./run_toolbox.py cluster capture_environment", capture_stdout=True
+        )
+
+        if exc: raise exc
 
 def deploy_models_sequentially():
     "Deploys all the configured models sequentially (one after the other) -- for local usage"
@@ -137,6 +151,19 @@ def test_models_sequentially(locally=False):
         run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
 
 
+def deploy_and_test_models_e2e():
+    run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+
+    try:
+        deploy_models_concurrently()
+
+        test_models_concurrently()
+
+        test_models_sequentially(locally=False)
+    finally:
+        run.run("./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+
+
 def deploy_and_test_models_sequentially(locally=False):
     "Deploy and test all the configured models sequentially (one after the other)"
 
@@ -153,12 +180,18 @@ def deploy_and_test_models_sequentially(locally=False):
 
     run.run(f"./run_toolbox.py watsonx_serving undeploy_model --namespace {namespace} --all")
 
+    exc = None
     for consolidated_model in consolidated_models:
         try:
             launch_deploy_consolidated_model(consolidated_model)
+            run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
             launch_test_consolidated_model(consolidated_model)
         finally:
-            undeploy_consolidated_model(consolidated_model)
+            (env.ARTIFACT_DIR / ".matbench_prom_db_dir").touch() # flag file for watsonx-serving-prom visualization
+            exc = None
+            run_and_catch(exc, run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+            run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
+            if exc: raise exc
 
 
 def test_models_concurrently():
@@ -329,7 +362,6 @@ def test_consolidated_model(consolidated_model, namespace=None):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
         return
 
-    run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
     host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
     host = host_url.lstrip("https://") + ":443"
     if host == ":443":
@@ -349,10 +381,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
         llm_path=llm_config["src_path"],
     )
 
-    try:
-        run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
-    finally:
-        run.run("./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+    run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
 
     return 0
 
