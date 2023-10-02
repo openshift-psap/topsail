@@ -142,7 +142,7 @@ def deploy_and_test_models_sequentially(locally=False):
 
     logging.info(f"Deploy and test the models sequentially (locally={locally})")
     if not locally:
-        return run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=e2e_perf_test ./run_toolbox.py from_config local_ci run_multi --suffix deploy_and_test_sequentially")
+        return run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_e2e_perf_test ./run_toolbox.py from_config local_ci run_multi --suffix deploy_and_test_sequentially")
 
 
     with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
