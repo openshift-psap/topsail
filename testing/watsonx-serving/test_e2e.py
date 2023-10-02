@@ -161,8 +161,8 @@ def deploy_and_test_models_e2e():
 
         test_models_sequentially(locally=False)
     finally:
+        (env.ARTIFACT_DIR / ".matbench_prom_db_dir").touch() # flag file for watsonx-serving-prom visualization
         run.run("./run_toolbox.py cluster dump_prometheus_db > /dev/null")
-
 
 def deploy_and_test_models_sequentially(locally=False):
     "Deploy and test all the configured models sequentially (one after the other)"
