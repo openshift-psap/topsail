@@ -32,4 +32,4 @@
     export CONFIG_PATH="{{ artifact_extra_logs_dir }}/src/"
     export AWS_SHARED_CREDENTIALS_FILE="$PSAP_ODS_SECRET_PATH/.awscred" # workaround until llm-load-test is properly unlinked from AWS S3
 
-    python3 load_test.py --parallel_experiment &> {{ artifact_extra_logs_dir }}/run.log
+    python3 load_test.py &> {{ artifact_extra_logs_dir }}/run.log
