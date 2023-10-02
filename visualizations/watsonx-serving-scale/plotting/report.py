@@ -7,7 +7,10 @@ from dash import dcc
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
-from . import error_report
+try:
+    from . import error_report
+except ImportError:
+    error_report = None
 
 def register():
     ControlPlaneReport()
@@ -99,8 +102,8 @@ class ControlPlaneReport():
 
     def do_plot(self, *args):
         header = []
-
-        header += error_report._get_all_tests_setup(args)
+        if error_report:
+            header += error_report._get_all_tests_setup(args)
 
         header += [html.H1("Control Plane Nodes Load")]
 
