@@ -84,17 +84,16 @@ def test_ci():
         run.run("echo hello world")
         return
 
-    if test_mode == "e2e":
-        test_e2e.test_ci()
-        return
-
-    assert test_mode == "scale"
-
     do_visualize = config.ci_artifacts.get_config("tests.visualize")
 
     try:
         test_artifact_dir_p = [None]
-        _run_test(test_artifact_dir_p=test_artifact_dir_p)
+        if test_mode == "e2e":
+            test_e2e.test_ci()
+            test_artifact_dir_p[0] = env.ARTIFACT_DIR
+        else:
+            assert test_mode == "scale"
+            _run_test(test_artifact_dir_p=test_artifact_dir_p)
     finally:
         try:
             if not do_visualize:
