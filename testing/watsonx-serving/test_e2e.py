@@ -322,12 +322,14 @@ def test_consolidated_model(consolidated_model, namespace=None):
         query_data=consolidated_model["inference_service"]["query_data"],
     )
 
+
     run.run(f"./run_toolbox.py watsonx_serving validate_model {dict_to_run_toolbox_args(args_dict)}")
 
     if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
         return
 
+    run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
     host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
     host = host_url.lstrip("https://") + ":443"
     if host == ":443":
@@ -347,7 +349,10 @@ def test_consolidated_model(consolidated_model, namespace=None):
         llm_path=llm_config["src_path"],
     )
 
-    run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
+    try:
+        run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
+    finally:
+        run.run("./run_toolbox.py cluster dump_prometheus_db > /dev/null")
 
     return 0
 
