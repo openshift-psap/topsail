@@ -191,7 +191,7 @@ __e2e_aliases:
     minio_secret_key_key: s3_ldap.passwords
 
     user_batch_size: 1
-    capture_prom_db: {{ tests.capture_prom }}
+    capture_prom_db: false # Prom DB is captured manually for the e2e test
     git_pull: null #refs/pull/716/merge
 
     use_local_config: true
