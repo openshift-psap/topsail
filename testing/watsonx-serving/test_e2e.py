@@ -116,6 +116,7 @@ def test_ci():
 
         if exc: raise exc
 
+
 def deploy_models_sequentially():
     "Deploys all the configured models sequentially (one after the other) -- for local usage"
 
@@ -164,6 +165,7 @@ def deploy_and_test_models_e2e():
         (env.ARTIFACT_DIR / ".matbench_prom_db_dir").touch() # flag file for watsonx-serving-prom visualization
         run.run("./run_toolbox.py cluster dump_prometheus_db > /dev/null")
 
+
 def deploy_and_test_models_sequentially(locally=False):
     "Deploy and test all the configured models sequentially (one after the other)"
 
@@ -182,16 +184,17 @@ def deploy_and_test_models_sequentially(locally=False):
 
     exc = None
     for consolidated_model in consolidated_models:
-        try:
-            launch_deploy_consolidated_model(consolidated_model)
-            run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
-            launch_test_consolidated_model(consolidated_model)
-        finally:
-            (env.ARTIFACT_DIR / ".matbench_prom_db_dir").touch() # flag file for watsonx-serving-prom visualization
-            exc = None
-            run_and_catch(exc, run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
-            run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
-            if exc: raise exc
+        with env.NextArtifactDir(consolidated_model['name']):
+            try:
+                launch_deploy_consolidated_model(consolidated_model)
+                run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+                launch_test_consolidated_model(consolidated_model)
+            finally:
+                (env.ARTIFACT_DIR / ".matbench_prom_db_dir").touch() # flag file for watsonx-serving-prom visualization
+                exc = None
+                run_and_catch(exc, run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+                run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
+                if exc: raise exc
 
 
 def test_models_concurrently():
@@ -222,8 +225,7 @@ def deploy_consolidated_models():
 
 
 def launch_deploy_consolidated_model(consolidated_model):
-    next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__deploy_{consolidated_model['name']}"):
+    with env.NextArtifactDir(consolidated_model['name']):
         deploy_consolidated_model(consolidated_model)
 
 
@@ -319,8 +321,7 @@ def test_consolidated_models():
         launch_test_consolidated_model(consolidated_model)
 
 def launch_test_consolidated_model(consolidated_model):
-    next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test_{consolidated_model['name']}"):
+    with env.NextArtifactDir(f"test_{consolidated_model['name']}"):
         with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
             settings = dict(
                 e2e_test=True,
