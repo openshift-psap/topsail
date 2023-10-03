@@ -61,8 +61,7 @@ class Parallel(object):
             return False
 
         if self.dedicated_dir:
-            next_count = env.next_artifact_index()
-            context = env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__{self.name}")
+            context = env.NextArtifactDir(self.name)
         else:
             context = open("/dev/null") # dummy context
 
