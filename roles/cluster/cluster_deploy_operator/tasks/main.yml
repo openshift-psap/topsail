@@ -13,7 +13,7 @@
 
 - name: Create variables
   set_fact:
-    has_version_request: cluster_deploy_operator_version | string | default('', true) | length > 0
+    has_version_request: "{{ cluster_deploy_operator_version | default('', true) | string | length > 0 }}"
 
 - name: Store deployment values (debug)
   shell: |
@@ -31,6 +31,7 @@
     cluster_deploy_operator_channel: {{ cluster_deploy_operator_channel }}
     # Optional version to deploy. If unspecified, deploys the latest version available in the selected channel.
     cluster_deploy_operator_version: {{ cluster_deploy_operator_version }}
+    has_version_request: {{ has_version_request }}
     # Optional InstallPlan approval mode (Automatic or Manual). Default: Manual.
     cluster_deploy_operator_installplan_approval: {{ cluster_deploy_operator_installplan_approval }}
     # Optional flag to deploy the first example CR found in the CSV. Use 'True' as true value.
@@ -147,7 +148,7 @@
     set_fact:
       operator_channel: "{{ cluster_deploy_operator_channel }}"
 
-- name: "Get the version of the operator on channel '{{ cluster_deploy_operator_channel }}'"
+- name: Get the version of the operator on channel '{{ cluster_deploy_operator_channel }}'
   when: not has_version_request
   command:
     jq -r
@@ -163,7 +164,7 @@
 - name: Fetch the operator version and store its CSV name
   block:
   - name: Skip if the version was passed as a parameter '{{ cluster_deploy_operator_version }}'
-    when: has_version_request
+    when: has_version_request|bool
     fail: msg="Use the rescue block"
 
   - name: Store the CSV version
