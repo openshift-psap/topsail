@@ -162,7 +162,10 @@ def deploy_and_test_models_e2e():
 
         test_models_sequentially(locally=False)
     finally:
-        (env.ARTIFACT_DIR / ".matbench_prom_db_dir").touch() # flag file for watsonx-serving-prom visualization
+        # flag file for watsonx-serving-prom visualization
+        with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
+            print("e2e", file=f)
+
         run.run("./run_toolbox.py cluster dump_prometheus_db > /dev/null")
 
 
@@ -190,7 +193,10 @@ def deploy_and_test_models_sequentially(locally=False):
                 run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
                 launch_test_consolidated_model(consolidated_model)
             finally:
-                (env.ARTIFACT_DIR / ".matbench_prom_db_dir").touch() # flag file for watsonx-serving-prom visualization
+                # flag file for watsonx-serving-prom visualization
+                with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
+                    print(consolidated_model['name'], file=f)
+
                 exc = None
                 run_and_catch(exc, run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
                 run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
