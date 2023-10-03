@@ -99,8 +99,7 @@ def test_ci():
             if not do_visualize:
                 logging.info("Not generating the visualization because it isn't activated.")
             elif test_artifact_dir_p[0] is not None:
-                next_count = env.next_artifact_index()
-                with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
+                with env.NextArtifactDir("plots"):
                     visualize.prepare_matbench()
                     generate_plots(test_artifact_dir_p[0])
             else:
