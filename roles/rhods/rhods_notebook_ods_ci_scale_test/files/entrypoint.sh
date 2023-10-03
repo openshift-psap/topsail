@@ -96,6 +96,11 @@ echo "Waiting $sleep_delay seconds before starting (job index: $JOB_COMPLETION_I
 sleep "$sleep_delay"
 echo "launch_delay: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 
+curl https://tools.972.ovh/selenium-manager > selenium-manager
+chmod u+x selenium-manager
+
+RUST_BACKTRACE=1 ./selenium-manager --trace --browser chrome &> "$ARTIFACT_DIR/selenium-manager.log"
+
 test_exit_code=0
 (bash -x ./run_robot_test.sh \
     --skip-install \
