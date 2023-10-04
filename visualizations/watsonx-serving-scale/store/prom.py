@@ -284,9 +284,9 @@ def _get_apiserver_errcodes(cluster_role, register):
 # ---
 
 SUTEST_CONTAINER_LABELS = [
-    {"Caikit kserve container": dict(namespace="watsonx-serving-scale-test.*", pod="caikit-isvc.*", container="kserve-container")},
-    {"Caikit istio-proxy container": dict(namespace="watsonx-serving-scale-test.*", pod="caikit-isvc.*", container="istio-proxy")},
-    {"Caikit queue-proxy container": dict(namespace="watsonx-serving-scale-test.*", pod="caikit-isvc.*", container="queue-proxy")},
+    {"Caikit kserve container": dict(namespace="watsonx.*", pod="caikit-isvc.*", container="kserve-container")},
+    {"Caikit istio-proxy container": dict(namespace="watsonx.*", pod="caikit-isvc.*", container="istio-proxy")},
+    {"Caikit queue-proxy container": dict(namespace="watsonx.*", pod="caikit-isvc.*", container="queue-proxy")},
 
     {"KServe Controller": dict(namespace="redhat-ods-applications", pod="kserve-controller-manager-.*")},
     {"ODH Model Controller": dict(namespace="redhat-ods-applications", pod="odh-model-controller-.*")},
