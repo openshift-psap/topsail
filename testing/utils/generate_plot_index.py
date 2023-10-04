@@ -14,11 +14,11 @@ def report_index_to_html(report_index):
 
     report_parent = report_dir.parent
 
-    relative_name = report_dir.name if report_parent == ARTIFACT_DIR \
-        else report_parent.relative_to(ARTIFACT_DIR)
+    dirname = report_index.relative_to(ARTIFACT_DIR).parent
 
     print()
-    print(f"<h1>{relative_name}</h1>")
+    print(f"<h1><a  style='text-decoration:none; color: inherit' href='{dirname}'>{dirname}</a></h1>")
+
     print("<ul>")
     for report_file in sorted(report_dir.glob("*.html")):
         if report_file.name == "reports_index.html": continue
@@ -29,6 +29,7 @@ def report_index_to_html(report_index):
     for json_file in sorted(report_dir.glob("*.json")):
         add_entry(json_file)
     print("</ul>")
+    print("<br/>")
 
 def main():
     for report_index in sorted(ARTIFACT_DIR.glob('**/reports_index.html')):
