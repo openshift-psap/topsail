@@ -1,4 +1,4 @@
 visualize:
 - id: llm_test
   generate:
-  - "Latency"
+  - "report: Latency"
