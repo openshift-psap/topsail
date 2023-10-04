@@ -11,7 +11,7 @@ except ImportError:
 
 def register():
     SutestCpuMemoryReport()
-
+    GpuUsageReport()
 
 def add_pod_cpu_mem_usage(header, what, args, mem_only=False, cpu_only=False):
     if mem_only:
@@ -68,6 +68,33 @@ class SutestCpuMemoryReport():
             header += [html.H2(plot_name)]
             header += [report.Plot(f"Prom: {plot_name}: CPU usage", args)]
             header += [report.Plot(f"Prom: {plot_name}: Mem usage", args)]
+
+
+        return None, header
+
+
+class GpuUsageReport():
+    def __init__(self):
+        self.name = "report: GPU Usage"
+        self.id_name = self.name.lower().replace("/", "-")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        if error_report:
+            header += error_report._get_all_tests_setup(args)
+
+        header += [html.P("These plots show an overview of the GPU usage during the execution of the test")]
+
+        header += [html.H2("GPU Usage")]
+
+        for metric_spec in prom._get_gpu_usage("sutest", register=False):
+            plot_name = list(metric_spec.keys())[0]
+            header += [html.H3(plot_name)]
+            header += [report.Plot(f"Prom: {plot_name}", args)]
 
 
         return None, header

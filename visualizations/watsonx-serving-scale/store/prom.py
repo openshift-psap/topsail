@@ -281,6 +281,60 @@ def _get_apiserver_errcodes(cluster_role, register):
 
     return all_metrics
 
+
+def _get_gpu_usage(cluster_role, register):
+    all_metrics = []
+
+    gpu_usage_metrics = [
+        {f"GPU memory used": 'DCGM_FI_DEV_FB_USED'},
+        {f"GPU compute utilization": 'DCGM_FI_DEV_GPU_UTIL'},
+        {f"GPU engine usage": 'DCGM_FI_PROF_GR_ENGINE_ACTIVE'},
+        {f"GPU memory transfer utilization": 'DCGM_FI_DEV_MEM_COPY_UTIL'},
+        {f"GPU memory unallocated": 'DCGM_FI_DEV_FB_FREE'},
+        {f"GPU memory transfer (rx)": 'DCGM_FI_PROF_PCIE_RX_BYTES'},
+        {f"GPU memory transfer (tx)": 'DCGM_FI_PROF_PCIE_TX_BYTES'},
+
+
+    ]
+    all_metrics += gpu_usage_metrics
+
+    def get_legend_name(metric_name, metric_metric):
+        name = metric_metric.get('Hostname', "<no hostname>")
+
+        return name, None
+
+    if register:
+        for metric in gpu_usage_metrics:
+            name, rq = list(metric.items())[0]
+
+            y_divisor = 1
+
+            if rq.startswith("DCGM_FI_DEV_FB_"):
+                y_title = f"{name} (in GiB)"
+                y_divisor = 1024
+            elif rq.startswith("DCGM_FI_PROF_PCIE_"):
+                y_title = "Memory transfer (in MiB/s)"
+                y_divisor = 1024
+            elif rq in ('DCGM_FI_DEV_GPU_UTIL', 'DCGM_FI_PROF_GR_ENGINE_ACTIVE'):
+                y_title = "Compute usage (in %)"
+            elif rq == "DCGM_FI_DEV_MEM_COPY_UTIL":
+                y_title = "GPU transfer bus usage (in %)"
+            else:
+                y_title = "(no name)"
+
+            plotting_prom.Plot({name: rq},
+                               f"Prom: {name}",
+                               None,
+                               y_title,
+                               get_metrics=get_metrics(cluster_role),
+                               get_legend_name=get_legend_name,
+                               show_queries_in_title=True,
+                               y_divisor=y_divisor,
+                               show_legend=True,
+                               as_timestamp=True)
+
+    return all_metrics
+
 # ---
 
 SUTEST_CONTAINER_LABELS = [
@@ -317,6 +371,7 @@ def get_sutest_metrics(register=False):
     all_metrics += _get_apiserver_errcodes(cluster_role, register)
     all_metrics += _get_control_plane_nodes_cpu_usage(cluster_role, register)
     all_metrics += _get_container_mem_cpu(cluster_role, register, SUTEST_CONTAINER_LABELS)
+    all_metrics += _get_gpu_usage(cluster_role, register)
 
     return all_metrics
 
