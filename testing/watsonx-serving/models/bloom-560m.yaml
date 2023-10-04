@@ -1,0 +1,14 @@
+id: bloom-560m
+full_name: bloom-560m
+secret_key: # no secret key at the moment
+
+serving_runtime:
+  resource_request:
+    cpu: 1
+    memory: 6 # in Gi
+    nvidia.com/gpu: 5 # in Gi of GPU memory
+  extra_env: {}
+  min_replicas: 1
+inference_service:
+  storage_uri: "s3://psap-watsonx-models/bloom-560m"
+  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'
