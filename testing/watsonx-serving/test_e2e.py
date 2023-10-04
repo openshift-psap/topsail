@@ -81,6 +81,18 @@ def dict_to_run_toolbox_args(args_dict):
 
 # ---
 
+def run_and_catch(exc, fct, *args, **kwargs):
+    if not (exc is None or isinstance(exc, Exception)):
+        raise ValueException(f"exc={exc} should be None or an Exception")
+
+    try:
+        fct(*args, **kwargs)
+    except Exception as e:
+        logging.error(f"{e.__class__.__name__}: {e}")
+        exc = exc or e
+    return exc
+
+
 def test_ci():
     "Executes the full e2e test"
 
@@ -88,18 +100,21 @@ def test_ci():
         if config.ci_artifacts.get_config("tests.e2e.perf_mode"):
             deploy_and_test_models_sequentially(locally=False)
         else:
-            deploy_models_concurrently()
-
-            test_models_concurrently()
-
-            test_models_sequentially(locally=False)
+            deploy_and_test_models_e2e()
     finally:
-        try:
-            run.run("./run_toolbox.py watsonx_serving capture_operators_state",
-                    capture_stdout=True)
-        finally:
-            run.run("./run_toolbox.py cluster capture_environment",
-                    capture_stdout=True)
+        exc = None
+
+        exc = run_and_catch(
+            exc,
+            run.run, "./run_toolbox.py watsonx_serving capture_operators_state", capture_stdout=True
+        )
+
+        exc = run_and_catch(
+            exc,
+            run.run, "./run_toolbox.py cluster capture_environment", capture_stdout=True
+        )
+
+        if exc: raise exc
 
 
 def deploy_models_sequentially():
@@ -137,12 +152,29 @@ def test_models_sequentially(locally=False):
         run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
 
 
+def deploy_and_test_models_e2e():
+    run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+
+    try:
+        deploy_models_concurrently()
+
+        test_models_concurrently()
+
+        test_models_sequentially(locally=False)
+    finally:
+        # flag file for watsonx-serving-prom visualization
+        with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
+            print("e2e", file=f)
+
+        run.run("./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+
+
 def deploy_and_test_models_sequentially(locally=False):
     "Deploy and test all the configured models sequentially (one after the other)"
 
     logging.info(f"Deploy and test the models sequentially (locally={locally})")
     if not locally:
-        return run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=e2e_perf_test ./run_toolbox.py from_config local_ci run_multi --suffix deploy_and_test_sequentially")
+        return run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_e2e_perf_test ./run_toolbox.py from_config local_ci run_multi --suffix deploy_and_test_sequentially")
 
 
     with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
@@ -153,12 +185,22 @@ def deploy_and_test_models_sequentially(locally=False):
 
     run.run(f"./run_toolbox.py watsonx_serving undeploy_model --namespace {namespace} --all")
 
+    exc = None
     for consolidated_model in consolidated_models:
-        try:
-            launch_deploy_consolidated_model(consolidated_model)
-            launch_test_consolidated_model(consolidated_model)
-        finally:
-            undeploy_consolidated_model(consolidated_model)
+        with env.NextArtifactDir(consolidated_model['name']):
+            try:
+                launch_deploy_consolidated_model(consolidated_model)
+                run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+                launch_test_consolidated_model(consolidated_model)
+            finally:
+                # flag file for watsonx-serving-prom visualization
+                with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
+                    print(consolidated_model['name'], file=f)
+
+                exc = None
+                run_and_catch(exc, run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+                run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
+                if exc: raise exc
 
 
 def test_models_concurrently():
@@ -189,8 +231,7 @@ def deploy_consolidated_models():
 
 
 def launch_deploy_consolidated_model(consolidated_model):
-    next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__deploy_{consolidated_model['name']}"):
+    with env.NextArtifactDir(consolidated_model['name']):
         deploy_consolidated_model(consolidated_model)
 
 
@@ -286,8 +327,7 @@ def test_consolidated_models():
         launch_test_consolidated_model(consolidated_model)
 
 def launch_test_consolidated_model(consolidated_model):
-    next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test_{consolidated_model['name']}"):
+    with env.NextArtifactDir(f"test_{consolidated_model['name']}"):
         with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
             settings = dict(
                 e2e_test=True,
@@ -321,6 +361,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
         model_id=consolidated_model["id"],
         query_data=consolidated_model["inference_service"]["query_data"],
     )
+
 
     run.run(f"./run_toolbox.py watsonx_serving validate_model {dict_to_run_toolbox_args(args_dict)}")
 

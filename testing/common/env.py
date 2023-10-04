@@ -18,6 +18,11 @@ def init():
         ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
         os.environ["ARTIFACT_DIR"] = str(ARTIFACT_DIR)
 
+def NextArtifactDir(name):
+    next_count = next_artifact_index()
+    dirname = ARTIFACT_DIR / f"{next_count:03d}__{name}"
+    return TempArtifactDir(dirname)
+
 class TempArtifactDir(object):
     def __init__(self, dirname):
         self.dirname = pathlib.Path(dirname)

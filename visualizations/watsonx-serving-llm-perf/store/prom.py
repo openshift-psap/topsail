@@ -283,31 +283,6 @@ def _get_apiserver_errcodes(cluster_role, register):
 
 # ---
 
-SUTEST_CONTAINER_LABELS = [
-    {"Caikit kserve container": dict(namespace="watsonx.*", pod="caikit-isvc.*", container="kserve-container")},
-    {"Caikit istio-proxy container": dict(namespace="watsonx.*", pod="caikit-isvc.*", container="istio-proxy")},
-    {"Caikit queue-proxy container": dict(namespace="watsonx.*", pod="caikit-isvc.*", container="queue-proxy")},
-
-    {"KServe Controller": dict(namespace="redhat-ods-applications", pod="kserve-controller-manager-.*")},
-    {"ODH Model Controller": dict(namespace="redhat-ods-applications", pod="odh-model-controller-.*")},
-
-    {"Istio egress": dict(namespace="istio-system", pod="istio-egressgateway-.*")},
-    {"Istio ingress": dict(namespace="istio-system", pod="istio-ingressgateway-.*")},
-    {"Istio Jaeger": dict(namespace="istio-system", pod="jaeger-.*")},
-    {"Istio Kiaki": dict(namespace="istio-system", pod="kiali-.*")},
-    {"Istiod Minimal": dict(namespace="istio-system", pod="istiod-minimal.*")},
-
-    {"KNative Activator": dict(namespace="knative-serving", pod="activator-.*")},
-    {"KNative Autoscaler": dict(namespace="knative-serving", pod="autoscaler-.*")},
-    {"KNative Autoscaler HPA": dict(namespace="knative-serving", pod="autoscaler-hpa-.*")},
-    {"KNative Controller": dict(namespace="knative-serving", pod="controller-.*")},
-    {"KNative Domain-mapping": dict(namespace="knative-serving", pod="domain-mapping-.*")},
-    {"KNative Domain-mapping Webhook": dict(namespace="knative-serving", pod="domainmapping-webhook-.*")},
-    {"KNative net-istio-controller": dict(namespace="knative-serving", pod="net-istio-controller-.*")},
-    {"KNative net-istio-webhook": dict(namespace="knative-serving", pod="net-istio-webhook-.*")},
-    {"KNative webhook": dict(namespace="knative-serving", pod="webhook-.*")},
-]
-
 def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
@@ -316,9 +291,9 @@ def get_sutest_metrics(register=False):
     all_metrics += _get_plane_nodes(cluster_role, register)
     all_metrics += _get_apiserver_errcodes(cluster_role, register)
     all_metrics += _get_control_plane_nodes_cpu_usage(cluster_role, register)
-    all_metrics += _get_container_mem_cpu(cluster_role, register, SUTEST_CONTAINER_LABELS)
 
     return all_metrics
+
 
 # ---
 

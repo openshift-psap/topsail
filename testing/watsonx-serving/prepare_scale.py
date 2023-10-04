@@ -47,6 +47,7 @@ def prepare():
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
+    prepare_user_pods.apply_prefer_pr()
 
     with run.Parallel("prepare_scale") as parallel:
         # prepare the sutest cluster

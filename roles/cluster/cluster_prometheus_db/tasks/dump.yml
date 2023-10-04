@@ -15,3 +15,7 @@
   register: extract_prometheus_db
   # for tar, 0 means OK, 1 means file changed as we read it (we ignore it, 'Prometheus updates files atomically')
   failed_when: extract_prometheus_db.rc > 1
+
+- name: Save the cluster nodes along with the Prom database
+  shell:
+    oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/nodes.json"

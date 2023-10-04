@@ -1,0 +1,5 @@
+visualize:
+- id: scale_test
+  generate:
+  - "report: Sutest Cluster CPU/Memory Usage"
+  - "report: Control Plane Nodes Load"

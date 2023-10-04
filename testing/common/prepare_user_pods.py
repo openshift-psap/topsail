@@ -117,8 +117,6 @@ def prepare_user_pods(user_count):
         # Prepare the container image
         #
 
-        apply_prefer_pr()
-
         parallel.delayed(prepare_base_image_container, namespace)
 
         #

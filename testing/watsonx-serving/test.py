@@ -84,24 +84,22 @@ def test_ci():
         run.run("echo hello world")
         return
 
-    if test_mode == "e2e":
-        test_e2e.test_ci()
-        return
-
-    assert test_mode == "scale"
-
     do_visualize = config.ci_artifacts.get_config("tests.visualize")
 
     try:
         test_artifact_dir_p = [None]
-        _run_test(test_artifact_dir_p=test_artifact_dir_p)
+        if test_mode == "e2e":
+            test_e2e.test_ci()
+            test_artifact_dir_p[0] = env.ARTIFACT_DIR
+        else:
+            assert test_mode == "scale"
+            _run_test(test_artifact_dir_p=test_artifact_dir_p)
     finally:
         try:
             if not do_visualize:
                 logging.info("Not generating the visualization because it isn't activated.")
             elif test_artifact_dir_p[0] is not None:
-                next_count = env.next_artifact_index()
-                with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
+                with env.NextArtifactDir("plots"):
                     visualize.prepare_matbench()
                     generate_plots(test_artifact_dir_p[0])
             else:
@@ -194,8 +192,33 @@ def cleanup_cluster():
 
 @entrypoint(ignore_secret_path=True)
 def generate_plots(results_dirname):
-    visualize.generate_from_dir(str(results_dirname))
+    try:
+        main_workload = config.ci_artifacts.get_config("matbench.workload")
+        with env.NextArtifactDir(f"{main_workload}_plots"):
+            visualize.generate_from_dir(str(results_dirname))
+    finally:
+        prom_workload = config.ci_artifacts.get_config("tests.prom_plot_workload")
+        if not prom_workload:
+            logging.info(f"Setting tests.prom_plot_workload isn't set, nothing else to generate.")
+            return
 
+        with config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload):
+            visualize.prepare_matbench()
+
+            for prom_dir in pathlib.Path(results_dirname).glob("**/.matbench_prom_db_dir"):
+                current_results_dirname = prom_dir.parent
+                if current_results_dirname == results_dirname: continue
+                dirname = current_results_dirname.name
+
+                with env.NextArtifactDir(f"{prom_workload}__{dirname}"):
+                    logging.info(f"Generating the plots with workload={prom_workload} for {current_results_dirname}")
+                    visualize.generate_from_dir(str(current_results_dirname))
+
+            with env.NextArtifactDir(f"{prom_workload}__all"):
+                logging.info(f"Generating the plots with workload={prom_workload}")
+                visualize.generate_from_dir(str(results_dirname))
+
+    logging.info(f"Plots have been generated in {env.ARTIFACT_DIR}")
 
 @entrypoint()
 def _prepare_watsonx_serving():

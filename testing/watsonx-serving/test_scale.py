@@ -15,8 +15,7 @@ def test(test_artifact_dir_p=None):
     if dry_mode:
         capture_prom = False
 
-    next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__scale_test"):
+    with env.NextArtifactDir("scale_test"):
         if test_artifact_dir_p is not None:
             test_artifact_dir_p[0] = env.ARTIFACT_DIR
 
