@@ -67,6 +67,12 @@
 - name: Create the CI Job
   command: oc apply -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
 
+- name: Inform about the next task
+  debug:
+    msg: |
+      The next task waits for the completion of the local-ci command '{{ local_ci_run_multi_ci_command }}'
+      Watch the progress with this command: oc get pods -ljob-name={{ local_ci_run_multi_job_name }} -n {{ local_ci_run_multi_namespace }}
+
 - name: Wait for the CI Job to start
   shell:
     oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
