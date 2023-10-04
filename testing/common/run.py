@@ -9,8 +9,9 @@ import joblib
 
 from . import env
 
-# create new process group, become its leader
-os.setpgrp()
+# create new process group, become its leader, except if we're already pid 1 (defactor group leader, setpgrp gets permission denied error)
+if os.getpid() != 1:
+    os.setpgrp()
 
 def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None, stdin_file=None, log_command=True):
     if log_command:
