@@ -171,6 +171,11 @@ create_cluster() {
     fi
     echo "$time_to_live" > "${ARTIFACT_DIR}/${cluster_role}_TimeToLive_tag"
 
+    use_spot=""
+    if test_config clusters.create.ocp.workers.spot; then
+        use_spot=y
+    fi
+
     # ensure that the cluster's 'metadata.json' is copied
     # to the CONFIG_DEST_DIR even in case of errors
     trap "save_install_artifacts error" ERR SIGTERM SIGINT
@@ -182,7 +187,7 @@ create_cluster() {
           CLUSTER_NAME="${cluster_name}" \
           METADATA_JSON_DEST="${CONFIG_DEST_DIR}/${cluster_role}_ocp_metadata.json" \
           DIFF_TOOL= \
-          USE_SPOT= \
+          USE_SPOT=$use_spot \
           USE_FIPS="${cluster_use_fips}" \
           MACHINE_TAGS="${machine_tags}" \
          | grep --line-buffered -v 'password\|X-Auth-Token\|UserData:' > "${ARTIFACT_DIR}/${cluster_role}_ocp_install.log"
