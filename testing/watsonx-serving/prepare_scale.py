@@ -107,13 +107,12 @@ def scale_up_sutest():
 
 
 def cluster_scale_up():
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
 
     with run.Parallel("cluster_scale_up") as parallel:
-        namespace = config.ci_artifacts.get_config("base_image.namespace")
-        user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
         parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
-
-        parallel.delayed(prepare_sutest)
+        parallel.delayed(scale_up_sutest)
 
 
 def cluster_scale_down():
