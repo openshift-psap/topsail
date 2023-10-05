@@ -192,21 +192,27 @@ def deploy_and_test_models_sequentially(locally=False):
     run.run(f"./run_toolbox.py watsonx_serving undeploy_model --namespace {namespace} --all")
 
     exc = None
+    failed = []
     for consolidated_model in consolidated_models:
         with env.NextArtifactDir(consolidated_model['name']):
             try:
                 deploy_consolidated_model(consolidated_model)
                 run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
                 launch_test_consolidated_model(consolidated_model)
-            finally:
-                # flag file for watsonx-serving-prom visualization
-                with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-                    print(consolidated_model['name'], file=f)
+            except Exception as e:
+                failed += [consolidated_model['name']]
+                exc = e
 
-                exc = None
-                run_and_catch(exc, run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
-                run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
-                if exc: raise exc
+            # flag file for watsonx-serving-prom visualization
+            with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
+                print(consolidated_model['name'], file=f)
+
+            run_and_catch(exc, run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+            run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
+
+    if failed:
+        logging.fatal(f"deploy_and_test_models_sequentially: {len(failed)} tests failed :/ {' '.join(failed)}")
+        raise exc
 
 
 def test_models_concurrently():
