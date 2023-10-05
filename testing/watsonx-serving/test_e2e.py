@@ -208,6 +208,7 @@ def deploy_and_test_models_sequentially(locally=False):
                 print(consolidated_model['name'], file=f)
 
             run_and_catch(exc, run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+            run_and_catch(exc, run.run, f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
             run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
     if failed:
