@@ -338,7 +338,6 @@ def launch_test_consolidated_model(consolidated_model):
             settings = dict(
                 e2e_test=True,
                 model_name=consolidated_model['name'],
-                model_id=consolidated_model['id'],
             )
             yaml.dump(settings, f, indent=4)
 
