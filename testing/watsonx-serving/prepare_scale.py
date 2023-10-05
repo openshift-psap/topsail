@@ -123,7 +123,7 @@ def cluster_scale_down():
         parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=driver --extra \"{extra}\"")
 
 
-def consolidate_model_config(config_location=None, _model_name=None, index=None, show=True, save=True):
+def consolidate_model_config(config_location=None, _model_name=None, index=None, show=True):
     # test = <config_location>
     test_config = config.ci_artifacts.get_config(config_location) if config_location \
         else {}
@@ -174,13 +174,8 @@ def consolidate_model_config(config_location=None, _model_name=None, index=None,
     if config_location:
         config.ci_artifacts.set_config(config_location, model_config)
 
-    if show or save:
+    if show:
         dump = yaml.dump(model_config,  default_flow_style=False, sort_keys=False).strip()
-        if show:
-            logging.info(f"Consolidated configuration for model '{model_name}':\n{dump}")
-
-        if save:
-            with open(env.ARTIFACT_DIR / "model_config.yaml", "w") as f:
-                print(dump, file=f)
+        logging.info(f"Consolidated configuration for model '{model_name}':\n{dump}")
 
     return model_config
