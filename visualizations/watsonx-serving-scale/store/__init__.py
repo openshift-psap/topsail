@@ -22,7 +22,7 @@ from ..models import lts as models_lts
 store.register_lts_schema(models_lts.Payload)
 
 def is_mandatory_file(filename):
-    return filename.name in ("settings", "exit_code", "config.yaml") or filename.name.startswith("settings.")
+    return filename.name in ("settings", "exit_code", "config.yaml", ".matbench_prom_db_dir") or filename.name.startswith("settings.")
 
 
 def is_important_file(filename):

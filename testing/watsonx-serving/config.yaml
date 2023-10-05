@@ -42,23 +42,26 @@ ci_presets:
     extends: [e2e_gpu]
     tests.e2e.perf_mode: true
     matbench.workload: watsonx-serving-llm-perf
+    gpu.time_sharing.replicas: 1
+    clusters.sutest.compute.machineset.count: 1
 
   e2e:
     tests.mode: e2e
     base_image.extend.local_dockerfile_path: testing/watsonx-serving/images/Containerfile.e2e_test_user
     base_image.extend.tag: e2e-test-user
+    gpu.time_sharing.replicas: 1
 
   e2e_gpu:
     extends: [e2e]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g5.2xlarge
 
-  e2e_test_t5_large:
-    extends: [e2e, e2e_gpu]
-    gpu.time_sharing.replicas: 1
-    clusters.sutest.compute.machineset.count: 1
+  e2e_models:
     tests.e2e.models:
     - flan-t5-large-gpu
+    - flan-t5-small-gpu
+    - bloom-560m
+    - mpt-7b-instruct2
 
   # ---
 
@@ -135,7 +138,7 @@ clusters:
       machineset:
         name: workload-pods
         type: g5.2xlarge
-        count: 1
+        count: null
         disk_size: 400 # GB for the root partition
         taint:
           key: only-workload-pods
@@ -229,7 +232,7 @@ watsonx_serving:
 gpu:
   prepare_cluster: true
   time_sharing:
-    replicas: 17
+    replicas: 1
 
 tests:
   mode: e2e

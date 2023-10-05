@@ -152,6 +152,12 @@
     delay: 10
     until: inference_service_pod_name.stdout | length > 0
 
+  - name: Inform about the next task
+    debug:
+      msg: |
+        The next tasks wait for loading of the InferenceService Pod
+        Watch the progress with this command: oc get pods -n {{ watsonx_serving_deploy_model_namespace }} -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
+
   - name: Wait for the InferenceService Pod to be scheduled
     command:
       oc get pod

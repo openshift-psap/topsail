@@ -5,4 +5,5 @@ visualize:
   - "report: User Progress"
   - "report: User Progress Details"
   - "report: Sutest Cluster CPU/Memory Usage"
+  - "report: GPU Usage"
   - "report: Control Plane Nodes Load"

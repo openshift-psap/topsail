@@ -189,7 +189,7 @@ def deploy_and_test_models_sequentially(locally=False):
     for consolidated_model in consolidated_models:
         with env.NextArtifactDir(consolidated_model['name']):
             try:
-                launch_deploy_consolidated_model(consolidated_model)
+                deploy_consolidated_model(consolidated_model)
                 run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
                 launch_test_consolidated_model(consolidated_model)
             finally:

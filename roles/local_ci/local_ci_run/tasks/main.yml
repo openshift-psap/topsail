@@ -46,6 +46,12 @@
   fail: msg="Init Pod crashed :/"
   when: wait_pod_start.stdout == "Init:Error"
 
+- name: Inform about the next task
+  debug:
+    msg: |
+      The next task waits for the completion of the local-ci command '{{ local_ci_run_ci_command }}'
+      Watch the progress with this command: oc logs -f {{ local_ci_run_pod_name }} -n {{ local_ci_run_namespace }}
+
 - name: Wait for the main container to finish running
   shell:
     set -o pipefail;

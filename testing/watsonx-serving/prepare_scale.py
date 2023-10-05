@@ -82,6 +82,9 @@ def scale_compute_sutest_node_requirement():
 
 
 def e2e_compute_sutest_node_requirement():
+    if config.ci_artifacts.get_config("tests.e2e.perf_mode"):
+        return 1
+
     return len(config.ci_artifacts.get_config("tests.e2e.models"))
 
 def scale_up_sutest():
@@ -89,7 +92,10 @@ def scale_up_sutest():
         return
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode == "scale":
+    node_count = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.count")
+    if node_count is not None:
+        logging.info(f"Using the sutest node count from the configuration: {node_count}")
+    elif test_mode == "scale":
         node_count = scale_compute_sutest_node_requirement()
     elif test_mode == "e2e":
         node_count = e2e_compute_sutest_node_requirement()
