@@ -4,7 +4,7 @@ secret_key: flan-t5-large
 
 serving_runtime:
   resource_request:
-    cpu: 2
+    cpu: 1.5
     memory: 8 # in Gi
     nvidia.com/gpu: 7 # in Gi of GPU memory
   extra_env:

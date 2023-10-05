@@ -89,8 +89,8 @@ def test_ci():
     try:
         test_artifact_dir_p = [None]
         if test_mode == "e2e":
-            test_e2e.test_ci()
             test_artifact_dir_p[0] = env.ARTIFACT_DIR
+            test_e2e.test_ci()
         else:
             assert test_mode == "scale"
             _run_test(test_artifact_dir_p=test_artifact_dir_p)

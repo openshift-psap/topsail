@@ -41,7 +41,7 @@ def consolidate_model(index, name=None, show=True):
     return prepare_scale.consolidate_model_config(_model_name=model_name, index=index, show=show)
 
 
-def consolidate_models(index=None, use_job_index=False, model_name=None, namespace=None):
+def consolidate_models(index=None, use_job_index=False, model_name=None, namespace=None, save=True):
     consolidated_models = []
     if index is not None and model_name:
         consolidated_models.append(consolidate_model(index, model_name))
@@ -63,6 +63,12 @@ def consolidate_models(index=None, use_job_index=False, model_name=None, namespa
             consolidated_model["namespace"] = namespace
 
     config.ci_artifacts.set_config("tests.e2e.consolidated_models", consolidated_models)
+
+    if save:
+        dump = yaml.dump(consolidated_models,  default_flow_style=False, sort_keys=False).strip()
+
+        with open(env.ARTIFACT_DIR / "consolidated_models.yaml", "w") as f:
+            print(dump, file=f)
 
     return consolidated_models
 
@@ -332,7 +338,6 @@ def launch_test_consolidated_model(consolidated_model):
             settings = dict(
                 e2e_test=True,
                 model_name=consolidated_model['name'],
-                model_id=consolidated_model['id'],
             )
             yaml.dump(settings, f, indent=4)
 

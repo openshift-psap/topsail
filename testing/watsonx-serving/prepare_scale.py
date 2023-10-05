@@ -107,23 +107,25 @@ def scale_up_sutest():
 
 
 def cluster_scale_up():
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
 
     with run.Parallel("cluster_scale_up") as parallel:
-        namespace = config.ci_artifacts.get_config("base_image.namespace")
-        user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
         parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
-
-        parallel.delayed(prepare_sutest)
+        parallel.delayed(scale_up_sutest)
 
 
 def cluster_scale_down():
+    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+        return
+
     extra = dict(scale=1)
     with run.Parallel("cluster_scale_down") as parallel:
         parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=sutest --extra \"{extra}\"")
         parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=driver --extra \"{extra}\"")
 
 
-def consolidate_model_config(config_location=None, _model_name=None, index=None, show=True, save=True):
+def consolidate_model_config(config_location=None, _model_name=None, index=None, show=True):
     # test = <config_location>
     test_config = config.ci_artifacts.get_config(config_location) if config_location \
         else {}
@@ -174,13 +176,8 @@ def consolidate_model_config(config_location=None, _model_name=None, index=None,
     if config_location:
         config.ci_artifacts.set_config(config_location, model_config)
 
-    if show or save:
+    if show:
         dump = yaml.dump(model_config,  default_flow_style=False, sort_keys=False).strip()
-        if show:
-            logging.info(f"Consolidated configuration for model '{model_name}':\n{dump}")
-
-        if save:
-            with open(env.ARTIFACT_DIR / "model_config.yaml", "w") as f:
-                print(dump, file=f)
+        logging.info(f"Consolidated configuration for model '{model_name}':\n{dump}")
 
     return model_config
