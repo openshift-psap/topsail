@@ -161,15 +161,15 @@ create_cluster() {
     launch_time=$(date "+%Y/%m/%d %H:%M:%S %Z")
     machine_tags=$(echo "$machine_tags" | jq ". += {LaunchTime: \"$launch_time\"}" --compact-output)
 
-    duration=$(echo "$machine_tags" | jq .Duration)
-    if [[ "$duration" == null ]]; then
-        duration="12 hours"
-        echo "WARNING: 'Duration' tag not found. Setting the default duration: $duration"
-        machine_tags=$(echo "$machine_tags" | jq ". += {Duration: \"$duration\"}" --compact-output)
+    time_to_live=$(echo "$machine_tags" | jq .TimeToLive)
+    if [[ "$time_to_live" == null ]]; then
+        time_to_live="12 hours"
+        echo "WARNING: 'TimeToLive' tag not found. Setting the default duration: $time_to_live"
+        machine_tags=$(echo "$machine_tags" | jq ". += {TimeToLive: \"$time_to_live\"}" --compact-output)
     else
-        echo "INFO: Found the 'Duration' tag: '$duration'"
+        echo "INFO: Found the 'TimeToLive' tag: '$time_to_live'"
     fi
-    echo "$duration" > "${ARTIFACT_DIR}/${cluster_role}_duration_tag"
+    echo "$time_to_live" > "${ARTIFACT_DIR}/${cluster_role}_TimeToLive_tag"
 
     # ensure that the cluster's 'metadata.json' is copied
     # to the CONFIG_DEST_DIR even in case of errors
