@@ -41,6 +41,20 @@ prepare_deploy_cluster_subproject() {
     fi
 }
 
+cluster_cost_command() {
+    local cluster_tag=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
+    local cluster_ticket=$(get_config clusters.create.ocp.tags.TicketId)
+
+    if [[ "$cluster_ticket" == null || -z "$cluster_ticket" ]]; then
+        echo "No TicketId, cannot check its cost" > "${ARTIFACT_DIR}/no_ticket_id"
+        return
+    fi
+
+    cat <<EOF
+curl -k -Ssf https://elasticsearch.intlab.perf-infra.lab.eng.rdu2.redhat.com/cloud-governance-resource-orchestration/_doc/${cluster_ticket}?pretty=true | jq '._source.cluster_cost["${cluster_tag}"]'
+EOF
+}
+
 create_cluster() {
     local cluster_role=$1
 
@@ -183,6 +197,8 @@ create_cluster() {
        "$KUBECONFIG"
 
     save_install_artifacts success
+
+    cluster_cost_command > "${ARTIFACT_DIR}/${cluster_role}__cluster_cost.cmd"
 }
 
 
