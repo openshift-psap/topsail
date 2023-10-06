@@ -63,6 +63,15 @@ ci_presets:
     - bloom-560m
     - mpt-7b-instruct2
 
+  e2e_dgx_models:
+    tests.e2e.models:
+    - flan-t5-small-cpu
+    - flan-t5-small-gpu
+    - flan-t5-large-gpu
+    - bloom-560m
+    - mpt-7b-instruct2
+    - gpt-neox-20b
+
   # ---
 
   scale_test:

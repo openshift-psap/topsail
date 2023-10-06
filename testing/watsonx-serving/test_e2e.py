@@ -28,7 +28,7 @@ def consolidate_model_namespace(consolidated_model):
     return f"{namespace_prefix}-{model_index}"
 
 
-def consolidate_model(index, name=None, show=True):
+def consolidate_model(index=None, name=None, show=True):
     if name is None:
         model_list = config.ci_artifacts.get_config("tests.e2e.models")
         if index >= len(model_list):
@@ -43,7 +43,9 @@ def consolidate_model(index, name=None, show=True):
 
 def consolidate_models(index=None, use_job_index=False, model_name=None, namespace=None, save=True):
     consolidated_models = []
-    if index is not None and model_name:
+    if model_name and namespace:
+        consolidated_models.append(consolidate_model(name=model_name))
+    elif index is not None and model_name:
         consolidated_models.append(consolidate_model(index, model_name))
     elif index is not None:
         consolidated_models.append(consolidate_model(index))
@@ -201,6 +203,8 @@ def deploy_and_test_models_sequentially(locally=False):
                 launch_test_consolidated_model(consolidated_model)
             except Exception as e:
                 failed += [consolidated_model['name']]
+                with open(env.ARTIFACT_DIR / "FAILED") as f:
+                    print(f"{consolidated_model['name']} failed: {e.__class__.__name__}: {e}", file=f)
                 exc = e
 
             # flag file for watsonx-serving-prom visualization
@@ -223,14 +227,14 @@ def test_models_concurrently():
     run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_concurrently ./run_toolbox.py from_config local_ci run_multi --suffix test_concurrently")
 
 
-def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None):
+def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None, namespace: str = None):
     "Tests one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
 
     if use_job_index:
         with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
             yaml.dump(dict(mode="concurrent"), f, indent=4)
 
-    consolidate_models(index=index, use_job_index=True, model_name=model_name)
+    consolidate_models(index=index, use_job_index=True, model_name=model_name, namespace=namespace)
     test_consolidated_models()
 
 # ---
