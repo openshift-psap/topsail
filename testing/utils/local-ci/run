@@ -102,6 +102,10 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
     """
     namespace = get_config("base_image.namespace")
 
+    if pr_config and not pathlib.Path(pr_config).exists():
+        logging.fatal(f"--pr-config={pr_config} config file does not exist, aborting.")
+        sys.exit(1)
+
     try:
         logging.info("Checking if `git diff` is clean ...")
         run("git diff --quiet")
