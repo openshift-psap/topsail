@@ -28,13 +28,13 @@ IMPORTANT_FILES = [
     "000__local_ci__run_multi/ci_job.yaml",
     "000__local_ci__run_multi/prometheus_ocp.t*",
 
-    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/progress_ts.yaml",
-    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/test.exit_code",
-    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/*/_ansible.log",
-    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/004__pipelines__capture_state/pods/*.json",
+    "000__local_ci__run_multi/artifacts/ci-pod-*/progress_ts.yaml",
+    "000__local_ci__run_multi/artifacts/ci-pod-*/test.exit_code",
+    "000__local_ci__run_multi/artifacts/ci-pod-*/*/_ansible.log",
+    "000__local_ci__run_multi/artifacts/ci-pod-*/004__pipelines__capture_state/pods/*.json",
 
-    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/applications.json",
-    "000__local_ci__run_multi/ci-pods_artifacts/ci-pod-*/deployments.json",
+    "000__local_ci__run_multi/artifacts/ci-pod-*/applications.json",
+    "000__local_ci__run_multi/artifacts/ci-pod-*/deployments.json",
 
     "001__rhods__capture_state/nodes.json",
     "001__rhods__capture_state/ocp_version.yml",
@@ -292,7 +292,7 @@ def _parse_user_ansible_progress(dirname, ci_pod_dir):
 def _parse_user_data(dirname, user_count):
     user_data = {}
     for user_id in range(user_count):
-        ci_pod_dirname = dirname / "000__local_ci__run_multi" / "ci-pods_artifacts" / f"ci-pod-{user_id}"
+        ci_pod_dirname = dirname / "000__local_ci__run_multi" / "artifacts" / f"ci-pod-{user_id}"
         if not ci_pod_dirname.exists():
             user_data[user_id] = None
             logging.warning(f"No user directory collector for user #{user_id}")
