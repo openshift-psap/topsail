@@ -13,6 +13,7 @@ sutest/cluster set_scale:
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
 {% endif %}
   disk_size: {{ clusters.sutest.compute.machineset.disk_size }}
+  spot: {{ clusters.sutest.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 #
@@ -72,6 +73,7 @@ driver/cluster set_scale:
 {% if clusters.driver.compute.dedicated %}
   taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
 {% endif %}
+  spot: {{ clusters.driver.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 driver/cluster set_project_annotation/test_node_selector:

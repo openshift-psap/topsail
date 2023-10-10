@@ -8,6 +8,8 @@ ci_presets:
     clusters.create.type: single
 
   keep:
+    extends: [spot_cluster]
+
     clusters.create.keep: true
     clusters.create.ocp.tags.Project: PSAP/Watsonx/serving/scale/home-dev
     clusters.create.ocp.tags.TicketId: 229
@@ -35,6 +37,14 @@ ci_presets:
 
   kubemark:
     tests.mode: kubemark
+
+  spot_compute:
+    clusters.sutest.compute.machineset.spot: true
+    clusters.driver.compute.machineset.spot: true
+
+  spot_cluster:
+    extends: [spot_compute]
+    clusters.create.ocp.workers.spot: true
 
   # ---
 
@@ -137,6 +147,7 @@ clusters:
       workers:
         type: m6a.2xlarge
         count: 2
+        spot: false
 
   sutest:
     is_metal: false
@@ -149,6 +160,7 @@ clusters:
         type: g5.2xlarge
         count: null
         disk_size: 400 # GB for the root partition
+        spot: false
         taint:
           key: only-workload-pods
           value: "yes"
@@ -162,6 +174,7 @@ clusters:
         name: test-pods
         type: m6i.2xlarge
         count: null
+        spot: false
         taint:
           key: only-test-pods
           value: "yes"
