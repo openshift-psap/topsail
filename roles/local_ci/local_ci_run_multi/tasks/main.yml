@@ -160,7 +160,7 @@
 
 - name: Create the CI Pod logs directory
   file:
-    path: "{{ artifact_extra_logs_dir }}/ci-pods_logs"
+    path: "{{ artifact_extra_logs_dir }}/logs"
     state: directory
     mode: '0755'
 
@@ -179,7 +179,7 @@
     oc logs {{ item }}
          --all-containers --prefix
          -n {{ local_ci_run_multi_namespace }}
-         > "{{ artifact_extra_logs_dir }}/ci-pods_logs/$(basename "{{ item }}").log"
+         > "{{ artifact_extra_logs_dir }}/logs/$(basename "{{ item }}").log"
   loop: "{{ pod_names_cmd.stdout_lines }}"
   ignore_errors: true
   # mute to reduce the log length
