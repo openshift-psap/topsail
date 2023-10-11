@@ -168,6 +168,8 @@ class LatencyDetails():
                                           xanchor="left",
                                           x=0.01))
 
+        if cfg__entry:
+            fig.layout.update(showlegend=False)
 
         return fig, ""
 
