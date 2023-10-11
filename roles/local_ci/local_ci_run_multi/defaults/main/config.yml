@@ -51,10 +51,6 @@ local_ci_run_multi_use_local_config: true
 # Type: Bool
 local_ci_run_multi_capture_prom_db: true
 
-# If True, captures the RHODS Prometheus DB.
-# Type: Bool
-local_ci_run_multi_capture_rhods_prom_db: false
-
 # If True, update the repo in the image with the latest version of the build ref before running the command in the Pods.
 # Type: Bool
 local_ci_run_multi_git_pull: false
