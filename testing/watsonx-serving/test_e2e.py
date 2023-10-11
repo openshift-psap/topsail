@@ -331,8 +331,12 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     test_scale.prepare_user_sutest_namespace(namespace)
     test_scale.deploy_storage_configuration(namespace)
 
-    run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
-
+    try:
+        run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
+    except Exception as e:
+        logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
+        run_and_catch(exc, run.run, f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
+        raise e
 
 def undeploy_consolidated_model(consolidated_model, namespace=None):
     if namespace is None:
