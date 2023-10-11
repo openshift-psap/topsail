@@ -5,6 +5,7 @@ metadata:
     serving.knative.openshift.io/enablePassthrough: "true"
     sidecar.istio.io/inject: "true"
     sidecar.istio.io/rewriteAppHTTPProbers: "true"
+    serving.kserve.io/enable-prometheus-scraping: "true"
   name: {{ watsonx_serving_deploy_model_inference_service_name }}
   namespace: {{ watsonx_serving_deploy_model_namespace }}
 spec:
