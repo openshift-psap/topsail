@@ -262,7 +262,7 @@ def launch_deploy_consolidated_model(consolidated_model):
         deploy_consolidated_model(consolidated_model)
 
 
-def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None, delete_others=None):
+def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None, delete_others=None, limits_equals_requests=None):
     logging.info(f"Deploying model '{consolidated_model['name']}'")
 
     model_name = consolidated_model["name"]
@@ -285,6 +285,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     if delete_others is None:
         delete_others = config.ci_artifacts.get_config("tests.e2e.delete_others")
 
+    if limits_equals_requests is None:
+        limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
+
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
@@ -302,7 +305,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
         mute_serving_logs=mute_logs,
         delete_others=delete_others,
-        limits_equals_requests=config.ci_artifacts.get_config("tests.e2e.limits_equals_requests"),
+        limits_equals_requests=limits_equals_requests,
     )
 
     # optional fields
