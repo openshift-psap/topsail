@@ -102,6 +102,10 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
     """
     namespace = get_config("base_image.namespace")
 
+    if pr_config and not pathlib.Path(pr_config).exists():
+        logging.fatal(f"--pr-config={pr_config} config file does not exist, aborting.")
+        sys.exit(1)
+
     try:
         logging.info("Checking if `git diff` is clean ...")
         run("git diff --quiet")
@@ -109,7 +113,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
     except subprocess.CalledProcessError:
         diff_is_clean = False
         if check_clean_diff:
-            logging.error(f"Git diff isn't clean, bailing out.")
+            logging.fatal(f"Git diff isn't clean, bailing out.")
             logging.info("Pass the flag --check-clean-diff=False to bypass this.")
             sys.exit(1)
         else:
@@ -122,13 +126,13 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
         if not diff_is_clean:
             logging.warning(f"Git branch isn't in sync with its upstream branch.")
         elif check_branch_synced:
-            logging.error(f"Git branch isn't in sync with its upstream branch.")
+            logging.fatal(f"Git branch isn't in sync with its upstream branch.")
             logging.info("Pass the flag --check-branch-synced=False or --check-clean-diff=False to bypass this.")
             sys.exit(1)
 
     workloads = get_config("workloads")
     if not workload in workloads:
-        logging.error(f"Invalid workload '{workload}'. Must be in {', '.join(workloads.keys())}")
+        logging.fatal(f"Invalid workload '{workload}'. Must be in {', '.join(workloads.keys())}")
         sys.exit(1)
 
     env_ci_artifact_base_dir = pathlib.Path(os.environ.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
@@ -139,7 +143,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
 
     _test_args = test_args or workload_data.get("test_args", []) or []
     if isinstance(test_args, str):
-        logging.error(f"Invalid test args {_test_args} for workload {workload}. Expected a list of strings. In the CLI, add [] around the single element if needed.")
+        logging.fatal(f"Invalid test args {_test_args} for workload {workload}. Expected a list of strings. In the CLI, add [] around the single element if needed.")
         sys.exit(1)
 
     test_args = list(_test_args)
@@ -150,7 +154,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
     ts_id = datetime.datetime.now().strftime("%Y%m%d_%H%M")
 
     if step and step not in workload_data["steps"]:
-        logging.error(f"Invalid step name {step} for workload {workload}. Expected one of '{', '.join(workload_data['steps'])}'")
+        logging.fatal(f"Invalid step name {step} for workload {workload}. Expected one of '{', '.join(workload_data['steps'])}'")
         sys.exit(1)
 
     steps = workload_data["steps"] \
@@ -159,7 +163,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
     try:
         logging.info(f"Checking that no Pod is running in {namespace} ...")
         run(f"oc get pod --field-selector=status.phase==Running -oname -n {namespace} | grep .")
-        logging.error(f"Found Pods running in {namespace}, bailing out.")
+        logging.fatal(f"Found Pods running in {namespace}, bailing out.")
         sys.exit(1)
     except subprocess.CalledProcessError:
         pass
@@ -202,7 +206,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
             failed.append(step_dirname)
 
     if failed:
-        logging.error(f"Steps [{', '.join(failed)}] of workload '{workload}' failed :/")
+        logging.fatal(f"Steps [{', '.join(failed)}] of workload '{workload}' failed :/")
         sys.exit(1)
 
 class LocalCi:

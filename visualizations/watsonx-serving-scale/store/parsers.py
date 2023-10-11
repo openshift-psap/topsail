@@ -35,11 +35,11 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci_job.yaml",
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/prometheus_ocp.t*",
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/success_count",
-    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/progress_ts.yaml",
-    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/test.exit_code",
-    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/test.exit_code",
-    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/*__watsonx_serving__capture_state/serving.json",
-    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci-pods_artifacts/ci-pod-*/*__watsonx_serving__validate_model_caikit-isvc-u*-m*/caikit-isvc-u*-m*/call_*.json",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/artifacts/ci-pod-*/progress_ts.yaml",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/artifacts/ci-pod-*/test.exit_code",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/artifacts/ci-pod-*/test.exit_code",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/artifacts/ci-pod-*/*__watsonx_serving__capture_state/serving.json",
+    f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/artifacts/ci-pod-*/*__watsonx_serving__validate_model_caikit-isvc-u*-m*/caikit-isvc-u*-m*/call_*.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
     f"{artifact_dirnames.WATSONX_SERVING_CAPTURE_OPERATORS_STATE_DIR}/rhods.createdAt",
@@ -317,7 +317,7 @@ def _parse_user_progress(dirname, ci_pod_dir):
 def _parse_user_data(dirname, user_count):
     user_data = {}
     for user_id in range(user_count):
-        ci_pod_dirname = artifact_paths.LOCAL_CI_RUN_MULTI_DIR / "ci-pods_artifacts" / f"ci-pod-{user_id}"
+        ci_pod_dirname = artifact_paths.LOCAL_CI_RUN_MULTI_DIR / "artifacts" / f"ci-pod-{user_id}"
         ci_pod_dirpath = dirname / ci_pod_dirname
         if not (dirname / ci_pod_dirname).exists():
             user_data[user_id] = None

@@ -203,7 +203,7 @@ def deploy_and_test_models_sequentially(locally=False):
                 launch_test_consolidated_model(consolidated_model)
             except Exception as e:
                 failed += [consolidated_model['name']]
-                with open(env.ARTIFACT_DIR / "FAILED") as f:
+                with open(env.ARTIFACT_DIR / "FAILED", "w") as f:
                     print(f"{consolidated_model['name']} failed: {e.__class__.__name__}: {e}", file=f)
                 exc = e
 
@@ -292,6 +292,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
         mute_serving_logs=mute_logs,
         delete_others=delete_others,
+        limits_equals_requests=config.ci_artifacts.get_config("tests.e2e.limits_equals_requests"),
     )
 
     # optional fields

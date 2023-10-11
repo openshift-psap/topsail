@@ -25,46 +25,88 @@ def _get_test_setup(entry):
     setup_info = []
 
     artifacts_basedir = entry.results.from_local_env.artifacts_basedir
-
+    setup_info += ["Test settings", html.Code(" ".join([f"{k}={v}" for k,v in entry.settings.__dict__.items()]))]
     if artifacts_basedir:
         setup_info += [html.Li(html.A("Results artifacts", href=str(artifacts_basedir), target="_blank"))]
 
     else:
         setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE ({entry.results.from_local_env.source_url})")]
 
-    managed = list(entry.results.cluster_info.control_plane)[0].managed \
-        if entry.results.cluster_info.control_plane else False
-
-    sutest_ocp_version = entry.results.sutest_ocp_version
-
-
-    setup_info += [html.Li(["Test running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
-
-    nodes_info = [
-        html.Li([f"Total of {len(entry.results.cluster_info.node_count)} nodes in the cluster"]),
-    ]
-
-    for purpose in ["control_plane", "infra"]:
-        nodes = entry.results.cluster_info.__dict__.get(purpose)
-
-        purpose_str = f" {purpose} nodes"
-        if purpose == "control_plane": purpose_str = f" nodes running OpenShift control plane"
-        if purpose == "infra": purpose_str = " nodes, running the OpenShift and RHODS infrastructure Pods"
-
-        if not nodes:
-            node_count = 0
-            node_type = "n/a"
-        else:
-            node_count = len(nodes)
-            node_type = list(nodes)[0].instance_type
-
-        nodes_info_li = [f"{node_count} ", html.Code(node_type), purpose_str]
-
-        nodes_info += [html.Li(nodes_info_li)]
-
-    setup_info += [html.Ul(nodes_info)]
-
     return setup_info
+
+
+def simplify_error(error):
+    if (partition := error.partition("read tcp"))[1]:
+        simplify = partition[0]
+        simplify += "read tcp: "
+        simplify += partition[2].partition(": ")[2]
+        return simplify
+
+    return error
+
+
+def _get_test_details(entry, args):
+    header = []
+
+    header += [html.H2("Error distribution")]
+
+    llm_data = entry.results.llm_load_test_output
+
+    errorDistribution = defaultdict(int)
+    success_count = 0
+    for idx, block in enumerate(llm_data):
+        error_count = 0
+        for descr, count in block.get("errorDistribution", {}).items():
+            errorDistribution[simplify_error(descr)] += count
+            error_count += count
+        success_count += len(block["details"]) - error_count
+    errorDistribution["success"] = success_count
+
+    header += report.Plot_and_Text(f"Latency details", report.set_config(dict(show_errors=True, entry=entry), args))
+    header += [html.I("Click on the graph to see the error labels in the interactive view.")]
+    header += [html.Br(), html.Br()]
+    header += ["Number of successful calls and error count:"]
+    errors = []
+    for descr, count in sorted(errorDistribution.items()):
+        errors += [html.Li([html.Code(descr), " 🠊 ", f"{count} call{'s' if count > 1 else ''}"])]
+    header += [html.Ul(errors)]
+
+    return header
+
+
+def _get_error_overview(entries, args):
+    ordered_vars, settings, setting_lists, variables, cfg = args
+
+    header = []
+    header += [html.H2("Error overview")]
+
+    errorDistribution = defaultdict(int)
+    for entry in entries:
+        llm_data = entry.results.llm_load_test_output
+        success_count = 0
+        for idx, block in enumerate(llm_data):
+            error_count = 0
+            for descr, count in block.get("errorDistribution", {}).items():
+                errorDistribution[simplify_error(descr)] += count
+                error_count += count
+            success_count += len(block["details"]) - error_count
+        errorDistribution[entry.get_name(variables)] = success_count
+
+    header += report.Plot_and_Text(f"Errors distribution", args)
+    header += [html.I("Click on the graph to see the error labels in the interactive view.")]
+
+    header += report.Plot_and_Text(f"Latency details", report.set_config(dict(only_errors=True), args))
+    header += [html.I("Click on the graph to see the error labels in the interactive view.")]
+    header += [html.Br(), html.Br()]
+    header += ["Number of successful requests for each test, and gobal error count:"]
+
+    errors = []
+    for descr, count in sorted(errorDistribution.items()):
+        errors += [html.Li([html.Code(descr), " 🠊 ", f"{count} call{'s' if count > 1 else ''}"])]
+    header += [html.Ul(errors)]
+
+    return header
+
 
 class ErrorReport():
     def __init__(self):
@@ -76,35 +118,20 @@ class ErrorReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        header = []
+
+        args = ordered_vars, settings, setting_lists, variables, cfg
         if common.Matrix.count_records(settings, setting_lists) != 1:
-            return {}, "ERROR: only one experiment must be selected"
+            header += _get_error_overview(common.Matrix.all_records(settings, setting_lists), args)
 
         for entry in common.Matrix.all_records(settings, setting_lists):
-            pass
+            name = (" of "+entry.get_name(variables)) if variables else ""
+            header += [html.H1(f"Error Report{name}")]
 
-        header = []
-        header += [html.P("This report shows the list of users who failed the test, with a link to their execution report and the last screenshot taken by the Robot.")]
-        header += [html.H1("Error Report")]
+            header += [html.Ul(
+                _get_test_setup(entry)
+            )]
 
-        setup_info = _get_test_setup(entry)
-
-        if entry.results.from_local_env.is_interactive:
-            # running in interactive mode
-            def artifacts_link(path):
-                if path.suffix != ".png":
-                    return f"file://{entry.results.from_local_env.artifacts_basedir / path}"
-                try:
-                    with open (entry.results.from_local_env.artifacts_basedir / path, "rb") as f:
-                        encoded_image = base64.b64encode(f.read()).decode("ascii")
-                        return f"data:image/png;base64,{encoded_image}"
-                except FileNotFoundError:
-                    return f"file://{entry.results.from_local_env.artifacts_basedir / path}#file_not_found"
-        else:
-            artifacts_link = lambda path: entry.results.from_local_env.artifacts_basedir / path
-
-
-        header += [html.Ul(
-            setup_info
-        )]
+            header += _get_test_details(entry, args)
 
         return None, header

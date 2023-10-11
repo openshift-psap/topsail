@@ -58,8 +58,10 @@ spec:
         nvidia.com/gpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] }}"
 {% endif %}
       limits:
+{% if watsonx_serving_deploy_model_limits_equals_requests %}
         cpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.cpu }}"
         memory: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request.memory }}Gi"
+{% endif %}
 {% if watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] %}
         nvidia.com/gpu: "{{ watsonx_serving_deploy_model_serving_runtime_resource_request['nvidia.com/gpu'] }}"
 {% endif %}

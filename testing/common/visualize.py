@@ -142,6 +142,10 @@ def generate_visualization(idx):
     if run.run(f"PATH=$PATH:/tmp/prometheus/bin matbench parse --output-matrix {env.ARTIFACT_DIR}/internal_matrix.json |& tee > {env.ARTIFACT_DIR}/_matbench_parse.log", check=False).returncode != 0:
         raise RuntimeError("Failed to parse the results ...")
 
+    if mode != "prefer_cache":
+        logging.info(f"Parsing done, removing 'MATBENCH_STORE_IGNORE_CACHE' env var")
+        del os.environ["MATBENCH_STORE_IGNORE_CACHE"]
+
     error = False
 
     if config.ci_artifacts.get_config("matbench.generate_lts", False):

@@ -51,6 +51,7 @@ ci_presets:
   e2e_perf:
     extends: [e2e_gpu]
     tests.e2e.perf_mode: true
+    tests.e2e.limits_equals_requests: false
     matbench.workload: watsonx-serving-llm-perf
     gpu.time_sharing.replicas: 1
     clusters.sutest.compute.machineset.count: 1
@@ -281,6 +282,7 @@ tests:
     - flan-t5-small-cpu
     consolidated_models: {} # will be filled at runtime
     request_one_gpu: true
+    limits_equals_requests: true
     delete_others: true
     llm_load_test:
       enabled: true
@@ -288,8 +290,8 @@ tests:
       duration: 5m
       protos_file: nlpservice.proto
       protos_dir: testing/watsonx-serving/protos/
-
       call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+
 matbench:
   preset: null
   workload: watsonx-serving-llm-perf

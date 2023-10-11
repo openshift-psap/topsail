@@ -24,6 +24,7 @@ class Watsonx_Serving:
                      query_data=None,
                      mute_serving_logs=False,
                      delete_others=True,
+                     limits_equals_requests=True,
                      ):
         """
         Deploy a WatsonX-Serving model
@@ -52,6 +53,8 @@ class Watsonx_Serving:
           mute_serving_logs: if True, mute the serving runtime container logs
 
           delete_others: if True, deletes the other serving runtime/inference services of the namespace
+
+          limits_equals_requests: if True, sets use the requests values to define the limits. If False, do not define any limits (except for GPU)
         """
 
         return RunAnsibleRole(locals())

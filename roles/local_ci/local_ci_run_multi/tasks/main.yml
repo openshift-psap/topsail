@@ -160,7 +160,7 @@
 
 - name: Create the CI Pod logs directory
   file:
-    path: "{{ artifact_extra_logs_dir }}/ci-pods_logs"
+    path: "{{ artifact_extra_logs_dir }}/logs"
     state: directory
     mode: '0755'
 
@@ -179,7 +179,7 @@
     oc logs {{ item }}
          --all-containers --prefix
          -n {{ local_ci_run_multi_namespace }}
-         > "{{ artifact_extra_logs_dir }}/ci-pods_logs/$(basename "{{ item }}").log"
+         > "{{ artifact_extra_logs_dir }}/logs/$(basename "{{ item }}").log"
   loop: "{{ pod_names_cmd.stdout_lines }}"
   ignore_errors: true
   # mute to reduce the log length
@@ -194,9 +194,9 @@
   register: minio_podname_cmd
   ignore_errors: true
 
-- name: Create the ci-pods_artifacts directory
+- name: Create the artifacts directory
   file:
-    path: "{{ artifact_extra_logs_dir }}/ci-pods_artifacts"
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
     state: directory
     mode: '0755'
 
@@ -213,15 +213,15 @@
     set -o pipefail
 
     oc -n {{ local_ci_run_multi_minio_namespace }} -c ubi8 \
-       rsync "{{ minio_podname_cmd.stdout }}:/artifacts/to_export/" "{{ artifact_extra_logs_dir }}/ci-pods_artifacts" --quiet
+       rsync "{{ minio_podname_cmd.stdout }}:/artifacts/to_export/" "{{ artifact_extra_logs_dir }}/artifacts" --quiet
 
-    rm -f "{{ artifact_extra_logs_dir }}/ci-pods_artifacts/os-release"
+    rm -f "{{ artifact_extra_logs_dir }}/artifacts/os-release"
   ignore_errors: true
 
 - name: Count how many Pods succeeded
   shell:
     set -o pipefail;
-    (cat "{{ artifact_extra_logs_dir }}"/ci-pods_artifacts/ci-pod-*/test.exit_code || true)
+    (cat "{{ artifact_extra_logs_dir }}"/artifacts/ci-pod-*/test.exit_code || true)
       | (grep '^0$' || true)
       | wc -l
   register: success_count_cmd
