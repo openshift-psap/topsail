@@ -292,6 +292,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
         mute_serving_logs=mute_logs,
         delete_others=delete_others,
+        limits_equals_requests=config.ci_artifacts.get_config("tests.e2e.limits_equals_requests"),
     )
 
     # optional fields
