@@ -114,6 +114,14 @@ cluster deploy_minio_s3_server:
   secret_properties_file: {{ s3_ldap_password_location }}
   bucket_name: {{ base_image.minio.bucket_name }}
 
+cluster reset_prometheus_db/uwm:
+  label: app.kubernetes.io/instance=user-workload,app.kubernetes.io/component=prometheus
+  namespace: openshift-user-workload-monitoring
+
+cluster dump_prometheus_db/uwm:
+  label: app.kubernetes.io/instance=user-workload,app.kubernetes.io/component=prometheus
+  namespace: openshift-user-workload-monitoring
+
 #
 # Test WatsonX Serving scale
 #

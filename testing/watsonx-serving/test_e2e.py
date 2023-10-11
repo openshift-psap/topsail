@@ -161,7 +161,9 @@ def test_models_sequentially(locally=False):
 
 
 def deploy_and_test_models_e2e():
-    run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+    with run.Parallel("reset_prom_db") as parallel:
+        parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+        parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
 
     try:
         deploy_models_concurrently()
@@ -174,7 +176,9 @@ def deploy_and_test_models_e2e():
         with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
             print("e2e", file=f)
 
-        run.run("./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+        with run.Parallel("dump_prom_db") as parallel:
+            parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+            parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null")
 
 
 def deploy_and_test_models_sequentially(locally=False):
@@ -199,7 +203,10 @@ def deploy_and_test_models_sequentially(locally=False):
         with env.NextArtifactDir(consolidated_model['name']):
             try:
                 deploy_consolidated_model(consolidated_model)
-                run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+                with run.Parallel("reset_prom_db") as parallel:
+                    parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+                    parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
+
                 launch_test_consolidated_model(consolidated_model)
             except Exception as e:
                 failed += [consolidated_model['name']]
@@ -211,8 +218,11 @@ def deploy_and_test_models_sequentially(locally=False):
             with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
                 print(consolidated_model['name'], file=f)
 
-            run_and_catch(exc, run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
-            run_and_catch(exc, run.run, f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
+            with run.Parallel("dump_prom_db") as parallel:
+                parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null", check=False)
+                parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null", check=False)
+                parallel.delayed(run.run, f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
+
             run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
     if failed:
