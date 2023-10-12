@@ -177,9 +177,9 @@
       -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
       -n {{ watsonx_serving_deploy_model_namespace }}
     register: inference_service_pod_fetching_cmd
-    # wait 30 minutes
+    # wait 60 minutes
     retries: 60
-    delay: 30
+    delay: 60
     until: inference_service_pod_fetching_cmd.stdout | length > 0
 
   - name: Wait for the InferenceService Pod to initialize the model
