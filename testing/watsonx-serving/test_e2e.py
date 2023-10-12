@@ -202,10 +202,11 @@ def deploy_and_test_models_sequentially(locally=False):
     for consolidated_model in consolidated_models:
         with env.NextArtifactDir(consolidated_model['name']):
             try:
-                deploy_consolidated_model(consolidated_model)
                 with run.Parallel("reset_prom_db") as parallel:
                     parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
                     parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
+
+                deploy_consolidated_model(consolidated_model)
 
                 launch_test_consolidated_model(consolidated_model)
             except Exception as e:
