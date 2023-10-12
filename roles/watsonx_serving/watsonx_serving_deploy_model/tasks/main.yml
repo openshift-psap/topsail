@@ -228,6 +228,8 @@
   always:
   - name: Capture the state of the InferenceService Pod resource
     shell:
+      set -o pipefail;
+
       oc get pod
          -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
          -oyaml
@@ -242,6 +244,10 @@
          -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }}
          -n {{ watsonx_serving_deploy_model_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/predictor-pod.desc
+
+      oc logs $(oc get pod -lserving.kserve.io/inferenceservice={{ watsonx_serving_deploy_model_inference_service_name }} -n {{ watsonx_serving_deploy_model_namespace }} -oname | head -1)
+         -n {{ watsonx_serving_deploy_model_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/predictor-pod.log
     ignore_errors: true
 
   - name: Capture the state of the InferenceService resource
