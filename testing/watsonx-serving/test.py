@@ -205,6 +205,10 @@ def generate_plots(results_dirname):
         with config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload):
             visualize.prepare_matbench()
 
+            with env.NextArtifactDir(f"{prom_workload}__all"):
+                logging.info(f"Generating the plots with workload={prom_workload}")
+                visualize.generate_from_dir(str(results_dirname))
+
             for prom_dir in pathlib.Path(results_dirname).glob("**/.matbench_prom_db_dir"):
                 current_results_dirname = prom_dir.parent
                 if current_results_dirname == results_dirname: continue
@@ -213,10 +217,6 @@ def generate_plots(results_dirname):
                 with env.NextArtifactDir(f"{prom_workload}__{dirname}"):
                     logging.info(f"Generating the plots with workload={prom_workload} for {current_results_dirname}")
                     visualize.generate_from_dir(str(current_results_dirname))
-
-            with env.NextArtifactDir(f"{prom_workload}__all"):
-                logging.info(f"Generating the plots with workload={prom_workload}")
-                visualize.generate_from_dir(str(results_dirname))
 
     logging.info(f"Plots have been generated in {env.ARTIFACT_DIR}")
 
