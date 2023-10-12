@@ -161,7 +161,9 @@ def test_models_sequentially(locally=False):
 
 
 def deploy_and_test_models_e2e():
-    run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+    with run.Parallel("reset_prom_db") as parallel:
+        parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+        parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
 
     try:
         deploy_models_concurrently()
@@ -174,7 +176,9 @@ def deploy_and_test_models_e2e():
         with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
             print("e2e", file=f)
 
-        run.run("./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+        with run.Parallel("dump_prom_db") as parallel:
+            parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
+            parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null")
 
 
 def deploy_and_test_models_sequentially(locally=False):
@@ -199,7 +203,10 @@ def deploy_and_test_models_sequentially(locally=False):
         with env.NextArtifactDir(consolidated_model['name']):
             try:
                 deploy_consolidated_model(consolidated_model)
-                run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+                with run.Parallel("reset_prom_db") as parallel:
+                    parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+                    parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
+
                 launch_test_consolidated_model(consolidated_model)
             except Exception as e:
                 failed += [consolidated_model['name']]
@@ -211,8 +218,11 @@ def deploy_and_test_models_sequentially(locally=False):
             with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
                 print(consolidated_model['name'], file=f)
 
-            run_and_catch(exc, run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
-            run_and_catch(exc, run.run, f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
+            with run.Parallel("dump_prom_db") as parallel:
+                parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null", check=False)
+                parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null", check=False)
+                parallel.delayed(run.run, f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
+
             run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
     if failed:
@@ -252,7 +262,7 @@ def launch_deploy_consolidated_model(consolidated_model):
         deploy_consolidated_model(consolidated_model)
 
 
-def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None, delete_others=None):
+def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None, delete_others=None, limits_equals_requests=None):
     logging.info(f"Deploying model '{consolidated_model['name']}'")
 
     model_name = consolidated_model["name"]
@@ -275,6 +285,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     if delete_others is None:
         delete_others = config.ci_artifacts.get_config("tests.e2e.delete_others")
 
+    if limits_equals_requests is None:
+        limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
+
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
@@ -292,7 +305,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
         mute_serving_logs=mute_logs,
         delete_others=delete_others,
-        limits_equals_requests=config.ci_artifacts.get_config("tests.e2e.limits_equals_requests"),
+        limits_equals_requests=limits_equals_requests,
     )
 
     # optional fields
@@ -318,8 +331,12 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     test_scale.prepare_user_sutest_namespace(namespace)
     test_scale.deploy_storage_configuration(namespace)
 
-    run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
-
+    try:
+        run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
+    except Exception as e:
+        logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
+        run_and_catch(exc, run.run, f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
+        raise e
 
 def undeploy_consolidated_model(consolidated_model, namespace=None):
     if namespace is None:

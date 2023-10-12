@@ -28,6 +28,7 @@ def deploy(
         show=False,
         mute_serving_logs=False,
         delete_other_models=False,
+        limits_equals_requests=False,
         ):
     """
     Deploys a preconfigured model
@@ -41,6 +42,7 @@ def deploy(
       show: if True, only show the model configuration, do not deploy it.
       mute_serving_logs: if True, mutes the stdout logs of the KServe container (to avoid leaking secrets)
       delete_other_models: if True, deletes the other models already deployed in the namespace
+      limits_equals_requests: if True, sets the CPU and memory limits to their request value. If False, do not set them.
     """
 
     model_config = test_e2e.consolidate_model(index, name=(model_name if index is None else None), show=False)
@@ -70,7 +72,7 @@ def deploy(
 
     # ---
 
-    test_e2e.deploy_consolidated_model(model_config, namespace, mute_serving_logs, delete_other_models)
+    test_e2e.deploy_consolidated_model(model_config, namespace, mute_serving_logs, delete_other_models, limits_equals_requests)
 
 
 class Entrypoint:

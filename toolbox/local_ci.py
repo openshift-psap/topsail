@@ -83,7 +83,6 @@ class Local_CI:
                   variable_overrides=None,
                   use_local_config=True,
                   capture_prom_db: bool = True,
-                  capture_rhods_prom_db: bool = False,
                   git_pull: bool = False,
                   state_signal_redis_server=None,
                   sleep_factor=0.0,
@@ -110,7 +109,6 @@ class Local_CI:
             variable_overrides: Optional path to the variable_overrides config file (avoids fetching Github PR json).
             use_local_config: If true, gives the local configuration file ($CI_ARTIFACTS_FROM_CONFIG_FILE) to the Pods.
             capture_prom_db: If True, captures the Prometheus DB of the systems.
-            capture_rhods_prom_db: If True, captures the RHODS Prometheus DB.
             git_pull: If True, update the repo in the image with the latest version of the build ref before running the command in the Pods.
             state_signal_redis_server: Optional address of the Redis server to pass to StateSignal synchronization.
             sleep_factor: Delay (in seconds) between the start of each of the users.

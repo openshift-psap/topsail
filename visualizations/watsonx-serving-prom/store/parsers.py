@@ -21,11 +21,14 @@ SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 artifact_dirnames = types.SimpleNamespace()
-artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_db"
+artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__dump_prom_db/*__cluster__dump_prometheus_db"
+artifact_dirnames.CLUSTER_DUMP_PROM_DB_UWM_DIR = "*__dump_prom_db/*__cluster__dump_prometheus_db_uwm"
 
 IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/nodes.json",
+
+    f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_UWM_DIR}/prometheus.t*",
 ]
 
 def ignore_file_not_found(fn):
@@ -56,6 +59,7 @@ def _extract_metrics(dirname):
 
     METRICS = {
         "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
+        "uwm": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_UWM_DIR / "prometheus.t*"), []),
     }
 
     metrics = {}

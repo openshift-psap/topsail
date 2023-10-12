@@ -1,0 +1,7 @@
+extends: flan-t5-large-gpu
+serving_runtime:
+  resource_request:
+    nvidia.com/gpu: 5 # in Gi of GPU memory
+    memory: 13 # in Gi
+  extra_env:
+    PT2_COMPILE: true
