@@ -55,10 +55,6 @@ class SutestCpuMemoryReport():
 
         header += [html.P("These plots show an overview of the CPU and Memory usage during the execution of the test, for the cluster, the nodes, and various relevant Pods.")]
 
-        header += [html.H2("SUTest Cluster")]
-        header += [report.Plot("Prom: sutest cluster memory usage", args)]
-        header += [report.Plot("Prom: sutest cluster CPU usage", args)]
-
         header += ["These plots show the CPU and memory capacity of the SUTest cluster."]
         header += html.Br()
         header += html.Br()
@@ -69,6 +65,10 @@ class SutestCpuMemoryReport():
             header += [report.Plot(f"Prom: {plot_name}: CPU usage", args)]
             header += [report.Plot(f"Prom: {plot_name}: Mem usage", args)]
 
+
+        header += [html.H2("SUTest Cluster")]
+        header += [report.Plot("Prom: sutest cluster memory usage", args)]
+        header += [report.Plot("Prom: sutest cluster CPU usage", args)]
 
         return None, header
 
