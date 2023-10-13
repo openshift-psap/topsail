@@ -46,6 +46,7 @@ def _get_container_mem(cluster_role, labels):
         {f"{cluster_role}__container_memory__{metric_name}": "container_memory_rss{"+labels_str+"}"},
         {f"{cluster_role}__container_memory_requests__{metric_name}": "kube_pod_container_resource_requests{"+labels_str+",resource='memory'}"},
         {f"{cluster_role}__container_memory_limits__{metric_name}": "kube_pod_container_resource_limits{"+labels_str+",resource='memory'}"},
+        {f"{cluster_role}__container_max_memory__{metric_name}": "container_memory_max_usage_bytes{"+labels_str+"}"},
     ]
 
 def _get_container_cpu_mem(labelss):
