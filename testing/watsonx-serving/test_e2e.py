@@ -329,7 +329,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         args_dict["env_extra_values"] = extra_env
 
     test_scale.prepare_user_sutest_namespace(namespace)
-    test_scale.deploy_storage_configuration(namespace)
+
+    with env.NextArtifactDir("deploy_storage_configuration"):
+        test_scale.deploy_storage_configuration(namespace)
 
     try:
         run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
