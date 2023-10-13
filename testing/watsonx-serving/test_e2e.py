@@ -202,10 +202,11 @@ def deploy_and_test_models_sequentially(locally=False):
     for consolidated_model in consolidated_models:
         with env.NextArtifactDir(consolidated_model['name']):
             try:
-                deploy_consolidated_model(consolidated_model)
                 with run.Parallel("reset_prom_db") as parallel:
                     parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
                     parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
+
+                deploy_consolidated_model(consolidated_model)
 
                 launch_test_consolidated_model(consolidated_model)
             except Exception as e:
@@ -221,7 +222,6 @@ def deploy_and_test_models_sequentially(locally=False):
             with run.Parallel("dump_prom_db") as parallel:
                 parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null", check=False)
                 parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null", check=False)
-                parallel.delayed(run.run, f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
 
             run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
@@ -335,8 +335,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
-        run_and_catch(exc, run.run, f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
         raise e
+    finally:
+        run.run(f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
 
 def undeploy_consolidated_model(consolidated_model, namespace=None):
     if namespace is None:
@@ -422,7 +423,10 @@ def test_consolidated_model(consolidated_model, namespace=None):
         llm_path=llm_config["src_path"],
     )
 
-    run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
+    try:
+        run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
+    finally:
+        run.run(f"./run_toolbox.py watsonx_serving capture_state {namespace} > /dev/null")
 
     return 0
 

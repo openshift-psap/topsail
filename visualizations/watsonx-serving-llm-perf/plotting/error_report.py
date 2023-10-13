@@ -98,7 +98,7 @@ def _get_error_overview(entries, args):
     header += report.Plot_and_Text(f"Latency details", report.set_config(dict(only_errors=True), args))
     header += [html.I("Click on the graph to see the error labels in the interactive view.")]
     header += [html.Br(), html.Br()]
-    header += ["Number of successful requests for each test, and gobal error count:"]
+    header += ["Number of successful requests for each test, and global error count:"]
 
     errors = []
     for descr, count in sorted(errorDistribution.items()):

@@ -9,6 +9,7 @@ import matrix_benchmarking.common as common
 
 def register():
     LatencyReport()
+    TokensReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -96,7 +97,7 @@ class LatencyReport():
         header = []
         header += [html.H1("llm-load-test latency")]
 
-        header += Plot_and_Text(f"Latency", args)
+        header += Plot_and_Text(f"Latency distribution", args)
         header += html.Br()
         header += html.Br()
         header += Plot_and_Text(f"Latency details", args)
@@ -104,5 +105,29 @@ class LatencyReport():
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += [html.H2(entry.get_name(variables))]
             header += Plot_and_Text(f"Latency details", set_config(dict(entry=entry), args))
+
+        return None, header
+
+class TokensReport():
+    def __init__(self):
+        self.name = "report: Tokens"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.H1("llm-load-test tokens")]
+
+        header += Plot_and_Text(f"Latency distribution", set_config(dict(only_tokens=True), args))
+        header += html.Br()
+        header += html.Br()
+        header += Plot_and_Text(f"Latency details", set_config(dict(only_tokens=True), args))
+        ordered_vars, settings, setting_lists, variables, cfg = args
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            header += [html.H2(entry.get_name(variables))]
+            header += Plot_and_Text(f"Latency details", set_config(dict(only_tokens=True, entry=entry), args))
 
         return None, header
