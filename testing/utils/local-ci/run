@@ -190,7 +190,8 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
             export=export,
             pod_name=f"{workload}-{step_idx:03d}-{step_name}".replace("_", "-"),
             test_name=f"{command_group}/{workload_identifier}",
-            test_args=test_args
+            test_args=test_args,
+            retrieve_artifacts=retrieve_artifacts,
         )
 
         if pr_config is not None:
