@@ -21,8 +21,8 @@ SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 artifact_dirnames = types.SimpleNamespace()
-artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__dump_prom_db/*__cluster__dump_prometheus_db"
-artifact_dirnames.CLUSTER_DUMP_PROM_DB_UWM_DIR = "*__dump_prom_db/*__cluster__dump_prometheus_db_uwm"
+artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db"
+artifact_dirnames.CLUSTER_DUMP_PROM_DB_UWM_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db_uwm"
 
 IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",

@@ -5,7 +5,7 @@ secret_key: mpt-7b-instruct2
 serving_runtime:
   resource_request:
     cpu: 1.5
-    memory: 9 # in Gi
+    memory: 11 # in Gi
     nvidia.com/gpu: 23 # in Gi of GPU memory
   min_replicas: 1
   extra_env:

@@ -161,7 +161,7 @@ def test_models_sequentially(locally=False):
 
 
 def deploy_and_test_models_e2e():
-    with run.Parallel("reset_prom_db") as parallel:
+    with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
         parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
         parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
 
@@ -176,7 +176,7 @@ def deploy_and_test_models_e2e():
         with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
             print("e2e", file=f)
 
-        with run.Parallel("dump_prom_db") as parallel:
+        with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
             parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
             parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null")
 
@@ -202,13 +202,13 @@ def deploy_and_test_models_sequentially(locally=False):
     for consolidated_model in consolidated_models:
         with env.NextArtifactDir(consolidated_model['name']):
             try:
-                with run.Parallel("reset_prom_db") as parallel:
+                with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
                     parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
                     parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
 
                 deploy_consolidated_model(consolidated_model)
 
-                launch_test_consolidated_model(consolidated_model)
+                launch_test_consolidated_model(consolidated_model, dedicated_dir=False)
             except Exception as e:
                 failed += [consolidated_model['name']]
                 with open(env.ARTIFACT_DIR / "FAILED", "w") as f:
@@ -219,7 +219,7 @@ def deploy_and_test_models_sequentially(locally=False):
             with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
                 print(consolidated_model['name'], file=f)
 
-            with run.Parallel("dump_prom_db") as parallel:
+            with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
                 parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null", check=False)
                 parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null", check=False)
 
@@ -328,8 +328,11 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             raise ValueError(f"serving_runtime.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
         args_dict["env_extra_values"] = extra_env
 
-    test_scale.prepare_user_sutest_namespace(namespace)
-    test_scale.deploy_storage_configuration(namespace)
+    with env.NextArtifactDir("prepare_namespace"):
+        test_scale.prepare_user_sutest_namespace(namespace)
+
+        with env.NextArtifactDir("deploy_storage_configuration"):
+            test_scale.deploy_storage_configuration(namespace)
 
     try:
         run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
@@ -362,8 +365,12 @@ def test_consolidated_models():
     for consolidated_model in consolidated_models:
         launch_test_consolidated_model(consolidated_model)
 
-def launch_test_consolidated_model(consolidated_model):
-    with env.NextArtifactDir(f"test_{consolidated_model['name']}"):
+def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
+
+    context = env.NextArtifactDir(f"test_{consolidated_model['name']}") \
+        if dedicated_dir else open("/dev/null") # dummy context
+
+    with context:
         with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
             settings = dict(
                 e2e_test=True,

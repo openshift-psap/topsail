@@ -197,6 +197,7 @@ def generate_plots(results_dirname):
         with env.NextArtifactDir(f"{main_workload}_plots"):
             visualize.generate_from_dir(str(results_dirname))
     finally:
+        exc = None
         prom_workload = config.ci_artifacts.get_config("tests.prom_plot_workload")
         if not prom_workload:
             logging.info(f"Setting tests.prom_plot_workload isn't set, nothing else to generate.")
@@ -207,7 +208,11 @@ def generate_plots(results_dirname):
 
             with env.NextArtifactDir(f"{prom_workload}__all"):
                 logging.info(f"Generating the plots with workload={prom_workload}")
-                visualize.generate_from_dir(str(results_dirname))
+                try:
+                    visualize.generate_from_dir(str(results_dirname))
+                except Exception as e:
+                    exc = e
+                    logging.error(f"Generating the plots with workload={prom_workload} --> FAILED")
 
             for prom_dir in pathlib.Path(results_dirname).glob("**/.matbench_prom_db_dir"):
                 current_results_dirname = prom_dir.parent
@@ -216,9 +221,16 @@ def generate_plots(results_dirname):
 
                 with env.NextArtifactDir(f"{prom_workload}__{dirname}"):
                     logging.info(f"Generating the plots with workload={prom_workload} for {current_results_dirname}")
-                    visualize.generate_from_dir(str(current_results_dirname))
+                    try:
+                        visualize.generate_from_dir(str(current_results_dirname))
+                    except Exception as e:
+                        exc = e
+                        logging.error(f"Generating the plots with workload={prom_workload} for {current_results_dirname} --> FAILED")
+        if exc is not None:
+            raise exc
 
     logging.info(f"Plots have been generated in {env.ARTIFACT_DIR}")
+
 
 @entrypoint()
 def _prepare_watsonx_serving():

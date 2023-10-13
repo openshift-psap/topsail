@@ -50,7 +50,7 @@ class Local_CI:
             init_command: Command to run in the container before running anything else.
             export_bucket_name: Name of the S3 bucket where the artifacts should be exported.
             export_test_run_identifier: Identifier of the test being executed (will be a dirname).
-            export: If False, do not run the export command.
+            export: If True, exports the artifacts to the S3 bucket. If False, do not run the export command.
             retrieve_artifacts: If False, do not retrieve locally the test artifacts.
             pr_config: Optional path to a PR config file (avoids fetching Github PR json).
             update_git: If True, updates the git repo with the latest main/PR before running the test.
