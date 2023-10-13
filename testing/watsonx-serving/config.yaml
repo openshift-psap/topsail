@@ -80,12 +80,23 @@ ci_presets:
 
   e2e_dgx_models:
     tests.e2e.models:
-    - flan-t5-small-cpu
-    - flan-t5-small-gpu
-    - flan-t5-large-gpu
-    - bloom-560m
-    - mpt-7b-instruct2
-    - gpt-neox-20b
+    - flan-t5-large-gpu-1:
+        name: flan-t5-large-gpu
+    - flan-t5-small-gpu-1:
+        name: flan-t5-small-gpu
+    - bloom-560m-1:
+        name: bloom-560m
+    - mpt-7b-instruct2-1:
+        name: mpt-7b-instruct2
+
+    - flan-t5-large-gpu-2:
+        name: flan-t5-large-gpu
+    - flan-t5-small-gpu-2:
+        name: flan-t5-small-gpu
+    - bloom-560m-2:
+        name: bloom-560m
+    - mpt-7b-instruct2-2:
+        name: mpt-7b-instruct2
 
   # ---
 
