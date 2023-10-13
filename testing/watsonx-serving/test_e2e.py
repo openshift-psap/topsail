@@ -362,8 +362,12 @@ def test_consolidated_models():
     for consolidated_model in consolidated_models:
         launch_test_consolidated_model(consolidated_model)
 
-def launch_test_consolidated_model(consolidated_model):
-    with env.NextArtifactDir(f"test_{consolidated_model['name']}"):
+def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
+
+    context = env.NextArtifactDir(f"test_{consolidated_model['name']}") \
+        if dedicated_dir else open("/dev/null") # dummy context
+
+    with context:
         with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
             settings = dict(
                 e2e_test=True,
