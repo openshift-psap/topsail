@@ -161,7 +161,7 @@ def test_models_sequentially(locally=False):
 
 
 def deploy_and_test_models_e2e():
-    with run.Parallel("reset_prom_db") as parallel:
+    with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
         parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
         parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
 
@@ -176,7 +176,7 @@ def deploy_and_test_models_e2e():
         with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
             print("e2e", file=f)
 
-        with run.Parallel("dump_prom_db") as parallel:
+        with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
             parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
             parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null")
 
@@ -202,7 +202,7 @@ def deploy_and_test_models_sequentially(locally=False):
     for consolidated_model in consolidated_models:
         with env.NextArtifactDir(consolidated_model['name']):
             try:
-                with run.Parallel("reset_prom_db") as parallel:
+                with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
                     parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
                     parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
 
@@ -219,7 +219,7 @@ def deploy_and_test_models_sequentially(locally=False):
             with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
                 print(consolidated_model['name'], file=f)
 
-            with run.Parallel("dump_prom_db") as parallel:
+            with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
                 parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null", check=False)
                 parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null", check=False)
 
