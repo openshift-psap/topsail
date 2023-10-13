@@ -208,7 +208,7 @@ def deploy_and_test_models_sequentially(locally=False):
 
                 deploy_consolidated_model(consolidated_model)
 
-                launch_test_consolidated_model(consolidated_model)
+                launch_test_consolidated_model(consolidated_model, dedicated_dir=False)
             except Exception as e:
                 failed += [consolidated_model['name']]
                 with open(env.ARTIFACT_DIR / "FAILED", "w") as f:
