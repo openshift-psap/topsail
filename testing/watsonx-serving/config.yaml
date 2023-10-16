@@ -23,7 +23,11 @@ ci_presets:
   quick:
     gpu.prepare_cluster: false
     clusters.sutest.compute.machineset.type: m6i.2xlarge
-    tests.e2e.models: [flan-t5-small-cpu, flan-t5-small-cpu]
+    tests.e2e.models:
+    - flan-t5-small-cpu-1:
+        name: flan-t5-small-cpu
+    - flan-t5-small-cpu-2:
+        name: flan-t5-small-cpu
 
   metal:
     clusters.sutest.is_metal: true
