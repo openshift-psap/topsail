@@ -21,6 +21,7 @@ def register():
     LatencyDistribution()
     LatencyDetails()
     ErrorDistribution()
+    FinishReasonDistribution()
 
 
 class LatencyDistribution():
@@ -122,7 +123,7 @@ def generateLatencyDetailsData(entries, variables, only_errors=False, test_name_
                 datum["index"] = idx
                 datum["timestamp"] = detail["timestamp"]
 
-                generatedTokens= int(detail["response"].get("generatedTokens", 1))
+                generatedTokens = int(detail["response"].get("generatedTokens", 1))
                 if only_tokens:
                     datum["tokens"] = generatedTokens
 
@@ -163,6 +164,32 @@ def generateErrorHistogramData(entries, variables):
         for descr, count in errorDistribution.items():
             datum = {}
             datum["error"] = descr
+            datum["count"] = count
+            datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
+            data.append(datum)
+
+    return data
+
+
+def generateFinishReasonData(entries, variables):
+    data = []
+
+    for entry in entries:
+        llm_data = entry.results.llm_load_test_output
+
+        finishReasons = defaultdict(int)
+        for idx, block in enumerate(llm_data):
+            for detail in block.get("details"):
+                if detail["error"]:
+                    reason = "ERROR"
+                else:
+                    reason = detail["response"].get("finishReason", "ERROR")
+                pass
+                finishReasons[reason] += 1
+
+        for reason, count in finishReasons.items():
+            datum = {}
+            datum["reason"] = reason
             datum["count"] = count
             datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
             data.append(datum)
@@ -273,6 +300,44 @@ class ErrorDistribution():
         fig.update_layout(title=f"Distribution of the load test errors", title_x=0.5,)
 
         fig.update_yaxes(title=f"Error occurence count")
+
+        fig.update_layout(legend=dict(yanchor="top",
+                                      y=1.55,
+                                      xanchor="left",
+                                      x=-0.05))
+
+        return fig, ""
+
+
+class FinishReasonDistribution():
+    def __init__(self):
+        self.name = "Finish Reason distribution"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        entries = common.Matrix.all_records(settings, setting_lists)
+
+        df = pd.DataFrame(generateFinishReasonData(entries, variables))
+
+        if df.empty:
+            return None, "Not data available ..."
+
+        df = df.sort_values(by=["test_name"])
+
+        fig = px.bar(df, hover_data=df.columns,
+                     x="test_name", y="count", color="reason")
+
+
+        fig.update_layout(title=f"Distribution of the finish reasons", title_x=0.5,)
+
+        fig.update_yaxes(title=f"Finish reason count")
 
         fig.update_layout(legend=dict(yanchor="top",
                                       y=1.55,
