@@ -22,6 +22,7 @@ def register():
     LatencyDetails()
     ErrorDistribution()
     FinishReasonDistribution()
+    LogDistribution()
 
 
 class LatencyDistribution():
@@ -351,5 +352,60 @@ class FinishReasonDistribution():
                                       y=1.55,
                                       xanchor="left",
                                       x=-0.05))
+
+        return fig, ""
+
+
+def generateLogData(entries, variables, line_count):
+    data = []
+
+    for entry in entries:
+        predictor_logs = entry.results.predictor_logs
+
+        datum = {}
+        datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
+        if line_count:
+            datum["count"] = predictor_logs.line_count
+            data.append(datum)
+        else:
+            for key, count in predictor_logs.distribution.items():
+                d = dict(datum)
+                d["what"] = key
+                d["count"] = count
+                data.append(d)
+
+    return data
+
+class LogDistribution():
+    def __init__(self):
+        self.name = "Log distribution"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        entries = common.Matrix.all_records(settings, setting_lists)
+        cfg__line_count = cfg.get("line_count", True)
+        df = pd.DataFrame(generateLogData(entries, variables, cfg__line_count))
+
+        if df.empty:
+            return None, "Not data available ..."
+
+        df = df.sort_values(by=["test_name"])
+
+        fig = px.bar(df, hover_data=df.columns,
+                     x="test_name", y="count", color="test_name" if cfg__line_count else "what")
+
+        if cfg__line_count:
+            fig.update_layout(title=f"Line predictor logs line count", title_x=0.5,)
+            fig.update_yaxes(title=f"Line count")
+        else:
+            fig.update_layout(title=f"Distribution of well-know messages in the logs", title_x=0.5,)
+            fig.update_yaxes(title=f"Occurence count")
 
         return fig, ""
