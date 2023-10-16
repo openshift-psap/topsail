@@ -152,6 +152,8 @@ def generateLatencyDetailsData(entries, variables, only_errors=False, test_name_
 
 def generateErrorHistogramData(entries, variables):
     data = []
+    CLOSING_CX = "rpc error: code = Canceled desc = grpc: the client connection is closing"
+    CLOSED_CX = "rpc error: code = Unavailable desc = error reading from server: read tcp: use of closed network connection"
 
     for entry in entries:
         llm_data = entry.results.llm_load_test_output
@@ -159,7 +161,13 @@ def generateErrorHistogramData(entries, variables):
         errorDistribution = defaultdict(int)
         for idx, block in enumerate(llm_data):
             for descr, count in block.get("errorDistribution", {}).items():
-                errorDistribution[error_report.simplify_error(descr)] += count
+                simplified_error = error_report.simplify_error(descr)
+
+                if error_report.simplify_error(descr) in (CLOSING_CX, CLOSED_CX):
+                    continue # ignore these errors from the top chart, they're well known
+
+                errorDistribution[simplified_error] += count
+
 
         for descr, count in errorDistribution.items():
             datum = {}
