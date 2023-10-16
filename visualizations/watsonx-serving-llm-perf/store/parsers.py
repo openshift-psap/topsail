@@ -138,7 +138,7 @@ def _parse_llm_load_test_output(dirname):
         register_important_file(dirname, llm_output_file.relative_to(dirname))
 
         with open(llm_output_file) as f:
-            llm_data = yaml.safe_load(f)
+            llm_data = json.load(f)
 
         llm_load_test_output += llm_data
 
