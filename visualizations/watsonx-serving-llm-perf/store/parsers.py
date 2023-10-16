@@ -140,27 +140,6 @@ def _parse_llm_load_test_output(dirname):
         with open(llm_output_file) as f:
             llm_data = yaml.safe_load(f)
 
-        for block_idx, block in enumerate(llm_data):
-            for detail in block["details"]:
-                if detail.get("error"):
-                    detail["response"] = {}
-                    continue # the response isn't set when an error occured
-
-                try: detail["response"] = json.loads(detail["response"])
-                except Exception:
-                    logging.warning(f"Invalid JSON response found in {llm_output_file} at index {block_idx}")
-                    detail["error"] = "Invalid JSON response"
-                    continue
-
-                try: del detail["response"]["generatedText"]
-                except Exception:
-                    detail["error"] = "'generatedText' field missing in the response"
-
-                try: detail["response"]["generatedTokens"] = int(detail["response"]["generatedTokens"])
-                except Exception:
-                    detail["error"] = f"'generatedTokens' field ('{detail['response']['generatedTokens']}')can't be converted to int"
-
-
         llm_load_test_output += llm_data
 
     return llm_load_test_output

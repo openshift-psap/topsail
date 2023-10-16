@@ -122,11 +122,12 @@ def generateLatencyDetailsData(entries, variables, only_errors=False, test_name_
                 datum["index"] = idx
                 datum["timestamp"] = detail["timestamp"]
 
+                generatedTokens= int(detail["response"].get("generatedTokens", 1))
                 if only_tokens:
-                    datum["tokens"] = detail["response"].get("generatedTokens", 1)
+                    datum["tokens"] = generatedTokens
 
                 elif latency_per_token:
-                    datum["latencyPerToken"] = detail["latency"] / 1000 / 1000 / detail["response"].get("generatedTokens", 1) # in ms/token
+                    datum["latencyPerToken"] = detail["latency"] / 1000 / 1000 / generatedTokens # in ms/token
 
                 else:
                     datum["latency"] = detail["latency"] / 1000 / 1000
