@@ -301,7 +301,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         storage_uri=consolidated_model["inference_service"]["storage_uri"],
         sa_name=config.ci_artifacts.get_config("watsonx_serving.sa_name"),
 
-        query_data=consolidated_model["inference_service"].get("query_data"),
+        query_data=config.ci_artifacts.get_config("watsonx_serving.inference_service.validation_query_data"),
 
         mute_serving_logs=mute_logs,
         delete_others=delete_others,
@@ -401,7 +401,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
         namespace=namespace,
         inference_service_names=[model_name],
         model_id=consolidated_model["id"],
-        query_data=consolidated_model["inference_service"]["query_data"],
+        query_data=config.ci_artifacts.get_config("watsonx_serving.inference_service.validation_query_data"),
     )
 
 

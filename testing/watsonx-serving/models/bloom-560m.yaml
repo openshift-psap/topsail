@@ -11,4 +11,3 @@ serving_runtime:
   min_replicas: 1
 inference_service:
   storage_uri: "s3://psap-watsonx-models/bloom-560m"
-  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'

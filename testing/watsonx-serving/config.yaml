@@ -255,6 +255,8 @@ watsonx_serving:
     region: us-east-1
     endpoint: s3.amazonaws.com
     use_https: 1
+  inference_service:
+    validation_query_data: '{"text": "At what temperature does liquid Nitrogen boil?", "max_new_tokens": 25, "min_new_tokens": 25}'
   model:
     serving_runtime:
       image: quay.io/opendatahub/caikit-tgis-serving:stable

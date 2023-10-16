@@ -179,7 +179,7 @@ watsonx_serving validate_model:
   inference_service_names: [{{ tests.scale.model.name }}]
 
   model_id: {{ tests.scale.model.id }}
-  query_data: {{ tests.scale.model.inference_service.query_data }}
+  query_data: {{ watsonx_serving.inference_service.validation_query_data }}
 {% endif %}
 
 #
