@@ -10,4 +10,4 @@ serving_runtime:
   extra_env: {}
 inference_service:
   storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/"
-  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'
+  query_data: '{"text": "At what temperature does liquid Nitrogen boil?", "max_new_tokens": 20, "min_new_tokens": 20}'
