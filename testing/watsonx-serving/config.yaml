@@ -98,6 +98,32 @@ ci_presets:
     - mpt-7b-instruct2-2:
         name: mpt-7b-instruct2
 
+  e2e_perf_flan:
+    extends: [e2e_perf]
+    tests.e2e.llm_load_test.duration: 3m
+    watsonx_serving.model.serving_runtime.mute_logs: false # secret key has been disabled
+    tests.e2e.models:
+    - flan-t5-small-gpu-3gb:
+        name: flan-t5-small-gpu
+        serving_runtime:
+          resource_request:
+            memory: 3 # in Gi
+    - flan-t5-small-gpu-4gb:
+        name: flan-t5-small-gpu
+        serving_runtime:
+          resource_request:
+            memory: 4 # in Gi
+    - flan-t5-small-gpu-5gb:
+        name: flan-t5-small-gpu
+        serving_runtime:
+          resource_request:
+            memory: 5 # in Gi
+    - flan-t5-small-gpu-6gb:
+        name: flan-t5-small-gpu
+        serving_runtime:
+          resource_request:
+            memory: 6 # in Gi
+
   # ---
 
   scale_test:
