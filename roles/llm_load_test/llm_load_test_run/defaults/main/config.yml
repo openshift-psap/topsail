@@ -25,3 +25,9 @@ llm_load_test_run_model_id:
 
 # Path where llm-load-test has been cloned
 llm_load_test_run_llm_path: /src/llm-load-test/
+
+# number of GHZ instances to launch in parallel
+llm_load_test_run_threads: 16
+
+# max request per second
+llm_load_test_run_rps: 2

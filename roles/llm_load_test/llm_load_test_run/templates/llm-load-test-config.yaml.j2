@@ -18,9 +18,9 @@ load_generator:
     total: 2000 # ignored
     duration: "{{ llm_load_test_run_duration }}"
     timeout: 60s
-    rps: 2 # rate limit, in requests per seconds
+    rps: {{ llm_load_test_run_rps }} # rate limit, in requests per seconds
   multiplexed: true
-  threads: 16
+  threads: {{ llm_load_test_run_threads }}
   input_dataset:
     filename: "openorca-subset-006.json"
     max_size: 32

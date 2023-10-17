@@ -17,6 +17,8 @@ class Llm_load_test:
             call,
             model_id,
             llm_path="/src/llm-load-test/",
+            threads=16,
+            rps=2,
             ):
         """
         Load test the wisdom model
@@ -32,6 +34,9 @@ class Llm_load_test:
           call: GRPC call to perform
 
           llm_path: Path where llm-load-test has been cloned
+
+          threads: number of GHZ instances to launch in parallel
+          rps: max request per second
         """
 
         return RunAnsibleRole(locals())

@@ -428,6 +428,8 @@ def test_consolidated_model(consolidated_model, namespace=None):
         call=llm_config["call"],
         model_id=consolidated_model["id"],
         llm_path=llm_config["src_path"],
+        threads=llm_config["threads"],
+        rps=llm_config["rps"],
     )
 
     try:
