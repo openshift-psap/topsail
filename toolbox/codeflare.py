@@ -23,6 +23,9 @@ class Codeflare:
                            pod_requests={"cpu": "100m"},
                            timespan=0,
                            distribution="poisson",
+                           mcad_namespace="opendatahub",
+                           mcad_labels="app=mcad-mcad",
+                           mcad_deploy="mcad-controller-mcad",
                            ):
         """
         Generate MCAD load
@@ -40,6 +43,9 @@ class Codeflare:
           aw_count: number of AppWrapper replicas to create
           timespan: number of minutes over which the AppWrappers should be created
           distribution: the distribution method to use to spread the resource creation over the requested timespan
+          mcad_namespace: namespace where MCAD is deployed
+          mcad_labels: labels to find the MCAD controller pods
+          mcad_deploy: name of the MCAD controller deployment
         """
 
         return RunAnsibleRole(locals())

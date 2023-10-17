@@ -4,12 +4,12 @@
 
 - name: Reset the MCAD controller
   command:
-    oc delete pod -lapp=mcad-mcad -n opendatahub
+    oc delete pod -l{{ codeflare_generate_mcad_load_mcad_labels }} -n {{ codeflare_generate_mcad_load_mcad_namespace }}
 
 - name: Ensure that the MCAD controller is ready
   shell:
     set -o pipefail;
-    oc get deploy/mcad-controller-mcad -n opendatahub --no-headers | awk '{print $2}'
+    oc get deploy/{{ codeflare_generate_mcad_load_mcad_deploy }} -n opendatahub --no-headers | awk '{print $2}'
   register: mcad_ready_cmd
   delay: 10
   retries: 10
@@ -17,13 +17,13 @@
 
 - name: Save the MCAD controller deployment
   shell: |
-    oc get deploy mcad-controller-mcad -oyaml -n opendatahub > "{{ artifact_extra_logs_dir }}/mcad-deployment.yaml"
-    oc get deploy mcad-controller-mcad -ojson -n opendatahub > "{{ artifact_extra_logs_dir }}/mcad-deployment.json"
+    oc get deploy/{{ codeflare_generate_mcad_load_mcad_deploy }}  -oyaml -n {{ codeflare_generate_mcad_load_mcad_namespace }} "{{ artifact_extra_logs_dir }}/mcad-deployment.yaml"
+    oc get deploy/{{ codeflare_generate_mcad_load_mcad_deploy }} -ojson -n {{ codeflare_generate_mcad_load_mcad_namespace }} > "{{ artifact_extra_logs_dir }}/mcad-deployment.json"
 
 - name: Save the MCAD controller Pods
   shell: |
-    oc get pod -lapp=mcad-mcad -n opendatahub -oyaml > "{{ artifact_extra_logs_dir }}/mcad-pods.yaml"
-    oc get pod -lapp=mcad-mcad -n opendatahub -ojson > "{{ artifact_extra_logs_dir }}/mcad-pods.json"
+    oc get pod -l{{ codeflare_generate_mcad_load_mcad_labels }} -n {{ codeflare_generate_mcad_load_mcad_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/mcad-pods.yaml"
+    oc get pod -l{{ codeflare_generate_mcad_load_mcad_labels }} -n {{ codeflare_generate_mcad_load_mcad_namespace }} -ojson > "{{ artifact_extra_logs_dir }}/mcad-pods.json"
 
 - name: Ensure that there are no Jobs in the namespace
   shell:
@@ -181,8 +181,8 @@
 
   - name: Capture the logs of the MCAD controller
     shell: |
-      oc logs deploy/mcad-controller-mcad -n opendatahub > "{{ artifact_extra_logs_dir }}/mcad-controller.log";
-      oc logs deploy/mcad-controller-mcad -n opendatahub --previous 2>/dev/null > "{{ artifact_extra_logs_dir }}/mcad-controller.previous.log" || true
+      oc logs deploy/{{ codeflare_generate_mcad_load_mcad_deploy }} -n {{ codeflare_generate_mcad_load_mcad_namespace }} > "{{ artifact_extra_logs_dir }}/mcad-controller.log";
+      oc logs deploy/{{ codeflare_generate_mcad_load_mcad_deploy }} -n {{ codeflare_generate_mcad_load_mcad_namespace }} --previous 2>/dev/null > "{{ artifact_extra_logs_dir }}/mcad-controller.previous.log" || true
     ignore_errors: true
 
   - name: Capture the nodes of the cluster
