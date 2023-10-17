@@ -21,7 +21,6 @@ class Watsonx_Serving:
                      secret_env_file_name=None,
                      secret_env_file_key=None,
                      env_extra_values : dict = {},
-                     query_data=None,
                      mute_serving_logs=False,
                      delete_others=True,
                      limits_equals_requests=True,
@@ -47,8 +46,6 @@ class Watsonx_Serving:
           secret_env_file_name: name of the YAML file containing the secret environment key/values
           secret_env_file_key: key to the secret environment key/values in the secret file
           env_extra_values: extra key/value pairs (will override the values from the secret file)
-
-          query_data: a JSON payload used to validate the model deployment
 
           mute_serving_logs: if True, mute the serving runtime container logs
 

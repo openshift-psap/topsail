@@ -205,26 +205,6 @@
       oc create configmap $NAME -n {{ watsonx_serving_deploy_model_namespace }}
       oc label cm/$NAME topsail.time-tracking=yes -n {{ watsonx_serving_deploy_model_namespace }}
 
-  - name: Ensure that grpcurl is available
-    command: which grpcurl
-
-  - name: Validate the model deployment
-    when: watsonx_serving_deploy_model_query_data is not none
-    shell: |
-      set -o pipefail
-      set -e
-
-      GRPCURL_DATA=$(echo "{{ watsonx_serving_deploy_model_query_data }}" | sed "s/'/\"/g")
-      HOSTNAME=$(oc get isvc -ojsonpath={.items[0].status.components.predictor.url} -n {{ watsonx_serving_deploy_model_namespace }} | cut -d/ -f3)
-
-      grpcurl -insecure \
-              -d "$GRPCURL_DATA" \
-              -H "mm-model-id: {{ watsonx_serving_deploy_model_model_id }}" \
-              "$HOSTNAME:443" \
-              caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict \
-    register: grpc_validation_cmd
-    failed_when: '"ERROR" in grpc_validation_cmd.stderr'
-
   always:
   - name: Capture the state of the InferenceService Pod resource
     shell:
