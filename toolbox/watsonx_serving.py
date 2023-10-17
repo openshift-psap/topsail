@@ -86,7 +86,8 @@ class Watsonx_Serving:
     def validate_model(self,
                        inference_service_names,
                        model_id,
-                       query_data,
+                       dataset,
+                       query_count,
                        namespace=""):
         """
         Validate the proper deployment of a WatsonX model
@@ -97,7 +98,8 @@ class Watsonx_Serving:
         Args:
           inference_service_names: a list of names of the inference service to validate
           model_id: the model-id to pass to the inference service
-          query_data: the data to pass to the model query
+          dataset: path to the dataset to use for the query
+          query_count: number of query to perform
           namespace: the namespace in which the Serving stack was deployed. If empty, use the current project.
         """
 
