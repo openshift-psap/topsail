@@ -301,8 +301,6 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         storage_uri=consolidated_model["inference_service"]["storage_uri"],
         sa_name=config.ci_artifacts.get_config("watsonx_serving.sa_name"),
 
-        query_data=config.ci_artifacts.get_config("watsonx_serving.inference_service.validation_query_data"),
-
         mute_serving_logs=mute_logs,
         delete_others=delete_others,
         limits_equals_requests=limits_equals_requests,
@@ -336,6 +334,15 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
     try:
         run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
+
+        validate_kwargs = dict(
+            namespace=namespace,
+            inference_service_names=[model_name],
+            model_id=consolidated_model["id"],
+            dataset=config.ci_artifacts.get_config("watsonx_serving.inference_service.validation.dataset"),
+            query_count=config.ci_artifacts.get_config("watsonx_serving.inference_service.validation.query_count"),
+        )
+        run.run(f"./run_toolbox.py watsonx_serving validate_model {dict_to_run_toolbox_args(validate_kwargs)}")
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
         raise e
