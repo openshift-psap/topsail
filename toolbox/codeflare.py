@@ -72,3 +72,27 @@ class Codeflare:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("codeflare_deploy_mcad_from_helm")
+    @AnsibleMappedParams
+    def deploy_mcad_from_helm(
+            self,
+            namespace,
+            git_repo="https://github.com/project-codeflare/multi-cluster-app-dispatcher",
+            git_ref="main",
+            image_repo="quay.io/project-codeflare/mcad-controller",
+            image_tag="stable",
+    ):
+        """
+        Deploys MCAD from helm
+
+        Args:
+          namespace: name of the namespace where MCAD should be deployed
+          git_repo: name of the GIT repo to clone
+          git_ref: name of the GIT branch to fetch
+          image_repo: name of the image registry where the image is stored
+          image_tag: tag of the image to use
+        """
+
+        return RunAnsibleRole(locals())
