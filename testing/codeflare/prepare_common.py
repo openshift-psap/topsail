@@ -5,9 +5,18 @@ from common import env, config, run
 import prepare_odh, prepare_gpu
 
 def prepare_common():
-    prepare_odh.prepare_odh()
-    
-    prepare_odh.prepare_odh_customization()
+    deploy_from = "odh"
+
+    test_mode = config.ci_artifacts.get_config("tests.mode")
+    if test_mode == "mcad":
+        deploy_from = config.ci_artifacts.get_config("codeflare.mcad.deploy_from")
+
+    if deploy_from == "odh":
+        prepare_odh.prepare_odh()
+        prepare_odh.prepare_odh_customization()
+
+    elif deploy_from == "helm":
+        run.run("./run_toolbox.py from_config codeflare deploy_mcad_from_helm")
 
     if config.ci_artifacts.get_config("tests.want_gpu"):
         prepare_gpu.prepare_gpu_operator()
