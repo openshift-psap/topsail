@@ -401,7 +401,8 @@ def test_consolidated_model(consolidated_model, namespace=None):
         namespace=namespace,
         inference_service_names=[model_name],
         model_id=consolidated_model["id"],
-        query_data=config.ci_artifacts.get_config("watsonx_serving.inference_service.validation_query_data"),
+        dataset=config.ci_artifacts.get_config("watsonx_serving.inference_service.validation.dataset"),
+        query_count=config.ci_artifacts.get_config("watsonx_serving.inference_service.validation.query_count"),
     )
 
 

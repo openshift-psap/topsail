@@ -286,7 +286,9 @@ watsonx_serving:
     endpoint: s3.amazonaws.com
     use_https: 1
   inference_service:
-    validation_query_data: '{"text": "At what temperature does liquid Nitrogen boil?", "max_new_tokens": 25, "min_new_tokens": 25}'
+    validation:
+      dataset: subprojects/llm-load-test/openorca-subset-006.json
+      query_count: 10
   model:
     serving_runtime:
       image: quay.io/opendatahub/caikit-tgis-serving:stable
