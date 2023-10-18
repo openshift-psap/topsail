@@ -15,7 +15,7 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 LIGHT_PROFILE = "light"
 
 sys.path.append(str(TESTING_THIS_DIR.parent))
-from common import env, config
+from common import env, config, visualize
 
 import prepare_mcad, test_mcad
 import prepare_sdk_user, test_sdk_user
