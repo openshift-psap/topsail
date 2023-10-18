@@ -12,4 +12,3 @@ serving_runtime:
   min_replicas: 1
 inference_service:
   storage_uri: "s3://<bucket>/<path>"
-  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'

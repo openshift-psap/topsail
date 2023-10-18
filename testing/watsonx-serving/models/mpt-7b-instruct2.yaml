@@ -12,4 +12,3 @@ serving_runtime:
     DTYPE_STR: float16
 inference_service:
   storage_uri: "s3://psap-watsonx-models/mpt-7b-instruct2-unconverted/"
-  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'

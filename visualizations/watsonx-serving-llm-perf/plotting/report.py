@@ -121,6 +121,10 @@ class TokensReport():
         header = []
         header += [html.H1("llm-load-test tokens")]
 
+        header += Plot_and_Text(f"Finish Reason distribution", args)
+        header += html.Br()
+        header += html.Br()
+
         header += Plot_and_Text(f"Latency distribution", set_config(dict(only_tokens=True), args))
         header += html.Br()
         header += html.Br()

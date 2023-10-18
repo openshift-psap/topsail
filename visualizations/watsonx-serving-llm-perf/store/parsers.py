@@ -5,6 +5,7 @@ import yaml
 import os
 import json
 import datetime
+from collections import defaultdict
 
 import jsonpath_ng
 
@@ -49,6 +50,7 @@ def _parse_always(results, dirname, import_settings):
 
 def _parse_once(results, dirname):
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)
+    results.predictor_logs = _parse_predictor_logs(dirname)
 
 
 def _parse_local_env(dirname):
@@ -138,29 +140,36 @@ def _parse_llm_load_test_output(dirname):
         register_important_file(dirname, llm_output_file.relative_to(dirname))
 
         with open(llm_output_file) as f:
-            llm_data = yaml.safe_load(f)
-
-        for block_idx, block in enumerate(llm_data):
-            for detail in block["details"]:
-                if detail.get("error"):
-                    detail["response"] = {}
-                    continue # the response isn't set when an error occured
-
-                try: detail["response"] = json.loads(detail["response"])
-                except Exception:
-                    logging.warning(f"Invalid JSON response found in {llm_output_file} at index {block_idx}")
-                    detail["error"] = "Invalid JSON response"
-                    continue
-
-                try: del detail["response"]["generatedText"]
-                except Exception:
-                    detail["error"] = "'generatedText' field missing in the response"
-
-                try: detail["response"]["generatedTokens"] = int(detail["response"]["generatedTokens"])
-                except Exception:
-                    detail["error"] = f"'generatedTokens' field ('{detail['response']['generatedTokens']}')can't be converted to int"
-
+            llm_data = json.load(f)
 
         llm_load_test_output += llm_data
 
     return llm_load_test_output
+
+
+@ignore_file_not_found
+def _parse_predictor_logs(dirname):
+    capture_state_dirs = list(dirname.glob("*__watsonx_serving__capture_state/"))
+
+    if not capture_state_dirs:
+        logging.error("No 'watsonx_serving__capture_state' directory found in {dirname} ...")
+        return
+
+    predictor_logs = types.SimpleNamespace()
+    predictor_logs.distribution = defaultdict(int)
+    predictor_logs.line_count = 0
+    last_capture_state_dir = capture_state_dirs[-1] # ignore the capture done after the deployment
+
+    for log_file in last_capture_state_dir.glob("logs/*.log"):
+
+        for line in open(log_file).readlines():
+            predictor_logs.line_count += 1
+
+            if '"severity":"ERROR"' in line:
+                predictor_logs.distribution["errors"] += 1
+            if '"channel": "DESTROY-THRD"' in line:
+                predictor_logs.distribution["DESTROY-THRD"] += 1
+            if '"channel": "ABORT-ACTION"' in line:
+                predictor_logs.distribution["ABORT-ACTION"] += 1
+
+    return predictor_logs

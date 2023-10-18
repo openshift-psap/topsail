@@ -30,6 +30,21 @@
 
     export CONFIG_FILENAME=llm_load_test.config.yaml
     export CONFIG_PATH="{{ artifact_extra_logs_dir }}/src/"
-    export AWS_SHARED_CREDENTIALS_FILE="$PSAP_ODS_SECRET_PATH/.awscred" # workaround until llm-load-test is properly unlinked from AWS S3
 
     python3 load_test.py &> {{ artifact_extra_logs_dir }}/run.log
+
+- name: Cleanup the output dir
+  command:
+    find '{{ artifact_extra_logs_dir }}/output' -type f ! -iname 'ghz-multiplexed-results-*.json' -delete
+
+- name: Turn the response field into json
+  shell: |
+    set -e;
+    set -o pipefail;
+
+    output_file=$(echo '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results-*.json);
+    mv "$output_file" '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results.orig
+    cat '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results.orig \
+       | jq '.[].details[].response |= fromjson' \
+      > "${output_file}"
+    echo "Results have been save in '${output_file}'"

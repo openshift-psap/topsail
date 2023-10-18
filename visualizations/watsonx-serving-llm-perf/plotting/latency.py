@@ -21,6 +21,8 @@ def register():
     LatencyDistribution()
     LatencyDetails()
     ErrorDistribution()
+    FinishReasonDistribution()
+    LogDistribution()
 
 
 class LatencyDistribution():
@@ -122,11 +124,12 @@ def generateLatencyDetailsData(entries, variables, only_errors=False, test_name_
                 datum["index"] = idx
                 datum["timestamp"] = detail["timestamp"]
 
+                generatedTokens = int(detail["response"].get("generatedTokens", 1))
                 if only_tokens:
-                    datum["tokens"] = detail["response"].get("generatedTokens", 1)
+                    datum["tokens"] = generatedTokens
 
                 elif latency_per_token:
-                    datum["latencyPerToken"] = detail["latency"] / 1000 / 1000 / detail["response"].get("generatedTokens", 1) # in ms/token
+                    datum["latencyPerToken"] = detail["latency"] / 1000 / 1000 / generatedTokens # in ms/token
 
                 else:
                     datum["latency"] = detail["latency"] / 1000 / 1000
@@ -150,6 +153,8 @@ def generateLatencyDetailsData(entries, variables, only_errors=False, test_name_
 
 def generateErrorHistogramData(entries, variables):
     data = []
+    CLOSING_CX = "rpc error: code = Canceled desc = grpc: the client connection is closing"
+    CLOSED_CX = "rpc error: code = Unavailable desc = error reading from server: read tcp: use of closed network connection"
 
     for entry in entries:
         llm_data = entry.results.llm_load_test_output
@@ -157,11 +162,43 @@ def generateErrorHistogramData(entries, variables):
         errorDistribution = defaultdict(int)
         for idx, block in enumerate(llm_data):
             for descr, count in block.get("errorDistribution", {}).items():
-                errorDistribution[error_report.simplify_error(descr)] += count
+                simplified_error = error_report.simplify_error(descr)
+
+                if error_report.simplify_error(descr) in (CLOSING_CX, CLOSED_CX):
+                    continue # ignore these errors from the top chart, they're well known
+
+                errorDistribution[simplified_error] += count
+
 
         for descr, count in errorDistribution.items():
             datum = {}
             datum["error"] = descr
+            datum["count"] = count
+            datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
+            data.append(datum)
+
+    return data
+
+
+def generateFinishReasonData(entries, variables):
+    data = []
+
+    for entry in entries:
+        llm_data = entry.results.llm_load_test_output
+
+        finishReasons = defaultdict(int)
+        for idx, block in enumerate(llm_data):
+            for detail in block.get("details"):
+                if detail["error"]:
+                    reason = "ERROR"
+                else:
+                    reason = detail["response"].get("finishReason", "ERROR")
+                pass
+                finishReasons[reason] += 1
+
+        for reason, count in finishReasons.items():
+            datum = {}
+            datum["reason"] = reason
             datum["count"] = count
             datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
             data.append(datum)
@@ -277,5 +314,98 @@ class ErrorDistribution():
                                       y=1.55,
                                       xanchor="left",
                                       x=-0.05))
+
+        return fig, ""
+
+
+class FinishReasonDistribution():
+    def __init__(self):
+        self.name = "Finish Reason distribution"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        entries = common.Matrix.all_records(settings, setting_lists)
+
+        df = pd.DataFrame(generateFinishReasonData(entries, variables))
+
+        if df.empty:
+            return None, "Not data available ..."
+
+        df = df.sort_values(by=["test_name"])
+
+        fig = px.bar(df, hover_data=df.columns,
+                     x="test_name", y="count", color="reason")
+
+
+        fig.update_layout(title=f"Distribution of the finish reasons", title_x=0.5,)
+
+        fig.update_yaxes(title=f"Finish reason count")
+
+        fig.update_layout(legend=dict(yanchor="top",
+                                      y=1.55,
+                                      xanchor="left",
+                                      x=-0.05))
+
+        return fig, ""
+
+
+def generateLogData(entries, variables, line_count):
+    data = []
+
+    for entry in entries:
+        predictor_logs = entry.results.predictor_logs
+
+        datum = {}
+        datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
+        if line_count:
+            datum["count"] = predictor_logs.line_count
+            data.append(datum)
+        else:
+            for key, count in predictor_logs.distribution.items():
+                d = dict(datum)
+                d["what"] = key
+                d["count"] = count
+                data.append(d)
+
+    return data
+
+class LogDistribution():
+    def __init__(self):
+        self.name = "Log distribution"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        entries = common.Matrix.all_records(settings, setting_lists)
+        cfg__line_count = cfg.get("line_count", True)
+        df = pd.DataFrame(generateLogData(entries, variables, cfg__line_count))
+
+        if df.empty:
+            return None, "Not data available ..."
+
+        df = df.sort_values(by=["test_name"])
+
+        fig = px.bar(df, hover_data=df.columns,
+                     x="test_name", y="count", color="test_name" if cfg__line_count else "what")
+
+        if cfg__line_count:
+            fig.update_layout(title=f"Line predictor logs line count", title_x=0.5,)
+            fig.update_yaxes(title=f"Line count")
+        else:
+            fig.update_layout(title=f"Distribution of well-know messages in the logs", title_x=0.5,)
+            fig.update_yaxes(title=f"Occurence count")
 
         return fig, ""

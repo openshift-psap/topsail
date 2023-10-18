@@ -105,6 +105,13 @@ def _get_error_overview(entries, args):
         errors += [html.Li([html.Code(descr), " 🠊 ", f"{count} call{'s' if count > 1 else ''}"])]
     header += [html.Ul(errors)]
 
+    header += [html.H2("Log stats")]
+    header += report.Plot_and_Text(f"Log distribution", report.set_config(dict(line_count=True), args))
+    header += [html.I("The plot above shows the number of log lines collected for the Predicator Pod(s). Too many lines may increase the response time. Mind that the Pods are not restarted between all of the tests.")]
+
+    header += report.Plot_and_Text(f"Log distribution", report.set_config(dict(line_count=False), args))
+    header += [html.I("The plot above shows the occurence count of various well-known log lines. Too many of them might be the sign of runtime issues.")]
+
     return header
 
 

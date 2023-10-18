@@ -14,4 +14,3 @@ serving_runtime:
     MODEL_LOADING_TIMEOUT_MS: 40000
 inference_service:
   storage_uri: "s3://psap-watsonx-models/flan-t5-large/"
-  query_data: '{"text": "At what temperature does liquid Nitrogen boil?"}'

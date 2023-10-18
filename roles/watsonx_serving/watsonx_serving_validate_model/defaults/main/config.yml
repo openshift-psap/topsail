@@ -11,9 +11,13 @@ watsonx_serving_validate_model_inference_service_names:
 # Mandatory value
 watsonx_serving_validate_model_model_id:
 
-# the data to pass to the model query
+# path to the dataset to use for the query
 # Mandatory value
-watsonx_serving_validate_model_query_data:
+watsonx_serving_validate_model_dataset:
+
+# number of query to perform
+# Mandatory value
+watsonx_serving_validate_model_query_count:
 
 # the namespace in which the Serving stack was deployed. If empty, use the current project.
 watsonx_serving_validate_model_namespace:

@@ -21,7 +21,6 @@ class Watsonx_Serving:
                      secret_env_file_name=None,
                      secret_env_file_key=None,
                      env_extra_values : dict = {},
-                     query_data=None,
                      mute_serving_logs=False,
                      delete_others=True,
                      limits_equals_requests=True,
@@ -47,8 +46,6 @@ class Watsonx_Serving:
           secret_env_file_name: name of the YAML file containing the secret environment key/values
           secret_env_file_key: key to the secret environment key/values in the secret file
           env_extra_values: extra key/value pairs (will override the values from the secret file)
-
-          query_data: a JSON payload used to validate the model deployment
 
           mute_serving_logs: if True, mute the serving runtime container logs
 
@@ -86,7 +83,8 @@ class Watsonx_Serving:
     def validate_model(self,
                        inference_service_names,
                        model_id,
-                       query_data,
+                       dataset,
+                       query_count,
                        namespace=""):
         """
         Validate the proper deployment of a WatsonX model
@@ -97,7 +95,8 @@ class Watsonx_Serving:
         Args:
           inference_service_names: a list of names of the inference service to validate
           model_id: the model-id to pass to the inference service
-          query_data: the data to pass to the model query
+          dataset: path to the dataset to use for the query
+          query_count: number of query to perform
           namespace: the namespace in which the Serving stack was deployed. If empty, use the current project.
         """
 
