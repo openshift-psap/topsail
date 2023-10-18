@@ -42,3 +42,12 @@ codeflare_generate_mcad_load_timespan: 0
 
 # the distribution method to use to spread the resource creation over the requested timespan
 codeflare_generate_mcad_load_distribution: poisson
+
+# namespace where MCAD is deployed
+codeflare_generate_mcad_load_mcad_namespace: opendatahub
+
+# labels to find the MCAD controller pods
+codeflare_generate_mcad_load_mcad_labels: app=mcad-mcad
+
+# name of the MCAD controller deployment
+codeflare_generate_mcad_load_mcad_deploy: mcad-controller-mcad

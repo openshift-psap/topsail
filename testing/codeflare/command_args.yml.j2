@@ -36,6 +36,13 @@ gpu_operator run_gpu_burn:
   runtime: 30 #s
   ensure_has_gpu: false
 
+codeflare deploy_mcad_from_helm:
+  namespace: {{ odh.namespace }}
+  git_repo: {{ codeflare.mcad.helm.git.repo }}
+  git_ref: {{ codeflare.mcad.helm.git.ref }}
+  image_repo: {{ codeflare.mcad.helm.image.repo }}
+  image_tag: {{ codeflare.mcad.helm.image.tag }}
+
 #
 # Prepare User Pods
 #

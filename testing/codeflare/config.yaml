@@ -166,6 +166,16 @@ odh:
         image: quay.io/project-codeflare/mcad-controller
         tag: main-v1.32.0
 
+codeflare:
+  mcad:
+    deploy_from: helm
+    helm:
+      git:
+        repo: https://github.com/project-codeflare/multi-cluster-app-dispatcher
+        ref: main
+      image:
+        repo: quay.io/project-codeflare/mcad-controller
+        tag: stable
 gpu:
   time_sharing:
     replicas: 10
