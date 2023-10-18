@@ -47,6 +47,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/start_end_cm.yaml",
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-deployment.json",
     f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-controller.log",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-pods.json",
 
     f"{artifact_dirnames.CODEFLARE_CLEANUP_APPWRAPPERS_DIR}/start_end_cm.yaml",
 ]
