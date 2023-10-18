@@ -4,18 +4,16 @@
  *----------------------------------------------------------------------------*/
 
 syntax = "proto3";
-package caikit_data_model.nlp;
+package caikit_data_model.common;
 
 
 /*-- ENUMS -------------------------------------------------------------------*/
 
-enum FinishReason {
-  NOT_FINISHED = 0;
-  MAX_TOKENS = 1;
-  EOS_TOKEN = 2;
-  CANCELLED = 3;
-  TIME_LIMIT = 4;
-  STOP_SEQUENCE = 5;
-  TOKEN_LIMIT = 6;
-  ERROR = 7;
+enum TrainingStatus {
+  PLACEHOLDER_UNSET = 0;
+  QUEUED = 1;
+  RUNNING = 2;
+  COMPLETED = 3;
+  CANCELED = 4;
+  ERRORED = 5;
 }
