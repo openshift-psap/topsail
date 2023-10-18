@@ -38,6 +38,7 @@ ci_presets:
 
   mcad:
     tests.mode: mcad
+    matbench.generate_lts: true
 
   cpu_light_unschedulable:
     extends: [mcad]
@@ -83,6 +84,7 @@ ci_presets:
 
   sdk_user:
     tests.mode: sdk_user
+    matbench.generate_lts: false
 
 secrets:
   dir:
@@ -261,4 +263,4 @@ matbench:
   ignore_exit_code: true
   # directory to plot. Set by testing/common/visualize.py before launching the visualization
   test_directory: null
-  generate_lts: false
+  generate_lts: true
