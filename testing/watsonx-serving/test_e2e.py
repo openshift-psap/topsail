@@ -440,6 +440,16 @@ def test_consolidated_model(consolidated_model, namespace=None):
         rps=llm_config["rps"],
     )
 
+    extract_proto_args_dict = dict(
+        namespace=namespace,
+        inference_service_name=model_name,
+        dest_dir=protos_path.parent,
+    )
+
+    # workaround for https://github.com/caikit/caikit-nlp/issues/237, so that llm-load-test always run with the right protos
+    run.run(f"./run_toolbox.py watsonx_serving extract_protos {dict_to_run_toolbox_args(extract_proto_args_dict)}")
+    run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
+
     try:
         run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
     finally:
