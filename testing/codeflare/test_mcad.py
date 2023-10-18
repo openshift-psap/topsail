@@ -88,9 +88,8 @@ def merge(a, b, path=None):
 
 
 def save_matbench_files(name, cfg):
-    with open(env.ARTIFACT_DIR / "settings", "w") as f:
-        print(f"mcad_load_test=true", file=f)
-        print(f"name={name}", file=f)
+    with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+        yaml.dump(dict(mcad_load_test=True, name=name), f)
 
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
         yaml.dump(config.ci_artifacts.config, f, indent=4)
