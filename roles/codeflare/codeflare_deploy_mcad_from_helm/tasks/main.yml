@@ -27,7 +27,7 @@
 - name: Create the namespace if it does not exist
   command:
     oc create ns "{{ codeflare_deploy_mcad_from_helm_namespace }}"
-
+  failed_when: false
 
 - name: Clone MCAD directory
   shell: |
