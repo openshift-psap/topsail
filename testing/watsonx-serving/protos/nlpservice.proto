@@ -1,84 +1,28 @@
 
 /*------------------------------------------------------------------------------
- * caikit.runtime.WisdomExt.WisdomExtService/CodeGenerationTaskPredict
- * caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+ * AUTO GENERATED
  *----------------------------------------------------------------------------*/
 
 syntax = "proto3";
 package caikit.runtime.Nlp;
+import "bidistreamingtokenclassificationtaskrequest.proto";
+import "classificationresults.proto";
+import "generatedtextresult.proto";
+import "generatedtextstreamresult.proto";
+import "serverstreamingtextgenerationtaskrequest.proto";
+import "textclassificationtaskrequest.proto";
+import "textgenerationtaskrequest.proto";
+import "tokenclassificationresults.proto";
+import "tokenclassificationstreamresult.proto";
+import "tokenclassificationtaskrequest.proto";
 
-import "generatedresult.proto";
-import "caikit-nlp.proto";
-
-message TextGenerationTaskRequest {
-  string text = 1;
-  oneof _max_new_tokens {
-    int64 max_new_tokens = 2;
-  }
-  oneof _min_new_tokens {
-    int64 min_new_tokens = 3;
-  }
-  oneof _truncate_input_tokens {
-    int64 truncate_input_tokens = 4;
-  }
-  oneof _decoding_method {
-    string decoding_method = 5;
-  }
-  oneof _top_k {
-    int64 top_k = 6;
-  }
-  oneof _top_p {
-    double top_p = 7;
-  }
-  oneof _typical_p {
-    double typical_p = 8;
-  }
-  oneof _temperature {
-    double temperature = 9;
-  }
-  oneof _seed {
-    uint64 seed = 10;
-  }
-  oneof _repetition_penalty {
-    double repetition_penalty = 11;
-  }
-  oneof _max_time {
-    double max_time = 12;
-  }
-  oneof _exponential_decay_length_penalty {
-    .caikit_data_model.caikit_nlp.ExponentialDecayLengthPenalty exponential_decay_length_penalty = 13;
-  }
-  repeated string stop_sequences = 14;
-  oneof _preserve_input_text {
-    bool preserve_input_text = 15;
-  }
-}
-
-message ServerStreamingTextGenerationTaskRequest {
-  string text = 1;
-  oneof _preserve_input_text {
-    bool preserve_input_text = 2;
-  }
-  oneof _max_new_tokens {
-    int64 max_new_tokens = 3;
-  }
-  oneof _min_new_tokens {
-    int64 min_new_tokens = 4;
-  }
-}
 
 /*-- SERVICES ----------------------------------------------------------------*/
-/*
-*   rpc ServerStreamingTextGenerationTaskPredict ( .caikit.runtime.Nlp.ServerStreamingTextGenerationTaskRequest ) returns ( stream .caikit_data_model.nlp.GeneratedTextStreamResult );
-*   rpc TextClassificationTaskPredict ( .caikit.runtime.Nlp.TextClassificationTaskRequest ) returns ( .caikit_data_model.caikit_nlp.ClassificationResult );
-*     rpc TokenClassificationTaskPredict ( .caikit.runtime.Nlp.TokenClassificationTaskRequest ) returns ( .caikit_data_model.caikit_nlp.TokenClassificationResult );
-*     rpc TokenizationTaskPredict ( .caikit.runtime.Nlp.TokenizationTaskRequest ) returns ( .caikit_data_model.caikit_nlp.TokenizationResult );
-*   ..etc
-*/
+
 service NlpService {
-  rpc TextGenerationTaskPredict ( caikit.runtime.Nlp.TextGenerationTaskRequest ) returns (caikit_data_model.nlp.GeneratedTextResult );
-  rpc ServerStreamingTextGenerationTaskPredict ( caikit.runtime.Nlp.ServerStreamingTextGenerationTaskRequest ) returns ( stream caikit_data_model.nlp.GeneratedTextStreamResult );
+  rpc TextGenerationTaskPredict(caikit.runtime.Nlp.TextGenerationTaskRequest) returns (caikit_data_model.nlp.GeneratedTextResult);
+  rpc ServerStreamingTextGenerationTaskPredict(caikit.runtime.Nlp.ServerStreamingTextGenerationTaskRequest) returns (stream caikit_data_model.nlp.GeneratedTextStreamResult);
+  rpc TokenClassificationTaskPredict(caikit.runtime.Nlp.TokenClassificationTaskRequest) returns (caikit_data_model.nlp.TokenClassificationResults);
+  rpc BidiStreamingTokenClassificationTaskPredict(stream caikit.runtime.Nlp.BidiStreamingTokenClassificationTaskRequest) returns (stream caikit_data_model.nlp.TokenClassificationStreamResult);
+  rpc TextClassificationTaskPredict(caikit.runtime.Nlp.TextClassificationTaskRequest) returns (caikit_data_model.nlp.ClassificationResults);
 }
-
-
-

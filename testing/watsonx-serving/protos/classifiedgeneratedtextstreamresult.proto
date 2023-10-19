@@ -1,0 +1,23 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.nlp;
+import "finishreason.proto";
+import "tokenclassificationresult.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message ClassifiedGeneratedTextStreamResult {
+
+  /*-- fields --*/
+  string text = 1;
+  repeated caikit_data_model.nlp.TokenClassificationResult token_classification_results = 2;
+  caikit_data_model.nlp.FinishReason finish_reason = 3;
+  int64 token_count = 4;
+  uint64 seed = 5;
+  int64 processed_index = 6;
+}

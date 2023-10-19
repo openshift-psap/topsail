@@ -125,3 +125,24 @@ class Watsonx_Serving:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("watsonx_serving_extract_protos")
+    @AnsibleMappedParams
+    def extract_protos(self,
+                       namespace,
+                       inference_service_name,
+                       dest_dir,
+                       copy_to_artifacts=True,
+                       ):
+        """
+        Extracts the protos of an inference service
+
+        Args:
+          namespace: the namespace in which the model was deployed
+          inference_service_name: the name of the inference service
+          dest_dir: the directory where the protos should be stored
+          copy_to_artifacts: if True, copy the protos to the command artifacts. If False, don't.
+        """
+
+        return RunAnsibleRole(locals())

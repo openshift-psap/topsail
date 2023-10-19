@@ -1,0 +1,17 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.Nlp;
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message TokenClassificationTaskRequest {
+
+  /*-- fields --*/
+  string text = 1;
+  optional double threshold = 2;
+}
