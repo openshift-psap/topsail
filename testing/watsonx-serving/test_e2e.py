@@ -426,8 +426,6 @@ def test_consolidated_model(consolidated_model, namespace=None):
     llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
 
     protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
-    if not protos_path.exists():
-        raise RuntimeError("Protos do not exist at {protos_path}")
 
     args_dict = dict(
         host=host,
@@ -440,15 +438,55 @@ def test_consolidated_model(consolidated_model, namespace=None):
         rps=llm_config["rps"],
     )
 
-    extract_proto_args_dict = dict(
-        namespace=namespace,
-        inference_service_name=model_name,
-        dest_dir=protos_path.parent,
-    )
-
     # workaround for https://github.com/caikit/caikit-nlp/issues/237, so that llm-load-test always run with the right protos
-    run.run(f"./run_toolbox.py watsonx_serving extract_protos {dict_to_run_toolbox_args(extract_proto_args_dict)}")
-    run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
+
+    USE_EXTRACT_PROTO_GPRCURL = True
+    if USE_EXTRACT_PROTO_GPRCURL:
+
+
+
+        extract_proto_grpcurl_args_dict = dict(
+            namespace=namespace,
+            inference_service_name=model_name,
+        )
+
+        main_file = dict(
+            methods=["caikit.runtime.Nlp.TextGenerationTaskRequest", "caikit.runtime.Nlp.ServerStreamingTextGenerationTaskRequest", "caikit.runtime.Nlp.BidiStreamingTokenClassificationTaskRequest", "caikit_data_model.nlp.TokenClassificationResult", ".caikit_data_model.nlp.TokenClassificationStreamResult", "caikit.runtime.Nlp.TextClassificationTaskRequest", "caikit.runtime.Nlp.TokenClassificationTaskRequest", "caikit.runtime.Nlp.NlpService",],
+            dest_file=protos_path,
+        )
+
+        with open(main_file["dest_file"], "w") as f:
+            header = """\
+syntax = "proto3";
+package caikit.runtime.Nlp;
+
+import "generatedresult.proto";
+import "caikit-nlp.proto";
+import "caikit_data_model.generated.proto";
+"""
+            print(header, file=f)
+
+        data_file = dict(
+            methods=["caikit_data_model.nlp.TokenClassificationResult", ".caikit_data_model.nlp.TokenClassificationStreamResult", "caikit_data_model.nlp.ClassificationResults", "caikit_data_model.nlp.ClassificationResult", "caikit_data_model.nlp.TokenClassificationResults"],
+            dest_file=protos_path.parent / "caikit_data_model.generated.proto",
+        )
+        with open(data_file["dest_file"], "w") as f:
+            header = """\
+syntax = "proto3";
+package caikit_data_model.nlp;
+
+import "producer-types.proto";
+import "finishreason.proto";
+"""
+            print(header, file=f)
+
+        run.run(f"./run_toolbox.py watsonx_serving extract_protos_grpcurl {dict_to_run_toolbox_args(extract_proto_grpcurl_args_dict | main_file)}")
+        run.run(f"./run_toolbox.py watsonx_serving extract_protos_grpcurl {dict_to_run_toolbox_args(extract_proto_grpcurl_args_dict | data_file)}")
+
+        run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
+
+    if not protos_path.exists():
+        raise RuntimeError(f"Protos do not exist at {protos_path}")
 
     try:
         run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")

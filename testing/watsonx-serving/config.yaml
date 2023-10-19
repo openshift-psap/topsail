@@ -339,7 +339,7 @@ tests:
       duration: 1m
       threads: 16
       rps: 2
-      protos_file: nlpservice.proto
+      protos_file: nlpservice.generated.proto
       protos_dir: testing/watsonx-serving/protos/
       call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
 
