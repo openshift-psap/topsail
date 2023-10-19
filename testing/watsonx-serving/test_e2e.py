@@ -440,15 +440,28 @@ def test_consolidated_model(consolidated_model, namespace=None):
         rps=llm_config["rps"],
     )
 
-    extract_proto_args_dict = dict(
-        namespace=namespace,
-        inference_service_name=model_name,
-        dest_dir=protos_path.parent,
-    )
-
     # workaround for https://github.com/caikit/caikit-nlp/issues/237, so that llm-load-test always run with the right protos
-    run.run(f"./run_toolbox.py watsonx_serving extract_protos {dict_to_run_toolbox_args(extract_proto_args_dict)}")
-    run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
+    USE_EXTRACT_PROTO = False
+    if USE_EXTRACT_PROTO:
+        extract_proto_args_dict = dict(
+            namespace=namespace,
+            inference_service_name=model_name,
+            dest_dir=protos_path.parent,
+        )
+        run.run(f"./run_toolbox.py watsonx_serving extract_protos {dict_to_run_toolbox_args(extract_proto_args_dict)}")
+
+    USE_EXTRACT_PROTO_GPRCURL = True
+    if USE_EXTRACT_PROTO_GPRCURL:
+        extract_proto_args_dict = dict(
+            namespace=namespace,
+            inference_service_name=model_name,
+            dest_file="testing/watsonx-serving/protos/textgenerationtaskrequest.proto",
+            call="caikit.runtime.Nlp.TextGenerationTaskRequest",
+        )
+        run.run(f"./run_toolbox.py watsonx_serving extract_protos_grpcurl {dict_to_run_toolbox_args(extract_proto_grpcurl_args_dict)}")
+
+    if USE_EXTRACT_PROTO or USE_EXTRACT_PROTO_GPRCURL:
+        run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
 
     try:
         run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
