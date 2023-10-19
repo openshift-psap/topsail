@@ -291,7 +291,7 @@ watsonx_serving:
       query_count: 10
   model:
     serving_runtime:
-      image: quay.io/opendatahub/caikit-tgis-serving:stable
+      image: quay.io/kpouget/catalogs:caikit-tgis-serving
       mute_logs: true
   customize:
     serverless:
