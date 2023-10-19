@@ -1,0 +1,38 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Get the yaml of the inference service
+  shell:
+    oc get isvc/{{ watsonx_serving_extract_protos_grpcurl_inference_service_name }}
+    -n {{ watsonx_serving_extract_protos_grpcurl_namespace }}
+    -oyaml
+    > "{{ artifact_extra_logs_dir }}/artifacts/inference_service.yaml"
+
+- name: Get the route of the predictor hostname and port
+  shell:
+    set -o pipefail;
+
+    yq -r .status.url "{{ artifact_extra_logs_dir }}/artifacts/inference_service.yaml" | sed 's|^https://||' | sed 's|$|:443|'
+  register: predictor_hostname_cmd
+
+- name: Generate the protos
+  shell:
+    set -o pipefail;
+    set -e;
+
+    what="{{ item }}";
+    echo "/* $what */" >> "{{ watsonx_serving_extract_protos_grpcurl_dest_file }}";
+    grpcurl -insecure "{{ predictor_hostname_cmd.stdout }}" describe "$what"
+     | sed -E 's/^.* is a (message|service)://g'
+     | sed 's/ .caikit/ caikit/g'
+     >> "{{ watsonx_serving_extract_protos_grpcurl_dest_file }}"
+  loop: "{{ watsonx_serving_extract_protos_grpcurl_methods }}"
+
+- name: Copy the prototypes to the artifacts dir
+  shell:
+    cp "{{ watsonx_serving_extract_protos_grpcurl_dest_file }}" "{{ artifact_extra_logs_dir }}/artifacts/proto"
+  when: watsonx_serving_extract_protos_grpcurl_copy_to_artifacts

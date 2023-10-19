@@ -146,3 +146,26 @@ class Watsonx_Serving:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("watsonx_serving_extract_protos_grpcurl")
+    @AnsibleMappedParams
+    def extract_protos_grpcurl(self,
+                               namespace,
+                               inference_service_name,
+                               dest_file,
+                               methods: list,
+                               copy_to_artifacts=True,
+                       ):
+        """
+        Extracts the protos of an inference service, with GRPCurl observe
+
+        Args:
+          namespace: the namespace in which the model was deployed
+          inference_service_name: the name of the inference service
+          dest_file: the path where the proto file will be stored
+          methods: the list of methods to extract
+          copy_to_artifacts: if True, copy the protos to the command artifacts. If False, don't.
+        """
+
+        return RunAnsibleRole(locals())
