@@ -11,7 +11,7 @@ set -x
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp}
 GIT_REPO=opendatahub-io/caikit-tgis-serving
-GIT_REF=main
+GIT_REF=747af55d12613e62fd72479f4024a8d9edf096e3
 
 export TARGET_OPERATOR=brew # Set this among odh, rhods or brew, if you want to skip the question in the script.
 export CHECK_UWM=false # Set this to "false", if you want to skip the User Workload Configmap check message
