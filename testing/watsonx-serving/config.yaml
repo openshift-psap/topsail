@@ -47,6 +47,7 @@ ci_presets:
   spot_cluster:
     extends: [spot_compute]
     clusters.create.ocp.workers.spot: true
+    clusters.create.ocp.region: us-east-2
 
   # ---
 
