@@ -129,6 +129,8 @@ cluster dump_prometheus_db/uwm:
 local_ci run_multi/scale:
   user_count: "{{ tests.scale.namespace.replicas }}"
   namespace: "{{ base_image.namespace }}"
+  job_name: scale-test-run-one
+
   istag: "{{ base_image.imagestream }}:{{ base_image.extend.tag }}"
   service_account: "{{ base_image.user.service_account }}"
   state_signal_redis_server: {{ redis_internal_address }}
@@ -213,20 +215,24 @@ local_ci run_multi/deploy_concurrently:
   ci_command: "watsonx-serving test_e2e deploy_one_model --use-job-index"
   sleep_factor: 0
   need_all_success: true
+  job_name: deploy-one-model
 
 local_ci run_multi/test_sequentially:
   <<: *local_ci_run_multi_e2e
   ci_command: "watsonx-serving test_e2e test_models_sequentially --locally"
   sleep_factor: 0
   user_count: 1
+  job_name: test-models
 
 local_ci run_multi/test_concurrently:
   <<: *local_ci_run_multi_e2e
   ci_command: "watsonx-serving test_e2e test_one_model --use-job-index"
   sleep_factor: 0
+  job_name: test-one-model
 
 local_ci run_multi/deploy_and_test_sequentially:
   <<: *local_ci_run_multi_e2e
   ci_command: "watsonx-serving test_e2e deploy_and_test_models_sequentially --locally"
   sleep_factor: 0
   user_count: 1
+  job_name: deploy-and-test-models
