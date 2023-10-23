@@ -103,7 +103,7 @@ class LatencyReport():
         header += Plot_and_Text(f"Latency details", args)
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
-            header += [html.H2(entry.get_name(variables))]
+            header += [html.H2(entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name'])))))]
             header += Plot_and_Text(f"Latency details", set_config(dict(entry=entry), args))
 
         return None, header
@@ -131,7 +131,7 @@ class TokensReport():
         header += Plot_and_Text(f"Latency details", set_config(dict(only_tokens=True), args))
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
-            header += [html.H2(entry.get_name(variables))]
+            header += [html.H2(entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name'])))))]
             header += Plot_and_Text(f"Latency details", set_config(dict(only_tokens=True, entry=entry), args))
 
         return None, header
