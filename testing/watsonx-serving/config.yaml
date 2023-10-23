@@ -138,6 +138,12 @@ ci_presets:
           resource_request:
             memory: 6 # in Gi
 
+  5min:
+    tests.e2e.llm_load_test.duration: 5m
+
+  10min:
+    tests.e2e.llm_load_test.duration: 10m
+
   # ---
 
   scale_test:
