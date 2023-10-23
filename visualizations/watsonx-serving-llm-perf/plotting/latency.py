@@ -40,7 +40,11 @@ class LatencyDistribution():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         entries = common.Matrix.all_records(settings, setting_lists)
         cfg__only_tokens = cfg.get("only_tokens", False)
-        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, only_tokens=cfg__only_tokens))
+        cfg__summary = cfg.get("summary", False)
+        cfg__box_plot = cfg.get("box_plot", True)
+        cfg__show_text = cfg.get("show_text", True)
+
+        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, only_tokens=cfg__only_tokens, summary=cfg__summary))
 
         if df.empty:
             return None, "Not data available ..."
@@ -50,11 +54,13 @@ class LatencyDistribution():
             y_key = "tokens"
         else:
             y_key = "latencyPerToken"
-        fig = px.box(df, hover_data=df.columns,
-                      x="model_name", y=y_key, color="test_name")
 
-        fig.update_layout(barmode='stack')
-        fig.update_yaxes(range=[0, df[y_key].max() * 1.1])
+        if cfg__box_plot:
+            fig = px.box(df, hover_data=df.columns,
+                         x="model_name", y=y_key, color="test_name")
+            fig.update_yaxes(range=[0, df[y_key].max() * 1.1])
+        else:
+            fig = plotCustomComparison(df, x="model_name", y=y_key)
 
         if cfg__only_tokens:
             plot_title = f"Distribution of the number of tokens of the model answers"
@@ -72,9 +78,11 @@ class LatencyDistribution():
         if len(variables) == 1 and "model_name" in variables:
             fig.layout.update(showlegend=False)
 
-        show_message = True
+        if cfg__box_plot and cfg__summary:
+            fig.layout.update(showlegend=False)
+
         msg = []
-        for test_fullname in df.sort_values(by=["test_fullname"]).test_fullname.unique():
+        for test_fullname in df.sort_values(by=["test_fullname"]).test_fullname.unique() if cfg__show_text else []:
             stats_data = df[df.test_fullname == test_fullname][y_key]
 
             msg += [html.H3(test_fullname)]
@@ -116,7 +124,38 @@ class LatencyDistribution():
         return fig, msg
 
 
-def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name_by_error=False, latency_per_token=True, show_errors=False, only_tokens=False):
+def plotCustomComparison(df, x, y):
+    fig = go.Figure()
+    data_whatxy = defaultdict(dict)
+
+    for x_value in df[x].unique():
+        df_x_value = df[df[x] == x_value]
+        y_min = df_x_value[y].min()
+        y_max = df_x_value[y].max()
+        q1, median, q3 = stats.quantiles(df_x_value[y])
+        data_whatxy["max"][x_value] = y_max
+        data_whatxy["Q3 (75%)"][x_value] = q3
+        data_whatxy["median (50%)"][x_value] = median
+        data_whatxy["Q1 (25%)"][x_value] = q1
+        data_whatxy["min"][x_value] = y_min
+
+    all_x_values = set()
+    all_y_values = []
+    for legend_name, xy_values in data_whatxy.items():
+        x_values = list(xy_values.keys())
+        y_values = list(xy_values.values())
+
+        all_x_values.update(x_values)
+        all_y_values += y_values
+        fig.add_trace(go.Bar(x=x_values,
+                             y=y_values,
+                             name=legend_name,
+                             ))
+    fig.update_layout(barmode='overlay')
+
+    return fig
+
+def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name_by_error=False, latency_per_token=True, show_errors=False, only_tokens=False, summary=False):
     data = []
 
     if "mode" in _variables:
@@ -137,15 +176,8 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
                     continue
 
                 datum = {}
-                datum["index"] = idx
-                datum["timestamp"] = detail["timestamp"]
 
-                if has_multiple_modes:
-                    datum["test_fullname"] = ""\
-                        + f"{entry.settings.model_name}, {entry.settings.mode} | " \
-                        + entry.get_name(variables)
-                else:
-                    datum["test_fullname"] = entry.get_name(variables)
+                datum["timestamp"] = detail["timestamp"]
 
                 generatedTokens = int(detail["response"].get("generatedTokens", 1))
                 if only_tokens:
@@ -162,7 +194,9 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
                 if has_multiple_modes:
                     datum["model_name"] += f"<br>{entry.settings.mode.title()}"
 
-                if test_name_by_error:
+                if summary:
+                    datum["test_name"] = "all"
+                elif test_name_by_error:
                     datum["test_name"] = error_report.simplify_error(detail.get("error"))
                 elif detail.get("error"):
                     datum["test_name"] = "errors"
@@ -171,6 +205,9 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
 
                 if only_errors:
                     datum["error"] = detail.get("error")
+
+                datum["test_fullname"] = datum["model_name"].replace("<br>", ", ") + " | " + datum["test_name"]
+
 
                 data.append(datum)
 

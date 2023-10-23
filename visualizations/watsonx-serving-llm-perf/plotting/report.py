@@ -100,6 +100,12 @@ class LatencyReport():
         header += Plot_and_Text(f"Latency distribution", args)
         header += html.Br()
         header += html.Br()
+
+        header += Plot_and_Text(f"Latency distribution", set_config(dict(summary=True, show_text=False), args))
+        header += Plot_and_Text(f"Latency distribution", set_config(dict(summary=True, box_plot=False), args))
+        header += html.Br()
+        header += html.Br()
+
         header += Plot_and_Text(f"Latency details", args)
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
