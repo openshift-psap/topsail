@@ -222,7 +222,7 @@ local_ci run_multi/test_sequentially:
   ci_command: "watsonx-serving test_e2e test_models_sequentially --locally"
   sleep_factor: 0
   user_count: 1
-  job_name: test-models
+  job_name: test-models-seq
 
 local_ci run_multi/test_concurrently:
   <<: *local_ci_run_multi_e2e
