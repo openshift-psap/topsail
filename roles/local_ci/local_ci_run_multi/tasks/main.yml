@@ -105,6 +105,12 @@
        > "{{ artifact_extra_logs_dir }}/ci_job.yaml"
   ignore_errors: true
 
+- name: Get the description of the CI Job
+  shell:
+    oc describe -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
+        > "{{ artifact_extra_logs_dir }}/ci_job.desc"
+  ignore_errors: true
+
 - name: Get the status of the CI Pods
   shell:
     oc get pods -owide
