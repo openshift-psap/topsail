@@ -46,19 +46,19 @@ def consolidate_models(index=None, use_job_index=False, model_name=None, namespa
     if model_name and namespace:
         consolidated_models.append(consolidate_model(name=model_name))
     elif index is not None and model_name:
-        consolidated_models.append(consolidate_model(index, model_name))
+        consolidated_models.append(consolidate_model(index=index, model_name=model_name))
     elif index is not None:
-        consolidated_models.append(consolidate_model(index))
+        consolidated_models.append(consolidate_model(index=index))
     elif use_job_index:
         index = os.environ.get("JOB_COMPLETION_INDEX", None)
         if index is None:
             raise RuntimeError("No JOB_COMPLETION_INDEX env variable available :/")
 
         index = int(index)
-        consolidated_models.append(consolidate_model(index))
+        consolidated_models.append(consolidate_model(index=index))
     else:
         for index in range(len(config.ci_artifacts.get_config("tests.e2e.models"))):
-            consolidated_models.append(consolidate_model(index))
+            consolidated_models.append(consolidate_model(index=index))
 
     if namespace is not None:
         for consolidated_model in consolidated_models:
@@ -383,6 +383,9 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
                 e2e_test=True,
                 model_name=consolidated_model['name'],
             )
+            if (index := consolidated_model.get("index")) is not None:
+                settings["index"] = index
+
             yaml.dump(settings, f, indent=4)
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
