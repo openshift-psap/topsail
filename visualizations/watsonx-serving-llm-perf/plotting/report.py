@@ -86,7 +86,7 @@ def Plot_and_Text(name, args):
 
 class LatencyReport():
     def __init__(self):
-        self.name = "report: Latency"
+        self.name = "report: Latency per token"
         self.id_name = self.name.lower().replace(" ", "_")
         self.no_graph = True
         self.is_report = True
@@ -95,7 +95,7 @@ class LatencyReport():
 
     def do_plot(self, *args):
         header = []
-        header += [html.H1("llm-load-test latency")]
+        header += [html.H1("Latency per token during the load test")]
 
         header += Plot_and_Text(f"Latency distribution", args)
         header += html.Br()
