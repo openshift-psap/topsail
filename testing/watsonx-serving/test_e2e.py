@@ -9,7 +9,6 @@ import time
 import functools
 import json
 import yaml
-from collections import defaultdict
 
 import fire
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -29,34 +28,9 @@ def consolidate_model_namespace(consolidated_model):
     return f"{namespace_prefix}-{model_index}"
 
 
-def give_unique_names(model_list):
-    known_models = defaultdict(int)
-
-    uniquename_model_list = []
-    for _model_name in model_list:
-
-        model_name = list(_model_name.keys())[0] \
-            if isinstance(_model_name, dict) \
-               else _model_name
-
-        known_models[model_name] += 1
-        if (model_name_count := known_models[model_name]) != 1:
-            unique_model_name = f"{model_name}-{model_name_count}"
-            if isinstance(_model_name, dict):
-                _model_name = {unique_model_name: list(_model_name.values())[0]}
-            else:
-                _model_name = {unique_model_name: dict(name=model_name)}
-
-        uniquename_model_list.append(_model_name)
-    [print(f"- {v}") for v in uniquename_model_list]
-
-    return uniquename_model_list
-
-
 def consolidate_model(index=None, name=None, show=True):
     if name is None:
-        model_list = give_unique_names(config.ci_artifacts.get_config("tests.e2e.models"))
-
+        model_list = config.ci_artifacts.get_config("tests.e2e.models")
         if index >= len(model_list):
             raise IndexError(f"Requested model index #{index}, but only {len(model_list)} are defined. {model_list}")
 
