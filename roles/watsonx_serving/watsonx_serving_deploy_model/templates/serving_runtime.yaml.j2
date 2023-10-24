@@ -16,7 +16,7 @@ spec:
 {% endif %}
       TGIS_CONFIG_TEMPLATE="/caikit/config/caikit-tgis.template.yml"
       EXTENDED_TIMEOUT=20000
-      sed -i 's/load_timeout: .*/load_timeout: '$EXTENDED_TIMEOUT'/' /caikit/config/caikit-tgis.template.yml
+      sed -i 's/load_timeout: .*/load_timeout: '$EXTENDED_TIMEOUT'/' "$TGIS_CONFIG_TEMPLATE"
       exec ./start-serving.sh {% if watsonx_serving_deploy_model_mute_serving_logs %} > "$HUGGINGFACE_HUB_CACHE/logs" {% endif %}
 
     env:

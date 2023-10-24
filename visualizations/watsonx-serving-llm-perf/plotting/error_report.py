@@ -92,13 +92,17 @@ def _get_error_overview(entries, args):
             success_count += len(block["details"]) - error_count
         errorDistribution[entry.get_name(variables)] = success_count
 
-    header += report.Plot_and_Text(f"Errors distribution", args)
-    header += [html.I("Click on the graph to see the error labels in the interactive view.")]
+    graph_text = report.Plot_and_Text(f"Errors distribution", args)
+    if graph_text[0] and graph_text[0].figure:
+        header += graph_text
+        header += [html.I("Click on the graph to see the error labels in the interactive view.")]
 
     header += report.Plot_and_Text(f"Latency details", report.set_config(dict(only_errors=True), args))
     header += [html.I("Click on the graph to see the error labels in the interactive view.")]
     header += [html.Br(), html.Br()]
-    header += ["Number of successful requests for each test, and global error count:"]
+
+    header += report.Plot_and_Text(f"Success count distribution", args)
+    header += ["Number of successful requests and error count, for each of the tests:"]
 
     errors = []
     for descr, count in sorted(errorDistribution.items()):

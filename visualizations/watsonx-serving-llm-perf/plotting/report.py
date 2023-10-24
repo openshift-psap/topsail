@@ -86,7 +86,7 @@ def Plot_and_Text(name, args):
 
 class LatencyReport():
     def __init__(self):
-        self.name = "report: Latency"
+        self.name = "report: Latency per token"
         self.id_name = self.name.lower().replace(" ", "_")
         self.no_graph = True
         self.is_report = True
@@ -95,15 +95,21 @@ class LatencyReport():
 
     def do_plot(self, *args):
         header = []
-        header += [html.H1("llm-load-test latency")]
+        header += [html.H1("Latency per token during the load test")]
 
         header += Plot_and_Text(f"Latency distribution", args)
         header += html.Br()
         header += html.Br()
+
+        header += Plot_and_Text(f"Latency distribution", set_config(dict(summary=True, show_text=False), args))
+        header += Plot_and_Text(f"Latency distribution", set_config(dict(summary=True, box_plot=False), args))
+        header += html.Br()
+        header += html.Br()
+
         header += Plot_and_Text(f"Latency details", args)
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
-            header += [html.H2(entry.get_name(variables))]
+            header += [html.H2(entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name'])))))]
             header += Plot_and_Text(f"Latency details", set_config(dict(entry=entry), args))
 
         return None, header
@@ -131,7 +137,7 @@ class TokensReport():
         header += Plot_and_Text(f"Latency details", set_config(dict(only_tokens=True), args))
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
-            header += [html.H2(entry.get_name(variables))]
+            header += [html.H2(entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name'])))))]
             header += Plot_and_Text(f"Latency details", set_config(dict(only_tokens=True, entry=entry), args))
 
         return None, header

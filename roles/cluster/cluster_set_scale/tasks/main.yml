@@ -140,7 +140,7 @@
   # info about the 'machinesets'
   - name: Capture the description of the machinesets
     shell: |
-      oc describe machineset/{{ item }} -n openshift-machine-api > {{ artifact_extra_logs_dir }}/machines_{{ item }}.desc
+      oc describe machineset/{{ item }} -n openshift-machine-api > {{ artifact_extra_logs_dir }}/machineset_{{ item }}.desc
     failed_when: false
     loop: "{{ oc_get_machinesets.stdout_lines }}"
 

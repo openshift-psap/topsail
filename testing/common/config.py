@@ -96,7 +96,7 @@ class Config:
 
     def apply_preset(self, name):
         try:
-            values = self.get_config(f"ci_presets.{name}")
+            values = self.get_config(f'ci_presets["{name}"]')
         except IndexError:
             logging.error(f"Preset '{name}' does not exists :/")
             raise

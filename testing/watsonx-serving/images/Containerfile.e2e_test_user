@@ -12,12 +12,8 @@ RUN curl -L https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL
 # install GHZ (llm-load-test dependency)
 ARG GHZ_PINNED_COMMIT=44a50f9826a0c1f6c42c430dafb29662cb2e418b
 ARG GHZ_BRANCH_NAME=response_json
-RUN git clone https://github.com/dagrayvid/ghz.git /src/ghz && \
-    cd /src/ghz/cmd/ghz && \
-    git fetch --quiet origin ${GHZ_PINNED_COMMIT} && \
-    git checkout FETCH_HEAD -b ${GHZ_BRANCH_NAME} && \
-    go build . && \
-    mv ghz /usr/local/bin/
+
+RUN curl https://tools.972.ovh/ghz -o /usr/local/bin/ghz && chmod ugo+x /usr/local/bin/ghz
 
 # install llm-load-test requirements
 RUN pip3 install -r subprojects/llm-load-test/requirements.txt
