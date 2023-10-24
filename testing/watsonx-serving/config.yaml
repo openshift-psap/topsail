@@ -115,7 +115,6 @@ ci_presets:
   e2e_perf_flan:
     extends: [e2e_perf]
     tests.e2e.llm_load_test.duration: 3m
-    watsonx_serving.model.serving_runtime.mute_logs: false # secret key has been disabled
     tests.e2e.models:
     - flan-t5-small-gpu-3gb:
         name: flan-t5-small-gpu
@@ -307,8 +306,11 @@ watsonx_serving:
       query_count: 10
   model:
     serving_runtime:
-      image: quay.io/opendatahub/caikit-tgis-serving:stable
-      mute_logs: true
+      kserve:
+        image: quay.io/opendatahub/text-generation-inference:stable
+      transformer:
+        image: quay.io/opendatahub/caikit-tgis-serving:fast
+        mute_logs: true
   customize:
     serverless:
       enabled: false
