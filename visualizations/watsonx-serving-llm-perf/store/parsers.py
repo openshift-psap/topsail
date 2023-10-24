@@ -51,7 +51,7 @@ def _parse_always(results, dirname, import_settings):
 def _parse_once(results, dirname):
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)
     results.predictor_logs = _parse_predictor_logs(dirname)
-
+    results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -173,3 +173,20 @@ def _parse_predictor_logs(dirname):
                 predictor_logs.distribution["ABORT-ACTION"] += 1
 
     return predictor_logs
+
+
+def _parse_test_start_end(dirname, llm_load_test_output):
+    test_start_end = types.SimpleNamespace()
+    test_start_end.start = None
+    test_start_end.end = None
+
+    for entry in llm_load_test_output:
+        start = entry["details"][0]["timestamp"]
+        if test_start_end.start is None or start < test_start_end.start:
+            test_start_end.start = start
+
+        end = entry["date"]
+        if test_start_end.end is None or end > test_start_end.end:
+            test_start_end.end = end
+
+    return test_start_end
