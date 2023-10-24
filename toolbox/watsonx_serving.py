@@ -13,15 +13,18 @@ class Watsonx_Serving:
                      namespace,
                      model_name,
                      model_id,
-                     serving_runtime_name, serving_runtime_image, serving_runtime_resource_request,
-                     inference_service_name,
-                     storage_uri,
+                     serving_runtime_name,
+                     sr_kserve_image, sr_kserve_resource_request,
+                     sr_transformer_image, sr_transformer_resource_request,
+
+                     inference_service_name, storage_uri,
                      sa_name,
+                     sr_kserve_extra_env_values={},
+                     sr_transformer_extra_env_values={},
                      inference_service_min_replicas : int = None,
                      secret_env_file_name=None,
                      secret_env_file_key=None,
-                     env_extra_values : dict = {},
-                     mute_serving_logs=False,
+                     sr_transformer_mute_logs=False,
                      delete_others=True,
                      limits_equals_requests=True,
                      ):
@@ -35,8 +38,14 @@ class Watsonx_Serving:
           model_id: the ID of the model, for the validation step
 
           serving_runtime_name: the name to give to the serving runtime
-          serving_runtime_image: the image of the serving runtime
-          serving_runtime_resource_request: the resource request of the serving runtime
+          sr_kserve_image: the image of the Kserve serving runtime container
+          sr_kserve_resource_request: the resource request of the kserve serving runtime container
+          sr_kserve_extra_env_values: extra key/value pairs for the kserve container (will override the values from the secret file)
+
+          sr_transformer_image: the image of the Transformer serving runtime container
+          sr_transformer_resource_request: the resource request of the Transformer serving runtime container
+          sr_transformer_mute_logs: if True, mute the transformer serving runtime container logs
+          sr_transformer_extra_env_values: extra key/value pairs for the transformer container (will override the values from the secret file)
 
           inference_service_name: the name to give to the inference service
           inference_service_min_replicas: the minimum number of replicas. If none, the field is left unset.
@@ -45,9 +54,6 @@ class Watsonx_Serving:
 
           secret_env_file_name: name of the YAML file containing the secret environment key/values
           secret_env_file_key: key to the secret environment key/values in the secret file
-          env_extra_values: extra key/value pairs (will override the values from the secret file)
-
-          mute_serving_logs: if True, mute the serving runtime container logs
 
           delete_others: if True, deletes the other serving runtime/inference services of the namespace
 
