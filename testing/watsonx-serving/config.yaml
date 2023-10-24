@@ -74,10 +74,11 @@ ci_presets:
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g5.2xlarge
 
-  e2e_models:
+  e2e_all_models:
     tests.e2e.models:
-    - flan-t5-large-gpu
+    - flan-t5-small-cpu
     - flan-t5-small-gpu
+    - flan-t5-large-gpu
     - bloom-560m
     - mpt-7b-instruct2
 
