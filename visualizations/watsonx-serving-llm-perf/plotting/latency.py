@@ -40,11 +40,11 @@ class LatencyDistribution():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         entries = common.Matrix.all_records(settings, setting_lists)
         cfg__only_tokens = cfg.get("only_tokens", False)
-        cfg__summary = cfg.get("summary", False)
+        cfg__collapse_index = cfg.get("collapse_index", False)
         cfg__box_plot = cfg.get("box_plot", True)
         cfg__show_text = cfg.get("show_text", True)
 
-        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, only_tokens=cfg__only_tokens, summary=cfg__summary))
+        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, only_tokens=cfg__only_tokens, collapse_index=cfg__collapse_index))
 
         if df.empty:
             return None, "Not data available ..."
@@ -78,7 +78,7 @@ class LatencyDistribution():
         if len(variables) == 1 and "model_name" in variables:
             fig.layout.update(showlegend=False)
 
-        if cfg__box_plot and cfg__summary:
+        if cfg__box_plot and cfg__collapse_index:
             fig.layout.update(showlegend=False)
 
         msg = []
@@ -161,7 +161,7 @@ def plotCustomComparison(df, x, y):
 
     return fig
 
-def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name_by_error=False, latency_per_token=True, show_errors=False, only_tokens=False, summary=False):
+def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name_by_error=False, latency_per_token=True, show_errors=False, only_tokens=False, collapse_index=False):
     data = []
 
     if "mode" in _variables:
@@ -200,7 +200,7 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
                 if has_multiple_modes:
                     datum["model_name"] += f"<br>{entry.settings.mode.title()}"
 
-                if summary:
+                if collapse_index:
                     datum["test_name"] = entry.get_name(v for v in variables if v != "index").replace(", ", "<br>")
                 elif test_name_by_error:
                     datum["test_name"] = error_report.simplify_error(detail.get("error"))

@@ -101,8 +101,12 @@ class LatencyReport():
         header += html.Br()
         header += html.Br()
 
-        header += Plot_and_Text(f"Latency distribution", set_config(dict(summary=True, show_text=False), args))
-        header += Plot_and_Text(f"Latency distribution", set_config(dict(summary=True, box_plot=False), args))
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        collapse_index = "mode" in variables
+
+        header += Plot_and_Text(f"Latency distribution", set_config(dict(collapse_index=collapse_index, show_text=False), args))
+        header += Plot_and_Text(f"Latency distribution", set_config(dict(collapse_index=collapse_index, box_plot=False), args))
         header += html.Br()
         header += html.Br()
 
