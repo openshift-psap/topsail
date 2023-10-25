@@ -133,7 +133,13 @@ def plotCustomComparison(df, x, y):
         y_min = df_x_value[y].min()
         y_max = df_x_value[y].max()
         q1, median, q3 = stats.quantiles(df_x_value[y])
+
+        q90 = stats.quantiles(df_x_value[y], n=10)[8] # 90th percentile
+        q99 = stats.quantiles(df_x_value[y], n=100)[98] # 99th percentile
+
         data_whatxy["max"][x_value] = y_max
+        data_whatxy["99th percentile"][x_value] = q99
+        data_whatxy["90th percentile"][x_value] = q90
         data_whatxy["Q3 (75%)"][x_value] = q3
         data_whatxy["median (50%)"][x_value] = median
         data_whatxy["Q1 (25%)"][x_value] = q1
@@ -189,13 +195,13 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
                 else:
                     datum["latency"] = detail["latency"] / 1000 / 1000
 
-                datum["model_name"] = entry.settings.model_name
+                datum["model_name"] = f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")
 
                 if has_multiple_modes:
                     datum["model_name"] += f"<br>{entry.settings.mode.title()}"
 
                 if summary:
-                    datum["test_name"] = "all"
+                    datum["test_name"] = entry.get_name(v for v in variables if v != "index").replace(", ", "<br>")
                 elif test_name_by_error:
                     datum["test_name"] = error_report.simplify_error(detail.get("error"))
                 elif detail.get("error"):
@@ -206,7 +212,7 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
                 if only_errors:
                     datum["error"] = detail.get("error")
 
-                datum["test_fullname"] = datum["model_name"].replace("<br>", ", ") + " | " + datum["test_name"]
+                datum["test_fullname"] = datum["model_name"].replace("<br>", ", ")
 
 
                 data.append(datum)
