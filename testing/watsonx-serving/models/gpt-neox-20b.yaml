@@ -1,3 +1,4 @@
+extends: base
 id: gpt-neox-20b
 full_name: EleutherAI/gpt-neox-20b
 secret_key: gpt-neox-20b
@@ -9,11 +10,5 @@ serving_runtime:
       memory: 30 # in Gi
       nvidia.com/gpu: 40 # in Gi of GPU memory
     extra_env: {}
-  transformer:
-    resource_request:
-      cpu: 1
-      memory: 3 # in Gi
-    extra_env: {}
 inference_service:
-  min_replicas: 2
   storage_uri: "s3://psap-watsonx-models/gpt-neox-20b/gpt-neox-20b"

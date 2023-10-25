@@ -1,3 +1,4 @@
+extends: base
 id: flan-t5-large
 full_name: google/flan-t5-large
 secret_key: flan-t5-large
@@ -13,10 +14,5 @@ serving_runtime:
       PT2_COMPILE: false
       INFERENCE_PLUGIN_TGIS_MODEL_LOADING_TIMEOUT_MS: 40000
       MODEL_LOADING_TIMEOUT_MS: 40000
-  transformer:
-    resource_request:
-      cpu: 1
-      memory: 3 # in Gi
-    extra_env: {}
 inference_service:
   storage_uri: "s3://psap-watsonx-models/flan-t5-large/flan-t5-large"

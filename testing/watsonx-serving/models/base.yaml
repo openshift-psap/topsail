@@ -1,0 +1,8 @@
+serving_runtime:
+  transformer:
+    resource_request:
+      cpu: 0.5
+      memory: 0.5 # in Gi
+    extra_env: {}
+inference_service:
+  min_replicas: 1
