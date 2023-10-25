@@ -130,6 +130,14 @@ def _find_test_timestamps(dirname):
                 end = data["end"]
                 test_timestamp.end = datetime.datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")
                 test_timestamp.settings = data["settings"]
+                if "expe" in test_timestamp.settings:
+                    del test_timestamp.settings["expe"]
+                if "e2e_test" in test_timestamp.settings:
+                    del test_timestamp.settings["e2e_test"]
+                if "model_name" in test_timestamp.settings:
+                    test_timestamp.settings["*model_name"] = test_timestamp.settings["model_name"]
+                    del test_timestamp.settings["model_name"]
+
                 test_timestamps.append(test_timestamp)
             except Exception as e:
                 logging.warning(f"Failed to parse {test_timestamp_filename}: {e.__class__.__name__}: {e}")
