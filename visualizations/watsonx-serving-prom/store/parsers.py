@@ -51,6 +51,8 @@ def _parse_once(results, dirname):
     results.metrics = _extract_metrics(dirname)
     results.nodes_info = _parse_nodes_info(dirname) or {}
     results.cluster_info = _extract_cluster_info(results.nodes_info)
+    results.tests_timestamp = _find_test_timestamps(dirname)
+
 
 def _extract_metrics(dirname):
     if artifact_paths.CLUSTER_DUMP_PROM_DB_DIR is None:
@@ -115,3 +117,21 @@ def _extract_cluster_info(nodes_info):
                                 if node_info.sutest_cluster and node_info.infra]
 
     return cluster_info
+
+def _find_test_timestamps(dirname):
+    test_timestamps = []
+    for test_timestamp_filename in sorted(dirname.glob("**/test_start_end.json")):
+        with open(test_timestamp_filename) as f:
+            try:
+                data = json.load(f)
+                test_timestamp = types.SimpleNamespace()
+                start = data["start"][:-4]+"Z"
+                test_timestamp.start = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M:%S.%f%z")
+                end = data["end"]
+                test_timestamp.end = datetime.datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")
+                test_timestamp.settings = data["settings"]
+                test_timestamps.append(test_timestamp)
+            except Exception as e:
+                logging.warning(f"Failed to parse {test_timestamp_filename}: {e.__class__.__name__}: {e}")
+
+    return test_timestamps

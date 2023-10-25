@@ -3,11 +3,17 @@ full_name: bloom-560m
 secret_key: # no secret key at the moment
 
 serving_runtime:
-  resource_request:
-    cpu: 1.5
-    memory: 6 # in Gi
-    nvidia.com/gpu: 5 # in Gi of GPU memory
-  extra_env: {}
-  min_replicas: 1
+  kserve:
+    resource_request:
+      cpu: 1.5
+      memory: 6 # in Gi
+      nvidia.com/gpu: 5 # in Gi of GPU memory
+    extra_env: {}
+  transformer:
+    resource_request:
+      cpu: 1
+      memory: 3 # in Gi
+    extra_env: {}
 inference_service:
-  storage_uri: "s3://psap-watsonx-models/bloom-560m"
+  min_replicas: 1
+  storage_uri: "s3://psap-watsonx-models/bloom-560m/bloom-560m"

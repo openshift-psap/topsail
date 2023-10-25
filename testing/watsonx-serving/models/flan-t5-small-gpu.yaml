@@ -3,10 +3,19 @@ full_name: google/flan-t5-small
 secret_key: flan-t5-small
 
 serving_runtime:
-  resource_request:
-    cpu: 1
-    memory: 3 # in Gi
-    nvidia.com/gpu: 1 # in Gi of GPU memory
-  extra_env: {}
+  kserve:
+    resource_request:
+      cpu: 1
+      memory: 3 # in Gi
+      nvidia.com/gpu: 1 # in Gi of GPU memory
+    extra_env:
+      container: kserver
+  transformer:
+    resource_request:
+      cpu: 1
+      memory: 3 # in Gi
+      nvidia.com/gpu: 1 # in Gi of GPU memory
+    extra_env:
+      container: transformer
 inference_service:
-  storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/"
+  storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/flan-t5-small-caikit"

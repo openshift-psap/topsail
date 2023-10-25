@@ -21,10 +21,22 @@
 
 - name: Wait for the model to answer successfully
   shell: |
-    curl -Ssf -k "{{ ksvc_hostname_cmd.stdout }}"
-  register: curl_working_cmd
+    set -o pipefail;
+    i=0;
+
+    GRPCURL_DATA=$(cat "{{ watsonx_serving_validate_model_dataset }}" | jq .dataset[$i].input )
+
+    grpcurl \
+        -insecure \
+        -d "$GRPCURL_DATA" \
+        -H "mm-model-id: {{ watsonx_serving_validate_model_model_id }}" \
+        {{ ksvc_hostname_cmd.stdout }}:443 \
+        caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+
+  register: grpcurl_working_cmd
   retries: 60
   delay: 5
+  until: grpcurl_working_cmd.rc == 0
 
 - name: Inform | Next task runs the load test
   debug: msg="Next task runs the validation test. It runs {{ watsonx_serving_validate_model_query_count }} queries. Artifacts will be saved into '{{ artifact_extra_logs_dir }}/{{ watsonx_serving_validate_model_inference_service_name }}'."
