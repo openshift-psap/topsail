@@ -12,7 +12,5 @@ serving_runtime:
     extra_env:
       DTYPE_STR: float16
       PT2_COMPILE: false
-      INFERENCE_PLUGIN_TGIS_MODEL_LOADING_TIMEOUT_MS: 40000
-      MODEL_LOADING_TIMEOUT_MS: 40000
 inference_service:
   storage_uri: "s3://psap-watsonx-models/flan-t5-large/flan-t5-large"
