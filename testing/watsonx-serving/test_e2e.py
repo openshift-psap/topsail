@@ -165,6 +165,9 @@ def deploy_and_test_models_e2e():
         parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
         parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
 
+    logging.info("Wait 60s for Prometheus to restart collecting data ...")
+    time.sleep(60)
+
     try:
         deploy_models_concurrently()
 
@@ -175,6 +178,9 @@ def deploy_and_test_models_e2e():
         # flag file for watsonx-serving-prom visualization
         with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
             print("e2e", file=f)
+
+        logging.info("Wait 60s for Prometheus to finish collecting data ...")
+        time.sleep(60)
 
         with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
             parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
@@ -206,6 +212,9 @@ def deploy_and_test_models_sequentially(locally=False):
                     parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
                     parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
 
+                logging.info("Wait 60s for Prometheus to restart collecting data ...")
+                time.sleep(60)
+
                 deploy_consolidated_model(consolidated_model)
 
                 launch_test_consolidated_model(consolidated_model, dedicated_dir=False)
@@ -218,6 +227,9 @@ def deploy_and_test_models_sequentially(locally=False):
             # flag file for watsonx-serving-prom visualization
             with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
                 print(consolidated_model['name'], file=f)
+
+            logging.info("Wait 60s for Prometheus to finish collecting data ...")
+            time.sleep(60)
 
             with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
                 parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null", check=False)
