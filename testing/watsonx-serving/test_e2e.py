@@ -337,8 +337,6 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
 
     if mute_logs and (secret_key := consolidated_model.get("secret_key")) != None:
-
-
         import test
         secret_env_file = test.PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.watsonx_model_secret_settings")
         if not secret_env_file.exists():
@@ -349,10 +347,15 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     else:
         logging.warning("No secret env key defined for this model")
 
+
     if (extra_env := consolidated_model["serving_runtime"].get("extra_env")):
         if not isinstance(extra_env, dict):
             raise ValueError(f"serving_runtime.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
         args_dict["env_extra_values"] = extra_env
+
+    if consolidated_model["serving_runtime"].get("merge_containers", False):
+        args_dict["sr_merge_containers"] = True
+        args_dict["storage_uri"] = args_dict["storage_uri"].removesuffix("/" + consolidated_model["id"])
 
     with env.NextArtifactDir("prepare_namespace"):
         test_scale.prepare_user_sutest_namespace(namespace)
