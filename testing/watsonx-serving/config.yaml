@@ -83,15 +83,18 @@ ci_presets:
     - mpt-7b-instruct2
 
   e2e_dgx_one_model:
+    extends: [e2e_perf]
     tests.e2e.models:
-    - mpt-7b-instruct2
-    - mpt-7b-instruct2
-    - mpt-7b-instruct2
-    - mpt-7b-instruct2
-    - mpt-7b-instruct2
-    - mpt-7b-instruct2
-    - mpt-7b-instruct2
-    - mpt-7b-instruct2
+    - mpt-1container:
+        name: mpt-7b-instruct2
+        serving_runtime:
+          merge_containers: true
+    - mpt-2container:
+        name: mpt-7b-instruct2
+    - mpt-2container-limits:
+        name: mpt-7b-instruct2
+        serving_runtime:
+          limits_equals_requests: true
 
   e2e_dgx_models:
     tests.e2e.models:
