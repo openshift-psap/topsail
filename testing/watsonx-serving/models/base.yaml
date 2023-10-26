@@ -3,6 +3,7 @@ serving_runtime:
     resource_request:
       cpu: 0.5
       memory: 0.5 # in Gi
-    extra_env: {}
+    extra_env:
+      INFERENCE_PLUGIN_TGIS_MODEL_LOADING_TIMEOUT_MS: 40000
 inference_service:
   min_replicas: 1
