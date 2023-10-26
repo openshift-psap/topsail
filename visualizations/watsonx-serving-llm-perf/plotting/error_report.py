@@ -66,7 +66,7 @@ def _get_test_details(entry, args):
             if not simplified_error:
                 continue
 
-            errorDistribution[simplify_error] += count
+            errorDistribution[simplified_error] += count
             error_count += count
         success_count += len(block["details"]) - error_count
     errorDistribution["success"] = success_count
@@ -76,6 +76,7 @@ def _get_test_details(entry, args):
     header += [html.Br(), html.Br()]
     header += ["Number of successful calls and error count:"]
     errors = []
+
     for descr, count in sorted(errorDistribution.items()):
         errors += [html.Li([html.Code(descr), " 🠊 ", f"{count} call{'s' if count > 1 else ''}"])]
     header += [html.Ul(errors)]
