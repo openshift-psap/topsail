@@ -9,6 +9,7 @@ serving_runtime:
       cpu: 7
       memory: 30 # in Gi
       nvidia.com/gpu: 40 # in Gi of GPU memory
-    extra_env: {}
+    extra_env:
+      DEPLOYMENT_FRAMEWORK: hf_transformers
 inference_service:
   storage_uri: "s3://psap-watsonx-models/gpt-neox-20b/gpt-neox-20b"
