@@ -1,3 +1,4 @@
+extends: base
 id: mpt-7b-instruct2
 full_name: ibm/mpt-7b-instruct2
 secret_key: mpt-7b-instruct2
@@ -6,15 +7,9 @@ serving_runtime:
   kserve:
     resource_request:
       cpu: 1.5
-      memory: 11 # in Gi
+      memory: 13 # in Gi
       nvidia.com/gpu: 23 # in Gi of GPU memory
     extra_env:
       DTYPE_STR: float16
-  transformer:
-    resource_request:
-      cpu: 1
-      memory: 3 # in Gi
-    extra_env: {}
 inference_service:
   storage_uri: "s3://psap-watsonx-models/mpt-7b-instruct2-unconverted/mpt-7b-instruct2"
-  min_replicas: 1

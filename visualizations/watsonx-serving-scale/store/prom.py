@@ -340,9 +340,10 @@ def _get_gpu_usage(cluster_role, register):
 # ---
 
 SUTEST_CONTAINER_LABELS = [
-    {"Caikit kserve container": dict(namespace="watsonx.*", container="kserve-container")},
-    {"Caikit istio-proxy container": dict(namespace="watsonx.*", container="istio-proxy")},
-    {"Caikit queue-proxy container": dict(namespace="watsonx.*", container="queue-proxy")},
+    {"Serving Runtime kserve container": dict(namespace="watsonx.*", container="kserve-container")},
+    {"Serving Runtime transformer container": dict(namespace="watsonx.*", container="transformer-container")},
+    {"Serving Runtime istio-proxy container": dict(namespace="watsonx.*", container="istio-proxy")},
+    {"Serving Runtime queue-proxy container": dict(namespace="watsonx.*", container="queue-proxy")},
 
     {"KServe Controller": dict(namespace="redhat-ods-applications", pod="kserve-controller-manager-.*")},
     {"ODH Model Controller": dict(namespace="redhat-ods-applications", pod="odh-model-controller-.*")},

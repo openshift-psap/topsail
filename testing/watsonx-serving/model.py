@@ -57,12 +57,6 @@ def deploy(
         logging.info(f"Removing the secret key parameter: {model_config['secret_key']}")
         del model_config["secret_key"]
 
-    gpu_count = model_config["serving_runtime"]["resource_request"].get("nvidia.com/gpu", 0)
-    if config.ci_artifacts.get_config("tests.e2e.request_one_gpu") and gpu_count != 0:
-        model_config["serving_runtime"]["resource_request"]["nvidia.com/gpu"] = 1
-        logging.info("tests.e2e.request_one_gpu is set.")
-        logging.info(f"Replacing the GPU request: {gpu_count} to 1.")
-
     # ---
 
     dump = yaml.dump(model_config,  default_flow_style=False, sort_keys=False).strip()

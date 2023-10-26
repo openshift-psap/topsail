@@ -94,15 +94,24 @@ class LatencyReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+        collapse_index = "mode" in variables
+
         header = []
         header += [html.H1("Latency per token during the load test")]
 
+        if not collapse_index:
+            header += Plot_and_Text(f"Latency distribution", set_config(dict(box_plot=False, show_text=False), args))
         header += Plot_and_Text(f"Latency distribution", args)
+
         header += html.Br()
         header += html.Br()
 
-        header += Plot_and_Text(f"Latency distribution", set_config(dict(summary=True, show_text=False), args))
-        header += Plot_and_Text(f"Latency distribution", set_config(dict(summary=True, box_plot=False), args))
+        if collapse_index:
+            header += [html.H3("Latency per token, with all the indexes aggregated")]
+            header += Plot_and_Text(f"Latency distribution", set_config(dict(collapse_index=collapse_index, show_text=False), args))
+            header += Plot_and_Text(f"Latency distribution", set_config(dict(collapse_index=collapse_index, box_plot=False), args))
+
         header += html.Br()
         header += html.Br()
 

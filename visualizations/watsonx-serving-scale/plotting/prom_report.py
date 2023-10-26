@@ -4,6 +4,7 @@ from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
 
 from ..store import prom
+from . import report
 try:
     from . import error_report
 except ImportError:
@@ -59,16 +60,17 @@ class SutestCpuMemoryReport():
         header += html.Br()
         header += html.Br()
 
+        args_as_timeline = report.set_config(dict(as_timeline=True), args)
         for metric_spec in prom.SUTEST_CONTAINER_LABELS:
             plot_name = list(metric_spec.keys())[0]
             header += [html.H2(plot_name)]
-            header += [report.Plot(f"Prom: {plot_name}: CPU usage", args)]
-            header += [report.Plot(f"Prom: {plot_name}: Mem usage", args)]
+            header += [report.Plot(f"Prom: {plot_name}: CPU usage", args_as_timeline)]
+            header += [report.Plot(f"Prom: {plot_name}: Mem usage", args_as_timeline)]
 
 
         header += [html.H2("SUTest Cluster")]
-        header += [report.Plot("Prom: sutest cluster memory usage", args)]
-        header += [report.Plot("Prom: sutest cluster CPU usage", args)]
+        header += [report.Plot("Prom: sutest cluster memory usage", args_as_timeline)]
+        header += [report.Plot("Prom: sutest cluster CPU usage", args_as_timeline)]
 
         return None, header
 
@@ -90,11 +92,12 @@ class GpuUsageReport():
         header += [html.P("These plots show an overview of the GPU usage during the execution of the test")]
 
         header += [html.H2("GPU Usage")]
+        args_as_timeline = report.set_config(dict(as_timeline=True), args)
 
         for metric_spec in prom._get_gpu_usage("sutest", register=False):
             plot_name = list(metric_spec.keys())[0]
             header += [html.H3(plot_name)]
-            header += [report.Plot(f"Prom: {plot_name}", args)]
 
+            header += [report.Plot(f"Prom: {plot_name}", args_as_timeline)]
 
         return None, header

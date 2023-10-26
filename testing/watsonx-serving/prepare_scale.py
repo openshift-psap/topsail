@@ -125,6 +125,23 @@ def cluster_scale_down():
         parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=driver --extra \"{extra}\"")
 
 
+def get_file_config(file_model_name):
+    with open(TESTING_THIS_DIR / "models" / f"{file_model_name}.yaml") as f:
+        return yaml.safe_load(f)
+
+
+def get_base_config(model_name):
+    # base = testing/models/<model_name>
+    base_config = get_file_config(model_name)
+
+    extends_name = base_config.pop("extends", False)
+    if not extends_name: return base_config # end of recusion
+
+    config_to_extend = get_base_config(extends_name) # recursive call
+
+    return merge_dicts(config_to_extend, base_config)
+
+
 def consolidate_model_config(config_location=None, _model_name=None, index=None, show=True):
     # test = <config_location>
     test_config = config.ci_artifacts.get_config(config_location) if config_location \
@@ -150,15 +167,8 @@ def consolidate_model_config(config_location=None, _model_name=None, index=None,
 
         raise SystemExit(0)
 
-    def get_file_config(file_model_name):
-        with open(TESTING_THIS_DIR / "models" / f"{file_model_name}.yaml") as f:
-            return yaml.safe_load(f)
 
-    # base = testing/models/<model_name>
-    base_config = get_file_config(model_name)
-    if extends_name := base_config.pop("extends", False):
-        config_to_extend = get_file_config(extends_name)
-        base_config = merge_dicts(config_to_extend, base_config)
+    base_config = get_base_config(model_name)
 
     # watsonx = config(watsonx_serving.model)
     watsonx_config = config.ci_artifacts.get_config("watsonx_serving.model")

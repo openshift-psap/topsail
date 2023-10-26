@@ -40,6 +40,11 @@ def simplify_error(error):
         simplify = partition[0]
         simplify += "read tcp: "
         simplify += partition[2].partition(": ")[2]
+
+        if "use of closed network connection" in simplify:
+            # not an error
+            return None
+
         return simplify
 
     return error
@@ -57,7 +62,11 @@ def _get_test_details(entry, args):
     for idx, block in enumerate(llm_data):
         error_count = 0
         for descr, count in block.get("errorDistribution", {}).items():
-            errorDistribution[simplify_error(descr)] += count
+            simplified_error = simplify_error(descr)
+            if not simplified_error:
+                continue
+
+            errorDistribution[simplify_error] += count
             error_count += count
         success_count += len(block["details"]) - error_count
     errorDistribution["success"] = success_count
@@ -87,19 +96,26 @@ def _get_error_overview(entries, args):
         for idx, block in enumerate(llm_data):
             error_count = 0
             for descr, count in block.get("errorDistribution", {}).items():
-                errorDistribution[simplify_error(descr)] += count
+                simplified_error = simplify_error(descr)
+                if not simplified_error:
+                    continue
+
+                errorDistribution[simplified_error] += count
                 error_count += count
             success_count += len(block["details"]) - error_count
         errorDistribution[entry.get_name(variables)] = success_count
 
     graph_text = report.Plot_and_Text(f"Errors distribution", args)
+
     if graph_text[0] and graph_text[0].figure:
         header += graph_text
         header += [html.I("Click on the graph to see the error labels in the interactive view.")]
 
-    header += report.Plot_and_Text(f"Latency details", report.set_config(dict(only_errors=True), args))
-    header += [html.I("Click on the graph to see the error labels in the interactive view.")]
-    header += [html.Br(), html.Br()]
+    graph_text = report.Plot_and_Text(f"Latency details", report.set_config(dict(only_errors=True), args))
+    if graph_text[0] and graph_text[0].figure:
+        header += graph_text
+        header += [html.I("Click on the graph to see the error labels in the interactive view.")]
+        header += [html.Br(), html.Br()]
 
     header += report.Plot_and_Text(f"Success count distribution", args)
     header += ["Number of successful requests and error count, for each of the tests:"]
@@ -114,7 +130,7 @@ def _get_error_overview(entries, args):
     header += [html.I("The plot above shows the number of log lines collected for the Predicator Pod(s). Too many lines may increase the response time. Mind that the Pods are not restarted between all of the tests.")]
 
     header += report.Plot_and_Text(f"Log distribution", report.set_config(dict(line_count=False), args))
-    header += [html.I("The plot above shows the occurence count of various well-known log lines. Too many of them might be the sign of runtime issues.")]
+    header += [html.I("The plot above shows the occurence count of various well-known log lines. Too many of them (thousands) might be the sign of runtime issues.")]
 
     return header
 

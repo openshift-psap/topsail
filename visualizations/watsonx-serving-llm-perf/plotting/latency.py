@@ -40,11 +40,11 @@ class LatencyDistribution():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         entries = common.Matrix.all_records(settings, setting_lists)
         cfg__only_tokens = cfg.get("only_tokens", False)
-        cfg__summary = cfg.get("summary", False)
+        cfg__collapse_index = cfg.get("collapse_index", False)
         cfg__box_plot = cfg.get("box_plot", True)
         cfg__show_text = cfg.get("show_text", True)
 
-        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, only_tokens=cfg__only_tokens, summary=cfg__summary))
+        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, only_tokens=cfg__only_tokens, collapse_index=cfg__collapse_index))
 
         if df.empty:
             return None, "Not data available ..."
@@ -60,7 +60,7 @@ class LatencyDistribution():
                          x="model_name", y=y_key, color="test_name")
             fig.update_yaxes(range=[0, df[y_key].max() * 1.1])
         else:
-            fig = plotCustomComparison(df, x="model_name", y=y_key)
+            fig = plotCustomComparison(df, x="test_fullname", y=y_key)
 
         if cfg__only_tokens:
             plot_title = f"Distribution of the number of tokens of the model answers"
@@ -78,7 +78,7 @@ class LatencyDistribution():
         if len(variables) == 1 and "model_name" in variables:
             fig.layout.update(showlegend=False)
 
-        if cfg__box_plot and cfg__summary:
+        if cfg__box_plot and cfg__collapse_index:
             fig.layout.update(showlegend=False)
 
         msg = []
@@ -133,7 +133,13 @@ def plotCustomComparison(df, x, y):
         y_min = df_x_value[y].min()
         y_max = df_x_value[y].max()
         q1, median, q3 = stats.quantiles(df_x_value[y])
+
+        q90 = stats.quantiles(df_x_value[y], n=10)[8] # 90th percentile
+        q99 = stats.quantiles(df_x_value[y], n=100)[98] # 99th percentile
+
         data_whatxy["max"][x_value] = y_max
+        data_whatxy["99th percentile"][x_value] = q99
+        data_whatxy["90th percentile"][x_value] = q90
         data_whatxy["Q3 (75%)"][x_value] = q3
         data_whatxy["median (50%)"][x_value] = median
         data_whatxy["Q1 (25%)"][x_value] = q1
@@ -155,7 +161,7 @@ def plotCustomComparison(df, x, y):
 
     return fig
 
-def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name_by_error=False, latency_per_token=True, show_errors=False, only_tokens=False, summary=False):
+def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name_by_error=False, latency_per_token=True, show_errors=False, only_tokens=False, collapse_index=False):
     data = []
 
     if "mode" in _variables:
@@ -189,25 +195,27 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
                 else:
                     datum["latency"] = detail["latency"] / 1000 / 1000
 
-                datum["model_name"] = entry.settings.model_name
+                datum["model_name"] = (f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")).removesuffix("<br>")
 
                 if has_multiple_modes:
                     datum["model_name"] += f"<br>{entry.settings.mode.title()}"
 
-                if summary:
-                    datum["test_name"] = "all"
+                if collapse_index:
+                    datum["test_name"] = entry.get_name(v for v in variables if v != "index").replace(", ", "<br>")
                 elif test_name_by_error:
-                    datum["test_name"] = error_report.simplify_error(detail.get("error"))
+                    simplified_error = datum["test_name"] = error_report.simplify_error(detail.get("error"))
+                    if not simplified_error: continue
+
                 elif detail.get("error"):
                     datum["test_name"] = "errors"
                 else:
                     datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
 
-                if only_errors:
-                    datum["error"] = detail.get("error")
+                datum["error"] = detail.get("error", "no error")
 
-                datum["test_fullname"] = datum["model_name"].replace("<br>", ", ") + " | " + datum["test_name"]
-
+                datum["test_fullname"] = entry.get_name([v for v in variables if v != "index"] if collapse_index else variables)
+                if has_multiple_modes:
+                    datum["test_fullname"] += f" {entry.settings.mode.title()}"
 
                 data.append(datum)
 
@@ -227,7 +235,7 @@ def generateErrorHistogramData(entries, variables):
             for descr, count in block.get("errorDistribution", {}).items():
                 simplified_error = error_report.simplify_error(descr)
 
-                if error_report.simplify_error(descr) in (CLOSING_CX, CLOSED_CX):
+                if error_report.simplify_error(descr) in (CLOSING_CX, CLOSED_CX, None):
                     continue # ignore these errors from the top chart, they're well known
 
                 errorDistribution[simplified_error] += count
@@ -513,11 +521,14 @@ class LogDistribution():
         fig = px.bar(df, hover_data=df.columns,
                      x="test_name", y="count", color="test_name" if cfg__line_count else "what")
 
+        subtitle = ""
+        if "model_name" not in variables:
+            subtitle = f"<br><b>{settings['model_name']}</b>"
         if cfg__line_count:
-            fig.update_layout(title=f"Line predictor logs line count", title_x=0.5,)
+            fig.update_layout(title=f"Logs line count of the predictor Pod" + subtitle, title_x=0.5,)
             fig.update_yaxes(title=f"Line count")
         else:
-            fig.update_layout(title=f"Distribution of well-know messages in the logs", title_x=0.5,)
+            fig.update_layout(title=f"Distribution of well-know messages in the logs" + subtitle, title_x=0.5,)
             fig.update_yaxes(title=f"Occurence count")
 
         return fig, ""
