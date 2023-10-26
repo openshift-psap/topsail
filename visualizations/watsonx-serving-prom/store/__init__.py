@@ -138,10 +138,7 @@ def store_parse_directory(results_dir, expe, dirname):
     if not name:
         name = dirname.name
 
-    import_settings = dict(
-        expe=expe,
-        name=name,
-    )
+    import_settings = store_simple.parse_settings(dirname, name)
 
     def add_to_matrix(results, extra_settings=None):
         store.add_to_matrix(import_settings | (extra_settings or {}),
