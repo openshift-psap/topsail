@@ -297,8 +297,15 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     if delete_others is None:
         delete_others = config.ci_artifacts.get_config("tests.e2e.delete_others")
 
+
+    # first choice:  from the function arg (cli)
+    # second choice: from the model settings
+    # third choice:  from the configuration
     if limits_equals_requests is None:
-        limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
+        limits_equals_requests = consolidated_model["serving_runtime"].get("limits_equals_requests")
+
+        if limits_equals_requests is None:
+            limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
 
     # mandatory fields
     args_dict = dict(
