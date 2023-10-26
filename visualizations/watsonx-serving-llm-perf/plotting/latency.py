@@ -60,7 +60,7 @@ class LatencyDistribution():
                          x="model_name", y=y_key, color="test_name")
             fig.update_yaxes(range=[0, df[y_key].max() * 1.1])
         else:
-            fig = plotCustomComparison(df, x="model_name", y=y_key)
+            fig = plotCustomComparison(df, x="test_fullname", y=y_key)
 
         if cfg__only_tokens:
             plot_title = f"Distribution of the number of tokens of the model answers"
@@ -195,7 +195,7 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
                 else:
                     datum["latency"] = detail["latency"] / 1000 / 1000
 
-                datum["model_name"] = f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")
+                datum["model_name"] = (f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")).removesuffix("<br>")
 
                 if has_multiple_modes:
                     datum["model_name"] += f"<br>{entry.settings.mode.title()}"
@@ -203,17 +203,19 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
                 if collapse_index:
                     datum["test_name"] = entry.get_name(v for v in variables if v != "index").replace(", ", "<br>")
                 elif test_name_by_error:
-                    datum["test_name"] = error_report.simplify_error(detail.get("error"))
+                    simplified_error = datum["test_name"] = error_report.simplify_error(detail.get("error"))
+                    if not simplified_error: continue
+
                 elif detail.get("error"):
                     datum["test_name"] = "errors"
                 else:
                     datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
 
-                if only_errors:
-                    datum["error"] = detail.get("error")
+                datum["error"] = detail.get("error", "no error")
 
-                datum["test_fullname"] = datum["model_name"].replace("<br>", ", ")
-
+                datum["test_fullname"] = entry.get_name([v for v in variables if v != "index"] if collapse_index else variables)
+                if has_multiple_modes:
+                    datum["test_fullname"] += f" {entry.settings.mode.title()}"
 
                 data.append(datum)
 
@@ -233,7 +235,7 @@ def generateErrorHistogramData(entries, variables):
             for descr, count in block.get("errorDistribution", {}).items():
                 simplified_error = error_report.simplify_error(descr)
 
-                if error_report.simplify_error(descr) in (CLOSING_CX, CLOSED_CX):
+                if error_report.simplify_error(descr) in (CLOSING_CX, CLOSED_CX, None):
                     continue # ignore these errors from the top chart, they're well known
 
                 errorDistribution[simplified_error] += count
@@ -519,11 +521,14 @@ class LogDistribution():
         fig = px.bar(df, hover_data=df.columns,
                      x="test_name", y="count", color="test_name" if cfg__line_count else "what")
 
+        subtitle = ""
+        if "model_name" not in variables:
+            subtitle = f"<br><b>{settings['model_name']}</b>"
         if cfg__line_count:
-            fig.update_layout(title=f"Line predictor logs line count", title_x=0.5,)
+            fig.update_layout(title=f"Logs line count of the predictor Pod" + subtitle, title_x=0.5,)
             fig.update_yaxes(title=f"Line count")
         else:
-            fig.update_layout(title=f"Distribution of well-know messages in the logs", title_x=0.5,)
+            fig.update_layout(title=f"Distribution of well-know messages in the logs" + subtitle, title_x=0.5,)
             fig.update_yaxes(title=f"Occurence count")
 
         return fig, ""
