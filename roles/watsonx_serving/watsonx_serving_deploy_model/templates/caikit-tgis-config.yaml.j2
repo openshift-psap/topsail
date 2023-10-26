@@ -21,5 +21,7 @@ model_management:
         backend_priority:
         - type: TGIS
           config:
+            local:
+              load_timeout: 5000 # only relevant with the 1-container architecture
             connection:
               hostname: localhost:8033
