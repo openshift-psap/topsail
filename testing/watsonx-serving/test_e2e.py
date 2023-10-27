@@ -364,7 +364,34 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             test_scale.deploy_storage_configuration(namespace)
 
     try:
-        run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
+        deploy_model_start_ts = datetime.datetime.now()
+        try:
+            run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
+        finally:
+            deploy_model_end_ts = datetime.datetime.now()
+            try:
+                deploy_model_dir = list(env.ARTIFACT_DIR.glob("*__watsonx_serving__deploy_model"))[0]
+            except Exception as e:
+                logging.error("Faile to get the deploy directory :/", e)
+                logging.info(f"Using {env.ARTIFACT_DIR} as a fallback.")
+                deploy_model_dir = env.ARTIFACT_DIR
+
+            # could be read from env.ARTIFACT_DIR / settings.yaml
+            settings = dict(
+                e2e_test=True,
+                model_name=consolidated_model['name'],
+                mode="deploy",
+            )
+            if (index := consolidated_model.get("index")) is not None:
+                settings["index"] = index
+
+            with open(deploy_model_dir / "test_start_end.json", "w") as f:
+                json.dump(dict(
+                    start=deploy_model_start_ts.astimezone().isoformat(),
+                    end=deploy_model_end_ts.astimezone().isoformat(),
+                    settings=settings,
+                ), f, indent=4)
+                print("", file=f)
 
         validate_kwargs = dict(
             namespace=namespace,
