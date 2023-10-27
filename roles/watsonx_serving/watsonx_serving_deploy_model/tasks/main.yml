@@ -211,12 +211,12 @@
         | jq -r '.items[0].status.containerStatuses[] | ("" + .name +" ready="+ (.ready|tostring)) +" restarted="+(.restartCount|tostring)')
       echo "$status"
 
-      if grep -v restarted=0 <<< $status >&2; then
-        echo "Restart detected, aborting" >&2
+      if grep -v restarted=0 --silent <<< $status; then
+        echo "Container restart detected, aborting" >&2
         exit 2
       fi
 
-      if grep -v ready=true <<< $status >&2; then
+      if grep -v ready=true --silent <<< $status; then
         echo "Containers not ready detected, keep waiting ..." >&2
         exit 1
       fi
