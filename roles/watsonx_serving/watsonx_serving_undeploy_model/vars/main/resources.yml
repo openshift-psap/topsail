@@ -1,2 +1,0 @@
-serving_runtime_template: templates/serving_runtime.yaml.j2
-inference_service_template: templates/inference_service.yaml.j2
