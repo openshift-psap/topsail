@@ -5,6 +5,7 @@ import yaml
 import os
 import json
 import datetime
+import dateutil.parser
 
 import jsonpath_ng
 
@@ -129,10 +130,10 @@ def _find_test_timestamps(dirname):
             try:
                 data = json.load(f)
                 test_timestamp = types.SimpleNamespace()
-                start = data["start"][:-4]+"Z"
-                test_timestamp.start = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M:%S.%f%z")
+                start = data["start"].replace("Z", "+0000")
+                test_timestamp.start = dateutil.parser.isoparse(start)
                 end = data["end"]
-                test_timestamp.end = datetime.datetime.strptime(end, "%Y-%m-%dT%H:%M:%S%z")
+                test_timestamp.end = dateutil.parser.isoparse(end)
                 test_timestamp.settings = data["settings"]
                 if "expe" in test_timestamp.settings:
                     del test_timestamp.settings["expe"]
