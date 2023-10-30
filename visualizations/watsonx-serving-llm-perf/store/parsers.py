@@ -6,6 +6,7 @@ import os
 import json
 import datetime
 from collections import defaultdict
+import dateutil.parser
 
 import jsonpath_ng
 
@@ -181,11 +182,11 @@ def _parse_test_start_end(dirname, llm_load_test_output):
     test_start_end.end = None
 
     for entry in llm_load_test_output:
-        start = entry["details"][0]["timestamp"]
+        start = dateutil.parser.isoparse(entry["details"][0]["timestamp"])
         if test_start_end.start is None or start < test_start_end.start:
             test_start_end.start = start
 
-        end = entry["date"]
+        end = dateutil.parser.isoparse(entry["date"])
         if test_start_end.end is None or end > test_start_end.end:
             test_start_end.end = end
 
