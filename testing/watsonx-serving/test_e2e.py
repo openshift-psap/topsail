@@ -297,8 +297,15 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     if delete_others is None:
         delete_others = config.ci_artifacts.get_config("tests.e2e.delete_others")
 
+
+    # first choice:  from the function arg (cli)
+    # second choice: from the model settings
+    # third choice:  from the configuration
     if limits_equals_requests is None:
-        limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
+        limits_equals_requests = consolidated_model["serving_runtime"].get("limits_equals_requests")
+
+        if limits_equals_requests is None:
+            limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
 
     # mandatory fields
     args_dict = dict(
@@ -330,8 +337,6 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
 
     if mute_logs and (secret_key := consolidated_model.get("secret_key")) != None:
-
-
         import test
         secret_env_file = test.PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.watsonx_model_secret_settings")
         if not secret_env_file.exists():
@@ -342,10 +347,15 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     else:
         logging.warning("No secret env key defined for this model")
 
+
     if (extra_env := consolidated_model["serving_runtime"].get("extra_env")):
         if not isinstance(extra_env, dict):
             raise ValueError(f"serving_runtime.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
         args_dict["env_extra_values"] = extra_env
+
+    if consolidated_model["serving_runtime"].get("merge_containers", False):
+        args_dict["sr_merge_containers"] = True
+        args_dict["storage_uri"] = args_dict["storage_uri"].removesuffix("/" + consolidated_model["id"])
 
     with env.NextArtifactDir("prepare_namespace"):
         test_scale.prepare_user_sutest_namespace(namespace)
@@ -354,7 +364,34 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             test_scale.deploy_storage_configuration(namespace)
 
     try:
-        run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
+        deploy_model_start_ts = datetime.datetime.now()
+        try:
+            run.run(f"./run_toolbox.py watsonx_serving deploy_model {dict_to_run_toolbox_args(args_dict)}")
+        finally:
+            deploy_model_end_ts = datetime.datetime.now()
+            try:
+                deploy_model_dir = list(env.ARTIFACT_DIR.glob("*__watsonx_serving__deploy_model"))[0]
+            except Exception as e:
+                logging.error("Faile to get the deploy directory :/", e)
+                logging.info(f"Using {env.ARTIFACT_DIR} as a fallback.")
+                deploy_model_dir = env.ARTIFACT_DIR
+
+            # could be read from env.ARTIFACT_DIR / settings.yaml
+            settings = dict(
+                e2e_test=True,
+                model_name=consolidated_model['name'],
+                mode="deploy",
+            )
+            if (index := consolidated_model.get("index")) is not None:
+                settings["index"] = index
+
+            with open(deploy_model_dir / "test_start_end.json", "w") as f:
+                json.dump(dict(
+                    start=deploy_model_start_ts.astimezone().isoformat(),
+                    end=deploy_model_end_ts.astimezone().isoformat(),
+                    settings=settings,
+                ), f, indent=4)
+                print("", file=f)
 
         validate_kwargs = dict(
             namespace=namespace,

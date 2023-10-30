@@ -53,6 +53,9 @@ watsonx_serving_deploy_model_sr_kserve_extra_env_values: {}
 # extra key/value pairs for the transformer container (will override the values from the secret file)
 watsonx_serving_deploy_model_sr_transformer_extra_env_values: {}
 
+# if True, deploy 1 container. If False, deploy 2 containers.
+watsonx_serving_deploy_model_sr_merge_containers: false
+
 # the minimum number of replicas. If none, the field is left unset.
 # Type: Int
 watsonx_serving_deploy_model_inference_service_min_replicas: null

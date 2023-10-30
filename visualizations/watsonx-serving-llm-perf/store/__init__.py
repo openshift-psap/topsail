@@ -115,8 +115,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     with open(dirname / "test_start_end.json", "w") as f:
         json.dump(dict(
-            start=results.test_start_end.start,
-            end=results.test_start_end.end,
+            start=results.test_start_end.start.isoformat(),
+            end=results.test_start_end.end.isoformat(),
             settings=import_settings,
         ), f, indent=4)
         print("", file=f)

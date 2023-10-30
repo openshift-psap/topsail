@@ -81,6 +81,11 @@ class LatencyDistribution():
         if cfg__box_plot and cfg__collapse_index:
             fig.layout.update(showlegend=False)
 
+        if not cfg__box_plot:
+            for plot in fig.data:
+                if plot.name in ["max", "99th percentile"]:
+                    plot.visible = "legendonly"
+
         msg = []
         for test_fullname in df.sort_values(by=["test_fullname"]).test_fullname.unique() if cfg__show_text else []:
             stats_data = df[df.test_fullname == test_fullname][y_key]
