@@ -283,6 +283,12 @@
     when: operator_csv_phase.stdout != "Succeeded"
 
   rescue:
+  - name: Store the CSV that have been installed
+    shell:
+      oc get ClusterServiceVersion
+          -n "{{ cluster_deploy_operator_namespace }}"
+          > {{ artifact_extra_logs_dir }}/all_csv.status
+
   - name: Capture the Catalog Operator logs (debug)
     shell:
       oc logs deployment.apps/catalog-operator
