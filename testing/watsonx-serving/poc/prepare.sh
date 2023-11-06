@@ -10,11 +10,10 @@ set -x
 # and https://github.com/opendatahub-io/caikit-tgis-serving/blob/8e9104109bb1bc79e57bc50933dc7363b73f5715/demo/kserve/scripts/install/kserve-install.sh
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp}
-GIT_REPO=opendatahub-io/caikit-tgis-serving
-GIT_REF=747af55d12613e62fd72479f4024a8d9edf096e3
 
 export TARGET_OPERATOR=brew # Set this among odh, rhods or brew, if you want to skip the question in the script.
 export CHECK_UWM=false # Set this to "false", if you want to skip the User Workload Configmap check message
+export deploy_odh_operator=false
 
 # Enable User Workload Monitoring
 # Configure User Workload Monitoring
@@ -43,7 +42,7 @@ EOF
 
 TOPSAIL_DIR=$(pwd)
 
-rm -rf /tmp/caikit-tgis-serving /tmp/kserve
+rm -rf /tmp/kserve
 
 generate_certs() {
     BASE_CERT_DIR=/tmp/kserve/certs
@@ -82,22 +81,14 @@ generate_certs() {
 
 generate_certs
 
-cd /tmp
-git clone --quiet https://github.com/$GIT_REPO
+cd "${TOPSAIL_DIR}/testing/watsonx-serving/poc/"
+ln -sf poc/env.sh ..
+ln -sf poc/utils.sh ..
 
-cd caikit-tgis-serving/demo/kserve
-git fetch --quiet origin "$GIT_REF"
-git checkout FETCH_HEAD
+# delete all the DataScienceCluster resources except the default one
+dsclusters=$(oc get datasciencecluster -oname | grep -v /default || true)
+if [[ -n "$dsclusters" ]]; then
+    oc delete $dsclusters
+fi
 
-git show --no-patch | tee $ARTIFACT_DIR/caikit-tgis-serving.commit
-
-cp ${TOPSAIL_DIR}/testing/watsonx-serving/poc/kserve-install.sh \
-   scripts/install/
-
-cp ${TOPSAIL_DIR}/testing/watsonx-serving/poc/deploy-model.sh \
-   scripts/test/
-
-cp ${TOPSAIL_DIR}/testing/watsonx-serving/poc/kserve-dsc.yaml \
-   custom-manifests/opendatahub/
-
-bash -ex scripts/install/kserve-install.sh
+bash -ex kserve-install.sh

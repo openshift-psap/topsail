@@ -270,18 +270,6 @@ rhods:
 
 prepare:
   operators:
-  - name: kiali-ossm
-    catalog: redhat-operators
-    namespace: all
-    cleanup:
-      crds:
-      - kialis.kiali.io
-  - name: jaeger-product
-    catalog: redhat-operators
-    namespace: all
-    cleanup:
-      crds:
-        - jaegers.jaegertracing.io
   - name: serverless-operator
     catalog: redhat-operators
     namespace: all
