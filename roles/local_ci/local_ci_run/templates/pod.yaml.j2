@@ -175,12 +175,16 @@ spec:
       echo "Export disabled."
 {% endif %}
 
+{% if local_ci_run_retrieve_artifacts %}
       echo 'Waiting for the local export to be done ...'
       set +x
       while [[ ! -f /tmp/local_export_done ]]; do
         sleep 1
       done
       echo 'The local export is done ...'
+{% else %}
+      echo 'Local export disabled, no need to wait for it ...'
+{% endif %}
       echo 'All done, bye.'
 
       exit $failed
