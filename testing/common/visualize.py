@@ -108,7 +108,6 @@ def prepare_matbench():
     fi
     cd /tmp
 
-
     mkdir -p /tmp/prometheus/bin
     ln -sf "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/prometheus/bin
     cp "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
