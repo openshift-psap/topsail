@@ -176,7 +176,7 @@ watsonx_serving deploy_model:
   inference_service_name: {{ tests.scale.model.name }}
   storage_uri: {{ tests.scale.model.inference_service.storage_uri }}
 
-  delete_others: {{ tests.e2e.delete_others }}
+  delete_others: false
   limits_equals_requests: true
 
 watsonx_serving validate_model:
