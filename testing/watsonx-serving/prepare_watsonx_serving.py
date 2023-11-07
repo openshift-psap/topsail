@@ -72,12 +72,19 @@ def preload_image():
     namespace = config.get_command_arg("cluster preload_image --prefix sutest --suffix watsonx-serving-runtime", "namespace")
     test_scale.prepare_user_sutest_namespace(namespace)
 
-    RETRIES = 3
-    for i in range(RETRIES):
-        try:
-            run.run("./run_toolbox.py from_config cluster preload_image --prefix sutest --suffix watsonx-serving-runtime")
-            break
-        except Exception:
-            logging.warning("Watsonx Serving Runtime image preloading try #{i}/{RETRIES} failed :/")
-            if i == RETRIES:
-                raise
+    def preload(image):
+        RETRIES = 3
+        extra = dict(image=image)
+        for i in range(RETRIES):
+            try:
+                run.run(f"./run_toolbox.py from_config cluster preload_image --prefix sutest --suffix watsonx-serving-runtime --extra \"{extra}\"")
+
+                break
+            except Exception:
+                logging.warning(f"Preloading of '{image}' try #{i+1}/{RETRIES} failed :/")
+                if i+1 == RETRIES:
+                    raise
+
+    with run.Parallel("preload_serving_runtime") as parallel:
+        preload(config.ci_artifacts.get_config("watsonx_serving.model.serving_runtime.kserve.image"))
+        preload(config.ci_artifacts.get_config("watsonx_serving.model.serving_runtime.transformer.image"))

@@ -49,7 +49,7 @@ sutest/cluster preload_image/watsonx-serving-runtime:
   namespace: {{ tests.e2e.namespace }}
 {% endif %}
   name: caikit-image
-  image: {{ watsonx_serving.model.serving_runtime.image }}
+  image: SET_AT_RUNTIME
 
   node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
   node_selector_value: "{{ clusters.sutest.compute.machineset.taint.value }}"
