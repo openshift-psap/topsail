@@ -65,8 +65,8 @@ def scale_compute_sutest_node_requirement():
     models_per_ns = config.ci_artifacts.get_config("tests.scale.model.replicas")
     models_count = ns_count * models_per_ns
 
-    cpu_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.resource_request.cpu")
-    mem_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.resource_request.memory")
+    cpu_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.kserve.resource_request.cpu") + config.ci_artifacts.get_config("tests.scale.model.serving_runtime.kserve.resource_request.cpu")
+    mem_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.transformer.resource_request.memory") + config.ci_artifacts.get_config("tests.scale.model.serving_runtime.transformer.resource_request.memory")
 
     kwargs = dict(
         cpu = cpu_rq,
