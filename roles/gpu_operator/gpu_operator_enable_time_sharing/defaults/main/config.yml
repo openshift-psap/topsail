@@ -3,11 +3,12 @@
 # Source component: GPU_Operator.enable_time_sharing
 
 # Parameters
+# number of slices available for each of the GPUs
+# Mandatory value
+gpu_operator_enable_time_sharing_replicas:
+
 # namespace in which the GPU Operator is deployed
 gpu_operator_enable_time_sharing_namespace: nvidia-gpu-operator
-
-# number of slices available for each of the GPUs
-gpu_operator_enable_time_sharing_replicas: 4
 
 # name of the ConfigMap where the configuration will be stored
 gpu_operator_enable_time_sharing_configmap_name: time-slicing-config-all
