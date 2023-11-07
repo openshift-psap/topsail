@@ -90,8 +90,9 @@ def prepare_matbench():
         run.run(f"""
         WORKLOAD_RUN_DIR="{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/workloads/{matbench_workload}"
 
-        rm -f "$WORKLOAD_RUN_DIR"
-        ln -s "{workload_storage_dir}" "$WORKLOAD_RUN_DIR"
+        if [[ ! -e "$WORKLOAD_RUN_DIR" ]]; then
+          ln -s "{workload_storage_dir}" "$WORKLOAD_RUN_DIR"
+        fi
 
         pip install --quiet --requirement "{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/requirements.txt"
         """)
