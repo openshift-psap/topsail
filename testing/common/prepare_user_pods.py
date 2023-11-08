@@ -180,3 +180,8 @@ def save_and_create(name, content, namespace, is_secret=False):
     finally:
         if is_secret:
             file_path.unlink(missing_ok=True)
+
+
+def cleanup_cluster():
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    run.run(f"oc delete ns {namespace} --ignore-not-found")
