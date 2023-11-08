@@ -15,7 +15,9 @@ def prepare_gpu_operator():
     else:
         run.run("./run_toolbox.py gpu_operator deploy_from_operatorhub")
 
+def wait_ready():
     run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
+    run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
 
 
 def cleanup_gpu_operator():
@@ -25,6 +27,7 @@ def cleanup_gpu_operator():
 
     if run.run(f'oc get project -oname openshift-nfd 2>/dev/null', check=False).returncode != 0:
         run.run("oc delete ns openshift-nfd")
+
 
 def add_toleration(effect, key):
     run.run("""\
