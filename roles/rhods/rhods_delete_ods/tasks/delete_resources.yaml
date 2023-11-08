@@ -1,0 +1,11 @@
+---
+- name: Check if the cluster knows the crd {{ item }}
+  command:
+    oc get {{ item }} -n default
+  failed_when: false
+  register: has_crd_cmd
+
+- name: Delete all the resources {{ item }}
+  command:
+    oc delete {{ item }} --all -A
+  when: has_crd_cmd.rc == 0

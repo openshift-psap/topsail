@@ -21,16 +21,13 @@
        -n "{{ rhods_delete_ods_namespace }}"
   when: has_rhods_operator_cmd.stdout and rhods_operator_replicas_cmd.stdout == "0"
 
-- name: Check if the cluster knows the DataSciencePipelinesApplication crd
-  command:
-    oc get datasciencepipelinesapplication -n default
-  failed_when: false
-  register: has_dspa_cmd
-
-- name: Delete all the DSPApplications
-  command:
-    oc delete dspa --all -A
-  when: has_dspa_cmd.rc == 0
+- name: Wait for the operand namespaces to disappear
+  include_tasks: delete_ns.yaml
+  loop:
+  - datasciencepipelinesapplication
+  - InferenceServices
+  - ServingRuntime
+  - ServiceMeshMembers
 
 - name: Ensure that the operator is not running
   command:
