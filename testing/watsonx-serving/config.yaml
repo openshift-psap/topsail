@@ -49,6 +49,9 @@ ci_presets:
     clusters.create.ocp.workers.spot: true
     clusters.create.ocp.region: us-east-2
 
+  cleanup:
+    clusters.cleanup_on_exit: true
+
   # ---
 
   e2e_perf_strict_limits:
