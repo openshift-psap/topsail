@@ -200,7 +200,7 @@ def run_one_test(namespace, job_index):
     model_name = config.ci_artifacts.get_config("tests.scale.model.full_name")
     all_inference_service_names = []
     for model_idx in range(models_per_namespace):
-        inference_service_name = f"{inference_service_basename}-u{job_index}-m{model_idx}"
+        inference_service_name = f"u{job_index}-m{model_idx}"
 
         extra = dict(
             inference_service_name=inference_service_name,

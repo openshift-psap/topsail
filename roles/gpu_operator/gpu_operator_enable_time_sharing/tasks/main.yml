@@ -33,6 +33,12 @@
        -p '{"spec": {"devicePlugin": {"config": {"name": "{{ gpu_operator_enable_time_sharing_configmap_name }}", "default": "any"}}}}'
   when: gpu_operator_enable_time_sharing_replicas != 1
 
+- name: Force bounce the Device Plugin and GPU Feature Discovery daemonsets
+  command:
+    oc delete daemonsets nvidia-device-plugin-daemonset gpu-feature-discovery
+       -n {{ gpu_operator_enable_time_sharing_namespace }}
+       --ignore-not-found
+
 - name: Wait for the DaemonSets to be all available
   shell:
     set -o pipefail;
@@ -45,6 +51,18 @@
   retries: 30
   delay: 10
   failed_when: daemonsets_not_ready.stdout | length > 0
+
+- name: Wait for the number of GPU per node to be updated (on the first node)
+  shell:
+    set -o pipefail;
+    oc get nodes -lnvidia.com/gpu.replicas -ojson
+      | jq -r '.items[0].metadata.labels["nvidia.com/gpu.replicas"]'
+      | head -1
+  register: replicas_count
+  until: replicas_count.stdout_lines[0] == gpu_operator_enable_time_sharing_replicas | string
+  retries: 30
+  delay: 10
+  failed_when: replicas_count.stdout_lines[0] != gpu_operator_enable_time_sharing_replicas | string
 
 - name: Get the number of GPUs per node
   shell:

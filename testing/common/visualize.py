@@ -90,8 +90,9 @@ def prepare_matbench():
         run.run(f"""
         WORKLOAD_RUN_DIR="{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/workloads/{matbench_workload}"
 
-        rm -f "$WORKLOAD_RUN_DIR"
-        ln -s "{workload_storage_dir}" "$WORKLOAD_RUN_DIR"
+        if [[ ! -e "$WORKLOAD_RUN_DIR" ]]; then
+          ln -s "{workload_storage_dir}" "$WORKLOAD_RUN_DIR"
+        fi
 
         pip install --quiet --requirement "{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/requirements.txt"
         """)
@@ -106,7 +107,6 @@ def prepare_matbench():
        exit 0
     fi
     cd /tmp
-
 
     mkdir -p /tmp/prometheus/bin
     ln -sf "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/prometheus/bin
