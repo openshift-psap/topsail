@@ -29,7 +29,7 @@ def prepare_gpu():
         toleration_effect = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.effect")
         prepare_gpu_operator.add_toleration(toleration_effect, toleration_key)
 
-    run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
+    prepare_gpu_operator.wait_ready()
 
 
 def prepare():
