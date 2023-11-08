@@ -61,6 +61,27 @@ def prepare():
     customize_watsonx_serving()
 
 
+def undeploy_operator(operator):
+    manifest_name = operator["name"]
+    namespace = operator["namespace"]
+
+    installed_csv_cmd = run.run(f"oc get csv -oname -n {namespace}", capture_stdout=True)
+    if manifest_name not in installed_csv_cmd.stdout:
+        logging.info(f"{manifest_name} operator is not installed")
+        return
+
+    run.run(f"oc delete sub/{manifest_name} -n {namespace}")
+    run.run(f"oc delete csv -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}")
+
+
+def cleanup():
+    rhods.uninstall()
+
+    with run.Parallel("cleanup_watsonx_serving") as parallel:
+        for operator in config.ci_artifacts.get_config("prepare.operators"):
+            undeploy_operator(operator)
+
+
 def preload_image():
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
         return
