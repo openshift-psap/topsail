@@ -1,0 +1,123 @@
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Give the default metrics URL
+  debug: 'msg="Metrics defined upstream at https://raw.githubusercontent.com/NVIDIA/dcgm-exporter/main/etc/dcp-metrics-included.csv"'
+  when: gpu_operator_extend_metrics_include_defaults | bool
+
+- name: Prepare the metrics file
+  command:
+    touch "{{ artifact_extra_logs_dir }}/src/metrics.csv"
+
+- name: Include the default metrics
+  shell: |
+    cat <<EOF >> "{{ artifact_extra_logs_dir }}/src/metrics.csv"
+    {{lookup('file', default_metrics_file)}}
+    EOF
+  when: gpu_operator_extend_metrics_include_defaults | bool
+
+- name: Add the well-known metrics
+  shell: |
+    cat <<EOF >> "{{ artifact_extra_logs_dir }}/src/metrics.csv"
+
+    #
+    # Well-known custom metrics
+    #
+
+    {{lookup('file', well_known_metrics_file)}}
+    EOF
+  when: gpu_operator_extend_metrics_include_well_known | bool
+
+- name: Add the extra metrics
+  shell: |
+    cat <<EOF >> "{{ artifact_extra_logs_dir }}/src/metrics.csv"
+
+    #
+    # Extra custom metrics
+    #
+
+    {% for metric in gpu_operator_extend_metrics_extra_metrics %}
+    {{ metric["name"] }}, {{ metric["type"] }}, {{ metric["description"] }}
+    {% endfor %}
+    EOF
+  when: gpu_operator_extend_metrics_extra_metrics is not none
+
+- name: Create the ConfigMap definition
+  shell:
+    oc create configmap {{ gpu_operator_extend_metrics_configmap_name }}
+       -n {{ gpu_operator_extend_metrics_namespace }}
+       --from-file=dcgm-metrics.csv="{{ artifact_extra_logs_dir }}/src/metrics.csv"
+       --dry-run=client
+       -oyaml
+      > "{{ artifact_extra_logs_dir }}/src/configmap.yaml"
+
+- name: Instanciate the ConfigMap
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/configmap.yaml"
+
+- name: Cleanup the ClusterPolicy (to force the update in the next task)
+  command: |
+    oc patch clusterpolicy/gpu-cluster-policy \
+       --type merge \
+       -p '{"spec": {"dcgmExporter": {"config": {"name": ""}}}}'
+
+- name: Update the ClusterPolicy
+  shell: |
+    set -o pipefail;
+    set -e;
+
+    oc get clusterpolicy/gpu-cluster-policy -ojson > "{{ artifact_extra_logs_dir }}/artifacts/cluster_policy_old.json"
+    cat "{{ artifact_extra_logs_dir }}/artifacts/cluster_policy_old.json" \
+      | jq '.spec.dcgmExporter.config.name = "{{ gpu_operator_extend_metrics_configmap_name }}" | .spec.dcgmExporter.config.env["DCGM_EXPORTER_COLLECTORS"] = "/etc/dcgm-exporter/dcgm-metrics.csv"' \
+      | jq 'del(.status) | del(.metadata.resourceVersion) | del(.metadata.creationTimestamp) | del(.metadata.uid) | del(.metadata.generation)' \
+      > "{{ artifact_extra_logs_dir }}/src/cluster_policy_new.json"
+
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/cluster_policy_new.json"
+
+
+- name: Force bounce the GPU DCGM daemonsets
+  command:
+    oc delete daemonsets nvidia-dcgm-exporter
+       -n {{ gpu_operator_extend_metrics_namespace }}
+       --ignore-not-found
+
+- name: Wait for the DaemonSets and capture artifacts
+  block:
+  - name: Wait for the DaemonSet to reappear
+    command:
+      oc get daemonsets nvidia-dcgm-exporter
+         -n {{ gpu_operator_extend_metrics_namespace }}
+         --ignore-not-found
+    register: has_dcgm_exporter
+    until: has_dcgm_exporter.stdout | length > 0
+    retries: 12
+    delay: 10
+
+  - name: Wait for the DaemonSets to be all available
+    shell:
+      set -o pipefail;
+      oc get daemonsets
+         -o=jsonpath="{range .items[*]}{.metadata.name}{' ='}{.status.numberUnavailable}{'=\n'}{end}"
+         -n {{ gpu_operator_extend_metrics_namespace }}
+         | grep -v "==" || true
+    register: daemonsets_not_ready
+    until: not daemonsets_not_ready.stdout
+    retries: 60
+    delay: 10
+    failed_when: daemonsets_not_ready.stdout | length > 0
+
+  always:
+  - name: Capture the ClusterPolicy
+    shell:
+      oc get clusterpolicy/gpu-cluster-policy
+         -ojson
+         > "{{ artifact_extra_logs_dir }}/artifacts/cluster_policy_new.json"

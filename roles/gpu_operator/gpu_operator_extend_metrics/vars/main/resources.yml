@@ -1,0 +1,2 @@
+default_metrics_file: files/dcgm-metrics.csv
+well_known_metrics_file: files/well-known.csv

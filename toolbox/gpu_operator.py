@@ -165,3 +165,26 @@ class GPU_Operator:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("gpu_operator_extend_metrics")
+    @AnsibleMappedParams
+    def extend_metrics(self,
+                       include_defaults=True,
+                       include_well_known=False,
+                       namespace="nvidia-gpu-operator",
+                       configmap_name="metrics-config",
+                       extra_metrics : list = None,
+                        ):
+        """
+        Enable time-sharing in the GPU Operator ClusterPolicy
+
+        Args:
+          namespace: namespace in which the GPU Operator is deployed
+          configmap_name: name of the ConfigMap where the configuration will be stored
+          include_defaults: if True, include the default DCGM metrics in the custom config
+          include_well_known: if True, include well-known interesting DCGM metrics in the custom config
+          extra_metrics: if not None, a [{name,type,description}*] list of dictionnaries with the extra metrics to include in the custom config
+        """
+
+        return RunAnsibleRole(locals())
