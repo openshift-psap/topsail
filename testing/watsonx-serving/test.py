@@ -253,11 +253,11 @@ def cluster_scale_up():
 
 
 @entrypoint()
-def cluster_scale_down():
+def cluster_scale_down(to_zero=False):
     """
     Scales down the cluster SUTest and Driver machinesets
     """
-    return prepare_scale.cluster_scale_down()
+    return prepare_scale.cluster_scale_down(to_zero)
 
 
 @entrypoint()
