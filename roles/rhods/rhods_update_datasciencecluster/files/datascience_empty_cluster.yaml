@@ -1,0 +1,20 @@
+apiVersion: datasciencecluster.opendatahub.io/v1
+kind: DataScienceCluster
+metadata:
+  name: ...
+spec:
+  components:
+    codeflare:
+      managementState: Removed
+    dashboard:
+      managementState: Removed
+    datasciencepipelines:
+      managementState: Removed
+    kserve:
+      managementState: Removed
+    modelmeshserving:
+      managementState: Removed
+    ray:
+      managementState: Removed
+    workbenches:
+      managementState: Removed

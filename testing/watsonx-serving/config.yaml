@@ -49,6 +49,9 @@ ci_presets:
     clusters.create.ocp.workers.spot: true
     clusters.create.ocp.region: us-east-2
 
+  cleanup:
+    clusters.cleanup_on_exit: true
+
   # ---
 
   e2e_perf_strict_limits:
@@ -265,18 +268,36 @@ rhods:
 
 prepare:
   operators:
-  - name: servicemeshoperator
-    catalog: redhat-operators
-    namespace: all
   - name: kiali-ossm
     catalog: redhat-operators
     namespace: all
+    cleanup:
+      crds:
+      - kialis.kiali.io
   - name: jaeger-product
     catalog: redhat-operators
     namespace: all
+    cleanup:
+      crds:
+        - jaegers.jaegertracing.io
   - name: serverless-operator
     catalog: redhat-operators
     namespace: all
+    cleanup:
+      crds:
+      - knativeservings.operator.knative.dev
+      namespaces:
+      - knative-eventing
+      - knative-serving
+  - name: servicemeshoperator
+    catalog: redhat-operators
+    namespace: all
+    cleanup:
+      crds:
+      - servicemeshmemberrolls.maistra.io
+      - servicemeshcontrolplanes.maistra.io
+      namespaces:
+      - istio-system
 
 base_image:
   namespace: watsonx-serving-user-test-driver

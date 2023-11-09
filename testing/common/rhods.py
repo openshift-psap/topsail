@@ -27,7 +27,10 @@ def install(token_file=None, force=False):
 
     run.run("./run_toolbox.py from_config rhods deploy_ods")
 
+
 def uninstall():
+    run.run("./run_toolbox.py rhods update_datasciencecluster")
+
     installed_csv_cmd = run.run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
 
     if RHODS_OPERATOR_MANIFEST_NAME not in installed_csv_cmd.stdout:

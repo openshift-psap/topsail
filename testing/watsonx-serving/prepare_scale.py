@@ -115,11 +115,11 @@ def cluster_scale_up():
         parallel.delayed(scale_up_sutest)
 
 
-def cluster_scale_down():
+def cluster_scale_down(to_zero=False):
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
         return
 
-    extra = dict(scale=1)
+    extra = dict(scale=0 if to_zero else 1)
     with run.Parallel("cluster_scale_down") as parallel:
         parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=sutest --extra \"{extra}\"")
         parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=driver --extra \"{extra}\"")

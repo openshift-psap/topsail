@@ -1,0 +1,68 @@
+---
+- name: Get the list of DataScienceCluster resources
+  command:
+    oc get datasciencecluster -n default
+  failed_when: false
+  register: has_datascience_cluster_cmd
+
+- name: Exit if the Datasciencecluster CRD does not exist
+  meta: end_play
+  when: has_datascience_cluster_cmd.rc != 0
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Get the name of the datasciencecluster resource
+  shell:
+    set -o pipefail;
+    oc get datasciencecluster -oname | cut -d/ -f2 | head -1
+  register: dscluster_name_cmd
+  failed_when: not dscluster_name_cmd.stdout
+  when: not rhods_update_datasciencecluster_name
+
+- name: Save the name of the datasciencecluster
+  set_fact:
+    datasciencecluster_name: "{% if rhods_update_datasciencecluster_name %}{{ rhods_update_datasciencecluster_name }}{% else %}{{ dscluster_name_cmd.stdout_lines[0] }}{% endif %}"
+
+- name: Get the state of the datasciencecluster, if it exists
+  shell:
+    oc get datasciencecluster/{{ datasciencecluster_name }}
+       -oyaml
+       --ignore-not-found
+       > "{{ artifact_extra_logs_dir }}/artifacts/datascience_cluster_old.yaml"
+
+- name: Prepare the DataScienceCluster resource
+  template:
+    src: "{{ datascience_cluster_file }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
+    mode: '0400'
+
+- name: Create the DataScienceCluster
+  shell: |
+    set -e
+    # oc apply does not work -,-
+    oc delete -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
+    oc create -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
+
+- name: Wait for the DataScienceCluster to be ready and capture artifacts
+  block:
+  - name: Wait for the DataScienceCluster to be ready
+    shell: oc get datasciencecluster/{{ datasciencecluster_name }} -ojsonpath={.status.phase}
+    register: dscluster_phase_cmd
+    until: dscluster_phase_cmd.stdout == "Ready"
+    retries: 60
+    delay: 10
+  always:
+  - name: Capture the DataScienceCluster state
+    shell:
+      oc get datasciencecluster/{{ datasciencecluster_name }} -oyaml
+         > "{{ artifact_extra_logs_dir }}/artifacts/datascience_cluster.yaml"

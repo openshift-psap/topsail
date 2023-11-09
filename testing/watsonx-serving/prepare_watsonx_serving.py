@@ -61,6 +61,42 @@ def prepare():
     customize_watsonx_serving()
 
 
+def undeploy_operator(operator):
+    manifest_name = operator["name"]
+    namespace = operator["namespace"]
+    if namespace == "all":
+        namespace = "openshift-operators"
+
+    cleanup = operator.get("cleanup", dict(crds=[], namespaces=[]))
+
+    for crd in cleanup.get("crds", []):
+        run.run(f"oc delete {crd} --all -A")
+
+    for ns in cleanup.get("namespaces", []):
+        run.run(f"oc api-resources --verbs=list --namespaced -o name | grep -v -E 'coreos.com|openshift.io|cncf.io|k8s.io|metal3.io|k8s.ovn.org|.apps' | xargs -t -n 1 oc get --show-kind --ignore-not-found -n watsonx-serving-user-test-driver |& cat > $ARTIFACT_DIR/{operator['name']}_{ns}.log", check=False)
+
+    installed_csv_cmd = run.run(f"oc get csv -oname -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}", capture_stdout=True)
+    if not installed_csv_cmd.stdout:
+        logging.info(f"{manifest_name} operator is not installed")
+
+    run.run(f"oc delete sub/{manifest_name} -n {namespace} --ignore-not-found")
+    run.run(f"oc delete csv -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}")
+
+    for crd in cleanup.get("crds", []):
+        run.run(f"oc delete crd/{crd} --ignore-not-found")
+
+    for ns in cleanup.get("namespaces", []):
+        run.run(f"timeout 300 oc delete ns {ns} --ignore-not-found")
+
+
+def cleanup():
+    rhods.uninstall()
+
+    with run.Parallel("cleanup_watsonx_serving") as parallel:
+        for operator in config.ci_artifacts.get_config("prepare.operators"):
+            undeploy_operator(operator)
+
+
 def preload_image():
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
         return

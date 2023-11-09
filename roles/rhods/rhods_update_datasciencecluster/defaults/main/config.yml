@@ -1,0 +1,28 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: RHODS.update_datasciencecluster
+
+# Parameters
+# Name of the resource to update. If none, update the first (and only) one found.
+rhods_update_datasciencecluster_name: null
+
+# enables the codeflare component
+rhods_update_datasciencecluster_codeflare: false
+
+# enables the dashboard component
+rhods_update_datasciencecluster_dashboard: false
+
+# enables the datascience pipelines component
+rhods_update_datasciencecluster_datasciencepipelines: false
+
+# enables the kserve component
+rhods_update_datasciencecluster_kserve: false
+
+# enables the modelmesh serving
+rhods_update_datasciencecluster_modelmeshserving: false
+
+# enables the ray component
+rhods_update_datasciencecluster_ray: false
+
+# enables the workbenches component
+rhods_update_datasciencecluster_workbenches: false

@@ -325,3 +325,32 @@ class RHODS:
         """
 
         return RunAnsibleRole()
+
+    @AnsibleRole("rhods_update_datasciencecluster")
+    @AnsibleMappedParams
+    def update_datasciencecluster(self,
+                                  name=None,
+                                  codeflare=False,
+                                  dashboard=False,
+                                  datasciencepipelines=False,
+                                  kserve=False,
+                                  modelmeshserving=False,
+                                  ray=False,
+                                  workbenches=False,
+                                  ):
+        """
+        Update RHOAI datasciencecluster resource
+
+        Args:
+          name: Name of the resource to update. If none, update the first (and only) one found.
+
+          codeflare: enables the codeflare component
+          dashboard: enables the dashboard component
+          datasciencepipelines: enables the datascience pipelines component
+          kserve: enables the kserve component
+          modelmeshserving: enables the modelmesh serving
+          ray: enables the ray component
+          workbenches: enables the workbenches component
+        """
+
+        return RunAnsibleRole(locals())

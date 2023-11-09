@@ -187,7 +187,11 @@ def cleanup_cluster():
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    logging.info("Nothing to do to cleanup the cluster.")
+    with env.NextArtifactDir("cleanup_cluster"):
+        cleanup_sutest_ns()
+        cluster_scale_down()
+        prepare_user_pods.cleanup_cluster()
+        prepare_watsonx_serving.cleanup()
 
 
 @entrypoint(ignore_secret_path=True)
@@ -249,11 +253,11 @@ def cluster_scale_up():
 
 
 @entrypoint()
-def cluster_scale_down():
+def cluster_scale_down(to_zero=False):
     """
     Scales down the cluster SUTest and Driver machinesets
     """
-    return prepare_scale.cluster_scale_down()
+    return prepare_scale.cluster_scale_down(to_zero)
 
 
 @entrypoint()
@@ -264,6 +268,7 @@ def cleanup_sutest_ns():
 
     label = config.ci_artifacts.get_config("tests.scale.namespace.label")
     run.run(f"oc delete ns -l{label}")
+
 
 @entrypoint()
 def rebuild_driver_image(pr_number):
@@ -279,6 +284,7 @@ class Entrypoint:
 
     def __init__(self):
         self.cleanup_cluster_ci = cleanup_cluster
+        self.cleanup_cluster = cleanup_cluster
 
         self.prepare_ci = prepare_ci
         self.prepare_watsonx_serving = _prepare_watsonx_serving
