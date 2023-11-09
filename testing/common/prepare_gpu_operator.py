@@ -17,6 +17,7 @@ def prepare_gpu_operator():
 
 def wait_ready():
     run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
+    run.run("./run_toolbox.py gpu_operator extend_metrics --include-defaults --include-well-known")
     run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
 
 
