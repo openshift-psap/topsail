@@ -169,7 +169,17 @@ create_cluster() {
     else
         echo "INFO: Found the 'TimeToLive' tag: '$time_to_live'"
     fi
-    echo "$time_to_live" > "${ARTIFACT_DIR}/${cluster_role}_TimeToLive_tag"
+    echo "$time_to_live" > "${ARTIFACT_DIR}/${cluster_role}_tag_TimeToLive"
+
+    cluster_user_identifier=$(echo "$machine_tags" | jq .ClusterUserIdentifier)
+    if [[ "$cluster_user_identifier" == null ]]; then
+        cluster_user_identifier="${author_kerberos}@${REPO_OWNER:-}_${REPO_NAME:-}/${PULL_NUMBER:-}/${JOB_NAME:-}/${BUILD_ID:-}/artifacts/${JOB_NAME_SAFE:-}"
+        echo "INFO: 'ClusterUserIdentifier' tag not found. Setting the default duration: $cluster_user_identifier"
+        machine_tags=$(echo "$machine_tags" | jq ". += {\"ClusterUserIdentifier\": \"$cluster_user_identifier\"}" --compact-output)
+    else
+        echo "INFO: Found a 'ClusterUserIdentifier' tag: '$cluster_user_identifier'"
+    fi
+    echo "$cluster_user_identifier" > "${ARTIFACT_DIR}/${cluster_role}_tag_ClusterUserIdentifier"
 
     use_spot=""
     if test_config clusters.create.ocp.workers.spot; then
