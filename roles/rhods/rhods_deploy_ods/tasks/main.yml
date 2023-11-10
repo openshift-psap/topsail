@@ -69,3 +69,11 @@
     cluster_deploy_operator_catalog_namespace: "{{ rhods_namespace }}"
     cluster_deploy_operator_channel: "{{ rhods_deploy_ods_channel }}"
     cluster_deploy_operator_version: "{{ rhods_deploy_ods_version }}"
+
+- name: Wait for the DataScienceCluster resource to be created
+  command:
+    oc get datasciencecluster -oname
+  register: has_datasciencecluster_cmd
+  until: has_datasciencecluster_cmd.stdout
+  retries: 60
+  delay: 10
