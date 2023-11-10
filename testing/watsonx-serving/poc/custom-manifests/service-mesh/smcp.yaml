@@ -26,7 +26,18 @@ spec:
       defaultConfig:
         terminationDrainDuration: 35s
   gateways:
+    egress:
+      runtime:
+        container:
+          resources:
+            limits:
+              memory: 4Gi
     ingress:
+      runtime:
+        container:
+          resources:
+            limits:
+              memory: 4Gi
       service:
         metadata:
           labels:
