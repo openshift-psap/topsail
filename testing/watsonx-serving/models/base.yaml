@@ -1,7 +1,7 @@
 serving_runtime:
   transformer:
     resource_request:
-      cpu: 0.5
+      cpu: 0.2
       memory: 0.5 # in Gi
     extra_env:
       INFERENCE_PLUGIN_TGIS_MODEL_LOADING_TIMEOUT_MS: 40000
