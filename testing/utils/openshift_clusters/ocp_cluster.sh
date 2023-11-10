@@ -42,7 +42,8 @@ prepare_deploy_cluster_subproject() {
 }
 
 cluster_cost_command() {
-    local cluster_tag=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
+    local cluster_name=$1
+
     local cluster_ticket=$(get_config clusters.create.ocp.tags.TicketId)
 
     if [[ "$cluster_ticket" == null || -z "$cluster_ticket" ]]; then
@@ -51,7 +52,8 @@ cluster_cost_command() {
     fi
 
     cat <<EOF
-curl -k -Ssf https://elasticsearch.intlab.perf-infra.lab.eng.rdu2.redhat.com/cloud-governance-resource-orchestration/_doc/${cluster_ticket}?pretty=true | jq '._source.cluster_cost["${cluster_tag}"]'
+account_id=\$(cat \$PSAP_ODS_SECRET_PATH/.awscred | grep 'account id' | cut -d' ' -f4)
+curl -k -Ssf 'https://cloud-governance-stage.rdu2.scalelab.redhat.com:8000/api/v1/cloud_governance/get_cluster_details?account_id=\${account_id}&cluster_name=${cluster_name}' | jq
 EOF
 }
 
@@ -213,7 +215,7 @@ create_cluster() {
 
     save_install_artifacts success
 
-    cluster_cost_command > "${ARTIFACT_DIR}/${cluster_role}__cluster_cost.cmd"
+    cluster_cost_command "$cluster_name"> "${ARTIFACT_DIR}/${cluster_role}__cluster_cost.cmd"
 }
 
 
