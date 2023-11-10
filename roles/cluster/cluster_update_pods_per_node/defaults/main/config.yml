@@ -1,0 +1,19 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.update_pods_per_node
+
+# Parameters
+# the maximum number of Pods per nodes
+cluster_update_pods_per_node_max_pods: 250
+
+# the maximum number of Pods per core
+cluster_update_pods_per_node_pods_per_core: 10
+
+# the name to give to the KubeletConfig object
+cluster_update_pods_per_node_name: set-max-pods
+
+# the label selector for the nodes to update
+cluster_update_pods_per_node_label: pools.operator.machineconfiguration.openshift.io/worker
+
+# the expected value for the label selector
+cluster_update_pods_per_node_label_value:

@@ -508,3 +508,28 @@ class Cluster:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("cluster_update_pods_per_node")
+    @AnsibleMappedParams
+    def update_pods_per_node(self,
+                             max_pods=250,
+                             pods_per_core=10,
+                             name="set-max-pods",
+                             label="pools.operator.machineconfiguration.openshift.io/worker",
+                             label_value="",
+                             ):
+        """
+        Update the maximum number of Pods per Nodes, and Pods per Core
+        See alse:
+          https://docs.openshift.com/container-platform/4.14/nodes/nodes/nodes-nodes-managing-max-pods.html
+
+        Args:
+          max_pods: the maximum number of Pods per nodes
+          pods_per_core: the maximum number of Pods per core
+          name: the name to give to the KubeletConfig object
+          label: the label selector for the nodes to update
+          label_value: the expected value for the label selector
+        """
+
+        return RunAnsibleRole(locals())
