@@ -1,4 +1,3 @@
-from collections import defaultdict
 import json
 
 from matrix_benchmarking import common
@@ -289,13 +288,16 @@ def _get_gpu_usage(cluster_role, register):
 
     gpu_usage_metrics = [
         {f"GPU memory used": 'DCGM_FI_DEV_FB_USED'},
-        {f"GPU compute utilization": 'DCGM_FI_DEV_GPU_UTIL'},
-        {f"GPU engine usage": 'DCGM_FI_PROF_GR_ENGINE_ACTIVE'},
+        {f"GPU active computes": 'DCGM_FI_PROF_SM_ACTIVE'},
         {f"GPU memory transfer utilization": 'DCGM_FI_DEV_MEM_COPY_UTIL'},
         {f"GPU memory unallocated": 'DCGM_FI_DEV_FB_FREE'},
         {f"GPU memory transfer (rx)": 'DCGM_FI_PROF_PCIE_RX_BYTES'},
         {f"GPU memory transfer (tx)": 'DCGM_FI_PROF_PCIE_TX_BYTES'},
-
+        {f"GPU compute utilization (not 100% accurate)": 'DCGM_FI_DEV_GPU_UTIL'},
+        {f"GPU engine usage (not 100% accurate)": 'DCGM_FI_PROF_GR_ENGINE_ACTIVE'},
+        {f"GPU active fp16 pipe": 'DCGM_FI_PROF_PIPE_FP16_ACTIVE'},
+        {f"GPU active fp32 pipe": 'DCGM_FI_PROF_PIPE_FP32_ACTIVE'},
+        {f"GPU active fp64 pipe": 'DCGM_FI_PROF_PIPE_FP64_ACTIVE'},
 
     ]
     all_metrics += gpu_usage_metrics
@@ -321,6 +323,12 @@ def _get_gpu_usage(cluster_role, register):
                 y_title = "Compute usage (in %)"
             elif rq == "DCGM_FI_DEV_MEM_COPY_UTIL":
                 y_title = "GPU transfer bus usage (in %)"
+            elif rq == "DCGM_FI_PROF_SM_ACTIVE":
+                y_title = "The ratio of cycles an SM has at least 1 warp assigned (in %)"
+            elif rq == "DCGM_FI_PROF_SM_OCCUPANCY":
+                y_title = "The ratio of number of warps resident on an SM (in %)."
+            elif rq.startswith("DCGM_FI_PROF_PIPE_FP"):
+                y_title = "Ratio of cycles the fp pipes are active (in %)."
             else:
                 y_title = "(no name)"
 

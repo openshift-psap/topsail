@@ -60,4 +60,9 @@
         {{ ksvc_hostname_cmd.stdout }}:443 \
         caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict \
         >> "$dest"
+      echo "Call $i/{{ watsonx_serving_validate_model_query_count }} passed"
      done
+  register: query_model_cmd
+  until: query_model_cmd.rc == 0
+  retries: 5
+  delay: 30

@@ -73,6 +73,7 @@ ci_presets:
   e2e_gpu:
     extends: [e2e]
     gpu.prepare_cluster: true
+    clusters.sutest.compute.machineset.spot: false
     clusters.sutest.compute.machineset.type: g5.2xlarge
 
   e2e_all_models:
@@ -158,6 +159,7 @@ ci_presets:
   scale_gpu:
     extends: [scale_test]
     gpu.prepare_cluster: true
+    clusters.sutest.compute.machineset.spot: false
     clusters.sutest.compute.machineset.type: g5.2xlarge
     tests.scale.model.name: flan-t5-small-gpu
     gpu.time_sharing.replicas: 17
