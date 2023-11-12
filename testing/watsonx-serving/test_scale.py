@@ -216,7 +216,7 @@ def run_one_test(namespace, job_index):
 
         all_inference_service_names += [inference_service_name]
 
-        extra = dict(inference_service_names=all_inference_service_names)
+    extra = dict(inference_service_names=all_inference_service_names)
 
     run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_all ./run_toolbox.py from_config watsonx_serving validate_model --extra \"{extra}\"")
     run.run(f'echo "model_all_validated: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
