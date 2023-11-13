@@ -1,0 +1,11 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: KubeletConfig
+metadata:
+  name: {{ cluster_update_pods_per_node_name }}
+spec:
+  machineConfigPoolSelector:
+    matchLabels:
+      {{ cluster_update_pods_per_node_label }}: "{{ cluster_update_pods_per_node_label_value }}"
+  kubeletConfig:
+    maxPods: {{ cluster_update_pods_per_node_max_pods }}
+    podsPerCore: {{ cluster_update_pods_per_node_pods_per_core }}

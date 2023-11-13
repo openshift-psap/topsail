@@ -20,20 +20,20 @@
 
 - name: Include the default metrics
   shell: |
-    cat <<EOF >> "{{ artifact_extra_logs_dir }}/src/metrics.csv"
-    {{lookup('file', default_metrics_file)}}
+    cat << EOF >> "{{ artifact_extra_logs_dir }}/src/metrics.csv"
+    {{ lookup('file', default_metrics_file) }}
     EOF
   when: gpu_operator_extend_metrics_include_defaults | bool
 
 - name: Add the well-known metrics
   shell: |
-    cat <<EOF >> "{{ artifact_extra_logs_dir }}/src/metrics.csv"
+    cat << EOF >> "{{ artifact_extra_logs_dir }}/src/metrics.csv"
 
     #
     # Well-known custom metrics
     #
 
-    {{lookup('file', well_known_metrics_file)}}
+    {{ lookup('file', well_known_metrics_file) }}
     EOF
   when: gpu_operator_extend_metrics_include_well_known | bool
 

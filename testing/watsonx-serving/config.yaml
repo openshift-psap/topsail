@@ -167,7 +167,7 @@ ci_presets:
   # ---
 
   scale_on_dgx:
-    extends: [scale_gpu]
+    extends: [scale_gpu, customize_smmr]
     gpu.time_sharing.replicas: 32
     tests.scale.namespace.replicas: 25
     tests.scale.model.replicas: 8
@@ -184,8 +184,8 @@ ci_presets:
 
   customize_smmr:
     watsonx_serving.customize.serverless.enabled: true
-    watsonx_serving.customize.serverless.pilot.limits.cpu: 1500m
-    watsonx_serving.customize.serverless.pilot.limits.memory: 1Gi
+    watsonx_serving.customize.serverless.egress.limits.memory: 4Gi
+    watsonx_serving.customize.serverless.ingress.limits.memory: 4Gi
 
 secrets:
   dir:
@@ -329,11 +329,12 @@ watsonx_serving:
   customize:
     serverless:
       enabled: false
-      pilot:
+      egress:
         limits:
-          cpu: 1500m
-          memory: 1Gi
-
+          memory: 4Gi
+      ingress:
+        limits:
+          memory: 4Gi
 gpu:
   prepare_cluster: true
   time_sharing:
