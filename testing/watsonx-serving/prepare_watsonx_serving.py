@@ -35,11 +35,11 @@ def customize_rhods():
 def customize_watsonx_serving():
 
     if config.ci_artifacts.get_config("watsonx_serving.customize.serverless.enabled"):
-        cpu = config.ci_artifacts.get_config("watsonx_serving.customize.serverless.pilot.limits.cpu")
-        mem = config.ci_artifacts.get_config("watsonx_serving.customize.serverless.pilot.limits.memory")
+        egress_mem = config.ci_artifacts.get_config("watsonx_serving.customize.serverless.egress.limits.memory")
+        ingress_mem = config.ci_artifacts.get_config("watsonx_serving.customize.serverless.ingress.limits.memory")
         run.run(f"oc get smcp/minimal -n istio-system -ojson "
-                f"| jq --arg mem '{mem}' --arg cpu '{cpu}' "
-                "'.spec.runtime.components.pilot.container.resources.limits.cpu = $cpu | .spec.runtime.components.pilot.container.resources.limits.memory = $mem' "
+                f"| jq --arg egress_mem '{egress_mem}' --arg ingress_mem '{ingress_mem}' "
+                "'.spec.gateways.egress.runtime.container.resources.limits.memory = $egress_mem | .spec.gateways.ingress.runtime.container.resources.limits.memory = $ingress_mem' "
                 f"| oc apply -f-")
         run.run("oc get smcp/minimal -n istio-system -oyaml > $ARTIFACT_DIR/smcp_minimal.customized.yaml")
 
