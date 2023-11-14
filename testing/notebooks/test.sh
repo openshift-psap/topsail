@@ -134,19 +134,6 @@ apply_presets_from_args() {
 main() {
     process_ctrl__finalizers+=("process_ctrl::kill_bg_processes")
 
-    if [[ "$(get_config clusters.create.type)" == "customer" ]]; then
-        case ${action} in
-            "prepare_ci")
-                exec "$TESTING_NOTEBOOKS_DIR/run_notebook_scale_test_on_customer.sh" prepare
-                ;;
-            "test_ci")
-                exec "$TESTING_NOTEBOOKS_DIR/run_notebook_scale_test_on_customer.sh" test
-                ;;
-        esac
-
-        return 1
-    fi
-
     action=${1:-}
     shift || true
 
