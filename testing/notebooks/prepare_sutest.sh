@@ -146,6 +146,7 @@ sutest_wait_rhods_launch() {
     ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated"
     ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated"
 
+    ./run_toolbox.py rhods update_datasciencecluster --dashboard --workbenches
     ./run_toolbox.py rhods wait_ods
 
     if test_config rhods.operator.stop; then
@@ -248,6 +249,8 @@ sutest_cleanup() {
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_rhods; then
+        ./run_toolbox.py rhods update_datasciencecluster
+
         _info "Force delete RHODS (workaround for RHODS-8002)"
         ./run_toolbox.py rhods delete_ods
         #./run_toolbox.py rhods undeploy_ods
