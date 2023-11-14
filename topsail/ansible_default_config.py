@@ -35,7 +35,17 @@ def _generate_config(component):
 
     classname = component.__qualname__.partition(".")[0].lower()
 
-    dest = pathlib.Path("roles") / classname / component.ansible_role / "defaults" / "main" / "config.yml"
+    if classname == component.ansible_role:
+
+        if classname == 'fetch_external_test':
+            # TODO:FIXME: Check this convention defaults/main.yml vs defaults/main/config.yml
+            # TODO:FIXME: Why nesting folders for the roles definitions?
+            dest = pathlib.Path("roles") / component.ansible_role / "defaults" / "main.yml"
+        else:
+            dest = pathlib.Path("roles") / component.ansible_role / "defaults" / "main" / "config.yml"
+    else:
+        dest = pathlib.Path("roles") / classname / component.ansible_role / "defaults" / "main" / "config.yml"
+
     dest.parent.mkdir(parents=True, exist_ok=True)
     print(f"{component.__qualname__}\n- generating {dest} ...\n")
 

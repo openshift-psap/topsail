@@ -16,6 +16,7 @@ from topsail.load_aware import Load_Aware
 from topsail.codeflare import Codeflare
 from topsail.watsonx_serving import Watsonx_Serving
 from topsail.llm_load_test import Llm_load_test
+from topsail.fetch_external_test import Fetch_External_Test
 
 class Toolbox:
     """
@@ -47,3 +48,4 @@ class Toolbox:
         self.codeflare = Codeflare
         self.watsonx_serving = Watsonx_Serving
         self.llm_load_test = Llm_load_test
+        self.fetch_external_test = Fetch_External_Test

@@ -1,0 +1,16 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Fetch_External_Test.run
+
+# Parameters
+# the collection to be executed
+# Mandatory value
+fetch_external_test_collection:
+
+# the role to be executed
+# Mandatory value
+fetch_external_test_role:
+
+# tasks file to be executed
+# Mandatory value
+fetch_external_test_task:

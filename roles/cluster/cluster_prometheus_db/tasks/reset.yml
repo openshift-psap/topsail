@@ -16,7 +16,7 @@
   when: 'cluster_prometheus_db_namespace == "redhat-ods-monitoring"'
 
 - name: Recreate Prometheus PVC (redhat-ods-monitoring only)
-  shell: |
+  ansible.builtin.shell: |
     set -o pipefail;
     cat << EOF | oc apply -f- -n redhat-ods-monitoring
     apiVersion: v1
@@ -30,4 +30,6 @@
         requests:
           storage: 5Gi
     EOF
+  args:
+    executable: /bin/bash
   when: 'cluster_prometheus_db_namespace == "redhat-ods-monitoring"'
