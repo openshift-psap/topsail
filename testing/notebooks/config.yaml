@@ -137,20 +137,14 @@ ci_presets:
     extends: [notebook_scale_test]
     tests.notebooks.ods_ci.test_case: notebook_jupyter_test.robot
 
-  # run the notebook image performance test (dev mode)
+  # run the notebook image performance test on RHODS (benchmark mode)
   notebook_performance:
     tests.notebooks.test_flavor: notebook-performance
     matbench.config_file: single_notebook_perf.yaml
     matbench.workload: rhods-notebooks-performance
-    tests.notebooks.notebook_performance.use_rhods: false
     tests.notebooks.users.count: 1
     clusters.sutest.compute.dedicated: true
     'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
-
-  # run the notebook image performance test on RHODS (benchmark mode)
-  rhods_notebook_performance:
-    extends: [notebook_performance]
-    tests.notebooks.notebook_performance.use_rhods: true
 
   notebook_scale_test_burst_create_only:
     extends: [notebook_scale_test]
@@ -469,7 +463,6 @@ tests:
           remove_dsg_notebook_dedicated_toleration: true
 
     notebook_performance:
-      use_rhods: true
       tests:
       - imagestream: all
         ipynb:
@@ -488,7 +481,7 @@ tests:
     gating_tests:
     - notebook_scale_test_dsg
     - notebook_scale_test_jupyter
-    - rhods_notebook_performance
+    - notebook_performance
 
 matbench:
   preset: null

@@ -83,32 +83,7 @@ lab_ci_sutest_cleanup() {
     $LAB_ENVIRONEMNT_CLEANUP_SUTEST_FCT # execute the function
 }
 
-prepare_notebook_performance_without_rhods() {
-    local namespace=$(get_command_arg namespace rhods benchmark_notebook_performance)
-    oc create namespace "$namespace" -oyaml --dry-run=client | oc apply -f-
-
-    local dedicated="{}" # set the toleration/node-selector annotations
-    if ! test_config clusters.sutest.compute.dedicated; then
-        dedicated="{value: ''}" # delete the toleration/node-selector annotations, if it exists
-    fi
-
-    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix single_notebook_node_selector --extra "$dedicated"
-    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix single_notebook_toleration --extra "$dedicated"
-}
-
 prepare() {
-    prepare_notebook_performance_without_rhods
-
-    local test_flavor=$(get_config tests.notebooks.test_flavor)
-    if [[ "$test_flavor" == "notebook-performance" ]]; then
-
-        if ! test_config tests.notebooks.notebook_performance.use_rhods; then
-            _info "Skip cluster preparation (running the notebook-performance test without using RHODS)"
-
-            return
-        fi
-    fi
-
     if [[ "${JOB_NAME_SAFE:-}" == "light" ||  "${JOB_NAME_SAFE:-}" == *"-light" ]]; then
         local user_count=$(get_config tests.notebooks.users.count)
         local light_test_user_count=$(get_config 'ci_presets.notebooks_light["tests.notebooks.users.count"]')
