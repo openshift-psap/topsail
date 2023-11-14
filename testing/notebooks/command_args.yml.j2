@@ -19,9 +19,6 @@ cluster deploy_ldap:
   secret_properties_file: {{ s3_ldap_password_location }}
   username_count: {{ ldap.users.count }}
   username_prefix: {{ ldap.users.prefix }}
-  use_ocm: {{ clusters.sutest.managed.is_ocm }}
-  use_rosa: {{ clusters.sutest.managed.is_rosa }}
-  cluster_name: {{ clusters.sutest.managed.name }}
   wait: true
 
 rhods deploy_ods:
@@ -198,9 +195,6 @@ notebooks cleanup:
 
 cluster undeploy_ldap:
   idp_name: {{ ldap.idp_name }}
-  use_ocm: {{ clusters.sutest.managed.is_ocm }}
-  use_rosa: {{ clusters.sutest.managed.is_rosa }}
-  cluster_name: {{ clusters.sutest.managed.name }}
 
 cluster deploy_nfs_provisioner:
   pvc_size: {{ clusters.sutest.storage.deploy_nfs_provisioner.pvc_size }}

@@ -138,11 +138,6 @@ ci_presets:
   ocp:
     clusters.create.type: ocp
 
-  osd:
-    clusters.create.type: osd
-    clusters.sutest.is_managed: true
-    clusters.sutest.managed.is_ocm: true
-
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
 
@@ -210,20 +205,12 @@ secrets:
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
 clusters:
   create:
-    type: single # can be: single, ocp, managed
+    type: single # can be: single, ocp
     keep: false
     name_prefix: odsci
     sutest_already_exists:
       hostname: null
       username: null
-    ocm:
-      version: 4.10.15
-      region: us-west-2
-      workers:
-        type: m5.2xlarge
-        count: 2
-      compute:
-        type: m5.2xlarge
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags: {}
@@ -247,13 +234,7 @@ clusters:
 
   sutest:
     is_metal: false
-    is_managed: false
     lab:
-      name: null
-    managed:
-      is_rosa: false
-      is_ocm: false
-      env: staging
       name: null
     compute:
       dedicated: true
