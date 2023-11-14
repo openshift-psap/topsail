@@ -58,7 +58,7 @@ run_ods_ci_burst_test() {
         fi
 
         echo "$(date) Launching $batch_size users. $users_already_in/$user_target_count already in the system."
-        ./run_toolbox.py from_config rhods notebook_ods_ci_scale_test \
+        ./run_toolbox.py from_config notebooks ods_ci_scale_test \
              --extra "{$extra_notebook_url
                        user_index_offset: $users_already_in,
                        user_count: '$batch_size',
@@ -109,7 +109,7 @@ run_ods_ci_test() {
     local failed=0
 
     if [[ "$test_mode" == null || "$test_mode" == simple ]]; then
-        ./run_toolbox.py from_config rhods notebook_ods_ci_scale_test \
+        ./run_toolbox.py from_config notebooks ods_ci_scale_test \
                          --extra "{$extra_notebook_url sut_cluster_kubeconfig: '$KUBECONFIG_SUTEST'}" \
             || failed=1
 

@@ -150,10 +150,10 @@ cluster deploy_nginx_server:
   namespace: {{ nginx_namespace }}
   directory: {{ tests.notebooks.ipynb.uploaded_directory }}
 
-rhods benchmark_notebook_performance:
+notebooks benchmark_performance:
   namespace: {{ notebook_performance_namespace }}
 
-rhods notebook_ods_ci_scale_test:
+notebooks ods_ci_scale_test:
   namespace: {{ tests.notebooks.namespace }}
   artifacts_collected: {{ tests.notebooks.artifacts_collected }}
   idp_name: {{ ldap.idp_name }}
@@ -196,7 +196,7 @@ driver/cluster set_scale/cleanup:
   name: {{ clusters.driver.compute.machineset.name }}
   scale: 0
 
-rhods cleanup_notebooks:
+notebooks cleanup:
   username_prefix: {{ ldap.users.prefix }}
 
 cluster undeploy_ldap:
