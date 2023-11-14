@@ -194,6 +194,14 @@ def cleanup_cluster():
         prepare_watsonx_serving.cleanup()
 
 
+@entrypoint()
+def cleanup_rhoai():
+    """
+    Restores the cluster to its original state
+    """
+    prepare_watsonx_serving.cleanup()
+
+
 @entrypoint(ignore_secret_path=True)
 def generate_plots(results_dirname):
     try:
@@ -285,6 +293,7 @@ class Entrypoint:
     def __init__(self):
         self.cleanup_cluster_ci = cleanup_cluster
         self.cleanup_cluster = cleanup_cluster
+        self.cleanup_rhoai = cleanup_rhoai
 
         self.prepare_ci = prepare_ci
         self.prepare_watsonx_serving = _prepare_watsonx_serving
