@@ -350,7 +350,7 @@ sutest_cleanup() {
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.delete_test_namespaces; then
         echo "Deleting the notebook performance namespace"
-       local notebook_performance_namespace=$(get_command_arg namespace rhods benchmark_notebook_performance)
+       local notebook_performance_namespace=$(get_command_arg namespace notebooks benchmark_performance)
        timeout 15m \
                oc delete namespace --ignore-not-found \
                "$notebook_performance_namespace"
