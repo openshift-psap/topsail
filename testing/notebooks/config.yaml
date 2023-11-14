@@ -278,9 +278,10 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 585043
+    tag: 621083
     channel: beta
-    version: 1.33.0 # RC 3
+    version: 2.4.0
+    rc: 2
   notebooks:
     customize:
       enabled: true
