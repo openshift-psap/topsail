@@ -41,7 +41,7 @@ ci_presets:
 
   notebook_gating_scale_test_light:
     extends: [notebook_gating_scale_test]
-    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
+    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 4
     'ci_presets.notebook_scale_test["tests.notebooks.repeat"]': 1
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
 
@@ -151,8 +151,8 @@ ci_presets:
     clusters.driver.compute.dedicated: true
     clusters.driver.compute.machineset.count: 1
 
-    tests.notebooks.users.count: 5
-    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
+    tests.notebooks.users.count: 4
+    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 4
 
   light:
     extends: [light_cluster, notebooks_light]
@@ -324,7 +324,7 @@ tests:
     repeat: 1
     users:
       # number of users to simulate
-      count: 5
+      count: 4
       # offset to add to the Pod user index when computing the user name
       start_offset: 0
       # how long to wait between user starts, multiplied by the user index
