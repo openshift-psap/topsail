@@ -55,7 +55,6 @@ ci_presets:
     clusters.create.ocp.workers.type: m6i.4xlarge
     clusters.create.ocp.compute.type: m6i.8xlarge
     clusters.driver.compute.autoscaling.enabled: false
-    clusters.sutest.compute.machineset.spot: true
     clusters.sutest.compute.autoscaling.enabled: true
 
     rhods.operator.stop: true
@@ -76,7 +75,6 @@ ci_presets:
   notebook_large_scale_test_no_notebook:
     extends: [notebook_large_scale_test]
     clusters.sutest.compute.machineset.count: 0
-    clusters.sutest.compute.machineset.spot: false
     clusters.sutest.compute.autoscaling.enabled: false
     clusters.create.type: single
     tests.notebooks.users.count: 1000
@@ -231,14 +229,6 @@ ci_presets:
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
-  spot:
-    clusters.sutest.compute.machineset.spot: true
-    clusters.sutest.compute.autoscaling.enabled: true
-    clusters.driver.compute.machineset.spot: false
-    'ci_presets.notebooks_light["clusters.driver.compute.machineset.count"]': null
-    'ci_presets.notebooks_light["clusters.driver.compute.dedicated"]': true
-    'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
-
   perflab_notebook_scale_test:
     extends: [notebook_scale_test, metal, cleanup_clusters_on_exit]
     clusters.driver.compute.dedicated: false
@@ -287,15 +277,6 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags: {}
-      # list of tags to apply to the spot machineset
-      spot:
-        tags:
-          Budget: PSAP
-          Project: PSAP
-          Environment: TEST/DEV
-          Owner: KEVIN POUGET
-          Manager: ASHISH KAMRA
-          User: kpouget
 
       deploy_cluster:
         target: cluster
@@ -331,7 +312,6 @@ clusters:
       machineset:
         name: rhods-compute-pods
         count: null
-        spot: false
         taint:
           key: only-rhods-compute-pods
           value: "yes"
@@ -350,7 +330,6 @@ clusters:
       machineset:
         name: test-pods
         count: null
-        spot: false
         taint:
           key: &driver_toleration_key only-test-pods
           value: "yes"

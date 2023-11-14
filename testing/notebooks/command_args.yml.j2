@@ -36,7 +36,6 @@ sutest/cluster set_scale:
 {% if clusters.sutest.compute.dedicated %}
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
 {% endif %}
-  spot: {{ clusters.sutest.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 driver/cluster set_scale:
@@ -45,7 +44,6 @@ driver/cluster set_scale:
 {% if clusters.driver.compute.dedicated %}
   taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
 {% endif %}
-  spot: {{ clusters.driver.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 cluster set_scale/notebook-performance:
@@ -184,7 +182,6 @@ notebooks ods_ci_scale_test:
   capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
   only_create_notebooks: {{ tests.notebooks.ods_ci.only_create_notebooks }}
   stop_notebooks_on_exit: {{ tests.notebooks.ods_ci.stop_notebooks_on_exit }}
-  driver_running_on_spot: {{ clusters.driver.compute.machineset.spot or false}}
 
 sutest/cluster set_scale/cleanup:
   instance_type: not-used
