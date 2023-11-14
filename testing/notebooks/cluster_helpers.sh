@@ -45,11 +45,6 @@ cluster_helpers::get_compute_node_count() {
         local notebook_size="$(get_config tests.notebooks.test_pods.size.cpu) $(get_config tests.notebooks.test_pods.size.mem_gi)"
         local user_count=$(get_config tests.notebooks.users.count)
 
-        local test_mode=$(get_config tests.notebooks.ods_ci.test_mode)
-        if [[ "$test_mode" == burst || "$test_mode" == batch ]]; then
-            user_count=$(get_config tests.notebooks.users.batch_size)
-        fi
-
         local instance_type="$(get_config clusters.create.ocp.compute.type)"
     fi
 

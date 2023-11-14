@@ -97,37 +97,6 @@ ci_presets:
     tests.notebooks.repeat: 1
     tests.notebooks.users.sleep_factor: 1
 
-  icelake_notebook_scale_test_scaleup:
-    extends: [notebook_scale_test_scaleup]
-    tests.notebooks.users.scaleups: [50, 100, 200, 400, 600, 800]
-
-  icelake_notebook_scale_test_burst:
-    extends: [notebook_scale_test_burst]
-    tests.notebooks.users.count: 350
-    tests.notebooks.ods_ci.test_mode: burst
-    tests.notebooks.users.batch_size: 10
-    tests.notebooks.users.sleep_factor: 0
-
-  notebook_scale_test_scaleup:
-    tests.notebooks.ods_ci.test_mode: scaleup
-    tests.notebooks.users.scaleups: [300, 200, 100, 5]
-    tests.notebooks.repeat: 1
-
-  notebook_scale_test_burst:
-    extends: [notebook_scale_test]
-    tests.notebooks.users.count: 2000
-    tests.notebooks.ods_ci.test_mode: burst
-    tests.notebooks.users.batch_size: 100
-    tests.notebooks.users.sleep_factor: 3
-    tests.notebooks.ods_ci.stop_notebooks_on_exit: false
-    tests.notebooks.repeat: 1
-
-  # run the DSG Notebook scale test with user batching
-  notebook_scale_test_batch:
-    extends: [notebook_scale_test]
-    tests.notebooks.users.batch_size: 10
-    tests.notebooks.users.sleep_factor: 5.0
-
   notebook_scale_test_dsg:
     extends: [notebook_scale_test]
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
@@ -145,16 +114,6 @@ ci_presets:
     tests.notebooks.users.count: 1
     clusters.sutest.compute.dedicated: true
     'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
-
-  notebook_scale_test_burst_create_only:
-    extends: [notebook_scale_test]
-    tests.notebooks.ods_ci.only_create_notebooks: true
-    tests.notebooks.ods_ci.test_mode: burst
-    tests.notebooks.users.count: 500
-    tests.notebooks.users.batch_size: 100
-    tests.notebooks.users.sleep_factor: 3
-    tests.notebooks.repeat: 1
-    tests.notebooks.ods_ci.stop_notebooks_on_exit: true
 
   plot.notebook_scale_tests_comparison:
     matbench.preset: notebook_scale_tests_comparison
@@ -199,8 +158,6 @@ ci_presets:
 
     tests.notebooks.users.count: 5
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
-    'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.count"]': 200
-    'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.batch_size"]': 50
 
   light:
     extends: [light_cluster, notebooks_light]
@@ -397,8 +354,6 @@ tests:
       sleep_factor: 5.0
       # number of users to launch at the same time
       batch_size: 1
-      # numbers of users to launch during the scaleup test
-      scaleups: [5, 4, 3, 2, 1]
 
     # namespace in which the scale test should run
     namespace: notebook-scale-test
@@ -423,8 +378,6 @@ tests:
       # ODS-CI test case to execute.
       test_case: notebook_dsg_test.robot
       # mode in which the ODS-CI test should be executed
-      # can be: null, simple (default), burst or scaleup
-      test_mode: simple
       image:
         repo: https://github.com/red-hat-data-services/ods-ci.git
         ref: master
