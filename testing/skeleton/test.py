@@ -66,7 +66,7 @@ def prepare_ci():
 
 
 
-def _run_test(test_artifact_dir_p):
+def _run_test(test_artifact_dir_p): # THis should be the actual test
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__dummy_test"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
@@ -79,10 +79,13 @@ def _run_test(test_artifact_dir_p):
 
         failed = True
         try:
-            run.run("./run_toolbox.py cluster reset_prometheus_db")
-
+            # Here we could wire in other tests?
+            run.run("./run_toolbox.py cluster reset_prometheus_db") # The actual test
+            
             logging.info("Waiting 5 minutes to capture some metrics in Prometheus ...")
-            time.sleep(5 * 60)
+            time.sleep(120) # This is the test wait and see how it behaves
+             # between the reset and the dump of prometheus is
+             # what we consider as a test
 
             run.run("./run_toolbox.py cluster dump_prometheus_db")
             failed = False
@@ -100,7 +103,7 @@ def test_ci():
 
     try:
         test_artifact_dir_p = [None]
-        _run_test(test_artifact_dir_p)
+        _run_test(test_artifact_dir_p) # RUn the dtes
     finally:
         try:
             if test_artifact_dir_p[0] is not None:

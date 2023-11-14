@@ -1,0 +1,10 @@
+- name: Install the external collection
+  community.general.ansible_galaxy_install:
+    type: collection
+    name: "{{ fetch_external_test_collection }}"
+    force: True
+
+- name: Run a task from the role'
+  ansible.builtin.include_role:
+    name: "{{ fetch_external_test_collection }}.{{ fetch_external_test_role }}"
+    tasks_from: "{{ fetch_external_test_task }}"
