@@ -207,7 +207,6 @@ secrets:
   # name of the file containing the properties of LDAP secrets
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
-  addon_email_file: addon.email
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
 clusters:
   create:
@@ -296,15 +295,11 @@ ldap:
     prefix: psapuser
 
 rhods:
-  deploy_from_catalog: true
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
     tag: 585043
     channel: beta
     version: 1.33.0 # RC 3
-  addon:
-    # only necessary/set when rhods.deploy_from_catalog is true
-    email: SET_AT_RUNTIME
   notebooks:
     customize:
       enabled: true
