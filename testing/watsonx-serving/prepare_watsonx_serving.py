@@ -70,7 +70,7 @@ def undeploy_operator(operator):
     cleanup = operator.get("cleanup", dict(crds=[], namespaces=[]))
 
     for crd in cleanup.get("crds", []):
-        run.run(f"oc delete {crd} --all -A")
+        run.run(f"oc delete {crd} --all -A", check=False)
 
     for ns in cleanup.get("namespaces", []):
         run.run(f"oc api-resources --verbs=list --namespaced -o name | grep -v -E 'coreos.com|openshift.io|cncf.io|k8s.io|metal3.io|k8s.ovn.org|.apps' | xargs -t -n 1 oc get --show-kind --ignore-not-found -n watsonx-serving-user-test-driver |& cat > $ARTIFACT_DIR/{operator['name']}_{ns}.log", check=False)
