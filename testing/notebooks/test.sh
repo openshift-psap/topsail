@@ -154,6 +154,7 @@ main() {
             prepare
 
             process_ctrl::wait_bg_processes
+            wait # ensure that there's really no background process
             return 0
             ;;
         "test_ci")
