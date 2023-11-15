@@ -195,8 +195,3 @@ notebooks cleanup:
 
 cluster undeploy_ldap:
   idp_name: {{ ldap.idp_name }}
-
-cluster deploy_nfs_provisioner:
-  pvc_size: {{ clusters.sutest.storage.deploy_nfs_provisioner.pvc_size }}
-  pvc_sc: {{ clusters.sutest.storage.deploy_nfs_provisioner.pvc_sc }}
-  default_sc: {{ clusters.sutest.storage.deploy_nfs_provisioner.default_sc }}
