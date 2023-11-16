@@ -84,3 +84,7 @@
     if [[ "$cr" ]]; then
       oc delete $cr
     fi
+
+- name: Delete the Dashboard OAuth client
+  command:
+    oc delete oauthclient.oauth.openshift.io dashboard-oauth-client --ignore-not-found
