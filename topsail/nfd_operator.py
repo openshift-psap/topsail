@@ -1,4 +1,4 @@
-from toolbox._common import RunAnsibleRole, AnsibleRole, AnsibleConstant, AnsibleSkipConfigGeneration, AnsibleMappedParams
+from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleConstant, AnsibleSkipConfigGeneration, AnsibleMappedParams
 
 
 class NFDOperator:

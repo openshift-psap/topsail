@@ -24,7 +24,7 @@ fi
 ANSIBLE_OPTS="$ANSIBLE_OPTS -e artifact_dir=${ARTIFACT_DIR}"
 
 TOOLBOX_SCRIPT_NAME="${TOOLBOX_SCRIPT_NAME:-$0}"
-TOOLBOX_PATH="${TOOLBOX_SCRIPT_NAME##*toolbox/}" # remove everything before 'toolbox/'
+TOOLBOX_PATH="${TOOLBOX_SCRIPT_NAME##*topsail/}" # remove everything before 'topsail/'
 TOOLBOX_PATH="${TOOLBOX_PATH%.*}" # remove file extension
 ARTIFACT_DIRNAME="${TOOLBOX_PATH//\//__}" # replace / by __
 

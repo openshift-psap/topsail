@@ -14,4 +14,4 @@ jobs:
           fetch-depth: 0
 
       - name: Check that there is no WIP commit in the PR
-        run: bash toolbox/repo_scripts/validate_no_wip.sh
+        run: bash topsail/repo_scripts/validate_no_wip.sh

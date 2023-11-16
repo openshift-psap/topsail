@@ -7,7 +7,7 @@ import traceback
 import jinja2
 import jinja2.filters
 
-from toolbox._common import RunAnsibleRole
+from topsail._common import RunAnsibleRole
 
 class FromConfig:
     """
@@ -47,8 +47,8 @@ class FromConfig:
             logging.error("--command_args_file flag or CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE env var must have a value.")
             raise SystemExit(1)
 
-        import toolbox
-        toolbox = toolbox.Toolbox()
+        import topsail
+        toolbox = topsail.Toolbox()
 
         with open(config_file) as f:
             config = yaml.safe_load(f)

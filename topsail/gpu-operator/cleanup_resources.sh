@@ -6,8 +6,8 @@ source ${THIS_DIR}/../_common.sh
 source ${THIS_DIR}/_helm_common.sh
 
 set +e
-toolbox/gpu-operator/undeploy_from_operatorhub.sh
-toolbox/gpu-operator/undeploy_from_helm.sh
+topsail/gpu-operator/undeploy_from_operatorhub.sh
+topsail/gpu-operator/undeploy_from_helm.sh
 
 bash "${HELM_DEPLOY_OPERATOR}" cleanup
 
