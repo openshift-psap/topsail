@@ -127,10 +127,11 @@ run_test() {
         echo "repeat=$repeat_idx" > "$ARTIFACT_DIR/settings.repeat"
     fi
 
+    failed=0
     if [[ "$test_flavor" == "ods-ci" ]]; then
-        run_ods_ci_test || return 1
+        run_ods_ci_test || failed=1
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
-        run_single_notebook_tests "$repeat_idx" || return 1
+        run_single_notebook_tests "$repeat_idx" || failed=1
     elif [[ "$test_flavor" == "gating" ]]; then
         # 'gating' testing is handled higher in the call stack, before the 'repeat' (in run_gating_tests_and_plots)
         _error "Test flavor cannot be '$test_flavor' in function run_test."
@@ -141,5 +142,8 @@ run_test() {
     switch_sutest_cluster
     if ! ./run_toolbox.py rhods capture_state > /dev/null; then
         _warning "rhods capture state failed :("
+        failed=1
     fi
+
+    return $failed
 }
