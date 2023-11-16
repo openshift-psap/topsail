@@ -186,14 +186,10 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
                 datum["timestamp"] = detail["timestamp"]
 
                 generatedTokens = int(detail["response"].get("generatedTokens", 1))
-                if only_tokens:
-                    datum["tokens"] = generatedTokens
+                datum["tokens"] = generatedTokens
 
-                elif latency_per_token:
-                    datum["latencyPerToken"] = detail["latency"] / 1000 / 1000 / generatedTokens # in ms/token
-
-                else:
-                    datum["latency"] = detail["latency"] / 1000 / 1000
+                datum["latencyPerToken"] = detail["latency"] / 1000 / 1000 / generatedTokens # in ms/token
+                datum["latency"] = detail["latency"] / 1000 / 1000
 
                 datum["model_name"] = (f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")).removesuffix("<br>")
 
@@ -208,6 +204,7 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
 
                 elif detail.get("error"):
                     datum["test_name"] = "errors"
+                    datum["latency"] = -1
                 else:
                     datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
 
@@ -262,12 +259,17 @@ class LatencyDetails():
         else:
             y_key = "latency"
 
-        fig = px.line(df, hover_data=df.columns,
-                      x="timestamp", y=y_key, color="test_name")
+        if cfg__only_tokens and cfg__entry:
+            color = "latency"
+        elif latency_per_token and cfg__entry:
+            color = "tokens"
+        elif cfg__show_errors:
+            color = "tokens"
+        else:
+            color = "test_name"
 
-
-        for i in range(len(fig.data)):
-            fig.data[i].update(mode='markers')
+        fig = px.scatter(df, hover_data=df.columns,
+                      x="timestamp", y=y_key, color=color)
 
         fig.update_layout(barmode='stack')
         fig.update_yaxes(range=[0, df[y_key].max() * 1.1])
@@ -295,7 +297,7 @@ class LatencyDetails():
                                           xanchor="left",
                                           x=0.01))
 
-        if cfg__entry:
+        if cfg__entry and not latency_per_token:
             fig.layout.update(showlegend=False)
 
         return fig, ""
