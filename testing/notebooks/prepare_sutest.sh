@@ -3,11 +3,7 @@
 prepare_sutest_deploy_rhods() {
     switch_sutest_cluster
 
-    if test_config clusters.sutest.is_managed; then
-        prepare_managed_sutest_deploy_rhods
-    else
-        prepare_ocp_sutest_deploy_rhods
-    fi
+    prepare_ocp_sutest_deploy_rhods
 }
 
 prepare_sutest_deploy_ldap() {
@@ -32,82 +28,17 @@ prepare_sutest_scale_cluster() {
         compute_nodes_count=$(cluster_helpers::get_compute_node_count sutest)
     fi
 
-    if test_config clusters.sutest.is_managed; then
-        if test_config clusters.sutest.compute.autoscaling.enabled; then
-            local specific_options=" \
-                --enable-autoscaling \
-                --min-replicas=2 \
-                --max-replicas=20 \
-                "
-        else
-            local specific_options=" \
-                --replicas "$compute_nodes_count" \
-                "
-        fi
 
-        if test_config clusters.sutest.managed.is_ocm; then
-            local managed_cluster_name=$(get_config clusters.sutest.managed.name)
-            local compute_nodes_type=$(get_config clusters.create.ocm.compute.type)
-            local compute_nodes_machinepool_name=$(get_config clusters.sutest.compute.machineset.name)
+    ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
+                     --extra "{scale: $compute_nodes_count}"
 
-            local sutest_taint_key=$(get_config clusters.sutest.compute.machineset.taint.key)
-            local sutest_taint_value=$(get_config clusters.sutest.compute.machineset.taint.value)
-            local sutest_taint_effect=$(get_config clusters.sutest.compute.machineset.taint.effect)
-            local sutest_taint="$sutest_taint_key=$sutest_taint_value:$sutest_taint_effect"
+    if test_config clusters.sutest.compute.autoscaling.enabled; then
+        oc apply -f "$TESTING_NOTEBOOKS_DIR"/autoscaling/clusterautoscaler.yaml
 
-            ocm create machinepool "$compute_nodes_machinepool_name" \
-                --cluster "$managed_cluster_name" \
-                --instance-type "$compute_nodes_type" \
-                --taints "$sutest_taint" \
-                --labels "$sutest_taint_key=$sutest_taint_value" \
-                $specific_options
-        elif test_config clusters.sutest.managed.is_rosa; then
-            _error "prepare_sutest_scale_cluster not supported with rosa"
-        fi
-    else
-        if test_config clusters.sutest.compute.autoscaling.enabled && test_config clusters.sutest.compute.machineset.spot; then
-            touch "$ARTIFACT_DIR/spot_and_autoscaling"
-
-            # create one auto-scaling machineset per (region)/zone of the base worker machinesets
-
-            cluster_name=$(oc get machines -n openshift-machine-api -ojsonpath={.items[0].spec.providerSpec.value.tags[0].name} | cut -d/ -f3)
-            worker_machinesets=$(oc get machinesets -n openshift-machine-api -oname | grep $cluster_name | cut -d/ -f2)
-
-            oc apply -f "$TESTING_NOTEBOOKS_DIR"/autoscaling/clusterautoscaler.yaml
-            for base_worker_machineset in $worker_machinesets; do
-                region_zone=$(echo "$base_worker_machineset" | cut -d- -f6-)
-                new_machineset_name="$(get_config clusters.sutest.compute.machineset.name)-$region_zone"
-
-                ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
-                                 --extra "{scale: 0, name: '$new_machineset_name', base_machineset: '$base_worker_machineset'}"
-
-                tag_spot_machineset sutest "$new_machineset_name"
-
-                cat "$TESTING_NOTEBOOKS_DIR"/autoscaling/machineautoscaler.yaml \
-                    | sed "s/MACHINESET_NAME/$new_machineset_name/" \
-                    | oc apply -f-
-            done
-        else
-            if test_config clusters.sutest.compute.machineset.spot; then
-                compute_nodes_count=$(python3 -c "print(round($compute_nodes_count * 1.1))")
-                _info "SUTEST running with SPOT nodes, giving +10% of worker nodes --> $compute_nodes_count"
-            fi
-            ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
-                             --extra "{scale: $compute_nodes_count}"
-
-            if test_config clusters.sutest.compute.machineset.spot; then
-                tag_spot_machineset sutest "$(get_config clusters.sutest.compute.machineset.name)"
-            fi
-
-            if test_config clusters.sutest.compute.autoscaling.enabled; then
-                oc apply -f "$TESTING_NOTEBOOKS_DIR"/autoscaling/clusterautoscaler.yaml
-
-                local machineset_name=$(get_config clusters.sutest.compute.machineset.name)
-                cat "$TESTING_NOTEBOOKS_DIR"/autoscaling/machineautoscaler.yaml \
-                    | sed "s/MACHINESET_NAME/$machineset_name/" \
-                    | oc apply -f-
-            fi
-        fi
+        local machineset_name=$(get_config clusters.sutest.compute.machineset.name)
+        cat "$TESTING_NOTEBOOKS_DIR"/autoscaling/machineautoscaler.yaml \
+            | sed "s/MACHINESET_NAME/$machineset_name/" \
+            | oc apply -f-
     fi
 }
 
@@ -117,25 +48,6 @@ prepare_sutest_cluster() {
     prepare_sutest_deploy_ldap
     prepare_sutest_scale_cluster
     prepare_rhods_admin_users
-
-    if test_config clusters.sutest.storage.deploy_nfs_provisioner.enabled; then
-        prepare_nfs_provisioner
-    fi
-}
-
-prepare_managed_sutest_deploy_rhods() {
-    if test_config rhods.deploy_from_catalog; then
-        process_ctrl::run_in_bg \
-            ./run_toolbox.py from_config rhods deploy_ods
-    else
-        if test_config clusters.sutest.managed.is_rosa; then
-            _error "prepare_managed_sutest_deploy_rhods not supported on ROSA when 'rhods.deploy_from_catalog' is set."
-        fi
-        local managed_cluster_name=$(get_config clusters.sutest.managed.name)
-        local email="$(cat "$PSAP_ODS_SECRET_PATH/$(get_config secrets.addon_email_file)")"
-        process_ctrl::run_in_bg \
-            ./run_toolbox.py from_config rhods deploy_addon "$managed_cluster_name" "$email"
-    fi
 }
 
 setup_brew_registry() {
@@ -209,10 +121,6 @@ prepare_rhods_admin_users() {
     done
 }
 
-prepare_nfs_provisioner() {
-    ./run_toolbox.py from_config cluster deploy_nfs_provisioner
-}
-
 sutest_wait_rhods_launch() {
     switch_sutest_cluster
 
@@ -230,6 +138,7 @@ sutest_wait_rhods_launch() {
     ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated"
     ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated"
 
+    ./run_toolbox.py rhods update_datasciencecluster --dashboard --workbenches
     ./run_toolbox.py rhods wait_ods
 
     if test_config rhods.operator.stop; then
@@ -321,28 +230,19 @@ sutest_cleanup() {
         oc scale deploy/rhods-operator --replicas=1 -n redhat-ods-operator
     fi
 
-    if ! ./run_toolbox.py from_config rhods cleanup_notebooks > /dev/null; then
+    if ! ./run_toolbox.py from_config notebooks cleanup > /dev/null; then
         _warning "rhods notebook cleanup failed :("
     fi
 
-    if test_config clusters.sutest.is_managed; then
-        local managed_cluster_name=$(get_config clusters.sutest.managed.name)
-        local sutest_machineset_name=$(get_config clusters.sutest.compute.machineset.name)
-
-        if test_config clusters.sutest.managed.is_ocm; then
-            ocm delete machinepool "$sutest_machineset_name" --cluster "$managed_cluster_name"
-        elif test_config clusters.sutest.managed.is_rosa; then
-            rosa delete machinepool "$sutest_machineset_name" --cluster "$managed_cluster_name"
-        else
-            _error "sutest_cleanup: managed cluster must be OCM or ROSA ..."
-        fi
-    elif test_config clusters.sutest.is_metal; then
+    if test_config clusters.sutest.is_metal; then
          true # nothing to do
     else
         ./run_toolbox.py from_config cluster set_scale --prefix "sutest" --suffix "cleanup" > /dev/null
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_rhods; then
+        ./run_toolbox.py rhods update_datasciencecluster
+
         _info "Force delete RHODS (workaround for RHODS-8002)"
         ./run_toolbox.py rhods delete_ods
         #./run_toolbox.py rhods undeploy_ods
@@ -350,7 +250,7 @@ sutest_cleanup() {
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.delete_test_namespaces; then
         echo "Deleting the notebook performance namespace"
-       local notebook_performance_namespace=$(get_command_arg namespace rhods benchmark_notebook_performance)
+       local notebook_performance_namespace=$(get_command_arg namespace notebooks benchmark_performance)
        timeout 15m \
                oc delete namespace --ignore-not-found \
                "$notebook_performance_namespace"

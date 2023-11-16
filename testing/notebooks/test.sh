@@ -134,19 +134,6 @@ apply_presets_from_args() {
 main() {
     process_ctrl__finalizers+=("process_ctrl::kill_bg_processes")
 
-    if [[ "$(get_config clusters.create.type)" == "customer" ]]; then
-        case ${action} in
-            "prepare_ci")
-                exec "$TESTING_NOTEBOOKS_DIR/run_notebook_scale_test_on_customer.sh" prepare
-                ;;
-            "test_ci")
-                exec "$TESTING_NOTEBOOKS_DIR/run_notebook_scale_test_on_customer.sh" test
-                ;;
-        esac
-
-        return 1
-    fi
-
     action=${1:-}
     shift || true
 
@@ -167,6 +154,7 @@ main() {
             prepare
 
             process_ctrl::wait_bg_processes
+            wait # ensure that there's really no background process
             return 0
             ;;
         "test_ci")
@@ -205,9 +193,6 @@ main() {
             ;;
         "undeploy_ldap")
             switch_sutest_cluster
-            if test_config clusters.sutest.managed.is_ocm; then
-                cluster_helpers::ocm_login
-            fi
             ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
             return 0
             ;;

@@ -78,9 +78,6 @@ prepare_driver_scale_cluster() {
     ./run_toolbox.py from_config cluster set_scale --prefix="driver" \
                      --extra "{scale: $compute_nodes_count}"
 
-    if test_config clusters.driver.compute.machineset.spot; then
-        tag_spot_machineset driver "$(get_config clusters.driver.compute.machineset.name)"
-    fi
 
     if test_config clusters.driver.compute.autoscaling.enabled; then
         oc apply -f "$TESTING_NOTEBOOKS_DIR"/autoscaling/clusterautoscaler.yaml

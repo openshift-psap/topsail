@@ -19,11 +19,10 @@ run_single_notebook_tests_run_benchmark_against_imagestream() {
     local benchmark_repeat=$(echo "$benchmark" | jq -r .repeat)
     local benchmark_number=$(echo "$benchmark" | jq -r .number)
 
-    if ! ./run_toolbox.py rhods benchmark_notebook_performance \
+    if ! ./run_toolbox.py notebooks benchmark_performance \
          --imagestream "$imagestream" \
          $imagestream_tag \
          --namespace "$namespace" \
-         --use_rhods "$use_rhods" \
          --notebook_directory "$notebook_directory" \
          --notebook_filename "$notebook_filename" \
          --benchmark_name "$benchmark_name" \
@@ -91,10 +90,9 @@ run_single_notebook_tests() {
 
     local failed=0
 
-    local namespace=$(get_command_arg namespace rhods benchmark_notebook_performance)
+    local namespace=$(get_command_arg namespace notebooks benchmark_performance)
     local toleration_key=$(get_config clusters.driver.compute.machineset.taint.key)
 
-    local use_rhods=$(get_config tests.notebooks.notebook_performance.use_rhods)
     local notebook_performance_tests=$(get_config tests.notebooks.notebook_performance.tests[])
     for notebook_performance_test in $(echo "$notebook_performance_tests" | jq --compact-output); do
         local instance_types=$(echo "$notebook_performance_test" | jq -r .instance_types[])

@@ -19,9 +19,6 @@ cluster deploy_ldap:
   secret_properties_file: {{ s3_ldap_password_location }}
   username_count: {{ ldap.users.count }}
   username_prefix: {{ ldap.users.prefix }}
-  use_ocm: {{ clusters.sutest.managed.is_ocm }}
-  use_rosa: {{ clusters.sutest.managed.is_rosa }}
-  cluster_name: {{ clusters.sutest.managed.name }}
   wait: true
 
 rhods deploy_ods:
@@ -36,7 +33,6 @@ sutest/cluster set_scale:
 {% if clusters.sutest.compute.dedicated %}
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
 {% endif %}
-  spot: {{ clusters.sutest.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 driver/cluster set_scale:
@@ -45,7 +41,6 @@ driver/cluster set_scale:
 {% if clusters.driver.compute.dedicated %}
   taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
 {% endif %}
-  spot: {{ clusters.driver.compute.machineset.spot }}
   scale: SET_AT_RUNTIME
 
 cluster set_scale/notebook-performance:
@@ -150,10 +145,10 @@ cluster deploy_nginx_server:
   namespace: {{ nginx_namespace }}
   directory: {{ tests.notebooks.ipynb.uploaded_directory }}
 
-rhods benchmark_notebook_performance:
+notebooks benchmark_performance:
   namespace: {{ notebook_performance_namespace }}
 
-rhods notebook_ods_ci_scale_test:
+notebooks ods_ci_scale_test:
   namespace: {{ tests.notebooks.namespace }}
   artifacts_collected: {{ tests.notebooks.artifacts_collected }}
   idp_name: {{ ldap.idp_name }}
@@ -184,7 +179,6 @@ rhods notebook_ods_ci_scale_test:
   capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
   only_create_notebooks: {{ tests.notebooks.ods_ci.only_create_notebooks }}
   stop_notebooks_on_exit: {{ tests.notebooks.ods_ci.stop_notebooks_on_exit }}
-  driver_running_on_spot: {{ clusters.driver.compute.machineset.spot or false}}
 
 sutest/cluster set_scale/cleanup:
   instance_type: not-used
@@ -196,16 +190,8 @@ driver/cluster set_scale/cleanup:
   name: {{ clusters.driver.compute.machineset.name }}
   scale: 0
 
-rhods cleanup_notebooks:
+notebooks cleanup:
   username_prefix: {{ ldap.users.prefix }}
 
 cluster undeploy_ldap:
   idp_name: {{ ldap.idp_name }}
-  use_ocm: {{ clusters.sutest.managed.is_ocm }}
-  use_rosa: {{ clusters.sutest.managed.is_rosa }}
-  cluster_name: {{ clusters.sutest.managed.name }}
-
-cluster deploy_nfs_provisioner:
-  pvc_size: {{ clusters.sutest.storage.deploy_nfs_provisioner.pvc_size }}
-  pvc_sc: {{ clusters.sutest.storage.deploy_nfs_provisioner.pvc_sc }}
-  default_sc: {{ clusters.sutest.storage.deploy_nfs_provisioner.default_sc }}

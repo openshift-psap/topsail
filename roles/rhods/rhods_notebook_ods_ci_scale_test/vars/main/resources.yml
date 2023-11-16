@@ -1,7 +1,0 @@
----
-rhods_notebook_ods_ci_scale_test_job: "roles/rhods/rhods_notebook_ods_ci_scale_test/templates/ods-ci_job.yaml"
-rhods_notebook_ods_ci_scale_test_entrypoint: "roles/rhods/rhods_notebook_ods_ci_scale_test/files/entrypoint.sh"
-rhods_notebook_ods_ci_scale_test_state_signal_barrier: "roles/rhods/rhods_notebook_ods_ci_scale_test/files/state-signal_barrier.py"
-rhods_notebook_ods_ci_scale_test_s3_artifacts_exporter_sidecar: "roles/rhods/rhods_notebook_ods_ci_scale_test/files/s3-artifacts-exporter.sh"
-rhods_notebook_ods_ci_scale_test_test_case_directory: "roles/rhods/rhods_notebook_ods_ci_scale_test/files/ods-ci"
-rhods_notebook_ods_ci_scale_test_artifacts_version: 2022-11-17

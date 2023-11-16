@@ -41,7 +41,7 @@ ci_presets:
 
   notebook_gating_scale_test_light:
     extends: [notebook_gating_scale_test]
-    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
+    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 4
     'ci_presets.notebook_scale_test["tests.notebooks.repeat"]': 1
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
 
@@ -55,7 +55,6 @@ ci_presets:
     clusters.create.ocp.workers.type: m6i.4xlarge
     clusters.create.ocp.compute.type: m6i.8xlarge
     clusters.driver.compute.autoscaling.enabled: false
-    clusters.sutest.compute.machineset.spot: true
     clusters.sutest.compute.autoscaling.enabled: true
 
     rhods.operator.stop: true
@@ -76,7 +75,6 @@ ci_presets:
   notebook_large_scale_test_no_notebook:
     extends: [notebook_large_scale_test]
     clusters.sutest.compute.machineset.count: 0
-    clusters.sutest.compute.machineset.spot: false
     clusters.sutest.compute.autoscaling.enabled: false
     clusters.create.type: single
     tests.notebooks.users.count: 1000
@@ -99,37 +97,6 @@ ci_presets:
     tests.notebooks.repeat: 1
     tests.notebooks.users.sleep_factor: 1
 
-  icelake_notebook_scale_test_scaleup:
-    extends: [notebook_scale_test_scaleup]
-    tests.notebooks.users.scaleups: [50, 100, 200, 400, 600, 800]
-
-  icelake_notebook_scale_test_burst:
-    extends: [notebook_scale_test_burst]
-    tests.notebooks.users.count: 350
-    tests.notebooks.ods_ci.test_mode: burst
-    tests.notebooks.users.batch_size: 10
-    tests.notebooks.users.sleep_factor: 0
-
-  notebook_scale_test_scaleup:
-    tests.notebooks.ods_ci.test_mode: scaleup
-    tests.notebooks.users.scaleups: [300, 200, 100, 5]
-    tests.notebooks.repeat: 1
-
-  notebook_scale_test_burst:
-    extends: [notebook_scale_test]
-    tests.notebooks.users.count: 2000
-    tests.notebooks.ods_ci.test_mode: burst
-    tests.notebooks.users.batch_size: 100
-    tests.notebooks.users.sleep_factor: 3
-    tests.notebooks.ods_ci.stop_notebooks_on_exit: false
-    tests.notebooks.repeat: 1
-
-  # run the DSG Notebook scale test with user batching
-  notebook_scale_test_batch:
-    extends: [notebook_scale_test]
-    tests.notebooks.users.batch_size: 10
-    tests.notebooks.users.sleep_factor: 5.0
-
   notebook_scale_test_dsg:
     extends: [notebook_scale_test]
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
@@ -139,30 +106,14 @@ ci_presets:
     extends: [notebook_scale_test]
     tests.notebooks.ods_ci.test_case: notebook_jupyter_test.robot
 
-  # run the notebook image performance test (dev mode)
+  # run the notebook image performance test on RHODS (benchmark mode)
   notebook_performance:
     tests.notebooks.test_flavor: notebook-performance
     matbench.config_file: single_notebook_perf.yaml
     matbench.workload: rhods-notebooks-performance
-    tests.notebooks.notebook_performance.use_rhods: false
     tests.notebooks.users.count: 1
     clusters.sutest.compute.dedicated: true
     'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
-
-  # run the notebook image performance test on RHODS (benchmark mode)
-  rhods_notebook_performance:
-    extends: [notebook_performance]
-    tests.notebooks.notebook_performance.use_rhods: true
-
-  notebook_scale_test_burst_create_only:
-    extends: [notebook_scale_test]
-    tests.notebooks.ods_ci.only_create_notebooks: true
-    tests.notebooks.ods_ci.test_mode: burst
-    tests.notebooks.users.count: 500
-    tests.notebooks.users.batch_size: 100
-    tests.notebooks.users.sleep_factor: 3
-    tests.notebooks.repeat: 1
-    tests.notebooks.ods_ci.stop_notebooks_on_exit: true
 
   plot.notebook_scale_tests_comparison:
     matbench.preset: notebook_scale_tests_comparison
@@ -187,11 +138,6 @@ ci_presets:
   ocp:
     clusters.create.type: ocp
 
-  osd:
-    clusters.create.type: osd
-    clusters.sutest.is_managed: true
-    clusters.sutest.managed.is_ocm: true
-
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
 
@@ -205,10 +151,8 @@ ci_presets:
     clusters.driver.compute.dedicated: true
     clusters.driver.compute.machineset.count: 1
 
-    tests.notebooks.users.count: 5
-    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 5
-    'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.count"]': 200
-    'ci_presets.notebook_scale_test_burst_create_only["tests.notebooks.users.batch_size"]': 50
+    tests.notebooks.users.count: 4
+    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 4
 
   light:
     extends: [light_cluster, notebooks_light]
@@ -230,14 +174,6 @@ ci_presets:
     clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
-
-  spot:
-    clusters.sutest.compute.machineset.spot: true
-    clusters.sutest.compute.autoscaling.enabled: true
-    clusters.driver.compute.machineset.spot: false
-    'ci_presets.notebooks_light["clusters.driver.compute.machineset.count"]': null
-    'ci_presets.notebooks_light["clusters.driver.compute.dedicated"]': true
-    'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
 
   perflab_notebook_scale_test:
     extends: [notebook_scale_test, metal, cleanup_clusters_on_exit]
@@ -266,36 +202,18 @@ secrets:
   # name of the file containing the properties of LDAP secrets
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
-  addon_email_file: addon.email
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
 clusters:
   create:
-    type: single # can be: single, ocp, managed
+    type: single # can be: single, ocp
     keep: false
     name_prefix: odsci
     sutest_already_exists:
       hostname: null
       username: null
-    ocm:
-      version: 4.10.15
-      region: us-west-2
-      workers:
-        type: m5.2xlarge
-        count: 2
-      compute:
-        type: m5.2xlarge
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags: {}
-      # list of tags to apply to the spot machineset
-      spot:
-        tags:
-          Budget: PSAP
-          Project: PSAP
-          Environment: TEST/DEV
-          Owner: KEVIN POUGET
-          Manager: ASHISH KAMRA
-          User: kpouget
 
       deploy_cluster:
         target: cluster
@@ -316,13 +234,7 @@ clusters:
 
   sutest:
     is_metal: false
-    is_managed: false
     lab:
-      name: null
-    managed:
-      is_rosa: false
-      is_ocm: false
-      env: staging
       name: null
     compute:
       dedicated: true
@@ -331,17 +243,10 @@ clusters:
       machineset:
         name: rhods-compute-pods
         count: null
-        spot: false
         taint:
           key: only-rhods-compute-pods
           value: "yes"
           effect: NoSchedule
-    storage:
-      deploy_nfs_provisioner:
-        enable: false
-        default_sc: true
-        pvc_size: 10Gi
-        pvc_sc: gp3-csi
   driver:
     compute:
       autoscaling:
@@ -350,7 +255,6 @@ clusters:
       machineset:
         name: test-pods
         count: null
-        spot: false
         taint:
           key: &driver_toleration_key only-test-pods
           value: "yes"
@@ -366,15 +270,12 @@ ldap:
     prefix: psapuser
 
 rhods:
-  deploy_from_catalog: true
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 585043
+    tag: 621083
     channel: beta
-    version: 1.33.0 # RC 3
-  addon:
-    # only necessary/set when rhods.deploy_from_catalog is true
-    email: SET_AT_RUNTIME
+    version: 2.4.0
+    rc: 2
   notebooks:
     customize:
       enabled: true
@@ -417,15 +318,13 @@ tests:
     repeat: 1
     users:
       # number of users to simulate
-      count: 5
+      count: 4
       # offset to add to the Pod user index when computing the user name
       start_offset: 0
       # how long to wait between user starts, multiplied by the user index
       sleep_factor: 5.0
       # number of users to launch at the same time
       batch_size: 1
-      # numbers of users to launch during the scaleup test
-      scaleups: [5, 4, 3, 2, 1]
 
     # namespace in which the scale test should run
     namespace: notebook-scale-test
@@ -450,8 +349,6 @@ tests:
       # ODS-CI test case to execute.
       test_case: notebook_dsg_test.robot
       # mode in which the ODS-CI test should be executed
-      # can be: null, simple (default), burst or scaleup
-      test_mode: simple
       image:
         repo: https://github.com/red-hat-data-services/ods-ci.git
         ref: master
@@ -461,7 +358,7 @@ tests:
       only_create_notebooks: false
       stop_notebooks_on_exit: true
     test_pods:
-      # must be consistent with roles/rhods_notebook_ods_ci_scale_test/templates/ods-ci_job.yaml
+      # must be consistent with roles/notebooks_ods_ci_scale_test/templates/ods-ci_job.yaml
       size:
         cpu: 0.2
         mem_gi: 0.75
@@ -490,7 +387,6 @@ tests:
           remove_dsg_notebook_dedicated_toleration: true
 
     notebook_performance:
-      use_rhods: true
       tests:
       - imagestream: all
         ipynb:
@@ -509,7 +405,7 @@ tests:
     gating_tests:
     - notebook_scale_test_dsg
     - notebook_scale_test_jupyter
-    - rhods_notebook_performance
+    - notebook_performance
 
 matbench:
   preset: null

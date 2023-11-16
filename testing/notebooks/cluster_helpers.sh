@@ -21,15 +21,7 @@ cluster_helpers::get_compute_node_count() {
         local request_mem=$(python3 -c "print(f'{$notebook_mem + $NOTEBOOK_OAUTH_PROXY_MEM:.3f}')")
         local notebook_size="$request_cpu $request_mem"
 
-        if test_config clusters.sutest.is_managed; then
-            if test_config clusters.sutest.managed.is_ocm; then
-                local instance_type="$(get_config clusters.create.ocm.compute.type)"
-            else
-                _error "Cannot get the instance type of ROSA clusters ..."
-            fi
-        else
-            local instance_type="$(get_config clusters.create.ocp.compute.type)"
-        fi
+        local instance_type="$(get_config clusters.create.ocp.compute.type)"
 
         local user_count=$(get_config tests.notebooks.users.count)
 
@@ -44,11 +36,6 @@ cluster_helpers::get_compute_node_count() {
 
         local notebook_size="$(get_config tests.notebooks.test_pods.size.cpu) $(get_config tests.notebooks.test_pods.size.mem_gi)"
         local user_count=$(get_config tests.notebooks.users.count)
-
-        local test_mode=$(get_config tests.notebooks.ods_ci.test_mode)
-        if [[ "$test_mode" == burst || "$test_mode" == batch ]]; then
-            user_count=$(get_config tests.notebooks.users.batch_size)
-        fi
 
         local instance_type="$(get_config clusters.create.ocp.compute.type)"
     fi
@@ -67,44 +54,10 @@ cluster_helpers::get_compute_node_count() {
     echo "$size"
 }
 
-cluster_helpers::ocm_oc_login() {
-    local managed_cluster_name=$(get_config clusters.sutest.managed.name)
-
-    local api_url=$(ocm describe cluster "$managed_cluster_name" --json | jq -r .api.url)
-
-    # do it in a subshell to avoid leaking the `KUBEADMIN_PASS` secret because of `set -x`
-    bash -c '
-    source "'$PSAP_ODS_SECRET_PATH'/create_osd_cluster.password"
-    oc login "'$api_url'" \
-             --username=kubeadmin \
-             --password="$KUBEADMIN_PASS" \
-             --insecure-skip-tls-verify
-    '
-}
-
 cluster_helpers::connect_sutest_cluster() {
     touch "$KUBECONFIG_SUTEST"
 
     switch_sutest_cluster
-
-    if ! test_config clusters.sutest.is_managed; then
-        oc get clusterversion
-
-        return
-    fi
-
-    local managed_cluster_name=$(get_config clusters.sutest.managed.name)
-    if test_config clusters.sutest.managed.is_ocm; then
-
-        cluster_helpers::ocm_login
-
-        if [[ $((ocm describe cluster "$managed_cluster_name"  --json || true) | jq -r .state) != "ready" ]];
-        then
-            _error "OCM cluster '$managed_cluster_name' isn't ready ..."
-        fi
-
-        cluster_helpers::ocm_oc_login
-    fi
 
     oc get clusterversion
 }

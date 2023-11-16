@@ -90,7 +90,6 @@
 - name: Define the test environment
   set_fact:
     notebook_search_labels: "-lci-artifacts.single-notebook-perf=true -lapp={{ notebook_name }}"
-    rhods_notebook_ods_ci_scale_test_username_prefix: "{{ notebook_name }}"
 
 - name: Delete the notebook files ConfigMap, if it exists
   command:
