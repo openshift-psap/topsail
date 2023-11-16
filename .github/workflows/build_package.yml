@@ -1,0 +1,46 @@
+---
+name: Build package
+on:
+  push:
+  pull_request:
+  # Run the functional tests every 8 hours.
+  # This will help to identify faster if
+  # there is a CI failure related to a
+  # change in any dependency.
+  schedule:
+    - cron: '0 */8 * * *'
+jobs:
+  pypibuild:
+    if: github.repository_owner == 'ccamacho'
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          sudo apt update -y
+          sudo apt install jq -y
+          sudo apt-get purge python3-yaml ansible -y
+          sudo locale-gen en_US.UTF-8
+          sudo dpkg-reconfigure locales
+          sudo apt install build-essential findutils -y
+          sudo apt-get --purge autoremove python3-pip
+          sudo apt install python3-pip -y
+          sudo python3 -m pip install --upgrade pip
+          sudo python3 -m pip install --upgrade virtualenv
+          sudo python3 -m pip install --upgrade setuptools
+          sudo python3 -m pip install -r requirements.txt
+      - name: Build the package
+        run: |
+          rm -rf dist
+          sudo python3 setup.py sdist
+          sudo python3 -m pip install --force dist/*
+          twine check dist/*
+          topsail info

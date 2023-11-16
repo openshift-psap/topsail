@@ -1,3 +1,4 @@
+from topsail.get_info import Get_Info
 from topsail.cluster import Cluster
 from topsail.entitlement import Entitlement
 from topsail.gpu_operator import GPU_Operator
@@ -29,6 +30,7 @@ class Toolbox:
     configuration and troubleshooting.
     """
     def __init__(self):
+        self.info = Get_Info
         self.cluster = Cluster
         self.entitlement = Entitlement
         self.gpu_operator = GPU_Operator
