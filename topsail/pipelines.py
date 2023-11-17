@@ -1,8 +1,8 @@
 import sys
 
-from toolbox._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
+from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
-from toolbox import local_ci
+from topsail import local_ci
 
 
 class Pipelines:

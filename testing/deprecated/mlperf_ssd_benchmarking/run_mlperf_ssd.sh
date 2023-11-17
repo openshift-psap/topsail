@@ -46,10 +46,10 @@ if ! dtk_image_is_valid; then
     exit 1
 fi
 
-./toolbox/wdm ensure library.gpu-operator.has_gpu_operator --library
+./topsail/wdm ensure library.gpu-operator.has_gpu_operator --library
 GPU_NODE_CONFIG=--config=instance_type=g4dn.xlarge,instance_count=1
-./toolbox/wdm ensure library.gpu.has_gpu_nodes --library $GPU_NODE_CONFIG
-./toolbox/wdm ensure library.gpu-operator.is_ready --library
+./topsail/wdm ensure library.gpu.has_gpu_nodes --library $GPU_NODE_CONFIG
+./topsail/wdm ensure library.gpu-operator.is_ready --library
 
 gpu_node_hostname=$(oc get nodes -oname -lfeature.node.kubernetes.io/pci-10de.present -ojsonpath={.items[].metadata.labels} | jq -r '.["kubernetes.io/hostname"]')
 

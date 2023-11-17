@@ -1,7 +1,7 @@
 import sys
 import secrets
 
-from toolbox._common import PlaybookRun
+from topsail._common import PlaybookRun
 
 
 class OCMAddon:

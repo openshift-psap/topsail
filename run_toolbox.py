@@ -8,7 +8,7 @@ except ModuleNotFoundError:
     print("The toolbox requires the Python `fire` package, see requirements.txt for a full list of requirements")
     sys.exit(1)
 
-import toolbox
+import topsail
 
 def main(no_exit=False):
     # Print help rather than opening a pager
@@ -17,7 +17,7 @@ def main(no_exit=False):
     # Launch CLI, get a runnable
     runnable = None
     try:
-        runnable = fire.Fire(toolbox.Toolbox())
+        runnable = fire.Fire(topsail.Toolbox())
     except fire.core.FireExit:
         if not no_exit:
             raise
