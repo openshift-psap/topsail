@@ -126,6 +126,11 @@ def _get_error_overview(entries, args):
         errors += [html.Li([html.Code(descr), " 🠊 ", f"{count} call{'s' if count > 1 else ''}"])]
     header += [html.Ul(errors)]
 
+    header += [html.H2("Load time")]
+    header += report.Plot_and_Text(f"Load time", report.set_config(dict(init_time=True), args))
+    header += report.Plot_and_Text(f"Load time", report.set_config(dict(init_time=False), args))
+    header += [html.I("The plots above shows the initialization and load duration of the model")]
+
     header += [html.H2("Log stats")]
     header += report.Plot_and_Text(f"Log distribution", report.set_config(dict(line_count=True), args))
     header += [html.I("The plot above shows the number of log lines collected for the Predicator Pod(s). Too many lines may increase the response time. Mind that the Pods are not restarted between all of the tests.")]
