@@ -22,6 +22,7 @@ def register():
     FinishReasonDistribution()
     LogDistribution()
     SuccessCountDistribution()
+    LoadTime()
 
 
 def generateErrorHistogramData(entries, variables):
@@ -259,5 +260,65 @@ class LogDistribution():
         else:
             fig.update_layout(title=f"Distribution of well-know messages in the logs" + subtitle, title_x=0.5,)
             fig.update_yaxes(title=f"Occurence count")
+
+        return fig, ""
+
+# ---
+
+def generateLoadTimeData(entries, variables):
+    data = []
+
+    for entry in entries:
+        predictor_logs = entry.results.predictor_logs
+
+        datum = {}
+        datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
+        datum["init_time"] = entry.results.predictor_pod.init_time.total_seconds()
+        datum["load_time"] = entry.results.predictor_pod.load_time.total_seconds()
+        data.append(datum)
+
+    return data
+
+
+class LoadTime():
+    def __init__(self):
+        self.name = "Load time"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        entries = common.Matrix.all_records(settings, setting_lists)
+        cfg__init_time = cfg.get("init_time", False)
+
+        df = pd.DataFrame(generateLoadTimeData(entries, variables))
+
+        if df.empty:
+            return None, "Not data available ..."
+
+        df = df.sort_values(by=["test_name"])
+
+        if cfg__init_time:
+            y_key = "init_time"
+            what = "init"
+        else:
+            y_key = "load_time"
+            what = "load"
+
+        fig = px.bar(df, hover_data=df.columns, x="test_name", y=y_key, color="test_name")
+
+        subtitle = ""
+        if "model_name" not in variables:
+            subtitle = f"<br><b>{settings['model_name']}</b>"
+
+
+        fig.update_layout(title=f"{what.title()} time of the predictor Pod" + subtitle, title_x=0.5,)
+        fig.update_yaxes(title=f"Load time, in seconds")
+
 
         return fig, ""
