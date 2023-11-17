@@ -3,4 +3,5 @@ visualize:
   generate:
   - "report: Error report"
   - "report: Latency per token"
+  - "report: Throughput"
   - "report: Tokens"

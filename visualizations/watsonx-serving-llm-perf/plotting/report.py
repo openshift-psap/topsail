@@ -9,6 +9,7 @@ import matrix_benchmarking.common as common
 
 def register():
     LatencyReport()
+    ThroughputReport()
     TokensReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
@@ -122,6 +123,31 @@ class LatencyReport():
             header += Plot_and_Text(f"Latency details", set_config(dict(entry=entry), args))
 
         return None, header
+
+
+class ThroughputReport():
+    def __init__(self):
+        self.name = "report: Throughput"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.H1("llm-load-test Thoughput")]
+
+        header += Plot_and_Text(f"Throughput", set_config(dict(by_model=True), args))
+        header += html.Br()
+        header += html.Br()
+
+        header += Plot_and_Text(f"Throughput", set_config(dict(), args))
+        header += html.Br()
+        header += html.Br()
+
+        return None, header
+
 
 class TokensReport():
     def __init__(self):
