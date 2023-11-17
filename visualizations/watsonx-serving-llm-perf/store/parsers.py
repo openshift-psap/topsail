@@ -24,11 +24,14 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.LLM_LOAD_TEST_RUN_DIR = "*__llm_load_test__run"
+artifact_dirnames.SERVING_CAPTURE_STATE = "*__watsonx_serving__capture_state"
 
 IMPORTANT_FILES = [
     "config.yaml",
 
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/output/ghz-multiplexed-results*.json",
+    f"{artifact_dirnames.SERVING_CAPTURE_STATE}/pods.json",
+    f"{artifact_dirnames.SERVING_CAPTURE_STATE}/pods.yaml",
 ]
 
 def ignore_file_not_found(fn):
@@ -52,7 +55,9 @@ def _parse_always(results, dirname, import_settings):
 def _parse_once(results, dirname):
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)
     results.predictor_logs = _parse_predictor_logs(dirname)
+    results.predictor_pod = _parse_predictor_pod(dirname)
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
+
 
 def _parse_local_env(dirname):
     from_local_env = types.SimpleNamespace()
@@ -149,11 +154,60 @@ def _parse_llm_load_test_output(dirname):
 
 
 @ignore_file_not_found
+def _parse_predictor_pod(dirname):
+    if not artifact_paths.SERVING_CAPTURE_STATE:
+        logging.error(f"No '{artifact_dirnames.SERVING_CAPTURE_STATE}' directory found in {dirname} ...")
+        return
+
+    capture_state_dir = artifact_paths.SERVING_CAPTURE_STATE
+    if isinstance(capture_state_dir, list):
+        capture_state_dir = capture_state_dir[-1]
+
+    predictor_pod = types.SimpleNamespace()
+    pods_def_file = capture_state_dir / "pods.json"
+
+    if (dirname / pods_def_file).exists():
+        with open(register_important_file(dirname, pods_def_file)) as f:
+            pods_def = json.load(f)
+    else:
+        pods_def_file = pods_def_file.with_suffix(".yaml")
+        with open(register_important_file(dirname, pods_def_file)) as f:
+            logging.warning("Loading the predictor pod def as yaml ... (json file missing)")
+            pods_def = yaml.safe_load(f)
+
+    if not pods_def["items"]:
+        logging.error(f"No container Pod found in {pods_def_file} ...")
+        return predictor_pods
+
+    pod = pods_def["items"][0]
+
+    condition_times = {}
+    for condition in pod["status"]["conditions"]:
+        condition_times[condition["type"]] = \
+            datetime.datetime.strptime(
+                condition["lastTransitionTime"], K8S_TIME_FMT)
+
+    containers_start_time = {}
+    for container_status in pod["status"]["containerStatuses"]:
+        try:
+            containers_start_time[container_status["name"]] = \
+                datetime.datetime.strptime(
+                    container_status["state"]["running"]["startedAt"], K8S_TIME_FMT)
+        except IndexError: pass # container not running
+
+
+    predictor_pod.init_time = condition_times["Initialized"] - condition_times["PodScheduled"]
+    predictor_pod.load_time = condition_times["Ready"] - condition_times["Initialized"]
+
+    return predictor_pod
+
+
+@ignore_file_not_found
 def _parse_predictor_logs(dirname):
     capture_state_dirs = list(dirname.glob("*__watsonx_serving__capture_state/"))
 
     if not capture_state_dirs:
-        logging.error("No 'watsonx_serving__capture_state' directory found in {dirname} ...")
+        logging.error(f"No 'watsonx_serving__capture_state' directory found in {dirname} ...")
         return
 
     predictor_logs = types.SimpleNamespace()
