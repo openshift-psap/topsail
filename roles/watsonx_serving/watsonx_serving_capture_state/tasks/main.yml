@@ -15,6 +15,8 @@
        > "{{ artifact_extra_logs_dir }}/pods.status"
     oc get pods -n "{{ namespace }}" -oyaml \
        > "{{ artifact_extra_logs_dir }}/pods.yaml"
+    oc get pods -n "{{ namespace }}" -ojson \
+       > "{{ artifact_extra_logs_dir }}/pods.json"
     oc describe pods -n "{{ namespace }}" \
        > "{{ artifact_extra_logs_dir }}/pods.desc"
   ignore_errors: true
