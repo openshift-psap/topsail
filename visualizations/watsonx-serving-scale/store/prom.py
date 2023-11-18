@@ -373,6 +373,51 @@ SUTEST_CONTAINER_LABELS = [
     {"KNative webhook": dict(namespace="knative-serving", pod="webhook-.*")},
 ]
 
+def _get_rhoai_resource_usage(cluster_role, register):
+    def get_cpu_resource_usage(namespace):
+        return [
+            {f"{namespace} CPU request" : "sum(kube_pod_container_resource_requests{namespace=~'"+namespace+"',resource='cpu'})"},
+            {f"{namespace} CPU limit" : "sum(kube_pod_container_resource_limits{namespace=~'"+namespace+"',resource='cpu'})"},
+            {f"{namespace} CPU usage" : "sum(rate(container_cpu_usage_seconds_total{namespace=~'"+namespace+"'}[5m]))"},
+        ]
+
+    def get_mem_resource_usage(namespace):
+        return [
+            {f"{namespace} memory request" : "sum(kube_pod_container_resource_requests{namespace=~'"+namespace+"',resource='memory'})"},
+            {f"{namespace} memory limit" : "sum(kube_pod_container_resource_limits{namespace=~'"+namespace+"',resource='memory'})"},
+            {f"{namespace} memory usage": "sum(container_memory_rss{namespace=~'"+namespace+"'})"},
+        ]
+
+    all_metrics = []
+
+    namespaces = [
+        "redhat-ods-.*",
+        "knative-.*",
+        "istio-system",
+        "openshift-operators",
+    ]
+
+    for namespace in namespaces:
+        cpu = get_cpu_resource_usage(namespace)
+        mem = get_mem_resource_usage(namespace)
+
+        all_metrics += cpu
+        all_metrics += mem
+
+        if not register: continue
+        plotting_prom_cpu_memory.Plot(cpu, f"Namespace {namespace}: CPU usage",
+                                      get_metrics=get_metrics(cluster_role),
+                                      as_timestamp=True, container_name=namespace,
+                                      )
+        plotting_prom_cpu_memory.Plot(mem, f"Namespace {namespace}: Mem usage",
+                                      get_metrics=get_metrics(cluster_role),
+                                      as_timestamp=True, is_memory=True,
+                                      skip_nodes=False,
+                                      )
+
+    return all_metrics
+
+
 def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
@@ -383,6 +428,7 @@ def get_sutest_metrics(register=False):
     all_metrics += _get_control_plane_nodes_cpu_usage(cluster_role, register)
     all_metrics += _get_container_mem_cpu(cluster_role, register, SUTEST_CONTAINER_LABELS)
     all_metrics += _get_gpu_usage(cluster_role, register)
+    all_metrics += _get_rhoai_resource_usage(cluster_role, register)
 
     return all_metrics
 
