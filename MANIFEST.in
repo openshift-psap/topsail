@@ -1,7 +1,7 @@
-include *.py
-include *.yaml
-include requirements.txt
+include *
 recursive-include topsail *
 global-exclude *pyc
+global-exclude .git
+global-exclude .github
 global-exclude .project
 global-exclude .pydevproject

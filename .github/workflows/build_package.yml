@@ -44,3 +44,9 @@ jobs:
           sudo python3 -m pip install --force dist/*
           twine check dist/*
           topsail info
+          sudo python3 -m pip show topsail
+          echo "Run from the script"
+          sudo ./run_toolbox.py fetch_external_test run ccamacho.automationhub debug main
+          echo "Run from the installed package"
+          sudo topsail fetch_external_test run ccamacho.automationhub debug main
+

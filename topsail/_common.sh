@@ -68,6 +68,9 @@ if [ -z "${ANSIBLE_JSON_TO_LOGFILE:-}" ]; then
     export ANSIBLE_JSON_TO_LOGFILE="${ARTIFACT_EXTRA_LOGS_DIR}/_ansible.log.json"
 fi
 
+# export ANSIBLE_ROLES_PATH=$ANSIBLE_ROLES_PATH:$TOOLBOX_DIR/roles/benchmarking:$TOOLBOX_DIR/roles/fetch_external_test:$TOOLBOX_DIR/roles/cluster:$TOOLBOX_DIR/roles/codeflare:$TOOLBOX_DIR/roles/entitlement:$TOOLBOX_DIR/roles/gpu_operator:$TOOLBOX_DIR/roles/load_aware:$TOOLBOX_DIR/roles/local_ci:$TOOLBOX_DIR/roles/nfd:$TOOLBOX_DIR/roles/ocm:$TOOLBOX_DIR/roles/pipelines:$TOOLBOX_DIR/roles/rhods:$TOOLBOX_DIR/roles/utils:$TOOLBOX_DIR/roles/wisdom:$TOOLBOX_DIR/roles/watsonx_serving:$TOOLBOX_DIR/roles/llm_load_test:$TOOLBOX_DIR/roles/notebooks
+# export ANSIBLE_COLLECTIONS_PATH=$ANSIBLE_COLLECTIONS_PATH:./ansible_collections:/usr/local/lib/python3.10/dist-packages/ansible_collections
+
 echo "Using '${ANSIBLE_JSON_TO_LOGFILE}' as ansible json log file."
 
 ###

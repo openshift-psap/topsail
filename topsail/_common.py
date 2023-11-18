@@ -4,6 +4,7 @@ import os
 import time
 import sys
 from pathlib import Path
+import pkg_resources
 import yaml
 import tempfile
 import functools
@@ -148,6 +149,42 @@ class RunAnsibleRole:
 
         print(f"Using '{env['ARTIFACT_DIR']}' to store the test artifacts.")
         self.ansible_vars["artifact_dir"] = env["ARTIFACT_DIR"]
+
+        # Get the topstail package location if installed
+        topsail_package_location = ''
+        try:
+            topsail_package_location = pkg_resources.resource_filename('topsail', '')
+            print(f"Topsail package location: {topsail_package_location}")
+        except pkg_resources.ResolutionError:
+            print("Topsail is not installed as a package")
+
+        # Lets register all the internal roles folders
+        # If the script is running from the package or not
+        if "dist-packages" in str(top_dir):
+            print("Roles included from the package")
+            top_dir_roles = os.path.join(topsail_package_location, 'roles')
+            print('asdf')
+            print(topsail_package_location)
+            print(os.listdir(os.path.join(topsail_package_location)))
+            print(os.listdir(top_dir_roles))
+        else:
+            print("Roles included from the repository directly")
+            top_dir_roles = os.path.join(top_dir, 'roles')
+        top_dir_roles_list = [os.path.join(top_dir_roles, entry) for entry in os.listdir(top_dir_roles) if os.path.isdir(os.path.join(top_dir_roles, entry))]
+
+        print(str(top_dir_roles_list))
+
+        for path in top_dir_roles_list:
+            env["ANSIBLE_ROLES_PATH"] = os.path.join(env.get("ANSIBLE_ROLES_PATH", ""), path)
+
+        env["ANSIBLE_COLLECTIONS_PATHS"] = env.get("ANSIBLE_COLLECTIONS_PATHS", "")
+        for path in sys.path:
+            collections_path = os.path.join(path, 'ansible_collections')
+            if os.path.exists(collections_path):
+                env["ANSIBLE_COLLECTIONS_PATHS"] = os.path.join(env.get("ANSIBLE_COLLECTIONS_PATHS", ""), collections_path)
+
+        self.ansible_vars["roles_path"] = env["ANSIBLE_ROLES_PATH"]
+        self.ansible_vars["collections_paths"] = env["ANSIBLE_COLLECTIONS_PATHS"]
 
         print(f"Using '{artifact_extra_logs_dir}' to store extra log files.")
         self.ansible_vars["artifact_extra_logs_dir"] = str(artifact_extra_logs_dir)

@@ -71,6 +71,7 @@ setup(
     author='TOPSAIL',
     include_package_data=True,
     install_requires=requirements,
+    package_data={'topsail': ['../roles/*']},
     py_modules=['run_toolbox'],
     entry_points={
         'console_scripts': [

@@ -2,7 +2,6 @@ import os
 import json
 
 from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams
-import ansible_runner
 
 class Fetch_External_Test:
     """
