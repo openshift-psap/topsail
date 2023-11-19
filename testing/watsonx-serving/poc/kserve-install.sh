@@ -17,4 +17,3 @@ source check-env-variables.sh
 
 ./1-prerequisite-operators.sh
 ./2-required-crs.sh
-./3-only-kserve-install.sh
