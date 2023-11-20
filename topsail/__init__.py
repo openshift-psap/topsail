@@ -1,49 +1,29 @@
-from topsail.cluster import Cluster
-from topsail.entitlement import Entitlement
-from topsail.gpu_operator import GPU_Operator
-from topsail.nfd import NFD
-from topsail.nfd_operator import NFDOperator
-from topsail.repo import Repo
-from topsail.benchmarking import Benchmarking
-from topsail.utils import Utils
-from topsail.rhods import RHODS
-from topsail.notebooks import Notebooks
-from topsail.pipelines import Pipelines
-from topsail.wisdom import Wisdom
-from topsail.from_config import FromConfig
-from topsail.local_ci import Local_CI
-from topsail.load_aware import Load_Aware
-from topsail.codeflare import Codeflare
-from topsail.watsonx_serving import Watsonx_Serving
-from topsail.llm_load_test import Llm_load_test
+import sys, os
+import pathlib
+import importlib
+import logging
 
 class Toolbox:
     """
-    The PSAP Operators Toolbox
-
-    The toolbox is a set of tools, originally written for
-    CI automation, but that appeared to be useful for a broader scope. It
-    automates different operations on OpenShift clusters and operators
-    revolving around PSAP activities: entitlement, scale-up of GPU nodes,
-    deployment of the NFD, SRO and NVIDIA GPU Operators, but also their
-    configuration and troubleshooting.
+    The Topsail Toolbox
     """
+
     def __init__(self):
-        self.cluster = Cluster
-        self.entitlement = Entitlement
-        self.gpu_operator = GPU_Operator
-        self.nfd_operator = NFDOperator
-        self.nfd = NFD
-        self.repo = Repo
-        self.benchmarking = Benchmarking
-        self.utils = Utils
-        self.rhods = RHODS
-        self.notebooks = Notebooks
-        self.pipelines = Pipelines
-        self.from_config = FromConfig.run
-        self.local_ci = Local_CI
-        self.wisdom = Wisdom
-        self.load_aware = Load_Aware
-        self.codeflare = Codeflare
-        self.watsonx_serving = Watsonx_Serving
-        self.llm_load_test = Llm_load_test
+
+        top_dir = pathlib.Path(__file__).resolve().parent.parent
+
+        for toolbox_file in (top_dir / "topsail").glob("*.py"):
+            project_toolbox_module = str(toolbox_file.relative_to(top_dir).with_suffix("")).replace(os.path.sep, ".")
+            mod = importlib.import_module(project_toolbox_module)
+            toolbox_name = toolbox_file.with_suffix("").name
+
+            if toolbox_name.startswith("_"): continue
+
+            if hasattr(mod, "__entrypoint"):
+                self.__dict__[toolbox_name] = getattr(mod, "__entrypoint")
+                continue
+
+            try:
+                self.__dict__[toolbox_name] = getattr(mod, toolbox_name.title())
+            except AttributeError as e:
+                logging.warning(str(e)) # AttributeError: module 'projects.notebooks.toolbox.notebooks' has no attribute 'Notebooks'
