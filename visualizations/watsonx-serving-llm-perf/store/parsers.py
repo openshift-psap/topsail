@@ -193,7 +193,7 @@ def _parse_predictor_pod(dirname):
             containers_start_time[container_status["name"]] = \
                 datetime.datetime.strptime(
                     container_status["state"]["running"]["startedAt"], K8S_TIME_FMT)
-        except IndexError: pass # container not running
+        except KeyError: pass # container not running
 
 
     predictor_pod.init_time = condition_times["Initialized"] - condition_times["PodScheduled"]

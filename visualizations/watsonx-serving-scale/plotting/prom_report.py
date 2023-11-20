@@ -13,6 +13,7 @@ except ImportError:
 def register():
     SutestCpuMemoryReport()
     GpuUsageReport()
+    RhoaiFootprintReport()
 
 def add_pod_cpu_mem_usage(header, what, args, mem_only=False, cpu_only=False):
     if mem_only:
@@ -99,5 +100,33 @@ class GpuUsageReport():
             header += [html.H3(plot_name)]
 
             header += [report.Plot(f"Prom: {plot_name}", args_as_timeline)]
+
+        return None, header
+
+
+class RhoaiFootprintReport():
+    def __init__(self):
+        self.name = "report: RHOAI Footprint"
+        self.id_name = self.name.lower().replace("/", "-")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        if error_report:
+            header += error_report._get_all_tests_setup(args)
+
+        header += [html.P("These plots show the CPU and memory footprint of RHOAI operators, by namespaces")]
+
+        header += [html.H2("RHOAI Footprint")]
+        args_as_timeline = report.set_config(dict(as_timeline=True), args)
+        for metric_spec in prom._get_rhoai_resource_usage("sutest", register=False):
+            namespace = list(metric_spec.keys())[0].split()[0]
+
+            header += [html.H3(f"Namespace {namespace}")]
+            header += [report.Plot(f"Prom: Namespace {namespace}: CPU usage", args_as_timeline)]
+            header += [report.Plot(f"Prom: Namespace {namespace}: Mem usage", args_as_timeline)]
 
         return None, header
