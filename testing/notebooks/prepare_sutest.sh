@@ -138,7 +138,7 @@ sutest_wait_rhods_launch() {
     ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated"
     ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated"
 
-    ./run_toolbox.py rhods update_datasciencecluster --dashboard --workbenches
+    ./run_toolbox.py rhods update_datasciencecluster --enable [dashboard,workbenches]
     ./run_toolbox.py rhods wait_ods
 
     if test_config rhods.operator.stop; then
