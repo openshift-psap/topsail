@@ -3,7 +3,7 @@ import secrets
 
 from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
-class GPU_Operator:
+class Gpu_Operator:
     """
     Commands for deploying, building and testing the GPU operator in various ways
     """
