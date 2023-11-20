@@ -55,6 +55,7 @@ def prepare():
         for operator in config.ci_artifacts.get_config("prepare.operators"):
             parallel.delayed(run.run, f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{operator['name']} ./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
 
+    run.run("./run_toolbox.py rhods update_datasciencecluster --enable [kserve]")
     run.run("testing/watsonx-serving/poc/prepare.sh |& tee -a $ARTIFACT_DIR/000_prepare_sh.log")
 
     customize_rhods()

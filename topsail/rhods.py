@@ -1,4 +1,5 @@
 import sys
+import logging
 
 from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
@@ -146,13 +147,8 @@ class RHODS:
     @AnsibleMappedParams
     def update_datasciencecluster(self,
                                   name=None,
-                                  codeflare=False,
-                                  dashboard=False,
-                                  datasciencepipelines=False,
-                                  kserve=False,
-                                  modelmeshserving=False,
-                                  ray=False,
-                                  workbenches=False,
+                                  enable: list = [],
+                                  show_all=False,
                                   ):
         """
         Update RHOAI datasciencecluster resource
@@ -160,13 +156,12 @@ class RHODS:
         Args:
           name: Name of the resource to update. If none, update the first (and only) one found.
 
-          codeflare: enables the codeflare component
-          dashboard: enables the dashboard component
-          datasciencepipelines: enables the datascience pipelines component
-          kserve: enables the kserve component
-          modelmeshserving: enables the modelmesh serving
-          ray: enables the ray component
-          workbenches: enables the workbenches component
+          enable: list of all the components to enable
+          show_all: if enabled, show all the available components and exit.
         """
+
+        if not isinstance(enable, list):
+            logging.fatal(f"The --enable value must be a list. Got '{enable}' ({enable.__class__.__name__}). Maybe add [] around it?")
+            sys.exit(1)
 
         return RunAnsibleRole(locals())

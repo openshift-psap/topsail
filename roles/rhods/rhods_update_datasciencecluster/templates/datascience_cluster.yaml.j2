@@ -4,17 +4,7 @@ metadata:
   name: {{ datasciencecluster_name }}
 spec:
   components:
-    codeflare:
-      managementState: "{% if rhods_update_datasciencecluster_codeflare %}Managed{% else %}Removed{% endif %}"
-    dashboard:
-      managementState: "{% if rhods_update_datasciencecluster_dashboard %}Managed{% else %}Removed{% endif %}"
-    datasciencepipelines:
-      managementState: "{% if rhods_update_datasciencecluster_datasciencepipelines %}Managed{% else %}Removed{% endif %}"
-    kserve:
-      managementState: "{% if rhods_update_datasciencecluster_kserve %}Managed{% else %}Removed{% endif %}"
-    modelmeshserving:
-      managementState: "{% if rhods_update_datasciencecluster_modelmeshserving %}Managed{% else %}Removed{% endif %}"
-    ray:
-      managementState: "{% if rhods_update_datasciencecluster_ray %}Managed{% else %}Removed{% endif %}"
-    workbenches:
-      managementState: "{% if rhods_update_datasciencecluster_workbenches %}Managed{% else %}Removed{% endif %}"
+{% for component in rhods_update_datasciencecluster_enable %}
+    {{ component }}:
+      managementState: Managed
+{% endfor %}
