@@ -122,9 +122,12 @@ class RhoaiFootprintReport():
 
         header += [html.H2("RHOAI Footprint")]
         args_as_timeline = report.set_config(dict(as_timeline=True), args)
-        for metric_spec in prom._get_rhoai_resource_usage("sutest", register=False):
-            namespace = list(metric_spec.keys())[0].split()[0]
 
+        namespaces = set()
+        for metric_spec in prom._get_rhoai_resource_usage("sutest", register=False):
+            namespaces.add(list(metric_spec.keys())[0].split()[0])
+
+        for namespace in reversed(sorted(namespaces)):
             header += [html.H3(f"Namespace {namespace}")]
             header += [report.Plot(f"Prom: Namespace {namespace}: CPU usage", args_as_timeline)]
             header += [report.Plot(f"Prom: Namespace {namespace}: Mem usage", args_as_timeline)]

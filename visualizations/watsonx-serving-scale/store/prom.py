@@ -395,6 +395,7 @@ def _get_rhoai_resource_usage(cluster_role, register):
         "knative-.*",
         "istio-system",
         "openshift-operators",
+        "watsonx-e2e.*",
     ]
 
     for namespace in namespaces:
