@@ -1,6 +1,6 @@
 # Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
-# Source component: GPU_Operator.wait_stack_deployed
+# Source component: Gpu_Operator.wait_stack_deployed
 
 # Parameters
 # namespace in which the GPU Operator is deployed

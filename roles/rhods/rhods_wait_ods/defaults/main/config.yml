@@ -1,8 +1,8 @@
 # Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
-# Source component: RHODS.wait_ods
+# Source component: Rhods.wait_ods
 
 # Constants
 # Comma-separated list of the RHODS images that should be awaited
-# Defined as a constant in RHODS.wait_ods
+# Defined as a constant in Rhods.wait_ods
 rhods_wait_ods_images: s2i-minimal-notebook,s2i-generic-data-science-notebook
