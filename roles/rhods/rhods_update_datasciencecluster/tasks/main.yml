@@ -9,6 +9,15 @@
   meta: end_play
   when: has_datascience_cluster_cmd.rc != 0
 
+- name: Show the available components if requested
+  when: rhods_update_datasciencecluster_show_all | bool
+  command:
+    oc explain datasciencecluster.spec.components
+
+- name: Exit if showing the component was requested
+  meta: end_play
+  when: rhods_update_datasciencecluster_show_all | bool
+
 - name: Set the ODS namespace name
   set_fact:
     ods_namespace: redhat-ods-operator
@@ -75,16 +84,17 @@
 - name: Create the DataScienceCluster
   shell: |
     set -e
-    # oc apply does not work -,-
-    oc delete -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
-    oc create -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
+    oc replace -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
 
 - name: Wait for the DataScienceCluster to be ready and capture artifacts
   block:
-  - name: Wait for the DataScienceCluster to be ready
-    shell: oc get datasciencecluster/{{ datasciencecluster_name }} -ojsonpath={.status.phase}
-    register: dscluster_phase_cmd
-    until: dscluster_phase_cmd.stdout == "Ready"
+  - name: Wait for the enabled components to be ready
+    shell: oc get datasciencecluster/{{ datasciencecluster_name }} -ojsonpath={.status.installedComponents.{{ component }}}
+    register: dscluster_component_status_cmd
+    until: dscluster_component_status_cmd.stdout == "true"
+    loop: "{{ rhods_update_datasciencecluster_enable }}"
+    loop_control:
+      loop_var: component
     retries: 60
     delay: 10
   always:

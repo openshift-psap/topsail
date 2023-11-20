@@ -6,23 +6,9 @@
 # Name of the resource to update. If none, update the first (and only) one found.
 rhods_update_datasciencecluster_name: null
 
-# enables the codeflare component
-rhods_update_datasciencecluster_codeflare: false
+# list of all the components to enable
+# Type: List
+rhods_update_datasciencecluster_enable: []
 
-# enables the dashboard component
-rhods_update_datasciencecluster_dashboard: false
-
-# enables the datascience pipelines component
-rhods_update_datasciencecluster_datasciencepipelines: false
-
-# enables the kserve component
-rhods_update_datasciencecluster_kserve: false
-
-# enables the modelmesh serving
-rhods_update_datasciencecluster_modelmeshserving: false
-
-# enables the ray component
-rhods_update_datasciencecluster_ray: false
-
-# enables the workbenches component
-rhods_update_datasciencecluster_workbenches: false
+# if enabled, show all the available components and exit.
+rhods_update_datasciencecluster_show_all: false
