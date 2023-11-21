@@ -7,7 +7,8 @@ set -o errtrace
 set -x
 
 TESTING_NOTEBOOKS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-TESTING_UTILS_DIR="$TESTING_NOTEBOOKS_DIR/../utils"
+TOPSAIL_DIR="$(cd "$TESTING_NOTEBOOKS_DIR/../../.." >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
 
 if [ -z "${ARTIFACT_DIR:-}" ]; then
     if [[ "${INSIDE_CI_IMAGE:-}" == "y" ]]; then
