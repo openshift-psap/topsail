@@ -162,6 +162,24 @@ class RunAnsibleRole:
         print(f"Using '{env['ANSIBLE_CACHE_PLUGIN_CONNECTION']}' to store ansible facts.")
         Path(env["ANSIBLE_CACHE_PLUGIN_CONNECTION"]).parent.mkdir(parents=True, exist_ok=True)
 
+        # We configure the roles path dynamically appending them to the defaults
+        top_dir_roles = top_dir / "roles"
+        top_dir_roles_list = [str(entry) for entry in top_dir_roles.glob('*') if entry.is_dir()]
+        current_roles_path = env.get("ANSIBLE_ROLES_PATH", "")
+        env["ANSIBLE_ROLES_PATH"] = os.pathsep.join([current_roles_path] + top_dir_roles_list)
+        self.ansible_vars["roles_path"] = env["ANSIBLE_ROLES_PATH"]
+
+        # We configure the collections path dynamically
+        current_collections_paths = []
+        if (collect_path := env.get("ANSIBLE_COLLECTIONS_PATHS")) is not None:
+            current_collections_paths.append(collect_path)
+        for path in sys.path:
+            collections_path = Path(path) / 'ansible_collections'
+            if collections_path.exists():
+                current_collections_paths.append(collections_path)
+        env["ANSIBLE_COLLECTIONS_PATHS"] = os.pathsep.join(current_collections_paths)
+        self.ansible_vars["collections_paths"] = env["ANSIBLE_COLLECTIONS_PATHS"]
+
         if env.get("ANSIBLE_CONFIG") is None:
             env["ANSIBLE_CONFIG"] = str(top_dir / "config" / "ansible.cfg")
         print(f"Using '{env['ANSIBLE_CONFIG']}' as ansible configuration file.")
