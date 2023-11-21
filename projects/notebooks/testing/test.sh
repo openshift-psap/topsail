@@ -60,7 +60,9 @@ connect_ci() {
         set_config PR_POSITIONAL_ARG_EXTRA_METAL "$METAL_PROFILE"
     fi
 
-    set_presets_from_pr_args
+    if [[ "${JOB_NAME_SAFE:-}" != "plot" ]]; then
+        set_presets_from_pr_args
+    fi
 
     bash "$TESTING_UTILS_DIR/configure_set_presets.sh"
     # ^^^ applies the presets
