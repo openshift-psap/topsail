@@ -53,7 +53,3 @@
   shell:
     (test -z "$(oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ notebooks_ods_ci_scale_test_namespace }})" && echo 0 || echo 1) > "{{ artifact_extra_logs_dir }}/exit_code"
   ignore_errors: true
-
-- name: Save the artifacts version
-  shell:
-    echo "{{ notebooks_ods_ci_scale_test_artifacts_version }}" >  "{{ artifact_extra_logs_dir }}/artifacts_version"

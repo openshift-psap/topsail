@@ -6,4 +6,3 @@ notebooks_ods_ci_scale_test_entrypoint: "projects/notebooks/roles/notebooks_ods_
 notebooks_ods_ci_scale_test_state_signal_barrier: "projects/notebooks/roles/notebooks_ods_ci_scale_test/files/state-signal_barrier.py"
 notebooks_ods_ci_scale_test_s3_artifacts_exporter_sidecar: "projects/notebooks/roles/notebooks_ods_ci_scale_test/files/s3-artifacts-exporter.sh"
 notebooks_ods_ci_scale_test_test_case_directory: "projects/notebooks/roles/notebooks_ods_ci_scale_test/files/ods-ci/"
-notebooks_ods_ci_scale_test_artifacts_version: 2022-11-17
