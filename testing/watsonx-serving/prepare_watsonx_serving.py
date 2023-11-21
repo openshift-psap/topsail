@@ -56,7 +56,10 @@ def prepare():
             parallel.delayed(run.run, f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{operator['name']} ./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
 
     run.run("./run_toolbox.py rhods update_datasciencecluster --enable [kserve]")
-    run.run("testing/watsonx-serving/poc/prepare.sh |& tee -a $ARTIFACT_DIR/000_prepare_sh.log")
+    try:
+        run.run("testing/watsonx-serving/poc/prepare.sh |& tee -a $ARTIFACT_DIR/000_prepare_sh.log")
+    finally:
+        run.run("oc get datasciencecluster -oyaml > $ARTIFACT_DIR/datasciencecluster.after.yaml")
 
     customize_rhods()
     customize_watsonx_serving()
