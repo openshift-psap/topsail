@@ -21,6 +21,9 @@ jobs:
     # Important: This sets up your GITHUB_WORKSPACE environment variable
     - uses: actions/checkout@v3
 
+    - name: Set ANSIBLE_ROLES_PATH
+      run: echo "ANSIBLE_ROLES_PATH=\"$(find ./projects -type d -name roles -print | tr '\n' ':')$(ls roles/* -d | tr '\n' ':')\"" >> $GITHUB_ENV
+
     - name: Lint Ansible Playbook
       # replace "main" with any valid ref
       uses: ansible/ansible-lint@main
