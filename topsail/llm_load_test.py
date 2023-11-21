@@ -3,7 +3,7 @@ import sys
 from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
 
-class Llm_load_test:
+class Llm_Load_Test:
     """
     Commands relating to llm-load-test
     """

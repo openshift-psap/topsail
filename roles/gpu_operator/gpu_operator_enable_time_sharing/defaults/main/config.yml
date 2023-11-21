@@ -1,6 +1,6 @@
 # Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
-# Source component: GPU_Operator.enable_time_sharing
+# Source component: Gpu_Operator.enable_time_sharing
 
 # Parameters
 # number of slices available for each of the GPUs

@@ -1,7 +1,7 @@
 from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleConstant, AnsibleSkipConfigGeneration, AnsibleMappedParams
 
 
-class NFDOperator:
+class Nfd_Operator:
     """
     Commands for deploying, building and testing the NFD operator in various ways
     """

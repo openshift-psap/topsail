@@ -4,7 +4,7 @@ import logging
 from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
 
-class RHODS:
+class Rhods:
     """
     Commands relating to RHODS
     """

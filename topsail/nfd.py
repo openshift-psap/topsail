@@ -1,7 +1,7 @@
 from topsail._common import RunAnsibleRole, AnsibleRole
 
 
-class NFD:
+class Nfd:
     """
     Commands for NFD related tasks
     """

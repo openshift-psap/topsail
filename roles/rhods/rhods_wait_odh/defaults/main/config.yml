@@ -1,6 +1,6 @@
 # Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
-# Source component: RHODS.wait_odh
+# Source component: Rhods.wait_odh
 
 # Parameters
 # namespace in which ODH is deployed

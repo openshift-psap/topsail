@@ -1,6 +1,6 @@
 # Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
-# Source component: GPU_Operator.extend_metrics
+# Source component: Gpu_Operator.extend_metrics
 
 # Parameters
 # if True, include the default DCGM metrics in the custom config

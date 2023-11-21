@@ -9,7 +9,7 @@ import jinja2.filters
 
 from topsail._common import RunAnsibleRole
 
-class FromConfig:
+class From_Config:
     """
     Run `ci-artifacts` toolbox commands from a single config file
     """
@@ -141,3 +141,6 @@ class FromConfig:
         run_ansible_role.py_command_args = command_args
 
         return run_ansible_role
+
+
+__entrypoint = From_Config.run

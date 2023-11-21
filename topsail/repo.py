@@ -4,7 +4,7 @@ import topsail
 from topsail.repo_scripts.validate_role_files import main as role_files_main
 from topsail.repo_scripts.validate_role_vars_used import main as role_vars_used_main
 
-import topsail.ansible_default_config
+import topsail._ansible_default_config
 
 class Repo:
     """
@@ -40,5 +40,5 @@ class Repo:
         """
         Generate the 'defaults/main/config.yml' file of the Ansible roles, based on the Python definition.
         """
-        topsail.ansible_default_config.generate_all(topsail.Toolbox())
+        topsail._ansible_default_config.generate_all(topsail.Toolbox())
         exit(0)
