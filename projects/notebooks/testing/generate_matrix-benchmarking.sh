@@ -6,7 +6,8 @@ set -o nounset
 set -x
 
 TESTING_NOTEBOOKS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
-TESTING_UTILS_DIR="$TESTING_NOTEBOOKS_DIR/../utils"
+TOPSAIL_DIR="$(cd "$TESTING_NOTEBOOKS_DIR/../../.." >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
 
 source "$TESTING_NOTEBOOKS_DIR/configure.sh"
 source "$TESTING_UTILS_DIR/logging.sh"
@@ -15,8 +16,9 @@ ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
 
 export MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE=$(get_config matbench.ignore_exit_code)
 
-export MATBENCH_WORKLOAD=$(get_config matbench.workload)
-WORKLOAD_STORAGE_DIR="$TESTING_NOTEBOOKS_DIR/../../visualizations/$MATBENCH_WORKLOAD"
+export MATBENCH_WORKLOAD_BASE_DIR=$TOPSAIL_DIR
+export MATBENCH_WORKLOAD=projects.notebooks.visualizations.$(get_config matbench.workload)
+WORKLOAD_STORAGE_DIR="$(echo "$MATBENCH_WORKLOAD" | tr . /)"
 
 if [[ "$(get_config PR_POSITIONAL_ARG_0)" == ods-plot-* ]]; then
     set_config_from_pr_arg 1 "matbench.preset"
@@ -36,18 +38,13 @@ else
 fi
 
 get_matbench_config() {
-    CI_ARTIFACTS_FROM_CONFIG_FILE=$TESTING_NOTEBOOKS_DIR/../../visualizations/$(get_config matbench.workload)/data/$(get_config matbench.config_file) \
+    CI_ARTIFACTS_FROM_CONFIG_FILE=$WORKLOAD_STORAGE_DIR/data/$(get_config matbench.config_file) \
         get_config "$@"
 }
 
 
 generate_matbench::prepare_matrix_benchmarking() {
-    WORKLOAD_RUN_DIR="$TESTING_NOTEBOOKS_DIR/../../subprojects/matrix-benchmarking/workloads/$MATBENCH_WORKLOAD"
-
-    rm -f "$WORKLOAD_RUN_DIR"
-    ln -s "$WORKLOAD_STORAGE_DIR" "$WORKLOAD_RUN_DIR"
-
-    pip install --quiet --requirement "$TESTING_NOTEBOOKS_DIR/../../subprojects/matrix-benchmarking/requirements.txt"
+    pip install --quiet --requirement "subprojects/matrix-benchmarking/requirements.txt"
     pip install --quiet --requirement "$WORKLOAD_STORAGE_DIR/requirements.txt"
 }
 
