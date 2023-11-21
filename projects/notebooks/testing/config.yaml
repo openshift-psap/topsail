@@ -364,7 +364,7 @@ tests:
         mem_gi: 0.75
       toleration: *driver_toleration_key
     ipynb:
-      uploaded_directory: testing/notebooks/notebooks
+      uploaded_directory: projects/notebooks/testing/notebooks
       notebook_filename: benchmark_entrypoint.ipynb
     benchmark:
       # name of the benchmark to pass to the notebook
@@ -390,7 +390,7 @@ tests:
       tests:
       - imagestream: all
         ipynb:
-          uploaded_directory: testing/notebooks/notebooks
+          uploaded_directory: projects/notebooks/testing/notebooks
           notebook_filename: benchmark_entrypoint.ipynb
         instance_types:
         - m6i.xlarge
