@@ -1,6 +1,7 @@
 import sys, os
 import pathlib
 import importlib
+import itertools
 import logging
 
 class Toolbox:
@@ -12,7 +13,9 @@ class Toolbox:
 
         top_dir = pathlib.Path(__file__).resolve().parent.parent
 
-        for toolbox_file in (top_dir / "topsail").glob("*.py"):
+
+        for toolbox_file in itertools.chain((top_dir / "projects").glob("*/toolbox/*.py"), (top_dir / "topsail").glob("*.py")):
+
             project_toolbox_module = str(toolbox_file.relative_to(top_dir).with_suffix("")).replace(os.path.sep, ".")
             mod = importlib.import_module(project_toolbox_module)
             toolbox_name = toolbox_file.with_suffix("").name
