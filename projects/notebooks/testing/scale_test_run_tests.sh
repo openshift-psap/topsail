@@ -23,7 +23,7 @@ run_normal_tests_and_plots() {
             [[ -f "$f" ]] && cp "$f" "$ARTIFACT_DIR" || true
         done
 
-        run_test "$idx" && test_failed=0 || test_failed=1
+        run_test "$idx" || test_failed=1
 
         generate_plots || plot_failed=1
 
