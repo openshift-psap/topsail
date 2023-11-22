@@ -132,6 +132,17 @@ apply_presets_from_args() {
     done
 }
 
+check_failure_flag() {
+    if find -type f -name FAILURE -exec false {} +; then
+        echo "No failure detected"
+        exit 0
+    fi
+
+
+    echo "FATAL: failure detected, aborting :/"
+    exit 1
+}
+
 # ---
 
 main() {
@@ -158,6 +169,8 @@ main() {
 
             process_ctrl::wait_bg_processes
             wait # ensure that there's really no background process
+            check_failure_flag
+
             return 0
             ;;
         "test_ci")
@@ -173,6 +186,8 @@ main() {
             process_ctrl__finalizers+=("driver_cleanup")
 
             run_tests_and_plots
+            check_failure_flag
+
             return 0
             ;;
         "prepare")
