@@ -9,6 +9,7 @@ import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 
 from . import parsers
+from . import lts
 
 CACHE_FILENAME = "cache.pickle"
 
@@ -128,7 +129,6 @@ def parse_data():
     store.register_custom_rewrite_settings(_rewrite_settings)
     store_simple.register_custom_parse_results(_parse_directory)
 
-    from . import lts
     store_simple.register_custom_lts_parse_results(lts._parse_lts_dir)
     store_simple.register_custom_build_lts_payloads(lts.build_lts_payloads)
 
