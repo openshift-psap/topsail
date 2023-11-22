@@ -178,11 +178,11 @@ class RunAnsibleRole:
         # We configure the collections path dynamically
         current_collections_paths = []
         if (collect_path := env.get("ANSIBLE_COLLECTIONS_PATHS")) is not None:
-            current_collections_paths.append(collect_path)
+            current_collections_paths.append(str(collect_path))
         for path in sys.path:
             collections_path = Path(path) / 'ansible_collections'
             if collections_path.exists():
-                current_collections_paths.append(collections_path)
+                current_collections_paths.append(str(collections_path))
         env["ANSIBLE_COLLECTIONS_PATHS"] = os.pathsep.join(current_collections_paths)
         self.ansible_vars["collections_paths"] = env["ANSIBLE_COLLECTIONS_PATHS"]
 
