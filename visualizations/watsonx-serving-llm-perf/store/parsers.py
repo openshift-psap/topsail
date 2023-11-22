@@ -14,6 +14,7 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
 from . import prom as workload_prom
+from . import lts_parser
 
 
 register_important_file = None # will be when importing store/__init__.py
@@ -57,6 +58,9 @@ def _parse_once(results, dirname):
     results.predictor_logs = _parse_predictor_logs(dirname)
     results.predictor_pod = _parse_predictor_pod(dirname)
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
+    results.sutest_ocp_version = _parse_ocp_version(dirname)
+
+    results.lts = lts_parser.generate_lts_results(results)
 
 
 def _parse_local_env(dirname):
@@ -245,3 +249,9 @@ def _parse_test_start_end(dirname, llm_load_test_output):
             test_start_end.end = end
 
     return test_start_end
+
+
+@ignore_file_not_found
+def _parse_ocp_version(dirname):
+    logging.warning("OCP version not stored")
+    return "0.0.0"
