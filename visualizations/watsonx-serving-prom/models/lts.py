@@ -21,11 +21,10 @@ class Metrics(matbench_models.ExclusiveModel):
         Field(..., alias="Sutest API Server Requests (server errors)")
 
 
-class Results(BaseModel):
-    fake_results: bool
+class Results(matbench_models.ExclusiveModel):
     metrics: Metrics
 
 
-class Payload(BaseModel):
+class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata
     results: Results
