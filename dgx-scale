@@ -1,0 +1,9 @@
+ci_presets.scale_gpu["tests.scale.model.name"]=flan-t5-small-gpu
+ci_presets.scale_on_dgx["tests.scale.model.name"]=flan-t5-small-gpu
+ci_presets.scale_on_dgx["gpu.time_sharing.replicas"]=38
+
+ci_presets.scale_on_dgx["tests.scale.model.replicas"]=21
+ci_presets.scale_on_dgx["tests.scale.namespace.replicas"]=12
+watsonx_serving.model.serving_runtime.transformer.mute_logs=false
+tests.scale.sleep_factor=60
+tests.e2e.limits_equals_requests=false

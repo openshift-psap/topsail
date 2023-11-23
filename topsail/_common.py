@@ -164,9 +164,15 @@ class RunAnsibleRole:
 
         # We configure the roles path dynamically appending them to the defaults
         top_dir_roles = top_dir / "roles"
-        top_dir_roles_list = [str(entry) for entry in top_dir_roles.glob('*') if entry.is_dir()]
-        current_roles_path = env.get("ANSIBLE_ROLES_PATH", "")
-        env["ANSIBLE_ROLES_PATH"] = os.pathsep.join([current_roles_path] + top_dir_roles_list)
+        top_dir_roles_list = []
+
+        if current_roles_path := env.get("ANSIBLE_ROLES_PATH"):
+            top_dir_roles_list += [current_roles_path]
+
+        top_dir_roles_list += [str(entry) for entry in top_dir_roles.glob('*') if entry.is_dir()]
+        top_dir_roles_list += [str(entry) for entry in (top_dir / "projects").glob("*/roles")]
+
+        env["ANSIBLE_ROLES_PATH"] = os.pathsep.join(top_dir_roles_list)
         self.ansible_vars["roles_path"] = env["ANSIBLE_ROLES_PATH"]
 
         # We configure the collections path dynamically

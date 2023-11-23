@@ -242,6 +242,20 @@ if [[ -e "${target_entrypoint_file_sh}" ]]; then
     exit 0
 fi
 
+if [[ -e "projects/${target}/testing/${second_target}.sh" || -e "projects/${target}/testing/${second_target}.py" ]]; then
+    shift # eat second_target
+
+    if [[ -e "projects/${target}/testing/${second_target}.py" ]]; then
+        target_entrypoint_file="projects/${target}/testing/${second_target}.py"
+    else
+        target_entrypoint_file="projects/${target}/testing/${second_target}.sh"
+    fi
+
+    "${target_entrypoint_file}" "$@"
+
+    exit 0
+fi
+
 echo
 echo "FATAL: Unknown entrypoint '${second_target}' inside '${target}' directory | $@"
 echo

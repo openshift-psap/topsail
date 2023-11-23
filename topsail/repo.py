@@ -36,6 +36,15 @@ class Repo:
 
 
     @staticmethod
+    def validate_no_broken_link():
+        """
+        Ensure that all the symlinks point to a file
+        """
+
+        has_broken_links = os.system("find . -type l -exec file {} \\; | grep 'broken symbolic link'") == 0
+        exit(1 if has_broken_links else 0)
+
+    @staticmethod
     def generate_ansible_default_settings():
         """
         Generate the 'defaults/main/config.yml' file of the Ansible roles, based on the Python definition.

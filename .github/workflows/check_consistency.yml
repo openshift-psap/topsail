@@ -26,3 +26,6 @@ jobs:
 
       - name: Check that all the variables defined are actually used
         run: ./run_toolbox.py repo validate_role_vars_used
+
+      - name: Check that no symlink is broken
+        run: ./run_toolbox.py repo validate_no_broken_link
