@@ -70,6 +70,11 @@ ci_presets:
     tests.mode: e2e
     gpu.time_sharing.replicas: 1
 
+  e2e_scale:
+    extends: [e2e_gpu]
+    tests.e2e.perf_mode: false
+    gpu.time_sharing.replicas: 1
+
   e2e_gpu:
     extends: [e2e]
     gpu.prepare_cluster: true
@@ -360,7 +365,7 @@ tests:
       replicas: 2
   e2e:
     namespace: watsonx-e2e
-    perf_mode: false
+    perf_mode: true
     models:
     - flan-t5-small-gpu
     - flan-t5-small-gpu
