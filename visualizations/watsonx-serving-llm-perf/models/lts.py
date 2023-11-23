@@ -14,8 +14,10 @@ class Metadata(matbench_models.Metadata):
     rhods_version: matbench_models.SemVer
 
 class Results(matbench_models.ExclusiveModel):
-    fake_results: bool
-
+    throughput: float
+    time_per_output_token: List[float]
+    time_to_first_token: List[float]
+    model_load_duration: float
 
 class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata

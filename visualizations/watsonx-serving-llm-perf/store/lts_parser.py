@@ -29,10 +29,56 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
     return lts_payload
 
 
+def _generate_throughput(results):
+    generated_tokens = 0
+
+    llm_data = results.llm_load_test_output
+    for idx, block in enumerate(llm_data):
+        for detail in block["details"]:
+            if detail.get("error"):
+                continue # in this plot, ignore the latency if an error occured
+
+            generated_tokens += int(detail["response"]["generatedTokens"])
+
+    duration_s = (results.test_start_end.end - results.test_start_end.start).total_seconds()
+
+    return generated_tokens / duration_s
+
+
+def _generate_time_per_output_token(results):
+    time_per_output_token = []
+
+    llm_data = results.llm_load_test_output
+    for idx, block in enumerate(llm_data):
+        for detail in block["details"]:
+            if detail.get("error"):
+                continue # in this plot, ignore the latency if an error occured
+
+            generated_tokens = int(detail["response"]["generatedTokens"])
+            latency_ms = detail["latency"] / 1000 / 1000
+            time_per_output_token.append(latency_ms / generated_tokens)
+
+    return time_per_output_token
+
+
+def _generate_time_to_first_token(results):
+    return [] # cannot be computed yet
+
+
 def generate_lts_results(results):
     results_lts = types.SimpleNamespace()
 
-    results_lts.fake_results = True
+    # Throughout value (scalar, in token/ms)
+    results_lts.throughput = _generate_throughput(results)
+
+    # Time Per Output Token value
+    results_lts.time_per_output_token = _generate_time_per_output_token(results)
+
+    # Time To First Token values for all of the calls (vector)
+    results_lts.time_to_first_token = _generate_time_to_first_token(results)
+
+    # Model Load Duration (scalar, in seconds)
+    results_lts.model_load_duration = results.predictor_pod.load_time.total_seconds()
 
     return results_lts
 
