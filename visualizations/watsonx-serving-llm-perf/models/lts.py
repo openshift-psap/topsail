@@ -11,7 +11,7 @@ class Metadata(matbench_models.Metadata):
     presets: List[str]
     config: Any
     ocp_version: matbench_models.SemVer
-
+    rhods_version: matbench_models.SemVer
 
 class Results(matbench_models.ExclusiveModel):
     fake_results: bool

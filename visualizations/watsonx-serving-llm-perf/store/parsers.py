@@ -33,6 +33,9 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/output/ghz-multiplexed-results*.json",
     f"{artifact_dirnames.SERVING_CAPTURE_STATE}/pods.json",
     f"{artifact_dirnames.SERVING_CAPTURE_STATE}/pods.yaml",
+    f"{artifact_dirnames.SERVING_CAPTURE_STATE}/ocp_version.yaml",
+    f"{artifact_dirnames.SERVING_CAPTURE_STATE}/rhods.createdAt",
+    f"{artifact_dirnames.SERVING_CAPTURE_STATE}/rhods.version",
 ]
 
 def ignore_file_not_found(fn):
@@ -58,7 +61,8 @@ def _parse_once(results, dirname):
     results.predictor_logs = _parse_predictor_logs(dirname)
     results.predictor_pod = _parse_predictor_pod(dirname)
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
-    results.sutest_ocp_version = _parse_ocp_version(dirname)
+    results.ocp_version = _parse_ocp_version(dirname)
+    results.rhods_info = _parse_rhods_info(dirname)
 
     results.lts = lts_parser.generate_lts_results(results)
 
@@ -253,5 +257,28 @@ def _parse_test_start_end(dirname, llm_load_test_output):
 
 @ignore_file_not_found
 def _parse_ocp_version(dirname):
-    logging.warning("OCP version not stored")
-    return "0.0.0"
+    serving_capture_state_dir = artifact_paths.SERVING_CAPTURE_STATE[0] if isinstance(artifact_paths.SERVING_CAPTURE_STATE, list) else artifact_paths.SERVING_CAPTURE_STATE
+    with open(register_important_file(dirname, serving_capture_state_dir / "ocp_version.yaml")) as f:
+        sutest_ocp_version_yaml = yaml.safe_load(f)
+
+    return sutest_ocp_version_yaml["openshiftVersion"]
+
+
+@ignore_file_not_found
+def _parse_rhods_info(dirname):
+    rhods_info = types.SimpleNamespace()
+    serving_capture_state_dir = artifact_paths.SERVING_CAPTURE_STATE[0] if isinstance(artifact_paths.SERVING_CAPTURE_STATE, list) else artifact_paths.SERVING_CAPTURE_STATE
+
+    with open(register_important_file(dirname, serving_capture_state_dir / "rhods.version")) as f:
+        rhods_info.version = f.read().strip()
+
+    with open(register_important_file(dirname, serving_capture_state_dir / "rhods.createdAt")) as f:
+        rhods_info.createdAt_raw = f.read().strip()
+
+    try:
+        rhods_info.createdAt = datetime.datetime.strptime(rhods_info.createdAt_raw, K8S_TIME_FMT)
+    except ValueError as e:
+        logging.error("Couldn't parse RHODS version timestamp: {e}")
+        rhods_info.createdAt = None
+
+    return rhods_info

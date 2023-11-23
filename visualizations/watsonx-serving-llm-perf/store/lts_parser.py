@@ -16,7 +16,10 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
 
     lts_payload.metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
     lts_payload.metadata.config = results.test_config.yaml_file
-    lts_payload.metadata.ocp_version = results.sutest_ocp_version
+
+    lts_payload.metadata.ocp_version = results.ocp_version
+    lts_payload.metadata.rhods_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
+
     lts_payload.metadata.settings = dict(import_settings)
 
     lts_payload.results = lts_results
