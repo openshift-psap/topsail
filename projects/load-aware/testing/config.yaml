@@ -128,7 +128,7 @@ load_aware:
   matbench_comparison_file: load-aware_multi.yaml
 matbench:
   preset: null
-  workload: load-aware
+  workload: projects.load-aware.visualizations.load-aware
   config_file: load-aware.yaml
   download:
     mode: prefer_cache

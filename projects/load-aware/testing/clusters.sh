@@ -7,7 +7,8 @@ set -o errtrace
 set -x
 
 TESTING_THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-TESTING_UTILS_DIR="$TESTING_THIS_DIR/../utils"
+TOPSAIL_DIR="$(cd "$TESTING_THIS_DIR/../../.." >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
 
 source "$TESTING_THIS_DIR/configure.sh"
 
