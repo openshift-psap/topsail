@@ -102,17 +102,17 @@ def prepare_matbench():
     """)
 
 @entrypoint()
-def generate_visualizations(results_dirname):
+def generate_visualizations(results_dirname, generate_lts=None):
     visualizations = matbench_config.get_config("visualize")
     plotting_failed = False
     for idx in range(len(visualizations)):
-        generate_visualization(results_dirname, idx)
+        generate_visualization(results_dirname, idx, generate_lts=generate_lts)
 
     if plotting_failed:
         raise RuntimeError("Som of visualization failed")
 
 
-def generate_visualization(results_dirname, idx):
+def generate_visualization(results_dirname, idx, generate_lts=None):
     generate_list = matbench_config.get_config(f"visualize[{idx}].generate")
     if not generate_list:
         raise ValueError(f"Couldn't get the configuration #{idx} ...")
@@ -143,7 +143,10 @@ def generate_visualization(results_dirname, idx):
 
     common_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in common_env.items())
 
-    if config.ci_artifacts.get_config("matbench.generate_lts", False):
+    do_generate_lts = generate_lts if generate_lts is not None \
+        else config.ci_artifacts.get_config("matbench.generate_lts", False) \
+
+    if do_generate_lts:
         if run.run(f"{common_env_str} matbench parse {lts_args_str} |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts.log", check=False).returncode != 0:
             logging.warning("An error happened while generating the LTS payload ...")
             error = True
@@ -156,7 +159,10 @@ def generate_visualization(results_dirname, idx):
             logging.warning("An error happened while generating the LTS payload schema...")
             error = True
     else:
-        logging.info("matbench.generate_lts not enabled, skipping LTS payload&schema generation.")
+        if generate_lts is not None:
+            logging.info(f"'generate_lts' parameter is set to {generate_lts}, skipping LTS payload&schema generation.")
+        else:
+            logging.info("matbench.generate_lts not enabled, skipping LTS payload&schema generation.")
 
     if config.ci_artifacts.get_config("matbench.download.save_to_artifacts"):
         shutil.copytree(common_args["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
@@ -205,10 +211,10 @@ def generate_visualization(results_dirname, idx):
 
 
 @entrypoint()
-def generate_from_dir(results_dirname):
+def generate_from_dir(results_dirname, generate_lts=None):
     logging.info(f"Generating the visualization from '{results_dirname}' ...")
 
-    generate_visualizations(results_dirname)
+    generate_visualizations(results_dirname, generate_lts=generate_lts)
 
 
 def get_common_matbench_args_env(results_dirname):
