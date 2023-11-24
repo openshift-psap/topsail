@@ -141,7 +141,7 @@ def run_one():
 
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__run_one"):
-        src_dir = orig_wd / "testing/codeflare/sdk_user" / user_directory
+        src_dir = orig_wd / "projects/codeflare/testing/sdk_user" / user_directory
 
         run.run(f"cp -rv {src_dir}/* {env.ARTIFACT_DIR}")
 

@@ -193,7 +193,7 @@ base_image: # only used in sdk_user test mode
     dockerfile_path: build/Dockerfile
   extend:
     enabled: true
-    local_dockerfile_path: testing/codeflare/images/Containerfile.codeflare_sdk
+    local_dockerfile_path: projects/codeflare/testing/images/Containerfile.codeflare_sdk
     tag: codeflare-sdk
   user:
     service_account: ci-artifacts
@@ -252,7 +252,7 @@ tests:
 
 matbench:
   preset: null
-  workload: codeflare
+  workload: projects.codeflare.visualizations.codeflare
   config_file: plots.yaml
   download:
     mode: prefer_cache
