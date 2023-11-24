@@ -2,14 +2,18 @@
 
 if [ -n "$BASH_VERSION" ]; then
     # assume Bash
-    TESTING_PIPELINES_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+    TESTING_THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 elif [ -n "$ZSH_VERSION" ]; then
     # assume ZSH
-    TESTING_PIPELINES_DIR=${0:a:h}
-elif [[ -z "${TESTING_PIPELINES_DIR:-}" ]]; then
-     echo "Shell isn't bash nor zsh, please expose the directory of this file with TESTING_PIPELINES_DIR."
+    TESTING_THIS_DIR=${0:a:h}
+elif [[ -z "${TESTING_THIS_DIR:-}" ]]; then
+     echo "Shell isn't bash nor zsh, please expose the directory of this file with TESTING_THIS_DIR."
      false
 fi
+
+TOPSAIL_DIR="$(cd "$TESTING_THIS_DIR/../../.." >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
+
 
 TESTING_UTILS_DIR="$TESTING_PIPELINES_DIR/../utils"
 

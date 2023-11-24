@@ -1,1 +1,0 @@
-pipelines_deploy_application_app_template: roles/pipelines/pipelines_deploy_application/templates/application.yaml.j2

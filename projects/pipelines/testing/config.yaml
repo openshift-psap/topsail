@@ -45,15 +45,15 @@ ci_presets:
 
   pipeline_pi:
     tests.pipelines.notebook_filename: kfp_pi.ipynb
-    tests.pipelines.notebook_directory: testing/pipelines/notebooks/pi
+    tests.pipelines.notebook_directory: projects/pipelines/testing/notebooks/pi
 
   pipeline_hash:
     tests.pipelines.notebook_filename: kfp_hash.ipynb
-    tests.pipelines.notebook_directory: testing/pipelines/notebooks/hash
+    tests.pipelines.notebook_directory: projects/pipelines/testing/notebooks/hash
 
   pipeline_timed_multistage:
     tests.pipelines.notebook_filename: kfp_timed_multistage.ipynb
-    tests.pipelines.notebook_directory: testing/pipelines/notebooks/timed-multistage
+    tests.pipelines.notebook_directory: projects/pipelines/testing/notebooks/timed-multistage
 
 secrets:
   dir:
@@ -140,7 +140,7 @@ base_image:
   namespace: pipelines-scale-test
   imagestream: ci-artifacts
   repo:
-    url: https://github.com/openshift-psap/ci-artifacts/
+    url: https://github.com/openshift-psap/topsail/
     tag: main
     ref: main
     ref_prefer_pr: true
@@ -153,13 +153,13 @@ base_image:
 tests:
   pipelines:
     notebook_filename: kfp_hello_world.ipynb
-    notebook_directory: testing/pipelines/notebooks/hello-world
+    notebook_directory: projects/pipelines/testing/notebooks/hello-world
     user_count: 2
     sleep_factor: 1
     user_batch_size: 1
 matbench:
   preset: null
-  workload: rhods-pipelines
+  workload: projects.pipelines.visualizations.rhods-pipelines
   config_file: scale_test.yaml
   download:
     mode: prefer_cache
