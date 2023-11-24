@@ -167,7 +167,7 @@ generate_matbench::generate_visualization() {
         fi
         if grep "^ERROR" "$VISU_LOG_FILE"; then
             _warning "An error happened during the report generation :/."
-            grep "^ERROR" "$VISU_LOG_FILE" > "$ARTIFACT_DIR"/FAILURE
+            grep "^ERROR" "$VISU_LOG_FILE" >> "$ARTIFACT_DIR"/FAILURE
             retcode=1
         fi
         unset MATBENCH_FILTERS
