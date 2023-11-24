@@ -85,7 +85,7 @@ clusters:
 
 matbench:
   preset: null
-  workload: skeleton
+  workload: projects.skeleton.visualizations.skeleton
   config_file: plots.yaml
   download:
     mode: prefer_cache

@@ -13,11 +13,13 @@ import yaml
 import fire
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-TESTING_UTILS_DIR = TESTING_THIS_DIR.parent / "utils"
+TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent
+TESTING_COMMON_DIR = TOPSAIL_DIR.parent / "testing" / "common"
+
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
 
-sys.path.append(str(TESTING_THIS_DIR.parent))
+sys.path.append(str(TESTING_COMMON_DIR.parent))
 from common import env, config, run, rhods, visualize
 
 
@@ -112,7 +114,7 @@ def test_ci():
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
         finally:
-            run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
+            run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
 
             if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
                 cleanup_cluster()
