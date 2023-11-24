@@ -6,8 +6,9 @@ set -o nounset
 set -o errtrace
 set -x
 
-TESTING_NOTEBOOKS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-TESTING_UTILS_DIR="$TESTING_NOTEBOOKS_DIR/../utils"
+TESTING_THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TOPSAIL_DIR="$(cd "$TESTING_THIS_DIR/../../.." >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
 
 source "$TESTING_NOTEBOOKS_DIR/configure.sh"
 source "$TESTING_UTILS_DIR/logging.sh"

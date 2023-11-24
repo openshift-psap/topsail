@@ -169,7 +169,7 @@ class Notebooks:
             namespace="rhods-notebooks",
             imagestream="s2i-generic-data-science-notebook",
             imagestream_tag="",
-            notebook_directory="testing/notebooks/notebooks/",
+            notebook_directory="projects/notebooks/testing/notebooks/",
             notebook_filename="benchmark_entrypoint.ipynb",
             benchmark_name="pyperf_bm_go.py",
             benchmark_repeat: int = 1,
