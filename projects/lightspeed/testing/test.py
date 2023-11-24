@@ -12,18 +12,21 @@ import time
 import functools
 import yaml
 
-TESTING_ANSIBLE_LLM_DIR = pathlib.Path(__file__).absolute().parent
+TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 WISDOM_SECRET_PATH = pathlib.Path(os.environ["WISDOM_SECRET_PATH"])
 WISDOM_PROTOS_SECRET_PATH = pathlib.Path(os.environ["WISDOM_PROTOS_SECRET_PATH"])
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
 
-sys.path.append(str(TESTING_ANSIBLE_LLM_DIR.parent))
+TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent
+TESTING_COMMON_DIR = TOPSAIL_DIR.parent / "testing" / "common"
+
+sys.path.append(str(TESTING_COMMON_DIR.parent))
 from common import env, config, run, rhods
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
-    global initialized
+    global initializedf
     if initialized:
         logging.debug("Already initialized.")
         return
@@ -130,7 +133,7 @@ def run_ci():
 
     test_cases = config.ci_artifacts.get_config("tests.ansible_llm.test_cases")
     for replicas, concurrency in test_cases:
-        global dataset_path 
+        global dataset_path
 
         deploy_and_warmup_model(replicas)
 
@@ -141,7 +144,7 @@ def run_ci():
         logging.info(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and total_requests: {total_requests}")
 
         run.run(f"./run_toolbox.py from_config wisdom run_llm_load_test")
-    
+
     # Switch to multiplexed dataset
     config.ci_artifacts.set_config("tests.config.dataset_path", str(WISDOM_SECRET_PATH / "llm-load-test-multiplexed-dataset.json"))
     multiplexed_test_cases = config.ci_artifacts.get_config("tests.ansible_llm.multiplexed_test_cases")
@@ -149,7 +152,7 @@ def run_ci():
 
         # There will be <concurrency> num instances of ghz. However, some instances
         # requests will be much smaller and will be answered more quickly.
-        # To ensure that the requests are multiplexed throughout the run, 
+        # To ensure that the requests are multiplexed throughout the run,
         # we set max requests high, and rely on the timeout after 10m to end the test.
         requests_per_instance = 400
         max_duration = "10m"

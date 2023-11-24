@@ -6,10 +6,11 @@ set -o nounset
 set -o errtrace
 set -x
 
-TESTING_ANSIBLE_LLM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-TESTING_UTILS_DIR="$TESTING_ANSIBLE_LLM_DIR/../utils"
+TESTING_THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TOPSAIL_DIR="$(cd "$TESTING_THIS_DIR/../../.." >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
 
-source "$TESTING_ANSIBLE_LLM_DIR/configure.sh"
+source "$TESTING_THIS_DIR/configure.sh"
 source "$TESTING_UTILS_DIR/logging.sh"
 
 clusters_create__check_test_size() {
