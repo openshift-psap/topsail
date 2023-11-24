@@ -242,7 +242,7 @@ class RunAnsibleRole:
 
             if ret != 0:
                 extra_dir_name = Path(env['ARTIFACT_EXTRA_LOGS_DIR']).name
-                with open(artifact_extra_logs_dir / "FAILURE", "w") as f:
+                with open(artifact_extra_logs_dir / "FAILURE", "a") as f:
                     print(f"[{extra_dir_name}] {' '.join(sys.argv)} --> {ret}", file=f)
 
         raise SystemExit(ret)

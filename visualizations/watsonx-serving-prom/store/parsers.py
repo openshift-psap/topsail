@@ -13,7 +13,7 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
 from . import prom as workload_prom
-
+from . import lts_parser
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -31,6 +31,7 @@ IMPORTANT_FILES = [
 
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_UWM_DIR}/prometheus.t*",
     f"*/test_start_end.json", f"test_start_end.json",
+    "config.yaml",
 ]
 
 def ignore_file_not_found(fn):
@@ -51,9 +52,15 @@ def _parse_always(results, dirname, import_settings):
 
 def _parse_once(results, dirname):
     results.metrics = _extract_metrics(dirname)
+
+    # required to distinguish the control plane nodes
     results.nodes_info = _parse_nodes_info(dirname) or {}
     results.cluster_info = _extract_cluster_info(results.nodes_info)
+
     results.tests_timestamp = _find_test_timestamps(dirname)
+    results.test_config = _parse_test_config(dirname)
+
+    results.lts = lts_parser.generate_lts_results(results)
 
 
 def _extract_metrics(dirname):
@@ -120,6 +127,7 @@ def _extract_cluster_info(nodes_info):
 
     return cluster_info
 
+
 def _find_test_timestamps(dirname):
     test_timestamps = []
     FILENAME = "test_start_end.json"
@@ -149,3 +157,34 @@ def _find_test_timestamps(dirname):
 
     logging.info(f"Found {len(test_timestamps)}x {FILENAME}")
     return test_timestamps
+
+
+def _parse_test_config(dirname):
+    test_config = types.SimpleNamespace()
+
+    filename = pathlib.Path("config.yaml")
+    test_config.filepath = dirname / filename
+
+    with open(register_important_file(dirname, filename)) as f:
+        yaml_file = test_config.yaml_file = yaml.safe_load(f)
+
+    if not yaml_file:
+        logging.error(f"Config file '{filename}' is empty ...")
+        yaml_file = test_config.yaml_file = {}
+
+    def get(key, missing=...):
+        nonlocal yaml_file
+        jsonpath_expression = jsonpath_ng.parse(f'$.{key}')
+
+        match = jsonpath_expression.find(yaml_file)
+        if not match:
+            if missing != ...:
+                return missing
+
+            raise KeyError(f"Key '{key}' not found in {filename} ...")
+
+        return match[0].value
+
+    test_config.get = get
+
+    return test_config

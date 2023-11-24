@@ -66,3 +66,40 @@
        --all-containers --prefix
        > "{{ artifact_extra_logs_dir }}/logs/{{ item }}.log"
   ignore_errors: true
+
+# RHODS version
+
+- name: Check if RHODS CSV exists
+  shell:
+    set -o pipefail;
+    oc get csv -n redhat-ods-operator -oname | grep rhods-operator
+  register: has_rhods_csv_cmd
+
+- name: Save the RHODS CSV
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -ojson > "{{ artifact_extra_logs_dir }}/rhods.csv.json"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
+- name: Get the RHODS version, if rhods is installed
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -ojsonpath={.spec.version} > "{{ artifact_extra_logs_dir }}/rhods.version"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
+- name: Store the RHODS creation timestamp, if RHODS is installed
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname -ojsonpath={.metadata.annotations.createdAt}
+      > "{{ artifact_extra_logs_dir }}/rhods.createdAt"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
+# OCP version
+
+- name: Store OpenShift YAML version
+  shell:
+    oc version -oyaml
+       > {{ artifact_extra_logs_dir }}/ocp_version.yaml
+
+# Cluster nodes
+
+- name: Get the cluster nodes json
+  shell:
+    oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/nodes.json"

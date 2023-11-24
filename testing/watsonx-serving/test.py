@@ -234,7 +234,7 @@ def generate_plots(results_dirname):
                 with env.NextArtifactDir(f"{prom_workload}__{dirname}"):
                     logging.info(f"Generating the plots with workload={prom_workload} for {current_results_dirname}")
                     try:
-                        visualize.generate_from_dir(str(current_results_dirname))
+                        visualize.generate_from_dir(str(current_results_dirname), generate_lts=False)
                     except Exception as e:
                         exc = e
                         logging.error(f"Generating the plots with workload={prom_workload} for {current_results_dirname} --> FAILED")

@@ -10,6 +10,7 @@ import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 
 from . import parsers
+from . import lts
 
 CACHE_FILENAME = "watsonx-serving-prom.cache.pickle"
 
@@ -158,6 +159,9 @@ def store_parse_directory(results_dir, expe, dirname):
 
 def parse_data(results_dir=None):
     store.register_custom_rewrite_settings(_rewrite_settings)
+
+    store_simple.register_custom_build_lts_payloads(lts.build_lts_payloads)
+    store_simple.register_custom_lts_parse_results(lts._parse_lts_dir)
 
     if results_dir is None:
         results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])

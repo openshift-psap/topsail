@@ -13,7 +13,6 @@ import fire
 
 TESTING_COMMON_DIR = pathlib.Path(__file__).absolute().parent
 TESTING_UTILS_DIR = TESTING_COMMON_DIR.parent / "utils"
-TESTING_PIPELINES_DIR = pathlib.Path(__file__).absolute().parent.parent / "pipelines"
 
 sys.path.append(str(TESTING_COMMON_DIR.parent))
 from common import env, config, run
@@ -45,12 +44,7 @@ def init(allow_no_config_file=False):
 
         config.ci_artifacts.set_config("matbench.preset", pr_arg_1, dump_command_args=False)
 
-
-    matbench_workload =  config.ci_artifacts.get_config("matbench.workload")
-
-    os.environ["MATBENCH_WORKLOAD"] = matbench_workload
-    os.environ["MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE"] = "true" if config.ci_artifacts.get_config("matbench.ignore_exit_code") else "false"
-
+    matbench_workload = config.ci_artifacts.get_config("matbench.workload")
     workload_storage_dir = TESTING_COMMON_DIR.parent.parent / "visualizations" / matbench_workload
 
     if config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "").endswith("-plot"):
@@ -99,82 +93,97 @@ def prepare_matbench():
     else:
         logging.info("Running without workload configuration, skipping the workload preparation")
 
-    PROMETHEUS_VERSION = "2.36.0"
-    os.environ["PATH"] += ":/tmp/prometheus"
     run.run(f"""
-    if which prometheus 2>/dev/null; then
-       echo "Prometheus already available."
-       exit 0
+    if ! which prometheus 2>/dev/null; then
+       echo "ERROR: prometheus not available :/"
+       exit 1
     fi
-    cd /tmp
-
-    mkdir -p /tmp/prometheus/bin
-    ln -sf "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus" /tmp/prometheus/bin
-    cp "/tmp/prometheus-{PROMETHEUS_VERSION}.linux-amd64/prometheus.yml" /tmp/
+    echo "Prometheus available."
     """)
 
 @entrypoint()
-def generate_visualizations():
-    if not os.environ.get("MATBENCH_RESULTS_DIRNAME"):
-        raise ValueError("MATBENCH_RESULTS_DIRNAME should have been set ...")
-
+def generate_visualizations(results_dirname, generate_lts=None):
     visualizations = matbench_config.get_config("visualize")
     plotting_failed = False
     for idx in range(len(visualizations)):
-        generate_visualization(idx)
+        generate_visualization(results_dirname, idx, generate_lts=generate_lts)
 
     if plotting_failed:
         raise RuntimeError("Som of visualization failed")
 
 
-def generate_visualization(idx):
+def generate_visualization(results_dirname, idx, generate_lts=None):
     generate_list = matbench_config.get_config(f"visualize[{idx}].generate")
     if not generate_list:
         raise ValueError(f"Couldn't get the configuration #{idx} ...")
 
     generate_url = "stats=" + "&stats=".join(generate_list)
 
+    common_args, common_env = get_common_matbench_args_env(results_dirname)
+
+    parse_env = common_env.copy()
     mode = config.ci_artifacts.get_config("matbench.download.mode")
     if mode != "prefer_cache":
         logging.info(f"Download mode set to '{mode}', ignoring the parser cache.")
-        os.environ["MATBENCH_STORE_IGNORE_CACHE"] = "y"
+        parse_env["MATBENCH_STORE_IGNORE_CACHE"] = "y"
 
-    if run.run(f"PATH=$PATH:/tmp/prometheus/bin matbench parse --output-matrix {env.ARTIFACT_DIR}/internal_matrix.json |& tee > {env.ARTIFACT_DIR}/_matbench_parse.log", check=False).returncode != 0:
+    parse_args = common_args.copy()
+    parse_args["output-matrix"] = env.ARTIFACT_DIR / "internal_matrix.json"
+
+    parse_args_str = " ".join(f"'--{k}={v}'" for k, v in parse_args.items())
+    parse_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in parse_env.items())
+
+    if run.run(f"{parse_env_str} matbench parse {parse_args_str}  |& tee > {env.ARTIFACT_DIR}/_matbench_parse.log", check=False).returncode != 0:
         raise RuntimeError("Failed to parse the results ...")
 
-    if mode != "prefer_cache":
-        logging.info(f"Parsing done, removing 'MATBENCH_STORE_IGNORE_CACHE' env var")
-        del os.environ["MATBENCH_STORE_IGNORE_CACHE"]
-
     error = False
+    lts_args = common_args.copy()
+    lts_args["output-lts"] = env.ARTIFACT_DIR / "lts_payload.json"
+    lts_args_str = " ".join(f"'--{k}={v}'" for k, v in lts_args.items())
 
-    if config.ci_artifacts.get_config("matbench.generate_lts", False):
-        if run.run(f"matbench parse --output_lts {env.ARTIFACT_DIR}/lts_payload.json |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts.log", check=False).returncode != 0:
+    common_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in common_env.items())
+
+    do_generate_lts = generate_lts if generate_lts is not None \
+        else config.ci_artifacts.get_config("matbench.generate_lts", False) \
+
+    if do_generate_lts:
+        if run.run(f"{common_env_str} matbench parse {lts_args_str} |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts.log", check=False).returncode != 0:
             logging.warning("An error happened while generating the LTS payload ...")
             error = True
 
-        if run.run(f"matbench export_lts_schema --file {env.ARTIFACT_DIR}/lts_payload.schema.json |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts_schema.log", check=False).returncode != 0:
+        lts_schema_args = common_args.copy()
+        lts_schema_args.pop("results_dirname")
+        lts_schema_args["file"] = env.ARTIFACT_DIR / "lts_payload.schema.json"
+        lts_schema_args_str = " ".join(f"'--{k}={v}'" for k, v in lts_schema_args.items())
+        if run.run(f"matbench export_lts_schema {lts_schema_args_str}  |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts_schema.log", check=False).returncode != 0:
             logging.warning("An error happened while generating the LTS payload schema...")
             error = True
     else:
-        logging.info("matbench.generate_lts not enabled, skipping LTS payload&schema generation.")
+        if generate_lts is not None:
+            logging.info(f"'generate_lts' parameter is set to {generate_lts}, skipping LTS payload&schema generation.")
+        else:
+            logging.info("matbench.generate_lts not enabled, skipping LTS payload&schema generation.")
 
     if config.ci_artifacts.get_config("matbench.download.save_to_artifacts"):
-        shutil.copytree(os.environ["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
+        shutil.copytree(common_args["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
+
 
     filters = matbench_config.get_config(f"visualize[{idx}]").get("filters", [None])
     for filters_to_apply in filters:
         if not filters_to_apply:
             filters_to_apply = ""
 
-        os.environ["MATBENCH_FILTERS"] = filters_to_apply
+        visu_args = common_args.copy()
+        visu_args["filters"] = filters_to_apply
+        visu_args["generate"] = generate_url
+        visu_args_str = " ".join(f"'--{k}={v}'" for k, v in visu_args.items())
 
         dest_dir = env.ARTIFACT_DIR / filters_to_apply
         dest_dir.mkdir(parents=True, exist_ok=True)
 
         log_file = dest_dir / "_matbench_visualize.log"
 
-        if run.run(f"matbench visualize --generate='{generate_url}' |& tee > {log_file}",
+        if run.run(f"{common_env_str} matbench visualize {visu_args_str} |& tee > {log_file}",
                 check=False, cwd=dest_dir).returncode != 0:
             logging.warning("An error happened while generating the visualization ...")
             error = True
@@ -188,7 +197,6 @@ def generate_visualization(idx):
                     print(line, end="", file=fail_f)
                 print(line.strip())
 
-        del os.environ["MATBENCH_FILTERS"]
         run.run(f"""
         cd
         mkdir -p {dest_dir}/figures_{{png,html}}
@@ -203,18 +211,28 @@ def generate_visualization(idx):
 
 
 @entrypoint()
-def generate_from_dir(results_dirname):
+def generate_from_dir(results_dirname, generate_lts=None):
     logging.info(f"Generating the visualization from '{results_dirname}' ...")
-    os.environ["MATBENCH_RESULTS_DIRNAME"] = str(results_dirname)
 
-    generate_visualizations()
+    generate_visualizations(results_dirname, generate_lts=generate_lts)
 
 
-def download():
+def get_common_matbench_args_env(results_dirname):
+    common_args = dict()
+    common_args["results_dirname"] = results_dirname
+    common_args["workload"] = config.ci_artifacts.get_config("matbench.workload")
+
+    common_env = dict()
+    common_env["MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE"] = "true" if config.ci_artifacts.get_config("matbench.ignore_exit_code") else "false"
+
+    return common_args, common_env
+
+
+def download(results_dirname):
     url = config.ci_artifacts.get_config("matbench.download.url")
     url_file = config.ci_artifacts.get_config("matbench.download.url_file")
+
     if url:
-        os.environ["MATBENCH_URL"] = url
         with open(env.ARTIFACT_DIR / "source_url", "w") as f:
             print(url, file=f)
 
@@ -223,27 +241,37 @@ def download():
     else:
         raise ValueError("matbench.download.url or matbench.download.url_file must be specified")
 
-    os.environ["MATBENCH_MODE"] = config.ci_artifacts.get_config("matbench.download.mode")
+    common_args, common_env = get_common_matbench_args_env(results_dirname)
 
-    if not os.environ.get("MATBENCH_RESULTS_DIRNAME"):
-        raise ValueError("internal error: MATBENCH_RESULTS_DIRNAME should have been set :/")
+    download_args = common_args.copy()
+    download_args |= dict(
+        mode=config.ci_artifacts.get_config("matbench.download.mode"),
+        do_download=True,
+    )
 
-    run.run(f"matbench download --do-download |& tee > {env.ARTIFACT_DIR}/_matbench_download.log")
+    if url:
+        download_args["url"] = url
+    elif url_file:
+        download_args["url_file"] = url_file
+
+    download_args_str = " ".join(f"'--{k}={v}'" for k, v in download_args.items())
+    common_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in common_env.items())
+
+    run.run(f"{common_env_str} matbench download {download_args_str} |& tee > {env.ARTIFACT_DIR}/_matbench_download.log")
 
 
 @entrypoint()
-def download_and_generate_visualizations():
+def download_and_generate_visualizations(results_dirname="/tmp/matrix_benchmarking_results"):
     prepare_matbench()
-    os.environ["MATBENCH_RESULTS_DIRNAME"] = "/tmp/matrix_benchmarking_results"
 
-    download()
+    download(results_dirname)
 
-    generate_visualizations()
+    generate_visualizations(results_dirname)
 
 
 class Visualize:
     """
-    Commands for launching the Pipeline Perf & Scale tests
+    Commands for launching the visualization commands
     """
 
     def __init__(self):
