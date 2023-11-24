@@ -206,10 +206,17 @@ second_target="${1:-}"
 # Note: do not 'exec' into the entrypoint, so that 'postchecks' can be
 # executed on exit.
 
-target_entrypoint_file="${THIS_DIR}/${target}.sh"
-if [[ -e "${target_entrypoint_file}" ]]; then
-    "${target_entrypoint_file}" "$@"
+if [[ -f "${THIS_DIR}/${target}.sh" || -f "${THIS_DIR}/${target}" || -f "${THIS_DIR}/${target}.py" ]]; then
+    if [[ -f "${THIS_DIR}/${target}.sh" ]]; then
+        "${target_entrypoint_file}" "$@"
+        exit 0
+    fi
+    if [[ -f "${THIS_DIR}/${target}.py" ]]; then
+        "${THIS_DIR}/${target}.py" "$@"
+        exit 0
+    fi
 
+    "${THIS_DIR}/${target}" "$@"
     exit 0
 fi
 
