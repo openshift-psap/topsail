@@ -2,22 +2,22 @@
 
 if [ -n "$BASH_VERSION" ]; then
     # assume Bash
-    TESTING_NOTEBOOKS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+    TESTING_THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 elif [ -n "$ZSH_VERSION" ]; then
     # assume ZSH
-    TESTING_NOTEBOOKS_DIR=${0:a:h}
-elif [[ -z "${TESTING_NOTEBOOKS_DIR:-}" ]]; then
-     echo "Shell isn't bash nor zsh, please expose the directory of this file with TESTING_NOTEBOOKS_DIR."
+    TESTING_THIS_DIR=${0:a:h}
+elif [[ -z "${TESTING_THIS_DIR:-}" ]]; then
+     echo "Shell isn't bash nor zsh, please expose the directory of this file with TESTING_THIS_DIR."
      false
 fi
 
-TOPSAIL_DIR="$(cd "$TESTING_NOTEBOOKS_DIR/../../.." >/dev/null 2>&1 && pwd )"
+TOPSAIL_DIR="$(cd "$TESTING_THIS_DIR/../../.." >/dev/null 2>&1 && pwd )"
 TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
 
-export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_NOTEBOOKS_DIR}/command_args.yml.j2
+export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_THIS_DIR}/command_args.yml.j2
 
 if [[ -z "${CI_ARTIFACTS_FROM_CONFIG_FILE:-}" ]]; then
-    export CI_ARTIFACTS_FROM_CONFIG_FILE=${TESTING_NOTEBOOKS_DIR}/config.yaml
+    export CI_ARTIFACTS_FROM_CONFIG_FILE=${TESTING_THIS_DIR}/config.yaml
 fi
 echo "Using '$CI_ARTIFACTS_FROM_CONFIG_FILE' as configuration file."
 
