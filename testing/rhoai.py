@@ -5,12 +5,17 @@ import pathlib
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
-ARTIFACT_DIR = pathlib.Path(os.environ["ARTIFACT_DIR"])
+ARTIFACT_DIR = pathlib.Path(os.environ.get("ARTIFACT_DIR", "."))
 
 PR_POSITIONAL_ARG_KEY = "PR_POSITIONAL_ARG"
 
 def main():
     old_variable_overrides = {}
+    variable_overrides = ARTIFACT_DIR / "variable_overrides"
+    if not variable_overrides.exists():
+      logging.fatal(f"File {variable_overrides.absolute()} does not exist. Cannot proceed.")
+      return 1
+
     with open(ARTIFACT_DIR / "variable_overrides") as f:
         for line in f.readlines():
             if not line.strip():
