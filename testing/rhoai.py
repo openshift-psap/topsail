@@ -39,9 +39,10 @@ def main():
     new_variable_overrides = {}
 
     # pass all args without the first arg
-    old_all_args = old_variable_overrides.pop(f"{PR_POSITIONAL_ARG_KEY}S")
+    old_all_args = old_variable_overrides.pop(f"{PR_POSITIONAL_ARG_KEY}S", "")
     new_all_args = old_all_args.partition(" ")[-1]
-    new_variable_overrides[f"{PR_POSITIONAL_ARG_KEY}S"] = new_all_args
+    if new_all_args:
+        new_variable_overrides[f"{PR_POSITIONAL_ARG_KEY}S"] = new_all_args
 
 
     # pass the new arg0
