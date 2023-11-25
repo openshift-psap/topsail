@@ -3,8 +3,9 @@ import logging
 
 from . import run
 
-TESTING_COMMON_DIR = pathlib.Path(__file__).absolute().parent
-TESTING_UTILS_DIR = TESTING_COMMON_DIR.parent / "utils"
+TOPSAIL_TESTING_DIR = pathlib.Path(__file__).absolute().parent
+TOPSAIL_DIR = TOPSAIL_TESTING_DIR.parent.parent
+TESTING_UTILS_DIR = TOPSAIL_DIR / "testing" / "utils"
 
 RHODS_OPERATOR_MANIFEST_NAME = "rhods-operator"
 

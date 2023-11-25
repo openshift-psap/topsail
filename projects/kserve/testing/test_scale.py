@@ -5,7 +5,7 @@ import time
 import os
 import datetime
 
-from common import env, config, run
+from topsail.testing import env, config, run
 import prepare_scale
 
 def test(test_artifact_dir_p=None):

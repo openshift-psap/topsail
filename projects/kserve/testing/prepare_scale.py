@@ -3,7 +3,7 @@ import pathlib
 import os
 import yaml
 
-from common import env, config, run, prepare_gpu_operator, prepare_user_pods, prepare_gpu_operator, merge_dicts, sizing
+from topsail.testing import env, config, run, prepare_gpu_operator, prepare_user_pods, prepare_gpu_operator, merge_dicts, sizing
 import prepare_kserve
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent

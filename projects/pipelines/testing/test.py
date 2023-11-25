@@ -13,15 +13,15 @@ import re
 import yaml
 import fire
 
+from topsail.common import env, config, run, rhods, visualize
+
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 
-TESTING_PIPELINES_DIR = pathlib.Path(__file__).absolute().parent
+TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TESTING_UTILS_DIR = TESTING_PIPELINES_DIR.parent / "utils"
+
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
-
-sys.path.append(str(TESTING_PIPELINES_DIR.parent))
-from common import env, config, run, rhods, visualize
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -32,7 +32,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     initialized = True
 
     env.init()
-    config.init(TESTING_PIPELINES_DIR)
+    config.init(TESTING_THIS_DIR)
 
     if apply_preset_from_pr_args:
         config.ci_artifacts.apply_preset_from_pr_args()
