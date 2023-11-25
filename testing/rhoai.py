@@ -79,7 +79,7 @@ def main():
     command = f"run {project_name} {run_args}"
     logging.info(f"===> Starting '{command}' <===")
 
-    return os.system(command)
+    return os.WEXITSTATUS(os.system(command))
 
 
 
