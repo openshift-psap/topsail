@@ -33,9 +33,16 @@ def _generate_config(component):
     for arg in doc.args or {}:
         args[arg.name] = arg
 
-    classname = component.__qualname__.partition(".")[0].lower()
 
-    dest = pathlib.Path("roles") / classname / component.ansible_role / "defaults" / "main" / "config.yml"
+    if component.__module__.startswith("projects"):
+        roles_dir = pathlib.Path(component.__module__.replace(".", "/")).parent.parent / "roles"
+    else:
+        # old directory, for retro-compatibility
+        classname = component.__qualname__.partition(".")[0].lower()
+        roles_dir = dest = pathlib.Path("roles") / classname
+
+    dest = roles_dir / component.ansible_role / "defaults" / "main" / "config.yml"
+
     dest.parent.mkdir(parents=True, exist_ok=True)
     print(f"{component.__qualname__}\n- generating {dest} ...\n")
 
@@ -74,7 +81,7 @@ def _generate_config(component):
                   else f"{ansible_arg_name}:", file=f)
             if i < len(mapped_params)-1:
                 print("", file=f)
-        
+
         if len(ansible_constants) > 0:
             print("", file=f)
             print("# Constants", file=f)

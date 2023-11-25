@@ -14,10 +14,13 @@ fi
 TOPSAIL_DIR="$(cd "$TESTING_THIS_DIR/../../.." >/dev/null 2>&1 && pwd )"
 TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
 
-export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_THIS_DIR}/command_args.yml.j2
+
+TESTING_UTILS_DIR="$TESTING_PIPELINES_DIR/../utils"
+
+export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_PIPELINES_DIR}/command_args.yml.j2
 
 if [[ -z "${CI_ARTIFACTS_FROM_CONFIG_FILE:-}" ]]; then
-    export CI_ARTIFACTS_FROM_CONFIG_FILE=${TESTING_THIS_DIR}/config.yaml
+    export CI_ARTIFACTS_FROM_CONFIG_FILE=${TESTING_PIPELINES_DIR}/config.yaml
 fi
 echo "Using '$CI_ARTIFACTS_FROM_CONFIG_FILE' as configuration file."
 

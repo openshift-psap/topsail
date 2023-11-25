@@ -13,6 +13,7 @@ import fire
 
 TESTING_COMMON_DIR = pathlib.Path(__file__).absolute().parent
 TESTING_UTILS_DIR = TESTING_COMMON_DIR.parent / "utils"
+TOPSAIL_DIR = TESTING_COMMON_DIR.parent.parent
 
 sys.path.append(str(TESTING_COMMON_DIR.parent))
 from common import env, config, run
@@ -45,7 +46,12 @@ def init(allow_no_config_file=False):
         config.ci_artifacts.set_config("matbench.preset", pr_arg_1, dump_command_args=False)
 
     matbench_workload = config.ci_artifacts.get_config("matbench.workload")
-    workload_storage_dir = TESTING_COMMON_DIR.parent.parent / "visualizations" / matbench_workload
+
+    if matbench_workload.startswith("projects."):
+        workload_storage_dir = pathlib.Path(matbench_workload.replace(".", "/"))
+    else:
+        # old directory, for retro-compatibility
+        workload_storage_dir = TESTING_COMMON_DIR.parent.parent / "visualizations" / matbench_workload
 
     if config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "").endswith("-plot"):
         config.ci_artifacts.set_config("matbench.preset", config.ci_artifacts.get_config("PR_POSITIONAL_ARG_1", None), dump_command_args=False)
@@ -221,6 +227,13 @@ def get_common_matbench_args_env(results_dirname):
     common_args = dict()
     common_args["results_dirname"] = results_dirname
     common_args["workload"] = config.ci_artifacts.get_config("matbench.workload")
+
+    common_args["workload_base_dir"] = str(TOPSAIL_DIR)
+
+    if not common_args["workload"].startswith("projects."):
+        # --workload_base_dir isn't necessary with the old workload convention.
+        # remove this test when the old workload convention is cleanup from the codebase.
+        common_args.pop("workload_base_dir")
 
     common_env = dict()
     common_env["MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE"] = "true" if config.ci_artifacts.get_config("matbench.ignore_exit_code") else "false"

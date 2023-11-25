@@ -13,7 +13,7 @@ notebooks_benchmark_performance_imagestream: s2i-generic-data-science-notebook
 notebooks_benchmark_performance_imagestream_tag:
 
 # Directory containing the files to mount in the notebook.
-notebooks_benchmark_performance_notebook_directory: testing/notebooks/notebooks/
+notebooks_benchmark_performance_notebook_directory: projects/notebooks/testing/notebooks/
 
 # Name of the ipynb notebook file to execute with JupyterLab.
 notebooks_benchmark_performance_notebook_filename: benchmark_entrypoint.ipynb
