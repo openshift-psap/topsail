@@ -1,0 +1,399 @@
+ci_presets:
+  # name of the presets to apply, or null if no preset
+  name: null
+  # list of names of the presets to apply, or a single name, or null if no preset
+  names: null
+
+  single:
+    clusters.create.type: single
+
+  keep:
+    extends: [spot_cluster]
+
+    clusters.create.keep: true
+    clusters.create.ocp.tags.Project: PSAP/Watsonx/serving/scale/home-dev
+    clusters.create.ocp.tags.TicketId: 229
+
+  light_cluster:
+    clusters.create.ocp.deploy_cluster.target: cluster_light
+
+  light:
+    extends: [light_cluster]
+
+  quick:
+    gpu.prepare_cluster: false
+    clusters.sutest.compute.machineset.type: m6i.2xlarge
+    tests.e2e.models:
+    - flan-t5-small-cpu
+    - flan-t5-small-cpu
+
+  metal:
+    clusters.sutest.is_metal: true
+    clusters.driver.is_metal: true
+    clusters.sutest.compute.dedicated: false
+    clusters.driver.compute.dedicated: false
+
+  not_metal:
+    clusters.sutest.is_metal: false
+    clusters.driver.is_metal: false
+
+  kubemark:
+    tests.mode: kubemark
+
+  spot_compute:
+    clusters.sutest.compute.machineset.spot: true
+    clusters.driver.compute.machineset.spot: true
+
+  spot_cluster:
+    extends: [spot_compute]
+    clusters.create.ocp.workers.spot: true
+    clusters.create.ocp.region: us-east-2
+
+  cleanup:
+    clusters.cleanup_on_exit: true
+
+  # ---
+
+  e2e_perf_strict_limits:
+    extends: [e2e_perf]
+    tests.e2e.limits_equals_requests: true
+
+  e2e_perf:
+    extends: [e2e_gpu]
+    tests.e2e.perf_mode: true
+    tests.e2e.limits_equals_requests: false
+    matbench.workload: projects.kserve.visualizations.kserve-llm
+    gpu.time_sharing.replicas: 1
+    clusters.sutest.compute.machineset.count: 1
+
+  e2e:
+    tests.mode: e2e
+    gpu.time_sharing.replicas: 1
+
+  e2e_scale:
+    extends: [e2e_gpu]
+    tests.e2e.perf_mode: false
+    gpu.time_sharing.replicas: 1
+
+  e2e_gpu:
+    extends: [e2e]
+    gpu.prepare_cluster: true
+    clusters.sutest.compute.machineset.spot: false
+    clusters.sutest.compute.machineset.type: g5.2xlarge
+
+  e2e_all_models:
+    tests.e2e.models:
+    - flan-t5-small-cpu
+    - flan-t5-small-gpu
+    - flan-t5-large-gpu
+    - bloom-560m
+    - mpt-7b-instruct2
+
+  e2e_dgx_one_model:
+    extends: [e2e_perf]
+    tests.e2e.models:
+    - mpt-1container:
+        name: mpt-7b-instruct2
+        serving_runtime:
+          merge_containers: true
+    - mpt-2container:
+        name: mpt-7b-instruct2
+    - mpt-2container-limits:
+        name: mpt-7b-instruct2
+        serving_runtime:
+          limits_equals_requests: true
+
+  e2e_dgx_models:
+    tests.e2e.models:
+    - flan-t5-large-gpu-1:
+        name: flan-t5-large-gpu
+    - flan-t5-small-gpu-1:
+        name: flan-t5-small-gpu
+    - bloom-560m-1:
+        name: bloom-560m
+    - mpt-7b-instruct2-1:
+        name: mpt-7b-instruct2
+
+    - flan-t5-large-gpu-2:
+        name: flan-t5-large-gpu
+    - flan-t5-small-gpu-2:
+        name: flan-t5-small-gpu
+    - bloom-560m-2:
+        name: bloom-560m
+    - mpt-7b-instruct2-2:
+        name: mpt-7b-instruct2
+
+  e2e_perf_flan:
+    extends: [e2e_perf]
+    tests.e2e.llm_load_test.duration: 3m
+    tests.e2e.models:
+    - flan-t5-small-gpu-3gb:
+        name: flan-t5-small-gpu
+        serving_runtime:
+          resource_request:
+            memory: 3 # in Gi
+    - flan-t5-small-gpu-4gb:
+        name: flan-t5-small-gpu
+        serving_runtime:
+          resource_request:
+            memory: 4 # in Gi
+    - flan-t5-small-gpu-5gb:
+        name: flan-t5-small-gpu
+        serving_runtime:
+          resource_request:
+            memory: 5 # in Gi
+    - flan-t5-small-gpu-6gb:
+        name: flan-t5-small-gpu
+        serving_runtime:
+          resource_request:
+            memory: 6 # in Gi
+
+  5min:
+    tests.e2e.llm_load_test.duration: 5m
+
+  10min:
+    tests.e2e.llm_load_test.duration: 10m
+
+  # ---
+
+  scale_test:
+    tests.mode: scale
+    matbench.workload: projects.kserve.visualizations.kserve-scale
+    tests.prom_plot_workload: null
+
+  scale_gpu:
+    extends: [scale_test]
+    gpu.prepare_cluster: true
+    clusters.sutest.compute.machineset.spot: false
+    clusters.sutest.compute.machineset.type: g5.2xlarge
+    tests.scale.model.name: flan-t5-small-gpu
+    gpu.time_sharing.replicas: 17
+
+  # ---
+
+  scale_on_dgx:
+    extends: [scale_gpu, customize_smmr]
+    gpu.time_sharing.replicas: 32
+    tests.scale.namespace.replicas: 25
+    tests.scale.model.replicas: 8
+    tests.scale.model.name: flan-t5-small-gpu
+
+  delayed:
+    tests.scale.sleep_factor: 10 # 10s between each of the users
+
+  customize_kserve:
+    rhods.operator.stop: true
+    rhods.operator.customize.kserve.enabled: true
+    rhods.operator.customize.kserve.cpu: 500m
+    rhods.operator.customize.kserve.memory: 500Mi
+
+  customize_smmr:
+    kserve.customize.serverless.enabled: true
+    kserve.customize.serverless.egress.limits.memory: 4Gi
+    kserve.customize.serverless.ingress.limits.memory: 4Gi
+
+secrets:
+  dir:
+    name: psap-ods-secret
+    env_key: PSAP_ODS_SECRET_PATH
+  # name of the file containing the properties of LDAP secrets
+  s3_ldap_password_file: s3_ldap.passwords
+  keep_cluster_password_file: get_cluster.password
+  brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+  aws_cred: .awscred
+  kserve_model_secret_settings: watsonx-models.yaml
+clusters:
+  create:
+    type: single # can be: single, ocp, managed
+    keep: false
+    name_prefix: kserve-ci
+    ocp:
+      # list of tags to apply to the machineset when creating the cluster
+      tags:
+        TicketId: 229
+        Project: PSAP/Watsonx/serving/scale/ci-dev
+      deploy_cluster:
+        target: cluster
+      base_domain: psap.aws.rhperfscale.org
+      version: 4.13.9
+      region: us-west-2
+      control_plane:
+        type: m6a.xlarge
+      workers:
+        type: m6a.2xlarge
+        count: 2
+        spot: false
+
+  sutest:
+    is_metal: false
+    lab:
+      name: null
+    compute:
+      dedicated: true
+      machineset:
+        name: workload-pods
+        type: g5.2xlarge
+        count: null
+        disk_size: 400 # GB for the root partition
+        spot: false
+        taint:
+          key: only-workload-pods
+          value: "yes"
+          effect: NoSchedule
+
+  driver:
+    is_metal: false
+    compute:
+      dedicated: true
+      machineset:
+        name: test-pods
+        type: m6i.2xlarge
+        count: null
+        spot: false
+        taint:
+          key: only-test-pods
+          value: "yes"
+          effect: NoSchedule
+  cleanup_on_exit: false
+
+rhods:
+  catalog:
+    image: brew.registry.redhat.io/rh-osbs/iib
+    tag: 625517
+    channel: alpha
+    version: 2.4.0
+    version_name: RC3
+  operator:
+    # set to true to stop the RHODS operator
+    stop: false
+    customize:
+      kserve:
+        enabled: false
+        cpu: 500m
+        memory: 500Mi
+
+
+prepare:
+  operators:
+  - name: serverless-operator
+    catalog: redhat-operators
+    namespace: all
+    cleanup:
+      crds:
+      - knativeservings.operator.knative.dev
+      namespaces:
+      - knative-eventing
+      - knative-serving
+  - name: servicemeshoperator
+    catalog: redhat-operators
+    namespace: all
+    cleanup:
+      crds:
+      - servicemeshmemberrolls.maistra.io
+      - servicemeshcontrolplanes.maistra.io
+      namespaces:
+      - istio-system
+
+base_image:
+  namespace: kserve-user-test-driver
+  imagestream: topsail
+  repo:
+    url: https://github.com/openshift-psap/topsail/
+    tag: main
+    ref: main
+    ref_prefer_pr: true
+    dockerfile_path: build/Dockerfile
+  extend:
+    enabled: true
+    local_dockerfile_path: projects/kserve/testing/images/Containerfile.e2e_test_user
+    tag: e2e-test-user
+  user:
+    service_account: ci-artifacts
+    role: cluster-admin
+  minio:
+    bucket_name: kserve-test-bucket
+
+kserve:
+  sa_name: sa
+  storage_config:
+    name: storage-config
+    region: us-east-1
+    endpoint: s3.amazonaws.com
+    use_https: 1
+  inference_service:
+    validation:
+      dataset: subprojects/llm-load-test/openorca-subset-006.json
+      query_count: 10
+  model:
+    serving_runtime:
+      kserve:
+        image: quay.io/opendatahub/text-generation-inference:stable
+      transformer:
+        image: quay.io/opendatahub/caikit-tgis-serving:fast
+        mute_logs: true
+  customize:
+    serverless:
+      enabled: false
+      egress:
+        limits:
+          memory: 4Gi
+      ingress:
+        limits:
+          memory: 4Gi
+gpu:
+  prepare_cluster: true
+  time_sharing:
+    replicas: 1
+
+tests:
+  mode: e2e
+
+  dry_mode: false
+  visualize: true
+  capture_prom: true
+  prom_plot_workload: projects.kserve.visualizations.kserve-prom
+  scale:
+    sleep_factor: 1
+    namespace:
+      name: kserve-scale-test
+      label: topsail.scale-test=true
+      replicas: 2
+
+    model:
+      consolidated: false
+      name: flan-t5-small-cpu
+      replicas: 2
+  e2e:
+    namespace: watsonx-e2e
+    perf_mode: true
+    models:
+    - flan-t5-small-gpu
+    - flan-t5-small-gpu
+    consolidated_models: {} # will be filled at runtime
+    request_one_gpu: true
+    limits_equals_requests: true
+    delete_others: true
+    llm_load_test:
+      enabled: true
+      src_path: subprojects/llm-load-test/
+      duration: 1m
+      threads: 16
+      rps: 2
+      protos_file: nlpservice.generated.proto
+      protos_dir: projects/kserve/testing/protos/
+      call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+
+matbench:
+  preset: null
+  workload: projects.kserve.visualizations.kserve-llm
+  config_file: plots.yaml
+  download:
+    mode: prefer_cache
+    url:
+    url_file:
+    # if true, copy the results downloaded by `matbench download` into the artifacts directory
+    save_to_artifacts: false
+  ignore_exit_code: true
+  # directory to plot. Set by topsail/testing/visualize.py before launching the visualization
+  test_directory: null
+  generate_lts: true

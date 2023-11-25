@@ -55,16 +55,16 @@ workloads:
       test:
         command: load-aware test test_ci
 
-  watsonx-serving:
+  kserve:
     command_group: rhods
     test_args:
     steps:
       pre_clean_up:
-        command: watsonx-serving test cleanup_sutest_ns
+        command: kserve test cleanup_sutest_ns
       pre_scale_up:
-        command: watsonx-serving test cluster_scale_up
+        command: kserve test cluster_scale_up
       test:
-        command: watsonx-serving test test_ci
+        command: kserve test test_ci
       post_scale_down:
-        command: watsonx-serving test cluster_scale_down
+        command: kserve test cluster_scale_down
         always_run: true

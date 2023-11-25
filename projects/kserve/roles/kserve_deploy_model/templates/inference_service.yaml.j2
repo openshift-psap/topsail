@@ -1,0 +1,21 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  annotations:
+    serving.knative.openshift.io/enablePassthrough: "true"
+    sidecar.istio.io/inject: "true"
+    sidecar.istio.io/rewriteAppHTTPProbers: "true"
+    serving.kserve.io/enable-prometheus-scraping: "true"
+  name: {{ kserve_deploy_model_inference_service_name }}
+  namespace: {{ kserve_deploy_model_namespace }}
+spec:
+  predictor:
+{% if kserve_deploy_model_inference_service_min_replicas is not none %}
+    minReplicas: {{ kserve_deploy_model_inference_service_min_replicas }}
+{% endif %}
+    serviceAccountName: {{ kserve_deploy_model_sa_name }}
+    model:
+      modelFormat:
+        name: caikit
+      runtime: {{ kserve_deploy_model_serving_runtime_name }}
+      storageUri: {{ kserve_deploy_model_storage_uri }}

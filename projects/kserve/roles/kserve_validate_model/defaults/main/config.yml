@@ -1,0 +1,23 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Kserve.validate_model
+
+# Parameters
+# a list of names of the inference service to validate
+# Mandatory value
+kserve_validate_model_inference_service_names:
+
+# the model-id to pass to the inference service
+# Mandatory value
+kserve_validate_model_model_id:
+
+# path to the dataset to use for the query
+# Mandatory value
+kserve_validate_model_dataset:
+
+# number of query to perform
+# Mandatory value
+kserve_validate_model_query_count:
+
+# the namespace in which the Serving stack was deployed. If empty, use the current project.
+kserve_validate_model_namespace:
