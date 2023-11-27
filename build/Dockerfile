@@ -45,6 +45,8 @@ ENV USER_NAME=psap-ci-runner \
     INSIDE_CI_IMAGE="y"
 ENV ANSIBLE_CONFIG="${HOME}/config/ansible.cfg"
 
+ENV PYTHONPATH=$HOME
+
 COPY . ${HOME}/
 
 # Install Python requirements
