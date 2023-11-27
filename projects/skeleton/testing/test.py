@@ -12,16 +12,13 @@ import functools
 import yaml
 import fire
 
+from topsail.testing import env, config, run, rhods, visualize
+
+
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent.parent
-TESTING_COMMON_DIR = TOPSAIL_DIR / "testing" / "common"
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
-
-sys.path.append(str(TESTING_COMMON_DIR.parent))
-from common import env, config, run, rhods, visualize
-
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):

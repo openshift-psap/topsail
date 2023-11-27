@@ -3,7 +3,7 @@ import os
 import logging
 import time
 
-from common import env, config, run, rhods, sizing
+from topsail.testing import env, config, run, rhods, sizing
 import test_scale
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))

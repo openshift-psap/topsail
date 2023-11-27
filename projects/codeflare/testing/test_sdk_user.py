@@ -6,7 +6,7 @@ import importlib
 
 import prepare_sdk_user, prepare_user_pods
 
-from common import env, config, run, visualize
+from topsail.testing import env, config, run, visualize
 
 def _run_many(test_artifact_dir_p):
     # argument 'test_artifact_dir_p' is a pointer to

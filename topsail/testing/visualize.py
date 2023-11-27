@@ -11,17 +11,14 @@ logging.getLogger().setLevel(logging.INFO)
 
 import fire
 
-TESTING_COMMON_DIR = pathlib.Path(__file__).absolute().parent
-TESTING_UTILS_DIR = TESTING_COMMON_DIR.parent / "utils"
-TOPSAIL_DIR = TESTING_COMMON_DIR.parent.parent
+TOPSAIL_TESTING_DIR = pathlib.Path(__file__).absolute().parent
+TOPSAIL_DIR = TOPSAIL_TESTING_DIR.parent.parent
 
-sys.path.append(str(TESTING_COMMON_DIR.parent))
-from common import env, config, run
+from topsail.testing import env, config, run
 
 matbench_config = None # will be set in init()
 matbench_workload = None # will be set in init()
 workload_storage_dir = None # will be set in init()
-
 
 
 def init(allow_no_config_file=False):
@@ -47,11 +44,7 @@ def init(allow_no_config_file=False):
 
     matbench_workload = config.ci_artifacts.get_config("matbench.workload")
 
-    if matbench_workload.startswith("projects."):
-        workload_storage_dir = pathlib.Path(matbench_workload.replace(".", "/"))
-    else:
-        # old directory, for retro-compatibility
-        workload_storage_dir = TESTING_COMMON_DIR.parent.parent / "visualizations" / matbench_workload
+    workload_storage_dir = pathlib.Path(matbench_workload.replace(".", "/"))
 
     if config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "").endswith("-plot"):
         config.ci_artifacts.set_config("matbench.preset", config.ci_artifacts.get_config("PR_POSITIONAL_ARG_1", None), dump_command_args=False)
@@ -83,29 +76,9 @@ def entrypoint(allow_no_config_file=False):
 def prepare_matbench():
 
     run.run(f"""
-    pip install --quiet --requirement "{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/requirements.txt"
+    pip install --quiet --requirement "{TOPSAIL_DIR}/subprojects/matrix-benchmarking/requirements.txt"
     """)
 
-    if workload_storage_dir:
-        run.run(f"""
-        WORKLOAD_RUN_DIR="{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/workloads/{matbench_workload}"
-
-        if [[ ! -e "$WORKLOAD_RUN_DIR" ]]; then
-          ln -s "{workload_storage_dir}" "$WORKLOAD_RUN_DIR"
-        fi
-
-        pip install --quiet --requirement "{TESTING_COMMON_DIR}/../../subprojects/matrix-benchmarking/requirements.txt"
-        """)
-    else:
-        logging.info("Running without workload configuration, skipping the workload preparation")
-
-    run.run(f"""
-    if ! which prometheus 2>/dev/null; then
-       echo "ERROR: prometheus not available :/"
-       exit 1
-    fi
-    echo "Prometheus available."
-    """)
 
 @entrypoint()
 def generate_visualizations(results_dirname, generate_lts=None):
@@ -229,11 +202,6 @@ def get_common_matbench_args_env(results_dirname):
     common_args["workload"] = config.ci_artifacts.get_config("matbench.workload")
 
     common_args["workload_base_dir"] = str(TOPSAIL_DIR)
-
-    if not common_args["workload"].startswith("projects."):
-        # --workload_base_dir isn't necessary with the old workload convention.
-        # remove this test when the old workload convention is cleanup from the codebase.
-        common_args.pop("workload_base_dir")
 
     common_env = dict()
     common_env["MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE"] = "true" if config.ci_artifacts.get_config("matbench.ignore_exit_code") else "false"

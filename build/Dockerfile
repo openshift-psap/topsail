@@ -45,12 +45,14 @@ ENV USER_NAME=psap-ci-runner \
     INSIDE_CI_IMAGE="y"
 ENV ANSIBLE_CONFIG="${HOME}/config/ansible.cfg"
 
+ENV PYTHONPATH=$HOME
+
 COPY . ${HOME}/
 
 # Install Python requirements
 
 RUN pip install --quiet --no-cache-dir -r ${HOME}/requirements.txt && \
-    (cd ${HOME} && ./testing/common/visualize.py prepare_matbench)
+    (cd ${HOME} && ./topsail/testing/visualize.py prepare_matbench)
 
 # Prepare the CI `run` entrypoint
 

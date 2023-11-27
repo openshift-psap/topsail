@@ -11,14 +11,10 @@ import json
 import yaml
 
 import fire
-TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent.parent
-TESTING_COMMON_DIR = TOPSAIL_DIR / "testing" / "common"
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
-sys.path.append(str(TESTING_COMMON_DIR.parent))
-from common import env, config, run, visualize
+from topsail.testing import env, config, run, visualize
 import prepare_scale, test_scale
 
 # ---

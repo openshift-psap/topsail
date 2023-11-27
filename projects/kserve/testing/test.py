@@ -11,20 +11,17 @@ import functools
 import yaml
 import fire
 
-TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent.parent
-TESTING_COMMON_DIR = TOPSAIL_DIR / "testing" / "common"
-
-PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
-LIGHT_PROFILE = "light"
-METAL_PROFILE = "metal"
-
-sys.path.append(str(TESTING_COMMON_DIR.parent))
-from common import env, config, run, rhods, visualize, configure_logging, prepare_user_pods
+from topsail.testing import env, config, run, rhods, visualize, configure_logging, prepare_user_pods
 configure_logging()
 
 import prepare_scale, test_scale, test_e2e
 import prepare_kserve
+
+TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
+
+PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
+LIGHT_PROFILE = "light"
+METAL_PROFILE = "metal"
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):

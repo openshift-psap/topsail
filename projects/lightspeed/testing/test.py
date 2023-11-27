@@ -12,17 +12,15 @@ import time
 import functools
 import yaml
 
+from topsail.testing import env, config, run, rhods
+
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
+
 WISDOM_SECRET_PATH = pathlib.Path(os.environ["WISDOM_SECRET_PATH"])
 WISDOM_PROTOS_SECRET_PATH = pathlib.Path(os.environ["WISDOM_PROTOS_SECRET_PATH"])
+
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
-
-TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent.parent
-TESTING_COMMON_DIR = TOPSAIL_DIR / "testing" / "common"
-
-sys.path.append(str(TESTING_COMMON_DIR.parent))
-from common import env, config, run, rhods
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -33,7 +31,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     initialized = True
 
     env.init()
-    config.init(TESTING_ANSIBLE_LLM_DIR)
+    config.init(TESTING_THIS_DIR)
 
     if apply_preset_from_pr_args:
         config.ci_artifacts.apply_preset_from_pr_args()

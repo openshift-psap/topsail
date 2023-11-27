@@ -4,7 +4,7 @@ import pathlib
 import base64
 import yaml
 
-from common import env, config, run, sizing
+from topsail.testing import env, config, run, sizing
 
 def apply_prefer_pr(pr_number=None):
     if not config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr"):
