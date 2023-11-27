@@ -18,8 +18,8 @@ WISDOM_PROTOS_SECRET_PATH = pathlib.Path(os.environ["WISDOM_PROTOS_SECRET_PATH"]
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
 
-TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent
-TESTING_COMMON_DIR = TOPSAIL_DIR.parent / "testing" / "common"
+TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent.parent
+TESTING_COMMON_DIR = TOPSAIL_DIR / "testing" / "common"
 
 sys.path.append(str(TESTING_COMMON_DIR.parent))
 from common import env, config, run, rhods

@@ -13,8 +13,10 @@ import test_e2e
 import test_scale
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-TESTING_UTILS_DIR = TESTING_THIS_DIR.parent / "utils"
+TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent.parent
+
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
+
 sys.path.append(str(TESTING_THIS_DIR.parent))
 from common import env, config, run, configure_logging
 configure_logging()
