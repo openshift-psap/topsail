@@ -1,0 +1,105 @@
+---
+- name: Get the name of the current project
+  command:
+    oc project --short
+  register: project_name_cmd
+  when: not kserve_capture_state_namespace
+
+- name: Define the test environment
+  set_fact:
+    namespace: "{% if kserve_capture_state_namespace | length > 0 %}{{ kserve_capture_state_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
+
+- name: Save the state of the pods
+  shell: |
+    oc get pods -n "{{ namespace }}" -owide \
+       > "{{ artifact_extra_logs_dir }}/pods.status"
+    oc get pods -n "{{ namespace }}" -oyaml \
+       > "{{ artifact_extra_logs_dir }}/pods.yaml"
+    oc get pods -n "{{ namespace }}" -ojson \
+       > "{{ artifact_extra_logs_dir }}/pods.json"
+    oc describe pods -n "{{ namespace }}" \
+       > "{{ artifact_extra_logs_dir }}/pods.desc"
+  ignore_errors: true
+
+- name: Save the state of all the resources
+  shell: |
+    oc get all -n "{{ namespace }}" \
+       > "{{ artifact_extra_logs_dir }}/all.status"
+    oc get all -n "{{ namespace }}" -oyaml \
+       > "{{ artifact_extra_logs_dir }}/all.yaml"
+    oc get all -n "{{ namespace }}" -ojson \
+       > "{{ artifact_extra_logs_dir }}/all.json"
+    oc describe all -n "{{ namespace }}" \
+       > "{{ artifact_extra_logs_dir }}/all.desc"
+  ignore_errors: true
+
+- name: Save the state of the serving resources
+  shell: |
+    oc get serving,inferenceservice,servingruntime -n "{{ namespace }}" \
+       > "{{ artifact_extra_logs_dir }}/serving.status"
+    oc get serving,inferenceservice,servingruntime -n "{{ namespace }}" -oyaml \
+       > "{{ artifact_extra_logs_dir }}/serving.yaml"
+    oc get serving,inferenceservice,servingruntime -n "{{ namespace }}" -ojson \
+       > "{{ artifact_extra_logs_dir }}/serving.json"
+    oc describe serving,inferenceservice,servingruntime -n "{{ namespace }}" \
+       > "{{ artifact_extra_logs_dir }}/serving.desc"
+  ignore_errors: true
+
+- name: Create the logs directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/logs"
+    state: directory
+    mode: '0755'
+
+- name: Get the names of the deployments
+  command:
+    oc get deployments
+       -n "{{ namespace }}"
+       -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+  register: deploy_names_cmd
+
+- name: Capture the logs of the deployments
+  loop: "{{ deploy_names_cmd.stdout_lines }}"
+  shell:
+    oc logs deploy/{{ item }}
+       -n {{ namespace }}
+       --all-containers --prefix
+       > "{{ artifact_extra_logs_dir }}/logs/{{ item }}.log"
+  ignore_errors: true
+
+# RHODS version
+
+- name: Check if RHODS CSV exists
+  shell:
+    set -o pipefail;
+    oc get csv -n redhat-ods-operator -oname | grep rhods-operator
+  register: has_rhods_csv_cmd
+
+- name: Save the RHODS CSV
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -ojson > "{{ artifact_extra_logs_dir }}/rhods.csv.json"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
+- name: Get the RHODS version, if rhods is installed
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -ojsonpath={.spec.version} > "{{ artifact_extra_logs_dir }}/rhods.version"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
+- name: Store the RHODS creation timestamp, if RHODS is installed
+  shell:
+    oc get {{ has_rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname -ojsonpath={.metadata.annotations.createdAt}
+      > "{{ artifact_extra_logs_dir }}/rhods.createdAt"
+  when: has_rhods_csv_cmd.stdout | length > 0
+
+# OCP version
+
+- name: Store OpenShift YAML version
+  shell:
+    oc version -oyaml
+       > {{ artifact_extra_logs_dir }}/ocp_version.yaml
+
+# Cluster nodes
+
+- name: Get the cluster nodes json
+  shell:
+    oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/nodes.json"

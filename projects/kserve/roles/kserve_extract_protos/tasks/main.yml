@@ -1,0 +1,75 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Get the yaml of the inference service
+  shell:
+    oc get isvc/{{ kserve_extract_protos_inference_service_name }}
+    -n {{ kserve_extract_protos_namespace }}
+    -oyaml
+    > "{{ artifact_extra_logs_dir }}/artifacts/inference_service.yaml"
+
+- name: Get the name of the last revision of the inference service
+  command:
+    oc get isvc/{{ kserve_extract_protos_inference_service_name }}
+       -n {{ kserve_extract_protos_namespace }}
+       -ojsonpath={.status.components.predictor.traffic[-1].revisionName}
+  register: predictor_name_cmd
+
+- name: Get the name of the first pod of the inference service predictor
+  shell:
+    oc get pods
+       -n {{ kserve_extract_protos_namespace }}
+       -lapp={{ predictor_name_cmd.stdout }}
+       -ojsonpath={.items[0].metadata.name}
+  register: predictor_pod_name_cmd
+
+- name: Give details about the next task
+  debug:
+    msg: |
+      The next task generates the protos. It takes a few seconds.
+      The 'Address already in use' exception is raised by the metric server, it can be safely ignored.
+        RuntimeServerBase._start_metrics_server()
+
+- name: "Generate the protos"
+  command:
+    oc rsh
+       -n {{ kserve_extract_protos_namespace }}
+       {{ predictor_pod_name_cmd.stdout }}
+       bash -cxe 'rm -rf /tmp/protos; RUNTIME_LIBRARY=caikit_nlp python -m caikit.runtime.dump_services /tmp/protos'
+  register: extract_protos_cmd
+  failed_when: extract_protos_cmd.rc != 0 and extract_protos_cmd.rc != 1
+
+- name: Give details about the previous task
+  debug:
+    msg: |
+      The 'Address already in use' exception above can be safely ignored.
+
+- name: Ensure that the dest dir exists # noqa risky-file-permissions
+  file:
+    path: "{{ kserve_extract_protos_dest_dir }}"
+    state: directory
+    # mode: don't set it here, it fails if the directory exists but is owned by root
+
+- name: Extract the prototypes from the Pod
+  command:
+    oc cp
+       {{ kserve_extract_protos_namespace }}/{{ predictor_pod_name_cmd.stdout }}:/tmp/protos
+       "{{ kserve_extract_protos_dest_dir }}"
+
+- name: Create the protos artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/protos"
+    state: directory
+    mode: '0755'
+  when: kserve_extract_protos_copy_to_artifacts
+
+- name: Copy the prototypes to the artifacts dir
+  shell:
+    oc cp
+       {{ kserve_extract_protos_namespace }}/{{ predictor_pod_name_cmd.stdout }}:/tmp/protos
+       "{{ artifact_extra_logs_dir }}/artifacts/protos"
+  when: kserve_extract_protos_copy_to_artifacts

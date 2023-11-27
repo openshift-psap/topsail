@@ -29,4 +29,5 @@ class Toolbox:
             try:
                 self.__dict__[toolbox_name] = getattr(mod, toolbox_name.title())
             except AttributeError as e:
-                logging.warning(str(e)) # AttributeError: module 'projects.notebooks.toolbox.notebooks' has no attribute 'Notebooks'
+                logging.fatal(str(e)) # AttributeError: module 'projects.notebooks.toolbox.notebooks' has no attribute 'Notebooks'
+                sys.exit(1)

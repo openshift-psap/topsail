@@ -10,8 +10,8 @@ import functools
 import fire
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent
-TESTING_COMMON_DIR = TOPSAIL_DIR.parent / "testing" / "common"
+TOPSAIL_DIR = TESTING_THIS_DIR.parent.parent.parent
+TESTING_COMMON_DIR = TOPSAIL_DIR / "testing" / "common"
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"

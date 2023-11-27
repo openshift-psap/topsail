@@ -5,12 +5,17 @@ import pathlib
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
-ARTIFACT_DIR = pathlib.Path(os.environ["ARTIFACT_DIR"])
+ARTIFACT_DIR = pathlib.Path(os.environ.get("ARTIFACT_DIR", "."))
 
 PR_POSITIONAL_ARG_KEY = "PR_POSITIONAL_ARG"
 
 def main():
     old_variable_overrides = {}
+    variable_overrides = ARTIFACT_DIR / "variable_overrides"
+    if not variable_overrides.exists():
+      logging.fatal(f"File {variable_overrides.absolute()} does not exist. Cannot proceed.")
+      return 1
+
     with open(ARTIFACT_DIR / "variable_overrides") as f:
         for line in f.readlines():
             if not line.strip():
@@ -34,9 +39,10 @@ def main():
     new_variable_overrides = {}
 
     # pass all args without the first arg
-    old_all_args = old_variable_overrides.pop(f"{PR_POSITIONAL_ARG_KEY}S")
+    old_all_args = old_variable_overrides.pop(f"{PR_POSITIONAL_ARG_KEY}S", "")
     new_all_args = old_all_args.partition(" ")[-1]
-    new_variable_overrides[f"{PR_POSITIONAL_ARG_KEY}S"] = new_all_args
+    if new_all_args:
+        new_variable_overrides[f"{PR_POSITIONAL_ARG_KEY}S"] = new_all_args
 
 
     # pass the new arg0
@@ -79,7 +85,7 @@ def main():
     command = f"run {project_name} {run_args}"
     logging.info(f"===> Starting '{command}' <===")
 
-    return os.system(command)
+    return os.WEXITSTATUS(os.system(command))
 
 
 
