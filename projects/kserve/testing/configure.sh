@@ -11,7 +11,8 @@ elif [[ -z "${TESTING_THIS_DIR:-}" ]]; then
      false
 fi
 
-TESTING_UTILS_DIR="$TESTING_THIS_DIR/../utils"
+TOPSAIL_DIR="$(cd "$TESTING_THIS_DIR/../../.." >/dev/null 2>&1 && pwd )"
+TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
 
 export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_THIS_DIR}/command_args.yml.j2
 
