@@ -29,15 +29,16 @@ fi
 echo
 light_info "[INFO] Update SMMR"
 echo
-oc create ns knative-serving -oyaml --dry-run=client | oc apply -f-
-oc::wait::object::availability "oc get project knative-serving" 2 60
-
+oc::wait::object::availability "oc get project istio-system" 2 60
 oc apply -f custom-manifests/service-mesh/default-smmr.yaml
 
 # Create a Knative Serving installation
 echo
 light_info "[INFO] Create a Knative Serving installation"
 echo
+oc create ns knative-serving -oyaml --dry-run=client | oc apply -f-
+oc::wait::object::availability "oc get project knative-serving" 2 60
+
 oc apply -f custom-manifests/serverless/knativeserving-istio.yaml
 
 wait_for_pods_ready "app=controller" "knative-serving"
