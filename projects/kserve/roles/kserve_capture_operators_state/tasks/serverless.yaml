@@ -15,10 +15,11 @@
 
 - name: serverless | Capture the SMCP
   shell:
-    oc get smcp/minimal
+    oc get smcp/data-science-smcp
        -n istio-system
        -oyaml
        > "{{ artifact_extra_logs_dir }}/serverless/smcp.yaml"
+  ignore_errors: true
 
 - name: serverless | Capture the knative-serving
   shell:
