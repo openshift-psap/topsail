@@ -134,15 +134,6 @@ class Rhods:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("rhods_capture_state")
-    @AnsibleMappedParams
-    def capture_state(self):
-        """
-        Capture information about the cluster and the RHODS deployment
-        """
-
-        return RunAnsibleRole()
-
     @AnsibleRole("rhods_update_datasciencecluster")
     @AnsibleMappedParams
     def update_datasciencecluster(self,
