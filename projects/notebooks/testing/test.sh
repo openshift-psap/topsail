@@ -29,6 +29,11 @@ source "$TESTING_UTILS_DIR/process_ctrl.sh"
 source "$TESTING_NOTEBOOKS_DIR/configure.sh"
 source "$TESTING_NOTEBOOKS_DIR/cluster_helpers.sh"
 
+if [[ "${OPENSHIFT_CI:-}" == true && "${JOB_NAME_SAFE:-}" == "light" ]]; then
+    cp "$KUBECONFIG" "${SHARED_DIR}/driver_kubeconfig"
+    cp "$KUBECONFIG" "${SHARED_DIR}/sutest_kubeconfig"
+fi
+
 KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-${KUBECONFIG:-}}" # cluster driving the test
 KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-${KUBECONFIG:-}}" # system under test
 
