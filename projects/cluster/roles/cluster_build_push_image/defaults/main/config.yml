@@ -1,0 +1,43 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.build_push_image
+
+# Parameters
+# Name of locally built image.
+# Mandatory value
+cluster_build_push_image_image_local_name:
+
+# Tag for the image to build.
+# Mandatory value
+cluster_build_push_image_tag:
+
+# Namespace where the local image will be built.
+cluster_build_push_image_namespace: ci-artifacts
+
+# Remote image repo to push to. If undefined, the image will not be pushed.
+cluster_build_push_image_remote_repo:
+
+# Auth file for the remote repository.
+cluster_build_push_image_remote_auth_file:
+
+# Git repo containing Dockerfile if used as source. If undefined, the local path of 'dockerfile_path' will be used.
+cluster_build_push_image_git_repo:
+
+# Git commit ref (branch, tag, commit hash) in the git repository.
+cluster_build_push_image_git_ref:
+
+# Path/Name of Dockerfile if used as source. If 'git_repo' is undefined, this path will be resolved locally, and the Dockerfile will be injected in the image BuildConfig.
+cluster_build_push_image_dockerfile_path: Dockerfile
+
+# Context dir inside the git repository.
+cluster_build_push_image_context_dir: /
+
+# Flag to specify the required memory to build the image (in Gb).
+# Type: Float
+cluster_build_push_image_memory:
+
+# Base image to use, instead of the FROM image specified in the Dockerfile.
+cluster_build_push_image_from_image: null
+
+# Base imagestreamtag to use, instead of the FROM image specified in the Dockerfile.
+cluster_build_push_image_from_imagetag: null
