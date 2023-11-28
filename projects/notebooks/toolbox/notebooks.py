@@ -190,3 +190,12 @@ class Notebooks:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("notebooks_capture_state")
+    @AnsibleMappedParams
+    def capture_state(self):
+        """
+        Capture information about the cluster and the RHODS notebooks deployment
+        """
+
+        return RunAnsibleRole()
