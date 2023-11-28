@@ -11,8 +11,6 @@ class Kserve:
     @AnsibleMappedParams
     def deploy_model(self,
                      namespace,
-                     model_name,
-                     model_id,
                      serving_runtime_name,
                      sr_kserve_image, sr_kserve_resource_request,
                      sr_transformer_image, sr_transformer_resource_request,
@@ -34,8 +32,6 @@ class Kserve:
         Args:
           name: the name of the resource to create
           namespace: the namespace in which the model should be deployed
-          model_name: the full name of the model
-          model_id: the ID of the model, for the validation step
 
           serving_runtime_name: the name to give to the serving runtime
           sr_merge_containers: if True, deploy 1 container. If False, deploy 2 containers.

@@ -161,9 +161,6 @@ kserve deploy_model:
   namespace: {{ tests.scale.namespace.name }}
   sa_name: {{ kserve.sa_name }}
 
-  model_id: {{ tests.scale.model.id }}
-  model_name: {{ tests.scale.model.full_name }}
-
   serving_runtime_name: {{ tests.scale.model.name }}
 
   sr_kserve_image: {{ kserve.model.serving_runtime.kserve.image }}
