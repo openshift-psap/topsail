@@ -37,9 +37,6 @@ ci_presets:
     clusters.sutest.is_metal: false
     clusters.driver.is_metal: false
 
-  kubemark:
-    tests.mode: kubemark
-
   spot_compute:
     clusters.sutest.compute.machineset.spot: true
     clusters.driver.compute.machineset.spot: true
