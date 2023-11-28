@@ -32,13 +32,15 @@
     oc get -oname machineconfigpools "-l{{ cluster_update_pods_per_node_label }}={{ cluster_update_pods_per_node_label_value }}"
   register: new_machineconfigpools_list
   until: new_machineconfigpools_list.stdout != old_machineconfigpools_list.stdout
-  retry: 10
+  retries: 10
   delay: 10
 
 - name: Wait for the new machineconfigpools to be all updated and capture artifacts
   block:
   - name: Wait for the new machineconfigpools to be all updated
     shell:
+      set -o pipefail;
+
       oc get machineconfigpools
          "-l{{ cluster_update_pods_per_node_label }}={{ cluster_update_pods_per_node_label_value }}"
          -o json
@@ -48,7 +50,7 @@
     register: has_machineconfigpools_unavailable
     until: not has_machineconfigpools_unavailable.stdout
     failed_when: has_machineconfigpools_unavailable.stdout_lines | length > 0
-    retry: 40
+    retries: 40
     delay: 30
   always:
   - name: Get the maximum number of Pods per node
