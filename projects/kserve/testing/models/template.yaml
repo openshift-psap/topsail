@@ -1,6 +1,5 @@
 extends: base
 id: <id in the storage>
-full_name: <origin>/<name>
 secret_key: <key in watsonx-models.yaml>
 
 serving_runtime:

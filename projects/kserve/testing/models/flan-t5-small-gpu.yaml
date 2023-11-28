@@ -1,6 +1,5 @@
 extends: base
 id: flan-t5-small-caikit
-full_name: google/flan-t5-small
 secret_key: flan-t5-small
 
 serving_runtime:
