@@ -1,0 +1,30 @@
+---
+- name: Fail if artifact_dir is not defined
+  fail: msg="'artifact_dir' must be defined before running this role"
+  when: artifact_dir is undefined
+
+- name: Fail if artifact_extra_logs_dir is not defined
+  fail: msg="'artifact_extra_logs_dir' must be defined before running this role"
+  when: artifact_extra_logs_dir is undefined
+
+- name: Create the artifact_extra_logs_dir directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Test the cluster connectivity
+  when: check_deps_needs_cluster
+  block:
+  - name: Retrieve the name of the current user
+    command: oc whoami
+
+  rescue:
+  - name: Fail because of a dependency issue
+    fail:
+      msg: |
+        Failed to fetch the name of the current user. Please verify the failure message above and double check:
+          1. that `KUBECONFIG` is properly set ({{ lookup('env', 'KUBECONFIG') }})
+          2. that `oc` is available in the PATH
+          3. that `jq` is available in the PATH
+          4. that `oc` and `KUBECONFIG` are able to access the OpenShift cluster

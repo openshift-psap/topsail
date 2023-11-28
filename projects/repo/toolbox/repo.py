@@ -1,10 +1,15 @@
 import os
+import pathlib
 
 import topsail
-from topsail.repo_scripts.validate_role_files import main as role_files_main
-from topsail.repo_scripts.validate_role_vars_used import main as role_vars_used_main
 
-import topsail._ansible_default_config
+from projects.repo.scripts.validate_role_files import main as role_files_main
+from projects.repo.scripts.validate_role_vars_used import main as role_vars_used_main
+import projects.repo.scripts.ansible_default_config
+
+TOOLBOX_THIS_DIR = pathlib.Path(__file__).absolute().parent
+PROJECT_DIR = TOOLBOX_THIS_DIR.parent
+TOPSAIL_DIR = TOOLBOX_THIS_DIR.parent.parent.parent
 
 class Repo:
     """
@@ -32,7 +37,7 @@ class Repo:
         Ensures that none of the commits have the WIP flag in their
         message title.
         """
-        exit(os.system("topsail/repo_scripts/validate_no_wip.sh"))
+        exit(os.system(str(PROJECT_DIR / "scripts" / "validate_no_wip.sh")))
 
 
     @staticmethod
@@ -49,5 +54,5 @@ class Repo:
         """
         Generate the 'defaults/main/config.yml' file of the Ansible roles, based on the Python definition.
         """
-        topsail._ansible_default_config.generate_all(topsail.Toolbox())
+        projects.repo.scripts.ansible_default_config.generate_all(topsail.Toolbox())
         exit(0)
