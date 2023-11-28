@@ -95,7 +95,7 @@ prepare_sutest_cluster() {
 
 capture_environment() {
     switch_sutest_cluster
-    ./run_toolbox.py rhods capture_state > /dev/null || true
+    ./run_toolbox.py notebooks capture_state > /dev/null || true
     ./run_toolbox.py cluster capture_environment > /dev/null || true
 
     switch_driver_cluster

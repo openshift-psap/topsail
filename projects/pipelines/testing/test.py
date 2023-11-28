@@ -368,7 +368,7 @@ def _pipelines_run_many(test_artifact_dir_p):
                 with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                     print("1" if failed else "0", file=f)
 
-                run.run(f"./run_toolbox.py rhods capture_state > /dev/null", check=False)
+                run.run(f"./run_toolbox.py notebooks capture_state > /dev/null", check=False)
 
     finally:
         run.run(f"./run_toolbox.py cluster capture_environment > /dev/null", check=False)
