@@ -25,22 +25,6 @@ then
   mkdir ${BASE_CERT_DIR}
 fi
 
-# Create an istio instance
-echo
-light_info "[INFO] Create an istio instance"
-echo
-oc create ns istio-system -oyaml --dry-run=client | oc apply -f-
-oc::wait::object::availability "oc get project istio-system" 2 60
-
-oc apply -f custom-manifests/service-mesh/smcp.yaml
-wait_for_pods_ready "app=istiod" "istio-system"
-wait_for_pods_ready "app=istio-ingressgateway" "istio-system"
-wait_for_pods_ready "app=istio-egressgateway" "istio-system"
-
-oc wait --for=condition=ready pod -l app=istiod -n istio-system --timeout=300s
-oc wait --for=condition=ready pod -l app=istio-ingressgateway -n istio-system --timeout=300s
-oc wait --for=condition=ready pod -l app=istio-egressgateway -n istio-system --timeout=300s
-
 # kserve/knative
 echo
 light_info "[INFO] Update SMMR"
