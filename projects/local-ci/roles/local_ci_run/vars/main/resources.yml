@@ -1,0 +1,2 @@
+---
+local_ci_run_pod_template: templates/pod.yaml.j2

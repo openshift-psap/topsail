@@ -50,9 +50,9 @@ def local_ci_prepare():
     # Prepare the container image
     #
 
-    # keep this command (utils build_push_image) first, it creates the namespace
+    # keep this command (cluster build_push_image) first, it creates the namespace
 
-    istag = get_command_arg("utils build_push_image", "_istag")
+    istag = get_command_arg("cluster build_push_image", "_istag")
     try:
         run(f"oc get istag {istag} -n {namespace} -oname >/dev/null")
         has_istag = True
@@ -61,7 +61,7 @@ def local_ci_prepare():
         has_istag = False
 
     if not has_istag:
-        run("./run_toolbox.py from_config utils build_push_image")
+        run("./run_toolbox.py from_config cluster build_push_image")
 
     #
     # Prepare the ServiceAccount
