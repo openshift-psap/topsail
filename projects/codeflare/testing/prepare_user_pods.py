@@ -40,18 +40,18 @@ def apply_prefer_pr():
 
 
 def prepare_base_image_container(namespace):
-    istag = config.get_command_arg("utils build_push_image --prefix base_image", "_istag")
+    istag = config.get_command_arg("cluster build_push_image --prefix base_image", "_istag")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
         logging.info(f"Image '{istag}' already exists in namespace '{namespace}'. Don't build it.")
     else:
-        run.run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
+        run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix base_image")
 
     if not config.ci_artifacts.get_config("base_image.extend.enabled"):
         logging.info("Base image extention not enabled.")
         return
 
-    run.run(f"./run_toolbox.py from_config utils build_push_image --prefix extended_image")
+    run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix extended_image")
 
 
 def compute_driver_node_requirement():

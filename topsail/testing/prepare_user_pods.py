@@ -44,28 +44,28 @@ def apply_prefer_pr(pr_number=None):
 
 
 def prepare_base_image_container(namespace):
-    istag = config.get_command_arg("utils build_push_image --prefix base_image", "_istag")
+    istag = config.get_command_arg("cluster build_push_image --prefix base_image", "_istag")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
         logging.info(f"Image '{istag}' already exists in namespace '{namespace}'. Don't build it.")
     else:
-        run.run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
+        run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix base_image")
 
     if not config.ci_artifacts.get_config("base_image.extend.enabled"):
         logging.info("Base image extention not enabled.")
         return
 
-    run.run(f"./run_toolbox.py from_config utils build_push_image --prefix extended_image")
+    run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix extended_image")
 
 
 def rebuild_driver_image(namespace, pr_number):
     apply_prefer_pr(pr_number)
 
-    istag = config.get_command_arg("utils build_push_image --prefix base_image", "_istag")
+    istag = config.get_command_arg("cluster build_push_image --prefix base_image", "_istag")
 
     run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
     if config.ci_artifacts.get_config("base_image.extend.enabled"):
-        istag = config.get_command_arg("utils build_push_image --prefix extended_image", "_istag")
+        istag = config.get_command_arg("cluster build_push_image --prefix extended_image", "_istag")
         run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
 
     prepare_base_image_container(namespace)

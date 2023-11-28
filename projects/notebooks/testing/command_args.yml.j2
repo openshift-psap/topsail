@@ -91,7 +91,7 @@ sutest/cluster set_project_annotation/toleration:
   value: '[{"operator": "Exists", "effect": "{{ clusters.sutest.compute.machineset.taint.effect }}", "key": "{{ clusters.sutest.compute.machineset.taint.key }}"}]'
   all: true
 
-utils build_push_image/artifacts-exporter:
+cluster build_push_image/artifacts-exporter:
   namespace: {{ tests.notebooks.namespace }}
   dockerfile_path: projects/notebooks/testing/images/Containerfile.s3_artifacts_exporter
 {% set artifacts_exporter_tag = "artifacts-exporter" %}
@@ -104,7 +104,7 @@ cluster preload_image/artifacts-exporter:
   image: {{ scale_test_imagestream }}:{{ artifacts_exporter_tag }}
   <<: *driver_preload_image
 
-utils build_push_image/ods-ci:
+cluster build_push_image/ods-ci:
   namespace: {{ tests.notebooks.namespace }}
   git_repo: {{ tests.notebooks.ods_ci.image.repo }}
   git_ref: {{ tests.notebooks.ods_ci.image.ref }}

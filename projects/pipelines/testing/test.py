@@ -239,12 +239,12 @@ def prepare_test_driver_namespace():
 
     apply_prefer_pr()
 
-    istag = config.get_command_arg("utils build_push_image --prefix base_image", "_istag")
+    istag = config.get_command_arg("cluster build_push_image --prefix base_image", "_istag")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
         logging.info(f"Image {istag} already exists in namespace {namespace}. Don't build it.")
     else:
-        run.run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
+        run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix base_image")
 
     #
     # Deploy Redis server for Pod startup synchronization

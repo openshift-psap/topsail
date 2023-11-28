@@ -70,7 +70,7 @@ pipelines capture_state:
   namespace: {{ rhods.pipelines.namespace }}
   dsp_application_name: {{ rhods.pipelines.application.name }}
 
-base_image/utils build_push_image:
+base_image/cluster build_push_image:
   namespace: "{{ base_image.namespace }}"
   image_local_name: "{{ base_image.imagestream }}"
   tag: "{{ base_image.repo.tag }}"

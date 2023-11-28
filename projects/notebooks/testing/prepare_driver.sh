@@ -5,7 +5,7 @@ driver_build_and_preload_image() {
 
     # this command may fail when the ImageStream operator isn't 100% ready
     process_ctrl::retry 5 30s \
-                        ./run_toolbox.py from_config utils build_push_image \
+                        ./run_toolbox.py from_config cluster build_push_image \
                         --suffix "$suffix"
 
     if test_config clusters.driver.compute.autoscaling.enabled; then

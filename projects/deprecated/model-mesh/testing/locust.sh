@@ -69,12 +69,12 @@ prepare_driver_cluster() {
     oc create namespace "$loadtest_namespace" -oyaml --dry-run=client | oc apply -f-
 
     build_and_preload_artifacts_exporter_image() {
-        ./run_toolbox.py from_config utils build_push_image --suffix artifacts-exporter
+        ./run_toolbox.py from_config cluster build_push_image --suffix artifacts-exporter
         ./run_toolbox.py from_config cluster preload_image --suffix artifacts-exporter
     }
 
     build_and_preload_api_scale_test_image() {
-        ./run_toolbox.py from_config utils build_push_image --suffix locust-scale-test
+        ./run_toolbox.py from_config cluster build_push_image --suffix locust-scale-test
         ./run_toolbox.py from_config cluster preload_image --suffix locust-scale-test
     }
 
