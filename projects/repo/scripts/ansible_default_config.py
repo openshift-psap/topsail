@@ -6,6 +6,9 @@ import logging
 import fire.inspectutils
 import fire.docstrings
 
+SCRIPT_THIS_DIR = pathlib.Path(__file__).absolute().parent
+PROJECT_DIR = SCRIPT_THIS_DIR.parent
+TOPSAIL_DIR = SCRIPT_THIS_DIR.parent.parent.parent
 
 def _generate_config(component):
     if not hasattr(component, "ansible_role"):
@@ -33,15 +36,9 @@ def _generate_config(component):
     for arg in doc.args or {}:
         args[arg.name] = arg
 
+    roles_dir = pathlib.Path(component.__module__.replace(".", "/")).parent.parent / "roles"
 
-    if component.__module__.startswith("projects"):
-        roles_dir = pathlib.Path(component.__module__.replace(".", "/")).parent.parent / "roles"
-    else:
-        # old directory, for retro-compatibility
-        classname = component.__qualname__.partition(".")[0].lower()
-        roles_dir = dest = pathlib.Path("roles") / classname
-
-    dest = roles_dir / component.ansible_role / "defaults" / "main" / "config.yml"
+    dest = TOPSAIL_DIR / roles_dir / component.ansible_role / "defaults" / "main" / "config.yml"
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     print(f"{component.__qualname__}\n- generating {dest} ...\n")
