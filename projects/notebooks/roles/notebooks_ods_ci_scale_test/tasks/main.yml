@@ -78,7 +78,7 @@
     # We'll have to find another way to distinguish RHODS from ODH, this doesn't work anymore:
     # oc -c rhods-dashboard -n redhat-ods-applications -n redhat-ods-applications rsh deploy/rhods-dashboard bash -c "echo ${ODH_PRODUCT_NAME:-Open Data Hub}"
     command:
-      echo "Red Hat OpenShift Data Science"
+      echo "Red Hat OpenShift AI"
     register: rhods_dashboard_product_name
 
   - name: Get the image name description
