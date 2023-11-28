@@ -10,90 +10,136 @@ import subprocess
 import pathlib
 import itertools
 import shlex
+import logging
+logging.getLogger().setLevel(logging.INFO)
 
-THIS_DIR = pathlib.Path(__file__).absolute().parent
-TOP_DIR = THIS_DIR.parent.parent
-# go to top directory
-os.chdir(TOP_DIR)
+SCRIPT_THIS_DIR = pathlib.Path(__file__).absolute().parent
+TOPSAIL_DIR = SCRIPT_THIS_DIR.parent.parent.parent
 
-ROLES_VARS_GLOB = "roles/*/vars/*/*"
-ROLES_DEFAULTS_GLOB = "roles/*/defaults/*/*"
+TOPSAIL_ROLES_GLOB = "projects/*/roles/*"
 
-def validate_role_vars_used(filename, yaml_doc):
-    errors = 0
+ROLE_VARS_GLOB = "vars/*/*"
+ROLE_DEFAULTS_GLOB = "defaults/*/*"
 
-    # filename.parts[len(TOP_DIR.parts)] is 'roles'
-    role_name = filename.parts[len(TOP_DIR.parts)+1]
+def validate_role_vars_used(dirname, filename, yaml_doc):
+    errors = []
+    messages = []
+    # filename.parts[len(TOPDIR_DIR.parts)] is 'roles'
+    successes = 0
+    role_name = dirname.name
     for key in yaml_doc:
-        grep_command = ["grep", key,
-                        str(pathlib.Path("roles") / role_name),
-                        "--dereference-recursive",
-                        ]
+
+        grep_command = ["grep", key, dirname,
+                        "--dereference-recursive"]
+
         proc = subprocess.run(grep_command, capture_output=True)
 
         if proc.returncode != 0:
-            print("DEBUG:", shlex.join(grep_command))
+            logging.debug(str(shlex.join(grep_command)))
             # grep should always find 'key' inside 'filename',
             # I couldn't find how to exclude one specific file with
             # grep options....
-            print(proc.stderr)
-            print("ERROR: grep shouldn't have failed ...")
+            logging.info(str(proc.stderr))
+            logging.fatal("grep shouldn't have failed ...")
             proc.check_returncode() # raises a subprocess.CalledProcessError
 
         count = len(proc.stdout.decode('utf-8').splitlines())
         count -= 1 # exclude 'key' found inside 'filename'
         if count == 0:
-            print(f"ERROR: '{key}' not used in role '{role_name}'")
-            errors += 1
+            errors.append(f"'{key}' not used in role '{role_name}'")
             continue
 
-        # key is used, nothing to do
+        successes += 1
 
-    return errors
+    return errors, messages, successes
 
-def traverse_role_vars_defaults():
+
+def traverse_files(dirname):
+    logging.debug(f"Searching for unused variables in '{dirname}'")
+
     errors = 0
-    for filename in itertools.chain(TOP_DIR.glob(ROLES_VARS_GLOB), TOP_DIR.glob(ROLES_DEFAULTS_GLOB)):
-        msg = ["", f"### {filename.relative_to(TOP_DIR)}"]
+    successes = 0
 
-        if filename.is_symlink():
-            msg.append(f"--> is a symlink, don't check.")
-            continue
+    for filename in itertools.chain(dirname.glob(ROLE_VARS_GLOB), dirname.glob(ROLE_DEFAULTS_GLOB)):
+        successes += 1
 
         with open(filename) as f:
             try:
                 yaml_doc = yaml.safe_load(f)
             except yaml.YAMLError as e:
-                msg.append(f"--> invalid YAML file ({e})")
+                logging.warning(f"{filename} --> invalid YAML file ({e})")
                 continue
+            except Exception as e:
+                logging.warning(f"{filename} --> invalid YAML file ({e})")
+                errors += 1
 
         if yaml_doc is None:
-            msg.append(f"--> empty file")
+            continue
+            logging.warning(f"{filename} --> empty file)")
             continue
 
-        file_errors = validate_role_vars_used(filename, yaml_doc)
-        errors += file_errors
 
-        msg.append(f"--> found {file_errors} error{'s' if file_errors > 1 else ''} in {filename.relative_to(TOP_DIR)}")
+        dirname = filename.parent
+        while dirname.name not in ("vars", "defaults"):
+            dirname = dirname.parent
+        dirname = dirname.parent
+
+        file_errors, messages, succ = validate_role_vars_used(dirname, filename, yaml_doc)
+        errors += len(file_errors)
+        successes += succ
+
+        if not file_errors and not messages:
+            continue
+
+        logging.info(f"### {filename.relative_to(TOPSAIL_DIR)}")
+
+        for msg in file_errors:
+            logging.error(msg)
         if file_errors:
-            print("\n".join(msg))
+            logging.warning(f"--> found {len(file_errors)} error{'s' if len(file_errors) > 1 else ''} in {filename.relative_to(TOPSAIL_DIR)}")
+        for msg in messages:
+            logging.info(msg)
 
-    return errors
+        logging.info("\n")
+
+    return errors, successes
+
+
+def traverse_roles():
+    errors = 0
+    successes = 0
+    for dirname in TOPSAIL_DIR.glob(TOPSAIL_ROLES_GLOB):
+        logging.debug("")
+        err, succ = traverse_files(dirname)
+
+        errors += err
+        successes += succ
+
+    return errors, successes
+
 
 def main():
     if "-h" in sys.argv or "--help" in sys.argv:
-        print("""\
+        logging.info("""\
 This script ensures that all the Ansible variables defined are
 actually used in their role (with an exception for symlinks)""")
         return 0
 
-    print(f"INFO: Searching for used variables in '{ROLES_VARS_GLOB}'")
-    errors = traverse_role_vars_defaults()
+    errors, successes = traverse_roles()
 
-    print()
-    print(f"{'ERROR' if errors else 'INFO'}: found {errors} unused variable{'s' if errors > 1 else ''}")
+    logging.debug("")
+    if errors:
+        logging.fatal(f"Found {errors} unused variable{'s' if errors > 1 else ''}")
+        return 1
 
-    return 1 if errors else 0
+    if successes == 0:
+        logging.fatal(f"Didn't traverse any file :/")
+        return 1
+
+    logging.info(f"{successes} files have been validated.")
+    logging.info("All good :)")
+    return 0
+
 
 if __name__ == "__main__":
     exit(main())
