@@ -172,9 +172,9 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
 
         if not dry_mode:
             if capture_prom:
-                run.run("./run_toolbox.py cluster reset_prometheus_db > /dev/null")
+                run.run_toolbox("cluster", "reset_prometheus_db", mute_stdout=True)
 
-            run.run(f"./run_toolbox.py from_config codeflare cleanup_appwrappers")
+            run.run_toolbox_from_config("codeflare", "cleanup_appwrappers")
 
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test"):
@@ -212,7 +212,7 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
                 return
 
             try:
-                run.run(f"./run_toolbox.py from_config codeflare generate_mcad_load --extra \"{extra}\"")
+                run.run_toolbox_from_config("codeflare", "generate_mcad_load", extra=extra)
             except Exception as e:
                 failed = True
                 logging.error(f"*** Caught an exception during generate_mcad_load({name}): {e.__class__.__name__}: {e}")
@@ -223,20 +223,20 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
 
             if not dry_mode:
                 try:
-                    run.run(f"./run_toolbox.py from_config codeflare cleanup_appwrappers")
+                    run.run_toolbox_from_config("codeflare", "cleanup_appwrappers")
                 except Exception as e:
                     logging.error(f"*** Caught an exception during cleanup_appwrappers({name}): {e.__class__.__name__}: {e}")
                     failed = True
 
                 if capture_prom:
                     try:
-                        run.run("./run_toolbox.py cluster dump_prometheus_db >/dev/null")
+                        run.run_toolbox("cluster", "dump_prometheus_db", mute_stdout=True)
                     except Exception as e:
                         logging.error(f"*** Caught an exception during dump_prometheus_db({name}): {e.__class__.__name__}: {e}")
                         failed = True
 
                 # must be part of the test directory
-                run.run("./run_toolbox.py cluster capture_environment >/dev/null")
+                run.run_toolbox("cluster capture_environment >/dev/null")
 
     logging.info(f"_run_test: Test '{name}' {'failed' if failed else 'passed'}.")
 

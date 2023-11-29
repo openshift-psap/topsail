@@ -20,7 +20,8 @@ def prepare():
 
     prepare_user_namespace()
 
-    run.run("./run_toolbox.py from_config cluster preload_image --prefix sutest --suffix sdk_user")
+    run.run_toolbox_from_config("cluster preload_image", prefix="sutest", suffix="sdk_user")
+
 
 def cleanup_cluster():
     """
@@ -49,7 +50,7 @@ def prepare_sutest_scale_up():
     extra = {}
     extra["scale"] = node_count
 
-    run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest --extra \"{extra}\"")
+    run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest", extra=extra)
 
 
 def prepare_user_namespace():
@@ -64,5 +65,5 @@ def prepare_user_namespace():
     dedicated = "{}" if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix user_sdk_node_selector --extra '{dedicated}' >  /dev/null")
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix user_sdk_toleration --extra '{dedicated}' > /dev/null")
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="user_sdk_node_selector", extra=extra, mute_stdout=True)
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="user_sdk_toleration", extra=dedicated, mute_stdout=True)

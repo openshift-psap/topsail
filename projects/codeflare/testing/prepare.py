@@ -26,9 +26,9 @@ def prepare_worker_node_labels():
 
 
 def prepare_gpu_operator():
-    run.run("./run_toolbox.py nfd_operator deploy_from_operatorhub")
-    run.run("./run_toolbox.py gpu_operator deploy_from_operatorhub")
-    run.run("./run_toolbox.py from_config gpu_operator enable_time_sharing")
+    run.run_toolbox("nfd_operator", "deploy_from_operatorhub")
+    run.run_toolbox("gpu_operator", "deploy_from_operatorhub")
+    run.run_toolbox_from_config("gpu_operator", "enable_time_sharing")
 
 
 def cleanup_gpu_operator():
@@ -50,13 +50,13 @@ def prepare_test_nodes(name, cfg, dry_mode):
         logging.info(f"dry_mode: scale up the cluster for the test '{name}': {extra} ")
         return
 
-    run.run(f"./run_toolbox.py from_config cluster set_scale --extra \"{extra}\"")
+    run.run_toolbox_from_config("cluster", "set_scale", extra=extra)
 
     if cfg["node"].get("wait_gpus", True):
         if not config.ci_artifacts.get_config("tests.want_gpu"):
             logging.error("Cannot wait for GPUs when tests.want_gpu is disabled ...")
         else:
-            run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
+            run.run_toolbox("gpu_operator", "wait_stack_deployed")
 
 
 def prepare_odh():
@@ -68,7 +68,7 @@ def prepare_odh():
         (env.ARTIFACT_DIR / "ODH_PROJECT_ALREADY_EXISTS").touch()
 
     for operator in config.ci_artifacts.get_config("odh.operators"):
-        run.run(f"./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
+        run.run_toolbox("cluster", "deploy_operator", catalog=operator['catalog'], manifest_name=operator['name'], namespace=operator['namespace'], artifact_dir_suffix=operator['catalog'])
 
     for resource in config.ci_artifacts.get_config("odh.kfdefs"):
         if not resource.startswith("http"):
