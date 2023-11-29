@@ -11,7 +11,7 @@ import inspect
 import shutil
 import shlex
 
-top_dir = Path(__file__).resolve().parent.parent
+TOPSAIL_DIR = Path(__file__).resolve().parent.parent
 
 def AnsibleRole(role_name):
     def decorator(fct):
@@ -163,16 +163,14 @@ class RunAnsibleRole:
         Path(env["ANSIBLE_CACHE_PLUGIN_CONNECTION"]).parent.mkdir(parents=True, exist_ok=True)
 
         # We configure the roles path dynamically appending them to the defaults
-        top_dir_roles = top_dir / "roles"
-        top_dir_roles_list = []
+        topsail_roles_list = []
 
         if current_roles_path := env.get("ANSIBLE_ROLES_PATH"):
-            top_dir_roles_list += [current_roles_path]
+            topsail_roles_list += [current_roles_path]
 
-        top_dir_roles_list += [str(entry) for entry in top_dir_roles.glob('*') if entry.is_dir()]
-        top_dir_roles_list += [str(entry) for entry in (top_dir / "projects").glob("*/roles")]
+        topsail_roles_list += [str(entry) for entry in (TOPSAIL_DIR / "projects").glob("*/roles")]
 
-        env["ANSIBLE_ROLES_PATH"] = os.pathsep.join(top_dir_roles_list)
+        env["ANSIBLE_ROLES_PATH"] = os.pathsep.join(topsail_roles_list)
         self.ansible_vars["roles_path"] = env["ANSIBLE_ROLES_PATH"]
 
         # We configure the collections path dynamically
@@ -187,7 +185,7 @@ class RunAnsibleRole:
         self.ansible_vars["collections_paths"] = env["ANSIBLE_COLLECTIONS_PATHS"]
 
         if env.get("ANSIBLE_CONFIG") is None:
-            env["ANSIBLE_CONFIG"] = str(top_dir / "config" / "ansible.cfg")
+            env["ANSIBLE_CONFIG"] = str(TOPSAIL_DIR / "config" / "ansible.cfg")
         print(f"Using '{env['ANSIBLE_CONFIG']}' as ansible configuration file.")
 
         if env.get("ANSIBLE_JSON_TO_LOGFILE") is None:
