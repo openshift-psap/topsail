@@ -86,7 +86,7 @@ driver/cluster set_project_annotation/test_toleration:
   value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.driver.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.driver.compute.machineset.taint.key }}\"}]'
   project: {{ base_image.namespace }}
 
-base_image/utils build_push_image:
+base_image/cluster build_push_image:
   namespace: "{{ base_image.namespace }}"
   image_local_name: "{{ base_image.imagestream }}"
   tag: "{{ base_image.repo.tag }}"
@@ -96,7 +96,7 @@ base_image/utils build_push_image:
   git_ref: "{{ base_image.repo.ref }}" # may be overwritten at runtime with the PR ref
   dockerfile_path: "{{ base_image.repo.dockerfile_path }}"
 
-extended_image/utils build_push_image:
+extended_image/cluster build_push_image:
   namespace: "{{ base_image.namespace }}"
   image_local_name: "{{ base_image.imagestream }}"
   tag: "{{ base_image.extend.tag }}"
@@ -160,9 +160,6 @@ local_ci run_multi/scale:
 kserve deploy_model:
   namespace: {{ tests.scale.namespace.name }}
   sa_name: {{ kserve.sa_name }}
-
-  model_id: {{ tests.scale.model.id }}
-  model_name: {{ tests.scale.model.full_name }}
 
   serving_runtime_name: {{ tests.scale.model.name }}
 

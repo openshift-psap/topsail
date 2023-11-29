@@ -1,0 +1,2 @@
+---
+cluster_preload_image_ds_template: templates/daemonset.yaml.j2

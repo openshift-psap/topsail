@@ -65,9 +65,6 @@ def prepare_ci():
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode in ("scale", "e2e"):
         prepare_scale.prepare()
-    elif test_mode == "kubemark":
-        run.run("./run_toolbox.py cluster deploy_kubemark_capi_provider")
-        run.run("./run_toolbox.py cluster deploy_kubemark_nodes")
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
@@ -79,9 +76,6 @@ def test_ci():
     """
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode == "kubemark":
-        run.run("echo hello world")
-        return
 
     do_visualize = config.ci_artifacts.get_config("tests.visualize")
 

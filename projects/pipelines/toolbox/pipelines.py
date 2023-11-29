@@ -2,9 +2,6 @@ import sys
 
 from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
 
-from topsail import local_ci
-
-
 class Pipelines:
     """
     Commands relating to RHODS

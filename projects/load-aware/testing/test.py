@@ -74,8 +74,8 @@ def prepare_ci():
 
     run.run("./run_toolbox.py cluster deploy_kepler")
 
-    run.run("./run_toolbox.py from_config utils build_push_image --suffix deps")
-    run.run("./run_toolbox.py from_config utils build_push_image --suffix make")
+    run.run("./run_toolbox.py from_config cluster build_push_image --suffix deps")
+    run.run("./run_toolbox.py from_config cluster build_push_image --suffix make")
     run.run("./run_toolbox.py from_config cluster preload_image --suffix deps")
     run.run("./run_toolbox.py from_config cluster preload_image --suffix make")
     run.run("./run_toolbox.py from_config cluster preload_image --suffix sleep") # preloads ubi8

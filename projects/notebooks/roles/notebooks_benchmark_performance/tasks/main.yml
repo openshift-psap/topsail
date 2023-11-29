@@ -50,7 +50,7 @@
 
 - name: Define the test environment
   set_fact:
-    notebook_name: notebook-performance
+    notebook_name: "{{ notebooks_benchmark_performance_namespace }}"
     notebook_namespace: "rhods-notebooks"
     notebook_src_template_dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook.yaml"
     notebook_file_cm_name: rhods-notebook-files

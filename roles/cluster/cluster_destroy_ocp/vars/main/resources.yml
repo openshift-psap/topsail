@@ -1,1 +1,0 @@
-cluster_destroy_ocp_metadata_json: roles/cluster/cluster_destroy_ocp/templates/metadata.json.j2

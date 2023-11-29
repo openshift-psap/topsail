@@ -13,5 +13,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install dependencies
+        run: |
+          python3 -m pip install fire pyyaml
+
       - name: Check that there is no WIP commit in the PR
-        run: bash topsail/repo_scripts/validate_no_wip.sh
+        run: |
+          ./run_toolbox.py repo validate_no_wip

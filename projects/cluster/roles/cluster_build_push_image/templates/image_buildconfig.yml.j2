@@ -1,0 +1,46 @@
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: ci-artifacts
+  name: {{ cluster_build_push_image_image_local_name }}-{{ cluster_build_push_image_tag }}
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: {{ cluster_build_push_image_image_local_name }}:{{ cluster_build_push_image_tag }}
+{% if cluster_build_push_image_memory|length %}
+  resources:
+    requests:
+      memory: {{ cluster_build_push_image_memory }}Gi
+{% endif %}
+
+  source:
+{% if cluster_build_push_image_git_repo|length %}
+    type: Git
+    git:
+      uri: {{ cluster_build_push_image_git_repo }}
+      ref: {{ cluster_build_push_image_git_ref }}
+    contextDir: {{ cluster_build_push_image_context_dir }}
+{% elif dockerfile_content_cmd.stdout|length %}
+    dockerfile: |
+{{ dockerfile_content_cmd.stdout | indent(6, True) }}
+{% endif %}
+  strategy:
+    type: Docker
+    dockerStrategy:
+{% if cluster_build_push_image_dockerfile_path and cluster_build_push_image_git_repo %}
+      dockerfilePath: {{ cluster_build_push_image_dockerfile_path }}
+{% endif %}
+{% if cluster_build_push_image_from_image %}
+      from:
+        kind: DockerImage
+        name: {{ cluster_build_push_image_from_image }}
+{% elif cluster_build_push_image_from_imagetag %}
+      from:
+        kind: ImageStreamTag
+        name: {{ cluster_build_push_image_from_imagetag }}
+{% endif %}
+  triggers:
+    - type: ConfigChange

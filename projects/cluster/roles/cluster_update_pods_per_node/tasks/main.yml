@@ -1,0 +1,59 @@
+---
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Get the list of machineconfigpools matching the label
+  command:
+    oc get -oname machineconfigpools "-l{{ cluster_update_pods_per_node_label }}={{ cluster_update_pods_per_node_label_value }}"
+  register: old_machineconfigpools_list
+  failed_when: not old_machineconfigpools_list.stdout
+
+- name: Instantiate the KubeletConfig template
+  template:
+    src: "{{ kubelet_config_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/kubeletconfig.yaml"
+    mode: '0600'
+
+- name: Create the KubeletConfig resource
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/kubeletconfig.yaml"
+
+- name: Wait for the list of machineconfigpools to be updated
+  command:
+    oc get -oname machineconfigpools "-l{{ cluster_update_pods_per_node_label }}={{ cluster_update_pods_per_node_label_value }}"
+  register: new_machineconfigpools_list
+  until: new_machineconfigpools_list.stdout != old_machineconfigpools_list.stdout
+  retries: 10
+  delay: 10
+
+- name: Wait for the new machineconfigpools to be all updated and capture artifacts
+  block:
+  - name: Wait for the new machineconfigpools to be all updated
+    shell:
+      set -o pipefail;
+
+      oc get machineconfigpools
+         "-l{{ cluster_update_pods_per_node_label }}={{ cluster_update_pods_per_node_label_value }}"
+         -o json
+       | jq '.items[] | .metadata.name + " --> " + (.status.unavailableMachineCount|tostring)'
+       | grep -v -- '--> 0' || true
+
+    register: has_machineconfigpools_unavailable
+    until: not has_machineconfigpools_unavailable.stdout
+    failed_when: has_machineconfigpools_unavailable.stdout_lines | length > 0
+    retries: 40
+    delay: 30
+  always:
+  - name: Get the maximum number of Pods per node
+    command:
+      oc get nodes -ojson | jq '.items[] | .metadata.name + "--> " + (.status.allocatable.pods|tostring) + "Pods per Node"' -r
+      oc get nodes -ojsonpath={.items[].status.allocatable.pods}

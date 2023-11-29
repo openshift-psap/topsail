@@ -1,0 +1,4 @@
+---
+cluster_deploy_operator_res_ns: templates/namespace.yml.j2
+cluster_deploy_operator_res_group: templates/operator_group.yml.j2
+cluster_deploy_operator_res_sub: templates/subscription.yml.j2

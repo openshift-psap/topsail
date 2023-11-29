@@ -140,8 +140,8 @@ run_test() {
     fi
 
     switch_sutest_cluster
-    if ! ./run_toolbox.py rhods capture_state > /dev/null; then
-        _warning "rhods capture state failed :("
+    if ! ./run_toolbox.py notebooks capture_state > /dev/null; then
+        _warning "rhods notebooks state failed :("
         failed=1
     fi
 

@@ -239,12 +239,12 @@ def prepare_test_driver_namespace():
 
     apply_prefer_pr()
 
-    istag = config.get_command_arg("utils build_push_image --prefix base_image", "_istag")
+    istag = config.get_command_arg("cluster build_push_image --prefix base_image", "_istag")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
         logging.info(f"Image {istag} already exists in namespace {namespace}. Don't build it.")
     else:
-        run.run(f"./run_toolbox.py from_config utils build_push_image --prefix base_image")
+        run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix base_image")
 
     #
     # Deploy Redis server for Pod startup synchronization
@@ -368,7 +368,7 @@ def _pipelines_run_many(test_artifact_dir_p):
                 with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                     print("1" if failed else "0", file=f)
 
-                run.run(f"./run_toolbox.py rhods capture_state > /dev/null", check=False)
+                run.run(f"./run_toolbox.py notebooks capture_state > /dev/null", check=False)
 
     finally:
         run.run(f"./run_toolbox.py cluster capture_environment > /dev/null", check=False)

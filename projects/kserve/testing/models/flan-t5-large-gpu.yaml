@@ -1,6 +1,5 @@
 extends: base
 id: flan-t5-large
-full_name: google/flan-t5-large
 secret_key: flan-t5-large
 
 serving_runtime:

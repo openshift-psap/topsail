@@ -124,7 +124,7 @@ def run_ci():
     protos_path=config.ci_artifacts.get_config("tests.config.protos_path")
     print(f"Protos path: {protos_path}")
 
-    run.run(f"./run_toolbox.py utils build_push_image --namespace='{test_namespace}'  --git_repo='https://github.com/openshift-psap/llm-load-test.git' --git_ref='main' --dockerfile_path='build/Containerfile' --image_local_name='{tester_imagestream_name}' --tag='{tester_image_tag}'  --")
+    run.run(f"./run_toolbox.py cluster build_push_image --namespace='{test_namespace}'  --git_repo='https://github.com/openshift-psap/llm-load-test.git' --git_ref='main' --dockerfile_path='build/Containerfile' --image_local_name='{tester_imagestream_name}' --tag='{tester_image_tag}'  --")
 
     max_replicas = max_gpu_nodes()
     run.run(f"./run_toolbox.py cluster set_scale g5.2xlarge {max_replicas}")

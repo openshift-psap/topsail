@@ -1,0 +1,1 @@
+cluster_destroy_ocp_metadata_json: templates/metadata.json.j2

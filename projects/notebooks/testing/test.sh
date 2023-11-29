@@ -138,11 +138,10 @@ apply_presets_from_args() {
 }
 
 check_failure_flag() {
-    if find -type f -name FAILURE -exec false {} +; then
+    if find "$ARTIFACT_DIR" -type f -name FAILURE -exec false {} +; then
         echo "No failure detected"
         exit 0
     fi
-
 
     echo "FATAL: failure detected, aborting :/"
     exit 1

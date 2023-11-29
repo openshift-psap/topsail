@@ -1,0 +1,2 @@
+---
+config_map_template: templates/configmap.yaml.j2

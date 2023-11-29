@@ -197,14 +197,12 @@ def run_one_test(namespace, job_index):
 
     models_per_namespace = config.ci_artifacts.get_config("tests.scale.model.replicas")
     inference_service_basename = config.ci_artifacts.get_config("tests.scale.model.name")
-    model_name = config.ci_artifacts.get_config("tests.scale.model.full_name")
     all_inference_service_names = []
     for model_idx in range(models_per_namespace):
         inference_service_name = f"u{job_index}-m{model_idx}"
 
         extra = dict(
             inference_service_name=inference_service_name,
-            model_name=model_name,
         )
 
         run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{inference_service_name} ./run_toolbox.py from_config kserve deploy_model --extra \"{extra}\"")
