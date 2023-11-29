@@ -47,7 +47,7 @@ def ignore_file_not_found(fn):
 
 def _parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
-    pass
+    results.test_config = _parse_test_config(dirname)
 
 
 def _parse_once(results, dirname):
