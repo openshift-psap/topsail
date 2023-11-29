@@ -13,12 +13,12 @@ import re
 import yaml
 import fire
 
-from topsail.common import env, config, run, rhods, visualize
+from topsail.testing import env, config, run, rhods, visualize
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-TESTING_UTILS_DIR = TESTING_PIPELINES_DIR.parent / "utils"
+TESTING_UTILS_DIR = TESTING_THIS_DIR.parent / "utils"
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
