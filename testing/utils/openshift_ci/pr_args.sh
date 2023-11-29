@@ -30,7 +30,7 @@ PR_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PULL_NUMBER"
 PR_COMMENTS_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PULL_NUMBER/comments"
 
 if [[ "${TEST_NAME:-}" ]]; then
-    test_name=$TEST_NAME
+    test_name="$TEST_NAME"
 
 elif [[ "${OPENSHIFT_CI:-}" == true ]]; then
     JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-${PULL_BASE_REF}
@@ -45,6 +45,8 @@ else
     echo "ERROR: not running in OpenShift CI and TEST_NAME not defined." >&2
     exit 1
 fi
+
+test_anchor="/test $test_name"
 
 echo "PR URL: $PR_URL" >&2
 if [[ "${OPENSHIFT_CI:-}" == true ]]; then
@@ -90,24 +92,27 @@ fi
 echo "PR comments URL: $PR_COMMENTS_URL" >&2
 last_user_test_comment=$(echo "$last_comment_page_json" \
                              | jq '.[] | select(.user.login == "'$pr_author'") | .body' \
-                             | (grep "$test_name" || true) \
+                             | (grep "$test_anchor" || true) \
                              | tail -1 | jq -r)
 
 if [[ -z "$last_user_test_comment" ]]; then
-    echo "WARNING: last comment of author '$pr_author' could not be found (searching for '$test_name') ..." >&2
+    echo "WARNING: last comment of author '$pr_author' could not be found (searching for '$test_anchor') ..." >&2
+    exit 1
 fi
 
 pos_args=$(echo "$last_user_test_comment" |
-               (grep "$test_name" || true) | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
+               (grep "$test_anchor" || true) | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
 if [[ "$pos_args" ]]; then
     echo "PR_POSITIONAL_ARGS=$pos_args" >> "$DEST"
+    echo "PR_POSITIONAL_ARG_0=$test_name" >> "$DEST"
     i=1
     for pos_arg in $pos_args; do
         echo "PR_POSITIONAL_ARG_$i=$pos_arg" >> "$DEST"
         i=$((i + 1))
     done
+else
+    echo "PR_POSITIONAL_ARG_0=$test_name" >> "$DEST"
 fi
-echo "PR_POSITIONAL_ARG_0=$test_name" >> "$DEST"
 
 while read line; do
     [[ $line != "/var "* ]] && continue
