@@ -21,31 +21,35 @@
        -n "{{ rhods_delete_ods_namespace }}"
   when: has_rhods_operator_cmd.stdout and rhods_operator_replicas_cmd.stdout == "0"
 
-- name: Wait for the operand namespaces to disappear
-  include_tasks: delete_ns.yaml
+- name: Wait for the resources to disappear
+  include_tasks: delete_resources.yaml
   loop:
-  - datasciencepipelinesapplication
+  - DataSciencePipelinesApplication
   - InferenceServices
   - ServingRuntime
-  - ServiceMeshMembers
 
-- name: Ensure that the operator is not running
-  command:
-    oc scale deploy/rhods-operator
-       --replicas=0
-       -n "{{ rhods_delete_ods_namespace }}"
-  when: has_rhods_operator_cmd.stdout
 
-- name: Wait for the operator pod to disappear
+- name: Get all the ODH/Kubeflow CRDs
+  shell:
+    set -o pipefail;
+    oc get crd -oname | grep -E 'opendatahub.io|kubeflow.org' | cut -d/ -f2
+  register: crd_names_cmd
+
+- name: Delete all the CR {{ item }}
   command:
-    oc get pods -lname=rhods-operator
-       --no-headers
-       -n "{{ rhods_delete_ods_namespace }}"
-  register: has_rhods_operator_pod_cmd
-  until: not has_rhods_operator_pod_cmd.stdout
-  failed_when: has_rhods_operator_pod_cmd.stdout
-  retries: 10
-  delay: 10
+    oc delete --all "{{ item }}"
+       --ignore-not-found
+       --timeout=300s
+  loop: "{{ crd_names_cmd.stdout_lines }}"
+
+- name: Delete the Dashboard OAuth client
+  command:
+    oc delete oauthclient.oauth.openshift.io dashboard-oauth-client --ignore-not-found
+
+- name: Delete the operator namespace
+  command:
+    oc delete ns "{{ rhods_delete_ods_namespace }}"
+       --ignore-not-found
 
 - name: Wait for the operand namespaces to disappear
   include_tasks: delete_ns.yaml
@@ -53,22 +57,6 @@
   - redhat-ods-applications
   - redhat-ods-monitoring
   - rhods-notebooks
-
-- name: Delete the operator namespace
-  command:
-    oc delete ns "{{ rhods_delete_ods_namespace }}"
-       --ignore-not-found
-
-- name: Delete all the following CRDs {{ item }}
-  shell: |
-    set -o pipefail;
-    CRDs=$(oc get crd -oname | grep {{ item }})
-    if [[ "$CRDs" ]]; then
-      oc delete $CRDs --ignore-not-found
-    fi
-  loop:
-  - opendatahub.io
-  - kubeflow.org
 
 - name: Delete the RHODS ClusterRoleBindings and ClusterRole
   shell: |
@@ -85,6 +73,7 @@
       oc delete $cr
     fi
 
-- name: Delete the Dashboard OAuth client
+- name: Delete all the CRDs {{ item }}
   command:
-    oc delete oauthclient.oauth.openshift.io dashboard-oauth-client --ignore-not-found
+    oc delete --ignore-not-found "crd/{{ item }}" --timeout=300s
+  loop: "{{ crd_names_cmd.stdout_lines }}"
