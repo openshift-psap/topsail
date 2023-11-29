@@ -2,6 +2,7 @@ import sys, os, signal
 import traceback
 import logging
 logging.getLogger().setLevel(logging.INFO)
+import json
 
 import subprocess
 
@@ -9,9 +10,58 @@ import joblib
 
 from . import env
 
-# create new process group, become its leader, except if we're already pid 1 (defactor group leader, setpgrp gets permission denied error)
+# create new process group, become its leader, except if we're already pid 1 (defacto group leader, setpgrp gets permission denied error)
 if os.getpid() != 1:
     os.setpgrp()
+
+
+def run_toolbox_from_config(group, command, prefix=None, suffix=None, extra=dict(), artifact_dir_suffix=None, mute_stdout=False, check=True, run_kwargs=dict()):
+    kwargs = dict()
+    if prefix is not None:
+        kwargs["prefix"] = prefix
+    if suffix is not None:
+        kwargs["suffix"] = suffix
+    if extra is not None:
+        kwargs["extra"] = extra
+
+    if mute_stdout:
+        run_kwargs["capture_stdout"] = True
+
+    if check is not None:
+        run_kwargs["check"] = check
+
+    cmd_env = f'ARTIFACT_TOOLBOX_NAME_SUFFIX="{artifact_dir_suffix}" ' \
+        if artifact_dir_suffix is not None else ""
+
+    return run(f'{cmd_env}./run_toolbox.py from_config {group} {command} {_dict_to_run_toolbox_args(kwargs)}', **run_kwargs)
+
+
+def _dict_to_run_toolbox_args(args_dict):
+    args = []
+    for k, v in args_dict.items():
+        if isinstance(v, dict) or isinstance(v, list):
+            val = json.dumps(v)
+            arg = f"--{k}=\"{v}\""
+        else:
+            val = str(v).replace("'", "\'")
+            arg = f"--{k}='{v}'"
+        args.append(arg)
+
+    return " ".join(args)
+
+
+def run_toolbox(group, command, artifact_dir_suffix=None, run_kwargs=dict(), mute_stdout=None, check=None, **kwargs):
+    if mute_stdout:
+        run_kwargs["capture_stdout"] = True
+
+    if check is not None:
+        run_kwargs["check"] = check
+
+    cmd_env = f'ARTIFACT_TOOLBOX_NAME_SUFFIX="{artifact_dir_suffix}" ' \
+        if artifact_dir_suffix is not None else ""
+
+    return run(f'{cmd_env}./run_toolbox.py {group} {command} {_dict_to_run_toolbox_args(kwargs)}', **run_kwargs)
+
 
 def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None, stdin_file=None, log_command=True):
     if log_command:
