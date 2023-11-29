@@ -63,22 +63,22 @@ def prepare_ci():
     test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
     run.run(f"oc create ns {test_namespace}")
 
-    run.run("./run_toolbox.py from_config cluster set_scale --prefix='sutest'")
-    run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector")
-    run.run("./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration")
+    run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest")
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="node_selector")
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="toleration")
 
     install_ocp_pipelines()
 
-    run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
-    run.run("./run_toolbox.py from_config load_aware deploy_trimaran")
+    run.run_toolbox_from_config("cluster", "capture_environment", suffix="sample")
+    run.run_toolbox_from_config("load_aware", "deploy_trimaran")
 
-    run.run("./run_toolbox.py cluster deploy_kepler")
+    run.run_toolbox("cluster deploy_kepler")
 
-    run.run("./run_toolbox.py from_config cluster build_push_image --suffix deps")
-    run.run("./run_toolbox.py from_config cluster build_push_image --suffix make")
-    run.run("./run_toolbox.py from_config cluster preload_image --suffix deps")
-    run.run("./run_toolbox.py from_config cluster preload_image --suffix make")
-    run.run("./run_toolbox.py from_config cluster preload_image --suffix sleep") # preloads ubi8
+    run.run_toolbox_from_config("cluster", "build_push_image", suffix="deps")
+    run.run_toolbox_from_config("cluster", "build_push_image", suffix="make")
+    run.run_toolbox_from_config("cluster", "preload_image", suffix="deps")
+    run.run_toolbox_from_config("cluster", "preload_image", suffix="make")
+    run.run_toolbox_from_config("cluster", "preload_image",  suffix="sleep") # preloads ubi8
 
 def _run_test(test_artifact_dir_p, scheduler_name):
     """
@@ -98,21 +98,22 @@ def _run_test(test_artifact_dir_p, scheduler_name):
         # clean up pods from previous test
         test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
         run.run(f"oc delete pods --all -n {test_namespace} --ignore-not-found")
-        run.run("./run_toolbox.py cluster reset_prometheus_db")
+        run.run_toolbox("cluster reset_prometheus_db")
 
         failed = True
         try:
             extra = {}
             extra["scheduler"] = scheduler_name
-            run.run(f'./run_toolbox.py from_config load_aware scale_test --extra "{extra}"')
+            run.run_toolbox_from_config("load_aware", "scale_test", extra=extra)
 
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
 
-            run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
-            run.run("./run_toolbox.py cluster dump_prometheus_db")
+            run.run_toolbox_from_config("cluster", "capture_environment", suffix="sample")
+            run.run_toolbox("cluster", "dump_prometheus_db")
+
 
 @entrypoint()
 def test_ci():
@@ -164,8 +165,8 @@ def cleanup_cluster():
     logging.info("Cleaning up cluster and uninstall pipelines")
     test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
     run.run("oc delete ns {test_namespace} --ignore-not-found")
-    run.run("./run_toolbox.py load_aware undeploy_trimaran")
-    run.run("./run_toolbox.py cluster undeploy_kepler")
+    run.run_toolbox("load_aware undeploy_trimaran")
+    run.run_toolbox("cluster undeploy_kepler")
 
     uninstall_ocp_pipelines()
 
@@ -181,7 +182,7 @@ def install_ocp_pipelines():
         logging.info(f"Operator '{PIPELINES_OPERATOR_MANIFEST_NAME}' is already installed.")
         return
 
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_pipelines ./run_toolbox.py cluster deploy_operator redhat-operators {PIPELINES_OPERATOR_MANIFEST_NAME} all")
+    run.run_toolbox("cluster", "deploy_operator", catalog="redhat-operators", manifest_name=PIPELINES_OPERATOR_MANIFEST_NAME, all=True, artifact_dir_suffix="_pipelines")
 
 def uninstall_ocp_pipelines():
     installed_csv_cmd = run.run("oc get csv -oname", capture_stdout=True)

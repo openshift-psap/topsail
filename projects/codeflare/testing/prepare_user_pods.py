@@ -45,13 +45,13 @@ def prepare_base_image_container(namespace):
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
         logging.info(f"Image '{istag}' already exists in namespace '{namespace}'. Don't build it.")
     else:
-        run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix base_image")
+        run.run_toolbox_from_config("cluster", "build_push_image", prefix="base_image")
 
     if not config.ci_artifacts.get_config("base_image.extend.enabled"):
         logging.info("Base image extention not enabled.")
         return
 
-    run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix extended_image")
+    run.run_toolbox_from_config("cluster", "build_push_image", prefix="extended_image")
 
 
 def compute_driver_node_requirement():
@@ -84,8 +84,8 @@ def prepare_user_pods(namespace):
     dedicated = "{}" if config.ci_artifacts.get_config("clusters.driver.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix test_node_selector --extra '{dedicated}'")
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix test_toleration --extra '{dedicated}'")
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="driver", suffix="test_node_selector", extra=dedicated)
+    run.run_toolbox_from_config("cluster set_project_annotation --prefix driver --suffix test_toleration --extra '{dedicated}'")
 
     #
     # Prepare the driver machineset
@@ -99,7 +99,7 @@ def prepare_user_pods(namespace):
 
             extra = f"--extra '{{scale: {node_count}}}'"
 
-        run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
+        run.run_toolbox_from_config("cluster set_scale --prefix=driver {extra}")
 
     #
     # Prepare the container image
@@ -113,13 +113,13 @@ def prepare_user_pods(namespace):
     # Deploy Redis server for Pod startup synchronization
     #
 
-    run.run("./run_toolbox.py from_config cluster deploy_redis_server")
+    run.run_toolbox_from_config("cluster deploy_redis_server")
 
     #
     # Deploy Minio
     #
 
-    run.run(f"./run_toolbox.py from_config cluster deploy_minio_s3_server")
+    run.run_toolbox_from_config("cluster deploy_minio_s3_server")
 
     #
     # Prepare the ServiceAccount

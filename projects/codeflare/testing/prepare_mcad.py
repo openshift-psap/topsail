@@ -29,13 +29,13 @@ def prepare_test_nodes(name, cfg, dry_mode):
         logging.info(f"dry_mode: scale up the cluster for the test '{name}': {extra} ")
         return
 
-    run.run(f"./run_toolbox.py from_config cluster set_scale --extra \"{extra}\"")
+    run.run_toolbox_from_config("cluster", "set_scale", extra=extra)
 
     if cfg["node"].get("wait_gpus", True):
         if not config.ci_artifacts.get_config("tests.want_gpu"):
             logging.error("Cannot wait for GPUs when tests.want_gpu is disabled ...")
         else:
-            run.run("./run_toolbox.py gpu_operator wait_stack_deployed")
+            run.run_toolbox("gpu_operator", "wait_stack_deployed")
 
 
 def prepare():

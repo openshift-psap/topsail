@@ -292,7 +292,7 @@ prepare:
       - istio-system
 
 base_image:
-  namespace: watsonx-user-test-driver
+  namespace: kserve-user-test-driver
   imagestream: topsail
   repo:
     url: https://github.com/openshift-psap/topsail/
@@ -352,7 +352,7 @@ tests:
   scale:
     sleep_factor: 1
     namespace:
-      name: kserve-scale-test
+      name: watsonx-scale-test
       label: topsail.scale-test=true
       replicas: 2
 

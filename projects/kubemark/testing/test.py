@@ -49,8 +49,8 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
 
-    run.run("./run_toolbox.py cluster deploy_kubemark_capi_provider")
-    run.run("./run_toolbox.py cluster deploy_kubemark_nodes")
+    run.run_toolbox("cluster deploy_kubemark_capi_provider")
+    run.run_toolbox("cluster deploy_kubemark_nodes")
 
 
 @entrypoint()

@@ -13,12 +13,12 @@ import re
 import yaml
 import fire
 
-from topsail.common import env, config, run, rhods, visualize
+from topsail.testing import env, config, run, rhods, visualize
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-TESTING_UTILS_DIR = TESTING_PIPELINES_DIR.parent / "utils"
+TESTING_UTILS_DIR = TESTING_THIS_DIR.parent / "utils"
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
@@ -75,7 +75,7 @@ def install_ocp_pipelines():
         logging.info(f"Operator '{PIPELINES_OPERATOR_MANIFEST_NAME}' is already installed.")
         return
 
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_pipelines ./run_toolbox.py cluster deploy_operator redhat-operators {PIPELINES_OPERATOR_MANIFEST_NAME} all")
+    run.run_toolbox("cluster", "deploy_operator", catalog="redhat-operators", manifest_name=PIPELINES_OPERATOR_MANIFEST_NAME, namespace=operator['namespace'], artifact_dir_suffix=operator['name'])
 
 
 def uninstall_ocp_pipelines():
@@ -91,7 +91,7 @@ def uninstall_ocp_pipelines():
 
 
 def create_dsp_application():
-    run.run("./run_toolbox.py from_config pipelines deploy_application")
+    run.run_toolbox_from_config("pipelines", "deploy_application")
 
 
 @entrypoint()
@@ -104,11 +104,11 @@ def prepare_rhods():
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
     rhods.install(token_file)
 
-    run.run("./run_toolbox.py rhods wait_ods")
+    run.run_toolbox("rhods", "wait_ods")
     customize_rhods()
-    run.run("./run_toolbox.py rhods wait_ods")
+    run.run_toolbox("rhods", "wait_ods")
 
-    run.run("./run_toolbox.py from_config cluster deploy_ldap")
+    run.run_toolbox_from_config("cluster", "deploy_ldap")
 
 
 def compute_node_requirement(driver=False, sutest=False):
@@ -193,8 +193,8 @@ def prepare_pipelines_namespace():
     dedicated = "{}" if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_node_selector --extra '{dedicated}'")
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix pipelines_toleration --extra '{dedicated}'")
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="pipelines_node_selector", extra=dedicated)
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="pipelines_toleration" , extra=dedicated)
 
     create_dsp_application()
 
@@ -217,8 +217,8 @@ def prepare_test_driver_namespace():
     dedicated = "{}" if config.ci_artifacts.get_config("clusters.driver.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix test_node_selector --extra '{dedicated}'")
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix test_toleration --extra '{dedicated}'")
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="driver", suffix="test_node_selector", extra=dedicated)
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="driver", suffix="test_toleration", extra=dedicated)
 
     #
     # Prepare the driver machineset
@@ -226,12 +226,12 @@ def prepare_test_driver_namespace():
 
     if not config.ci_artifacts.get_config("clusters.driver.is_metal"):
         nodes_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
-        extra = ""
+        extra = dict()
         if nodes_count is None:
             node_count = compute_node_requirement(driver=True)
-            extra = f"--extra '{{scale: {node_count}}}'"
+            extra["scale"] = node_count
 
-        run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
+        run.run_toolbox_from_config("cluster", "set_scale", prefix="driver", extra=extra)
 
     #
     # Prepare the container image
@@ -244,19 +244,19 @@ def prepare_test_driver_namespace():
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
         logging.info(f"Image {istag} already exists in namespace {namespace}. Don't build it.")
     else:
-        run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix base_image")
+        run.run_toolbox_from_config("cluster", "build_push_image", prefix="base_image")
 
     #
     # Deploy Redis server for Pod startup synchronization
     #
 
-    run.run("./run_toolbox.py from_config cluster deploy_redis_server")
+    run.run_toolbox_from_config("cluster", "deploy_redis_server")
 
     #
     # Deploy Minio
     #
 
-    run.run(f"./run_toolbox.py from_config cluster deploy_minio_s3_server")
+    run.run_toolbox_from_config(f"cluster", "deploy_minio_s3_server")
 
     #
     # Prepare the ServiceAccount
@@ -285,12 +285,12 @@ def prepare_sutest_scale_up():
         return
 
     node_count = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.count")
-    extra = ""
+    extra = dict()
     if node_count is None:
         node_count = compute_node_requirement(sutest=True)
-        extra = f"--extra '{{scale: {node_count}}}'"
+        extra["scale"] = node_count
 
-    run.run(f"./run_toolbox.py from_config cluster set_scale --prefix=sutest {extra}")
+    run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest", extra=extra)
 
 
 @entrypoint()
@@ -317,9 +317,9 @@ def pipelines_run_one():
 
     try:
         prepare_pipelines_namespace()
-        run.run(f"./run_toolbox.py from_config pipelines run_kfp_notebook")
+        run.run_toolbox_from_config("pipelines", "run_kfp_notebook")
     finally:
-        run.run(f"./run_toolbox.py from_config pipelines capture_state > /dev/null")
+        run.run_toolbox_from_config("pipelines", "capture_state", mute_stdout=True)
 
 
 @entrypoint()
@@ -362,16 +362,16 @@ def _pipelines_run_many(test_artifact_dir_p):
 
             failed = True
             try:
-                run.run(f"./run_toolbox.py from_config local_ci run_multi")
+                run.run_toolbox_from_config("local_ci", "run_multi")
                 failed = False
             finally:
                 with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                     print("1" if failed else "0", file=f)
 
-                run.run(f"./run_toolbox.py notebooks capture_state > /dev/null", check=False)
+                run.run_toolbox("notebooks", "capture_state", mute_stdout=True, check=False)
 
     finally:
-        run.run(f"./run_toolbox.py cluster capture_environment > /dev/null", check=False)
+        run.run_toolbox("cluster", "capture_environment", mute_stdout=True, check=False)
 
 
 @entrypoint()

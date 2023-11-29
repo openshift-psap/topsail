@@ -57,9 +57,9 @@ def install_rhods():
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
     rhods.install(token_file)
 
-    run.run("./run_toolbox.py rhods wait_ods")
+    run.run_toolbox("rhods", "wait_ods")
 
-    # run.run("./run_toolbox.py from_config cluster deploy_ldap")
+    # run.run_toolbox_from_config("cluster", "deploy_ldap")
 
 def max_gpu_nodes():
     test_cases = config.ci_artifacts.get_config("tests.ansible_llm.test_cases")
@@ -77,13 +77,13 @@ def prepare_ci():
     """
 
     install_rhods()
-    run.run("./run_toolbox.py rhods wait_ods")
+    run.run_toolbox("rhods", "wait_ods")
     max_replicas = max_gpu_nodes()
-    run.run(f"./run_toolbox.py cluster set_scale g5.2xlarge {max_replicas}")
-    run.run("./run_toolbox.py nfd_operator deploy_from_operatorhub")
-    run.run("./run_toolbox.py nfd wait_labels")
-    run.run("./run_toolbox.py gpu_operator deploy_from_operatorhub")
-    run.run("./run_toolbox.py gpu_operator wait_deployment")
+    run.run_toolbox("cluster", "set_scale", instance_type="g5.2xlarge", scale=max_replicas)
+    run.run_toolbox("nfd_operator deploy_from_operatorhub")
+    run.run_toolbox("nfd wait_labels")
+    run.run_toolbox("gpu_operator deploy_from_operatorhub")
+    run.run_toolbox("gpu_operator wait_deployment")
 
     #TODO create lightspeed namespace and annotate it
 
@@ -101,10 +101,10 @@ def init_config():
 
 def deploy_and_warmup_model(replicas):
     config.ci_artifacts.set_config("tests.config.replicas", replicas)
-    run.run(f"./run_toolbox.py from_config wisdom deploy_model")
+    run.run_toolbox_from_config("wisdom deploy_model")
 
     # Warmup
-    run.run(f"./run_toolbox.py from_config wisdom warmup_model")
+    run.run_toolbox_from_config("wisdom warmup_model")
 
 @entrypoint()
 def run_ci():
@@ -124,10 +124,18 @@ def run_ci():
     protos_path=config.ci_artifacts.get_config("tests.config.protos_path")
     print(f"Protos path: {protos_path}")
 
-    run.run(f"./run_toolbox.py cluster build_push_image --namespace='{test_namespace}'  --git_repo='https://github.com/openshift-psap/llm-load-test.git' --git_ref='main' --dockerfile_path='build/Containerfile' --image_local_name='{tester_imagestream_name}' --tag='{tester_image_tag}'  --")
+    args = dict(
+        namespace=test_namespace,
+        git_repo="https://github.com/openshift-psap/llm-load-test.git",
+        git_ref="main",
+        dockerfile_path="build/Containerfile",
+        image_local_name=tester_imagestream_name,
+        tag=tester_image_tag,
+    )
+    run.run_toolbox("cluster", "build_push_image", **args)
 
     max_replicas = max_gpu_nodes()
-    run.run(f"./run_toolbox.py cluster set_scale g5.2xlarge {max_replicas}")
+    run.run_toolbox("cluster", "set_scale", instance="g5.2xlarge", scale=max_replicas)
 
     test_cases = config.ci_artifacts.get_config("tests.ansible_llm.test_cases")
     for replicas, concurrency in test_cases:
@@ -141,7 +149,7 @@ def run_ci():
 
         logging.info(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and total_requests: {total_requests}")
 
-        run.run(f"./run_toolbox.py from_config wisdom run_llm_load_test")
+        run.run_toolbox_from_config("wisdom", "run_llm_load_test")
 
     # Switch to multiplexed dataset
     config.ci_artifacts.set_config("tests.config.dataset_path", str(WISDOM_SECRET_PATH / "llm-load-test-multiplexed-dataset.json"))
@@ -164,7 +172,7 @@ def run_ci():
         config.ci_artifacts.set_config("tests.config.requests", requests_per_instance)
         config.ci_artifacts.set_config("tests.config.max_duration", max_duration)
 
-        run.run(f"./run_toolbox.py from_config wisdom run_llm_load_test_multiplexed")
+        run.run_toolbox_from_config("wisdom", "run_llm_load_test_multiplexed")
 
     pass
 

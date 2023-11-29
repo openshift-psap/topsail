@@ -12,7 +12,7 @@ def prepare_odh():
         (env.ARTIFACT_DIR / "ODH_PROJECT_ALREADY_EXISTS").touch()
 
     for operator in config.ci_artifacts.get_config("odh.operators"):
-        run.run(f"./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
+        run.run_toolbox("cluster", "deploy_operator", catalog=operator['catalog'], manifest_name=operator['name'], namespace=operator['namespace'], artifact_dir_suffix=operator['catalog'])
 
     for resource in config.ci_artifacts.get_config("odh.kfdefs"):
         if not resource.startswith("http"):
@@ -23,7 +23,7 @@ def prepare_odh():
 
         run.run(f"curl -Ssf {resource} | tee '{env.ARTIFACT_DIR / filename}' | oc apply -f- -n {odh_namespace}")
 
-    run.run("./run_toolbox.py from_config rhods wait_odh")
+    run.run_toolbox_from_config("rhods", "wait_odh")
 
 
 def prepare_odh_customization():
@@ -50,7 +50,7 @@ def prepare_odh_customization():
         run.run("oc apply -f https://raw.githubusercontent.com/project-codeflare/multi-cluster-app-dispatcher/main/config/crd/bases/workload.codeflare.dev_appwrappers.yaml")
 
     if customized:
-        run.run("./run_toolbox.py from_config rhods wait_odh")
+        run.run_toolbox_from_config("rhods", "wait_odh")
 
 
 def cleanup_odh():

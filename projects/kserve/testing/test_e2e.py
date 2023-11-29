@@ -72,32 +72,7 @@ def consolidate_models(index=None, use_job_index=False, model_name=None, namespa
 
     return consolidated_models
 
-
-def dict_to_run_toolbox_args(args_dict):
-    args = []
-    for k, v in args_dict.items():
-        if isinstance(v, dict) or isinstance(v, list):
-            val = json.dumps(v)
-            arg = f"--{k}=\"{v}\""
-        else:
-            val = str(v).replace("'", "\'")
-            arg = f"--{k}='{v}'"
-        args.append(arg)
-    return " ".join(args)
-
 # ---
-
-def run_and_catch(exc, fct, *args, **kwargs):
-    if not (exc is None or isinstance(exc, Exception)):
-        raise ValueException(f"exc={exc} should be None or an Exception")
-
-    try:
-        fct(*args, **kwargs)
-    except Exception as e:
-        logging.error(f"{e.__class__.__name__}: {e}")
-        exc = exc or e
-    return exc
-
 
 def test_ci():
     "Executes the full e2e test"
@@ -110,14 +85,14 @@ def test_ci():
     finally:
         exc = None
 
-        exc = run_and_catch(
+        exc = run.run_and_catch(
             exc,
-            run.run, "./run_toolbox.py kserve capture_operators_state", capture_stdout=True
+            run.run_toolbox, "kserve", "capture_operators_state", run_kwargs=dict(capture_stdout=True),
         )
 
-        exc = run_and_catch(
+        exc = run.run_and_catch(
             exc,
-            run.run, "./run_toolbox.py cluster capture_environment", capture_stdout=True
+            run.run_toolbox, "cluster", "capture_environment", run_kwargs=dict(capture_stdout=True),
         )
 
         if exc: raise exc
@@ -135,7 +110,7 @@ def deploy_models_concurrently():
     "Deploys all the configured models concurrently (all at the same time)"
 
     logging.info("Deploy the models concurrently")
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_deploy ./run_toolbox.py from_config local_ci run_multi --suffix deploy_concurrently")
+    run.run_toolbox_from_config("local_ci", "run_multi", suffix="deploy_concurrently", artifact_dir_suffix="_deploy")
 
 
 def deploy_one_model(index: int = None, use_job_index: bool = False, model_name: str = None):
@@ -155,13 +130,13 @@ def test_models_sequentially(locally=False):
         consolidate_models()
         test_consolidated_models()
     else:
-        run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_sequentially ./run_toolbox.py from_config local_ci run_multi --suffix test_sequentially")
+        run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially", artifact_dir_suffix="_test_sequentially")
 
 
 def deploy_and_test_models_e2e():
     with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
-        parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
-        parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
+        parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
+        parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
 
     logging.info("Wait 60s for Prometheus to restart collecting data ...")
     time.sleep(60)
@@ -181,8 +156,8 @@ def deploy_and_test_models_e2e():
         time.sleep(60)
 
         with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
-            parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null")
-            parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null")
+            parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True)
+            parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
 
 
 def deploy_and_test_models_sequentially(locally=False):
@@ -190,7 +165,7 @@ def deploy_and_test_models_sequentially(locally=False):
 
     logging.info(f"Deploy and test the models sequentially (locally={locally})")
     if not locally:
-        return run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_e2e_perf_test ./run_toolbox.py from_config local_ci run_multi --suffix deploy_and_test_sequentially")
+        return run.run_toolbox_from_config("local_ci", "run_multi", suffix="deploy_and_test_sequentially", artifact_dir_suffix="_e2e_perf_test")
 
 
     with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
@@ -199,7 +174,7 @@ def deploy_and_test_models_sequentially(locally=False):
     namespace = config.ci_artifacts.get_config("tests.e2e.namespace") + "-perf"
     consolidated_models = consolidate_models(namespace=namespace)
 
-    run.run(f"./run_toolbox.py kserve undeploy_model --namespace {namespace} --all")
+    run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True)
 
     exc = None
     failed = []
@@ -207,8 +182,8 @@ def deploy_and_test_models_sequentially(locally=False):
         with env.NextArtifactDir(consolidated_model['name']):
             try:
                 with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
-                    parallel.delayed(run.run, "./run_toolbox.py cluster reset_prometheus_db > /dev/null")
-                    parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster reset_prometheus_db --suffix=uwm >/dev/null")
+                    parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
+                    parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm")
 
                 logging.info("Wait 60s for Prometheus to restart collecting data ...")
                 time.sleep(60)
@@ -230,10 +205,10 @@ def deploy_and_test_models_sequentially(locally=False):
             time.sleep(60)
 
             with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
-                parallel.delayed(run.run, "./run_toolbox.py cluster dump_prometheus_db > /dev/null", check=False)
-                parallel.delayed(run.run, "ARTIFACT_TOOLBOX_NAME_SUFFIX=_uwm ./run_toolbox.py from_config cluster dump_prometheus_db --suffix=uwm >/dev/null", check=False)
+                parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True, check=False)
+                parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", check=False, artifact_dir_suffix="_uwm")
 
-            run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
+            run.run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
     if failed:
         logging.fatal(f"deploy_and_test_models_sequentially: {len(failed)} tests failed :/ {' '.join(failed)}")
@@ -244,7 +219,7 @@ def test_models_concurrently():
     "Tests all the configured models concurrently (all at the same time)"
 
     logging.info("Test the models concurrently")
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_test_concurrently ./run_toolbox.py from_config local_ci run_multi --suffix test_concurrently")
+    run.run_toolbox_from_config("local_ci", "run_multi", "suffix=test_concurrently", artifact_dir_suffix="_test_concurrently")
 
 
 def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None, namespace: str = None):
@@ -362,7 +337,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     try:
         deploy_model_start_ts = datetime.datetime.now()
         try:
-            run.run(f"./run_toolbox.py kserve deploy_model {dict_to_run_toolbox_args(args_dict)}")
+            run.run_toolbox("kserve", "deploy_model", **args_dict)
         finally:
             deploy_model_end_ts = datetime.datetime.now()
             try:
@@ -396,12 +371,12 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
             query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
         )
-        run.run(f"./run_toolbox.py kserve validate_model {dict_to_run_toolbox_args(validate_kwargs)}")
+        run.run_toolbox("kserve", "validate_model", **validate_kwargs)
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
         raise e
     finally:
-        run.run(f"./run_toolbox.py kserve capture_state {namespace} > /dev/null")
+        run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
 
 def undeploy_consolidated_model(consolidated_model, namespace=None):
     if namespace is None:
@@ -417,7 +392,7 @@ def undeploy_consolidated_model(consolidated_model, namespace=None):
         inference_service_name=model_name,
     )
 
-    run.run(f"./run_toolbox.py kserve undeploy_model {dict_to_run_toolbox_args(args_dict)}")
+    run.run_toolbox("kserve", "undeploy_model", **args_dict)
 
 def test_consolidated_models():
     consolidated_models = config.ci_artifacts.get_config("tests.e2e.consolidated_models")
@@ -470,7 +445,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
     )
 
 
-    run.run(f"./run_toolbox.py kserve validate_model {dict_to_run_toolbox_args(args_dict)}")
+    run.run_toolbox("kserve", "validate_model", **args_dict)
 
     if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
@@ -537,8 +512,8 @@ import "finishreason.proto";
 """
             print(header, file=f)
 
-        run.run(f"./run_toolbox.py kserve extract_protos_grpcurl {dict_to_run_toolbox_args(extract_proto_grpcurl_args_dict | main_file)}")
-        run.run(f"./run_toolbox.py kserve extract_protos_grpcurl {dict_to_run_toolbox_args(extract_proto_grpcurl_args_dict | data_file)}")
+        run.run_toolbox("kserve", "extract_protos_grpcurl", **(extract_proto_grpcurl_args_dict | main_file))
+        run.run_toolbox("kserve", "extract_protos_grpcurl", **(extract_proto_grpcurl_args_dict | data_file))
 
         run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
 
@@ -546,9 +521,9 @@ import "finishreason.proto";
         raise RuntimeError(f"Protos do not exist at {protos_path}")
 
     try:
-        run.run(f"./run_toolbox.py llm_load_test run {dict_to_run_toolbox_args(args_dict)}")
+        run.run_toolbox("llm_load_test", "run", **args_dict)
     finally:
-        run.run(f"./run_toolbox.py kserve capture_state {namespace} > /dev/null")
+        run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
 
     return 0
 

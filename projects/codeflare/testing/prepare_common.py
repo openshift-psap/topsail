@@ -16,7 +16,7 @@ def prepare_common():
         prepare_odh.prepare_odh_customization()
 
     elif deploy_from == "helm":
-        run.run("./run_toolbox.py from_config codeflare deploy_mcad_from_helm")
+        run.run_toolbox_from_config("codeflare", "deploy_mcad_from_helm")
 
     if config.ci_artifacts.get_config("tests.want_gpu"):
         prepare_gpu.prepare_gpu_operator()
@@ -24,7 +24,7 @@ def prepare_common():
     prepare_worker_node_labels()
 
     if config.ci_artifacts.get_config("tests.want_gpu"):
-        run.run("./run_toolbox.py from_config gpu_operator run_gpu_burn")
+        run.run_toolbox_from_config("gpu_operator", "run_gpu_burn")
 
     if config.ci_artifacts.get_config("clusters.sutest.worker.fill_resources.enabled"):
         prepare_fill_workernodes()
@@ -43,7 +43,7 @@ def prepare_fill_workernodes():
     if run.run(f'oc get project -oname "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
 
-    run.run("./run_toolbox.py from_config cluster fill_workernodes")
+    run.run_toolbox_from_config("cluster", "fill_workernodes")
 
 
 def cleanup_fill_workernodes():

@@ -61,7 +61,7 @@ def prepare_ci():
 
     logging.info("Nothing to do to prepare the cluster.")
 
-    run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
+    run.run_toolbox_from_config("cluster", "capture_environment", suffix="sample")
 
 
 
@@ -78,18 +78,19 @@ def _run_test(test_artifact_dir_p):
 
         failed = True
         try:
-            run.run("./run_toolbox.py cluster reset_prometheus_db")
+            run.run_toolbox("cluster", "reset_prometheus_db")
 
             logging.info("Waiting 5 minutes to capture some metrics in Prometheus ...")
             time.sleep(5 * 60)
 
-            run.run("./run_toolbox.py cluster dump_prometheus_db")
+            run.run_toolbox("cluster", "dump_prometheus_db")
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
 
-            run.run("./run_toolbox.py from_config cluster capture_environment --suffix sample")
+            run.run_toolbox_from_config("cluster", "capture_environment", suffix="sample")
+
 
 @entrypoint()
 def test_ci():

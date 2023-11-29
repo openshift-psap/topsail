@@ -39,7 +39,7 @@ def _run_many(test_artifact_dir_p):
             if dry_mode:
                 logging.info("local_ci run_multi --suffix sdk_user ==> skipped")
             else:
-                run.run(f"./run_toolbox.py from_config local_ci run_multi --suffix sdk_user")
+                run.run_toolbox_from_config("local_ci", "run_multi", suffix="sdk_user")
 
             failed = False
         finally:
@@ -47,7 +47,7 @@ def _run_many(test_artifact_dir_p):
                 print("1" if failed else "0", file=f)
 
             if not dry_mode:
-                #run.run(f"./run_toolbox.py cluster capture_environment > /dev/null", check=False)
+                #run.run_toolbox("cluster", "capture_environment", mute_stdout=True, check=False)
                 pass
 
 
@@ -157,9 +157,9 @@ def run_one():
             sys.path.pop()
             os.chdir(orig_wd)
 
-        run.run(f"./run_toolbox.py codeflare capture_state --namespace {namespace}")
+        run.run_toolbox("codeflare", "capture_state", namespace=namespace)
 
-        run.run(f"./run_toolbox.py codeflare cleanup_appwrappers --namespace {namespace}")
+        run.run_toolbox("codeflare", "cleanup_appwrappers", namespace=namespace)
         run.run(f"oc delete rayclusters --all -n {namespace}")
 
     logging.info("All done.")
