@@ -74,18 +74,6 @@ def consolidate_models(index=None, use_job_index=False, model_name=None, namespa
 
 # ---
 
-def run_and_catch(exc, fct, *args, **kwargs):
-    if not (exc is None or isinstance(exc, Exception)):
-        raise ValueException(f"exc={exc} should be None or an Exception")
-
-    try:
-        fct(*args, **kwargs)
-    except Exception as e:
-        logging.error(f"{e.__class__.__name__}: {e}")
-        exc = exc or e
-    return exc
-
-
 def test_ci():
     "Executes the full e2e test"
 
@@ -97,12 +85,12 @@ def test_ci():
     finally:
         exc = None
 
-        exc = run_and_catch(
+        exc = run.run_and_catch(
             exc,
-            run.run_toolbox, "kserve" "capture_operators_state", run_kwargs=dict(capture_stdout=True),
+            run.run_toolbox, "kserve", "capture_operators_state", run_kwargs=dict(capture_stdout=True),
         )
 
-        exc = run_and_catch(
+        exc = run.run_and_catch(
             exc,
             run.run_toolbox, "cluster", "capture_environment", run_kwargs=dict(capture_stdout=True),
         )
@@ -220,7 +208,7 @@ def deploy_and_test_models_sequentially(locally=False):
                 parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True, check=False)
                 parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", check=False, artifact_dir_suffix="_uwm")
 
-            run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
+            run.run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
     if failed:
         logging.fatal(f"deploy_and_test_models_sequentially: {len(failed)} tests failed :/ {' '.join(failed)}")
