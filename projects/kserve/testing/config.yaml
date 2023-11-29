@@ -292,7 +292,7 @@ prepare:
       - istio-system
 
 base_image:
-  namespace: kserve-user-test-driver
+  namespace: watsonx-user-test-driver
   imagestream: topsail
   repo:
     url: https://github.com/openshift-psap/topsail/
