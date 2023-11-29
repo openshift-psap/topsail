@@ -18,6 +18,7 @@ class Metrics(matbench_models.ExclusiveModel):
     kserve_container_memory_usage: matbench_models.PrometheusValues = \
         Field(..., alias="sutest__container_memory_usage_bytes__namespace=watsonx.*_container=kserve-container")
     gpu_memory_used: matbench_models.PrometheusValues = Field(..., alias="GPU memory used")
+    gpu_active_computes: matbench_models.PrometheusValues = Field(..., alias="GPU active computes")
 
     rhoai_mem_footprint_core_request: matbench_models.PrometheusValues = Field(..., alias="redhat-ods-.* memory request")
     rhoai_mem_footprint_core_limit: matbench_models.PrometheusValues = Field(..., alias="redhat-ods-.* memory limit")
