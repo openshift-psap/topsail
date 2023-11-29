@@ -47,7 +47,7 @@ def ignore_file_not_found(fn):
 
 def _parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
-    pass
+    results.test_config = _parse_test_config(dirname)
 
 
 def _parse_once(results, dirname):
@@ -107,8 +107,17 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
 
         node_info.control_plane = "node-role.kubernetes.io/control-plane" in node["metadata"]["labels"] or "node-role.kubernetes.io/master" in node["metadata"]["labels"]
 
-        node_info.infra = \
-            not node_info.control_plane
+        node_info.infra = not node_info.control_plane
+
+        if node["metadata"]["labels"].get("nvidia.com/gpu.present"):
+            node_info.gpu = types.SimpleNamespace()
+
+            node_info.gpu.product = node["metadata"]["labels"].get("nvidia.com/gpu.product")
+            node_info.gpu.memory = int(node["metadata"]["labels"].get("nvidia.com/gpu.memory")) / 1000
+            node_info.gpu.count = int(node["metadata"]["labels"].get("nvidia.com/gpu.count"))
+        else :
+            node_info.gpu = None
+
 
     return nodes_info
 
@@ -124,6 +133,11 @@ def _extract_cluster_info(nodes_info):
 
     cluster_info.infra = [node_info for node_info in nodes_info.values() \
                                 if node_info.sutest_cluster and node_info.infra]
+
+    cluster_info.gpus = []
+    for infra_node in cluster_info.infra:
+        if not infra_node.gpu: continue
+        cluster_info.gpus.append(infra_node.gpu)
 
     return cluster_info
 

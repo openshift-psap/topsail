@@ -122,6 +122,14 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     fn_add_to_matrix(results)
 
+    with open(dirname / CACHE_FILENAME, "wb") as f:
+        get_config = results.test_config.get
+        results.test_config.get = None
+
+        pickle.dump(results, f)
+
+        results.test_config.get = get_config
+
     logging.info("parsing done :)")
 
 
