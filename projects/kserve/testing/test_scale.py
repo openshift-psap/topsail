@@ -36,17 +36,16 @@ def test(test_artifact_dir_p=None):
 
             if not dry_mode:
                 try:
-                    run.run("./run_toolbox.py kserve capture_operators_state",
-                            capture_stdout=True)
+                    run.run_toolbox("kserve", "capture_operators_state", mute_stdout=True)
                 finally:
-                    run.run("./run_toolbox.py cluster capture_environment",
-                            capture_stdout=True)
+                    run.run_toolbox("cluster", "capture_environment", mute_stdout=True)
+
 
 def run_test(dry_mode):
     if dry_mode:
         logging.info("local_ci run_multi --suffix sdk_user ==> skipped")
     else:
-        run.run(f"./run_toolbox.py from_config local_ci run_multi --suffix scale")
+        run.run_toolbox_from_config("local_ci", "run_multi", suffix="scale")
 
 
 def prepare_user_sutest_namespace(namespace):
@@ -63,8 +62,8 @@ def prepare_user_sutest_namespace(namespace):
     dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
     if not metal and dedicated:
         extra = dict(project=namespace)
-        run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_node_selector --extra \"{extra}\"", capture_stdout=True)
-        run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix scale_test_toleration --extra \"{extra}\"", capture_stdout=True)
+        run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_node_selector", extra=extra, mute_stdout=True)
+        run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_toleration", extra=extra, mute_stdout=True)
 
 
 def save_and_create(name, content, namespace, is_secret=False):
@@ -186,7 +185,7 @@ def run_one():
             parallel.delayed(watch_failures, namespace)
 
     finally:
-        run.run(f"./run_toolbox.py kserve capture_state {namespace} > /dev/null")
+        run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
         sync_file.unlink(missing_ok=True)
 
 
@@ -205,16 +204,16 @@ def run_one_test(namespace, job_index):
             inference_service_name=inference_service_name,
         )
 
-        run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{inference_service_name} ./run_toolbox.py from_config kserve deploy_model --extra \"{extra}\"")
+        run.run_toolbox_from_config("kserve", "deploy_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
         run.run(f'echo "model_{model_idx}_deployed: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
 
         extra = dict(inference_service_names=[inference_service_name])
-        run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{inference_service_name} ./run_toolbox.py from_config kserve validate_model --extra \"{extra}\"")
+        run.run("kserve", "validate_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
         run.run(f'echo "model_{model_idx}_validated: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
 
         all_inference_service_names += [inference_service_name]
 
     extra = dict(inference_service_names=all_inference_service_names)
 
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_all ./run_toolbox.py from_config kserve validate_model --extra \"{extra}\"")
+    run.run_toolbox_from_config("kserve", "validate_model", extra=extra, artifact_dir_suffix=f"_all")
     run.run(f'echo "model_all_validated: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')

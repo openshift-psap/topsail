@@ -103,7 +103,7 @@ def scale_up_sutest():
         raise KeyError(f"Invalid test mode: {test_mode}")
 
     extra = dict(scale=node_count)
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_sutest ./run_toolbox.py from_config cluster set_scale --prefix=sutest --extra \"{extra}\"")
+    run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest", extra=extra, artifact_dir_suffix="_sutest")
 
 
 def cluster_scale_up():
@@ -121,8 +121,8 @@ def cluster_scale_down(to_zero=False):
 
     extra = dict(scale=0 if to_zero else 1)
     with run.Parallel("cluster_scale_down") as parallel:
-        parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=sutest --extra \"{extra}\"")
-        parallel.delayed(run.run, f"./run_toolbox.py from_config cluster set_scale --prefix=driver --extra \"{extra}\"")
+        parallel.delayed(run.run_toolbox_from_config, "cluster", "set_scale", prefix="sutest", extra=extra)
+        parallel.delayed(run.run_toolbox_from_config, "cluster", "set_scale", prefix="driver", extra=extra)
 
 
 def get_file_config(file_model_name):

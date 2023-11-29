@@ -53,9 +53,9 @@ def prepare():
         parallel.delayed(rhods.install, token_file)
 
         for operator in config.ci_artifacts.get_config("prepare.operators"):
-            parallel.delayed(run.run, f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_{operator['name']} ./run_toolbox.py cluster deploy_operator {operator['catalog']} {operator['name']} {operator['namespace']}")
+            parallel.delayed(run.run_toolbox, "cluster", "deploy_operator", catalog=operator['catalog'], manifest_name=operator['name'], namespace=operator['namespace'], artifact_dir_suffix=operator['name'])
 
-    run.run("./run_toolbox.py rhods update_datasciencecluster --enable [kserve]")
+    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve"])
     try:
         run.run("projects/kserve/testing/poc/prepare.sh |& tee -a $ARTIFACT_DIR/000_prepare_sh.log")
     finally:
@@ -117,7 +117,7 @@ def preload_image():
         extra = dict(image=image)
         for i in range(RETRIES):
             try:
-                run.run(f"./run_toolbox.py from_config cluster preload_image --prefix sutest --suffix kserve-runtime --extra \"{extra}\"")
+                run.run_toolbox_from_config("cluster", "preload_image", prefix="sutest", suffix="kserve-runtime", extra=extra)
 
                 break
             except Exception:
