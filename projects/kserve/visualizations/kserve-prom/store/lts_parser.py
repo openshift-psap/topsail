@@ -30,6 +30,8 @@ def generate_lts_metadata(results, import_settings):
     metadata.config = results.test_config.yaml_file
     metadata.settings = dict(import_settings)
 
+    metadata.gpus = results.cluster_info.gpus
+
     return metadata
 
 

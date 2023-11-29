@@ -6,10 +6,16 @@ from pydantic import BaseModel, Field
 
 import matrix_benchmarking.models as matbench_models
 
+class GpuMetadata(matbench_models.ExclusiveModel):
+    product: str
+    memory: float
+    count: int
+
 
 class Metadata(matbench_models.Metadata):
     presets: List[str]
     config: Any
+    gpus: List[GpuMetadata]
 
 
 class Metrics(matbench_models.ExclusiveModel):
