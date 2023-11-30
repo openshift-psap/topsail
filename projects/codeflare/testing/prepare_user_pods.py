@@ -40,7 +40,7 @@ def apply_prefer_pr():
 
 
 def prepare_base_image_container(namespace):
-    istag = config.get_command_arg("cluster build_push_image --prefix base_image", "_istag")
+    istag = config.get_command_arg("cluster", "build_push_image", "_istag", prefix="base_image")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
         logging.info(f"Image '{istag}' already exists in namespace '{namespace}'. Don't build it.")
@@ -85,7 +85,7 @@ def prepare_user_pods(namespace):
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
     run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="driver", suffix="test_node_selector", extra=dedicated)
-    run.run_toolbox_from_config("cluster set_project_annotation --prefix driver --suffix test_toleration --extra '{dedicated}'")
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="driver", suffix="test_toleration", extra=dedicated)
 
     #
     # Prepare the driver machineset
@@ -93,13 +93,13 @@ def prepare_user_pods(namespace):
 
     if not config.ci_artifacts.get_config("clusters.driver.is_metal"):
         nodes_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
-        extra = ""
+        extra = {}
         if nodes_count is None:
             node_count = compute_driver_node_requirement()
 
-            extra = f"--extra '{{scale: {node_count}}}'"
+            extra["scale"] = node_count
 
-        run.run_toolbox_from_config("cluster set_scale --prefix=driver {extra}")
+        run.run_toolbox_from_config("cluster", "set_scale", prefix="driver", extra=extra)
 
     #
     # Prepare the container image
