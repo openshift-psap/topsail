@@ -19,6 +19,17 @@
       -f "{{ rhods_undeploy_ods_delete_cm }}"
       -n "{{ rhods_undeploy_ods_namespace }}"
 
+- name: Bounce the label to be sure it is detected
+  shell: |
+    set -e; set -x;
+    for value in false true; do
+      oc label \
+        -f  "{{ rhods_undeploy_ods_delete_cm }}" \
+        -n "{{ rhods_undeploy_ods_namespace }}" \
+        api.openshift.com/addon-managed-odh-delete=$value \
+        --overwrite
+    done
+
 - name: Wait for the operand namespaces to disappear
   shell:
     oc get ns "{{ item }}" --no-headers 2>/dev/null
