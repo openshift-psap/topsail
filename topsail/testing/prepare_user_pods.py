@@ -44,28 +44,28 @@ def apply_prefer_pr(pr_number=None):
 
 
 def prepare_base_image_container(namespace):
-    istag = config.get_command_arg("cluster build_push_image --prefix base_image", "_istag")
+    istag = config.get_command_arg("cluster", "build_push_image", "_istag", prefix="base_image")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
         logging.info(f"Image '{istag}' already exists in namespace '{namespace}'. Don't build it.")
     else:
-        run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix base_image")
+        run.run_toolbox_from_config("cluster", "build_push_image", prefix="base_image")
 
     if not config.ci_artifacts.get_config("base_image.extend.enabled"):
         logging.info("Base image extention not enabled.")
         return
 
-    run.run(f"./run_toolbox.py from_config cluster build_push_image --prefix extended_image")
+    run.run_toolbox_from_config("cluster", "build_push_image", prefix="extended_image")
 
 
 def rebuild_driver_image(namespace, pr_number):
     apply_prefer_pr(pr_number)
 
-    istag = config.get_command_arg("cluster build_push_image --prefix base_image", "_istag")
+    istag = config.get_command_arg("cluster", "build_push_image", "_istag", prefix="base_image")
 
     run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
     if config.ci_artifacts.get_config("base_image.extend.enabled"):
-        istag = config.get_command_arg("cluster build_push_image --prefix extended_image", "_istag")
+        istag = config.get_command_arg("cluster", "build_push_image", "_istag", prefix="extended_image")
         run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
 
     prepare_base_image_container(namespace)
@@ -92,9 +92,9 @@ def cluster_scale_up(namespace, user_count):
     if node_count is None:
         node_count = compute_driver_node_requirement(user_count)
 
-    extra = f"--extra '{{scale: {node_count}}}'"
+    extra = dict(scale=node_count)
 
-    run.run(f"ARTIFACT_TOOLBOX_NAME_SUFFIX=_driver ./run_toolbox.py from_config cluster set_scale --prefix=driver {extra}")
+    run.run_toolbox_from_config("cluster", "set_scale", prefix="driver", extra=extra, artifact_dir_suffix="_driver")
 
 def prepare_user_pods(user_count):
     namespace = config.ci_artifacts.get_config("base_image.namespace")
@@ -123,20 +123,20 @@ def prepare_user_pods(user_count):
         # Deploy Redis server for Pod startup synchronization
         #
 
-        parallel.delayed(run.run, "./run_toolbox.py from_config cluster deploy_redis_server")
+        parallel.delayed(run.run_toolbox_from_config, "cluster", "deploy_redis_server")
 
         #
         # Deploy Minio
         #
 
-        parallel.delayed(run.run, f"./run_toolbox.py from_config cluster deploy_minio_s3_server")
+        parallel.delayed(run.run_toolbox_from_config, "cluster", "deploy_minio_s3_server")
 
     #
     # Prepare the driver namespace annotations
     #
 
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix test_node_selector --extra '{dedicated}'")
-    run.run(f"./run_toolbox.py from_config cluster set_project_annotation --prefix driver --suffix test_toleration --extra '{dedicated}'")
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="driver", suffix="test_node_selector", extra=dedicated)
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="driver", suffix="test_toleration", extra=dedicated)
 
     #
     # Prepare the ServiceAccount
