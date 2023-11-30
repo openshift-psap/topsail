@@ -80,7 +80,7 @@ class Rhods:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("rhods_delete_ods")
+    @AnsibleRole("rhods_undeploy_ods")
     @AnsibleMappedParams
     def undeploy_ods(self,
                      namespace="redhat-ods-operator"):
