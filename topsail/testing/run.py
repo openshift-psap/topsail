@@ -15,7 +15,7 @@ if os.getpid() != 1:
     os.setpgrp()
 
 
-def run_toolbox_from_config(group, command, prefix=None, suffix=None, extra=dict(), artifact_dir_suffix=None, mute_stdout=False, check=True, run_kwargs=dict()):
+def run_toolbox_from_config(group, command, prefix=None, suffix=None, show_args=None, extra=dict(), artifact_dir_suffix=None, mute_stdout=False, check=True, run_kwargs=dict()):
     kwargs = dict()
     if prefix is not None:
         kwargs["prefix"] = prefix
@@ -23,6 +23,8 @@ def run_toolbox_from_config(group, command, prefix=None, suffix=None, extra=dict
         kwargs["suffix"] = suffix
     if extra is not None:
         kwargs["extra"] = extra
+    if show_args:
+        kwargs["show_args"] = show_args
 
     if mute_stdout:
         run_kwargs["capture_stdout"] = True

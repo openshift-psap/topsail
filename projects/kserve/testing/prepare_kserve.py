@@ -109,7 +109,7 @@ def preload_image():
         return
 
     # this is required to properly create the namespace used to preload the image
-    namespace = config.get_command_arg("cluster preload_image --prefix sutest --suffix kserve-runtime", "namespace")
+    namespace = config.get_command_arg("cluster", "preload_image", "namespace", prefix="sutest", suffix="kserve-runtime")
     test_scale.prepare_user_sutest_namespace(namespace)
 
     def preload(image):

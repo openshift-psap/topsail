@@ -174,7 +174,7 @@ class Config:
 
     def dump_command_args(self):
         try:
-            command_template = get_command_arg("dump config", None)
+            command_template = get_command_arg("dump", "config", None)
         except Exception as e:
             import traceback
             with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
@@ -246,15 +246,17 @@ def _set_config_environ(base_dir):
     return config_path
 
 
-def get_command_arg(command, args):
+def get_command_arg(group, command, arg, prefix=None, suffix=None):
     try:
-        logging.info(f"get_command_arg: {command} {args}")
-        proc = subprocess.run(f'./run_toolbox.py from_config {command} --show_args "{args}"', check=True, shell=True, capture_output=True)
+        logging.info(f"get_command_arg: {group} {command} {arg}")
+        proc = run.run_toolbox_from_config(group, command, show_args=arg,
+                                           prefix=prefix, suffix=suffix,
+                                           check=True, run_kwargs=dict(capture_stdout=True, capture_stderr=True))
     except subprocess.CalledProcessError as e:
-        logging.error(e.stderr.decode("utf-8").strip())
+        logging.error(e.stderr.strip())
         raise
 
-    return proc.stdout.decode("utf-8").strip()
+    return proc.stdout.strip()
 
 
 def set_jsonpath(config, jsonpath, value):
