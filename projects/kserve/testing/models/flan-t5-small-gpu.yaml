@@ -1,5 +1,4 @@
 extends: base
-id: flan-t5-small-caikit
 secret_key: flan-t5-small
 
 serving_runtime:
