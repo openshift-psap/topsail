@@ -376,12 +376,15 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
             query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
         )
-        run.run_toolbox("kserve", "validate_model", **validate_kwargs)
+        if config.ci_artifacts.get_config("tests.e2e.validate_model"):
+            run.run_toolbox("kserve", "validate_model", **validate_kwargs)
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
         raise e
     finally:
-        run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
+        if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+            run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
+
 
 def undeploy_consolidated_model(consolidated_model, namespace=None):
     if namespace is None:
@@ -479,7 +482,7 @@ import "finishreason.proto";
     run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
 
 
-def matbenchmark_run_llm_load_test(llm_load_test_args):
+def matbenchmark_run_llm_load_test(namespace, llm_load_test_args):
     visualize.prepare_matbench()
 
     with env.NextArtifactDir("matbenchmark__llm_load_test"):
@@ -491,6 +494,8 @@ def matbenchmark_run_llm_load_test(llm_load_test_args):
                 benchmark_values[key] = value
             else:
                 common_settings[key] = value
+
+        common_settings["namespace"] = namespace
 
         path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()]) + "_"
 
@@ -525,7 +530,13 @@ def run_one_matbench():
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
-        run.run_toolbox("llm_load_test", "run", **settings)
+        namespace = settings.pop("namespace")
+
+        try:
+            run.run_toolbox("llm_load_test", "run", **settings)
+        finally:
+            if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+                run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
 
     sys.exit(0)
 
@@ -547,7 +558,8 @@ def test_consolidated_model(consolidated_model, namespace=None):
         query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
     )
 
-    run.run_toolbox("kserve", "validate_model", **args_dict)
+    if config.ci_artifacts.get_config("tests.e2e.validate_model"):
+        run.run_toolbox("kserve", "validate_model", **args_dict)
 
     if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
@@ -580,13 +592,14 @@ def test_consolidated_model(consolidated_model, namespace=None):
     if not protos_path.exists():
         raise RuntimeError(f"Protos do not exist at {protos_path}")
 
-    try:
-        if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
-            matbenchmark_run_llm_load_test(args_dict)
-        else:
+    if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
+        matbenchmark_run_llm_load_test(namespace, args_dict)
+    else:
+        try:
             run.run_toolbox("llm_load_test", "run", **args_dict)
-    finally:
-        run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
+        finally:
+            if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+                run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
 
     return 0
 
