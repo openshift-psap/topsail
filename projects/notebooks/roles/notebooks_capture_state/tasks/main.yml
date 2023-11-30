@@ -82,3 +82,13 @@
   shell:
     oc version -oyaml
        > {{ artifact_extra_logs_dir }}/ocp_version.yml
+
+- name: Store RHOAI DSC
+  shell:
+    oc get dsc -oyaml -A
+       > {{ artifact_extra_logs_dir }}/dsc.yml
+
+- name: Store RHOAI DSC
+  shell:
+    oc get dsci -oyaml -A
+       > {{ artifact_extra_logs_dir }}/dsci.yml
