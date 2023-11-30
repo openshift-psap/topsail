@@ -256,10 +256,10 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 629825
+    tag: 631215
     channel: alpha
     version: 2.5.0
-    version_name: RC1
+    version_name: RC2
   operator:
     # set to true to stop the RHODS operator
     stop: false
