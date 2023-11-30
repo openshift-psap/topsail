@@ -1,4 +1,5 @@
 import types
+import logging
 
 from .. import models
 from ..models import lts as models_lts
@@ -78,7 +79,10 @@ def generate_lts_results(results):
     results_lts.time_to_first_token = _generate_time_to_first_token(results)
 
     # Model Load Duration (scalar, in seconds)
-    results_lts.model_load_duration = results.predictor_pod.load_time.total_seconds()
+    if results.predictor_pod and results.predictor_pod.load_time:
+        results_lts.model_load_duration = results.predictor_pod.load_time.total_seconds()
+    else:
+        logging.error("Cannot set lts.results.model_load_duration: Predictor pod load time missing.")
 
     return results_lts
 
