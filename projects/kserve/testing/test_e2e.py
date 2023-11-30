@@ -367,7 +367,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         validate_kwargs = dict(
             namespace=namespace,
             inference_service_names=[model_name],
-            model_id=consolidated_model["id"],
+            model_id="not-used",
             dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
             query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
         )
@@ -439,7 +439,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
     args_dict = dict(
         namespace=namespace,
         inference_service_names=[model_name],
-        model_id=consolidated_model["id"],
+        model_id="not-used",
         dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
         query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
     )
@@ -464,7 +464,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
         duration=llm_config["duration"],
         protos_path=protos_path.absolute(),
         call=llm_config["call"],
-        model_id=consolidated_model["id"],
+        model_id="not-used",
         llm_path=llm_config["src_path"],
         threads=llm_config["threads"],
         rps=llm_config["rps"],
