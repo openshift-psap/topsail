@@ -14,8 +14,13 @@ import fire
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
-from topsail.testing import env, config, run, visualize
+import topsail
+from topsail.testing import env, config, run, visualize, matbenchmark
 import prepare_scale, test_scale
+
+TOPSAIL_DIR = pathlib.Path(topsail.__file__).parent.parent
+RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
+os.chdir(TOPSAIL_DIR)
 
 # ---
 
@@ -406,8 +411,11 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
     context = env.NextArtifactDir(f"test_{consolidated_model['name']}") \
         if dedicated_dir else open("/dev/null") # dummy context
 
+    matbenchmarking = config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled")
     with context:
-        with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+        settings_filename = "settings.model.yaml" if matbenchmarking else "settings.yaml"
+
+        with open(env.ARTIFACT_DIR / settings_filename, "w") as f:
             settings = dict(
                 e2e_test=True,
                 model_name=consolidated_model['name'],
@@ -421,10 +429,12 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
         exit_code = 1
-        try: exit_code = test_consolidated_model(consolidated_model)
+        try:
+            exit_code = test_consolidated_model(consolidated_model)
         finally:
-            with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
-                print(f"{exit_code}", file=f)
+            if matbenchmarking:
+                with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
+                    print(f"{exit_code}", file=f)
 
 def extract_protos(namespace, model_name, protos_path):
 
@@ -469,6 +479,57 @@ import "finishreason.proto";
     run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
 
 
+def matbenchmark_run_llm_load_test(llm_load_test_args):
+    visualize.prepare_matbench()
+
+    with env.NextArtifactDir("matbenchmark__llm_load_test"):
+        benchmark_values = {}
+        common_settings = {}
+
+        for key, value in llm_load_test_args.items():
+            if isinstance(value, list):
+                benchmark_values[key] = value
+            else:
+                common_settings[key] = value
+
+        path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()]) + "_"
+
+        expe_name = "expe"
+        json_benchmark_file = matbenchmark.prepare_benchmark_file(
+            path_tpl=path_tpl,
+            script_tpl=f"{pathlib.Path(__file__).absolute()} run_one_matbench",
+            stop_on_error=config.ci_artifacts.get_config("tests.e2e.matbenchmark.stop_on_error"),
+            common_settings=common_settings,
+            expe_name=expe_name,
+            benchmark_values=benchmark_values,
+        )
+
+        benchmark_file, content = matbenchmark.save_benchmark_file(json_benchmark_file)
+        logging.info(f"Benchmark configuration to run: \n{content}")
+
+        args = matbenchmark.set_benchmark_args(benchmark_file, expe_name)
+
+        failed = matbenchmark.run_benchmark(args)
+
+        if failed:
+            msg = "_run_test_multiple_values: matbench benchmark failed :/"
+            logging.error(msg)
+            raise RuntimeError(msg)
+
+
+def run_one_matbench():
+    with env.TempArtifactDir(RUN_DIR):
+        with open(env.ARTIFACT_DIR / "settings.yaml") as f:
+            settings = yaml.safe_load(f)
+
+        with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+            yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+        run.run_toolbox("llm_load_test", "run", **settings)
+
+    sys.exit(0)
+
+
 def test_consolidated_model(consolidated_model, namespace=None):
     logging.info(f"Testing model '{consolidated_model['name']}")
 
@@ -485,7 +546,6 @@ def test_consolidated_model(consolidated_model, namespace=None):
         dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
         query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
     )
-
 
     run.run_toolbox("kserve", "validate_model", **args_dict)
 
@@ -521,7 +581,10 @@ def test_consolidated_model(consolidated_model, namespace=None):
         raise RuntimeError(f"Protos do not exist at {protos_path}")
 
     try:
-        run.run_toolbox("llm_load_test", "run", **args_dict)
+        if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
+            matbenchmark_run_llm_load_test(args_dict)
+        else:
+            run.run_toolbox("llm_load_test", "run", **args_dict)
     finally:
         run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
 
@@ -563,6 +626,8 @@ class Entrypoint:
         self.test_models_sequentially = test_models_sequentially
         self.test_models_concurrently = test_models_concurrently
         self.test_one_model = test_one_model
+
+        self.run_one_matbench = run_one_matbench
 
         self.rebuild_driver_image = rebuild_driver_image
 
