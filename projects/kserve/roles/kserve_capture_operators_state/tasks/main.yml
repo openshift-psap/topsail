@@ -48,6 +48,16 @@
        -A
        > "{{ artifact_extra_logs_dir }}/predictor_pods.status"
 
+- name: Store RHOAI DSC
+  shell:
+    oc get dsc -oyaml -A
+       > {{ artifact_extra_logs_dir }}/dsc.yml
+
+- name: Store RHOAI DSC
+  shell:
+    oc get dsci -oyaml -A
+       > {{ artifact_extra_logs_dir }}/dsci.yml
+
 - name: Capture the Serverless state
   include_tasks: serverless.yaml
 

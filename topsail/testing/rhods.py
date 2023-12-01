@@ -38,8 +38,8 @@ def uninstall():
         logging.info("RHODS is not installed.")
         return
 
-    run.run_toolbox("rhods", "undeploy_ods", mute_stdout=True)
-    # Force-deleting RHODS was necessary because of RHODS-8002. Should be a noop now. To be confirmed.
+    # Force-deleting RHODS is necessary because of RHODS-8002.
+    #run.run_toolbox("rhods", "undeploy_ods", mute_stdout=True)
     run.run_toolbox("rhods", "delete_ods", mute_stdout=True)
 
 
