@@ -1,9 +1,34 @@
 import os
 import logging
-
+import functools
 import yaml
+import json
 
 from . import env, config, run
+
+
+def _json_dumper(obj, strict=False):
+    import datetime
+    import pathlib
+
+    if hasattr(obj, "toJSON"):
+        return obj.toJSON()
+
+    elif hasattr(obj, "json"):
+        return obj.dict(by_alias=True)
+
+    elif hasattr(obj, "__dict__"):
+        return obj.__dict__
+
+    if isinstance(obj, datetime.datetime):
+        return obj.isoformat()
+
+    elif isinstance(obj, pathlib.Path):
+        return str(obj)
+    elif not strict:
+        return str(obj)
+    else:
+        raise RuntimeError(f"No default serializer for object of type {obj.__class__}: {obj}")
 
 
 def prepare_benchmark_file(path_tpl:str,
@@ -28,18 +53,21 @@ def prepare_benchmark_file(path_tpl:str,
     return json_benchmark_file
 
 
-def save_benchmark_file(json_benchmark_file, dirname=None, name="benchmark.yaml"):
+def save_benchmark_file(benchmark_file_content, dirname=None, name="benchmark.yaml"):
     if dirname is None:
         dirname = env.ARTIFACT_DIR
 
     benchmark_file = dirname / name
 
     logging.info(f"Saving MatrixBenchmarking benchmark file into {benchmark_file} ...")
+    # properly convert all the field to string
+    benchmark_file_safe_content = json.loads(json.dumps(benchmark_file_content, default=functools.partial(_json_dumper, strict=False)))
+
+    yaml_content = yaml.dump(benchmark_file_safe_content, default_flow_style=False, sort_keys=False, width=1000)
     with open(benchmark_file, "w") as f:
+        print(yaml_content, file=f)
 
-        yaml.dump(json_benchmark_file, f, default_flow_style=False, sort_keys=False)
-
-    return benchmark_file
+    return benchmark_file, yaml_content
 
 
 def set_benchmark_args(benchmark_file, expe_name, results_dirname=None):

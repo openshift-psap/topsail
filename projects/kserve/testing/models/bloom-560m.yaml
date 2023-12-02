@@ -1,5 +1,4 @@
 extends: base
-id: bloom-560m
 secret_key: # no secret key at the moment
 
 serving_runtime:

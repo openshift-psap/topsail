@@ -1,5 +1,4 @@
 extends: base
-id: mpt-7b-instruct2
 secret_key: mpt-7b-instruct2
 
 serving_runtime:

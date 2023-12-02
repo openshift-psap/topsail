@@ -1,5 +1,4 @@
 extends: base
-id: gpt-neox-20b
 secret_key: gpt-neox-20b
 
 serving_runtime:

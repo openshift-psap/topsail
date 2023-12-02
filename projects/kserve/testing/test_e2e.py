@@ -14,8 +14,13 @@ import fire
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
-from topsail.testing import env, config, run, visualize
+import topsail
+from topsail.testing import env, config, run, visualize, matbenchmark
 import prepare_scale, test_scale
+
+TOPSAIL_DIR = pathlib.Path(topsail.__file__).parent.parent
+RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
+os.chdir(TOPSAIL_DIR)
 
 # ---
 
@@ -367,16 +372,19 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         validate_kwargs = dict(
             namespace=namespace,
             inference_service_names=[model_name],
-            model_id=consolidated_model["id"],
+            model_id="not-used",
             dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
             query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
         )
-        run.run_toolbox("kserve", "validate_model", **validate_kwargs)
+        if config.ci_artifacts.get_config("tests.e2e.validate_model"):
+            run.run_toolbox("kserve", "validate_model", **validate_kwargs)
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
         raise e
     finally:
-        run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
+        if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+            run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
+
 
 def undeploy_consolidated_model(consolidated_model, namespace=None):
     if namespace is None:
@@ -406,8 +414,11 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
     context = env.NextArtifactDir(f"test_{consolidated_model['name']}") \
         if dedicated_dir else open("/dev/null") # dummy context
 
+    matbenchmarking = config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled")
     with context:
-        with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+        settings_filename = "settings.model.yaml" if matbenchmarking else "settings.yaml"
+
+        with open(env.ARTIFACT_DIR / settings_filename, "w") as f:
             settings = dict(
                 e2e_test=True,
                 model_name=consolidated_model['name'],
@@ -421,10 +432,113 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
         exit_code = 1
-        try: exit_code = test_consolidated_model(consolidated_model)
+        try:
+            exit_code = test_consolidated_model(consolidated_model)
         finally:
-            with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
-                print(f"{exit_code}", file=f)
+            if matbenchmarking:
+                with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
+                    print(f"{exit_code}", file=f)
+
+def extract_protos(namespace, model_name, protos_path):
+
+    extract_proto_grpcurl_args_dict = dict(
+        namespace=namespace,
+        inference_service_name=model_name,
+    )
+
+    main_file = dict(
+        methods=["caikit.runtime.Nlp.TextGenerationTaskRequest", "caikit.runtime.Nlp.ServerStreamingTextGenerationTaskRequest", "caikit.runtime.Nlp.BidiStreamingTokenClassificationTaskRequest", "caikit_data_model.nlp.TokenClassificationResult", ".caikit_data_model.nlp.TokenClassificationStreamResult", "caikit.runtime.Nlp.TextClassificationTaskRequest", "caikit.runtime.Nlp.TokenClassificationTaskRequest", "caikit.runtime.Nlp.NlpService",],
+        dest_file=protos_path,
+    )
+
+    with open(main_file["dest_file"], "w") as f:
+        header = """\
+syntax = "proto3";
+package caikit.runtime.Nlp;
+
+import "generatedresult.proto";
+import "caikit-nlp.proto";
+import "caikit_data_model.generated.proto";
+"""
+        print(header, file=f)
+
+    data_file = dict(
+        methods=["caikit_data_model.nlp.TokenClassificationResult", ".caikit_data_model.nlp.TokenClassificationStreamResult", "caikit_data_model.nlp.ClassificationResults", "caikit_data_model.nlp.ClassificationResult", "caikit_data_model.nlp.TokenClassificationResults"],
+        dest_file=protos_path.parent / "caikit_data_model.generated.proto",
+    )
+    with open(data_file["dest_file"], "w") as f:
+        header = """\
+syntax = "proto3";
+package caikit_data_model.nlp;
+
+import "producer-types.proto";
+import "finishreason.proto";
+"""
+        print(header, file=f)
+
+    run.run_toolbox("kserve", "extract_protos_grpcurl", **(extract_proto_grpcurl_args_dict | main_file))
+    run.run_toolbox("kserve", "extract_protos_grpcurl", **(extract_proto_grpcurl_args_dict | data_file))
+
+    run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
+
+
+def matbenchmark_run_llm_load_test(namespace, llm_load_test_args):
+    visualize.prepare_matbench()
+
+    with env.NextArtifactDir("matbenchmark__llm_load_test"):
+        benchmark_values = {}
+        common_settings = {}
+
+        for key, value in llm_load_test_args.items():
+            if isinstance(value, list):
+                benchmark_values[key] = value
+            else:
+                common_settings[key] = value
+
+        common_settings["namespace"] = namespace
+
+        path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()]) + "_"
+
+        expe_name = "expe"
+        json_benchmark_file = matbenchmark.prepare_benchmark_file(
+            path_tpl=path_tpl,
+            script_tpl=f"{pathlib.Path(__file__).absolute()} run_one_matbench",
+            stop_on_error=config.ci_artifacts.get_config("tests.e2e.matbenchmark.stop_on_error"),
+            common_settings=common_settings,
+            expe_name=expe_name,
+            benchmark_values=benchmark_values,
+        )
+
+        benchmark_file, content = matbenchmark.save_benchmark_file(json_benchmark_file)
+        logging.info(f"Benchmark configuration to run: \n{content}")
+
+        args = matbenchmark.set_benchmark_args(benchmark_file, expe_name)
+
+        failed = matbenchmark.run_benchmark(args)
+
+        if failed:
+            msg = "_run_test_multiple_values: matbench benchmark failed :/"
+            logging.error(msg)
+            raise RuntimeError(msg)
+
+
+def run_one_matbench():
+    with env.TempArtifactDir(RUN_DIR):
+        with open(env.ARTIFACT_DIR / "settings.yaml") as f:
+            settings = yaml.safe_load(f)
+
+        with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+            yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+        namespace = settings.pop("namespace")
+
+        try:
+            run.run_toolbox("llm_load_test", "run", **settings)
+        finally:
+            if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+                run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
+
+    sys.exit(0)
 
 
 def test_consolidated_model(consolidated_model, namespace=None):
@@ -439,13 +553,13 @@ def test_consolidated_model(consolidated_model, namespace=None):
     args_dict = dict(
         namespace=namespace,
         inference_service_names=[model_name],
-        model_id=consolidated_model["id"],
+        model_id="not-used",
         dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
         query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
     )
 
-
-    run.run_toolbox("kserve", "validate_model", **args_dict)
+    if config.ci_artifacts.get_config("tests.e2e.validate_model"):
+        run.run_toolbox("kserve", "validate_model", **args_dict)
 
     if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
@@ -464,66 +578,28 @@ def test_consolidated_model(consolidated_model, namespace=None):
         duration=llm_config["duration"],
         protos_path=protos_path.absolute(),
         call=llm_config["call"],
-        model_id=consolidated_model["id"],
+        model_id="not-used",
         llm_path=llm_config["src_path"],
         threads=llm_config["threads"],
         rps=llm_config["rps"],
     )
 
-    # workaround for https://github.com/caikit/caikit-nlp/issues/237, so that llm-load-test always run with the right protos
-
     USE_EXTRACT_PROTO_GPRCURL = True
     if USE_EXTRACT_PROTO_GPRCURL:
-
-
-
-        extract_proto_grpcurl_args_dict = dict(
-            namespace=namespace,
-            inference_service_name=model_name,
-        )
-
-        main_file = dict(
-            methods=["caikit.runtime.Nlp.TextGenerationTaskRequest", "caikit.runtime.Nlp.ServerStreamingTextGenerationTaskRequest", "caikit.runtime.Nlp.BidiStreamingTokenClassificationTaskRequest", "caikit_data_model.nlp.TokenClassificationResult", ".caikit_data_model.nlp.TokenClassificationStreamResult", "caikit.runtime.Nlp.TextClassificationTaskRequest", "caikit.runtime.Nlp.TokenClassificationTaskRequest", "caikit.runtime.Nlp.NlpService",],
-            dest_file=protos_path,
-        )
-
-        with open(main_file["dest_file"], "w") as f:
-            header = """\
-syntax = "proto3";
-package caikit.runtime.Nlp;
-
-import "generatedresult.proto";
-import "caikit-nlp.proto";
-import "caikit_data_model.generated.proto";
-"""
-            print(header, file=f)
-
-        data_file = dict(
-            methods=["caikit_data_model.nlp.TokenClassificationResult", ".caikit_data_model.nlp.TokenClassificationStreamResult", "caikit_data_model.nlp.ClassificationResults", "caikit_data_model.nlp.ClassificationResult", "caikit_data_model.nlp.TokenClassificationResults"],
-            dest_file=protos_path.parent / "caikit_data_model.generated.proto",
-        )
-        with open(data_file["dest_file"], "w") as f:
-            header = """\
-syntax = "proto3";
-package caikit_data_model.nlp;
-
-import "producer-types.proto";
-import "finishreason.proto";
-"""
-            print(header, file=f)
-
-        run.run_toolbox("kserve", "extract_protos_grpcurl", **(extract_proto_grpcurl_args_dict | main_file))
-        run.run_toolbox("kserve", "extract_protos_grpcurl", **(extract_proto_grpcurl_args_dict | data_file))
-
-        run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
+        # workaround for https://github.com/caikit/caikit-nlp/issues/237, so that llm-load-test always run with the right protos
+        extract_protos(namespace, model_name, protos_path)
 
     if not protos_path.exists():
         raise RuntimeError(f"Protos do not exist at {protos_path}")
 
-    try:
-        run.run_toolbox("llm_load_test", "run", **args_dict)
-    finally:
-        run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
+    if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
+        matbenchmark_run_llm_load_test(namespace, args_dict)
+    else:
+        try:
+            run.run_toolbox("llm_load_test", "run", **args_dict)
+        finally:
+            if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+                run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
 
     return 0
 
@@ -563,6 +639,8 @@ class Entrypoint:
         self.test_models_sequentially = test_models_sequentially
         self.test_models_concurrently = test_models_concurrently
         self.test_one_model = test_one_model
+
+        self.run_one_matbench = run_one_matbench
 
         self.rebuild_driver_image = rebuild_driver_image
 
