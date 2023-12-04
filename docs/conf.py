@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Red Hat PSAP CI-Artifacts toolbox'
+project = 'Red Hat PSAP topsail toolbox'
 copyright = '2021, Red Hat PSAP team'
 author = 'Red Hat PSAP team'
 

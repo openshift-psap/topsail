@@ -101,8 +101,8 @@ prechecks() {
     # avoid incorrect error reporting (mostly for outside of CI)
     rm -f "${ARTIFACT_DIR}/FAILURE"
 
-    # store `ci-artifacts` version in use
-    (git describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/ci_artifact.git_version
+    # store `topsail` version in use
+    (git describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/topsail.git_version
 
     if [[ "${PULL_NUMBER:-}" ]]; then
         PR_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PULL_NUMBER"
