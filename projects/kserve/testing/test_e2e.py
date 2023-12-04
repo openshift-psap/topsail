@@ -89,18 +89,18 @@ def test_ci():
             deploy_and_test_models_e2e()
     finally:
         exc = None
+        if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+            exc = run.run_and_catch(
+                exc,
+                run.run_toolbox, "kserve", "capture_operators_state", run_kwargs=dict(capture_stdout=True),
+            )
 
-        exc = run.run_and_catch(
-            exc,
-            run.run_toolbox, "kserve", "capture_operators_state", run_kwargs=dict(capture_stdout=True),
-        )
+            exc = run.run_and_catch(
+                exc,
+                run.run_toolbox, "cluster", "capture_environment", run_kwargs=dict(capture_stdout=True),
+            )
 
-        exc = run.run_and_catch(
-            exc,
-            run.run_toolbox, "cluster", "capture_environment", run_kwargs=dict(capture_stdout=True),
-        )
-
-        if exc: raise exc
+            if exc: raise exc
 
 
 def deploy_models_sequentially():
@@ -487,26 +487,27 @@ def matbenchmark_run_llm_load_test(namespace, llm_load_test_args):
 
     with env.NextArtifactDir("matbenchmark__llm_load_test"):
         benchmark_values = {}
-        common_settings = {}
+        test_configuration = {}
 
         for key, value in llm_load_test_args.items():
             if isinstance(value, list):
                 benchmark_values[key] = value
             else:
-                common_settings[key] = value
+                test_configuration[key] = value
 
-        common_settings["namespace"] = namespace
+        test_configuration["namespace"] = namespace
 
-        path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()]) + "_"
+        path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()])
 
         expe_name = "expe"
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
             script_tpl=f"{pathlib.Path(__file__).absolute()} run_one_matbench",
             stop_on_error=config.ci_artifacts.get_config("tests.e2e.matbenchmark.stop_on_error"),
-            common_settings=common_settings,
+            test_files={"test_config.yaml": test_configuration},
             expe_name=expe_name,
             benchmark_values=benchmark_values,
+            common_settings={},
         )
 
         benchmark_file, content = matbenchmark.save_benchmark_file(json_benchmark_file)
@@ -527,13 +528,15 @@ def run_one_matbench():
         with open(env.ARTIFACT_DIR / "settings.yaml") as f:
             settings = yaml.safe_load(f)
 
+        with open(env.ARTIFACT_DIR / "test_config.yaml") as f:
+            test_config = yaml.safe_load(f)
+
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
-        namespace = settings.pop("namespace")
-
+        namespace = test_config.pop("namespace")
         try:
-            run.run_toolbox("llm_load_test", "run", **settings)
+            run.run_toolbox("llm_load_test", "run", **(test_config | settings))
         finally:
             if config.ci_artifacts.get_config("tests.e2e.capture_state"):
                 run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)

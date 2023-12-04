@@ -35,6 +35,7 @@ def prepare_benchmark_file(path_tpl:str,
                            script_tpl:str,
                            stop_on_error:bool,
                            common_settings:dict,
+                           test_files:dict,
                            expe_name:str,
                            benchmark_values:dict):
 
@@ -43,6 +44,7 @@ def prepare_benchmark_file(path_tpl:str,
     json_benchmark_file["--script_tpl"] = script_tpl
     json_benchmark_file["--remote_mode"] = False
     json_benchmark_file["--stop_on_error"] = stop_on_error
+    json_benchmark_file["test_files"] = test_files
     json_benchmark_file["common_settings"] = common_settings
     json_benchmark_file["expe_to_run"] = [expe_name]
 
