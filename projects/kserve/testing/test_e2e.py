@@ -487,26 +487,27 @@ def matbenchmark_run_llm_load_test(namespace, llm_load_test_args):
 
     with env.NextArtifactDir("matbenchmark__llm_load_test"):
         benchmark_values = {}
-        common_settings = {}
+        test_configuration = {}
 
         for key, value in llm_load_test_args.items():
             if isinstance(value, list):
                 benchmark_values[key] = value
             else:
-                common_settings[key] = value
+                test_configuration[key] = value
 
-        common_settings["namespace"] = namespace
+        test_configuration["namespace"] = namespace
 
-        path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()]) + "_"
+        path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()])
 
         expe_name = "expe"
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
             script_tpl=f"{pathlib.Path(__file__).absolute()} run_one_matbench",
             stop_on_error=config.ci_artifacts.get_config("tests.e2e.matbenchmark.stop_on_error"),
-            common_settings=common_settings,
+            test_files={"test_config.yaml": test_configuration},
             expe_name=expe_name,
             benchmark_values=benchmark_values,
+            common_settings={},
         )
 
         benchmark_file, content = matbenchmark.save_benchmark_file(json_benchmark_file)
