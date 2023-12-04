@@ -89,18 +89,18 @@ def test_ci():
             deploy_and_test_models_e2e()
     finally:
         exc = None
+        if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+            exc = run.run_and_catch(
+                exc,
+                run.run_toolbox, "kserve", "capture_operators_state", run_kwargs=dict(capture_stdout=True),
+            )
 
-        exc = run.run_and_catch(
-            exc,
-            run.run_toolbox, "kserve", "capture_operators_state", run_kwargs=dict(capture_stdout=True),
-        )
+            exc = run.run_and_catch(
+                exc,
+                run.run_toolbox, "cluster", "capture_environment", run_kwargs=dict(capture_stdout=True),
+            )
 
-        exc = run.run_and_catch(
-            exc,
-            run.run_toolbox, "cluster", "capture_environment", run_kwargs=dict(capture_stdout=True),
-        )
-
-        if exc: raise exc
+            if exc: raise exc
 
 
 def deploy_models_sequentially():
