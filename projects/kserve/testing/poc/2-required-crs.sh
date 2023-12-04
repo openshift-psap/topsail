@@ -34,12 +34,8 @@ oc apply -f custom-manifests/service-mesh/default-smmr.yaml
 
 # Create a Knative Serving installation
 echo
-light_info "[INFO] Create a Knative Serving installation"
+light_info "[INFO] Wait for Knative Serving installation"
 echo
-oc create ns knative-serving -oyaml --dry-run=client | oc apply -f-
-oc::wait::object::availability "oc get project knative-serving" 2 60
-
-oc apply -f custom-manifests/serverless/knativeserving-istio.yaml
 
 wait_for_pods_ready "app=controller" "knative-serving"
 wait_for_pods_ready "app=net-istio-controller" "knative-serving"
@@ -60,27 +56,5 @@ oc wait --for=condition=ready pod -l app=domain-mapping -n knative-serving --tim
 oc wait --for=condition=ready pod -l app=webhook -n knative-serving --timeout=300s
 oc wait --for=condition=ready pod -l app=activator -n knative-serving --timeout=300s
 oc wait --for=condition=ready pod -l app=autoscaler -n knative-serving --timeout=300s
-
-# Generate wildcard cert for a gateway.
-export DOMAIN_NAME=$(oc get ingresses.config.openshift.io cluster -o jsonpath='{.spec.domain}' | awk -F'.' '{print $(NF-1)"."$NF}')
-export COMMON_NAME=$(oc get ingresses.config.openshift.io cluster -o jsonpath='{.spec.domain}')
-
-## Generate wildcard cert using openssl
-if [[ ! -n ${CUSTOM_CERT+x} && ! -n ${CUSTOM_KEY+x} ]];
-then
-  echo
-  light_info "[INFO] Generate wildcard cert using openssl"
-  echo
-  # bash -x ./scripts/generate-wildcard-certs.sh ${BASE_CERT_DIR} ${DOMAIN_NAME} ${COMMON_NAME}
-  TARGET_CUSTOM_CERT=${BASE_CERT_DIR}/wildcard.crt
-  TARGET_CUSTOM_KEY=${BASE_CERT_DIR}/wildcard.key
-else
-  TARGET_CUSTOM_CERT=${CUSTOM_CERT}
-  TARGET_CUSTOM_KEY=${CUSTOM_KEY}
-fi
-
-# Create the Knative gateways
-oc create secret tls wildcard-certs --cert=${TARGET_CUSTOM_CERT} --key=${TARGET_CUSTOM_KEY} -n istio-system --dry-run=client -ojson | oc apply -f-
-oc apply -f custom-manifests/serverless/gateways.yaml
 
 success "[SUCCESS] Successfully created ServiceMesh Control Plane CR, KNative-Serving CR and required setup such as wildcard cert and Gateways"
