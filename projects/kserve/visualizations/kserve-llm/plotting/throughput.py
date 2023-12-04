@@ -43,6 +43,11 @@ def generateThroughputData(entries, _variables):
             datum["model_name"] += f"<br>{entry.settings.mode.title()}"
             datum["test_name"] += f"<br>{entry.settings.mode.title()}"
 
+        if _variables:
+            datum["test_name:sort_index"] = entry.settings.__dict__[list(_variables.keys())[0]]
+        else:
+            datum["test_name:sort_index"] = datum["test_name"]
+
         calls_count = 0
         latency_s = 0.0
         for idx, block in enumerate(llm_data):
@@ -88,7 +93,7 @@ class Throughput():
         if df.empty:
             return None, "Not data available ..."
 
-        df = df.sort_values(by=["test_name"])
+        df = df.sort_values(by=["test_name:sort_index"], ascending=False)
 
         if cfg__by_model:
             fig = plotly.subplots.make_subplots(rows=1, cols=2, specs=[[{}, {}]], shared_xaxes=True,
