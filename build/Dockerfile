@@ -2,10 +2,10 @@ FROM registry.access.redhat.com/ubi9/ubi
 
 MAINTAINER OpenShift PSAP Team <openshift-psap@redhat.com>
 
-LABEL 	io.k8s.display-name="OpenShift PSAP CI artifacts" \
+LABEL 	io.k8s.display-name="OpenShift PSAP topsail" \
       	io.k8s.description="An image for running Ansible artifacts for OpenShift PSAP CI" \
- 	name="ci-artifacts" \
-	url="https://github.com/openshift-psap/ci-artifacts"
+ 	name="topsail" \
+	url="https://github.com/openshift-psap/"
 
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
@@ -41,7 +41,7 @@ RUN wget --quiet "https://github.com/prometheus/prometheus/releases/download/v${
 # Set up the runner user
 ENV USER_NAME=psap-ci-runner \
     USER=psap-ci-runner \
-    HOME=/opt/ci-artifacts/src \
+    HOME=/opt/topsail/src \
     INSIDE_CI_IMAGE="y"
 ENV ANSIBLE_CONFIG="${HOME}/config/ansible.cfg"
 

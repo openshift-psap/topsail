@@ -1,4 +1,4 @@
-title = "ci-artifacts gitleaks config"
+title = "topsail gitleaks config"
 
 [allowlist]
   paths = [

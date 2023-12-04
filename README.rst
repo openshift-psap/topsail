@@ -87,7 +87,7 @@ available commands.
 
 The functionalities of the toolbox commands are described in the
 `🚧 under construction 🚧 documentation page
-<https://openshift-psap.github.io/ci-artifacts/index.html#psap-toolbox>`_.
+<https://openshift-psap.github.io/topsail/index.html#psap-toolbox>`_.
 
 
 .. |lint| image:: https://github.com/openshift-psap/topsail/actions/workflows/ansible-lint.yml/badge.svg?event=schedule

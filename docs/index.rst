@@ -1,5 +1,5 @@
 =================================
-Red Hat PSAP CI-Artifacts toolbox
+Red Hat PSAP TOPSAIL toolbox
 =================================
 
 .. toctree::
