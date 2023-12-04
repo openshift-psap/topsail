@@ -528,13 +528,15 @@ def run_one_matbench():
         with open(env.ARTIFACT_DIR / "settings.yaml") as f:
             settings = yaml.safe_load(f)
 
+        with open(env.ARTIFACT_DIR / "test_config.yaml") as f:
+            test_config = yaml.safe_load(f)
+
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
-        namespace = settings.pop("namespace")
-
+        namespace = test_config.pop("namespace")
         try:
-            run.run_toolbox("llm_load_test", "run", **settings)
+            run.run_toolbox("llm_load_test", "run", **(test_config | settings))
         finally:
             if config.ci_artifacts.get_config("tests.e2e.capture_state"):
                 run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
