@@ -61,7 +61,11 @@ def generateThroughputData(entries, _variables):
 
         datum["token_count"] = generatedTokens
         datum["throughput"] = int(generatedTokens / duration)
-        datum["vusers"] = entry.results.test_config.get("tests.e2e.llm_load_test.threads")
+        try:
+            datum["vusers"] = entry.settings.threads
+        except AttributeError:
+            datum["vusers"] = entry.results.test_config.get("tests.e2e.llm_load_test.threads")
+
         datum["avg_latency"] = latency_s / calls_count
 
         data.append(datum)
@@ -155,7 +159,7 @@ class Throughput():
             fig.update_xaxes(title=f"Throughput (in tokens/s) ❯")
             fig.update_yaxes(title=f"❮ Average latency (in s)")
 
-        vus = ", ".join(map(str, df["vusers"].unique()))
+        vus = ", ".join(map(str, sorted(df["vusers"].unique())))
         subtitle = f"<br>for {vus} VUs"
 
         # ❯ or ❮
