@@ -8,6 +8,7 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 import datetime
 import time
+import functools
 
 import yaml
 import jsonpath_ng
@@ -17,7 +18,6 @@ configure_logging()
 
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -29,9 +29,6 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
 
     env.init()
     config.init(TESTING_THIS_DIR)
-
-    if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
-        raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -45,6 +42,7 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     return decorator
 
 
+@entrypoint()
 def local_ci_prepare():
     """
     Prepares the cluster for running Local-CI commands.
@@ -82,7 +80,7 @@ def local_ci_prepare():
     # Prepare the Secrets
     #
 
-    for secret_name, secret_data in get_config("secrets").items():
+    for secret_name, secret_data in config.ci_artifacts.get_config("secrets").items():
         secret_env_key = secret_data["env_key"]
 
         run.run(f"oc create secret generic {secret_name} --from-file=${secret_env_key} -n {namespace} --dry-run=client -oyaml | oc apply -f-")
@@ -90,6 +88,7 @@ def local_ci_prepare():
     return None
 
 
+@entrypoint()
 def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True, step=None,
                  check_clean_diff=True, check_branch_synced=True, pr_config=None, retrieve_artifacts=True,
                  test_args=None):
@@ -108,7 +107,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
       retrieve_artifacts: If False, do not retrieve locally the test artifacts.
       test_args: List of arguments to give to the test. Overrides what is found in the configuration file.
     """
-    namespace = get_config("base_image.namespace")
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
 
     if pr_config and not pathlib.Path(pr_config).exists():
         logging.fatal(f"--pr-config={pr_config} config file does not exist, aborting.")
@@ -138,7 +137,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
             logging.info("Pass the flag --check-branch-synced=False or --check-clean-diff=False to bypass this.")
             sys.exit(1)
 
-    workloads = get_config("workloads")
+    workloads = config.ci_artifacts.get_config("workloads")
     if not workload in workloads:
         logging.fatal(f"Invalid workload '{workload}'. Must be in {', '.join(workloads.keys())}")
         sys.exit(1)
@@ -178,7 +177,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
 
     logging.info("Cleanup up the workflow Pods ...")
     for step_idx, step_name in enumerate(steps):
-        run(f"oc delete pod/{workload}-{step_idx:03d}-{step_name} -n {namespace} --ignore-not-found")
+        run.run(f"oc delete pod/{workload}-{step_idx:03d}-{step_name} -n {namespace} --ignore-not-found")
 
     failed = []
     for step_idx, step_name in enumerate(steps):
