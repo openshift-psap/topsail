@@ -9,7 +9,7 @@ metadata:
 spec:
   initContainers:
   - name: fetch-git
-    workingDir: /opt/ci-artifacts/src
+    workingDir: /opt/topsail/src
     command:
     - bash
     - -cxe
@@ -56,7 +56,7 @@ spec:
     - mountPath: /logs
       name: artifacts
 {% if local_ci_run_update_git %}
-    - mountPath: /opt/ci-artifacts/src
+    - mountPath: /opt/topsail/src
       name: ci-artifacts-repo
 {% endif %}
   serviceAccount: "{{ local_ci_run_service_account }}"
@@ -130,7 +130,7 @@ spec:
     - mountPath: /logs
       name: artifacts
 {% if local_ci_run_update_git %}
-    - mountPath: /opt/ci-artifacts/src
+    - mountPath: /opt/topsail/src
       name: ci-artifacts-repo
 {% endif %}
 {% if local_ci_run_secret_name %}
@@ -221,7 +221,7 @@ spec:
     - mountPath: /logs
       name: artifacts
 {% if local_ci_run_update_git %}
-    - mountPath: /opt/ci-artifacts/src
+    - mountPath: /opt/topsail/src
       name: ci-artifacts-repo
 {% endif %}
 {% if local_ci_run_secret_name %}
