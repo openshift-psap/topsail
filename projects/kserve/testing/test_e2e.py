@@ -224,7 +224,7 @@ def test_models_concurrently():
     "Tests all the configured models concurrently (all at the same time)"
 
     logging.info("Test the models concurrently")
-    run.run_toolbox_from_config("local_ci", "run_multi", "suffix=test_concurrently", artifact_dir_suffix="_test_concurrently")
+    run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_concurrently", artifact_dir_suffix="_test_concurrently")
 
 
 def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None, namespace: str = None):

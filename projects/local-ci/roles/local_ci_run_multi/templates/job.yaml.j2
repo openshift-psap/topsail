@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   labels:
-    app: ci-artifacts
+    app: topsail
     test: {{ local_ci_run_multi_job_name }}
   name: {{ local_ci_run_multi_job_name }}
   namespace: {{ local_ci_run_multi_namespace }}
@@ -104,7 +104,7 @@ spec:
           sleep "$sleep_delay"
           echo "launch_delay: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 
-          if ! /opt/ci-artifacts/src/testing/run {{ local_ci_run_multi_ci_command }} |& tee "${ARTIFACT_DIR}/run.log"; then
+          if ! "$HOME"/testing/run {{ local_ci_run_multi_ci_command }} |& tee "${ARTIFACT_DIR}/run.log"; then
               safe_exit 1
           fi
 

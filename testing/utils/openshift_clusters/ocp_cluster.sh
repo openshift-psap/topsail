@@ -24,10 +24,10 @@ prepare_deploy_cluster_subproject() {
 
     local DOWNLOAD_OCP_INSTALLER_FROM_PRIVATE=
     if [[ "$DOWNLOAD_OCP_INSTALLER_FROM_PRIVATE" ]]; then
-        mkdir -p "/opt/ci-artifacts/src/subprojects/deploy-cluster/utils/installers/$ocp_version"
+        mkdir -p "/opt/topsail/src/subprojects/deploy-cluster/utils/installers/$ocp_version"
         wget --quiet "https://people.redhat.com/~kpouget/22-10-05/openshift-install-linux-$ocp_version.tar.gz"
         tar xzf "openshift-install-linux-$ocp_version.tar.gz" openshift-install
-        mv openshift-install "/opt/ci-artifacts/src/subprojects/deploy-cluster/utils/installers/$ocp_version/openshift-install"
+        mv openshift-install "/opt/topsail/src/subprojects/deploy-cluster/utils/installers/$ocp_version/openshift-install"
         rm "openshift-install-linux-$ocp_version.tar.gz"
     fi
 
