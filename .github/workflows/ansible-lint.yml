@@ -23,14 +23,13 @@ jobs:
 
     - name: Set ANSIBLE_ROLES_PATH
       run: |
-        EXTRA_ANSIBLE_ROLES_PATH=$(find "$(realpath ./projects)" -type d -name roles -print | tr '\n' ':')
+        EXTRA_ANSIBLE_ROLES_PATH=$(find "$(realpath ./topsail/projects)" -type d -name roles -print | tr '\n' ':')
         if [ -n "$ANSIBLE_ROLES_PATH" ]; then
           ANSIBLE_ROLES_PATH="$ANSIBLE_ROLES_PATH:$EXTRA_ANSIBLE_ROLES_PATH"
         else
           ANSIBLE_ROLES_PATH="$EXTRA_ANSIBLE_ROLES_PATH"
         fi
         echo "ANSIBLE_ROLES_PATH=$ANSIBLE_ROLES_PATH" | tee -a "$GITHUB_ENV"
-
 
     - name: Lint Ansible Playbook
       # replace "main" with any valid ref
