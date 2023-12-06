@@ -180,7 +180,6 @@ kserve validate_model:
   namespace: {{ tests.scale.namespace.name }}
   inference_service_names: [{{ tests.scale.model.name }}]
 
-  model_id: {{ tests.scale.model.id }}
   dataset: {{ kserve.inference_service.validation.dataset }}
   query_count: {{ kserve.inference_service.validation.query_count }}
 {% endif %}
