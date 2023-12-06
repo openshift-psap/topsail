@@ -7,10 +7,6 @@
 # Mandatory value
 kserve_validate_model_inference_service_names:
 
-# the model-id to pass to the inference service
-# Mandatory value
-kserve_validate_model_model_id:
-
 # path to the dataset to use for the query
 # Mandatory value
 kserve_validate_model_dataset:
@@ -18,6 +14,9 @@ kserve_validate_model_dataset:
 # number of query to perform
 # Mandatory value
 kserve_validate_model_query_count:
+
+# the model-id to pass to the inference service
+kserve_validate_model_model_id: not-used
 
 # the namespace in which the Serving stack was deployed. If empty, use the current project.
 kserve_validate_model_namespace:
