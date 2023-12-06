@@ -208,7 +208,7 @@ def run_one_test(namespace, job_index):
         run.run(f'echo "model_{model_idx}_deployed: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
 
         extra = dict(inference_service_names=[inference_service_name])
-        run.run("kserve", "validate_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
+        run.run_toolbox_from_config("kserve", "validate_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
         run.run(f'echo "model_{model_idx}_validated: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
 
         all_inference_service_names += [inference_service_name]
