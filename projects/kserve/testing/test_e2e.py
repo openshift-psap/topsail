@@ -434,7 +434,7 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
         try:
             exit_code = test_consolidated_model(consolidated_model)
         finally:
-            if matbenchmarking:
+            if not matbenchmarking:
                 with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                     print(f"{exit_code}", file=f)
 
