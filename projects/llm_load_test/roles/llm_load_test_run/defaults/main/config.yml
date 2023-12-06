@@ -20,8 +20,7 @@ llm_load_test_run_protos_path:
 llm_load_test_run_call:
 
 # The ID of the model to pass along with the GRPC call
-# Mandatory value
-llm_load_test_run_model_id:
+llm_load_test_run_model_id: not-used
 
 # Path where llm-load-test has been cloned
 llm_load_test_run_llm_path: /src/llm-load-test/
