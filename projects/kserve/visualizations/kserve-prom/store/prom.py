@@ -30,8 +30,8 @@ def _get_container_cpu(cluster_role, labels):
     metric_name = "_".join(f"{k}={v}" for k, v in labels.items())
 
     return [
-        {f"{cluster_role}__container_cpu__{metric_name}": "rate(container_cpu_usage_seconds_total{"+labels_str+"}[5m])"},
-        {f"{cluster_role}__container_sum_cpu__{metric_name}": "sum(rate(container_cpu_usage_seconds_total{"+labels_str+"}[5m]))"},
+        {f"{cluster_role}__container_cpu__{metric_name}": "rate(container_cpu_usage_seconds_total{"+labels_str+", prometheus_replica=""}[5m])"},
+        {f"{cluster_role}__container_sum_cpu__{metric_name}": "sum(rate(container_cpu_usage_seconds_total{"+labels_str+", prometheus_replica=""}[5m]))"},
         {f"{cluster_role}__container_cpu_requests__{metric_name}": "kube_pod_container_resource_requests{"+labels_str+",resource='cpu'}"},
         {f"{cluster_role}__container_cpu_limits__{metric_name}": "kube_pod_container_resource_limits{"+labels_str+",resource='cpu'}"},
     ]
@@ -358,8 +358,6 @@ SUTEST_CONTAINER_LABELS = [
 
     {"Istio egress": dict(namespace="istio-system", pod="istio-egressgateway-.*")},
     {"Istio ingress": dict(namespace="istio-system", pod="istio-ingressgateway-.*")},
-    {"Istio Jaeger": dict(namespace="istio-system", pod="jaeger-.*")},
-    {"Istio Kiaki": dict(namespace="istio-system", pod="kiali-.*")},
     {"Istiod Minimal": dict(namespace="istio-system", pod="istiod-minimal.*")},
 
     {"KNative Activator": dict(namespace="knative-serving", pod="activator-.*")},

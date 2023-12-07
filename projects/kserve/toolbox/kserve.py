@@ -85,9 +85,9 @@ class Kserve:
     @AnsibleMappedParams
     def validate_model(self,
                        inference_service_names,
-                       model_id,
                        dataset,
                        query_count,
+                       model_id="not-used",
                        namespace=""):
         """
         Validate the proper deployment of a KServe model

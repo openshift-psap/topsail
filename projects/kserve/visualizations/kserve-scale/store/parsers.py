@@ -42,7 +42,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/artifacts/ci-pod-*/*__kserve__validate_model_caikit-isvc-u*-m*/caikit-isvc-u*-m*/call_*.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
-    f"{artifact_dirnames.KSERVER_CAPTURE_OPERATORS_STATE_DIR}/rhods.createdAt",
+    f"{artifact_dirnames.KSERVE_CAPTURE_OPERATORS_STATE_DIR}/rhods.createdAt",
     f"{artifact_dirnames.KSERVE_CAPTURE_OPERATORS_STATE_DIR}/rhods.version",
     f"{artifact_dirnames.KSERVE_CAPTURE_OPERATORS_STATE_DIR}/predictor_pods.json",
 ]

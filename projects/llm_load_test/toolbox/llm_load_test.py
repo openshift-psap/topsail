@@ -15,7 +15,7 @@ class Llm_Load_Test:
             duration,
             protos_path,
             call,
-            model_id,
+            model_id="not-used",
             llm_path="/src/llm-load-test/",
             threads=16,
             rps=2,

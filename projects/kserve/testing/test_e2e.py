@@ -336,9 +336,6 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     with env.NextArtifactDir("prepare_namespace"):
         test_scale.prepare_user_sutest_namespace(namespace)
 
-        with env.NextArtifactDir("deploy_storage_configuration"):
-            test_scale.deploy_storage_configuration(namespace)
-
     try:
         deploy_model_start_ts = datetime.datetime.now()
         try:
@@ -372,7 +369,6 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         validate_kwargs = dict(
             namespace=namespace,
             inference_service_names=[model_name],
-            model_id="not-used",
             dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
             query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
         )
@@ -435,7 +431,7 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
         try:
             exit_code = test_consolidated_model(consolidated_model)
         finally:
-            if matbenchmarking:
+            if not matbenchmarking:
                 with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                     print(f"{exit_code}", file=f)
 
@@ -556,7 +552,6 @@ def test_consolidated_model(consolidated_model, namespace=None):
     args_dict = dict(
         namespace=namespace,
         inference_service_names=[model_name],
-        model_id="not-used",
         dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
         query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
     )
@@ -581,7 +576,6 @@ def test_consolidated_model(consolidated_model, namespace=None):
         duration=llm_config["duration"],
         protos_path=protos_path.absolute(),
         call=llm_config["call"],
-        model_id="not-used",
         llm_path=llm_config["src_path"],
         threads=llm_config["threads"],
         rps=llm_config["rps"],
