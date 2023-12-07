@@ -25,11 +25,12 @@ def generateThroughputData(entries, _variables):
     data = []
 
     if "mode" in _variables:
-        variables = list(_variables) # make a copy before modifying
-        variables.remove("mode")
+        variables = dict(_variables) # make a copy before modifying
+        variables.pop("mode")
+        variables.pop("index")
         has_multiple_modes = True
     else:
-        variables = _variables
+        variables = dict(_variables)
         has_multiple_modes = False
 
     for entry in entries:
@@ -43,7 +44,7 @@ def generateThroughputData(entries, _variables):
             datum["model_name"] += f"<br>{entry.settings.mode.title()}"
             datum["test_name"] += f"<br>{entry.settings.mode.title()}"
 
-        if _variables:
+        if _variables and not has_multiple_modes:
             datum["test_name:sort_index"] = entry.settings.__dict__[list(_variables.keys())[0]]
         else:
             datum["test_name:sort_index"] = datum["test_name"]
@@ -103,8 +104,8 @@ class Throughput():
             fig = plotly.subplots.make_subplots(rows=1, cols=2, specs=[[{}, {}]], shared_xaxes=True,
                                                 shared_yaxes=False, vertical_spacing=0.001)
 
-            fig1 = px.bar(df, hover_data=df.columns, y="test_name", x="throughput",
-                          orientation='h',)
+            fig1 = px.bar(df, hover_data=df.columns, y="test_name", x="throughput", orientation='h')
+
             for i in range(len(fig1.data)):
                 fig1.data[i].update(xperiodalignment="middle")
 
