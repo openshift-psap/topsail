@@ -61,10 +61,10 @@ workloads:
     steps:
       pre_clean_up:
         command: kserve test cleanup_sutest_ns
-      pre_scale_up:
-        command: kserve test cluster_scale_up
+      # pre_scale_up:
+      #   command: kserve test cluster_scale_up
       test:
         command: kserve test test_ci
-      post_scale_down:
-        command: kserve test cluster_scale_down
-        always_run: true
+      # post_scale_down:
+      #   command: kserve test cluster_scale_down
+      #   always_run: true
