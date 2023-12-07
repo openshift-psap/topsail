@@ -138,9 +138,9 @@ class ErrorReport():
             setup_info
         )]
 
-        setup_info += [html.Li(["RHODS configuration: ", html.Code(yaml.dump(dict(rhods=entry.results.test_config.yaml_file["rhods"])), style={"white-space": "pre-wrap"})])]
+        setup_info += [html.Li(["RHOAI configuration: ", html.Code(yaml.dump(dict(rhods=entry.results.test_config.yaml_file["rhods"])), style={"white-space": "pre-wrap"})])]
 
-        setup_info += [html.Li(["Watsonx configuration: ", html.Code(yaml.dump(dict(watsonx_serving=entry.results.test_config.yaml_file["watsonx_serving"])), style={"white-space": "pre-wrap"})])]
+        setup_info += [html.Li(["KServe configuration: ", html.Code(yaml.dump(dict(watsonx_serving=entry.results.test_config.yaml_file["kserve"])), style={"white-space": "pre-wrap"})])]
 
         header += report.Plot_and_Text(f"Inference Services Progress", args)
 
