@@ -1,2 +1,6 @@
 __pycache__
 .env*
+nohup.out
+*.pyc
+*topsail.egg-info*
+dist*

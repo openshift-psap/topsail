@@ -1,6 +1,6 @@
 [submodule "subprojects/matrix-benchmarking"]
-	path = subprojects/matrix-benchmarking
+	path = topsail/subprojects/matrix-benchmarking
 	url = https://github.com/openshift-psap/matrix-benchmarking
 [submodule "subprojects/llm-load-test"]
-	path = subprojects/llm-load-test
+	path = topsail/subprojects/llm-load-test
 	url = https://github.com/openshift-psap/llm-load-test
