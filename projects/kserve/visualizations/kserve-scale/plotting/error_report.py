@@ -143,6 +143,7 @@ class ErrorReport():
         setup_info += [html.Li(["KServe configuration: ", html.Code(yaml.dump(dict(watsonx_serving=entry.results.test_config.yaml_file["kserve"])), style={"white-space": "pre-wrap"})])]
 
         header += report.Plot_and_Text(f"Inference Services Progress", args)
+        header += report.Plot_and_Text(f"Inference Services Load-time Distribution", args)
 
         failed_users = []
         successful_users = []
