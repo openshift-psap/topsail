@@ -263,7 +263,7 @@ main() {
 
             ;& # fallthrough
         "cleanup_clusters")
-            apply_preset cleanup_clusters_on_exit
+            apply_preset cleanup
             sutest_cleanup
             driver_cleanup
 
