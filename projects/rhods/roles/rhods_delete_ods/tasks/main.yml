@@ -32,7 +32,7 @@
 - name: Get all the ODH/Kubeflow CRDs
   shell:
     set -o pipefail;
-    oc get crd -oname | grep -E 'opendatahub.io|kubeflow.org' | cut -d/ -f2
+    oc get crd -oname | (grep -E 'opendatahub.io|kubeflow.org' || true) | cut -d/ -f2
   register: crd_names_cmd
 
 - name: Delete all the CR {{ item }}
