@@ -65,6 +65,12 @@ def prepare_user_sutest_namespace(namespace):
         run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_node_selector", extra=extra, mute_stdout=True)
         run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_toleration", extra=extra, mute_stdout=True)
 
+    with env.NextArtifactDir("deploy_storage_configuration"):
+        deploy_storage_configuration(namespace)
+
+    with env.NextArtifactDir("deploy_istio_sidecar"):
+        deploy_istio_sidecar(namespace)
+
 
 def save_and_create(name, content, namespace, is_secret=False):
     (env.ARTIFACT_DIR / "src").mkdir(exist_ok=True)
@@ -80,6 +86,27 @@ def save_and_create(name, content, namespace, is_secret=False):
     finally:
         if is_secret:
             file_path.unlink(missing_ok=True)
+
+
+def prepare_namespace(namespace):
+    deploy_storage_configuration(namespace)
+    deploy_istio_sidecar()
+
+
+def deploy_istio_sidecar(namespace):
+    istio_sidecar = f"""\
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: {namespace}
+spec:
+  egress:
+  - hosts:
+    - "./*"
+    - "istio-system/*"
+"""
+    save_and_create("istio_sidecar.yaml", istio_sidecar, namespace)
 
 
 def deploy_storage_configuration(namespace):
@@ -190,10 +217,6 @@ def run_one():
 
 
 def run_one_test(namespace, job_index):
-    run.run('echo "namespace_prepared: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"')
-    deploy_storage_configuration(namespace)
-    run.run('echo "storage_configured: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"')
-
     models_per_namespace = config.ci_artifacts.get_config("tests.scale.model.replicas")
     inference_service_basename = config.ci_artifacts.get_config("tests.scale.model.name")
     all_inference_service_names = []

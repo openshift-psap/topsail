@@ -336,9 +336,6 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     with env.NextArtifactDir("prepare_namespace"):
         test_scale.prepare_user_sutest_namespace(namespace)
 
-        with env.NextArtifactDir("deploy_storage_configuration"):
-            test_scale.deploy_storage_configuration(namespace)
-
     try:
         deploy_model_start_ts = datetime.datetime.now()
         try:
