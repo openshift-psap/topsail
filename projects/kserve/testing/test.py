@@ -275,6 +275,17 @@ def cleanup_sutest_ns():
 
 
 @entrypoint()
+def cleanup_sutest_crs():
+    """
+    Cleans up the Custom Resources of the SUTest cluster
+    """
+
+    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve"])
+    for cr_name in config.ci_artifacts.get_config("prepare.cleanup.crds"):
+        run.run(f"oc delete {cr_name} --all -A")
+
+
+@entrypoint()
 def rebuild_driver_image(pr_number):
     namespace = config.ci_artifacts.get_config("base_image.namespace")
     prepare_user_pods.rebuild_driver_image(namespace, pr_number)
