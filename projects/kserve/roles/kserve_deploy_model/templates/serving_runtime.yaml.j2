@@ -3,6 +3,10 @@ kind: ServingRuntime
 metadata:
   name: {{ kserve_deploy_model_serving_runtime_name }}
   namespace: {{ kserve_deploy_model_namespace }}
+  labels:
+    opendatahub.io/dashboard: "true"
+  annotations:
+    opendatahub.io/template-display-name: "Caikit/TGis ServingRuntime for {{ kserve_deploy_model_serving_runtime_name }} | Topsail"
 spec:
   containers:
 {% if kserve_deploy_model_sr_merge_containers == false %} # 2-container architecture
