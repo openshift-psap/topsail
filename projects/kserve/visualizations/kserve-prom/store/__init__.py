@@ -12,7 +12,7 @@ import matrix_benchmarking.store.simple as store_simple
 from . import parsers
 from . import lts
 
-CACHE_FILENAME = "watsonx-serving-prom.cache.pickle"
+CACHE_FILENAME = "kserve-prom.cache.pickle"
 
 IMPORTANT_FILES = parsers.IMPORTANT_FILES
 
