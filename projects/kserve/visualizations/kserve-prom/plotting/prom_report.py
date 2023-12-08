@@ -15,6 +15,7 @@ def register():
     GpuUsageReport()
     RhoaiFootprintReport()
     ControlPlaneReport()
+    LtsReport()
 
 
 def add_pod_cpu_mem_usage(header, what, args, mem_only=False, cpu_only=False):
@@ -209,3 +210,26 @@ class ControlPlaneReport():
         return None, header
 
 
+class LtsReport():
+    def __init__(self):
+        self.name = "report: LTS"
+        self.id_name = self.name
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.H1("LTS visualization")]
+
+        for stats_name in table_stats.TableStats.stats_by_name.keys():
+            if not stats_name.startswith("LTS:"): continue
+            header += report.Plot_and_Text(stats_name, args)
+            header += html.Br()
+            header += html.Br()
+
+        return None, header
