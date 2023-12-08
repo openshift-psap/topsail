@@ -3,6 +3,7 @@ from . import report
 from . import latency
 from . import errors
 from . import throughput
+from . import lts
 
 def register():
     error_report.register()
@@ -10,3 +11,4 @@ def register():
     latency.register()
     errors.register()
     throughput.register()
+    lts.register()
