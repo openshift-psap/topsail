@@ -103,7 +103,7 @@ def test_ci():
                 run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
 
             if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
-                cleanup_cluster()
+                cleanup_cluster(mute=True)
 
 @entrypoint()
 def scale_test(dry_mode=None, capture_prom=None, do_visualize=None):
@@ -173,8 +173,9 @@ def generate_plots_from_pr_args():
     visualize.download_and_generate_visualizations()
 
 
+
 @entrypoint()
-def cleanup_cluster():
+def cleanup_cluster(mute=False):
     """
     Restores the cluster to its original state
     """
@@ -184,15 +185,17 @@ def cleanup_cluster():
         cleanup_sutest_ns()
         cluster_scale_down()
         prepare_user_pods.cleanup_cluster()
-        prepare_kserve.cleanup()
+        cleanup_sutest_crs()
+
+    prepare_kserve.cleanup(mute)
 
 
 @entrypoint()
-def cleanup_rhoai():
+def cleanup_rhoai(mute=False):
     """
     Restores the cluster to its original state
     """
-    prepare_kserve.cleanup()
+    prepare_kserve.cleanup(mute)
 
 
 @entrypoint(ignore_secret_path=True)
