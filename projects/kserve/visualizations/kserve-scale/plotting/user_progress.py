@@ -153,7 +153,7 @@ class InferenceServicesProgress():
                                  name="Ready",
                                 ))
 
-        fig.update_yaxes(title=f"Percentage of the {total_resource_count} InferenceServices")
+        fig.update_yaxes(title=f"Percentage of the {total_resource_count} InferenceServices ❯")
         fig.update_xaxes(title="Timeline, in minutes after the start time")
         fig.update_layout(title=f"InferenceServices Progress", title_x=0.5)
 

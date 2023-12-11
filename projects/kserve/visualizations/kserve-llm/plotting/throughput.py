@@ -101,70 +101,53 @@ class Throughput():
         df = df.sort_values(by=["test_name:sort_index"], ascending=False)
 
         if cfg__by_model:
-            fig = plotly.subplots.make_subplots(rows=1, cols=2, specs=[[{}, {}]], shared_xaxes=True,
-                                                shared_yaxes=False, vertical_spacing=0.001)
+            fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]])
+            df = df.sort_values(by=["test_name"], ascending=True)
 
-            fig1 = px.bar(df, hover_data=df.columns, y="test_name", x="throughput", orientation='h')
-
+            fig1 = px.line(df, hover_data=df.columns, x="test_name", y="throughput")
             for i in range(len(fig1.data)):
-                fig1.data[i].update(xperiodalignment="middle")
+                fig1.data[i].update(mode='markers+lines')
+                fig1.data[i].name = "Throughput"
+                fig1.data[i].showlegend = True
+                fig1.data[i].line.color = "red"
 
-            fig2 = px.line(df, hover_data=df.columns, y="test_name", x="avg_latency")
-            fig2.update_traces(yaxis="y2")
+            fig2 = px.line(df, hover_data=df.columns, x="test_name", y="avg_latency")
             for i in range(len(fig2.data)):
                 fig2.data[i].update(mode='markers+lines')
+                fig2.data[i].name = "Latency"
+                fig2.data[i].showlegend = True
 
-            fig.add_traces(fig1.data, 1, 1)
-            fig.add_traces(fig2.data[0], 1, 2)
+            fig2.update_traces(yaxis="y2")
+
+
+            fig.add_trace(fig1.data[0], secondary_y=False)
+            fig.add_trace(fig2.data[0], secondary_y=True)
 
             fig.update_layout(
-                xaxis=dict(
-                    zeroline=False,
-                    showline=False,
-                    showticklabels=True,
-                    showgrid=True,
-                    domain=[0, 0.42],
-                    title="Throughput (in tokens/s) ❯ ",
-                    side='top',
-                ),
                 yaxis=dict(
-                    showgrid=False,
-                    showline=False,
-                    showticklabels=True,
-                    domain=[0, 0.85],
+                    title="Throughput (in tokens/s) ❯<br>Higher is better",
+                    rangemode="tozero",
                 ),
 
-                xaxis2=dict(
-                    zeroline=True,
-                    showline=False,
-                    showticklabels=True,
-                    showgrid=True,
-                    domain=[0.47, 1],
-                    title="❮ Average latency (in s)",
-                    side='top',
-                ),
                 yaxis2=dict(
-                    showgrid=False,
-                    showline=True,
-                    showticklabels=False,
-                    linecolor='rgba(102, 102, 102, 0.8)',
-                    linewidth=2,
-                    domain=[0, 0.85],
+                    title="❮ Average latency (in s)<br>Lower is better",
+                    rangemode="tozero",
                 ),
             )
+            fig.layout.update(showlegend=True)
         else:
             fig = px.line(df, hover_data=df.columns, x="throughput", y="avg_latency", color="test_name", text="test_name")
             for i in range(len(fig.data)):
                 fig.data[i].update(mode='markers+text')
 
-            fig.update_xaxes(title=f"Throughput (in tokens/s) ❯")
-            fig.update_yaxes(title=f"❮ Average latency (in s)")
+            fig.update_xaxes(title=f"Throughput (in tokens/s) ❯<br>Higher is better")
+            fig.update_yaxes(title=f"❮ Average latency (in s)<br>Lower is better")
 
         vus = ", ".join(map(str, sorted(df["vusers"].unique())))
         subtitle = f"<br>for {vus} VUs"
 
         # ❯ or ❮
-        fig.update_layout(title=f"Throughput and average latency of the load test{subtitle}", title_x=0.5,)
+        fig.update_layout(title=f"Throughput and latency of the load tests{subtitle}", title_x=0.5,)
         if cfg__entry:
             fig.layout.update(showlegend=False)
 

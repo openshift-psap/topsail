@@ -11,6 +11,7 @@ def register():
     LatencyReport()
     ThroughputReport()
     TokensReport()
+    LtsReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -174,5 +175,36 @@ class TokensReport():
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += [html.H2(entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name'])))))]
             header += Plot_and_Text(f"Latency details", set_config(dict(only_tokens=True, entry=entry), args))
+
+        return None, header
+
+
+class LtsReport():
+    def __init__(self):
+        self.name = "report: LTS"
+        self.id_name = self.name
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.H1("LTS visualization")]
+
+        header += Plot_and_Text(f"LTS: Throughput", args)
+        header += html.Br()
+        header += html.Br()
+
+        header += Plot_and_Text(f"LTS: Time Per Output Token", args)
+        header += html.Br()
+        header += html.Br()
+
+        header += Plot_and_Text(f"LTS: Model Load Time", args)
+        header += html.Br()
+        header += html.Br()
 
         return None, header

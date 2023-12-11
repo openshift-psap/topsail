@@ -82,7 +82,7 @@ class ErrorDistribution():
 
         fig.update_layout(title=f"Distribution of the load test errors", title_x=0.5,)
 
-        fig.update_yaxes(title=f"Error occurence count")
+        fig.update_yaxes(title=f"❮ Error occurence count")
 
         fig.update_layout(legend=dict(yanchor="top",
                                       y=1.55,
@@ -188,7 +188,7 @@ class FinishReasonDistribution():
 
         if cfg__success_count:
             fig.update_layout(title=f"Distribution of the successful calls count", title_x=0.5,)
-            fig.update_yaxes(title=f"Successful calls count")
+            fig.update_yaxes(title=f"Successful calls count ❯")
             fig.update_xaxes(title=f"")
             fig.layout.update(showlegend=False)
         else:
@@ -256,7 +256,7 @@ class LogDistribution():
             subtitle = f"<br><b>{settings['model_name']}</b>"
         if cfg__line_count:
             fig.update_layout(title=f"Logs line count of the predictor Pod" + subtitle, title_x=0.5,)
-            fig.update_yaxes(title=f"Line count")
+            fig.update_yaxes(title=f"❮ Line count")
         else:
             fig.update_layout(title=f"Distribution of well-know messages in the logs" + subtitle, title_x=0.5,)
             fig.update_yaxes(title=f"Occurence count")

@@ -5,3 +5,4 @@ visualize:
   - "report: Latency per token"
   - "report: Throughput"
   - "report: Tokens"
+  - "report: LTS"
