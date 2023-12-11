@@ -324,10 +324,15 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         logging.warning("No secret env key defined for this model")
 
 
-    if (extra_env := consolidated_model["serving_runtime"].get("extra_env")):
+    if (extra_env := consolidated_model["serving_runtime"].get("transformer", {}).get("extra_env")):
         if not isinstance(extra_env, dict):
-            raise ValueError(f"serving_runtime.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
-        args_dict["env_extra_values"] = extra_env
+            raise ValueError(f"serving_runtime.transformer.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
+        args_dict["sr_transformer_extra_env_values"] = extra_env
+
+    if (extra_env := consolidated_model["serving_runtime"].get("kserve", {}).get("extra_env")):
+        if not isinstance(extra_env, dict):
+            raise ValueError(f"serving_runtime.kserve.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
+        args_dict["sr_kserve_extra_env_values"] = extra_env
 
     if consolidated_model["serving_runtime"].get("merge_containers", False):
         args_dict["sr_merge_containers"] = True
