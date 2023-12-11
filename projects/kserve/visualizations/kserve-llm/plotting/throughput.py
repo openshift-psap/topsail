@@ -124,7 +124,7 @@ class Throughput():
                     showticklabels=True,
                     showgrid=True,
                     domain=[0, 0.42],
-                    title="Throughput (in tokens/s) ❯ ",
+                    title="Throughput (in tokens/s) ❯<br>Higher is better",
                     side='top',
                 ),
                 yaxis=dict(
@@ -140,7 +140,7 @@ class Throughput():
                     showticklabels=True,
                     showgrid=True,
                     domain=[0.47, 1],
-                    title="❮ Average latency (in s)",
+                    title="❮ Average latency (in s)<br>Lower is better",
                     side='top',
                 ),
                 yaxis2=dict(
@@ -157,14 +157,14 @@ class Throughput():
             for i in range(len(fig.data)):
                 fig.data[i].update(mode='markers+text')
 
-            fig.update_xaxes(title=f"Throughput (in tokens/s) ❯")
-            fig.update_yaxes(title=f"❮ Average latency (in s)")
+            fig.update_xaxes(title=f"Throughput (in tokens/s) ❯<br>Higher is better")
+            fig.update_yaxes(title=f"❮ Average latency (in s)<br>Lower is better")
 
         vus = ", ".join(map(str, sorted(df["vusers"].unique())))
         subtitle = f"<br>for {vus} VUs"
 
         # ❯ or ❮
-        fig.update_layout(title=f"Throughput and average latency of the load test{subtitle}", title_x=0.5,)
+        fig.update_layout(title=f"Throughput and latency of the load tests{subtitle}", title_x=0.5,)
         if cfg__entry:
             fig.layout.update(showlegend=False)
 

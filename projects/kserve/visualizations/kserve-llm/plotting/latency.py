@@ -62,13 +62,14 @@ class LatencyDistribution():
             fig.update_yaxes(title=f"Number of tokens")
         else:
             plot_title = f"Distribution of the latency/token of the model answers"
-            fig.update_yaxes(title=f"❮ Latency per token (in ms/token)")
+            fig.update_yaxes(title=f"❮ Latency per token (in ms/token)<br>Lower is better")
 
         if "model_name" not in variables:
             plot_title += f"<br><b>{settings['model_name']}</b>"
 
         fig.update_layout(title=plot_title, title_x=0.5,)
-        fig.update_xaxes(title=f"Timeline")
+        fig.update_xaxes(title=f"")
+        fig.update_layout(legend_title_text='')
 
         if len(variables) == 1 and "model_name" in variables:
             fig.layout.update(showlegend=False)
@@ -280,12 +281,13 @@ class LatencyDetails():
         else:
             subtitle = ""
 
+        fig.update_layout(legend_title_text='')
         fig.update_xaxes(title=f"Timeline")
         if cfg__only_tokens:
             fig.update_yaxes(title=f"Number of tokens in the answer")
             fig.update_layout(title=f"Detailed token count of the model answers{subtitle}", title_x=0.5,)
         elif latency_per_token:
-            fig.update_yaxes(title=f"❮ Latency per token (in ms/token)")
+            fig.update_yaxes(title=f"❮ Latency per token (in ms/token)<br>Lower is better")
             fig.update_layout(title=f"Detailed latency/token of {'errors of ' if cfg__only_errors else ''}the load test{subtitle}", title_x=0.5,)
         else:
             fig.update_yaxes(title=f"❮ Latency (in ms)")
