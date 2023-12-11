@@ -270,7 +270,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         consolidated_model["serving_runtime"]["kserve"]["resource_request"]["nvidia.com/gpu"] = 1
 
     if mute_logs is None:
-        mute_logs = config.ci_artifacts.get_config("kserve.model.serving_runtime.transformer.mute_logs")
+        mute_logs = config.ci_artifacts.get_config("kserve.model.serving_runtime.mute_logs")
 
     if delete_others is None:
         delete_others = config.ci_artifacts.get_config("tests.e2e.delete_others")
@@ -294,7 +294,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
         sr_transformer_image=consolidated_model["serving_runtime"]["transformer"]["image"],
         sr_transformer_resource_request=consolidated_model["serving_runtime"]["transformer"]["resource_request"],
-        sr_transformer_mute_logs=mute_logs,
+        sr_mute_logs=mute_logs,
 
         inference_service_name=model_name,
         storage_uri=consolidated_model["inference_service"]["storage_uri"],
@@ -308,11 +308,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     try: args_dict["inference_service_min_replicas"] = consolidated_model["inference_service"]["min_replicas"]
     except KeyError: pass
 
-    if not mute_logs and consolidated_model.get("secret_key"):
-        logging.warning("Running with mute_logs=False. Not using the secret_key.")
-
-
-    if mute_logs and (secret_key := consolidated_model.get("secret_key")) != None:
+    if (secret_key := consolidated_model.get("secret_key")) != None:
         import test
         secret_env_file = test.PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.kserve_model_secret_settings")
         if not secret_env_file.exists():

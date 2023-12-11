@@ -336,9 +336,9 @@ kserve:
       query_count: 10
   model:
     serving_runtime:
+      mute_logs: true
       kserve:
         image: quay.io/opendatahub/text-generation-inference:stable
-        mute_logs: true
       transformer:
         image: quay.io/opendatahub/caikit-tgis-serving:fast
         mute_logs: true
