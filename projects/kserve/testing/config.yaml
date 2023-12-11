@@ -299,6 +299,10 @@ prepare:
       - servicemeshcontrolplanes.maistra.io
       namespaces:
       - istio-system
+  cleanup:
+    crds:
+    - InferenceService
+    - ServingRuntime
 
 base_image:
   namespace: kserve-user-test-driver

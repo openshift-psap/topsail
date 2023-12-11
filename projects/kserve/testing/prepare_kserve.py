@@ -65,7 +65,7 @@ def prepare():
     customize_kserve()
 
 
-def undeploy_operator(operator):
+def undeploy_operator(operator, mute=True):
     manifest_name = operator["name"]
     namespace = operator["namespace"]
     if namespace == "all":
@@ -79,7 +79,7 @@ def undeploy_operator(operator):
     for ns in cleanup.get("namespaces", []):
         run.run(f"oc api-resources --verbs=list --namespaced -o name | grep -v -E 'coreos.com|openshift.io|cncf.io|k8s.io|metal3.io|k8s.ovn.org|.apps' | xargs -t -n 1 oc get --show-kind --ignore-not-found -n kserve-user-test-driver |& cat > $ARTIFACT_DIR/{operator['name']}_{ns}.log", check=False)
 
-    installed_csv_cmd = run.run(f"oc get csv -oname -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}", capture_stdout=True)
+    installed_csv_cmd = run.run(f"oc get csv -oname -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}", capture_stdout=mute)
     if not installed_csv_cmd.stdout:
         logging.info(f"{manifest_name} operator is not installed")
 
@@ -93,8 +93,8 @@ def undeploy_operator(operator):
         run.run(f"timeout 300 oc delete ns {ns} --ignore-not-found")
 
 
-def cleanup():
-    rhods.uninstall()
+def cleanup(mute=True):
+    rhods.uninstall(mute)
 
     with run.Parallel("cleanup_kserve") as parallel:
         for operator in config.ci_artifacts.get_config("prepare.operators"):

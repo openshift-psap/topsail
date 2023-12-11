@@ -29,8 +29,9 @@ def install(token_file=None, force=False):
     run.run_toolbox_from_config("rhods", "deploy_ods")
 
 
-def uninstall():
-    run.run_toolbox("rhods", "update_datasciencecluster")
+def uninstall(mute=True):
+    if run.run(f'oc get datasciencecluster -oname | grep .', check=False).returncode == 0:
+        run.run_toolbox("rhods", "update_datasciencecluster")
 
     installed_csv_cmd = run.run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
 
@@ -39,15 +40,15 @@ def uninstall():
         return
 
     # Force-deleting RHODS is necessary because of RHODS-8002.
-    #run.run_toolbox("rhods", "undeploy_ods", mute_stdout=True)
-    run.run_toolbox("rhods", "delete_ods", mute_stdout=True)
+    #run.run_toolbox("rhods", "undeploy_ods", mute_stdout=mute)
+    run.run_toolbox("rhods", "delete_ods", mute_stdout=mute)
 
 
-def uninstall_ldap():
+def uninstall_ldap(mute=True):
     ldap_installed_cmd = run.run("oc get ns/openldap --ignore-not-found -oname", capture_stdout=True)
 
     if "openldap" not in ldap_installed_cmd.stdout:
         logging.info("OpenLDAP is not installed")
         return
 
-    run.run_toolbox_from_config("cluster", "undeploy_ldap", mute_stdout=True)
+    run.run_toolbox_from_config("cluster", "undeploy_ldap", mute_stdout=mute)
