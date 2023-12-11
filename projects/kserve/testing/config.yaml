@@ -338,6 +338,7 @@ kserve:
     serving_runtime:
       kserve:
         image: quay.io/opendatahub/text-generation-inference:stable
+        mute_logs: true
       transformer:
         image: quay.io/opendatahub/caikit-tgis-serving:fast
         mute_logs: true
