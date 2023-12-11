@@ -58,8 +58,8 @@ kserve_deploy_model_secret_env_file_name: null
 # key to the secret environment key/values in the secret file
 kserve_deploy_model_secret_env_file_key: null
 
-# if True, mute the transformer serving runtime container logs
-kserve_deploy_model_sr_transformer_mute_logs: false
+# if True, mute the serving runtime containers logs
+kserve_deploy_model_sr_mute_logs: false
 
 # if True, deletes the other serving runtime/inference services of the namespace
 kserve_deploy_model_delete_others: true

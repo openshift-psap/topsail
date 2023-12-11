@@ -15,8 +15,8 @@ spec:
     command: [bash, -cex]
     args:
     - |
-      echo 'Starting kserver (TGIS) {% if kserve_deploy_model_sr_transformer_mute_logs %} without {% else %} _with_ {% endif %} stdout logs ...'
-      exec text-generation-launcher --model-name=/mnt/models/artifacts/ {% if kserve_deploy_model_sr_transformer_mute_logs %} > /tmp/tgis-logs {% endif %}
+      echo 'Starting kserver (TGIS) {% if kserve_deploy_model_sr_mute_logs %} without {% else %} _with_ {% endif %} stdout logs ...'
+      exec text-generation-launcher --model-name=/mnt/models/artifacts/ {% if kserve_deploy_model_sr_mute_logs %} > /tmp/tgis-logs {% endif %}
 
     env:
     - name: TRANSFORMERS_CACHE
@@ -92,7 +92,7 @@ spec:
     command: [bash, -cex]
     args:
     - |
-{% if kserve_deploy_model_sr_transformer_mute_logs %}
+{% if kserve_deploy_model_sr_mute_logs %}
       echo "Starting Caikit-serving without stdout logs ..."
 {% else %}
       echo "Starting Caikit-serving _with_ stdout logs ..."
@@ -100,7 +100,7 @@ spec:
       TGIS_CONFIG_TEMPLATE="/caikit/config/caikit-tgis.template.yml"
       EXTENDED_TIMEOUT=20000
       sed -i 's/load_timeout: .*/load_timeout: '$EXTENDED_TIMEOUT'/' $TGIS_CONFIG_TEMPLATE
-      exec ./start-serving.sh {% if kserve_deploy_model_sr_transformer_mute_logs %} > /tmp/tgis-caikit-logs {% endif %}
+      exec ./start-serving.sh {% if kserve_deploy_model_sr_mute_logs %} > /tmp/tgis-caikit-logs {% endif %}
 
     env:
     - name: RUNTIME_LOCAL_MODELS_DIR
