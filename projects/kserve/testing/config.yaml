@@ -381,7 +381,6 @@ tests:
     - flan-t5-small-gpu
     - flan-t5-small-gpu
     consolidated_models: {} # will be filled at runtime
-    request_one_gpu: true
     limits_equals_requests: true
     delete_others: true
     validate_model: true

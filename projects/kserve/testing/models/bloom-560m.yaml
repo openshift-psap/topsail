@@ -6,7 +6,8 @@ serving_runtime:
     resource_request:
       cpu: 1.5
       memory: 6 # in Gi
-      nvidia.com/gpu: 5 # in Gi of GPU memory
+      nvidia.com/gpu: 1
+      nvidia.com/gpu_memory: 5 # in Gi of GPU memory
     extra_env: {}
 inference_service:
   storage_uri: "s3://psap-watsonx-models/bloom-560m/bloom-560m"

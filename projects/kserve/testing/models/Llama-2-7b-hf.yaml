@@ -13,6 +13,7 @@ serving_runtime:
       cpu: 4
       memory: 24 # in Gi
       nvidia.com/gpu: 1
+      nvidia.com/gpu_memory: 40 # in Gi of GPU memory
     extra_env:
       NUM_GPUS: 1
       FLASH_ATTENTION: true

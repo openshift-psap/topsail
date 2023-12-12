@@ -6,7 +6,8 @@ serving_runtime:
     resource_request:
       cpu: 0
       memory: 0 # in Gi
-      nvidia.com/gpu: 0 # in Gi of GPU memory
+      nvidia.com/gpu: 0
+      nvidia.com/gpu_memory: 0 # in Gi of GPU memory
     extra_env:
       key: value
 inference_service:

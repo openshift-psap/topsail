@@ -6,7 +6,8 @@ serving_runtime:
     resource_request:
       cpu: 1.5
       memory: 13 # in Gi
-      nvidia.com/gpu: 23 # in Gi of GPU memory
+      nvidia.com/gpu: 1
+      nvidia.com/gpu_memory: 23 # in Gi of GPU memory
     extra_env:
       DTYPE_STR: float16
 inference_service:
