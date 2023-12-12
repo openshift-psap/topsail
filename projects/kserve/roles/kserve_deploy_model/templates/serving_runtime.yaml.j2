@@ -86,6 +86,10 @@ spec:
     - name: config
       mountPath: /caikit/config/
       readOnly: true
+{% if kserve_deploy_model_sr_shared_memory %}
+    - name: shared-memory
+      mountPath: /dev/shm
+{% endif %}
 {% else %} # 1-container architecture
   - name: kserve-container
     image: quay.io/opendatahub/caikit-tgis-serving:stable
@@ -148,6 +152,10 @@ spec:
       mountPath: /shared_model_storage/transformers_cache
     - name: config
       mountPath: /etc/not_used/caikit-tgis.yml # only use the one shipped with the container
+{% if kserve_deploy_model_sr_shared_memory %}
+    - name: shared-memory
+      mountPath: /dev/shm
+{% endif %}
 {% endif %}
   volumes:
   - name:  cache-volume
@@ -156,6 +164,12 @@ spec:
   - name: config
     configMap:
       name: {{ kserve_deploy_model_serving_runtime_name }}-caikit-tgis-config
+{% if kserve_deploy_model_sr_shared_memory %}
+  - name: shared-memory
+    emptyDir:
+      medium: Memory
+      sizeLimit: 2Gi
+{% endif %}
   multiModel: false
   supportedModelFormats:
   # Note: this currently *only* supports caikit format models
