@@ -23,8 +23,8 @@ model_management:
           config:
             local:
               load_timeout: 5000 # only relevant with the 1-container architecture
-{% if 'NUM_GPUS' in kserve_deploy_model_sr_kserve_extra_env_values %}
-              num_gpus: {{ kserve_deploy_model_sr_kserve_extra_env_values['NUM_GPUS'] }}
+{% if kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] %}
+              num_gpus: "{{ kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] }}"
 {% endif %}
             connection:
               hostname: localhost:8033
