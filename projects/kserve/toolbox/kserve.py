@@ -22,7 +22,7 @@ class Kserve:
                      inference_service_min_replicas : int = None,
                      secret_env_file_name=None,
                      secret_env_file_key=None,
-                     sr_transformer_mute_logs=False,
+                     sr_mute_logs=False,
                      delete_others=True,
                      limits_equals_requests=True,
                      ):
@@ -41,7 +41,7 @@ class Kserve:
 
           sr_transformer_image: the image of the Transformer serving runtime container
           sr_transformer_resource_request: the resource request of the Transformer serving runtime container
-          sr_transformer_mute_logs: if True, mute the transformer serving runtime container logs
+          sr_mute_logs: if True, mute the serving runtime containers logs
           sr_transformer_extra_env_values: extra key/value pairs for the transformer container (will override the values from the secret file)
 
           inference_service_name: the name to give to the inference service

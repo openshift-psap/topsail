@@ -336,6 +336,7 @@ kserve:
       query_count: 10
   model:
     serving_runtime:
+      mute_logs: true
       kserve:
         image: quay.io/opendatahub/text-generation-inference:stable
       transformer:
