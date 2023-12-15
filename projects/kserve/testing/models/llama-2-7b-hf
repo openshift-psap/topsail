@@ -1,0 +1,22 @@
+extends: base
+secret_key: "llama-2-7b-hf"
+
+serving_runtime:
+  transformer:
+    resource_request:
+      cpu: 2
+      memory: 4 # in Gi
+    extra_env:
+      RUNTIME_GRPC_SERVER_THREAD_POOL_SIZE: 160
+  kserve:
+    resource_request:
+      cpu: 4
+      memory: 24 # in Gi
+      nvidia.com/gpu: 1
+      nvidia.com/gpu_memory: 40 # in Gi of GPU memory
+    extra_env:
+      NUM_GPUS: 1
+      FLASH_ATTENTION: true
+      DEPLOYMENT_FRAMEWORK: hf_custom_tp
+inference_service:
+  storage_uri: "s3://psap-watsonx-models/Llama-2-7b-hf/Llama-2-7b-hf"

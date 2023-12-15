@@ -9,4 +9,5 @@ serving_runtime:
     resource_request:
       cpu: 0.1
       memory: 0.1 # in Gi
-      nvidia.com/gpu: 1 # in Gi of GPU memory
+      nvidia.com/gpu: 1
+      nvidia.com/gpu_memory: 1 # in Gi of GPU memory

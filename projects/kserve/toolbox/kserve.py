@@ -19,6 +19,7 @@ class Kserve:
                      sr_kserve_extra_env_values={},
                      sr_transformer_extra_env_values={},
                      sr_merge_containers=False,
+                     sr_shared_memory=False,
                      inference_service_min_replicas : int = None,
                      secret_env_file_name=None,
                      secret_env_file_key=None,
@@ -35,6 +36,7 @@ class Kserve:
 
           serving_runtime_name: the name to give to the serving runtime
           sr_merge_containers: if True, deploy 1 container. If False, deploy 2 containers.
+          sr_shared_memory: if True, create a 2 Gi in-memory volume mounted on /dev/shm (for shards to communicate).
           sr_kserve_image: the image of the Kserve serving runtime container
           sr_kserve_resource_request: the resource request of the kserve serving runtime container
           sr_kserve_extra_env_values: extra key/value pairs for the kserve container (will override the values from the secret file)

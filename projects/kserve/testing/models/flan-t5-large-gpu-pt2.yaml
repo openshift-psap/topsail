@@ -2,7 +2,8 @@ extends: flan-t5-large-gpu
 serving_runtime:
   kserve:
     resource_request:
-      nvidia.com/gpu: 5 # in Gi of GPU memory
+      nvidia.com/gpu: 1
+      nvidia.com/gpu_memory: 5 # in Gi of GPU memory
       memory: 13 # in Gi
     extra_env:
       PT2_COMPILE: true

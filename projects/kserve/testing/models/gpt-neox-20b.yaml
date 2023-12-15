@@ -6,7 +6,8 @@ serving_runtime:
     resource_request:
       cpu: 7
       memory: 30 # in Gi
-      nvidia.com/gpu: 40 # in Gi of GPU memory
+      nvidia.com/gpu: 1
+      nvidia.com/gpu_memory: 40 # in Gi of GPU memory
     extra_env:
       DEPLOYMENT_FRAMEWORK: hf_transformers
 inference_service:

@@ -265,9 +265,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
     logging.info(f"Deploying a consolidated model. Changing the test namespace to '{namespace}'")
 
-    gpu_count = consolidated_model["serving_runtime"]["kserve"]["resource_request"].get("nvidia.com/gpu", 0)
-    if config.ci_artifacts.get_config("tests.e2e.request_one_gpu") and gpu_count != 0:
-        consolidated_model["serving_runtime"]["kserve"]["resource_request"]["nvidia.com/gpu"] = 1
+    if "nvidia.com/gpu_memory" in consolidated_model["serving_runtime"].get("kserve", {}).get("resource_request",{}):
+        logging.info(f"Ignoring nvidia.com/gpu_memory resource request, not yet used")
+        del consolidated_model["serving_runtime"]["kserve"]["resource_request"]["nvidia.com/gpu_memory"]
 
     if mute_logs is None:
         mute_logs = config.ci_artifacts.get_config("kserve.model.serving_runtime.mute_logs")
@@ -333,6 +333,11 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     if consolidated_model["serving_runtime"].get("merge_containers", False):
         args_dict["sr_merge_containers"] = True
         args_dict["storage_uri"] = args_dict["storage_uri"].removesuffix("/" + consolidated_model["id"])
+
+    if "nvidia.com/gpu" in consolidated_model["serving_runtime"].get("kserve", {}).get("resource_request",{}):
+        num_gpus = consolidated_model["serving_runtime"]["kserve"]["resource_request"]["nvidia.com/gpu"]
+        if num_gpus > 1:
+            args_dict["sr_shared_memory"]=True
 
     with env.NextArtifactDir("prepare_namespace"):
         test_scale.prepare_user_sutest_namespace(namespace)

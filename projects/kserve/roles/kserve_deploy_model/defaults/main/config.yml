@@ -48,6 +48,9 @@ kserve_deploy_model_sr_transformer_extra_env_values: {}
 # if True, deploy 1 container. If False, deploy 2 containers.
 kserve_deploy_model_sr_merge_containers: false
 
+# if True, create a 2 Gi in-memory volume mounted on /dev/shm (for shards to communicate).
+kserve_deploy_model_sr_shared_memory: false
+
 # the minimum number of replicas. If none, the field is left unset.
 # Type: Int
 kserve_deploy_model_inference_service_min_replicas: null
