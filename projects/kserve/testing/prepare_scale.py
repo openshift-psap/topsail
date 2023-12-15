@@ -10,11 +10,9 @@ TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
 def prepare_sutest():
     with run.Parallel("prepare_sutest_1") as parallel:
-        parallel.delayed(prepare_kserve.prepare)
         parallel.delayed(scale_up_sutest)
 
     with run.Parallel("prepare_sutest_2") as parallel:
-        parallel.delayed(prepare_kserve.preload_image)
         parallel.delayed(prepare_gpu)
 
 

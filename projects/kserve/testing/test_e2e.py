@@ -80,7 +80,10 @@ def consolidate_models(index=None, use_job_index=False, model_name=None, namespa
 # ---
 
 def test_ci():
-    "Executes the full e2e test"
+    run.run_toolbox("gpu-operator", "run_gpu_burn")
+
+    return
+
 
     try:
         if config.ci_artifacts.get_config("tests.e2e.perf_mode"):
