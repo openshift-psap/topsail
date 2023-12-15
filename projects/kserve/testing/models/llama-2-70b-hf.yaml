@@ -1,5 +1,5 @@
 extends: base
-secret_key: "Llama-2-70b-hf"
+secret_key: "llama-2-70b-hf"
 
 serving_runtime:
   transformer:
@@ -15,7 +15,6 @@ serving_runtime:
       nvidia.com/gpu: 8
       nvidia.com/gpu_memory: 320 # in Gi of GPU memory
     extra_env:
-      NUM_GPUS: 8
       FLASH_ATTENTION: true
       DEPLOYMENT_FRAMEWORK: hf_custom_tp
 inference_service:

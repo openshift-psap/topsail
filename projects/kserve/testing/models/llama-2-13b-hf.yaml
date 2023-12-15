@@ -1,5 +1,5 @@
 extends: base
-secret_key: "Llama-2-13b-hf"
+secret_key: "llama-2-13b-hf"
 
 serving_runtime:
   transformer:
