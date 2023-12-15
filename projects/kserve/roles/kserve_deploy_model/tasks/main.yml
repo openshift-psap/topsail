@@ -204,6 +204,13 @@
       set -o pipefail;
       set -e;
 
+      pods=$(oc get pod -lserving.kserve.io/inferenceservice=flan-t5-small-gpu -n {{ kserve_deploy_model_namespace }})
+      echo "$pods"
+      if grep ContainerStatusUnknown --silent <<< "$pods"; then
+        echo "ContainerStatusUnknown detected, aborting" >&2
+        exit 2
+      fi
+
       status=$(oc get pod \
         -ojson \
         -lserving.kserve.io/inferenceservice={{ kserve_deploy_model_inference_service_name }} \
