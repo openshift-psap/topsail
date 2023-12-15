@@ -17,5 +17,6 @@ serving_runtime:
     extra_env:
       FLASH_ATTENTION: true
       DEPLOYMENT_FRAMEWORK: hf_custom_tp
+      RAYON_NUM_THREADS: "64" # Would otherwise be calculated based on shards*num_cpus
 inference_service:
   storage_uri: "s3://psap-watsonx-models/Llama-2-70b-hf/Llama-2-70b-hf"
