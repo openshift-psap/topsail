@@ -265,10 +265,10 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 634449
+    tag: 636599
     channel: alpha
     version: 2.5.0
-    version_name: RC3
+    version_name: RC5
   operator:
     # set to true to stop the RHODS operator
     stop: false
