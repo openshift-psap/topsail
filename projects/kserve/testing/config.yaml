@@ -177,7 +177,7 @@ ci_presets:
     extends: [scale_test]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.spot: false
-    clusters.sutest.compute.machineset.type: g5.2xlarge
+    clusters.sutest.compute.machineset.type: g4dn.2xlarge
     tests.scale.model.name: flan-t5-small-gpu
     gpu.time_sharing.replicas: 17
 
@@ -250,7 +250,7 @@ clusters:
       dedicated: true
       machineset:
         name: workload-pods
-        type: g5.2xlarge
+        type: g4dn.2xlarge
         count: null
         disk_size: 400 # GB for the root partition
         spot: false
