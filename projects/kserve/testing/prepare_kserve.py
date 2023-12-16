@@ -50,10 +50,10 @@ def prepare():
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
 
     with run.Parallel("prepare_kserve") as parallel:
-        parallel.delayed(rhods.install, token_file)
-
         for operator in config.ci_artifacts.get_config("prepare.operators"):
             parallel.delayed(run.run_toolbox, "cluster", "deploy_operator", catalog=operator['catalog'], manifest_name=operator['name'], namespace=operator['namespace'], artifact_dir_suffix=operator['name'])
+
+    rhods.install(token_file)
 
     run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve"])
     try:
