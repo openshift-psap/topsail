@@ -76,7 +76,7 @@ ci_presets:
     extends: [e2e]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.spot: false
-    clusters.sutest.compute.machineset.type: g5.2xlarge
+    clusters.sutest.compute.machineset.type: g4dn.2xlarge
 
   e2e_all_models:
     tests.e2e.models:
