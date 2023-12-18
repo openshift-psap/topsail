@@ -312,7 +312,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         import test
         secret_env_file = test.PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.kserve_model_secret_settings")
         if not secret_env_file.exists():
-            raise FileNotFoundError("Watsonx model secret settings file does not exist :/ {secret_env_file}")
+            raise FileNotFoundError(f"Watsonx model secret settings file does not exist :/ {secret_env_file}")
 
         args_dict["secret_env_file_name"] = secret_env_file
         args_dict["secret_env_file_key"] = secret_key
