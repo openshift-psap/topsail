@@ -55,7 +55,10 @@ def prepare():
 
     rhods.install(token_file)
 
-    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve"])
+    has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
+    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve"],
+                    name=None if has_dsc else "default-dsc")
+
     try:
         run.run("projects/kserve/testing/poc/prepare.sh |& tee -a $ARTIFACT_DIR/000_prepare_sh.log")
     finally:
