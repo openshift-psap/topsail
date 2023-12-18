@@ -153,14 +153,20 @@ def prepare_user_pods(user_count):
     secret_name = config.ci_artifacts.get_config("secrets.dir.name")
     secret_env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
 
-
     secret_yaml_str = run.run(f"oc create secret generic {secret_name} --from-file=$(find ${secret_env_key}/* -maxdepth 1 -not -type d | tr '\\n' ,)/dev/null -n {namespace} --dry-run=client -oyaml", capture_stdout=True).stdout
-    with open(pathlib.Path(os.environ[secret_env_key]) / ".awscred", "rb") as f:
-        file_content = f.read()
-    base64_secret = base64.b64encode(file_content).decode("ascii")
     secret_yaml = yaml.safe_load(secret_yaml_str)
-    secret_yaml["data"][".awscred"] = base64_secret
     del secret_yaml["data"]["null"]
+
+    if (aws_cred_path := pathlib.Path(os.environ[secret_env_key]) / ".awscred").exists():
+        with open(aws_cred_path, "rb") as f:
+            file_content = f.read()
+            base64_secret = base64.b64encode(file_content).decode("ascii")
+
+        secret_yaml["data"][".awscred"] = base64_secret
+    else:
+        msg = f".awscred file doesn't exist in ${secret_env_key}"
+        secret_yaml["data"]["awscred_missing"] = base64.b64encode(msg.encode("ascii")).decode("ascii")
+        logging.warning(msg)
 
     save_and_create("secret.yaml", yaml.dump(secret_yaml), namespace, is_secret=True)
 
