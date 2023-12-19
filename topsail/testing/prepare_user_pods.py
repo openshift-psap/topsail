@@ -3,6 +3,7 @@ import logging
 import pathlib
 import base64
 import yaml
+import re
 
 from topsail.testing import env, config, run, sizing
 
@@ -22,9 +23,9 @@ def apply_prefer_pr(pr_number=None):
         git_ref = os.environ.get("PERFLAB_GIT_REF")
 
         try:
-            pr_number = int(re.compile("refs/pull/([0-9]+)/merge").match(git_ref).groups()[0])
+            pr_number = int(re.compile("refs/pull/([0-9]+)/").match(git_ref).groups()[0])
         except Exception as e:
-            logging.warning("apply_prefer_pr: PERFLAB_CI: base_image.repo.ref_prefer_pr is set cannot parse PERFLAB_GIT_REF={git_erf}: {e.__class__.__name__}: {e}")
+            logging.warning(f"apply_prefer_pr: PERFLAB_CI: base_image.repo.ref_prefer_pr is set but 'PERFLAB_GIT_REF={git_ref}' cannot be parsed: {e.__class__.__name__}: {e}")
             return
 
     elif os.environ.get("HOMELAB_CI"):
