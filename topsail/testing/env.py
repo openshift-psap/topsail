@@ -18,10 +18,12 @@ def init():
         ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
         os.environ["ARTIFACT_DIR"] = str(ARTIFACT_DIR)
 
+
 def NextArtifactDir(name):
     next_count = next_artifact_index()
     dirname = ARTIFACT_DIR / f"{next_count:03d}__{name}"
     return TempArtifactDir(dirname)
+
 
 class TempArtifactDir(object):
     def __init__(self, dirname):
@@ -51,6 +53,7 @@ class TempArtifactDir(object):
         ARTIFACT_DIR = self.previous_dirname
 
         return False # If we returned True here, any exception would be suppressed!
+
 
 def next_artifact_index():
     return len(list(ARTIFACT_DIR.glob("*__*")))
