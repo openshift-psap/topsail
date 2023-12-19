@@ -63,8 +63,10 @@ def prepare_ci():
     """
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode in ("scale", "e2e"):
+    if test_mode in ("scale", "e2e", "prepare_only"):
         prepare_scale.prepare()
+    elif test_mode in ("cleanup_only"):
+        logging.info("Cleanup only mode, nothing to do")
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
@@ -76,6 +78,10 @@ def test_ci():
     """
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
+
+    if test_mode in ("prepare_only", "cleanup_only"):
+        logging.info(f"Test mode is '{test_mode}', nothing to do.")
+        return
 
     do_visualize = config.ci_artifacts.get_config("tests.visualize")
 
@@ -187,6 +193,11 @@ def cleanup_cluster(mute=False):
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
+
+    test_mode = config.ci_artifacts.get_config("tests.mode")
+    if test_mode in ("prepare_only"):
+        logging.info("Prepare only mode, nothing to do.")
+        return
 
     with env.NextArtifactDir("cleanup_cluster"):
         cleanup_sutest_ns()

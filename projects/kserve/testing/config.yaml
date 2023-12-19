@@ -78,6 +78,12 @@ ci_presets:
     clusters.sutest.compute.machineset.spot: false
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
 
+  prepare_only:
+    tests.mode: prepare_only
+
+  cleanup_only:
+    tests.mode: cleanup_only
+
   e2e_all_models:
     tests.e2e.models:
     - flan-t5-small-cpu

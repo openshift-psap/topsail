@@ -42,7 +42,7 @@ def prepare():
         consolidate_model_config("tests.scale.model")
         config.ci_artifacts.set_config("tests.scale.model.consolidated", True)
         user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
-    elif test_mode == "e2e":
+    elif test_mode in ("e2e", "prepare_only"):
         user_count = len(config.ci_artifacts.get_config("tests.e2e.models"))
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
@@ -97,7 +97,7 @@ def scale_up_sutest():
         logging.info(f"Using the sutest node count from the configuration: {node_count}")
     elif test_mode == "scale":
         node_count = scale_compute_sutest_node_requirement()
-    elif test_mode == "e2e":
+    elif test_mode in ("e2e", "prepare_only"):
         node_count = e2e_compute_sutest_node_requirement()
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
