@@ -253,7 +253,7 @@ def get_command_arg(group, command, arg, prefix=None, suffix=None):
                                            prefix=prefix, suffix=suffix,
                                            check=True, run_kwargs=dict(capture_stdout=True, capture_stderr=True))
     except subprocess.CalledProcessError as e:
-        logging.error(e.stderr.strip())
+        logging.error(e.stderr.strip().encode("ascii", "ignore"))
         raise
 
     return proc.stdout.strip()
