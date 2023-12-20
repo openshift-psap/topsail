@@ -411,4 +411,7 @@ matbench:
   ignore_exit_code: true
   # directory to plot. Set by topsail/testing/visualize.py before launching the visualization
   test_directory: null
-  generate_lts: true
+  lts:
+    generate: true
+    horreum:
+      test_name: null
