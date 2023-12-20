@@ -198,6 +198,12 @@ ci_presets:
     kserve.customize.serverless.egress.limits.memory: 4Gi
     kserve.customize.serverless.ingress.limits.memory: 4Gi
 
+  # ---
+  single_model_gating:
+    extends: [10min]
+    tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, bloom-560m, mpt-7b-instruct2]
+    matbench.lts.horreum.test_name: RHOAI-kserve-single
+
 secrets:
   dir:
     name: psap-ods-secret
