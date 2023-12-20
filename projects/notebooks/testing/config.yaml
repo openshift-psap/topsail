@@ -420,3 +420,7 @@ matbench:
   ignore_exit_code: true
   # directory to plot. Set by notebook_scale_test.sh before launching the visualization
   test_directory: null
+  lts:
+    generate: true
+    horreum:
+      test_name: null
