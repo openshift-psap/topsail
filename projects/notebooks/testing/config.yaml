@@ -30,6 +30,7 @@ ci_presets:
     clusters.create.ocp.tags.Project: PSAP/RHODS/gating
     clusters.create.ocp.tags.TicketId:
 
+    matbench.lts.horreum.test_name: RHOAI-notebooks
     tests.notebooks.identifier: gating_test
     tests.notebooks.test_flavor: gating
     # modify the presets, as they will be applied by the gating test
