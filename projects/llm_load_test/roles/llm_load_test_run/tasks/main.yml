@@ -11,6 +11,12 @@
     state: directory
     mode: '0755'
 
+- name: Create the logs directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/logs"
+    state: directory
+    mode: '0755'
+
 - name: Ensure that ghz is available
   command: which ghz
 
@@ -33,7 +39,7 @@
       export CONFIG_FILENAME=llm_load_test.config.yaml
       export CONFIG_PATH="{{ artifact_extra_logs_dir }}/src/"
 
-      python3 load_test.py &> {{ artifact_extra_logs_dir }}/run.log
+      python3 load_test.py &> {{ artifact_extra_logs_dir }}/logs/run.log
   always:
   - name: Cleanup the output dir
     command:
