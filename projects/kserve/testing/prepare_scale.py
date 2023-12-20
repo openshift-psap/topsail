@@ -8,16 +8,6 @@ import prepare_kserve
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
-def prepare_sutest():
-    with run.Parallel("prepare_sutest_1") as parallel:
-        parallel.delayed(prepare_kserve.prepare)
-        parallel.delayed(scale_up_sutest)
-
-    with run.Parallel("prepare_sutest_2") as parallel:
-        parallel.delayed(prepare_kserve.preload_image)
-        parallel.delayed(prepare_gpu)
-
-
 def prepare_gpu():
     if not config.ci_artifacts.get_config("gpu.prepare_cluster"):
         return
@@ -51,13 +41,20 @@ def prepare():
 
     with run.Parallel("prepare_scale") as parallel:
         # prepare the sutest cluster
-        parallel.delayed(prepare_sutest)
+        parallel.delayed(prepare_kserve.prepare)
+        parallel.delayed(scale_up_sutest)
 
         # prepare the driver cluster
         namespace = config.ci_artifacts.get_config("base_image.namespace")
 
         parallel.delayed(prepare_user_pods.prepare_user_pods, user_count)
         parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
+
+    with run.Parallel("prepare_scale2") as parallel:
+        # must be after prepare_kserve.update_serving_runtime_images
+        parallel.delayed(prepare_kserve.preload_image)
+        # must be after scale_up_sutest
+        parallel.delayed(prepare_gpu)
 
 
 def scale_compute_sutest_node_requirement():
