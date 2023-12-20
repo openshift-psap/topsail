@@ -37,6 +37,7 @@
 - name: "Generate the protos"
   command:
     oc rsh
+       -c transformer-container
        -n {{ kserve_extract_protos_namespace }}
        {{ predictor_pod_name_cmd.stdout }}
        bash -cxe 'rm -rf /tmp/protos; RUNTIME_LIBRARY=caikit_nlp python -m caikit.runtime.dump_services /tmp/protos'
