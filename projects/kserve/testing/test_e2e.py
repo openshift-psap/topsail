@@ -16,7 +16,7 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 
 import topsail
 from topsail.testing import env, config, run, visualize, matbenchmark
-import prepare_scale, test_scale
+import prepare_scale, test_scale, prepare_kserve
 
 TOPSAIL_DIR = pathlib.Path(topsail.__file__).parent.parent
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
@@ -81,6 +81,10 @@ def consolidate_models(index=None, use_job_index=False, model_name=None, namespa
 
 def test_ci():
     "Executes the full e2e test"
+
+    # in the OCP CI, the config is passed from 'prepare' to 'test', so this is a NOOP
+    # in the Perf CI environment, the config isn't passed, so this is mandatory.
+    prepare_kserve.update_serving_runtime_images()
 
     try:
         if config.ci_artifacts.get_config("tests.e2e.perf_mode"):

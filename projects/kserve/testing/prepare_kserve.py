@@ -56,7 +56,7 @@ def prepare():
     rhods.install(token_file)
 
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
-    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve"],
+    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve", "dashboard"],
                     name=None if has_dsc else "default-dsc")
 
     with env.NextArtifactDir("prepare_poc"):
@@ -103,6 +103,22 @@ def cleanup(mute=True):
     with run.Parallel("cleanup_kserve") as parallel:
         for operator in config.ci_artifacts.get_config("prepare.operators"):
             undeploy_operator(operator)
+
+
+def update_serving_runtime_images():
+    TEMPLATE_CMD = "oc get template/caikit-tgis-serving-template -n redhat-ods-applications"
+    logging.info("Ensure that the Dashboard template resource is available ...")
+    run.run(TEMPLATE_CMD, capture_stdout=True)
+
+    def get_image(name):
+        cmd = f"""{TEMPLATE_CMD} -ojson | jq --arg name "{name}" '.objects[0].spec.containers[] | select(.name == $name).image' -r"""
+        return run.run(cmd, capture_stdout=True).stdout
+
+    kserve_image = get_image("kserve-container")
+    transformer_image = get_image("transformer-container")
+
+    config.ci_artifacts.set_config("kserve.model.serving_runtime.kserve.image", kserve_image.strip())
+    config.ci_artifacts.set_config("kserve.model.serving_runtime.transformer.image", transformer_image.strip())
 
 
 def preload_image():

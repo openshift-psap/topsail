@@ -50,6 +50,10 @@ def prepare():
         parallel.delayed(prepare_user_pods.prepare_user_pods, user_count)
         parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
 
+    # must be after prepare_kserve.prepare and before prepare_kserve.preload_image
+    # must not be in a parallel group, because it updates the config file
+    prepare_kserve.update_serving_runtime_images()
+
     with run.Parallel("prepare_scale2") as parallel:
         # must be after prepare_kserve.update_serving_runtime_images
         parallel.delayed(prepare_kserve.preload_image)
