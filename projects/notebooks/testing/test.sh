@@ -190,6 +190,13 @@ main() {
             process_ctrl__finalizers+=("driver_cleanup")
 
             run_tests_and_plots
+
+            local horreum_test_name=$(get_config matbench.lts.horreum.test_name)
+            if [[ "$horreum_test_name" ]]; then
+                echo "Saving Horreum test name: $horreum_test_name"
+                echo "$horreum_test_name" > $ARTIFACT_DIR/test_name.horreum
+            fi
+
             check_failure_flag
 
             return 0
