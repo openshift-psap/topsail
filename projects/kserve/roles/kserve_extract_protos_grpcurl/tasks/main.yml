@@ -20,15 +20,15 @@
   register: predictor_hostname_cmd
 
 - name: Generate the protos
-  shell:
-    set -o pipefail;
-    set -e;
+  shell: |
+    set -o pipefail
+    set -e
 
-    what="{{ item }}";
-    echo "/* $what */" >> "{{ kserve_extract_protos_grpcurl_dest_file }}";
-    grpcurl -insecure "{{ predictor_hostname_cmd.stdout }}" describe "$what"
-     | sed -E 's/^.* is a (message|service)://g'
-     | sed 's/ .caikit/ caikit/g'
+    what="{{ item }}"
+    echo "/* $what */" >> "{{ kserve_extract_protos_grpcurl_dest_file }}"
+    grpcurl -insecure "{{ predictor_hostname_cmd.stdout }}" describe "$what" \
+     | sed -E 's/^.* is a (message|service)://g' \
+     | sed 's/ .caikit/ caikit/g' \
      >> "{{ kserve_extract_protos_grpcurl_dest_file }}"
   loop: "{{ kserve_extract_protos_grpcurl_methods }}"
 
