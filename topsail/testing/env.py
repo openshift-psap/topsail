@@ -3,25 +3,71 @@ import pathlib
 import time
 import traceback
 import logging
+import threading
 
-ARTIFACT_DIR = None
+###
+# The code below required to properly set the ARTIFACT_DIR in the
+# thead local storage, so that threads don't share the same
+# ARTIFACT_DIR value (and don't update the shared value)
+###
+
+class MyThread(threading.Thread):
+
+    def __init__(self, *args, **kwargs):
+        super(MyThread, self).__init__(*args, **kwargs)
+        self.parent_artifact_dict = None
+
+    def start(self):
+        self.parent_artifact_dict = get_tls_artifact_dir()
+        super(MyThread, self).start()
+
+    def run(self):
+        _set_tls_artifact_dir(self.parent_artifact_dict)
+        super(MyThread, self).run()
+
+threading.Thread = MyThread
+
+def __getattr__(name):
+
+    if name == "ARTIFACT_DIR":
+        return get_tls_artifact_dir()
+
+    return globals()[name]
+
+_main_artifact_dir = None
+_tls_artifact_dir = threading.local()
+
+def get_tls_artifact_dir():
+    return _tls_artifact_dir.val
+
+
+def _set_tls_artifact_dir(value):
+    _tls_artifact_dir.val = value
+
+###
+# end of the thread local storage code
+###
 
 def init():
-    global ARTIFACT_DIR
-
     if "ARTIFACT_DIR" in os.environ:
-        ARTIFACT_DIR = pathlib.Path(os.environ["ARTIFACT_DIR"])
+        artifact_dir = pathlib.Path(os.environ["ARTIFACT_DIR"])
 
     else:
         env_ci_artifact_base_dir = pathlib.Path(os.environ.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
-        ARTIFACT_DIR = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d-%H%M')}"
-        ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
-        os.environ["ARTIFACT_DIR"] = str(ARTIFACT_DIR)
+        artifact_dir = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d-%H%M')}"
+
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        os.environ["ARTIFACT_DIR"] = str(artifact_dir)
+
+    _set_tls_artifact_dir(artifact_dir)
+
 
 def NextArtifactDir(name):
     next_count = next_artifact_index()
-    dirname = ARTIFACT_DIR / f"{next_count:03d}__{name}"
+    dirname = get_tls_artifact_dir() / f"{next_count:03d}__{name}"
+
     return TempArtifactDir(dirname)
+
 
 class TempArtifactDir(object):
     def __init__(self, dirname):
@@ -29,28 +75,28 @@ class TempArtifactDir(object):
         self.previous_dirname = None
 
     def __enter__(self):
-        self.previous_dirname = pathlib.Path(os.environ["ARTIFACT_DIR"])
+        self.previous_dirname = get_tls_artifact_dir()
         os.environ["ARTIFACT_DIR"] = str(self.dirname)
         self.dirname.mkdir(exist_ok=True)
 
-        global ARTIFACT_DIR
-        ARTIFACT_DIR = self.dirname
+        _set_tls_artifact_dir(self.dirname)
 
         return True
 
     def __exit__(self, ex_type, ex_value, exc_traceback):
-        global ARTIFACT_DIR
+        global _ARTIFACT_DIR
 
         if ex_value:
             logging.error(f"Caught exception {ex_type.__name__}: {ex_value}")
-            with open(ARTIFACT_DIR / "FAILURE", "a") as f:
+            with open(get_tls_artifact_dir() / "FAILURE", "a") as f:
                 print(f"{ex_type.__name__}: {ex_value}", file=f)
                 print(''.join(traceback.format_exception(None, value=ex_value, tb=exc_traceback)), file=f)
 
         os.environ["ARTIFACT_DIR"] = str(self.previous_dirname)
-        ARTIFACT_DIR = self.previous_dirname
+        _set_tls_artifact_dir(self.previous_dirname)
 
         return False # If we returned True here, any exception would be suppressed!
 
+
 def next_artifact_index():
-    return len(list(ARTIFACT_DIR.glob("*__*")))
+    return len(list(get_tls_artifact_dir().glob("*__*")))

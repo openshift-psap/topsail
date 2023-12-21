@@ -37,8 +37,11 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     if apply_preset_from_pr_args:
         config.ci_artifacts.apply_preset_from_pr_args()
 
-    if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
-        raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
+    if not ignore_secret_path:
+        if not PSAP_ODS_SECRET_PATH.exists():
+            raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
+
+        run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
 
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
     config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
@@ -63,8 +66,10 @@ def prepare_ci():
     """
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode in ("scale", "e2e"):
+    if test_mode in ("scale", "e2e", "prepare_only"):
         prepare_scale.prepare()
+    elif test_mode in ("cleanup_only"):
+        logging.info("Cleanup only mode, nothing to do")
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
@@ -76,6 +81,10 @@ def test_ci():
     """
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
+
+    if test_mode in ("prepare_only", "cleanup_only"):
+        logging.info(f"Test mode is '{test_mode}', nothing to do.")
+        return
 
     do_visualize = config.ci_artifacts.get_config("tests.visualize")
 
@@ -187,6 +196,11 @@ def cleanup_cluster(mute=False):
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
+
+    test_mode = config.ci_artifacts.get_config("tests.mode")
+    if test_mode in ("prepare_only"):
+        logging.info("Prepare only mode, nothing to do.")
+        return
 
     with env.NextArtifactDir("cleanup_cluster"):
         cleanup_sutest_ns()

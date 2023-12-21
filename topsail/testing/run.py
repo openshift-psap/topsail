@@ -15,7 +15,13 @@ if os.getpid() != 1:
     os.setpgrp()
 
 
-def run_toolbox_from_config(group, command, prefix=None, suffix=None, show_args=None, extra=dict(), artifact_dir_suffix=None, mute_stdout=False, check=True, run_kwargs=dict()):
+def run_toolbox_from_config(group, command, prefix=None, suffix=None, show_args=None, extra=None, artifact_dir_suffix=None, mute_stdout=False, check=True, run_kwargs=None):
+    if extra is None:
+        extra = {}
+
+    if run_kwargs is None:
+        run_kwargs = {}
+
     kwargs = dict()
     if prefix is not None:
         kwargs["prefix"] = prefix
@@ -32,10 +38,13 @@ def run_toolbox_from_config(group, command, prefix=None, suffix=None, show_args=
     if check is not None:
         run_kwargs["check"] = check
 
-    cmd_env = f'ARTIFACT_TOOLBOX_NAME_SUFFIX="{artifact_dir_suffix}" ' \
-        if artifact_dir_suffix is not None else ""
+    env_vals = [f'ARTIFACT_DIR="{env.ARTIFACT_DIR}"']
+    if artifact_dir_suffix is not None:
+        env_vals.append(f'ARTIFACT_TOOLBOX_NAME_SUFFIX="{artifact_dir_suffix}"')
 
-    return run(f'{cmd_env}./run_toolbox.py from_config {group} {command} {_dict_to_run_toolbox_args(kwargs)}', **run_kwargs)
+    cmd_env = " ".join(env_vals)
+
+    return run(f'{cmd_env} ./run_toolbox.py from_config {group} {command} {_dict_to_run_toolbox_args(kwargs)}', **run_kwargs)
 
 
 def _dict_to_run_toolbox_args(args_dict):
@@ -52,17 +61,23 @@ def _dict_to_run_toolbox_args(args_dict):
     return " ".join(args)
 
 
-def run_toolbox(group, command, artifact_dir_suffix=None, run_kwargs=dict(), mute_stdout=None, check=None, **kwargs):
+def run_toolbox(group, command, artifact_dir_suffix=None, run_kwargs=None, mute_stdout=None, check=None, **kwargs):
+    if run_kwargs is None:
+        run_kwargs = {}
+
     if mute_stdout:
         run_kwargs["capture_stdout"] = True
 
     if check is not None:
         run_kwargs["check"] = check
 
-    cmd_env = f'ARTIFACT_TOOLBOX_NAME_SUFFIX="{artifact_dir_suffix}" ' \
-        if artifact_dir_suffix is not None else ""
+    env_vals = [f'ARTIFACT_DIR="{env.ARTIFACT_DIR}"']
+    if artifact_dir_suffix is not None:
+        env_vals.append(f'ARTIFACT_TOOLBOX_NAME_SUFFIX="{artifact_dir_suffix}"')
 
-    return run(f'{cmd_env}./run_toolbox.py {group} {command} {_dict_to_run_toolbox_args(kwargs)}', **run_kwargs)
+    cmd_env = " ".join(env_vals)
+
+    return run(f'{cmd_env} ./run_toolbox.py {group} {command} {_dict_to_run_toolbox_args(kwargs)}', **run_kwargs)
 
 
 def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None, stdin_file=None, log_command=True):

@@ -45,7 +45,7 @@ sutest/cluster set_project_annotation/scale_test_toleration:
 sutest/cluster preload_image/kserve-runtime:
 {% if tests.mode == "scale" %}
   namespace: {{ tests.scale.namespace.name }}
-{% elif tests.mode == "e2e" %}
+{% else %}
   namespace: {{ tests.e2e.namespace }}
 {% endif %}
   name: caikit-image

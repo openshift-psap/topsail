@@ -228,15 +228,15 @@ def run_one_test(namespace, job_index):
         )
 
         run.run_toolbox_from_config("kserve", "deploy_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
-        run.run(f'echo "model_{model_idx}_deployed: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
+        run.run(f'echo "model_{model_idx}_deployed: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
 
         extra = dict(inference_service_names=[inference_service_name])
         run.run_toolbox_from_config("kserve", "validate_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
-        run.run(f'echo "model_{model_idx}_validated: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
+        run.run(f'echo "model_{model_idx}_validated: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
 
         all_inference_service_names += [inference_service_name]
 
     extra = dict(inference_service_names=all_inference_service_names)
 
     run.run_toolbox_from_config("kserve", "validate_model", extra=extra, artifact_dir_suffix=f"_all")
-    run.run(f'echo "model_all_validated: $(date)" >> "$ARTIFACT_DIR/progress_ts.yaml"')
+    run.run(f'echo "model_all_validated: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')

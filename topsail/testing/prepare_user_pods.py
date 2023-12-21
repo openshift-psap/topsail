@@ -3,6 +3,7 @@ import logging
 import pathlib
 import base64
 import yaml
+import re
 
 from topsail.testing import env, config, run, sizing
 
@@ -22,9 +23,9 @@ def apply_prefer_pr(pr_number=None):
         git_ref = os.environ.get("PERFLAB_GIT_REF")
 
         try:
-            pr_number = int(re.compile("refs/pull/([0-9]+)/merge").match(git_ref).groups()[0])
+            pr_number = int(re.compile("refs/pull/([0-9]+)/").match(git_ref).groups()[0])
         except Exception as e:
-            logging.warning("apply_prefer_pr: PERFLAB_CI: base_image.repo.ref_prefer_pr is set cannot parse PERFLAB_GIT_REF={git_erf}: {e.__class__.__name__}: {e}")
+            logging.warning(f"apply_prefer_pr: PERFLAB_CI: base_image.repo.ref_prefer_pr is set but 'PERFLAB_GIT_REF={git_ref}' cannot be parsed: {e.__class__.__name__}: {e}")
             return
 
     elif os.environ.get("HOMELAB_CI"):
@@ -153,14 +154,20 @@ def prepare_user_pods(user_count):
     secret_name = config.ci_artifacts.get_config("secrets.dir.name")
     secret_env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
 
-
     secret_yaml_str = run.run(f"oc create secret generic {secret_name} --from-file=$(find ${secret_env_key}/* -maxdepth 1 -not -type d | tr '\\n' ,)/dev/null -n {namespace} --dry-run=client -oyaml", capture_stdout=True).stdout
-    with open(pathlib.Path(os.environ[secret_env_key]) / ".awscred", "rb") as f:
-        file_content = f.read()
-    base64_secret = base64.b64encode(file_content).decode("ascii")
     secret_yaml = yaml.safe_load(secret_yaml_str)
-    secret_yaml["data"][".awscred"] = base64_secret
     del secret_yaml["data"]["null"]
+
+    if (aws_cred_path := pathlib.Path(os.environ[secret_env_key]) / ".awscred").exists():
+        with open(aws_cred_path, "rb") as f:
+            file_content = f.read()
+            base64_secret = base64.b64encode(file_content).decode("ascii")
+
+        secret_yaml["data"][".awscred"] = base64_secret
+    else:
+        msg = f".awscred file doesn't exist in ${secret_env_key}"
+        secret_yaml["data"]["awscred_missing"] = base64.b64encode(msg.encode("ascii")).decode("ascii")
+        logging.warning(msg)
 
     save_and_create("secret.yaml", yaml.dump(secret_yaml), namespace, is_secret=True)
 

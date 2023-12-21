@@ -78,6 +78,12 @@ ci_presets:
     clusters.sutest.compute.machineset.spot: false
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
 
+  prepare_only:
+    tests.mode: prepare_only
+
+  cleanup_only:
+    tests.mode: cleanup_only
+
   e2e_all_models:
     tests.e2e.models:
     - flan-t5-small-cpu
@@ -171,7 +177,7 @@ ci_presets:
     extends: [scale_test]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.spot: false
-    clusters.sutest.compute.machineset.type: g5.2xlarge
+    clusters.sutest.compute.machineset.type: g4dn.2xlarge
     tests.scale.model.name: flan-t5-small-gpu
     gpu.time_sharing.replicas: 17
 
@@ -244,7 +250,7 @@ clusters:
       dedicated: true
       machineset:
         name: workload-pods
-        type: g5.2xlarge
+        type: g4dn.2xlarge
         count: null
         disk_size: 400 # GB for the root partition
         spot: false

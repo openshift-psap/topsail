@@ -11,6 +11,12 @@
     state: directory
     mode: '0755'
 
+- name: Create the logs directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/logs"
+    state: directory
+    mode: '0755'
+
 - name: Ensure that ghz is available
   command: which ghz
 
@@ -23,28 +29,41 @@
 - name: Inform | Next task runs the load test
   debug: msg="Next task runs the load test. It takes {{ llm_load_test_run_duration }} to complete. Artifacts will be saved into '{{ artifact_extra_logs_dir }}/output'."
 
-- name: Run llm-load-test
-  shell: |
-    set -e
-    cd "{{ llm_load_test_run_llm_path }}"
+- name: Run llm-load-test and update the response
+  block:
+  - name: Run llm-load-test
+    shell: |
+      set -e
+      cd "{{ llm_load_test_run_llm_path }}"
 
-    export CONFIG_FILENAME=llm_load_test.config.yaml
-    export CONFIG_PATH="{{ artifact_extra_logs_dir }}/src/"
+      export CONFIG_FILENAME=llm_load_test.config.yaml
+      export CONFIG_PATH="{{ artifact_extra_logs_dir }}/src/"
 
-    python3 load_test.py &> {{ artifact_extra_logs_dir }}/run.log
+      python3 load_test.py &> {{ artifact_extra_logs_dir }}/logs/run.log
+  always:
+  - name: Cleanup the output dir
+    command:
+      find '{{ artifact_extra_logs_dir }}/output' -type f ! -iname 'ghz-multiplexed-results-*.json' -delete
 
-- name: Cleanup the output dir
-  command:
-    find '{{ artifact_extra_logs_dir }}/output' -type f ! -iname 'ghz-multiplexed-results-*.json' -delete
+  - name: Turn the response field into json
+    shell: |
+      set -e;
+      set -o pipefail;
 
-- name: Turn the response field into json
-  shell: |
-    set -e;
-    set -o pipefail;
+      output_file=$(echo '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results-*.json);
+      mv "$output_file" '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results.orig
+      cat '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results.orig \
+        | jq '.[].details[].response |= fromjson' \
+        > "${output_file}"
+      echo "Results have been save in '${output_file}'"
 
-    output_file=$(echo '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results-*.json);
-    mv "$output_file" '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results.orig
-    cat '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results.orig \
-       | jq '.[].details[].response |= fromjson' \
-      > "${output_file}"
-    echo "Results have been save in '${output_file}'"
+  - name: Ensure that some content has been generated
+    shell:
+      set -o pipefail;
+      cat {{ artifact_extra_logs_dir }}/output/ghz-multiplexed-results*.json | jq .[] | grep . --quiet
+    register: llm_load_test_has_content
+    failed_when: false
+
+  - name: Fail if llm-load-test did not generate content
+    fail: msg="llm-load-test did not generate content. See logs in '{{ artifact_extra_logs_dir }}/logs/run.log'"
+    when: llm_load_test_has_content.rc == 1

@@ -3,6 +3,8 @@
 # kpouget: imported from
 # https://github.com/openshift/release/blob/8de7ecc42af9af62aa473b7f0468b07d92d5f74f/ci-operator/step-registry/gather/extra/gather-extra-commands.sh
 
+exit 0
+
 if [ "${PERFLAB_CI:-}" == true ]; then
     LOG_FILE=$ARTIFACT_DIR/gather_extra.log
     echo "Running in the PerfLab CI, mutting the gather-extra std output. See $LOG_FILE for details."

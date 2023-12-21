@@ -29,7 +29,7 @@ def customize_rhods():
         run.run(f"oc get deploy/kserve-controller-manager -n redhat-ods-applications -ojson "
                 f"| jq --arg mem '{mem}' --arg cpu '{cpu}' '.spec.template.spec.containers[0].resources.limits.cpu = $cpu | .spec.template.spec.containers[0].resources.limits.memory = $mem' "
                 f"| oc apply -f-")
-        run.run("oc get deploy/kserve-controller-manager -n redhat-ods-applications -oyaml > $ARTIFACT_DIR/deploy_kserve-controller-manager.customized.yaml")
+        run.run(f"oc get deploy/kserve-controller-manager -n redhat-ods-applications -oyaml > {env.ARTIFACT_DIR}/deploy_kserve-controller-manager.customized.yaml")
 
 
 def customize_kserve():
@@ -41,7 +41,7 @@ def customize_kserve():
                 f"| jq --arg egress_mem '{egress_mem}' --arg ingress_mem '{ingress_mem}' "
                 "'.spec.gateways.egress.runtime.container.resources.limits.memory = $egress_mem | .spec.gateways.ingress.runtime.container.resources.limits.memory = $ingress_mem' "
                 f"| oc apply -f-")
-        run.run("oc get smcp/minimal -n istio-system -oyaml > $ARTIFACT_DIR/smcp_minimal.customized.yaml")
+        run.run(f"oc get smcp/minimal -n istio-system -oyaml > {env.ARTIFACT_DIR}/smcp_minimal.customized.yaml")
 
 def prepare():
     if not PSAP_ODS_SECRET_PATH.exists():
@@ -55,11 +55,15 @@ def prepare():
 
     rhods.install(token_file)
 
-    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve"])
-    try:
-        run.run("projects/kserve/testing/poc/prepare.sh |& tee -a $ARTIFACT_DIR/000_prepare_sh.log")
-    finally:
-        run.run("oc get datasciencecluster -oyaml > $ARTIFACT_DIR/datasciencecluster.after.yaml")
+    has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
+    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve", "dashboard"],
+                    name=None if has_dsc else "default-dsc")
+
+    with env.NextArtifactDir("prepare_poc"):
+        try:
+            run.run(f"projects/kserve/testing/poc/prepare.sh |& tee -a {env.ARTIFACT_DIR}/run.log")
+        finally:
+            run.run(f"oc get datasciencecluster -oyaml > {env.ARTIFACT_DIR}/datasciencecluster.after.yaml")
 
     customize_rhods()
     customize_kserve()
@@ -77,7 +81,7 @@ def undeploy_operator(operator, mute=True):
         run.run(f"oc delete {crd} --all -A", check=False)
 
     for ns in cleanup.get("namespaces", []):
-        run.run(f"oc api-resources --verbs=list --namespaced -o name | grep -v -E 'coreos.com|openshift.io|cncf.io|k8s.io|metal3.io|k8s.ovn.org|.apps' | xargs -t -n 1 oc get --show-kind --ignore-not-found -n kserve-user-test-driver |& cat > $ARTIFACT_DIR/{operator['name']}_{ns}.log", check=False)
+        run.run(f"oc api-resources --verbs=list --namespaced -o name | grep -v -E 'coreos.com|openshift.io|cncf.io|k8s.io|metal3.io|k8s.ovn.org|.apps' | xargs -t -n 1 oc get --show-kind --ignore-not-found -n kserve-user-test-driver |& cat > {env.ARTIFACT_DIR}/{operator['name']}_{ns}.log", check=False)
 
     installed_csv_cmd = run.run(f"oc get csv -oname -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}", capture_stdout=mute)
     if not installed_csv_cmd.stdout:
@@ -99,6 +103,22 @@ def cleanup(mute=True):
     with run.Parallel("cleanup_kserve") as parallel:
         for operator in config.ci_artifacts.get_config("prepare.operators"):
             undeploy_operator(operator)
+
+
+def update_serving_runtime_images():
+    TEMPLATE_CMD = "oc get template/caikit-tgis-serving-template -n redhat-ods-applications"
+    logging.info("Ensure that the Dashboard template resource is available ...")
+    run.run(TEMPLATE_CMD, capture_stdout=True)
+
+    def get_image(name):
+        cmd = f"""{TEMPLATE_CMD} -ojson | jq --arg name "{name}" '.objects[0].spec.containers[] | select(.name == $name).image' -r"""
+        return run.run(cmd, capture_stdout=True).stdout
+
+    kserve_image = get_image("kserve-container")
+    transformer_image = get_image("transformer-container")
+
+    config.ci_artifacts.set_config("kserve.model.serving_runtime.kserve.image", kserve_image.strip())
+    config.ci_artifacts.set_config("kserve.model.serving_runtime.transformer.image", transformer_image.strip())
 
 
 def preload_image():
