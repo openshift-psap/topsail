@@ -353,7 +353,6 @@ kserve:
         image: quay.io/opendatahub/text-generation-inference:stable
       transformer:
         image: quay.io/opendatahub/caikit-tgis-serving:fast
-        mute_logs: true
   customize:
     serverless:
       enabled: false
