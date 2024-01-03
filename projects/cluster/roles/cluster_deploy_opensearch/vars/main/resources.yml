@@ -1,0 +1,4 @@
+---
+opensearch_deployment: templates/deploy.yaml.j2
+opensearch_dashboards_configuration: templates/opensearch_dashboards.yaml.j2
+opensearch_internal_users: templates/internal_users.yaml.j2

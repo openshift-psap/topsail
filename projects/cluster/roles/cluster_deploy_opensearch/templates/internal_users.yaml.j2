@@ -1,0 +1,11 @@
+
+_meta:
+  type: "internalusers"
+  config_version: 2
+
+admin:
+  hash: "PASSWORD_HASH" # generated via plugins/opensearch-security/tools/hash.sh -p $OPENSEARCH_PASSWORD at load time
+  reserved: true
+  backend_roles:
+  - "admin"
+  description: "Admin user"

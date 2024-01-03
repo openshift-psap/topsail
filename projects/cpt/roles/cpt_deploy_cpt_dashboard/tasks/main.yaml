@@ -1,0 +1,94 @@
+---
+- name: Set the variables
+  set_fact:
+    cpt_deploy_cpt_dashboard_name: cpt-dashboard
+
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Check if the project exists
+  command:
+    oc get ns {{ cpt_deploy_cpt_dashboard_namespace }} -oname
+  failed_when: false
+  register: has_ns_cmd
+
+- name: Create the namespace if it does not exist
+  command:
+    oc new-project {{ cpt_deploy_cpt_dashboard_namespace }} --skip-config-write
+  when: has_ns_cmd.rc == 1
+
+- name: Apply the Dashboards configuration template
+  template:
+    src: "{{ cpt_dashboard_ocpperf }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/ocpperf.yaml"
+    mode: '0700'
+
+- name: Create the Dashboards configuration ConfigMap
+  shell:
+    set -o pipefail;
+
+    oc create cm {{ cpt_deploy_cpt_dashboard_name }}-config
+       -n {{ cpt_deploy_cpt_dashboard_namespace }}
+       --from-file="{{ artifact_extra_logs_dir }}/src/ocpperf.yaml"
+       -oyaml --dry-run=client
+       | oc apply -f-
+
+
+- name: Create the Dashboard OpenSearch admin user password
+  shell:
+    set -o pipefail;
+    PASS=$(cat "{{ cpt_deploy_cpt_dashboard_secret_properties_file }}" | grep admin_password | cut -d= -f2);
+    oc create secret generic {{ cpt_deploy_cpt_dashboard_name }}-creds
+       --from-literal=OPENSEARCH_PASSWORD=$PASS
+       -n {{ cpt_deploy_cpt_dashboard_namespace }}
+       -oyaml --dry-run=client
+       | oc apply -f-
+
+- name: Apply the Deployment template
+  template:
+    src: "{{ cpt_dashboard_deployment }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/deploy.yaml"
+    mode: '0700'
+
+- name: Instantiate the Deployment
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/deploy.yaml"
+
+- name: Expose the CPT Dashboard frontend route
+  shell:
+    set -o pipefail;
+
+    oc create route edge {{ cpt_deploy_cpt_dashboard_name }}
+       --service={{ cpt_deploy_cpt_dashboard_name }}
+       --port=tcp-cpt-dashboard-frontend
+       -n {{ cpt_deploy_cpt_dashboard_namespace }}
+       --dry-run=client -oyaml | oc apply -f-
+
+- name: Expose the CPT Dashboard backend route
+  shell:
+    set -o pipefail;
+
+    oc create route edge {{ cpt_deploy_cpt_dashboard_name }}-backend
+       --service={{ cpt_deploy_cpt_dashboard_name }}
+       --port=tcp-cpt-dashboard-backend
+       -n {{ cpt_deploy_cpt_dashboard_namespace }}
+       --dry-run=client -oyaml | oc apply -f-
+
+- name: Wait for the deployment to be ready
+  command:
+    oc get deploy {{ cpt_deploy_cpt_dashboard_name }}
+       -n {{ cpt_deploy_cpt_dashboard_namespace }}
+       -ojsonpath={.status.unavailableReplicas}
+  register: deployments_not_ready_cmd
+  retries: 20
+  delay: 15
+  until: not deployments_not_ready_cmd.stdout
