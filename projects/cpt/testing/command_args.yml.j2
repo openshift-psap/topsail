@@ -1,0 +1,38 @@
+cluster deploy_opensearch:
+  namespace: "{{ opensearch.namespace }}"
+  name: "{{ opensearch.name }}"
+
+dashboard/cluster build_push_image/backend:
+  namespace: "{{ cpt_dashboard.namespace }}"
+  image_local_name: "{{ cpt_dashboard.imagestream }}"
+  git_repo: "{{ cpt_dashboard.repo.url }}"
+  git_ref: "{{ cpt_dashboard.repo.ref }}"
+
+  _istag: "{{ cpt_dashboard.imagestream }}:{{ cpt_dashboard.repo.backend.tag }}"
+
+  dockerfile_path: "{{ cpt_dashboard.repo.backend.dockerfile_path }}"
+  tag: "{{ cpt_dashboard.repo.backend.tag }}"
+  context_dir: "{{ cpt_dashboard.repo.backend.context_dir }}"
+
+dashboard/cluster build_push_image/frontend:
+  namespace: "{{ cpt_dashboard.namespace }}"
+  image_local_name: "{{ cpt_dashboard.imagestream }}"
+  git_repo: "{{ cpt_dashboard.repo.url }}"
+  git_ref: "{{ cpt_dashboard.repo.ref }}"
+
+  _istag: "{{ cpt_dashboard.imagestream }}:{{ cpt_dashboard.repo.frontend.tag }}"
+
+  dockerfile_path: "{{ cpt_dashboard.repo.frontend.dockerfile_path }}"
+  tag: "{{ cpt_dashboard.repo.frontend.tag }}"
+  context_dir: "{{ cpt_dashboard.repo.frontend.context_dir }}"
+
+cpt deploy_cpt_dashboard:
+  namespace: "{{ cpt_dashboard.namespace }}"
+  backend_istag: "{{ cpt_dashboard.imagestream }}:{{ cpt_dashboard.repo.backend.tag }}"
+  frontend_istag: "{{ cpt_dashboard.imagestream }}:{{ cpt_dashboard.repo.frontend.tag }}"
+
+  plugin_name: "{{ cpt_dashboard.plugin }}"
+
+  es_url: "{{ cpt_dashboard.es.url }}"
+  es_username: "{{ cpt_dashboard.es.username }}"
+  es_indice: "{{ cpt_dashboard.es.indice }}"

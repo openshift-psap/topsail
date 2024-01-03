@@ -1,0 +1,36 @@
+ci_presets:
+  # name of the presets to apply, or null if no preset
+  name: null
+  # list of names of the presets to apply, or a single name, or null if no preset
+  names: null
+
+secrets:
+  dir:
+    name: psap-ods-secret
+    env_key: PSAP_ODS_SECRET_PATH
+  # name of the file containing the properties of OpenSearch secrets
+  password_file: s3_ldap.passwords
+
+opensearch:
+  namespace: opensearch
+  name: opensearch
+
+cpt_dashboard:
+  namespace: topsail-cpt-dashboard
+  imagestream: cpt-dashboard
+  repo:
+    url: https://github.com/kpouget/cpt-dashboard
+    ref: work
+    backend:
+      dockerfile_path: backend.containerfile
+      tag: backend
+      context_dir: backend
+    frontend:
+      dockerfile_path: frontend.containerfile
+      tag: frontend
+      context_dir: frontend
+  plugin: ocp
+  es:
+    url: SET_AT_RUNTIME
+    username: admin
+    indice: psap_rhoai

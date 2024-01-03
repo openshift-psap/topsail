@@ -1,0 +1,35 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cpt.deploy_cpt_dashboard
+
+# Parameters
+# Imagestream tag to use for the frontend container
+# Mandatory value
+cpt_deploy_cpt_dashboard_frontend_istag:
+
+# Imagestream tag to use for the backend container
+# Mandatory value
+cpt_deploy_cpt_dashboard_backend_istag:
+
+# Name of the CPT Dashboard plugin to configure
+# Mandatory value
+cpt_deploy_cpt_dashboard_plugin_name:
+
+# URL of the OpenSearch backend
+# Mandatory value
+cpt_deploy_cpt_dashboard_es_url:
+
+# indice of the OpenSearch backend
+# Mandatory value
+cpt_deploy_cpt_dashboard_es_indice:
+
+# username to use to login into OpenSearch
+# Mandatory value
+cpt_deploy_cpt_dashboard_es_username:
+
+# Path of a file containing the OpenSearch user credentials
+# Mandatory value
+cpt_deploy_cpt_dashboard_secret_properties_file:
+
+# namespace in which the application will be deployed
+cpt_deploy_cpt_dashboard_namespace: topsail-cpt-dashboard

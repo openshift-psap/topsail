@@ -1,0 +1,3 @@
+---
+cpt_dashboard_ocpperf: "templates/ocpperf.yaml.j2"
+cpt_dashboard_deployment: "templates/deploy.yaml.j2"
