@@ -334,7 +334,6 @@ class Cluster:
 
         Example of secret properties file:
 
-        user_password=passwd
         admin_password=adminpasswd
 
         Args:
@@ -571,5 +570,29 @@ class Cluster:
         if from_image and from_imagetag:
             logging.error(f"the --from-image={from_image} and --from-imagetag={from_imagetag} flags cannot be used at the same time.")
             sys.exit(1)
+
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("cluster_deploy_opensearch")
+    @AnsibleMappedParams
+    def deploy_opensearch(self,
+                          secret_properties_file,
+                          namespace="opensearch",
+                          name="opensearch",
+
+                    ):
+        """
+        Deploy OpenSearch and OpenSearch-Dashboards
+
+        Example of secret properties file:
+
+        user_password=passwd
+        admin_password=adminpasswd
+
+        Args:
+          namespace: namespace in which the application will be deployed
+          name: name to give to the opensearch instance
+          secret_properties_file: Path of a file containing the properties of LDAP secrets.
+        """
 
         return RunAnsibleRole(locals())
