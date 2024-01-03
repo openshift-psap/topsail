@@ -37,11 +37,11 @@ def customize_kserve():
     if config.ci_artifacts.get_config("kserve.customize.serverless.enabled"):
         egress_mem = config.ci_artifacts.get_config("kserve.customize.serverless.egress.limits.memory")
         ingress_mem = config.ci_artifacts.get_config("kserve.customize.serverless.ingress.limits.memory")
-        run.run(f"oc get smcp/minimal -n istio-system -ojson "
+        run.run(f"oc get smcp/data-science-smcp -n istio-system -ojson "
                 f"| jq --arg egress_mem '{egress_mem}' --arg ingress_mem '{ingress_mem}' "
                 "'.spec.gateways.egress.runtime.container.resources.limits.memory = $egress_mem | .spec.gateways.ingress.runtime.container.resources.limits.memory = $ingress_mem' "
                 f"| oc apply -f-")
-        run.run(f"oc get smcp/minimal -n istio-system -oyaml > {env.ARTIFACT_DIR}/smcp_minimal.customized.yaml")
+        run.run(f"oc get smcp/data-science-smcp -n istio-system -oyaml > {env.ARTIFACT_DIR}/smcp_minimal.customized.yaml")
 
 def prepare():
     if not PSAP_ODS_SECRET_PATH.exists():
