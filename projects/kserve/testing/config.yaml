@@ -78,12 +78,6 @@ ci_presets:
     clusters.sutest.compute.machineset.spot: false
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
 
-  prepare_only:
-    tests.mode: prepare_only
-
-  cleanup_only:
-    tests.mode: cleanup_only
-
   e2e_all_models:
     tests.e2e.models:
     - flan-t5-small-cpu
@@ -92,64 +86,13 @@ ci_presets:
     - bloom-560m
     - mpt-7b-instruct2
 
-  e2e_dgx_one_model:
-    extends: [e2e_perf]
-    tests.e2e.models:
-    - mpt-1container:
-        name: mpt-7b-instruct2
-        serving_runtime:
-          merge_containers: true
-    - mpt-2container:
-        name: mpt-7b-instruct2
-    - mpt-2container-limits:
-        name: mpt-7b-instruct2
-        serving_runtime:
-          limits_equals_requests: true
+  # ---
 
-  e2e_dgx_models:
-    tests.e2e.models:
-    - flan-t5-large-gpu-1:
-        name: flan-t5-large-gpu
-    - flan-t5-small-gpu-1:
-        name: flan-t5-small-gpu
-    - bloom-560m-1:
-        name: bloom-560m
-    - mpt-7b-instruct2-1:
-        name: mpt-7b-instruct2
+  prepare_only:
+    tests.mode: prepare_only
 
-    - flan-t5-large-gpu-2:
-        name: flan-t5-large-gpu
-    - flan-t5-small-gpu-2:
-        name: flan-t5-small-gpu
-    - bloom-560m-2:
-        name: bloom-560m
-    - mpt-7b-instruct2-2:
-        name: mpt-7b-instruct2
-
-  e2e_perf_flan:
-    extends: [e2e_perf]
-    tests.e2e.llm_load_test.duration: 3m
-    tests.e2e.models:
-    - flan-t5-small-gpu-3gb:
-        name: flan-t5-small-gpu
-        serving_runtime:
-          resource_request:
-            memory: 3 # in Gi
-    - flan-t5-small-gpu-4gb:
-        name: flan-t5-small-gpu
-        serving_runtime:
-          resource_request:
-            memory: 4 # in Gi
-    - flan-t5-small-gpu-5gb:
-        name: flan-t5-small-gpu
-        serving_runtime:
-          resource_request:
-            memory: 5 # in Gi
-    - flan-t5-small-gpu-6gb:
-        name: flan-t5-small-gpu
-        serving_runtime:
-          resource_request:
-            memory: 6 # in Gi
+  cleanup_only:
+    tests.mode: cleanup_only
 
   matbenchmark:
     tests.e2e.matbenchmark.enabled: true
@@ -159,6 +102,8 @@ ci_presets:
   matbenchmark_quick:
     extends: [matbenchmark, quick]
     tests.e2e.models: [flan-t5-small-cpu]
+
+  # ---
 
   5min:
     tests.e2e.llm_load_test.duration: 5m
@@ -183,32 +128,79 @@ ci_presets:
 
   # ---
 
-  scale_on_dgx:
-    extends: [scale_gpu, customize_smmr]
-    gpu.time_sharing.replicas: 32
-    tests.scale.namespace.replicas: 25
-    tests.scale.model.replicas: 8
-    tests.scale.model.name: flan-t5-small-gpu
-
-  delayed:
-    tests.scale.sleep_factor: 10 # 10s between each of the users
-
-  customize_kserve:
-    rhods.operator.stop: true
-    rhods.operator.customize.kserve.enabled: true
-    rhods.operator.customize.kserve.cpu: 500m
-    rhods.operator.customize.kserve.memory: 500Mi
-
-  customize_smmr:
+  customize_smcp:
     kserve.customize.serverless.enabled: true
     kserve.customize.serverless.egress.limits.memory: 4Gi
     kserve.customize.serverless.ingress.limits.memory: 4Gi
 
   # ---
+
+  # single-model
+
   single_model_gating:
-    extends: [10min]
+    extends: [10min, e2e_gpu, e2e_perf]
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, bloom-560m, mpt-7b-instruct2]
     matbench.lts.horreum.test_name: RHOAI-kserve-single
+
+  single_model_gating_light:
+    extends: [single_model_gating, 5min]
+
+    tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu]
+    matbench.lts.horreum.test_name: null
+
+  # multi-model
+
+  multi_model_gating:
+    extends: [10min, e2e_gpu, e2e_scale]
+    matbench.lts.horreum.test_name: RHOAI-kserve-multi
+    tests.e2e.models:
+    - flan-t5-large-gpu-1:
+        name: flan-t5-large-gpu
+    - flan-t5-small-gpu-1:
+        name: flan-t5-small-gpu
+    - bloom-560m-1:
+        name: bloom-560m
+    - mpt-7b-instruct2-1:
+        name: mpt-7b-instruct2
+
+    - flan-t5-large-gpu-2:
+        name: flan-t5-large-gpu
+    - flan-t5-small-gpu-2:
+        name: flan-t5-small-gpu
+    - bloom-560m-2:
+        name: bloom-560m
+    - mpt-7b-instruct2-2:
+        name: mpt-7b-instruct2
+
+  multi_model_gating_light:
+    extends: [multi_model_gating, 5min]
+
+    tests.e2e.models: [flan-t5-small-gpu, flan-t5-small-cpu]
+    matbench.lts.horreum.test_name: null
+
+  # many-model
+
+  many_model_gating:
+    extends: [scale_test, customize_smcp]
+    matbench.lts.horreum.test_name: RHOAI-kserve-many
+
+    tests.scale.model.replicas: 17
+    tests.scale.namespace.replicas: 12
+    gpu.time_sharing.replicas: 210
+
+    tests.scale.model.name: flan-t5-small-gpu-light
+    kserve.model.serving_runtime.mute_logs: true
+    tests.scale.sleep_factor: 60
+    tests.e2e.limits_equals_requests: false
+
+  many_model_gating_light:
+    extends: [many_model_gating]
+
+    tests.scale.sleep_factor: 1
+    tests.scale.model.replicas: 2
+    tests.scale.namespace.replicas: 2
+    gpu.time_sharing.replicas: 10
+    matbench.lts.horreum.test_name: null
 
 secrets:
   dir:
@@ -353,7 +345,6 @@ kserve:
         image: quay.io/opendatahub/text-generation-inference:stable
       transformer:
         image: quay.io/opendatahub/caikit-tgis-serving:fast
-        mute_logs: true
   customize:
     serverless:
       enabled: false

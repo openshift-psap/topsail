@@ -168,7 +168,7 @@ kserve deploy_model:
 
   sr_transformer_image: {{ kserve.model.serving_runtime.transformer.image }}
   sr_transformer_resource_request: {{ tests.scale.model.serving_runtime.transformer.resource_request }}
-  sr_transformer_mute_logs: {{ kserve.model.serving_runtime.transformer.mute_logs }}
+  sr_mute_logs: {{ kserve.model.serving_runtime.mute_logs }}
 
   inference_service_name: {{ tests.scale.model.name }}
   storage_uri: {{ tests.scale.model.inference_service.storage_uri }}
