@@ -4,12 +4,25 @@ ci_presets:
   # list of names of the presets to apply, or a single name, or null if no preset
   names: null
 
+  keep:
+    clusters.cleanup.opensearch: false
+    clusters.cleanup.cpt.dashboard: false
+
 secrets:
   dir:
     name: psap-ods-secret
     env_key: PSAP_ODS_SECRET_PATH
   # name of the file containing the properties of OpenSearch secrets
   password_file: s3_ldap.passwords
+
+clusters:
+  sutest:
+    lab:
+      name: null
+  cleanup:
+    opensearch: true
+    cpt:
+      dashboard: true
 
 opensearch:
   namespace: opensearch

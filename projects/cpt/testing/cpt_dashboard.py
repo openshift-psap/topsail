@@ -92,6 +92,15 @@ def test_ci():
     deploy()
 
 
+@entrypoint()
+def cleanup_cluster_ci():
+    if config.ci_artifacts.get_config("clusters.cleanup.opensearch"):
+        es_namespace = config.ci_artifacts.get_config("opensearch.namespace")
+        run.run(f"oc delete ns {es_namespace}")
+
+    if config.ci_artifacts.get_config("clusters.cleanup.cpt.dashboard"):
+        cpt_dashboard_namespace = config.ci_artifacts.get_config("cpt_dashboard.namespace")
+        run.run(f"oc delete ns {cpt_dashboard_namespace}")
 
 # ---
 
@@ -107,6 +116,8 @@ class Entrypoint:
 
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
+        self.cleanup_cluster_ci = cleanup_cluster_ci
+
 
 def main():
     # Print help rather than opening a pager
