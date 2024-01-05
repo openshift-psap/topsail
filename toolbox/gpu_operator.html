@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPU Operator &mdash; Red Hat PSAP topsail toolbox git-main/84d81cd6 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Node Feature Discover Operator" href="nfd.html" />
+    <link rel="prev" title="Entitlement" href="entitlement.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                05, Jan 2024
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">TOPSAIL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contrib.html">Contributing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">PSAP Toolbox</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="cluster.html">Cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="entitlement.html">Entitlement</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">GPU Operator</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#deployment">Deployment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-and-waiting">Testing and Waiting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cleaning-up">Cleaning Up</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="nfd.html">Node Feature Discover Operator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nto.html">Node Tuning Operator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sro.html">Special Resource Operator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local-ci.html">Local CI Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repo.html">Repository Maintenance</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">GPU Operator</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/toolbox/gpu_operator.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gpu-operator">
+<h1>GPU Operator<a class="headerlink" href="#gpu-operator" title="Permalink to this heading"></a></h1>
+<section id="deployment">
+<h2>Deployment<a class="headerlink" href="#deployment" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Deploy from OperatorHub</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./run_toolbox.py<span class="w"> </span>gpu_operator<span class="w"> </span>deploy_from_operatorhub<span class="w"> </span><span class="o">[</span>--version<span class="o">=</span>&lt;version&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--channel<span class="o">=</span>&lt;channel&gt;<span class="o">]</span><span class="w"> </span><span class="o">[</span>--installPlan<span class="o">=</span>Automatic<span class="p">|</span>Manual<span class="o">]</span>
+./run_toolbox.py<span class="w"> </span>gpu_operator<span class="w"> </span>undeploy_from_operatorhub
+</pre></div>
+</div>
+<p><strong>Examples:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">./run_toolbox.py</span> <span class="pre">gpu_operator</span> <span class="pre">deploy_from_operatorhub</span></code></p>
+<ul>
+<li><p>Installs the latest version available</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">./run_toolbox.py</span> <span class="pre">gpu_operator</span> <span class="pre">deploy_from_operatorhub</span> <span class="pre">--version=1.7.0</span> <span class="pre">--channel=v1.7</span></code></p>
+<ul>
+<li><p>Installs <code class="docutils literal notranslate"><span class="pre">v1.7.0</span></code> from the <code class="docutils literal notranslate"><span class="pre">v1.7</span></code> channel</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">./run_toolbox.py</span> <span class="pre">gpu_operator</span> <span class="pre">deploy_from_operatorhub</span> <span class="pre">--version=1.6.2</span> <span class="pre">--channel=stable</span></code></p>
+<ul>
+<li><p>Installs <code class="docutils literal notranslate"><span class="pre">v1.6.2</span></code> from the <code class="docutils literal notranslate"><span class="pre">stable</span></code> channel</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">./run_toolbox.py</span> <span class="pre">gpu_operator</span> <span class="pre">deploy_from_operatorhub</span> <span class="pre">--installPlan=Automatic</span></code></p>
+<ul>
+<li><p>Forces the install plan approval to be set to <code class="docutils literal notranslate"><span class="pre">Automatic</span></code>.</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>Note about the GPU Operator channel:</strong></p>
+<ul class="simple">
+<li><p>Before <code class="docutils literal notranslate"><span class="pre">v1.7.0</span></code>, the GPU Operator was using a unique channel name
+(<code class="docutils literal notranslate"><span class="pre">stable</span></code>). Within this channel, OperatorHub would automatically
+upgrade the operator to the latest available version. This was an
+issue as the operator doesn’t support (yet) being upgraded (remove
+and reinstall is the official way). OperatorHub allows specifying
+the upgrade as <code class="docutils literal notranslate"><span class="pre">Manual</span></code>, but this isn’t the default behavior.</p></li>
+<li><p>Starting with <code class="docutils literal notranslate"><span class="pre">v1.7.0</span></code>, the channel is set to <code class="docutils literal notranslate"><span class="pre">v1.7</span></code>, so that
+OperatorHub won’t trigger an automatic upgrade.</p></li>
+<li><p>See the <a class="reference external" href="https://docs.openshift.com/container-platform/4.7/operators/understanding/olm/olm-understanding-olm.html#olm-subscription_olm-understanding-olm">OpenShift Subscriptions and channel documentation</a> for
+further information.</p></li>
+</ul>
+<ul class="simple">
+<li><p>List the versions available from OperatorHub</p></li>
+</ul>
+<p>(not 100% reliable, the connection may timeout)</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>toolbox/gpu-operator/list_version_from_operator_hub.sh
+</pre></div>
+</div>
+<p><strong>Usage:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>toolbox/gpu-operator/list_version_from_operator_hub.sh<span class="w"> </span><span class="o">[</span>&lt;package-name&gt;<span class="w"> </span><span class="o">[</span>&lt;catalog-name&gt;<span class="o">]]</span>
+toolbox/gpu-operator/list_version_from_operator_hub.sh<span class="w"> </span>--help
+</pre></div>
+</div>
+<p><em>Default values:</em></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>package-name:<span class="w"> </span>gpu-operator-certified
+catalog-name:<span class="w"> </span>certified-operators
+namespace:<span class="w"> </span>openshift-marketplace<span class="w"> </span><span class="o">(</span>controlled<span class="w"> </span>with<span class="w"> </span>NAMESPACE<span class="w"> </span>environment<span class="w"> </span>variable<span class="o">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Deploy from NVIDIA helm repository</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>toolbox/gpu-operator/list_version_from_helm.sh
+toolbox/gpu-operator/deploy_from_helm.sh<span class="w"> </span>&lt;helm-version&gt;
+toolbox/gpu-operator/undeploy_from_helm.sh
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Deploy from a custom commit.</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./run_toolbox.py<span class="w"> </span>gpu_operator<span class="w"> </span>deploy_from_commit<span class="w"> </span>&lt;git<span class="w"> </span>repository&gt;<span class="w"> </span>&lt;git<span class="w"> </span>reference&gt;<span class="w"> </span><span class="o">[</span>--tag_uid<span class="o">=</span>TAG_UID<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./run_toolbox.py<span class="w"> </span>gpu_operator<span class="w"> </span>deploy_from_commit<span class="w"> </span>https://github.com/NVIDIA/gpu-operator.git<span class="w"> </span>master
+</pre></div>
+</div>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Set a custom repository list to use in the GPU Operator
+<code class="docutils literal notranslate"><span class="pre">ClusterPolicy</span></code></p></li>
+</ul>
+<p><em>Using a repo-list file</em></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./run_toolbox.py<span class="w"> </span>gpu_operator<span class="w"> </span>set_repo_config<span class="w"> </span>/path/to/repo.list<span class="w"> </span><span class="o">[</span>--dest_dir<span class="o">=</span>DEST_DIR<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Default values</strong>:</p>
+<ul class="simple">
+<li><p><em>dest-dir-in-pod</em>: <code class="docutils literal notranslate"><span class="pre">/etc/distro.repos.d</span></code></p></li>
+</ul>
+</section>
+<section id="testing-and-waiting">
+<h2>Testing and Waiting<a class="headerlink" href="#testing-and-waiting" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Wait for the GPU Operator deployment and validate it</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./run_toolbox.py<span class="w"> </span>gpu_operator<span class="w"> </span>wait_deployment
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Run <cite>GPU-burn_</cite> to validate that all the GPUs of all the nodes can
+run workloads</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./run_toolbox.py<span class="w"> </span>gpu_operator<span class="w"> </span>run_gpu_burn<span class="w"> </span><span class="o">[</span>--runtime<span class="o">=</span>RUNTIME,<span class="w"> </span><span class="k">in</span><span class="w"> </span>seconds<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Default values:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>gpu-burn<span class="w"> </span>runtime:<span class="w"> </span><span class="m">30</span>
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Capture GPU operator possible issues</p></li>
+</ul>
+<p>(entitlement, NFD labelling, operator deployment, state of resources
+in gpu-operator-resources, …)</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./run_toolbox.py<span class="w"> </span>entitlement<span class="w"> </span>test_cluster
+./run_toolbox.py<span class="w"> </span>nfd<span class="w"> </span>has_labels
+./run_toolbox.py<span class="w"> </span>nfd<span class="w"> </span>has_gpu_nodes
+./run_toolbox.py<span class="w"> </span>gpu_operator<span class="w"> </span>wait_deployment
+./run_toolbox.py<span class="w"> </span>gpu_operator<span class="w"> </span>run_gpu_burn<span class="w"> </span>--runtime<span class="o">=</span><span class="m">30</span>
+./run_toolbox.py<span class="w"> </span>gpu_operator<span class="w"> </span>capture_deployment_state
+</pre></div>
+</div>
+<p>or all in one step:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>toolbox/gpu-operator/diagnose.sh
+</pre></div>
+</div>
+<p>or with the must-gather script:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>toolbox/gpu-operator/must-gather.sh
+</pre></div>
+</div>
+<p>or with the must-gather image:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>oc<span class="w"> </span>adm<span class="w"> </span>must-gather<span class="w"> </span>--image<span class="o">=</span>quay.io/openshift-psap/ci-artifacts:latest<span class="w"> </span>--dest-dir<span class="o">=</span>/tmp/must-gather<span class="w"> </span>--<span class="w"> </span>gpu-operator_gather
+</pre></div>
+</div>
+</section>
+<section id="cleaning-up">
+<h2>Cleaning Up<a class="headerlink" href="#cleaning-up" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Uninstall and cleanup stalled resources</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">helm</span></code> (in particular) fails to deploy when any resource is left from
+a previously failed deployment, eg:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Error</span><span class="p">:</span> <span class="n">rendered</span> <span class="n">manifests</span> <span class="n">contain</span> <span class="n">a</span> <span class="n">resource</span> <span class="n">that</span> <span class="n">already</span>
+<span class="n">exists</span><span class="o">.</span> <span class="n">Unable</span> <span class="n">to</span> <span class="k">continue</span> <span class="k">with</span> <span class="n">install</span><span class="p">:</span> <span class="n">existing</span> <span class="n">resource</span>
+<span class="n">conflict</span><span class="p">:</span> <span class="n">namespace</span><span class="p">:</span> <span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">gpu</span><span class="o">-</span><span class="n">operator</span><span class="p">,</span> <span class="n">existing_kind</span><span class="p">:</span>
+<span class="n">rbac</span><span class="o">.</span><span class="n">authorization</span><span class="o">.</span><span class="n">k8s</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">v1</span><span class="p">,</span> <span class="n">Kind</span><span class="o">=</span><span class="n">ClusterRole</span><span class="p">,</span> <span class="n">new_kind</span><span class="p">:</span>
+<span class="n">rbac</span><span class="o">.</span><span class="n">authorization</span><span class="o">.</span><span class="n">k8s</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">v1</span><span class="p">,</span> <span class="n">Kind</span><span class="o">=</span><span class="n">ClusterRole</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">toolbox</span><span class="o">/</span><span class="n">gpu</span><span class="o">-</span><span class="n">operator</span><span class="o">/</span><span class="n">cleanup_resources</span><span class="o">.</span><span class="n">sh</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="entitlement.html" class="btn btn-neutral float-left" title="Entitlement" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="nfd.html" class="btn btn-neutral float-right" title="Node Feature Discover Operator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
