@@ -13,7 +13,6 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
 from . import prom as workload_prom
-from . import lts_parser
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -59,8 +58,6 @@ def _parse_once(results, dirname):
 
     results.tests_timestamp = _find_test_timestamps(dirname)
     results.test_config = _parse_test_config(dirname)
-
-    results.lts = lts_parser.generate_lts_results(results)
 
 
 def _extract_metrics(dirname):
@@ -135,7 +132,7 @@ def _extract_cluster_info(nodes_info):
                                 if node_info.sutest_cluster and node_info.infra]
 
     cluster_info.gpus = []
-    for infra_node in cluster_info.infra:
+    for infra_node in cluster_info.node_count:
         if not infra_node.gpu: continue
         cluster_info.gpus.append(infra_node.gpu)
 

@@ -40,10 +40,10 @@ def generateLtsData(entries, _variables):
     for entry in entries:
         datum = dict(name=entry.get_name(_variables),)
 
-        datum["throughput"] = entry.results.lts.throughput
-        datum |= generateTimePerOutputTokenStats(entry.results.lts.time_per_output_token)
+        datum["throughput"] = entry.results.lts.results.throughput
+        datum |= generateTimePerOutputTokenStats(entry.results.lts.results.time_per_output_token)
         try:
-            datum["model_load_time"] = entry.results.lts.model_load_duration
+            datum["model_load_time"] = entry.results.lts.results.model_load_duration
         except AttributeError:
             datum["model_load_time"] = None
         data.append(datum)

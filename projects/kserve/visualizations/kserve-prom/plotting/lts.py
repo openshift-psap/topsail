@@ -48,7 +48,7 @@ class LtsMetric():
         for entry in entries:
             datum = dict(name=entry.get_name(_variables),)
 
-            all_prom_ts_values = getattr(entry.results.lts.metrics, self.lts_key_name)
+            all_prom_ts_values = getattr(entry.results.lts.results.metrics, self.lts_key_name)
 
             transformed_values = []
 
