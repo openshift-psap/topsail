@@ -4,6 +4,7 @@ visualize:
   - "report: Error report"
   - "gating report: Functional and Spawn Time"
   - "gating report: Health Check"
+  - "report: LTS Documentation"
 
   - "report: Performance report"
   - "report: Pod-Node Mapping"

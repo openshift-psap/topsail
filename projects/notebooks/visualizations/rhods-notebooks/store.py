@@ -28,7 +28,7 @@ from . import k8s_quantity
 from . import store_theoretical
 from . import store_thresholds
 from .plotting import prom as rhods_plotting_prom
-from .horreum_lts_store import build_lts_payloads as horreum_build_lts_payloads, _parse_lts_dir
+from . import lts_parser, lts
 
 K8S_EVT_TIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
@@ -385,7 +385,8 @@ def _parse_resource_times(dirname):
     @ignore_file_not_found
     def parse(fname):
         print(f"Parsing {fname} ...")
-        file_path = (dirname / "artifacts-sutest" / "project_dsg"/ f"{fname}.json").resolve().relative_to(dirname)
+
+        file_path = (dirname / "artifacts-sutest" / "project_dsg"/ f"{fname}.json").relative_to(dirname)
         with open(register_important_file(dirname, file_path)) as f:
             data = json.load(f)
 
@@ -722,11 +723,15 @@ def _parse_ods_ci_pods_directory(dirname, output_dir):
     return ods_ci
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
-
-    try:
-        results = load_cache(dirname)
-    except FileNotFoundError:
-        results = None # Cache file doesn't exit, ignore and parse the artifacts
+    ignore_cache = os.environ.get("MATBENCH_STORE_IGNORE_CACHE", False) in ("yes", "y", "true", "True")
+    if not ignore_cache:
+        try:
+            results = load_cache(dirname)
+        except FileNotFoundError:
+            results = None # Cache file doesn't exit, ignore and parse the artifacts
+    else:
+        logging.info("MATBENCH_STORE_IGNORE_CACHE is set, not processing the cache file.")
+        results = None
 
     if results:
         _parse_always(results, dirname, import_settings)
@@ -820,6 +825,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.all_resource_times = _parse_resource_times(dirname)
 
+    results.lts = lts_parser.generate_lts_payload(results, import_settings)
+
     print("add the result to the matrix ...")
 
     fn_add_to_matrix(results)
@@ -865,11 +872,11 @@ def parse_data():
     # delegate the parsing to the simple_store
     store.register_custom_rewrite_settings(_rewrite_settings)
     store_simple.register_custom_parse_results(_parse_directory)
-    store_simple.register_custom_lts_parse_results(_parse_lts_dir)
+    store_simple.register_custom_lts_parse_results(lts._parse_lts_dir)
 
     return store_simple.parse_data()
 
 def build_lts_payloads():
-    store_simple.register_custom_build_lts_payloads(horreum_build_lts_payloads)
+    store_simple.register_custom_build_lts_payloads(lts.build_lts_payloads)
 
     return store_simple.build_lts_payloads()
