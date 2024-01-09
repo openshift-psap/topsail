@@ -263,7 +263,7 @@ def _get_apiserver_errcodes(cluster_role, register):
         if metric_metric.get('subresource'):
             res += f"/{metric_metric['subresource']}"
         return res, None
-    
+
     for metric in apiserver_request_metrics:
         name, rq = list(metric.items())[0]
 

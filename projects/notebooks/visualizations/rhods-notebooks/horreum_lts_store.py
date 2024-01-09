@@ -151,48 +151,6 @@ def _encode_json(src_obj, name, settings):
     return common.MatrixEntry(import_key=name, processed_settings=settings, **data)
 
 
-def build_lts_payloads() -> dict:
-    prom.register(only_initialize=True) # this call populates the 'lts_metrics' structure
-
-    for entry in common.Matrix.processed_map.values():
-        if entry.is_lts:
-            continue
-
-        results = entry.results
-
-        start_time: datetime.datetime = results.start_time
-        end_time: datetime.datetime = results.end_time
-
-        if start_time.tzinfo is None:
-            start_time = start_time.replace(tzinfo=pytz.UTC)
-        if end_time.tzinfo is None:
-            end_time = end_time.replace(tzinfo=pytz.UTC)
-
-        payload = {
-            "$schema": "urn:rhods-notebooks:1.0.0",
-            "data": {
-                "users": _decode_users(results),
-                'metrics': _gather_prom_metrics(entry),
-                'thresholds': results.thresholds,
-                'config': results.test_config.yaml_file,
-                "cluster_info": _parse_entry(entry.results.rhods_cluster_info),
-            },
-            "metadata": {
-                "presets": results.test_config.get("ci_presets.names") or ["no_preset_defined"],
-                "test": results.test_config.get('tests.notebooks.identifier', "missing"),
-                "start": start_time.isoformat(),
-                "end": end_time.isoformat(),
-                'rhods_version': results.rhods_info.version,
-                'ocp_version': results.sutest_ocp_version,
-                "settings": {'version': results.rhods_info.version, **_parse_entry(entry.settings)},
-            }
-        }
-        
-        output: models.NotebookScalePayload = models.NotebookScalePayload.parse_obj(payload)
-
-        yield output.dict(by_alias=True), start_time, end_time
-
-
 def _decode_users(results):
     output = []
     for user_idx, ods_ci in getattr(results, "ods_ci", {}).items():
@@ -236,7 +194,10 @@ def _generate_pod_timings(pod_times, start, end):
     return output
 
 
-def _gather_prom_metrics(entry) -> dict:
+def _gather_prom_metrics(results) -> dict:
+    entry = types.SimpleNamespace()
+    entry.results = results
+
     output = {}
     for cluster_role, metric_names in lts_metrics.items():
         for metric_name in metric_names:
