@@ -6,3 +6,4 @@ visualize:
   - "report: GPU Usage"
   - "report: RHOAI Footprint"
   - "report: LTS"
+  - "report: LTS Documentation"
