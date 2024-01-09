@@ -12,7 +12,8 @@ source "$TESTING_UTILS_DIR/configure.sh"
 
 do_override() {
     echo "Configuration overrides:"
-    while read line; do
+    while read full_line; do
+        line=$(echo "$full_line" | cut -d'#' -f1)
         if [[ -z "$line" ]]; then
             continue
         fi
