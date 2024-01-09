@@ -13,4 +13,5 @@ visualize:
   - "report: RHODS metrics"
   - "report: Notebook Performance"
   - "report: Price Estimation"
+  - "report: LTS Documentation"
   - "multi: Notebook Spawn Time"
