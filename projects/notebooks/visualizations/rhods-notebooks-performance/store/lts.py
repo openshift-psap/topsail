@@ -2,48 +2,51 @@ import types
 import datetime
 import logging
 import pytz
+import json
+import functools
 
 import matrix_benchmarking.common as common
+from matrix_benchmarking.parse import json_dumper
 
 from ..import models
+from . import lts_parser
 
 def build_lts_payloads():
 
     for entry in common.Matrix.processed_map.values():
         results = entry.results
 
-        start_time = results.start_time
-        end_time = results.end_time
+        lts_payload = results.lts
 
-        if start_time.tzinfo is None:
-            start_time = start_time.replace(tzinfo=pytz.UTC)
-        if end_time.tzinfo is None:
-            end_time = end_time.replace(tzinfo=pytz.UTC)
+        yield lts_payload, lts_payload.metadata.start, lts_payload.metadata.end
 
-        lts_payload = {
-            "$schema": "urn:rhods-notebooks-perf:1.0.0",
-            "metadata": {
-                "start": start_time,
-                "end": end_time,
-                "presets": results.test_config.get("ci_presets.names") or ["no_preset_defined"],
-                "config": results.test_config.yaml_file,
-                "rhods_version": results.rhods_info.version,
-                "ocp_version": results.sutest_ocp_version,
-                "settings": entry.settings.__dict__,
-                "test": results.test_config.get('tests.notebooks.identifier') or 'unknown'
-            },
-            "results": {
-                "benchmark_measures": results.notebook_benchmark,
-            },
-        }
 
-        try:
-            models.lts.Payload.parse_obj(lts_payload)
-        except Exception as e:
-            logging.error("internal-error: Failed to validate the LTS payload against the model", e)
-            raise e
+def validate_lts_payload(payload, import_settings, reraise=False):
+    try:
+        json_lts = json.dumps(payload, indent=4, default=functools.partial(json_dumper, strict=False))
+    except ValueError as e:
+        logging.error(f"Couldn't dump the lts_payload into JSON :/ {e}")
 
-        yield lts_payload, start_time, end_time
+        if reraise:
+            raise
+
+        return False
+
+    parsed_lts = json.loads(json_lts)
+    try:
+        models.lts.Payload.parse_obj(parsed_lts)
+        return True
+
+    except Exception as e:
+        logging.error(f"lts-error: Failed to validate the generated LTS payload against the model")
+        logging.error(f"lts-error: entry settings: {import_settings}")
+
+        if reraise:
+            raise
+
+        logging.error(f"lts-error: validation issue(s): {e}")
+
+        return False
 
 
 def _parse_lts_dir(add_to_matrix, dirname, import_settings):
