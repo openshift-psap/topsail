@@ -25,6 +25,11 @@ set_config() {
     key=${1}
     value=${2}
 
+    if [[ -z "$value" ]]; then
+        # without this, the ARG of '--argjson value ARG' below is empty, and yq/jq aren't happy (not a json value)
+        value="''"
+    fi
+
     yq --yaml-roundtrip --in-place --argjson value "$(echo "$value" | yq)" ".$key = \$value" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
 
     if [[ "${ARTIFACT_DIR:-}" ]]; then
