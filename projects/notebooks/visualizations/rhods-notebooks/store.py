@@ -723,11 +723,15 @@ def _parse_ods_ci_pods_directory(dirname, output_dir):
     return ods_ci
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
-
-    try:
-        results = load_cache(dirname)
-    except FileNotFoundError:
-        results = None # Cache file doesn't exit, ignore and parse the artifacts
+    ignore_cache = os.environ.get("MATBENCH_STORE_IGNORE_CACHE", False) in ("yes", "y", "true", "True")
+    if not ignore_cache:
+        try:
+            results = load_cache(dirname)
+        except FileNotFoundError:
+            results = None # Cache file doesn't exit, ignore and parse the artifacts
+    else:
+        logging.info("MATBENCH_STORE_IGNORE_CACHE is set, not processing the cache file.")
+        results = None
 
     if results:
         _parse_always(results, dirname, import_settings)
