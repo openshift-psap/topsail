@@ -21,6 +21,7 @@ def validate_lts_payload(payload, import_settings, reraise=False):
         return False
 
     parsed_lts = json.loads(json_lts)
+
     try:
         models.lts.Payload.parse_obj(parsed_lts)
         return True
@@ -40,9 +41,7 @@ def validate_lts_payload(payload, import_settings, reraise=False):
 def build_lts_payloads():
     for entry in common.Matrix.processed_map.values():
         results = entry.results
-
-        lts_results = results.lts
-        lts_payload = lts_parser.generate_lts_payload(entry.results, lts_results, entry.import_settings, must_validate=True)
+        lts_payload = results.lts
 
         yield lts_payload, lts_payload.metadata.start, lts_payload.metadata.end
 
