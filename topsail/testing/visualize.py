@@ -123,7 +123,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None):
     common_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in common_env.items())
 
     do_generate_lts = generate_lts if generate_lts is not None \
-        else config.ci_artifacts.get_config("matbench.generate_lts", False) \
+        else config.ci_artifacts.get_config("matbench.lts.generate", None) \
 
     if do_generate_lts:
         if run.run(f"{common_env_str} matbench parse {lts_args_str} |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts.log", check=False).returncode != 0:
@@ -139,9 +139,9 @@ def generate_visualization(results_dirname, idx, generate_lts=None):
             error = True
     else:
         if generate_lts is not None:
-            logging.info(f"'generate_lts' parameter is set to {generate_lts}, skipping LTS payload&schema generation.")
+            logging.info(f"'matbench.lts.generate' parameter is set to {generate_lts}, skipping LTS payload&schema generation.")
         else:
-            logging.info("matbench.generate_lts not enabled, skipping LTS payload&schema generation.")
+            logging.info("'matbench.lts.generate' not enabled, skipping LTS payload&schema generation.")
 
     if config.ci_artifacts.get_config("matbench.download.save_to_artifacts"):
         shutil.copytree(common_args["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
