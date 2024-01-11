@@ -17,6 +17,8 @@ def build_lts_payloads():
         results = entry.results
         lts_payload = results.lts
 
+        validate_lts_payload(lts_payload, entry.import_settings, reraise=True)
+
         yield lts_payload, lts_payload.metadata.start, lts_payload.metadata.end
 
 
@@ -33,7 +35,7 @@ def validate_lts_payload(payload, import_settings, reraise=False):
 
     parsed_lts = json.loads(json_lts)
     try:
-        models.lts.Payload.parse_obj(parsed_lts)
+        models.NotebookScalePayload.parse_obj(parsed_lts)
         return True
 
     except Exception as e:
