@@ -13,18 +13,18 @@ class Metadata(matbench_models.Metadata):
     test: str
     config: Any
 
-class BenchmarkMeasures(BaseModel):
+class BenchmarkMeasures(matbench_models.ExclusiveModel):
     benchmark: str
     repeat: int
     number: int
     measures: List[float]
 
 
-class Results(BaseModel):
+class Results(matbench_models.ExclusiveModel):
     benchmark_measures: BenchmarkMeasures
 
 
-class Payload(BaseModel):
+class Payload(matbench_models.ExclusiveModel):
     schema_name: matbench_models.create_schema_field("rhods-notebooks-perf") = Field(alias="$schema")
     metadata: Metadata
     results: Results
