@@ -186,7 +186,7 @@ ci_presets:
 
     tests.scale.model.replicas: 17
     tests.scale.namespace.replicas: 12
-    gpu.time_sharing.replicas: 210
+    gpu.time_sharing.replicas: 32
 
     tests.scale.model.name: flan-t5-small-gpu-light
     kserve.model.serving_runtime.mute_logs: true
