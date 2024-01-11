@@ -43,6 +43,8 @@ def build_lts_payloads():
         results = entry.results
         lts_payload = results.lts
 
+        validate_lts_payload(lts_payload, entry.import_settings, reraise=True)
+
         yield lts_payload, lts_payload.metadata.start, lts_payload.metadata.end
 
 
