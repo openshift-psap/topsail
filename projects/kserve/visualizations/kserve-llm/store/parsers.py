@@ -7,6 +7,7 @@ import json
 import datetime
 from collections import defaultdict
 import dateutil.parser
+import urllib.parse
 
 import jsonpath_ng
 
