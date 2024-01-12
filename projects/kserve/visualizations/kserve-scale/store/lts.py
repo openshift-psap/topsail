@@ -1,51 +1,52 @@
 import logging
+import json
+import functools
 
 import matrix_benchmarking.common as common
+from matrix_benchmarking.parse import json_dumper
 
 from .. import models
 from ..models import lts as models_lts
 
+
+def validate_lts_payload(payload, import_settings, reraise=False):
+    try:
+        json_lts = json.dumps(payload, indent=4, default=functools.partial(json_dumper, strict=False))
+    except ValueError as e:
+        logging.error(f"Couldn't dump the lts_payload into JSON :/ {e}")
+
+        if reraise:
+            raise
+
+        return False
+
+    parsed_lts = json.loads(json_lts)
+
+    try:
+        models.lts.Payload.parse_obj(parsed_lts)
+        return True
+
+    except Exception as e:
+        logging.error(f"lts-error: Failed to validate the generated LTS payload against the model")
+        logging.error(f"lts-error: entry settings: {import_settings}")
+
+        if reraise:
+            raise
+
+        logging.error(f"lts-error: validation issue(s): {e}")
+
+        return False
+
+
 def build_lts_payloads():
     for entry in common.Matrix.processed_map.values():
         results = entry.results
+        lts_payload = results.lts
 
-        start_time = results.test_start_end_time.start
-        end_time = results.test_start_end_time.end
+        validate_lts_payload(lts_payload, entry.import_settings, reraise=True)
 
-        # To know the available metrics:
-        # _=[print(m) for m in results.metrics["sutest"].keys()]
-
-        lts_payload = {
-            "metadata": {
-                "start": start_time,
-                "end": end_time,
-                "presets": results.test_config.get("ci_presets.names") or ["no_preset_defined"],
-                "config": results.test_config.yaml_file,
-                "ocp_version": results.sutest_ocp_version,
-                "settings": entry.settings.__dict__,
-            },
-            "results": {
-                "fake_results": True,
-
-                "metrics": _gather_prom_metrics(results.metrics["sutest"], models.lts.Metrics),
-            },
-        }
-
-        try:
-            models.lts.Payload.parse_obj(lts_payload)
-        except Exception as e:
-            logging.error("internal-error: Failed to validate the LTS payload against the model", e)
-            raise e
-
-        yield lts_payload, start_time, end_time
+        yield lts_payload, lts_payload.metadata.start, lts_payload.metadata.end
 
 
 def _parse_lts_dir(add_to_matrix, dirname, import_settings):
     pass
-
-
-def _gather_prom_metrics(metrics, model) -> dict:
-    data = {metric_name: metrics[metric_name]
-            for metric_name in model.schema()["properties"].keys()}
-
-    return model(**data)

@@ -7,3 +7,4 @@ visualize:
   - "report: Sutest Cluster CPU/Memory Usage"
   - "report: GPU Usage"
   - "report: Control Plane Nodes Load"
+  - "report: LTS Documentation"
