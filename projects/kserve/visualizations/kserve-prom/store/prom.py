@@ -358,7 +358,7 @@ SUTEST_CONTAINER_LABELS = [
 
     {"Istio egress": dict(namespace="istio-system", pod="istio-egressgateway-.*")},
     {"Istio ingress": dict(namespace="istio-system", pod="istio-ingressgateway-.*")},
-    {"Istiod Minimal": dict(namespace="istio-system", pod="istiod-minimal.*")},
+    {"Istiod DataScience SMCP": dict(namespace="istio-system", pod="istiod-data-science-smcp-.*")},
 
     {"KNative Activator": dict(namespace="knative-serving", pod="activator-.*")},
     {"KNative Autoscaler": dict(namespace="knative-serving", pod="autoscaler-.*")},
