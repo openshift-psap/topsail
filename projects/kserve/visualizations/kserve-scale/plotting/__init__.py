@@ -6,6 +6,7 @@ from . import resource_creation
 from . import grpc_distribution
 from . import conditions
 from . import load_time
+from . import lts_documentation
 
 def register():
     error_report.register()
@@ -17,3 +18,4 @@ def register():
     grpc_distribution.register()
     conditions.register()
     load_time.register()
+    lts_documentation.register()
