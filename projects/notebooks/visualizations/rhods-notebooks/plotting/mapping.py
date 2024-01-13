@@ -24,9 +24,6 @@ def register():
 
 
 def generate_data(entry, cfg, is_notebook, force_order_by_user_idx=False):
-    if entry.is_lts:
-        return []
-
     test_nodes = {}
     entry_results = entry.results
 

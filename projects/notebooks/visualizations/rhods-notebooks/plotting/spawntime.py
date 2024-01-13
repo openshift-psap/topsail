@@ -47,8 +47,6 @@ def add_ods_ci_progress(entry, hide_failed_users):
 
 
 def add_ods_ci_output(entry, keep_failed_steps, hide_failed_users, hide):
-    if entry.is_lts:
-        return []
     data = []
     def add_substep_time(entry_data, substep_index, name, start, finish):
         subentry_data = entry_data.copy()

@@ -19,9 +19,6 @@ def register():
 
 
 def _get_test_setup(entry):
-    if entry.is_lts:
-        return []
-
     setup_info = []
     if entry.results.from_env and entry.results.from_env.pr:
         pr = entry.results.from_env.pr

@@ -37,48 +37,6 @@ def _recursive_create_namespace(obj: dict) -> types.SimpleNamespace:
 
     return types.SimpleNamespace(**final_obj)
 
-def _parse_lts_dir(add_to_matrix, dirname, import_settings):
-    with open(dirname / "data.json") as f:
-        payload = json.load(f)
-    model = models.NotebookScalePayload(**payload)
-    data = payload['data']
-    metadata = payload['metadata']
-    settings = metadata['settings']
-
-    results = types.SimpleNamespace(
-        start_time = model.metadata.start,
-        end_time = model.metadata.end,
-
-        thresholds = model.data.thresholds.dict() or store_thresholds.get_thresholds(import_settings),
-        settings = model.metadata.settings.dict(),
-
-        sutest_ocp_version = model.data.ocp_version,
-        rhods_cluster_info = _recursive_create_namespace(model.metadata.cluster_info.dict()),
-        rhods_info = types.SimpleNamespace(
-            version = model.data.rhods_version
-        ),
-
-        test_config = types.SimpleNamespace(
-            yaml_file = model.data.config
-        ),
-        users = [user.dict() for user in model.data.users],
-        metrics = {
-            'sutest': {
-                key: [item.dict() for item in val.data] \
-                    for key, val in model.data.metrics.items()
-            }
-        }
-    )
-    common.MatrixEntry(
-        "LTS from Horreum",
-        results,
-        common.Matrix.settings_to_key(settings),
-        common.Matrix.settings_to_key(import_settings),
-        settings,
-        import_settings,
-        is_lts = True
-    )
-
 
 def _parse_entry(val):
     type_skiplist = [PosixPath, types.FunctionType]

@@ -35,7 +35,7 @@ class MultiNotebookSpawnTime():
         entry_names = set()
         data = []
 
-        for entry in common.Matrix.all_records(settings, setting_lists, include_lts=True):
+        for entry in common.Matrix.all_records(settings, setting_lists):
             entry_name = entry.get_name(variables)
             entry_names.add(entry_name)
 
