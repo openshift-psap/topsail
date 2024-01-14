@@ -41,8 +41,8 @@ def build_lts_payloads():
     for entry in common.Matrix.processed_map.values():
         results = entry.results
 
-        lts_results = results.lts
-        lts_payload = lts_parser.generate_lts_payload(entry.results, lts_results, entry.import_settings, must_validate=True)
+        lts_payload = results.lts
+
+        validate_lts_payload(lts_payload, entry.import_settings, reraise=True)
 
         yield lts_payload, lts_payload.metadata.start, lts_payload.metadata.end
-
