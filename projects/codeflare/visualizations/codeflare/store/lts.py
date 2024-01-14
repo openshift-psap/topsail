@@ -57,10 +57,6 @@ def build_lts_payloads():
         yield lts_payload, start_time, end_time
 
 
-def _parse_lts_dir(add_to_matrix, dirname, import_settings):
-    pass
-
-
 def _gather_prom_metrics(metrics, model) -> dict:
     data = {metric_name: metrics[metric_name]
             for metric_name in model.schema()["properties"].keys()}

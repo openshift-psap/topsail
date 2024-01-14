@@ -872,7 +872,6 @@ def parse_data():
     # delegate the parsing to the simple_store
     store.register_custom_rewrite_settings(_rewrite_settings)
     store_simple.register_custom_parse_results(_parse_directory)
-    store_simple.register_custom_lts_parse_results(lts._parse_lts_dir)
 
     return store_simple.parse_data()
 

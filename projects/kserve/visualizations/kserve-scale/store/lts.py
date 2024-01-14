@@ -47,6 +47,3 @@ def build_lts_payloads():
 
         yield lts_payload, lts_payload.metadata.start, lts_payload.metadata.end
 
-
-def _parse_lts_dir(add_to_matrix, dirname, import_settings):
-    pass

@@ -9,9 +9,6 @@ def build_lts_payloads():
     prom.register(only_initialize=True) # this call populates the 'lts_metrics' structure
 
     for entry in common.Matrix.processed_map.values():
-        if entry.is_lts:
-            continue
-
         results = entry.results
 
         lts_metadata = models_lts.PipelinesScaleTestMetadata(
@@ -38,9 +35,6 @@ def build_lts_payloads():
 
         yield lts_payload.dict(), lts_metadata.start, lts_metadata.end
 
-
-def _parse_lts_dir(add_to_matrix, dirname, import_settings):
-    pass
 
 def register_lts_metric(cluster_role, metric):
     pass

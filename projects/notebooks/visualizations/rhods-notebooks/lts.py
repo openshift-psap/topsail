@@ -49,6 +49,3 @@ def validate_lts_payload(payload, import_settings, reraise=False):
 
         return False
 
-
-def _parse_lts_dir(add_to_matrix, dirname, import_settings):
-    pass

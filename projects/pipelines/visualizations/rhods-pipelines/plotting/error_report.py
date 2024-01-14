@@ -19,9 +19,6 @@ def register():
 
 
 def _get_test_setup(entry):
-    if entry.is_lts:
-        return []
-
     setup_info = []
 
     artifacts_basedir = entry.results.from_local_env.artifacts_basedir

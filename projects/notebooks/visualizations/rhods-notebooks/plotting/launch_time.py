@@ -34,9 +34,8 @@ class LaunchTimeDistribution():
         cfg__all_in_one = cfg.get("all_in_one", False)
         cfg__show_only_step = cfg.get("show_only_step", False)
         cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
-        cfg__show_lts = cfg.get('show_lts', False)
 
-        expe_cnt = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts)
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
 
         if expe_cnt != 1 and not cfg__all_in_one:
             return {}, f"ERROR: only one experiment must be selected (found {expe_cnt}), or pass the all_in_one config flag."
@@ -45,7 +44,7 @@ class LaunchTimeDistribution():
         threshold_status_keys = set()
 
         data = []
-        for entry in common.Matrix.all_records(settings, setting_lists, include_lts=cfg__show_lts):
+        for entry in common.Matrix.all_records(settings, setting_lists):
             entry_name = entry.get_name(variables)
 
             try: check_thresholds = entry.results.check_thresholds
