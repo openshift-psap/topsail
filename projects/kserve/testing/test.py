@@ -292,7 +292,7 @@ def cleanup_sutest_ns():
     """
 
     label = config.ci_artifacts.get_config("tests.scale.namespace.label")
-    run.run(f"oc delete ns -l{label}")
+    run.run(f"oc delete ns -l{label} --ignore-not-found=true")
 
 
 @entrypoint()
