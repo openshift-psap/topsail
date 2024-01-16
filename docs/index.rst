@@ -7,7 +7,7 @@ Red Hat PSAP TOPSAIL toolbox
    :caption: General
 
    intro
-   contrib
+   contributing
    changelog
 
 .. _psap_ci:
@@ -33,6 +33,5 @@ Red Hat PSAP TOPSAIL toolbox
    toolbox/sro
    toolbox/local-ci
    toolbox/repo
-
 
 Documentation generated on |today| from |release|.
