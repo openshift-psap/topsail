@@ -60,7 +60,8 @@ spec:
         - |
           # inside 'bash -ce' to avoid leaking the password because of the -x
           bash -ce 'sed  s/PASSWORD_SET_AT_RUNTIME/$OPENSEARCH_PASSWORD/ /mnt/cpt-dashboard-config/ocpperf.yaml > ocpperf.yaml'
-          exec bash ./scripts/start.sh
+          ./scripts/start.sh || true
+          sleep +inf
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
