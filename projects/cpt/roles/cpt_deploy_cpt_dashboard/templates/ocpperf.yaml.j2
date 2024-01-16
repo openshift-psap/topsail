@@ -1,7 +1,14 @@
-{{ cpt_deploy_cpt_dashboard_plugin_name }}:
+rhoai_notebooks_scale:
   elasticsearch:
     url: "{{ cpt_deploy_cpt_dashboard_es_url }}"
-    indice: "{{ cpt_deploy_cpt_dashboard_es_indice }}"
+    indice: notebook_gating_test__scale_test
+    username: "{{ cpt_deploy_cpt_dashboard_es_username }}"
+    password: "PASSWORD_SET_AT_RUNTIME"
+
+rhoai_notebooks_perf: # was {{ cpt_deploy_cpt_dashboard_plugin_name }}
+  elasticsearch:
+    url: "{{ cpt_deploy_cpt_dashboard_es_url }}"
+    indice: notebook_gating_test__performance_test # was {{ cpt_deploy_cpt_dashboard_es_indice }}
     username: "{{ cpt_deploy_cpt_dashboard_es_username }}"
     password: "PASSWORD_SET_AT_RUNTIME"
 

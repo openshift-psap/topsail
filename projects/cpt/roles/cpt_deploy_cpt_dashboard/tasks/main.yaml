@@ -77,9 +77,11 @@
   shell:
     set -o pipefail;
 
-    oc create route edge {{ cpt_deploy_cpt_dashboard_name }}-backend
+    oc create route edge {{ cpt_deploy_cpt_dashboard_name }}-api
        --service={{ cpt_deploy_cpt_dashboard_name }}
        --port=tcp-cpt-dashboard-backend
+       --path=/api
+       --hostname=$(oc get route cpt-dashboard -ojsonpath={.spec.host})
        -n {{ cpt_deploy_cpt_dashboard_namespace }}
        --dry-run=client -oyaml | oc apply -f-
 
