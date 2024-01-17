@@ -19,6 +19,11 @@ run_single_notebook_tests_run_benchmark_against_imagestream() {
     local benchmark_repeat=$(echo "$benchmark" | jq -r .repeat)
     local benchmark_number=$(echo "$benchmark" | jq -r .number)
 
+    if get_config tests.notebooks.notebook_performance.incompatible_images[] | grep "$imagestream" --quiet; then
+        _info "Image '$imagestream' part of the incompatible images. Skipping it."
+        return
+    fi
+
     if ! ./run_toolbox.py notebooks benchmark_performance \
          --imagestream "$imagestream" \
          $imagestream_tag \

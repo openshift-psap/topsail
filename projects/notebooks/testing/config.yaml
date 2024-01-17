@@ -388,6 +388,8 @@ tests:
           remove_dsg_notebook_dedicated_toleration: false
 
     notebook_performance:
+      incompatible_images:
+      - odh-code-server-notebook
       tests:
       - imagestream: all
         ipynb:
