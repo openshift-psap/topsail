@@ -10,6 +10,7 @@ from matrix_benchmarking.parse import json_dumper
 
 from ..import models
 from . import lts_parser
+from ..models import kpi as models_kpi
 
 def build_lts_payloads():
 
@@ -49,3 +50,20 @@ def validate_lts_payload(payload, import_settings, reraise=False):
 
         return False
 
+
+def generate_lts_kpis(lts_payload):
+
+    kpis = {}
+    min_value = min(lts_payload.results.benchmark_measures.measures)
+    max_value = max(lts_payload.results.benchmark_measures.measures)
+    diff_value = max_value - min_value
+
+    for name, properties in models_kpi.KPIs.items():
+        kpi = {} | properties | lts_parser.get_kpi_labels(lts_payload)
+
+        kpi_func = kpi.pop("__func__")
+        kpi["value"] = kpi_func(lts_payload)
+
+        kpis[name] = models_kpi.NotebookPerformanceKPI.parse_obj(kpi)
+
+    return kpis
