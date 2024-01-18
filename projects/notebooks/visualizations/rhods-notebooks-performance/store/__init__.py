@@ -11,6 +11,7 @@ import matrix_benchmarking.store.simple as store_simple
 from . import parsers
 from ..models import lts as models_lts
 from . import lts_parser
+from . import lts
 
 CACHE_FILENAME = "cache.pickle"
 
@@ -18,8 +19,6 @@ IMPORTANT_FILES = parsers.IMPORTANT_FILES
 
 PARSER_VERSION = parsers.PARSER_VERSION
 ARTIFACTS_VERSION = parsers.ARTIFACTS_VERSION
-
-store.register_lts_schema(models_lts.Payload)
 
 def is_mandatory_file(filename):
     return filename.name in ("settings", "exit_code", "config.yaml") or filename.name.startswith("settings.")
@@ -109,8 +108,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     parsers._parse_always(results, dirname, import_settings)
     parsers._parse_once(results, dirname)
 
-    lts_results = lts_parser.generate_lts_results(results)
-    results.lts = lts_parser.generate_lts_payload(results, lts_results, import_settings, must_validate=False)
+    results.lts = lts_parser.generate_lts_payload(results, import_settings, must_validate=False)
 
     fn_add_to_matrix(results)
 
@@ -124,17 +122,14 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     print("parsing done :)")
 
+# initialization
 
-def parse_data():
-    # delegate the parsing to the simple_store
-    store.register_custom_rewrite_settings(_rewrite_settings)
-    store_simple.register_custom_parse_results(_parse_directory)
+# delegate the parsing to the simple_store
+store.register_lts_schema(models_lts.Payload)
+store.register_custom_rewrite_settings(_rewrite_settings)
 
-    from . import lts
-    store_simple.register_custom_build_lts_payloads(lts.build_lts_payloads)
+store_simple.register_custom_parse_results(_parse_directory)
+store_simple.register_custom_build_lts_payloads(lts.build_lts_payloads)
 
-    return store_simple.parse_data()
-
-
-def build_lts_payloads():
-    return store_simple.build_lts_payloads()
+parse_data = store_simple.parse_data
+build_lts_payloads = store_simple.build_lts_payloads
