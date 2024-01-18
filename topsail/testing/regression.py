@@ -1,10 +1,10 @@
 import os
 import json
 
+from datetime import datetime
+
 import numpy as np
 from functools import reduce
-
-from opensearchpy import OpenSearch
 
 regression_return_codes = {
     "POS_REG": 1,
@@ -20,61 +20,40 @@ class RegressionIndicator:
 
     def __init__(
             self,
-            client,
-            kpi,
-            settings=None,
+            payloads,
             combine_func=None,
             x_var="_source.@timestamp",
             y_var="_source.value",
-            reg_return_codes=regression_return_codes
+            reg_return_codes=regression_return_codes,
+            return_aggregator_func=lambda x, y: x or y,
         ):
-        self.client = client
-        self.kpi = kpi
-        self.settings = settings
+        self.payloads = payloads
         self.combine = combine_func
         self.x_var = x_var
         self.y_var = y_var
         self.reg_ret_codes = reg_return_codes
+        self.ret_agg_func = return_aggregator_func
 
-    def analyze(self, size=10000, timestamp="@timestamp"):
+    def analyze(self, timestamp="@timestamp", kpi=None):
 
-        query = {
-            "size": size,
-            "sort": {
-                f"{timestamp}": {
-                    "order": "desc"
-                }
-            }
-        }
+        if len(self.payloads) <= 1:
+            return regression_return_codes["UNDEF"]
 
-        # Restrict the results to specific settings
-        if self.settings:
-            query["query"] = {
-                "bool": {
-                    "must": [
-                        {"match": {k: v}} for k, v in self.settings.items()
-                    ]
-                }
-            }
+        self.payloads.sort(key=lambda pl: datetime.fromisoformat(get_from_path(pl, "metadata.end")).astimezone())
+        curr_result = self.payloads[0]
+        prev_results = self.payloads[1:]
 
-        resp = client.search(
-            body = query,
-            index = self.kpi,
-        )
+        kpis = [k for k, v in curr_result["kpis"].items()] if kpi is None else [kpi]
 
-        results = resp["hits"]["hits"]
+        regression_results = []
+        for kpi_name in kpis:
+            print(kpi_name)
+            curr_value = curr_result["kpis"][kpi_name]["value"]
+            prev_values = list(map(lambda x: x["kpis"][kpi_name]["value"], prev_results))
+            regression_results.append(self.regression_test(curr_value, prev_values))
 
-        if len(results) <= 1:
-            return self.reg_ret_codes["UNDEF"]
-
-        curr_result = get_from_path(results[0], self.y_var)
-        prev_results = list(map(lambda x: get_from_path(x, self.y_var), results[1:]))
-        # Combine the trial results if needed using the provided operator
-        if self.combine:
-            curr_result = self.combine(curr_result)
-            prev_results = list(map(self.combine, prev_results))
-
-        return self.regression_test(curr_result, prev_results)
+        print(regression_results)
+        return reduce(self.ret_agg_func, regression_results, 0)
 
     def regression_test(self, curr_result, prev_result):
         return self.reg_test_codes["NONE"]
@@ -120,49 +99,15 @@ class PolynomialRegressionIndicator(RegressionIndicator):
 
 if __name__ == '__main__':
 
-    os_username = os.getenv("OS_USER")
-    os_pass = os.getenv("OS_PASS")
-    os_endpoint = "opensearch-topsail-opensearch.apps.bm.example.com"
-    auth = (os_username, os_pass)
-
-
-    indices = [
-        "notebook_performance_benchmark_min_time",
-        "notebook_performance_benchmark_min_max_diff",
-        "notebook_gating_test__performance_test",
-    ]
-
-    # Start opernsearch client
-    client = OpenSearch(
-        hosts = [{"host": os_endpoint, "port": 443}],
-        http_auth = auth,
-        use_ssl=True,
-        verify_certs=False,
-        ssl_show_warn=False,
-    )
+    artifacts_dir = os.getenv("ARTIFACTS_DIR")
+    json_payloads = []
+    for filename in os.listdir(artifacts_dir):
+        with open(os.path.join(artifacts_dir, filename)) as raw_json_f:
+            if filename[-5:] == ".json":
+                json_payloads.append(json.load(raw_json_f))
 
     # Create a ZScore indicator to check the 
     # notebook_performance_benchmark_min_max_diff index
-    zscore_indicator = ZScoreIndicator(client, indices[1])
+    zscore_indicator = ZScoreIndicator(json_payloads)
     reg_status = zscore_indicator.analyze()
     print(f"ZScoreIndicator -> {reg_status}")
-
-    # Create another ZScore indicator 
-    # to check if there is any regression on the
-    # notebook_gating_test__performance_test index
-    zscore_indicator = ZScoreIndicator(
-        client,
-        indices[2], # index name
-        combine_func=np.mean, # Multiple measured repitions are provided in the data set, call this func to combine them
-        x_var="_source.metadata.end", # What we are looking for regression OVER. Ie, time, versions, etc
-        y_var="_source.results.benchmark_measures.measures" # The path to the array of trials or scalar measurement
-    )
-    reg_status = zscore_indicator.analyze(timestamp="metadata.end") # Provide the key for the timestamp so we get most recent test
-    print(f"ZScoreIndicator with combine -> {reg_status}")
-
-    # Create a ZScore indicator to check the 
-    # notebook_performance_benchmark_min_max_diff index
-    # but restrict the regression test to the 2023.1 image name
-    zscore_indicator = ZScoreIndicator(client, indices[1], settings={"image_name": "2023.1"})
-    reg_status = zscore_indicator.analyze()
-    print(f"ZScoreIndicator with image_name=2023.1 -> {reg_status}")
