@@ -142,7 +142,7 @@ generate_matbench::generate_visualization() {
     fi
 
     step_idx=$((step_idx + 1))
-    if ! matbench export_lts_schema --file $ARTIFACT_DIR/lts_payload.schema.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_generate_lts_schema.log"; then
+    if ! matbench generate_lts_schema --file $ARTIFACT_DIR/lts_payload.schema.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_generate_lts_schema.log"; then
         _warning "An error happened while generating the LTS Notebook JSON Schema :/"
         retcode=1
     fi
