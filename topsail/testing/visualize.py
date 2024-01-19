@@ -134,7 +134,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None):
         lts_schema_args.pop("results_dirname")
         lts_schema_args["file"] = env.ARTIFACT_DIR / "lts_payload.schema.json"
         lts_schema_args_str = " ".join(f"'--{k}={v}'" for k, v in lts_schema_args.items())
-        if run.run(f"matbench export_lts_schema {lts_schema_args_str}  |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts_schema.log", check=False).returncode != 0:
+        if run.run(f"matbench generate_lts_schema {lts_schema_args_str}  |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts_schema.log", check=False).returncode != 0:
             logging.warning("An error happened while generating the LTS payload schema...")
             error = True
     else:
