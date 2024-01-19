@@ -147,10 +147,23 @@ generate_matbench::generate_visualization() {
         retcode=1
     fi
 
-    step_idx=$((step_idx + 1))
-    if ! matbench export_lts --file $ARTIFACT_DIR/lts_payload.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_export_lts.log"; then
-        _warning "An error happened while exporting the LTS payload :/"
-        retcode=1
+    if test_config matbench.lts.opensearch.export; then
+        instance=$(get_config matbench.lts.opensearch.instance)
+        index=$(get_config matbench.lts.opensearch.index)
+        yq '{
+                  "opensearch_username": .'$instance'.username,
+                  "opensearch_password": .'$instance'.password,
+                  "opensearch_port": .'$instance'.port,
+                  "opensearch_host": .'$instance'.host,
+                  "opensearch_index": "'$index'",
+        }' "$PSAP_ODS_SECRET_PATH/opensearch.yaml" > .env.yaml
+
+        step_idx=$((step_idx + 1))
+        if ! matbench upload_lts |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_upload_lts.log"; then
+            _warning "An error happened while uploading the LTS payload :/"
+            retcode=1
+        fi
+        rm -f .env.yaml
     fi
 
     if test_config matbench.download.save_to_artifacts; then
