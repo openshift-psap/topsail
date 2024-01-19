@@ -17,7 +17,7 @@ def generate_lts_payload(results, import_settings, must_validate=False):
     # ---
 
     lts_payload = types.SimpleNamespace()
-    lts_payload.__dict__["$schema"] = "urn:rhods-notebooks-perf:1.0.0"
+    lts_payload.__dict__["$schema"] = f"urn:rhods-notebooks-perf:{models_lts.VERSION}"
     lts_payload.metadata = lts_metadata
     lts_payload.results = lts_results
 
