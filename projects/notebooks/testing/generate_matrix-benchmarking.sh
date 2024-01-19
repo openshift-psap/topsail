@@ -147,6 +147,12 @@ generate_matbench::generate_visualization() {
         retcode=1
     fi
 
+    step_idx=$((step_idx + 1))
+    if ! matbench export_lts --file $ARTIFACT_DIR/lts_payload.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_export_lts.log"; then
+        _warning "An error happened while exporting the LTS payload :/"
+        retcode=1
+    fi
+
     if test_config matbench.download.save_to_artifacts; then
         cp -rv "$MATBENCH_RESULTS_DIRNAME" "$ARTIFACT_DIR"
     fi
