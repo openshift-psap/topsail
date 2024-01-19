@@ -128,7 +128,6 @@ generate_matbench::generate_visualization() {
 
     generate_url="stats=$(echo -n "$generate_list" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
-    cp -f /tmp/prometheus.yml "." || true
     if ! matbench parse --output-matrix $ARTIFACT_DIR/internal_matrix.json |& tee > "$ARTIFACT_DIR/_matbench_parse.log"; then
         _warning "An error happened during the parsing of the results (or no results were available) in $MATBENCH_RESULTS_DIRNAME, aborting."
         return 1
