@@ -128,22 +128,42 @@ generate_matbench::generate_visualization() {
 
     generate_url="stats=$(echo -n "$generate_list" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
-    cp -f /tmp/prometheus.yml "." || true
-    if ! matbench parse --output-matrix $ARTIFACT_DIR/internal_matrix.json |& tee > "$ARTIFACT_DIR/_matbench_parse.log"; then
+    step_idx=0
+    if ! matbench parse --output-matrix $ARTIFACT_DIR/internal_matrix.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_parse.log"; then
         _warning "An error happened during the parsing of the results (or no results were available) in $MATBENCH_RESULTS_DIRNAME, aborting."
         return 1
     fi
 
+    step_idx=$((step_idx + 1))
     retcode=0
-
-    if ! matbench parse --output_lts $ARTIFACT_DIR/lts_payload.json |& tee > "$ARTIFACT_DIR/_matbench_generate_lts.log"; then
+    if ! matbench parse --output_lts $ARTIFACT_DIR/lts_payload.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_generate_lts.log"; then
         _warning "An error happened while generating the LTS payload from $MATBENCH_RESULTS_DIRNAME :/."
         retcode=1
     fi
 
-    if ! matbench export_lts_schema --file $ARTIFACT_DIR/lts_payload.schema.json |& tee > "$ARTIFACT_DIR/_matbench_generate_lts_schema.log"; then
+    step_idx=$((step_idx + 1))
+    if ! matbench generate_lts_schema --file $ARTIFACT_DIR/lts_payload.schema.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_generate_lts_schema.log"; then
         _warning "An error happened while generating the LTS Notebook JSON Schema :/"
         retcode=1
+    fi
+
+    if test_config matbench.lts.opensearch.export; then
+        instance=$(get_config matbench.lts.opensearch.instance)
+        index=$(get_config matbench.lts.opensearch.index)
+        yq '{
+                  "opensearch_username": .'$instance'.username,
+                  "opensearch_password": .'$instance'.password,
+                  "opensearch_port": .'$instance'.port,
+                  "opensearch_host": .'$instance'.host,
+                  "opensearch_index": "'$index'",
+        }' "$PSAP_ODS_SECRET_PATH/opensearch.yaml" > .env.yaml
+
+        step_idx=$((step_idx + 1))
+        if ! matbench upload_lts |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_upload_lts.log"; then
+            _warning "An error happened while uploading the LTS payload :/"
+            # retcode=1
+        fi
+        rm -f .env.yaml
     fi
 
     if test_config matbench.download.save_to_artifacts; then
@@ -158,7 +178,8 @@ generate_matbench::generate_visualization() {
         mkdir -p "$ARTIFACT_DIR/$filters_to_apply"
         cd "$ARTIFACT_DIR/$filters_to_apply"
 
-        VISU_LOG_FILE="$ARTIFACT_DIR/$filters_to_apply/_matbench_visualize.log"
+        step_idx=$((step_idx + 1))
+        VISU_LOG_FILE="$ARTIFACT_DIR/$filters_to_apply/${step_idx}_matbench_visualize.log"
 
         export MATBENCH_FILTERS="$filters_to_apply"
         if ! matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then

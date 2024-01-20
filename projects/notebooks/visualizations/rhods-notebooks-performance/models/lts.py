@@ -8,6 +8,13 @@ from pydantic import BaseModel, Field
 import matrix_benchmarking.models as matbench_models
 from . import kpi
 
+
+#
+# VERSION must be bumped after every model or PKI update
+#
+VERSION = "1.0.0"
+
+
 class Metadata(matbench_models.Metadata):
     presets: List[str]
     rhods_version: str
