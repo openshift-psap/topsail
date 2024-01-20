@@ -161,7 +161,7 @@ generate_matbench::generate_visualization() {
         step_idx=$((step_idx + 1))
         if ! matbench upload_lts |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_upload_lts.log"; then
             _warning "An error happened while uploading the LTS payload :/"
-            retcode=1
+            # retcode=1
         fi
         rm -f .env.yaml
     fi
