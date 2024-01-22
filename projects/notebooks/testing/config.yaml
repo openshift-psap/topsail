@@ -437,5 +437,6 @@ matbench:
       test_name: null
     opensearch:
       export: true
+      fail_test_on_fail: true
       instance: smoke
       index: rhoai-notebooks-scale
