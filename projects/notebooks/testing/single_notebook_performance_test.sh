@@ -68,6 +68,11 @@ run_single_notebook_tests_run_benchmarks() {
             local istag=$(echo "$istag" | cut -d: -f2)
 
             run_single_notebook_tests_run_benchmark_against_imagestream "$notebook_performance_test" "$benchmark" "$instance_type"  "$istream" "$istag"
+
+            if test_config tests.notebook_performance.test_only_one_image; then
+                _info "tests.notebook_performance.test_only_one_image is set, stopping the imagetag loop after the first test."
+                break
+            fi
         done
     done
 }

@@ -118,6 +118,10 @@ ci_presets:
     matbench.lts.opensearch.export: true
     matbench.lts.opensearch.index: rhoai-notebooks-performance
 
+  notebook_performance_light:
+    extends: [notebook_performance]
+    tests.notebook_performance.test_only_one_image: true
+
   plot.notebook_scale_tests_comparison:
     matbench.preset: notebook_scale_tests_comparison
 
@@ -406,6 +410,8 @@ tests:
           number: 20
           # number of repeats of the benchmark to perform.
           repeat: 5
+      # for faster smoke testing
+      test_only_one_image: false
     # List of preset configurations to run as part of the 'gating' test
     gating_tests:
     - notebook_scale_test_dsg
