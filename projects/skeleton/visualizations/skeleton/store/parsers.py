@@ -6,6 +6,7 @@ import os
 import json
 import datetime
 import urllib
+import uuid
 
 import jsonpath_ng
 
@@ -56,6 +57,7 @@ def _parse_once(results, dirname):
     results.sutest_ocp_version = _parse_ocp_version(dirname)
     results.metrics = _extract_metrics(dirname)
     results.test_start_end_time = _parse_start_end_time(dirname)
+    results.test_uuid = _parse_test_uuid(dirname)
 
 
 def _parse_local_env(dirname):
@@ -225,3 +227,11 @@ def _parse_start_end_time(dirname):
         test_start_end_time.end = datetime.datetime.strptime(time_str, ANSIBLE_LOG_TIME_FMT)
 
     return test_start_end_time
+
+
+@ignore_file_not_found
+def _parse_test_uuid(dirname):
+    with open(dirname / ".uuid") as f:
+        test_uuid = f.read().strip()
+
+    return uuid.UUID(test_uuid)

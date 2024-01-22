@@ -17,6 +17,7 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
     lts_payload.metadata.config = results.test_config.yaml_file
     lts_payload.metadata.ocp_version = results.sutest_ocp_version
     lts_payload.metadata.settings = dict(import_settings)
+    lts_payload.metadata.test_uuid = results.test_uuid
 
     lts_payload.results = lts_results
 
