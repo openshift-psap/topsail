@@ -9,6 +9,7 @@ import time
 import functools
 import json
 import yaml
+import uuid
 
 import fire
 
@@ -437,6 +438,10 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
+        if not matbenchmarking:
+            with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+                print(str(uuid.uuid4()), file=f)
+
         exit_code = 1
         try:
             exit_code = test_consolidated_model(consolidated_model)
@@ -540,6 +545,9 @@ def run_one_matbench():
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
+        with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+            print(str(uuid.uuid4()), file=f)
+
         namespace = test_config.pop("namespace")
         try:
             run.run_toolbox("llm_load_test", "run", **(test_config | settings))
@@ -609,6 +617,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
                 run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
 
     return 0
+
 
 # ---
 

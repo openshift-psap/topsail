@@ -22,6 +22,7 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
     lts_payload.metadata.rhods_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
 
     lts_payload.metadata.settings = dict(import_settings)
+    lts_payload.metadata.test_uuid = results.test_uuid
 
     lts_payload.results = lts_results
 

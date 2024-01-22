@@ -7,6 +7,7 @@ import json
 import datetime
 import dateutil
 import urllib.parse
+import uuid
 
 import jsonpath_ng
 
@@ -31,6 +32,7 @@ artifact_paths = None # store._parse_directory will turn it into a {str: pathlib
 
 IMPORTANT_FILES = [
     "config.yaml",
+    ".uuid",
 
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/ci_job.yaml",
     f"{artifact_dirnames.LOCAL_CI_RUN_MULTI_DIR}/prometheus_ocp.t*",
@@ -81,6 +83,7 @@ def _parse_once(results, dirname):
     results.file_locations = _parse_file_locations(dirname)
     results.rhods_info = _parse_rhods_info(dirname)
     results.pod_times = _parse_pod_times(dirname)
+    results.test_uuid = _parse_test_uuid(dirname)
 
 
 def _parse_local_env(dirname):
@@ -498,3 +501,11 @@ def _parse_user_grpc_calls(dirname, ci_pod_dir):
             grpc_calls.append(grpc_call)
 
     return grpc_calls
+
+
+@ignore_file_not_found
+def _parse_test_uuid(dirname):
+    with open(dirname / ".uuid") as f:
+        test_uuid = f.read().strip()
+
+    return uuid.UUID(test_uuid)

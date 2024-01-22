@@ -4,6 +4,7 @@ import yaml, json
 import time
 import os
 import datetime
+import uuid
 
 from topsail.testing import env, config, run
 import prepare_scale
@@ -24,6 +25,9 @@ def test(test_artifact_dir_p=None):
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+        with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+            print(str(uuid.uuid4()), file=f)
 
         failed = True
         try:

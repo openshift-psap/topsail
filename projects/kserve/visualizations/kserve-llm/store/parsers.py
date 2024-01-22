@@ -8,6 +8,7 @@ import datetime
 from collections import defaultdict
 import dateutil.parser
 import urllib.parse
+import uuid
 
 import jsonpath_ng
 
@@ -29,6 +30,7 @@ artifact_dirnames.KSERVE_CAPTURE_STATE = "*__kserve__capture_state"
 
 IMPORTANT_FILES = [
     "config.yaml",
+    ".uuid",
 
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/output/ghz-multiplexed-results*.json",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/pods.json",
@@ -63,6 +65,7 @@ def _parse_once(results, dirname):
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
     results.ocp_version = _parse_ocp_version(dirname)
     results.rhods_info = _parse_rhods_info(dirname)
+    results.test_uuid = _parse_test_uuid(dirname)
 
 
 def _parse_local_env(dirname):
@@ -288,3 +291,11 @@ def _parse_rhods_info(dirname):
         rhods_info.createdAt = None
 
     return rhods_info
+
+
+@ignore_file_not_found
+def _parse_test_uuid(dirname):
+    with open(dirname / ".uuid") as f:
+        test_uuid = f.read().strip()
+
+    return uuid.UUID(test_uuid)
