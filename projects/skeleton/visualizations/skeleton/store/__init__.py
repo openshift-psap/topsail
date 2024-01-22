@@ -18,8 +18,6 @@ IMPORTANT_FILES = parsers.IMPORTANT_FILES
 
 from ..models import lts as models_lts
 
-store.register_lts_schema(models_lts.Payload)
-
 def is_mandatory_file(filename):
     return filename.name in ("settings", "exit_code", "config.yaml") or filename.name.startswith("settings.")
 
@@ -86,7 +84,7 @@ def load_cache(dirname):
         return pickle.load(f)
 
 
-def _parse_directory(fn_add_to_matrix, dirname, import_settings):
+def _parse_results(fn_add_to_matrix, dirname, import_settings):
     parsers.artifact_paths = resolve_artifact_dirnames(dirname, parsers.artifact_dirnames)
 
     ignore_cache = os.environ.get("MATBENCH_STORE_IGNORE_CACHE", False) in ("yes", "y", "true", "True")
@@ -127,16 +125,10 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     logging.info("parsing done :)")
 
+# delegate the parsing to the simple_store
+store.register_custom_rewrite_settings(_rewrite_settings)
+store.register_lts_schema(models_lts.Payload)
 
-def parse_data():
-    # delegate the parsing to the simple_store
-    store.register_custom_rewrite_settings(_rewrite_settings)
-    store_simple.register_custom_parse_results(_parse_directory)
+store_simple.register_custom_parse_results(_parse_results)
 
-    store_simple.register_custom_build_lts_payloads(lts.build_lts_payloads)
-
-    return store_simple.parse_data()
-
-
-def build_lts_payloads():
-    return store_simple.build_lts_payloads()
+build_lts_payloads = lts.build_lts_payloads
