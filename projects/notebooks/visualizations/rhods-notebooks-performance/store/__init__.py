@@ -76,7 +76,7 @@ def load_cache(dirname):
     return results
 
 
-def _parse_directory(fn_add_to_matrix, dirname, import_settings):
+def _parse_results(fn_add_to_matrix, dirname, import_settings):
     ignore_cache = os.environ.get("MATBENCH_STORE_IGNORE_CACHE", False) in ("yes", "y", "true", "True")
     if not ignore_cache:
         try:
@@ -128,9 +128,6 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 store.register_lts_schema(models_lts.Payload)
 store.register_custom_rewrite_settings(_rewrite_settings)
 
-store_simple.register_custom_parse_results(_parse_directory)
-store_simple.register_custom_build_lts_payloads(lts.build_lts_payloads)
+store_simple.register_custom_parse_results(_parse_results)
 
-parse_lts_data = store_simple.parse_data
-parse_data = store_simple.parse_data
-build_lts_payloads = store_simple.build_lts_payloads
+build_lts_payloads = lts.build_lts_payloads
