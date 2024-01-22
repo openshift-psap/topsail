@@ -137,21 +137,29 @@ ci_presets:
 
   # single-model
 
+  gating:
+    matbench.lts.opensearch.instance: perflab
+
+  gating_light:
+    matbench.lts.opensearch.instance: smoke
+
   single_model_gating:
-    extends: [10min, e2e_gpu, e2e_perf]
+    extends: [gating, 10min, e2e_gpu, e2e_perf]
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, bloom-560m, mpt-7b-instruct2]
     matbench.lts.horreum.test_name: RHOAI-kserve-single
+    matbench.lts.opensearch.index: rhoai-kserve-single
 
   single_model_gating_light:
-    extends: [single_model_gating, 5min]
+    extends: [single_model_gating, 5min, gating_light]
 
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu]
     matbench.lts.horreum.test_name: null
+    matbench.lts.opensearch.index: rhoai-kserve-single-light
 
   # multi-model
 
   multi_model_gating:
-    extends: [10min, e2e_gpu, e2e_scale]
+    extends: [gating, 10min, e2e_gpu, e2e_scale]
     matbench.lts.horreum.test_name: RHOAI-kserve-multi
     tests.e2e.models:
     - flan-t5-large-gpu-1:
@@ -171,17 +179,19 @@ ci_presets:
         name: bloom-560m
     - mpt-7b-instruct2-2:
         name: mpt-7b-instruct2
+    matbench.lts.opensearch.index: rhoai-kserve-multi
 
   multi_model_gating_light:
-    extends: [multi_model_gating, 5min]
+    extends: [multi_model_gating, 5min, gating_light]
 
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-small-cpu]
     matbench.lts.horreum.test_name: null
+    matbench.lts.opensearch.index: rhoai-kserve-multi-light
 
   # many-model
 
   many_model_gating:
-    extends: [scale_test, customize_smcp]
+    extends: [gating, scale_test, customize_smcp]
     matbench.lts.horreum.test_name: RHOAI-kserve-many
 
     tests.scale.model.replicas: 17
@@ -192,15 +202,17 @@ ci_presets:
     kserve.model.serving_runtime.mute_logs: true
     tests.scale.sleep_factor: 60
     tests.e2e.limits_equals_requests: false
+    matbench.lts.opensearch.index: rhoai-kserve-many
 
   many_model_gating_light:
-    extends: [many_model_gating]
+    extends: [many_model_gating, gating_light]
 
     tests.scale.sleep_factor: 1
     tests.scale.model.replicas: 2
     tests.scale.namespace.replicas: 2
     gpu.time_sharing.replicas: 10
     matbench.lts.horreum.test_name: null
+    matbench.lts.opensearch.index: rhoai-kserve-many-light
 
 secrets:
   dir:
@@ -212,6 +224,8 @@ secrets:
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   aws_cred: .awscred
   kserve_model_secret_settings: watsonx-models.yaml
+  opensearch_instances: opensearch.yaml
+
 clusters:
   create:
     type: single # can be: single, ocp, managed
@@ -418,3 +432,12 @@ matbench:
     generate: true
     horreum:
       test_name: null
+    opensearch:
+      export: true
+      fail_test_on_fail: false
+      instance: smoke
+      index: rhoai-kserve-single
+    regression_analyses:
+      enabled: true
+      # if the regression analyses fail, mark the test as failed
+      fail_test_on_regression: true
