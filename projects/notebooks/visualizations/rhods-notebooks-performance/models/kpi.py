@@ -27,3 +27,8 @@ def notebook_performance_benchmark_min_max_diff(lts_payload):
     max_value = max(lts_payload.results.benchmark_measures.measures)
 
     return max_value - min_value
+
+
+@matbench_models.KPIMetadata(help="list of the execution time of the benchmark", unit="seconds")
+def notebook_performance_benchmark_time(lts_payload):
+    return lts_payload.results.benchmark_measures.measures
