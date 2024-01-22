@@ -211,6 +211,8 @@ secrets:
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+  opensearch_instances: opensearch.yaml
+
 clusters:
   create:
     type: single # can be: single, ocp
