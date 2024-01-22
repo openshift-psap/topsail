@@ -40,6 +40,10 @@
 
 # ---
 
+- name: Generate a UUID for the test
+  shell:
+    uuidgen > "{{ artifact_extra_logs_dir }}/.uuid"
+
 - name: Generate MatrixBenchmark settings file
   shell: |
     cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
