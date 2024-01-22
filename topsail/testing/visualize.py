@@ -6,6 +6,7 @@ import sys
 import functools
 import subprocess
 import os
+import yaml, json
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
@@ -91,7 +92,183 @@ def generate_visualizations(results_dirname, generate_lts=None):
         raise RuntimeError("Som of visualization failed")
 
 
-def generate_visualization(results_dirname, idx, generate_lts=None):
+def call_parse(step_idx, common_args, common_env):
+    parse_env = common_env.copy()
+    parse_args = common_args.copy()
+
+    mode = config.ci_artifacts.get_config("matbench.download.mode")
+    if mode != "prefer_cache":
+        logging.info(f"Download mode set to '{mode}', ignoring the parser cache.")
+        parse_env["MATBENCH_STORE_IGNORE_CACHE"] = "y"
+
+    parse_args["output-matrix"] = env.ARTIFACT_DIR / "internal_matrix.json"
+
+    parse_args_str = " ".join(f"'--{k}={v}'" for k, v in parse_args.items())
+    parse_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in parse_env.items())
+
+    log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_parse.log"
+
+    cmd = f"{parse_env_str} matbench parse {parse_args_str} |& tee > {log_file}"
+
+    errors = []
+    if run.run(cmd, check=False).returncode != 0:
+        logging.warning("An error happened while parsing the results  ...")
+        errors.append(log_file.name)
+
+    return errors
+
+def call_generate_lts(step_idx, common_args, common_env_str):
+    lts_args = common_args.copy()
+    lts_args["output-lts"] = env.ARTIFACT_DIR / "lts_payload.json"
+    lts_args_str = " ".join(f"'--{k}={v}'" for k, v in lts_args.items())
+
+    log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_generate_lts.log"
+
+    cmd = f"{common_env_str} matbench parse {lts_args_str} |& tee > {log_file}"
+
+    errors = []
+    if run.run(cmd, check=False).returncode != 0:
+        logging.warning("An error happened while generating the LTS payload ...")
+        errors.append(log_file.name)
+
+    return errors
+
+
+def call_generate_lts_schema(step_idx, common_args):
+    lts_schema_args = common_args.copy()
+
+    lts_schema_args.pop("results_dirname")
+    lts_schema_args["file"] = env.ARTIFACT_DIR / "lts_payload.schema.json"
+    lts_schema_args_str = " ".join(f"'--{k}={v}'" for k, v in lts_schema_args.items())
+
+    log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_generate_lts_schema.log"
+
+    cmd = f"matbench generate_lts_schema {lts_schema_args_str} |& tee > {log_file}"
+
+    errors = []
+    if run.run(cmd, check=False).returncode != 0:
+        logging.warning("An error happened while generating the LTS payload schema...")
+        errors.apprend(log_file.name)
+
+    return errors
+
+
+def generate_opensearch_config_yaml_env(dest):
+    instance = config.ci_artifacts.get_config("matbench.lts.opensearch.instance")
+    index = config.ci_artifacts.get_config("matbench.lts.opensearch.index")
+
+    vault_key = config.ci_artifacts.get_config("secrets.dir.env_key")
+    opensearch_instances_file = config.ci_artifacts.get_config("secrets.opensearch_instances")
+
+    with open(pathlib.Path(os.environ[vault_key]) / opensearch_instances_file) as f:
+        instances_file_doc = yaml.safe_load(f)
+
+    env_doc = dict(
+        opensearch_username=instances_file_doc[instance]["username"],
+        opensearch_password=instances_file_doc[instance]["password"],
+        opensearch_port=instances_file_doc[instance]["port"],
+        opensearch_host=instances_file_doc[instance]["host"],
+        opensearch_index=index,
+    )
+
+    with open(dest, "w") as f:
+        yaml.dump(env_doc, f, indent=4)
+
+
+def call_upload_lts(step_idx, common_args, common_env_str):
+    upload_args = common_args.copy()
+    upload_args_str = " ".join(f"'--{k}={v}'" for k, v in upload_args.items())
+
+    log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_upload_lts.log"
+
+    env_file = pathlib.Path(".env.generated.yaml")
+    generate_opensearch_config_yaml_env(env_file)
+
+    cmd = f"{common_env_str} matbench upload_lts {upload_args_str} |& tee > {log_file}"
+
+    errors = []
+    if run.run(cmd, check=False).returncode != 0:
+        logging.warning("An error happened while uploading the LTS payload ...")
+        errors.append(log_file.name)
+
+    env_file.unlink()
+
+    return errors
+
+
+def call_analyze_lts(step_idx, common_args, common_env_str):
+    analyze_args = common_args.copy()
+    analyze_args_str = " ".join(f"'--{k}={v}'" for k, v in analyze_args.items())
+
+    log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_analyze_lts.log"
+
+    env_file = pathlib.Path(".env.generated.yaml")
+    generate_opensearch_config_yaml_env(env_file)
+
+    cmd = f"{common_env_str} matbench analyze_lts {analyze_args_str} |& tee > {log_file}"
+
+    errors = []
+    retcode = run.run(cmd, check=False).returncode
+
+
+    if retcode == 0:
+        logging.info("The regression analyses did not detect any regression.")
+        regression_detected = False
+    elif retcode < 100:
+        logging.warning("A regression was detected.")
+        regression_detected = True
+    else:
+        logging.warning("An error happened while analyzing the LTS payload ...")
+        errors.append(log_file.name)
+        regression_detected = None
+
+    env_file.unlink()
+
+    return errors, regression_detected
+
+
+def call_visualize(step_idx, common_env_str, common_args, filters_to_apply, generate_url):
+    visu_args = common_args.copy()
+    visu_args["filters"] = filters_to_apply
+    visu_args["generate"] = generate_url
+    visu_args_str = " ".join(f"'--{k}={v}'" for k, v in visu_args.items())
+
+    dest_dir = env.ARTIFACT_DIR / filters_to_apply
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    log_file = dest_dir / f"{step_idx}_matbench_visualize.log"
+
+    cmd = f"{common_env_str} matbench visualize {visu_args_str} |& tee > {log_file}"
+
+    errors = []
+    if run.run(cmd, check=False, cwd=dest_dir).returncode != 0:
+        logging.warning("An error happened while generating the visualization ...")
+        errors.append(log_file.name)
+
+    with open(log_file) as log_f:
+        logs_has_errors = False
+        for line in log_f.readlines():
+            if not line.startswith("ERROR"):
+                continue
+
+            logs_has_errors = True
+
+            with open(env.ARTIFACT_DIR / "FAILURE", "a") as fail_f:
+                print(line, end="", file=fail_f)
+                logging.error(line.strip())
+        if logs_has_errors:
+            errors.append(log_file.name)
+
+    run.run(f"""
+        mkdir -p {dest_dir}/figures_{{png,html}}
+        mv {dest_dir}/fig_*.png "{dest_dir}/figures_png" 2>/dev/null || true
+        mv {dest_dir}/fig_*.html "{dest_dir}/figures_html" 2>/dev/null || true
+        """)
+
+    return errors
+
+
+def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=None, analyze_lts=None):
     generate_list = matbench_config.get_config(f"visualize[{idx}].generate")
     if not generate_list:
         raise ValueError(f"Couldn't get the configuration #{idx} ...")
@@ -100,92 +277,79 @@ def generate_visualization(results_dirname, idx, generate_lts=None):
 
     common_args, common_env = get_common_matbench_args_env(results_dirname)
 
-    parse_env = common_env.copy()
-    mode = config.ci_artifacts.get_config("matbench.download.mode")
-    if mode != "prefer_cache":
-        logging.info(f"Download mode set to '{mode}', ignoring the parser cache.")
-        parse_env["MATBENCH_STORE_IGNORE_CACHE"] = "y"
+    step_idx = 0
+    errors = []
 
-    parse_args = common_args.copy()
-    parse_args["output-matrix"] = env.ARTIFACT_DIR / "internal_matrix.json"
+    errors += call_parse(step_idx, common_args, common_env)
 
-    parse_args_str = " ".join(f"'--{k}={v}'" for k, v in parse_args.items())
-    parse_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in parse_env.items())
-
-    if run.run(f"{parse_env_str} matbench parse {parse_args_str}  |& tee > {env.ARTIFACT_DIR}/_matbench_parse.log", check=False).returncode != 0:
-        raise RuntimeError("Failed to parse the results ...")
-
-    error = False
-    lts_args = common_args.copy()
-    lts_args["output-lts"] = env.ARTIFACT_DIR / "lts_payload.json"
-    lts_args_str = " ".join(f"'--{k}={v}'" for k, v in lts_args.items())
+    if errors:
+        msg = f"An error happened during the results parsing, aborting the visualization ({', '.join(errors)})."
+        with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
+            print(msg, file=f)
+        logging.error(msg)
+        raise RuntimeError(msg)
 
     common_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in common_env.items())
 
     do_generate_lts = generate_lts if generate_lts is not None \
-        else config.ci_artifacts.get_config("matbench.lts.generate", None) \
+        else config.ci_artifacts.get_config("matbench.lts.generate", None)
 
     if do_generate_lts:
-        if run.run(f"{common_env_str} matbench parse {lts_args_str} |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts.log", check=False).returncode != 0:
-            logging.warning("An error happened while generating the LTS payload ...")
-            error = True
+        step_idx += 1
+        errors += call_generate_lts(step_idx, common_args, common_env_str)
 
-        lts_schema_args = common_args.copy()
-        lts_schema_args.pop("results_dirname")
-        lts_schema_args["file"] = env.ARTIFACT_DIR / "lts_payload.schema.json"
-        lts_schema_args_str = " ".join(f"'--{k}={v}'" for k, v in lts_schema_args.items())
-        if run.run(f"matbench generate_lts_schema {lts_schema_args_str}  |& tee > {env.ARTIFACT_DIR}/_matbench_generate_lts_schema.log", check=False).returncode != 0:
-            logging.warning("An error happened while generating the LTS payload schema...")
-            error = True
+        step_idx += 1
+        errors += call_generate_lts_schema(step_idx, common_args)
+
     else:
         if generate_lts is not None:
-            logging.info(f"'matbench.lts.generate' parameter is set to {generate_lts}, skipping LTS payload&schema generation.")
+            logging.info(f"'matbench.lts.generate' parameter is set to {generate_lts}, "
+                         "skipping LTS payload&schema generation.")
         else:
-            logging.info("'matbench.lts.generate' not enabled, skipping LTS payload&schema generation.")
+            logging.info("'matbench.lts.generate' not enabled, "
+                         "skipping LTS payload&schema generation.")
+
+    do_upload_lts = upload_lts if upload_lts is not None \
+        else config.ci_artifacts.get_config("matbench.lts.opensearch.export", None)
+
+    if do_upload_lts:
+        step_idx += 1
+        upload_lts_errors = call_upload_lts(step_idx, common_args, common_env_str)
+        if config.ci_artifacts.get_config("matbench.lts.opensearch.fail_test_on_fail"):
+            errors += upload_lts_errors
+        elif upload_lts_errors:
+            logging.warning("An error happened during the LTS load. Ignoring as per matbench.lts.opensearch.fail_test_on_fail.")
+
+    do_analyze_lts = analyze_lts if analyze_lts is not None \
+        else config.ci_artifacts.get_config("matbench.lts.regression_analyses.enabled", None)
+
+    if do_analyze_lts:
+        step_idx += 1
+        analyze_lts_errors, regression_detected = call_analyze_lts(step_idx, common_args, common_env_str)
+        errors += analyze_lts_errors
+
+        if regression_detected:
+            if config.ci_artifacts.get_config("matbench.lts.regression_analyses.fail_test_on_regression"):
+                errors += ["regression detected"]
+            else:
+                logging.warning("A regression has been detected, but ignored as per matbench.lts.opensearch.fail_test_on_fail.")
 
     if config.ci_artifacts.get_config("matbench.download.save_to_artifacts"):
         shutil.copytree(common_args["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
-
 
     filters = matbench_config.get_config(f"visualize[{idx}]").get("filters", [None])
     for filters_to_apply in filters:
         if not filters_to_apply:
             filters_to_apply = ""
 
-        visu_args = common_args.copy()
-        visu_args["filters"] = filters_to_apply
-        visu_args["generate"] = generate_url
-        visu_args_str = " ".join(f"'--{k}={v}'" for k, v in visu_args.items())
+        step_idx += 1
+        errors += call_visualize(step_idx, common_env_str, common_args, filters_to_apply, generate_url)
 
-        dest_dir = env.ARTIFACT_DIR / filters_to_apply
-        dest_dir.mkdir(parents=True, exist_ok=True)
-
-        log_file = dest_dir / "_matbench_visualize.log"
-
-        if run.run(f"{common_env_str} matbench visualize {visu_args_str} |& tee > {log_file}",
-                check=False, cwd=dest_dir).returncode != 0:
-            logging.warning("An error happened while generating the visualization ...")
-            error = True
-
-        with open(log_file) as log_f:
-            for line in log_f.readlines():
-                if not line.startswith("ERROR"):
-                    continue
-                error = True
-                with open(env.ARTIFACT_DIR / "FAILURE", "a") as fail_f:
-                    print(line, end="", file=fail_f)
-                print(line.strip())
-
-        run.run(f"""
-        cd
-        mkdir -p {dest_dir}/figures_{{png,html}}
-        mv {dest_dir}/fig_*.png "{dest_dir}/figures_png" 2>/dev/null || true
-        mv {dest_dir}/fig_*.html "{dest_dir}/figures_html" 2>/dev/null || true
-        """)
-
-    if error:
-        msg = "An error happened during the report generation ..."
+    if errors:
+        msg = f"An error happened during the visualization post-processing ... ({', '.join(errors)})"
         logging.error(msg)
+        with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
+            print(msg, file=f)
         raise RuntimeError(msg)
 
 
