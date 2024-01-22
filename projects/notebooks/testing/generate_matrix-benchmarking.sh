@@ -147,7 +147,7 @@ generate_matbench::generate_visualization() {
         retcode=1
     fi
 
-    if test_config matbench.lts.opensearch.export; then
+    generate_opensearch_config() {
         instance=$(get_config matbench.lts.opensearch.instance)
         index=$(get_config matbench.lts.opensearch.index)
         yq '{
@@ -157,6 +157,10 @@ generate_matbench::generate_visualization() {
                   "opensearch_host": .'$instance'.host,
                   "opensearch_index": "'$index'",
         }' "$PSAP_ODS_SECRET_PATH/opensearch.yaml" > .env.yaml
+    }
+
+    if test_config matbench.lts.opensearch.export; then
+        generate_opensearch_config
 
         step_idx=$((step_idx + 1))
         if ! matbench upload_lts |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_upload_lts.log"; then
