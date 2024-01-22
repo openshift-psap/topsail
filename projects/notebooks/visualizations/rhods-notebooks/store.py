@@ -10,6 +10,7 @@ import os
 import json
 import fnmatch
 import pickle
+import uuid
 
 import pandas as pd
 import jsonpath_ng
@@ -46,6 +47,7 @@ CACHE_FILENAME = "cache.pickle"
 
 IMPORTANT_FILES = [
     "_ansible.env",
+    ".uuid",
 
     "artifacts-sutest/rhods.version",
     "artifacts-sutest/rhods.createdAt",
@@ -825,6 +827,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.all_resource_times = _parse_resource_times(dirname)
 
+    results.test_uuid = _parse_test_uuid(dirname)
+
     results.lts = lts_parser.generate_lts_payload(results, import_settings)
 
     print("add the result to the matrix ...")
@@ -840,6 +844,15 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.test_config.get = get_config
 
     print("parsing done :)")
+
+
+@ignore_file_not_found
+def _parse_test_uuid(dirname):
+    with open(dirname / ".uuid") as f:
+        test_uuid = f.read().strip()
+
+    return uuid.UUID(test_uuid)
+
 
 @ignore_file_not_found
 def _parse_start_end_times(dirname):
