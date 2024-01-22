@@ -131,5 +131,6 @@ store.register_custom_rewrite_settings(_rewrite_settings)
 store_simple.register_custom_parse_results(_parse_directory)
 store_simple.register_custom_build_lts_payloads(lts.build_lts_payloads)
 
+parse_lts_data = store_simple.parse_data
 parse_data = store_simple.parse_data
 build_lts_payloads = store_simple.build_lts_payloads
