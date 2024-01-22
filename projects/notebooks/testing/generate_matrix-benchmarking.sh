@@ -172,6 +172,29 @@ generate_matbench::generate_visualization() {
         rm -f .env.yaml
     fi
 
+    if test_config matbench.lts.regression_analyses.enabled; then
+        generate_opensearch_config
+
+        step_idx=$((step_idx + 1))
+        regression_analyses_retcode=0
+        matbench analyze-lts |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_analyze_lts.log" || regression_analyses_retcode=$?
+        if $regression_analyses_retcode == 0 ; then
+            _info "The regression analyses did not detect any regression."
+        elif $regression_analyses_retcode < 100 ; then
+            _warning "The regression analyses detected a regression :|"
+            if test_config matbench.lts.regression_analyses.fail_test_on_regression; then
+                retcode=1
+            else
+                _info "A regression was detected, but the regression analysese 'fail_test_on_regression' flag is not set. Ignoring."
+            fi
+        else
+            _warning "An error $regression_analyses_retcode happened during the regression analyses :/"
+            retcode=1
+        fi
+
+        rm -f .env.yaml
+    fi
+
     if test_config matbench.download.save_to_artifacts; then
         cp -rv "$MATBENCH_RESULTS_DIRNAME" "$ARTIFACT_DIR"
     fi
