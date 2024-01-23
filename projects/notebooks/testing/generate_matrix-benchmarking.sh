@@ -128,11 +128,19 @@ generate_matbench::generate_visualization() {
 
     generate_url="stats=$(echo -n "$generate_list" | tr '\n' '&' | sed 's/&/&stats=/g')"
 
+    #
+    # Parse
+    #
+
     step_idx=0
     if ! matbench parse --output-matrix $ARTIFACT_DIR/internal_matrix.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_parse.log"; then
         _warning "An error happened during the parsing of the results (or no results were available) in $MATBENCH_RESULTS_DIRNAME, aborting."
         return 1
     fi
+
+    #
+    # Generate LTS
+    #
 
     step_idx=$((step_idx + 1))
     retcode=0
@@ -140,6 +148,10 @@ generate_matbench::generate_visualization() {
         _warning "An error happened while generating the LTS payload from $MATBENCH_RESULTS_DIRNAME :/."
         retcode=1
     fi
+
+    #
+    # Generate LTS schema
+    #
 
     step_idx=$((step_idx + 1))
     if ! matbench generate_lts_schema --file $ARTIFACT_DIR/lts_payload.schema.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_generate_lts_schema.log"; then
@@ -162,6 +174,51 @@ generate_matbench::generate_visualization() {
         }' "${!vault_key}/${opensearch_instances_file}" > .env.generated.yaml
     }
 
+    #
+    # Download the LTS results
+    # Analyze the current results against LTS results
+    #
+
+    if test_config matbench.lts.regression_analyses.enabled; then
+        generate_opensearch_config
+
+        step_idx=$((step_idx + 1))
+
+        if ! matbench download_lts --lts_results_dirname "$MATBENCH_RESULTS_DIRNAME/lts" \
+           |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_download_lts.log";
+        then
+            _warning "An error happened while downloading the LTS results :/."
+            retcode=1
+        fi
+
+        step_idx=$((step_idx + 1))
+        regression_analyses_retcode=0
+        matbench analyze-lts --lts_results_dirname "$MATBENCH_RESULTS_DIRNAME/lts" \
+            |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_analyze_lts.log" \
+            || regression_analyses_retcode=$?
+
+        if [[ $regression_analyses_retcode == 0 ]]; then
+            _info "The regression analyses did not detect any regression."
+        elif [[ $regression_analyses_retcode < 100 ]]; then
+            _warning "The regression analyses detected a regression :|"
+            if test_config matbench.lts.regression_analyses.fail_test_on_regression;
+            then
+                retcode=1
+            else
+                _info "A regression was detected, but the regression analysese 'fail_test_on_regression' flag is not set. Ignoring."
+            fi
+        else
+            _warning "An error $regression_analyses_retcode happened during the regression analyses :/"
+            retcode=1
+        fi
+
+        rm -f .env.yaml
+    fi
+
+    #
+    # Upload LTS results
+    #
+
     if test_config matbench.lts.opensearch.export; then
         generate_opensearch_config
 
@@ -175,32 +232,13 @@ generate_matbench::generate_visualization() {
         rm -f .env.yaml
     fi
 
-    if test_config matbench.lts.regression_analyses.enabled; then
-        generate_opensearch_config
-
-        step_idx=$((step_idx + 1))
-        regression_analyses_retcode=0
-        matbench analyze-lts |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_analyze_lts.log" || regression_analyses_retcode=$?
-        if [[ $regression_analyses_retcode == 0 ]]; then
-            _info "The regression analyses did not detect any regression."
-        elif [[ $regression_analyses_retcode < 100 ]]; then
-            _warning "The regression analyses detected a regression :|"
-            if test_config matbench.lts.regression_analyses.fail_test_on_regression; then
-                retcode=1
-            else
-                _info "A regression was detected, but the regression analysese 'fail_test_on_regression' flag is not set. Ignoring."
-            fi
-        else
-            _warning "An error $regression_analyses_retcode happened during the regression analyses :/"
-            retcode=1
-        fi
-
-        rm -f .env.yaml
-    fi
-
     if test_config matbench.download.save_to_artifacts; then
         cp -rv "$MATBENCH_RESULTS_DIRNAME" "$ARTIFACT_DIR"
     fi
+
+    #
+    # Generate the visualization reports
+    #
 
     for filters_to_apply in $filters; do
         if [[ "$filters_to_apply" == "null" ]]; then
