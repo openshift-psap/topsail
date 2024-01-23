@@ -175,6 +175,35 @@ def generate_opensearch_config_yaml_env(dest):
         yaml.dump(env_doc, f, indent=4)
 
 
+def call_download_lts(step_idx, common_args, common_env_str):
+    download_args = common_args.copy()
+
+    download_args["lts_results_dirname"] = pathlib.Path(download_args.pop("results_dirname")) / "lts"
+
+    download_args.pop("workload")
+    download_args.pop("workload_base_dir")
+    download_args["force"] = True
+    download_args["clean"] = True
+
+    download_args_str = " ".join(f"'--{k}={v}'" for k, v in download_args.items())
+
+    log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_download_lts.log"
+
+    env_file = pathlib.Path(".env.generated.yaml")
+    generate_opensearch_config_yaml_env(env_file)
+
+    cmd = f"{common_env_str} matbench download_lts {download_args_str} |& tee > {log_file}"
+
+    errors = []
+    if run.run(cmd, check=False).returncode != 0:
+        logging.warning("An error happened while downloading the LTS payload ...")
+        errors.append(log_file.name)
+
+    env_file.unlink()
+
+    return errors
+
+
 def call_upload_lts(step_idx, common_args, common_env_str):
     upload_args = common_args.copy()
     upload_args_str = " ".join(f"'--{k}={v}'" for k, v in upload_args.items())
@@ -198,6 +227,7 @@ def call_upload_lts(step_idx, common_args, common_env_str):
 
 def call_analyze_lts(step_idx, common_args, common_env_str):
     analyze_args = common_args.copy()
+    analyze_args["lts_results_dirname"] = pathlib.Path(analyze_args["results_dirname"]) / "lts"
     analyze_args_str = " ".join(f"'--{k}={v}'" for k, v in analyze_args.items())
 
     log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_analyze_lts.log"
@@ -276,9 +306,14 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     generate_url = "stats=" + "&stats=".join(generate_list)
 
     common_args, common_env = get_common_matbench_args_env(results_dirname)
+    common_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in common_env.items())
 
     step_idx = 0
     errors = []
+
+    #
+    # Parse the results, to validate that they are well formed
+    #
 
     errors += call_parse(step_idx, common_args, common_env)
 
@@ -289,7 +324,10 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
         logging.error(msg)
         raise RuntimeError(msg)
 
-    common_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in common_env.items())
+    #
+    # Save the LTS in the artifacts, to have it along with the other files
+    # Save the LTS schema in the artifacts
+    #
 
     do_generate_lts = generate_lts if generate_lts is not None \
         else config.ci_artifacts.get_config("matbench.lts.generate", None)
@@ -301,13 +339,35 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
         step_idx += 1
         errors += call_generate_lts_schema(step_idx, common_args)
 
-    else:
-        if generate_lts is not None:
-            logging.info(f"'matbench.lts.generate' parameter is set to {generate_lts}, "
-                         "skipping LTS payload&schema generation.")
-        else:
-            logging.info("'matbench.lts.generate' not enabled, "
-                         "skipping LTS payload&schema generation.")
+    if config.ci_artifacts.get_config("matbench.download.save_to_artifacts"):
+        shutil.copytree(common_args["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
+
+    #
+    # Download the historical LTS payloads for compariosn
+    # Analyze the new results for regression against the historical results
+    #
+
+    do_analyze_lts = analyze_lts if analyze_lts is not None \
+        else config.ci_artifacts.get_config("matbench.lts.regression_analyses.enabled", None)
+
+    if do_analyze_lts:
+        step_idx += 1
+        download_lts_errors = call_download_lts(step_idx, common_args, common_env_str)
+        errors += download_lts_errors
+
+        step_idx += 1
+        analyze_lts_errors, regression_detected = call_analyze_lts(step_idx, common_args, common_env_str)
+        errors += analyze_lts_errors
+
+        if regression_detected:
+            if config.ci_artifacts.get_config("matbench.lts.regression_analyses.fail_test_on_regression"):
+                errors += ["regression detected"]
+            else:
+                logging.warning("A regression has been detected, but ignored as per matbench.lts.opensearch.fail_test_on_fail.")
+
+    #
+    # Upload the LTS payload for future regression analyses
+    #
 
     do_upload_lts = upload_lts if upload_lts is not None \
         else config.ci_artifacts.get_config("matbench.lts.opensearch.export", None)
@@ -320,22 +380,9 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
         elif upload_lts_errors:
             logging.warning("An error happened during the LTS load. Ignoring as per matbench.lts.opensearch.fail_test_on_fail.")
 
-    do_analyze_lts = analyze_lts if analyze_lts is not None \
-        else config.ci_artifacts.get_config("matbench.lts.regression_analyses.enabled", None)
-
-    if do_analyze_lts:
-        step_idx += 1
-        analyze_lts_errors, regression_detected = call_analyze_lts(step_idx, common_args, common_env_str)
-        errors += analyze_lts_errors
-
-        if regression_detected:
-            if config.ci_artifacts.get_config("matbench.lts.regression_analyses.fail_test_on_regression"):
-                errors += ["regression detected"]
-            else:
-                logging.warning("A regression has been detected, but ignored as per matbench.lts.opensearch.fail_test_on_fail.")
-
-    if config.ci_artifacts.get_config("matbench.download.save_to_artifacts"):
-        shutil.copytree(common_args["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
+    #
+    # Generate the visualization reports
+    #
 
     filters = matbench_config.get_config(f"visualize[{idx}]").get("filters", [None])
     for filters_to_apply in filters:
@@ -344,6 +391,10 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
 
         step_idx += 1
         errors += call_visualize(step_idx, common_env_str, common_args, filters_to_apply, generate_url)
+
+    #
+    # Done :)
+    #
 
     if errors:
         msg = f"An error happened during the visualization post-processing ... ({', '.join(errors)})"
