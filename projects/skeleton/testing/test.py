@@ -8,6 +8,7 @@ logging.getLogger().setLevel(logging.INFO)
 import datetime
 import time
 import functools
+import uuid
 
 import yaml
 import fire
@@ -75,6 +76,9 @@ def _run_test(test_artifact_dir_p):
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+        with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+            print(str(uuid.uuid4()), file=f)
 
         failed = True
         try:

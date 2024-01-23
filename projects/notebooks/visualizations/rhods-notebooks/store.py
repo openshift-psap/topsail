@@ -10,6 +10,7 @@ import os
 import json
 import fnmatch
 import pickle
+import uuid
 
 import pandas as pd
 import jsonpath_ng
@@ -46,6 +47,7 @@ CACHE_FILENAME = "cache.pickle"
 
 IMPORTANT_FILES = [
     "_ansible.env",
+    ".uuid",
 
     "artifacts-sutest/rhods.version",
     "artifacts-sutest/rhods.createdAt",
@@ -86,8 +88,6 @@ IMPORTANT_FILES = [
 ARTIFACTS_VERSION = "2022-11-09"
 PARSER_VERSION = "2022-12-14"
 
-
-store.register_lts_schema(models.NotebookScalePayload)
 
 def is_mandatory_file(filename):
     return filename.name in ("settings", "exit_code", "config.yaml") or filename.name.startswith("settings.")
@@ -722,7 +722,7 @@ def _parse_ods_ci_pods_directory(dirname, output_dir):
 
     return ods_ci
 
-def _parse_directory(fn_add_to_matrix, dirname, import_settings):
+def _parse_results(fn_add_to_matrix, dirname, import_settings):
     ignore_cache = os.environ.get("MATBENCH_STORE_IGNORE_CACHE", False) in ("yes", "y", "true", "True")
     if not ignore_cache:
         try:
@@ -825,6 +825,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results.all_resource_times = _parse_resource_times(dirname)
 
+    results.test_uuid = _parse_test_uuid(dirname)
+
     results.lts = lts_parser.generate_lts_payload(results, import_settings)
 
     print("add the result to the matrix ...")
@@ -840,6 +842,15 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.test_config.get = get_config
 
     print("parsing done :)")
+
+
+@ignore_file_not_found
+def _parse_test_uuid(dirname):
+    with open(dirname / ".uuid") as f:
+        test_uuid = f.read().strip()
+
+    return uuid.UUID(test_uuid)
+
 
 @ignore_file_not_found
 def _parse_start_end_times(dirname):
@@ -868,14 +879,10 @@ def _parse_start_end_times(dirname):
         return (start_time, end_time)
 
 
-def parse_data():
-    # delegate the parsing to the simple_store
-    store.register_custom_rewrite_settings(_rewrite_settings)
-    store_simple.register_custom_parse_results(_parse_directory)
+# delegate the parsing to the simple_store
+store.register_custom_rewrite_settings(_rewrite_settings)
+store.register_lts_schema(models.NotebookScalePayload)
 
-    return store_simple.parse_data()
+store_simple.register_custom_parse_results(_parse_results)
 
-def build_lts_payloads():
-    store_simple.register_custom_build_lts_payloads(lts.build_lts_payloads)
-
-    return store_simple.build_lts_payloads()
+build_lts_payloads = lts.build_lts_payloads

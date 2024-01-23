@@ -18,8 +18,6 @@ IMPORTANT_FILES = parsers.IMPORTANT_FILES
 
 from ..models import lts as models_lts
 
-store.register_lts_schema(models_lts.Payload)
-
 def is_mandatory_file(filename):
     return filename.name in ("settings", "exit_code", "config.yaml") or filename.name.startswith("settings.")
 
@@ -134,17 +132,10 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     logging.info("parsing done :)")
 
+# delegate the parsing to the simple_store
+store.register_custom_rewrite_settings(_rewrite_settings)
+store_simple.register_custom_parse_results(_parse_directory)
 
-def parse_data():
-    # delegate the parsing to the simple_store
-    store.register_custom_rewrite_settings(_rewrite_settings)
-    store_simple.register_custom_parse_results(_parse_directory)
-
-    from . import lts
-    store_simple.register_custom_build_lts_payloads(lts.build_lts_payloads)
-
-    return store_simple.parse_data()
-
-
-def build_lts_payloads():
-    return store_simple.build_lts_payloads()
+store.register_lts_schema(models_lts.Payload)
+from . import lts
+build_lts_payloads = lts.build_lts_payloads

@@ -35,6 +35,7 @@ def generate_lts_payload(results, import_settings, must_validate=False):
             'rhods_version': results.rhods_info.version,
             'ocp_version': results.sutest_ocp_version,
             "settings": {'version': results.rhods_info.version, **horreum_lts_store._parse_entry(import_settings)},
+            "test_uuid": results.test_uuid,
         }
     }
 

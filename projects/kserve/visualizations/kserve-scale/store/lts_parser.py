@@ -32,6 +32,7 @@ def generate_lts_metadata(results, import_settings):
     metadata.number_of_users = results.user_count
     metadata.number_of_inferenceservice_per_user = results.test_config.get("tests.scale.model.replicas")
     metadata.number_of_inferenceservices_to_create = results.user_count * metadata.number_of_inferenceservice_per_user
+    metadata.test_uuid = results.test_uuid
 
     return metadata
 

@@ -49,6 +49,7 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.settings = import_settings
     lts_metadata.test = results.test_config.get('tests.notebooks.identifier') or 'unknown'
     lts_metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
+    lts_metadata.test_uuid = results.test_uuid
 
     return lts_metadata
 
@@ -75,5 +76,6 @@ def get_kpi_labels(lts_payload):
     )
 
     kpi["@timestamp"] = lts_payload.metadata.start.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    kpi["test_uuid"] = lts_payload.metadata.test_uuid
 
     return kpi

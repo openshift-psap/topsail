@@ -147,22 +147,54 @@ generate_matbench::generate_visualization() {
         retcode=1
     fi
 
-    if test_config matbench.lts.opensearch.export; then
+    generate_opensearch_config() {
         instance=$(get_config matbench.lts.opensearch.instance)
         index=$(get_config matbench.lts.opensearch.index)
+
+        vault_key=$(get_config secrets.dir.env_key)
+        opensearch_instances_file=$(get_config secrets.opensearch_instances)
         yq '{
                   "opensearch_username": .'$instance'.username,
                   "opensearch_password": .'$instance'.password,
                   "opensearch_port": .'$instance'.port,
                   "opensearch_host": .'$instance'.host,
                   "opensearch_index": "'$index'",
-        }' "$PSAP_ODS_SECRET_PATH/opensearch.yaml" > .env.yaml
+        }' "${!vault_key}/${opensearch_instances_file}" > .env.generated.yaml
+    }
+
+    if test_config matbench.lts.opensearch.export; then
+        generate_opensearch_config
 
         step_idx=$((step_idx + 1))
         if ! matbench upload_lts |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_upload_lts.log"; then
             _warning "An error happened while uploading the LTS payload :/"
-            # retcode=1
+            if test_config matbench.lts.opensearch.fail_test_on_fail; then
+                retcode=1
+            fi
         fi
+        rm -f .env.yaml
+    fi
+
+    if test_config matbench.lts.regression_analyses.enabled; then
+        generate_opensearch_config
+
+        step_idx=$((step_idx + 1))
+        regression_analyses_retcode=0
+        matbench analyze-lts |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_analyze_lts.log" || regression_analyses_retcode=$?
+        if [[ $regression_analyses_retcode == 0 ]]; then
+            _info "The regression analyses did not detect any regression."
+        elif [[ $regression_analyses_retcode < 100 ]]; then
+            _warning "The regression analyses detected a regression :|"
+            if test_config matbench.lts.regression_analyses.fail_test_on_regression; then
+                retcode=1
+            else
+                _info "A regression was detected, but the regression analysese 'fail_test_on_regression' flag is not set. Ignoring."
+            fi
+        else
+            _warning "An error $regression_analyses_retcode happened during the regression analyses :/"
+            retcode=1
+        fi
+
         rm -f .env.yaml
     fi
 

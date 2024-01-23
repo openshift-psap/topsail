@@ -6,6 +6,7 @@ import os
 import json
 import datetime
 from collections import defaultdict
+import uuid
 
 import jsonpath_ng
 
@@ -21,6 +22,7 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 IMPORTANT_FILES = [
     "config.yaml",
     "_ansible.log",
+    ".uuid",
 
     "artifacts-sutest/nodes.json",
     "artifacts-sutest/ocp_version.yml",
@@ -58,6 +60,7 @@ def _parse_once(results, dirname):
     results.rhods_info = _parse_rhods_info(dirname)
     results.start_time, results.end_time = _parse_start_end_time(dirname)
     results.notebook_benchmark = _parse_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
+    results.test_uuid = _parse_test_uuid(dirname)
 
 
 def _parse_local_env(dirname):
@@ -105,6 +108,14 @@ def _parse_local_env(dirname):
         from_local_env.artifacts_basedir = dirname.absolute()
 
     return from_local_env
+
+
+@ignore_file_not_found
+def _parse_test_uuid(dirname):
+    with open(dirname / ".uuid") as f:
+        test_uuid = f.read().strip()
+
+    return uuid.UUID(test_uuid)
 
 
 def _parse_test_config(dirname):

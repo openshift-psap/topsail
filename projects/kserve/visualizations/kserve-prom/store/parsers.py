@@ -6,6 +6,7 @@ import os
 import json
 import datetime
 import dateutil.parser
+import uuid
 
 import jsonpath_ng
 
@@ -31,6 +32,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_UWM_DIR}/prometheus.t*",
     f"*/test_start_end.json", f"test_start_end.json",
     "config.yaml",
+    ".uuid",
 ]
 
 def ignore_file_not_found(fn):
@@ -58,6 +60,7 @@ def _parse_once(results, dirname):
 
     results.tests_timestamp = _find_test_timestamps(dirname)
     results.test_config = _parse_test_config(dirname)
+    results.test_uuid = _parse_test_uuid(dirname)
 
 
 def _extract_metrics(dirname):
@@ -199,3 +202,11 @@ def _parse_test_config(dirname):
     test_config.get = get
 
     return test_config
+
+
+@ignore_file_not_found
+def _parse_test_uuid(dirname):
+    with open(dirname / ".uuid") as f:
+        test_uuid = f.read().strip()
+
+    return uuid.UUID(test_uuid)

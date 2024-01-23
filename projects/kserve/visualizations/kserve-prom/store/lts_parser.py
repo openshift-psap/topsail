@@ -32,6 +32,8 @@ def generate_lts_metadata(results, import_settings):
 
     metadata.gpus = results.cluster_info.gpus
 
+    metadata.test_uuid = results.test_uuid
+
     return metadata
 
 
