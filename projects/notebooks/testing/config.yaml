@@ -115,7 +115,8 @@ ci_presets:
     tests.notebooks.users.count: 1
     clusters.sutest.compute.dedicated: true
     'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
-    matbench.lts.opensearch.export: true
+    matbench.lts.opensearch.upload: true
+    matbench.lts.opensearch.fail_test_on_fail: true
     matbench.lts.opensearch.index: rhoai-notebooks-performance
 
   notebook_performance_light:
@@ -282,10 +283,10 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 649886
+    tag: 655658
     channel: stable
     version: 2.6.0
-    version_name: pre-RC
+    version_name: rc1
   notebooks:
     customize:
       enabled: true
@@ -439,11 +440,11 @@ matbench:
     horreum:
       test_name: null
     opensearch:
-      export: true
-      fail_test_on_fail: true
+      upload: true
+      fail_test_on_fail: false
       instance: smoke
       index: rhoai-notebooks-scale
     regression_analyses:
       enabled: true
       # if the regression analyses fail, mark the test as failed
-      fail_test_on_regression: true
+      fail_test_on_regression: false
