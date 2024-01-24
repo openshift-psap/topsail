@@ -21,7 +21,11 @@ class Metadata(matbench_models.Metadata):
     ocp_version: str
     test: str
     config: Any
+    run_id: str
 
+    ci_engine: str
+    test_path: str
+    urls: Optional[dict[str, str]]
 
 class BenchmarkMeasures(matbench_models.ExclusiveModel):
     benchmark: str
