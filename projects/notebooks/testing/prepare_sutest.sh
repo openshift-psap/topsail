@@ -241,9 +241,11 @@ sutest_cleanup() {
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_rhods; then
-        ./run_toolbox.py rhods update_datasciencecluster
+        if [[ -n $(oc get datasciencecluster -oname 2>dev/null || true) ]]; then
+            ./run_toolbox.py rhods update_datasciencecluster
+        fi
 
-	# this is necessary because of RHODS-8002
+        # this is necessary because of RHODS-8002
         # ./run_toolbox.py rhods undeploy_ods
         _info "Force delete RHODS"
         ./run_toolbox.py rhods delete_ods
