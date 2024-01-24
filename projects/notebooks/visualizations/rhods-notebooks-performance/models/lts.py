@@ -22,6 +22,11 @@ class Metadata(matbench_models.Metadata):
     test: str
     config: Any
 
+    ci_engine: str = Field(default="Not set")
+    run_id: str = Field(default="Not set")
+    test_path: str = Field(default="Not set")
+    urls: Optional[dict[str, str]]
+
 
 class BenchmarkMeasures(matbench_models.ExclusiveModel):
     benchmark: str
