@@ -51,10 +51,7 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.test = results.test_config.get('tests.notebooks.identifier') or 'unknown'
     lts_metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
     lts_metadata.test_uuid = results.test_uuid
-    lts_metadata.run_id = results.from_env.test.run_id
-    lts_metadata.test_path = results.from_env.test.test_path
-    lts_metadata.urls = results.from_env.test.urls
-    lts_metadata.ci_engine = results.from_env.test.ci_engine
+
     return lts_metadata
 
 
