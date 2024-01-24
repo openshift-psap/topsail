@@ -89,6 +89,7 @@ def _parse_results(fn_add_to_matrix, dirname, import_settings):
 
     if results:
         parsers._parse_always(results, dirname, import_settings)
+        results.lts = lts_parser.generate_lts_payload(results, import_settings, must_validate=False)
 
         fn_add_to_matrix(results)
 
@@ -107,8 +108,6 @@ def _parse_results(fn_add_to_matrix, dirname, import_settings):
 
     parsers._parse_always(results, dirname, import_settings)
     parsers._parse_once(results, dirname)
-
-    results.lts = lts_parser.generate_lts_payload(results, import_settings, must_validate=False)
 
     fn_add_to_matrix(results)
 

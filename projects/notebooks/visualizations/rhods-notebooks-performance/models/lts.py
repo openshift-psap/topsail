@@ -40,6 +40,7 @@ class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata
     results: Results
     kpis: Optional[NotebookPerformanceKPIs]
+    regression_results: Optional[Any]
 
     class Config:
         fields = {'schema_name': '$schema'}

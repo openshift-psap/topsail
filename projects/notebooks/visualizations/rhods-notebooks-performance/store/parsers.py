@@ -51,6 +51,7 @@ def _parse_always(results, dirname, import_settings):
 
     results.from_local_env = _parse_local_env(dirname)
     results.test_config = _parse_test_config(dirname)
+    results.regression_results = _parse_regression_results(dirname)
 
 
 def _parse_once(results, dirname):
@@ -247,3 +248,15 @@ def _parse_start_end_time(dirname):
         end_time = datetime.datetime.strptime(time_str, ANSIBLE_LOG_TIME_FMT)
 
     return start_time, end_time
+
+
+def _parse_regression_results(dirname):
+    regression_results_file = dirname / "regression.json"
+    if not regression_results_file.exists():
+        logging.info(f"{regression_results_file.name} does not exist, ignoring the parsing of the regression analyses results.")
+        return None
+
+    with open(regression_results_file) as f:
+        regression_results = json.load(f)
+
+    return regression_results

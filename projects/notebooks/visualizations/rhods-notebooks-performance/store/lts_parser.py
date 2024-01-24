@@ -22,6 +22,7 @@ def generate_lts_payload(results, import_settings, must_validate=False):
     lts_payload.results = lts_results
 
     lts_payload.kpis = lts.generate_lts_kpis(lts_payload)
+    lts_payload.regression_results = results.regression_results
 
     # ---
 

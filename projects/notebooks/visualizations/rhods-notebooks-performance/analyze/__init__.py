@@ -1,18 +1,25 @@
-import matrix_benchmarking.common as common
+import json
 import logging
 
+import matrix_benchmarking.common as common
+
+
 def run():
-    logging.info("Hello world :)")
-
+    logging.info(f"Received {common.Matrix.count_records()} new entries")
     for entry in common.Matrix.all_records():
-        lts_payload = entry.results.lts
-        kpis = lts_payload.kpis
+        regression_results_dest = entry.location / "regression.json"
 
-        print(kpis.tostr())
-        print()
-        print("---")
-        print()
-        pass
+        logging.info(f"Saving the regression results in {regression_results_dest}")
+        with open(regression_results_dest, "w") as f:
+            regression = [
+                dict(name="rule1", results="pass"),
+                dict(name="rule2", results="fail"),
+            ]
+            json.dump(regression, f, indent=4)
+            print("", file=f)
+
+    logging.info(f"Received {common.LTS_Matrix.count_records()} historic LTS entries")
+    for lts_entry in common.LTS_Matrix.all_records(): pass
 
     number_of_failures = 0
 
