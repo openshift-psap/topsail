@@ -219,7 +219,7 @@ generate_matbench::generate_visualization() {
     # Upload LTS results
     #
 
-    if test_config matbench.lts.opensearch.export; then
+    if test_config matbench.lts.opensearch.upload; then
         generate_opensearch_config
 
         step_idx=$((step_idx + 1))

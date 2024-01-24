@@ -115,7 +115,7 @@ ci_presets:
     tests.notebooks.users.count: 1
     clusters.sutest.compute.dedicated: true
     'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
-    matbench.lts.opensearch.export: true
+    matbench.lts.opensearch.upload: true
     matbench.lts.opensearch.fail_test_on_fail: true
     matbench.lts.opensearch.index: rhoai-notebooks-performance
 
@@ -440,7 +440,7 @@ matbench:
     horreum:
       test_name: null
     opensearch:
-      export: true
+      upload: true
       fail_test_on_fail: false
       instance: smoke
       index: rhoai-notebooks-scale
