@@ -71,6 +71,11 @@ def get_kpi_labels(lts_payload):
     image_name, _, image_tag = image.partition(":")
 
     kpi = dict(
+        run_id = lts_payload.metadata.run_id,
+        test_path = lts_payload.metadata.test_path,
+        ci_engine = lts_payload.metadata.ci_engine,
+        urls = lts_payload.metadata.urls,
+
         rhoai_version = lts_payload.metadata.rhods_version,
         ocp_version = lts_payload.metadata.ocp_version,
         image = image,
