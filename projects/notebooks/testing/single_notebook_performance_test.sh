@@ -41,7 +41,11 @@ run_single_notebook_tests_run_benchmark_against_imagestream() {
     local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
     cp  "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir/config.yaml" || true
 
-    if ! test_config clusters.sutest.is_metal; then
+    if test_config clusters.sutest.is_metal; then
+        cat <<EOF > "$last_test_dir/settings.instance_type" || true
+instance_type=$(get_config clusters.create.ocp.compute.type)
+EOF
+    else
         cat <<EOF > "$last_test_dir/settings.instance_type" || true
 instance_type=$instance_type
 EOF

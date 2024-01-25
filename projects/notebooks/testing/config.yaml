@@ -119,6 +119,7 @@ ci_presets:
 
   icelake:
     extends: [metal]
+    clusters.create.ocp.compute.type: icelake
     clusters.driver.compute.dedicated: false
     clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
