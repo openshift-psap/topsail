@@ -17,11 +17,6 @@ ci_presets:
     tests.notebooks.repeat: 2
     tests.notebooks.identifier: scale_test
 
-  notebook_scale_test_autoscaling:
-    extends: [notebook_scale_test]
-    clusters.sutest.compute.autoscaling.enabled: true
-    tests.notebooks.repeat: 1
-
   # run the notebook gating tests
   # (DSG and Jupyter scale tests, notebook performance)
   notebook_gating_scale_test:
@@ -46,57 +41,6 @@ ci_presets:
     'ci_presets.notebook_scale_test["tests.notebooks.repeat"]': 1
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
 
-  notebook_large_scale_test:
-    extends: [notebook_scale_test]
-
-    clusters.create.type: ocp
-    clusters.create.ocp.tags.Project: PSAP/RHODS/large_scale
-    clusters.create.ocp.tags.TicketId:
-    clusters.create.ocp.workers.count: 4
-    clusters.create.ocp.workers.type: m6i.4xlarge
-    clusters.create.ocp.compute.type: m6i.8xlarge
-    clusters.driver.compute.autoscaling.enabled: false
-    clusters.sutest.compute.autoscaling.enabled: true
-
-    rhods.operator.stop: true
-    rhods.operator.dashboard.resources_cpu: 2
-
-    rhods.notebooks.customize.notebook_size.mem_gi: 5
-
-    tests.notebooks.users.count: 2000
-    tests.notebooks.users.sleep_factor: 3
-    tests.notebooks.repeat: 1
-
-  notebook_large_scale_test_light:
-    extends: [notebook_large_scale_test]
-
-    clusters.create.type: single
-    tests.notebooks.users.count: 100
-
-  notebook_large_scale_test_no_notebook:
-    extends: [notebook_large_scale_test]
-    clusters.sutest.compute.machineset.count: 0
-    clusters.sutest.compute.autoscaling.enabled: false
-    clusters.create.type: single
-    tests.notebooks.users.count: 1000
-
-  notebook_fast_scale_test:
-    extends: [notebook_scale_test]
-    rhods.operator.stop: true
-    rhods.operator.odh_notebook_controller.image: null
-    rhods.operator.odh_notebook_controller.replicas: 1
-    clusters.create.ocp.control_plane.type: m6i.xlarge
-    clusters.create.ocp.compute.type: m6i.xlarge
-
-    tests.notebooks.users.count: 300
-    tests.notebooks.repeat: 2
-    tests.notebooks.users.sleep_factor: 1
-
-  icelake_notebook_scale_test:
-    extends: [notebook_scale_test, metal]
-    tests.notebooks.users.count: 80
-    tests.notebooks.repeat: 1
-    tests.notebooks.users.sleep_factor: 1
 
   notebook_scale_test_dsg:
     extends: [notebook_scale_test]
@@ -122,9 +66,6 @@ ci_presets:
   notebook_performance_light:
     extends: [notebook_performance]
     tests.notebook_performance.test_only_one_image: true
-
-  plot.notebook_scale_tests_comparison:
-    matbench.preset: notebook_scale_tests_comparison
 
   cleanup:
     tests.notebooks.cleanup.on_exit.skip_if_le_than_users: 0
@@ -183,24 +124,10 @@ ci_presets:
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
-  perflab_notebook_scale_test:
-    extends: [notebook_scale_test, metal, cleanup]
-    clusters.driver.compute.dedicated: false
-    clusters.sutest.compute.dedicated: false
-    tests.notebooks.users.count: 15
-
-  icelake_notebook_scale_test_jenkins:
-    extends: [notebook_scale_test, metal, icelake]
-    tests.notebooks.users.count: 200
-
   icelake_notebook_gating_test:
     extends: [notebook_gating_scale_test, metal, icelake]
     tests.notebooks.users.count: 200
     matbench.lts.opensearch.instance: perflab
-
-  psap_ods_ci:
-    tests.notebooks.ods_ci.image.repo: https://github.com/openshift-psap/ods-ci.git
-    tests.notebooks.ods_ci.image.ref: notebook-scale-test.v1.30.0-rc1
 
   help:
     tests.show_help: true
