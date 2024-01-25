@@ -107,6 +107,8 @@ prechecks() {
 
     # store `topsail` version in use
     (git describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/topsail.git_version
+    # store `matrix-benchmarking` version in use
+    (git describe HEAD --long --always -C "$THIS_DIR/../subprojects/matrix-benchmarking" || echo "git missing") > ${ARTIFACT_DIR}/matbench.git_version
 
     if [[ "${PULL_NUMBER:-}" ]]; then
         PR_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PULL_NUMBER"

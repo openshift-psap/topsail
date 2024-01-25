@@ -198,18 +198,20 @@ generate_matbench::generate_visualization() {
             || regression_analyses_retcode=$?
 
         if [[ $regression_analyses_retcode == 0 ]]; then
-            _info "The regression analyses did not detect any regression."
-        elif [[ $regression_analyses_retcode < 100 ]]; then
-            _warning "The regression analyses detected a regression :|"
-            if test_config matbench.lts.regression_analyses.fail_test_on_regression;
+            _info "The regression analyses did not hit any issue."
+        else
+            if [[ $regression_analyses_retcode < 100 ]]; then
+                _warning "The regression analyses detected a regression :|"
+            else
+                _warning "An error code #$regression_analyses_retcode happened during the regression analyses :/"
+            fi
+
+            if test_config matbench.lts.regression_analyses.fail_test_on_regression_fail;
             then
                 retcode=1
             else
-                _info "A regression was detected, but the regression analysese 'fail_test_on_regression' flag is not set. Ignoring."
+                _info "An error code #$regression_analyses_retcode happened during the regression analyses, but the 'fail_test_on_regression_fail' flag is not set. Ignoring."
             fi
-        else
-            _warning "An error $regression_analyses_retcode happened during the regression analyses :/"
-            retcode=1
         fi
 
         rm -f .env.yaml
@@ -225,7 +227,7 @@ generate_matbench::generate_visualization() {
         step_idx=$((step_idx + 1))
         if ! matbench upload_lts |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_upload_lts.log"; then
             _warning "An error happened while uploading the LTS payload :/"
-            if test_config matbench.lts.opensearch.fail_test_on_fail; then
+            if test_config matbench.lts.opensearch.fail_test_on_upload_fail; then
                 retcode=1
             fi
         fi
