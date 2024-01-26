@@ -322,4 +322,13 @@ def _parse_env(dirname):
             PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/{from_env.test.run_id}/artifacts/{from_env.test.test_path}"
         )
 
+    if ansible_env.get("PERFLAB_CI") == "true":
+        from_env.test.ci_engine = "OPENSHIFT_CI"
+        from_env.test.test_path = "test/path/not/available"
+        from_env.test.run_id = "run/id/not/available"
+
+        from_env.test.urls |= dict(
+            JENKINS_ARTIFACTS=f"NOT AVAILABLE YET"
+        )
+
     return from_env
