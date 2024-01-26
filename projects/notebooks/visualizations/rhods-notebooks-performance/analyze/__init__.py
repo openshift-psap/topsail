@@ -10,30 +10,35 @@ import matrix_benchmarking.regression as regression
 def run():
 
     logging.info(f"Received {common.LTS_Matrix.count_records()} historic LTS entries")
-    lts_entries_raw = list(common.LTS_Matrix.all_records())
-    # Temporarily skip the gathered results
-    lts_entries = list(filter(lambda entry: type(entry.results) is not list, lts_entries_raw))
+    lts_entries = []
+    for entry in common.LTS_Matrix.all_records():
+        if entry.results and type(entry.results) is list:
+            entry.results = entry.results[0]
+            lts_entries.append(entry)
+        else:
+            lts_entries.append(entry)
 
     logging.info(f"Received {common.Matrix.count_records()} new entries")
-    new_entries = list(common.Matrix.all_records())
 
     number_of_failures = 0
     for entry in common.Matrix.all_records():
         regression_results_dest = entry.location / "regression.json"
-
-        # Check for regression over the image
-        zscore = regression.ZScoreIndicator(
-            entry,
-            lts_entries,
-            settings_filter={"image": "tensorflow:2023.1"},
-            combine_funcs={"notebook_performance_benchmark_time": np.mean}
+        regression_results = []
+        controlled_settings = entry.get_settings()
+        controlled_settings.pop("repeat") # Looking for regressions over the version, repeat is a placeholder
+        controlled_lts_entries = list(
+            filter(
+                lambda x: regression.dict_part_eq(controlled_settings, x.get_settings()),
+                lts_entries
+            )
         )
+        zscore = regression.ZScoreIndicator(entry, controlled_lts_entries)
+        regression_results = zscore.analyze()
+        number_of_failures += sum(map(lambda x: x["regression"]["status"], regression_results))
 
         logging.info(f"Saving the regression results in {regression_results_dest}")
-        regression_results = zscore.analyze()
         with open(regression_results_dest, "w") as f:
             json.dump(regression_results, f, indent=4)
             print("", file=f)
-        number_of_failures += sum(map(lambda x: x["regression"]["status"], regression_results))
 
     return number_of_failures
