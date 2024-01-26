@@ -53,7 +53,7 @@ class LtsMetric():
             transformed_values = []
 
             for prom_ts_values in all_prom_ts_values:
-                prom_values = [float(v) / self.divisor for k, v in prom_ts_values.values]
+                prom_values = [v / self.divisor for k, v in prom_ts_values.values.items()]
                 transformed_values.append(self.filter_fct(prom_values))
 
             datum["value"] = self.filter_fct(transformed_values) if transformed_values else None
