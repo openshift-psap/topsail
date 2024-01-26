@@ -4,6 +4,7 @@ import logging
 import datetime
 import math
 import copy
+import yaml
 
 import statistics as stats
 
@@ -91,7 +92,12 @@ def generateOneLtsDocumentationReport(entry):
     benchmark_measures += [html.Li([html.B("measures:"), html.Code(lts.results.benchmark_measures.measures)])]
 
     results += [html.Ul(benchmark_measures)]
-
     header += [html.Ul(results)]
+
+    regression = []
+    regression += [html.H1("regression analysis")]
+    regression += [html.Code(yaml.dump(lts.regression_results, default_flow_style=False), style={"white-space": "pre-wrap"})]
+
+    header += [html.Ul(regression)]
 
     return header
