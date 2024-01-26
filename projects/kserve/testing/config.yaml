@@ -411,7 +411,7 @@ tests:
       duration: 1m
       threads: 16
       rps: 2
-      protos_file: nlpservice.generated.proto
+      protos_file: nlpservice.proto
       protos_dir: projects/kserve/testing/protos/
       call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
 
