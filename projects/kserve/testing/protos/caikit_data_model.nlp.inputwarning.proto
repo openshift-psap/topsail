@@ -1,0 +1,18 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.nlp;
+import "caikit_data_model.nlp.inputwarningreason.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message InputWarning {
+
+  /*-- fields --*/
+  caikit_data_model.nlp.InputWarningReason id = 1;
+  string message = 2;
+}

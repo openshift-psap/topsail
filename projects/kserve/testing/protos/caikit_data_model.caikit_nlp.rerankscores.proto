@@ -1,0 +1,18 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.caikit_nlp;
+import "caikit_data_model.caikit_nlp.rerankscore.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message RerankScores {
+
+  /*-- fields --*/
+  string query = 1;
+  repeated caikit_data_model.caikit_nlp.RerankScore scores = 2;
+}

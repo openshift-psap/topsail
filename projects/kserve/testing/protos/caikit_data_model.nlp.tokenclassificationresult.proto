@@ -1,0 +1,22 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.nlp;
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message TokenClassificationResult {
+
+  /*-- fields --*/
+  int64 start = 1;
+  int64 end = 2;
+  string word = 3;
+  string entity = 4;
+  string entity_group = 5;
+  double score = 6;
+  int64 token_count = 7;
+}

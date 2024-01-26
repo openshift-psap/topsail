@@ -1,0 +1,17 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.Nlp;
+import "caikit_data_model.caikit_nlp.generationtrainrecord.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message DataStreamSourceGenerationTrainRecordJsonData {
+
+  /*-- fields --*/
+  repeated caikit_data_model.caikit_nlp.GenerationTrainRecord data = 1;
+}

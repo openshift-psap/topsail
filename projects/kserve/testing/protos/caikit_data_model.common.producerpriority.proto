@@ -1,0 +1,17 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.common;
+import "caikit_data_model.common.producerid.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message ProducerPriority {
+
+  /*-- fields --*/
+  repeated caikit_data_model.common.ProducerId producers = 1;
+}

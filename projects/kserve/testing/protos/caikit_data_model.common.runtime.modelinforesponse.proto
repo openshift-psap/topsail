@@ -1,0 +1,17 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.common.runtime;
+import "caikit_data_model.common.runtime.modelinfo.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message ModelInfoResponse {
+
+  /*-- fields --*/
+  repeated caikit_data_model.common.runtime.ModelInfo models = 1;
+}

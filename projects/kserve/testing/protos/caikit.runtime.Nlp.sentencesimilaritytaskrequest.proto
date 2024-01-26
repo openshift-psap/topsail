@@ -1,0 +1,18 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.Nlp;
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message SentenceSimilarityTaskRequest {
+
+  /*-- fields --*/
+  string source_sentence = 1;
+  repeated string sentences = 2;
+  optional int64 truncate_input_tokens = 3;
+}

@@ -55,12 +55,6 @@
     state: directory
     # mode: don't set it here, it fails if the directory exists but is owned by root
 
-- name: Extract the prototypes from the Pod
-  command:
-    oc cp
-       {{ kserve_extract_protos_namespace }}/{{ predictor_pod_name_cmd.stdout }}:/tmp/protos
-       "{{ kserve_extract_protos_dest_dir }}"
-
 - name: Create the protos artifacts directory
   file:
     path: "{{ artifact_extra_logs_dir }}/artifacts/protos"
@@ -68,9 +62,28 @@
     mode: '0755'
   when: kserve_extract_protos_copy_to_artifacts
 
-- name: Copy the prototypes to the artifacts dir
+# important: the 'transformer-container' image does not contain the 'tar' binary,
+# so the 'oc cp' command cannot work. If it gets added, here is the command to use:
+# oc cp -c transformer-container {{ kserve_extract_protos_namespace }}/{{ predictor_pod_name_cmd.stdout }}:/tmp/protos "{{ artifact_extra_logs_dir }}/artifacts/protos"
+
+- name: Extract the names of the proto files
+  command:
+    oc rsh
+       -c transformer-container
+       -n {{ kserve_extract_protos_namespace }}
+       {{ predictor_pod_name_cmd.stdout }}
+       ls /tmp/protos
+  register: proto_file_list_cmd
+
+- name: Extract the prototype files from the Pod
   shell:
-    oc cp
-       {{ kserve_extract_protos_namespace }}/{{ predictor_pod_name_cmd.stdout }}:/tmp/protos
-       "{{ artifact_extra_logs_dir }}/artifacts/protos"
-  when: kserve_extract_protos_copy_to_artifacts
+    oc rsh
+       -c transformer-container
+       -n {{ kserve_extract_protos_namespace }}
+       {{ predictor_pod_name_cmd.stdout }}
+       cat /tmp/protos/{{ item }}
+       > "{{ kserve_extract_protos_dest_dir }}/{{ item }}";
+    {% if kserve_extract_protos_copy_to_artifacts %}
+    cp "{{ kserve_extract_protos_dest_dir }}/{{ item }}" "{{ artifact_extra_logs_dir }}/artifacts/protos/{{ item }}"
+    {% endif %}
+  loop: "{{ proto_file_list_cmd.stdout_lines }}"

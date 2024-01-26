@@ -283,10 +283,10 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 636599
-    channel: alpha
-    version: 2.5.0
-    version_name: RC5
+    tag: 655658
+    channel: stable
+    version: 2.6.0
+    version_name: rc1
   operator:
     # set to true to stop the RHODS operator
     stop: false
@@ -411,7 +411,7 @@ tests:
       duration: 1m
       threads: 16
       rps: 2
-      protos_file: nlpservice.generated.proto
+      protos_file: nlpservice.proto
       protos_dir: projects/kserve/testing/protos/
       call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
 

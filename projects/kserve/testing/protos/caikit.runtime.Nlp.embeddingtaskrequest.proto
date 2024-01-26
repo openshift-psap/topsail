@@ -1,0 +1,17 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.Nlp;
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message EmbeddingTaskRequest {
+
+  /*-- fields --*/
+  string text = 1;
+  optional int64 truncate_input_tokens = 2;
+}

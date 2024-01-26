@@ -1,0 +1,19 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.caikit_nlp;
+import "caikit_data_model.caikit_nlp.sentencesimilarityscores.proto";
+import "caikit_data_model.common.producerid.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message SentenceSimilarityResults {
+
+  /*-- fields --*/
+  repeated caikit_data_model.caikit_nlp.SentenceSimilarityScores results = 1;
+  caikit_data_model.common.ProducerId producer_id = 2;
+}

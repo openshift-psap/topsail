@@ -450,48 +450,6 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
                 with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                     print(f"{exit_code}", file=f)
 
-def extract_protos(namespace, model_name, protos_path):
-
-    extract_proto_grpcurl_args_dict = dict(
-        namespace=namespace,
-        inference_service_name=model_name,
-    )
-
-    main_file = dict(
-        methods=["caikit.runtime.Nlp.TextGenerationTaskRequest", "caikit.runtime.Nlp.ServerStreamingTextGenerationTaskRequest", "caikit.runtime.Nlp.BidiStreamingTokenClassificationTaskRequest", "caikit_data_model.nlp.TokenClassificationResult", ".caikit_data_model.nlp.TokenClassificationStreamResult", "caikit.runtime.Nlp.TextClassificationTaskRequest", "caikit.runtime.Nlp.TokenClassificationTaskRequest", "caikit.runtime.Nlp.NlpService",],
-        dest_file=protos_path,
-    )
-
-    with open(main_file["dest_file"], "w") as f:
-        header = """\
-syntax = "proto3";
-package caikit.runtime.Nlp;
-
-import "generatedresult.proto";
-import "caikit-nlp.proto";
-import "caikit_data_model.generated.proto";
-"""
-        print(header, file=f)
-
-    data_file = dict(
-        methods=["caikit_data_model.nlp.TokenClassificationResult", ".caikit_data_model.nlp.TokenClassificationStreamResult", "caikit_data_model.nlp.ClassificationResults", "caikit_data_model.nlp.ClassificationResult", "caikit_data_model.nlp.TokenClassificationResults"],
-        dest_file=protos_path.parent / "caikit_data_model.generated.proto",
-    )
-    with open(data_file["dest_file"], "w") as f:
-        header = """\
-syntax = "proto3";
-package caikit_data_model.nlp;
-
-import "producer-types.proto";
-import "finishreason.proto";
-"""
-        print(header, file=f)
-
-    run.run_toolbox("kserve", "extract_protos_grpcurl", **(extract_proto_grpcurl_args_dict | main_file))
-    run.run_toolbox("kserve", "extract_protos_grpcurl", **(extract_proto_grpcurl_args_dict | data_file))
-
-    run.run(f"cd '{protos_path.parent}'; git diff . > {env.ARTIFACT_DIR}/protos.diff", check=False)
-
 
 def matbenchmark_run_llm_load_test(namespace, llm_load_test_args):
     visualize.prepare_matbench()
@@ -589,6 +547,10 @@ def test_consolidated_model(consolidated_model, namespace=None):
 
     protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
 
+    logging.info("To extract the protos:")
+    logging.info(f"./run_toolbox.py kserve extract_protos {namespace} {model_name} {protos_path}")
+    logging.info("Should be necessary only when the protos change in the image.")
+
     args_dict = dict(
         host=host,
         duration=llm_config["duration"],
@@ -598,11 +560,6 @@ def test_consolidated_model(consolidated_model, namespace=None):
         threads=llm_config["threads"],
         rps=llm_config["rps"],
     )
-
-    USE_EXTRACT_PROTO_GPRCURL = True
-    if USE_EXTRACT_PROTO_GPRCURL:
-        # workaround for https://github.com/caikit/caikit-nlp/issues/237, so that llm-load-test always run with the right protos
-        extract_protos(namespace, model_name, protos_path)
 
     if not protos_path.exists():
         raise RuntimeError(f"Protos do not exist at {protos_path}")
