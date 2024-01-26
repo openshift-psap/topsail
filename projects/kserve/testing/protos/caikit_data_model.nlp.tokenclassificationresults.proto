@@ -1,0 +1,17 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.nlp;
+import "caikit_data_model.nlp.tokenclassificationresult.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message TokenClassificationResults {
+
+  /*-- fields --*/
+  repeated caikit_data_model.nlp.TokenClassificationResult results = 1;
+}

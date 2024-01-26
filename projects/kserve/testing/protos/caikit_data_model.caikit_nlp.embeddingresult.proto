@@ -1,0 +1,19 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.caikit_nlp;
+import "caikit_data_model.common.producerid.proto";
+import "caikit_data_model.common.vector1d.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message EmbeddingResult {
+
+  /*-- fields --*/
+  caikit_data_model.common.Vector1D result = 1;
+  caikit_data_model.common.ProducerId producer_id = 2;
+}

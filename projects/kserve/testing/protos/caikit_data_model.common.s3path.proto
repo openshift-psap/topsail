@@ -1,0 +1,23 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.common;
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message S3Path {
+
+  /*-- fields --*/
+  string endpoint = 2;
+  string region = 3;
+  string bucket = 4;
+  string accessKey = 5;
+  string secretKey = 6;
+  string IAM_id = 7;
+  string IAM_api_key = 8;
+  string path = 1;
+}

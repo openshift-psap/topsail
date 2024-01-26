@@ -1,0 +1,23 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.Nlp;
+import "google/protobuf/struct.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message RerankTaskRequest {
+
+  /*-- fields --*/
+  string query = 1;
+  repeated google.protobuf.Struct documents = 2;
+  optional int64 top_n = 3;
+  optional int64 truncate_input_tokens = 4;
+  optional bool return_documents = 5;
+  optional bool return_query = 6;
+  optional bool return_text = 7;
+}

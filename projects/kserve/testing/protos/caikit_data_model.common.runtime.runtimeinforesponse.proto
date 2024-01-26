@@ -1,0 +1,19 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.common.runtime;
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message RuntimeInfoResponse {
+
+  /*-- nested messages --*/
+
+  /*-- fields --*/
+  string runtime_version = 1;
+  map<string, string> python_packages = 2;
+}

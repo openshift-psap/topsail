@@ -1,0 +1,20 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.Nlp;
+import "caikit.runtime.Nlp.textgenerationtasktextgenerationtrainparameters.proto";
+import "caikit_data_model.common.s3path.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message TextGenerationTaskTextGenerationTrainRequest {
+
+  /*-- fields --*/
+  string model_name = 1;
+  caikit_data_model.common.S3Path output_path = 2;
+  caikit.runtime.Nlp.TextGenerationTaskTextGenerationTrainParameters parameters = 3;
+}

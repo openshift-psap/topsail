@@ -1,0 +1,20 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.caikit_nlp;
+import "google/protobuf/struct.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message RerankScore {
+
+  /*-- fields --*/
+  google.protobuf.Struct document = 1;
+  int64 index = 2;
+  double score = 3;
+  string text = 4;
+}

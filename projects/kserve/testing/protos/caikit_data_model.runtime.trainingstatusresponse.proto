@@ -1,0 +1,22 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.runtime;
+import "caikit_data_model.common.trainingstatus.proto";
+import "google/protobuf/timestamp.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message TrainingStatusResponse {
+
+  /*-- fields --*/
+  string training_id = 1;
+  caikit_data_model.common.TrainingStatus state = 2;
+  google.protobuf.Timestamp submission_timestamp = 3;
+  google.protobuf.Timestamp completion_timestamp = 4;
+  repeated string reasons = 5;
+}

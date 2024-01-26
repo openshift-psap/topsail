@@ -1,0 +1,25 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.nlp;
+import "caikit_data_model.nlp.finishreason.proto";
+import "caikit_data_model.nlp.inputwarning.proto";
+import "caikit_data_model.nlp.textgentokenclassificationresults.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message ClassifiedGeneratedTextResult {
+
+  /*-- fields --*/
+  string generated_text = 1;
+  caikit_data_model.nlp.TextGenTokenClassificationResults token_classification_results = 2;
+  caikit_data_model.nlp.FinishReason finish_reason = 3;
+  int64 generated_token_count = 4;
+  uint64 seed = 5;
+  int64 input_token_count = 6;
+  repeated caikit_data_model.nlp.InputWarning warnings = 9;
+}

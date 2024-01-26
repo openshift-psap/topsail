@@ -1,8 +1,0 @@
-
-syntax = "proto3";
-package caikit_data_model.caikit_nlp;
-
-message ExponentialDecayLengthPenalty {
-  int64 start_index = 1;
-  double decay_factor = 2;
-}
