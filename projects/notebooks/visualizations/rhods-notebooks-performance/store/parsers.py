@@ -22,6 +22,7 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 IMPORTANT_FILES = [
     "config.yaml",
     "_ansible.log",
+    "_ansible.env",
     ".uuid",
 
     "artifacts-sutest/nodes.json",
@@ -62,6 +63,7 @@ def _parse_once(results, dirname):
     results.start_time, results.end_time = _parse_start_end_time(dirname)
     results.notebook_benchmark = _parse_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
     results.test_uuid = _parse_test_uuid(dirname)
+    results.from_env = _parse_env(dirname)
 
 
 def _parse_local_env(dirname):
@@ -260,3 +262,73 @@ def _parse_regression_results(dirname):
         regression_results = json.load(f)
 
     return regression_results
+
+
+@ignore_file_not_found
+def _parse_env(dirname):
+    from_env = types.SimpleNamespace()
+
+    ansible_env = {}
+
+    from_env.test = types.SimpleNamespace()
+    from_env.test.run_id = None
+    from_env.test.test_path = None
+    from_env.test.ci_engine = None
+    from_env.test.urls = {}
+
+    with open(register_important_file(dirname, "_ansible.env")) as f:
+        for line in f.readlines():
+            k, _, v = line.strip().partition("=")
+
+            ansible_env[k] = v
+
+    if ansible_env.get("OPENSHIFT_CI") == "true":
+        from_env.test.ci_engine = "OPENSHIFT_CI"
+        job_spec = json.loads(ansible_env["JOB_SPEC"])
+        entrypoint_options = json.loads(ansible_env["ENTRYPOINT_OPTIONS"])
+
+        #
+
+        pull_number = job_spec["refs"]["pulls"][0]["number"]
+        github_org = job_spec["refs"]["org"]
+        github_repo = job_spec["refs"]["repo"]
+
+        job = job_spec["job"]
+        build_id = job_spec["buildid"]
+
+        test_name = ansible_env.get("JOB_NAME_SAFE")
+        step_name = entrypoint_options["container_name"]
+
+        # ---
+        # eg: pull/openshift-psap_topsail/181/pull-ci-openshift-psap-topsail-main-rhoai-light/1749833488137195520
+
+        from_env.test.run_id = f"pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}"
+
+        # ---
+        # eg 003__notebook_performance/003__sutest_notebooks__benchmark_performance/
+        current_artifact_dir = pathlib.Path(ansible_env["ARTIFACT_DIR"])
+        base_artifact_dir = entrypoint_options["artifact_dir"]
+
+        if dirname.name == "from_url":
+            with open(dirname / "source_url") as f: # not an important file
+                source_url = f.read().strip()
+            _prefix, _, from_env.test.test_path = source_url.partition(f"{from_env.test.run_id}/artifacts/")
+        else:
+            from_env.test.test_path = str(f"{test_name}/{step_name}/artifacts" / (current_artifact_dir / dirname).relative_to(base_artifact_dir))
+
+        # ---
+        from_env.test.urls |= dict(
+            PROW_JOB=f"https://prow.ci.openshift.org/view/gs/test-platform-results/pr-logs/{from_env.test.run_id}",
+            PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/{from_env.test.run_id}/artifacts/{from_env.test.test_path}"
+        )
+
+    if ansible_env.get("PERFLAB_CI") == "true":
+        from_env.test.ci_engine = "OPENSHIFT_CI"
+        from_env.test.test_path = "test/path/not/available"
+        from_env.test.run_id = "run/id/not/available"
+
+        from_env.test.urls |= dict(
+            JENKINS_ARTIFACTS=f"NOT AVAILABLE YET"
+        )
+
+    return from_env

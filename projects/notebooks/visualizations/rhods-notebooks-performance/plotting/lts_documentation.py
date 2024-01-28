@@ -59,6 +59,15 @@ def generateOneLtsDocumentationReport(entry):
     metadata += [html.Li([html.B("rhods_version:"), html.Code(lts.metadata.rhods_version)])]
     metadata += [html.Li([html.B("config:"), html.Code("(not shown for clarity)")])]
 
+    metadata += [html.Li([html.B("ci_engine:"), html.Code(lts.metadata.ci_engine)])]
+    metadata += [html.Li([html.B("run_id:"), html.Code(lts.metadata.run_id)])]
+    metadata += [html.Li([html.B("test_path:"), html.Code(lts.metadata.test_path)])]
+
+    urls = []
+    for name, url in (lts.metadata.urls or {}).items():
+        urls += [html.Li(html.A(name, target="_blank", href=url))]
+    metadata += [html.Li([html.B("URLs:"), html.Ul(urls)])]
+
     header += [html.Ul(metadata)]
 
     header += [html.H2("kpis")]

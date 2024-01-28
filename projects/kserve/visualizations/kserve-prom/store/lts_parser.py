@@ -21,8 +21,9 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
 def generate_lts_metadata(results, import_settings):
     metadata = types.SimpleNamespace()
 
-    start_ts = results.metrics["sutest"]["watsonx-e2e.* CPU usage"][0].values[0][0]
-    end_ts = results.metrics["sutest"]["watsonx-e2e.* CPU usage"][0].values[-1][0]
+    start_ts = next(results.metrics["sutest"]["watsonx-e2e.* CPU usage"][0].values.keys().__iter__())
+    end_ts = list(results.metrics["sutest"]["watsonx-e2e.* CPU usage"][0].values.keys())[-1]
+
     metadata.start = datetime.datetime.utcfromtimestamp(start_ts)
     metadata.end = datetime.datetime.utcfromtimestamp(end_ts)
 

@@ -165,13 +165,20 @@ generate_matbench::generate_visualization() {
 
         vault_key=$(get_config secrets.dir.env_key)
         opensearch_instances_file=$(get_config secrets.opensearch_instances)
+
+        secret_file="${!vault_key}/${opensearch_instances_file}"
+        if ! [[ -f "$secret_file" ]]; then
+            _error "File '$secret_file' not found in the vault. Skipping regression analyzes."
+            return
+        fi
+
         yq '{
                   "opensearch_username": .'$instance'.username,
                   "opensearch_password": .'$instance'.password,
                   "opensearch_port": .'$instance'.port,
                   "opensearch_host": .'$instance'.host,
                   "opensearch_index": "'$index'",
-        }' "${!vault_key}/${opensearch_instances_file}" > .env.generated.yaml
+        }' "$secret_file" > .env.generated.yaml
     }
 
     #

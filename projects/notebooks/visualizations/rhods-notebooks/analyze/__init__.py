@@ -6,6 +6,10 @@ def run():
 
     for entry in common.Matrix.all_records():
         lts_payload = entry.results
+        if not hasattr(lts_payload, "kpis"):
+            logging.warning("Not KPIs available ...")
+            continue
+
         kpis = lts_payload.kpis
 
         print(kpis.tostr())
