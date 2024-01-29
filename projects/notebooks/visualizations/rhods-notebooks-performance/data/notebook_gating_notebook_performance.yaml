@@ -4,6 +4,7 @@ visualize:
   - "gating report: Notebook Performance"
   - "report: Notebook Performance"
   - "report: LTS Documentation"
+  - "report: LTS: KPIs"
   thresholds:
   - settings_selector:
       instance_type: m6i.2xlarge

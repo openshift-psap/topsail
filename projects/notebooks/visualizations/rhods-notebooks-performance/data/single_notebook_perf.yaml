@@ -3,3 +3,4 @@ visualize:
   generate:
   - "gating report: Notebook Performance"
   - "report: LTS Documentation"
+  - "report: LTS: KPIs"
