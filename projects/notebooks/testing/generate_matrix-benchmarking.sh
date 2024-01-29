@@ -261,7 +261,12 @@ generate_matbench::generate_visualization() {
         VISU_LOG_FILE="$ARTIFACT_DIR/$filters_to_apply/${step_idx}_matbench_visualize.log"
 
         export MATBENCH_FILTERS="$filters_to_apply"
-        if ! matbench visualize --generate="$generate_url" |& tee > "$VISU_LOG_FILE"; then
+        if [[ -d "$MATBENCH_RESULTS_DIRNAME/lts" ]]; then
+            LTS_DIR="--lts_results_dirname $MATBENCH_RESULTS_DIRNAME/lts"
+        else
+            LTS_DIR=""
+        fi
+        if ! matbench visualize --generate="$generate_url" $LTS_DIR |& tee > "$VISU_LOG_FILE"; then
             _warning "Visualization generation failed :("
             retcode=1
         fi
