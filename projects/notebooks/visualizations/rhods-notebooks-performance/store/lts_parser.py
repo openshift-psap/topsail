@@ -81,7 +81,7 @@ def generate_lts_results(results):
     results_lts = types.SimpleNamespace()
 
     results_lts.benchmark_measures = models.lts.BenchmarkMeasures.parse_obj(results.notebook_benchmark)
-
+    results_lts.regression = models.lts.NotebookPerformanceRegression.parse_obj(results.regression)
     return results_lts
 
 

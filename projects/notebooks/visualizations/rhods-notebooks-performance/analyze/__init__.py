@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import matrix_benchmarking.common as common
 import matrix_benchmarking.regression as regression
+import matrix_benchmarking.regression.zscore as zscore
 
 def run():
 
@@ -41,8 +42,8 @@ def run():
                     lts_entries
                 )
             )
-            zscore = regression.ZScoreIndicator(entry, controlled_lts_entries)
-            regression_results[check_setting] = zscore.analyze()
+            zscore_ind = zscore.ZScoreIndicator(entry, controlled_lts_entries)
+            regression_results[check_setting] = zscore_ind.analyze()
             number_of_failures += sum(map(lambda x: x["regression"]["status"], regression_results[check_setting]))
 
         logging.info(f"Saving the regression results in {regression_results_dest}")
