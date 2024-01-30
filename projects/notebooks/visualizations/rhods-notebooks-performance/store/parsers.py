@@ -31,6 +31,7 @@ IMPORTANT_FILES = [
     "artifacts-sutest/rhods.createdAt",
 
     "notebook-artifacts/benchmark_measures.json",
+    "regression.json"
 ]
 
 PARSER_VERSION = "2023-05-31"

@@ -2,7 +2,7 @@ import json
 import logging
 import numpy as np
 
-from copy import deepcopy
+from typing import List
 
 import matrix_benchmarking.common as common
 import matrix_benchmarking.regression as regression
@@ -26,7 +26,7 @@ def run():
     settings_to_check = ["version", "repeat"]
     for entry in common.Matrix.all_records():
         regression_results_dest = entry.location / "regression.json"
-        regression_results = {}
+        regression_results: List[models.RegressionResult] = []
         for check_setting in settings_to_check:
             controlled_settings = entry.get_settings()
 
@@ -43,12 +43,18 @@ def run():
                 )
             )
             zscore_ind = zscore.ZScoreIndicator(entry, controlled_lts_entries)
-            regression_results[check_setting] = zscore_ind.analyze()
-            number_of_failures += sum(map(lambda x: x["regression"]["status"], regression_results[check_setting]))
+            results: List[models.RegressionResult] = zscore_ind.analyze()
+            # Add back the setting that we are testing since we handled the filtering manually
+            for result in results:
+                result.setting = check_setting
+                regression_results.append(result)
+
+            number_of_failures += sum([x.status for x in results])
 
         logging.info(f"Saving the regression results in {regression_results_dest}")
         with open(regression_results_dest, "w") as f:
-            json.dump(regression_results, f, indent=4)
+            json_results = [dict(m) for m in regression_results]
+            json.dump(json_results, f, indent=4)
             print("", file=f)
 
     return number_of_failures

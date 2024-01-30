@@ -1,6 +1,7 @@
 import types
 import json
 import functools
+import logging
 
 import pytz
 
@@ -8,6 +9,7 @@ from .. import models
 from ..models import lts as models_lts
 from . import lts
 from matrix_benchmarking.parse import json_dumper
+import matrix_benchmarking.models as matbench_models
 
 def generate_lts_payload(results, import_settings, must_validate=False):
 
@@ -20,10 +22,8 @@ def generate_lts_payload(results, import_settings, must_validate=False):
     lts_payload.__dict__["$schema"] = f"urn:rhods-notebooks-perf:{models_lts.VERSION}"
     lts_payload.metadata = lts_metadata
     lts_payload.results = lts_results
-
     lts_payload.kpis = lts.generate_lts_kpis(lts_payload)
-    lts_payload.regression_results = results.regression_results
-
+    lts_payload.regression = generate_lts_regression(results)
     # ---
 
     json_lts = json.dumps(lts_payload, indent=4, default=functools.partial(json_dumper, strict=False))
@@ -67,6 +67,7 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.test = results.test_config.get('tests.notebooks.identifier') or 'unknown'
     lts_metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
     lts_metadata.test_uuid = results.test_uuid
+
     lts_metadata.run_id = results.from_env.test.run_id
     lts_metadata.test_path = results.from_env.test.test_path
     lts_metadata.urls = results.from_env.test.urls
@@ -79,11 +80,15 @@ def generate_lts_metadata(results, import_settings):
 
 def generate_lts_results(results):
     results_lts = types.SimpleNamespace()
-
     results_lts.benchmark_measures = models.lts.BenchmarkMeasures.parse_obj(results.notebook_benchmark)
-    results_lts.regression = models.lts.NotebookPerformanceRegression.parse_obj(results.regression)
+
     return results_lts
 
+def generate_lts_regression(results):
+    results_lts = types.SimpleNamespace()
+    results_lts.regression = matbench_models.RegressionResult.parse_obj(results.regression_results)
+
+    return results_lts
 
 def get_kpi_labels(lts_payload):
     kpi_labels = dict(lts_payload.metadata.settings)

@@ -49,19 +49,19 @@ class BenchmarkMeasures(matbench_models.ExclusiveModel):
 
 class Results(matbench_models.ExclusiveModel):
     benchmark_measures: BenchmarkMeasures
-    regression: NotebookPerformanceRegression
+
 
 class NotebookPerformanceKPI(matbench_models.KPI, Settings): pass
 
 
 NotebookPerformanceKPIs = matbench_models.getKPIsModel("NotebookPerformanceKPIs", __name__, kpi.KPIs, NotebookPerformanceKPI)
-NotebookPerformanceRegression = matbench_models.RegressionResult
 
 class Payload(matbench_models.ExclusiveModel):
     schema_name: matbench_models.create_schema_field("rhods-notebooks-perf") = Field(alias="$schema")
     metadata: Metadata
     results: Results
     kpis: Optional[NotebookPerformanceKPIs]
+    regression: Optional[List[matbench_models.RegressionResult]] = Field(default=None)
 
     class Config:
         fields = {'schema_name': '$schema'}
