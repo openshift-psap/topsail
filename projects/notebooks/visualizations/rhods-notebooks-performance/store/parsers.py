@@ -11,7 +11,7 @@ import uuid
 import jsonpath_ng
 
 import matrix_benchmarking.cli_args as cli_args
-
+from . import lts_parser
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -53,6 +53,7 @@ def _parse_always(results, dirname, import_settings):
     results.from_local_env = _parse_local_env(dirname)
     results.test_config = _parse_test_config(dirname)
     results.regression_results = _parse_regression_results(dirname)
+    results.lts = lts_parser.generate_lts_payload(results, import_settings, must_validate=False)
 
 
 def _parse_once(results, dirname):

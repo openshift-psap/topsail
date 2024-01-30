@@ -32,6 +32,23 @@ def generate_lts_payload(results, import_settings, must_validate=False):
     return models.lts.Payload.parse_obj(parsed_lts)
 
 
+def generate_lts_settings(lts_metadata, import_settings):
+    image = import_settings["image"]
+    image_name, _, image_tag = image.partition(":")
+
+    return models_lts.Settings(
+        ocp_version = lts_metadata.ocp_version,
+        rhoai_version = lts_metadata.rhods_version,
+        image = image,
+        image_tag = image_tag,
+        image_name = image_name,
+        instance_type = import_settings["instance_type"],
+
+        benchmark_name = import_settings["benchmark_name"],
+        test_flavor = lts_metadata.test,
+        ci_engine = lts_metadata.ci_engine,
+    )
+
 def generate_lts_metadata(results, import_settings):
     start_time = results.start_time
     end_time = results.end_time
@@ -47,7 +64,6 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.config = results.test_config.yaml_file
     lts_metadata.rhods_version = results.rhods_info.version
     lts_metadata.ocp_version = results.sutest_ocp_version
-    lts_metadata.settings = import_settings
     lts_metadata.test = results.test_config.get('tests.notebooks.identifier') or 'unknown'
     lts_metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
     lts_metadata.test_uuid = results.test_uuid
@@ -55,6 +71,9 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.test_path = results.from_env.test.test_path
     lts_metadata.urls = results.from_env.test.urls
     lts_metadata.ci_engine = results.from_env.test.ci_engine
+
+    lts_metadata.settings = generate_lts_settings(lts_metadata, import_settings)
+
     return lts_metadata
 
 
@@ -67,24 +86,9 @@ def generate_lts_results(results):
 
 
 def get_kpi_labels(lts_payload):
-    image = lts_payload.metadata.settings["image"]
-    image_name, _, image_tag = image.partition(":")
+    kpi_labels = dict(lts_payload.metadata.settings)
 
-    kpi = dict(
-        run_id = lts_payload.metadata.run_id,
-        test_path = lts_payload.metadata.test_path,
-        ci_engine = lts_payload.metadata.ci_engine,
-        urls = lts_payload.metadata.urls,
+    kpi_labels["@timestamp"] = lts_payload.metadata.start.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    kpi_labels["test_uuid"] = lts_payload.metadata.test_uuid
 
-        rhoai_version = lts_payload.metadata.rhods_version,
-        ocp_version = lts_payload.metadata.ocp_version,
-        image = image,
-        image_tag = image_tag, image_name=image_name,
-        benchmark_name = lts_payload.metadata.settings["benchmark_name"],
-        instance_type = lts_payload.metadata.settings["instance_type"],
-    )
-
-    kpi["@timestamp"] = lts_payload.metadata.start.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-    kpi["test_uuid"] = lts_payload.metadata.test_uuid
-
-    return kpi
+    return kpi_labels
