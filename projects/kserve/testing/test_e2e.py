@@ -559,7 +559,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
         protos_path=protos_path.absolute(),
         call=llm_config["call"],
         llm_path=llm_config["src_path"],
-        threads=llm_config["threads"],
+        concurrency=llm_config["concurrency"],
         rps=llm_config["rps"],
     )
 

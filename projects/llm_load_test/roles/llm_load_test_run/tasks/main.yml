@@ -17,9 +17,6 @@
     state: directory
     mode: '0755'
 
-- name: Ensure that ghz is available
-  command: which ghz
-
 - name: Apply the llm-load-test config.yaml template
   template:
     src: "{{ llm_load_test_config_template }}"
@@ -36,31 +33,13 @@
       set -e
       cd "{{ llm_load_test_run_llm_path }}"
 
-      export CONFIG_FILENAME=llm_load_test.config.yaml
-      export CONFIG_PATH="{{ artifact_extra_logs_dir }}/src/"
-
-      python3 load_test.py &> {{ artifact_extra_logs_dir }}/logs/run.log
+      python3 load_test.py --config "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml" &> {{ artifact_extra_logs_dir }}/logs/run.log
   always:
-  - name: Cleanup the output dir
-    command:
-      find '{{ artifact_extra_logs_dir }}/output' -type f ! -iname 'ghz-multiplexed-results-*.json' -delete
-
-  - name: Turn the response field into json
-    shell: |
-      set -e;
-      set -o pipefail;
-
-      output_file=$(echo '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results-*.json);
-      mv "$output_file" '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results.orig
-      cat '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results.orig \
-        | jq '.[].details[].response |= fromjson' \
-        > "${output_file}"
-      echo "Results have been save in '${output_file}'"
 
   - name: Ensure that some content has been generated
     shell:
       set -o pipefail;
-      cat {{ artifact_extra_logs_dir }}/output/ghz-multiplexed-results*.json | jq .[] | grep . --quiet
+      cat {{ artifact_extra_logs_dir }}/output/outpout.json | grep . --quiet
     register: llm_load_test_has_content
     failed_when: false
 

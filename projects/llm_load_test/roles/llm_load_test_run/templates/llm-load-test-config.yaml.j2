@@ -1,27 +1,24 @@
-output_dir: "{{ artifact_extra_logs_dir }}/output"
+output:
+  format: "json"
+  dir: "{{ artifact_extra_logs_dir }}/output"
+  file: "output.json"
 warmup: false
 storage:
   type: local
-load_generator:
-  type: ghz
-  ghz_params:
-    host: "{{ llm_load_test_run_host}}"
-    skipTLS: true
-    insecure: false
-    disable-template-data: true
-    proto: "{{ llm_load_test_run_protos_path }}"
-    call: "{{ llm_load_test_run_call }}"
-    # metadata is additional headers attached to the grpc request
-    metadata:
-      mm-model-id: "{{ llm_load_test_run_model_id }}"
-    concurrency: 1
-    total: 2000 # ignored
-    duration: "{{ llm_load_test_run_duration }}"
-    timeout: 60s
-    rps: {{ llm_load_test_run_rps }} # rate limit, in requests per seconds
-  multiplexed: true
-  threads: {{ llm_load_test_run_threads }}
-  input_dataset:
-    filename: "openorca-subset-006.json"
-    max_size: 32
-metadata: {}
+dataset:
+  file: "datasets/openorca_large_subset_010.jsonl"
+  max_queries: 3000
+  max_input_tokens: 1024
+  max_output_tokens: 512
+load_options:
+  type: constant #Future options: loadgen, stair-step
+  concurrency: {{ llm_load_test_run_concurrency }}
+  duration: "{{ llm_load_test_run_duration }}"
+plugin: "caikit_client_plugin"
+plugin_options:
+  interface: "grpc"
+  streaming: True
+  model_name: "{{ llm_load_test_run_model_id }}"
+  route: "{{ llm_load_test_run_host}}"
+extra_metadata:
+  replicas: 1

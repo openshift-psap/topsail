@@ -11,22 +11,11 @@ llm_load_test_run_host:
 # Mandatory value
 llm_load_test_run_duration:
 
-# File path to the proto files needed to query the model
-# Mandatory value
-llm_load_test_run_protos_path:
-
-# GRPC call to perform
-# Mandatory value
-llm_load_test_run_call:
-
 # The ID of the model to pass along with the GRPC call
 llm_load_test_run_model_id: not-used
 
 # Path where llm-load-test has been cloned
 llm_load_test_run_llm_path: /src/llm-load-test/
 
-# number of GHZ instances to launch in parallel
-llm_load_test_run_threads: 16
-
-# max request per second
-llm_load_test_run_rps: 2
+# Number of concurrent simulated users sending requests
+llm_load_test_run_concurrency: 16
