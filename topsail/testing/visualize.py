@@ -189,17 +189,12 @@ def call_download_lts(step_idx, common_args, common_env_str):
 
     log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_download_lts.log"
 
-    env_file = pathlib.Path(".env.generated.yaml")
-    generate_opensearch_config_yaml_env(env_file)
-
     cmd = f"{common_env_str} matbench download_lts {download_args_str} |& tee > {log_file}"
 
     errors = []
     if run.run(cmd, check=False).returncode != 0:
         logging.warning("An error happened while downloading the LTS payload ...")
         errors.append(log_file.name)
-
-    env_file.unlink()
 
     return errors
 
@@ -350,6 +345,22 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     do_analyze_lts = analyze_lts if analyze_lts is not None \
         else config.ci_artifacts.get_config("matbench.lts.regression_analyses.enabled", None)
 
+    do_upload_lts = upload_lts if upload_lts is not None \
+        else config.ci_artifacts.get_config("matbench.lts.opensearch.export", None)
+
+    try:
+        env_file = pathlib.Path(".env.generated.yaml")
+        generate_opensearch_config_yaml_env(env_file)
+    except FileNotFoundError:
+        logging.warning("Opensearch secret file does not exist: {e}")
+        do_analyze_lts = False
+        do_upload_lts = False
+
+        fail_on_regression = config.ci_artifacts.get_config("matbench.lts.regression_analyses.fail_test_on_regression")
+        fail_on_upload = config.ci_artifacts.get_config("matbench.lts.opensearch.fail_test_on_fail")
+        if fail_on_upload or fail_on_regression:
+            errors += ["opensearch secret missing"]
+
     if do_analyze_lts:
         step_idx += 1
         download_lts_errors = call_download_lts(step_idx, common_args, common_env_str)
@@ -368,9 +379,6 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     #
     # Upload the LTS payload for future regression analyses
     #
-
-    do_upload_lts = upload_lts if upload_lts is not None \
-        else config.ci_artifacts.get_config("matbench.lts.opensearch.export", None)
 
     if do_upload_lts:
         step_idx += 1
