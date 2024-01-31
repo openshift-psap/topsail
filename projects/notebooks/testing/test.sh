@@ -147,6 +147,56 @@ check_failure_flag() {
     exit 1
 }
 
+export_artifacts() {
+    EXPORT_ARTIFACT_DIR=${1:-}
+    if [[ -z "$EXPORT_ARTIFACT_DIR" ]]; then
+        _error "No artifact dir provided as \$1 ..."
+    fi
+
+    if ! test_config export_artifacts.enabled; then
+        echo "export_artifacts: Artifacts export not enabled, nothing to do."
+        return
+    fi
+
+
+    bucket=$(get_config export_artifacts.bucket)
+    path_prefix=$(get_config export_artifacts.path_prefix)
+    if [[ "$path_prefix" == null ]]; then
+        path_prefix=""
+    fi
+
+    if [[ "${OPENSHIFT_CI:-}" == true ]]; then
+        job=$(echo "$JOB_SPEC" | jq -r .job)
+
+        run_id="prow/pull/${REPO_OWNER}_${REPO_NAME}/${PULL_NUMBER}/${job}/$BUILD_ID/artifacts"
+
+    elif [[ "${PERFLAB_CI:-}" == true ]]; then
+        _warning "No way to get the run identifiers from Jenkins in the PERFLAB_CI ..."
+        run_id=middleware_jenkins/$(date +%s)
+    else
+        _error "CI engine not recognized, cannot build the run id ..."
+    fi
+
+    dest="s3://$bucket/$path_prefix/$run_id"
+
+    set_config "export_artifacts.dest" "$dest"
+
+    _info "Exporting $EXPORT_ARTIFACT_DIR to '$dest'"
+
+    aws_creds_filename=$(get_config secrets.aws_credentials)
+
+    export AWS_SHARED_CREDENTIALS_FILE="$PSAP_ODS_SECRET_PATH/${aws_creds_filename}"
+    if [[ ! -f "$AWS_SHARED_CREDENTIALS_FILE" ]]; then
+        _warning "$AWS_SHARED_CREDENTIALS_FILE does not exist :/"
+    else
+        _info "$AWS_SHARED_CREDENTIALS_FILE exists :)"
+    fi
+
+    if ! aws s3 cp --recursive "$EXPORT_ARTIFACT_DIR" "$dest" --acl public-read &> "$ARTIFACT_DIR/export_artifacts.log"; then
+        _error "Export to $dest failed ..."
+    fi
+}
+
 # ---
 
 main() {
@@ -155,8 +205,9 @@ main() {
     action=${1:-}
     shift || true
 
-    apply_presets_from_args "$@"
-
+    if [[ "$action" != "export_artifacts" ]]; then
+        apply_presets_from_args "$@"
+    fi
     case ${action} in
         "connect_ci")
             connect_ci
@@ -188,6 +239,9 @@ main() {
             process_ctrl__finalizers+=("capture_environment")
             process_ctrl__finalizers+=("sutest_cleanup")
             process_ctrl__finalizers+=("driver_cleanup")
+            if [[ "${PERFLAB_CI:-}" != true ]]; then
+                process_ctrl__finalizers+=("export_artifacts '/logs/artifacts'")
+            fi
 
             run_tests_and_plots
 
@@ -255,9 +309,20 @@ main() {
         "generate_plots_from_pr_args")
             export IGNORE_PSAP_ODS_SECRET_PATH=1
             connect_ci
+            if [[ "${PERFLAB_CI:-}" != true ]]; then
+                process_ctrl__finalizers+=("export_artifacts '/logs/artifacts'")
+            fi
 
             "$TESTING_NOTEBOOKS_DIR/generate_matrix-benchmarking.sh" from_pr_args
+
             return  0
+            ;;
+        "export_artifacts")
+            EXPORT_ARTIFACT_DIR="${1:-}"
+
+            export_artifacts "$EXPORT_ARTIFACT_DIR"
+
+            return 0
             ;;
         "cleanup_rhods")
             sutest_cleanup_rhods
