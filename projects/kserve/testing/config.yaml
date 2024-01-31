@@ -441,3 +441,8 @@ matbench:
       enabled: true
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
+export_artifacts:
+  enabled: true
+  bucket: rhoai-cpt-artifacts
+  path_prefix: cpt/kserve
+  dest: null # will be set by the export code

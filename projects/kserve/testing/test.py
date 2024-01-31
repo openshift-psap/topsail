@@ -11,7 +11,7 @@ import functools
 import yaml
 import fire
 
-from topsail.testing import env, config, run, rhods, visualize, configure_logging, prepare_user_pods
+from topsail.testing import env, config, run, rhods, visualize, configure_logging, prepare_user_pods, export
 configure_logging()
 
 import prepare_scale, test_scale, test_e2e
@@ -121,6 +121,9 @@ def test_ci():
             if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
                 cleanup_cluster(mute=True)
 
+            export.export_artifacts(env.ARTIFACT_DIR, "test_ci")
+
+
 @entrypoint()
 def scale_test(dry_mode=None, capture_prom=None, do_visualize=None):
     """
@@ -188,6 +191,7 @@ def generate_plots_from_pr_args():
 
     visualize.download_and_generate_visualizations()
 
+    export.export_artifacts(env.ARTIFACT_DIR, test_step="plot")
 
 
 @entrypoint()
@@ -311,6 +315,11 @@ def rebuild_driver_image(pr_number):
     namespace = config.ci_artifacts.get_config("base_image.namespace")
     prepare_user_pods.rebuild_driver_image(namespace, pr_number)
 
+
+@entrypoint(ignore_secret_path=True)
+def export_artifacts(artifacts_dirname):
+    export.export_artifacts(artifacts_dirname)
+
 # ---
 
 class Entrypoint:
@@ -334,6 +343,8 @@ class Entrypoint:
         self.run_one = run_one
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
         self.generate_plots = generate_plots
+
+        self.export_artifacts = export_artifacts
 
         self.cleanup_sutest_ns = cleanup_sutest_ns
 
