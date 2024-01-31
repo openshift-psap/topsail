@@ -86,7 +86,8 @@ def generate_lts_results(results):
 
 def generate_lts_regression(results):
     results_lts = types.SimpleNamespace()
-    results_lts.regression = matbench_models.RegressionResult.parse_obj(results.regression_results)
+    regression_results = [] if not results.regression_results else results.regression_results
+    results_lts = [matbench_models.RegressionResult.parse_obj(r) for r in regression_results]
 
     return results_lts
 
