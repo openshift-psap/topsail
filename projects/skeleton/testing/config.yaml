@@ -18,6 +18,9 @@ ci_presets:
   light:
     extends: [light_cluster]
 
+  quick:
+    tests.sleep_duration: 0
+
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
@@ -85,7 +88,9 @@ clusters:
           value: "yes"
           effect: NoSchedule
   cleanup_on_exit: false
-
+tests:
+  capture_prometheus: true
+  sleep_duration: 5 # minutes
 matbench:
   preset: null
   workload: projects.skeleton.visualizations.skeleton

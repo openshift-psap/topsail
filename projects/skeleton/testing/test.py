@@ -80,14 +80,18 @@ def _run_test(test_artifact_dir_p):
         with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
             print(str(uuid.uuid4()), file=f)
 
+        sleep_duration = config.ci_artifacts.get_config("tests.sleep_duration")
+        capture_prometheus = config.ci_artifacts.get_config("tests.capture_prometheus")
         failed = True
         try:
-            run.run_toolbox("cluster", "reset_prometheus_db")
+            if capture_prometheus:
+                run.run_toolbox("cluster", "reset_prometheus_db")
 
-            logging.info("Waiting 5 minutes to capture some metrics in Prometheus ...")
-            time.sleep(5 * 60)
+            logging.info(f"Waiting {sleep_duration} minutes to capture some metrics in Prometheus ...")
+            time.sleep(sleep_duration * 60)
 
-            run.run_toolbox("cluster", "dump_prometheus_db")
+            if capture_prometheus:
+                run.run_toolbox("cluster", "dump_prometheus_db")
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
