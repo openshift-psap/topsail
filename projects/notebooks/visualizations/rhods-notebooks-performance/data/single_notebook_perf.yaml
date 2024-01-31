@@ -2,5 +2,6 @@ visualize:
 - id: single_notebook_perf
   generate:
   - "gating report: Notebook Performance"
+  - "report: Notebook Performance"
   - "report: LTS Documentation"
   - "report: LTS: KPIs"
