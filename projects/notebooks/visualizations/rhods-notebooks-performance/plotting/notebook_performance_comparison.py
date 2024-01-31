@@ -31,7 +31,8 @@ class PythonPerformance():
         threshold_status_keys = set()
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
-            entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+            image = entry.settings.__dict__["image"]
+            image_name = entry.settings.__dict__["image_name"]
 
             try: check_thresholds = entry.results.check_thresholds
             except AttributeError: check_thresholds = False
@@ -40,7 +41,7 @@ class PythonPerformance():
                 check_thresholds = True
 
             if check_thresholds:
-                threshold_status_keys.add(entry_name)
+                threshold_status_keys.add(image)
 
                 threshold = float(entry.results.thresholds.get("py_perf_threshold", 0)) or None
             else:
@@ -48,11 +49,12 @@ class PythonPerformance():
 
             if not entry.results.notebook_benchmark:
                 continue
-            
+
             measures = entry.results.notebook_benchmark["measures"]
 
             for measure_idx, measure in enumerate(measures):
-                data.append(dict(Test=entry_name,
+                data.append(dict(Image=image,
+                                 Image_name=image_name,
                                  Time=measure,
                                  Threshold=threshold))
 
@@ -60,21 +62,21 @@ class PythonPerformance():
         if not data:
             return None, "No data to plot ..."
 
-        df = pd.DataFrame(data).sort_values(by=["Test"])
-        fig = px.box(df, x="Test", y="Time", color="Test")
+        df = pd.DataFrame(data).sort_values(by=["Image"])
+        fig = px.box(df, x="Image", y="Time", color="Image_name")
 
         max_time = max(df["Time"])
 
         if 'Threshold' in df and not df["Threshold"].isnull().all():
             fig.add_scatter(name="Test threshold",
-                            x=df['Test'], y=df['Threshold'], mode='lines+markers',
+                            x=df['Image'], y=df['Threshold'], mode='lines+markers',
                             marker=dict(color='red', size=15, symbol="triangle-down"),
                             line=dict(color='black', width=3, dash='dot'))
 
         msg = []
 
         for entry_name in threshold_status_keys:
-            res = df[df["Test"] == entry_name]
+            res = df[df["Image"] == entry_name]
             if res.empty:
                 msg.append(html.B(f"{entry_name}: no data ..."))
                 msg.append(html.Br())

@@ -10,7 +10,6 @@ import matrix_benchmarking.store.simple as store_simple
 
 from . import parsers
 from ..models import lts as models_lts
-from . import lts_parser
 from . import lts
 
 CACHE_FILENAME = "cache.pickle"
@@ -51,8 +50,11 @@ def register_important_file(base_dirname, filename):
 parsers.register_important_file = register_important_file
 
 
-def _rewrite_settings(settings_dict):
-    return settings_dict
+def _rewrite_settings(settings_dict, results, is_lts):
+    if is_lts:
+        return settings_dict
+
+    return results.lts.metadata.settings.dict()
 
 
 def load_cache(dirname):
@@ -89,7 +91,6 @@ def _parse_results(fn_add_to_matrix, dirname, import_settings):
 
     if results:
         parsers._parse_always(results, dirname, import_settings)
-        results.lts = lts_parser.generate_lts_payload(results, import_settings, must_validate=False)
 
         fn_add_to_matrix(results)
 
@@ -106,8 +107,8 @@ def _parse_results(fn_add_to_matrix, dirname, import_settings):
         else:
             logging.warning(f"Artifacts version '{results.artifacts_version}' does not match the parser version '{ARTIFACTS_VERSION}' ...")
 
-    parsers._parse_always(results, dirname, import_settings)
     parsers._parse_once(results, dirname)
+    parsers._parse_always(results, dirname, import_settings)
 
     fn_add_to_matrix(results)
 

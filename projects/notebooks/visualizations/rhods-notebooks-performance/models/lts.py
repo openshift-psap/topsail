@@ -14,8 +14,20 @@ from . import kpi
 #
 VERSION = "1.0.0"
 
+class Settings(matbench_models.ExclusiveModel):
+    rhoai_version: matbench_models.SemVer
+    ocp_version: matbench_models.SemVer
+    image: str
+    image_tag: str
+    image_name: str
+    instance_type: str
+    benchmark_name: str
+    test_flavor: str
+    ci_engine: str
+
 
 class Metadata(matbench_models.Metadata):
+    settings: Settings
     presets: List[str]
     rhods_version: str
     ocp_version: str
@@ -38,7 +50,10 @@ class BenchmarkMeasures(matbench_models.ExclusiveModel):
 class Results(matbench_models.ExclusiveModel):
     benchmark_measures: BenchmarkMeasures
 
-NotebookPerformanceKPIs = matbench_models.getKPIsModel("NotebookPerformanceKPIs", __name__, kpi.KPIs, kpi.NotebookPerformanceKPI)
+class NotebookPerformanceKPI(matbench_models.KPI, Settings): pass
+
+
+NotebookPerformanceKPIs = matbench_models.getKPIsModel("NotebookPerformanceKPIs", __name__, kpi.KPIs, NotebookPerformanceKPI)
 
 class Payload(matbench_models.ExclusiveModel):
     schema_name: matbench_models.create_schema_field("rhods-notebooks-perf") = Field(alias="$schema")

@@ -10,6 +10,7 @@ from matrix_benchmarking.parse import json_dumper
 
 from ..import models
 from . import lts_parser
+from ..models import lts as models_lts
 from ..models import kpi as models_kpi
 
 def build_lts_payloads():
@@ -64,6 +65,6 @@ def generate_lts_kpis(lts_payload):
         kpi_func = kpi.pop("__func__")
         kpi["value"] = kpi_func(lts_payload)
 
-        kpis[name] = models_kpi.NotebookPerformanceKPI.parse_obj(kpi)
+        kpis[name] = models_lts.NotebookPerformanceKPI.parse_obj(kpi)
 
     return kpis

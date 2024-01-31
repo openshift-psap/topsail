@@ -44,7 +44,7 @@ class NotebookPerformance():
 
         if not entry.results.notebook_benchmark:
             return
-        
+
         measures = entry.results.notebook_benchmark["measures"]
 
         for measure_idx, measure in enumerate(measures):
@@ -64,8 +64,6 @@ class NotebookPerformance():
                            barmode="overlay",
                            hover_data=df.columns)
         fig.update_layout(xaxis_title="Benchmark time (in seconds)")
-
-        user_count = entry.settings.user_count
 
         title = f"Notebook Performance distribution"
 
