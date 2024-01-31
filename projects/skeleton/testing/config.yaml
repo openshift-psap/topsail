@@ -35,6 +35,7 @@ secrets:
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   opensearch_instances: opensearch.yaml
+  aws_credentials: .awscred
 
 clusters:
   create:

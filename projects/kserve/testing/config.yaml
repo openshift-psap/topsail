@@ -225,6 +225,7 @@ secrets:
   aws_cred: .awscred
   kserve_model_secret_settings: watsonx-models.yaml
   opensearch_instances: opensearch.yaml
+  aws_credentials: .awscred
 
 clusters:
   create:
