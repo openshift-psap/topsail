@@ -61,7 +61,7 @@ create_cluster() {
     local cluster_role=$1
 
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_ocp_"
-    export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
+
     # ---
 
     if [[ "${OPENSHIFT_CI:-}" == true ]]; then
@@ -88,9 +88,6 @@ create_cluster() {
     else
         cluster_name="${cluster_name_prefix}-${cluster_role}-$(date +%Hh%M)"
     fi
-
-    export AWS_PROFILE=$AWS_DEFAULT_PROFILE
-    echo "Using AWS_[DEFAULT_]PROFILE=$AWS_DEFAULT_PROFILE"
 
     local install_dir="/tmp/${cluster_role}_ocp_installer"
     rm -rf "$install_dir"
@@ -230,9 +227,6 @@ destroy_cluster() {
     if ! cp "${CONFIG_DEST_DIR}/${cluster_role}_ocp_metadata.json" "${destroy_dir}/metadata.json"; then
         _error "Could not destroy the OCP $cluster_role cluster: cannot prepare the metadata.json file ..."
     fi
-
-    export AWS_PROFILE=${AWS_PROFILE:-ci-artifact}
-    export AWS_DEFAULT_PROFILE=${AWS_DEFAULT_PROFILE:-ci-artifact}
 
     (cd subprojects/deploy-cluster/;
      make uninstall \

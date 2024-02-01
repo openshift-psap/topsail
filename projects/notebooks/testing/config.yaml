@@ -142,7 +142,7 @@ secrets:
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   opensearch_instances: opensearch.yaml
-
+  aws_credentials: .awscred
 clusters:
   create:
     type: single # can be: single, ocp
@@ -377,3 +377,8 @@ matbench:
       enabled: true
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression_fail: false
+export_artifacts:
+  enabled: true
+  bucket: rhoai-cpt-artifacts
+  path_prefix: cpt/notebooks
+  dest: null # will be set by the export code

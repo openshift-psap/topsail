@@ -33,26 +33,26 @@
 
 # ---
 
-- name: Fetch ci-artifact version from Git
+- name: Fetch TOPSAIL version from Git
   command:
     git describe HEAD --long --always
   register: git_version
 
-- name: Store ci-artifact version from Git
+- name: Store TOPSAIL version from Git
   copy:
     content: "{{ git_version.stdout }}"
-    dest: "{{ artifact_extra_logs_dir }}/ci_artifact.git_version"
+    dest: "{{ artifact_extra_logs_dir }}/topsail.git_version"
     mode: '0644'
 
-- name: Fetch ci-artifact last git commit
+- name: Fetch TOPSAIL last git commit
   command:
     git show --no-patch
   register: git_show
 
-- name: Store ci-artifact last git commit
+- name: Store TOPSAIL last git commit
   copy:
     content: "{{ git_show.stdout }}"
-    dest: "{{ artifact_extra_logs_dir }}/ci_artifact.git_commit"
+    dest: "{{ artifact_extra_logs_dir }}/topsail.git_commit"
     mode: '0644'
 
 - name: Get the cluster nodes status

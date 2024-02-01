@@ -18,6 +18,9 @@ ci_presets:
   light:
     extends: [light_cluster]
 
+  quick:
+    tests.sleep_duration: 0
+
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
@@ -35,6 +38,7 @@ secrets:
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   opensearch_instances: opensearch.yaml
+  aws_credentials: .awscred
 
 clusters:
   create:
@@ -84,7 +88,9 @@ clusters:
           value: "yes"
           effect: NoSchedule
   cleanup_on_exit: false
-
+tests:
+  capture_prometheus: true
+  sleep_duration: 5 # minutes
 matbench:
   preset: null
   workload: projects.skeleton.visualizations.skeleton
@@ -111,3 +117,8 @@ matbench:
       enabled: true
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
+export_artifacts:
+  enabled: true
+  bucket: rhoai-cpt-artifacts
+  path_prefix: cpt/skeleton
+  dest: null # will be set by the export code

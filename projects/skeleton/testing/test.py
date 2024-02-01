@@ -13,7 +13,7 @@ import uuid
 import yaml
 import fire
 
-from topsail.testing import env, config, run, rhods, visualize
+from topsail.testing import env, config, run, rhods, visualize, export
 
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -80,14 +80,18 @@ def _run_test(test_artifact_dir_p):
         with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
             print(str(uuid.uuid4()), file=f)
 
+        sleep_duration = config.ci_artifacts.get_config("tests.sleep_duration")
+        capture_prometheus = config.ci_artifacts.get_config("tests.capture_prometheus")
         failed = True
         try:
-            run.run_toolbox("cluster", "reset_prometheus_db")
+            if capture_prometheus:
+                run.run_toolbox("cluster", "reset_prometheus_db")
 
-            logging.info("Waiting 5 minutes to capture some metrics in Prometheus ...")
-            time.sleep(5 * 60)
+            logging.info(f"Waiting {sleep_duration} minutes to capture some metrics in Prometheus ...")
+            time.sleep(sleep_duration * 60)
 
-            run.run_toolbox("cluster", "dump_prometheus_db")
+            if capture_prometheus:
+                run.run_toolbox("cluster", "dump_prometheus_db")
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
@@ -121,6 +125,9 @@ def test_ci():
             if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
                 cleanup_cluster()
 
+            export.export_artifacts(env.ARTIFACT_DIR, test_step="test_ci")
+
+
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
     """
@@ -128,6 +135,8 @@ def generate_plots_from_pr_args():
     """
 
     visualize.download_and_generate_visualizations()
+
+    export.export_artifacts(env.ARTIFACT_DIR, test_step="plot")
 
 
 @entrypoint()
@@ -145,6 +154,10 @@ def generate_plots(results_dirname):
     visualize.generate_from_dir(str(results_dirname))
 
 
+@entrypoint(ignore_secret_path=True)
+def export_artifacts(artifacts_dirname):
+    export.export_artifacts(artifacts_dirname)
+
 # ---
 
 class Entrypoint:
@@ -157,6 +170,7 @@ class Entrypoint:
 
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
+        self.export_artifacts = export_artifacts
 
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
         self.generate_plots = generate_plots
