@@ -6,6 +6,7 @@ import os, sys
 import json
 import subprocess
 import functools
+import pathlib
 
 import fire
 
@@ -52,12 +53,10 @@ def export_artifacts(artifacts_dirname, test_step=None):
     if os.environ.get("OPENSHIFT_CI") == "true":
         job_spec = json.loads(os.environ["JOB_SPEC"])
         pull_number = job_spec["refs"]["pulls"][0]["number"]
-        github_org = job_spec["refs"]["org"]
-        github_repo = job_spec["refs"]["repo"]
         job = job_spec["job"]
         build_id = job_spec["buildid"]
 
-        run_id=f"prow/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/artifacts"
+        run_id=f"prow/{pull_number}/{build_id}"
 
     elif os.environ.get("PERFLAB_CI") == "true":
         logging.warning("No way to get the run identifiers from Jenkins in the PERFLAB_CI")
@@ -84,7 +83,7 @@ def export_artifacts(artifacts_dirname, test_step=None):
 
     logging.info(f"Exporting to {export_dest} ({export_url})")
     aws_creds_filename = config.ci_artifacts.get_config("secrets.aws_credentials")
-    run.run(f"AWS_SHARED_CREDENTIALS_FILE=\"$PSAP_ODS_SECRET_PATH/{aws_creds_filename}\" aws s3 cp --recursive \"{artifacts_dirname}\" \"{export_dest}\" &> {env.ARTIFACT_DIR / 'export_artifacts.log'}")
+    run.run(f"AWS_SHARED_CREDENTIALS_FILE=\"$PSAP_ODS_SECRET_PATH/{aws_creds_filename}\" aws s3 cp --recursive \"{artifacts_dirname}\" \"{export_dest}\" &> {env.ARTIFACT_DIR / 'aws_s3_cp.log'}")
 
 
 
