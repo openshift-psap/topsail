@@ -3,7 +3,6 @@
 import logging
 logging.getLogger().setLevel(logging.INFO)
 import os, sys
-import datetime
 import json
 import subprocess
 import functools
@@ -62,8 +61,13 @@ def export_artifacts(artifacts_dirname, test_step=None):
 
     elif os.environ.get("PERFLAB_CI") == "true":
         logging.warning("No way to get the run identifiers from Jenkins in the PERFLAB_CI")
-        run_id = f"middleware_jenkins/{int(datetime.datetime.now().timestamp())}"
 
+
+        build_number = os.environ["JENKINS_BUILD_NUMBER"]
+        job = os.environ["JENKINS_JOB"] # "job/ExternalTeams/job/RHODS/job/topsail"
+        job_id = job[4:].replace("/job/", "_")
+
+        run_id = f"middleware_jenkins/{job_id}/{build_number}"
     else:
         logging.error("CI engine not recognized, cannot build the run id ...")
         raise ValueError("CI engine not recognized, cannot build the run id ...")
