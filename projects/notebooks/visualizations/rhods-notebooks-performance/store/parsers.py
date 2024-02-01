@@ -64,7 +64,9 @@ def _parse_once(results, dirname):
     results.start_time, results.end_time = _parse_start_end_time(dirname)
     results.notebook_benchmark = _parse_notebook_benchmark(dirname, pathlib.Path("notebook-artifacts"))
     results.test_uuid = _parse_test_uuid(dirname)
-    results.from_env = _parse_env(dirname)
+
+    results.test_config = _parse_test_config(dirname)
+    results.from_env = _parse_env(dirname, results.test_config)
 
 
 def _parse_local_env(dirname):
