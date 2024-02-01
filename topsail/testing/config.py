@@ -230,8 +230,9 @@ def _set_config_environ(base_dir):
     os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
     os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yml.j2")
 
-    # make sure we're using a clean copy of the configuration file
-    config_path.unlink(missing_ok=True)
+    if base_dir != env.ARTIFACT_DIR:
+        # make sure we're using a clean copy of the configuration file
+        config_path.unlink(missing_ok=True)
 
     if shared_dir := os.environ.get("SHARED_DIR"):
         shared_dir_config_path = pathlib.Path(shared_dir) / "config.yaml"
