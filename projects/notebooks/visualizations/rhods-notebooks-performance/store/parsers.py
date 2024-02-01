@@ -268,7 +268,7 @@ def _parse_regression_results(dirname):
 
 
 @ignore_file_not_found
-def _parse_env(dirname):
+def _parse_env(dirname, test_config):
     from_env = types.SimpleNamespace()
 
     ansible_env = {}
@@ -284,6 +284,20 @@ def _parse_env(dirname):
             k, _, v = line.strip().partition("=")
 
             ansible_env[k] = v
+
+
+    # ---
+    # eg 003__notebook_performance/003__sutest_notebooks__benchmark_performance/
+    current_artifact_dir = pathlib.Path(ansible_env["ARTIFACT_DIR"])
+    base_artifact_dir = "/logs/artifacts"
+
+    if dirname.name == "from_url":
+        with open(dirname / "source_url") as f: # not an important file
+            source_url = f.read().strip()
+        _prefix, _, from_env.test.test_path = source_url.partition(f"{from_env.test.run_id}/artifacts/")
+    else:
+        from_env.test.test_path = str((current_artifact_dir / dirname).relative_to(base_artifact_dir))
+
 
     if ansible_env.get("OPENSHIFT_CI") == "true":
         from_env.test.ci_engine = "OPENSHIFT_CI"
@@ -305,33 +319,53 @@ def _parse_env(dirname):
         # ---
         # eg: pull/openshift-psap_topsail/181/pull-ci-openshift-psap-topsail-main-rhoai-light/1749833488137195520
 
-        from_env.test.run_id = f"pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}"
-
-        # ---
-        # eg 003__notebook_performance/003__sutest_notebooks__benchmark_performance/
-        current_artifact_dir = pathlib.Path(ansible_env["ARTIFACT_DIR"])
-        base_artifact_dir = entrypoint_options["artifact_dir"]
-
-        if dirname.name == "from_url":
-            with open(dirname / "source_url") as f: # not an important file
-                source_url = f.read().strip()
-            _prefix, _, from_env.test.test_path = source_url.partition(f"{from_env.test.run_id}/artifacts/")
-        else:
-            from_env.test.test_path = str(f"{test_name}/{step_name}/artifacts" / (current_artifact_dir / dirname).relative_to(base_artifact_dir))
+        from_env.test.run_id = f"{pull_number}/{job}/{build_id}/{test_name}"
 
         # ---
         from_env.test.urls |= dict(
-            PROW_JOB=f"https://prow.ci.openshift.org/view/gs/test-platform-results/pr-logs/{from_env.test.run_id}",
-            PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/{from_env.test.run_id}/artifacts/{from_env.test.test_path}"
+            PROW_JOB=f"https://prow.ci.openshift.org/view/gs/test-platform-results/pr-logs/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/",
+            PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/artifacts/{test_name}/{step_name}/artifacts/{from_env.test.test_path}",
         )
 
     if ansible_env.get("PERFLAB_CI") == "true":
-        from_env.test.ci_engine = "OPENSHIFT_CI"
-        from_env.test.test_path = "test/path/not/available"
-        from_env.test.run_id = "run/id/not/available"
+        from_env.test.ci_engine = "PERFLAB_CI"
+
+        jumphost = ansible_env["JENKINS_JUMPHOST"]
+        build_number = ansible_env["JENKINS_BUILD_NUMBER"]
+        jenkins_job = ansible_env["JENKINS_JOB"] # "job/ExternalTeams/job/RHODS/job/topsail"
+        jenkins_instance = ansible_env["JENKINS_INSTANCE"] # ci.app-svc-perf.corp.redhat.com
+
+        from_env.test.run_id = build_number
+
+        base_path = pathlib.Path(ansible_env["ARTIFACT_DIR"].replace("/logs/artifacts/", "").replace(from_env.test.test_path, "")).parent
 
         from_env.test.urls |= dict(
-            JENKINS_ARTIFACTS=f"NOT AVAILABLE YET"
+            JENKINS_ARTIFACTS=f"https://{jenkins_instance}/{jenkins_job}/{build_number}/artifact/run/{jumphost}/{base_path}/{from_env.test.test_path}"
+        )
+
+    if test_config.get("export_artifacts.enabled"):
+        bucket = test_config.get("export_artifacts.bucket")
+        path_prefix = test_config.get("export_artifacts.path_prefix")
+
+        if ansible_env.get("OPENSHIFT_CI") == "true":
+            job_spec = json.loads(os.environ["JOB_SPEC"])
+            pull_number = job_spec["refs"]["pulls"][0]["number"]
+            github_org = job_spec["refs"]["org"]
+            github_repo = job_spec["refs"]["repo"]
+            job = job_spec["job"]
+            build_id = job_spec["buildid"]
+
+            s3_path = f"prow/{pull_number}/{build_id}/test_ci"
+
+        elif ansible_env.get("PERFLAB_CI") == "true":
+            build_number = os.environ["JENKINS_BUILD_NUMBER"]
+            job = os.environ["JENKINS_JOB"] # "job/ExternalTeams/job/RHODS/job/topsail"
+            job_id = job[4:].replace("/job/", "_")
+
+            s3_path = f"middleware_jenkins/{job_id}/{build_number}"
+
+        from_env.test.urls |= dict(
+            RHOAI_CPT_S3=f"https://{bucket}.s3.eu-central-1.amazonaws.com/index.html#{path_prefix}/{s3_path}/{from_env.test.test_path}/"
         )
 
     return from_env
