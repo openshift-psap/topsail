@@ -76,11 +76,13 @@ def export_artifacts(artifacts_dirname, test_step=None):
         run_id += f"/{test_step}"
 
     export_dest = f"s3://{bucket}/{path_prefix}/{run_id}"
-    with open(env.ARTIFACT_DIR / "export_dest", "w") as f:
-        print(export_dest, file=f)
+    export_url = f"https://{bucket}.s3.eu-central-1.amazonaws.com/index.html#{path_prefix}/{run_id}/"
+    with open(env.ARTIFACT_DIR / "export.url", "w") as f:
+        print(export_url, file=f)
 
-    config.ci_artifacts.set_config("export_artifacts.dest", export_dest)
+    config.ci_artifacts.set_config("export_artifacts.dest", export_url)
 
+    logging.info(f"Exporting to {export_dest} ({export_url})")
     aws_creds_filename = config.ci_artifacts.get_config("secrets.aws_credentials")
     run.run(f"AWS_SHARED_CREDENTIALS_FILE=\"$PSAP_ODS_SECRET_PATH/{aws_creds_filename}\" aws s3 cp --recursive \"{artifacts_dirname}\" \"{export_dest}\" &> {env.ARTIFACT_DIR / 'export_artifacts.log'}")
 
