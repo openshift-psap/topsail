@@ -148,53 +148,14 @@ check_failure_flag() {
 }
 
 export_artifacts() {
-    EXPORT_ARTIFACT_DIR=${1:-}
-    if [[ -z "$EXPORT_ARTIFACT_DIR" ]]; then
+    export_artifact_dir=${1:-}
+    test_step=${2:-}
+
+    if [[ -z "$export_artifact_dir" ]]; then
         _error "No artifact dir provided as \$1 ..."
     fi
 
-    if ! test_config export_artifacts.enabled; then
-        echo "export_artifacts: Artifacts export not enabled, nothing to do."
-        return
-    fi
-
-
-    bucket=$(get_config export_artifacts.bucket)
-    path_prefix=$(get_config export_artifacts.path_prefix)
-    if [[ "$path_prefix" == null ]]; then
-        path_prefix=""
-    fi
-
-    if [[ "${OPENSHIFT_CI:-}" == true ]]; then
-        job=$(echo "$JOB_SPEC" | jq -r .job)
-
-        run_id="prow/pull/${REPO_OWNER}_${REPO_NAME}/${PULL_NUMBER}/${job}/$BUILD_ID/artifacts"
-
-    elif [[ "${PERFLAB_CI:-}" == true ]]; then
-        _warning "No way to get the run identifiers from Jenkins in the PERFLAB_CI ..."
-        run_id=middleware_jenkins/$(date +%s)
-    else
-        _error "CI engine not recognized, cannot build the run id ..."
-    fi
-
-    dest="s3://$bucket/$path_prefix/$run_id"
-
-    set_config "export_artifacts.dest" "$dest"
-
-    _info "Exporting $EXPORT_ARTIFACT_DIR to '$dest'"
-
-    aws_creds_filename=$(get_config secrets.aws_credentials)
-
-    export AWS_SHARED_CREDENTIALS_FILE="$PSAP_ODS_SECRET_PATH/${aws_creds_filename}"
-    if [[ ! -f "$AWS_SHARED_CREDENTIALS_FILE" ]]; then
-        _warning "$AWS_SHARED_CREDENTIALS_FILE does not exist :/"
-    else
-        _info "$AWS_SHARED_CREDENTIALS_FILE exists :)"
-    fi
-
-    if ! aws s3 cp --recursive "$EXPORT_ARTIFACT_DIR" "$dest" --acl public-read &> "$ARTIFACT_DIR/export_artifacts.log"; then
-        _error "Export to $dest failed ..."
-    fi
+    ./topsail/testing/export.py export_artifacts "$export_artifact_dir" $test_step
 }
 
 # ---
@@ -235,12 +196,13 @@ main() {
 
             local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
 
-            process_ctrl__finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999__teardown'") # switch to the 'teardown' artifacts directory
+            process_ctrl__finalizers+=("export ARTIFACT_DIR=$BASE_ARTIFACT_DIR/999__teardown") # switch to the 'teardown' artifacts directory
+            process_ctrl__finalizers+=("mkdir -p $BASE_ARTIFACT_DIR/999__teardown")
             process_ctrl__finalizers+=("capture_environment")
             process_ctrl__finalizers+=("sutest_cleanup")
             process_ctrl__finalizers+=("driver_cleanup")
             if [[ "${PERFLAB_CI:-}" != true ]]; then
-                process_ctrl__finalizers+=("export_artifacts '/logs/artifacts'")
+                process_ctrl__finalizers+=("export_artifacts /logs/artifacts test_ci")
             fi
 
             run_tests_and_plots
@@ -310,7 +272,7 @@ main() {
             export IGNORE_PSAP_ODS_SECRET_PATH=1
             connect_ci
             if [[ "${PERFLAB_CI:-}" != true ]]; then
-                process_ctrl__finalizers+=("export_artifacts '/logs/artifacts'")
+                process_ctrl__finalizers+=("export_artifacts /logs/artifacts generate_plots")
             fi
 
             "$TESTING_NOTEBOOKS_DIR/generate_matrix-benchmarking.sh" from_pr_args
@@ -318,9 +280,10 @@ main() {
             return  0
             ;;
         "export_artifacts")
-            EXPORT_ARTIFACT_DIR="${1:-}"
+            export_artifact_dir="${1:-}"
+            test_step="${2:-}"
 
-            export_artifacts "$EXPORT_ARTIFACT_DIR"
+            export_artifacts "$export_artifact_dir" "$test_step"
 
             return 0
             ;;
