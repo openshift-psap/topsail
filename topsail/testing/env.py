@@ -59,6 +59,7 @@ def init():
         artifact_dir.mkdir(parents=True, exist_ok=True)
         os.environ["ARTIFACT_DIR"] = str(artifact_dir)
 
+    artifact_dir.mkdir(parents=True, exist_ok=True)
     _set_tls_artifact_dir(artifact_dir)
 
 
