@@ -196,12 +196,13 @@ main() {
 
             local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
 
-            process_ctrl__finalizers+=("export ARTIFACT_DIR='$BASE_ARTIFACT_DIR/999__teardown'") # switch to the 'teardown' artifacts directory
+            process_ctrl__finalizers+=("export ARTIFACT_DIR=$BASE_ARTIFACT_DIR/999__teardown") # switch to the 'teardown' artifacts directory
+            process_ctrl__finalizers+=("mkdir -p $BASE_ARTIFACT_DIR/999__teardown")
             process_ctrl__finalizers+=("capture_environment")
             process_ctrl__finalizers+=("sutest_cleanup")
             process_ctrl__finalizers+=("driver_cleanup")
             if [[ "${PERFLAB_CI:-}" != true ]]; then
-                process_ctrl__finalizers+=("export_artifacts '/logs/artifacts' test_ci")
+                process_ctrl__finalizers+=("export_artifacts /logs/artifacts test_ci")
             fi
 
             run_tests_and_plots
@@ -271,7 +272,7 @@ main() {
             export IGNORE_PSAP_ODS_SECRET_PATH=1
             connect_ci
             if [[ "${PERFLAB_CI:-}" != true ]]; then
-                process_ctrl__finalizers+=("export_artifacts '/logs/artifacts' generate_plots")
+                process_ctrl__finalizers+=("export_artifacts /logs/artifacts generate_plots")
             fi
 
             "$TESTING_NOTEBOOKS_DIR/generate_matrix-benchmarking.sh" from_pr_args

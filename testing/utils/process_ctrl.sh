@@ -71,12 +71,13 @@ process_ctrl::run_finalizers() {
     for finalizer in "${process_ctrl__finalizers[@]}"
     do
         echo "Running finalizer '$finalizer' ..."
-        eval $finalizer
+        $finalizer
     done
     echo "Run finalizers: all done."
 }
 
 if [[ ! -v process_ctrl::finalizers ]]; then
+    echo "Initializing 'process_ctrl__finalizers' ..."
     process_ctrl__finalizers=()
     trap process_ctrl::run_finalizers EXIT
 fi
