@@ -62,12 +62,18 @@ process_ctrl::run_finalizers() {
     [ ${#process_ctrl__finalizers[@]} -eq 0 ] && return
     set +x
 
-    echo "Running exit finalizers ..."
+    echo "Running exit finalizers: "
+    for finalizer in "${process_ctrl__finalizers[@]}"
+    do
+        echo "-> $finalizer"
+    done
+    echo "---"
     for finalizer in "${process_ctrl__finalizers[@]}"
     do
         echo "Running finalizer '$finalizer' ..."
         eval $finalizer
     done
+    echo "Run finalizers: all done."
 }
 
 if [[ ! -v process_ctrl::finalizers ]]; then
