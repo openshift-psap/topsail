@@ -161,7 +161,12 @@ generate_matbench::generate_visualization() {
 
     generate_opensearch_config() {
         instance=$(get_config matbench.lts.opensearch.instance)
+        index_prefix=$(get_config matbench.lts.opensearch.index_prefix)
         index=$(get_config matbench.lts.opensearch.index)
+
+        if [[ "$index_prefix" == null ]]; then
+            index_prefix=""
+        fi
 
         vault_key=$(get_config secrets.dir.env_key)
         opensearch_instances_file=$(get_config secrets.opensearch_instances)
@@ -177,7 +182,7 @@ generate_matbench::generate_visualization() {
                   "opensearch_password": .'$instance'.password,
                   "opensearch_port": .'$instance'.port,
                   "opensearch_host": .'$instance'.host,
-                  "opensearch_index": "'$index'",
+                  "opensearch_index": "'$index_prefix$index'",
         }' "$secret_file" > .env.generated.yaml
     }
 
