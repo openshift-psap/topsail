@@ -155,7 +155,10 @@ def call_generate_lts_schema(step_idx, common_args):
 
 def generate_opensearch_config_yaml_env(dest):
     instance = config.ci_artifacts.get_config("matbench.lts.opensearch.instance")
-    index = config.ci_artifacts.get_config("matbench.lts.opensearch.index")
+
+    _index = config.ci_artifacts.get_config("matbench.lts.opensearch.index")
+    index_prefix = config.ci_artifacts.get_config("matbench.lts.opensearch.index_prefix") or ""
+    index = f"{index_prefix}{_index}"
 
     vault_key = config.ci_artifacts.get_config("secrets.dir.env_key")
     opensearch_instances_file = config.ci_artifacts.get_config("secrets.opensearch_instances")
