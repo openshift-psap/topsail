@@ -75,7 +75,7 @@ def install_ocp_pipelines():
         logging.info(f"Operator '{PIPELINES_OPERATOR_MANIFEST_NAME}' is already installed.")
         return
 
-    run.run_toolbox("cluster", "deploy_operator", catalog="redhat-operators", manifest_name=PIPELINES_OPERATOR_MANIFEST_NAME, namespace=operator['namespace'], artifact_dir_suffix=operator['name'])
+    run.run_toolbox("cluster", "deploy_operator", catalog="redhat-operators", manifest_name=PIPELINES_OPERATOR_MANIFEST_NAME, namespace="all", artifact_dir_suffix=f"_{PIPELINES_OPERATOR_MANIFEST_NAME}")
 
 
 def uninstall_ocp_pipelines():
@@ -239,7 +239,7 @@ def prepare_test_driver_namespace():
 
     apply_prefer_pr()
 
-    istag = config.get_command_arg("cluster build_push_image --prefix base_image", "_istag")
+    istag = config.get_command_arg("cluster", "build_push_image --prefix base_image", "_istag")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
         logging.info(f"Image {istag} already exists in namespace {namespace}. Don't build it.")
