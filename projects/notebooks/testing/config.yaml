@@ -122,14 +122,15 @@ ci_presets:
     clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
-    matbench.lts.regression_analyses.enabled: false
-    matbench.lts.opensearch.upload: false
-    'ci_presets.notebook_performance["matbench.lts.opensearch.upload"]': false
 
   icelake_notebook_gating_test:
     extends: [notebook_gating_scale_test, metal, icelake]
     tests.notebooks.users.count: 200
     matbench.lts.opensearch.instance: perflab
+
+  use_intlab_os:
+    matbench.lts.opensearch.index_prefix: "psap-rhoai."
+    matbench.lts.opensearch.instance: intlab
 
   help:
     tests.show_help: true
@@ -373,6 +374,7 @@ matbench:
       fail_test_on_upload_fail: false
       instance: smoke
       index: rhoai-notebooks-scale
+      index_prefix: ""
     regression_analyses:
       enabled: true
       # if the regression analyses fail, mark the test as failed

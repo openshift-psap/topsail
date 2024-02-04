@@ -135,13 +135,17 @@ ci_presets:
 
   # ---
 
-  # single-model
 
-  gating:
-    matbench.lts.opensearch.instance: perflab
+  use_intlab_os:
+    matbench.lts.opensearch.index_prefix: "psap-rhoai."
+    matbench.lts.opensearch.instance: intlab
 
-  gating_light:
+  use_smoke_os:
     matbench.lts.opensearch.instance: smoke
+
+  # ---
+
+  # single-model
 
   single_model_gating:
     extends: [gating, 10min, e2e_gpu, e2e_perf]
@@ -438,6 +442,7 @@ matbench:
       fail_test_on_fail: false
       instance: smoke
       index: rhoai-kserve-single
+      index_prefix: ""
     regression_analyses:
       enabled: true
       # if the regression analyses fail, mark the test as failed

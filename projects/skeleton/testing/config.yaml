@@ -29,6 +29,13 @@ ci_presets:
     clusters.sutest.is_metal: false
     clusters.driver.is_metal: false
 
+  use_intlab_os:
+    matbench.lts.opensearch.index_prefix: "psap-rhoai."
+    matbench.lts.opensearch.instance: intlab
+
+  use_smoke_os:
+    matbench.lts.opensearch.instance: smoke
+
 secrets:
   dir:
     name: psap-ods-secret
