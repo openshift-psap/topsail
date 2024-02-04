@@ -135,13 +135,17 @@ ci_presets:
 
   # ---
 
-  # single-model
 
-  gating:
-    matbench.lts.opensearch.instance: perflab
+  use_intlab_os:
+    matbench.lts.opensearch.index_prefix: "psap-rhoai."
+    matbench.lts.opensearch.instance: intlab
 
-  gating_light:
+  use_smoke_os:
     matbench.lts.opensearch.instance: smoke
+
+  # ---
+
+  # single-model
 
   single_model_gating:
     extends: [gating, 10min, e2e_gpu, e2e_perf]
