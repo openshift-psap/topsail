@@ -35,11 +35,12 @@ IMPORTANT_FILES = [
 
     "000__local_ci__run_multi/artifacts/ci-pod-*/applications.json",
     "000__local_ci__run_multi/artifacts/ci-pod-*/deployments.json",
+    "000__local_ci__run_multi/artifacts/ci-pod-*/pipelines.json",
 
-    "001__rhods__capture_state/nodes.json",
-    "001__rhods__capture_state/ocp_version.yml",
-    "001__rhods__capture_state/rhods.version",
-    "001__rhods__capture_state/rhods.createdAt",
+    "001__notebooks__capture_state/nodes.json",
+    "001__notebooks__capture_state/ocp_version.yml",
+    "001__notebooks__capture_state/rhods.version",
+    "001__notebooks__capture_state/rhods.createdAt",
 ]
 
 PARSER_VERSION = "2023-06-05"
@@ -182,7 +183,7 @@ def _extract_rhods_cluster_info(nodes_info):
 def _parse_nodes_info(dirname, sutest_cluster=True):
     nodes_info = {}
 
-    filename = "001__rhods__capture_state/nodes.json"
+    filename = "001__notebooks__capture_state/nodes.json"
 
     with open(register_important_file(dirname, filename)) as f:
         nodeList = json.load(f)
@@ -209,7 +210,7 @@ def _parse_nodes_info(dirname, sutest_cluster=True):
 
 @ignore_file_not_found
 def _parse_ocp_version(dirname):
-    filename = "001__rhods__capture_state/ocp_version.yml"
+    filename = "001__notebooks__capture_state/ocp_version.yml"
 
     with open(register_important_file(dirname, filename)) as f:
         sutest_ocp_version_yaml = yaml.safe_load(f)
@@ -219,7 +220,7 @@ def _parse_ocp_version(dirname):
 @ignore_file_not_found
 def _parse_rhods_info(dirname):
     rhods_info = types.SimpleNamespace()
-    artifact_dirname = pathlib.Path("001__rhods__capture_state")
+    artifact_dirname = pathlib.Path("001__notebooks__capture_state")
 
     with open(register_important_file(dirname, artifact_dirname / "rhods.version")) as f:
         rhods_info.version = f.read().strip()
