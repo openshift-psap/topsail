@@ -106,9 +106,11 @@ def prepare_rhods():
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
     rhods.install(token_file)
 
-    run.run_toolbox("rhods", "wait_ods")
+    has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
+
+    run.run_toolbox("rhods", "update_datasciencecluster", enable=["datasciencepipelines", "workbenches"],
+                    name=None if has_dsc else "default-dsc")
     customize_rhods()
-    run.run_toolbox("rhods", "wait_ods")
 
     run.run_toolbox_from_config("cluster", "deploy_ldap")
 
@@ -239,8 +241,6 @@ def prepare_test_driver_namespace():
     # Prepare the container image
     #
 
-    apply_prefer_pr()
-
     istag = config.get_command_arg("cluster", "build_push_image --prefix base_image", "_istag")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
@@ -300,10 +300,13 @@ def prepare_cluster():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
     """
+    apply_prefer_pr()
 
-    prepare_test_driver_namespace()
-    prepare_sutest_scale_up()
-    prepare_rhods()
+    with run.Parallel("prepare_cluster") as parallel:
+        parallel.delayed(prepare_test_driver_namespace)
+        parallel.delayed(prepare_sutest_scale_up)
+        parallel.delayed(prepare_rhods)
+
 
 @entrypoint()
 def pipelines_run_one():
