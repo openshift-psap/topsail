@@ -4,7 +4,7 @@ import datetime
 import pathlib
 
 from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, constr, UUID4
 import pydantic
 
 import matrix_benchmarking.models as matbench_models
@@ -106,7 +106,7 @@ class ParsedResultsModel(matbench_models.ExclusiveModel, metaclass=matbench_mode
     tester_job: TesterJob
     metrics: Metrics
     test_config: Any
-
+    test_uuid: UUID4
 
 ParsedResultsModel.update_forward_refs()
 TesterJob.update_forward_refs()

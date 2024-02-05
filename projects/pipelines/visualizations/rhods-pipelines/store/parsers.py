@@ -6,6 +6,7 @@ import os
 import json
 import datetime
 from collections import defaultdict
+import uuid
 
 import jsonpath_ng
 
@@ -80,6 +81,7 @@ def _parse_once(results, dirname):
     results.user_data = _parse_user_data(dirname, results.user_count)
     results.tester_job = _parse_tester_job(dirname)
     results.metrics = _extract_metrics(dirname)
+    results.test_uuid = _parse_test_uuid(dirname)
 
 
 def _parse_local_env(dirname):
@@ -485,3 +487,11 @@ def _parse_resource_times(dirname, ci_pod_dir):
     parse("pipelines.json")
 
     return dict(all_resource_times)
+
+
+@ignore_file_not_found
+def _parse_test_uuid(dirname):
+    with open(dirname / ".uuid") as f:
+        test_uuid = f.read().strip()
+
+    return uuid.UUID(test_uuid)
