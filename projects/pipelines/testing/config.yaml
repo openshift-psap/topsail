@@ -65,6 +65,7 @@ secrets:
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+  opensearch_instances: opensearch.yaml
 clusters:
   create:
     type: single # can be: single, ocp, managed
@@ -173,4 +174,16 @@ matbench:
   ignore_exit_code: true
   # directory to plot. Set by notebook_scale_test.sh before launching the visualization
   test_directory: null
-  generate_lts: true
+  lts:
+    generate: true
+    horreum:
+      test_name: null
+    opensearch:
+      export: false
+      fail_test_on_fail: false
+      instance: smoke
+      index: pipelines
+    regression_analyses:
+      enabled: false
+      # if the regression analyses fail, mark the test as failed
+      fail_test_on_regression: false
