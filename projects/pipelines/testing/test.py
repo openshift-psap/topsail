@@ -215,7 +215,12 @@ def prepare_test_driver_namespace():
     #
     # Prepare the driver namespace
     #
-    run.run(f"oc new-project '{namespace}' --skip-config-write >/dev/null 2>/dev/null || true")
+
+    if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
+        run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
+    else:
+        logging.warning(f"Project {namespace} already exists.")
+        (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
 
     dedicated = "{}" if config.ci_artifacts.get_config("clusters.driver.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
