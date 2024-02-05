@@ -24,6 +24,8 @@ ci_presets:
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
+    clusters.sutest.compute.dedicated: false
+    clusters.driver.compute.dedicated: false
 
   not_metal:
     clusters.sutest.is_metal: false
