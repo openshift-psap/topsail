@@ -85,11 +85,9 @@ def generate_lts_results(results):
     return results_lts
 
 def generate_lts_regression(results):
-    results_lts = types.SimpleNamespace()
-    regression_results = [] if not results.regression_results else results.regression_results
-    results_lts = [matbench_models.RegressionResult.parse_obj(r) for r in regression_results]
-
-    return results_lts
+    regression = getattr(results, "regression", []) # A new payload will not have regression results yet!
+    regression = [matbench_models.Regression.parse_obj(r) for r in regression]
+    return regression
 
 def get_kpi_labels(lts_payload):
     kpi_labels = dict(lts_payload.metadata.settings)

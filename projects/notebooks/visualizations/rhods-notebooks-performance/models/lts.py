@@ -61,7 +61,7 @@ class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata
     results: Results
     kpis: Optional[NotebookPerformanceKPIs]
-    regression: Optional[List[matbench_models.RegressionResult]] = Field(default=None)
+    regression: Optional[List[matbench_models.Regression]] = Field(default=None)
 
     class Config:
         fields = {'schema_name': '$schema'}
