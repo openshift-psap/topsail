@@ -13,7 +13,7 @@ import re
 import yaml
 import fire
 
-from topsail.testing import env, config, run, rhods, visualize
+from topsail.testing import env, config, run, rhods, visualize, sizing
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 
@@ -120,7 +120,6 @@ def compute_node_requirement(driver=False, sutest=False):
         raise ValueError("compute_node_requirement must be called with driver=True or sutest=True")
 
     if driver:
-        cluster_role = "driver"
         # from the right namespace, get a hint of the resource request with these commands:
         # oc get pods -oyaml | yq .items[].spec.containers[].resources.requests.cpu -r | awk NF | grep -v null | python -c "import sys; print(sum(int(l.strip()[:-1]) for l in sys.stdin))"
         # --> 1090
@@ -130,18 +129,18 @@ def compute_node_requirement(driver=False, sutest=False):
         memory = 3
 
     if sutest:
-        cluster_role = "sutest"
         # must match 'roles/local_ci_run_multi/templates/job.yaml.j2'
         cpu_count = 1
         memory = 2
 
-    machine_type = config.ci_artifacts.get_config("clusters.create.ocp.compute.type")
-    user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+    kwargs = dict(
+        cpu = cpu_count,
+        memory = memory,
+        machine_type = config.ci_artifacts.get_config("clusters.create.ocp.compute.type"),
+        user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+        )
 
-    logfile = env.ARTIFACT_DIR / f'sizing_{cluster_role}'
-    proc = run.run(f"{TESTING_UTILS_DIR / 'sizing' / 'sizing'} {machine_type} {user_count} {cpu_count} {memory} > {logfile}", check=False)
-
-    return proc.returncode
+    return sizing.main(**kwargs)
 
 
 def apply_prefer_pr():
