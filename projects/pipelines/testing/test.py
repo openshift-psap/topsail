@@ -350,8 +350,8 @@ def _pipelines_run_many(test_artifact_dir_p):
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
         user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
-        with open(env.ARTIFACT_DIR / "settings", "w") as f:
-            print(f"user_count={user_count}", file=f)
+        with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+            yaml.dump(dict(user_count=user_count), f, indent=4)
 
         with open(env.ARTIFACT_DIR / "artifacts_version", "w") as f:
             print(ARTIFACTS_VERSION, file=f)
