@@ -20,6 +20,7 @@ def build_lts_payloads():
             rhods_version = results.rhods_info.full_version,
             user_count = results.user_count,
             config = results.test_config["yaml_file"],
+            test_uuid = results.test_uuid,
         )
 
         lts_results = models_lts.Results(
