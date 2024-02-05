@@ -120,6 +120,7 @@ matbench:
       fail_test_on_fail: false
       instance: smoke
       index: topsail-skeleton
+      index_prefix: ""
     regression_analyses:
       enabled: true
       # if the regression analyses fail, mark the test as failed
