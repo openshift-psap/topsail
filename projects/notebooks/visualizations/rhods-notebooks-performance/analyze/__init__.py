@@ -16,7 +16,7 @@ def run():
     logging.info(f"Received {common.Matrix.count_records()} new entries")
 
     number_of_failures = 0
-    settings_to_check = ["rhoai_version", "image_name"]
+    settings_to_check = ["rhoai_version"]
     for entry in common.Matrix.all_records():
         regression_results_dest = entry.location / "regression.json"
         regression_results: List[models.RegressionResult] = []
@@ -27,6 +27,8 @@ def run():
             except KeyError:
                 logging.warning(f"Couldn't find {check_setting} setting for entry={entry.location}, skipping...")
                 continue
+            
+            controlled_settings = {"image_name": "pytorch"}
 
             controlled_lts_entries = list(
                 filter(

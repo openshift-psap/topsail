@@ -299,6 +299,7 @@ def _parse_env(dirname, test_config):
     else:
         from_env.test.test_path = str((current_artifact_dir / dirname).relative_to(base_artifact_dir))
 
+    outside_test_env = os.getenv("OUTSIDE_TEST_ENV")
 
     if ansible_env.get("OPENSHIFT_CI") == "true":
         from_env.test.ci_engine = "OPENSHIFT_CI"
@@ -344,7 +345,7 @@ def _parse_env(dirname, test_config):
             JENKINS_ARTIFACTS=f"https://{jenkins_instance}/{jenkins_job}/{build_number}/artifact/run/{jumphost}/{base_path}/{from_env.test.test_path}"
         )
 
-    if test_config.get("export_artifacts.enabled"):
+    if test_config.get("export_artifacts.enabled") and not outside_test_env:
         bucket = test_config.get("export_artifacts.bucket")
         path_prefix = test_config.get("export_artifacts.path_prefix")
 
