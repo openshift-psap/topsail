@@ -7,8 +7,10 @@ reviewers:
   - dagrayvid
   - kpouget
   - ccamacho
+  - drewrip
 cluster_create: # who is allowed to create clusters in the PSAP account
   # github handle -> RH kerberos handle
   kpouget: kpouget
   dagrayvid: dagray
   ccamacho: ccamacho
+  drewrip: dripberg
