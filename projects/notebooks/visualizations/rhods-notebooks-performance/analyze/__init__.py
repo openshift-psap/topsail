@@ -16,7 +16,7 @@ def run():
     logging.info(f"Received {common.Matrix.count_records()} new entries")
 
     number_of_failures = 0
-    settings_to_check = ["rhoai_version"]
+    settings_to_check = ["rhoai_version", "ocp_version"]
     for entry in common.Matrix.all_records():
         regression_results_dest = entry.location / "regression.json"
         regression_results: List[models.RegressionResult] = []
