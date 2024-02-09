@@ -27,8 +27,7 @@ def run():
             except KeyError:
                 logging.warning(f"Couldn't find {check_setting} setting for entry={entry.location}, skipping...")
                 continue
-            
-            controlled_settings = {"image_name": "pytorch"}
+
 
             controlled_lts_entries = list(
                 filter(

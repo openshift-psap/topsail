@@ -17,7 +17,6 @@ def generate_lts_payload(results, import_settings, must_validate=False):
     lts_results = generate_lts_results(results)
 
     # ---
-
     lts_payload = types.SimpleNamespace()
     lts_payload.__dict__["$schema"] = f"urn:rhods-notebooks-perf:{models_lts.VERSION}"
     lts_payload.metadata = lts_metadata
@@ -85,7 +84,7 @@ def generate_lts_results(results):
     return results_lts
 
 def generate_lts_regression(results):
-    regression = getattr(results, "regression", []) # A new payload will not have regression results yet!
+    regression = getattr(results, "regression", []) or [] # A new payload will not have regression results yet!
     regression = [matbench_models.Regression.parse_obj(r) for r in regression]
     return regression
 
