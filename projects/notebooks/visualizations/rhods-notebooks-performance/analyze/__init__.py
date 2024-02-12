@@ -21,17 +21,13 @@ def run():
         regression_results_dest = entry.location / "regression.json"
         regression_results: List[models.RegressionResult] = []
         for check_setting in settings_to_check:
-            controlled_settings = dict(entry.get_settings())
-            try:
-                controlled_settings.pop(check_setting)
-            except KeyError:
-                logging.warning(f"Couldn't find {check_setting} setting for entry={entry.location}, skipping...")
-                continue
-
+            # This will likely need to be updated with the settings that must be equal between entries
+            # for them to be considered similar enough for comparison against LTS entries
+            controlled_settings = {setting: dict(entry.get_settings())[setting] for setting in ["ocp_version"]}
 
             controlled_lts_entries = list(
                 filter(
-                    lambda x: regression.dict_part_eq(controlled_settings, x.get_settings()),
+                    lambda x: regression.dict_part_eq(controlled_settings, dict(x.get_settings())),
                     lts_entries
                 )
             )
