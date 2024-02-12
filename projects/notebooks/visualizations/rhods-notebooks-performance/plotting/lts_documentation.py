@@ -96,7 +96,7 @@ def generateOneLtsDocumentationReport(entry):
 
     regression = []
     regression += [html.H1("regression analysis")]
-    regression += [html.Code(yaml.dump(lts.regression, default_flow_style=False), style={"white-space": "pre-wrap"})]
+    regression += [html.Code(yaml.dump([dict(r) for r in lts.regression], default_flow_style=False), style={"white-space": "pre-wrap"})]
 
     header += [html.Ul(regression)]
 
