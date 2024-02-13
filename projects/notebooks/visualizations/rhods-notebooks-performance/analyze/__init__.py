@@ -6,7 +6,7 @@ from typing import List
 
 import matrix_benchmarking.common as common
 import matrix_benchmarking.regression as regression
-import matrix_benchmarking.regression.zscore as zscore
+import matrix_benchmarking.regression.hunter as hunter
 
 def run():
 
@@ -33,8 +33,8 @@ def run():
             )
             if len(controlled_lts_entries) < 1:
                 logging.warning("No LTS entries left after filtering")
-            zscore_ind = zscore.ZScoreIndicator(entry, controlled_lts_entries, check_setting)
-            results: List[models.RegressionResult] = zscore_ind.analyze()
+            hunter_ind = hunter.HunterWrapperIndicator(entry, controlled_lts_entries, check_setting)
+            results: List[models.RegressionResult] = hunter_ind.analyze()
             # Add back the setting that we are testing since we handled the filtering manually
             for result in results:
                 result.metric = check_setting
