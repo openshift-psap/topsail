@@ -215,7 +215,7 @@ rhods:
     image: brew.registry.redhat.io/rh-osbs/iib
     tag: 655658
     channel: stable
-    version: 2.6.0
+    version: 2.7.0
     version_name: rc1
   notebooks:
     customize:
