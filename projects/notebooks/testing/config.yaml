@@ -214,7 +214,7 @@ rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
     tag: 670992
-    channel: stable
+    channel: fast
     version: 2.7.0
     version_name: rc1
   notebooks:
