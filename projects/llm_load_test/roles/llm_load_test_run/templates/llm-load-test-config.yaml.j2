@@ -14,11 +14,11 @@ load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: {{ llm_load_test_run_concurrency }}
   duration: "{{ llm_load_test_run_duration }}"
-plugin: "caikit_client_plugin"
+plugin: "tgis_grpc_plugin"
 plugin_options:
-  interface: "grpc"
   streaming: True
   model_name: "{{ llm_load_test_run_model_id }}"
-  route: "{{ llm_load_test_run_host}}"
+  host: "{{ llm_load_test_run_host}}"
+  port: 8033
 extra_metadata:
   replicas: 1

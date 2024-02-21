@@ -415,12 +415,10 @@ tests:
       stop_on_error: true
     llm_load_test:
       enabled: true
-      src_path: subprojects/llm-load-test/
+      src_path: projects/llm_load_test/llm-load-test/
       duration: 60
       concurrency: 16
       rps: 2
-      protos_file: nlpservice.proto
-      protos_dir: projects/kserve/testing/protos/
       call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
 
 matbench:

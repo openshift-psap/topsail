@@ -39,7 +39,7 @@
   - name: Ensure that some content has been generated
     shell:
       set -o pipefail;
-      cat {{ artifact_extra_logs_dir }}/output/outpout.json | grep . --quiet
+      cat {{ artifact_extra_logs_dir }}/output/output.json | grep . --quiet
     register: llm_load_test_has_content
     failed_when: false
 

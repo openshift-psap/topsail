@@ -547,24 +547,14 @@ def test_consolidated_model(consolidated_model, namespace=None):
         raise RuntimeError(f"Failed to get the hostname for InferenceServince {namespace}/{model_name}")
     llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
 
-    protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
-
-    logging.info("To extract the protos:")
-    logging.info(f"./run_toolbox.py kserve extract_protos {namespace} {model_name} {protos_path}")
-    logging.info("Should be necessary only when the protos change in the image.")
-
+    # model_id?
     args_dict = dict(
         host=host,
         duration=llm_config["duration"],
-        protos_path=protos_path.absolute(),
-        call=llm_config["call"],
+        model_id=model_name,
         llm_path=llm_config["src_path"],
-        concurrency=llm_config["concurrency"],
-        rps=llm_config["rps"],
+        concurrency=llm_config["concurrency"]
     )
-
-    if not protos_path.exists():
-        raise RuntimeError(f"Protos do not exist at {protos_path}")
 
     if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
         matbenchmark_run_llm_load_test(namespace, args_dict)
