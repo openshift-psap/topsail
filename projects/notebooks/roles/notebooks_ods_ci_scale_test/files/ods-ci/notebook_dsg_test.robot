@@ -172,7 +172,7 @@ Run the Notebook
 Just Launch Workbench
     [Arguments]     ${workbench_title}
 
-    Click Link       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h3[div[starts-with(text(), "${workbench_title}")]]]//a[text()="Open"]
+    Click Link      ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/*[div[text()="${workbench_title}"]]]/td//a[text()="Open"]
     Switch Window   NEW
 
 Wait Until Page Contains No Spinner
