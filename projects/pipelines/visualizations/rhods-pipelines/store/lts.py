@@ -11,7 +11,7 @@ def build_lts_payloads():
     for entry in common.Matrix.processed_map.values():
         results = entry.results
 
-        lts_metadata = models_lts.PipelinesScaleTestMetadata(
+        lts_metadata = models_lts.Metadata(
             start = results.tester_job.creation_time,
             end = results.tester_job.completion_time,
             presets = results.test_config["get"]("ci_presets.names") or ["no_preset_defined"],
@@ -20,15 +20,16 @@ def build_lts_payloads():
             rhods_version = results.rhods_info.full_version,
             user_count = results.user_count,
             config = results.test_config["yaml_file"],
+            test_uuid = results.test_uuid,
         )
 
-        lts_results = models_lts.PipelinesScaleTestResults(
-            metrics = models_lts.PipelinesScaleTestMetrics(
-                sutest = _gather_prom_metrics(entry.results.metrics.sutest, models_lts.PipelinesScaleTestSutestMetrics),
+        lts_results = models_lts.Results(
+            metrics = models_lts.Metrics(
+                sutest = _gather_prom_metrics(entry.results.metrics.sutest, models_lts.SutestMetrics),
             ),
         )
 
-        lts_payload = models_lts.PipelinesScaleTestPayload(
+        lts_payload = models_lts.Payload(
             metadata = lts_metadata,
             results = lts_results,
         )

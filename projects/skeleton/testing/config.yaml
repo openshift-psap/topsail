@@ -24,6 +24,8 @@ ci_presets:
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
+    clusters.sutest.compute.dedicated: false
+    clusters.driver.compute.dedicated: false
 
   not_metal:
     clusters.sutest.is_metal: false
@@ -120,6 +122,7 @@ matbench:
       fail_test_on_fail: false
       instance: smoke
       index: topsail-skeleton
+      index_prefix: ""
     regression_analyses:
       enabled: true
       # if the regression analyses fail, mark the test as failed
