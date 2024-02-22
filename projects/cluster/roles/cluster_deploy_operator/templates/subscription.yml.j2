@@ -11,3 +11,10 @@ spec:
   source: "{{ cluster_deploy_operator_catalog }}"
   sourceNamespace: "{{ cluster_deploy_operator_catalog_namespace }}"
   startingCSV: "{{ starting_csv }}"
+{% if cluster_deploy_operator_config_env_names %}
+  config:
+    env:
+{% for config_env_name in cluster_deploy_operator_config_env_names %}
+    - name: "{{ config_env_name }}"
+{% endfor %}
+{% endif %}
