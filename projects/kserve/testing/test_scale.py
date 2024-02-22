@@ -229,6 +229,7 @@ def run_one_test(namespace, job_index):
 
         extra = dict(
             inference_service_name=inference_service_name,
+            inference_service_model_format=config.ci_artifacts.get_config("tests.scale.model.format"),
         )
 
         run.run_toolbox_from_config("kserve", "deploy_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")

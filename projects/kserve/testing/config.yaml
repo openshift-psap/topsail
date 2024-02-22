@@ -395,6 +395,7 @@ tests:
     model:
       consolidated: false
       name: flan-t5-small-cpu
+      format: caikit
       replicas: 2
   e2e:
     namespace: watsonx-e2e
