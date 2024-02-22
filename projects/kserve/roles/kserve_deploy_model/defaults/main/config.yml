@@ -49,8 +49,8 @@ kserve_deploy_model_sr_kserve_extra_env_values: {}
 # extra key/value pairs for the transformer container (will override the values from the secret file)
 kserve_deploy_model_sr_transformer_extra_env_values: {}
 
-# if True, deploy 1 container. If False, deploy 2 containers.
-kserve_deploy_model_sr_merge_containers: false
+# if False, deploy 2 containers (transformer and kserve). If True, deploy 1 container (kserve).
+kserve_deploy_model_sr_single_container: false
 
 # if True, create a 2 Gi in-memory volume mounted on /dev/shm (for shards to communicate).
 kserve_deploy_model_sr_shared_memory: false
@@ -73,3 +73,6 @@ kserve_deploy_model_delete_others: true
 
 # if True, sets use the requests values to define the limits. If False, do not define any limits (except for GPU)
 kserve_deploy_model_limits_equals_requests: true
+
+# if True, do not try to configure anything related to Serverless.
+kserve_deploy_model_raw_deployment: false

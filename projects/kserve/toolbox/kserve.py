@@ -20,7 +20,7 @@ class Kserve:
                      sa_name,
                      sr_kserve_extra_env_values={},
                      sr_transformer_extra_env_values={},
-                     sr_merge_containers=False,
+                     sr_single_container=False,
                      sr_shared_memory=False,
                      inference_service_min_replicas : int = None,
                      secret_env_file_name=None,
@@ -28,6 +28,7 @@ class Kserve:
                      sr_mute_logs=False,
                      delete_others=True,
                      limits_equals_requests=True,
+                     raw_deployment=False,
                      ):
         """
         Deploy a KServe model
@@ -37,7 +38,7 @@ class Kserve:
           namespace: the namespace in which the model should be deployed
 
           serving_runtime_name: the name to give to the serving runtime
-          sr_merge_containers: if True, deploy 1 container. If False, deploy 2 containers.
+          sr_single_container: if False, deploy 2 containers (transformer and kserve). If True, deploy 1 container (kserve).
           sr_shared_memory: if True, create a 2 Gi in-memory volume mounted on /dev/shm (for shards to communicate).
           sr_kserve_image: the image of the Kserve serving runtime container
           sr_kserve_resource_request: the resource request of the kserve serving runtime container
@@ -61,6 +62,7 @@ class Kserve:
           delete_others: if True, deletes the other serving runtime/inference services of the namespace
 
           limits_equals_requests: if True, sets use the requests values to define the limits. If False, do not define any limits (except for GPU)
+          raw_deployment: if True, do not try to configure anything related to Serverless.
         """
 
         return RunAnsibleRole(locals())
