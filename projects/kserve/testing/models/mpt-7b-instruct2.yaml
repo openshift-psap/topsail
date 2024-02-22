@@ -1,4 +1,4 @@
-extends: base
+extends: base_caikit
 secret_key: mpt-7b-instruct2
 
 serving_runtime:

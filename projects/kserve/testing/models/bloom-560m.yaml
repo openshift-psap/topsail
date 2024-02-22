@@ -1,4 +1,4 @@
-extends: base
+extends: base_caikit
 secret_key: # no secret key at the moment
 
 serving_runtime:
