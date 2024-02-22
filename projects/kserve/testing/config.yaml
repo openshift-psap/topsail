@@ -348,6 +348,8 @@ base_image:
 
 kserve:
   sa_name: sa
+  raw_deployment:
+    enabled: false
   storage_config:
     name: storage-config
     region: us-east-1
@@ -361,7 +363,7 @@ kserve:
     serving_runtime:
       mute_logs: true
       kserve:
-        image: quay.io/opendatahub/text-generation-inference:stable
+        image: quay.io/opendatahub/text-generation-inference:fast
       transformer:
         image: quay.io/opendatahub/caikit-tgis-serving:fast
   customize:
@@ -395,6 +397,7 @@ tests:
     model:
       consolidated: false
       name: flan-t5-small-cpu
+      format: caikit
       replicas: 2
   e2e:
     namespace: watsonx-e2e

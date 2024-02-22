@@ -6,10 +6,10 @@ metadata:
   labels:
     opendatahub.io/dashboard: "true"
   annotations:
-    opendatahub.io/template-display-name: "Caikit/TGis ServingRuntime for {{ kserve_deploy_model_serving_runtime_name }} | Topsail"
+    opendatahub.io/template-display-name: "ServingRuntime for {{ kserve_deploy_model_serving_runtime_name }} | Topsail"
 spec:
   containers:
-{% if kserve_deploy_model_sr_merge_containers == false %} # 2-container architecture
+{% if kserve_deploy_model_sr_single_container == false %} # 2-container architecture
   - name: kserve-container
     image: {{ kserve_deploy_model_sr_kserve_image }}
     command: [bash, -cex]
@@ -92,27 +92,13 @@ spec:
 {% endif %}
 {% else %} # 1-container architecture
   - name: kserve-container
-    image: quay.io/opendatahub/caikit-tgis-serving:stable
-    command: [bash, -cex]
+    image: {{ kserve_deploy_model_sr_kserve_image }}
+    command: ["text-generation-launcher"]
     args:
-    - |
-{% if kserve_deploy_model_sr_mute_logs %}
-      echo "Starting Caikit-serving without stdout logs ..."
-{% else %}
-      echo "Starting Caikit-serving _with_ stdout logs ..."
-{% endif %}
-      TGIS_CONFIG_TEMPLATE="/caikit/config/caikit-tgis.template.yml"
-      EXTENDED_TIMEOUT=20000
-      sed -i 's/load_timeout: .*/load_timeout: '$EXTENDED_TIMEOUT'/' $TGIS_CONFIG_TEMPLATE
-      exec ./start-serving.sh {% if kserve_deploy_model_sr_mute_logs %} > /tmp/tgis-caikit-logs {% endif %}
-
+      - --model-name=/mnt/models/
+      - --port=3000
+      - --grpc-port=8033
     env:
-    - name: RUNTIME_LOCAL_MODELS_DIR
-      value: /mnt/models
-    - name: TRANSFORMERS_CACHE
-      value: /shared_model_storage/transformers_cache
-    - name: HUGGINGFACE_HUB_CACHE
-      value: /shared_model_storage/transformers_cache
 {% for env_key, env_value in kserve_deploy_model_sr_kserve_extra_env_values.items() %}
     - name: "{{ env_key }}"
       value: "{{ env_value }}"
@@ -143,15 +129,20 @@ spec:
 {% if kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] %}
         nvidia.com/gpu: "{{ kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] }}"
 {% endif %}
+    readinessProbe: # Use exec probes instad of httpGet since the probes' port gets rewritten to the containerPort
+      exec:
+        command: [curl, --silent, localhost:3000/health]
+    livenessProbe:
+      exec:
+        command: [curl, --silent, localhost:3000/health]
+      initialDelaySeconds: 30
     ports:
-    - containerPort: 8085
-      name: h2c
+    - containerPort: 8033
       protocol: TCP
+
     volumeMounts:
     - name: cache-volume
       mountPath: /shared_model_storage/transformers_cache
-    - name: config
-      mountPath: /etc/not_used/caikit-tgis.yml # only use the one shipped with the container
 {% if kserve_deploy_model_sr_shared_memory %}
     - name: shared-memory
       mountPath: /dev/shm
@@ -161,9 +152,11 @@ spec:
   - name:  cache-volume
     emptyDir:
       sizeLimit: 180Gi
+{% if kserve_deploy_model_sr_single_container == false %} # 2-container architecture
   - name: config
     configMap:
       name: {{ kserve_deploy_model_serving_runtime_name }}-caikit-tgis-config
+{% endif %}
 {% if kserve_deploy_model_sr_shared_memory %}
   - name: shared-memory
     emptyDir:
@@ -172,6 +165,5 @@ spec:
 {% endif %}
   multiModel: false
   supportedModelFormats:
-  # Note: this currently *only* supports caikit format models
   - autoSelect: true
-    name: caikit
+    name: {{ kserve_deploy_model_inference_service_model_format }}

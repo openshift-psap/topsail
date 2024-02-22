@@ -1,5 +1,4 @@
 extends: base
-secret_key: "llama-2-7b-hf"
 
 serving_runtime:
   transformer:
@@ -14,9 +13,8 @@ serving_runtime:
       memory: 24 # in Gi
       nvidia.com/gpu: 1
       nvidia.com/gpu_memory: 40 # in Gi of GPU memory
-    extra_env:
-      NUM_GPUS: 1
-      FLASH_ATTENTION: true
-      DEPLOYMENT_FRAMEWORK: hf_custom_tp
+    extra_env: {}
 inference_service:
-  storage_uri: "s3://psap-watsonx-models/Llama-2-7b-hf/Llama-2-7b-hf"
+  storage_uri: "s3://psap-hf-models/Llama-2-7b-chat-hf/Llama-2-7b-chat-hf"
+  model_format: pytorch
+  single_container: true

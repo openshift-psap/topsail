@@ -41,6 +41,7 @@
     oc label cm/$NAME topsail.time-tracking=yes -n {{ kserve_deploy_model_namespace }}
 
 - name: Prepare the SMMR
+  when: not kserve_deploy_model_raw_deployment | bool
   block:
   - name: Patch the SMMR
     command: |
@@ -204,7 +205,7 @@
       set -o pipefail;
       set -e;
 
-      pods=$(oc get pod -lserving.kserve.io/inferenceservice=flan-t5-small-gpu -n {{ kserve_deploy_model_namespace }})
+      pods=$(oc get pod -lserving.kserve.io/inferenceservice={{ kserve_deploy_model_inference_service_name }} -n {{ kserve_deploy_model_namespace }})
       echo "$pods"
       if grep ContainerStatusUnknown --silent <<< "$pods"; then
         echo "ContainerStatusUnknown detected, aborting" >&2

@@ -1,5 +1,4 @@
-extends: base_caikit
-secret_key: flan-t5-small
+extends: base
 
 serving_runtime:
   kserve:
@@ -8,5 +7,8 @@ serving_runtime:
       memory: 2 # in Gi
       nvidia.com/gpu: 1
       nvidia.com/gpu_memory: 1 # in Gi of GPU memory
+    extra_env: {}
 inference_service:
-  storage_uri: "s3://psap-watsonx-models/flan-t5-small-caikit/flan-t5-small-caikit"
+  storage_uri: "s3://psap-hf-models/flan-t5-small/flan-t5-small"
+  model_format: pytorch
+  single_container: true

@@ -11,5 +11,6 @@ serving_runtime:
     extra_env:
       key: value
 inference_service:
+  model_format: caikit/pytorch/...
   storage_uri: "s3://<bucket>/<path>"
   min_replicas: 1

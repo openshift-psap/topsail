@@ -302,6 +302,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         sr_mute_logs=mute_logs,
 
         inference_service_name=model_name,
+        inference_service_model_format=consolidated_model["inference_service"]["model_format"],
         storage_uri=consolidated_model["inference_service"]["storage_uri"],
         sa_name=config.ci_artifacts.get_config("kserve.sa_name"),
 
@@ -335,14 +336,15 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             raise ValueError(f"serving_runtime.kserve.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
         args_dict["sr_kserve_extra_env_values"] = extra_env
 
-    if consolidated_model["serving_runtime"].get("merge_containers", False):
-        args_dict["sr_merge_containers"] = True
-        args_dict["storage_uri"] = args_dict["storage_uri"].removesuffix("/" + consolidated_model["id"])
+    if consolidated_model["serving_runtime"].get("single_container", False):
+        args_dict["sr_single_container"] = True
 
     if "nvidia.com/gpu" in consolidated_model["serving_runtime"].get("kserve", {}).get("resource_request",{}):
         num_gpus = consolidated_model["serving_runtime"]["kserve"]["resource_request"]["nvidia.com/gpu"]
         if num_gpus > 1:
             args_dict["sr_shared_memory"]=True
+
+    args_dict["raw_deployment"] = config.ci_artifacts.get_config("kserve.raw_deployment.enabled")
 
     with env.NextArtifactDir("prepare_namespace"):
         test_scale.prepare_user_sutest_namespace(namespace)
@@ -383,7 +385,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
             query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
         )
-        if config.ci_artifacts.get_config("tests.e2e.validate_model"):
+        if config.ci_artifacts.get_config("tests.e2e.validate_model") and not args_dict["raw_deployment"]:
             run.run_toolbox("kserve", "validate_model", **validate_kwargs)
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")

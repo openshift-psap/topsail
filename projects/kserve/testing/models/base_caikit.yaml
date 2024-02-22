@@ -1,0 +1,4 @@
+extends: base
+inference_service:
+  model_format: caikit
+  single_container: false

@@ -18,6 +18,6 @@ spec:
     serviceAccountName: {{ kserve_deploy_model_sa_name }}
     model:
       modelFormat:
-        name: caikit
+        name: {{ kserve_deploy_model_inference_service_model_format }}
       runtime: {{ kserve_deploy_model_serving_runtime_name }}
       storageUri: {{ kserve_deploy_model_storage_uri }}
