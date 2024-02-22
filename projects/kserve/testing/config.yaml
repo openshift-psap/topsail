@@ -89,6 +89,14 @@ ci_presets:
     - bloom-560m
     - mpt-7b-instruct2
 
+  raw:
+    extends: [no_gpu]
+    kserve.raw_deployment.enabled: true
+    rhods.operator.stop: true # mandatory in 2.7
+    tests.e2e.models: [flan-t5-small-hf-cpu]
+    tests.e2e.llm_load_test.concurrency: 2
+    tests.e2e.llm_load_test.plugin: tgis_grpc_plugin
+
   # ---
 
   prepare_only:

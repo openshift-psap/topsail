@@ -9,6 +9,44 @@ import test_scale
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
 
+def enable_kserve_raw_deployment_dsci():
+    run.run("""\
+    cat <<EOF | oc apply -f-
+apiVersion: dscinitialization.opendatahub.io/v1
+kind: DSCInitialization
+metadata:
+  name: default-dsci
+spec:
+  applicationsNamespace: redhat-ods-applications
+  monitoring:
+    managementState: Managed
+    namespace: redhat-ods-monitoring
+  serviceMesh:
+    controlPlane:
+      metricsCollection: Istio
+      name: data-science-smcp
+      namespace: istio-system
+    managementState: Removed
+EOF
+""")
+
+
+def enable_kserve_raw_deployment():
+    run.run("""
+    oc patch configmap/inferenceservice-config \
+       -n redhat-ods-applications \
+       --type=strategic \
+       -p '{"data": {"deploy": "{\\"defaultDeploymentMode\\": \\"RawDeployment\\"}"}}'
+    new_deploy_value=$(oc get configmap/inferenceservice-config -n redhat-ods-applications  -ojsonpath={.data.deploy} | jq '.defaultDeploymentMode = "RawDeployment"');
+    oc set data configmap/inferenceservice-config -n redhat-ods-applications deploy="$new_deploy_value";
+    """)
+
+    run.run("""
+    new_ingress_value=$(oc get configmap/inferenceservice-config -n redhat-ods-applications  -ojsonpath={.data.ingress} | jq '.ingressClassName = "openshift-default"');
+    oc set data configmap/inferenceservice-config -n redhat-ods-applications ingress="$new_ingress_value";
+    """)
+
+
 def customize_rhods():
     if not config.ci_artifacts.get_config("rhods.operator.stop"):
         return
@@ -31,9 +69,26 @@ def customize_rhods():
                 f"| oc apply -f-")
         run.run(f"oc get deploy/kserve-controller-manager -n redhat-ods-applications -oyaml > {env.ARTIFACT_DIR}/deploy_kserve-controller-manager.customized.yaml")
 
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        run.run("oc apply -f projects/kserve/testing/poc/dsci.yaml")
+
+        run.run(""" \
+        oc patch configmap/inferenceservice-config \
+           -n redhat-ods-applications \
+           --type=strategic \
+           -p '{"data": {"deploy": "{\"defaultDeploymentMode\": \"RawDeployment\"}"}}'\
+        """)
+
+
+        run.run("""
+        oc patch configmap/inferenceservice-config \
+           -n redhat-ods-applications \
+           --type=strategic \
+           -p '{"data": {"ingress": "{\"ingressClassName\": \"openshift-default\"}"}}'\
+        """)
+
 
 def customize_kserve():
-
     if config.ci_artifacts.get_config("kserve.customize.serverless.enabled"):
         egress_mem = config.ci_artifacts.get_config("kserve.customize.serverless.egress.limits.memory")
         ingress_mem = config.ci_artifacts.get_config("kserve.customize.serverless.ingress.limits.memory")
@@ -49,15 +104,29 @@ def prepare():
 
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
 
-    with run.Parallel("prepare_kserve") as parallel:
-        for operator in config.ci_artifacts.get_config("prepare.operators"):
-            parallel.delayed(run.run_toolbox, "cluster", "deploy_operator", catalog=operator['catalog'], manifest_name=operator['name'], namespace=operator['namespace'], artifact_dir_suffix=operator['name'])
+    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        with run.Parallel("prepare_kserve") as parallel:
+            for operator in config.ci_artifacts.get_config("prepare.operators"):
+                parallel.delayed(run.run_toolbox, "cluster", "deploy_operator",
+                                 catalog=operator['catalog'],
+                                 manifest_name=operator['name'],
+                                 namespace=operator['namespace'],
+                                 artifact_dir_suffix=operator['name'])
 
     rhods.install(token_file)
 
+    extra_settings = {}
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        extra_settings["spec.components.kserve.serving.managementState"] = "Removed"
+
+        enable_kserve_raw_deployment_dsci()
+
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
-    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve", "dashboard"],
-                    name=None if has_dsc else "default-dsc")
+    run.run_toolbox("rhods", "update_datasciencecluster",
+                    enable=["kserve", "dashboard"],
+                    name=None if has_dsc else "default-dsc",
+                    extra_settings=extra_settings,
+                    )
 
     with env.NextArtifactDir("prepare_poc"):
         try:
@@ -67,6 +136,9 @@ def prepare():
 
     customize_rhods()
     customize_kserve()
+
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        enable_kserve_raw_deployment()
 
 
 def undeploy_operator(operator, mute=True):
