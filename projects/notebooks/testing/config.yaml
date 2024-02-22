@@ -121,11 +121,10 @@ ci_presets:
     clusters.driver.compute.dedicated: false
     clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
-    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
   icelake_notebook_gating_test:
     extends: [notebook_gating_scale_test, metal, icelake, use_intlab_os]
-    tests.notebooks.users.count: 200
+    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
   use_intlab_os:
     matbench.lts.opensearch.index_prefix: "psap-rhoai."
