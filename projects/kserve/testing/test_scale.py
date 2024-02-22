@@ -72,7 +72,7 @@ def prepare_user_sutest_namespace(namespace):
     with env.NextArtifactDir("deploy_storage_configuration"):
         deploy_storage_configuration(namespace)
 
-    with env.NextArtifactDir("deploy_istio_sidecar"):
+    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
         deploy_istio_sidecar(namespace)
 
 
@@ -230,6 +230,7 @@ def run_one_test(namespace, job_index):
         extra = dict(
             inference_service_name=inference_service_name,
             inference_service_model_format=config.ci_artifacts.get_config("tests.scale.model.format"),
+            raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
         )
 
         run.run_toolbox_from_config("kserve", "deploy_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
