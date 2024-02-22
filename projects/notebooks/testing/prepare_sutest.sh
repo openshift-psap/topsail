@@ -241,7 +241,7 @@ sutest_cleanup() {
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_rhods; then
-        if [[ -n $(oc get datasciencecluster -oname 2>dev/null || true) ]]; then
+        if [[ -n $(oc get datasciencecluster -oname 2> /dev/null || true) ]]; then
             ./run_toolbox.py rhods update_datasciencecluster
         fi
 
