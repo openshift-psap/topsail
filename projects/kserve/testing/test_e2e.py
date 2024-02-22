@@ -384,8 +384,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             inference_service_names=[model_name],
             dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
             query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
+            raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
         )
-        if config.ci_artifacts.get_config("tests.e2e.validate_model") and not args_dict["raw_deployment"]:
+        if config.ci_artifacts.get_config("tests.e2e.validate_model"):
             run.run_toolbox("kserve", "validate_model", **validate_kwargs)
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
@@ -541,11 +542,19 @@ def test_consolidated_model(consolidated_model, namespace=None):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
         return
 
-    host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
-    host = host_url.lstrip("https://")
-    if host == "":
-        raise RuntimeError(f"Failed to get the hostname for InferenceServince {namespace}/{model_name}")
-    port = 443
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        svc_name = run.run(f"oc get svc -lserving.kserve.io/inferenceservice={model_name} -ojsonpath={{.items[0].metadata.name}} -n {namespace}", capture_stdout=True).stdout
+        if not svc_name:
+            raise RuntimeError(f"Failed to get the hostname for Service of InferenceService {namespace}/{model_name}")
+        port = 80
+        host = f"{svc_name}.{namespace}.svc.cluster.local"
+    else:
+        host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
+        host = host_url.lstrip("https://")
+        if host == "":
+            raise RuntimeError(f"Failed to get the hostname for InferenceService {namespace}/{model_name}")
+        port = 443
+
     llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
 
     # model_id?
