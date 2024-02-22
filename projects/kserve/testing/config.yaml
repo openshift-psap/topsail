@@ -288,10 +288,10 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 655658
-    channel: stable
-    version: 2.6.0
-    version_name: rc1
+    tag: 675918
+    channel: fast
+    version: 2.7.0
+    version_name: rc2
   operator:
     # set to true to stop the RHODS operator
     stop: false
