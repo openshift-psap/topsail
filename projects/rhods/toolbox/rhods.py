@@ -11,7 +11,7 @@ class Rhods:
 
     @AnsibleRole("rhods_deploy_ods")
     @AnsibleMappedParams
-    def deploy_ods(self, catalog_image, tag, channel="", version=""):
+    def deploy_ods(self, catalog_image, tag, channel="", version="", disable_dsc_config=False):
         """
         Deploy ODS operator from its custom catalog
 
@@ -20,6 +20,7 @@ class Rhods:
           tag: Catalog image tag to use to deploy RHODS.
           channel: The channel to use for the deployment. Let empty to use the default channel.
           version: The version to deploy. Let empty to install the last version available.
+          disable_dsc_config: if True, pass the flag to disable DSC configuration
         """
 
         return RunAnsibleRole(locals())
