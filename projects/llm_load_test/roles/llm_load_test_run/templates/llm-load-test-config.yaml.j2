@@ -13,12 +13,13 @@ dataset:
 load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: {{ llm_load_test_run_concurrency }}
-  duration: "{{ llm_load_test_run_duration }}"
-plugin: "tgis_grpc_plugin"
+  duration: {{ llm_load_test_run_duration }}
+plugin: "{{ llm_load_test_run_plugin }}"
 plugin_options:
   streaming: True
+  interface: "{{ llm_load_test_run_interface }}"
   model_name: "{{ llm_load_test_run_model_id }}"
   host: "{{ llm_load_test_run_host}}"
-  port: 8033
+  port: "{{ llm_load_test_run_port}}"
 extra_metadata:
   replicas: 1

@@ -542,15 +542,19 @@ def test_consolidated_model(consolidated_model, namespace=None):
         return
 
     host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
-    host = host_url.lstrip("https://") + ":443"
-    if host == ":443":
+    host = host_url.lstrip("https://")
+    if host == "":
         raise RuntimeError(f"Failed to get the hostname for InferenceServince {namespace}/{model_name}")
+    port = 443
     llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
 
     # model_id?
     args_dict = dict(
         host=host,
+        port=port,
         duration=llm_config["duration"],
+        plugin=llm_config["plugin"],
+        interface=llm_config["interface"],
         model_id=model_name,
         llm_path=llm_config["src_path"],
         concurrency=llm_config["concurrency"]

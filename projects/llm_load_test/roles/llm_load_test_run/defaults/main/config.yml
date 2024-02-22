@@ -3,13 +3,23 @@
 # Source component: Llm_Load_Test.run
 
 # Parameters
-# the host endpoint of the GRPC call
+# the host endpoint of the gRPC call
 # Mandatory value
 llm_load_test_run_host:
+
+# the gRPC port on the specified host
+# Mandatory value
+llm_load_test_run_port:
 
 # the duration of the load testing
 # Mandatory value
 llm_load_test_run_duration:
+
+# the llm-load-test plugin to use (tgis_grpc_plugin or caikit_client_plugin for now)
+llm_load_test_run_plugin: tgis_grpc_plugin
+
+# (http or grpc) the interface to use for llm-load-test-plugins that support both
+llm_load_test_run_interface: grpc
 
 # The ID of the model to pass along with the GRPC call
 llm_load_test_run_model_id: not-used

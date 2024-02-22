@@ -418,8 +418,8 @@ tests:
       src_path: projects/llm_load_test/llm-load-test/
       duration: 60
       concurrency: 16
-      rps: 2
-      call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+      plugin: caikit_client_plugin
+      interface: grpc
 
 matbench:
   preset: null
