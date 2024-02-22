@@ -302,6 +302,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         sr_mute_logs=mute_logs,
 
         inference_service_name=model_name,
+        inference_service_model_format=consolidated_model["inference_service"]["model_format"],
         storage_uri=consolidated_model["inference_service"]["storage_uri"],
         sa_name=config.ci_artifacts.get_config("kserve.sa_name"),
 
