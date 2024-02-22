@@ -31,6 +31,10 @@ kserve_deploy_model_sr_transformer_resource_request:
 # Mandatory value
 kserve_deploy_model_inference_service_name:
 
+# the name of the inference service format (caikit, pytorch, ...)
+# Mandatory value
+kserve_deploy_model_inference_service_model_format:
+
 # [S3] URI where the model is stored
 # Mandatory value
 kserve_deploy_model_storage_uri:

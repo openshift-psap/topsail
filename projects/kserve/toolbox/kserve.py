@@ -14,7 +14,9 @@ class Kserve:
                      serving_runtime_name,
                      sr_kserve_image, sr_kserve_resource_request,
                      sr_transformer_image, sr_transformer_resource_request,
-                     inference_service_name, storage_uri,
+                     inference_service_name,
+                     inference_service_model_format,
+                     storage_uri,
                      sa_name,
                      sr_kserve_extra_env_values={},
                      sr_transformer_extra_env_values={},
@@ -48,6 +50,8 @@ class Kserve:
 
           inference_service_name: the name to give to the inference service
           inference_service_min_replicas: the minimum number of replicas. If none, the field is left unset.
+          inference_service_model_format: the name of the inference service format (caikit, pytorch, ...)
+
           sa_name: name of the service account to use for running the Pod
           storage_uri: [S3] URI where the model is stored
 
