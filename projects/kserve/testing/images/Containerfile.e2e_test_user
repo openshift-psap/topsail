@@ -3,6 +3,11 @@
 # not used by the buildconfig should not be prefix with the image registry location
 FROM ci-artifacts:main
 
+# install `grpcurl`
+ARG GRPCURL_VERSION=1.8.7
+RUN curl -L https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz | tar xz && \
+    chmod 777 grpcurl && mv grpcurl /usr/local/bin/
+
 # install llm-load-test requirements
 RUN python3 -m ensurepip
 
