@@ -8,6 +8,31 @@ import test_scale
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
+def enable_user_workload_monitoring():
+    run.run(""" \
+    cat <<EOF | oc apply -f-
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-workload-monitoring-config
+  namespace: openshift-user-workload-monitoring
+data:
+  config.yaml: |
+    prometheus:
+      logLevel: debug
+      retention: 15d #Change as needed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+data:
+  config.yaml: |
+    enableUserWorkload: true
+EOF
+""")
+
 
 def enable_kserve_raw_deployment_dsci():
     run.run("""\
@@ -128,12 +153,8 @@ def prepare():
                     extra_settings=extra_settings,
                     )
 
-    with env.NextArtifactDir("prepare_poc"):
-        try:
-            run.run(f"projects/kserve/testing/poc/prepare.sh |& tee -a {env.ARTIFACT_DIR}/run.log")
-        finally:
-            run.run(f"oc get datasciencecluster -oyaml > {env.ARTIFACT_DIR}/datasciencecluster.after.yaml")
 
+    enable_user_workload_monitoring()
     customize_rhods()
     customize_kserve()
 
