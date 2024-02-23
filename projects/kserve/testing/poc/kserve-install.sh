@@ -15,5 +15,5 @@ source "$(dirname "$(realpath "$0")")/utils.sh"
 
 source check-env-variables.sh
 
-./1-prerequisite-operators.sh
+#./1-prerequisite-operators.sh
 ./2-required-crs.sh
