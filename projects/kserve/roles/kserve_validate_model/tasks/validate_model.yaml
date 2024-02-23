@@ -9,29 +9,73 @@
     state: directory
     mode: '0755'
 
-- name: Get the name of the KSVC
-  shell:
+- name: Get the name of the model endpoint
+  shell: |
     set -o pipefail;
-    oc get ksvc
-       -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }}
-       -n {{ kserve_validate_model_namespace }}
-       -ojsonpath='{.items[0].status.url}'
-       | sed 's|https://||'
-  register: ksvc_hostname_cmd
+    {% if kserve_validate_model_raw_deployment %}
+    if test -e /run/secrets/kubernetes.io/serviceaccount/namespace; then
+      # inside the cluster
+      svc_name=$(oc get svc \
+                      -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }} \
+                      -ojsonpath={.items[0].metadata.name} \
+                      -n {{ kserve_validate_model_namespace }});
+
+      echo "${svc_name}.{{ kserve_validate_model_namespace }}.svc.cluster.local:80"
+    else
+      # outside the cluster
+      # port-forwaring enabled in the next task
+      echo "localhost:8080"
+    fi
+    {% else %}
+    oc get ksvc \
+       -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }} \
+       -n {{ kserve_validate_model_namespace }} \
+       -ojsonpath='{.items[0].status.url}' \
+       | sed 's|https://||' \
+       | sed 's/$/:443/'
+    {% endif %}
+  register: model_endpoint_cmd
 
 - name: Wait for the model to answer successfully
   shell: |
     set -o pipefail;
-    i=2;
+    set -e;
 
+    {% if kserve_validate_model_raw_deployment %}
+    if ! test -e /run/secrets/kubernetes.io/serviceaccount/namespace; then
+      oc port-forward svc/{{ kserve_validate_model_inference_service_name }}-predictor 8080:80 &
+      oc_pid=$!
+      trap "kill -9 $oc_pid" SIGINT SIGTERM EXIT
+
+      # I cannot find any better at the moment :/
+      # curl localhost:8080 could do the job ... but it leads to a 'read: connection reset by peer' :|
+      sleep 5;
+    fi
+
+    GRPCURL_DATA='{
+        "requests": [ {
+                "text": "At what temperature does Nitrogen boil?"
+
+        } ],
+        "params": {
+            "stopping": {
+                "min_new_tokens": 10,
+                "max_new_tokens": 100
+            }
+        }
+    }'
+    {% else %}
+    i=2;
     GRPCURL_DATA=$( sed "${i}q;d" "{{ kserve_validate_model_dataset }}" | jq .input )
+    {% endif %}
 
     grpcurl \
-        -insecure \
+        {% if kserve_validate_model_proto %} -proto {{ kserve_validate_model_proto }} {% endif %} \
+        {% if kserve_validate_model_raw_deployment %} -plaintext {% else %} -insecure {% endif %} \
         -d "$GRPCURL_DATA" \
         -H "mm-model-id: {{ kserve_validate_model_model_id }}" \
-        {{ ksvc_hostname_cmd.stdout }}:443 \
-        caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+        {{ model_endpoint_cmd.stdout }} \
+        {{ kserve_validate_model_method }}
 
   register: grpcurl_working_cmd
   retries: 60
@@ -40,7 +84,7 @@
 
 - name: Inform | Next task runs the validation test
   debug: msg="Next task runs the validation test. It runs {{ kserve_validate_model_query_count }} queries. Artifacts will be saved into '{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}'."
-
+  when: not kserve_validate_model_raw_deployment | bool
 
 - name: Query the model endpoint
   shell: |
@@ -54,11 +98,12 @@
       GRPCURL_DATA=$( sed "${i}q;d" "{{ kserve_validate_model_dataset }}" | jq .input )
       echo $GRPCURL_DATA >> "$queries"
       grpcurl \
-        -insecure \
+        {% if kserve_validate_model_proto %} -proto {{ kserve_validate_model_proto }} {% endif %} \
+        {% if kserve_validate_model_raw_deployment %} -plaintext {% else %} -insecure {% endif %} \
         -d "$GRPCURL_DATA" \
         -H "mm-model-id: {{ kserve_validate_model_model_id }}" \
-        {{ ksvc_hostname_cmd.stdout }}:443 \
-        caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict \
+        {{ model_endpoint_cmd.stdout }} \
+        {{ kserve_validate_model_method }} \
         >> "$dest"
       echo "Call $i/{{ kserve_validate_model_query_count }} passed"
      done
@@ -66,3 +111,4 @@
   until: query_model_cmd.rc == 0
   retries: 5
   delay: 30
+  when: not kserve_validate_model_raw_deployment | bool
