@@ -51,7 +51,7 @@ sutest/cluster preload_image/kserve-runtime:
 {% else %}
   namespace: {{ tests.e2e.namespace }}
 {% endif %}
-  name: caikit-image
+  name: SET_AT_RUNTIME
   image: SET_AT_RUNTIME
 
   node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
