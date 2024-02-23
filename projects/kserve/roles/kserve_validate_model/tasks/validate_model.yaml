@@ -22,9 +22,9 @@
 - name: Wait for the model to answer successfully
   shell: |
     set -o pipefail;
-    i=0;
+    i=2;
 
-    GRPCURL_DATA=$(cat "{{ kserve_validate_model_dataset }}" | jq .dataset[$i].input )
+    GRPCURL_DATA=$( sed "${i}q;d" "{{ kserve_validate_model_dataset }}" | jq .input )
 
     grpcurl \
         -insecure \
@@ -38,7 +38,7 @@
   delay: 5
   until: grpcurl_working_cmd.rc == 0
 
-- name: Inform | Next task runs the load test
+- name: Inform | Next task runs the validation test
   debug: msg="Next task runs the validation test. It runs {{ kserve_validate_model_query_count }} queries. Artifacts will be saved into '{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}'."
 
 
@@ -50,8 +50,8 @@
     queries={{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}/questions.json
     rm -f "$dest" "$queries"
 
-    for i in $(seq {{ kserve_validate_model_query_count }}); do
-      GRPCURL_DATA=$(cat "{{ kserve_validate_model_dataset }}" | jq .dataset[$i].input )
+    for i in $(seq 2 $(({{ kserve_validate_model_query_count }} + 1))); do
+      GRPCURL_DATA=$( sed "${i}q;d" "{{ kserve_validate_model_dataset }}" | jq .input )
       echo $GRPCURL_DATA >> "$queries"
       grpcurl \
         -insecure \

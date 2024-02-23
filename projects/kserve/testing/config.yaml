@@ -357,7 +357,7 @@ kserve:
     use_https: 1
   inference_service:
     validation:
-      dataset: subprojects/llm-load-test/openorca-subset-006.json
+      dataset: projects/llm_load_test/llm-load-test/datasets/openorca_large_subset_010.jsonl
       query_count: 10
   model:
     serving_runtime:
