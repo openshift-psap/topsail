@@ -94,24 +94,6 @@ def customize_rhods():
                 f"| oc apply -f-")
         run.run(f"oc get deploy/kserve-controller-manager -n redhat-ods-applications -oyaml > {env.ARTIFACT_DIR}/deploy_kserve-controller-manager.customized.yaml")
 
-    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
-        run.run("oc apply -f projects/kserve/testing/poc/dsci.yaml")
-
-        run.run(""" \
-        oc patch configmap/inferenceservice-config \
-           -n redhat-ods-applications \
-           --type=strategic \
-           -p '{"data": {"deploy": "{\"defaultDeploymentMode\": \"RawDeployment\"}"}}'\
-        """)
-
-
-        run.run("""
-        oc patch configmap/inferenceservice-config \
-           -n redhat-ods-applications \
-           --type=strategic \
-           -p '{"data": {"ingress": "{\"ingressClassName\": \"openshift-default\"}"}}'\
-        """)
-
 
 def customize_kserve():
     if config.ci_artifacts.get_config("kserve.customize.serverless.enabled"):
@@ -225,9 +207,10 @@ def preload_image():
     namespace = config.get_command_arg("cluster", "preload_image", "namespace", prefix="sutest", suffix="kserve-runtime")
     test_scale.prepare_user_sutest_namespace(namespace)
 
-    def preload(image):
+    def preload(image, name):
         RETRIES = 3
-        extra = dict(image=image)
+        extra = dict(image=image, name=name)
+
         for i in range(RETRIES):
             try:
                 run.run_toolbox_from_config("cluster", "preload_image", prefix="sutest", suffix="kserve-runtime", extra=extra)
@@ -239,5 +222,6 @@ def preload_image():
                     raise
 
     with run.Parallel("preload_serving_runtime") as parallel:
-        preload(config.ci_artifacts.get_config("kserve.model.serving_runtime.kserve.image"))
-        preload(config.ci_artifacts.get_config("kserve.model.serving_runtime.transformer.image"))
+        parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.kserve.image"), "kserve")
+        if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+            parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.transformer.image"), "transformer")
