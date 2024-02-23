@@ -141,6 +141,7 @@ class Rhods:
                                   name=None,
                                   enable: list = [],
                                   show_all=False,
+                                  extra_settings: dict = {},
                                   ):
         """
         Update RHOAI datasciencecluster resource
@@ -150,6 +151,7 @@ class Rhods:
 
           enable: list of all the components to enable
           show_all: if enabled, show all the available components and exit.
+          extra_settings: dict of key:value to set manually in the DSC, using JSON dot notation.
         """
 
         if not isinstance(enable, list):
