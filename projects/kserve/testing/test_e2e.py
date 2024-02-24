@@ -542,29 +542,23 @@ def test_consolidated_model(consolidated_model, namespace=None):
         return
 
     host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
-    host = host_url.lstrip("https://") + ":443"
-    if host == ":443":
+    host = host_url.lstrip("https://")
+    if host == "":
         raise RuntimeError(f"Failed to get the hostname for InferenceServince {namespace}/{model_name}")
+    port = 443
     llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
 
-    protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
-
-    logging.info("To extract the protos:")
-    logging.info(f"./run_toolbox.py kserve extract_protos {namespace} {model_name} {protos_path}")
-    logging.info("Should be necessary only when the protos change in the image.")
-
+    # model_id?
     args_dict = dict(
         host=host,
+        port=port,
         duration=llm_config["duration"],
-        protos_path=protos_path.absolute(),
-        call=llm_config["call"],
+        plugin=llm_config["plugin"],
+        interface=llm_config["interface"],
+        model_id=model_name,
         llm_path=llm_config["src_path"],
-        threads=llm_config["threads"],
-        rps=llm_config["rps"],
+        concurrency=llm_config["concurrency"]
     )
-
-    if not protos_path.exists():
-        raise RuntimeError(f"Protos do not exist at {protos_path}")
 
     if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
         matbenchmark_run_llm_load_test(namespace, args_dict)

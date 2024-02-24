@@ -96,7 +96,7 @@ ci_presets:
 
   matbenchmark:
     tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.threads: [8, 16, 32]
+    tests.e2e.llm_load_test.concurrency: [8, 16, 32]
     tests.e2e.models: [flan-t5-small-gpu]
 
   matbenchmark_quick:
@@ -106,10 +106,10 @@ ci_presets:
   # ---
 
   5min:
-    tests.e2e.llm_load_test.duration: 5m
+    tests.e2e.llm_load_test.duration: 300
 
   10min:
-    tests.e2e.llm_load_test.duration: 10m
+    tests.e2e.llm_load_test.duration: 600
 
   # ---
 
@@ -357,7 +357,7 @@ kserve:
     use_https: 1
   inference_service:
     validation:
-      dataset: subprojects/llm-load-test/openorca-subset-006.json
+      dataset: projects/llm_load_test/llm-load-test/datasets/openorca_large_subset_010.jsonl
       query_count: 10
   model:
     serving_runtime:
@@ -384,7 +384,7 @@ tests:
   mode: e2e
 
   dry_mode: false
-  visualize: true
+  visualize: false
   capture_prom: true
   prom_plot_workload: projects.kserve.visualizations.kserve-prom
   scale:
@@ -415,13 +415,11 @@ tests:
       stop_on_error: true
     llm_load_test:
       enabled: true
-      src_path: subprojects/llm-load-test/
-      duration: 1m
-      threads: 16
-      rps: 2
-      protos_file: nlpservice.proto
-      protos_dir: projects/kserve/testing/protos/
-      call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+      src_path: projects/llm_load_test/llm-load-test/
+      duration: 60
+      concurrency: 16
+      plugin: caikit_client_plugin
+      interface: grpc
 
 matbench:
   preset: null

@@ -1,4 +1,4 @@
-# based on https://github.com/openshift-psap/llm-load-test/blob/580dce5926380de05c108976a72c8e969346c5c8/build/Containerfile
+# based on https://github.com/openshift-psap/llm-load-test/blob/d503eba7f530a610d068b98f7f6bb12d62a98b69/build/Containerfile
 
 # not used by the buildconfig should not be prefix with the image registry location
 FROM ci-artifacts:main
@@ -8,12 +8,7 @@ ARG GRPCURL_VERSION=1.8.7
 RUN curl -L https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz | tar xz && \
     chmod 777 grpcurl && mv grpcurl /usr/local/bin/
 
-
-# install GHZ (llm-load-test dependency)
-ARG GHZ_PINNED_COMMIT=44a50f9826a0c1f6c42c430dafb29662cb2e418b
-ARG GHZ_BRANCH_NAME=response_json
-
-RUN curl https://tools.972.ovh/ghz -o /usr/local/bin/ghz && chmod ugo+x /usr/local/bin/ghz
-
 # install llm-load-test requirements
-RUN pip3 install -r subprojects/llm-load-test/requirements.txt
+RUN python3 -m ensurepip
+
+RUN pip3 install -r projects/llm_load_test/llm-load-test/requirements.txt
