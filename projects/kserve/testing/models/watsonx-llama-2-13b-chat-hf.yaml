@@ -1,5 +1,4 @@
 extends: watsonx_base
-secret_key: watsonx-llama-2-13b-chat-hf
 
 serving_runtime:
   kserve:
