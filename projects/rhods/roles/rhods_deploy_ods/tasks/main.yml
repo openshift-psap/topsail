@@ -37,18 +37,6 @@
                --from-literal=PAGERDUTY_KEY=not-a-key \
                -oyaml --dry-run=client \
                | oc apply -f-
-    oc create secret generic addon-managed-odh-parameters -n redhat-ods-operator \
-               --from-literal=notification-email=not-an-email@local.com \
-               -oyaml --dry-run=client \
-               | oc apply -f-
-    oc create secret generic redhat-rhods-smtp -n redhat-ods-monitoring \
-               --from-literal=host=dummy.svc \
-               --from-literal=port=1234 \
-               --from-literal=username=USERNAME \
-               --from-literal=password=PASSWORD \
-               -oyaml --dry-run=client \
-               | oc apply -f-
-
 
 - name: Test if the RHODS operator is installed
   command:
