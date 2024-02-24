@@ -21,11 +21,14 @@ ci_presets:
     extends: [light_cluster]
 
   quick:
-    gpu.prepare_cluster: false
-    clusters.sutest.compute.machineset.type: m6i.2xlarge
+    extends: [no_gpu]
     tests.e2e.models:
     - flan-t5-small-cpu
     - flan-t5-small-cpu
+
+  no_gpu:
+    gpu.prepare_cluster: false
+    clusters.sutest.compute.machineset.type: m6i.2xlarge
 
   metal:
     clusters.sutest.is_metal: true
