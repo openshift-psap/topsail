@@ -1,4 +1,4 @@
-extends: flan-t5-small-gpu
+extends: flan-t5-small-hf
 serving_runtime:
   kserve:
     resource_request:
