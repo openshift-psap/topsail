@@ -1,4 +1,4 @@
-extends: watsonx_base
+extends: base-standalone-tgis
 
 serving_runtime:
   kserve:
