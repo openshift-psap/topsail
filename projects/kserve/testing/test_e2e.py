@@ -95,9 +95,12 @@ def test_ci():
     finally:
         exc = None
         if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+            raw_deployment = config.ci_artifacts.get_config("kserve.raw_deployment.enabled")
+
             exc = run.run_and_catch(
                 exc,
-                run.run_toolbox, "kserve", "capture_operators_state", run_kwargs=dict(capture_stdout=True),
+                run.run_toolbox, "kserve", "capture_operators_state", raw_deployment=raw_deployment,
+                run_kwargs=dict(capture_stdout=True),
             )
 
             exc = run.run_and_catch(
