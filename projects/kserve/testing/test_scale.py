@@ -236,7 +236,15 @@ def run_one_test(namespace, job_index):
         run.run_toolbox_from_config("kserve", "deploy_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
         run.run(f'echo "model_{model_idx}_deployed: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
 
-        extra = dict(inference_service_names=[inference_service_name])
+        validate_extra = dict(
+            inference_service_names=[inference_service_name],
+            method=config.ci_artifacts.get_config("kserve.inference_service.validation.method"),
+            raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
+        )
+
+        if validate_extra["raw_deployment"]:
+            validate_extra["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
+
         run.run_toolbox_from_config("kserve", "validate_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
         run.run(f'echo "model_{model_idx}_validated: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
 

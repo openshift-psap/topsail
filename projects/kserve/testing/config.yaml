@@ -92,10 +92,14 @@ ci_presets:
   raw:
     extends: [no_gpu]
     kserve.raw_deployment.enabled: true
+    kserve.inference_service.validation.method: fmaas.GenerationService/Generate
+    kserve.inference_service.validation.proto: projects/kserve/testing/protos/tgis_generation.proto
     rhods.operator.stop: true # mandatory in 2.7
+
     tests.e2e.models: [flan-t5-small-hf-cpu]
     tests.e2e.llm_load_test.concurrency: 2
     tests.e2e.llm_load_test.plugin: tgis_grpc_plugin
+
 
   # ---
 
@@ -370,6 +374,8 @@ kserve:
     validation:
       dataset: projects/llm_load_test/llm-load-test/datasets/openorca_large_subset_010.jsonl
       query_count: 10
+      method: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+      proto: null
   model:
     serving_runtime:
       mute_logs: true
