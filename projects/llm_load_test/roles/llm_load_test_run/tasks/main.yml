@@ -24,7 +24,12 @@
     mode: '0400'
 
 - name: Inform | Next task runs the load test
-  debug: msg="Next task runs the load test. It takes {{ llm_load_test_run_duration }} to complete. Artifacts will be saved into '{{ artifact_extra_logs_dir }}/output'."
+  debug:
+    msg: |
+      Next task runs the load test.
+      It takes {{ llm_load_test_run_duration }}s to complete.
+      Artifacts will be saved into '{{ artifact_extra_logs_dir }}/output'.
+      Configuration file is {{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml
 
 - name: Run llm-load-test and update the response
   block:
@@ -33,7 +38,7 @@
       set -e
       cd "{{ llm_load_test_run_llm_path }}"
 
-      python3 load_test.py --config "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml" &> {{ artifact_extra_logs_dir }}/logs/run.log
+      timeout $(({{ llm_load_test_run_duration }} + 30)) python3 load_test.py --config "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml" &> {{ artifact_extra_logs_dir }}/logs/run.log
   always:
 
   - name: Ensure that some content has been generated
