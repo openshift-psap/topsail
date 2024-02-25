@@ -559,7 +559,6 @@ def test_consolidated_model(consolidated_model, namespace=None):
 
     llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
 
-    # model_id?
     args_dict = dict(
         host=host,
         port=port,
