@@ -257,6 +257,21 @@ def launch_deploy_consolidated_model(consolidated_model):
         deploy_consolidated_model(consolidated_model)
 
 
+def validate_model(namespace, model_name):
+    validate_kwargs = dict(
+        namespace=namespace,
+        inference_service_names=[model_name],
+        method=config.ci_artifacts.get_config("kserve.inference_service.validation.method"),
+        dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
+        query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
+        raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
+    )
+    if validate_kwargs["raw_deployment"]:
+        validate_kwargs["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
+
+    run.run_toolbox("kserve", "validate_model", **validate_kwargs)
+
+
 def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None, delete_others=None, limits_equals_requests=None):
     logging.info(f"Deploying model '{consolidated_model['name']}'")
 
@@ -379,15 +394,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
                 ), f, indent=4)
                 print("", file=f)
 
-        validate_kwargs = dict(
-            namespace=namespace,
-            inference_service_names=[model_name],
-            dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
-            query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
-            raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
-        )
         if config.ci_artifacts.get_config("tests.e2e.validate_model"):
-            run.run_toolbox("kserve", "validate_model", **validate_kwargs)
+            validate_model(namespace, model_name)
+
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
         raise e
@@ -528,15 +537,8 @@ def test_consolidated_model(consolidated_model, namespace=None):
     if namespace is None:
         namespace = consolidate_model_namespace(consolidated_model)
 
-    args_dict = dict(
-        namespace=namespace,
-        inference_service_names=[model_name],
-        dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
-        query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
-    )
-
     if config.ci_artifacts.get_config("tests.e2e.validate_model"):
-        run.run_toolbox("kserve", "validate_model", **args_dict)
+        validate_model(namespace, model_name)
 
     if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
