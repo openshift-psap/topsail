@@ -1,3 +1,7 @@
 # Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
 # Source component: Kserve.capture_operators_state
+
+# Parameters
+# if True, do not try to capture any Serverless related resource
+kserve_capture_operators_state_raw_deployment: false
