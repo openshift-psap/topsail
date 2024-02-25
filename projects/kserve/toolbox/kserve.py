@@ -135,11 +135,14 @@ class Kserve:
 
     @AnsibleRole("kserve_capture_operators_state")
     @AnsibleMappedParams
-    def capture_operators_state(self):
+    def capture_operators_state(self,
+                                raw_deployment=False,
+                                ):
         """
         Captures the state of the operators of the KServe serving stack
 
         Args:
+          raw_deployment: if True, do not try to capture any Serverless related resource
         """
 
         return RunAnsibleRole(locals())

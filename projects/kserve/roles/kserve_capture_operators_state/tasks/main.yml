@@ -60,6 +60,7 @@
 
 - name: Capture the Serverless state
   include_tasks: serverless.yaml
+  when: not kserve_capture_operators_state_raw_deployment | bool
 
 - name: Capture the Pods logs
   include_tasks: capture_pods.yaml
