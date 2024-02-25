@@ -50,7 +50,7 @@ def consolidate_models(index=None, use_job_index=False, model_name=None, namespa
     if model_name and namespace:
         consolidated_models.append(consolidate_model(name=model_name))
     elif index is not None and model_name:
-        consolidated_models.append(consolidate_model(index=index, model_name=model_name))
+        consolidated_models.append(consolidate_model(index=index, name=model_name))
     elif index is not None:
         consolidated_models.append(consolidate_model(index=index))
     elif use_job_index:
