@@ -95,6 +95,7 @@ ci_presets:
     kserve.inference_service.validation.method: fmaas.GenerationService/Generate
     kserve.inference_service.validation.proto: projects/kserve/testing/protos/tgis_generation.proto
     rhods.operator.stop: true # mandatory in 2.7
+
     tests.e2e.models: [flan-t5-small-hf-cpu, flan-t5-small-hf-cpu]
     tests.e2e.llm_load_test.concurrency: 2
     tests.e2e.llm_load_test.plugin: tgis_grpc_plugin
@@ -465,7 +466,7 @@ matbench:
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
 export_artifacts:
-  enabled: true
+  enabled: false
   bucket: rhoai-cpt-artifacts
   path_prefix: cpt/kserve
   dest: null # will be set by the export code
