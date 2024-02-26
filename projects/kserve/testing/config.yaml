@@ -400,7 +400,7 @@ tests:
   mode: e2e
 
   dry_mode: false
-  visualize: false
+  visualize: true
   capture_prom: true
   prom_plot_workload: projects.kserve.visualizations.kserve-prom
   scale:
