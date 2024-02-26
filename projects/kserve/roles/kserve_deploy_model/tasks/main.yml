@@ -84,6 +84,7 @@
     mode: '0400'
 
 - name: Create or update the Caikit TGIS config
+  when: not kserve_deploy_model_sr_single_container | bool
   shell:
     set -o pipefail;
 
