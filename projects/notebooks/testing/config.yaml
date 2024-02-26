@@ -121,12 +121,10 @@ ci_presets:
     clusters.driver.compute.dedicated: false
     clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
-    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
   icelake_notebook_gating_test:
-    extends: [notebook_gating_scale_test, metal, icelake]
-    tests.notebooks.users.count: 200
-    matbench.lts.opensearch.instance: perflab
+    extends: [notebook_gating_scale_test, metal, icelake, use_intlab_os]
+    'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
   use_intlab_os:
     matbench.lts.opensearch.index_prefix: "psap-rhoai."
@@ -213,9 +211,9 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 655658
-    channel: stable
-    version: 2.6.0
+    tag: 670992
+    channel: fast
+    version: 2.7.0
     version_name: rc1
   notebooks:
     customize:
