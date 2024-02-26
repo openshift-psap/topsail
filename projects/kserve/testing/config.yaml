@@ -215,6 +215,12 @@ ci_presets:
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-multi-light
 
+  multi_model_longevity:
+    extends: [multi_model_gating]
+    tests.e2e.longevity.enabled: true
+    tests.e2e.longevity.repeat: 3
+    tests.e2e.longevity.delay: 300
+
   # many-model
 
   many_model_gating:
@@ -446,6 +452,10 @@ tests:
       concurrency: 16
       plugin: caikit_client_plugin
       interface: grpc
+    longevity:
+      enabled: false
+      repeat: 3
+      delay: 300 # 5min, support "5min" in future
 
 matbench:
   preset: null

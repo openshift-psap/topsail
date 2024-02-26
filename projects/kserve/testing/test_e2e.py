@@ -154,12 +154,22 @@ def deploy_and_test_models_e2e():
     logging.info("Wait 60s for Prometheus to restart collecting data ...")
     time.sleep(60)
 
+    using_longevity = config.ci_artifacts.get_config("tests.e2e.longevity.enabled")
+
     try:
         deploy_models_concurrently()
 
-        test_models_concurrently()
+        if not using_longevity:
+            test_models_concurrently()
+            test_models_sequentially(locally=False)
+        else:
+            repeats = config.ci_artifacts.get_config("tests.e2e.longevity.repeats")
+            delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
+            for i in range(repeats):
+                test_models_concurrently()
+                time.sleep(delay)
+            run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True)
 
-        test_models_sequentially(locally=False)
     finally:
         # flag file for kserve-prom visualization
         with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
