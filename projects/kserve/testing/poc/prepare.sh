@@ -15,31 +15,6 @@ export TARGET_OPERATOR=brew # Set this among odh, rhods or brew, if you want to 
 export CHECK_UWM=false # Set this to "false", if you want to skip the User Workload Configmap check message
 export deploy_odh_operator=false
 
-# Enable User Workload Monitoring
-# Configure User Workload Monitoring
-
-cat <<EOF | oc apply -f-
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: user-workload-monitoring-config
-  namespace: openshift-user-workload-monitoring
-data:
-  config.yaml: |
-    prometheus:
-      logLevel: debug
-      retention: 15d #Change as needed
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cluster-monitoring-config
-  namespace: openshift-monitoring
-data:
-  config.yaml: |
-    enableUserWorkload: true
-EOF
-
 TOPSAIL_DIR=$(pwd)
 
 rm -rf /tmp/kserve
