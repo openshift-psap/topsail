@@ -174,48 +174,48 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
         has_multiple_modes = False
 
     for entry in entries:
-        llm_data = entry.results.llm_load_test_output
-        for idx, block in enumerate(llm_data):
-            for detail in block["details"]:
-                if only_errors and not detail.get("error"):
-                    continue # in this plot, ignore the latency if no error occured
-                if not show_errors and detail.get("error"):
-                    continue
 
-                datum = {}
+        for result in entry.results.llm_load_test_output["results"]:
 
-                datum["timestamp"] = detail["timestamp"]
+            if only_errors and not result["error_code"]:
+                continue # in this plot, ignore the latency if no error occured
+            if not show_errors and result["error_code"]:
+                continue
 
-                generatedTokens = int(detail["response"].get("generatedTokens", 1))
-                datum["tokens"] = generatedTokens
+            datum = {}
 
-                datum["latencyPerToken"] = detail["latency"] / 1000 / 1000 / generatedTokens # in ms/token
-                datum["latency"] = detail["latency"] / 1000 / 1000
+            datum["timestamp"] = datetime.datetime.fromtimestamp(result["start_time"])
 
-                datum["model_name"] = (f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")).removesuffix("<br>")
+            generatedTokens = result["output_tokens"]
+            datum["tokens"] = generatedTokens
 
-                if has_multiple_modes:
-                    datum["model_name"] += f"<br>{entry.settings.mode.title()}"
+            datum["latency"] = result["response_time"]
+            datum["latencyPerToken"] = datum["latency"] / generatedTokens # in ms/token
 
-                if collapse_index:
-                    datum["test_name"] = entry.get_name(v for v in variables if v != "index").replace(", ", "<br>")
-                elif test_name_by_error:
-                    simplified_error = datum["test_name"] = error_report.simplify_error(detail.get("error"))
-                    if not simplified_error: continue
+            datum["model_name"] = (f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")).removesuffix("<br>")
 
-                elif detail.get("error"):
-                    datum["test_name"] = "errors"
-                    datum["latency"] = -1
-                else:
-                    datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
+            if has_multiple_modes:
+                datum["model_name"] += f"<br>{entry.settings.mode.title()}"
 
-                datum["error"] = detail.get("error", "no error")
+            if collapse_index:
+                datum["test_name"] = entry.get_name(v for v in variables if v != "index").replace(", ", "<br>")
+            elif test_name_by_error:
+                simplified_error = datum["test_name"] = error_report.simplify_error(detail.get("error"))
+                if not simplified_error: continue
 
-                datum["test_fullname"] = entry.get_name([v for v in variables if v != "index"] if collapse_index else variables)
-                if has_multiple_modes:
-                    datum["test_fullname"] += f" {entry.settings.mode.title()}"
+            elif result["error_code"]:
+                datum["test_name"] = "errors"
+                datum["latency"] = -1
+            else:
+                datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
 
-                data.append(datum)
+            datum["error"] = result["error_text"] or "no error"
+
+            datum["test_fullname"] = entry.get_name([v for v in variables if v != "index"] if collapse_index else variables)
+            if has_multiple_modes:
+                datum["test_fullname"] += f" {entry.settings.mode.title()}"
+
+            data.append(datum)
 
     return data
 

@@ -32,39 +32,15 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
 
 
 def _generate_throughput(results):
-    generated_tokens = 0
-
-    llm_data = results.llm_load_test_output
-    for idx, block in enumerate(llm_data):
-        for detail in block["details"]:
-            if detail.get("error"):
-                continue # in this plot, ignore the latency if an error occured
-
-            generated_tokens += int(detail["response"]["generatedTokens"])
-
-    duration_s = (results.test_start_end.end - results.test_start_end.start).total_seconds()
-
-    return generated_tokens / duration_s
+    return results.llm_load_test_output["summary"]["throughput"]
 
 
 def _generate_time_per_output_token(results):
-    time_per_output_token = []
-
-    llm_data = results.llm_load_test_output
-    for idx, block in enumerate(llm_data):
-        for detail in block["details"]:
-            if detail.get("error"):
-                continue # in this plot, ignore the latency if an error occured
-
-            generated_tokens = int(detail["response"]["generatedTokens"])
-            latency_ms = detail["latency"] / 1000 / 1000
-            time_per_output_token.append(latency_ms / generated_tokens)
-
-    return time_per_output_token
+    return results.llm_load_test_output["summary"]["tpot"]
 
 
 def _generate_time_to_first_token(results):
-    return [] # cannot be computed yet
+    return results.llm_load_test_output["summary"]["ttft"]
 
 
 def generate_lts_results(results):

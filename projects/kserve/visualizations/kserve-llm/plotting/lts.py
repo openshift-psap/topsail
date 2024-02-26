@@ -26,12 +26,14 @@ def register():
 
 def generateTimePerOutputTokenStats(time_per_output_token):
     stats_dict = {}
-    stats_dict["tpot.min"] = min(time_per_output_token)
-    stats_dict["tpot.max"] = max(time_per_output_token)
-    stats_dict["tpot.q1"], stats_dict["tpot.med"], stats_dict["tpot.q3"] = stats.quantiles(time_per_output_token)
-    stats_dict["tpot.90%"] = stats.quantiles(time_per_output_token, n=10)[8] # 90th percentile
-    stats_dict["tpot.95%"] = stats.quantiles(time_per_output_token, n=20)[18] # 95th percentile
 
+    stats_dict["tpot.min"] = time_per_output_token["min"]
+    stats_dict["tpot.max"] = time_per_output_token["max"]
+
+    stats_dict["tpot.90%"] = time_per_output_token["percentile_90"]
+    stats_dict["tpot.95%"] = time_per_output_token["percentile_95"]
+
+    stats_dict["tpot.med"] = time_per_output_token["median"]
     return stats_dict
 
 
