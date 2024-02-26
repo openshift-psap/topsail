@@ -184,7 +184,7 @@ Wait Until Workbench Is Starting
     [Arguments]     ${workbench_title}      ${timeout}=30s    ${status}=${WORKBENCH_STATUS_STARTING}
 
     Wait Until Page Contains Element
-    ...        ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h3[div[starts-with(text(), "${workbench_title}")]]]/td[@data-label="Status"]//p[text()="${status}"]    timeout=${timeout}
+    ...        ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/*[div[starts-with(text(), "${workbench_title}")]]]/td[@data-label="Status"]//p[text()="${status}"]    timeout=${timeout}
 
 Stop Starting Workbench
     [Documentation]    Stops a starting workbench from DS Project details page
@@ -192,7 +192,7 @@ Stop Starting Workbench
     ${is_stopped}=      Run Keyword And Return Status   Workbench Status Should Be
     ...    workbench_title=${workbench_title}   status=${WORKBENCH_STATUS_STOPPED}
     IF    ${is_stopped} == ${False}
-        Click Element       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/h3[div[starts-with(text(), "${workbench_title}")]]]/td[@data-label="Status"]//span[@class="pf-c-switch__toggle"]
+        Click Element       ${WORKBENCH_SECTION_XP}//tr[td[@data-label="Name"]/*[div[starts-with(text(), "${workbench_title}")]]]/td[@data-label="Status"]//span[@class="pf-v5-c-switch__toggle"]
         Wait Until Generic Modal Appears
         Page Should Contain    Are you sure you want to stop the workbench? Any changes without saving will be erased.
         Click Button    ${WORKBENCH_STOP_BTN_XP}
@@ -205,4 +205,4 @@ Workbench is Listed
     [Arguments]     ${workbench_title}
     Run keyword And Continue On Failure
     ...    Page Should Contain Element
-    ...        ${WORKBENCH_SECTION_XP}//td[@data-label="Name"]/h3[div[starts-with(text(), "${workbench_title}")]]
+    ...        ${WORKBENCH_SECTION_XP}//td[@data-label="Name"]/*[div[starts-with(text(), "${workbench_title}")]]
