@@ -86,12 +86,13 @@ def test_ci():
     # in the OCP CI, the config is passed from 'prepare' to 'test', so this is a NOOP
     # in the Perf CI environment, the config isn't passed, so this is mandatory.
     prepare_kserve.update_serving_runtime_images()
-
+    mode = config.ci_artifacts.get_config("tests.e2e.mode")
     try:
-        if config.ci_artifacts.get_config("tests.e2e.perf_mode"):
+        if mode == "single":
             deploy_and_test_models_sequentially(locally=False)
-        else:
+        else: # multi and longevity tests
             deploy_and_test_models_e2e()
+
     finally:
         exc = None
         if config.ci_artifacts.get_config("tests.e2e.capture_state"):
@@ -145,6 +146,17 @@ def test_models_sequentially(locally=False):
     else:
         run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially", artifact_dir_suffix="_test_sequentially")
 
+def test_models_longevity():
+    repeats = config.ci_artifacts.get_config("tests.e2e.longevity.repeats")
+    delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
+    for i in range(repeats):
+        with env.NextArtifactdir(f"longevity_{i}"):
+            with open(env.ARTIFACT / "settings.longevity.yaml", "w") as f:
+                yaml.dump(dict(index=i), f, indent=4)
+            test_models_concurrently()
+            if i != repeats-1:
+                time.sleep(delay)
+    run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True)
 
 def deploy_and_test_models_e2e():
     with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
@@ -154,21 +166,16 @@ def deploy_and_test_models_e2e():
     logging.info("Wait 60s for Prometheus to restart collecting data ...")
     time.sleep(60)
 
-    using_longevity = config.ci_artifacts.get_config("tests.e2e.longevity.enabled")
+    mode = config.ci_artifacts.get_config("tests.e2e.mode")
 
     try:
         deploy_models_concurrently()
 
-        if not using_longevity:
+        if mode == "longevity":
+            test_models_longevity()
+        else:
             test_models_concurrently()
             test_models_sequentially(locally=False)
-        else:
-            repeats = config.ci_artifacts.get_config("tests.e2e.longevity.repeats")
-            delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
-            for i in range(repeats):
-                test_models_concurrently()
-                time.sleep(delay)
-            run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True)
 
     finally:
         # flag file for kserve-prom visualization
