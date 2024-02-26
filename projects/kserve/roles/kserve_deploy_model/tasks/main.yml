@@ -72,6 +72,7 @@
 # Serving Runtime
 
 - name: Prepare the caikit-tgis-config template
+  when: kserve_deploy_model_sr_container_flavor == "tgis+caikit"
   template:
     src: "{{ caikit_tgit_config_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/caikit_tgit_config.yaml"
@@ -84,7 +85,7 @@
     mode: '0400'
 
 - name: Create or update the Caikit TGIS config
-  when: not kserve_deploy_model_sr_single_container | bool
+  when: kserve_deploy_model_sr_container_flavor == "tgis+caikit"
   shell:
     set -o pipefail;
 

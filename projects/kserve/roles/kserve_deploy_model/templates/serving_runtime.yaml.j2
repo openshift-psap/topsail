@@ -9,7 +9,7 @@ metadata:
     opendatahub.io/template-display-name: "ServingRuntime for {{ kserve_deploy_model_serving_runtime_name }} | Topsail"
 spec:
   containers:
-{% if kserve_deploy_model_sr_single_container == false %} # 2-container architecture
+{% if kserve_deploy_model_sr_container_flavor == "tgis+caikit" %} # tgis+caikit container flavor
   - name: kserve-container
     image: {{ kserve_deploy_model_sr_kserve_image }}
     command: [bash, -cex]
@@ -90,7 +90,7 @@ spec:
     - name: shared-memory
       mountPath: /dev/shm
 {% endif %}
-{% else %} # 1-container architecture
+{% elif kserve_deploy_model_sr_container_flavor == "tgis" %} # tgis container flavor
   - name: kserve-container
     image: {{ kserve_deploy_model_sr_kserve_image }}
     command: ["text-generation-launcher"]
@@ -147,12 +147,14 @@ spec:
     - name: shared-memory
       mountPath: /dev/shm
 {% endif %}
+{% else %}
+{{ "Invalid value for 'kserve_deploy_model_sr_container_flavor'..."/0 }}
 {% endif %}
   volumes:
   - name:  cache-volume
     emptyDir:
       sizeLimit: 180Gi
-{% if kserve_deploy_model_sr_single_container == false %} # 2-container architecture
+{% if kserve_deploy_model_sr_container_flavor == "tgis+caikit" %} # tgis+caikit container flavor
   - name: config
     configMap:
       name: {{ kserve_deploy_model_serving_runtime_name }}-caikit-tgis-config
