@@ -135,11 +135,12 @@ def prepare():
                     extra_settings=extra_settings,
                     )
 
-    with env.NextArtifactDir("prepare_poc"):
-        try:
-            run.run(f"projects/kserve/testing/poc/prepare.sh |& tee -a {env.ARTIFACT_DIR}/run.log")
-        finally:
-            run.run(f"oc get datasciencecluster -oyaml > {env.ARTIFACT_DIR}/datasciencecluster.after.yaml")
+    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        with env.NextArtifactDir("prepare_poc"):
+            try:
+                run.run(f"projects/kserve/testing/poc/prepare.sh |& tee -a {env.ARTIFACT_DIR}/run.log")
+            finally:
+                run.run(f"oc get datasciencecluster -oyaml > {env.ARTIFACT_DIR}/datasciencecluster.after.yaml")
 
     enable_user_workload_monitoring()
     customize_rhods()
