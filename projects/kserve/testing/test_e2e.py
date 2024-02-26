@@ -354,8 +354,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             raise ValueError(f"serving_runtime.kserve.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
         args_dict["sr_kserve_extra_env_values"] = extra_env
 
-    if consolidated_model["serving_runtime"].get("single_container", False):
-        args_dict["sr_single_container"] = True
+    args_dict["sr_container_flavor"] = consolidated_model["serving_runtime"]["container_flavor"]
 
     if "nvidia.com/gpu" in consolidated_model["serving_runtime"].get("kserve", {}).get("resource_request",{}):
         num_gpus = consolidated_model["serving_runtime"]["kserve"]["resource_request"]["nvidia.com/gpu"]
