@@ -1,5 +1,5 @@
 extends: base
 serving_runtime:
-  single_container: false
+  container_flavor: tgis+caikit
 inference_service:
   model_format: caikit

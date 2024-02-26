@@ -6,8 +6,3 @@ serving_runtime:
       cpu: 5
       memory: 2 # in Gi
       nvidia.com/gpu: 0
-    extra_env: {}
-inference_service:
-  storage_uri: "s3://psap-hf-models/flan-t5-small/flan-t5-small"
-  model_format: pytorch
-  single_container: true
