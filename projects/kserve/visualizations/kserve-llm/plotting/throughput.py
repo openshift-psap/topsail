@@ -51,21 +51,21 @@ def generateThroughputData(entries, _variables):
 
         calls_count = 0
         latency_s = 0.0
-        for idx, block in enumerate(llm_data):
-            for detail in block["details"]:
-                generatedTokens += int(detail["response"].get("generatedTokens", 1))
-                calls_count += 1
-                latency_s += detail["latency"] / 1000 / 1000 / 1000
+
+        for result in entry.results.llm_load_test_output["results"]:
+            generatedTokens += result["output_tokens"]
+            calls_count += 1
+            latency_s += result["response_time"] / 1000
 
         duration = (entry.results.test_start_end.end-entry.results.test_start_end.start).total_seconds()
         datum["duration"] = int(duration)
 
         datum["token_count"] = generatedTokens
-        datum["throughput"] = int(generatedTokens / duration)
+        datum["throughput"] = entry.results.lts.results.throughput
         try:
-            datum["vusers"] = entry.settings.threads
+            datum["vusers"] = entry.settings.concurrency
         except AttributeError:
-            datum["vusers"] = entry.results.test_config.get("tests.e2e.llm_load_test.threads")
+            datum["vusers"] = entry.results.test_config.get("tests.e2e.llm_load_test.concurrency")
 
         datum["avg_latency"] = latency_s / calls_count
 

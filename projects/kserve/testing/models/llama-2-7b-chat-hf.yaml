@@ -1,6 +1,7 @@
 extends: base
 
 serving_runtime:
+  container_flavor: tgis
   transformer:
     resource_request:
       cpu: 2
@@ -17,4 +18,3 @@ serving_runtime:
 inference_service:
   storage_uri: "s3://psap-hf-models/Llama-2-7b-chat-hf/Llama-2-7b-chat-hf"
   model_format: pytorch
-  single_container: true

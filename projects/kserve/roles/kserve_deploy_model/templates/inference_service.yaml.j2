@@ -6,6 +6,7 @@ metadata:
     sidecar.istio.io/inject: "true"
     sidecar.istio.io/rewriteAppHTTPProbers: "true"
     serving.kserve.io/enable-prometheus-scraping: "true"
+    serving.kserve.io/deploymentMode: "{% if kserve_deploy_model_raw_deployment %}RawDeployment{% else %}Serverless{% endif %}"
   labels:
     opendatahub.io/dashboard: "true"
   name: {{ kserve_deploy_model_inference_service_name }}

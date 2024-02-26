@@ -50,7 +50,7 @@ def consolidate_models(index=None, use_job_index=False, model_name=None, namespa
     if model_name and namespace:
         consolidated_models.append(consolidate_model(name=model_name))
     elif index is not None and model_name:
-        consolidated_models.append(consolidate_model(index=index, model_name=model_name))
+        consolidated_models.append(consolidate_model(index=index, name=model_name))
     elif index is not None:
         consolidated_models.append(consolidate_model(index=index))
     elif use_job_index:
@@ -95,9 +95,12 @@ def test_ci():
     finally:
         exc = None
         if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+            raw_deployment = config.ci_artifacts.get_config("kserve.raw_deployment.enabled")
+
             exc = run.run_and_catch(
                 exc,
-                run.run_toolbox, "kserve", "capture_operators_state", run_kwargs=dict(capture_stdout=True),
+                run.run_toolbox, "kserve", "capture_operators_state", raw_deployment=raw_deployment,
+                run_kwargs=dict(capture_stdout=True),
             )
 
             exc = run.run_and_catch(
@@ -257,6 +260,21 @@ def launch_deploy_consolidated_model(consolidated_model):
         deploy_consolidated_model(consolidated_model)
 
 
+def validate_model(namespace, model_name):
+    validate_kwargs = dict(
+        namespace=namespace,
+        inference_service_names=[model_name],
+        method=config.ci_artifacts.get_config("kserve.inference_service.validation.method"),
+        dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
+        query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
+        raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
+    )
+    if validate_kwargs["raw_deployment"]:
+        validate_kwargs["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
+
+    run.run_toolbox("kserve", "validate_model", **validate_kwargs)
+
+
 def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None, delete_others=None, limits_equals_requests=None):
     logging.info(f"Deploying model '{consolidated_model['name']}'")
 
@@ -336,8 +354,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             raise ValueError(f"serving_runtime.kserve.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
         args_dict["sr_kserve_extra_env_values"] = extra_env
 
-    if consolidated_model["serving_runtime"].get("single_container", False):
-        args_dict["sr_single_container"] = True
+    args_dict["sr_container_flavor"] = consolidated_model["serving_runtime"]["container_flavor"]
 
     if "nvidia.com/gpu" in consolidated_model["serving_runtime"].get("kserve", {}).get("resource_request",{}):
         num_gpus = consolidated_model["serving_runtime"]["kserve"]["resource_request"]["nvidia.com/gpu"]
@@ -379,14 +396,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
                 ), f, indent=4)
                 print("", file=f)
 
-        validate_kwargs = dict(
-            namespace=namespace,
-            inference_service_names=[model_name],
-            dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
-            query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
-        )
-        if config.ci_artifacts.get_config("tests.e2e.validate_model") and not args_dict["raw_deployment"]:
-            run.run_toolbox("kserve", "validate_model", **validate_kwargs)
+        if config.ci_artifacts.get_config("tests.e2e.validate_model"):
+            validate_model(namespace, model_name)
+
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
         raise e
@@ -527,28 +539,28 @@ def test_consolidated_model(consolidated_model, namespace=None):
     if namespace is None:
         namespace = consolidate_model_namespace(consolidated_model)
 
-    args_dict = dict(
-        namespace=namespace,
-        inference_service_names=[model_name],
-        dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
-        query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
-    )
-
     if config.ci_artifacts.get_config("tests.e2e.validate_model"):
-        run.run_toolbox("kserve", "validate_model", **args_dict)
+        validate_model(namespace, model_name)
 
     if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
         return
 
-    host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
-    host = host_url.lstrip("https://")
-    if host == "":
-        raise RuntimeError(f"Failed to get the hostname for InferenceServince {namespace}/{model_name}")
-    port = 443
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        svc_name = run.run(f"oc get svc -lserving.kserve.io/inferenceservice={model_name} -ojsonpath={{.items[0].metadata.name}} -n {namespace}", capture_stdout=True).stdout
+        if not svc_name:
+            raise RuntimeError(f"Failed to get the hostname for Service of InferenceService {namespace}/{model_name}")
+        port = 80
+        host = f"{svc_name}.{namespace}.svc.cluster.local"
+    else:
+        host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
+        host = host_url.lstrip("https://")
+        if host == "":
+            raise RuntimeError(f"Failed to get the hostname for InferenceService {namespace}/{model_name}")
+        port = 443
+
     llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
 
-    # model_id?
     args_dict = dict(
         host=host,
         port=port,

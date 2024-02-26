@@ -18,9 +18,9 @@ class Kserve:
                      inference_service_model_format,
                      storage_uri,
                      sa_name,
+                     sr_container_flavor,
                      sr_kserve_extra_env_values={},
                      sr_transformer_extra_env_values={},
-                     sr_single_container=False,
                      sr_shared_memory=False,
                      inference_service_min_replicas : int = None,
                      secret_env_file_name=None,
@@ -38,7 +38,7 @@ class Kserve:
           namespace: the namespace in which the model should be deployed
 
           serving_runtime_name: the name to give to the serving runtime
-          sr_single_container: if False, deploy 2 containers (transformer and kserve). If True, deploy 1 container (kserve).
+          sr_container_flavor: name of the container flavor to use in the serving runtime (tgis+caikit or tgis)
           sr_shared_memory: if True, create a 2 Gi in-memory volume mounted on /dev/shm (for shards to communicate).
           sr_kserve_image: the image of the Kserve serving runtime container
           sr_kserve_resource_request: the resource request of the kserve serving runtime container
@@ -64,6 +64,9 @@ class Kserve:
           limits_equals_requests: if True, sets use the requests values to define the limits. If False, do not define any limits (except for GPU)
           raw_deployment: if True, do not try to configure anything related to Serverless.
         """
+
+        if sr_container_flavor not in ("tgis+caikit", "tgis"):
+            raise ValueError(f"Unsupported container flavor: {sr_container_flavor}")
 
         return RunAnsibleRole(locals())
 
@@ -93,10 +96,14 @@ class Kserve:
     @AnsibleMappedParams
     def validate_model(self,
                        inference_service_names,
+                       method,
                        dataset,
                        query_count,
                        model_id="not-used",
-                       namespace=""):
+                       namespace="",
+                       raw_deployment=False,
+                       proto=None,
+                       ):
         """
         Validate the proper deployment of a KServe model
 
@@ -105,10 +112,13 @@ class Kserve:
 
         Args:
           inference_service_names: a list of names of the inference service to validate
+          method: the gRPC method to call
           model_id: the model-id to pass to the inference service
           dataset: path to the dataset to use for the query
           query_count: number of query to perform
           namespace: the namespace in which the Serving stack was deployed. If empty, use the current project.
+          raw_deployment: if True, do not try to configure anything related to Serverless. Works only in-cluster at the moment.
+          proto: if not empty, the proto file to pass to grpcurl
         """
 
         return RunAnsibleRole(locals())
@@ -128,11 +138,14 @@ class Kserve:
 
     @AnsibleRole("kserve_capture_operators_state")
     @AnsibleMappedParams
-    def capture_operators_state(self):
+    def capture_operators_state(self,
+                                raw_deployment=False,
+                                ):
         """
         Captures the state of the operators of the KServe serving stack
 
         Args:
+          raw_deployment: if True, do not try to capture any Serverless related resource
         """
 
         return RunAnsibleRole(locals())

@@ -25,6 +25,9 @@ rhods deploy_ods:
   tag: {{ rhods.catalog.tag }}
   channel: {{ rhods.catalog.channel }}
   version: {{ rhods.catalog.version }}
+{% if kserve.raw_deployment.enabled %}
+  disable_dsc_config: true
+{% endif %}
 
 #
 # Scale test - Run one
@@ -48,7 +51,7 @@ sutest/cluster preload_image/kserve-runtime:
 {% else %}
   namespace: {{ tests.e2e.namespace }}
 {% endif %}
-  name: caikit-image
+  name: SET_AT_RUNTIME
   image: SET_AT_RUNTIME
 
   node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}

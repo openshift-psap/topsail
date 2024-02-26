@@ -6,6 +6,16 @@ from pydantic import BaseModel, Field
 
 import matrix_benchmarking.models as matbench_models
 
+class LlmLoadTestStats(matbench_models.ExclusiveModel):
+    min: float
+    max: float
+    median: float
+    mean: float
+    percentile_80: float
+    percentile_90: float
+    percentile_95: float
+    percentile_99: float
+
 
 class Metadata(matbench_models.Metadata):
     presets: List[str]
@@ -15,8 +25,9 @@ class Metadata(matbench_models.Metadata):
 
 class Results(matbench_models.ExclusiveModel):
     throughput: float
-    time_per_output_token: List[float]
-    time_to_first_token: List[float]
+    time_per_output_token: LlmLoadTestStats
+    time_to_first_token: LlmLoadTestStats
+
     model_load_duration: float
 
 class Payload(matbench_models.ExclusiveModel):

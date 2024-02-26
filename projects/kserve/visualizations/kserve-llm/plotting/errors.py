@@ -34,14 +34,15 @@ def generateErrorHistogramData(entries, variables):
         llm_data = entry.results.llm_load_test_output
 
         errorDistribution = defaultdict(int)
-        for idx, block in enumerate(llm_data):
-            for descr, count in block.get("errorDistribution", {}).items():
-                simplified_error = error_report.simplify_error(descr)
+        for result in entry.results.llm_load_test_output["results"]:
+            simplified_error = error_report.simplify_error(result["error_text"])
+            if not simplified_error:
+                continue
 
-                if error_report.simplify_error(descr) in (CLOSING_CX, CLOSED_CX, None):
-                    continue # ignore these errors from the top chart, they're well known
+            if error_report.simplify_error(descr) in (CLOSING_CX, CLOSED_CX, None):
+                continue # ignore these errors from the top chart, they're well known
 
-                errorDistribution[simplified_error] += count
+            errorDistribution[simplified_error] += count
 
 
         for descr, count in errorDistribution.items():
@@ -99,12 +100,9 @@ def generateSuccesssCount(entries, variables):
     for entry in entries:
         llm_data = entry.results.llm_load_test_output
 
-        success_count = 0
-        for idx, block in enumerate(llm_data):
-            error_count = 0
-            for descr, count in block.get("errorDistribution", {}).items():
-                error_count += count
-            success_count += len(block["details"]) - error_count
+        error_count = llm_data["summary"]["total_failures"]
+        success_count = llm_data["summary"]["total_requests"] - error_count
+
         data.append(dict(
             test_name=entry.get_name(variables),
             count=success_count,
@@ -134,17 +132,16 @@ def generateFinishReasonData(entries, variables):
     data = []
 
     for entry in entries:
-        llm_data = entry.results.llm_load_test_output
 
         finishReasons = defaultdict(int)
-        for idx, block in enumerate(llm_data):
-            for detail in block.get("details"):
-                if detail["error"]:
-                    reason = "ERROR"
-                else:
-                    reason = detail["response"].get("finishReason", "ERROR")
-                pass
-                finishReasons[reason] += 1
+        for result in entry.results.llm_load_test_output["results"]:
+            if result["error_code"] is not None:
+                reason = "ERROR"
+            else:
+                reason = result.get("finishReason")
+                if reason is None: continue
+
+            finishReasons[reason] += 1
 
         for reason, count in finishReasons.items():
             datum = {}

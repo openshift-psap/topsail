@@ -40,52 +40,6 @@
     oc create configmap $NAME -n {{ kserve_deploy_model_namespace }}
     oc label cm/$NAME topsail.time-tracking=yes -n {{ kserve_deploy_model_namespace }}
 
-- name: Prepare the SMMR
-  when: not kserve_deploy_model_raw_deployment | bool
-  block:
-  - name: Patch the SMMR
-    command: |
-      oc patch smmr/default \
-         -n istio-system \
-         --type=json \
-         -p="[{'op': 'add', 'path': '/spec/members/-', 'value': \"{{ kserve_deploy_model_namespace }}\"}]"
-    register: patch_smmr_cmd
-    failed_when: false
-
-  - name: Check that the namespace is already registered
-    when: patch_smmr_cmd.rc != 0
-    shell:
-      set -o pipefail;
-      oc get smmr/default -n istio-system  -ojsonpath={.spec.members} | jq .[] -r
-    register: smmr_members_cmd
-    failed_when: kserve_deploy_model_namespace not in smmr_members_cmd.stdout_lines
-
-  - name: Wait for the namespace to be registered
-    shell:
-      set -o pipefail;
-      oc get smmr/default
-         -n istio-system
-         -ojsonpath={.status.configuredMembers}
-         | jq '. | index("{{ kserve_deploy_model_namespace }}")'
-    register: smmr_registered_namespace_cmd
-    retries: 60
-    delay: 10
-    until: smmr_registered_namespace_cmd.stdout != "null"
-
-  - name: Save timestamp
-    shell: |
-      NAME=smmr-registered-namespace
-      oc create configmap $NAME -n {{ kserve_deploy_model_namespace }}
-      oc label cm/$NAME topsail.time-tracking=yes -n {{ kserve_deploy_model_namespace }}
-
-  always:
-  - name: Capture the SMMR resource
-    shell:
-      oc get smmr/default
-         -n istio-system
-         -oyaml
-         > {{ artifact_extra_logs_dir }}/artifacts/istio-system_smmr-default.yaml
-
 # Secret
 
 - name: Prepare the secret parameters
@@ -118,6 +72,7 @@
 # Serving Runtime
 
 - name: Prepare the caikit-tgis-config template
+  when: kserve_deploy_model_sr_container_flavor == "tgis+caikit"
   template:
     src: "{{ caikit_tgit_config_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/caikit_tgit_config.yaml"
@@ -130,6 +85,7 @@
     mode: '0400'
 
 - name: Create or update the Caikit TGIS config
+  when: kserve_deploy_model_sr_container_flavor == "tgis+caikit"
   shell:
     set -o pipefail;
 

@@ -33,6 +33,9 @@ def _get_test_setup(entry):
 
 
 def simplify_error(error):
+    if not error:
+        return error
+
     if (partition := error.partition("read tcp"))[1]:
         simplify = partition[0]
         simplify += "read tcp: "
@@ -56,16 +59,17 @@ def _get_test_details(entry, args):
 
     errorDistribution = defaultdict(int)
     success_count = 0
-    for idx, block in enumerate(llm_data):
-        error_count = 0
-        for descr, count in block.get("errorDistribution", {}).items():
-            simplified_error = simplify_error(descr)
-            if not simplified_error:
-                continue
+    error_count = 0
 
-            errorDistribution[simplified_error] += count
-            error_count += count
-        success_count += len(block["details"]) - error_count
+    for result in entry.results.llm_load_test_output["results"]:
+        simplified_error = simplify_error(result["error_text"])
+        if not simplified_error:
+            success_count += 1
+            continue
+
+        errorDistribution[simplified_error] += 1
+        error_count += 1
+
     errorDistribution["success"] = success_count
 
     header += report.Plot_and_Text(f"Latency details", report.set_config(dict(show_errors=True, entry=entry), args))
@@ -91,16 +95,15 @@ def _get_error_overview(entries, args):
     for entry in entries:
         llm_data = entry.results.llm_load_test_output
         success_count = 0
-        for idx, block in enumerate(llm_data):
-            error_count = 0
-            for descr, count in block.get("errorDistribution", {}).items():
-                simplified_error = simplify_error(descr)
-                if not simplified_error:
-                    continue
 
-                errorDistribution[simplified_error] += count
-                error_count += count
-            success_count += len(block["details"]) - error_count
+        for result in entry.results.llm_load_test_output["results"]:
+            simplified_error = simplify_error(result["error_text"])
+            if not simplified_error:
+                success_count += 1
+                continue
+
+            errorDistribution[simplified_error] += 1
+
         errorDistribution[entry.get_name(variables)] = success_count
 
     graph_text = report.Plot_and_Text(f"Errors distribution", args)

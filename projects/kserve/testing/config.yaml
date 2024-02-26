@@ -21,11 +21,14 @@ ci_presets:
     extends: [light_cluster]
 
   quick:
-    gpu.prepare_cluster: false
-    clusters.sutest.compute.machineset.type: m6i.2xlarge
+    extends: [no_gpu]
     tests.e2e.models:
     - flan-t5-small-cpu
     - flan-t5-small-cpu
+
+  no_gpu:
+    gpu.prepare_cluster: false
+    clusters.sutest.compute.machineset.type: m6i.2xlarge
 
   metal:
     clusters.sutest.is_metal: true
@@ -85,6 +88,18 @@ ci_presets:
     - flan-t5-large-gpu
     - bloom-560m
     - mpt-7b-instruct2
+
+  raw:
+    extends: [no_gpu]
+    kserve.raw_deployment.enabled: true
+    kserve.inference_service.validation.method: fmaas.GenerationService/Generate
+    kserve.inference_service.validation.proto: projects/kserve/testing/protos/tgis_generation.proto
+    rhods.operator.stop: true # mandatory in 2.7
+
+    tests.e2e.models: [flan-t5-small-hf-cpu, flan-t5-small-hf-cpu]
+    tests.e2e.llm_load_test.concurrency: 2
+    tests.e2e.llm_load_test.plugin: tgis_grpc_plugin
+
 
   # ---
 
@@ -359,6 +374,8 @@ kserve:
     validation:
       dataset: projects/llm_load_test/llm-load-test/datasets/openorca_large_subset_010.jsonl
       query_count: 10
+      method: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+      proto: null
   model:
     serving_runtime:
       mute_logs: true
@@ -384,7 +401,7 @@ tests:
   mode: e2e
 
   dry_mode: false
-  visualize: false
+  visualize: true
   capture_prom: true
   prom_plot_workload: projects.kserve.visualizations.kserve-prom
   scale:
@@ -449,7 +466,7 @@ matbench:
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
 export_artifacts:
-  enabled: true
+  enabled: false
   bucket: rhoai-cpt-artifacts
   path_prefix: cpt/kserve
   dest: null # will be set by the export code

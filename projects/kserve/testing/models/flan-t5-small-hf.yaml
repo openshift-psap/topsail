@@ -1,6 +1,7 @@
 extends: base
 
 serving_runtime:
+  container_flavor: tgis
   kserve:
     resource_request:
       cpu: 1
@@ -11,4 +12,3 @@ serving_runtime:
 inference_service:
   storage_uri: "s3://psap-hf-models/flan-t5-small/flan-t5-small"
   model_format: pytorch
-  single_container: true

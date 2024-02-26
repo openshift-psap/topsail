@@ -32,7 +32,7 @@ IMPORTANT_FILES = [
     "config.yaml",
     ".uuid",
 
-    f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/output/ghz-multiplexed-results*.json",
+    f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/output/output.json",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/pods.json",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/pods.yaml",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/ocp_version.yaml",
@@ -150,14 +150,11 @@ def _parse_test_config(dirname):
 
 @ignore_file_not_found
 def _parse_llm_load_test_output(dirname):
-    llm_load_test_output = []
-    for llm_output_file in (dirname / artifact_paths.LLM_LOAD_TEST_RUN_DIR / "output").glob("ghz-multiplexed-results-*.json"):
-        register_important_file(dirname, llm_output_file.relative_to(dirname))
+    llm_output_file = dirname / artifact_paths.LLM_LOAD_TEST_RUN_DIR / "output" / "output.json"
+    register_important_file(dirname, llm_output_file.relative_to(dirname))
 
-        with open(llm_output_file) as f:
-            llm_data = json.load(f)
-
-        llm_load_test_output += llm_data
+    with open(llm_output_file) as f:
+        llm_load_test_output = json.load(f)
 
     return llm_load_test_output
 
@@ -243,14 +240,20 @@ def _parse_test_start_end(dirname, llm_load_test_output):
     test_start_end.start = None
     test_start_end.end = None
 
-    for entry in llm_load_test_output:
-        start = dateutil.parser.isoparse(entry["details"][0]["timestamp"])
+    for result in llm_load_test_output["results"]:
+        start = datetime.datetime.fromtimestamp(result["start_time"])
+        end = datetime.datetime.fromtimestamp(result["end_time"])
+
         if test_start_end.start is None or start < test_start_end.start:
             test_start_end.start = start
 
-        end = dateutil.parser.isoparse(entry["date"])
         if test_start_end.end is None or end > test_start_end.end:
             test_start_end.end = end
+
+    if test_start_end.start is None:
+        logging.warning("Could not find the start time of the test...")
+    if test_start_end.end is None:
+        logging.warning("Could not find the end time of the test...")
 
     return test_start_end
 
