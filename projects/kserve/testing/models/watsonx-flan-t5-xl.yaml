@@ -8,4 +8,4 @@ serving_runtime:
       FLASH_ATTENTION: "false"
       MAX_CONCURRENT_REQUESTS: 128
 inference_service:
-  storage_uri: "s3://psap-hf-models/flan-t5-xl"
+  storage_uri: "s3://psap-hf-models/flan-t5-xl/flan-t5-xl"

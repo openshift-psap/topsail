@@ -8,4 +8,4 @@ serving_runtime:
       FLASH_ATTENTION: "true"
       MAX_CONCURRENT_REQUESTS: 128
 inference_service:
-  storage_uri: "s3://psap-hf-models/Llama-2-13b-chat-hf"
+  storage_uri: "s3://psap-hf-models/Llama-2-13b-chat-hf/Llama-2-13b-chat-hf"

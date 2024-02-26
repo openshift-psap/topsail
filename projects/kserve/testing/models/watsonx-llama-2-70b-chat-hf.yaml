@@ -9,4 +9,4 @@ serving_runtime:
       MAX_CONCURRENT_REQUESTS: 128
       NUM_GPUS: 8 # Do we want to shard it across 8 GPUs for watsonx testing?
 inference_service:
-  storage_uri: "s3://psap-hf-models/Llama-2-70b-chat-hf"
+  storage_uri: "s3://psap-hf-models/Llama-2-70b-chat-hf/Llama-2-70b-chat-hf"
