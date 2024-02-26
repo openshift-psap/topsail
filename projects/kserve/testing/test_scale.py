@@ -117,13 +117,14 @@ def deploy_storage_configuration(namespace):
     storage_secret_name = config.ci_artifacts.get_config("kserve.storage_config.name")
     region = config.ci_artifacts.get_config("kserve.storage_config.region")
     endpoint = config.ci_artifacts.get_config("kserve.storage_config.endpoint")
-    use_https = config.ci_artifacts.get_config("kserve.storage_config.use_https")
+    usehttps = config.ci_artifacts.get_config("kserve.storage_config.usehttps")
+    verifyssl = config.ci_artifacts.get_config("kserve.storage_config.verifyssl")
 
     access_key = None
     secret_key = None
 
     vault_key = config.ci_artifacts.get_config("secrets.dir.env_key")
-    aws_cred_filename = config.ci_artifacts.get_config("secrets.aws_cred")
+    aws_cred_filename = config.ci_artifacts.get_config("secrets.model_aws_cred")
     aws_cred_file = pathlib.Path(os.environ[vault_key]) / aws_cred_filename
     logging.info(f"Reading AWS credentials from '{aws_cred_filename}' ...")
     with open(aws_cred_file) as f:
@@ -143,7 +144,8 @@ metadata:
   annotations:
     serving.kserve.io/s3-region: "{region}"
     serving.kserve.io/s3-endpoint: "{endpoint}"
-    serving.kserve.io/s3-usehttps: "{use_https}"
+    serving.kserve.io/s3-usehttps: "{usehttps}"
+    serving.kserve.io/s3-verifyssl: "{verifyssl}"
   name: {storage_secret_name}
 stringData:
   AWS_ACCESS_KEY_ID: "{access_key}"
