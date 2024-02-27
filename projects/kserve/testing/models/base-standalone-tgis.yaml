@@ -1,5 +1,5 @@
 serving_runtime:
-  single_container: true
+  container_flavor: tgis
   kserve:
     resource_request:
       cpu: 8
