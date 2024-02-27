@@ -117,8 +117,8 @@ def deploy_storage_configuration(namespace):
     storage_secret_name = config.ci_artifacts.get_config("kserve.storage_config.name")
     region = config.ci_artifacts.get_config("kserve.storage_config.region")
     endpoint = config.ci_artifacts.get_config("kserve.storage_config.endpoint")
-    usehttps = config.ci_artifacts.get_config("kserve.storage_config.usehttps")
-    verifyssl = config.ci_artifacts.get_config("kserve.storage_config.verifyssl")
+    use_https = config.ci_artifacts.get_config("kserve.storage_config.use_https")
+    verify_ssl = config.ci_artifacts.get_config("kserve.storage_config.verify_ssl")
 
     access_key = None
     secret_key = None
@@ -144,8 +144,8 @@ metadata:
   annotations:
     serving.kserve.io/s3-region: "{region}"
     serving.kserve.io/s3-endpoint: "{endpoint}"
-    serving.kserve.io/s3-usehttps: "{usehttps}"
-    serving.kserve.io/s3-verifyssl: "{verifyssl}"
+    serving.kserve.io/s3-usehttps: "{use_https}"
+    serving.kserve.io/s3-verifyssl: "{verify_ssl}"
   name: {storage_secret_name}
 stringData:
   AWS_ACCESS_KEY_ID: "{access_key}"

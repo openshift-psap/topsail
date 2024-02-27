@@ -164,7 +164,7 @@ ci_presets:
     kserve.storage_config.region: "us-east-1"
     kserve.storage_config.endpoint: "minio.app.intlab.redhat.com"
     kserve.storage_config.use_https: "1"
-    kserve.storage_config.verifyssl: "0"
+    kserve.storage_config.verify_ssl: "0"
 
   # ---
 
@@ -389,8 +389,9 @@ kserve:
     name: storage-config
     region: us-east-1
     endpoint: s3.amazonaws.com
-    usehttps: 1
-    verifyssl: 1
+    use_https: 1
+    verify_ssl: 1
+
   inference_service:
     validation:
       dataset: projects/llm_load_test/llm-load-test/datasets/openorca_large_subset_010.jsonl
