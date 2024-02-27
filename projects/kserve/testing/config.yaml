@@ -287,7 +287,6 @@ ci_presets:
 
   longevity:
     tests.e2e.mode: longevity
-    tests.prom_plot_workload: null
 
   multi_model_longevity:
     extends: [multi_model_gating, longevity]

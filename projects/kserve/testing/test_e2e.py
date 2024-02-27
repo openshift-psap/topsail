@@ -172,6 +172,10 @@ def deploy_and_test_models_e2e():
         if mode == "longevity":
             test_models_longevity()
         else:
+            # flag file for kserve-prom visualization
+            with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
+                print("multi-model", file=f)
+
             test_models_concurrently()
             test_models_sequentially(locally=False)
 
@@ -481,6 +485,10 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+        if config.ci_artifacts.get_config("tests.e2e.mode") == "longevity":
+            with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
+                print("longevity", file=f)
 
         if not matbenchmarking:
             with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
