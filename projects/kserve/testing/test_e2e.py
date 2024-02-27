@@ -146,6 +146,7 @@ def test_models_sequentially(locally=False):
     else:
         run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially", artifact_dir_suffix="_test_sequentially")
 
+
 def test_models_longevity():
     repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
     delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
@@ -153,10 +154,13 @@ def test_models_longevity():
         with env.NextArtifactDir(f"longevity_{i}"):
             with open(env.ARTIFACT_DIR / "settings.longevity.yaml", "w") as f:
                 yaml.dump(dict(index=i), f, indent=4)
+
             test_models_concurrently()
+
             if i != repeat-1:
                 time.sleep(delay)
     run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True)
+
 
 def deploy_and_test_models_e2e():
     with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
