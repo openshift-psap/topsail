@@ -70,10 +70,11 @@ ci_presets:
     tests.mode: e2e
     gpu.time_sharing.replicas: 1
 
-  e2e_scale:
+  e2e_multi:
     extends: [e2e_gpu]
     tests.e2e.mode: multi
     gpu.time_sharing.replicas: 1
+    matbench.lts.generate: false
 
   e2e_gpu:
     extends: [e2e]
@@ -195,8 +196,30 @@ ci_presets:
 
   # multi-model
 
+  watsonx_multi_model_gating:
+    extends: [gating, 10min, e2e_gpu, e2e_multi, tgis, raw]
+    matbench.lts.horreum.test_name: RHOAI-watsonx-multi
+    matbench.lts.opensearch.index: rhoai-watsonx-multi
+    tests.e2e.models: ...
+
+  watsonx_multi_model_gating_light:
+    extends: [watsonx_multi_model_gating, gating_rehearsal, 5min, no_gpu]
+    tests.e2e.models:
+    - flan-t5-small-hf-cpu-1:
+        name: flan-t5-small-hf-cpu
+        namespace: watsonx-e2e-grouped
+        serving_runtime:
+          name: flan-t5-small-hf-cpu
+    - flan-t5-small-hf-cpu-2:
+        name: flan-t5-small-hf-cpu
+        namespace: watsonx-e2e-grouped
+        serving_runtime:
+          name: flan-t5-small-hf-cpu
+    - flan-t5-small-hf-cpu
+    - flan-t5-small-hf-cpu
+
   multi_model_gating:
-    extends: [gating, 10min, e2e_gpu, e2e_scale]
+    extends: [gating, 10min, e2e_gpu, e2e_multi]
     matbench.lts.horreum.test_name: RHOAI-kserve-multi
     tests.e2e.models:
     - flan-t5-large-gpu-1:
