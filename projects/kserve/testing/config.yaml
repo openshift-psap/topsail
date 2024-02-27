@@ -150,13 +150,21 @@ ci_presets:
 
   # ---
 
-
   use_intlab_os:
     matbench.lts.opensearch.index_prefix: "psap-rhoai."
     matbench.lts.opensearch.instance: intlab
 
   use_smoke_os:
     matbench.lts.opensearch.instance: smoke
+
+  # ---
+  # Get models from integration lab minio instead of AWS S3
+  use_intlab_minio:
+    secrets.model_s3_cred: intlab-miniocred
+    kserve.storage_config.region: "us-east-1"
+    kserve.storage_config.endpoint: "minio.app.intlab.redhat.com"
+    kserve.storage_config.use_https: "1"
+    kserve.storage_config.verifyssl: "0"
 
   # ---
 
@@ -241,7 +249,7 @@ secrets:
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
-  aws_cred: .awscred
+  model_s3_cred: .awscred
   kserve_model_secret_settings: watsonx-models.yaml
   opensearch_instances: opensearch.yaml
   aws_credentials: .awscred
@@ -369,7 +377,8 @@ kserve:
     name: storage-config
     region: us-east-1
     endpoint: s3.amazonaws.com
-    use_https: 1
+    usehttps: 1
+    verifyssl: 1
   inference_service:
     validation:
       dataset: projects/llm_load_test/llm-load-test/datasets/openorca_large_subset_010.jsonl
