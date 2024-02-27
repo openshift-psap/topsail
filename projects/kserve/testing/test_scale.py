@@ -124,10 +124,10 @@ def deploy_storage_configuration(namespace):
     secret_key = None
 
     vault_key = config.ci_artifacts.get_config("secrets.dir.env_key")
-    aws_cred_filename = config.ci_artifacts.get_config("secrets.model_aws_cred")
-    aws_cred_file = pathlib.Path(os.environ[vault_key]) / aws_cred_filename
-    logging.info(f"Reading AWS credentials from '{aws_cred_filename}' ...")
-    with open(aws_cred_file) as f:
+    model_s3_cred_filename = config.ci_artifacts.get_config("secrets.model_s3_cred")
+    model_s3_cred_file = pathlib.Path(os.environ[vault_key]) / model_s3_cred_filename
+    logging.info(f"Reading the models S3 credentials from '{model_s3_cred_filename}' ...")
+    with open(model_s3_cred_file) as f:
         for line in f.readlines():
             if line.startswith("aws_access_key_id "):
                 access_key = line.rpartition("=")[-1].strip()
@@ -135,7 +135,7 @@ def deploy_storage_configuration(namespace):
                 secret_key = line.rpartition("=")[-1].strip()
 
     if None in (access_key, secret_key):
-        raise ValueError(f"aws_access_key_id or aws_secret_access_key not found in {aws_cred_file} ...")
+        raise ValueError(f"aws_access_key_id or aws_secret_access_key not found in {model_s3_cred_file} ...")
 
     storage_secret = f"""\
 apiVersion: v1

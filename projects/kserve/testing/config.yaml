@@ -160,7 +160,7 @@ ci_presets:
   # ---
   # Get models from integration lab minio instead of AWS S3
   use_intlab_minio:
-    secrets.model_aws_cred: intlab-miniocred
+    secrets.model_s3_cred: intlab-miniocred
     kserve.storage_config.region: "us-east-1"
     kserve.storage_config.endpoint: "minio.app.intlab.redhat.com"
     kserve.storage_config.use_https: "1"
@@ -249,7 +249,7 @@ secrets:
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
-  model_aws_cred: .awscred
+  model_s3_cred: .awscred
   kserve_model_secret_settings: watsonx-models.yaml
   opensearch_instances: opensearch.yaml
   aws_credentials: .awscred
