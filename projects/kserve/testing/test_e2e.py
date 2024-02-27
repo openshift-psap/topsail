@@ -328,10 +328,14 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         if limits_equals_requests is None:
             limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
 
+
+    serving_runtime_name = consolidated_model["serving_runtime"].get("name", model_name)
+
+
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
-        serving_runtime_name=model_name,
+        serving_runtime_name=serving_runtime_name,
         sr_kserve_image=consolidated_model["serving_runtime"]["kserve"]["image"],
         sr_kserve_resource_request=consolidated_model["serving_runtime"]["kserve"]["resource_request"],
 
