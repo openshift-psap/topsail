@@ -161,6 +161,12 @@ ci_presets:
   use_smoke_os:
     matbench.lts.opensearch.instance: smoke
 
+  gating:
+    extends: [use_intlab_os]
+
+  gating_rehearsal:
+    extends: [use_smoke_os]
+
   # ---
   # Get models from integration lab minio instead of AWS S3
   use_intlab_minio:
@@ -181,7 +187,7 @@ ci_presets:
     matbench.lts.opensearch.index: rhoai-kserve-single
 
   single_model_gating_light:
-    extends: [single_model_gating, 5min, gating_light]
+    extends: [single_model_gating, 5min, gating_rehearsal]
 
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu]
     matbench.lts.horreum.test_name: null
@@ -213,7 +219,7 @@ ci_presets:
     matbench.lts.opensearch.index: rhoai-kserve-multi
 
   multi_model_gating_light:
-    extends: [multi_model_gating, 5min, gating_light]
+    extends: [multi_model_gating, 5min, gating_rehearsal]
 
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-small-cpu]
     matbench.lts.horreum.test_name: null
@@ -248,7 +254,7 @@ ci_presets:
     matbench.lts.opensearch.index: rhoai-kserve-many
 
   many_model_gating_light:
-    extends: [many_model_gating, gating_light]
+    extends: [many_model_gating, gating_rehearsal]
 
     tests.scale.sleep_factor: 1
     tests.scale.model.replicas: 2
