@@ -90,15 +90,19 @@ ci_presets:
     - mpt-7b-instruct2
 
   raw:
-    extends: [no_gpu]
     kserve.raw_deployment.enabled: true
+    rhods.operator.stop: true # mandatory in 2.7
+
+  tgis:
     kserve.inference_service.validation.method: fmaas.GenerationService/Generate
     kserve.inference_service.validation.proto: projects/kserve/testing/protos/tgis_generation.proto
-    rhods.operator.stop: true # mandatory in 2.7
+    tests.e2e.llm_load_test.plugin: tgis_grpc_plugin
+
+  quick_raw:
+    extends: [raw, no_gpu, tgis]
 
     tests.e2e.models: [flan-t5-small-hf-cpu, flan-t5-small-hf-cpu]
     tests.e2e.llm_load_test.concurrency: 2
-    tests.e2e.llm_load_test.plugin: tgis_grpc_plugin
 
 
   # ---
