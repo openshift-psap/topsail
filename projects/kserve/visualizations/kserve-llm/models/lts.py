@@ -5,6 +5,8 @@ from typing import Any, List, Optional
 from pydantic import BaseModel, Field
 
 import matrix_benchmarking.models as matbench_models
+from . import kpi
+
 
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
     min: float
@@ -30,6 +32,11 @@ class Results(matbench_models.ExclusiveModel):
 
     model_load_duration: float
 
+class KServeLLMPerformanceKPI(matbench_models.KPI, Settings): pass
+
+KServeLLMPerformanceKPIs = matbench_models.getKPIsModel("KServeLLMPerformanceKPIs", __name__, kpi.KPIs, KServeLLMPerformanceKPI)
+
 class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata
     results: Results
+    kpis: Optional[KServeLLMPerformanceKPIs]
