@@ -222,7 +222,7 @@ ci_presets:
     extends: [multi_model_gating, longevity]
 
   multi_day_longevity:
-    extends: [multi_model_gating]
+    extends: [multi_model_longevity]
     tests.e2e.longevity.repeat: 3
     tests.e2e.longevity.delay: 86400 # 24 hours
 
