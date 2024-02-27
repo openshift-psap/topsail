@@ -147,14 +147,14 @@ def test_models_sequentially(locally=False):
         run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially", artifact_dir_suffix="_test_sequentially")
 
 def test_models_longevity():
-    repeats = config.ci_artifacts.get_config("tests.e2e.longevity.repeats")
+    repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
     delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
-    for i in range(repeats):
+    for i in range(repeat):
         with env.NextArtifactdir(f"longevity_{i}"):
             with open(env.ARTIFACT / "settings.longevity.yaml", "w") as f:
                 yaml.dump(dict(index=i), f, indent=4)
             test_models_concurrently()
-            if i != repeats-1:
+            if i != repeat-1:
                 time.sleep(delay)
     run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True)
 
