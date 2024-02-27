@@ -1,0 +1,10 @@
+serving_runtime:
+  container_flavor: tgis
+  kserve:
+    resource_request:
+      cpu: 8
+    extra_env:
+      TRANSFORMERS_CACHE: "/tmp/transformers_cache"
+inference_service:
+  model_format: "pytorch"
+  min_replicas: 1
