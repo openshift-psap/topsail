@@ -90,8 +90,10 @@ def test_ci():
     try:
         if mode == "single":
             deploy_and_test_models_sequentially(locally=False)
-        else: # multi and longevity tests
-            deploy_and_test_models_e2e()
+        elif mode == "longevity":
+            test_models_longevity()
+        else:
+            deploy_and_test_multi_models()
 
     finally:
         exc = None
@@ -150,40 +152,39 @@ def test_models_sequentially(locally=False):
 def test_models_longevity():
     repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
     delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
+
+    reset_prometheus()
     for i in range(repeat):
         with env.NextArtifactDir(f"longevity_{i}"):
+
             with open(env.ARTIFACT_DIR / "settings.longevity.yaml", "w") as f:
                 yaml.dump(dict(longevity_index=i), f, indent=4)
 
-            test_models_concurrently()
+            try:
+                test_models_concurrently()
+            finally:
+                # flag file for kserve-prom visualization
+                with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
+                    print("multi-model", file=f)
+                dump_prometheus()
 
             if i != repeat-1:
                 time.sleep(delay)
 
 
-def deploy_and_test_models_e2e():
+def deploy_and_test_multi_models():
     reset_prometheus()
-
-    mode = config.ci_artifacts.get_config("tests.e2e.mode")
 
     try:
         deploy_models_concurrently()
 
-        if mode == "longevity":
-            test_models_longevity()
-        else:
-            # flag file for kserve-prom visualization
-            with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-                print("multi-model", file=f)
-
-            test_models_concurrently()
-            test_models_sequentially(locally=False)
+        test_models_concurrently()
+        test_models_sequentially(locally=False)
 
     finally:
         # flag file for kserve-prom visualization
         with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-            print("e2e", file=f)
-
+            print("multi-model", file=f)
         dump_prometheus()
 
 
