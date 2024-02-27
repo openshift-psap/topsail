@@ -150,7 +150,7 @@ def test_models_longevity():
     repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
     delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
     for i in range(repeat):
-        with env.NextArtifactdir(f"longevity_{i}"):
+        with env.NextArtifactDir(f"longevity_{i}"):
             with open(env.ARTIFACT / "settings.longevity.yaml", "w") as f:
                 yaml.dump(dict(index=i), f, indent=4)
             test_models_concurrently()
