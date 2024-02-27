@@ -159,7 +159,6 @@ def test_models_longevity():
 
             if i != repeat-1:
                 time.sleep(delay)
-    run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True)
 
 
 def deploy_and_test_models_e2e():
