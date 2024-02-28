@@ -62,23 +62,23 @@ def generate_lts_metadata(results, import_settings):
     return lts_metadata
 
 def generate_lts_results(results):
-    results_lts = types.SimpleNamespace()
+    results_lts = {}
     # Throughout value (scalar, in token/ms)
-    results_lts.throughput = _generate_throughput(results)
+    results_lts["throughput"] = _generate_throughput(results)
 
     # Time Per Output Token value
-    results_lts.time_per_output_token = _generate_time_per_output_token(results)
+    results_lts["time_per_output_token"] = _generate_time_per_output_token(results)
 
     # Time To First Token values for all of the calls (vector)
-    results_lts.time_to_first_token = _generate_time_to_first_token(results)
+    results_lts["time_to_first_token"] = _generate_time_to_first_token(results)
 
     # Model Load Duration (scalar, in seconds)
     if results.predictor_pod and results.predictor_pod.load_time:
-        results_lts.model_load_duration = results.predictor_pod.load_time.total_seconds()
+        results_lts["model_load_duration"] = results.predictor_pod.load_time.total_seconds()
     else:
         logging.error("Cannot set lts.results.model_load_duration: Predictor pod load time missing.")
 
-    return results_lts
+    return models.lts.Results.parse_obj(results_lts)
 
 
 def _gather_prom_metrics(metrics, model) -> dict:
