@@ -10,8 +10,6 @@ from . import kpi
 class Settings(matbench_models.ExclusiveModel):
     rhoai_version: matbench_models.SemVer
     ocp_version: matbench_models.SemVer
-    test_flavor: str
-    ci_engine: str
 
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
     min: float
