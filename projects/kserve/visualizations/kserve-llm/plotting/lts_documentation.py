@@ -52,7 +52,7 @@ def generateOneLtsDocumentationReport(entry):
     header += [html.H2("metadata")]
     metadata = []
 
-    metadata += [html.Li([html.B("settings:"), html.Code(f"{k}: {v}" for k, v in lts.metadata.settings.items())])]
+    metadata += [html.Li([html.B("settings:"), html.Code(f"{k}: {v}" for k, v in lts.metadata.settings.__dict__.items())])]
     metadata += [html.Li([html.B("start:"), html.Code(lts.metadata.start)])]
     metadata += [html.Li([html.B("presets:"), html.Code(", ".join(lts.metadata.presets))])]
     metadata += [html.Li([html.B("config:"), html.Code("(not shown for clarity)")])]
@@ -62,7 +62,7 @@ def generateOneLtsDocumentationReport(entry):
 
     header += [html.H2("kpis")]
     kpis = []
-    for name, kpi in lts.kpis:
+    for name, kpi in lts.kpis.items():
         labels = {k:v for k, v in kpi.__dict__.items() if k not in ("unit", "help", "timestamp", "value")}
         labels_str = ", ".join(f"{k}=\"{v}\"" for k, v in labels.items())
         kpis += [html.Li([html.P([html.Code(f"# HELP {name} {kpi.help}"), html.Br(),
@@ -75,8 +75,8 @@ def generateOneLtsDocumentationReport(entry):
     results = []
     results += [html.Li([html.B("throughput:"), html.Code(lts.results.throughput)])]
 
-    results += [html.Li([html.B("time_per_output_token:"), html.Code([f"{k}: {v:.2f}" for k, v in lts.results.time_per_output_token.items()])])]
-    results += [html.Li([html.B("time_to_first_token:"), html.Code([f"{k}: {v:.2f}" for k, v in lts.results.time_to_first_token.items()])])]
+    results += [html.Li([html.B("time_per_output_token:"), html.Code([f"{k}: {v:.2f}" for k, v in lts.results.time_per_output_token.__dict__.items()])])]
+    results += [html.Li([html.B("time_to_first_token:"), html.Code([f"{k}: {v:.2f}" for k, v in lts.results.time_to_first_token.__dict__.items()])])]
     results += [html.Li([html.B("model_load_duration:"), html.Code(lts.results.model_load_duration)])]
     header += [html.Ul(results)]
 
