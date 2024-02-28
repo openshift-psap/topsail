@@ -9,23 +9,12 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
     # To know the available metrics:
     # _=[print(m) for m in results.metrics["sutest"].keys()]
 
+    lts_metadata = generate_lts_metadata(results, import_settings)
+
     lts_payload = types.SimpleNamespace()
-    lts_payload.metadata = types.SimpleNamespace()
-
-    lts_payload.metadata.start = results.test_start_end.start
-    lts_payload.metadata.end = results.test_start_end.end
-
-    lts_payload.metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
-    lts_payload.metadata.config = results.test_config.yaml_file
-
-    lts_payload.metadata.ocp_version = results.ocp_version
-    lts_payload.metadata.rhods_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
-
-    lts_payload.metadata.settings = dict(import_settings)
-    lts_payload.metadata.test_uuid = results.test_uuid
-
+    lts_payload.metadata = lts_metadata
+    lts_payload.kpis = lts.generate_lts_kpis(lts_payload)
     lts_payload.results = lts_results
-
     lts.validate_lts_payload(lts_payload, import_settings, reraise=must_validate)
 
     return lts_payload
@@ -43,9 +32,45 @@ def _generate_time_to_first_token(results):
     return results.llm_load_test_output["summary"]["ttft"]
 
 
+def generate_lts_settings(lts_metadata, import_settings):
+    image = import_settings["image"]
+    image_name, _, image_tag = image.partition(":")
+
+    return models_lts.Settings(
+        ocp_version = lts_metadata.ocp_version,
+        rhoai_version = lts_metadata.rhods_version,
+        image = image,
+        image_tag = image_tag,
+        image_name = image_name,
+        instance_type = import_settings["instance_type"],
+
+        benchmark_name = import_settings["benchmark_name"],
+        test_flavor = lts_metadata.test,
+        ci_engine = lts_metadata.ci_engine,
+    )
+
+def generate_lts_metadata(results, import_settings):
+    start_time = results.start_time
+    end_time = results.end_time
+
+    if start_time.tzinfo is None:
+        start_time = start_time.replace(tzinfo=pytz.UTC)
+    if end_time.tzinfo is None:
+        end_time = end_time.replace(tzinfo=pytz.UTC)
+    lts_metadata = types.SimpleNamespace()
+    lts_metadata.start = results.test_start_end.start
+    lts_metadata.end = results.test_start_end.end
+    lts_metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
+    lts_metadata.config = results.test_config.yaml_file
+    lts_metadata.ocp_version = results.ocp_version
+    lts_metadata.rhods_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
+    lts_metadata.test_uuid = results.test_uuid
+    lts_metadata.settings = generate_lts_settings(lts_metadata, dict(import_settings))
+
+    return lts_metadata
+
 def generate_lts_results(results):
     results_lts = types.SimpleNamespace()
-
     # Throughout value (scalar, in token/ms)
     results_lts.throughput = _generate_throughput(results)
 
@@ -69,3 +94,11 @@ def _gather_prom_metrics(metrics, model) -> dict:
             for metric_name in model.schema()["properties"].keys()}
 
     return model(**data)
+
+def get_kpi_labels(lts_payload):
+    kpi_labels = dict(lts_payload.metadata.settings)
+
+    kpi_labels["@timestamp"] = lts_payload.metadata.start.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    kpi_labels["test_uuid"] = lts_payload.metadata.test_uuid
+
+    return kpi_labels

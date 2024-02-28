@@ -60,6 +60,17 @@ def generateOneLtsDocumentationReport(entry):
     metadata += [html.Li([html.B("rhods_version:"), html.Code(lts.metadata.rhods_version)])]
     header += [html.Ul(metadata)]
 
+    header += [html.H2("kpis")]
+    kpis = []
+    for name, kpi in lts.kpis:
+        labels = {k:v for k, v in kpi.__dict__.items() if k not in ("unit", "help", "timestamp", "value")}
+        labels_str = ", ".join(f"{k}=\"{v}\"" for k, v in labels.items())
+        kpis += [html.Li([html.P([html.Code(f"# HELP {name} {kpi.help}"), html.Br(),
+                                  html.Code(f"# UNIT {name} {kpi.unit}"), html.Br(),
+                                  html.Code(f"{name}{{{labels_str}}} {kpi.value}")])])]
+
+    header += [html.Ul(kpis)]
+
     header += [html.H2("results")]
     results = []
     results += [html.Li([html.B("throughput:"), html.Code(lts.results.throughput)])]

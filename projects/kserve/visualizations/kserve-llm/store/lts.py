@@ -46,3 +46,17 @@ def build_lts_payloads():
         validate_lts_payload(lts_payload, entry.import_settings, reraise=True)
 
         yield lts_payload, lts_payload.metadata.start, lts_payload.metadata.end
+
+def generate_lts_kpis(lts_payload):
+
+    kpis = {}
+
+    for name, properties in models_kpi.KPIs.items():
+        kpi = {} | properties | lts_parser.get_kpi_labels(lts_payload)
+
+        kpi_func = kpi.pop("__func__")
+        kpi["value"] = kpi_func(lts_payload)
+
+        kpis[name] = models_lts.KServeLLMPerformanceKPI.parse_obj(kpi)
+
+    return kpis

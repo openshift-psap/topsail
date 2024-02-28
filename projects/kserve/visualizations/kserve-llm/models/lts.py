@@ -7,6 +7,17 @@ from pydantic import BaseModel, Field
 import matrix_benchmarking.models as matbench_models
 from . import kpi
 
+# This will likely change depending on the information available and what labels we want
+class Settings(matbench_models.ExclusiveModel):
+    rhoai_version: matbench_models.SemVer
+    ocp_version: matbench_models.SemVer
+    image: str
+    image_tag: str
+    image_name: str
+    instance_type: str
+    benchmark_name: str
+    test_flavor: str
+    ci_engine: str
 
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
     min: float
@@ -28,9 +39,8 @@ class Metadata(matbench_models.Metadata):
 class Results(matbench_models.ExclusiveModel):
     throughput: float
     time_per_output_token: LlmLoadTestStats
-    time_to_first_token: LlmLoadTestStats
-
-    model_load_duration: float
+    time_to_first_token: Optional[LlmLoadTestStats]
+    model_load_duration: Optional[float]
 
 class KServeLLMPerformanceKPI(matbench_models.KPI, Settings): pass
 
