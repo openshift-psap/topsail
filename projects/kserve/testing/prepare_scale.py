@@ -83,7 +83,7 @@ def scale_compute_sutest_node_requirement():
 
 
 def e2e_compute_sutest_node_requirement():
-    if config.ci_artifacts.get_config("tests.e2e.perf_mode"):
+    if config.ci_artifacts.get_config("tests.e2e.mode") == "single":
         return 1
 
     return len(config.ci_artifacts.get_config("tests.e2e.models"))

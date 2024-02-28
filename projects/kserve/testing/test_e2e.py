@@ -86,12 +86,13 @@ def test_ci():
     # in the OCP CI, the config is passed from 'prepare' to 'test', so this is a NOOP
     # in the Perf CI environment, the config isn't passed, so this is mandatory.
     prepare_kserve.update_serving_runtime_images()
-
+    mode = config.ci_artifacts.get_config("tests.e2e.mode")
     try:
-        if config.ci_artifacts.get_config("tests.e2e.perf_mode"):
+        if mode == "single":
             deploy_and_test_models_sequentially(locally=False)
-        else:
+        else: # multi and longevity tests
             deploy_and_test_models_e2e()
+
     finally:
         exc = None
         if config.ci_artifacts.get_config("tests.e2e.capture_state"):
@@ -146,6 +147,20 @@ def test_models_sequentially(locally=False):
         run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially", artifact_dir_suffix="_test_sequentially")
 
 
+def test_models_longevity():
+    repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
+    delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
+    for i in range(repeat):
+        with env.NextArtifactDir(f"longevity_{i}"):
+            with open(env.ARTIFACT_DIR / "settings.longevity.yaml", "w") as f:
+                yaml.dump(dict(index=i), f, indent=4)
+
+            test_models_concurrently()
+
+            if i != repeat-1:
+                time.sleep(delay)
+
+
 def deploy_and_test_models_e2e():
     with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
         parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
@@ -154,12 +169,17 @@ def deploy_and_test_models_e2e():
     logging.info("Wait 60s for Prometheus to restart collecting data ...")
     time.sleep(60)
 
+    mode = config.ci_artifacts.get_config("tests.e2e.mode")
+
     try:
         deploy_models_concurrently()
 
-        test_models_concurrently()
+        if mode == "longevity":
+            test_models_longevity()
+        else:
+            test_models_concurrently()
+            test_models_sequentially(locally=False)
 
-        test_models_sequentially(locally=False)
     finally:
         # flag file for kserve-prom visualization
         with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
@@ -635,7 +655,9 @@ def main():
 
 if __name__ == "__main__":
     try:
-        os.environ["TOPSAIL_PR_ARGS"] = "e2e_gpu"
+        if not "JOB_COMPLETION_INDEX" in os.environ:
+            os.environ["TOPSAIL_PR_ARGS"] = "e2e_gpu"
+
         from test import init
         init(ignore_secret_path=False, apply_preset_from_pr_args=True)
 

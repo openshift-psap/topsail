@@ -60,7 +60,7 @@ ci_presets:
 
   e2e_perf:
     extends: [e2e_gpu]
-    tests.e2e.perf_mode: true
+    tests.e2e.mode: single
     tests.e2e.limits_equals_requests: false
     matbench.workload: projects.kserve.visualizations.kserve-llm
     gpu.time_sharing.replicas: 1
@@ -72,7 +72,7 @@ ci_presets:
 
   e2e_scale:
     extends: [e2e_gpu]
-    tests.e2e.perf_mode: false
+    tests.e2e.mode: multi
     gpu.time_sharing.replicas: 1
 
   e2e_gpu:
@@ -164,7 +164,7 @@ ci_presets:
     kserve.storage_config.region: "us-east-1"
     kserve.storage_config.endpoint: "minio.app.intlab.redhat.com"
     kserve.storage_config.use_https: "1"
-    kserve.storage_config.verifyssl: "0"
+    kserve.storage_config.verify_ssl: "0"
 
   # ---
 
@@ -214,6 +214,18 @@ ci_presets:
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-small-cpu]
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-multi-light
+
+  longevity:
+    tests.e2e.mode: longevity
+    tests.prom_plot_workload: null
+
+  multi_model_longevity:
+    extends: [multi_model_gating, longevity]
+
+  multi_day_longevity:
+    extends: [multi_model_longevity]
+    tests.e2e.longevity.repeat: 3
+    tests.e2e.longevity.delay: 86400 # 24 hours
 
   # many-model
 
@@ -377,8 +389,9 @@ kserve:
     name: storage-config
     region: us-east-1
     endpoint: s3.amazonaws.com
-    usehttps: 1
-    verifyssl: 1
+    use_https: 1
+    verify_ssl: 1
+
   inference_service:
     validation:
       dataset: projects/llm_load_test/llm-load-test/datasets/openorca_large_subset_010.jsonl
@@ -427,7 +440,7 @@ tests:
       replicas: 2
   e2e:
     namespace: watsonx-e2e
-    perf_mode: true
+    mode: single
     models:
     - flan-t5-small-gpu
     - flan-t5-small-gpu
@@ -446,6 +459,9 @@ tests:
       concurrency: 16
       plugin: caikit_client_plugin
       interface: grpc
+    longevity:
+      repeat: 2
+      delay: 30 # seconds
 
 matbench:
   preset: null
