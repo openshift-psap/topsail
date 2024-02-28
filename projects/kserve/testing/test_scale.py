@@ -97,11 +97,6 @@ def save_and_create(name, content, namespace, is_secret=False):
             file_path.unlink(missing_ok=True)
 
 
-def prepare_namespace(namespace):
-    deploy_storage_configuration(namespace)
-    deploy_istio_sidecar()
-
-
 def deploy_istio_sidecar(namespace):
     istio_sidecar = f"""\
 apiVersion: networking.istio.io/v1beta1
