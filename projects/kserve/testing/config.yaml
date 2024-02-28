@@ -125,6 +125,9 @@ ci_presets:
 
   # ---
 
+  3min:
+    tests.e2e.llm_load_test.duration: 180
+
   5min:
     tests.e2e.llm_load_test.duration: 300
 
@@ -181,6 +184,20 @@ ci_presets:
 
   # single-model
 
+  watsonx_single_model_gating:
+    extends: [gating, 3min, metal, tgis, raw]
+    tests.e2e.models:
+    - watsonx-starcoder
+    - watsonx-mt0-xxl
+    - watsonx-gpt-neox-20b
+    - watsonx-japanese-Llama-2-7b-instruct
+    - watsonx-flan-t5-xl
+    - watsonx-flan-t5-xxl
+    - watsonx-llama-2-13b-chat-hf
+    - watsonx-llama-2-70b-chat-hf
+    matbench.lts.horreum.test_name: RHOAI-kserve-single
+    matbench.lts.opensearch.index: rhoai-kserve-single
+
   single_model_gating:
     extends: [gating, 10min, e2e_gpu, e2e_perf]
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, bloom-560m, mpt-7b-instruct2]
@@ -197,7 +214,7 @@ ci_presets:
   # multi-model
 
   watsonx_multi_model_gating:
-    extends: [gating, 10min, e2e_gpu, e2e_multi, tgis, raw]
+    extends: [gating, 5min, e2e_gpu, e2e_multi, tgis, raw]
     matbench.lts.horreum.test_name: RHOAI-watsonx-multi
     matbench.lts.opensearch.index: rhoai-watsonx-multi
     tests.e2e.models:
