@@ -3,13 +3,23 @@ from __future__ import annotations
 from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
+from enum import Enum
 
 import matrix_benchmarking.models as matbench_models
 from . import kpi
 
+class Mode(str, Enum):
+    single = "single"
+    multi = "multi"
+    longevity = "longevity"
+
 class Settings(matbench_models.ExclusiveModel):
     rhoai_version: matbench_models.SemVer
     ocp_version: matbench_models.SemVer
+    tgis_image: str
+    gpu_name: str
+    model_name: str
+    mode: Mode
 
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
     values: List[float]

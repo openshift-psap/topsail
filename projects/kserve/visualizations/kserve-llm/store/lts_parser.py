@@ -39,6 +39,10 @@ def generate_lts_settings(lts_metadata, import_settings):
     return models_lts.Settings(
         ocp_version = lts_metadata.ocp_version,
         rhoai_version = lts_metadata.rhods_version,
+        tgis_image = ,
+        gpu_name = ,
+        model_name = ,
+        mode = ,
     )
 
 def generate_lts_metadata(results, import_settings):
