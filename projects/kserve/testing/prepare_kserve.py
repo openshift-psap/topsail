@@ -58,12 +58,8 @@ EOF
 
 def enable_kserve_raw_deployment():
     run.run("""
-    oc patch configmap/inferenceservice-config \
-       -n redhat-ods-applications \
-       --type=strategic \
-       -p '{"data": {"deploy": "{\\"defaultDeploymentMode\\": \\"RawDeployment\\"}"}}'
     new_deploy_value=$(oc get configmap/inferenceservice-config -n redhat-ods-applications  -ojsonpath={.data.deploy} | jq '.defaultDeploymentMode = "RawDeployment"');
-    oc set data configmap/inferenceservice-config -n redhat-ods-applications deploy="$new_deploy_value";
+    oc set data configmap/inferenceservice-config -n redhat-ods-applications deploy="$new_deploy_value"
     """)
 
     run.run("""
