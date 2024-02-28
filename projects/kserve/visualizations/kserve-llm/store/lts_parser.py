@@ -14,8 +14,8 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
 
     lts_payload = types.SimpleNamespace()
     lts_payload.metadata = lts_metadata
-    lts_payload.kpis = lts.generate_lts_kpis(lts_payload)
     lts_payload.results = lts_results
+    lts_payload.kpis = lts.generate_lts_kpis(lts_payload)
     lts.validate_lts_payload(lts_payload, import_settings, reraise=must_validate)
 
     return lts_payload
