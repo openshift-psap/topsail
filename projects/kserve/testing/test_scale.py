@@ -53,12 +53,15 @@ def run_test(dry_mode):
 
 
 def prepare_user_sutest_namespace(namespace):
-    if run.run(f'oc get project "{namespace}" -oname 2>/dev/null', check=False).returncode == 0:
+    if run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null', check=False).returncode == 1:
         logging.warning(f"Project {namespace} already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
+
+        run.run(f"oc wait --for jsonpath='{{.metadata.labels.topsail\.prepared}}=true' ns {namespace} --timeout=2m")
+
         return
 
-    run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
+
     label = config.ci_artifacts.get_config("tests.scale.namespace.label")
     run.run(f"oc label ns/{namespace} {label} --overwrite")
 
@@ -74,6 +77,8 @@ def prepare_user_sutest_namespace(namespace):
 
     if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
         deploy_istio_sidecar(namespace)
+
+    run.run(f"oc label ns/{namespace} topsail.prepared=true")
 
 
 def save_and_create(name, content, namespace, is_secret=False):
