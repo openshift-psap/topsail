@@ -50,13 +50,14 @@ def generate_lts_settings(lts_metadata, import_settings):
     )
 
 def generate_lts_metadata(results, import_settings):
-    start_time = results.start_time
-    end_time = results.end_time
+    start_time = results.test_start_end.start
+    end_time = results.test_start_end.end
 
     if start_time.tzinfo is None:
         start_time = start_time.replace(tzinfo=pytz.UTC)
     if end_time.tzinfo is None:
         end_time = end_time.replace(tzinfo=pytz.UTC)
+
     lts_metadata = types.SimpleNamespace()
     lts_metadata.start = results.test_start_end.start
     lts_metadata.end = results.test_start_end.end
