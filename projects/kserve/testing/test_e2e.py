@@ -153,7 +153,7 @@ def test_models_longevity():
     for i in range(repeat):
         with env.NextArtifactDir(f"longevity_{i}"):
             with open(env.ARTIFACT_DIR / "settings.longevity.yaml", "w") as f:
-                yaml.dump(dict(index=i), f, indent=4)
+                yaml.dump(dict(longevity_index=i), f, indent=4)
 
             test_models_concurrently()
 
