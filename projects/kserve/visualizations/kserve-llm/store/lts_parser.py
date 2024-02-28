@@ -34,18 +34,10 @@ def _generate_time_to_first_token(results):
 
 
 def generate_lts_settings(lts_metadata, import_settings):
-    image = import_settings["image"]
-    image_name, _, image_tag = image.partition(":")
 
     return models_lts.Settings(
         ocp_version = lts_metadata.ocp_version,
         rhoai_version = lts_metadata.rhods_version,
-        image = image,
-        image_tag = image_tag,
-        image_name = image_name,
-        instance_type = import_settings["instance_type"],
-
-        benchmark_name = import_settings["benchmark_name"],
         test_flavor = lts_metadata.test,
         ci_engine = lts_metadata.ci_engine,
     )
