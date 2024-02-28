@@ -114,12 +114,6 @@ spec:
 
 
 def deploy_storage_configuration(namespace):
-    storage_secret_name = config.ci_artifacts.get_config("kserve.storage_config.name")
-    region = config.ci_artifacts.get_config("kserve.storage_config.region")
-    endpoint = config.ci_artifacts.get_config("kserve.storage_config.endpoint")
-    use_https = config.ci_artifacts.get_config("kserve.storage_config.use_https")
-    verify_ssl = config.ci_artifacts.get_config("kserve.storage_config.verify_ssl")
-
     access_key = None
     secret_key = None
 
@@ -137,16 +131,18 @@ def deploy_storage_configuration(namespace):
     if None in (access_key, secret_key):
         raise ValueError(f"aws_access_key_id or aws_secret_access_key not found in {model_s3_cred_file} ...")
 
+    storage_config = config.ci_artifacts.get_config("kserve.storage_config")
+
     storage_secret = f"""\
 apiVersion: v1
 kind: Secret
 metadata:
   annotations:
-    serving.kserve.io/s3-region: "{region}"
-    serving.kserve.io/s3-endpoint: "{endpoint}"
-    serving.kserve.io/s3-usehttps: "{use_https}"
-    serving.kserve.io/s3-verifyssl: "{verify_ssl}"
-  name: {storage_secret_name}
+    serving.kserve.io/s3-region: "{storage_config['region']}"
+    serving.kserve.io/s3-endpoint: "{storage_config['endpoint']}"
+    serving.kserve.io/s3-usehttps: "{storage_config['use_https']}"
+    serving.kserve.io/s3-verifyssl: "{storage_config['verify_ssl']}"
+  name: {storage_config['name']}
 stringData:
   AWS_ACCESS_KEY_ID: "{access_key}"
   AWS_SECRET_ACCESS_KEY: "{secret_key}"
@@ -154,7 +150,7 @@ stringData:
     save_and_create("storage_secret.yaml", storage_secret, namespace, is_secret=True)
 
     # oc describe secret is safe
-    run.run(f"oc describe secret/{storage_secret_name} -n {namespace} > {env.ARTIFACT_DIR / 'src' / 'storage-config.desc'}")
+    run.run(f"oc describe secret/{storage_config['name']} -n {namespace} > {env.ARTIFACT_DIR / 'src' / 'storage-config.desc'}")
 
     # Service Account
 
@@ -165,7 +161,7 @@ kind: ServiceAccount
 metadata:
   name: {service_account_name}
 secrets:
-- name: {storage_secret_name}
+- name: {storage_config['name']}
 """
 
     save_and_create("ServiceAccount.yaml", service_account, namespace)
