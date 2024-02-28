@@ -78,8 +78,8 @@
         {{ kserve_validate_model_method }}
 
   register: grpcurl_working_cmd
-  retries: 60
-  delay: 5
+  retries: 6
+  delay: 10
   until: grpcurl_working_cmd.rc == 0
 
 - name: Inform | Next task runs the validation test

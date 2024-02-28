@@ -162,12 +162,7 @@ def test_models_longevity():
 
 
 def deploy_and_test_models_e2e():
-    with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
-        parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
-        parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
-
-    logging.info("Wait 60s for Prometheus to restart collecting data ...")
-    time.sleep(60)
+    reset_prometheus()
 
     mode = config.ci_artifacts.get_config("tests.e2e.mode")
 
@@ -185,12 +180,7 @@ def deploy_and_test_models_e2e():
         with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
             print("e2e", file=f)
 
-        logging.info("Wait 60s for Prometheus to finish collecting data ...")
-        time.sleep(60)
-
-        with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
-            parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True)
-            parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+        dump_prometheus()
 
 
 def deploy_and_test_models_sequentially(locally=False):
@@ -214,12 +204,7 @@ def deploy_and_test_models_sequentially(locally=False):
     for consolidated_model in consolidated_models:
         with env.NextArtifactDir(consolidated_model['name']):
             try:
-                with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
-                    parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
-                    parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm")
-
-                logging.info("Wait 60s for Prometheus to restart collecting data ...")
-                time.sleep(60)
+                reset_prometheus()
 
                 deploy_consolidated_model(consolidated_model)
 
@@ -234,12 +219,7 @@ def deploy_and_test_models_sequentially(locally=False):
             with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
                 print(consolidated_model['name'], file=f)
 
-            logging.info("Wait 60s for Prometheus to finish collecting data ...")
-            time.sleep(60)
-
-            with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
-                parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True, check=False)
-                parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", check=False, artifact_dir_suffix="_uwm")
+            dump_prometheus()
 
             run.run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
@@ -267,6 +247,32 @@ def test_one_model(index: int = None, use_job_index: bool = False, model_name: s
 
 # ---
 
+def reset_prometheus(delay=60):
+    if not config.ci_artifacts.get_config("tests.capture_prom"):
+        logging.info("tests.capture_prom is disabled, skipping Prometheus DB reset")
+        return
+
+    with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
+        parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
+        parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+
+    logging.info(f"Wait {delay}s for Prometheus to restart collecting data ...")
+    time.sleep(delay)
+
+
+def dump_prometheus(delay=60):
+    if not config.ci_artifacts.get_config("tests.capture_prom"):
+        logging.info("tests.capture_prom is disabled, skipping Prometheus DB dump")
+        return
+
+    logging.info(f"Wait {delay}s for Prometheus to finish collecting data ...")
+    time.sleep(delay)
+
+    with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
+        parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True)
+        parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+
+# ---
 def deploy_consolidated_models():
     consolidated_models = config.ci_artifacts.get_config("tests.e2e.consolidated_models")
     model_count = len(consolidated_models)
@@ -328,10 +334,14 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         if limits_equals_requests is None:
             limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
 
+
+    serving_runtime_name = consolidated_model["serving_runtime"].get("name", model_name)
+
+
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
-        serving_runtime_name=model_name,
+        serving_runtime_name=serving_runtime_name,
         sr_kserve_image=consolidated_model["serving_runtime"]["kserve"]["image"],
         sr_kserve_resource_request=consolidated_model["serving_runtime"]["kserve"]["resource_request"],
 
