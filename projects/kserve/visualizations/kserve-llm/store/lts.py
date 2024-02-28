@@ -7,6 +7,7 @@ from matrix_benchmarking.parse import json_dumper
 
 from .. import models
 from ..models import lts as models_lts
+from ..models import kpi as models_kpi
 from . import lts_parser
 
 def validate_lts_payload(payload, import_settings, reraise=False):
