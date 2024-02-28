@@ -39,10 +39,9 @@ def generate_lts_settings(lts_metadata, import_settings):
     return models_lts.Settings(
         ocp_version = lts_metadata.ocp_version,
         rhoai_version = lts_metadata.rhods_version,
-        tgis_image = ,
-        gpu_name = ,
-        model_name = ,
-        mode = ,
+        tgis_image = lts_metadata.tgis_image,
+        model_name = import_settings["model_name"],
+        mode = import_settings["mode"],
     )
 
 def generate_lts_metadata(results, import_settings):
@@ -61,6 +60,7 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.config = results.test_config.yaml_file
     lts_metadata.ocp_version = results.ocp_version
     lts_metadata.rhods_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
+    lts_metadata.tgis_image = results.test_config.get("kserve.model.serving_runtime.kserve.image") or "None"
     lts_metadata.test_uuid = results.test_uuid
     lts_metadata.settings = generate_lts_settings(lts_metadata, dict(import_settings))
 
