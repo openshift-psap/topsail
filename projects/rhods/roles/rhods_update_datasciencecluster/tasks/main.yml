@@ -88,7 +88,7 @@
     set -e;
 
     {% for setting_key, setting_value in rhods_update_datasciencecluster_extra_settings.items() %}
-    yq -yi --argjson value "$(echo "{{ setting_value }}" | yq)" '.{{ setting_key}} = $value' "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
+    yq -yi --argjson value "$(echo "{{ setting_value }}" | yq)" '.{{ setting_key }} = $value' "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
     {% endfor %}
 
 - name: Create the DataScienceCluster
