@@ -10,10 +10,8 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
     # To know the available metrics:
     # _=[print(m) for m in results.metrics["sutest"].keys()]
 
-    lts_metadata = generate_lts_metadata(results, import_settings)
-
     lts_payload = types.SimpleNamespace()
-    lts_payload.metadata = lts_metadata
+    lts_payload.metadata = generate_lts_metadata(results, import_settings)
     lts_payload.results = lts_results
     lts_payload.kpis = lts.generate_lts_kpis(lts_payload)
     lts.validate_lts_payload(lts_payload, import_settings, reraise=must_validate)
@@ -39,7 +37,7 @@ def generate_lts_settings(lts_metadata, import_settings):
     return models_lts.Settings(
         ocp_version = lts_metadata.ocp_version,
         rhoai_version = lts_metadata.rhods_version,
-        tgis_image = lts_metadata.tgis_image,
+        tgis_image_version = lts_metadata.tgis_image_version,
         model_name = import_settings["model_name"],
         mode = import_settings["mode"],
     )
@@ -60,7 +58,7 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.config = results.test_config.yaml_file
     lts_metadata.ocp_version = results.ocp_version
     lts_metadata.rhods_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
-    lts_metadata.tgis_image = results.test_config.get("kserve.model.serving_runtime.kserve.image") or "None"
+    lts_metadata.tgis_image_version = results.test_config.get("kserve.model.serving_runtime.kserve.image") or "None"
     lts_metadata.test_uuid = results.test_uuid
     lts_metadata.settings = generate_lts_settings(lts_metadata, dict(import_settings))
 

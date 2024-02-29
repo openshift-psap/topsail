@@ -11,7 +11,7 @@ from . import kpi
 class Settings(matbench_models.ExclusiveModel):
     rhoai_version: matbench_models.SemVer
     ocp_version: matbench_models.SemVer
-    tgis_image: str
+    tgis_image_version: str
     model_name: str
     mode: str
 
@@ -28,10 +28,12 @@ class LlmLoadTestStats(matbench_models.ExclusiveModel):
 
 
 class Metadata(matbench_models.Metadata):
+    settings: Settings
     presets: List[str]
     config: Any
     ocp_version: matbench_models.SemVer
     rhods_version: matbench_models.SemVer
+    tgis_image_version: str
 
 class Results(matbench_models.ExclusiveModel):
     throughput: float
