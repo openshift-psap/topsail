@@ -89,10 +89,13 @@ def test_ci():
     mode = config.ci_artifacts.get_config("tests.e2e.mode")
     try:
         if mode == "single":
-            deploy_and_test_models_sequentially(locally=False)
-        else: # multi and longevity tests
-            deploy_and_test_models_e2e()
-
+            single_model_deploy_and_test_sequentially(locally=False)
+        elif mode == "longevity":
+            test_models_longevity()
+        elif mode == "multi":
+            multi_model_deploy_and_test()
+        else:
+            raise ValueError(f"Invalid value for tests.e2e.mode: {mode} :/")
     finally:
         exc = None
         if config.ci_artifacts.get_config("tests.e2e.capture_state"):
@@ -134,7 +137,7 @@ def deploy_one_model(index: int = None, use_job_index: bool = False, model_name:
     deploy_consolidated_models()
 
 
-def test_models_sequentially(locally=False):
+def multi_model_test_sequentially(locally=False):
     "Tests all the configured models sequentially (one after the other)"
 
     logging.info(f"Test the models sequentially (locally={locally})")
@@ -143,47 +146,46 @@ def test_models_sequentially(locally=False):
             yaml.dump(dict(mode="sequential"), f, indent=4)
         consolidate_models()
         test_consolidated_models()
-    else:
-        run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially", artifact_dir_suffix="_test_sequentially")
+        return
+
+    # launch the remote execution
+
+    reset_prometheus()
+    with env.NextArtifactDir("multi_model_test_sequentially"):
+        try:
+            run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially",
+                                        artifact_dir_suffix="_test_sequentially")
+        finally:
+            generate_kserve_prom_results("multi-model_sequential")
 
 
 def test_models_longevity():
     repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
     delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
+
+    deploy_models_concurrently()
+
     for i in range(repeat):
-        with env.NextArtifactDir(f"longevity_{i}"):
+        expe_name = f"longevity_{i}"
+        with env.NextArtifactDir(expe_name):
+
             with open(env.ARTIFACT_DIR / "settings.longevity.yaml", "w") as f:
                 yaml.dump(dict(longevity_index=i), f, indent=4)
 
-            test_models_concurrently()
+            multi_model_test_concurrently(expe_name)
 
             if i != repeat-1:
                 time.sleep(delay)
 
 
-def deploy_and_test_models_e2e():
-    reset_prometheus()
+def multi_model_deploy_and_test():
+    deploy_models_concurrently()
 
-    mode = config.ci_artifacts.get_config("tests.e2e.mode")
-
-    try:
-        deploy_models_concurrently()
-
-        if mode == "longevity":
-            test_models_longevity()
-        else:
-            test_models_concurrently()
-            test_models_sequentially(locally=False)
-
-    finally:
-        # flag file for kserve-prom visualization
-        with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-            print("e2e", file=f)
-
-        dump_prometheus()
+    multi_model_test_concurrently()
+    multi_model_test_sequentially(locally=False)
 
 
-def deploy_and_test_models_sequentially(locally=False):
+def single_model_deploy_and_test_sequentially(locally=False):
     "Deploy and test all the configured models sequentially (one after the other)"
 
     logging.info(f"Deploy and test the models sequentially (locally={locally})")
@@ -215,24 +217,25 @@ def deploy_and_test_models_sequentially(locally=False):
                     print(f"{consolidated_model['name']} failed: {e.__class__.__name__}: {e}", file=f)
                 exc = e
 
-            # flag file for kserve-prom visualization
-            with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-                print(consolidated_model['name'], file=f)
-
-            dump_prometheus()
+            generate_kserve_prom_results("single_model")
 
             run.run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
     if failed:
-        logging.fatal(f"deploy_and_test_models_sequentially: {len(failed)} tests failed :/ {' '.join(failed)}")
+        logging.fatal(f"single_model_deploy_and_test_sequentially: {len(failed)} tests failed :/ {' '.join(failed)}")
         raise exc
 
 
-def test_models_concurrently():
+def multi_model_test_concurrently(expe_name="multi-model_concurrent"):
     "Tests all the configured models concurrently (all at the same time)"
 
-    logging.info("Test the models concurrently")
-    run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_concurrently", artifact_dir_suffix="_test_concurrently")
+    reset_prometheus()
+    with env.NextArtifactDir("multi_model_test_concurrently"):
+        try:
+            logging.info(f"Test the models concurrently ({expe_name})")
+            run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_concurrently", artifact_dir_suffix="_test_concurrently")
+        finally:
+            generate_kserve_prom_results(expe_name)
 
 
 def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None, namespace: str = None):
@@ -271,6 +274,25 @@ def dump_prometheus(delay=60):
     with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
         parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True)
         parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+
+
+def generate_kserve_prom_results(expe_name):
+    anchor_file = env.ARTIFACT_DIR / ".matbench_prom_db_dir"
+    if anchor_file.exists():
+        raise ValueError(f"File {anchor_file} already exist. It should be in a dedicated directory.")
+
+    # flag file for kserve-prom visualization
+    with open(anchor_file, "w") as f:
+        print(expe_name, file=f)
+
+    with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+        print(str(uuid.uuid4()), file=f)
+
+    with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+        yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+    dump_prometheus()
+
 
 # ---
 def deploy_consolidated_models():
@@ -645,13 +667,14 @@ class Entrypoint:
         self.deploy_models_sequentially = deploy_models_sequentially
         self.deploy_models_concurrently = deploy_models_concurrently
         self.deploy_one_model = deploy_one_model
-        self.deploy_and_test_models_sequentially = deploy_and_test_models_sequentially
 
-        self.test_models_sequentially = test_models_sequentially
-        self.test_models_concurrently = test_models_concurrently
         self.test_one_model = test_one_model
-
         self.run_one_matbench = run_one_matbench
+
+        self.single_model_deploy_and_test_sequentially = single_model_deploy_and_test_sequentially
+
+        self.multi_model_test_sequentially = multi_model_test_sequentially
+        self.multi_model_test_concurrently = multi_model_test_concurrently
 
         self.rebuild_driver_image = rebuild_driver_image
 
