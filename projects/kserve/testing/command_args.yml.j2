@@ -234,7 +234,7 @@ local_ci run_multi/test_concurrently:
 
 local_ci run_multi/deploy_and_test_sequentially:
   <<: *local_ci_run_multi_e2e
-  ci_command: "kserve test_e2e deploy_and_test_models_sequentially --locally"
+  ci_command: "kserve test_e2e single_model_deploy_and_test_sequentially --locally"
   sleep_factor: 0
   user_count: 1
   job_name: deploy-and-test-models
