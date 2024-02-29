@@ -48,21 +48,6 @@ class Config:
         with open(self.config_path) as config_f:
             self.config = yaml.safe_load(config_f)
 
-    def apply_local_config_overrides(self):
-        TOPSAIL_PR_ARGS_KEY = "TOPSAIL_PR_ARGS"
-        pr_args = os.environ.get(TOPSAIL_PR_ARGS_KEY)
-        if not pr_args:
-            logging.info(f"{TOPSAIL_PR_ARGS_KEY} env var not set, no local config to override.")
-            return
-
-        if ocp_ci := os.environ.get("OPENSHIFT_CI"):
-            raise RuntimeError(f"Found {TOPSAIL_PR_ARGS_KEY}={pr_args} and OPENSHIFT_CI={ocp_ci} defined at the same time, this isn't expected ...")
-
-        for idx, arg in enumerate(pr_args.split()):
-            key = f"{PR_ARG_KEY}{idx + 1}"
-            logging.info(f"{key} --> {arg}")
-            self.config[key] = arg
-
 
     def apply_config_overrides(self):
         variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
@@ -280,4 +265,3 @@ def init(base_dir):
 
     logging.info("config.init: apply the ci-artifacts config overrides")
     ci_artifacts.apply_config_overrides()
-    ci_artifacts.apply_local_config_overrides()
