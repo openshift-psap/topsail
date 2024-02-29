@@ -79,7 +79,7 @@ class Config:
                 actual_value = self.get_config(key) # ensure that key has been set, raises an exception otherwise
                 logging.info(f"config override: {key} --> {actual_value}")
 
-    def apply_preset(self, name):
+    def apply_preset(self, name, do_dump=True):
         try:
             values = self.get_config(f'ci_presets["{name}"]')
         except IndexError:
@@ -107,7 +107,8 @@ class Config:
 
             self.set_config(key, value, dump_command_args=False)
 
-        self.dump_command_args()
+        if do_dump:
+            self.dump_command_args()
 
     def get_config(self, jsonpath, default_value=..., warn=True, print=True):
         try:
