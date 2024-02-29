@@ -15,6 +15,10 @@ def kserve_llm_load_test_throughput(lts_payload):
 
 # Time per output token
 
+@matbench_models.KPIMetadata(help="All values of time per output token", unit="List[ms/token]")
+def kserve_llm_load_test_tpot(lts_payload):
+    return lts_payload.results.time_per_output_token.values
+
 @matbench_models.KPIMetadata(help="Min time per output token", unit="ms/token")
 def kserve_llm_load_test_tpot_min(lts_payload):
     return lts_payload.results.time_per_output_token.min
@@ -49,6 +53,10 @@ def kserve_llm_load_test_tpot_p99(lts_payload):
 
 
 # Time to first token
+
+@matbench_models.KPIMetadata(help="All values of time to first token", unit="List[ms]")
+def kserve_llm_load_test_ttft(lts_payload):
+    return lts_payload.results.time_to_first_token.values
 
 @matbench_models.KPIMetadata(help="Min time to first token", unit="ms")
 def kserve_llm_load_test_ttft_min(lts_payload):

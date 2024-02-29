@@ -20,18 +20,19 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
 
     return lts_payload
 
-
 def _generate_throughput(results):
     return results.llm_load_test_output["summary"]["throughput"]
 
 
 def _generate_time_per_output_token(results):
-    return results.llm_load_test_output["summary"]["tpot"]
-
+    tpot = dict(results.llm_load_test_output["summary"]["tpot"])
+    tpot["values"] = [x["tpot"] for x in results.llm_load_test_output["results"]]
+    return tpot
 
 def _generate_time_to_first_token(results):
-    return results.llm_load_test_output["summary"]["ttft"]
-
+    ttft = dict(results.llm_load_test_output["summary"]["ttft"])
+    ttft["values"] = [x["ttft"] for x in results.llm_load_test_output["results"]]
+    return ttft
 
 def generate_lts_settings(lts_metadata, import_settings):
 

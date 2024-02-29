@@ -12,6 +12,7 @@ class Settings(matbench_models.ExclusiveModel):
     ocp_version: matbench_models.SemVer
 
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
+    values: List[float]
     min: float
     max: float
     median: float
