@@ -509,7 +509,7 @@ tests:
       replicas: 2
   e2e:
     namespace: watsonx-e2e
-    mode: single
+    mode: single # single, longevity or multi
     models:
     - flan-t5-small-gpu
     - flan-t5-small-gpu

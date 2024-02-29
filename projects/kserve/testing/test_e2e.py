@@ -92,9 +92,10 @@ def test_ci():
             single_model_deploy_and_test_sequentially(locally=False)
         elif mode == "longevity":
             test_models_longevity()
-        else:
+        elif mode == "multi":
             multi_model_deploy_and_test()
-
+        else:
+            raise ValueError(f"Invalid value for tests.e2e.mode: {mode} :/")
     finally:
         exc = None
         if config.ci_artifacts.get_config("tests.e2e.capture_state"):
