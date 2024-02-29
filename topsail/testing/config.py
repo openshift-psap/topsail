@@ -53,7 +53,7 @@ class Config:
         variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
 
         if not variable_overrides_path.exists():
-            logging.info(f"apply_config_overrides: {variable_overrides_path} does not exist, nothing to override.")
+            logging.debug(f"apply_config_overrides: {variable_overrides_path} does not exist, nothing to override.")
             return
 
         with open(variable_overrides_path) as f:
@@ -88,7 +88,7 @@ class Config:
 
         logging.info(f"Appling preset '{name}' ==> {values}")
         if not values:
-            raise ValueError("Preset '{name}' does not exists")
+            raise ValueError(f"Preset '{name}' does not exists")
 
         presets = self.get_config("ci_presets.names") or []
         if not name in presets:
@@ -263,5 +263,4 @@ def init(base_dir):
     config_path = _set_config_environ(base_dir)
     ci_artifacts = Config(config_path)
 
-    logging.info("config.init: apply the ci-artifacts config overrides")
     ci_artifacts.apply_config_overrides()
