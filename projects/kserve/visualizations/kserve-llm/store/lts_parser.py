@@ -35,10 +35,20 @@ def _generate_time_to_first_token(results):
 def generate_lts_settings(lts_metadata, results, import_settings):
 
     return models_lts.Settings(
+        instance_type = "TEST",
+        accelerator_type = "FAST",
+        accelerator_count = "3",
+        accelerator_memory = "43221",
         ocp_version = lts_metadata.ocp_version,
         rhoai_version = lts_metadata.rhods_version,
-        tgis_image_version = lts_metadata.tgis_image_version,
+        deployment_mode = "RawDeployment" if results.test_config.get("kserve.raw_deployment.enabled") == "true" else "Serverless",
         model_name = import_settings["model_name"],
+        runtime_image = results.test_config.get("kserve.model.serving_runtime.kserve.image").split(":")[1],
+        min_pod_replicas = results.inference_service.min_replicas,
+        max_pod_replicas = results.inference_service.max_replicas,
+        virtual_users = results.test_config.get("tests.e2e.llm_load_test.concurrency"),
+        test_duration = results.test_config.get("tests.e2e.llm_load_test.duration"),
+        dataset_name = results.llm_load_test_config.get("dataset.file"),
         mode = import_settings["mode"],
     )
 
@@ -58,9 +68,8 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.config = results.test_config.yaml_file
     lts_metadata.ocp_version = results.ocp_version
     lts_metadata.rhods_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
-    lts_metadata.tgis_image_version = results.test_config.get("kserve.model.serving_runtime.kserve.image") or "None"
     lts_metadata.test_uuid = results.test_uuid
-    lts_metadata.settings = generate_lts_settings(lts_metadata, dict(import_settings))
+    lts_metadata.settings = generate_lts_settings(lts_metadata, results, dict(import_settings))
 
     return lts_metadata
 

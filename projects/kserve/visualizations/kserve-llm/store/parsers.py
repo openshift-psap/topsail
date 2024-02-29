@@ -9,7 +9,7 @@ from collections import defaultdict
 import dateutil.parser
 import urllib.parse
 import uuid
-
+from functools import reduce
 import jsonpath_ng
 
 import matrix_benchmarking.cli_args as cli_args
@@ -38,6 +38,8 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/ocp_version.yaml",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/rhods.createdAt",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/rhods.version",
+    f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/serving.json",
+    f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/nodes.json",
 ]
 
 def ignore_file_not_found(fn):
@@ -50,6 +52,12 @@ def ignore_file_not_found(fn):
 
     return decorator
 
+def get_from_path(d, path, default=None):
+    result = default
+    try:
+        result = reduce(dict.get, path.split("."), d)
+    finally:
+        return result
 
 def _parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
@@ -60,8 +68,10 @@ def _parse_always(results, dirname, import_settings):
 
 def _parse_once(results, dirname):
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)
+    results.llm_load_test_config = _parse_llm_load_test_config(dirname)
     results.predictor_logs = _parse_predictor_logs(dirname)
     results.predictor_pod = _parse_predictor_pod(dirname)
+    results.inference_service = _parse_inference_service(dirname)
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
     results.ocp_version = _parse_ocp_version(dirname)
     results.rhods_info = _parse_rhods_info(dirname)
@@ -157,6 +167,71 @@ def _parse_llm_load_test_output(dirname):
         llm_load_test_output = json.load(f)
 
     return llm_load_test_output
+
+@ignore_file_not_found
+def _parse_llm_load_test_config(dirname):
+    llm_config_file = dirname / artifact_paths.LLM_LOAD_TEST_RUN_DIR / "src" / "llm_load_test.config.yaml"
+    register_important_file(dirname, llm_config_file.relative_to(dirname))
+
+    llm_load_test_config = types.SimpleNamespace()
+
+    with open(llm_config_file) as f:
+        yaml_file = llm_load_test_config.yaml_file = yaml.safe_load(f)
+
+    if not yaml_file:
+        logging.error(f"Config file '{filename}' is empty ...")
+        yaml_file = llm_load_test_config.yaml_file = {}
+
+    def get(key, missing=...):
+        nonlocal yaml_file
+        jsonpath_expression = jsonpath_ng.parse(f'$.{key}')
+
+        match = jsonpath_expression.find(yaml_file)
+        if not match:
+            if missing != ...:
+                return missing
+
+            raise KeyError(f"Key '{key}' not found in {filename} ...")
+
+        return match[0].value
+
+    llm_load_test_config.get = get
+
+    return llm_load_test_config
+
+@ignore_file_not_found
+def _parse_inference_service(dirname):
+    if not artifact_paths.KSERVE_CAPTURE_STATE:
+        logging.error(f"No '{artifact_dirnames.KSERVE_CAPTURE_STATE}' directory found in {dirname} ...")
+        return
+
+    capture_state_dir = artifact_paths.KSERVE_CAPTURE_STATE
+    if isinstance(capture_state_dir, list):
+        capture_state_dir = capture_state_dir[-1]
+
+    inference_service = types.SimpleNamespace()
+    serving_file = capture_state_dir / "serving.json"
+
+    if (dirname / serving_file).exists():
+        with open(register_important_file(dirname, pods_def_file)) as f:
+            serving_def = json.load(f)
+    else:
+        serving_file = serving_file.with_suffix(".yaml")
+        with open(register_important_file(dirname, serving_file)) as f:
+            logging.warning("Loading the inference service def as yaml ... (json file missing)")
+            serving_def = yaml.safe_load(f)
+
+    if not serving_def["items"]:
+        logging.error(f"No InferenceService found in {serving_file} ...")
+        return inference_service
+
+    inference_service_specs = [item for item in serving_def["items"] if item["kind"] == "InferenceService"]
+    inference_service_specs = inference_service_specs[0]
+
+    inference_service.min_replicas = inference_service_specs.get_from_path("spec.predictor.minReplicas", default=-1)
+    inference_service.max_replicas = inference_service_specs.get_from_path("spec.predictor.maxReplicas", default=-1)
+
+    return inference_service
 
 
 @ignore_file_not_found
@@ -287,13 +362,34 @@ def _parse_rhods_info(dirname):
     with open(register_important_file(dirname, kserve_capture_state_dir / "rhods.createdAt")) as f:
         rhods_info.createdAt_raw = f.read().strip()
 
-    try:
-        rhods_info.createdAt = datetime.datetime.strptime(rhods_info.createdAt_raw, K8S_TIME_FMT)
+    try: rhods_info.createdAt = datetime.datetime.strptime(rhods_info.createdAt_raw, K8S_TIME_FMT)
     except ValueError as e:
         logging.error("Couldn't parse RHODS version timestamp: {e}")
         rhods_info.createdAt = None
 
     return rhods_info
+
+@ignore_file_not_found
+def _parse_nodes(dirname):
+    if not artifact_paths.KSERVE_CAPTURE_STATE:
+        logging.error(f"No '{artifact_dirnames.KSERVE_CAPTURE_STATE}' directory found in {dirname} ...")
+        return
+
+    capture_state_dir = artifact_paths.KSERVE_CAPTURE_STATE
+    if isinstance(capture_state_dir, list):
+        capture_state_dir = capture_state_dir[-1]
+
+    nodes = types.SimpleNamespace()
+    nodes_file = capture_state_dir / "nodes.json"
+
+    with open(register_important_file(dirname, nodes_file)) as f:
+        nodes_def = json.load(f)
+
+    if not nodes_def["items"]:
+        logging.error(f"No nodes found in {nodes_file} ...")
+        return nodes
+
+    return inference_service
 
 
 @ignore_file_not_found
