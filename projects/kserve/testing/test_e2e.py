@@ -89,11 +89,11 @@ def test_ci():
     mode = config.ci_artifacts.get_config("tests.e2e.mode")
     try:
         if mode == "single":
-            deploy_and_test_models_sequentially(locally=False)
+            single_model_deploy_and_test_sequentially(locally=False)
         elif mode == "longevity":
             test_models_longevity()
         else:
-            deploy_and_test_multi_models()
+            multi_model_deploy_and_test()
 
     finally:
         exc = None
@@ -136,7 +136,7 @@ def deploy_one_model(index: int = None, use_job_index: bool = False, model_name:
     deploy_consolidated_models()
 
 
-def test_models_sequentially(locally=False):
+def multi_model_test_sequentially(locally=False):
     "Tests all the configured models sequentially (one after the other)"
 
     logging.info(f"Test the models sequentially (locally={locally})")
@@ -153,7 +153,9 @@ def test_models_longevity():
     repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
     delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
 
+    multi_model_deploy_concurrently()
     reset_prometheus()
+
     for i in range(repeat):
         with env.NextArtifactDir(f"longevity_{i}"):
 
@@ -176,10 +178,10 @@ def deploy_and_test_multi_models():
     reset_prometheus()
 
     try:
-        deploy_models_concurrently()
+        multi_model_deploy_concurrently()
 
-        test_models_concurrently()
-        test_models_sequentially(locally=False)
+        multi_model_test_concurrently()
+        multi_model_test_sequentially(locally=False)
 
     finally:
         # flag file for kserve-prom visualization
@@ -188,7 +190,7 @@ def deploy_and_test_multi_models():
         dump_prometheus()
 
 
-def deploy_and_test_models_sequentially(locally=False):
+def single_model_deploy_and_test_sequentially(locally=False):
     "Deploy and test all the configured models sequentially (one after the other)"
 
     logging.info(f"Deploy and test the models sequentially (locally={locally})")
@@ -229,11 +231,11 @@ def deploy_and_test_models_sequentially(locally=False):
             run.run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
     if failed:
-        logging.fatal(f"deploy_and_test_models_sequentially: {len(failed)} tests failed :/ {' '.join(failed)}")
+        logging.fatal(f"single_model_deploy_and_test_sequentially: {len(failed)} tests failed :/ {' '.join(failed)}")
         raise exc
 
 
-def test_models_concurrently():
+def multi_model_test_concurrently():
     "Tests all the configured models concurrently (all at the same time)"
 
     logging.info("Test the models concurrently")
@@ -654,13 +656,14 @@ class Entrypoint:
         self.deploy_models_sequentially = deploy_models_sequentially
         self.deploy_models_concurrently = deploy_models_concurrently
         self.deploy_one_model = deploy_one_model
-        self.deploy_and_test_models_sequentially = deploy_and_test_models_sequentially
 
-        self.test_models_sequentially = test_models_sequentially
-        self.test_models_concurrently = test_models_concurrently
         self.test_one_model = test_one_model
-
         self.run_one_matbench = run_one_matbench
+
+        self.single_model_deploy_and_test_sequentially = single_model_deploy_and_test_sequentially
+
+        self.multi_model_test_sequentially = multi_model_test_sequentially
+        self.multi_model_test_concurrently = multi_model_test_concurrently
 
         self.rebuild_driver_image = rebuild_driver_image
 
