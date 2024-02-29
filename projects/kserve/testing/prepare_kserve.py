@@ -175,12 +175,11 @@ def undeploy_operator(operator, mute=True):
 
 
 def cleanup(mute=True):
-    return
-    # rhods.uninstall(mute)
-    #
-    # with run.Parallel("cleanup_kserve") as parallel:
-    #     for operator in config.ci_artifacts.get_config("prepare.operators"):
-    #         undeploy_operator(operator)
+    rhods.uninstall(mute)
+
+    with run.Parallel("cleanup_kserve") as parallel:
+        for operator in config.ci_artifacts.get_config("prepare.operators"):
+            undeploy_operator(operator)
 
 
 def update_serving_runtime_images():
