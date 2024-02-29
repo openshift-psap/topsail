@@ -96,9 +96,16 @@
        -oyaml
        | oc apply -f-
 
+
+# --server-side is required here because multiple concurrent users
+# might try to create the ServingRuntime simultaneously.
+# https://github.com/kubernetes/kubernetes/issues/44165
 - name: Create the ServingRuntime
   command:
-    oc apply -f "{{ artifact_extra_logs_dir }}/src/serving_runtime.yaml"
+    oc apply
+      --server-side
+      -f "{{ artifact_extra_logs_dir }}/src/serving_runtime.yaml"
+
 
 # Inference Service
 
