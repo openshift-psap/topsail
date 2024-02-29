@@ -75,8 +75,18 @@ def generateOneLtsDocumentationReport(entry):
     results = []
     results += [html.Li([html.B("throughput:"), html.Code(lts.results.throughput)])]
 
-    results += [html.Li([html.B("time_per_output_token:"), html.Code([f"{k}: {v:.2f}" for k, v in lts.results.time_per_output_token.__dict__.items()])])]
-    results += [html.Li([html.B("time_to_first_token:"), html.Code([f"{k}: {v:.2f}" for k, v in lts.results.time_to_first_token.__dict__.items()])])]
+    results += [
+        html.Li([
+            html.B("time_per_output_token:"),
+            html.Code([f"{k}: [{len(v)} values omitted...]" if k == "values" else f"{k}: {v:.2f}" for k, v in lts.results.time_per_output_token.__dict__.items()])
+        ])
+    ]
+    results += [
+        html.Li([
+            html.B("time_to_first_token:"),
+            html.Code([f"{k}: [{len(v)} values omitted...]" if k == "values" else f"{k}: {v:.2f}" for k, v in lts.results.time_to_first_token.__dict__.items()])
+        ])
+    ]
     results += [html.Li([html.B("model_load_duration:"), html.Code(lts.results.model_load_duration)])]
     header += [html.Ul(results)]
 
