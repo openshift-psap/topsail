@@ -200,19 +200,20 @@ def cleanup_cluster(mute=False):
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
+    return
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode in ("prepare_only"):
-        logging.info("Prepare only mode, nothing to do.")
-        return
-
-    with env.NextArtifactDir("cleanup_cluster"):
-        cleanup_sutest_ns()
-        cluster_scale_down()
-        prepare_user_pods.cleanup_cluster()
-        cleanup_sutest_crs()
-
-    prepare_kserve.cleanup(mute)
+    # test_mode = config.ci_artifacts.get_config("tests.mode")
+    # if test_mode in ("prepare_only"):
+    #     logging.info("Prepare only mode, nothing to do.")
+    #     return
+    #
+    # with env.NextArtifactDir("cleanup_cluster"):
+    #     cleanup_sutest_ns()
+    #     cluster_scale_down()
+    #     prepare_user_pods.cleanup_cluster()
+    #     cleanup_sutest_crs()
+    #
+    # prepare_kserve.cleanup(mute)
 
 
 @entrypoint()
