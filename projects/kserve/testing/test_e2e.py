@@ -145,49 +145,43 @@ def multi_model_test_sequentially(locally=False):
             yaml.dump(dict(mode="sequential"), f, indent=4)
         consolidate_models()
         test_consolidated_models()
-    else:
-        run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially", artifact_dir_suffix="_test_sequentially")
+        return
+
+    # launch the remote execution
+
+    reset_prometheus()
+    with env.NextArtifactDir("multi_model_test_sequentially"):
+        try:
+            run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially",
+                                        artifact_dir_suffix="_test_sequentially")
+        finally:
+            generate_kserve_prom_results("multi-model_sequential")
 
 
 def test_models_longevity():
     repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
     delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
 
-    multi_model_deploy_concurrently()
-    reset_prometheus()
+    deploy_models_concurrently()
 
     for i in range(repeat):
-        with env.NextArtifactDir(f"longevity_{i}"):
+        expe_name = f"longevity_{i}"
+        with env.NextArtifactDir(expe_name):
 
             with open(env.ARTIFACT_DIR / "settings.longevity.yaml", "w") as f:
                 yaml.dump(dict(longevity_index=i), f, indent=4)
 
-            try:
-                test_models_concurrently()
-            finally:
-                # flag file for kserve-prom visualization
-                with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-                    print("multi-model", file=f)
-                dump_prometheus()
+            multi_model_test_concurrently(expe_name)
 
             if i != repeat-1:
                 time.sleep(delay)
 
 
-def deploy_and_test_multi_models():
-    reset_prometheus()
+def multi_model_deploy_and_test():
+    deploy_models_concurrently()
 
-    try:
-        multi_model_deploy_concurrently()
-
-        multi_model_test_concurrently()
-        multi_model_test_sequentially(locally=False)
-
-    finally:
-        # flag file for kserve-prom visualization
-        with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-            print("multi-model", file=f)
-        dump_prometheus()
+    multi_model_test_concurrently()
+    multi_model_test_sequentially(locally=False)
 
 
 def single_model_deploy_and_test_sequentially(locally=False):
@@ -222,11 +216,7 @@ def single_model_deploy_and_test_sequentially(locally=False):
                     print(f"{consolidated_model['name']} failed: {e.__class__.__name__}: {e}", file=f)
                 exc = e
 
-            # flag file for kserve-prom visualization
-            with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-                print(consolidated_model['name'], file=f)
-
-            dump_prometheus()
+            generate_kserve_prom_results("single_model")
 
             run.run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
@@ -235,11 +225,16 @@ def single_model_deploy_and_test_sequentially(locally=False):
         raise exc
 
 
-def multi_model_test_concurrently():
+def multi_model_test_concurrently(expe_name="multi-model_concurrent"):
     "Tests all the configured models concurrently (all at the same time)"
 
-    logging.info("Test the models concurrently")
-    run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_concurrently", artifact_dir_suffix="_test_concurrently")
+    reset_prometheus()
+    with env.NextArtifactDir("multi_model_test_concurrently"):
+        try:
+            logging.info(f"Test the models concurrently ({expe_name})")
+            run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_concurrently", artifact_dir_suffix="_test_concurrently")
+        finally:
+            generate_kserve_prom_results(expe_name)
 
 
 def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None, namespace: str = None):
@@ -278,6 +273,25 @@ def dump_prometheus(delay=60):
     with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
         parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True)
         parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+
+
+def generate_kserve_prom_results(expe_name):
+    anchor_file = env.ARTIFACT_DIR / ".matbench_prom_db_dir"
+    if anchor_file.exists():
+        raise ValueError(f"File {anchor_file} already exist. It should be in a dedicated directory.")
+
+    # flag file for kserve-prom visualization
+    with open(anchor_file, "w") as f:
+        print(expe_name, file=f)
+
+    with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+        print(str(uuid.uuid4()), file=f)
+
+    with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+        yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+    dump_prometheus()
+
 
 # ---
 def deploy_consolidated_models():
@@ -488,10 +502,6 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
-
-        if config.ci_artifacts.get_config("tests.e2e.mode") == "longevity":
-            with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-                print("longevity", file=f)
 
         if not matbenchmarking:
             with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
