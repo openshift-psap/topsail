@@ -187,6 +187,21 @@ ci_presets:
   watsonx_single_model_gating:
     extends: [gating, 3min, metal, tgis, raw]
     tests.e2e.models:
+    - watsonx-starcoder
+    - watsonx-mt0-xxl
+    - watsonx-gpt-neox-20b
+    - watsonx-japanese-Llama-2-7b-instruct
+    - watsonx-flan-t5-xl
+    - watsonx-flan-t5-xxl
+    - watsonx-llama-2-13b-chat-hf
+    - watsonx-llama-2-70b-chat-hf
+    matbench.lts.horreum.test_name: RHOAI-kserve-single
+    matbench.lts.opensearch.index: rhoai-kserve-single
+
+  watsonx_single_model_gating_light:
+    extends: [gating, 3min, metal, tgis, raw]
+    tests.e2e.models:
+    - watsonx-japanese-Llama-2-7b-instruct
     - watsonx-flan-t5-xl
     matbench.lts.horreum.test_name: RHOAI-kserve-single
     matbench.lts.opensearch.index: rhoai-kserve-single
