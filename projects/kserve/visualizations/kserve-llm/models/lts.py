@@ -9,10 +9,20 @@ import matrix_benchmarking.models as matbench_models
 from . import kpi
 
 class Settings(matbench_models.ExclusiveModel):
-    rhoai_version: matbench_models.SemVer
+    instance_type: str
+    accelerator_type: str
+    accelerator_count: int
+    accelerator_memory: int
     ocp_version: matbench_models.SemVer
-    tgis_image_version: str
+    rhoai_version: matbench_models.SemVer
+    deployment_mode: str
     model_name: str
+    runtime_image: str
+    min_pod_replicas: int
+    max_pod_replicas: int
+    virtual_users: int
+    test_duration: int
+    dataset_name: str
     mode: str
 
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
@@ -33,7 +43,6 @@ class Metadata(matbench_models.Metadata):
     config: Any
     ocp_version: matbench_models.SemVer
     rhods_version: matbench_models.SemVer
-    tgis_image_version: str
 
 class Results(matbench_models.ExclusiveModel):
     throughput: float

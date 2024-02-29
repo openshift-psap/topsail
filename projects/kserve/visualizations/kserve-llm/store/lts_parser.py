@@ -32,7 +32,7 @@ def _generate_time_to_first_token(results):
     ttft["values"] = [x["ttft"] for x in results.llm_load_test_output["results"]]
     return ttft
 
-def generate_lts_settings(lts_metadata, import_settings):
+def generate_lts_settings(lts_metadata, results, import_settings):
 
     return models_lts.Settings(
         ocp_version = lts_metadata.ocp_version,
