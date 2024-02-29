@@ -7,6 +7,7 @@ serving_runtime:
     extra_env:
       FLASH_ATTENTION: "true"
       MAX_CONCURRENT_REQUESTS: 128
-      NUM_GPUS: 8 # Do we want to shard it across 8 GPUs for watsonx testing?
+      NUM_GPUS: 8
+      RAYON_NUM_THREADS: "32" # Would otherwise be calculated based on shards*num_cpus
 inference_service:
   storage_uri: "s3://psap-hf-models/Llama-2-70b-chat-hf/Llama-2-70b-chat-hf"
