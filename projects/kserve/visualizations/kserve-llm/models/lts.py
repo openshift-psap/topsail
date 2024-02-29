@@ -8,19 +8,12 @@ from enum import Enum
 import matrix_benchmarking.models as matbench_models
 from . import kpi
 
-class Mode(str, Enum):
-    single = "single"
-    multi = "multi"
-    longevity = "longevity"
-    sequential = "sequential"
-    concurrent = "concurrent"
-
 class Settings(matbench_models.ExclusiveModel):
     rhoai_version: matbench_models.SemVer
     ocp_version: matbench_models.SemVer
     tgis_image: str
     model_name: str
-    mode: Mode
+    mode: str
 
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
     values: List[float]
