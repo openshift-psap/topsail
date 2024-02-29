@@ -5,8 +5,14 @@ from typing import Any, List, Optional
 from pydantic import BaseModel, Field
 
 import matrix_benchmarking.models as matbench_models
+from . import kpi
+
+class Settings(matbench_models.ExclusiveModel):
+    rhoai_version: matbench_models.SemVer
+    ocp_version: matbench_models.SemVer
 
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
+    values: List[float]
     min: float
     max: float
     median: float
@@ -26,10 +32,14 @@ class Metadata(matbench_models.Metadata):
 class Results(matbench_models.ExclusiveModel):
     throughput: float
     time_per_output_token: LlmLoadTestStats
-    time_to_first_token: LlmLoadTestStats
+    time_to_first_token: Optional[LlmLoadTestStats]
+    model_load_duration: Optional[float]
 
-    model_load_duration: float
+class KServeLLMPerformanceKPI(matbench_models.KPI, Settings): pass
+
+KServeLLMPerformanceKPIs = matbench_models.getKPIsModel("KServeLLMPerformanceKPIs", __name__, kpi.KPIs, KServeLLMPerformanceKPI)
 
 class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata
     results: Results
+    kpis: Optional[KServeLLMPerformanceKPIs]
