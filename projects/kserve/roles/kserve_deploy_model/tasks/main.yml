@@ -182,6 +182,7 @@
     delay: 30
     register: inference_service_pod_fetching_cmd
     until: inference_service_pod_fetching_cmd.rc != 3
+    ignore_errors: true
 
   - name: Wait for the InferenceService Pod to initialize the model
     shell:
