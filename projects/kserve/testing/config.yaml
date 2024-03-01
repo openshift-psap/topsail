@@ -114,6 +114,10 @@ ci_presets:
   cleanup_only:
     tests.mode: cleanup_only
 
+  test_only:
+    prepare.enabled: false
+    prepare.cleanup.enabled: false
+
   matbenchmark:
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.concurrency: [8, 16, 32]
@@ -415,6 +419,7 @@ rhods:
 
 
 prepare:
+  enabled: true
   operators:
   - name: serverless-operator
     catalog: redhat-operators
@@ -435,6 +440,7 @@ prepare:
       namespaces:
       - istio-system
   cleanup:
+    enabled: true
     crds:
     - InferenceService
     - ServingRuntime
