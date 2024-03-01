@@ -30,6 +30,12 @@ ci_presets:
     gpu.prepare_cluster: false
     clusters.sutest.compute.machineset.type: m6i.2xlarge
 
+  dgx:
+    clusters.sutest.compute.machineset.type: "DGX A100-40GB"
+
+  icelake:
+    clusters.sutest.compute.machineset.type: "Icelake"
+
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
