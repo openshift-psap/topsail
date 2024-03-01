@@ -15,7 +15,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install fire pyyaml
+          python3 -m pip install fire pyyaml jsonpath_ng joblib
 
       - name: Check that there is no WIP commit in the PR
         run: |

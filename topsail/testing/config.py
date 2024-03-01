@@ -48,27 +48,12 @@ class Config:
         with open(self.config_path) as config_f:
             self.config = yaml.safe_load(config_f)
 
-    def apply_local_config_overrides(self):
-        TOPSAIL_PR_ARGS_KEY = "TOPSAIL_PR_ARGS"
-        pr_args = os.environ.get(TOPSAIL_PR_ARGS_KEY)
-        if not pr_args:
-            logging.info(f"{TOPSAIL_PR_ARGS_KEY} env var not set, no local config to override.")
-            return
-
-        if ocp_ci := os.environ.get("OPENSHIFT_CI"):
-            raise RuntimeError(f"Found {TOPSAIL_PR_ARGS_KEY}={pr_args} and OPENSHIFT_CI={ocp_ci} defined at the same time, this isn't expected ...")
-
-        for idx, arg in enumerate(pr_args.split()):
-            key = f"{PR_ARG_KEY}{idx + 1}"
-            logging.info(f"{key} --> {arg}")
-            self.config[key] = arg
-
 
     def apply_config_overrides(self):
         variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
 
         if not variable_overrides_path.exists():
-            logging.info(f"apply_config_overrides: {variable_overrides_path} does not exist, nothing to override.")
+            logging.debug(f"apply_config_overrides: {variable_overrides_path} does not exist, nothing to override.")
             return
 
         with open(variable_overrides_path) as f:
@@ -94,7 +79,7 @@ class Config:
                 actual_value = self.get_config(key) # ensure that key has been set, raises an exception otherwise
                 logging.info(f"config override: {key} --> {actual_value}")
 
-    def apply_preset(self, name):
+    def apply_preset(self, name, do_dump=True):
         try:
             values = self.get_config(f'ci_presets["{name}"]')
         except IndexError:
@@ -103,7 +88,7 @@ class Config:
 
         logging.info(f"Appling preset '{name}' ==> {values}")
         if not values:
-            raise ValueError("Preset '{name}' does not exists")
+            raise ValueError(f"Preset '{name}' does not exists")
 
         presets = self.get_config("ci_presets.names") or []
         if not name in presets:
@@ -122,7 +107,8 @@ class Config:
 
             self.set_config(key, value, dump_command_args=False)
 
-        self.dump_command_args()
+        if do_dump:
+            self.dump_command_args()
 
     def get_config(self, jsonpath, default_value=..., warn=True, print=True):
         try:
@@ -228,7 +214,8 @@ def _set_config_environ(base_dir):
     config_path = env.ARTIFACT_DIR / "config.yaml"
 
     os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
-    os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yml.j2")
+    if "CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE" not in os.environ:
+        os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yml.j2")
 
     if base_dir != env.ARTIFACT_DIR:
         # make sure we're using a clean copy of the configuration file
@@ -278,6 +265,4 @@ def init(base_dir):
     config_path = _set_config_environ(base_dir)
     ci_artifacts = Config(config_path)
 
-    logging.info("config.init: apply the ci-artifacts config overrides")
     ci_artifacts.apply_config_overrides()
-    ci_artifacts.apply_local_config_overrides()
