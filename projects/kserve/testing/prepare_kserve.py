@@ -157,9 +157,6 @@ def undeploy_operator(operator, mute=True):
     for crd in cleanup.get("crds", []):
         run.run(f"oc delete {crd} --all -A", check=False)
 
-    for ns in cleanup.get("namespaces", []):
-        run.run(f"oc api-resources --verbs=list --namespaced -o name | grep -v -E 'coreos.com|openshift.io|cncf.io|k8s.io|metal3.io|k8s.ovn.org|.apps' | xargs -t -n 1 oc get --show-kind --ignore-not-found -n kserve-user-test-driver |& cat > {env.ARTIFACT_DIR}/{operator['name']}_{ns}.log", check=False)
-
     installed_csv_cmd = run.run(f"oc get csv -oname -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}", capture_stdout=mute)
     if not installed_csv_cmd.stdout:
         logging.info(f"{manifest_name} operator is not installed")
