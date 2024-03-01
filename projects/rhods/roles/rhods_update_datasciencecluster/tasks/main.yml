@@ -26,8 +26,6 @@
   command:
     oc get deploy/rhods-operator
        -n "{{ ods_namespace }}"
-       --ignore-not-found
-  register: has_rhods_operator_cmd
 
 - name: Check if the operator is stopped
   command:
@@ -35,14 +33,13 @@
        -n "{{ ods_namespace }}"
        -ojsonpath={.spec.replicas}
   register: rhods_operator_replicas_cmd
-  when: has_rhods_operator_cmd.stdout
 
 - name: Scale up the operator if it was stopped
   command:
     oc scale deploy/rhods-operator
        --replicas=1
        -n "{{ ods_namespace }}"
-  when: has_rhods_operator_cmd.stdout and rhods_operator_replicas_cmd.stdout == "0"
+  when: rhods_operator_replicas_cmd.stdout == "0"
 
 - name: Create the src artifacts directory
   file:

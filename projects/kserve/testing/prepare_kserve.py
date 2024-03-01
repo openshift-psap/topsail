@@ -101,6 +101,22 @@ def customize_kserve():
                 f"| oc apply -f-")
         run.run(f"oc get smcp/data-science-smcp -n istio-system -oyaml > {env.ARTIFACT_DIR}/smcp_minimal.customized.yaml")
 
+
+def dsc_enable_kserve():
+    extra_settings = {}
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        extra_settings["spec.components.kserve.serving.managementState"] = "Removed"
+
+        enable_kserve_raw_deployment_dsci()
+
+    has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
+    run.run_toolbox("rhods", "update_datasciencecluster",
+                    enable=["kserve", "dashboard"],
+                    name=None if has_dsc else "default-dsc",
+                    extra_settings=extra_settings,
+                    )
+
+
 def prepare():
     if not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
@@ -118,18 +134,7 @@ def prepare():
 
     rhods.install(token_file)
 
-    extra_settings = {}
-    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
-        extra_settings["spec.components.kserve.serving.managementState"] = "Removed"
-
-        enable_kserve_raw_deployment_dsci()
-
-    has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
-    run.run_toolbox("rhods", "update_datasciencecluster",
-                    enable=["kserve", "dashboard"],
-                    name=None if has_dsc else "default-dsc",
-                    extra_settings=extra_settings,
-                    )
+    dsc_enable_kserve()
 
     if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
         with env.NextArtifactDir("prepare_poc"):
@@ -157,9 +162,6 @@ def undeploy_operator(operator, mute=True):
     for crd in cleanup.get("crds", []):
         run.run(f"oc delete {crd} --all -A", check=False)
 
-    for ns in cleanup.get("namespaces", []):
-        run.run(f"oc api-resources --verbs=list --namespaced -o name | grep -v -E 'coreos.com|openshift.io|cncf.io|k8s.io|metal3.io|k8s.ovn.org|.apps' | xargs -t -n 1 oc get --show-kind --ignore-not-found -n kserve-user-test-driver |& cat > {env.ARTIFACT_DIR}/{operator['name']}_{ns}.log", check=False)
-
     installed_csv_cmd = run.run(f"oc get csv -oname -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}", capture_stdout=mute)
     if not installed_csv_cmd.stdout:
         logging.info(f"{manifest_name} operator is not installed")
@@ -177,9 +179,10 @@ def undeploy_operator(operator, mute=True):
 def cleanup(mute=True):
     rhods.uninstall(mute)
 
-    with run.Parallel("cleanup_kserve") as parallel:
-        for operator in config.ci_artifacts.get_config("prepare.operators"):
-            undeploy_operator(operator)
+    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        with run.Parallel("cleanup_kserve") as parallel:
+            for operator in config.ci_artifacts.get_config("prepare.operators"):
+                undeploy_operator(operator)
 
 
 def update_serving_runtime_images():
