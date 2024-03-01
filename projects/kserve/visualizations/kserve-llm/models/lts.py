@@ -19,11 +19,12 @@ class Settings(matbench_models.ExclusiveModel):
     model_name: str
     runtime_image: str
     min_pod_replicas: int
-    max_pod_replicas: int
+    max_pod_replicas: Optional[int]
     virtual_users: int
     test_duration: int
     dataset_name: str
     mode: str
+
 
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
     values: List[float]

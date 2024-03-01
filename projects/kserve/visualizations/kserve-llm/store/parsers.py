@@ -33,6 +33,7 @@ IMPORTANT_FILES = [
     ".uuid",
 
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/output/output.json",
+    f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/src/llm_load_test.config.yaml",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/pods.json",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/pods.yaml",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/ocp_version.yaml",
@@ -59,16 +60,17 @@ def get_from_path(d, path, default=None):
     finally:
         return result
 
+
 def _parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
 
     results.from_local_env = _parse_local_env(dirname)
     results.test_config = _parse_test_config(dirname)
+    results.llm_load_test_config = _parse_llm_load_test_config(dirname)
 
 
 def _parse_once(results, dirname):
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)
-    results.llm_load_test_config = _parse_llm_load_test_config(dirname)
     results.predictor_logs = _parse_predictor_logs(dirname)
     results.predictor_pod = _parse_predictor_pod(dirname)
     results.inference_service = _parse_inference_service(dirname)
@@ -213,13 +215,8 @@ def _parse_inference_service(dirname):
     serving_file = capture_state_dir / "serving.json"
 
     if (dirname / serving_file).exists():
-        with open(register_important_file(dirname, pods_def_file)) as f:
-            serving_def = json.load(f)
-    else:
-        serving_file = serving_file.with_suffix(".yaml")
         with open(register_important_file(dirname, serving_file)) as f:
-            logging.warning("Loading the inference service def as yaml ... (json file missing)")
-            serving_def = yaml.safe_load(f)
+            serving_def = json.load(f)
 
     if not serving_def["items"]:
         logging.error(f"No InferenceService found in {serving_file} ...")
@@ -228,8 +225,8 @@ def _parse_inference_service(dirname):
     inference_service_specs = [item for item in serving_def["items"] if item["kind"] == "InferenceService"]
     inference_service_specs = inference_service_specs[0]
 
-    inference_service.min_replicas = inference_service_specs.get_from_path("spec.predictor.minReplicas", default=-1)
-    inference_service.max_replicas = inference_service_specs.get_from_path("spec.predictor.maxReplicas", default=-1)
+    inference_service.min_replicas = get_from_path(inference_service_specs, "spec.predictor.minReplicas", default=None)
+    inference_service.max_replicas = get_from_path(inference_service_specs, "spec.predictor.maxReplicas", default=None)
 
     return inference_service
 
@@ -380,8 +377,8 @@ def _parse_nodes(dirname):
         capture_state_dir = capture_state_dir[-1]
 
     nodes = types.SimpleNamespace()
-    nodes_file = capture_state_dir / "nodes.json"
 
+    nodes_file = capture_state_dir / "nodes.json"
     with open(register_important_file(dirname, nodes_file)) as f:
         nodes_def = json.load(f)
 
@@ -389,7 +386,7 @@ def _parse_nodes(dirname):
         logging.error(f"No nodes found in {nodes_file} ...")
         return nodes
 
-    return inference_service
+    return nodes
 
 
 @ignore_file_not_found
