@@ -1,18 +1,19 @@
 import types
 import logging
 import pytz
+import pathlib
 
 from .. import models
 from ..models import lts as models_lts
 from . import lts
 
-def generate_lts_payload(results, lts_results, import_settings, must_validate=False):
+def generate_lts_payload(results, import_settings, must_validate=False):
     # To know the available metrics:
     # _=[print(m) for m in results.metrics["sutest"].keys()]
 
     lts_payload = types.SimpleNamespace()
+    lts_payload.results = generate_lts_results(results)
     lts_payload.metadata = generate_lts_metadata(results, import_settings)
-    lts_payload.results = lts_results
     lts_payload.kpis = lts.generate_lts_kpis(lts_payload)
     lts.validate_lts_payload(lts_payload, import_settings, reraise=must_validate)
 
@@ -33,23 +34,28 @@ def _generate_time_to_first_token(results):
     return ttft
 
 def generate_lts_settings(lts_metadata, results, import_settings):
+    gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu])
+    gpu_names = "|".join(gpus)
 
     return models_lts.Settings(
-        instance_type = "TEST",
-        accelerator_type = "FAST",
-        accelerator_count = "3",
-        accelerator_memory = "43221",
+        instance_type = results.test_config.get("clusters.sutest.compute.machineset.type"),
+        accelerator_name = gpu_names,
+
         ocp_version = lts_metadata.ocp_version,
         rhoai_version = lts_metadata.rhods_version,
-        deployment_mode = "RawDeployment" if results.test_config.get("kserve.raw_deployment.enabled") == "true" else "Serverless",
+        deployment_mode = "RawDeployment" if results.test_config.get("kserve.raw_deployment.enabled") else "Serverless",
         model_name = import_settings["model_name"],
         runtime_image = results.test_config.get("kserve.model.serving_runtime.kserve.image").split(":")[1],
         min_pod_replicas = results.inference_service.min_replicas,
         max_pod_replicas = results.inference_service.max_replicas,
         virtual_users = results.test_config.get("tests.e2e.llm_load_test.concurrency"),
         test_duration = results.test_config.get("tests.e2e.llm_load_test.duration"),
-        dataset_name = results.llm_load_test_config.get("dataset.file"),
-        mode = import_settings["mode"],
+        dataset_name = pathlib.Path(results.llm_load_test_config.get("dataset.file")).name,
+        test_mode = import_settings["mode"],
+        ci_engine = results.from_env.test.ci_engine,
+        run_id = results.from_env.test.run_id,
+        test_path = results.from_env.test.test_path,
+        urls = results.from_env.test.urls,
     )
 
 def generate_lts_metadata(results, import_settings):
@@ -71,7 +77,13 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.test_uuid = results.test_uuid
     lts_metadata.settings = generate_lts_settings(lts_metadata, results, dict(import_settings))
 
+    lts_metadata.run_id = results.from_env.test.run_id
+    lts_metadata.test_path = results.from_env.test.test_path
+    lts_metadata.urls = results.from_env.test.urls
+    lts_metadata.ci_engine = results.from_env.test.ci_engine
+
     return lts_metadata
+
 
 def generate_lts_results(results):
     results_lts = {}

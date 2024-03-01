@@ -10,9 +10,8 @@ from . import kpi
 
 class Settings(matbench_models.ExclusiveModel):
     instance_type: str
-    accelerator_type: str
-    accelerator_count: int
-    accelerator_memory: int
+    accelerator_name: str
+
     ocp_version: matbench_models.SemVer
     rhoai_version: matbench_models.SemVer
     deployment_mode: str
@@ -23,8 +22,12 @@ class Settings(matbench_models.ExclusiveModel):
     virtual_users: int
     test_duration: int
     dataset_name: str
-    mode: str
+    test_mode: str
 
+    ci_engine: str
+    run_id: str
+    test_path: str
+    urls: Optional[dict[str, str]]
 
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
     values: List[float]
@@ -44,6 +47,11 @@ class Metadata(matbench_models.Metadata):
     config: Any
     ocp_version: matbench_models.SemVer
     rhods_version: matbench_models.SemVer
+
+    ci_engine: str = Field(default="Not set")
+    run_id: str = Field(default="Not set")
+    test_path: str = Field(default="Not set")
+    urls: Optional[dict[str, str]]
 
 class Results(matbench_models.ExclusiveModel):
     throughput: float

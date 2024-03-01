@@ -16,7 +16,7 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
 from . import prom as workload_prom
-
+from . import lts_parser
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -34,8 +34,8 @@ IMPORTANT_FILES = [
 
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/output/output.json",
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/src/llm_load_test.config.yaml",
+    f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/_ansible.env",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/pods.json",
-    f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/pods.yaml",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/ocp_version.yaml",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/rhods.createdAt",
     f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/rhods.version",
@@ -67,9 +67,12 @@ def _parse_always(results, dirname, import_settings):
     results.from_local_env = _parse_local_env(dirname)
     results.test_config = _parse_test_config(dirname)
     results.llm_load_test_config = _parse_llm_load_test_config(dirname)
+    results.lts = lts_parser.generate_lts_payload(results, import_settings, must_validate=False)
 
 
 def _parse_once(results, dirname):
+    results.test_config = _parse_test_config(dirname)
+
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)
     results.predictor_logs = _parse_predictor_logs(dirname)
     results.predictor_pod = _parse_predictor_pod(dirname)
@@ -78,6 +81,8 @@ def _parse_once(results, dirname):
     results.ocp_version = _parse_ocp_version(dirname)
     results.rhods_info = _parse_rhods_info(dirname)
     results.test_uuid = _parse_test_uuid(dirname)
+    results.from_env = _parse_env(dirname, results.test_config)
+    results.nodes_info = _parse_nodes_info(dirname)
 
 
 def _parse_local_env(dirname):
@@ -367,7 +372,7 @@ def _parse_rhods_info(dirname):
     return rhods_info
 
 @ignore_file_not_found
-def _parse_nodes(dirname):
+def _parse_nodes_info(dirname):
     if not artifact_paths.KSERVE_CAPTURE_STATE:
         logging.error(f"No '{artifact_dirnames.KSERVE_CAPTURE_STATE}' directory found in {dirname} ...")
         return
@@ -376,17 +381,39 @@ def _parse_nodes(dirname):
     if isinstance(capture_state_dir, list):
         capture_state_dir = capture_state_dir[-1]
 
-    nodes = types.SimpleNamespace()
+    nodes_info = {}
 
     nodes_file = capture_state_dir / "nodes.json"
     with open(register_important_file(dirname, nodes_file)) as f:
-        nodes_def = json.load(f)
+        nodeList = json.load(f)
 
-    if not nodes_def["items"]:
+    if not nodeList["items"]:
         logging.error(f"No nodes found in {nodes_file} ...")
-        return nodes
+        return None
 
-    return nodes
+    for node in nodeList["items"]:
+        node_name = node["metadata"]["name"]
+        node_info = nodes_info[node_name] = types.SimpleNamespace()
+
+        node_info.name = node_name
+
+        node_info.managed = "managed.openshift.com/customlabels" in node["metadata"]["annotations"]
+        node_info.instance_type = node["metadata"]["labels"].get("node.kubernetes.io/instance-type", "N/A")
+
+        node_info.control_plane = "node-role.kubernetes.io/control-plane" in node["metadata"]["labels"] or "node-role.kubernetes.io/master" in node["metadata"]["labels"]
+
+        node_info.infra = not node_info.control_plane
+
+        if node["metadata"]["labels"].get("nvidia.com/gpu.present"):
+            node_info.gpu = types.SimpleNamespace()
+
+            node_info.gpu.product = node["metadata"]["labels"].get("nvidia.com/gpu.product")
+            node_info.gpu.memory = int(node["metadata"]["labels"].get("nvidia.com/gpu.memory")) / 1000
+            node_info.gpu.count = int(node["metadata"]["labels"].get("nvidia.com/gpu.count"))
+        else :
+            node_info.gpu = None
+
+    return nodes_info
 
 
 @ignore_file_not_found
@@ -395,3 +422,111 @@ def _parse_test_uuid(dirname):
         test_uuid = f.read().strip()
 
     return uuid.UUID(test_uuid)
+
+
+@ignore_file_not_found
+def _parse_env(dirname, test_config):
+    from_env = types.SimpleNamespace()
+
+    ansible_env = {}
+
+    from_env.test = types.SimpleNamespace()
+    from_env.test.run_id = None
+    from_env.test.test_path = None
+    from_env.test.ci_engine = None
+    from_env.test.urls = {}
+
+    capture_state_dir = artifact_paths.KSERVE_CAPTURE_STATE
+    if isinstance(capture_state_dir, list):
+        capture_state_dir = capture_state_dir[-1]
+
+    with open(register_important_file(dirname, capture_state_dir / "_ansible.env")) as f:
+        for line in f.readlines():
+            k, _, v = line.strip().partition("=")
+
+            ansible_env[k] = v
+
+
+    # ---
+    # eg 003__notebook_performance/003__sutest_notebooks__benchmark_performance/
+    current_artifact_dir = pathlib.Path(ansible_env["ARTIFACT_DIR"])
+    base_artifact_dir = "/logs/artifacts"
+
+    if dirname.name == "from_url":
+        with open(dirname / "source_url") as f: # not an important file
+            source_url = f.read().strip()
+        _prefix, _, from_env.test.test_path = source_url.partition(f"{from_env.test.run_id}/artifacts/")
+    else:
+        from_env.test.test_path = str((current_artifact_dir / dirname).relative_to(base_artifact_dir))
+
+
+    if ansible_env.get("OPENSHIFT_CI") == "true":
+        from_env.test.ci_engine = "OPENSHIFT_CI"
+        job_spec = json.loads(ansible_env["JOB_SPEC"])
+        entrypoint_options = json.loads(ansible_env["ENTRYPOINT_OPTIONS"])
+
+        #
+
+        pull_number = job_spec["refs"]["pulls"][0]["number"]
+        github_org = job_spec["refs"]["org"]
+        github_repo = job_spec["refs"]["repo"]
+
+        job = job_spec["job"]
+        build_id = job_spec["buildid"]
+
+        test_name = ansible_env.get("JOB_NAME_SAFE")
+        step_name = entrypoint_options["container_name"]
+
+        # ---
+        # eg: pull/openshift-psap_topsail/181/pull-ci-openshift-psap-topsail-main-rhoai-light/1749833488137195520
+
+        from_env.test.run_id = f"{pull_number}/{job}/{build_id}/{test_name}"
+
+        # ---
+        from_env.test.urls |= dict(
+            PROW_JOB=f"https://prow.ci.openshift.org/view/gs/test-platform-results/pr-logs/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/",
+            PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/artifacts/{test_name}/{step_name}/artifacts/{from_env.test.test_path}",
+        )
+
+    if ansible_env.get("PERFLAB_CI") == "true":
+        from_env.test.ci_engine = "PERFLAB_CI"
+
+        jumphost = ansible_env["JENKINS_JUMPHOST"]
+        build_number = ansible_env["JENKINS_BUILD_NUMBER"]
+        jenkins_job = ansible_env["JENKINS_JOB"] # "job/ExternalTeams/job/RHODS/job/topsail"
+        jenkins_instance = ansible_env["JENKINS_INSTANCE"] # ci.app-svc-perf.corp.redhat.com
+
+        from_env.test.run_id = build_number
+
+        base_path = pathlib.Path(ansible_env["ARTIFACT_DIR"].replace("/logs/artifacts/", "").replace(from_env.test.test_path, "")).parent
+
+        from_env.test.urls |= dict(
+            JENKINS_ARTIFACTS=f"https://{jenkins_instance}/{jenkins_job}/{build_number}/artifact/run/{jumphost}/{base_path}/{from_env.test.test_path}"
+        )
+
+    if test_config.get("export_artifacts.enabled"):
+        bucket = test_config.get("export_artifacts.bucket")
+        path_prefix = test_config.get("export_artifacts.path_prefix")
+
+        if ansible_env.get("OPENSHIFT_CI") == "true":
+            job_spec = json.loads(os.environ["JOB_SPEC"])
+            pull_number = job_spec["refs"]["pulls"][0]["number"]
+            github_org = job_spec["refs"]["org"]
+            github_repo = job_spec["refs"]["repo"]
+            job = job_spec["job"]
+            build_id = job_spec["buildid"]
+
+            s3_path = f"prow/{pull_number}/{build_id}/test_ci"
+
+        elif ansible_env.get("PERFLAB_CI") == "true":
+            build_number = os.environ["JENKINS_BUILD_NUMBER"]
+            job = os.environ["JENKINS_JOB"] # "job/ExternalTeams/job/RHODS/job/topsail"
+            job_id = job[4:].replace("/job/", "_")
+
+            s3_path = f"middleware_jenkins/{job_id}/{build_number}"
+
+        from_env.test.urls |= dict(
+            RHOAI_CPT_S3=f"https://{bucket}.s3.eu-central-1.amazonaws.com/index.html#{path_prefix}/{s3_path}/{from_env.test.test_path}/"
+        )
+
+    return from_env
