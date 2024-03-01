@@ -152,53 +152,36 @@
     until: inference_service_pod_nodename.stdout | length > 0
 
   - name: Wait for the InferenceService Pod to be fetch the model from S3
-    command:
-      oc get pod
-      -ojsonpath={.items[0].status.initContainerStatuses[0].state.terminated}
-      -lserving.kserve.io/inferenceservice={{ kserve_deploy_model_inference_service_name }}
-      -n {{ kserve_deploy_model_namespace }}
-    register: inference_service_pod_fetching_cmd
+    shell: |
+      set -e;
+
+      restarted=$(oc get pod \
+          -ojsonpath={.items[0].status.initContainerStatuses[0].restartCount} \
+          -lserving.kserve.io/inferenceservice={{ kserve_deploy_model_inference_service_name }} \
+          -n {{ kserve_deploy_model_namespace }})
+
+      if [[ "$restarted" && "$restarted" != 0 ]]; then
+          echo "Container restart detected, aborting" >&2
+          exit 2
+      fi
+
+      terminated=$(oc get pod \
+          -ojsonpath={.items[0].status.initContainerStatuses[0].state.terminated} \
+          -lserving.kserve.io/inferenceservice={{ kserve_deploy_model_inference_service_name }} \
+          -n {{ kserve_deploy_model_namespace }})
+
+      if [[ -z "$terminated" ]]; then
+          echo "Container running, keep waiting ..." >&2
+          exit 3;
+      fi;
+
+      echo "Container terminated without reboot, all good :)" >&2
+
     # wait 60 minutes
     retries: 120
     delay: 30
-    until: inference_service_pod_fetching_cmd.stdout | length > 0
-
-  - name: Wait for all the containers to be ready
-    shell: |
-      set -o pipefail;
-      set -e;
-
-      pods=$(oc get pod -lserving.kserve.io/inferenceservice={{ kserve_deploy_model_inference_service_name }} -n {{ kserve_deploy_model_namespace }})
-      echo "$pods"
-      if grep ContainerStatusUnknown --silent <<< "$pods"; then
-        echo "ContainerStatusUnknown detected, aborting" >&2
-        exit 2
-      fi
-
-      status=$(oc get pod \
-        -ojson \
-        -lserving.kserve.io/inferenceservice={{ kserve_deploy_model_inference_service_name }} \
-        -n {{ kserve_deploy_model_namespace }} \
-        | jq -r '.items[0].status.containerStatuses[] | ("" + .name +" ready="+ (.ready|tostring)) +" restarted="+(.restartCount|tostring)')
-      echo "$status"
-
-      if grep -v restarted=0 --silent <<< $status; then
-        echo "Container restart detected, aborting" >&2
-        exit 2
-      fi
-
-      if grep -v ready=true --silent <<< $status; then
-        echo "Containers not ready detected, keep waiting ..." >&2
-        exit 1
-      fi
-
-      echo "All the containers are ready, all good :)" >&2
-    register: inference_service_pod_ready
-    failed_when: inference_service_pod_ready.rc == 2
-    until: inference_service_pod_ready.rc == 0 or inference_service_pod_ready.rc == 2
-    # wait 90 minutes
-    retries: 180
-    delay: 30
+    register: inference_service_pod_fetching_cmd
+    until: inference_service_pod_fetching_cmd.rc != 3
 
   - name: Wait for the InferenceService Pod to initialize the model
     shell:
@@ -206,10 +189,11 @@
       oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
          -ojsonpath={.status.modelStatus.states.targetModelState}
     register: inference_service_state_cmd
-    # wait 5 minutes
-    retries: 30
-    delay: 10
+    # wait up to 90 minutes
+    retries: 180
+    delay: 30
     until: inference_service_state_cmd.stdout == "Loaded"
+    failed_when: inference_service_state_cmd.stdout == "FailedToLoad"
 
   - name: Capture the state of the InferenceService Pod resource
     shell:
