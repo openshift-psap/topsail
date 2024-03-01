@@ -212,7 +212,7 @@ def cleanup_cluster(mute=False):
         prepare_user_pods.cleanup_cluster()
         cleanup_sutest_crs()
 
-    prepare_kserve.cleanup(mute)
+        prepare_kserve.cleanup(mute)
 
 
 @entrypoint()
@@ -305,7 +305,13 @@ def cleanup_sutest_crs():
     Cleans up the Custom Resources of the SUTest cluster
     """
 
-    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve"])
+    has_rhods_operator = run.run("oc get deploy/rhods-operator -n redhat-ods-operator", check=False).returncode == 0
+    if not has_rhods_operator:
+        logging.warning("RHOAI operator not installed, cannot cleanup the CRDs")
+        return
+
+    prepare_kserve.dsc_enable_kserve()
+
     for cr_name in config.ci_artifacts.get_config("prepare.cleanup.crds"):
         run.run(f"oc delete {cr_name} --all -A")
 

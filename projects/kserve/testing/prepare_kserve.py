@@ -101,6 +101,22 @@ def customize_kserve():
                 f"| oc apply -f-")
         run.run(f"oc get smcp/data-science-smcp -n istio-system -oyaml > {env.ARTIFACT_DIR}/smcp_minimal.customized.yaml")
 
+
+def dsc_enable_kserve():
+    extra_settings = {}
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        extra_settings["spec.components.kserve.serving.managementState"] = "Removed"
+
+        enable_kserve_raw_deployment_dsci()
+
+    has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
+    run.run_toolbox("rhods", "update_datasciencecluster",
+                    enable=["kserve", "dashboard"],
+                    name=None if has_dsc else "default-dsc",
+                    extra_settings=extra_settings,
+                    )
+
+
 def prepare():
     if not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
@@ -118,18 +134,7 @@ def prepare():
 
     rhods.install(token_file)
 
-    extra_settings = {}
-    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
-        extra_settings["spec.components.kserve.serving.managementState"] = "Removed"
-
-        enable_kserve_raw_deployment_dsci()
-
-    has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
-    run.run_toolbox("rhods", "update_datasciencecluster",
-                    enable=["kserve", "dashboard"],
-                    name=None if has_dsc else "default-dsc",
-                    extra_settings=extra_settings,
-                    )
+    dsc_enable_kserve()
 
     if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
         with env.NextArtifactDir("prepare_poc"):
