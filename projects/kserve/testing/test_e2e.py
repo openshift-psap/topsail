@@ -143,7 +143,7 @@ def multi_model_test_sequentially(locally=False):
     logging.info(f"Test the models sequentially (locally={locally})")
     if locally:
         with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
-            yaml.dump(dict(mode="sequential"), f, indent=4)
+            yaml.dump(dict(mode="multi-model_sequential"), f, indent=4)
         consolidate_models()
         test_consolidated_models()
         return
@@ -194,7 +194,7 @@ def single_model_deploy_and_test_sequentially(locally=False):
 
 
     with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
-        yaml.dump(dict(mode="alone"), f, indent=4)
+        yaml.dump(dict(mode="single-model"), f, indent=4)
 
     namespace = config.ci_artifacts.get_config("tests.e2e.namespace") + "-perf"
     consolidated_models = consolidate_models(namespace=namespace)
@@ -243,7 +243,7 @@ def test_one_model(index: int = None, use_job_index: bool = False, model_name: s
 
     if use_job_index:
         with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
-            yaml.dump(dict(mode="concurrent"), f, indent=4)
+            yaml.dump(dict(mode="multi-model_concurrent"), f, indent=4)
 
     consolidate_models(index=index, use_job_index=True, model_name=model_name, namespace=namespace)
     test_consolidated_models()
