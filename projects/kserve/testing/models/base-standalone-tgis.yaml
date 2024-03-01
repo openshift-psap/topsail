@@ -3,8 +3,14 @@ serving_runtime:
   kserve:
     resource_request:
       cpu: 8
+      memory: 40 # in Gi
     extra_env:
       TRANSFORMERS_CACHE: "/tmp/transformers_cache"
+  transformer:
+    resource_request:
+      cpu: 0
+      memory: 0
+    extra_env: {}
 inference_service:
   model_format: "pytorch"
   min_replicas: 1

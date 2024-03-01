@@ -184,6 +184,14 @@ ci_presets:
 
   # single-model
 
+  watsonx_single_model_gating_light:
+    extends: [watsonx_single_model_gating, gating_rehearsal]
+    tests.e2e.models:
+    - watsonx-japanese-Llama-2-7b-instruct
+    - watsonx-flan-t5-xl
+    matbench.lts.horreum.test_name: null
+    matbench.lts.opensearch.index: rhoai-kserve-single-light
+
   watsonx_single_model_gating:
     extends: [gating, 3min, metal, tgis, raw]
     tests.e2e.models:
