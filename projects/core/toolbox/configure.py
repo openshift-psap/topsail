@@ -40,6 +40,11 @@ class Configure:
             os.environ["CI_ARTIFACTS_CONFIG_INITED"] = "true"
 
         env.init()
+
+        if (config_file := env.ARTIFACT_DIR / "config.yaml").exists():
+            logging.warning(f"{config_file} already exists. Deleting it.")
+            config_file.unlink()
+
         config.init(base_dir)
 
         if preset or presets:
