@@ -191,7 +191,7 @@ ci_presets:
   watsonx_single_model_gating_light:
     extends: [watsonx_single_model_gating, gating_rehearsal]
     tests.e2e.models:
-    - watsonx-japanese-Llama-2-7b-instruct
+    - watsonx-japanese-llama-2-7b-instruct
     - watsonx-flan-t5-xl
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-light
@@ -202,7 +202,7 @@ ci_presets:
     - watsonx-starcoder
     - watsonx-mt0-xxl
     - watsonx-gpt-neox-20b
-    - watsonx-japanese-Llama-2-7b-instruct
+    - watsonx-japanese-llama-2-7b-instruct
     - watsonx-flan-t5-xl
     - watsonx-flan-t5-xxl
     - watsonx-llama-2-13b-chat-hf
