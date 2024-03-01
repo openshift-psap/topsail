@@ -64,6 +64,9 @@ def prepare_ci():
     """
     Prepares the cluster and the namespace for running the tests
     """
+    if not config.ci_artifacts.get_config("prepare.enabled"):
+        logging.warning("prepare.enabled not enabled, nothing to do.")
+        return
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode in ("scale", "e2e", "prepare_only"):
@@ -200,6 +203,11 @@ def cleanup_cluster(mute=False):
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
+
+    if not config.ci_artifacts.get_config("prepare.cleanup.enabled"):
+        logging.warning("prepare.cleanup.enabled not enabled, cleanup only the test namespaces.")
+        cleanup_sutest_ns()
+        return
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode in ("prepare_only"):
