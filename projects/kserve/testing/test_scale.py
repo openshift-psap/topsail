@@ -123,13 +123,18 @@ def deploy_storage_configuration(namespace):
     logging.info(f"Reading the models S3 credentials from '{model_s3_cred_filename}' ...")
     with open(model_s3_cred_file) as f:
         for line in f.readlines():
-            if line.startswith("aws_access_key_id "):
+            if line.startswith("aws_access_key_id"):
                 access_key = line.rpartition("=")[-1].strip()
-            if line.startswith("aws_secret_access_key "):
+            if line.startswith("aws_secret_access_key"):
                 secret_key = line.rpartition("=")[-1].strip()
 
     if None in (access_key, secret_key):
-        raise ValueError(f"aws_access_key_id or aws_secret_access_key not found in {model_s3_cred_file} ...")
+        not_found = []
+        if access_key is None:
+            not_found += ["aws_access_key_id"]
+        if secret_key is None:
+            not_found += ["aws_secret_access_key"]
+        raise ValueError(f"{not_found} not found in {model_s3_cred_file} ...")
 
     storage_config = config.ci_artifacts.get_config("kserve.storage_config")
 
