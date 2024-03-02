@@ -126,7 +126,7 @@ spec:
             memory: 2Gi
         env:
         - name: ARTIFACT_DIR
-          value: /mnt/logs
+          value: /logs/artifacts
         - name: KUBECONFIG # Kubernetes is accessed via the in-Pod credentials
           value: ""
 {% if local_ci_run_multi_secret_name %}
@@ -148,7 +148,7 @@ spec:
         - name: USER_BATCH_SIZE
           value: "{{ local_ci_run_multi_user_batch_size }}"
         volumeMounts:
-        - mountPath: /mnt/logs
+        - mountPath: /logs/artifacts
           name: artifacts
         - mountPath: /mnt/shared
           name: shared-dir
@@ -224,7 +224,7 @@ spec:
             type: RuntimeDefault
         runAsNonRoot: True
         volumeMounts:
-        - mountPath: /mnt/logs
+        - mountPath: /logs/artifacts
           name: artifacts
 {% if local_ci_run_multi_secret_name %}
         - name: {{ local_ci_run_multi_secret_name }}
