@@ -31,6 +31,7 @@ IMPORTANT_FILES = [
     "artifacts-sutest/rhods.createdAt",
 
     "notebook-artifacts/benchmark_measures.json",
+    "regression.json"
 ]
 
 PARSER_VERSION = "2023-05-31"
@@ -52,7 +53,7 @@ def _parse_always(results, dirname, import_settings):
 
     results.from_local_env = _parse_local_env(dirname)
     results.test_config = _parse_test_config(dirname)
-    results.regression_results = _parse_regression_results(dirname)
+    results.regression = _parse_regression_results(dirname)
     results.lts = lts_parser.generate_lts_payload(results, import_settings, must_validate=False)
 
 
@@ -258,7 +259,7 @@ def _parse_start_end_time(dirname):
 def _parse_regression_results(dirname):
     regression_results_file = dirname / "regression.json"
     if not regression_results_file.exists():
-        logging.info(f"{regression_results_file.name} does not exist, ignoring the parsing of the regression analyses results.")
+        logging.info(f"{regression_results_file} does not exist, no new regression results found.")
         return None
 
     with open(regression_results_file) as f:
@@ -298,6 +299,7 @@ def _parse_env(dirname, test_config):
     else:
         from_env.test.test_path = str((current_artifact_dir / dirname).relative_to(base_artifact_dir))
 
+    outside_test_env = os.getenv("OUTSIDE_TEST_ENV")
 
     if ansible_env.get("OPENSHIFT_CI") == "true":
         from_env.test.ci_engine = "OPENSHIFT_CI"
@@ -343,7 +345,7 @@ def _parse_env(dirname, test_config):
             JENKINS_ARTIFACTS=f"https://{jenkins_instance}/{jenkins_job}/{build_number}/artifact/run/{jumphost}/{base_path}/{from_env.test.test_path}"
         )
 
-    if test_config.get("export_artifacts.enabled"):
+    if test_config.get("export_artifacts.enabled") and not outside_test_env:
         bucket = test_config.get("export_artifacts.bucket")
         path_prefix = test_config.get("export_artifacts.path_prefix")
 
