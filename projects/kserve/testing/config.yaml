@@ -197,7 +197,7 @@ ci_presets:
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
   watsonx_single_model_gating:
-    extends: [gating, 3min, metal, tgis, raw]
+    extends: [e2e_perf, gating, 3min, metal, tgis, raw]
     tests.e2e.models:
     - watsonx-starcoder
     - watsonx-mt0-xxl
