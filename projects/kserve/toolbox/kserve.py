@@ -27,7 +27,7 @@ class Kserve:
                      secret_env_file_key=None,
                      sr_mute_logs=False,
                      delete_others=True,
-                     limits_equals_requests=True,
+                     limits_equals_requests=False,
                      raw_deployment=False,
                      ):
         """
