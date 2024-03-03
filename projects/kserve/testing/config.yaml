@@ -127,7 +127,7 @@ ci_presets:
   matbenchmark:
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.concurrency: [8, 16, 32]
-    tests.e2e.models: [flan-t5-small-gpu]
+    tests.e2e.models: [flan-t5-small-hf-cpu]
 
   matbenchmark_quick:
     extends: [matbenchmark, quick]
