@@ -566,15 +566,20 @@ def run_one_matbench():
         with open(env.ARTIFACT_DIR / "test_config.yaml") as f:
             test_config = yaml.safe_load(f)
 
+        llm_load_test_cfg = (test_config | settings)
+
+        config.ci_artifacts.set_config("tests.e2e.llm_load_test.concurrency",
+                                       llm_load_test_cfg["concurrency"])
+
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
         with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
             print(str(uuid.uuid4()), file=f)
 
-        namespace = test_config.pop("namespace")
+        namespace = llm_load_test_cfg.pop("namespace")
         try:
-            run.run_toolbox("llm_load_test", "run", **(test_config | settings))
+            run.run_toolbox("llm_load_test", "run", **llm_load_test_cfg)
         finally:
             if config.ci_artifacts.get_config("tests.e2e.capture_state"):
                 run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
