@@ -50,6 +50,7 @@ class BenchmarkMeasures(matbench_models.ExclusiveModel):
 class Results(matbench_models.ExclusiveModel):
     benchmark_measures: BenchmarkMeasures
 
+
 class NotebookPerformanceKPI(matbench_models.KPI, Settings): pass
 
 
@@ -60,7 +61,7 @@ class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata
     results: Results
     kpis: Optional[NotebookPerformanceKPIs]
-    regression_results: Optional[Any]
+    regression: Optional[List[matbench_models.Regression]] = Field(default=None)
 
     class Config:
         fields = {'schema_name': '$schema'}
