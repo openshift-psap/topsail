@@ -111,6 +111,9 @@ ci_presets:
     tests.e2e.models: [flan-t5-small-hf-cpu, flan-t5-small-hf-cpu]
     tests.e2e.llm_load_test.concurrency: 2
 
+  single_raw:
+    extends: [quick_raw]
+    tests.e2e.models: [flan-t5-small-hf-cpu]
 
   # ---
 
@@ -124,14 +127,13 @@ ci_presets:
     prepare.enabled: false
     prepare.cleanup.enabled: false
 
-  matbenchmark:
+  gating_concurrency:
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.concurrency: [1, 2, 16, 32, 64, 96]
+
+  gating_concurrency_light:
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.concurrency: [8, 16, 32]
-    tests.e2e.models: [flan-t5-small-gpu]
-
-  matbenchmark_quick:
-    extends: [matbenchmark, quick]
-    tests.e2e.models: [flan-t5-small-cpu]
 
   # ---
 
