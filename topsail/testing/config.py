@@ -210,6 +210,22 @@ class Config:
         self.apply_preset(profile)
 
 
+    def detect_apply_cluster_profile(self, node_profiles):
+        cluster_nodes_cmd = run.run("oc get nodes -oname", capture_stdout=True, capture_stderr=True, check=False)
+        if cluster_nodes_cmd.returncode != 0:
+            logging.warning(f"Failed to get the cluster nodes: {cluster_nodes_cmd.stderr.strip()}")
+            logging.warning("Ignoring the cluster profile check.")
+            return
+
+        for node_name in cluster_nodes_cmd.stdout.split():
+            for node, profile in node_profiles.items():
+                if f"node/{node}" != node_name:
+                    continue
+                print("yes", node)
+                self.apply_preset(profile)
+                break
+
+
 def _set_config_environ(base_dir):
     config_path = env.ARTIFACT_DIR / "config.yaml"
 

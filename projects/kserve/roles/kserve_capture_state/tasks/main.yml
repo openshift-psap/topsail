@@ -35,13 +35,13 @@
 
 - name: Save the state of the serving resources
   shell: |
-    oc get serving,inferenceservice,servingruntime -n "{{ namespace }}" \
+    oc get inferenceservice,servingruntime -n "{{ namespace }}" \
        > "{{ artifact_extra_logs_dir }}/serving.status"
-    oc get serving,inferenceservice,servingruntime -n "{{ namespace }}" -oyaml \
+    oc get inferenceservice,servingruntime -n "{{ namespace }}" -oyaml \
        > "{{ artifact_extra_logs_dir }}/serving.yaml"
-    oc get serving,inferenceservice,servingruntime -n "{{ namespace }}" -ojson \
+    oc get inferenceservice,servingruntime -n "{{ namespace }}" -ojson \
        > "{{ artifact_extra_logs_dir }}/serving.json"
-    oc describe serving,inferenceservice,servingruntime -n "{{ namespace }}" \
+    oc describe inferenceservice,servingruntime -n "{{ namespace }}" \
        > "{{ artifact_extra_logs_dir }}/serving.desc"
   ignore_errors: true
 

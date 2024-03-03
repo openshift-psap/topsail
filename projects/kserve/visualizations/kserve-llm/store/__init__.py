@@ -106,11 +106,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     results = types.SimpleNamespace()
 
-    parsers._parse_always(results, dirname, import_settings)
     parsers._parse_once(results, dirname)
-
-    lts_results = lts_parser.generate_lts_results(results)
-    results.lts = lts_parser.generate_lts_payload(results, lts_results, import_settings, must_validate=False)
+    parsers._parse_always(results, dirname, import_settings)
 
     fn_add_to_matrix(results)
 
@@ -124,11 +121,15 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     with open(dirname / CACHE_FILENAME, "wb") as f:
         get_config = results.test_config.get
+        llm_get_config = results.llm_load_test_config.get
+
         results.test_config.get = None
+        results.llm_load_test_config.get = None
 
         pickle.dump(results, f)
 
         results.test_config.get = get_config
+        results.llm_load_test_config.get = llm_get_config
 
     logging.info("parsing done :)")
 

@@ -46,6 +46,9 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
     config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
 
+    # could be turned into configuration bits ...
+    config.ci_artifacts.detect_apply_cluster_profile({"p42-h03-dgx.rdu3.labs.perfscale.redhat.com": "dgx",
+                                                      "e26-h23-000-r650": "icelake"})
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     def decorator(fct):

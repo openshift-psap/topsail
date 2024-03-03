@@ -126,7 +126,18 @@ spec:
             memory: 2Gi
         env:
         - name: ARTIFACT_DIR
-          value: /mnt/logs
+          value: /logs/artifacts
+        - name: TOPSAIL_LOCAL_CI
+          value: "true"
+{% set ocp_keys = ["OPENSHIFT_CI", "JOB_NAME", "JOB_SPEC", "JOB_NAME_SAFE", "PULL_NUMBER", "REPO_OWNER", "REPO_NAME", "PULL_BASE_REF", "ENTRYPOINT_OPTIONS"] %}
+{% set jenkins_keys = ["PERFLAB_CI", "JENKINS_JUMPHOST", "JENKINS_BUILD_NUMBER", "JENKINS_JOB", "JENKINS_INSTANCE"] %}
+{% for key in ocp_keys + jenkins_keys %}
+{% set value = lookup('env', key) %}
+{% if value %}
+        - name: "{{ key }}"
+          value: '{{ value }}'
+{% endif %}
+{% endfor %}
         - name: KUBECONFIG # Kubernetes is accessed via the in-Pod credentials
           value: ""
 {% if local_ci_run_multi_secret_name %}
@@ -148,7 +159,7 @@ spec:
         - name: USER_BATCH_SIZE
           value: "{{ local_ci_run_multi_user_batch_size }}"
         volumeMounts:
-        - mountPath: /mnt/logs
+        - mountPath: /logs/artifacts
           name: artifacts
         - mountPath: /mnt/shared
           name: shared-dir
@@ -215,7 +226,7 @@ spec:
           value: /mnt/secrets/{{ local_ci_run_multi_secret_name }}
 {% endif %}
         - name: ARTIFACT_DIR
-          value: /mnt/logs
+          value: /logs/artifacts
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -224,7 +235,7 @@ spec:
             type: RuntimeDefault
         runAsNonRoot: True
         volumeMounts:
-        - mountPath: /mnt/logs
+        - mountPath: /logs/artifacts
           name: artifacts
 {% if local_ci_run_multi_secret_name %}
         - name: {{ local_ci_run_multi_secret_name }}

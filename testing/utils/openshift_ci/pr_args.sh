@@ -36,6 +36,12 @@ elif [[ "${OPENSHIFT_CI:-}" == true ]]; then
     JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-${PULL_BASE_REF}
     test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 
+    if [[ "${TOPSAIL_LOCAL_CI:-}" == true ]]; then
+        export SHARED_DIR=/tmp/shared
+        echo "INFO: running in TOPSAIL local CI, creating SHARED_DIR=$SHARED_DIR ..."
+        mkdir -p "$SHARED_DIR"
+    fi
+
     if [[ -z "${SHARED_DIR:-}" ]]; then
         echo "ERROR: running in OpenShift CI, but SHARED_DIR not defined." >&2
         exit 1
