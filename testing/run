@@ -51,7 +51,7 @@ prechecks() {
         exit 1
     fi
 
-    if [ "${PERFLAB_CI:-}" == true ]; then
+    if [[ "${PERFLAB_CI:-}" == true && "${TOPSAIL_LOCAL_CI:-}" != true ]]; then
         # in the perflab CI, the tty columns returns 10240, making Ansible print as many stars at the end of the play
         # this is a workaround to avoid that.
         stty cols 80
@@ -60,7 +60,7 @@ prechecks() {
         if [[ -f "$LOG_FILE" ]]; then
             mkdir -p "$ARTIFACT_DIR/_WARNING"
             msg="WARNING: run: log file $LOG_FILE already exists"
-            echo $msg | tee -a "$run_log_file_already_exists"
+            echo $msg | tee -a "$ARTIFACT_DIR/_WARNING/msg"
 
         fi
         exec &> >(tee -a "$LOG_FILE")
