@@ -132,10 +132,11 @@ spec:
     readinessProbe: # Use exec probes instad of httpGet since the probes' port gets rewritten to the containerPort
       exec:
         command: [curl, --silent, localhost:3000/health]
+      initialDelaySeconds: 3000
     livenessProbe:
       exec:
         command: [curl, --silent, localhost:3000/health]
-      initialDelaySeconds: 30
+      initialDelaySeconds: 3000
     ports:
     - containerPort: 8033
       protocol: TCP
