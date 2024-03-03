@@ -73,7 +73,7 @@ kserve_deploy_model_sr_mute_logs: false
 kserve_deploy_model_delete_others: true
 
 # if True, sets use the requests values to define the limits. If False, do not define any limits (except for GPU)
-kserve_deploy_model_limits_equals_requests: false
+kserve_deploy_model_limits_equals_requests: true
 
 # if True, do not try to configure anything related to Serverless.
 kserve_deploy_model_raw_deployment: false
