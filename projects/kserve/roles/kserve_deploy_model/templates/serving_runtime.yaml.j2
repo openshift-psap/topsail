@@ -129,12 +129,24 @@ spec:
 {% if kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] %}
         nvidia.com/gpu: "{{ kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] }}"
 {% endif %}
-    readinessProbe: # Use exec probes instad of httpGet since the probes' port gets rewritten to the containerPort
-      exec:
+    readinessProbe:
+{% if kserve_deploy_model_raw_deployment %}
+      httpGet:
+        path: /health
+        port: 3000
+{% else %}
+      exec: # Use exec probes instad of httpGet since the probes' port gets rewritten to the containerPort
         command: [curl, --silent, localhost:3000/health]
+{% endif %}
     livenessProbe:
+{% if kserve_deploy_model_raw_deployment %}
+      httpGet:
+        path: /health
+        port: 3000
+{% else %}
       exec:
         command: [curl, --silent, localhost:3000/health]
+{% endif %}
       initialDelaySeconds: 30
     ports:
     - containerPort: 8033
