@@ -140,9 +140,8 @@ spec:
 {% endif %}
     livenessProbe:
 {% if kserve_deploy_model_raw_deployment %}
-      httpGet:
-        path: /health
-        port: 3000
+      exec:
+        command: [echo, "alive"]
 {% else %}
       exec:
         command: [curl, --silent, localhost:3000/health]

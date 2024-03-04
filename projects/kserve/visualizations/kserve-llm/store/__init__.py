@@ -111,13 +111,14 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
     fn_add_to_matrix(results)
 
-    with open(dirname / "test_start_end.json", "w") as f:
-        json.dump(dict(
-            start=results.test_start_end.start.isoformat(),
-            end=results.test_start_end.end.isoformat(),
-            settings=import_settings,
-        ), f, indent=4)
-        print("", file=f)
+    if results.test_start_end:
+        with open(dirname / "test_start_end.json", "w") as f:
+            json.dump(dict(
+                start=results.test_start_end.start.isoformat(),
+                end=results.test_start_end.end.isoformat(),
+                settings=import_settings,
+            ), f, indent=4)
+            print("", file=f)
 
     with open(dirname / CACHE_FILENAME, "wb") as f:
         get_config = results.test_config.get
