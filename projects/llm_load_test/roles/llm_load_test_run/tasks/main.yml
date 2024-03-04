@@ -38,8 +38,12 @@
       set -e
       cd "{{ llm_load_test_run_llm_path }}"
 
-      timeout $(({{ llm_load_test_run_duration }} + 30)) python3 load_test.py --config "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml" &> {{ artifact_extra_logs_dir }}/logs/run.log
+      time timeout $(({{ llm_load_test_run_duration }} + 90)) python3 load_test.py --config "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml" &> {{ artifact_extra_logs_dir }}/logs/run.log
+    register: llm_load_test_cmd
   always:
+  - name: Check if llm-load-test run timedout
+    when: llm_load_test_cmd.rc == 124
+    debug: msg="llm-load-test executed timeout :/"
 
   - name: Ensure that some content has been generated
     shell:

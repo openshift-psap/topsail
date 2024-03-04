@@ -199,7 +199,8 @@ def single_model_deploy_and_test_sequentially(locally=False):
     namespace = config.ci_artifacts.get_config("tests.e2e.namespace") + "-perf"
     consolidated_models = consolidate_models(namespace=namespace)
 
-    run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True)
+    run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True,
+                    artifact_dir_suffix="_all")
 
     exc = None
     failed = []
