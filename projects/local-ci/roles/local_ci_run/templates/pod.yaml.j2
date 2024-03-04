@@ -42,7 +42,7 @@ spec:
     - name: PULL_NUMBER
       value: "{{ local_ci_run_pr_number }}"
     - name: ARTIFACT_DIR
-      value: /logs
+      value: /logs/artifacts
     image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
     imagePullPolicy: Always
     securityContext:
@@ -53,7 +53,7 @@ spec:
         type: RuntimeDefault
     runAsNonRoot: True
     volumeMounts:
-    - mountPath: /logs
+    - mountPath: /logs/artifacts
       name: artifacts
 {% if local_ci_run_update_git %}
     - mountPath: /opt/topsail/src
@@ -105,7 +105,7 @@ spec:
     - name: "RUNNING_LOCALLY"
       value: "yes"
     - name: ARTIFACT_DIR
-      value: /logs
+      value: /logs/artifacts
     - name: PULL_BASE_SHA
       value: main
     - name: PULL_BASE_REF
@@ -127,7 +127,7 @@ spec:
     - name: SHARED_DIR # shouldn't be used
       value: /tmp/shared
     volumeMounts:
-    - mountPath: /logs
+    - mountPath: /logs/artifacts
       name: artifacts
 {% if local_ci_run_update_git %}
     - mountPath: /opt/topsail/src
@@ -212,13 +212,13 @@ spec:
     - name: JOB_NAME
       value: local-ci
     - name: ARTIFACT_DIR
-      value: /logs
+      value: /logs/artifacts
     - name: KUBECONFIG
       value: ""
     - name: SHARED_DIR # shouldn't be used
       value: /tmp/shared
     volumeMounts:
-    - mountPath: /logs
+    - mountPath: /logs/artifacts
       name: artifacts
 {% if local_ci_run_update_git %}
     - mountPath: /opt/topsail/src
