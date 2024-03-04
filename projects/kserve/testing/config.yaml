@@ -197,7 +197,7 @@ ci_presets:
   # single-model
 
   watsonx_single_model_gating_light:
-    extends: [watsonx_single_model_gating, gating_rehearsal]
+    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio]
     tests.e2e.models:
     - watsonx-japanese-llama-2-7b-instruct
     - watsonx-flan-t5-xl
@@ -205,7 +205,7 @@ ci_presets:
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
   watsonx_single_model_gating:
-    extends: [e2e_perf, gating, 3min, metal, tgis, raw]
+    extends: [e2e_perf, gating, 3min, metal, tgis, raw, use_intlab_minio]
     tests.e2e.models:
     - watsonx-starcoder
     - watsonx-mt0-xxl
