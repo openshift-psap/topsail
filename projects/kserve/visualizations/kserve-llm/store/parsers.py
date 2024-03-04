@@ -313,11 +313,14 @@ def _parse_predictor_logs(dirname):
 
 
 def _parse_test_start_end(dirname, llm_load_test_output):
+    if not llm_load_test_output:
+        return None
+
     test_start_end = types.SimpleNamespace()
     test_start_end.start = None
     test_start_end.end = None
 
-    for result in llm_load_test_output["results"]:
+    for result in llm_load_test_output.get("results") or []:
         start = datetime.datetime.fromtimestamp(result["start_time"])
         end = datetime.datetime.fromtimestamp(result["end_time"])
 
