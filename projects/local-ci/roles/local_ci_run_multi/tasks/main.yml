@@ -78,7 +78,7 @@
     oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
        -ojsonpath={.status.active}
   register: wait_ci_job
-  retries: 480
+  retries: 1440
   delay: 30
   until: not wait_ci_job.stdout
   failed_when: false
