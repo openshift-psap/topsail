@@ -498,10 +498,8 @@ def _parse_env(dirname, test_config):
 
         from_env.test.run_id = build_number
 
-        base_path = pathlib.Path(ansible_env["ARTIFACT_DIR"].replace("/logs/artifacts/", "").replace(from_env.test.test_path, "")).parent
-
         from_env.test.urls |= dict(
-            JENKINS_ARTIFACTS=f"https://{jenkins_instance}/{jenkins_job}/{build_number}/artifact/run/{jumphost}/{base_path}/{from_env.test.test_path}"
+            JENKINS_ARTIFACTS=f"https://{jenkins_instance}/{jenkins_job}/{build_number}/artifact/run/{jumphost}/{from_env.test.test_path}"
         )
 
     if test_config.get("export_artifacts.enabled"):
