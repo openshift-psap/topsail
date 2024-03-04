@@ -185,16 +185,24 @@
     ignore_errors: true
 
   - name: Wait for the InferenceService Pod to initialize the model
-    shell:
+    shell: |
       set -o pipefail;
-      oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
+      restart_count=$(oc get pods -ojsonpath={.items[*].status.containerStatuses[*]} \
+                         -lserving.kserve.io/inferenceservice={{ kserve_deploy_model_inference_service_name }} \
+                         -n {{ kserve_deploy_model_namespace }} \
+                     | jq .restartCount |  python -c "import sys; print(sum(int(l) for l in sys.stdin))");
+      if [[ "$restart_count" != 0 ]]; then
+        echo "ERROR: restart detected ($restart_count), aborting.";
+        exit 2;
+      fi;
+      oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml" \
          -ojsonpath={.status.modelStatus.states.targetModelState}
     register: inference_service_state_cmd
     # wait up to 90 minutes
     retries: 180
     delay: 30
-    until: inference_service_state_cmd.stdout == "Loaded" or inference_service_state_cmd.stdout == "FailedToLoad"
-    failed_when: inference_service_state_cmd.stdout == "FailedToLoad"
+    until: inference_service_state_cmd.stdout == "Loaded" or inference_service_state_cmd.stdout == "FailedToLoad" or inference_service_state_cmd.rc != 0
+    failed_when: inference_service_state_cmd.stdout == "FailedToLoad" or inference_service_state_cmd.rc != 0
 
   - name: Capture the state of the InferenceService Pod resource
     shell:
