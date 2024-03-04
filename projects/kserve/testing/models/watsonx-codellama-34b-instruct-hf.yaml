@@ -3,13 +3,13 @@ extends: base-standalone-tgis
 serving_runtime:
   kserve:
     resource_request:
-      nvidia.com/gpu: 8
+      nvidia.com/gpu: 4
     extra_env:
       DEPLOYMENT_FRAMEWORK: "tgis_native"
       FLASH_ATTENTION: "true"
       MAX_CONCURRENT_REQUESTS: 128
       MAX_BATCH_SIZE: 96
-      NUM_GPUS: 8
+      NUM_GPUS: 4
       RAYON_NUM_THREADS: "32" # Would otherwise be calculated based on shards*num_cpus
 inference_service:
-  storage_uri: "s3://psap-hf-models/Llama-2-70b-chat-hf/Llama-2-70b-chat-hf"
+  storage_uri: "s3://psap-hf-models/CodeLlama-34b-Instruct-hf/CodeLlama-34b-Instruct-hf"

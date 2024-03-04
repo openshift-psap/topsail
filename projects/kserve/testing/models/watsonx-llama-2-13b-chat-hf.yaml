@@ -5,7 +5,9 @@ serving_runtime:
     resource_request:
       nvidia.com/gpu: 1
     extra_env:
+      DEPLOYMENT_FRAMEWORK: "tgis_native"
       FLASH_ATTENTION: "true"
       MAX_CONCURRENT_REQUESTS: 128
+      MAX_BATCH_SIZE: 96
 inference_service:
   storage_uri: "s3://psap-hf-models/Llama-2-13b-chat-hf/Llama-2-13b-chat-hf"
