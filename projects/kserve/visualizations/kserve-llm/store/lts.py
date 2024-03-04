@@ -1,6 +1,7 @@
 import logging
 import json
 import functools
+import types
 
 import matrix_benchmarking.common as common
 from matrix_benchmarking.parse import json_dumper
@@ -56,8 +57,12 @@ def generate_lts_kpis(lts_payload):
         kpi = {} | properties | lts_parser.get_kpi_labels(lts_payload)
 
         kpi_func = kpi.pop("__func__")
-        kpi["value"] = kpi_func(lts_payload)
+        try:
+            kpi["value"] = kpi_func(lts_payload)
+        except Exception as e:
+            logging.error(f"Failed to generate KPI {name}: {e}")
+            kpi["value"] = None
 
-        kpis[name] = models_lts.KServeLLMPerformanceKPI.parse_obj(kpi)
+        kpis[name] =  types.SimpleNamespace(**kpi)
 
     return kpis
