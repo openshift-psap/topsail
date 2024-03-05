@@ -41,9 +41,10 @@
       time timeout $(({{ llm_load_test_run_duration }} + 15*60)) python3 load_test.py --config "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml" &> {{ artifact_extra_logs_dir }}/logs/run.log
     register: llm_load_test_cmd
   always:
-  - name: Check if llm-load-test run timedout
+  - name: Check if llm-load-test run timed-out
     when: llm_load_test_cmd.rc == 124
-    debug: msg="llm-load-test executed timeout :/"
+    command:
+      touch {{ artifact_extra_logs_dir }}/TIMEOUT
 
   - name: Ensure that some content has been generated
     shell:
