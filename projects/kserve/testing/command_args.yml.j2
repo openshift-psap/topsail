@@ -211,12 +211,12 @@ __e2e_aliases:
     git_pull: null #refs/pull/716/merge
 
     use_local_config: true
+    need_all_success: true
 
 local_ci run_multi/deploy_concurrently:
   <<: *local_ci_run_multi_e2e
   ci_command: "kserve test_e2e deploy_one_model --use-job-index"
   sleep_factor: 0
-  need_all_success: true
   job_name: deploy-one-model
 
 local_ci run_multi/test_sequentially:
