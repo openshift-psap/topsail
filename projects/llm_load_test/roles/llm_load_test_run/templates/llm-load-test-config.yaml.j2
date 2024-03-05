@@ -6,10 +6,12 @@ warmup: false
 storage:
   type: local
 dataset:
-  file: "datasets/openorca_large_subset_010.jsonl"
+  file: "datasets/openorca_large_subset_011.jsonl"
   max_queries: 3000
+  min_input_tokens: 0
   max_input_tokens: 1024
   max_output_tokens: 512
+  max_sequence_tokens: 2048
 load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: {{ llm_load_test_run_concurrency }}
