@@ -100,10 +100,22 @@ spec:
         type: RuntimeDefault
     runAsNonRoot: True
     env:
+    - name: TOPSAIL_LOCAL_CI
+      value: "true"
+    - name: JOB_NAME
+      value: local-ci
     - name: JOB_NAME_SAFE
       value: "{{ local_ci_run_test_name }}"
     - name: "RUNNING_LOCALLY"
       value: "yes"
+
+    - name: TEST_RUN_IDENTIFIER
+      value: "{{ local_ci_run_export_test_run_identifier }}"
+    - name: TOPSAIL_LOCAL_CI_BUCKET_NAME
+      value: "{{ local_ci_run_export_bucket_name }}"
+    - name: TEST_NAME
+      value: "{{ local_ci_run_test_name }}"
+
     - name: ARTIFACT_DIR
       value: /logs/artifacts
     - name: PULL_BASE_SHA
@@ -167,7 +179,7 @@ spec:
         exit 1
       fi
 
-      dest="s3://$BUCKET_NAME/local-ci/$TEST_NAME/$TEST_RUN_IDENTIFIER"
+      dest="s3://$TOPSAIL_LOCAL_CI_BUCKET_NAME/local-ci/$TEST_NAME/$TEST_RUN_IDENTIFIER"
       echo "Pushing to '$dest'"
       aws s3 cp "$ARTIFACT_DIR" "$dest" --recursive --acl public-read
 
@@ -205,7 +217,7 @@ spec:
 {% endif %}
     - name: TEST_RUN_IDENTIFIER
       value: "{{ local_ci_run_export_test_run_identifier }}"
-    - name: BUCKET_NAME
+    - name: TOPSAIL_LOCAL_CI_BUCKET_NAME
       value: "{{ local_ci_run_export_bucket_name }}"
     - name: TEST_NAME
       value: "{{ local_ci_run_test_name }}"

@@ -129,9 +129,11 @@ spec:
           value: /logs/artifacts
         - name: TOPSAIL_LOCAL_CI
           value: "true"
-{% set ocp_keys = ["OPENSHIFT_CI", "JOB_NAME", "JOB_SPEC", "JOB_NAME_SAFE", "PULL_NUMBER", "REPO_OWNER", "REPO_NAME", "PULL_BASE_REF", "ENTRYPOINT_OPTIONS"] %}
+{% set ocp_keys = ["OPENSHIFT_CI", "JOB_SPEC", "PULL_NUMBER", "REPO_OWNER", "REPO_NAME", "PULL_BASE_REF", "ENTRYPOINT_OPTIONS"] %}
 {% set jenkins_keys = ["PERFLAB_CI", "JENKINS_JUMPHOST", "JENKINS_BUILD_NUMBER", "JENKINS_JOB", "JENKINS_INSTANCE"] %}
-{% for key in ocp_keys + jenkins_keys %}
+{% set local_ci_keys = ["TOPSAIL_LOCAL_CI", "TOPSAIL_LOCAL_CI_BUCKET_NAME", "TEST_RUN_IDENTIFIER"] %}
+{% set common_keys = ["JOB_NAME", "JOB_NAME_SAFE"] %}
+{% for key in ocp_keys + jenkins_keys + local_ci_keys + common_keys %}
 {% set value = lookup('env', key) %}
 {% if value %}
         - name: "{{ key }}"

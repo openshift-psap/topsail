@@ -463,6 +463,18 @@ def _parse_env(dirname, test_config):
         from_env.test.test_path = str((current_artifact_dir / dirname).relative_to(base_artifact_dir))
 
 
+    if ansible_env.get("TOPSAIL_LOCAL_CI") == "true":
+        from_env.test.ci_engine = "TOPSAIL_LOCAL_CI"
+        from_env.test.run_id = ansible_env.get("TEST_RUN_IDENTIFIER")
+
+        bucket_name = ansible_env.get("TOPSAIL_LOCAL_CI_BUCKET_NAME")
+        job_name_safe = ansible_env.get("JOB_NAME_SAFE")
+
+        from_env.test.urls |= dict(
+            LOCAL_CI_S3=f"https://{bucket_name}.s3.amazonaws.com/index.html#local-ci/{job_name_safe}/{from_env.test.run_id}/{from_env.test.test_path}/",
+        )
+
+
     if ansible_env.get("OPENSHIFT_CI") == "true":
         from_env.test.ci_engine = "OPENSHIFT_CI"
         job_spec = json.loads(ansible_env["JOB_SPEC"])
