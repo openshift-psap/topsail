@@ -7,7 +7,5 @@ serving_runtime:
     extra_env:
       DEPLOYMENT_FRAMEWORK: "tgis_native"
       FLASH_ATTENTION: "false"
-      MAX_CONCURRENT_REQUESTS: 128
-      MAX_BATCH_SIZE: 96
 inference_service:
   storage_uri: "s3://psap-hf-models/flan-t5-xxl/flan-t5-xxl"

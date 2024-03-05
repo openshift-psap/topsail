@@ -204,15 +204,6 @@ ci_presets:
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
-  # Just for the test (will be removed before merging)
-  watsonx_single_model_gating_new:
-    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio]
-    tests.e2e.models:
-    - watsonx-codellama-34b-instruct-hf
-    - watsonx-mpt-7b-instruct2
-    matbench.lts.horreum.test_name: null
-    matbench.lts.opensearch.index: rhoai-kserve-single-light
-
   watsonx_single_model_gating:
     extends: [e2e_perf, gating, 3min, metal, tgis, raw, use_intlab_minio]
     tests.e2e.models:
