@@ -57,6 +57,10 @@ ci_presets:
     tests.pipelines.notebook_filename: kfp_timed_multistage.ipynb
     tests.pipelines.notebook_directory: projects/pipelines/testing/notebooks/timed-multistage
 
+  pipeline_iris:
+    tests.pipelines.notebook_filename: kfp_iris.ipynb
+    tests.pipelines.notebook_directory: projects/pipelines/testing/notebooks/iris
+
 secrets:
   dir:
     name: psap-ods-secret
