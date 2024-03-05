@@ -212,6 +212,8 @@ ci_presets:
     - watsonx-flan-t5-xxl
     - watsonx-llama-2-13b-chat-hf
     - watsonx-llama-2-70b-chat-hf
+    - watsonx-mpt-7b-instruct2
+    - watsonx-codellama-34b-instruct-hf
     matbench.lts.horreum.test_name: RHOAI-kserve-single
     matbench.lts.opensearch.index: rhoai-kserve-single
 
