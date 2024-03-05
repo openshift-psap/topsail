@@ -130,7 +130,7 @@ spec:
 {% if kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] %}
         nvidia.com/gpu: "{{ kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] }}"
 {% endif %}
-{% endif %}}
+{% endif %}
     readinessProbe:
 {% if kserve_deploy_model_raw_deployment %}
       httpGet:
