@@ -52,6 +52,9 @@ spec:
       name: data-science-smcp
       namespace: istio-system
     managementState: Removed
+  trustedCABundle:
+    managementState: Managed
+    customCABundle: ""
 EOF
 """)
 
