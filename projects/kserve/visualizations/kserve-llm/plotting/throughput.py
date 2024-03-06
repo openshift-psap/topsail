@@ -21,7 +21,7 @@ from . import error_report, report
 def register():
     Throughput()
 
-def generateThroughputData(entries, _variables):
+def generateThroughputData(entries, _variables, ordered_vars):
     data = []
 
     if "mode" in _variables:
@@ -49,26 +49,21 @@ def generateThroughputData(entries, _variables):
         else:
             datum["test_name:sort_index"] = datum["test_name"]
 
-        calls_count = 0
-        latency_s = 0.0
-
         if not entry.results.llm_load_test_output: continue
-        for result in entry.results.llm_load_test_output["results"]:
-            generatedTokens += result["output_tokens"]
-            calls_count += 1
-            latency_s += result["response_time"] / 1000
 
         duration = (entry.results.test_start_end.end-entry.results.test_start_end.start).total_seconds()
         datum["duration"] = int(duration)
 
-        datum["token_count"] = generatedTokens
         datum["throughput"] = entry.results.lts.results.throughput
         try:
             datum["vusers"] = entry.settings.concurrency
         except AttributeError:
             datum["vusers"] = entry.results.test_config.get("tests.e2e.llm_load_test.concurrency")
 
-        datum["avg_latency"] = latency_s / calls_count
+        datum["tpot_mean"] = entry.results.lts.kpis["kserve_llm_load_test_tpot_mean"].value
+
+        datum["sort_index"] = entry.settings.__dict__[ordered_vars[0]] \
+            if ordered_vars else 0
 
         data.append(datum)
 
@@ -94,7 +89,7 @@ class Throughput():
         entries = [cfg__entry] if cfg__entry else \
             common.Matrix.all_records(settings, setting_lists)
 
-        df = pd.DataFrame(generateThroughputData(entries, variables))
+        df = pd.DataFrame(generateThroughputData(entries, variables, ordered_vars))
 
         if df.empty:
             return None, "Not data available ..."
@@ -103,7 +98,7 @@ class Throughput():
 
         if cfg__by_model:
             fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]])
-            df = df.sort_values(by=["test_name"], ascending=True)
+            df = df.sort_values(by=["sort_index", "test_name"], ascending=True)
 
             fig1 = px.line(df, hover_data=df.columns, x="test_name", y="throughput")
             for i in range(len(fig1.data)):
@@ -112,10 +107,10 @@ class Throughput():
                 fig1.data[i].showlegend = True
                 fig1.data[i].line.color = "red"
 
-            fig2 = px.line(df, hover_data=df.columns, x="test_name", y="avg_latency")
+            fig2 = px.line(df, hover_data=df.columns, x="test_name", y="tpot_mean")
             for i in range(len(fig2.data)):
                 fig2.data[i].update(mode='markers+lines')
-                fig2.data[i].name = "Latency"
+                fig2.data[i].name = "Average TPOT"
                 fig2.data[i].showlegend = True
 
             fig2.update_traces(yaxis="y2")
@@ -131,24 +126,24 @@ class Throughput():
                 ),
 
                 yaxis2=dict(
-                    title="❮ Average latency (in s)<br>Lower is better",
+                    title="❮ Average time per output token (in ms/token)<br>Lower is better",
                     rangemode="tozero",
                 ),
             )
             fig.layout.update(showlegend=True)
         else:
-            fig = px.line(df, hover_data=df.columns, x="throughput", y="avg_latency", color="test_name", text="test_name")
+            fig = px.line(df, hover_data=df.columns, x="throughput", y="tpot_mean", color="test_name", text="test_name")
             for i in range(len(fig.data)):
                 fig.data[i].update(mode='markers+text')
 
             fig.update_xaxes(title=f"Throughput (in tokens/s) ❯<br>Higher is better")
-            fig.update_yaxes(title=f"❮ Average latency (in s)<br>Lower is better")
+            fig.update_yaxes(title=f"❮ Average time per output token (in ms/token)<br>Lower is better")
 
         vus = ", ".join(map(str, sorted(df["vusers"].unique())))
-        subtitle = f"<br>for {vus} VUs"
+        subtitle = f"<br>for {vus} users"
 
         # ❯ or ❮
-        fig.update_layout(title=f"Throughput and latency of the load tests{subtitle}", title_x=0.5,)
+        fig.update_layout(title=f"Throughput and Time Per Output Token{subtitle}", title_x=0.5,)
         if cfg__entry:
             fig.layout.update(showlegend=False)
 
