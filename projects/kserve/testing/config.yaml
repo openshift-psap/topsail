@@ -178,7 +178,9 @@ ci_presets:
     matbench.lts.opensearch.instance: smoke
 
   gating:
-    extends: [use_intlab_os]
+    # using the 'smoke' instance for the time being, the intlab instance ('use_intlab_os') is full
+    # 'Validation Failed: 1: this action would add [8] total shards, but this cluster currently has [6000]/[6000] maximum shards open;')
+    extends: [use_smoke_os]
 
   gating_rehearsal:
     extends: [use_smoke_os]
@@ -577,7 +579,7 @@ matbench:
       index: rhoai-kserve-single
       index_prefix: ""
     regression_analyses:
-      enabled: true
+      enabled: false
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
 export_artifacts:
