@@ -31,7 +31,7 @@ def generateErrorHistogramData(entries, variables):
     CLOSED_CX = "rpc error: code = Unavailable desc = error reading from server: read tcp: use of closed network connection"
 
     for entry in entries:
-        llm_data = entry.results.llm_load_test_output
+        if not entry.results.llm_load_test_output: continue
 
         errorDistribution = defaultdict(int)
         for result in entry.results.llm_load_test_output["results"]:
@@ -98,10 +98,14 @@ def generateSuccesssCount(entries, variables):
     data = []
 
     for entry in entries:
-        llm_data = entry.results.llm_load_test_output
+        if entry.results.llm_load_test_output:
+            llm_data = entry.results.llm_load_test_output
 
-        error_count = llm_data["summary"]["total_failures"]
-        success_count = llm_data["summary"]["total_requests"] - error_count
+            error_count = llm_data["summary"]["total_failures"]
+            success_count = llm_data["summary"]["total_requests"] - error_count
+        else:
+            error_count = 0
+            success_count = 0
 
         data.append(dict(
             test_name=entry.get_name(variables),
@@ -132,13 +136,14 @@ def generateFinishReasonData(entries, variables):
     data = []
 
     for entry in entries:
+        if not entry.results.llm_load_test_output: continue
 
         finishReasons = defaultdict(int)
         for result in entry.results.llm_load_test_output["results"]:
             if result["error_code"] is not None:
                 reason = "ERROR"
             else:
-                reason = result.get("finishReason")
+                reason = result.get("stop_reason")
                 if reason is None: continue
 
             finishReasons[reason] += 1

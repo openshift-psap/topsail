@@ -52,6 +52,7 @@ def generateThroughputData(entries, _variables):
         calls_count = 0
         latency_s = 0.0
 
+        if not entry.results.llm_load_test_output: continue
         for result in entry.results.llm_load_test_output["results"]:
             generatedTokens += result["output_tokens"]
             calls_count += 1

@@ -61,14 +61,15 @@ def _get_test_details(entry, args):
     success_count = 0
     error_count = 0
 
-    for result in entry.results.llm_load_test_output["results"]:
-        simplified_error = simplify_error(result["error_text"])
-        if not simplified_error:
-            success_count += 1
-            continue
+    if entry.results.llm_load_test_output:
+        for result in entry.results.llm_load_test_output["results"]:
+            simplified_error = simplify_error(result["error_text"])
+            if not simplified_error:
+                success_count += 1
+                continue
 
-        errorDistribution[simplified_error] += 1
-        error_count += 1
+            errorDistribution[simplified_error] += 1
+            error_count += 1
 
     errorDistribution["success"] = success_count
 
@@ -96,13 +97,14 @@ def _get_error_overview(entries, args):
         llm_data = entry.results.llm_load_test_output
         success_count = 0
 
-        for result in entry.results.llm_load_test_output["results"]:
-            simplified_error = simplify_error(result["error_text"])
-            if not simplified_error:
-                success_count += 1
-                continue
+        if entry.results.llm_load_test_output:
+            for result in entry.results.llm_load_test_output["results"]:
+                simplified_error = simplify_error(result["error_text"])
+                if not simplified_error:
+                    success_count += 1
+                    continue
 
-            errorDistribution[simplified_error] += 1
+                errorDistribution[simplified_error] += 1
 
         errorDistribution[entry.get_name(variables)] = success_count
 

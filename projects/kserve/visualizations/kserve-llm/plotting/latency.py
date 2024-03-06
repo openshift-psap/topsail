@@ -174,7 +174,7 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
         has_multiple_modes = False
 
     for entry in entries:
-
+        if not entry.results.llm_load_test_output: continue
         for result in entry.results.llm_load_test_output["results"]:
 
             if only_errors and not result["error_code"]:
