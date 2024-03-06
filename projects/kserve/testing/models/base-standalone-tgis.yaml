@@ -8,6 +8,7 @@ serving_runtime:
       TRANSFORMERS_CACHE: "/tmp/transformers_cache"
       MAX_BATCH_SIZE: 96
       MAX_CONCURRENT_REQUESTS: 128
+      MAX_NEW_TOKENS: 4096
   transformer:
     resource_request:
       cpu: 0

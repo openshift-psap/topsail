@@ -7,6 +7,7 @@ serving_runtime:
     extra_env:
       DEPLOYMENT_FRAMEWORK: "tgis_native"
       FLASH_ATTENTION: "true"
+      MAX_SEQUENCE_LENGTH: 4096
       NUM_GPUS: 4
       RAYON_NUM_THREADS: "32" # Would otherwise be calculated based on shards*num_cpus
 inference_service:

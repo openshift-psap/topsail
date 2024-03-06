@@ -7,5 +7,6 @@ serving_runtime:
     extra_env:
       DEPLOYMENT_FRAMEWORK: "tgis_native"
       FLASH_ATTENTION: "true"
+      MAX_SEQUENCE_LENGTH: 4096
 inference_service:
   storage_uri: "s3://psap-hf-models/ELYZA-japanese-Llama-2-7b-instruct/ELYZA-japanese-Llama-2-7b-instruct"
