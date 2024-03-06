@@ -1,4 +1,11 @@
 ---
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
 - name: Check that cluster_deploy_nginx_server_namespace is defined
   fail: msg="Bailing out. This role requires 'cluster_deploy_nginx_server_namespace'"
   when: not cluster_deploy_nginx_server_namespace
@@ -74,6 +81,15 @@
   command:
     oc expose svc/nginx --port=http
        -n "{{ cluster_deploy_nginx_server_namespace }}"
+
+- name: Capture HTTPS Route Config 
+  shell:
+    set -o pipefail;
+    oc create route passthrough nginx-secure
+       --service=nginx --port=https
+       -n "{{ cluster_deploy_nginx_server_namespace }}"
+       --dry-run=client -oyaml
+      | tee "{{ artifact_extra_logs_dir }}/src/route_nginx-secure.yaml"
 
 - name: Create the nginx HTTPS route
   shell:
