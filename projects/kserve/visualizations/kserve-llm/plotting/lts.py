@@ -40,6 +40,8 @@ def generateTimePerOutputTokenStats(time_per_output_token):
 def generateLtsData(entries, _variables):
     data = []
     for entry in entries:
+        if not entry.results.llm_load_test_output: continue
+
         datum = dict(name=entry.get_name(_variables),)
 
         datum["throughput"] = entry.results.lts.results.throughput
