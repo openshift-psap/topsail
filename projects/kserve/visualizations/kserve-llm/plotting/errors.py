@@ -143,7 +143,7 @@ def generateFinishReasonData(entries, variables):
             if result["error_code"] is not None:
                 reason = "ERROR"
             else:
-                reason = result.get("finishReason")
+                reason = result.get("stop_reason")
                 if reason is None: continue
 
             finishReasons[reason] += 1
