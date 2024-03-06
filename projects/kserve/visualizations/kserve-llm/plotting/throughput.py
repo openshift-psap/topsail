@@ -21,7 +21,7 @@ from . import error_report, report
 def register():
     Throughput()
 
-def generateThroughputData(entries, _variables, ordered_vars):
+def generateThroughputData(entries, _variables, ordered_vars, model_name=None):
     data = []
 
     if "mode" in _variables:
@@ -36,6 +36,9 @@ def generateThroughputData(entries, _variables, ordered_vars):
     for entry in entries:
         llm_data = entry.results.llm_load_test_output
         generatedTokens = 0
+
+        if model_name and entry.settings.__dict__.get("model_name") != model_name:
+            continue
 
         datum = {}
         datum["model_name"] = (f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")).removesuffix("<br>")
@@ -85,11 +88,12 @@ class Throughput():
 
         cfg__entry = cfg.get("entry", None)
         cfg__by_model = cfg.get("by_model", False)
+        cfg__model_name = cfg.get("model_name", False)
 
         entries = [cfg__entry] if cfg__entry else \
             common.Matrix.all_records(settings, setting_lists)
 
-        df = pd.DataFrame(generateThroughputData(entries, variables, ordered_vars))
+        df = pd.DataFrame(generateThroughputData(entries, variables, ordered_vars, cfg__model_name))
 
         if df.empty:
             return None, "Not data available ..."
@@ -142,6 +146,8 @@ class Throughput():
         vus = ", ".join(map(str, sorted(df["vusers"].unique())))
         subtitle = f"<br>for {vus} users"
 
+        if cfg__model_name:
+            subtitle += f" ({cfg__model_name})"
         # ❯ or ❮
         fig.update_layout(title=f"Throughput and Time Per Output Token{subtitle}", title_x=0.5,)
         if cfg__entry:
