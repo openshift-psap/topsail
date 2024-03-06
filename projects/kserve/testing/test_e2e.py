@@ -175,7 +175,9 @@ def test_models_longevity():
             multi_model_test_concurrently(expe_name)
 
             if i != repeat-1:
+                logging.info(f"Sleeping for {delay} seconds after test #{i}...")
                 time.sleep(delay)
+                logging.info(f"Slept for {delay} seconds after test #{i}...")
 
 
 def multi_model_deploy_and_test():
