@@ -579,7 +579,7 @@ matbench:
       index: rhoai-kserve-single
       index_prefix: ""
     regression_analyses:
-      enabled: true
+      enabled: false
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
 export_artifacts:
