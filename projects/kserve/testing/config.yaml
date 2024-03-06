@@ -235,13 +235,17 @@ ci_presets:
   # multi-model
 
   watsonx_multi_model_gating:
-    extends: [gating, 5min, e2e_gpu, e2e_multi, tgis, raw]
+    extends: [gating, 5min, e2e_gpu, e2e_multi, tgis, raw, use_intlab_minio]
     matbench.lts.horreum.test_name: RHOAI-watsonx-multi
     matbench.lts.opensearch.index: rhoai-watsonx-multi
+    tests.e2e.limits_equals_requests: false
+    tests.e2e.llm_load_test.concurrency: 16
     tests.e2e.models:
-    - watsonx-starcoder
-    - watsonx-mt0-xxl
-    - watsonx-japanese-Llama-2-7b-instruct
+    - watsonx-mpt-7b-instruct2
+    - watsonx-mpt-7b-instruct2
+    - watsonx-japanese-llama-2-7b-instruct
+    - watsonx-llama-2-13b-chat-hf
+    - watsonx-llama-2-13b-chat-hf
     - watsonx-flan-t5-xl-1:
         name: watsonx-flan-t5-xl
         namespace: watsonx-e2e-flan-grouped
@@ -253,12 +257,10 @@ ci_presets:
         serving_runtime:
           name: watsonx-flan-grouped
     - watsonx-flan-t5-xxl:
-        name: watsonx-flan-t5-xl
+        name: watsonx-flan-t5-xxl
         namespace: watsonx-e2e-flan-grouped
         serving_runtime:
           name: watsonx-flan-grouped
-    - watsonx-llama-2-13b-chat-hf
-    - watsonx-llama-2-13b-chat-hf
 
   watsonx_multi_model_gating_light:
     extends: [watsonx_multi_model_gating, gating_rehearsal, 3min, no_gpu]
