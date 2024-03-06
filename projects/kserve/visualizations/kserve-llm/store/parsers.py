@@ -297,7 +297,7 @@ def _parse_predictor_logs(dirname):
     predictor_logs.distribution = defaultdict(int)
     predictor_logs.line_count = 0
 
-    for log_file in kserve_capture_state_dir.glob("logs/*.log"):
+    for log_file in (dirname / kserve_capture_state_dir).glob("logs/*.log"):
 
         for line in open(log_file).readlines():
             predictor_logs.line_count += 1
