@@ -27,6 +27,9 @@ llm_load_test_run_model_id: not-used
 # Path where llm-load-test has been cloned
 llm_load_test_run_llm_path: /src/llm-load-test/
 
+# Whether to stream the llm-load-test requests
+llm_load_test_run_streaming: true
+
 # Number of concurrent simulated users sending requests
 llm_load_test_run_concurrency: 16
 
