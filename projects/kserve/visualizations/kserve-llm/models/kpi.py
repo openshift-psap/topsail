@@ -21,7 +21,7 @@ def kserve_llm_load_test_tpot(lts_payload):
 
 @matbench_models.KPIMetadata(help="Number of failures reported in TPOT", unit="int")
 def kserve_llm_load_test_tpot_failures(lts_payload):
-    return sum([1 if v == None else 0 for v in lts_payload.results.time_per_output_token.values])
+    return sum(1 for v in lts_payload.results.time_per_output_token.values if v)
 
 @matbench_models.KPIMetadata(help="Min time per output token", unit="ms/token")
 def kserve_llm_load_test_tpot_min(lts_payload):
@@ -64,7 +64,7 @@ def kserve_llm_load_test_ttft(lts_payload):
 
 @matbench_models.KPIMetadata(help="Number of failures reported in TTFT", unit="int")
 def kserve_llm_load_test_ttft_failures(lts_payload):
-    return sum([1 if v == None else 0 for v in lts_payload.results.time_to_first_token.values])
+    return sum(1 for v in lts_payload.results.time_to_first_token.values if v)
 
 @matbench_models.KPIMetadata(help="Min time to first token", unit="ms")
 def kserve_llm_load_test_ttft_min(lts_payload):
