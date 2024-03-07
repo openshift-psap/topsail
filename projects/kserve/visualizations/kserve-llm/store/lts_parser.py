@@ -30,7 +30,7 @@ def _generate_time_per_output_token(results):
     if not results.llm_load_test_output: return None
 
     tpot = dict(results.llm_load_test_output["summary"]["tpot"])
-    tpot["values"] = [x["tpot"] for x in results.llm_load_test_output["results"]]
+    tpot["values"] = [x["tpot"] for x in results.llm_load_test_output["results"] if x["tpot"]]
     return types.SimpleNamespace(**tpot)
 
 
@@ -38,9 +38,13 @@ def _generate_time_to_first_token(results):
     if not results.llm_load_test_output: return None
 
     ttft = dict(results.llm_load_test_output["summary"]["ttft"])
-    ttft["values"] = [x["ttft"] for x in results.llm_load_test_output["results"]]
+    ttft["values"] = [x["ttft"] for x in results.llm_load_test_output["results"] if x["ttft"]]
     return types.SimpleNamespace(**ttft)
 
+def _generate_failures(results):
+    if not results.llm_load_test_output: return None
+
+    return results.llm_load_test_output["summary"]["total_failures"]
 
 def generate_lts_settings(lts_metadata, results, import_settings):
     gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu])
@@ -117,6 +121,9 @@ def generate_lts_results(results):
         results_lts.model_load_duration = results.predictor_pod.load_time.total_seconds()
     else:
         logging.error("Cannot set lts.results.model_load_duration: Predictor pod load time missing.")
+
+    # Number of failures
+    results_lts.failures = _generate_failures(results)
 
     return results_lts
 

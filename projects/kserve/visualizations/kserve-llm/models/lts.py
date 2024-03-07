@@ -40,7 +40,6 @@ class LlmLoadTestStats(matbench_models.ExclusiveModel):
     percentile_95: float
     percentile_99: float
 
-
 class Metadata(matbench_models.Metadata):
     settings: Settings
     presets: List[str]
@@ -58,6 +57,7 @@ class Results(matbench_models.ExclusiveModel):
     time_per_output_token: LlmLoadTestStats
     time_to_first_token: Optional[LlmLoadTestStats]
     model_load_duration: Optional[float]
+    failures: int
 
 class KServeLLMPerformanceKPI(matbench_models.KPI, Settings): pass
 

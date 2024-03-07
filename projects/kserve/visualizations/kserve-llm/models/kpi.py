@@ -96,4 +96,6 @@ def kserve_llm_load_test_ttft_p99(lts_payload):
 def kserve_llm_load_test_model_load_duration(lts_payload):
     return lts_payload.results.model_load_duration
 
-
+@matbench_models.KPIMetadata(help="Number of failure responses", unit="int")
+def kserve_llm_load_test_failures(lts_payload):
+    return lts_payload.results.failures
