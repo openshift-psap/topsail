@@ -19,6 +19,9 @@ class Llm_Load_Test:
             model_id="not-used",
             llm_path="/src/llm-load-test/",
             concurrency=16,
+            max_input_tokens=1024,
+            max_output_tokens=512,
+            max_sequence_tokens=1536
             ):
         """
         Load test the wisdom model
@@ -33,6 +36,9 @@ class Llm_Load_Test:
           model_id: The ID of the model to pass along with the GRPC call
           llm_path: Path where llm-load-test has been cloned
           concurrency: Number of concurrent simulated users sending requests
+          max_input_tokens: max input tokens in llm load test to filter the dataset
+          max_sequence_tokens: max sequence tokens in llm load test to filter the dataset
+          max_output_tokens: max output tokens in llm load test to filter the dataset
         """
 
         return RunAnsibleRole(locals())

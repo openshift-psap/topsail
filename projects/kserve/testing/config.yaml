@@ -127,13 +127,13 @@ ci_presets:
     prepare.enabled: false
     prepare.cleanup.enabled: false
 
-  gating_concurrency:
+  gating_concurrency_heavy:
     tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.concurrency: [1, 2, 16, 32, 64, 96]
+    tests.e2e.llm_load_test.concurrency: [64, 96, 128]
 
   gating_concurrency_light:
     tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.concurrency: [8, 16, 32]
+    tests.e2e.llm_load_test.concurrency: [1, 2, 4, 8, 16, 32]
 
   # ---
 
@@ -199,12 +199,23 @@ ci_presets:
   # single-model
 
   watsonx_single_model_gating_light:
-    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio]
+    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio, gating_concurrency_light]
     tests.e2e.models:
     - watsonx-japanese-llama-2-7b-instruct
     - watsonx-flan-t5-xl
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-light
+
+  watsonx_single_model_gating_heavy:
+    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio, gating_concurrency_heavy]
+    tests.e2e.models:
+      - watsonx-codellama-34b-instruct-hf
+      - watsonx-llama-2-70b-chat-hf
+    tests.e2e.llm_load_test.max_input_tokens: 3500
+    tests.e2e.llm_load_test.max_output_tokens: 800
+    tests.e2e.llm_load_test.max_sequence_tokens: 3500
+    matbench.lts.horreum.test_name: null
+    matbench.lts.opensearch.index: rhoai-kserve-single-heavy
 
   watsonx_single_model_gating:
     extends: [e2e_perf, gating, 3min, metal, tgis, raw, use_intlab_minio]
@@ -559,6 +570,7 @@ tests:
       concurrency: 16
       plugin: caikit_client_plugin
       interface: grpc
+      streaming: true
     longevity:
       repeat: 2
       delay: 30 # seconds

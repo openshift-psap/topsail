@@ -9,9 +9,9 @@ dataset:
   file: "datasets/openorca_large_subset_011.jsonl"
   max_queries: 3000
   min_input_tokens: 0
-  max_input_tokens: 1024
-  max_output_tokens: 512
-  max_sequence_tokens: 2048
+  max_input_tokens: {{ llm_load_test_run_max_input_tokens }}
+  max_output_tokens: {{ llm_load_test_run_max_output_tokens }}
+  max_sequence_tokens: {{ llm_load_test_run_max_sequence_tokens }}
 load_options:
   type: constant #Future options: loadgen, stair-step
   concurrency: {{ llm_load_test_run_concurrency }}
