@@ -571,6 +571,9 @@ tests:
       plugin: caikit_client_plugin
       interface: grpc
       streaming: true
+      max_input_tokens: 1024
+      max_output_tokens: 512
+      max_sequence_tokens: 1536
     longevity:
       repeat: 2
       delay: 30 # seconds
