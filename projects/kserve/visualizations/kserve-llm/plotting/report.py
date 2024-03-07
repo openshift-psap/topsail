@@ -139,7 +139,7 @@ class ThroughputReport():
         header = []
         header += [html.H1("llm-load-test Thoughput")]
 
-        header += Plot_and_Text(f"Throughput", set_config(dict(by_model=True), args))
+        header += Plot_and_Text(f"Throughput", set_config(dict(bar_plot=True), args))
         header += html.Br()
         header += html.Br()
 
@@ -151,6 +151,7 @@ class ThroughputReport():
         for model_name in variables.get("model_name", []):
             header += [html.H1(f"Thoughput of model {model_name}")]
 
+            header += Plot_and_Text(f"Throughput", set_config(dict(bar_plot=True, model_name=model_name), args))
             header += Plot_and_Text(f"Throughput", set_config(dict(model_name=model_name), args))
             header += html.Br()
             header += html.Br()
