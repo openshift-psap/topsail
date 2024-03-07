@@ -133,6 +133,26 @@ class SuccessCountDistribution():
 # ---
 
 def generateFinishReasonData(entries, variables):
+    # https://github.com/IBM/text-generation-inference/blob/88f2a0b858b9f080f42cde388c4ebec961b9fa7d/proto/generation.proto#L155-L172
+    STOP_REASONS = {
+        # Possibly more tokens to be streamed
+        0: "NOT_FINISHED",
+        # Maximum requested tokens reached
+        1: "MAX_TOKENS",
+        # End-of-sequence token encountered
+        2: "EOS_TOKEN",
+        # Request cancelled by client
+        3: "CANCELLED",
+        # Time limit reached
+        4: "TIME_LIMIT",
+        # Stop sequence encountered
+        5: "STOP_SEQUENCE",
+        # Total token limit reached
+        6: "TOKEN_LIMIT",
+        # Decoding error
+        7: "ERROR",
+    }
+
     data = []
 
     for entry in entries:
@@ -140,11 +160,14 @@ def generateFinishReasonData(entries, variables):
 
         finishReasons = defaultdict(int)
         for result in entry.results.llm_load_test_output["results"]:
+            reason = result.get("stop_reason")
             if result["error_code"] is not None:
-                reason = "ERROR"
+                reason = error_report.simplify_error(result["error_text"])
+
+            #elif reason == 1: # MAX_TOKENS: good, ignore
+            #    continue
             else:
-                reason = result.get("stop_reason")
-                if reason is None: continue
+                reason = STOP_REASONS[reason]
 
             finishReasons[reason] += 1
 
