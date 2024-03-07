@@ -186,11 +186,15 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
 
             datum["timestamp"] = datetime.datetime.fromtimestamp(result["start_time"])
 
-            generatedTokens = result["output_tokens"]
+            generatedTokens = result["output_tokens"] or 0
+
             datum["tokens"] = generatedTokens
 
-            datum["latency"] = result["response_time"]
-            datum["latencyPerToken"] = datum["latency"] / generatedTokens # in ms/token
+            datum["latency"] = result["response_time"] if generatedTokens else 0
+
+
+            datum["latencyPerToken"] = datum["latency"] / generatedTokens \
+                if generatedTokens else 0
 
             datum["model_name"] = (f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")).removesuffix("<br>")
 
@@ -200,7 +204,7 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
             if collapse_index:
                 datum["test_name"] = entry.get_name(v for v in variables if v != "index").replace(", ", "<br>")
             elif test_name_by_error:
-                simplified_error = datum["test_name"] = error_report.simplify_error(detail.get("error"))
+                simplified_error = datum["test_name"] = error_report.simplify_error(result.get("error_text"))
                 if not simplified_error: continue
 
             elif result["error_code"]:

@@ -39,10 +39,10 @@ def generateErrorHistogramData(entries, variables):
             if not simplified_error:
                 continue
 
-            if error_report.simplify_error(descr) in (CLOSING_CX, CLOSED_CX, None):
+            if simplified_error in (CLOSING_CX, CLOSED_CX, None):
                 continue # ignore these errors from the top chart, they're well known
 
-            errorDistribution[simplified_error] += count
+            errorDistribution[simplified_error] += 1
 
 
         for descr, count in errorDistribution.items():
