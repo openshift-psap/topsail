@@ -36,6 +36,9 @@ def simplify_error(error):
     if not error:
         return error
 
+    if "CUDA out of memory" in error:
+        return "CUDA out of memory"
+
     if (partition := error.partition("read tcp"))[1]:
         simplify = partition[0]
         simplify += "read tcp: "
@@ -73,7 +76,7 @@ def _get_test_details(entry, args):
 
     errorDistribution["success"] = success_count
 
-    header += report.Plot_and_Text(f"Latency details", report.set_config(dict(show_errors=True, entry=entry), args))
+    header += report.Plot_and_Text(f"Latency details", report.set_config(dict(only_errors=True, entry=entry), args))
     header += [html.I("Click on the graph to see the error labels in the interactive view.")]
     header += [html.Br(), html.Br()]
     header += ["Number of successful calls and error count:"]
