@@ -30,7 +30,7 @@ def _generate_time_per_output_token(results):
     if not results.llm_load_test_output: return None
 
     tpot = dict(results.llm_load_test_output["summary"]["tpot"])
-    tpot["values"] = [x["tpot"] for x in results.llm_load_test_output["results"]]
+    tpot["values"] = [x["tpot"] for x in results.llm_load_test_output["results"] if x["tpot"]]
     return types.SimpleNamespace(**tpot)
 
 
@@ -38,7 +38,7 @@ def _generate_time_to_first_token(results):
     if not results.llm_load_test_output: return None
 
     ttft = dict(results.llm_load_test_output["summary"]["ttft"])
-    ttft["values"] = [x["ttft"] for x in results.llm_load_test_output["results"]]
+    ttft["values"] = [x["ttft"] for x in results.llm_load_test_output["results"] if x["ttft"]]
     return types.SimpleNamespace(**ttft)
 
 def _generate_failures(results):
@@ -123,7 +123,7 @@ def generate_lts_results(results):
         logging.error("Cannot set lts.results.model_load_duration: Predictor pod load time missing.")
 
     # Number of failures
-    results_lts.failures = _generate_failures()
+    results_lts.failures = _generate_failures(results)
 
     return results_lts
 
