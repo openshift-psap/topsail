@@ -33,6 +33,13 @@ def _generate_time_per_output_token(results):
     tpot["values"] = [x["tpot"] for x in results.llm_load_test_output["results"] if x["tpot"]]
     return types.SimpleNamespace(**tpot)
 
+def _generate_inter_token_latency(results):
+    if not results.llm_load_test_output: return None
+
+    itl = dict(results.llm_load_test_output["summary"]["itl"])
+    itl["values"] = [x["itl"] for x in results.llm_load_test_output["results"] if x["itl"]]
+    return types.SimpleNamespace(**itl)
+
 
 def _generate_time_to_first_token(results):
     if not results.llm_load_test_output: return None
@@ -45,6 +52,9 @@ def _generate_failures(results):
     if not results.llm_load_test_output: return None
 
     return results.llm_load_test_output["summary"]["total_failures"]
+
+def _is_streaming(results):
+    return "ttft" in results.llm_load_test_output["summary"]
 
 def generate_lts_settings(lts_metadata, results, import_settings):
     gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu])
@@ -106,15 +116,19 @@ def generate_lts_metadata(results, import_settings):
 
 def generate_lts_results(results):
     results_lts = types.SimpleNamespace()
-    # Throughout value (scalar, in token/ms)
 
+    # Throughout value (scalar, in token/ms)
     results_lts.throughput = _generate_throughput(results)
 
     # Time Per Output Token value
     results_lts.time_per_output_token = _generate_time_per_output_token(results)
 
-    # Time To First Token values for all of the calls (vector)
-    results_lts.time_to_first_token = _generate_time_to_first_token(results)
+    if _is_streaming(results):
+        # Inter Token Latency (ms)
+        results_lts.inter_token_latency = _generate_inter_token_latency(results)
+
+        # Time To First Token values for all of the calls (vector)
+        results_lts.time_to_first_token = _generate_time_to_first_token(results)
 
     # Model Load Duration (scalar, in seconds)
     if results.predictor_pod and results.predictor_pod.load_time:

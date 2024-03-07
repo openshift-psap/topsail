@@ -51,6 +51,43 @@ def kserve_llm_load_test_tpot_p95(lts_payload):
 def kserve_llm_load_test_tpot_p99(lts_payload):
     return lts_payload.results.time_per_output_token.percentile_99
 
+# Inter token latency
+
+@matbench_models.KPIMetadata(help="All values of inter token latency", unit="List[ms]")
+def kserve_llm_load_test_itl(lts_payload):
+    return lts_payload.results.inter_token_latency.values if hasattr(lts_payload.results, "inter_token_latency") else []
+
+@matbench_models.KPIMetadata(help="Min inter token latency", unit="ms")
+def kserve_llm_load_test_itl_min(lts_payload):
+    return lts_payload.results.inter_token_latency.min if hasattr(lts_payload.results, "inter_token_latency") else 0
+
+@matbench_models.KPIMetadata(help="Max inter token latency", unit="ms")
+def kserve_llm_load_test_itl_max(lts_payload):
+    return lts_payload.results.inter_token_latency.max if hasattr(lts_payload.results, "inter_token_latency") else 0
+
+@matbench_models.KPIMetadata(help="Median inter token latency", unit="ms")
+def kserve_llm_load_test_itl_median(lts_payload):
+    return lts_payload.results.inter_token_latency.median if hasattr(lts_payload.results, "inter_token_latency") else 0
+
+@matbench_models.KPIMetadata(help="Mean inter token latency", unit="ms")
+def kserve_llm_load_test_itl_mean(lts_payload):
+    return lts_payload.results.inter_token_latency.mean if hasattr(lts_payload.results, "inter_token_latency") else 0
+
+@matbench_models.KPIMetadata(help="80th Percentile inter token latency", unit="ms")
+def kserve_llm_load_test_itl_p80(lts_payload):
+    return lts_payload.results.inter_token_latency.percentile_80 if hasattr(lts_payload.results, "inter_token_latency") else 0
+
+@matbench_models.KPIMetadata(help="90th Percentile inter token latency", unit="ms")
+def kserve_llm_load_test_itl_p90(lts_payload):
+    return lts_payload.results.inter_token_latency.percentile_90 if hasattr(lts_payload.results, "inter_token_latency") else 0
+
+@matbench_models.KPIMetadata(help="95th Percentile inter token latency", unit="ms")
+def kserve_llm_load_test_itl_p95(lts_payload):
+    return lts_payload.results.inter_token_latency.percentile_95 if hasattr(lts_payload.results, "inter_token_latency") else 0
+
+@matbench_models.KPIMetadata(help="99th Percentile inter token latency", unit="ms")
+def kserve_llm_load_test_itl_p99(lts_payload):
+    return lts_payload.results.inter_token_latency.percentile_99 if hasattr(lts_payload.results, "inter_token_latency") else 0
 
 # Time to first token
 

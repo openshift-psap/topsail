@@ -55,6 +55,7 @@ class Metadata(matbench_models.Metadata):
 class Results(matbench_models.ExclusiveModel):
     throughput: float
     time_per_output_token: LlmLoadTestStats
+    inter_token_latency: Optional[LlmLoadTestStats]
     time_to_first_token: Optional[LlmLoadTestStats]
     model_load_duration: Optional[float]
     failures: int
