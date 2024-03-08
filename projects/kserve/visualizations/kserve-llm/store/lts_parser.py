@@ -123,7 +123,12 @@ def generate_lts_results(results):
     # Time Per Output Token value
     results_lts.time_per_output_token = _generate_time_per_output_token(results)
 
-    if _is_streaming(results):
+    results_lts.streaming = _is_streaming(results)
+
+    results_lts.inter_token_latency = None
+    results_lts.time_to_first_token = None
+
+    if results_lts.streaming:
         # Inter Token Latency (ms)
         results_lts.inter_token_latency = _generate_inter_token_latency(results)
 

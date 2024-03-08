@@ -53,6 +53,7 @@ class Metadata(matbench_models.Metadata):
     urls: Optional[dict[str, str]]
 
 class Results(matbench_models.ExclusiveModel):
+    streaming: bool
     throughput: float
     time_per_output_token: LlmLoadTestStats
     inter_token_latency: Optional[LlmLoadTestStats]
