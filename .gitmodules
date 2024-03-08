@@ -1,7 +1,3 @@
 [submodule "subprojects/matrix-benchmarking"]
 	path = subprojects/matrix-benchmarking
 	url = https://github.com/openshift-psap/matrix-benchmarking
-[submodule "subprojects/llm-load-test"]
-	path = projects/llm_load_test/llm-load-test
-	url = https://github.com/openshift-psap/llm-load-test
-	branch = main
