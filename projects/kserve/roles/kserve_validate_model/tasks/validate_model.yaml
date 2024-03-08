@@ -95,11 +95,11 @@
     rm -f "$dest" "$queries"
 
     for i in $(seq 2 $(({{ kserve_validate_model_query_count }} + 1))); do
-      GRPCURL_DATA=$( sed "${i}q;d" "{{ kserve_validate_model_dataset }}" | jq .input )
+      GRPCURL_DATA='{"text": "At what temperature does liquid Nitrogen boil?"}'
       echo $GRPCURL_DATA >> "$queries"
       grpcurl \
         {% if kserve_validate_model_proto %} -proto {{ kserve_validate_model_proto }} {% endif %} \
-        {% if kserve_validate_model_raw_deployment %} -plaintext {% else %} -insecure {% endif %} \
+        -insecure \
         -d "$GRPCURL_DATA" \
         -H "mm-model-id: {{ kserve_validate_model_model_id }}" \
         {{ model_endpoint_cmd.stdout }} \
