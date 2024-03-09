@@ -628,7 +628,11 @@ def test_consolidated_model(consolidated_model, namespace=None):
         interface=llm_config["interface"],
         model_id=model_name,
         llm_path=llm_config["src_path"],
-        concurrency=llm_config["concurrency"]
+        streaming=llm_config["streaming"],
+        concurrency=llm_config["concurrency"],
+        max_input_tokens=llm_config["max_input_tokens"],
+        max_output_tokens=llm_config["max_output_tokens"],
+        max_sequence_tokens=llm_config["max_sequence_tokens"],
     )
 
     if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
