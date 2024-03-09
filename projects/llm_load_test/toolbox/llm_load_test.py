@@ -17,7 +17,7 @@ class Llm_Load_Test:
             plugin="tgis_grpc_plugin",
             interface="grpc",
             model_id="not-used",
-            llm_path="/src/llm-load-test/",
+            src_path="projects/llm_load_test/subprojects/llm-load-test/",
             streaming=True,
             concurrency=16,
             max_input_tokens=1024,
@@ -35,7 +35,7 @@ class Llm_Load_Test:
           plugin: the llm-load-test plugin to use (tgis_grpc_plugin or caikit_client_plugin for now)
           interface: (http or grpc) the interface to use for llm-load-test-plugins that support both
           model_id: The ID of the model to pass along with the GRPC call
-          llm_path: Path where llm-load-test has been cloned
+          src_path: Path where llm-load-test has been cloned
           streaming: Whether to stream the llm-load-test requests
           concurrency: Number of concurrent simulated users sending requests
           max_input_tokens: max input tokens in llm load test to filter the dataset
