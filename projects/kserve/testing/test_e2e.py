@@ -316,7 +316,6 @@ def validate_model(namespace, model_name):
         namespace=namespace,
         inference_service_names=[model_name],
         method=config.ci_artifacts.get_config("kserve.inference_service.validation.method"),
-        dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
         query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
         raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
     )

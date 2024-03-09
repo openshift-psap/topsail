@@ -151,6 +151,8 @@ def generateFinishReasonData(entries, variables):
         6: "TOKEN_LIMIT",
         # Decoding error
         7: "ERROR",
+        # Stop reason is not reported
+        None: "NOT_REPORTED"
     }
 
     data = []

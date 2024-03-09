@@ -97,7 +97,6 @@ class Kserve:
     def validate_model(self,
                        inference_service_names,
                        method,
-                       dataset,
                        query_count,
                        model_id="not-used",
                        namespace="",
@@ -114,7 +113,6 @@ class Kserve:
           inference_service_names: a list of names of the inference service to validate
           method: the gRPC method to call
           model_id: the model-id to pass to the inference service
-          dataset: path to the dataset to use for the query
           query_count: number of query to perform
           namespace: the namespace in which the Serving stack was deployed. If empty, use the current project.
           raw_deployment: if True, do not try to configure anything related to Serverless. Works only in-cluster at the moment.
