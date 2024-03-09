@@ -22,7 +22,7 @@ class Llm_Load_Test:
             concurrency=16,
             max_input_tokens=1024,
             max_output_tokens=512,
-            max_sequence_tokens=1536
+            max_sequence_tokens=1536,
             ):
         """
         Load test the wisdom model
