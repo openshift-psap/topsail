@@ -54,7 +54,8 @@ def _generate_failures(results):
     return results.llm_load_test_output["summary"]["total_failures"]
 
 def _is_streaming(results):
-    return "ttft" in results.llm_load_test_output["summary"]
+    return results.test_config.get("tests.e2e.llm_load_test.args.streaming")
+
 
 def generate_lts_settings(lts_metadata, results, import_settings):
     gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu])
@@ -72,8 +73,8 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.runtime_image = results.test_config.get("kserve.model.serving_runtime.kserve.image").split(":")[1]
     lts_settings.min_pod_replicas = results.inference_service.min_replicas
     lts_settings.max_pod_replicas = results.inference_service.max_replicas
-    lts_settings.virtual_users = results.test_config.get("tests.e2e.llm_load_test.concurrency")
-    lts_settings.test_duration = results.test_config.get("tests.e2e.llm_load_test.duration")
+    lts_settings.virtual_users = results.test_config.get("tests.e2e.llm_load_test.args.concurrency")
+    lts_settings.test_duration = results.test_config.get("tests.e2e.llm_load_test.args.duration")
     lts_settings.dataset_name = pathlib.Path(results.llm_load_test_config.get("dataset.file")).name
     lts_settings.test_mode = import_settings.get("mode") or None
     lts_settings.ci_engine = results.from_env.test.ci_engine
