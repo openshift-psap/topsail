@@ -39,6 +39,7 @@ spec:
 {% if kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] %}
         nvidia.com/gpu: "{{ kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] }}"
 {% endif %}
+{% if kserve_deploy_model_limits_equals_requests or kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] %}
       limits:
 {% if kserve_deploy_model_limits_equals_requests %}
         cpu: "{{ kserve_deploy_model_sr_kserve_resource_request.cpu }}"
@@ -46,6 +47,7 @@ spec:
 {% endif %}
 {% if kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] %}
         nvidia.com/gpu: "{{ kserve_deploy_model_sr_kserve_resource_request['nvidia.com/gpu'] }}"
+{% endif %}
 {% endif %}
     volumeMounts:
     - mountPath: /shared_model_storage/transformers_cache
@@ -77,8 +79,8 @@ spec:
       requests:
         cpu: "{{ kserve_deploy_model_sr_transformer_resource_request.cpu }}"
         memory: "{{ kserve_deploy_model_sr_transformer_resource_request.memory }}Gi"
-      limits:
 {% if kserve_deploy_model_limits_equals_requests %}
+      limits:
         cpu: "{{ kserve_deploy_model_sr_transformer_resource_request.cpu }}"
         memory: "{{ kserve_deploy_model_sr_transformer_resource_request.memory }}Gi"
 {% endif %}
