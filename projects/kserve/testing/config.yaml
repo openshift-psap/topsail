@@ -104,7 +104,6 @@ ci_presets:
     kserve.inference_service.validation.method: fmaas.GenerationService/Generate
     kserve.inference_service.validation.proto: projects/kserve/testing/protos/tgis_generation.proto
     tests.e2e.llm_load_test.plugin: tgis_grpc_plugin
-    tests.e2e.limits_equals_requests: false
 
   quick_raw:
     extends: [raw, no_gpu, tgis]
@@ -546,7 +545,7 @@ tests:
     - flan-t5-small-gpu
     - flan-t5-small-gpu
     consolidated_models: {} # will be filled at runtime
-    limits_equals_requests: true
+    limits_equals_requests: false
     delete_others: true
     validate_model: true
     capture_state: true
