@@ -23,6 +23,7 @@ class Settings(matbench_models.ExclusiveModel):
     test_duration: int
     dataset_name: str
     test_mode: str
+    streaming: bool
 
     ci_engine: str
     run_id: str

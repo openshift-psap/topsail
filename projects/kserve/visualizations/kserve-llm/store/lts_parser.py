@@ -80,6 +80,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.run_id = results.from_env.test.run_id
     lts_settings.test_path = results.from_env.test.test_path
     lts_settings.urls = results.from_env.test.urls
+    lts_settings.streaming = _is_streaming(results)
 
     return lts_settings
 
