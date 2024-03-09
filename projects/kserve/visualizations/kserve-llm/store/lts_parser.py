@@ -48,10 +48,12 @@ def _generate_time_to_first_token(results):
     ttft["values"] = [x["ttft"] for x in results.llm_load_test_output["results"] if x["ttft"]]
     return types.SimpleNamespace(**ttft)
 
+
 def _generate_failures(results):
     if not results.llm_load_test_output: return None
 
     return results.llm_load_test_output["summary"]["total_failures"]
+
 
 def _is_streaming(results):
     return results.test_config.get("tests.e2e.llm_load_test.args.streaming")
@@ -127,15 +129,15 @@ def generate_lts_results(results):
 
     results_lts.streaming = _is_streaming(results)
 
-    results_lts.inter_token_latency = None
-    results_lts.time_to_first_token = None
-
     if results_lts.streaming:
         # Inter Token Latency (ms)
         results_lts.inter_token_latency = _generate_inter_token_latency(results)
 
         # Time To First Token values for all of the calls (vector)
         results_lts.time_to_first_token = _generate_time_to_first_token(results)
+    else:
+        results_lts.inter_token_latency = None
+        results_lts.time_to_first_token = None
 
     # Model Load Duration (scalar, in seconds)
     if results.predictor_pod and results.predictor_pod.load_time:
