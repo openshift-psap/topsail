@@ -11,10 +11,6 @@ kserve_validate_model_inference_service_names:
 # Mandatory value
 kserve_validate_model_method:
 
-# path to the dataset to use for the query
-# Mandatory value
-kserve_validate_model_dataset:
-
 # number of query to perform
 # Mandatory value
 kserve_validate_model_query_count:
