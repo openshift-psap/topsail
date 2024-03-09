@@ -23,6 +23,7 @@ class Settings(matbench_models.ExclusiveModel):
     test_duration: int
     dataset_name: str
     test_mode: str
+    streaming: bool
 
     ci_engine: str
     run_id: str
@@ -53,8 +54,10 @@ class Metadata(matbench_models.Metadata):
     urls: Optional[dict[str, str]]
 
 class Results(matbench_models.ExclusiveModel):
+    streaming: bool
     throughput: float
     time_per_output_token: LlmLoadTestStats
+    inter_token_latency: Optional[LlmLoadTestStats]
     time_to_first_token: Optional[LlmLoadTestStats]
     model_load_duration: Optional[float]
     failures: int
