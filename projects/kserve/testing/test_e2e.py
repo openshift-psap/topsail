@@ -570,7 +570,7 @@ def run_one_matbench():
 
         llm_load_test_cfg = (test_config | settings)
 
-        config.ci_artifacts.set_config("tests.e2e.llm_load_test.concurrency",
+        config.ci_artifacts.set_config("tests.e2e.llm_load_test.args.concurrency",
                                        llm_load_test_cfg["concurrency"])
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
@@ -618,21 +618,14 @@ def test_consolidated_model(consolidated_model, namespace=None):
             raise RuntimeError(f"Failed to get the hostname for InferenceService {namespace}/{model_name}")
         port = 443
 
-    llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
+    llm_load_test_args = config.ci_artifacts.get_config("tests.e2e.llm_load_test.args")
 
     args_dict = dict(
         host=host,
         port=port,
-        duration=llm_config["duration"],
-        plugin=llm_config["plugin"],
-        interface=llm_config["interface"],
         model_id=model_name,
-        llm_path=llm_config["src_path"],
-        streaming=llm_config["streaming"],
-        concurrency=llm_config["concurrency"],
-        max_input_tokens=llm_config["max_input_tokens"],
-        max_output_tokens=llm_config["max_output_tokens"],
-        max_sequence_tokens=llm_config["max_sequence_tokens"],
+
+        **llm_load_test_args
     )
 
     if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
