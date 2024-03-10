@@ -12,3 +12,5 @@ serving_runtime:
       RAYON_NUM_THREADS: "32" # Would otherwise be calculated based on shards*num_cpus
 inference_service:
   storage_uri: "s3://psap-hf-models/CodeLlama-34b-Instruct-hf/CodeLlama-34b-Instruct-hf"
+testing:
+  size: large

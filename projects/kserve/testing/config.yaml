@@ -127,7 +127,7 @@ ci_presets:
     prepare.enabled: false
     prepare.cleanup.enabled: false
 
-  gating_concurrency_heavy:
+  gating_concurrency_large:
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.args.concurrency: [64, 96, 128]
 
@@ -199,23 +199,21 @@ ci_presets:
   # single-model
 
   watsonx_single_model_gating_light:
-    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio, gating_concurrency]
+    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio]
     tests.e2e.models:
-    - watsonx-japanese-llama-2-7b-instruct
     - watsonx-flan-t5-xl
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.args.concurrency: [4, 8]
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
-  watsonx_single_model_gating_heavy:
-    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio, gating_concurrency_heavy]
+  watsonx_single_model_gating_large:
+    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio, gating_concurrency_large]
     tests.e2e.models:
       - watsonx-codellama-34b-instruct-hf
       - watsonx-llama-2-70b-chat-hf
-    tests.e2e.llm_load_test.args.max_input_tokens: 3500
-    tests.e2e.llm_load_test.args.max_output_tokens: 800
-    tests.e2e.llm_load_test.args.max_sequence_tokens: 3500
     matbench.lts.horreum.test_name: null
-    matbench.lts.opensearch.index: rhoai-kserve-single-heavy
+    matbench.lts.opensearch.index: rhoai-kserve-single
 
   watsonx_single_model_gating:
     extends: [e2e_perf, gating, 3min, metal, tgis, raw, use_intlab_minio, gating_concurrency]
@@ -575,9 +573,15 @@ tests:
         interface: grpc
         streaming: true
 
-        max_input_tokens: 1024
-        max_output_tokens: 512
-        max_sequence_tokens: 1536
+      dataset_size:
+        small:
+          max_input_tokens: 1024
+          max_output_tokens: 512
+          max_sequence_tokens: 1536
+        large:
+          max_input_tokens: 3500
+          max_output_tokens: 800
+          max_sequence_tokens: 3500
     longevity:
       repeat: 2
       delay: 30 # seconds
