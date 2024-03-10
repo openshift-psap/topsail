@@ -66,7 +66,7 @@ def generateThroughputData(entries, _variables, _ordered_vars, model_name=None):
         try:
             datum["vusers"] = entry.settings.concurrency
         except AttributeError:
-            datum["vusers"] = entry.results.test_config.get("tests.e2e.llm_load_test.concurrency")
+            datum["vusers"] = entry.results.test_config.get("tests.e2e.llm_load_test.args.concurrency")
 
         datum["tpot_mean"] = entry.results.lts.kpis["kserve_llm_load_test_tpot_mean"].value
 

@@ -103,13 +103,13 @@ ci_presets:
   tgis:
     kserve.inference_service.validation.method: fmaas.GenerationService/Generate
     kserve.inference_service.validation.proto: projects/kserve/testing/protos/tgis_generation.proto
-    tests.e2e.llm_load_test.plugin: tgis_grpc_plugin
+    tests.e2e.llm_load_test.args.plugin: tgis_grpc_plugin
 
   quick_raw:
     extends: [raw, no_gpu, tgis]
 
     tests.e2e.models: [flan-t5-small-hf-cpu, flan-t5-small-hf-cpu]
-    tests.e2e.llm_load_test.concurrency: 2
+    tests.e2e.llm_load_test.args.concurrency: 2
 
   single_raw:
     extends: [quick_raw]
@@ -129,22 +129,22 @@ ci_presets:
 
   gating_concurrency_heavy:
     tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.concurrency: [64, 96, 128]
+    tests.e2e.llm_load_test.args.concurrency: [64, 96, 128]
 
   gating_concurrency:
     tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.concurrency: [1, 2, 4, 8, 16, 32]
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32]
 
   # ---
 
   3min:
-    tests.e2e.llm_load_test.duration: 180
+    tests.e2e.llm_load_test.args.duration: 180
 
   5min:
-    tests.e2e.llm_load_test.duration: 300
+    tests.e2e.llm_load_test.args.duration: 300
 
   10min:
-    tests.e2e.llm_load_test.duration: 600
+    tests.e2e.llm_load_test.args.duration: 600
 
   # ---
 
@@ -211,9 +211,9 @@ ci_presets:
     tests.e2e.models:
       - watsonx-codellama-34b-instruct-hf
       - watsonx-llama-2-70b-chat-hf
-    tests.e2e.llm_load_test.max_input_tokens: 3500
-    tests.e2e.llm_load_test.max_output_tokens: 800
-    tests.e2e.llm_load_test.max_sequence_tokens: 3500
+    tests.e2e.llm_load_test.args.max_input_tokens: 3500
+    tests.e2e.llm_load_test.args.max_output_tokens: 800
+    tests.e2e.llm_load_test.args.max_sequence_tokens: 3500
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-heavy
 
@@ -250,7 +250,7 @@ ci_presets:
     matbench.lts.horreum.test_name: RHOAI-watsonx-multi
     matbench.lts.opensearch.index: rhoai-watsonx-multi
     tests.e2e.limits_equals_requests: false
-    tests.e2e.llm_load_test.concurrency: 16
+    tests.e2e.llm_load_test.args.concurrency: 16
     tests.e2e.models:
     - watsonx-mpt-7b-instruct2
     - watsonx-mpt-7b-instruct2
@@ -565,15 +565,18 @@ tests:
       stop_on_error: true
     llm_load_test:
       enabled: true
-      src_path: projects/llm_load_test/subprojects/llm-load-test/
-      duration: 60
-      concurrency: 16
-      plugin: caikit_client_plugin
-      interface: grpc
-      streaming: true
-      max_input_tokens: 1024
-      max_output_tokens: 512
-      max_sequence_tokens: 1536
+      args:
+        src_path: projects/llm_load_test/subprojects/llm-load-test/
+
+        duration: 60
+        concurrency: 16
+        plugin: caikit_client_plugin
+        interface: grpc
+        streaming: true
+
+        max_input_tokens: 1024
+        max_output_tokens: 512
+        max_sequence_tokens: 1536
     longevity:
       repeat: 2
       delay: 30 # seconds
