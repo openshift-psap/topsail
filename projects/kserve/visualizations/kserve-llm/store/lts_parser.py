@@ -2,6 +2,7 @@ import types
 import logging
 import pytz
 import pathlib
+import yaml
 
 from .. import models
 from ..models import lts as models_lts
@@ -64,9 +65,9 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     gpu_names = "|".join(gpus)
 
     lts_settings = types.SimpleNamespace()
-
+    lts_settings.kpi_settings_version = models_lts.KPI_SETTINGS_VERSION
     lts_settings.instance_type = results.test_config.get("clusters.sutest.compute.machineset.type")
-    lts_settings.accelerator_name = gpu_names
+    lts_settings.accelerator_name = gpu_names or "no accelerator"
 
     lts_settings.ocp_version = lts_metadata.ocp_version
     lts_settings.rhoai_version = lts_metadata.rhods_version
@@ -102,10 +103,12 @@ def generate_lts_metadata(results, import_settings):
             end_time = end_time.replace(tzinfo=pytz.UTC)
 
     lts_metadata = types.SimpleNamespace()
+
+    lts_metadata.lts_schema_version = models_lts.LTS_SCHEMA_VERSION
     lts_metadata.start = start_time
     lts_metadata.end = end_time
     lts_metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
-    lts_metadata.config = results.test_config.yaml_file
+    lts_metadata.config = yaml.dump(results.test_config.yaml_file, indent=4, default_flow_style=False, sort_keys=False, width=1000)
     lts_metadata.ocp_version = results.ocp_version
     lts_metadata.rhods_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
     lts_metadata.test_uuid = results.test_uuid

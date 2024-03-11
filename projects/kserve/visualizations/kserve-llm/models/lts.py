@@ -8,7 +8,10 @@ from enum import Enum
 import matrix_benchmarking.models as matbench_models
 from . import kpi
 
+KPI_SETTINGS_VERSION = "1.0"
 class Settings(matbench_models.ExclusiveModel):
+    kpi_settings_version: str
+
     instance_type: str
     accelerator_name: str
 
@@ -30,6 +33,7 @@ class Settings(matbench_models.ExclusiveModel):
     test_path: str
     urls: Optional[dict[str, str]]
 
+
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
     values: List[float]
     min: float
@@ -41,10 +45,14 @@ class LlmLoadTestStats(matbench_models.ExclusiveModel):
     percentile_95: float
     percentile_99: float
 
+
+LTS_SCHEMA_VERSION = "1.0"
 class Metadata(matbench_models.Metadata):
+    lts_schema_version: str
+
     settings: Settings
     presets: List[str]
-    config: Any
+    config: str
     ocp_version: matbench_models.SemVer
     rhods_version: matbench_models.SemVer
 
@@ -52,6 +60,7 @@ class Metadata(matbench_models.Metadata):
     run_id: str = Field(default="Not set")
     test_path: str = Field(default="Not set")
     urls: Optional[dict[str, str]]
+
 
 class Results(matbench_models.ExclusiveModel):
     streaming: bool

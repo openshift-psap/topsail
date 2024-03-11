@@ -14,7 +14,7 @@ class GpuMetadata(matbench_models.ExclusiveModel):
 
 class Metadata(matbench_models.Metadata):
     presets: List[str]
-    config: Any
+    config: str
     gpus: List[GpuMetadata]
 
 

@@ -247,7 +247,14 @@ def generate_plots(results_dirname):
             logging.info(f"Setting tests.prom_plot_workload isn't set, nothing else to generate.")
             return
 
-        with config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload):
+        index = config.ci_artifacts.get_config("matbench.lts.opensearch.index")
+        prom_index_suffix = config.ci_artifacts.get_config("tests.prom_plot_index_suffix")
+
+        with (
+                config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload),
+                config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export", False),
+                config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")
+        ):
             visualize.prepare_matbench()
 
             with env.NextArtifactDir(f"{prom_workload}__all"):
@@ -263,7 +270,10 @@ def generate_plots(results_dirname):
                 if current_results_dirname == results_dirname: continue
                 dirname = current_results_dirname.name
 
-                with env.NextArtifactDir(f"{prom_workload}__{dirname}"):
+                with (
+                        env.NextArtifactDir(f"{prom_workload}__{dirname}"),
+                        config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export", False),
+                ):
                     logging.info(f"Generating the plots with workload={prom_workload} for {current_results_dirname}")
                     try:
                         visualize.generate_from_dir(str(current_results_dirname), generate_lts=False)

@@ -19,7 +19,6 @@ configure_logging()
 
 def deploy(
         model_name,
-        min_replicas=1,
         namespace=None,
         include_secret_key=False,
         index=None,
@@ -34,7 +33,6 @@ def deploy(
     Args:
       namespace: the namespace where the model should be deployed. If omitted, deploys in the current namespace.
       model_name: the name of the model to deploy.
-      min_replicas: the minimum number of replicas to request.
       include_secret_key: if True, deploy the secret parameters from the secret file.
       index: if set, picks up the model definition in the config file (key: tests.e2e.models[index])
       show: if True, only show the model configuration, do not deploy it.
@@ -48,8 +46,6 @@ def deploy(
     if namespace is None:
         namespace = run.run("oc config view --minify -ojsonpath='{..namespace}'", capture_stdout=True).stdout
         logging.info(f"Using namespace '{namespace}'.")
-
-    model_config["inference_service"]["min_replicas"] = min_replicas
 
     if not include_secret_key and "secret_key" in model_config:
         logging.info(f"Removing the secret key parameter: {model_config['secret_key']}")

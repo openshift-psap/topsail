@@ -537,6 +537,7 @@ tests:
   visualize: true
   capture_prom: true
   prom_plot_workload: projects.kserve.visualizations.kserve-prom
+  prom_plot_index_suffix: -prom
   scale:
     sleep_factor: 1
     namespace:
@@ -600,7 +601,7 @@ matbench:
       test_name: null
     opensearch:
       export: true
-      fail_test_on_fail: false
+      fail_test_on_fail: true
       instance: smoke
       index: rhoai-kserve-single
       index_prefix: ""
