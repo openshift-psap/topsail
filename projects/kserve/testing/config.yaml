@@ -600,7 +600,7 @@ matbench:
       test_name: null
     opensearch:
       export: true
-      fail_test_on_fail: false
+      fail_test_on_fail: true
       instance: smoke
       index: rhoai-kserve-single
       index_prefix: ""
