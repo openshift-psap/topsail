@@ -44,7 +44,7 @@ class LlmLoadTestStats(matbench_models.ExclusiveModel):
 class Metadata(matbench_models.Metadata):
     settings: Settings
     presets: List[str]
-    config: Any
+    config: str
     ocp_version: matbench_models.SemVer
     rhods_version: matbench_models.SemVer
 
