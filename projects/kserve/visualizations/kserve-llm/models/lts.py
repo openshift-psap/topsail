@@ -30,6 +30,7 @@ class Settings(matbench_models.ExclusiveModel):
     test_path: str
     urls: Optional[dict[str, str]]
 
+
 class LlmLoadTestStats(matbench_models.ExclusiveModel):
     values: List[float]
     min: float
@@ -40,6 +41,7 @@ class LlmLoadTestStats(matbench_models.ExclusiveModel):
     percentile_90: float
     percentile_95: float
     percentile_99: float
+
 
 class Metadata(matbench_models.Metadata):
     settings: Settings
@@ -52,6 +54,7 @@ class Metadata(matbench_models.Metadata):
     run_id: str = Field(default="Not set")
     test_path: str = Field(default="Not set")
     urls: Optional[dict[str, str]]
+
 
 class Results(matbench_models.ExclusiveModel):
     streaming: bool
