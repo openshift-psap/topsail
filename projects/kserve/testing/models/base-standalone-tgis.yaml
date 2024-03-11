@@ -17,3 +17,5 @@ serving_runtime:
 inference_service:
   model_format: "pytorch"
   min_replicas: 1
+testing:
+  size: small

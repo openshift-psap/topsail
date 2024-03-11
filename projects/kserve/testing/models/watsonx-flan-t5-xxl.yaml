@@ -10,5 +10,3 @@ serving_runtime:
       MAX_SEQUENCE_LENGTH: 2048
 inference_service:
   storage_uri: "s3://psap-hf-models/flan-t5-xxl/flan-t5-xxl"
-testing:
-  size: small

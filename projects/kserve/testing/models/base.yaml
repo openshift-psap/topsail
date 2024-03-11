@@ -7,3 +7,5 @@ serving_runtime:
       INFERENCE_PLUGIN_TGIS_MODEL_LOADING_TIMEOUT_MS: 40000
 inference_service:
   min_replicas: 1
+testing:
+  size: small

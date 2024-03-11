@@ -10,5 +10,3 @@ serving_runtime:
       MAX_SEQUENCE_LENGTH: 2048
 inference_service:
   storage_uri: "s3://psap-hf-models/mpt-7b-instruct2/mpt-7b-instruct2"
-testing:
-  size: small
