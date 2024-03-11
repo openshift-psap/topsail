@@ -175,12 +175,11 @@ ci_presets:
     matbench.lts.opensearch.instance: intlab
 
   use_smoke_os:
-    matbench.lts.opensearch.instance: smoke
+    matbench.lts.opensearch.index_prefix: "psap-rhoai-rehearsal."
+    matbench.lts.opensearch.instance: intlab
 
   gating:
-    # using the 'smoke' instance for the time being, the intlab instance ('use_intlab_os') is full
-    # 'Validation Failed: 1: this action would add [8] total shards, but this cluster currently has [6000]/[6000] maximum shards open;')
-    extends: [use_smoke_os]
+    extends: [use_intlab_os]
 
   gating_rehearsal:
     extends: [use_smoke_os]
@@ -208,7 +207,7 @@ ci_presets:
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
   watsonx_single_model_gating_large:
-    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio, gating_concurrency_large]
+    extends: [watsonx_single_model_gating, use_intlab_minio, gating_concurrency_large]
     tests.e2e.models:
       - watsonx-codellama-34b-instruct-hf
       - watsonx-llama-2-70b-chat-hf
