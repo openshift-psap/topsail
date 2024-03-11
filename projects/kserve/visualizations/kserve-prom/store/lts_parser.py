@@ -1,5 +1,6 @@
 import types
 import datetime
+import yaml
 
 from .. import models
 from ..models import lts as models_lts
@@ -28,7 +29,7 @@ def generate_lts_metadata(results, import_settings):
     metadata.end = datetime.datetime.utcfromtimestamp(end_ts)
 
     metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
-    metadata.config = results.test_config.yaml_file
+    metadata.config = config = yaml.dump(results.test_config.yaml_file, indent=4, default_flow_style=False, sort_keys=False, width=1000)
     metadata.settings = dict(import_settings)
 
     metadata.gpus = results.cluster_info.gpus
