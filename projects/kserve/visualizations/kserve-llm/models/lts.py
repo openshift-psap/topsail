@@ -46,7 +46,10 @@ class LlmLoadTestStats(matbench_models.ExclusiveModel):
     percentile_99: float
 
 
+LTS_SCHEMA_VERSION = "1.0"
 class Metadata(matbench_models.Metadata):
+    lts_schema_version: str
+
     settings: Settings
     presets: List[str]
     config: str

@@ -103,6 +103,8 @@ def generate_lts_metadata(results, import_settings):
             end_time = end_time.replace(tzinfo=pytz.UTC)
 
     lts_metadata = types.SimpleNamespace()
+
+    lts_metadata.lts_schema_version = models_lts.LTS_SCHEMA_VERSION
     lts_metadata.start = start_time
     lts_metadata.end = end_time
     lts_metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
