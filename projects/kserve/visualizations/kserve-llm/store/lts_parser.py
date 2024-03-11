@@ -65,7 +65,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     gpu_names = "|".join(gpus)
 
     lts_settings = types.SimpleNamespace()
-
+    lts_settings.kpi_settings_version = models_lts.KPI_SETTINGS_VERSION
     lts_settings.instance_type = results.test_config.get("clusters.sutest.compute.machineset.type")
     lts_settings.accelerator_name = gpu_names or "no accelerator"
 
