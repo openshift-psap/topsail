@@ -575,9 +575,9 @@ tests:
 
       dataset_size:
         small:
-          max_input_tokens: 1024
-          max_output_tokens: 512
-          max_sequence_tokens: 1536
+          max_input_tokens: 2047
+          max_output_tokens: 1024
+          max_sequence_tokens: 2048
         large:
           max_input_tokens: 3500
           max_output_tokens: 800
