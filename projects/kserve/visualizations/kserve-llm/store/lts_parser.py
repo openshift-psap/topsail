@@ -67,7 +67,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings = types.SimpleNamespace()
 
     lts_settings.instance_type = results.test_config.get("clusters.sutest.compute.machineset.type")
-    lts_settings.accelerator_name = gpu_names
+    lts_settings.accelerator_name = gpu_names or "no accelerator"
 
     lts_settings.ocp_version = lts_metadata.ocp_version
     lts_settings.rhoai_version = lts_metadata.rhods_version
