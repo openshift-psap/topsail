@@ -175,7 +175,7 @@ ci_presets:
     matbench.lts.opensearch.instance: intlab
 
   use_smoke_os:
-    matbench.lts.opensearch.index_prefix: "psap-rhoai-rehearsal."
+    matbench.lts.opensearch.index_prefix: "psap-rhoai.rehearsal."
     matbench.lts.opensearch.instance: intlab
 
   gating:
