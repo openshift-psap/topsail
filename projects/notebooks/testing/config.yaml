@@ -58,7 +58,7 @@ ci_presets:
     clusters.sutest.compute.dedicated: true
     'ci_presets.notebooks_light["clusters.sutest.compute.dedicated"]': true
     matbench.lts.opensearch.upload: true
-    matbench.lts.opensearch.fail_test_on_upload_fail: false
+    matbench.lts.opensearch.fail_test_on_upload_fail: true
     matbench.lts.opensearch.index: rhoai-notebooks-performance
 
   notebook_performance_light:
