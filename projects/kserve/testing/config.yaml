@@ -193,7 +193,7 @@ ci_presets:
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
   watsonx_single_model_gating:
-    extends: [e2e_perf, gating, 3min, metal, tgis, raw, use_intlab_minio, gating_concurrency]
+    extends: [e2e_perf, gating, 3min, tgis, raw, use_intlab_minio]
     tests.e2e.models:
     - watsonx-japanese-llama-2-7b-instruct
     - watsonx-flan-t5-xl
