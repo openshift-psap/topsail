@@ -30,6 +30,9 @@ ci_presets:
     gpu.prepare_cluster: false
     clusters.sutest.compute.machineset.type: m6i.2xlarge
 
+  gpu:
+    gpu.prepare_cluster: true
+
   dgx:
     clusters.sutest.compute.machineset.type: "DGX A100-40GB"
 
