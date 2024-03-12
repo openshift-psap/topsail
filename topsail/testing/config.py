@@ -25,7 +25,7 @@ class TempValue(object):
         self.prev_value = None
 
     def __enter__(self):
-        self.prev_value = self.config.get_config(self.key)
+        self.prev_value = self.config.get_config(self.key, print=False)
         self.config.set_config(self.key, self.value)
 
         return True
@@ -58,6 +58,8 @@ class Config:
 
         with open(variable_overrides_path) as f:
             for line in f.readlines():
+                line = line.partition("#")[0]
+
                 if not line.strip():
                     continue
 
@@ -69,19 +71,19 @@ class Config:
                 value = yaml.safe_load(_value) # convert the string as YAML would do
 
                 MAGIC_DEFAULT_VALUE = object()
-                current_value = self.get_config(key, MAGIC_DEFAULT_VALUE)
+                current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False)
                 if current_value == MAGIC_DEFAULT_VALUE:
                     if "." in key:
                         raise ValueError(f"Config key '{key}' does not exist, and cannot create it at the moment :/")
                     self.config[key] = None
 
                 self.set_config(key, value, dump_command_args=False)
-                actual_value = self.get_config(key) # ensure that key has been set, raises an exception otherwise
+                actual_value = self.get_config(key, print=False) # ensure that key has been set, raises an exception otherwise
                 logging.info(f"config override: {key} --> {actual_value}")
 
     def apply_preset(self, name, do_dump=True):
         try:
-            values = self.get_config(f'ci_presets["{name}"]')
+            values = self.get_config(f'ci_presets["{name}"]', print=False)
         except IndexError:
             logging.error(f"Preset '{name}' does not exists :/")
             raise
@@ -90,7 +92,7 @@ class Config:
         if not values:
             raise ValueError(f"Preset '{name}' does not exists")
 
-        presets = self.get_config("ci_presets.names") or []
+        presets = self.get_config("ci_presets.names", print=False) or []
         if not name in presets:
             self.set_config("ci_presets.names", presets + [name], dump_command_args=False)
 
@@ -105,7 +107,7 @@ class Config:
             with open(env.ARTIFACT_DIR / "presets_applied", "a") as f:
                 print(msg, file=f)
 
-            self.set_config(key, value, dump_command_args=False)
+            self.set_config(key, value, dump_command_args=False, print=False)
 
         if do_dump:
             self.dump_command_args()
@@ -128,7 +130,7 @@ class Config:
         return value
 
 
-    def set_config(self, jsonpath, value, dump_command_args=True):
+    def set_config(self, jsonpath, value, dump_command_args=True, print=True):
         if threading.current_thread().name != "MainThread":
             msg = f"set_config({jsonpath}, {value}) cannot be called from a thread, to avoid race conditions."
             if os.environ.get("OPENSHIFT_CI") or os.environ.get("PERFLAB_CI"):
@@ -139,13 +141,14 @@ class Config:
                 raise RuntimeError(msg)
 
         try:
-            self.get_config(jsonpath, value) # will raise an exception if the jsonpath does not exist
+            self.get_config(jsonpath, value, print=False) # will raise an exception if the jsonpath does not exist
             jsonpath_ng.parse(jsonpath).update(self.config, value)
         except Exception as ex:
             logging.error(f"set_config: {jsonpath}={value} --> {ex}")
             raise
 
-        logging.info(f"set_config: {jsonpath} --> {value}")
+        if print:
+            logging.info(f"set_config: {jsonpath} --> {value}")
 
         with open(self.config_path, "w") as f:
             yaml.dump(self.config, f, indent=4, default_flow_style=False, sort_keys=False)
