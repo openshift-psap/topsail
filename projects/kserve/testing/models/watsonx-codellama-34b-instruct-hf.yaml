@@ -7,8 +7,12 @@ serving_runtime:
     extra_env:
       DEPLOYMENT_FRAMEWORK: "tgis_native"
       FLASH_ATTENTION: "true"
+      MAX_BATCH_SIZE: 256
+      MAX_CONCURRENT_REQUESTS: 256
       MAX_SEQUENCE_LENGTH: 4096
       NUM_GPUS: 4
       RAYON_NUM_THREADS: "32" # Would otherwise be calculated based on shards*num_cpus
 inference_service:
   storage_uri: "s3://psap-hf-models/CodeLlama-34b-Instruct-hf/CodeLlama-34b-Instruct-hf"
+testing:
+  size: large
