@@ -207,6 +207,7 @@ ci_presets:
 
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32]
+    export_artifacts.enabled: true
 
   watsonx_single_model_gating_large:
     extends: [watsonx_single_model_gating]
