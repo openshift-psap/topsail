@@ -502,7 +502,6 @@ kserve:
 
   inference_service:
     validation:
-      dataset: projects/llm_load_test/subprojects/llm-load-test/datasets/openorca_large_subset_011.jsonl
       query_count: 10
       method: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
       proto: null
