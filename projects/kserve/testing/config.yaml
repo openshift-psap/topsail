@@ -127,14 +127,6 @@ ci_presets:
     prepare.enabled: false
     prepare.cleanup.enabled: false
 
-  gating_concurrency_large:
-    tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.args.concurrency: [64, 96, 128]
-
-  gating_concurrency:
-    tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32]
-
   # ---
 
   3min:
@@ -170,19 +162,13 @@ ci_presets:
 
   # ---
 
-  use_intlab_os:
+  gating:
     matbench.lts.opensearch.index_prefix: "psap-rhoai."
     matbench.lts.opensearch.instance: intlab
 
-  use_smoke_os:
+  gating_rehearsal:
     matbench.lts.opensearch.index_prefix: "psap-rhoai.rehearsal."
     matbench.lts.opensearch.instance: intlab
-
-  gating:
-    extends: [use_intlab_os]
-
-  gating_rehearsal:
-    extends: [use_smoke_os]
 
   # ---
   # Get models from integration lab minio instead of AWS S3
@@ -194,8 +180,8 @@ ci_presets:
     kserve.storage_config.verify_ssl: "0"
 
   # ---
-
   # single-model
+  # ---
 
   watsonx_single_model_gating_light:
     extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio]
@@ -205,14 +191,6 @@ ci_presets:
     tests.e2e.llm_load_test.args.concurrency: [4, 8]
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-light
-
-  watsonx_single_model_gating_large:
-    extends: [watsonx_single_model_gating, use_intlab_minio, gating_concurrency_large]
-    tests.e2e.models:
-      - watsonx-codellama-34b-instruct-hf
-      - watsonx-llama-2-70b-chat-hf
-    matbench.lts.horreum.test_name: null
-    matbench.lts.opensearch.index: rhoai-kserve-single
 
   watsonx_single_model_gating:
     extends: [e2e_perf, gating, 3min, metal, tgis, raw, use_intlab_minio, gating_concurrency]
@@ -224,13 +202,25 @@ ci_presets:
     - watsonx-llama-2-70b-chat-hf
     - watsonx-mpt-7b-instruct2
     - watsonx-codellama-34b-instruct-hf
-    matbench.lts.horreum.test_name: RHOAI-kserve-single
+    matbench.lts.horreum.test_name: rhoai-kserve-single
     matbench.lts.opensearch.index: rhoai-kserve-single
+
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32]
+
+  watsonx_single_model_gating_large:
+    extends: [watsonx_single_model_gating]
+    tests.e2e.llm_load_test.args.concurrency: [64, 96, 128]
+    tests.e2e.models:
+      - watsonx-codellama-34b-instruct-hf
+      - watsonx-llama-2-70b-chat-hf
+
+  # ---
 
   single_model_gating:
     extends: [gating, 10min, e2e_gpu, e2e_perf]
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, bloom-560m, mpt-7b-instruct2]
-    matbench.lts.horreum.test_name: RHOAI-kserve-single
+    matbench.lts.horreum.test_name: rhoai-kserve-single
     matbench.lts.opensearch.index: rhoai-kserve-single
 
   single_model_gating_light:
@@ -240,12 +230,14 @@ ci_presets:
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
+  # ---
   # multi-model
+  # ---
 
   watsonx_multi_model_gating:
     extends: [gating, 5min, e2e_gpu, e2e_multi, tgis, raw, use_intlab_minio]
-    matbench.lts.horreum.test_name: RHOAI-watsonx-multi
     matbench.lts.opensearch.index: rhoai-watsonx-multi
+    matbench.lts.horreum.test_name: rhoai-watsonx-multi
     tests.e2e.limits_equals_requests: false
     tests.e2e.llm_load_test.args.concurrency: 16
     tests.e2e.models:
@@ -286,9 +278,11 @@ ci_presets:
         serving_runtime:
           name: flan-t5-small-hf-cpu
 
+  # multi-model non-watsonx
+
   multi_model_gating:
     extends: [gating, 10min, e2e_gpu, e2e_multi]
-    matbench.lts.horreum.test_name: RHOAI-kserve-multi
+    matbench.lts.horreum.test_name: rhoai-kserve-multi
     tests.e2e.models:
     - flan-t5-large-gpu-1:
         name: flan-t5-large-gpu
@@ -316,10 +310,17 @@ ci_presets:
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-multi-light
 
+  # ---
+  # longevity
+  # ---
+
   longevity:
     tests.e2e.mode: longevity
     tests.e2e.longevity.repeat: 2
     tests.e2e.longevity.delay: 30 # s
+
+    matbench.lts.horreum.test_name: rhoai-kserve-longevity
+    matbench.lts.opensearch.index: rhoai-kserve-longevity
 
   hour_longevity:
     extends: [longevity]
@@ -337,7 +338,7 @@ ci_presets:
 
   many_model_gating:
     extends: [gating, scale_test, customize_smcp]
-    matbench.lts.horreum.test_name: RHOAI-kserve-many
+    matbench.lts.horreum.test_name: rhoai-kserve-many
 
     tests.scale.model.replicas: 17
     tests.scale.namespace.replicas: 12
