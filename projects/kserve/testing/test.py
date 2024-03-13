@@ -44,11 +44,15 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
         run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
 
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
-    config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
+    is_metal = config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
 
-    # could be turned into configuration bits ...
-    config.ci_artifacts.detect_apply_cluster_profile({"p42-h03-dgx.rdu3.labs.perfscale.redhat.com": "dgx",
-                                                      "e26-h23-000-r650": "icelake"})
+    if is_metal:
+        metal_profiles = config.ci_artifacts.get_config("clusters.metal_profiles")
+        profile_applied = config.ci_artifacts.detect_apply_cluster_profile(metal_profiles)
+
+        if not profile_applied:
+            raise ValueError("Bare-metal cluster not recognized :/ ")
+
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     def decorator(fct):

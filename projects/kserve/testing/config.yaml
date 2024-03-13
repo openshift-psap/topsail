@@ -33,17 +33,21 @@ ci_presets:
   gpu:
     gpu.prepare_cluster: true
 
-  dgx:
+  cluster_dgx:
     clusters.sutest.compute.machineset.type: "DGX A100-40GB"
 
-  icelake:
+  cluster_icelake:
     clusters.sutest.compute.machineset.type: "Icelake"
+
+  cluster_a30:
+    clusters.sutest.compute.machineset.type: "PSAP A30 node"
 
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
+    clusters.sutest.compute.machineset.type: "bare-metal node"
 
   not_metal:
     clusters.sutest.is_metal: false
@@ -391,6 +395,10 @@ secrets:
   aws_credentials: .awscred
 
 clusters:
+  metal_profiles:
+    p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
+    e26-h23-000-r650: cluster_icelake
+    bb37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
   create:
     type: single # can be: single, ocp, managed
     keep: false
