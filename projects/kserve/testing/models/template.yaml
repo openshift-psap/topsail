@@ -14,3 +14,6 @@ inference_service:
   model_format: caikit/pytorch/...
   storage_uri: "s3://<bucket>/<path>"
   min_replicas: 1
+testing:
+  size: small # see the keys of tests.e2e.llm_load_test.dataset_size
+  max_concurrency: 32
