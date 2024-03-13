@@ -186,47 +186,49 @@ class Config:
         job_name_safe = os.environ.get("JOB_NAME_SAFE", "")
         if not job_name_safe:
             logging.info(f"detect_apply_light_profile: JOB_NAME_SAFE not set, assuming not running in a CI environment.")
-            return
+            return False
 
         if job_name_safe != name_suffix and not job_name_safe.endswith(f"-{name_suffix}"):
-            return
+            return False
 
         logging.info(f"Running a '{name_suffix}' test ({job_name_safe}), applying the '{profile}' profile")
 
         self.apply_preset(profile)
-
+        return True
 
     def detect_apply_metal_profile(self, profile):
         platform_type_cmd = run.run("oc get infrastructure/cluster -ojsonpath={.status.platformStatus.type}", capture_stdout=True, capture_stderr=True, check=False)
         if platform_type_cmd.returncode != 0:
             logging.warning(f"Failed to get the platform type: {platform_type_cmd.stderr.strip()}")
             logging.warning("Ignoring the metal profile check.")
-            return
+            return False
 
         platform_type = platform_type_cmd.stdout
         logging.info(f"detect_apply_metal_profile: infrastructure/cluster.status.platformStatus.type = {platform_type}")
         if platform_type not in ("BareMetal", "None"):
             logging.info("detect_apply_metal_profile: Assuming not running in a bare-metal environment.")
-            return
+            return False
         logging.info(f"detect_apply_metal_profile: Assuming running in a bare-metal environment. Applying the '{profile}' profile.")
 
         self.apply_preset(profile)
-
+        return True
 
     def detect_apply_cluster_profile(self, node_profiles):
         cluster_nodes_cmd = run.run("oc get nodes -oname", capture_stdout=True, capture_stderr=True, check=False)
         if cluster_nodes_cmd.returncode != 0:
             logging.warning(f"Failed to get the cluster nodes: {cluster_nodes_cmd.stderr.strip()}")
             logging.warning("Ignoring the cluster profile check.")
-            return
+            return False
 
         for node_name in cluster_nodes_cmd.stdout.split():
             for node, profile in node_profiles.items():
                 if f"node/{node}" != node_name:
                     continue
-                print("yes", node)
+
                 self.apply_preset(profile)
-                break
+                return profile
+
+        return False
 
 
 def _set_config_environ(base_dir):
