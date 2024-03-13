@@ -20,6 +20,7 @@ from . import error_report, report
 
 def register():
     Throughput()
+    TtftConcurrency()
 
 def generateThroughputData(entries, _variables, _ordered_vars, model_name=None):
     data = []
@@ -70,6 +71,7 @@ def generateThroughputData(entries, _variables, _ordered_vars, model_name=None):
 
         datum["tpot_mean"] = entry.results.lts.kpis["kserve_llm_load_test_tpot_mean"].value
         datum["itl_mean"] = entry.results.lts.kpis["kserve_llm_load_test_itl_mean"].value
+        datum["ttft_mean"] = entry.results.lts.kpis["kserve_llm_load_test_ttft_mean"].value
 
         datum["sort_index"] = entry.settings.__dict__[ordered_vars[0]] \
             if ordered_vars else 0
@@ -148,6 +150,56 @@ class Throughput():
 
         if cfg__model_name:
             subtitle += f" ({cfg__model_name})"
+        # ❯ or ❮
+
+        if cfg__entry:
+            fig.layout.update(showlegend=False)
+
+        return fig, ""
+
+
+class TtftConcurrency():
+    def __init__(self):
+        self.name = "TTFT Concurrency"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+
+        cfg__entry = cfg.get("entry", None)
+        cfg__model_name = cfg.get("model_name", False)
+
+        entries = [cfg__entry] if cfg__entry else \
+            common.Matrix.all_records(settings, setting_lists)
+
+        df = pd.DataFrame(generateThroughputData(entries, variables, ordered_vars, cfg__model_name))
+
+        if df.empty:
+            return None, "Not data available ..."
+
+        df = df.sort_values(by=["sort_index", "model_testname"], ascending=False)
+
+        y_name = "Time To First Token"
+        y_unit = "ms"
+        y_key = "ttft_mean"
+
+        fig = px.line(df, hover_data=df.columns,
+                      x="vusers", y=y_key, color="model_testname", text="test_name",)
+        for i in range(len(fig.data)):
+            fig.data[i].update(mode='lines+markers')
+
+        fig.update_xaxes(title=f"Number of Virtual Users")
+
+        fig.update_yaxes(title=f"❮ Mean {y_name} (in {y_unit})<br>Lower is better")
+        subtitle = f" ({cfg__model_name})" if cfg__model_name else ""
+        fig.update_layout(title=f"{y_name} vs Virtual Users{subtitle}", title_x=0.5,)
+        fig.update_layout(legend_title_text="Model name")
+
         # ❯ or ❮
 
         if cfg__entry:
