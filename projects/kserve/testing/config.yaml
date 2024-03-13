@@ -326,11 +326,24 @@ ci_presets:
     matbench.lts.horreum.test_name: rhoai-kserve-longevity
     matbench.lts.opensearch.index: rhoai-kserve-longevity
 
+  multi_model_a30:
+    extends: [raw, use_intlab_minio, tgis]
+
+    tests.e2e.models:
+    - watsonx-flan-t5-xl
+    - watsonx-flan-t5-xl
+    - watsonx-japanese-llama-2-7b-instruct
+
   hour_longevity:
     extends: [longevity]
 
     tests.e2e.longevity.repeat: 4
     tests.e2e.longevity.delay: 1200 # 20min
+
+  multi_hour_longevity: # 12h
+    extends: [longevity]
+    tests.e2e.longevity.repeat: 8
+    tests.e2e.longevity.delay: 5400 # 90min
 
   multi_day_longevity:
     extends: [longevity]
