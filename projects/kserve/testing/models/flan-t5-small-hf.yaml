@@ -14,4 +14,4 @@ inference_service:
   storage_uri: "s3://psap-hf-models/flan-t5-small/flan-t5-small"
   model_format: pytorch
 testing:
-  max_concurrency: 3
+  max_concurrency: null
