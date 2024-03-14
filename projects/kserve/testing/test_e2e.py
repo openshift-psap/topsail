@@ -519,7 +519,7 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
                     print(f"{exit_code}", file=f)
 
 
-def matbenchmark_run_llm_load_test(namespace, llm_load_test_args):
+def matbenchmark_run_llm_load_test(namespace, llm_load_test_args, max_concurrency):
     visualize.prepare_matbench()
 
     with env.NextArtifactDir("matbenchmark__llm_load_test"):
@@ -528,7 +528,12 @@ def matbenchmark_run_llm_load_test(namespace, llm_load_test_args):
 
         for key, value in llm_load_test_args.items():
             if isinstance(value, list):
-                benchmark_values[key] = value
+                if key == "concurrency" and max_concurrency:
+                    benchmark_values[key] = [v for v in value if v <= max_concurrency]
+                    if len(benchmark_values[key]) != len(value):
+                        logging.warning(f"Removed the concurrency levels higher than {max_concurrency}.")
+                else:
+                    benchmark_values[key] = value
             else:
                 test_configuration[key] = value
 
@@ -621,6 +626,8 @@ def test_consolidated_model(consolidated_model, namespace=None):
     llm_load_test_args = config.ci_artifacts.get_config("tests.e2e.llm_load_test.args")
 
     size_name = consolidated_model["testing"]["size"]
+    max_concurrency = consolidated_model["testing"].get("max_concurrency")
+
     llm_load_test_dataset_sample_args = config.ci_artifacts.get_config(f"tests.e2e.llm_load_test.dataset_size.{size_name}")
     llm_load_test_args |= llm_load_test_dataset_sample_args
 
@@ -633,7 +640,9 @@ def test_consolidated_model(consolidated_model, namespace=None):
     )
 
     if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
-        matbenchmark_run_llm_load_test(namespace, args_dict)
+        matbenchmark_run_llm_load_test(namespace, args_dict, max_concurrency)
+    elif max_concurrency and max_concurrency >= args_dict["concurrency"]:
+        logging.warning(f"Requested concurrency ({args_dict['concurrency']}) is higher than the model limit ({max_concurrency})")
     else:
         try:
             run.run_toolbox("llm_load_test", "run", **args_dict)

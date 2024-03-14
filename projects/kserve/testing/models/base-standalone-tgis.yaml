@@ -19,3 +19,4 @@ inference_service:
   min_replicas: 1
 testing:
   size: small
+  max_concurrency: 32
