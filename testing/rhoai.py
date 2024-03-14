@@ -12,6 +12,7 @@ PR_POSITIONAL_ARG_KEY = "PR_POSITIONAL_ARG"
 RHOAI_CONFIG_KEY = "_rhoai_."
 rhoai_configuration = {
     "subproject": None, # _rhoai_.subproject allows overriding the subproject received as sys.argv[1]
+    "replot": None,
 }
 
 def main():
@@ -127,7 +128,14 @@ def main():
         for key, value in sorted(original_variable_overrides.items()):
             print(f"{key}={value}", file=f)
 
-    command = f"run {project_name} {run_args}"
+    if rhoai_configuration["replot"]:
+        logging.info("Running in replot mode.")
+
+        run_args = f"test generate_plots_from_pr_args {run_args}"
+
+
+    command = f"run {project_name} {run_args}".strip()
+
     logging.info(f"===> Starting '{command}' <===")
 
     return os.WEXITSTATUS(os.system(command))
