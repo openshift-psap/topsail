@@ -37,7 +37,13 @@ class Repo:
         Ensures that none of the commits have the WIP flag in their
         message title.
         """
-        exit(os.system(str(PROJECT_DIR / "scripts" / "validate_no_wip.sh")))
+
+        retcode = os.system(str(PROJECT_DIR / "scripts" / "validate_no_wip.sh"))
+        # I don't know why this ^^^ return 256 on failure
+        # but Python swallows it :/
+        if retcode == 256: retcode = 1
+
+        exit(retcode)
 
 
     @staticmethod
