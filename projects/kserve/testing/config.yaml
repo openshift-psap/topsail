@@ -213,15 +213,9 @@ ci_presets:
     matbench.lts.opensearch.index: rhoai-kserve-single
 
     tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32]
+    # small models will stop at 32
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
     export_artifacts.enabled: true
-
-  watsonx_single_model_gating_large:
-    extends: [watsonx_single_model_gating]
-    tests.e2e.llm_load_test.args.concurrency: [64, 96, 128]
-    tests.e2e.models:
-      - watsonx-codellama-34b-instruct-hf
-      - watsonx-llama-2-70b-chat-hf
 
   # ---
 
