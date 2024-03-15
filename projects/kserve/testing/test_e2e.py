@@ -163,6 +163,8 @@ def test_models_longevity():
     repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
     delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
 
+    reset_prometheus()
+
     deploy_models_concurrently()
 
     for i in range(repeat):
@@ -178,6 +180,8 @@ def test_models_longevity():
                 logging.info(f"Sleeping for {delay} seconds after test #{i}...")
                 time.sleep(delay)
                 logging.info(f"Slept for {delay} seconds after test #{i}...")
+
+    generate_kserve_prom_results("longevity")
 
 
 def multi_model_deploy_and_test():
