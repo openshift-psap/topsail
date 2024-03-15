@@ -113,7 +113,8 @@ class Throughput():
         if cfg__bar_plot:
             df = df.sort_values(by=["sort_index", "test_name"], ascending=True)
 
-            fig = px.bar(df, x='model_testname', y='throughput', color="test_name", hover_data=df.columns)
+            fig = px.bar(df, x='model_testname', y='throughput', color="test_name", hover_data=df.columns,
+                         text='throughput', text_auto='.0f')
             fig.update_layout(barmode='group')
             fig.update_layout(
                 yaxis=dict(
