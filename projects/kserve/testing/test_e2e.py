@@ -229,10 +229,12 @@ def single_model_deploy_and_test_sequentially(locally=False):
         raise exc
 
 
-def multi_model_test_concurrently(expe_name="multi-model_concurrent"):
+def multi_model_test_concurrently(expe_name="multi-model_concurrent", reset_prometheus=True):
     "Tests all the configured models concurrently (all at the same time)"
 
-    reset_prometheus()
+    if reset_prometheus:
+        reset_prometheus()
+
     with env.NextArtifactDir("multi_model_test_concurrently"):
         try:
             logging.info(f"Test the models concurrently ({expe_name})")
