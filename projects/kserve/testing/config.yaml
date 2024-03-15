@@ -124,18 +124,6 @@ ci_presets:
 
   # ---
 
-  prepare_only:
-    tests.mode: prepare_only
-
-  cleanup_only:
-    tests.mode: cleanup_only
-
-  test_only:
-    prepare.enabled: false
-    prepare.cleanup.enabled: false
-
-  # ---
-
   3min:
     tests.e2e.llm_load_test.args.duration: 180
 
