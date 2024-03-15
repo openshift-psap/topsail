@@ -519,7 +519,7 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
                     print(f"{exit_code}", file=f)
 
 
-def matbenchmark_run_llm_load_test(namespace, llm_load_test_args, max_concurrency):
+def matbenchmark_run_llm_load_test(namespace, llm_load_test_args, model_max_concurrency):
     visualize.prepare_matbench()
 
     with env.NextArtifactDir("matbenchmark__llm_load_test"):
@@ -528,10 +528,10 @@ def matbenchmark_run_llm_load_test(namespace, llm_load_test_args, max_concurrenc
 
         for key, value in llm_load_test_args.items():
             if isinstance(value, list):
-                if key == "concurrency" and max_concurrency:
-                    benchmark_values[key] = [v for v in value if v <= max_concurrency]
+                if key == "concurrency" and model_max_concurrency:
+                    benchmark_values[key] = [v for v in value if v <= model_max_concurrency]
                     if len(benchmark_values[key]) != len(value):
-                        logging.warning(f"Removed the concurrency levels higher than {max_concurrency}.")
+                        logging.warning(f"Removed the concurrency levels higher than {model_max_concurrency}.")
                 else:
                     benchmark_values[key] = value
             else:
