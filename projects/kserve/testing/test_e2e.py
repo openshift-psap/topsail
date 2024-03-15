@@ -640,7 +640,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
     )
 
     if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
-        matbenchmark_run_llm_load_test(namespace, args_dict, max_concurrency)
+        matbenchmark_run_llm_load_test(namespace, args_dict, model_max_concurrency)
     elif model_max_concurrency and args_dict["concurrency"] > model_max_concurrency:
         logging.warning(f"Requested concurrency ({args_dict['concurrency']}) is higher than the model limit ({max_concurrency})")
     else:
