@@ -626,7 +626,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
     llm_load_test_args = config.ci_artifacts.get_config("tests.e2e.llm_load_test.args")
 
     size_name = consolidated_model["testing"]["size"]
-    max_concurrency = consolidated_model["testing"].get("max_concurrency")
+    model_max_concurrency = consolidated_model["testing"].get("max_concurrency")
 
     llm_load_test_dataset_sample_args = config.ci_artifacts.get_config(f"tests.e2e.llm_load_test.dataset_size.{size_name}")
     llm_load_test_args |= llm_load_test_dataset_sample_args
@@ -641,7 +641,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
 
     if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
         matbenchmark_run_llm_load_test(namespace, args_dict, max_concurrency)
-    elif max_concurrency and max_concurrency >= args_dict["concurrency"]:
+    elif model_max_concurrency and args_dict["concurrency"] > model_max_concurrency:
         logging.warning(f"Requested concurrency ({args_dict['concurrency']}) is higher than the model limit ({max_concurrency})")
     else:
         try:
