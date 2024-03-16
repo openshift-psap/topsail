@@ -163,6 +163,8 @@ def test_models_longevity():
     repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
     delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
 
+    reset_prometheus()
+
     deploy_models_concurrently()
 
     for i in range(repeat):
@@ -172,12 +174,14 @@ def test_models_longevity():
             with open(env.ARTIFACT_DIR / "settings.longevity.yaml", "w") as f:
                 yaml.dump(dict(longevity_index=i), f, indent=4)
 
-            multi_model_test_concurrently(expe_name)
+            multi_model_test_concurrently(expe_name, with_kserve_prom=False)
 
             if i != repeat-1:
                 logging.info(f"Sleeping for {delay} seconds after test #{i}...")
                 time.sleep(delay)
                 logging.info(f"Slept for {delay} seconds after test #{i}...")
+
+    generate_kserve_prom_results("longevity")
 
 
 def multi_model_deploy_and_test():
@@ -229,16 +233,19 @@ def single_model_deploy_and_test_sequentially(locally=False):
         raise exc
 
 
-def multi_model_test_concurrently(expe_name="multi-model_concurrent"):
+def multi_model_test_concurrently(expe_name="multi-model_concurrent", with_kserve_prom=True):
     "Tests all the configured models concurrently (all at the same time)"
 
-    reset_prometheus()
+    if with_kserve_prom:
+        reset_prometheus()
+
     with env.NextArtifactDir("multi_model_test_concurrently"):
         try:
             logging.info(f"Test the models concurrently ({expe_name})")
             run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_concurrently", artifact_dir_suffix="_test_concurrently")
         finally:
-            generate_kserve_prom_results(expe_name)
+            if with_kserve_prom:
+                generate_kserve_prom_results(expe_name)
 
 
 def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None, namespace: str = None):
