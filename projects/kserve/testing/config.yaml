@@ -331,11 +331,11 @@ ci_presets:
     tests.e2e.longevity.repeat: 8
     tests.e2e.longevity.delay: 5400 # 90min
 
-  multi_day_longevity:
+  multi_day_longevity: # 48h
     extends: [longevity]
 
-    tests.e2e.longevity.repeat: 3
-    tests.e2e.longevity.delay: 86400 # 24 hours
+    tests.e2e.longevity.repeat: 4
+    tests.e2e.longevity.delay: 43200 # 12 hours
 
   # many-model
 
