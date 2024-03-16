@@ -477,12 +477,14 @@ def undeploy_consolidated_model(consolidated_model, namespace=None):
 
     run.run_toolbox("kserve", "undeploy_model", **args_dict)
 
+
 def test_consolidated_models():
     consolidated_models = config.ci_artifacts.get_config("tests.e2e.consolidated_models")
     model_count = len(consolidated_models)
     logging.info(f"Found {model_count} models to test")
     for consolidated_model in consolidated_models:
         launch_test_consolidated_model(consolidated_model)
+
 
 def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
 
