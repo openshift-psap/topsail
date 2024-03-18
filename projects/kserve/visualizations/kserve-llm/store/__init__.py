@@ -6,6 +6,8 @@ import fnmatch
 import os
 import json
 
+import jsonpath_ng
+
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 
@@ -84,8 +86,6 @@ def load_cache(dirname):
 
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
-    parsers.artifact_paths = resolve_artifact_dirnames(dirname, parsers.artifact_dirnames)
-
     ignore_cache = os.environ.get("MATBENCH_STORE_IGNORE_CACHE", False) in ("yes", "y", "true", "True")
     if not ignore_cache:
         try:
@@ -103,6 +103,8 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         fn_add_to_matrix(results)
 
         return
+
+    parsers.artifact_paths = resolve_artifact_dirnames(dirname, parsers.artifact_dirnames)
 
     results = types.SimpleNamespace()
 
@@ -133,6 +135,24 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
         results.llm_load_test_config.get = llm_get_config
 
     logging.info("parsing done :)")
+
+
+def get_yaml_get_key(filename, yaml_file):
+    def get(key, missing=...):
+        nonlocal yaml_file
+
+        jsonpath_expression = jsonpath_ng.parse(f'$.{key}')
+
+        match = jsonpath_expression.find(yaml_file)
+        if not match:
+            if missing != ...:
+                return missing
+
+            raise KeyError(f"Key '{key}' not found in {filename} ...")
+
+        return match[0].value
+
+    return get
 
 # delegate the parsing to the simple_store
 store.register_custom_rewrite_settings(_rewrite_settings)

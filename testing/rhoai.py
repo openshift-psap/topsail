@@ -48,10 +48,9 @@ def main():
 
     # pass all args ...
     old_all_args = old_variable_overrides.pop(f"{PR_POSITIONAL_ARG_KEY}S", "").strip("'").split()
-    try:
-        if old_all_args[0] == "perf-ci":
-            old_all_args.pop(0)
-    except IndexError: pass # old_all_args is empty, ignore
+    if old_all_args and old_all_args[0].startswith("perf-ci"):
+        perflab_test_name = old_all_args.pop(0)
+        logging.info(f"Perflab test name: {perflab_test_name}")
 
     new_all_args = []
     for idx, arg in enumerate(old_all_args):

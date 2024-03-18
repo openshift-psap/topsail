@@ -10,7 +10,6 @@ import dateutil.parser
 import urllib.parse
 import uuid
 from functools import reduce
-import jsonpath_ng
 
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
@@ -63,16 +62,19 @@ def get_from_path(d, path, default=None):
 
 def _parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
+    from . import get_yaml_get_key
+    results.llm_load_test_config.get = get_yaml_get_key("llm-load-test config file", results.llm_load_test_config.yaml_file)
+
+    results.test_config.get = get_yaml_get_key("topsail config file", results.test_config.yaml_file)
 
     results.from_local_env = _parse_local_env(dirname)
-    results.test_config = _parse_test_config(dirname)
-    results.llm_load_test_config = _parse_llm_load_test_config(dirname)
     results.lts = lts_parser.generate_lts_payload(results, import_settings, must_validate=False)
 
 
 def _parse_once(results, dirname):
     results.test_config = _parse_test_config(dirname)
 
+    results.llm_load_test_config = _parse_llm_load_test_config(dirname)
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)
     results.predictor_logs = _parse_predictor_logs(dirname)
     results.predictor_pod = _parse_predictor_pod(dirname)
@@ -147,20 +149,9 @@ def _parse_test_config(dirname):
         logging.error(f"Config file '{filename}' is empty ...")
         yaml_file = test_config.yaml_file = {}
 
-    def get(key, missing=...):
-        nonlocal yaml_file
-        jsonpath_expression = jsonpath_ng.parse(f'$.{key}')
+    from . import get_yaml_get_key
 
-        match = jsonpath_expression.find(yaml_file)
-        if not match:
-            if missing != ...:
-                return missing
-
-            raise KeyError(f"Key '{key}' not found in {filename} ...")
-
-        return match[0].value
-
-    test_config.get = get
+    test_config.get = get_yaml_get_key("topsail config", yaml_file)
 
     return test_config
 
@@ -186,23 +177,12 @@ def _parse_llm_load_test_config(dirname):
         yaml_file = llm_load_test_config.yaml_file = yaml.safe_load(f)
 
     if not yaml_file:
-        logging.error(f"Config file '{filename}' is empty ...")
+        logging.error(f"Config file '{llm_config_file}' is empty ...")
         yaml_file = llm_load_test_config.yaml_file = {}
 
-    def get(key, missing=...):
-        nonlocal yaml_file
-        jsonpath_expression = jsonpath_ng.parse(f'$.{key}')
+    from . import get_yaml_get_key
 
-        match = jsonpath_expression.find(yaml_file)
-        if not match:
-            if missing != ...:
-                return missing
-
-            raise KeyError(f"Key '{key}' not found in {filename} ...")
-
-        return match[0].value
-
-    llm_load_test_config.get = get
+    llm_load_test_config.get = get_yaml_get_key("llm-load-test config", yaml_file)
 
     return llm_load_test_config
 

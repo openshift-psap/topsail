@@ -183,18 +183,24 @@ class Config:
                 self.apply_preset(preset)
 
     def detect_apply_light_profile(self, profile, name_suffix="light"):
-        job_name_safe = os.environ.get("JOB_NAME_SAFE", "")
-        if not job_name_safe:
-            logging.info(f"detect_apply_light_profile: JOB_NAME_SAFE not set, assuming not running in a CI environment.")
-            return False
+        if os.environ.get("OPENSHIFT_CI"):
+            job_name_safe = os.environ.get("JOB_NAME_SAFE", ...)
 
-        if job_name_safe != name_suffix and not job_name_safe.endswith(f"-{name_suffix}"):
-            return False
+            if job_name_safe is ...:
+                raise RuntimeError("Running in OpenShift CI but JOB_NAME_SAFE not set :/")
 
-        logging.info(f"Running a '{name_suffix}' test ({job_name_safe}), applying the '{profile}' profile")
+            if job_name_safe != name_suffix and not job_name_safe.endswith(f"-{name_suffix}"):
+                return False
 
-        self.apply_preset(profile)
-        return True
+            logging.info(f"Running a '{name_suffix}' test ({job_name_safe}), applying the '{profile}' profile")
+
+            self.apply_preset(profile)
+
+            return True
+
+        logging.info("Not running in OpenShift CI, no light environment to detect.")
+
+        return False
 
     def detect_apply_metal_profile(self, profile):
         platform_type_cmd = run.run("oc get infrastructure/cluster -ojsonpath={.status.platformStatus.type}", capture_stdout=True, capture_stderr=True, check=False)

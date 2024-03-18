@@ -193,6 +193,11 @@ def generate_plots_from_pr_args():
     Generates the visualization reports from the PR arguments
     """
 
+    try:
+        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"]) / config.ci_artifacts.get_config("secrets.aws_credentials"))
+    except Exception as e:
+        logging.warning(f"Failed to set AWS_SHARED_CREDENTIALS_FILE: {e}")
+
     visualize.download_and_generate_visualizations()
 
     export.export_artifacts(env.ARTIFACT_DIR, test_step="plot")
