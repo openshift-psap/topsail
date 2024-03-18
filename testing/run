@@ -106,6 +106,7 @@ prechecks() {
     rm -f "${ARTIFACT_DIR}/FAILURE"
 
     # store `topsail` version in use
+    echo "Saving TOPSAIL git version into ${ARTIFACT_DIR}/topsail.git_version"
     (git describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/topsail.git_version
     # store `matrix-benchmarking` version in use
     (git -C "$THIS_DIR/../subprojects/matrix-benchmarking" describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/matbench.git_version
