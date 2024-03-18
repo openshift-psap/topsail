@@ -8,5 +8,7 @@ serving_runtime:
       DEPLOYMENT_FRAMEWORK: "tgis_native"
       FLASH_ATTENTION: "false"
       MAX_SEQUENCE_LENGTH: 2048
+      BATCH_SAFETY_MARGIN: 25
+      ESTIMATE_MEMORY_BATCH_SIZE: 8
 inference_service:
   storage_uri: "s3://psap-hf-models/flan-t5-xxl/flan-t5-xxl"
