@@ -53,7 +53,7 @@ def init(allow_no_config_file=False):
     matbench_preset = config.ci_artifacts.get_config("matbench.preset")
     if not matbench_preset:
         pass # no preset defined, nothing to do
-    elif str(matbench_preset).startswith("https://"):
+    elif "://" in str(matbench_preset):
         config.ci_artifacts.set_config("matbench.download.url", matbench_preset, dump_command_args=False)
     else:
         config.ci_artifacts.set_config("matbench.config_file", f"{matbench_preset}.yaml", dump_command_args=False)
