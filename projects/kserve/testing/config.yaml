@@ -225,11 +225,14 @@ ci_presets:
   # ---
 
   watsonx_multi_model_gating:
-    extends: [gating, 5min, e2e_gpu, e2e_multi, tgis, raw, use_intlab_minio]
+    extends: [gating, 5min, e2e_gpu, e2e_multi, raw, watsonx_mutlti_model_models]
     matbench.lts.opensearch.index: rhoai-watsonx-multi
     matbench.lts.horreum.test_name: rhoai-watsonx-multi
     tests.e2e.limits_equals_requests: false
     tests.e2e.llm_load_test.args.concurrency: 16
+
+  watsonx_multi_model_models:
+    extends: [tgis, raw, use_intlab_minio]
     tests.e2e.models:
     - watsonx-mpt-7b-instruct2
     - watsonx-mpt-7b-instruct2
@@ -303,6 +306,11 @@ ci_presets:
   # ---
   # longevity
   # ---
+
+  watsonx_longevity_gating:
+    extends: [watsonx_multi_model_models, multi_day_longevity, raw]
+    tests.e2e.limits_equals_requests: false
+    tests.e2e.llm_load_test.args.concurrency: 16
 
   longevity:
     tests.e2e.mode: longevity
