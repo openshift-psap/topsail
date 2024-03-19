@@ -107,6 +107,7 @@ class CallDetailsReport():
             header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="tpot", legend_title="TPOT,<br>in ms/token", show_timeline=True), args))
             header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="ttft", legend_title="TTFT,<br>in ms", show_timeline=True), args))
             header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="itl", legend_title="ITL,<br>in ms", show_timeline=True), args))
+            header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, only_ttft=True), args))
 
         return None, header
 

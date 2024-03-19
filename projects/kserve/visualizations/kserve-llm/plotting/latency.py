@@ -283,6 +283,7 @@ class LatencyDetails():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
 
         cfg__entry = cfg.get("entry", None)
+        cfg__only_ttft = cfg.get("only_ttft", False)
         cfg__only_tokens = cfg.get("only_tokens", False)
         cfg__only_errors = cfg.get("only_errors", False)
         cfg__show_errors = cfg.get("show_errors", cfg__only_errors)
@@ -305,12 +306,14 @@ class LatencyDetails():
         if df.empty:
             return None, "Not data available ..."
 
-        df = df.sort_values(by=["test_name"])
+        df = df.sort_values(by=["test_name", "sort_index"])
 
         if cfg__only_tokens:
             y_key = "tokens"
         elif latency_per_token:
             y_key = "latencyPerToken"
+        if cfg__only_ttft:
+            y_key = "ttft"
         else:
             y_key = "latency"
 
@@ -369,6 +372,9 @@ class LatencyDetails():
         elif cfg__only_tokens:
             fig.update_yaxes(title=f"Number of tokens in the answer")
             fig.update_layout(title=f"Detailed token count of the model answers{subtitle}", title_x=0.5,)
+        elif cfg__only_ttft:
+            fig.update_yaxes(title=f"Time to first token, in ms<br>Lower is better")
+            fig.update_layout(title=f"Time to first token of the model answers{subtitle}", title_x=0.5,)
         elif latency_per_token:
             fig.update_yaxes(title=f"❮ Latency per token (in ms/token)<br>Lower is better")
             fig.update_layout(title=f"Detailed latency/token of {'errors of ' if cfg__only_errors else ''}the load test{subtitle}", title_x=0.5,)
