@@ -161,7 +161,7 @@ class ThroughputReport():
         header += html.Br()
 
         ordered_vars, settings, setting_lists, variables, cfg = args
-        for model_name in variables.get("model_name", []):
+        for model_name in common.Matrix.settings.get("model_name", []):
             header += [html.H1(f"Thoughput of model {model_name}")]
 
             header += Plot_and_Text(f"Throughput", set_config(dict(bar_plot=True, model_name=model_name), args))
