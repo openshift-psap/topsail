@@ -345,11 +345,19 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     # Analyze the new results for regression against the historical results
     #
 
+    replotting = config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "").endswith("-plot")
+
     do_analyze_lts = analyze_lts if analyze_lts is not None \
         else config.ci_artifacts.get_config("matbench.lts.regression_analyses.enabled", None)
 
+    if replotting and not config.ci_artifacts.get_config("matbench.lts.regression_analyses.enabled_on_replot", None):
+        do_analyze_lts = False
+
     do_upload_lts = upload_lts if upload_lts is not None \
         else config.ci_artifacts.get_config("matbench.lts.opensearch.export.enabled", None)
+
+    if replotting and not config.ci_artifacts.get_config("matbench.lts.opensearch.export.enabled_on_replot", None):
+        do_upload_lts = False
 
     try:
         env_file = pathlib.Path(".env.generated.yaml")
