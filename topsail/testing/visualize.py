@@ -349,7 +349,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
         else config.ci_artifacts.get_config("matbench.lts.regression_analyses.enabled", None)
 
     do_upload_lts = upload_lts if upload_lts is not None \
-        else config.ci_artifacts.get_config("matbench.lts.opensearch.export", None)
+        else config.ci_artifacts.get_config("matbench.lts.opensearch.export.enabled", None)
 
     try:
         env_file = pathlib.Path(".env.generated.yaml")
@@ -360,7 +360,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
         do_upload_lts = False
 
         fail_on_regression = config.ci_artifacts.get_config("matbench.lts.regression_analyses.fail_test_on_regression")
-        fail_on_upload = config.ci_artifacts.get_config("matbench.lts.opensearch.fail_test_on_fail")
+        fail_on_upload = config.ci_artifacts.get_config("matbench.lts.opensearch.export.fail_test_on_fail")
         if fail_on_upload or fail_on_regression:
             errors += ["opensearch secret missing"]
 
@@ -377,7 +377,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
             if config.ci_artifacts.get_config("matbench.lts.regression_analyses.fail_test_on_regression"):
                 errors += ["regression detected"]
             else:
-                logging.warning("A regression has been detected, but ignored as per matbench.lts.opensearch.fail_test_on_fail.")
+                logging.warning("A regression has been detected, but ignored as per matbench.lts.regression_analyses.fail_test_on_regression")
 
     #
     # Upload the LTS payload for future regression analyses
@@ -386,10 +386,10 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     if do_upload_lts:
         step_idx += 1
         upload_lts_errors = call_upload_lts(step_idx, common_args, common_env_str)
-        if config.ci_artifacts.get_config("matbench.lts.opensearch.fail_test_on_fail"):
+        if config.ci_artifacts.get_config("matbench.lts.opensearch.export.fail_test_on_fail"):
             errors += upload_lts_errors
         elif upload_lts_errors:
-            logging.warning("An error happened during the LTS load. Ignoring as per matbench.lts.opensearch.fail_test_on_fail.")
+            logging.warning("An error happened during the LTS load. Ignoring as per matbench.lts.opensearch.export.fail_test_on_fail.")
 
     #
     # Generate the visualization reports
