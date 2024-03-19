@@ -104,6 +104,11 @@ class LatencyReport():
 
         if not collapse_index:
             header += Plot_and_Text(f"Latency distribution", set_config(dict(box_plot=False, show_text=False), args))
+
+        header += Plot_and_Text(f"Latency details", args)
+        header += html.Br()
+        header += html.Br()
+
         header += Plot_and_Text(f"Latency distribution", args)
 
         header += html.Br()
@@ -114,10 +119,10 @@ class LatencyReport():
             header += Plot_and_Text(f"Latency distribution", set_config(dict(collapse_index=collapse_index, show_text=False), args))
             header += Plot_and_Text(f"Latency distribution", set_config(dict(collapse_index=collapse_index, box_plot=False), args))
 
-        header += html.Br()
-        header += html.Br()
+        DISABLE_DETAILS = True
+        if DISABLE_DETAILS:
+            return None, header
 
-        header += Plot_and_Text(f"Latency details", args)
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += [html.H2(entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name'])))))]
@@ -190,6 +195,12 @@ class TokensReport():
         header += html.Br()
         header += html.Br()
         header += Plot_and_Text(f"Latency details", set_config(dict(only_tokens=True), args))
+
+        DISABLE_DETAILS = True
+
+        if DISABLE_DETAILS:
+            return None, header
+
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += [html.H2(entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name'])))))]
