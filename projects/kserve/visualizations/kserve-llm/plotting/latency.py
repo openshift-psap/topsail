@@ -39,7 +39,8 @@ class LatencyDistribution():
         cfg__box_plot = cfg.get("box_plot", True)
         cfg__show_text = cfg.get("show_text", True)
 
-        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, only_tokens=cfg__only_tokens, collapse_index=cfg__collapse_index))
+        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, ordered_vars,
+                                                     only_tokens=cfg__only_tokens, collapse_index=cfg__collapse_index))
 
         if df.empty:
             return None, "Not data available ..."
@@ -162,18 +163,48 @@ def plotCustomComparison(df, x, y):
 
     return fig
 
-def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name_by_error=False, latency_per_token=True, show_errors=False, only_tokens=False, collapse_index=False):
+def generateTestStartEnd(entries, model_name):
     data = []
 
+    for entry in entries:
+        if model_name and entry.settings.__dict__.get("model_name") != model_name:
+            continue
+
+        if not entry.results.llm_load_test_output: continue
+        start = datetime.datetime.fromtimestamp(min(r["start_time"] for r in entry.results.llm_load_test_output["results"]))
+        duration = entry.results.llm_load_test_config.get("load_options.duration")
+        end = start + datetime.timedelta(seconds=duration)
+
+        data.append(dict(
+            start=start,
+            end=end
+        ))
+
+
+
+    return data
+
+
+def generateLatencyDetailsData(entries, _variables, _ordered_vars,
+                               only_errors=False, test_name_by_error=False, latency_per_token=True, show_errors=False, only_tokens=False, collapse_index=False, model_name=None):
+    data = []
+
+    variables = list(_variables) # make a copy before modifying
     if "mode" in _variables:
-        variables = list(_variables) # make a copy before modifying
         variables.remove("mode")
         has_multiple_modes = True
     else:
-        variables = _variables
         has_multiple_modes = False
 
+    if model_name and "model_name" in variables:
+        variables.remove("model_name")
+
+    ordered_vars = [v for v in _ordered_vars if v in variables]
+
     for entry in entries:
+        if model_name and entry.settings.__dict__.get("model_name") != model_name:
+            continue
+
         if not entry.results.llm_load_test_output: continue
         for result in entry.results.llm_load_test_output["results"]:
 
@@ -216,6 +247,20 @@ def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name
             datum["error"] = result["error_text"] or "no error"
 
             datum["test_fullname"] = entry.get_name([v for v in variables if v != "index"] if collapse_index else variables)
+            datum["start_time"] = datetime.datetime.fromtimestamp(result["start_time"])
+            datum["end_time"] = datetime.datetime.fromtimestamp(result["end_time"])
+
+            datum["duration"] = result["response_time"]
+            datum["user_id"] = str(result["user_id"])
+            datum["user_id_int"] = result["user_id"]
+
+            datum["tpot"] = result["tpot"]
+            datum["ttft"] = result["ttft"]
+            datum["itl"] = result["itl"]
+
+            datum["sort_index"] = entry.settings.__dict__[ordered_vars[0]] \
+                if ordered_vars else 0
+
             if has_multiple_modes:
                 datum["test_fullname"] += f" {entry.settings.mode.title()}"
 
@@ -241,16 +286,21 @@ class LatencyDetails():
         cfg__only_tokens = cfg.get("only_tokens", False)
         cfg__only_errors = cfg.get("only_errors", False)
         cfg__show_errors = cfg.get("show_errors", cfg__only_errors)
+        cfg__show_timeline = cfg.get("show_timeline", False)
+        cfg__model_name = cfg.get("model_name", False)
+        cfg__color = cfg.get("color", False)
+        cfg__legend_title = cfg.get("legend_title", False)
 
-        entries = [cfg__entry] if cfg__entry else \
-            common.Matrix.all_records(settings, setting_lists)
+        entries = list([cfg__entry] if cfg__entry else \
+                       common.Matrix.all_records(settings, setting_lists))
         latency_per_token = (not cfg__only_errors and not cfg__show_errors)
-        df = pd.DataFrame(generateLatencyDetailsData(entries, variables,
+        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, ordered_vars,
                                                      test_name_by_error=cfg__only_errors,
                                                      show_errors=cfg__show_errors,
                                                      only_errors=cfg__only_errors,
                                                      only_tokens=cfg__only_tokens,
-                                                     latency_per_token=latency_per_token))
+                                                     latency_per_token=latency_per_token,
+                                                     model_name=cfg__model_name))
 
         if df.empty:
             return None, "Not data available ..."
@@ -270,24 +320,53 @@ class LatencyDetails():
             color = "tokens"
         elif cfg__show_errors:
             color = "tokens"
+        elif cfg__show_timeline:
+            color = "user_id"
         else:
             color = "test_name"
 
-        fig = px.scatter(df, hover_data=df.columns,
-                      x="timestamp", y=y_key, color=color)
+        if cfg__show_timeline:
+            scale="greys"
 
-        fig.update_layout(barmode='stack')
-        fig.update_yaxes(range=[0, df[y_key].max() * 1.1])
-        if cfg__entry:
+            df = df.sort_values(by=["sort_index", "user_id_int"])
+            fig = px.timeline(df, x_start="start_time",  x_end="end_time", y="user_id", color=cfg__color,
+                              color_continuous_scale=scale)
+
+            test_start_end = generateTestStartEnd(entries, model_name=cfg__model_name)
+            for start_end in test_start_end:
+                fig.add_vrect(x0=start_end["start"], x1=start_end["end"])
+        else:
+            fig = px.scatter(df, hover_data=df.columns,
+                             x="timestamp", y=y_key, color=color)
+
+        if not cfg__show_timeline:
+            fig.update_layout(barmode='stack')
+            fig.update_yaxes(range=[0, df[y_key].max() * 1.1])
+
+        if cfg__model_name:
+            subtitle = f"<br><b>{cfg__model_name}</b>"
+        elif cfg__entry:
             subtitle = f"<br>{cfg__entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name']))))}"
         elif "model_name" not in variables:
             subtitle = f"<br><b>{settings['model_name']}</b>"
         else:
             subtitle = ""
 
-        fig.update_layout(legend_title_text='')
-        fig.update_xaxes(title=f"Timeline")
-        if cfg__only_tokens:
+        if cfg__legend_title:
+            fig.update_layout(legend_title_text=cfg__legend_title)
+            fig.update_layout(
+                coloraxis_colorbar=dict(
+                    title=cfg__legend_title,
+                ),
+)
+        else:
+            fig.update_layout(legend_title_text='')
+
+        if cfg__show_timeline:
+            fig.update_yaxes(title=f"Virtual user index")
+            fig.update_xaxes(title=f"Timeline")
+            fig.update_layout(title=f"Timeline of the virtual users inference queries{subtitle}", title_x=0.5,)
+        elif cfg__only_tokens:
             fig.update_yaxes(title=f"Number of tokens in the answer")
             fig.update_layout(title=f"Detailed token count of the model answers{subtitle}", title_x=0.5,)
         elif latency_per_token:
