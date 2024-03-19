@@ -11,6 +11,7 @@ def register():
     LatencyReport()
     ThroughputReport()
     TokensReport()
+    CallDetailsReport()
     LtsReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
@@ -85,6 +86,30 @@ def Plot_and_Text(name, args):
                        }))
 
     return data
+
+class CallDetailsReport():
+    def __init__(self):
+        self.name = "report: Call details"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+
+        for model_name in common.Matrix.settings.get("model_name", []):
+            header += [html.H1(f"{model_name}")]
+            header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="duration", legend_title="Call duration,<br>in s", show_timeline=True), args))
+            header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="tpot", legend_title="TPOT,<br>in ms/token", show_timeline=True), args))
+            header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="ttft", legend_title="TTFT,<br>in ms", show_timeline=True), args))
+            header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="itl", legend_title="ITL,<br>in ms", show_timeline=True), args))
+
+        return None, header
+
 
 class LatencyReport():
     def __init__(self):
