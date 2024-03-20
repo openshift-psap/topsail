@@ -33,6 +33,7 @@ IMPORTANT_FILES = [
     f"*/test_start_end.json", f"test_start_end.json",
     "config.yaml",
     ".uuid",
+    ".matbench_prom_db_dir",
 ]
 
 def ignore_file_not_found(fn):
