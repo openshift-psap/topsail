@@ -17,14 +17,14 @@ CACHE_FILENAME = "kserve-prom.cache.pickle"
 
 IMPORTANT_FILES = parsers.IMPORTANT_FILES
 
-PROM_BASE_DIR_FILE = ".matbench_prom_db_dir"
+TEST_DIR_FILE = ".matbench_prom_db_dir"
 
 from ..models import lts as models_lts
 
 store.register_lts_schema(models_lts.Payload)
 
 def is_mandatory_file(filename):
-    return filename.name in (PROM_BASE_DIR_FILE, "exit_code", "config.yaml") or filename.name.startswith("settings.")
+    return filename.name in (TEST_DIR_FILE, "exit_code", "config.yaml") or filename.name.startswith("settings.")
 
 
 def is_important_file(filename):
@@ -146,7 +146,7 @@ def _duplicated_directory(import_key, old_location, new_location):
 
 
 def store_parse_directory(results_dir, expe, dirname):
-    with open(dirname / PROM_BASE_DIR_FILE) as f:
+    with open(dirname / TEST_DIR_FILE) as f:
         name = f.read().strip()
 
     if not name:
@@ -178,12 +178,12 @@ def parse_data(results_dir=None):
     if results_dir is None:
         results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])
 
-    logging.info(f"Searching '{results_dir}' for files named '{PROM_BASE_DIR_FILE}' ...")
+    logging.info(f"Searching '{results_dir}' for files named '{TEST_DIR_FILE}' ...")
     results_directories = []
     path = os.walk(results_dir, followlinks=True)
     results_directories = []
     for _this_dir, directories, files in path:
-        if PROM_BASE_DIR_FILE not in files: continue
+        if TEST_DIR_FILE not in files: continue
         if "skip" in files: continue
         this_dir = pathlib.Path(_this_dir)
 
