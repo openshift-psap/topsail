@@ -312,7 +312,7 @@ class LatencyDetails():
             y_key = "tokens"
         elif latency_per_token:
             y_key = "latencyPerToken"
-        if cfg__only_ttft:
+        elif cfg__only_ttft:
             y_key = "ttft"
         else:
             y_key = "latency"
