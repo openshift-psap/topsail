@@ -20,7 +20,7 @@ from . import error_report, report
 
 def register():
     Throughput()
-    TtftConcurrency()
+    ByUsers()
 
 def generateThroughputData(entries, _variables, _ordered_vars, model_name=None):
     data = []
@@ -109,6 +109,8 @@ class Throughput():
 
         vus = ", ".join(map(str, sorted(df["vusers"].unique())))
         subtitle = f"<br>for {vus} users"
+        if cfg__model_name:
+            subtitle += f"<br><b>{cfg__model_name}</b>"
 
         if cfg__bar_plot:
             df = df.sort_values(by=["sort_index", "test_name"], ascending=True)
@@ -150,18 +152,18 @@ class Throughput():
             fig.update_layout(legend_title_text="Model name")
 
         if cfg__model_name:
-            subtitle += f" ({cfg__model_name})"
+            subtitle += f"<br><b>{cfg__model_name}</b>"
         # ❯ or ❮
 
-        if cfg__entry:
+        if cfg__entry or cfg__model_name:
             fig.layout.update(showlegend=False)
 
         return fig, ""
 
 
-class TtftConcurrency():
+class ByUsers():
     def __init__(self):
-        self.name = "TTFT Concurrency"
+        self.name = "By Users"
         self.id_name = self.name
 
         table_stats.TableStats._register_stat(self)
@@ -174,6 +176,7 @@ class TtftConcurrency():
 
         cfg__entry = cfg.get("entry", None)
         cfg__model_name = cfg.get("model_name", False)
+        cfg__what = cfg.get("what", False)
 
         entries = [cfg__entry] if cfg__entry else \
             common.Matrix.all_records(settings, setting_lists)
@@ -185,9 +188,16 @@ class TtftConcurrency():
 
         df = df.sort_values(by=["sort_index", "model_testname"], ascending=False)
 
-        y_name = "Time To First Token"
-        y_unit = "ms"
-        y_key = "ttft_mean"
+        if cfg__what == "ttft":
+            y_name = "Time To First Token"
+            y_unit = "ms"
+            y_key = "ttft_mean"
+            y_title = f"❮ Mean {y_name} (in {y_unit})<br>Lower is better"
+        elif cfg__what == "throughput":
+            y_name = "Throughput"
+            y_unit = "token/ms"
+            y_key = "throughput"
+            y_title = f"{y_name} (in {y_unit}) ❯<br>Higher is better"
 
         fig = px.line(df, hover_data=df.columns,
                       x="vusers", y=y_key, color="model_testname", text="test_name",)
@@ -196,14 +206,14 @@ class TtftConcurrency():
 
         fig.update_xaxes(title=f"Number of Virtual Users")
 
-        fig.update_yaxes(title=f"❮ Mean {y_name} (in {y_unit})<br>Lower is better")
-        subtitle = f" ({cfg__model_name})" if cfg__model_name else ""
-        fig.update_layout(title=f"{y_name} vs Virtual Users{subtitle}", title_x=0.5,)
+        fig.update_yaxes(title=y_title)
+        subtitle = f"<br><b>{cfg__model_name}</b>" if cfg__model_name else ""
+        fig.update_layout(title=f"{y_name} by Virtual Users{subtitle}", title_x=0.5,)
         fig.update_layout(legend_title_text="Model name")
 
         # ❯ or ❮
 
-        if cfg__entry:
+        if cfg__entry or cfg__model_name:
             fig.layout.update(showlegend=False)
 
         return fig, ""
