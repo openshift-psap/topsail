@@ -618,13 +618,17 @@ matbench:
     horreum:
       test_name: null
     opensearch:
-      export: true
-      fail_test_on_fail: true
+      export:
+        enabled: true
+        enabled_on_replot: false
+        fail_test_on_fail: true
       instance: smoke
       index: rhoai-kserve-single
       index_prefix: ""
+
     regression_analyses:
       enabled: false
+      enabled_on_replot: false
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
 export_artifacts:

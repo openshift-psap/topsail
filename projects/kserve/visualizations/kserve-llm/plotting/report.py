@@ -11,6 +11,7 @@ def register():
     LatencyReport()
     ThroughputReport()
     TokensReport()
+    CallDetailsReport()
     LtsReport()
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
@@ -86,6 +87,31 @@ def Plot_and_Text(name, args):
 
     return data
 
+class CallDetailsReport():
+    def __init__(self):
+        self.name = "report: Call details"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+
+        for model_name in common.Matrix.settings.get("model_name", []):
+            header += [html.H1(f"{model_name}")]
+            header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="duration", legend_title="Call duration,<br>in s", show_timeline=True), args))
+            header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="tpot", legend_title="TPOT,<br>in ms/token", show_timeline=True), args))
+            header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="ttft", legend_title="TTFT,<br>in ms", show_timeline=True), args))
+            header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, color="itl", legend_title="ITL,<br>in ms", show_timeline=True), args))
+            header += Plot_and_Text(f"Latency details", set_config(dict(model_name=model_name, only_ttft=True), args))
+
+        return None, header
+
+
 class LatencyReport():
     def __init__(self):
         self.name = "report: Latency per token"
@@ -104,6 +130,11 @@ class LatencyReport():
 
         if not collapse_index:
             header += Plot_and_Text(f"Latency distribution", set_config(dict(box_plot=False, show_text=False), args))
+
+        header += Plot_and_Text(f"Latency details", args)
+        header += html.Br()
+        header += html.Br()
+
         header += Plot_and_Text(f"Latency distribution", args)
 
         header += html.Br()
@@ -114,10 +145,10 @@ class LatencyReport():
             header += Plot_and_Text(f"Latency distribution", set_config(dict(collapse_index=collapse_index, show_text=False), args))
             header += Plot_and_Text(f"Latency distribution", set_config(dict(collapse_index=collapse_index, box_plot=False), args))
 
-        header += html.Br()
-        header += html.Br()
+        DISABLE_DETAILS = True
+        if DISABLE_DETAILS:
+            return None, header
 
-        header += Plot_and_Text(f"Latency details", args)
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += [html.H2(entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name'])))))]
@@ -156,7 +187,7 @@ class ThroughputReport():
         header += html.Br()
 
         ordered_vars, settings, setting_lists, variables, cfg = args
-        for model_name in variables.get("model_name", []):
+        for model_name in common.Matrix.settings.get("model_name", []):
             header += [html.H1(f"Thoughput of model {model_name}")]
 
             header += Plot_and_Text(f"Throughput", set_config(dict(bar_plot=True, model_name=model_name), args))
@@ -190,6 +221,12 @@ class TokensReport():
         header += html.Br()
         header += html.Br()
         header += Plot_and_Text(f"Latency details", set_config(dict(only_tokens=True), args))
+
+        DISABLE_DETAILS = True
+
+        if DISABLE_DETAILS:
+            return None, header
+
         ordered_vars, settings, setting_lists, variables, cfg = args
         for entry in common.Matrix.all_records(settings, setting_lists):
             header += [html.H2(entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name'])))))]
