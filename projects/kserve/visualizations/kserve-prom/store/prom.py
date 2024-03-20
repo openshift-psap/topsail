@@ -295,6 +295,7 @@ def _get_gpu_usage(cluster_role, register):
         {f"GPU memory transfer (tx)": 'DCGM_FI_PROF_PCIE_TX_BYTES'},
         {f"GPU compute utilization (not 100% accurate)": 'DCGM_FI_DEV_GPU_UTIL'},
         {f"GPU engine usage (not 100% accurate)": 'DCGM_FI_PROF_GR_ENGINE_ACTIVE'},
+        {f"GPU resident wraps occupancy": 'DCGM_FI_PROF_SM_OCCUPANCY'},
         {f"GPU active fp16 pipe": 'DCGM_FI_PROF_PIPE_FP16_ACTIVE'},
         {f"GPU active fp32 pipe": 'DCGM_FI_PROF_PIPE_FP32_ACTIVE'},
         {f"GPU active fp64 pipe": 'DCGM_FI_PROF_PIPE_FP64_ACTIVE'},
