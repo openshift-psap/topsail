@@ -321,14 +321,19 @@ def _get_gpu_usage(cluster_role, register):
                 y_divisor = 1024
             elif rq in ('DCGM_FI_DEV_GPU_UTIL', 'DCGM_FI_PROF_GR_ENGINE_ACTIVE'):
                 y_title = "Compute usage (in %)"
+                if rq == 'DCGM_FI_PROF_GR_ENGINE_ACTIVE':
+                    y_divisor = 0.01
             elif rq == "DCGM_FI_DEV_MEM_COPY_UTIL":
                 y_title = "GPU transfer bus usage (in %)"
             elif rq == "DCGM_FI_PROF_SM_ACTIVE":
                 y_title = "The ratio of cycles an SM has at least 1 warp assigned (in %)"
+                y_divisor = 0.01
             elif rq == "DCGM_FI_PROF_SM_OCCUPANCY":
                 y_title = "The ratio of number of warps resident on an SM (in %)."
+                y_divisor = 0.01
             elif rq.startswith("DCGM_FI_PROF_PIPE_FP"):
                 y_title = "Ratio of cycles the fp pipes are active (in %)."
+                y_divisor = 0.01
             else:
                 y_title = "(no name)"
 
