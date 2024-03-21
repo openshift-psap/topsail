@@ -33,6 +33,18 @@ ci_presets:
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
 
+  stress:
+    extends: [metal]
+    clusters.sutest.compute.dedicated: false
+    clusters.driver.compute.dedicated: false
+    tests.pipelines.mode: stress
+
+  mixed:
+    extends: [metal]
+    clusters.sutest.compute.dedicated: false
+    clusters.driver.compute.dedicated: false
+    tests.pipelines.mode: mixed
+
   scale_test:
     tests.pipelines.user_count: 100
     tests.pipelines.sleep_factor: 1
@@ -160,6 +172,7 @@ base_image:
     bucket_name: pipelines-scale-test-bucket
 tests:
   pipelines:
+    mode: single
     notebook_filename: kfp_hello_world.ipynb
     notebook_directory: projects/pipelines/testing/notebooks/hello-world
     user_count: 2

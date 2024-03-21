@@ -27,8 +27,9 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
             if pipeline_task_only and not pod_time.is_pipeline_task:
                 continue
 
+            print(pod_time)
             pod_name = pod_time.pod_friendly_name
-            hostname = pod_time.hostname
+            hostname = pod_time.hostname or ""
 
             shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "").replace(".ec2.internal", "")
             if pod_time.container_finished:
