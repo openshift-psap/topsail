@@ -41,6 +41,21 @@ workloads:
         command: pipelines test cleanup_cluster_ci
         alway_run: true
 
+  pipelines-light:
+    command_group: rhods
+    test_args:
+    - light
+    steps:
+      pre_cleanup_cluster:
+        command: pipelines test cleanup_cluster_ci
+      prepare:
+        command: pipelines test prepare_ci
+      test:
+        command: pipelines test test_ci
+      post_cleanup_cluster:
+        command: pipelines test cleanup_cluster_ci
+        alway_run: true
+
   pipelines-stress:
     command_group: rhods
     test_args:
