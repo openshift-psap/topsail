@@ -2,6 +2,7 @@ from dash import html
 
 from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
+import matrix_benchmarking.common as common
 
 from ..store import prom
 from . import report
@@ -33,9 +34,9 @@ def add_pod_cpu_mem_usage(header, what, args, mem_only=False, cpu_only=False):
         these_plots_show = "These plots show"
 
     if not cpu_only:
-        header += [report.Plot(f"Prom: {what}: Mem usage", args)]
+        header += report.Plot_and_Text(f"Prom: {what}: Mem usage", args)
     if not mem_only:
-        header += [report.Plot(f"Prom: {what}: CPU usage", args)]
+        header += report.Plot_and_Text(f"Prom: {what}: CPU usage", args)
 
     header += [f"{these_plots_show} the {descr} usage of {what} Pods. "]
     header += ["The ", html.Code("requests"), " and ", html.Code("limits"),
@@ -54,6 +55,8 @@ class SutestCpuMemoryReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
         header = []
         if error_report:
             header += error_report._get_all_tests_setup(args)
@@ -64,17 +67,27 @@ class SutestCpuMemoryReport():
         header += html.Br()
         header += html.Br()
 
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            is_raw_deployment = entry.results.test_config.get("kserve.raw_deployment.enabled")
+            break
+        else:
+            is_raw_deployment = None
+
         args_as_timeline = report.set_config(dict(as_timeline=True), args)
         for metric_spec in prom.SUTEST_CONTAINER_LABELS:
             plot_name = list(metric_spec.keys())[0]
+            if is_raw_deployment and "[serverless]" in plot_name:
+                continue
+
             header += [html.H2(plot_name)]
-            header += [report.Plot(f"Prom: {plot_name}: CPU usage", args_as_timeline)]
-            header += [report.Plot(f"Prom: {plot_name}: Mem usage", args_as_timeline)]
+            header += report.Plot_and_Text(f"Prom: {plot_name}: CPU usage", args_as_timeline)
+            header += report.Plot_and_Text(f"Prom: {plot_name}: Mem usage", args_as_timeline)
 
 
         header += [html.H2("SUTest Cluster")]
-        header += [report.Plot("Prom: sutest cluster memory usage", args_as_timeline)]
-        header += [report.Plot("Prom: sutest cluster CPU usage", args_as_timeline)]
+        header += report.Plot_and_Text("Prom: sutest cluster memory usage", args_as_timeline)
+        header += report.Plot_and_Text("Prom: sutest cluster CPU usage", args_as_timeline)
 
         return None, header
 
@@ -102,7 +115,7 @@ class GpuUsageReport():
             plot_name = list(metric_spec.keys())[0]
             header += [html.H3(plot_name)]
 
-            header += [report.Plot(f"Prom: {plot_name}", args_as_timeline)]
+            header += report.Plot_and_Text(f"Prom: {plot_name}", args_as_timeline)
 
         return None, header
 
@@ -132,8 +145,8 @@ class RhoaiFootprintReport():
 
         for namespace in reversed(sorted(namespaces)):
             header += [html.H3(f"Namespace {namespace}")]
-            header += [report.Plot(f"Prom: Namespace {namespace}: CPU usage", args_as_timeline)]
-            header += [report.Plot(f"Prom: Namespace {namespace}: Mem usage", args_as_timeline)]
+            header += report.Plot_and_Text(f"Prom: Namespace {namespace}: CPU usage", args_as_timeline)
+            header += report.Plot_and_Text(f"Prom: Namespace {namespace}: Mem usage", args_as_timeline)
 
         return None, header
 

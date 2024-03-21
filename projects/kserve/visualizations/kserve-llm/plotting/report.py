@@ -182,7 +182,11 @@ class ThroughputReport():
         header += html.Br()
         header += html.Br()
 
-        header += Plot_and_Text(f"TTFT Concurrency", set_config(dict(), args))
+        header += Plot_and_Text(f"By Users", set_config(dict(what="throughput"), args))
+        header += html.Br()
+        header += html.Br()
+
+        header += Plot_and_Text(f"By Users", set_config(dict(what="ttft"), args))
         header += html.Br()
         header += html.Br()
 
@@ -193,7 +197,8 @@ class ThroughputReport():
             header += Plot_and_Text(f"Throughput", set_config(dict(bar_plot=True, model_name=model_name), args))
             header += Plot_and_Text(f"Throughput", set_config(dict(model_name=model_name), args))
             header += Plot_and_Text(f"Throughput", set_config(dict(model_name=model_name, itl=True), args))
-            header += Plot_and_Text(f"TTFT Concurrency", set_config(dict(model_name=model_name), args))
+            header += Plot_and_Text(f"By Users", set_config(dict(model_name=model_name, what="throughput"), args))
+            header += Plot_and_Text(f"By Users", set_config(dict(model_name=model_name, what="ttft"), args))
             header += html.Br()
             header += html.Br()
 

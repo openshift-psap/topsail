@@ -287,17 +287,17 @@ def _get_gpu_usage(cluster_role, register):
     all_metrics = []
 
     gpu_usage_metrics = [
-        {f"GPU memory used": 'DCGM_FI_DEV_FB_USED'},
-        {f"GPU active computes": 'DCGM_FI_PROF_SM_ACTIVE'},
-        {f"GPU memory transfer utilization": 'DCGM_FI_DEV_MEM_COPY_UTIL'},
-        {f"GPU memory unallocated": 'DCGM_FI_DEV_FB_FREE'},
-        {f"GPU memory transfer (rx)": 'DCGM_FI_PROF_PCIE_RX_BYTES'},
-        {f"GPU memory transfer (tx)": 'DCGM_FI_PROF_PCIE_TX_BYTES'},
-        {f"GPU compute utilization (not 100% accurate)": 'DCGM_FI_DEV_GPU_UTIL'},
-        {f"GPU engine usage (not 100% accurate)": 'DCGM_FI_PROF_GR_ENGINE_ACTIVE'},
-        {f"GPU active fp16 pipe": 'DCGM_FI_PROF_PIPE_FP16_ACTIVE'},
-        {f"GPU active fp32 pipe": 'DCGM_FI_PROF_PIPE_FP32_ACTIVE'},
-        {f"GPU active fp64 pipe": 'DCGM_FI_PROF_PIPE_FP64_ACTIVE'},
+        {f"GPU memory used": 'DCGM_FI_DEV_FB_USED{exported_container="kserve-container"}'},
+        {f"GPU active computes": 'DCGM_FI_PROF_SM_ACTIVE{exported_container="kserve-container"}'},
+        {f"GPU memory transfer utilization": 'DCGM_FI_DEV_MEM_COPY_UTIL{exported_container="kserve-container"}'},
+        {f"GPU memory unallocated": 'DCGM_FI_DEV_FB_FREE{exported_container="kserve-container"}'},
+        {f"GPU memory transfer (rx)": 'DCGM_FI_PROF_PCIE_RX_BYTES{exported_container="kserve-container"}'},
+        {f"GPU memory transfer (tx)": 'DCGM_FI_PROF_PCIE_TX_BYTES{exported_container="kserve-container"}'},
+        {f"GPU compute utilization (not 100% accurate)": 'DCGM_FI_DEV_GPU_UTIL{exported_container="kserve-container"}'},
+        {f"GPU engine usage (not 100% accurate)": 'DCGM_FI_PROF_GR_ENGINE_ACTIVE{exported_container="kserve-container"}'},
+        {f"GPU active fp16 pipe": 'DCGM_FI_PROF_PIPE_FP16_ACTIVE{exported_container="kserve-container"}'},
+        {f"GPU active fp32 pipe": 'DCGM_FI_PROF_PIPE_FP32_ACTIVE{exported_container="kserve-container"}'},
+        {f"GPU active fp64 pipe": 'DCGM_FI_PROF_PIPE_FP64_ACTIVE{exported_container="kserve-container"}'},
 
     ]
     all_metrics += gpu_usage_metrics
@@ -321,14 +321,19 @@ def _get_gpu_usage(cluster_role, register):
                 y_divisor = 1024
             elif rq in ('DCGM_FI_DEV_GPU_UTIL', 'DCGM_FI_PROF_GR_ENGINE_ACTIVE'):
                 y_title = "Compute usage (in %)"
+                if rq == 'DCGM_FI_PROF_GR_ENGINE_ACTIVE':
+                    y_divisor = 0.01
             elif rq == "DCGM_FI_DEV_MEM_COPY_UTIL":
                 y_title = "GPU transfer bus usage (in %)"
             elif rq == "DCGM_FI_PROF_SM_ACTIVE":
                 y_title = "The ratio of cycles an SM has at least 1 warp assigned (in %)"
+                y_divisor = 0.01
             elif rq == "DCGM_FI_PROF_SM_OCCUPANCY":
                 y_title = "The ratio of number of warps resident on an SM (in %)."
+                y_divisor = 0.01
             elif rq.startswith("DCGM_FI_PROF_PIPE_FP"):
                 y_title = "Ratio of cycles the fp pipes are active (in %)."
+                y_divisor = 0.01
             else:
                 y_title = "(no name)"
 
@@ -349,26 +354,26 @@ def _get_gpu_usage(cluster_role, register):
 
 SUTEST_CONTAINER_LABELS = [
     {"Serving Runtime kserve container": dict(namespace="watsonx.*", container="kserve-container")},
-    {"Serving Runtime transformer container": dict(namespace="watsonx.*", container="transformer-container")},
-    {"Serving Runtime istio-proxy container": dict(namespace="watsonx.*", container="istio-proxy")},
-    {"Serving Runtime queue-proxy container": dict(namespace="watsonx.*", container="queue-proxy")},
+    {"Serving Runtime transformer container [caikit]": dict(namespace="watsonx.*", container="transformer-container")},
+    {"Serving Runtime istio-proxy container [serverless]": dict(namespace="watsonx.*", container="istio-proxy")},
+    {"Serving Runtime queue-proxy container [serverless]": dict(namespace="watsonx.*", container="queue-proxy")},
 
-    {"KServe Controller": dict(namespace="redhat-ods-applications", pod="kserve-controller-manager-.*")},
+    {"KServe Controller [serverless]": dict(namespace="redhat-ods-applications", pod="kserve-controller-manager-.*")},
     {"ODH Model Controller": dict(namespace="redhat-ods-applications", pod="odh-model-controller-.*")},
 
-    {"Istio egress": dict(namespace="istio-system", pod="istio-egressgateway-.*")},
-    {"Istio ingress": dict(namespace="istio-system", pod="istio-ingressgateway-.*")},
-    {"Istiod DataScience SMCP": dict(namespace="istio-system", pod="istiod-data-science-smcp-.*")},
+    {"Istio egress [serverless]": dict(namespace="istio-system", pod="istio-egressgateway-.*")},
+    {"Istio ingress [serverless]": dict(namespace="istio-system", pod="istio-ingressgateway-.*")},
+    {"Istiod DataScience SMCP [serverless]": dict(namespace="istio-system", pod="istiod-data-science-smcp-.*")},
 
-    {"KNative Activator": dict(namespace="knative-serving", pod="activator-.*")},
-    {"KNative Autoscaler": dict(namespace="knative-serving", pod="autoscaler-.*")},
-    {"KNative Autoscaler HPA": dict(namespace="knative-serving", pod="autoscaler-hpa-.*")},
-    {"KNative Controller": dict(namespace="knative-serving", pod="controller-.*")},
-    {"KNative Domain-mapping": dict(namespace="knative-serving", pod="domain-mapping-.*")},
-    {"KNative Domain-mapping Webhook": dict(namespace="knative-serving", pod="domainmapping-webhook-.*")},
-    {"KNative net-istio-controller": dict(namespace="knative-serving", pod="net-istio-controller-.*")},
-    {"KNative net-istio-webhook": dict(namespace="knative-serving", pod="net-istio-webhook-.*")},
-    {"KNative webhook": dict(namespace="knative-serving", pod="webhook-.*")},
+    {"KNative Activator [serverless]": dict(namespace="knative-serving", pod="activator-.*")},
+    {"KNative Autoscaler [serverless]": dict(namespace="knative-serving", pod="autoscaler-.*")},
+    {"KNative Autoscaler HPA [serverless]": dict(namespace="knative-serving", pod="autoscaler-hpa-.*")},
+    {"KNative Controller [serverless]": dict(namespace="knative-serving", pod="controller-.*")},
+    {"KNative Domain-mapping [serverless]": dict(namespace="knative-serving", pod="domain-mapping-.*")},
+    {"KNative Domain-mapping Webhook [serverless]": dict(namespace="knative-serving", pod="domainmapping-webhook-.*")},
+    {"KNative net-istio-controller [serverless]": dict(namespace="knative-serving", pod="net-istio-controller-.*")},
+    {"KNative net-istio-webhook [serverless]": dict(namespace="knative-serving", pod="net-istio-webhook-.*")},
+    {"KNative webhook [serverless]": dict(namespace="knative-serving", pod="webhook-.*")},
 ]
 
 def _get_rhoai_resource_usage(cluster_role, register):
