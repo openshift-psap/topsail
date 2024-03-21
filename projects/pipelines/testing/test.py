@@ -402,6 +402,14 @@ def _pipelines_run_many(test_artifact_dir_p):
     finally:
         run.run_toolbox("cluster", "capture_environment", mute_stdout=True, check=False)
 
+@entrypoint()
+def cleanup_sutest_ns():
+    """
+    Cleans up the SUTest namespaces
+    """
+
+    cleanup_scale_test()
+
 
 @entrypoint()
 def cleanup_scale_test():
