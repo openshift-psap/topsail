@@ -27,11 +27,17 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
             if pipeline_task_only and not pod_time.is_pipeline_task:
                 continue
 
-            print(pod_time)
+            logging.info(pod_time)
             pod_name = pod_time.pod_friendly_name
             hostname = pod_time.hostname or ""
 
             shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "").replace(".ec2.internal", "")
+
+            if pod_time.start_time:
+                start_time = pod_time.start_time
+            else:
+                start_time = entry.results.tester_job.creation_time
+
             if pod_time.container_finished:
                 finish = pod_time.container_finished
             else:
@@ -48,9 +54,9 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
                 PodOwner = f"{pod_name} -- {user_index}",
                 PodName = pod_name,
                 UserIdx = user_idx,
-                PodStart = pod_time.start_time,
+                PodStart = start_time,
                 PodFinish = finish,
-                Duration = (finish - pod_time.start_time).total_seconds(),
+                Duration = (finish - start_time).total_seconds(),
                 NodeIndex = f"Node {hostname_index}",
                 NodeName = f"Node {hostname_index}<br>{shortname}",
                 Count=1,
