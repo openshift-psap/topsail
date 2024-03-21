@@ -2,6 +2,7 @@ from dash import html
 
 from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
+import matrix_benchmarking.common as common
 
 from ..store import prom
 from . import report
@@ -54,6 +55,8 @@ class SutestCpuMemoryReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
         header = []
         if error_report:
             header += error_report._get_all_tests_setup(args)
@@ -64,9 +67,19 @@ class SutestCpuMemoryReport():
         header += html.Br()
         header += html.Br()
 
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            is_raw_deployment = entry.results.test_config.get("kserve.raw_deployment.enabled")
+            break
+        else:
+            is_raw_deployment = None
+
         args_as_timeline = report.set_config(dict(as_timeline=True), args)
         for metric_spec in prom.SUTEST_CONTAINER_LABELS:
             plot_name = list(metric_spec.keys())[0]
+            if is_raw_deployment and "[serverless]" in plot_name:
+                continue
+
             header += [html.H2(plot_name)]
             header += report.Plot_and_Text(f"Prom: {plot_name}: CPU usage", args_as_timeline)
             header += report.Plot_and_Text(f"Prom: {plot_name}: Mem usage", args_as_timeline)
