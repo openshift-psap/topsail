@@ -46,14 +46,12 @@ workloads:
     test_args:
     - light
     steps:
-      pre_cleanup_cluster:
-        command: pipelines test cleanup_cluster_ci
-      prepare:
-        command: pipelines test prepare_ci
+      pre_cleanup_ns:
+        command: pipelines test cleanup_sutest_ns
       test:
         command: pipelines test test_ci
-      post_cleanup_cluster:
-        command: pipelines test cleanup_cluster_ci
+      post_cleanup_ns:
+        command: pipelines test cleanup_sutest_ns
         alway_run: true
 
   pipelines-stress:
