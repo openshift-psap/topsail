@@ -341,6 +341,21 @@ def pipelines_run_many():
     _not_used__test_artifact_dir_p = [None]
     _pipelines_run_many(_not_used__test_artifact_dir_p)
 
+@entrypoint()
+def pipelines_run_stress():
+    """
+    Runs stress test of pipelines
+    """
+    _not_used__test_artifact_dir_p = [None]
+    _pipelines_run_many(_not_used__test_artifact_dir_p)
+
+@entrypoint()
+def pipelines_run_mixed():
+    """
+    Runs a mixed workload composed of various pipelines
+    """
+    _not_used__test_artifact_dir_p = [None]
+    _pipelines_run_many(_not_used__test_artifact_dir_p)
 
 def _pipelines_run_many(test_artifact_dir_p):
     ARTIFACTS_VERSION = "2023-06-05"
