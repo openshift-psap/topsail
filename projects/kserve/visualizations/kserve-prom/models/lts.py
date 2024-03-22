@@ -12,6 +12,18 @@ KPI_SETTINGS_VERSION = "1.0"
 class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
 
+    instance_type: str
+    accelerator_name: str
+
+    ocp_version: matbench_models.SemVer
+    rhoai_version: matbench_models.SemVer
+    deployment_mode: str
+
+    ci_engine: str
+    run_id: str
+    test_path: str
+    urls: Optional[dict[str, str]]
+
 
 class GpuMetadata(matbench_models.ExclusiveModel):
     product: str
@@ -22,6 +34,8 @@ class GpuMetadata(matbench_models.ExclusiveModel):
 LTS_SCHEMA_VERSION = "1.0"
 class Metadata(matbench_models.Metadata):
     lts_schema_version: str
+
+    settings: Settings
 
     presets: List[str]
     config: str

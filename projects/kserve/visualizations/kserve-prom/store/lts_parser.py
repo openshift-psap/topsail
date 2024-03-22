@@ -20,8 +20,25 @@ def generate_lts_payload(results, lts_results, import_settings, must_validate=Fa
 
 
 def generate_lts_settings(lts_metadata, results, import_settings):
+    gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu])
+    gpu_names = "|".join(gpus)
+
     lts_settings = types.SimpleNamespace()
     lts_settings.kpi_settings_version = models_lts.KPI_SETTINGS_VERSION
+
+    lts_settings.instance_type = results.test_config.get("clusters.sutest.compute.machineset.type")
+    lts_settings.accelerator_name = gpu_names or "no accelerator"
+
+    lts_settings.ocp_version = results.ocp_version
+    version_name = results.test_config.get("rhods.catalog.version_name")
+    lts_settings.rhoai_version = f"{results.rhods_info.version}-{version_name}+{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
+
+    lts_settings.deployment_mode = "RawDeployment" if results.test_config.get("kserve.raw_deployment.enabled") else "Serverless"
+
+    lts_settings.ci_engine = results.from_env.test.ci_engine
+    lts_settings.run_id = results.from_env.test.run_id
+    lts_settings.test_path = results.from_env.test.test_path
+    lts_settings.urls = results.from_env.test.urls
 
     return lts_settings
 
@@ -38,7 +55,6 @@ def generate_lts_metadata(results, import_settings):
 
     metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
     metadata.config = config = yaml.dump(results.test_config.yaml_file, indent=4, default_flow_style=False, sort_keys=False, width=1000)
-    metadata.settings = dict(import_settings)
 
     metadata.gpus = results.cluster_info.gpus
 
