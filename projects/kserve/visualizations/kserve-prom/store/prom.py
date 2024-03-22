@@ -288,6 +288,7 @@ def _get_gpu_usage(cluster_role, register):
 
     gpu_usage_metrics = [
         {f"GPU memory used": 'DCGM_FI_DEV_FB_USED{exported_container="kserve-container"}'},
+        {f"GPU memory used (all GPUs)": 'sum(DCGM_FI_DEV_FB_USED{exported_container="kserve-container"})'},
         {f"GPU active computes": 'DCGM_FI_PROF_SM_ACTIVE{exported_container="kserve-container"}'},
         {f"GPU memory transfer utilization": 'DCGM_FI_DEV_MEM_COPY_UTIL{exported_container="kserve-container"}'},
         {f"GPU memory unallocated": 'DCGM_FI_DEV_FB_FREE{exported_container="kserve-container"}'},

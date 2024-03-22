@@ -6,13 +6,23 @@ from pydantic import BaseModel, Field
 
 import matrix_benchmarking.models as matbench_models
 
+from . import kpi
+
+KPI_SETTINGS_VERSION = "1.0"
+class Settings(matbench_models.ExclusiveModel):
+    kpi_settings_version: str
+
+
 class GpuMetadata(matbench_models.ExclusiveModel):
     product: str
     memory: float
     count: int
 
 
+LTS_SCHEMA_VERSION = "1.0"
 class Metadata(matbench_models.Metadata):
+    lts_schema_version: str
+
     presets: List[str]
     config: str
     gpus: List[GpuMetadata]
@@ -24,6 +34,7 @@ class Metrics(matbench_models.ExclusiveModel):
     kserve_container_memory_usage: matbench_models.PrometheusValues = \
         Field(..., alias="sutest__container_memory_usage_bytes__namespace=watsonx.*_container=kserve-container")
     gpu_memory_used: matbench_models.PrometheusValues = Field(..., alias="GPU memory used")
+    gpu_total_memory_used: matbench_models.PrometheusValues = Field(..., alias="GPU memory used (all GPUs)")
     gpu_active_computes: matbench_models.PrometheusValues = Field(..., alias="GPU active computes")
 
     rhoai_mem_footprint_core_request: matbench_models.PrometheusValues = Field(..., alias="redhat-ods-.* memory request")
@@ -68,6 +79,12 @@ class Results(matbench_models.ExclusiveModel):
     metrics: Metrics
 
 
+class KServePromKPI(matbench_models.KPI, Settings): pass
+
+KServePromKPIs = matbench_models.getKPIsModel("KServePromKPIs", __name__, kpi.KPIs, KServePromKPI)
+
+
 class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata
     results: Results
+    kpis: Optional[KServePromKPIs]

@@ -1,12 +1,14 @@
 import logging
 import json
 import functools
+import types
 
 import matrix_benchmarking.common as common
 from matrix_benchmarking.parse import json_dumper
 
 from .. import models
 from ..models import lts as models_lts
+from ..models import kpi as models_kpi
 from . import lts_parser
 
 def validate_lts_payload(payload, import_settings, reraise=False):
@@ -37,6 +39,25 @@ def validate_lts_payload(payload, import_settings, reraise=False):
         return False
 
 
+def generate_lts_kpis(lts_payload):
+
+    kpis = {}
+
+    for name, properties in models_kpi.KPIs.items():
+        kpi = {} | properties | lts_parser.get_kpi_labels(lts_payload)
+
+        kpi_func = kpi.pop("__func__")
+        try:
+            kpi["value"] = kpi_func(lts_payload)
+        except Exception as e:
+            logging.error(f"Failed to generate KPI {name}: {e}")
+            kpi["value"] = None
+
+        kpis[name] =  types.SimpleNamespace(**kpi)
+
+    return kpis
+
+
 def build_lts_payloads():
     for entry in common.Matrix.processed_map.values():
         results = entry.results
@@ -45,4 +66,3 @@ def build_lts_payloads():
         validate_lts_payload(lts_payload, entry.import_settings, reraise=True)
 
         yield lts_payload, lts_payload.metadata.start, lts_payload.metadata.end
-
