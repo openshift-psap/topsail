@@ -519,6 +519,9 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
             with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
                 print(str(uuid.uuid4()), file=f)
 
+        with open(env.ARTIFACT_DIR / "consolidated_model.yaml", "w") as f:
+            yaml.dump(consolidated_model, f, indent=4)
+
         exit_code = 1
         try:
             exit_code = test_consolidated_model(consolidated_model)
