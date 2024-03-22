@@ -72,9 +72,11 @@ class Results(matbench_models.ExclusiveModel):
     model_load_duration: Optional[float]
     failures: int
 
+
 class KServeLLMPerformanceKPI(matbench_models.KPI, Settings): pass
 
 KServeLLMPerformanceKPIs = matbench_models.getKPIsModel("KServeLLMPerformanceKPIs", __name__, kpi.KPIs, KServeLLMPerformanceKPI)
+
 
 class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata

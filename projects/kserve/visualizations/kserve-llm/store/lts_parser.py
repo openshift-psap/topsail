@@ -34,6 +34,7 @@ def _generate_time_per_output_token(results):
     tpot["values"] = [x["tpot"] for x in results.llm_load_test_output["results"] if x["tpot"]]
     return types.SimpleNamespace(**tpot)
 
+
 def _generate_inter_token_latency(results):
     if not results.llm_load_test_output: return None
 
@@ -154,12 +155,6 @@ def generate_lts_results(results):
 
     return results_lts
 
-
-def _gather_prom_metrics(metrics, model) -> dict:
-    data = {metric_name: metrics[metric_name]
-            for metric_name in model.schema()["properties"].keys()}
-
-    return model(**data)
 
 def get_kpi_labels(lts_payload):
     kpi_labels = dict(lts_payload.metadata.settings.__dict__)
