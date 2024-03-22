@@ -262,6 +262,19 @@ def _parse_predictor_pod(dirname):
     predictor_pod.init_time = condition_times["Initialized"] - condition_times["PodScheduled"]
     predictor_pod.load_time = condition_times["Ready"] - condition_times["Initialized"]
 
+    for container in pod["spec"]["containers"]:
+        if container["name"] != "kserve-container": continue
+        try:
+            gpu_count = int(container["resources"]["requests"]["nvidia.com/gpu"])
+        except:
+            gpu_count = 0
+        break
+    else:
+        logging.warning("Container 'kserve-container' not found in the predictor pod spec ...")
+        gpu_count = None
+
+    predictor_pod.gpu_count = gpu_count
+
     return predictor_pod
 
 
