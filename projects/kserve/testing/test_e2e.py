@@ -303,6 +303,8 @@ def generate_kserve_prom_results(expe_name):
 
     dump_prometheus()
 
+    raw_deployment = config.ci_artifacts.get_config("kserve.raw_deployment.enabled")
+    run.run_toolbox("kserve", "capture_operators_state", raw_deployment=raw_deployment, run_kwargs=dict(capture_stdout=True))
 
 # ---
 def deploy_consolidated_models():
