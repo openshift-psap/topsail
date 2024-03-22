@@ -127,7 +127,7 @@ spec:
         env:
         - name: ARTIFACT_DIR
           value: /logs/artifacts
-        - name: TOPSAIL_LOCAL_CI
+        - name: TOPSAIL_LOCAL_CI_MULTI
           value: "true"
 {% set ocp_keys = ["OPENSHIFT_CI", "JOB_SPEC", "PULL_NUMBER", "REPO_OWNER", "REPO_NAME", "PULL_BASE_REF", "ENTRYPOINT_OPTIONS"] %}
 {% set jenkins_keys = ["PERFLAB_CI", "JENKINS_JUMPHOST", "JENKINS_BUILD_NUMBER", "JENKINS_JOB", "JENKINS_INSTANCE"] %}
