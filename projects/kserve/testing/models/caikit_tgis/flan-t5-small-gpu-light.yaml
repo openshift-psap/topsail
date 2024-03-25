@@ -1,5 +1,5 @@
 # light profile for running a scale test with stretched resources
-extends: flan-t5-small-gpu
+extends: caikit_tgis/flan-t5-small-gpu
 
 serving_runtime:
   transformer:

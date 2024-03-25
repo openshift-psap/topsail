@@ -168,6 +168,10 @@ def consolidate_model_config(config_location=None, _model_name=None, index=None,
 
         raise SystemExit(0)
 
+    model_directory_prefix = config.ci_artifacts.get_config("model_directory_prefix")
+    if model_directory_prefix:
+        model_name = model_directory_prefix + "/" + model_name
+
     base_config = get_base_config(model_name)
 
     # kserve_model = config(kserve.model)
@@ -179,9 +183,6 @@ def consolidate_model_config(config_location=None, _model_name=None, index=None,
     model_config = merge_dicts(model_config, kserve_model_config)
     # base += test
     model_config = merge_dicts(model_config, test_config)
-
-    # If there exists a directory structure in the model name, then remove it.
-    model_config["name"] = model_config["name"].split("/")[-1]
 
     if index is not None:
         model_config["index"] = index
