@@ -8,12 +8,13 @@ from enum import Enum
 import matrix_benchmarking.models as matbench_models
 from . import kpi
 
-KPI_SETTINGS_VERSION = "1.0"
+KPI_SETTINGS_VERSION = "1.1"
 class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
 
     instance_type: str
     accelerator_name: str
+    accelerator_count: Optional[int]
 
     ocp_version: matbench_models.SemVer
     rhoai_version: matbench_models.SemVer
@@ -71,9 +72,11 @@ class Results(matbench_models.ExclusiveModel):
     model_load_duration: Optional[float]
     failures: int
 
+
 class KServeLLMPerformanceKPI(matbench_models.KPI, Settings): pass
 
 KServeLLMPerformanceKPIs = matbench_models.getKPIsModel("KServeLLMPerformanceKPIs", __name__, kpi.KPIs, KServeLLMPerformanceKPI)
+
 
 class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata

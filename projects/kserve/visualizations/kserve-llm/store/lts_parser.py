@@ -34,6 +34,7 @@ def _generate_time_per_output_token(results):
     tpot["values"] = [x["tpot"] for x in results.llm_load_test_output["results"] if x["tpot"]]
     return types.SimpleNamespace(**tpot)
 
+
 def _generate_inter_token_latency(results):
     if not results.llm_load_test_output: return None
 
@@ -68,6 +69,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.kpi_settings_version = models_lts.KPI_SETTINGS_VERSION
     lts_settings.instance_type = results.test_config.get("clusters.sutest.compute.machineset.type")
     lts_settings.accelerator_name = gpu_names or "no accelerator"
+    lts_settings.accelerator_count = results.predictor_pod.gpu_count # none if the kserve container isn't found
 
     lts_settings.ocp_version = lts_metadata.ocp_version
     lts_settings.rhoai_version = lts_metadata.rhods_version
@@ -110,7 +112,8 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
     lts_metadata.config = yaml.dump(results.test_config.yaml_file, indent=4, default_flow_style=False, sort_keys=False, width=1000)
     lts_metadata.ocp_version = results.ocp_version
-    lts_metadata.rhods_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
+    version_name = results.test_config.get("rhods.catalog.version_name")
+    lts_metadata.rhods_version = f"{results.rhods_info.version}-{version_name}+{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
     lts_metadata.test_uuid = results.test_uuid
     lts_metadata.settings = generate_lts_settings(lts_metadata, results, dict(import_settings))
     lts_metadata.run_id = results.from_env.test.run_id
@@ -153,12 +156,6 @@ def generate_lts_results(results):
 
     return results_lts
 
-
-def _gather_prom_metrics(metrics, model) -> dict:
-    data = {metric_name: metrics[metric_name]
-            for metric_name in model.schema()["properties"].keys()}
-
-    return model(**data)
 
 def get_kpi_labels(lts_payload):
     kpi_labels = dict(lts_payload.metadata.settings.__dict__)

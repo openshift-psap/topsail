@@ -303,6 +303,8 @@ def generate_kserve_prom_results(expe_name):
 
     dump_prometheus()
 
+    raw_deployment = config.ci_artifacts.get_config("kserve.raw_deployment.enabled")
+    run.run_toolbox("kserve", "capture_operators_state", raw_deployment=raw_deployment, run_kwargs=dict(capture_stdout=True))
 
 # ---
 def deploy_consolidated_models():
@@ -518,6 +520,9 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
         if not matbenchmarking:
             with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
                 print(str(uuid.uuid4()), file=f)
+
+        with open(env.ARTIFACT_DIR / "consolidated_model.yaml", "w") as f:
+            yaml.dump(consolidated_model, f, indent=4)
 
         exit_code = 1
         try:

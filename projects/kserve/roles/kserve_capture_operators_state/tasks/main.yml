@@ -72,3 +72,17 @@
   - istio-system
   loop_control:
     loop_var: namespace
+
+
+# OCP version
+
+- name: Store OpenShift YAML version
+  shell:
+    oc version -oyaml
+       > {{ artifact_extra_logs_dir }}/ocp_version.yaml
+
+# Cluster nodes
+
+- name: Get the cluster nodes json
+  shell:
+    oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/nodes.json"
