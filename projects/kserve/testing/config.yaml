@@ -239,21 +239,21 @@ ci_presets:
     - watsonx/japanese-llama-2-7b-instruct
     - watsonx/llama-2-13b-chat-hf
     - watsonx/llama-2-13b-chat-hf
-    - flan-t5-xl-1:
+    - kserve-flan-t5-xl-1:
         name: watsonx/flan-t5-xl
-        namespace: e2e-flan-grouped
+        namespace: kserve-e2e-flan-grouped
         serving_runtime:
-          name: flan-grouped
-    - flan-t5-xl-2:
+          name: kserve-flan-grouped
+    - kserve-flan-t5-xl-2:
         name: watsonx/flan-t5-xl
-        namespace: e2e-flan-grouped
+        namespace: kserve-e2e-flan-grouped
         serving_runtime:
-          name: flan-grouped
-    - flan-t5-xxl:
+          name: kserve-flan-grouped
+    - kserve-flan-t5-xxl:
         name: watsonx/flan-t5-xxl
-        namespace: e2e-flan-grouped
+        namespace: kserve-e2e-flan-grouped
         serving_runtime:
-          name: flan-grouped
+          name: kserve-flan-grouped
 
   watsonx_multi_model_gating_light:
     extends: [watsonx_multi_model_gating, gating_rehearsal, 3min, no_gpu]
