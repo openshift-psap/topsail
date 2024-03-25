@@ -239,17 +239,17 @@ ci_presets:
     - watsonx/japanese-llama-2-7b-instruct
     - watsonx/llama-2-13b-chat-hf
     - watsonx/llama-2-13b-chat-hf
-    - watsonx-flan-t5-xl-1:
+    - flan-t5-xl-1:
         name: watsonx/flan-t5-xl
         namespace: e2e-flan-grouped
         serving_runtime:
           name: flan-grouped
-    - watsonx-flan-t5-xl-2:
+    - flan-t5-xl-2:
         name: watsonx/flan-t5-xl
         namespace: e2e-flan-grouped
         serving_runtime:
           name: flan-grouped
-    - watsonx-flan-t5-xxl:
+    - flan-t5-xxl:
         name: watsonx/flan-t5-xxl
         namespace: e2e-flan-grouped
         serving_runtime:
