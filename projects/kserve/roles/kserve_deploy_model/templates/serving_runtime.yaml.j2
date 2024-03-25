@@ -62,6 +62,8 @@ spec:
       name: h2c
       protocol: TCP
     env:
+    - name: TRANSFORMERS_CACHE
+      value: /shared_model_storage/transformers_cache
 {% for env_key, env_value in kserve_deploy_model_sr_transformer_extra_env_values.items() %}
     - name: "{{ env_key }}"
       value: "{{ env_value }}"
