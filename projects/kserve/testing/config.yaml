@@ -225,7 +225,7 @@ ci_presets:
   # ---
 
   watsonx_multi_model_gating:
-    extends: [gating, 5min, e2e_gpu, e2e_multi, raw, watsonx_mutlti_model_models]
+    extends: [gating, 5min, e2e_gpu, e2e_multi, raw, watsonx_multi_model_models]
     matbench.lts.opensearch.index: rhoai-watsonx-multi
     matbench.lts.horreum.test_name: rhoai-watsonx-multi
     tests.e2e.limits_equals_requests: false
