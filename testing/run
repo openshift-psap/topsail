@@ -51,7 +51,7 @@ prechecks() {
         exit 1
     fi
 
-    if [[ "${PERFLAB_CI:-}" == true && "${TOPSAIL_LOCAL_CI:-}" != true ]]; then
+    if [[ "${PERFLAB_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
         # in the perflab CI, the tty columns returns 10240, making Ansible print as many stars at the end of the play
         # this is a workaround to avoid that.
         stty cols 80
@@ -66,7 +66,7 @@ prechecks() {
         exec &> >(tee -a "$LOG_FILE")
     fi
 
-    if [[ "${OPENSHIFT_CI:-}" == true && "${TOPSAIL_LOCAL_CI:-}" != true ]]; then
+    if [[ "${OPENSHIFT_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
         DEST="${ARTIFACT_DIR}/variable_overrides"
         "$THIS_DIR/utils/openshift_ci/pr_args.sh" "$DEST"
         if [[ -f "$DEST" ]]; then
