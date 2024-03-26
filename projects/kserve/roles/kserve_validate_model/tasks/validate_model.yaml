@@ -43,7 +43,7 @@
 
     {% if kserve_validate_model_raw_deployment %}
     if ! test -e /run/secrets/kubernetes.io/serviceaccount/namespace; then
-      oc port-forward svc/{{ kserve_validate_model_inference_service_name }}-predictor 8080:80 &
+      oc port-forward svc/{{ kserve_validate_model_inference_service_name }}-predictor 8080:80 -n {{ kserve_validate_model_namespace }} &
       oc_pid=$!
       trap "kill -9 $oc_pid" SIGINT SIGTERM EXIT
 
