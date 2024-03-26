@@ -40,7 +40,9 @@ def test(test_artifact_dir_p=None):
 
             if not dry_mode:
                 try:
-                    run.run_toolbox("kserve", "capture_operators_state", mute_stdout=True)
+                    run.run_toolbox("kserve", "capture_operators_state",
+                                    raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
+                                    mute_stdout=True)
                 finally:
                     run.run_toolbox("cluster", "capture_environment", mute_stdout=True)
 
@@ -226,7 +228,11 @@ def run_one():
 def run_one_test(namespace, job_index):
     models_per_namespace = config.ci_artifacts.get_config("tests.scale.model.replicas")
     inference_service_basename = config.ci_artifacts.get_config("tests.scale.model.name")
+    container_flavor = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.container_flavor")
+
     all_inference_service_names = []
+    import test_e2e
+
     for model_idx in range(models_per_namespace):
         inference_service_name = f"u{job_index}-m{model_idx}"
 
@@ -238,25 +244,13 @@ def run_one_test(namespace, job_index):
         run.run_toolbox_from_config("kserve", "deploy_model", extra=deploy_extra, artifact_dir_suffix=f"_{inference_service_name}")
         run.run(f'echo "model_{model_idx}_deployed: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
 
-        validate_extra = dict(
-            inference_service_names=[inference_service_name],
-            method=config.ci_artifacts.get_config("kserve.inference_service.validation.method"),
-            raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
-        )
+        test_e2e.validate_model(namespace, model_name=inference_service_name, container_flavor=container_flavor)
 
-        if validate_extra["raw_deployment"]:
-            validate_extra["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
-
-        run.run_toolbox_from_config("kserve", "validate_model", extra=validate_extra, artifact_dir_suffix=f"_{inference_service_name}")
         run.run(f'echo "model_{model_idx}_validated: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
 
         all_inference_service_names += [inference_service_name]
 
-    validate_all_extra = dict(
-        inference_service_names=all_inference_service_names,
-        method=config.ci_artifacts.get_config("kserve.inference_service.validation.method"),
-        raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
-    )
+    test_e2e.validate_model(namespace, model_names=all_inference_service_names, container_flavor=container_flavor,
+                            artifact_dir_suffix=f"_all")
 
-    run.run_toolbox_from_config("kserve", "validate_model", extra=validate_all_extra, artifact_dir_suffix=f"_all")
     run.run(f'echo "model_all_validated: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
