@@ -11,7 +11,6 @@ import matrix_benchmarking.store.simple as store_simple
 import projects.core.visualizations.helpers.store as core_helpers_store
 
 from . import parsers
-from . import lts
 from . import lts_parser
 
 CACHE_FILENAME = "cache.pickle"

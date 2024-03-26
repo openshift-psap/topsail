@@ -46,7 +46,7 @@ def _get_test_setup(entry):
     managed = list(entry.results.cluster_info.control_plane)[0].managed \
         if entry.results.cluster_info.control_plane else False
 
-    sutest_ocp_version = entry.results.sutest_ocp_version
+    ocp_version = entry.results.ocp_version
 
     version = "version not available"
     if entry.results.rhods_info:
@@ -54,7 +54,7 @@ def _get_test_setup(entry):
             if entry.results.rhods_info.createdAt else entry.results.rhods_info.createdAt_raw
         version = f"{entry.results.rhods_info.version}-{version_ts}"
 
-    setup_info += [html.Li([html.B("RHODS "), html.B(html.Code(version)), f" running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
+    setup_info += [html.Li([html.B("RHODS "), html.B(html.Code(version)), f" running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{ocp_version}")])]
 
     nodes_info = [
         html.Li([f"Total of {len(entry.results.cluster_info.node_count)} nodes in the cluster"]),

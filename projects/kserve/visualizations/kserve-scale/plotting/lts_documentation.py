@@ -76,22 +76,6 @@ def generateOneLtsDocumentationReport(entry):
 
         results += [html.Li([html.B(f"{f}:"), html.Code(getattr(lts.results, f))])]
 
-    results += [html.H3("metrics")]
-    all_metrics = []
-    for field_name, metric_values in lts.results.metrics.dict().items():
-        all_metrics += [html.Li(html.H4(field_name))]
-        field_metrics = []
-        for idx, metric_value in enumerate(metric_values):
-            field_metrics += [html.Li(html.H5(f"#{idx} metric/value"))]
-            field_metrics += [html.Ul([
-                html.Code(", ".join(f"{k}={v}" for k, v in metric_value["metric"].items()) or "(No metric metadata)"),
-                html.Br(),html.Br(),
-                html.Code(str(metric_value["values"])),
-            ])]
-
-        all_metrics += [html.Ul(field_metrics)]
-
-    results += [html.Ul(all_metrics)]
     header += [html.Ul(results)]
 
     return header

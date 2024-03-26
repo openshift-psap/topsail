@@ -3,15 +3,13 @@ import datetime
 
 from .. import models
 from ..models import lts as models_lts
-from . import lts
 
 
-def generate_lts_payload(results, lts_results, import_settings, must_validate=False):
+def generate_lts_payload(results, import_settings, must_validate=False):
     lts_payload = types.SimpleNamespace()
-    lts_payload.metadata = generate_lts_metadata(results, import_settings)
-    lts_payload.results = lts_results
 
-    lts.validate_lts_payload(lts_payload, import_settings, reraise=must_validate)
+    lts_payload.metadata = generate_lts_metadata(results, import_settings)
+    lts_payload.results = generate_lts_results(results)
 
     return lts_payload
 
@@ -26,7 +24,7 @@ def generate_lts_metadata(results, import_settings):
     metadata.config = results.test_config.yaml_file
     metadata.settings = dict(import_settings)
 
-    metadata.ocp_version = results.sutest_ocp_version
+    metadata.ocp_version = results.ocp_version
     metadata.rhoai_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
 
     metadata.number_of_users = results.user_count
@@ -62,8 +60,6 @@ def generate_lts_results(results):
     results_lts.test_duration = generate_test_duration(results)
     results_lts.number_of_inferenceservices_loaded = len(results_lts.inferenceservice_load_times)
     results_lts.number_of_successful_users = results.success_count
-
-    results_lts.metrics = _gather_prom_metrics(results.metrics["sutest"], models_lts.Metrics)
 
     return results_lts
 
