@@ -269,12 +269,12 @@ ci_presets:
     - flan-t5-small-hf-cpu
     - flan-t5-small-hf-cpu-1:
         name: flan-t5-small-hf-cpu
-        namespace: cpt-e2e-grouped
+        namespace: kserve-e2e-grouped
         serving_runtime:
           name: flan-t5-small-hf-cpu
     - flan-t5-small-hf-cpu-2:
         name: flan-t5-small-hf-cpu
-        namespace: cpt-e2e-grouped
+        namespace: kserve-e2e-grouped
         serving_runtime:
           name: flan-t5-small-hf-cpu
 
@@ -563,7 +563,7 @@ tests:
   scale:
     sleep_factor: 1
     namespace:
-      name: cpt-scale-test
+      name: kserve-scale-test
       label: topsail.scale-test=true
       replicas: 2
 
@@ -573,7 +573,7 @@ tests:
       format: caikit
       replicas: 2
   e2e:
-    namespace: cpt-e2e
+    namespace: kserve-e2e
     mode: single # single, longevity or multi
     models:
     - flan-t5-small-hf

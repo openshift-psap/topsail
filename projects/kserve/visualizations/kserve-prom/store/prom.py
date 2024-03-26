@@ -354,10 +354,10 @@ def _get_gpu_usage(cluster_role, register):
 # ---
 
 SUTEST_CONTAINER_LABELS = [
-    {"Serving Runtime kserve container": dict(namespace="watsonx.*", container="kserve-container")},
-    {"Serving Runtime transformer container [caikit]": dict(namespace="watsonx.*", container="transformer-container")},
-    {"Serving Runtime istio-proxy container [serverless]": dict(namespace="watsonx.*", container="istio-proxy")},
-    {"Serving Runtime queue-proxy container [serverless]": dict(namespace="watsonx.*", container="queue-proxy")},
+    {"Serving Runtime kserve container": dict(namespace="kserve.*", container="kserve-container")},
+    {"Serving Runtime transformer container [caikit]": dict(namespace="kserve.*", container="transformer-container")},
+    {"Serving Runtime istio-proxy container [serverless]": dict(namespace="kserve.*", container="istio-proxy")},
+    {"Serving Runtime queue-proxy container [serverless]": dict(namespace="kserve.*", container="queue-proxy")},
 
     {"KServe Controller [serverless]": dict(namespace="redhat-ods-applications", pod="kserve-controller-manager-.*")},
     {"ODH Model Controller": dict(namespace="redhat-ods-applications", pod="odh-model-controller-.*")},
@@ -399,7 +399,7 @@ def _get_rhoai_resource_usage(cluster_role, register):
         "knative-.*",
         "istio-system",
         "openshift-operators",
-        "watsonx-e2e.*",
+        "kserve-e2e.*",
     ]
 
     for namespace in namespaces:

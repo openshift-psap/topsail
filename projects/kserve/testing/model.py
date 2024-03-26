@@ -65,7 +65,7 @@ def deploy(
 
 class Entrypoint:
     """
-    Commands for deploying WatsonX models
+    Commands for deploying cpt models
     """
 
     def __init__(self):
