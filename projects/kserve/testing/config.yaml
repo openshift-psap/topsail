@@ -22,6 +22,7 @@ ci_presets:
 
   quick:
     extends: [no_gpu]
+    kserve.model.directory_prefix: caikit_tgis
     tests.e2e.models:
     - flan-t5-small-cpu
     - flan-t5-small-cpu
@@ -145,7 +146,7 @@ ci_presets:
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.spot: false
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
-    tests.scale.model.name: flan-t5-small-gpu
+    tests.scale.model.name: caikit_tgis/flan-t5-small-gpu
     gpu.time_sharing.replicas: 17
 
   # ---
