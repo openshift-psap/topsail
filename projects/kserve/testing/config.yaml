@@ -189,7 +189,7 @@ ci_presets:
 
   cpt_single_model_gating:
     extends: [e2e_perf, gating, 3min, tgis, raw, use_intlab_minio]
-    model_directory_prefix: cpt
+    kserve.model.directory_prefix: cpt
     tests.e2e.models:
     - japanese-llama-2-7b-instruct
     - flan-t5-xl
@@ -210,7 +210,7 @@ ci_presets:
 
   caikit_single_model_gating:
     extends: [gating, 10min, e2e_gpu, e2e_perf]
-    model_directory_prefix: caikit_tgis
+    kserve.model.directory_prefix: caikit_tgis
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, bloom-560m, mpt-7b-instruct2]
     matbench.lts.horreum.test_name: rhoai-kserve-single
     matbench.lts.opensearch.index: rhoai-kserve-single
@@ -235,7 +235,7 @@ ci_presets:
 
   cpt_multi_model_models:
     extends: [tgis, raw, use_intlab_minio]
-    model_directory_prefix: cpt
+    kserve.model.directory_prefix: cpt
     tests.e2e.models:
     - mpt-7b-instruct2
     - mpt-7b-instruct2
@@ -262,7 +262,7 @@ ci_presets:
 
   multi_model_gating_light:
     extends: [cpt_multi_model_gating, gating_rehearsal, 3min, no_gpu]
-    model_directory_prefix: null
+    kserve.model.directory_prefix: null
     tests.e2e.models:
     - flan-t5-small-hf-cpu
     - flan-t5-small-hf-cpu
@@ -281,7 +281,7 @@ ci_presets:
 
   caikit_multi_model_gating:
     extends: [gating, 10min, e2e_gpu, e2e_multi]
-    model_directory_prefix: caikit_tgis
+    kserve.model.directory_prefix: caikit_tgis
     matbench.lts.horreum.test_name: rhoai-kserve-multi
     tests.e2e.models:
     - flan-t5-large-gpu-1:
@@ -329,7 +329,7 @@ ci_presets:
 
   multi_model_a30:
     extends: [raw, use_intlab_minio, tgis]
-    model_directory_prefix: cpt
+    kserve.model.directory_prefix: cpt
 
     tests.e2e.models:
     - flan-t5-xl
@@ -530,6 +530,7 @@ kserve:
       method: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
       proto: null
   model:
+    directory_prefix: null
     serving_runtime:
       mute_logs: true
       kserve:
