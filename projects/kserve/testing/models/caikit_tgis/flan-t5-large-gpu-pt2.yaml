@@ -1,4 +1,4 @@
-extends: flan-t5-large-gpu
+extends: caikit_tgis/flan-t5-large-gpu
 serving_runtime:
   kserve:
     resource_request:

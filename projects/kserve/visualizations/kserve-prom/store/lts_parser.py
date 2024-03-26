@@ -46,8 +46,8 @@ def generate_lts_settings(lts_metadata, results, import_settings):
 def generate_lts_metadata(results, import_settings):
     metadata = types.SimpleNamespace()
 
-    start_ts = next(results.metrics["sutest"]["watsonx-e2e.* CPU usage"][0].values.keys().__iter__())
-    end_ts = list(results.metrics["sutest"]["watsonx-e2e.* CPU usage"][0].values.keys())[-1]
+    start_ts = next(results.metrics["sutest"]["kserve-e2e.* CPU usage"][0].values.keys().__iter__())
+    end_ts = list(results.metrics["sutest"]["kserve-e2e.* CPU usage"][0].values.keys())[-1]
 
     metadata.lts_schema_version = models_lts.LTS_SCHEMA_VERSION
     metadata.start = datetime.datetime.utcfromtimestamp(start_ts)

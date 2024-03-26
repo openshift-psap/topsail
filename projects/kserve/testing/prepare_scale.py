@@ -168,6 +168,9 @@ def consolidate_model_config(config_location=None, _model_name=None, index=None,
 
         raise SystemExit(0)
 
+    model_directory_prefix = config.ci_artifacts.get_config("kserve.model.directory_prefix")
+    if model_directory_prefix:
+        model_name = model_directory_prefix + "/" + model_name
 
     base_config = get_base_config(model_name)
 

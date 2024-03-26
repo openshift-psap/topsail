@@ -22,6 +22,7 @@ ci_presets:
 
   quick:
     extends: [no_gpu]
+    kserve.model.directory_prefix: caikit_tgis
     tests.e2e.models:
     - flan-t5-small-cpu
     - flan-t5-small-cpu
@@ -145,7 +146,7 @@ ci_presets:
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.spot: false
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
-    tests.scale.model.name: flan-t5-small-gpu
+    tests.scale.model.name: caikit_tgis/flan-t5-small-gpu
     gpu.time_sharing.replicas: 17
 
   # ---
@@ -178,25 +179,26 @@ ci_presets:
   # single-model
   # ---
 
-  watsonx_single_model_gating_light:
-    extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio]
+  cpt_single_model_gating_light:
+    extends: [cpt_single_model_gating, gating_rehearsal, use_intlab_minio]
     tests.e2e.models:
-    - watsonx-flan-t5-xl
+    - flan-t5-xl
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.args.concurrency: [4, 8]
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
-  watsonx_single_model_gating:
+  cpt_single_model_gating:
     extends: [e2e_perf, gating, 3min, tgis, raw, use_intlab_minio]
+    kserve.model.directory_prefix: cpt
     tests.e2e.models:
-    - watsonx-japanese-llama-2-7b-instruct
-    - watsonx-flan-t5-xl
-    - watsonx-flan-t5-xxl
-    - watsonx-llama-2-13b-chat-hf
-    - watsonx-llama-2-70b-chat-hf
-    - watsonx-mpt-7b-instruct2
-    - watsonx-codellama-34b-instruct-hf
+    - japanese-llama-2-7b-instruct
+    - flan-t5-xl
+    - flan-t5-xxl
+    - llama-2-13b-chat-hf
+    - llama-2-70b-chat-hf
+    - mpt-7b-instruct2
+    - codellama-34b-instruct-hf
     matbench.lts.horreum.test_name: rhoai-kserve-single
     matbench.lts.opensearch.index: rhoai-kserve-single
 
@@ -207,14 +209,15 @@ ci_presets:
 
   # ---
 
-  single_model_gating:
+  caikit_single_model_gating:
     extends: [gating, 10min, e2e_gpu, e2e_perf]
+    kserve.model.directory_prefix: caikit_tgis
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, bloom-560m, mpt-7b-instruct2]
     matbench.lts.horreum.test_name: rhoai-kserve-single
     matbench.lts.opensearch.index: rhoai-kserve-single
 
-  single_model_gating_light:
-    extends: [single_model_gating, 5min, gating_rehearsal]
+  caikit_single_model_gating_light:
+    extends: [caikit_single_model_gating, 5min, gating_rehearsal]
 
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu]
     matbench.lts.horreum.test_name: null
@@ -224,57 +227,62 @@ ci_presets:
   # multi-model
   # ---
 
-  watsonx_multi_model_gating:
-    extends: [gating, 5min, e2e_gpu, e2e_multi, raw, watsonx_mutlti_model_models]
-    matbench.lts.opensearch.index: rhoai-watsonx-multi
-    matbench.lts.horreum.test_name: rhoai-watsonx-multi
+  cpt_multi_model_gating:
+    extends: [gating, 5min, e2e_gpu, e2e_multi, raw, cpt_multi_model_models]
+    matbench.lts.opensearch.index: rhoai-kserve-multi
+    matbench.lts.horreum.test_name: rhoai-kserve-multi
     tests.e2e.limits_equals_requests: false
     tests.e2e.llm_load_test.args.concurrency: 16
 
-  watsonx_multi_model_models:
+  cpt_multi_model_models:
     extends: [tgis, raw, use_intlab_minio]
+    kserve.model.directory_prefix: cpt
     tests.e2e.models:
-    - watsonx-mpt-7b-instruct2
-    - watsonx-mpt-7b-instruct2
-    - watsonx-japanese-llama-2-7b-instruct
-    - watsonx-llama-2-13b-chat-hf
-    - watsonx-llama-2-13b-chat-hf
-    - watsonx-flan-t5-xl-1:
-        name: watsonx-flan-t5-xl
-        namespace: watsonx-e2e-flan-grouped
+    - mpt-7b-instruct2
+    - mpt-7b-instruct2
+    - japanese-llama-2-7b-instruct
+    - llama-2-13b-chat-hf
+    - llama-2-13b-chat-hf
+    - kserve-flan-t5-xl-1:
+        name: flan-t5-xl
+        namespace: kserve-e2e-flan-grouped
         serving_runtime:
-          name: watsonx-flan-grouped
-    - watsonx-flan-t5-xl-2:
-        name: watsonx-flan-t5-xl
-        namespace: watsonx-e2e-flan-grouped
+          name: kserve-flan-grouped
+    - kserve-flan-t5-xl-2:
+        name: flan-t5-xl
+        namespace: kserve-e2e-flan-grouped
         serving_runtime:
-          name: watsonx-flan-grouped
-    - watsonx-flan-t5-xxl:
-        name: watsonx-flan-t5-xxl
-        namespace: watsonx-e2e-flan-grouped
+          name: kserve-flan-grouped
+    - kserve-flan-t5-xxl:
+        name: flan-t5-xxl
+        namespace: kserve-e2e-flan-grouped
         serving_runtime:
-          name: watsonx-flan-grouped
+          name: kserve-flan-grouped
 
-  watsonx_multi_model_gating_light:
-    extends: [watsonx_multi_model_gating, gating_rehearsal, 3min, no_gpu]
+  # multi-model non-cpt
+
+  multi_model_gating_light:
+    extends: [cpt_multi_model_gating, gating_rehearsal, 3min, no_gpu]
+    kserve.model.directory_prefix: null
     tests.e2e.models:
     - flan-t5-small-hf-cpu
     - flan-t5-small-hf-cpu
     - flan-t5-small-hf-cpu-1:
         name: flan-t5-small-hf-cpu
-        namespace: watsonx-e2e-grouped
+        namespace: kserve-e2e-grouped
         serving_runtime:
           name: flan-t5-small-hf-cpu
     - flan-t5-small-hf-cpu-2:
         name: flan-t5-small-hf-cpu
-        namespace: watsonx-e2e-grouped
+        namespace: kserve-e2e-grouped
         serving_runtime:
           name: flan-t5-small-hf-cpu
 
-  # multi-model non-watsonx
+  # multi-model caikit_tgis
 
-  multi_model_gating:
+  caikit_multi_model_gating:
     extends: [gating, 10min, e2e_gpu, e2e_multi]
+    kserve.model.directory_prefix: caikit_tgis
     matbench.lts.horreum.test_name: rhoai-kserve-multi
     tests.e2e.models:
     - flan-t5-large-gpu-1:
@@ -296,8 +304,8 @@ ci_presets:
         name: mpt-7b-instruct2
     matbench.lts.opensearch.index: rhoai-kserve-multi
 
-  multi_model_gating_light:
-    extends: [multi_model_gating, 5min, gating_rehearsal]
+  caikit_multi_model_gating_light:
+    extends: [caikit_multi_model_gating, 5min, gating_rehearsal]
 
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-small-cpu]
     matbench.lts.horreum.test_name: null
@@ -307,8 +315,8 @@ ci_presets:
   # longevity
   # ---
 
-  watsonx_longevity_gating:
-    extends: [watsonx_multi_model_models, multi_day_longevity, raw]
+  cpt_longevity_gating:
+    extends: [cpt_multi_model_models, multi_day_longevity, raw]
     tests.e2e.limits_equals_requests: false
     tests.e2e.llm_load_test.args.concurrency: 16
 
@@ -322,11 +330,12 @@ ci_presets:
 
   multi_model_a30:
     extends: [raw, use_intlab_minio, tgis]
+    kserve.model.directory_prefix: cpt
 
     tests.e2e.models:
-    - watsonx-flan-t5-xl
-    - watsonx-flan-t5-xl
-    - watsonx-japanese-llama-2-7b-instruct
+    - flan-t5-xl
+    - flan-t5-xl
+    - japanese-llama-2-7b-instruct
 
   hour_longevity:
     extends: [longevity]
@@ -355,7 +364,7 @@ ci_presets:
     tests.scale.namespace.replicas: 12
     gpu.time_sharing.replicas: 32
 
-    tests.scale.model.name: flan-t5-small-gpu-light
+    tests.scale.model.name: caikit_tgis/flan-t5-small-gpu-light
     kserve.model.serving_runtime.mute_logs: true
     tests.scale.sleep_factor: 60
     tests.e2e.limits_equals_requests: false
@@ -522,6 +531,7 @@ kserve:
       method: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
       proto: null
   model:
+    directory_prefix: null
     serving_runtime:
       mute_logs: true
       kserve:
@@ -553,21 +563,21 @@ tests:
   scale:
     sleep_factor: 1
     namespace:
-      name: watsonx-scale-test
+      name: kserve-scale-test
       label: topsail.scale-test=true
       replicas: 2
 
     model:
       consolidated: false
-      name: flan-t5-small-cpu
+      name: caikit_tgis/flan-t5-small-cpu
       format: caikit
       replicas: 2
   e2e:
-    namespace: watsonx-e2e
+    namespace: kserve-e2e
     mode: single # single, longevity or multi
     models:
-    - flan-t5-small-gpu
-    - flan-t5-small-gpu
+    - flan-t5-small-hf
+    - flan-t5-small-hf
     consolidated_models: {} # will be filled at runtime
     limits_equals_requests: false
     delete_others: true
