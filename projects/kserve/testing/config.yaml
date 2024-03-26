@@ -181,9 +181,9 @@ ci_presets:
   watsonx_single_model_gating_light:
     extends: [watsonx_single_model_gating, gating_rehearsal, use_intlab_minio]
     tests.e2e.models:
-    - watsonx-flan-t5-xl
+    - watsonx-flan-t5-xxl
     tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.args.concurrency: [4, 8]
+    tests.e2e.llm_load_test.args.concurrency: [8, 16, 32]
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
