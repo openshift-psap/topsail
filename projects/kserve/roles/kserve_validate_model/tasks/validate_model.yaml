@@ -51,7 +51,12 @@
       # curl localhost:8080 could do the job ... but it leads to a 'read: connection reset by peer' :|
       sleep 5;
     fi
+    {% endif %}
 
+    dest="{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}/answers.json"
+    query="{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}/questions.json"
+
+    {% if kserve_validate_model_sr_container_flavor == "tgis" %}
     GRPCURL_DATA='{
         "requests": [ {
                 "text": "At what temperature does Nitrogen boil?"
@@ -65,50 +70,21 @@
         }
     }'
     {% else %}
-    i=2;
     GRPCURL_DATA='{"text": "At what temperature does liquid Nitrogen boil?"}'
     {% endif %}
 
-    grpcurl \
+    echo $GRPCURL_DATA >> "$query"
+    for i in {1..{{ kserve_validate_model_query_count }}}; do
+      grpcurl \
         {% if kserve_validate_model_proto %} -proto {{ kserve_validate_model_proto }} {% endif %} \
         {% if kserve_validate_model_raw_deployment %} -plaintext {% else %} -insecure {% endif %} \
         -d "$GRPCURL_DATA" \
         -H "mm-model-id: {{ kserve_validate_model_model_id }}" \
         {{ model_endpoint_cmd.stdout }} \
-        {{ kserve_validate_model_method }}
-
+        {{ kserve_validate_model_method }} >> "$dest"
+       echo "Call $i/{{ kserve_validate_model_query_count }} passed"
+    done
   register: grpcurl_working_cmd
-  retries: 6
-  delay: 10
-  until: grpcurl_working_cmd.rc == 0
-
-- name: Inform | Next task runs the validation test
-  debug: msg="Next task runs the validation test. It runs {{ kserve_validate_model_query_count }} queries. Artifacts will be saved into '{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}'."
-  when: not kserve_validate_model_raw_deployment | bool
-
-- name: Query the model endpoint
-  shell: |
-    set -o pipefail;
-    set -e;
-    dest={{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}/answers.json
-    queries={{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}/questions.json
-    rm -f "$dest" "$queries"
-
-    for i in $(seq 2 $(({{ kserve_validate_model_query_count }} + 1))); do
-      GRPCURL_DATA='{"text": "At what temperature does liquid Nitrogen boil?"}'
-      echo $GRPCURL_DATA >> "$queries"
-      grpcurl \
-        {% if kserve_validate_model_proto %} -proto {{ kserve_validate_model_proto }} {% endif %} \
-        -insecure \
-        -d "$GRPCURL_DATA" \
-        -H "mm-model-id: {{ kserve_validate_model_model_id }}" \
-        {{ model_endpoint_cmd.stdout }} \
-        {{ kserve_validate_model_method }} \
-        >> "$dest"
-      echo "Call $i/{{ kserve_validate_model_query_count }} passed"
-     done
-  register: query_model_cmd
-  until: query_model_cmd.rc == 0
   retries: 5
   delay: 30
-  when: not kserve_validate_model_raw_deployment | bool
+  until: grpcurl_working_cmd.rc == 0

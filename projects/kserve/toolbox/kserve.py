@@ -98,6 +98,7 @@ class Kserve:
                        inference_service_names,
                        method,
                        query_count,
+                       sr_container_flavor,
                        model_id="not-used",
                        namespace="",
                        raw_deployment=False,
@@ -111,6 +112,7 @@ class Kserve:
 
         Args:
           inference_service_names: a list of names of the inference service to validate
+          sr_container_flavor: name of the container flavor to use in the serving runtime (tgis+caikit or tgis)
           method: the gRPC method to call
           model_id: the model-id to pass to the inference service
           query_count: number of query to perform
@@ -118,6 +120,9 @@ class Kserve:
           raw_deployment: if True, do not try to configure anything related to Serverless. Works only in-cluster at the moment.
           proto: if not empty, the proto file to pass to grpcurl
         """
+
+        if sr_container_flavor not in ("tgis+caikit", "tgis"):
+            raise ValueError(f"Unsupported container flavor: {sr_container_flavor}")
 
         return RunAnsibleRole(locals())
 
