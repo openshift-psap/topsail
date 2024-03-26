@@ -65,12 +65,12 @@ def parse_once(results, dirname):
     results.file_locations = _parse_file_locations(dirname)
     results.pod_times = _parse_pod_times(dirname)
 
-    capture_state_dir = artifact_paths.KSERVE_CAPTURE_OPERATORS_STATE
+    capture_state_dir = artifact_paths.KSERVE_CAPTURE_OPERATORS_STATE_DIR
     results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
     results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir)
     results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
     results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
-
+    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
 def _extract_metrics(dirname):
     db_files = {
@@ -229,7 +229,7 @@ def _parse_pod_times(dirname):
 def _parse_user_resource_times(dirname, ci_pod_dir):
     resource_times = {}
 
-    glob_expansion = list((dirname / ci_pod_dir).glob("*__kserve__capture_state"))
+    glob_expansion = list(ci_pod_dir.glob("*__kserve__capture_state"))
     if not glob_expansion:
         raise FileNotFoundError(f"'*__kserve__capture_state' not found in {ci_pod_dir}")
 

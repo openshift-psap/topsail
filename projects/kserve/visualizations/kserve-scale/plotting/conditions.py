@@ -112,10 +112,11 @@ class ConditionsTimeline():
 
 
         df = pd.DataFrame(generateConditionsTimeline(entry, cfg__kind, user_in_state=True))
-        df = df.sort_values(by=["Owner", "State"])
 
         if df.empty:
             return None, "Not data available ..."
+
+        df = df.sort_values(by=["Owner", "State"])
 
         fig = px.line(df, hover_data=df.columns,
                       x="Time", y="Owner", color="State")
