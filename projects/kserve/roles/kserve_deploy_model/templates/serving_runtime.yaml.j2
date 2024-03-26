@@ -31,7 +31,6 @@ spec:
     - secretRef:
         name: {{ kserve_deploy_model_serving_runtime_name }}-secret
 {% endif %}
-
     resources:
       requests:
         cpu: "{{ kserve_deploy_model_sr_kserve_resource_request.cpu }}"
@@ -52,15 +51,15 @@ spec:
     volumeMounts:
     - mountPath: /shared_model_storage/transformers_cache
       name: cache-volume
+    ports:
+    - containerPort: 8085
+      name: grpc
+      protocol: TCP
   # ---
   # --- transformer-container
   # ---
   - name: transformer-container
     image: {{ kserve_deploy_model_sr_transformer_image }}
-    ports:
-    - containerPort: 8085
-      name: h2c
-      protocol: TCP
     env:
     - name: TRANSFORMERS_CACHE
       value: /shared_model_storage/transformers_cache
