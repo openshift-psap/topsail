@@ -116,6 +116,9 @@ def call_parse(step_idx, common_args, common_env):
         logging.warning("An error happened while parsing the results  ...")
         errors.append(log_file.name)
 
+    if log_has_errors(log_file):
+        logging.warning("Errors detected in the log file. Not aborting the processing.")
+
     return errors
 
 def call_generate_lts(step_idx, common_args, common_env_str):
@@ -130,6 +133,9 @@ def call_generate_lts(step_idx, common_args, common_env_str):
     errors = []
     if run.run(cmd, check=False).returncode != 0:
         logging.warning("An error happened while generating the LTS payload ...")
+        errors.append(log_file.name)
+
+    if log_has_errors(log_file):
         errors.append(log_file.name)
 
     return errors
@@ -150,6 +156,9 @@ def call_generate_lts_schema(step_idx, common_args):
     if run.run(cmd, check=False).returncode != 0:
         logging.warning("An error happened while generating the LTS payload schema...")
         errors.apprend(log_file.name)
+
+    if log_has_errors(log_file):
+        errors.append(log_file.name)
 
     return errors
 
@@ -256,6 +265,22 @@ def call_analyze_lts(step_idx, common_args, common_env_str):
     return errors, regression_detected
 
 
+def log_has_errors(log_file):
+    has_errors = False
+    with open(log_file) as log_f:
+        for line in log_f.readlines():
+            if not line.startswith("ERROR"):
+                continue
+
+            has_errors = True
+
+            with open(env.ARTIFACT_DIR / "FAILURE", "a") as fail_f:
+                print(line, end="", file=fail_f)
+                logging.error(line.strip())
+
+    return has_errors
+
+
 def call_visualize(step_idx, common_env_str, common_args, filters_to_apply, generate_url):
     visu_args = common_args.copy()
     visu_args["filters"] = filters_to_apply
@@ -274,19 +299,8 @@ def call_visualize(step_idx, common_env_str, common_args, filters_to_apply, gene
         logging.warning("An error happened while generating the visualization ...")
         errors.append(log_file.name)
 
-    with open(log_file) as log_f:
-        logs_has_errors = False
-        for line in log_f.readlines():
-            if not line.startswith("ERROR"):
-                continue
-
-            logs_has_errors = True
-
-            with open(env.ARTIFACT_DIR / "FAILURE", "a") as fail_f:
-                print(line, end="", file=fail_f)
-                logging.error(line.strip())
-        if logs_has_errors:
-            errors.append(log_file.name)
+    if log_has_errors(log_file):
+        errors.append(log_file.name)
 
     run.run(f"""
         mkdir -p {dest_dir}/figures_{{png,html}}
@@ -342,7 +356,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
         shutil.copytree(common_args["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
 
     #
-    # Download the historical LTS payloads for compariosn
+    # Download the historical LTS payloads for comparions
     # Analyze the new results for regression against the historical results
     #
 
