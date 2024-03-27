@@ -75,7 +75,7 @@ class Kserve:
     @AnsibleMappedParams
     def undeploy_model(self,
                        namespace,
-                       serving_runtime_name="",
+                       sr_name="",
                        inference_service_name="",
                        all=False,
                      ):
@@ -84,7 +84,7 @@ class Kserve:
 
         Args:
           namespace: the namespace in which the model should be deployed
-          serving_runtime_name: the name to give to the serving runtime
+          sr_name: the name to give to the serving runtime
           inference_service_name: the name to give to the inference service
           all: delete all the inference services/servingruntime of the namespace
         """
