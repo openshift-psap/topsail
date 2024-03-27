@@ -75,7 +75,7 @@ class ErrorReport():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         if common.Matrix.count_records(settings, setting_lists) != 1:
             return {}, "ERROR: only one experiment must be selected"
-
+        logging.error("WRONG")
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass
 
