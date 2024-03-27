@@ -164,7 +164,7 @@ kserve deploy_model:
   namespace: {{ tests.scale.namespace.name }}
   sa_name: {{ kserve.sa_name }}
 
-  sr_name: {{ tests.scale.model.name }}
+  sr_name: {{ tests.scale.model.name.split("/")[-1] }}
 
   sr_kserve_image: {{ kserve.model.serving_runtime.kserve.image }}
   sr_kserve_resource_request: {{ tests.scale.model.serving_runtime.kserve.resource_request }}
