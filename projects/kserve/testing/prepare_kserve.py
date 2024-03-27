@@ -8,6 +8,68 @@ import test_scale
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
+def enable_user_workload_monitoring():
+    run.run(""" \
+    cat <<EOF | oc apply -f-
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-workload-monitoring-config
+  namespace: openshift-user-workload-monitoring
+data:
+  config.yaml: |
+    prometheus:
+      logLevel: debug
+      retention: 15d #Change as needed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+data:
+  config.yaml: |
+    enableUserWorkload: true
+EOF
+""")
+
+
+def enable_kserve_raw_deployment_dsci():
+    run.run("""\
+    cat <<EOF | oc apply -f-
+apiVersion: dscinitialization.opendatahub.io/v1
+kind: DSCInitialization
+metadata:
+  name: default-dsci
+spec:
+  applicationsNamespace: redhat-ods-applications
+  monitoring:
+    managementState: Managed
+    namespace: redhat-ods-monitoring
+  serviceMesh:
+    controlPlane:
+      metricsCollection: Istio
+      name: data-science-smcp
+      namespace: istio-system
+    managementState: Removed
+  trustedCABundle:
+    managementState: Managed
+    customCABundle: ""
+EOF
+""")
+
+
+def enable_kserve_raw_deployment():
+    run.run("""
+    new_deploy_value=$(oc get configmap/inferenceservice-config -n redhat-ods-applications  -ojsonpath={.data.deploy} | jq '.defaultDeploymentMode = "RawDeployment"');
+    oc set data configmap/inferenceservice-config -n redhat-ods-applications deploy="$new_deploy_value"
+    """)
+
+    run.run("""
+    new_ingress_value=$(oc get configmap/inferenceservice-config -n redhat-ods-applications  -ojsonpath={.data.ingress} | jq '.ingressClassName = "openshift-default"');
+    oc set data configmap/inferenceservice-config -n redhat-ods-applications ingress="$new_ingress_value";
+    """)
+
 
 def customize_rhods():
     if not config.ci_artifacts.get_config("rhods.operator.stop"):
@@ -33,7 +95,6 @@ def customize_rhods():
 
 
 def customize_kserve():
-
     if config.ci_artifacts.get_config("kserve.customize.serverless.enabled"):
         egress_mem = config.ci_artifacts.get_config("kserve.customize.serverless.egress.limits.memory")
         ingress_mem = config.ci_artifacts.get_config("kserve.customize.serverless.ingress.limits.memory")
@@ -43,30 +104,54 @@ def customize_kserve():
                 f"| oc apply -f-")
         run.run(f"oc get smcp/data-science-smcp -n istio-system -oyaml > {env.ARTIFACT_DIR}/smcp_minimal.customized.yaml")
 
+
+def dsc_enable_kserve():
+    extra_settings = {}
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        extra_settings["spec.components.kserve.serving.managementState"] = "Removed"
+
+        enable_kserve_raw_deployment_dsci()
+
+    has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
+    run.run_toolbox("rhods", "update_datasciencecluster",
+                    enable=["kserve", "dashboard"],
+                    name=None if has_dsc else "default-dsc",
+                    extra_settings=extra_settings,
+                    )
+
+
 def prepare():
     if not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
 
-    with run.Parallel("prepare_kserve") as parallel:
-        for operator in config.ci_artifacts.get_config("prepare.operators"):
-            parallel.delayed(run.run_toolbox, "cluster", "deploy_operator", catalog=operator['catalog'], manifest_name=operator['name'], namespace=operator['namespace'], artifact_dir_suffix=operator['name'])
+    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        with run.Parallel("prepare_kserve") as parallel:
+            for operator in config.ci_artifacts.get_config("prepare.operators"):
+                parallel.delayed(run.run_toolbox, "cluster", "deploy_operator",
+                                 catalog=operator['catalog'],
+                                 manifest_name=operator['name'],
+                                 namespace=operator['namespace'],
+                                 artifact_dir_suffix=operator['name'])
 
     rhods.install(token_file)
 
-    has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
-    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve", "dashboard"],
-                    name=None if has_dsc else "default-dsc")
+    dsc_enable_kserve()
 
-    with env.NextArtifactDir("prepare_poc"):
-        try:
-            run.run(f"projects/kserve/testing/poc/prepare.sh |& tee -a {env.ARTIFACT_DIR}/run.log")
-        finally:
-            run.run(f"oc get datasciencecluster -oyaml > {env.ARTIFACT_DIR}/datasciencecluster.after.yaml")
+    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        with env.NextArtifactDir("prepare_poc"):
+            try:
+                run.run(f"projects/kserve/testing/poc/prepare.sh |& tee -a {env.ARTIFACT_DIR}/run.log")
+            finally:
+                run.run(f"oc get datasciencecluster -oyaml > {env.ARTIFACT_DIR}/datasciencecluster.after.yaml")
 
+    enable_user_workload_monitoring()
     customize_rhods()
     customize_kserve()
+
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        enable_kserve_raw_deployment()
 
 
 def undeploy_operator(operator, mute=True):
@@ -79,9 +164,6 @@ def undeploy_operator(operator, mute=True):
 
     for crd in cleanup.get("crds", []):
         run.run(f"oc delete {crd} --all -A", check=False)
-
-    for ns in cleanup.get("namespaces", []):
-        run.run(f"oc api-resources --verbs=list --namespaced -o name | grep -v -E 'coreos.com|openshift.io|cncf.io|k8s.io|metal3.io|k8s.ovn.org|.apps' | xargs -t -n 1 oc get --show-kind --ignore-not-found -n kserve-user-test-driver |& cat > {env.ARTIFACT_DIR}/{operator['name']}_{ns}.log", check=False)
 
     installed_csv_cmd = run.run(f"oc get csv -oname -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}", capture_stdout=mute)
     if not installed_csv_cmd.stdout:
@@ -100,9 +182,10 @@ def undeploy_operator(operator, mute=True):
 def cleanup(mute=True):
     rhods.uninstall(mute)
 
-    with run.Parallel("cleanup_kserve") as parallel:
-        for operator in config.ci_artifacts.get_config("prepare.operators"):
-            undeploy_operator(operator)
+    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        with run.Parallel("cleanup_kserve") as parallel:
+            for operator in config.ci_artifacts.get_config("prepare.operators"):
+                undeploy_operator(operator)
 
 
 def update_serving_runtime_images():
@@ -132,9 +215,10 @@ def preload_image():
     namespace = config.get_command_arg("cluster", "preload_image", "namespace", prefix="sutest", suffix="kserve-runtime")
     test_scale.prepare_user_sutest_namespace(namespace)
 
-    def preload(image):
+    def preload(image, name):
         RETRIES = 3
-        extra = dict(image=image)
+        extra = dict(image=image, name=name)
+
         for i in range(RETRIES):
             try:
                 run.run_toolbox_from_config("cluster", "preload_image", prefix="sutest", suffix="kserve-runtime", extra=extra)
@@ -146,5 +230,6 @@ def preload_image():
                     raise
 
     with run.Parallel("preload_serving_runtime") as parallel:
-        preload(config.ci_artifacts.get_config("kserve.model.serving_runtime.kserve.image"))
-        preload(config.ci_artifacts.get_config("kserve.model.serving_runtime.transformer.image"))
+        parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.kserve.image"), "kserve")
+        if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+            parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.transformer.image"), "transformer")

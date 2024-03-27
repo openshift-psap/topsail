@@ -83,7 +83,9 @@ class Cluster:
                         catalog_namespace="openshift-marketplace",
                         deploy_cr: bool = False,
                         namespace_monitoring: bool = False,
-                        all_namespaces: bool = False):
+                        all_namespaces: bool = False,
+                        config_env_names: list = [],
+                        ):
         """
         Deploy an operator from OperatorHub catalog entry.
 
@@ -98,6 +100,7 @@ class Cluster:
             namespace_monitoring: If set, enable OpenShift namespace monitoring.
             all_namespaces: If set, deploy the CSV in all the namespaces.
             catalog_namespace: Namespace in which the CatalogSource will be deployed
+            config_env_names: If not empty, a list of config env names to pass to the subscription
         """
 
         if namespace == "all":

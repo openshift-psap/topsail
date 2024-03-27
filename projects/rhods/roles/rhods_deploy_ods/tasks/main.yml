@@ -69,6 +69,7 @@
     cluster_deploy_operator_catalog_namespace: "{{ rhods_namespace }}"
     cluster_deploy_operator_channel: "{{ rhods_deploy_ods_channel }}"
     cluster_deploy_operator_version: "{{ rhods_deploy_ods_version }}"
+    cluster_deploy_operator_config_env_names: "[{% if rhods_deploy_ods_disable_dsc_config %}\"DISABLE_DSC_CONFIG\"{% endif %}]"
 
 - name: Wait for the DataScienceCluster resource to be created
   command:

@@ -11,7 +11,7 @@ class Rhods:
 
     @AnsibleRole("rhods_deploy_ods")
     @AnsibleMappedParams
-    def deploy_ods(self, catalog_image, tag, channel="", version=""):
+    def deploy_ods(self, catalog_image, tag, channel="", version="", disable_dsc_config=False):
         """
         Deploy ODS operator from its custom catalog
 
@@ -20,6 +20,7 @@ class Rhods:
           tag: Catalog image tag to use to deploy RHODS.
           channel: The channel to use for the deployment. Let empty to use the default channel.
           version: The version to deploy. Let empty to install the last version available.
+          disable_dsc_config: if True, pass the flag to disable DSC configuration
         """
 
         return RunAnsibleRole(locals())
@@ -140,6 +141,7 @@ class Rhods:
                                   name=None,
                                   enable: list = [],
                                   show_all=False,
+                                  extra_settings: dict = {},
                                   ):
         """
         Update RHOAI datasciencecluster resource
@@ -149,6 +151,7 @@ class Rhods:
 
           enable: list of all the components to enable
           show_all: if enabled, show all the available components and exit.
+          extra_settings: dict of key:value to set manually in the DSC, using JSON dot notation.
         """
 
         if not isinstance(enable, list):

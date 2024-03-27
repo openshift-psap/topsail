@@ -4,6 +4,7 @@ visualize:
   - "report: Error report"
   - "report: Latency per token"
   - "report: Throughput"
+  - "report: Call details"
   - "report: Tokens"
   - "report: LTS"
   - "report: LTS Documentation"

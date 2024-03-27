@@ -20,7 +20,7 @@ class Metadata(matbench_models.Metadata):
 
 class Metrics(matbench_models.ExclusiveModel):
     serving_runtime_istio_proxy_container_cpu_usage: matbench_models.PrometheusValues = \
-        Field(..., alias="sutest__container_cpu__namespace=watsonx.*_container=istio-proxy")
+        Field(..., alias="sutest__container_cpu__namespace=kserve.*_container=istio-proxy")
     kserve_controller_cpu_usage: matbench_models.PrometheusValues = \
         Field(..., alias="sutest__container_cpu__namespace=redhat-ods-applications_pod=kserve-controller-manager-.*")
     kserve_controller_memory_usage: matbench_models.PrometheusValues = \

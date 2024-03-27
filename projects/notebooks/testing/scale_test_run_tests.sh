@@ -87,13 +87,17 @@ EOF
         export ARTIFACT_DIR="$BASE_ARTIFACT_DIR/$(printf "%03d" $test_idx)__$preset"
 
         if [[ "$prepare_failed" == 1 ]]; then
-            ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' preparation failed :/"
+            msg="Gating preset '$preset' preparation failed :/"
+            ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "$msg"
+            echo "$msg" >> $BASE_ARTIFACT_DIR/FAILURE
             failed=1
             continue
         fi
 
         if ! run_normal_tests_and_plots; then
-            ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "Gating preset '$preset' test failed :/"
+            msg="Gating preset '$preset' test failed :/"
+            ARTIFACT_DIR="$BASE_ARTIFACT_DIR" _warning "$msg"
+            echo "$msg" >> $BASE_ARTIFACT_DIR/FAILURE
             failed=1
         fi
     done

@@ -53,12 +53,15 @@ def run_test(dry_mode):
 
 
 def prepare_user_sutest_namespace(namespace):
-    if run.run(f'oc get project "{namespace}" -oname 2>/dev/null', check=False).returncode == 0:
+    if run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null', check=False).returncode == 1:
         logging.warning(f"Project {namespace} already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
+
+        run.run(f"oc wait --for jsonpath='{{.metadata.labels.topsail\.prepared}}=true' ns {namespace} --timeout=2m")
+
         return
 
-    run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
+
     label = config.ci_artifacts.get_config("tests.scale.namespace.label")
     run.run(f"oc label ns/{namespace} {label} --overwrite")
 
@@ -72,8 +75,10 @@ def prepare_user_sutest_namespace(namespace):
     with env.NextArtifactDir("deploy_storage_configuration"):
         deploy_storage_configuration(namespace)
 
-    with env.NextArtifactDir("deploy_istio_sidecar"):
+    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
         deploy_istio_sidecar(namespace)
+
+    run.run(f"oc label ns/{namespace} topsail.prepared=true")
 
 
 def save_and_create(name, content, namespace, is_secret=False):
@@ -90,11 +95,6 @@ def save_and_create(name, content, namespace, is_secret=False):
     finally:
         if is_secret:
             file_path.unlink(missing_ok=True)
-
-
-def prepare_namespace(namespace):
-    deploy_storage_configuration(namespace)
-    deploy_istio_sidecar()
 
 
 def deploy_istio_sidecar(namespace):
@@ -114,37 +114,40 @@ spec:
 
 
 def deploy_storage_configuration(namespace):
-    storage_secret_name = config.ci_artifacts.get_config("kserve.storage_config.name")
-    region = config.ci_artifacts.get_config("kserve.storage_config.region")
-    endpoint = config.ci_artifacts.get_config("kserve.storage_config.endpoint")
-    use_https = config.ci_artifacts.get_config("kserve.storage_config.use_https")
-
     access_key = None
     secret_key = None
 
     vault_key = config.ci_artifacts.get_config("secrets.dir.env_key")
-    aws_cred_filename = config.ci_artifacts.get_config("secrets.aws_cred")
-    aws_cred_file = pathlib.Path(os.environ[vault_key]) / aws_cred_filename
-    logging.info(f"Reading AWS credentials from '{aws_cred_filename}' ...")
-    with open(aws_cred_file) as f:
+    model_s3_cred_filename = config.ci_artifacts.get_config("secrets.model_s3_cred")
+    model_s3_cred_file = pathlib.Path(os.environ[vault_key]) / model_s3_cred_filename
+    logging.info(f"Reading the models S3 credentials from '{model_s3_cred_filename}' ...")
+    with open(model_s3_cred_file) as f:
         for line in f.readlines():
-            if line.startswith("aws_access_key_id "):
+            if line.startswith("aws_access_key_id"):
                 access_key = line.rpartition("=")[-1].strip()
-            if line.startswith("aws_secret_access_key "):
+            if line.startswith("aws_secret_access_key"):
                 secret_key = line.rpartition("=")[-1].strip()
 
     if None in (access_key, secret_key):
-        raise ValueError(f"aws_access_key_id or aws_secret_access_key not found in {aws_cred_file} ...")
+        not_found = []
+        if access_key is None:
+            not_found += ["aws_access_key_id"]
+        if secret_key is None:
+            not_found += ["aws_secret_access_key"]
+        raise ValueError(f"{not_found} not found in {model_s3_cred_file} ...")
+
+    storage_config = config.ci_artifacts.get_config("kserve.storage_config")
 
     storage_secret = f"""\
 apiVersion: v1
 kind: Secret
 metadata:
   annotations:
-    serving.kserve.io/s3-region: "{region}"
-    serving.kserve.io/s3-endpoint: "{endpoint}"
-    serving.kserve.io/s3-usehttps: "{use_https}"
-  name: {storage_secret_name}
+    serving.kserve.io/s3-region: "{storage_config['region']}"
+    serving.kserve.io/s3-endpoint: "{storage_config['endpoint']}"
+    serving.kserve.io/s3-usehttps: "{storage_config['use_https']}"
+    serving.kserve.io/s3-verifyssl: "{storage_config['verify_ssl']}"
+  name: {storage_config['name']}
 stringData:
   AWS_ACCESS_KEY_ID: "{access_key}"
   AWS_SECRET_ACCESS_KEY: "{secret_key}"
@@ -152,7 +155,7 @@ stringData:
     save_and_create("storage_secret.yaml", storage_secret, namespace, is_secret=True)
 
     # oc describe secret is safe
-    run.run(f"oc describe secret/{storage_secret_name} -n {namespace} > {env.ARTIFACT_DIR / 'src' / 'storage-config.desc'}")
+    run.run(f"oc describe secret/{storage_config['name']} -n {namespace} > {env.ARTIFACT_DIR / 'src' / 'storage-config.desc'}")
 
     # Service Account
 
@@ -163,7 +166,7 @@ kind: ServiceAccount
 metadata:
   name: {service_account_name}
 secrets:
-- name: {storage_secret_name}
+- name: {storage_config['name']}
 """
 
     save_and_create("ServiceAccount.yaml", service_account, namespace)
@@ -229,12 +232,22 @@ def run_one_test(namespace, job_index):
 
         extra = dict(
             inference_service_name=inference_service_name,
+            inference_service_model_format=config.ci_artifacts.get_config("tests.scale.model.format"),
+            raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
         )
 
         run.run_toolbox_from_config("kserve", "deploy_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
         run.run(f'echo "model_{model_idx}_deployed: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
 
-        extra = dict(inference_service_names=[inference_service_name])
+        validate_extra = dict(
+            inference_service_names=[inference_service_name],
+            method=config.ci_artifacts.get_config("kserve.inference_service.validation.method"),
+            raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
+        )
+
+        if validate_extra["raw_deployment"]:
+            validate_extra["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
+
         run.run_toolbox_from_config("kserve", "validate_model", extra=extra, artifact_dir_suffix=f"_{inference_service_name}")
         run.run(f'echo "model_{model_idx}_validated: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
 

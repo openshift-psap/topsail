@@ -44,18 +44,6 @@ class CallbackModule(default_CallbackModule):
 
             return
 
-        def print_cmd(cmd):
-            str_cmd = cmd if isinstance(cmd, str) \
-                else ' '.join(cmd)
-
-            self._display.display(f"", color=color)
-            if "\n" in str_cmd:
-                self._display.display(f"<command>\n{str_cmd}</command>", color=color)
-            else:
-                self._display.display(f"<command> {str_cmd}", color=color)
-
-            self._display.display(f"", color=color)
-
         def print_result_as_dict(key, d, depth=1):
             for k, v in d.items():
                 if k in INTERESTING_MODULE_PROPS:
@@ -69,8 +57,7 @@ class CallbackModule(default_CallbackModule):
                     print_result_as_dict(k, v, depth+1)
 
         try:
-            cmd = result._result['cmd']
-            print_cmd(cmd)
+            self.__print_cmd(result, color)
         except KeyError:
             print_result_as_dict("_top", result._result)
             # ^^^ will print stdout and stderr
@@ -87,6 +74,20 @@ class CallbackModule(default_CallbackModule):
 
         for line in result._result[f'{std_name}_lines']:
             self._display.display(f"<{std_name}> {line}", color=color)
+
+    def __print_cmd(self, result, color):
+        cmd = result._result['cmd']
+
+        str_cmd = cmd if isinstance(cmd, str) \
+            else ' '.join(cmd)
+
+        self._display.display(f"", color=color)
+        if "\n" in str_cmd:
+            self._display.display(f"<command>\n{str_cmd}</command>", color=color)
+        else:
+            self._display.display(f"<command> {str_cmd}", color=color)
+
+        self._display.display(f"", color=color)
 
     def v2_runner_on_skipped(self, result):
         self._print_task_banner(result._task, head=True)
@@ -140,10 +141,18 @@ class CallbackModule(default_CallbackModule):
             self.__display_result(result, color)
             self._display.display("")
 
-        self._display.display(f"==> FAILED attempt #{result._result['attempts']}/{result._task.retries}", color=color)
+        self._display.display("---")
+        self._display.display(str(result._task))
+        self._display.display(f"{result._task.get_path().replace(os.getcwd()+'/', '')}", color=color)
+        try:
+            self.__print_cmd(result, color)
+        except KeyError: pass # ignore
 
         self.__print_std_lines(result, "stdout", color)
         self.__print_std_lines(result, "stderr", color)
+        self._display.display(f"==> FAILED attempt #{result._result['attempts']}/{result._task.retries}", color=color)
+
+
         self._display.display("")
 
     def v2_runner_on_start(self, host, task): pass

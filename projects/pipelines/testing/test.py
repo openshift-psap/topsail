@@ -9,11 +9,12 @@ import datetime
 import time
 import functools
 import re
+import uuid
 
 import yaml
 import fire
 
-from topsail.testing import env, config, run, rhods, visualize
+from topsail.testing import env, config, run, rhods, visualize, sizing
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 
@@ -22,6 +23,7 @@ TESTING_UTILS_DIR = TESTING_THIS_DIR.parent / "utils"
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
+METAL_PROFILE = "metal"
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -48,6 +50,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
         config.ci_artifacts.apply_preset(ICELAKE_PROFILE)
 
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
+    config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -75,19 +78,20 @@ def install_ocp_pipelines():
         logging.info(f"Operator '{PIPELINES_OPERATOR_MANIFEST_NAME}' is already installed.")
         return
 
-    run.run_toolbox("cluster", "deploy_operator", catalog="redhat-operators", manifest_name=PIPELINES_OPERATOR_MANIFEST_NAME, namespace=operator['namespace'], artifact_dir_suffix=operator['name'])
+    run.run_toolbox("cluster", "deploy_operator", catalog="redhat-operators", manifest_name=PIPELINES_OPERATOR_MANIFEST_NAME, namespace="all", artifact_dir_suffix=f"_{PIPELINES_OPERATOR_MANIFEST_NAME}")
 
 
 def uninstall_ocp_pipelines():
-    installed_csv_cmd = run.run("oc get csv -oname", capture_stdout=True)
-    if PIPELINES_OPERATOR_MANIFEST_NAME not in installed_csv_cmd.stdout:
-        logging.info("Pipelines Operator is not installed")
-        return
-
     run.run(f"oc delete tektonconfigs.operator.tekton.dev --all")
     PIPELINES_OPERATOR_NAMESPACE = "openshift-operators"
-    run.run(f"oc delete sub/{PIPELINES_OPERATOR_MANIFEST_NAME} -n {PIPELINES_OPERATOR_NAMESPACE}")
+    run.run(f"oc delete sub/{PIPELINES_OPERATOR_MANIFEST_NAME} -n {PIPELINES_OPERATOR_NAMESPACE} --ignore-not-found")
     run.run(f"oc delete csv -n {PIPELINES_OPERATOR_NAMESPACE} -loperators.coreos.com/{PIPELINES_OPERATOR_MANIFEST_NAME}.{PIPELINES_OPERATOR_NAMESPACE}")
+
+
+    webhooks_cmd = run.run("oc get validatingwebhookconfigurations,mutatingwebhookconfigurations -oname | grep tekton.dev", capture_stdout=True, check=False)
+    for webhook in webhooks_cmd.stdout.split("\n"):
+        if not webhook: continue # empty lines
+        run.run(f"oc delete {webhook}")
 
 
 def create_dsp_application():
@@ -104,9 +108,11 @@ def prepare_rhods():
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
     rhods.install(token_file)
 
-    run.run_toolbox("rhods", "wait_ods")
+    has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
+
+    run.run_toolbox("rhods", "update_datasciencecluster", enable=["datasciencepipelines", "workbenches"],
+                    name=None if has_dsc else "default-dsc")
     customize_rhods()
-    run.run_toolbox("rhods", "wait_ods")
 
     run.run_toolbox_from_config("cluster", "deploy_ldap")
 
@@ -116,7 +122,6 @@ def compute_node_requirement(driver=False, sutest=False):
         raise ValueError("compute_node_requirement must be called with driver=True or sutest=True")
 
     if driver:
-        cluster_role = "driver"
         # from the right namespace, get a hint of the resource request with these commands:
         # oc get pods -oyaml | yq .items[].spec.containers[].resources.requests.cpu -r | awk NF | grep -v null | python -c "import sys; print(sum(int(l.strip()[:-1]) for l in sys.stdin))"
         # --> 1090
@@ -126,18 +131,18 @@ def compute_node_requirement(driver=False, sutest=False):
         memory = 3
 
     if sutest:
-        cluster_role = "sutest"
         # must match 'roles/local_ci_run_multi/templates/job.yaml.j2'
         cpu_count = 1
         memory = 2
 
-    machine_type = config.ci_artifacts.get_config("clusters.create.ocp.compute.type")
-    user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+    kwargs = dict(
+        cpu = cpu_count,
+        memory = memory,
+        machine_type = config.ci_artifacts.get_config("clusters.create.ocp.compute.type"),
+        user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+        )
 
-    logfile = env.ARTIFACT_DIR / f'sizing_{cluster_role}'
-    proc = run.run(f"{TESTING_UTILS_DIR / 'sizing' / 'sizing'} {machine_type} {user_count} {cpu_count} {memory} > {logfile}", check=False)
-
-    return proc.returncode
+    return sizing.main(**kwargs)
 
 
 def apply_prefer_pr():
@@ -212,7 +217,12 @@ def prepare_test_driver_namespace():
     #
     # Prepare the driver namespace
     #
-    run.run(f"oc new-project '{namespace}' --skip-config-write >/dev/null 2>/dev/null || true")
+
+    if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
+        run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
+    else:
+        logging.warning(f"Project {namespace} already exists.")
+        (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
 
     dedicated = "{}" if config.ci_artifacts.get_config("clusters.driver.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
@@ -237,9 +247,7 @@ def prepare_test_driver_namespace():
     # Prepare the container image
     #
 
-    apply_prefer_pr()
-
-    istag = config.get_command_arg("cluster build_push_image --prefix base_image", "_istag")
+    istag = config.get_command_arg("cluster", "build_push_image --prefix base_image", "_istag")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
         logging.info(f"Image {istag} already exists in namespace {namespace}. Don't build it.")
@@ -298,10 +306,13 @@ def prepare_cluster():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
     """
+    apply_prefer_pr()
 
-    prepare_test_driver_namespace()
-    prepare_sutest_scale_up()
-    prepare_rhods()
+    with run.Parallel("prepare_cluster") as parallel:
+        parallel.delayed(prepare_test_driver_namespace)
+        parallel.delayed(prepare_sutest_scale_up)
+        parallel.delayed(prepare_rhods)
+
 
 @entrypoint()
 def pipelines_run_one():
@@ -345,9 +356,12 @@ def _pipelines_run_many(test_artifact_dir_p):
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
+        with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+            print(str(uuid.uuid4()), file=f)
+
         user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
-        with open(env.ARTIFACT_DIR / "settings", "w") as f:
-            print(f"user_count={user_count}", file=f)
+        with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+            yaml.dump(dict(user_count=user_count), f, indent=4)
 
         with open(env.ARTIFACT_DIR / "artifacts_version", "w") as f:
             print(ARTIFACTS_VERSION, file=f)

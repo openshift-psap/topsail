@@ -1,4 +1,11 @@
 ---
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
 - name: Check that cluster_deploy_nginx_server_namespace is defined
   fail: msg="Bailing out. This role requires 'cluster_deploy_nginx_server_namespace'"
   when: not cluster_deploy_nginx_server_namespace
@@ -81,7 +88,10 @@
     oc create route passthrough nginx-secure
        --service=nginx --port=https
        -n "{{ cluster_deploy_nginx_server_namespace }}"
-       --dry-run=client -oyaml | oc apply -f-
+       --dry-run=client -oyaml
+      | yq -y '.apiVersion = "route.openshift.io/v1"'
+      | tee "{{ artifact_extra_logs_dir }}/src/route_nginx-secure.yaml"
+      | oc apply -f -
 
 - name: Wait for the nginx deployment to be ready
   command:

@@ -41,7 +41,6 @@ wait_for_pods_ready "app=controller" "knative-serving"
 wait_for_pods_ready "app=net-istio-controller" "knative-serving"
 wait_for_pods_ready "app=net-istio-webhook" "knative-serving"
 wait_for_pods_ready "app=autoscaler-hpa" "knative-serving"
-wait_for_pods_ready "app=domain-mapping" "knative-serving"
 wait_for_pods_ready "app=webhook" "knative-serving"
 oc delete pod -n knative-serving -l app=activator --grace-period=0
 oc delete pod -n knative-serving -l app=autoscaler --grace-period=0
@@ -52,7 +51,6 @@ oc wait --for=condition=ready pod -l app=controller -n knative-serving --timeout
 oc wait --for=condition=ready pod -l app=net-istio-controller -n knative-serving --timeout=300s
 oc wait --for=condition=ready pod -l app=net-istio-webhook -n knative-serving --timeout=300s
 oc wait --for=condition=ready pod -l app=autoscaler-hpa -n knative-serving --timeout=300s
-oc wait --for=condition=ready pod -l app=domain-mapping -n knative-serving --timeout=300s
 oc wait --for=condition=ready pod -l app=webhook -n knative-serving --timeout=300s
 oc wait --for=condition=ready pod -l app=activator -n knative-serving --timeout=300s
 oc wait --for=condition=ready pod -l app=autoscaler -n knative-serving --timeout=300s

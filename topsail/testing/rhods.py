@@ -30,18 +30,16 @@ def install(token_file=None, force=False):
 
 
 def uninstall(mute=True):
-    if run.run(f'oc get datasciencecluster -oname | grep .', check=False).returncode == 0:
-        run.run_toolbox("rhods", "update_datasciencecluster")
-
     installed_csv_cmd = run.run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
 
     if RHODS_OPERATOR_MANIFEST_NAME not in installed_csv_cmd.stdout:
         logging.info("RHODS is not installed.")
         return
 
-    # Force-deleting RHODS is necessary because of RHODS-8002.
-    #run.run_toolbox("rhods", "undeploy_ods", mute_stdout=mute)
-    run.run_toolbox("rhods", "delete_ods", mute_stdout=mute)
+    if run.run(f'oc get datasciencecluster -oname | grep .', check=False).returncode == 0:
+        run.run_toolbox("rhods", "update_datasciencecluster")
+
+    run.run_toolbox("rhods", "undeploy_ods", mute_stdout=mute)
 
 
 def uninstall_ldap(mute=True):

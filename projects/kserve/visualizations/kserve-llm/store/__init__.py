@@ -6,6 +6,8 @@ import fnmatch
 import os
 import json
 
+import jsonpath_ng
+
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 
@@ -84,8 +86,6 @@ def load_cache(dirname):
 
 
 def _parse_directory(fn_add_to_matrix, dirname, import_settings):
-    parsers.artifact_paths = resolve_artifact_dirnames(dirname, parsers.artifact_dirnames)
-
     ignore_cache = os.environ.get("MATBENCH_STORE_IGNORE_CACHE", False) in ("yes", "y", "true", "True")
     if not ignore_cache:
         try:
@@ -104,33 +104,55 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
 
         return
 
+    parsers.artifact_paths = resolve_artifact_dirnames(dirname, parsers.artifact_dirnames)
+
     results = types.SimpleNamespace()
 
-    parsers._parse_always(results, dirname, import_settings)
     parsers._parse_once(results, dirname)
-
-    lts_results = lts_parser.generate_lts_results(results)
-    results.lts = lts_parser.generate_lts_payload(results, lts_results, import_settings, must_validate=False)
+    parsers._parse_always(results, dirname, import_settings)
 
     fn_add_to_matrix(results)
 
-    with open(dirname / "test_start_end.json", "w") as f:
-        json.dump(dict(
-            start=results.test_start_end.start.isoformat(),
-            end=results.test_start_end.end.isoformat(),
-            settings=import_settings,
-        ), f, indent=4)
-        print("", file=f)
+    if results.test_start_end:
+        with open(dirname / "test_start_end.json", "w") as f:
+            json.dump(dict(
+                start=results.test_start_end.start.isoformat(),
+                end=results.test_start_end.end.isoformat(),
+                settings=import_settings,
+            ), f, indent=4)
+            print("", file=f)
 
     with open(dirname / CACHE_FILENAME, "wb") as f:
         get_config = results.test_config.get
+        llm_get_config = results.llm_load_test_config.get
+
         results.test_config.get = None
+        results.llm_load_test_config.get = None
 
         pickle.dump(results, f)
 
         results.test_config.get = get_config
+        results.llm_load_test_config.get = llm_get_config
 
     logging.info("parsing done :)")
+
+
+def get_yaml_get_key(filename, yaml_file):
+    def get(key, missing=...):
+        nonlocal yaml_file
+
+        jsonpath_expression = jsonpath_ng.parse(f'$.{key}')
+
+        match = jsonpath_expression.find(yaml_file)
+        if not match:
+            if missing != ...:
+                return missing
+
+            raise KeyError(f"Key '{key}' not found in {filename} ...")
+
+        return match[0].value
+
+    return get
 
 # delegate the parsing to the simple_store
 store.register_custom_rewrite_settings(_rewrite_settings)

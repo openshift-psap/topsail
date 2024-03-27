@@ -25,7 +25,7 @@ class TempValue(object):
         self.prev_value = None
 
     def __enter__(self):
-        self.prev_value = self.config.get_config(self.key)
+        self.prev_value = self.config.get_config(self.key, print=False)
         self.config.set_config(self.key, self.value)
 
         return True
@@ -48,31 +48,18 @@ class Config:
         with open(self.config_path) as config_f:
             self.config = yaml.safe_load(config_f)
 
-    def apply_local_config_overrides(self):
-        TOPSAIL_PR_ARGS_KEY = "TOPSAIL_PR_ARGS"
-        pr_args = os.environ.get(TOPSAIL_PR_ARGS_KEY)
-        if not pr_args:
-            logging.info(f"{TOPSAIL_PR_ARGS_KEY} env var not set, no local config to override.")
-            return
-
-        if ocp_ci := os.environ.get("OPENSHIFT_CI"):
-            raise RuntimeError(f"Found {TOPSAIL_PR_ARGS_KEY}={pr_args} and OPENSHIFT_CI={ocp_ci} defined at the same time, this isn't expected ...")
-
-        for idx, arg in enumerate(pr_args.split()):
-            key = f"{PR_ARG_KEY}{idx + 1}"
-            logging.info(f"{key} --> {arg}")
-            self.config[key] = arg
-
 
     def apply_config_overrides(self):
         variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
 
         if not variable_overrides_path.exists():
-            logging.info(f"apply_config_overrides: {variable_overrides_path} does not exist, nothing to override.")
+            logging.debug(f"apply_config_overrides: {variable_overrides_path} does not exist, nothing to override.")
             return
 
         with open(variable_overrides_path) as f:
             for line in f.readlines():
+                line = line.partition("#")[0]
+
                 if not line.strip():
                     continue
 
@@ -84,28 +71,28 @@ class Config:
                 value = yaml.safe_load(_value) # convert the string as YAML would do
 
                 MAGIC_DEFAULT_VALUE = object()
-                current_value = self.get_config(key, MAGIC_DEFAULT_VALUE)
+                current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False)
                 if current_value == MAGIC_DEFAULT_VALUE:
                     if "." in key:
                         raise ValueError(f"Config key '{key}' does not exist, and cannot create it at the moment :/")
                     self.config[key] = None
 
                 self.set_config(key, value, dump_command_args=False)
-                actual_value = self.get_config(key) # ensure that key has been set, raises an exception otherwise
+                actual_value = self.get_config(key, print=False) # ensure that key has been set, raises an exception otherwise
                 logging.info(f"config override: {key} --> {actual_value}")
 
-    def apply_preset(self, name):
+    def apply_preset(self, name, do_dump=True):
         try:
-            values = self.get_config(f'ci_presets["{name}"]')
+            values = self.get_config(f'ci_presets["{name}"]', print=False)
         except IndexError:
             logging.error(f"Preset '{name}' does not exists :/")
             raise
 
         logging.info(f"Appling preset '{name}' ==> {values}")
         if not values:
-            raise ValueError("Preset '{name}' does not exists")
+            raise ValueError(f"Preset '{name}' does not exists")
 
-        presets = self.get_config("ci_presets.names") or []
+        presets = self.get_config("ci_presets.names", print=False) or []
         if not name in presets:
             self.set_config("ci_presets.names", presets + [name], dump_command_args=False)
 
@@ -120,9 +107,10 @@ class Config:
             with open(env.ARTIFACT_DIR / "presets_applied", "a") as f:
                 print(msg, file=f)
 
-            self.set_config(key, value, dump_command_args=False)
+            self.set_config(key, value, dump_command_args=False, print=False)
 
-        self.dump_command_args()
+        if do_dump:
+            self.dump_command_args()
 
     def get_config(self, jsonpath, default_value=..., warn=True, print=True):
         try:
@@ -142,7 +130,7 @@ class Config:
         return value
 
 
-    def set_config(self, jsonpath, value, dump_command_args=True):
+    def set_config(self, jsonpath, value, dump_command_args=True, print=True):
         if threading.current_thread().name != "MainThread":
             msg = f"set_config({jsonpath}, {value}) cannot be called from a thread, to avoid race conditions."
             if os.environ.get("OPENSHIFT_CI") or os.environ.get("PERFLAB_CI"):
@@ -153,13 +141,14 @@ class Config:
                 raise RuntimeError(msg)
 
         try:
-            self.get_config(jsonpath, value) # will raise an exception if the jsonpath does not exist
+            self.get_config(jsonpath, value, print=False) # will raise an exception if the jsonpath does not exist
             jsonpath_ng.parse(jsonpath).update(self.config, value)
         except Exception as ex:
             logging.error(f"set_config: {jsonpath}={value} --> {ex}")
             raise
 
-        logging.info(f"set_config: {jsonpath} --> {value}")
+        if print:
+            logging.info(f"set_config: {jsonpath} --> {value}")
 
         with open(self.config_path, "w") as f:
             yaml.dump(self.config, f, indent=4, default_flow_style=False, sort_keys=False)
@@ -194,45 +183,66 @@ class Config:
                 self.apply_preset(preset)
 
     def detect_apply_light_profile(self, profile, name_suffix="light"):
-        job_name_safe = os.environ.get("JOB_NAME_SAFE", "")
-        if not job_name_safe:
-            logging.info(f"detect_apply_light_profile: JOB_NAME_SAFE not set, assuming not running in a CI environment.")
-            return
+        if os.environ.get("OPENSHIFT_CI"):
+            job_name_safe = os.environ.get("JOB_NAME_SAFE", ...)
 
-        if job_name_safe != name_suffix and not job_name_safe.endswith(f"-{name_suffix}"):
-            return
+            if job_name_safe is ...:
+                raise RuntimeError("Running in OpenShift CI but JOB_NAME_SAFE not set :/")
 
-        logging.info(f"Running a '{name_suffix}' test ({job_name_safe}), applying the '{profile}' profile")
+            if job_name_safe != name_suffix and not job_name_safe.endswith(f"-{name_suffix}"):
+                return False
 
-        self.apply_preset(profile)
+            logging.info(f"Running a '{name_suffix}' test ({job_name_safe}), applying the '{profile}' profile")
 
+            self.apply_preset(profile)
+
+            return True
+
+        logging.info("Not running in OpenShift CI, no light environment to detect.")
+
+        return False
 
     def detect_apply_metal_profile(self, profile):
         platform_type_cmd = run.run("oc get infrastructure/cluster -ojsonpath={.status.platformStatus.type}", capture_stdout=True, capture_stderr=True, check=False)
         if platform_type_cmd.returncode != 0:
             logging.warning(f"Failed to get the platform type: {platform_type_cmd.stderr.strip()}")
             logging.warning("Ignoring the metal profile check.")
-            return
+            return False
 
         platform_type = platform_type_cmd.stdout
         logging.info(f"detect_apply_metal_profile: infrastructure/cluster.status.platformStatus.type = {platform_type}")
         if platform_type not in ("BareMetal", "None"):
             logging.info("detect_apply_metal_profile: Assuming not running in a bare-metal environment.")
-            return
+            return False
         logging.info(f"detect_apply_metal_profile: Assuming running in a bare-metal environment. Applying the '{profile}' profile.")
 
         self.apply_preset(profile)
+        return True
+
+    def detect_apply_cluster_profile(self, node_profiles):
+        cluster_nodes_cmd = run.run("oc get nodes -oname", capture_stdout=True, capture_stderr=True, check=False)
+        if cluster_nodes_cmd.returncode != 0:
+            logging.warning(f"Failed to get the cluster nodes: {cluster_nodes_cmd.stderr.strip()}")
+            logging.warning("Ignoring the cluster profile check.")
+            return False
+
+        for node_name in cluster_nodes_cmd.stdout.split():
+            for node, profile in node_profiles.items():
+                if f"node/{node}" != node_name:
+                    continue
+
+                self.apply_preset(profile)
+                return profile
+
+        return False
 
 
 def _set_config_environ(base_dir):
     config_path = env.ARTIFACT_DIR / "config.yaml"
 
     os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
-    os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yml.j2")
-
-    if base_dir != env.ARTIFACT_DIR:
-        # make sure we're using a clean copy of the configuration file
-        config_path.unlink(missing_ok=True)
+    if "CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE" not in os.environ:
+        os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yml.j2")
 
     if shared_dir := os.environ.get("SHARED_DIR"):
         shared_dir_config_path = pathlib.Path(shared_dir) / "config.yaml"
@@ -254,7 +264,7 @@ def get_command_arg(group, command, arg, prefix=None, suffix=None):
                                            prefix=prefix, suffix=suffix,
                                            check=True, run_kwargs=dict(capture_stdout=True, capture_stderr=True))
     except subprocess.CalledProcessError as e:
-        logging.error(e.stderr.strip().encode("ascii", "ignore"))
+        logging.error(e.stderr.strip().decode("ascii", "ignore"))
         raise
 
     return proc.stdout.strip()
@@ -278,6 +288,4 @@ def init(base_dir):
     config_path = _set_config_environ(base_dir)
     ci_artifacts = Config(config_path)
 
-    logging.info("config.init: apply the ci-artifacts config overrides")
     ci_artifacts.apply_config_overrides()
-    ci_artifacts.apply_local_config_overrides()

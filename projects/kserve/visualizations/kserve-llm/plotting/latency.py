@@ -39,7 +39,8 @@ class LatencyDistribution():
         cfg__box_plot = cfg.get("box_plot", True)
         cfg__show_text = cfg.get("show_text", True)
 
-        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, only_tokens=cfg__only_tokens, collapse_index=cfg__collapse_index))
+        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, ordered_vars,
+                                                     only_tokens=cfg__only_tokens, collapse_index=cfg__collapse_index))
 
         if df.empty:
             return None, "Not data available ..."
@@ -162,60 +163,108 @@ def plotCustomComparison(df, x, y):
 
     return fig
 
-def generateLatencyDetailsData(entries, _variables, only_errors=False, test_name_by_error=False, latency_per_token=True, show_errors=False, only_tokens=False, collapse_index=False):
+def generateTestStartEnd(entries, model_name):
     data = []
 
+    for entry in entries:
+        if model_name and entry.settings.__dict__.get("model_name") != model_name:
+            continue
+
+        if not entry.results.llm_load_test_output: continue
+        start = datetime.datetime.fromtimestamp(min(r["start_time"] for r in entry.results.llm_load_test_output["results"]))
+        duration = entry.results.llm_load_test_config.get("load_options.duration")
+        end = start + datetime.timedelta(seconds=duration)
+
+        data.append(dict(
+            start=start,
+            end=end
+        ))
+
+
+
+    return data
+
+
+def generateLatencyDetailsData(entries, _variables, _ordered_vars,
+                               only_errors=False, test_name_by_error=False, latency_per_token=True, show_errors=False, only_tokens=False, collapse_index=False, model_name=None):
+    data = []
+
+    variables = list(_variables) # make a copy before modifying
     if "mode" in _variables:
-        variables = list(_variables) # make a copy before modifying
         variables.remove("mode")
         has_multiple_modes = True
     else:
-        variables = _variables
         has_multiple_modes = False
 
+    if model_name and "model_name" in variables:
+        variables.remove("model_name")
+
+    ordered_vars = [v for v in _ordered_vars if v in variables]
+
     for entry in entries:
-        llm_data = entry.results.llm_load_test_output
-        for idx, block in enumerate(llm_data):
-            for detail in block["details"]:
-                if only_errors and not detail.get("error"):
-                    continue # in this plot, ignore the latency if no error occured
-                if not show_errors and detail.get("error"):
-                    continue
+        if model_name and entry.settings.__dict__.get("model_name") != model_name:
+            continue
 
-                datum = {}
+        if not entry.results.llm_load_test_output: continue
+        for result in entry.results.llm_load_test_output["results"]:
 
-                datum["timestamp"] = detail["timestamp"]
+            if only_errors and not result["error_code"]:
+                continue # in this plot, ignore the latency if no error occured
+            if not show_errors and result["error_code"]:
+                continue
 
-                generatedTokens = int(detail["response"].get("generatedTokens", 1))
-                datum["tokens"] = generatedTokens
+            datum = {}
 
-                datum["latencyPerToken"] = detail["latency"] / 1000 / 1000 / generatedTokens # in ms/token
-                datum["latency"] = detail["latency"] / 1000 / 1000
+            datum["timestamp"] = datetime.datetime.fromtimestamp(result["start_time"])
 
-                datum["model_name"] = (f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")).removesuffix("<br>")
+            generatedTokens = result["output_tokens"] or 0
 
-                if has_multiple_modes:
-                    datum["model_name"] += f"<br>{entry.settings.mode.title()}"
+            datum["tokens"] = generatedTokens
 
-                if collapse_index:
-                    datum["test_name"] = entry.get_name(v for v in variables if v != "index").replace(", ", "<br>")
-                elif test_name_by_error:
-                    simplified_error = datum["test_name"] = error_report.simplify_error(detail.get("error"))
-                    if not simplified_error: continue
+            datum["latency"] = result["response_time"] if generatedTokens else 0
 
-                elif detail.get("error"):
-                    datum["test_name"] = "errors"
-                    datum["latency"] = -1
-                else:
-                    datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
 
-                datum["error"] = detail.get("error", "no error")
+            datum["latencyPerToken"] = datum["latency"] / generatedTokens \
+                if generatedTokens else 0
 
-                datum["test_fullname"] = entry.get_name([v for v in variables if v != "index"] if collapse_index else variables)
-                if has_multiple_modes:
-                    datum["test_fullname"] += f" {entry.settings.mode.title()}"
+            datum["model_name"] = (f"{entry.settings.model_name}<br>"+entry.get_name([v for v in variables if v not in ("index", "mode", "model_name")]).replace(", ", "<br>")).removesuffix("<br>")
 
-                data.append(datum)
+            if has_multiple_modes:
+                datum["model_name"] += f"<br>{entry.settings.mode.title()}"
+
+            if collapse_index:
+                datum["test_name"] = entry.get_name(v for v in variables if v != "index").replace(", ", "<br>")
+            elif test_name_by_error:
+                simplified_error = datum["test_name"] = error_report.simplify_error(result.get("error_text"))
+                if not simplified_error: continue
+
+            elif result["error_code"]:
+                datum["test_name"] = "errors"
+                datum["latency"] = -1
+            else:
+                datum["test_name"] = entry.get_name(variables).replace(", ", "<br>")
+
+            datum["error"] = result["error_text"] or "no error"
+
+            datum["test_fullname"] = entry.get_name([v for v in variables if v != "index"] if collapse_index else variables)
+            datum["start_time"] = datetime.datetime.fromtimestamp(result["start_time"])
+            datum["end_time"] = datetime.datetime.fromtimestamp(result["end_time"])
+
+            datum["duration"] = result["response_time"]
+            datum["user_id"] = str(result["user_id"])
+            datum["user_id_int"] = result["user_id"]
+
+            datum["tpot"] = result["tpot"]
+            datum["ttft"] = result["ttft"]
+            datum["itl"] = result["itl"]
+
+            datum["sort_index"] = entry.settings.__dict__[ordered_vars[0]] \
+                if ordered_vars else 0
+
+            if has_multiple_modes:
+                datum["test_fullname"] += f" {entry.settings.mode.title()}"
+
+            data.append(datum)
 
     return data
 
@@ -234,29 +283,37 @@ class LatencyDetails():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
 
         cfg__entry = cfg.get("entry", None)
+        cfg__only_ttft = cfg.get("only_ttft", False)
         cfg__only_tokens = cfg.get("only_tokens", False)
         cfg__only_errors = cfg.get("only_errors", False)
         cfg__show_errors = cfg.get("show_errors", cfg__only_errors)
+        cfg__show_timeline = cfg.get("show_timeline", False)
+        cfg__model_name = cfg.get("model_name", False)
+        cfg__color = cfg.get("color", False)
+        cfg__legend_title = cfg.get("legend_title", False)
 
-        entries = [cfg__entry] if cfg__entry else \
-            common.Matrix.all_records(settings, setting_lists)
+        entries = list([cfg__entry] if cfg__entry else \
+                       common.Matrix.all_records(settings, setting_lists))
         latency_per_token = (not cfg__only_errors and not cfg__show_errors)
-        df = pd.DataFrame(generateLatencyDetailsData(entries, variables,
+        df = pd.DataFrame(generateLatencyDetailsData(entries, variables, ordered_vars,
                                                      test_name_by_error=cfg__only_errors,
                                                      show_errors=cfg__show_errors,
                                                      only_errors=cfg__only_errors,
                                                      only_tokens=cfg__only_tokens,
-                                                     latency_per_token=latency_per_token))
+                                                     latency_per_token=latency_per_token,
+                                                     model_name=cfg__model_name))
 
         if df.empty:
             return None, "Not data available ..."
 
-        df = df.sort_values(by=["test_name"])
+        df = df.sort_values(by=["test_name", "sort_index"])
 
         if cfg__only_tokens:
             y_key = "tokens"
         elif latency_per_token:
             y_key = "latencyPerToken"
+        elif cfg__only_ttft:
+            y_key = "ttft"
         else:
             y_key = "latency"
 
@@ -266,26 +323,58 @@ class LatencyDetails():
             color = "tokens"
         elif cfg__show_errors:
             color = "tokens"
+        elif cfg__show_timeline:
+            color = "user_id"
         else:
             color = "test_name"
 
-        fig = px.scatter(df, hover_data=df.columns,
-                      x="timestamp", y=y_key, color=color)
+        if cfg__show_timeline:
+            scale="greys"
 
-        fig.update_layout(barmode='stack')
-        fig.update_yaxes(range=[0, df[y_key].max() * 1.1])
-        if cfg__entry:
+            df = df.sort_values(by=["sort_index", "user_id_int"])
+            fig = px.timeline(df, x_start="start_time",  x_end="end_time", y="user_id", color=cfg__color,
+                              color_continuous_scale=scale)
+
+            test_start_end = generateTestStartEnd(entries, model_name=cfg__model_name)
+            for start_end in test_start_end:
+                fig.add_vrect(x0=start_end["start"], x1=start_end["end"])
+        else:
+            fig = px.scatter(df, hover_data=df.columns,
+                             x="timestamp", y=y_key, color=color)
+
+        if not cfg__show_timeline:
+            fig.update_layout(barmode='stack')
+            fig.update_yaxes(range=[0, df[y_key].max() * 1.1])
+
+        if cfg__model_name:
+            subtitle = f"<br><b>{cfg__model_name}</b>"
+        elif cfg__entry:
             subtitle = f"<br>{cfg__entry.get_name(reversed(sorted(set(list(variables.keys()) + ['model_name']))))}"
         elif "model_name" not in variables:
             subtitle = f"<br><b>{settings['model_name']}</b>"
         else:
             subtitle = ""
 
-        fig.update_layout(legend_title_text='')
-        fig.update_xaxes(title=f"Timeline")
-        if cfg__only_tokens:
+        if cfg__legend_title:
+            fig.update_layout(legend_title_text=cfg__legend_title)
+            fig.update_layout(
+                coloraxis_colorbar=dict(
+                    title=cfg__legend_title,
+                ),
+)
+        else:
+            fig.update_layout(legend_title_text='')
+
+        if cfg__show_timeline:
+            fig.update_yaxes(title=f"Virtual user index")
+            fig.update_xaxes(title=f"Timeline")
+            fig.update_layout(title=f"Timeline of the virtual users inference queries{subtitle}", title_x=0.5,)
+        elif cfg__only_tokens:
             fig.update_yaxes(title=f"Number of tokens in the answer")
             fig.update_layout(title=f"Detailed token count of the model answers{subtitle}", title_x=0.5,)
+        elif cfg__only_ttft:
+            fig.update_yaxes(title=f"Time to first token, in ms<br>Lower is better")
+            fig.update_layout(title=f"Time to first token of the model answers{subtitle}", title_x=0.5,)
         elif latency_per_token:
             fig.update_yaxes(title=f"❮ Latency per token (in ms/token)<br>Lower is better")
             fig.update_layout(title=f"Detailed latency/token of {'errors of ' if cfg__only_errors else ''}the load test{subtitle}", title_x=0.5,)

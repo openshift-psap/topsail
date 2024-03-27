@@ -12,3 +12,7 @@ rhods_update_datasciencecluster_enable: []
 
 # if enabled, show all the available components and exit.
 rhods_update_datasciencecluster_show_all: false
+
+# dict of key:value to set manually in the DSC, using JSON dot notation.
+# Type: Dict
+rhods_update_datasciencecluster_extra_settings: {}

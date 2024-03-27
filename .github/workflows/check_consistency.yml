@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install fire pyyaml
+          python -m pip install fire pyyaml jsonpath_ng joblib
 
       - name: Check that all the variables point to existing files
         run: ./run_toolbox.py repo validate_role_files

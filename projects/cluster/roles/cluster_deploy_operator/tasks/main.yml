@@ -40,6 +40,8 @@
     cluster_deploy_operator_namespace_monitoring: {{ cluster_deploy_operator_namespace_monitoring }}
     # cluster_deploy_operator_catalog_namespace
     cluster_deploy_operator_catalog_namespace: {{ cluster_deploy_operator_catalog_namespace }}
+    # cluster_deploy_operator_config_env_names
+    cluster_deploy_operator_config_env_names: {{ cluster_deploy_operator_config_env_names }}
     EOF
 
 - name: Ensure the operator package is available

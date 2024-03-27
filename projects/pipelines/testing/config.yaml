@@ -21,6 +21,8 @@ ci_presets:
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
+    clusters.sutest.compute.dedicated: false
+    clusters.driver.compute.dedicated: false
 
   not_metal:
     clusters.sutest.is_metal: false
@@ -63,6 +65,7 @@ secrets:
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+  opensearch_instances: opensearch.yaml
 clusters:
   create:
     type: single # can be: single, ocp, managed
@@ -122,9 +125,10 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 524781
-    channel: beta
-    version: 1.29.0
+    tag: 655658
+    channel: stable
+    version: 2.6.0
+    version_name: rc1
   pipelines:
     application:
       name: sample
@@ -170,4 +174,17 @@ matbench:
   ignore_exit_code: true
   # directory to plot. Set by notebook_scale_test.sh before launching the visualization
   test_directory: null
-  generate_lts: true
+  lts:
+    generate: true
+    horreum:
+      test_name: null
+    opensearch:
+      export: false
+      fail_test_on_fail: false
+      instance: smoke
+      index: pipelines
+      index_prefix: ""
+    regression_analyses:
+      enabled: false
+      # if the regression analyses fail, mark the test as failed
+      fail_test_on_regression: false

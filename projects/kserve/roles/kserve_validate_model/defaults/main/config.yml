@@ -7,9 +7,9 @@
 # Mandatory value
 kserve_validate_model_inference_service_names:
 
-# path to the dataset to use for the query
+# the gRPC method to call
 # Mandatory value
-kserve_validate_model_dataset:
+kserve_validate_model_method:
 
 # number of query to perform
 # Mandatory value
@@ -20,3 +20,9 @@ kserve_validate_model_model_id: not-used
 
 # the namespace in which the Serving stack was deployed. If empty, use the current project.
 kserve_validate_model_namespace:
+
+# if True, do not try to configure anything related to Serverless. Works only in-cluster at the moment.
+kserve_validate_model_raw_deployment: false
+
+# if not empty, the proto file to pass to grpcurl
+kserve_validate_model_proto: null

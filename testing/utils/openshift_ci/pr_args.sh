@@ -36,6 +36,12 @@ elif [[ "${OPENSHIFT_CI:-}" == true ]]; then
     JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-${PULL_BASE_REF}
     test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 
+    if [[ "${TOPSAIL_LOCAL_CI:-}" == true ]]; then
+        export SHARED_DIR=/tmp/shared
+        echo "INFO: running in TOPSAIL local CI, creating SHARED_DIR=$SHARED_DIR ..."
+        mkdir -p "$SHARED_DIR"
+    fi
+
     if [[ -z "${SHARED_DIR:-}" ]]; then
         echo "ERROR: running in OpenShift CI, but SHARED_DIR not defined." >&2
         exit 1
@@ -64,12 +70,6 @@ fi
 pr_body=$(jq -r .body <<< "$pr_json")
 pr_comments=$(jq -r .comments <<< "$pr_json")
 
-if [[ "${JOB_SPEC:-}" ]]; then
-    pr_author=$(echo "$JOB_SPEC" | jq -r .refs.pulls[0].author)
-else
-    pr_author=$(jq -r .user.login <<< "$pr_json")
-fi
-
 COMMENTS_PER_PAGE=30 # default
 last_comment_page=$(($pr_comments / $COMMENTS_PER_PAGE))
 [[ $(($pr_comments % $COMMENTS_PER_PAGE)) != 0 ]] && last_comment_page=$(($last_comment_page + 1))
@@ -89,14 +89,16 @@ else
     last_comment_page_json=$(curl -sSf "$PR_LAST_COMMENT_PAGE_URL")
 fi
 
+REQUIRED_AUTHOR_ASSOCIATION=CONTRIBUTOR
+
 echo "PR comments URL: $PR_COMMENTS_URL" >&2
 last_user_test_comment=$(echo "$last_comment_page_json" \
-                             | jq '.[] | select(.user.login == "'$pr_author'") | .body' \
+                             | jq '.[] | select(.author_association == "'$REQUIRED_AUTHOR_ASSOCIATION'") | .body' \
                              | (grep "$test_anchor" || true) \
                              | tail -1 | jq -r)
 
 if [[ -z "$last_user_test_comment" ]]; then
-    echo "WARNING: last comment of author '$pr_author' could not be found (searching for '$test_anchor') ..." >&2
+    echo "ERROR: last comment of from a '$REQUIRED_AUTHOR_ASSOCIATION' could not be found (searching for '$test_anchor') ..." >&2
     exit 1
 fi
 

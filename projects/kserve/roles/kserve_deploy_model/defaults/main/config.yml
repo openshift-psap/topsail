@@ -31,6 +31,10 @@ kserve_deploy_model_sr_transformer_resource_request:
 # Mandatory value
 kserve_deploy_model_inference_service_name:
 
+# the name of the inference service format (caikit, pytorch, ...)
+# Mandatory value
+kserve_deploy_model_inference_service_model_format:
+
 # [S3] URI where the model is stored
 # Mandatory value
 kserve_deploy_model_storage_uri:
@@ -39,14 +43,15 @@ kserve_deploy_model_storage_uri:
 # Mandatory value
 kserve_deploy_model_sa_name:
 
+# name of the container flavor to use in the serving runtime (tgis+caikit or tgis)
+# Mandatory value
+kserve_deploy_model_sr_container_flavor:
+
 # extra key/value pairs for the kserve container (will override the values from the secret file)
 kserve_deploy_model_sr_kserve_extra_env_values: {}
 
 # extra key/value pairs for the transformer container (will override the values from the secret file)
 kserve_deploy_model_sr_transformer_extra_env_values: {}
-
-# if True, deploy 1 container. If False, deploy 2 containers.
-kserve_deploy_model_sr_merge_containers: false
 
 # if True, create a 2 Gi in-memory volume mounted on /dev/shm (for shards to communicate).
 kserve_deploy_model_sr_shared_memory: false
@@ -69,3 +74,6 @@ kserve_deploy_model_delete_others: true
 
 # if True, sets use the requests values to define the limits. If False, do not define any limits (except for GPU)
 kserve_deploy_model_limits_equals_requests: true
+
+# if True, do not try to configure anything related to Serverless.
+kserve_deploy_model_raw_deployment: false

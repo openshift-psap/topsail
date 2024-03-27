@@ -17,9 +17,6 @@
     state: directory
     mode: '0755'
 
-- name: Ensure that ghz is available
-  command: which ghz
-
 - name: Apply the llm-load-test config.yaml template
   template:
     src: "{{ llm_load_test_config_template }}"
@@ -27,40 +24,33 @@
     mode: '0400'
 
 - name: Inform | Next task runs the load test
-  debug: msg="Next task runs the load test. It takes {{ llm_load_test_run_duration }} to complete. Artifacts will be saved into '{{ artifact_extra_logs_dir }}/output'."
+  debug:
+    msg: |
+      Next task runs the load test.
+      It takes {{ llm_load_test_run_duration }}s to complete.
+      Artifacts will be saved into '{{ artifact_extra_logs_dir }}/output'.
+      Configuration file is {{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml
 
 - name: Run llm-load-test and update the response
   block:
   - name: Run llm-load-test
     shell: |
       set -e
-      cd "{{ llm_load_test_run_llm_path }}"
+      cd "{{ llm_load_test_run_src_path }}"
+      export OPENBLAS_NUM_THREADS=1 # https://github.com/OpenMathLib/OpenBLAS/wiki/Faq#how-can-i-use-openblas-in-multi-threaded-applications
 
-      export CONFIG_FILENAME=llm_load_test.config.yaml
-      export CONFIG_PATH="{{ artifact_extra_logs_dir }}/src/"
-
-      python3 load_test.py &> {{ artifact_extra_logs_dir }}/logs/run.log
+      time timeout $(({{ llm_load_test_run_duration }} + 25*60)) python3 load_test.py --config "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml" &> {{ artifact_extra_logs_dir }}/logs/run.log
+    register: llm_load_test_cmd
   always:
-  - name: Cleanup the output dir
+  - name: Check if llm-load-test run timed-out
+    when: llm_load_test_cmd.rc == 124
     command:
-      find '{{ artifact_extra_logs_dir }}/output' -type f ! -iname 'ghz-multiplexed-results-*.json' -delete
-
-  - name: Turn the response field into json
-    shell: |
-      set -e;
-      set -o pipefail;
-
-      output_file=$(echo '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results-*.json);
-      mv "$output_file" '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results.orig
-      cat '{{ artifact_extra_logs_dir }}'/output/ghz-multiplexed-results.orig \
-        | jq '.[].details[].response |= fromjson' \
-        > "${output_file}"
-      echo "Results have been save in '${output_file}'"
+      touch {{ artifact_extra_logs_dir }}/TIMEOUT
 
   - name: Ensure that some content has been generated
     shell:
       set -o pipefail;
-      cat {{ artifact_extra_logs_dir }}/output/ghz-multiplexed-results*.json | jq .[] | grep . --quiet
+      cat {{ artifact_extra_logs_dir }}/output/output.json | grep . --quiet
     register: llm_load_test_has_content
     failed_when: false
 

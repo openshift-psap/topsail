@@ -50,7 +50,7 @@ def consolidate_models(index=None, use_job_index=False, model_name=None, namespa
     if model_name and namespace:
         consolidated_models.append(consolidate_model(name=model_name))
     elif index is not None and model_name:
-        consolidated_models.append(consolidate_model(index=index, model_name=model_name))
+        consolidated_models.append(consolidate_model(index=index, name=model_name))
     elif index is not None:
         consolidated_models.append(consolidate_model(index=index))
     elif use_job_index:
@@ -86,18 +86,25 @@ def test_ci():
     # in the OCP CI, the config is passed from 'prepare' to 'test', so this is a NOOP
     # in the Perf CI environment, the config isn't passed, so this is mandatory.
     prepare_kserve.update_serving_runtime_images()
-
+    mode = config.ci_artifacts.get_config("tests.e2e.mode")
     try:
-        if config.ci_artifacts.get_config("tests.e2e.perf_mode"):
-            deploy_and_test_models_sequentially(locally=False)
+        if mode == "single":
+            single_model_deploy_and_test_sequentially(locally=False)
+        elif mode == "longevity":
+            test_models_longevity()
+        elif mode == "multi":
+            multi_model_deploy_and_test()
         else:
-            deploy_and_test_models_e2e()
+            raise ValueError(f"Invalid value for tests.e2e.mode: {mode} :/")
     finally:
         exc = None
         if config.ci_artifacts.get_config("tests.e2e.capture_state"):
+            raw_deployment = config.ci_artifacts.get_config("kserve.raw_deployment.enabled")
+
             exc = run.run_and_catch(
                 exc,
-                run.run_toolbox, "kserve", "capture_operators_state", run_kwargs=dict(capture_stdout=True),
+                run.run_toolbox, "kserve", "capture_operators_state", raw_deployment=raw_deployment,
+                run_kwargs=dict(capture_stdout=True),
             )
 
             exc = run.run_and_catch(
@@ -130,47 +137,61 @@ def deploy_one_model(index: int = None, use_job_index: bool = False, model_name:
     deploy_consolidated_models()
 
 
-def test_models_sequentially(locally=False):
+def multi_model_test_sequentially(locally=False):
     "Tests all the configured models sequentially (one after the other)"
 
     logging.info(f"Test the models sequentially (locally={locally})")
     if locally:
         with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
-            yaml.dump(dict(mode="sequential"), f, indent=4)
+            yaml.dump(dict(mode="multi-model_sequential"), f, indent=4)
         consolidate_models()
         test_consolidated_models()
-    else:
-        run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially", artifact_dir_suffix="_test_sequentially")
+        return
+
+    # launch the remote execution
+
+    reset_prometheus()
+    with env.NextArtifactDir("multi_model_test_sequentially"):
+        try:
+            run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially",
+                                        artifact_dir_suffix="_test_sequentially")
+        finally:
+            generate_kserve_prom_results("multi-model_sequential")
 
 
-def deploy_and_test_models_e2e():
-    with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
-        parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
-        parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+def test_models_longevity():
+    repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
+    delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
 
-    logging.info("Wait 60s for Prometheus to restart collecting data ...")
-    time.sleep(60)
+    reset_prometheus()
 
-    try:
-        deploy_models_concurrently()
+    deploy_models_concurrently()
 
-        test_models_concurrently()
+    for i in range(repeat):
+        expe_name = f"longevity_{i}"
+        with env.NextArtifactDir(expe_name):
 
-        test_models_sequentially(locally=False)
-    finally:
-        # flag file for kserve-prom visualization
-        with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-            print("e2e", file=f)
+            with open(env.ARTIFACT_DIR / "settings.longevity.yaml", "w") as f:
+                yaml.dump(dict(longevity_index=i), f, indent=4)
 
-        logging.info("Wait 60s for Prometheus to finish collecting data ...")
-        time.sleep(60)
+            multi_model_test_concurrently(expe_name, with_kserve_prom=False)
 
-        with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
-            parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True)
-            parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+            if i != repeat-1:
+                logging.info(f"Sleeping for {delay} seconds after test #{i}...")
+                time.sleep(delay)
+                logging.info(f"Slept for {delay} seconds after test #{i}...")
+
+    generate_kserve_prom_results("longevity")
 
 
-def deploy_and_test_models_sequentially(locally=False):
+def multi_model_deploy_and_test():
+    deploy_models_concurrently()
+
+    multi_model_test_concurrently()
+    multi_model_test_sequentially(locally=False)
+
+
+def single_model_deploy_and_test_sequentially(locally=False):
     "Deploy and test all the configured models sequentially (one after the other)"
 
     logging.info(f"Deploy and test the models sequentially (locally={locally})")
@@ -179,24 +200,20 @@ def deploy_and_test_models_sequentially(locally=False):
 
 
     with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
-        yaml.dump(dict(mode="alone"), f, indent=4)
+        yaml.dump(dict(mode="single-model"), f, indent=4)
 
     namespace = config.ci_artifacts.get_config("tests.e2e.namespace") + "-perf"
     consolidated_models = consolidate_models(namespace=namespace)
 
-    run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True)
+    run.run_toolbox("kserve", "undeploy_model", namespace=namespace, all=True,
+                    artifact_dir_suffix="_all")
 
     exc = None
     failed = []
     for consolidated_model in consolidated_models:
         with env.NextArtifactDir(consolidated_model['name']):
             try:
-                with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
-                    parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
-                    parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm")
-
-                logging.info("Wait 60s for Prometheus to restart collecting data ...")
-                time.sleep(60)
+                reset_prometheus()
 
                 deploy_consolidated_model(consolidated_model)
 
@@ -207,29 +224,28 @@ def deploy_and_test_models_sequentially(locally=False):
                     print(f"{consolidated_model['name']} failed: {e.__class__.__name__}: {e}", file=f)
                 exc = e
 
-            # flag file for kserve-prom visualization
-            with open(env.ARTIFACT_DIR / ".matbench_prom_db_dir", "w") as f:
-                print(consolidated_model['name'], file=f)
-
-            logging.info("Wait 60s for Prometheus to finish collecting data ...")
-            time.sleep(60)
-
-            with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
-                parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True, check=False)
-                parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", check=False, artifact_dir_suffix="_uwm")
+            generate_kserve_prom_results("single_model")
 
             run.run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
     if failed:
-        logging.fatal(f"deploy_and_test_models_sequentially: {len(failed)} tests failed :/ {' '.join(failed)}")
+        logging.fatal(f"single_model_deploy_and_test_sequentially: {len(failed)} tests failed :/ {' '.join(failed)}")
         raise exc
 
 
-def test_models_concurrently():
+def multi_model_test_concurrently(expe_name="multi-model_concurrent", with_kserve_prom=True):
     "Tests all the configured models concurrently (all at the same time)"
 
-    logging.info("Test the models concurrently")
-    run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_concurrently", artifact_dir_suffix="_test_concurrently")
+    if with_kserve_prom:
+        reset_prometheus()
+
+    with env.NextArtifactDir("multi_model_test_concurrently"):
+        try:
+            logging.info(f"Test the models concurrently ({expe_name})")
+            run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_concurrently", artifact_dir_suffix="_test_concurrently")
+        finally:
+            if with_kserve_prom:
+                generate_kserve_prom_results(expe_name)
 
 
 def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None, namespace: str = None):
@@ -237,13 +253,60 @@ def test_one_model(index: int = None, use_job_index: bool = False, model_name: s
 
     if use_job_index:
         with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
-            yaml.dump(dict(mode="concurrent"), f, indent=4)
+            yaml.dump(dict(mode="multi-model_concurrent"), f, indent=4)
 
     consolidate_models(index=index, use_job_index=True, model_name=model_name, namespace=namespace)
     test_consolidated_models()
 
 # ---
 
+def reset_prometheus(delay=60):
+    if not config.ci_artifacts.get_config("tests.capture_prom"):
+        logging.info("tests.capture_prom is disabled, skipping Prometheus DB reset")
+        return
+
+    with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
+        parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
+        parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+
+    logging.info(f"Wait {delay}s for Prometheus to restart collecting data ...")
+    time.sleep(delay)
+
+
+def dump_prometheus(delay=60):
+    if not config.ci_artifacts.get_config("tests.capture_prom"):
+        logging.info("tests.capture_prom is disabled, skipping Prometheus DB dump")
+        return
+
+    logging.info(f"Wait {delay}s for Prometheus to finish collecting data ...")
+    time.sleep(delay)
+
+    with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
+        parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True)
+        parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+
+
+def generate_kserve_prom_results(expe_name):
+    anchor_file = env.ARTIFACT_DIR / ".matbench_prom_db_dir"
+    if anchor_file.exists():
+        raise ValueError(f"File {anchor_file} already exist. It should be in a dedicated directory.")
+
+    # flag file for kserve-prom visualization
+    with open(anchor_file, "w") as f:
+        print(expe_name, file=f)
+
+    with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+        print(str(uuid.uuid4()), file=f)
+
+    with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+        yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+    dump_prometheus()
+
+    raw_deployment = config.ci_artifacts.get_config("kserve.raw_deployment.enabled")
+    run.run_toolbox("kserve", "capture_operators_state", raw_deployment=raw_deployment, run_kwargs=dict(capture_stdout=True))
+
+# ---
 def deploy_consolidated_models():
     consolidated_models = config.ci_artifacts.get_config("tests.e2e.consolidated_models")
     model_count = len(consolidated_models)
@@ -255,6 +318,20 @@ def deploy_consolidated_models():
 def launch_deploy_consolidated_model(consolidated_model):
     with env.NextArtifactDir(consolidated_model['name']):
         deploy_consolidated_model(consolidated_model)
+
+
+def validate_model(namespace, model_name):
+    validate_kwargs = dict(
+        namespace=namespace,
+        inference_service_names=[model_name],
+        method=config.ci_artifacts.get_config("kserve.inference_service.validation.method"),
+        query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
+        raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
+    )
+    if validate_kwargs["raw_deployment"]:
+        validate_kwargs["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
+
+    run.run_toolbox("kserve", "validate_model", **validate_kwargs)
 
 
 def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None, delete_others=None, limits_equals_requests=None):
@@ -290,10 +367,14 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         if limits_equals_requests is None:
             limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
 
+
+    serving_runtime_name = consolidated_model["serving_runtime"].get("name", model_name)
+
+
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
-        serving_runtime_name=model_name,
+        serving_runtime_name=serving_runtime_name,
         sr_kserve_image=consolidated_model["serving_runtime"]["kserve"]["image"],
         sr_kserve_resource_request=consolidated_model["serving_runtime"]["kserve"]["resource_request"],
 
@@ -302,6 +383,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
         sr_mute_logs=mute_logs,
 
         inference_service_name=model_name,
+        inference_service_model_format=consolidated_model["inference_service"]["model_format"],
         storage_uri=consolidated_model["inference_service"]["storage_uri"],
         sa_name=config.ci_artifacts.get_config("kserve.sa_name"),
 
@@ -335,14 +417,14 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             raise ValueError(f"serving_runtime.kserve.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
         args_dict["sr_kserve_extra_env_values"] = extra_env
 
-    if consolidated_model["serving_runtime"].get("merge_containers", False):
-        args_dict["sr_merge_containers"] = True
-        args_dict["storage_uri"] = args_dict["storage_uri"].removesuffix("/" + consolidated_model["id"])
+    args_dict["sr_container_flavor"] = consolidated_model["serving_runtime"]["container_flavor"]
 
     if "nvidia.com/gpu" in consolidated_model["serving_runtime"].get("kserve", {}).get("resource_request",{}):
         num_gpus = consolidated_model["serving_runtime"]["kserve"]["resource_request"]["nvidia.com/gpu"]
         if num_gpus > 1:
             args_dict["sr_shared_memory"]=True
+
+    args_dict["raw_deployment"] = config.ci_artifacts.get_config("kserve.raw_deployment.enabled")
 
     with env.NextArtifactDir("prepare_namespace"):
         test_scale.prepare_user_sutest_namespace(namespace)
@@ -377,14 +459,9 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
                 ), f, indent=4)
                 print("", file=f)
 
-        validate_kwargs = dict(
-            namespace=namespace,
-            inference_service_names=[model_name],
-            dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
-            query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
-        )
         if config.ci_artifacts.get_config("tests.e2e.validate_model"):
-            run.run_toolbox("kserve", "validate_model", **validate_kwargs)
+            validate_model(namespace, model_name)
+
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
         raise e
@@ -409,12 +486,14 @@ def undeploy_consolidated_model(consolidated_model, namespace=None):
 
     run.run_toolbox("kserve", "undeploy_model", **args_dict)
 
+
 def test_consolidated_models():
     consolidated_models = config.ci_artifacts.get_config("tests.e2e.consolidated_models")
     model_count = len(consolidated_models)
     logging.info(f"Found {model_count} models to test")
     for consolidated_model in consolidated_models:
         launch_test_consolidated_model(consolidated_model)
+
 
 def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
 
@@ -442,6 +521,9 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
             with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
                 print(str(uuid.uuid4()), file=f)
 
+        with open(env.ARTIFACT_DIR / "consolidated_model.yaml", "w") as f:
+            yaml.dump(consolidated_model, f, indent=4)
+
         exit_code = 1
         try:
             exit_code = test_consolidated_model(consolidated_model)
@@ -451,7 +533,7 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
                     print(f"{exit_code}", file=f)
 
 
-def matbenchmark_run_llm_load_test(namespace, llm_load_test_args):
+def matbenchmark_run_llm_load_test(namespace, llm_load_test_args, model_max_concurrency):
     visualize.prepare_matbench()
 
     with env.NextArtifactDir("matbenchmark__llm_load_test"):
@@ -460,7 +542,12 @@ def matbenchmark_run_llm_load_test(namespace, llm_load_test_args):
 
         for key, value in llm_load_test_args.items():
             if isinstance(value, list):
-                benchmark_values[key] = value
+                if key == "concurrency" and model_max_concurrency:
+                    benchmark_values[key] = [v for v in value if v <= model_max_concurrency]
+                    if len(benchmark_values[key]) != len(value):
+                        logging.warning(f"Removed the concurrency levels higher than {model_max_concurrency}.")
+                else:
+                    benchmark_values[key] = value
             else:
                 test_configuration[key] = value
 
@@ -500,15 +587,20 @@ def run_one_matbench():
         with open(env.ARTIFACT_DIR / "test_config.yaml") as f:
             test_config = yaml.safe_load(f)
 
+        llm_load_test_cfg = (test_config | settings)
+
+        config.ci_artifacts.set_config("tests.e2e.llm_load_test.args.concurrency",
+                                       llm_load_test_cfg["concurrency"])
+
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
             yaml.dump(config.ci_artifacts.config, f, indent=4)
 
         with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
             print(str(uuid.uuid4()), file=f)
 
-        namespace = test_config.pop("namespace")
+        namespace = llm_load_test_cfg.pop("namespace")
         try:
-            run.run_toolbox("llm_load_test", "run", **(test_config | settings))
+            run.run_toolbox("llm_load_test", "run", **llm_load_test_cfg)
         finally:
             if config.ci_artifacts.get_config("tests.e2e.capture_state"):
                 run.run_toolbox("kserve", "capture_state", namespace=namespace, mute_stdout=True)
@@ -525,47 +617,46 @@ def test_consolidated_model(consolidated_model, namespace=None):
     if namespace is None:
         namespace = consolidate_model_namespace(consolidated_model)
 
-    args_dict = dict(
-        namespace=namespace,
-        inference_service_names=[model_name],
-        dataset=config.ci_artifacts.get_config("kserve.inference_service.validation.dataset"),
-        query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
-    )
-
     if config.ci_artifacts.get_config("tests.e2e.validate_model"):
-        run.run_toolbox("kserve", "validate_model", **args_dict)
+        validate_model(namespace, model_name)
 
     if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
         return
 
-    host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
-    host = host_url.lstrip("https://") + ":443"
-    if host == ":443":
-        raise RuntimeError(f"Failed to get the hostname for InferenceServince {namespace}/{model_name}")
-    llm_config = config.ci_artifacts.get_config("tests.e2e.llm_load_test")
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        svc_name = run.run(f"oc get svc -lserving.kserve.io/inferenceservice={model_name} -ojsonpath={{.items[0].metadata.name}} -n {namespace}", capture_stdout=True).stdout
+        if not svc_name:
+            raise RuntimeError(f"Failed to get the hostname for Service of InferenceService {namespace}/{model_name}")
+        port = 80
+        host = f"{svc_name}.{namespace}.svc.cluster.local"
+    else:
+        host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
+        host = host_url.lstrip("https://")
+        if host == "":
+            raise RuntimeError(f"Failed to get the hostname for InferenceService {namespace}/{model_name}")
+        port = 443
 
-    protos_path = pathlib.Path(llm_config["protos_dir"]) / llm_config["protos_file"]
+    llm_load_test_args = config.ci_artifacts.get_config("tests.e2e.llm_load_test.args")
 
-    logging.info("To extract the protos:")
-    logging.info(f"./run_toolbox.py kserve extract_protos {namespace} {model_name} {protos_path}")
-    logging.info("Should be necessary only when the protos change in the image.")
+    size_name = consolidated_model["testing"]["size"]
+    model_max_concurrency = consolidated_model["testing"].get("max_concurrency")
+
+    llm_load_test_dataset_sample_args = config.ci_artifacts.get_config(f"tests.e2e.llm_load_test.dataset_size.{size_name}")
+    llm_load_test_args |= llm_load_test_dataset_sample_args
 
     args_dict = dict(
         host=host,
-        duration=llm_config["duration"],
-        protos_path=protos_path.absolute(),
-        call=llm_config["call"],
-        llm_path=llm_config["src_path"],
-        threads=llm_config["threads"],
-        rps=llm_config["rps"],
+        port=port,
+        model_id=model_name,
+
+        **llm_load_test_args
     )
 
-    if not protos_path.exists():
-        raise RuntimeError(f"Protos do not exist at {protos_path}")
-
     if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
-        matbenchmark_run_llm_load_test(namespace, args_dict)
+        matbenchmark_run_llm_load_test(namespace, args_dict, model_max_concurrency)
+    elif model_max_concurrency and args_dict["concurrency"] > model_max_concurrency:
+        logging.warning(f"Requested concurrency ({args_dict['concurrency']}) is higher than the model limit ({max_concurrency})")
     else:
         try:
             run.run_toolbox("llm_load_test", "run", **args_dict)
@@ -607,13 +698,14 @@ class Entrypoint:
         self.deploy_models_sequentially = deploy_models_sequentially
         self.deploy_models_concurrently = deploy_models_concurrently
         self.deploy_one_model = deploy_one_model
-        self.deploy_and_test_models_sequentially = deploy_and_test_models_sequentially
 
-        self.test_models_sequentially = test_models_sequentially
-        self.test_models_concurrently = test_models_concurrently
         self.test_one_model = test_one_model
-
         self.run_one_matbench = run_one_matbench
+
+        self.single_model_deploy_and_test_sequentially = single_model_deploy_and_test_sequentially
+
+        self.multi_model_test_sequentially = multi_model_test_sequentially
+        self.multi_model_test_concurrently = multi_model_test_concurrently
 
         self.rebuild_driver_image = rebuild_driver_image
 
@@ -627,7 +719,6 @@ def main():
 
 if __name__ == "__main__":
     try:
-        os.environ["TOPSAIL_PR_ARGS"] = "e2e_gpu"
         from test import init
         init(ignore_secret_path=False, apply_preset_from_pr_args=True)
 

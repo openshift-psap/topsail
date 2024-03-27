@@ -26,8 +26,6 @@
   command:
     oc get deploy/rhods-operator
        -n "{{ ods_namespace }}"
-       --ignore-not-found
-  register: has_rhods_operator_cmd
 
 - name: Check if the operator is stopped
   command:
@@ -35,14 +33,13 @@
        -n "{{ ods_namespace }}"
        -ojsonpath={.spec.replicas}
   register: rhods_operator_replicas_cmd
-  when: has_rhods_operator_cmd.stdout
 
 - name: Scale up the operator if it was stopped
   command:
     oc scale deploy/rhods-operator
        --replicas=1
        -n "{{ ods_namespace }}"
-  when: has_rhods_operator_cmd.stdout and rhods_operator_replicas_cmd.stdout == "0"
+  when: rhods_operator_replicas_cmd.stdout == "0"
 
 - name: Create the src artifacts directory
   file:
@@ -79,7 +76,17 @@
   template:
     src: "{{ datascience_cluster_file }}"
     dest: "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
-    mode: '0400'
+    mode: '0700'
+
+- name: Set the DSC extra values
+  when: rhods_update_datasciencecluster_extra_settings | length > 0
+  shell: |
+    set -o pipefail;
+    set -e;
+
+    {% for setting_key, setting_value in rhods_update_datasciencecluster_extra_settings.items() %}
+    yq -yi --argjson value "$(echo "{{ setting_value }}" | yq)" '.{{ setting_key }} = $value' "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
+    {% endfor %}
 
 - name: Create the DataScienceCluster
   shell: |
@@ -90,7 +97,18 @@
 - name: Wait for the DataScienceCluster to be ready and capture artifacts
   block:
   - name: Wait for the enabled components to be ready
-    shell: oc get datasciencecluster/{{ datasciencecluster_name }} -ojsonpath={.status.installedComponents.{{ component }}}
+    shell: |
+      # see RHOAIENG-2618 for which is mapping is necessary
+      declare -A INSTALLED_COMPONENT_NAME;
+
+      INSTALLED_COMPONENT_NAME["datasciencepipelines"]="data-science-pipelines-operator"
+
+      installed_component_name="${INSTALLED_COMPONENT_NAME['{{ component }}']}"
+      if [[ -z "$installed_component_name" ]]; then
+        installed_component_name="{{ component }}"
+      fi
+
+      oc get datasciencecluster/{{ datasciencecluster_name }} -ojsonpath="{.status.installedComponents.$installed_component_name}"
     register: dscluster_component_status_cmd
     until: dscluster_component_status_cmd.stdout == "true"
     loop: "{{ rhods_update_datasciencecluster_enable }}"

@@ -25,6 +25,9 @@ rhods deploy_ods:
   tag: {{ rhods.catalog.tag }}
   channel: {{ rhods.catalog.channel }}
   version: {{ rhods.catalog.version }}
+{% if kserve.raw_deployment.enabled %}
+  disable_dsc_config: true
+{% endif %}
 
 #
 # Scale test - Run one
@@ -48,7 +51,7 @@ sutest/cluster preload_image/kserve-runtime:
 {% else %}
   namespace: {{ tests.e2e.namespace }}
 {% endif %}
-  name: caikit-image
+  name: SET_AT_RUNTIME
   image: SET_AT_RUNTIME
 
   node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
@@ -208,17 +211,17 @@ __e2e_aliases:
     git_pull: null #refs/pull/716/merge
 
     use_local_config: true
+    need_all_success: true
 
 local_ci run_multi/deploy_concurrently:
   <<: *local_ci_run_multi_e2e
   ci_command: "kserve test_e2e deploy_one_model --use-job-index"
   sleep_factor: 0
-  need_all_success: true
   job_name: deploy-one-model
 
 local_ci run_multi/test_sequentially:
   <<: *local_ci_run_multi_e2e
-  ci_command: "kserve test_e2e test_models_sequentially --locally"
+  ci_command: "kserve test_e2e multi_model_test_sequentially --locally"
   sleep_factor: 0
   user_count: 1
   job_name: test-models-seq
@@ -231,7 +234,7 @@ local_ci run_multi/test_concurrently:
 
 local_ci run_multi/deploy_and_test_sequentially:
   <<: *local_ci_run_multi_e2e
-  ci_command: "kserve test_e2e deploy_and_test_models_sequentially --locally"
+  ci_command: "kserve test_e2e single_model_deploy_and_test_sequentially --locally"
   sleep_factor: 0
   user_count: 1
   job_name: deploy-and-test-models

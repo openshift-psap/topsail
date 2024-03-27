@@ -21,17 +21,34 @@ ci_presets:
     extends: [light_cluster]
 
   quick:
-    gpu.prepare_cluster: false
-    clusters.sutest.compute.machineset.type: m6i.2xlarge
+    extends: [no_gpu]
+    kserve.model.directory_prefix: caikit_tgis
     tests.e2e.models:
     - flan-t5-small-cpu
     - flan-t5-small-cpu
+
+  no_gpu:
+    gpu.prepare_cluster: false
+    clusters.sutest.compute.machineset.type: m6i.2xlarge
+
+  gpu:
+    gpu.prepare_cluster: true
+
+  cluster_dgx:
+    clusters.sutest.compute.machineset.type: "DGX A100-40GB"
+
+  cluster_icelake:
+    clusters.sutest.compute.machineset.type: "Icelake"
+
+  cluster_a30:
+    clusters.sutest.compute.machineset.type: "PSAP A30 node"
 
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
+    clusters.sutest.compute.machineset.type: "bare-metal node"
 
   not_metal:
     clusters.sutest.is_metal: false
@@ -57,7 +74,7 @@ ci_presets:
 
   e2e_perf:
     extends: [e2e_gpu]
-    tests.e2e.perf_mode: true
+    tests.e2e.mode: single
     tests.e2e.limits_equals_requests: false
     matbench.workload: projects.kserve.visualizations.kserve-llm
     gpu.time_sharing.replicas: 1
@@ -67,10 +84,11 @@ ci_presets:
     tests.mode: e2e
     gpu.time_sharing.replicas: 1
 
-  e2e_scale:
+  e2e_multi:
     extends: [e2e_gpu]
-    tests.e2e.perf_mode: false
+    tests.e2e.mode: multi
     gpu.time_sharing.replicas: 1
+    matbench.lts.generate: false
 
   e2e_gpu:
     extends: [e2e]
@@ -86,30 +104,35 @@ ci_presets:
     - bloom-560m
     - mpt-7b-instruct2
 
+  raw:
+    kserve.raw_deployment.enabled: true
+    rhods.operator.stop: true # mandatory in 2.7
+
+  tgis:
+    kserve.inference_service.validation.method: fmaas.GenerationService/Generate
+    kserve.inference_service.validation.proto: projects/kserve/testing/protos/tgis_generation.proto
+    tests.e2e.llm_load_test.args.plugin: tgis_grpc_plugin
+
+  quick_raw:
+    extends: [raw, no_gpu, tgis]
+
+    tests.e2e.models: [flan-t5-small-hf-cpu, flan-t5-small-hf-cpu]
+    tests.e2e.llm_load_test.args.concurrency: 2
+
+  single_raw:
+    extends: [quick_raw]
+    tests.e2e.models: [flan-t5-small-hf-cpu]
+
   # ---
 
-  prepare_only:
-    tests.mode: prepare_only
-
-  cleanup_only:
-    tests.mode: cleanup_only
-
-  matbenchmark:
-    tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.threads: [8, 16, 32]
-    tests.e2e.models: [flan-t5-small-gpu]
-
-  matbenchmark_quick:
-    extends: [matbenchmark, quick]
-    tests.e2e.models: [flan-t5-small-cpu]
-
-  # ---
+  3min:
+    tests.e2e.llm_load_test.args.duration: 180
 
   5min:
-    tests.e2e.llm_load_test.duration: 5m
+    tests.e2e.llm_load_test.args.duration: 300
 
   10min:
-    tests.e2e.llm_load_test.duration: 10m
+    tests.e2e.llm_load_test.args.duration: 600
 
   # ---
 
@@ -123,7 +146,7 @@ ci_presets:
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.spot: false
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
-    tests.scale.model.name: flan-t5-small-gpu
+    tests.scale.model.name: caikit_tgis/flan-t5-small-gpu
     gpu.time_sharing.replicas: 17
 
   # ---
@@ -135,36 +158,132 @@ ci_presets:
 
   # ---
 
-
-  use_intlab_os:
+  gating:
     matbench.lts.opensearch.index_prefix: "psap-rhoai."
     matbench.lts.opensearch.instance: intlab
 
-  use_smoke_os:
-    matbench.lts.opensearch.instance: smoke
+  gating_rehearsal:
+    matbench.lts.opensearch.index_prefix: "psap-rhoai.rehearsal."
+    matbench.lts.opensearch.instance: intlab
+
+  # ---
+  # Get models from integration lab minio instead of AWS S3
+  use_intlab_minio:
+    secrets.model_s3_cred: intlab-miniocred
+    kserve.storage_config.region: "us-east-1"
+    kserve.storage_config.endpoint: "minio.app.intlab.redhat.com"
+    kserve.storage_config.use_https: "1"
+    kserve.storage_config.verify_ssl: "0"
+
+  # ---
+  # single-model
+  # ---
+
+  cpt_single_model_gating_light:
+    extends: [cpt_single_model_gating, gating_rehearsal, use_intlab_minio]
+    tests.e2e.models:
+    - flan-t5-xl
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.args.concurrency: [4, 8]
+    matbench.lts.horreum.test_name: null
+    matbench.lts.opensearch.index: rhoai-kserve-single-light
+
+  cpt_single_model_gating:
+    extends: [e2e_perf, gating, 3min, tgis, raw, use_intlab_minio]
+    kserve.model.directory_prefix: cpt
+    tests.e2e.models:
+    - japanese-llama-2-7b-instruct
+    - flan-t5-xl
+    - flan-t5-xxl
+    - llama-2-13b-chat-hf
+    - llama-2-70b-chat-hf
+    - mpt-7b-instruct2
+    - codellama-34b-instruct-hf
+    matbench.lts.horreum.test_name: rhoai-kserve-single
+    matbench.lts.opensearch.index: rhoai-kserve-single
+
+    tests.e2e.matbenchmark.enabled: true
+    # small models will stop at 32
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
+    export_artifacts.enabled: true
 
   # ---
 
-  # single-model
-
-  single_model_gating:
+  caikit_single_model_gating:
     extends: [gating, 10min, e2e_gpu, e2e_perf]
+    kserve.model.directory_prefix: caikit_tgis
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu, bloom-560m, mpt-7b-instruct2]
-    matbench.lts.horreum.test_name: RHOAI-kserve-single
+    matbench.lts.horreum.test_name: rhoai-kserve-single
     matbench.lts.opensearch.index: rhoai-kserve-single
 
-  single_model_gating_light:
-    extends: [single_model_gating, 5min, gating_light]
+  caikit_single_model_gating_light:
+    extends: [caikit_single_model_gating, 5min, gating_rehearsal]
 
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-large-gpu]
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
+  # ---
   # multi-model
+  # ---
 
-  multi_model_gating:
-    extends: [gating, 10min, e2e_gpu, e2e_scale]
-    matbench.lts.horreum.test_name: RHOAI-kserve-multi
+  cpt_multi_model_gating:
+    extends: [gating, 5min, e2e_gpu, e2e_multi, raw, cpt_multi_model_models]
+    matbench.lts.opensearch.index: rhoai-kserve-multi
+    matbench.lts.horreum.test_name: rhoai-kserve-multi
+    tests.e2e.limits_equals_requests: false
+    tests.e2e.llm_load_test.args.concurrency: 16
+
+  cpt_multi_model_models:
+    extends: [tgis, raw, use_intlab_minio]
+    kserve.model.directory_prefix: cpt
+    tests.e2e.models:
+    - mpt-7b-instruct2
+    - mpt-7b-instruct2
+    - japanese-llama-2-7b-instruct
+    - llama-2-13b-chat-hf
+    - llama-2-13b-chat-hf
+    - kserve-flan-t5-xl-1:
+        name: flan-t5-xl
+        namespace: kserve-e2e-flan-grouped
+        serving_runtime:
+          name: kserve-flan-grouped
+    - kserve-flan-t5-xl-2:
+        name: flan-t5-xl
+        namespace: kserve-e2e-flan-grouped
+        serving_runtime:
+          name: kserve-flan-grouped
+    - kserve-flan-t5-xxl:
+        name: flan-t5-xxl
+        namespace: kserve-e2e-flan-grouped
+        serving_runtime:
+          name: kserve-flan-grouped
+
+  # multi-model non-cpt
+
+  multi_model_gating_light:
+    extends: [cpt_multi_model_gating, gating_rehearsal, 3min, no_gpu]
+    kserve.model.directory_prefix: null
+    tests.e2e.models:
+    - flan-t5-small-hf-cpu
+    - flan-t5-small-hf-cpu
+    - flan-t5-small-hf-cpu-1:
+        name: flan-t5-small-hf-cpu
+        namespace: kserve-e2e-grouped
+        serving_runtime:
+          name: flan-t5-small-hf-cpu
+    - flan-t5-small-hf-cpu-2:
+        name: flan-t5-small-hf-cpu
+        namespace: kserve-e2e-grouped
+        serving_runtime:
+          name: flan-t5-small-hf-cpu
+
+  # multi-model caikit_tgis
+
+  caikit_multi_model_gating:
+    extends: [gating, 10min, e2e_gpu, e2e_multi]
+    kserve.model.directory_prefix: caikit_tgis
+    matbench.lts.horreum.test_name: rhoai-kserve-multi
     tests.e2e.models:
     - flan-t5-large-gpu-1:
         name: flan-t5-large-gpu
@@ -185,31 +304,74 @@ ci_presets:
         name: mpt-7b-instruct2
     matbench.lts.opensearch.index: rhoai-kserve-multi
 
-  multi_model_gating_light:
-    extends: [multi_model_gating, 5min, gating_light]
+  caikit_multi_model_gating_light:
+    extends: [caikit_multi_model_gating, 5min, gating_rehearsal]
 
     tests.e2e.models: [flan-t5-small-gpu, flan-t5-small-cpu]
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-multi-light
 
+  # ---
+  # longevity
+  # ---
+
+  cpt_longevity_gating:
+    extends: [cpt_multi_model_models, multi_day_longevity, raw]
+    tests.e2e.limits_equals_requests: false
+    tests.e2e.llm_load_test.args.concurrency: 16
+
+  longevity:
+    tests.e2e.mode: longevity
+    tests.e2e.longevity.repeat: 4
+    tests.e2e.longevity.delay: 60 # s
+
+    matbench.lts.horreum.test_name: rhoai-kserve-longevity
+    matbench.lts.opensearch.index: rhoai-kserve-longevity
+
+  multi_model_a30:
+    extends: [raw, use_intlab_minio, tgis]
+    kserve.model.directory_prefix: cpt
+
+    tests.e2e.models:
+    - flan-t5-xl
+    - flan-t5-xl
+    - japanese-llama-2-7b-instruct
+
+  hour_longevity:
+    extends: [longevity]
+
+    tests.e2e.longevity.repeat: 4
+    tests.e2e.longevity.delay: 1200 # 20min
+
+  multi_hour_longevity: # 12h
+    extends: [longevity]
+    tests.e2e.longevity.repeat: 8
+    tests.e2e.longevity.delay: 5400 # 90min
+
+  multi_day_longevity: # 48h
+    extends: [longevity]
+
+    tests.e2e.longevity.repeat: 4
+    tests.e2e.longevity.delay: 43200 # 12 hours
+
   # many-model
 
   many_model_gating:
     extends: [gating, scale_test, customize_smcp]
-    matbench.lts.horreum.test_name: RHOAI-kserve-many
+    matbench.lts.horreum.test_name: rhoai-kserve-many
 
     tests.scale.model.replicas: 17
     tests.scale.namespace.replicas: 12
     gpu.time_sharing.replicas: 32
 
-    tests.scale.model.name: flan-t5-small-gpu-light
+    tests.scale.model.name: caikit_tgis/flan-t5-small-gpu-light
     kserve.model.serving_runtime.mute_logs: true
     tests.scale.sleep_factor: 60
     tests.e2e.limits_equals_requests: false
     matbench.lts.opensearch.index: rhoai-kserve-many
 
   many_model_gating_light:
-    extends: [many_model_gating, gating_light]
+    extends: [many_model_gating, gating_rehearsal]
 
     tests.scale.sleep_factor: 1
     tests.scale.model.replicas: 2
@@ -226,12 +388,16 @@ secrets:
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
-  aws_cred: .awscred
+  model_s3_cred: .awscred
   kserve_model_secret_settings: watsonx-models.yaml
   opensearch_instances: opensearch.yaml
   aws_credentials: .awscred
 
 clusters:
+  metal_profiles:
+    p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
+    e26-h23-000-r650: cluster_icelake
+    bb37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
   create:
     type: single # can be: single, ocp, managed
     keep: false
@@ -288,10 +454,10 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 655658
-    channel: stable
-    version: 2.6.0
-    version_name: rc1
+    tag: 690058
+    channel: fast
+    version: 2.8.0
+    version_name: rc4
   operator:
     # set to true to stop the RHODS operator
     stop: false
@@ -303,6 +469,7 @@ rhods:
 
 
 prepare:
+  enabled: true
   operators:
   - name: serverless-operator
     catalog: redhat-operators
@@ -323,6 +490,7 @@ prepare:
       namespaces:
       - istio-system
   cleanup:
+    enabled: true
     crds:
     - InferenceService
     - ServingRuntime
@@ -348,20 +516,26 @@ base_image:
 
 kserve:
   sa_name: sa
+  raw_deployment:
+    enabled: false
   storage_config:
     name: storage-config
     region: us-east-1
     endpoint: s3.amazonaws.com
     use_https: 1
+    verify_ssl: 1
+
   inference_service:
     validation:
-      dataset: subprojects/llm-load-test/openorca-subset-006.json
       query_count: 10
+      method: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+      proto: null
   model:
+    directory_prefix: null
     serving_runtime:
       mute_logs: true
       kserve:
-        image: quay.io/opendatahub/text-generation-inference:stable
+        image: quay.io/opendatahub/text-generation-inference:fast
       transformer:
         image: quay.io/opendatahub/caikit-tgis-serving:fast
   customize:
@@ -385,25 +559,27 @@ tests:
   visualize: true
   capture_prom: true
   prom_plot_workload: projects.kserve.visualizations.kserve-prom
+  prom_plot_index_suffix: -prom
   scale:
     sleep_factor: 1
     namespace:
-      name: watsonx-scale-test
+      name: kserve-scale-test
       label: topsail.scale-test=true
       replicas: 2
 
     model:
       consolidated: false
-      name: flan-t5-small-cpu
+      name: caikit_tgis/flan-t5-small-cpu
+      format: caikit
       replicas: 2
   e2e:
-    namespace: watsonx-e2e
-    perf_mode: true
+    namespace: kserve-e2e
+    mode: single # single, longevity or multi
     models:
-    - flan-t5-small-gpu
-    - flan-t5-small-gpu
+    - flan-t5-small-hf
+    - flan-t5-small-hf
     consolidated_models: {} # will be filled at runtime
-    limits_equals_requests: true
+    limits_equals_requests: false
     delete_others: true
     validate_model: true
     capture_state: true
@@ -412,13 +588,27 @@ tests:
       stop_on_error: true
     llm_load_test:
       enabled: true
-      src_path: subprojects/llm-load-test/
-      duration: 1m
-      threads: 16
-      rps: 2
-      protos_file: nlpservice.proto
-      protos_dir: projects/kserve/testing/protos/
-      call: caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict
+      args:
+        src_path: projects/llm_load_test/subprojects/llm-load-test/
+
+        duration: 60
+        concurrency: 16
+        plugin: caikit_client_plugin
+        interface: grpc
+        streaming: true
+
+      dataset_size:
+        small:
+          max_input_tokens: 2047
+          max_output_tokens: 1024
+          max_sequence_tokens: 2048
+        large:
+          max_input_tokens: 3500
+          max_output_tokens: 800
+          max_sequence_tokens: 3500
+    longevity:
+      repeat: 2
+      delay: 30 # seconds
 
 matbench:
   preset: null
@@ -438,17 +628,21 @@ matbench:
     horreum:
       test_name: null
     opensearch:
-      export: true
-      fail_test_on_fail: false
+      export:
+        enabled: true
+        enabled_on_replot: false
+        fail_test_on_fail: true
       instance: smoke
       index: rhoai-kserve-single
       index_prefix: ""
+
     regression_analyses:
-      enabled: true
+      enabled: false
+      enabled_on_replot: false
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
 export_artifacts:
-  enabled: true
+  enabled: false
   bucket: rhoai-cpt-artifacts
   path_prefix: cpt/kserve
   dest: null # will be set by the export code

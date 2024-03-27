@@ -31,17 +31,18 @@ def generateErrorHistogramData(entries, variables):
     CLOSED_CX = "rpc error: code = Unavailable desc = error reading from server: read tcp: use of closed network connection"
 
     for entry in entries:
-        llm_data = entry.results.llm_load_test_output
+        if not entry.results.llm_load_test_output: continue
 
         errorDistribution = defaultdict(int)
-        for idx, block in enumerate(llm_data):
-            for descr, count in block.get("errorDistribution", {}).items():
-                simplified_error = error_report.simplify_error(descr)
+        for result in entry.results.llm_load_test_output["results"]:
+            simplified_error = error_report.simplify_error(result["error_text"])
+            if not simplified_error:
+                continue
 
-                if error_report.simplify_error(descr) in (CLOSING_CX, CLOSED_CX, None):
-                    continue # ignore these errors from the top chart, they're well known
+            if simplified_error in (CLOSING_CX, CLOSED_CX, None):
+                continue # ignore these errors from the top chart, they're well known
 
-                errorDistribution[simplified_error] += count
+            errorDistribution[simplified_error] += 1
 
 
         for descr, count in errorDistribution.items():
@@ -97,14 +98,15 @@ def generateSuccesssCount(entries, variables):
     data = []
 
     for entry in entries:
-        llm_data = entry.results.llm_load_test_output
+        if entry.results.llm_load_test_output:
+            llm_data = entry.results.llm_load_test_output
 
-        success_count = 0
-        for idx, block in enumerate(llm_data):
+            error_count = llm_data["summary"]["total_failures"]
+            success_count = llm_data["summary"]["total_requests"] - error_count
+        else:
             error_count = 0
-            for descr, count in block.get("errorDistribution", {}).items():
-                error_count += count
-            success_count += len(block["details"]) - error_count
+            success_count = 0
+
         data.append(dict(
             test_name=entry.get_name(variables),
             count=success_count,
@@ -131,20 +133,45 @@ class SuccessCountDistribution():
 # ---
 
 def generateFinishReasonData(entries, variables):
+    # https://github.com/IBM/text-generation-inference/blob/88f2a0b858b9f080f42cde388c4ebec961b9fa7d/proto/generation.proto#L155-L172
+    STOP_REASONS = {
+        # Possibly more tokens to be streamed
+        0: "NOT_FINISHED",
+        # Maximum requested tokens reached
+        1: "MAX_TOKENS",
+        # End-of-sequence token encountered
+        2: "EOS_TOKEN",
+        # Request cancelled by client
+        3: "CANCELLED",
+        # Time limit reached
+        4: "TIME_LIMIT",
+        # Stop sequence encountered
+        5: "STOP_SEQUENCE",
+        # Total token limit reached
+        6: "TOKEN_LIMIT",
+        # Decoding error
+        7: "ERROR",
+        # Stop reason is not reported
+        None: "NOT_REPORTED"
+    }
+
     data = []
 
     for entry in entries:
-        llm_data = entry.results.llm_load_test_output
+        if not entry.results.llm_load_test_output: continue
 
         finishReasons = defaultdict(int)
-        for idx, block in enumerate(llm_data):
-            for detail in block.get("details"):
-                if detail["error"]:
-                    reason = "ERROR"
-                else:
-                    reason = detail["response"].get("finishReason", "ERROR")
-                pass
-                finishReasons[reason] += 1
+        for result in entry.results.llm_load_test_output["results"]:
+            reason = result.get("stop_reason")
+            if result["error_code"] is not None:
+                reason = error_report.simplify_error(result["error_text"])
+
+            #elif reason == 1: # MAX_TOKENS: good, ignore
+            #    continue
+            else:
+                reason = STOP_REASONS[reason]
+
+            finishReasons[reason] += 1
 
         for reason, count in finishReasons.items():
             datum = {}

@@ -12,7 +12,7 @@ from .. import models
 
 from ..models import lts as models_lts
 
-store.register_lts_schema(models_lts.PipelinesScaleTestPayload)
+store.register_lts_schema(models_lts.Payload)
 
 CACHE_FILENAME = "cache.pickle"
 

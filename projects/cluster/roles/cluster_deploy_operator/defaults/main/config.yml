@@ -38,3 +38,7 @@ cluster_deploy_operator_namespace_monitoring: false
 # If set, deploy the CSV in all the namespaces.
 # Type: Bool
 cluster_deploy_operator_all_namespaces: false
+
+# If not empty, a list of config env names to pass to the subscription
+# Type: List
+cluster_deploy_operator_config_env_names: []

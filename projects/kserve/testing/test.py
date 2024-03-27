@@ -44,7 +44,14 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
         run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
 
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
-    config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
+    is_metal = config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
+
+    if is_metal:
+        metal_profiles = config.ci_artifacts.get_config("clusters.metal_profiles")
+        profile_applied = config.ci_artifacts.detect_apply_cluster_profile(metal_profiles)
+
+        if not profile_applied:
+            raise ValueError("Bare-metal cluster not recognized :/ ")
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -64,12 +71,13 @@ def prepare_ci():
     """
     Prepares the cluster and the namespace for running the tests
     """
+    if not config.ci_artifacts.get_config("prepare.enabled"):
+        logging.warning("prepare.enabled not enabled, nothing to do.")
+        return
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode in ("scale", "e2e", "prepare_only"):
+    if test_mode in ("scale", "e2e"):
         prepare_scale.prepare()
-    elif test_mode in ("cleanup_only"):
-        logging.info("Cleanup only mode, nothing to do")
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
@@ -81,10 +89,6 @@ def test_ci():
     """
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
-
-    if test_mode in ("prepare_only", "cleanup_only"):
-        logging.info(f"Test mode is '{test_mode}', nothing to do.")
-        return
 
     do_visualize = config.ci_artifacts.get_config("tests.visualize")
 
@@ -189,6 +193,11 @@ def generate_plots_from_pr_args():
     Generates the visualization reports from the PR arguments
     """
 
+    try:
+        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"]) / config.ci_artifacts.get_config("secrets.aws_credentials"))
+    except Exception as e:
+        logging.warning(f"Failed to set AWS_SHARED_CREDENTIALS_FILE: {e}")
+
     visualize.download_and_generate_visualizations()
 
     export.export_artifacts(env.ARTIFACT_DIR, test_step="plot")
@@ -201,9 +210,9 @@ def cleanup_cluster(mute=False):
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode in ("prepare_only"):
-        logging.info("Prepare only mode, nothing to do.")
+    if not config.ci_artifacts.get_config("prepare.cleanup.enabled"):
+        logging.warning("prepare.cleanup.enabled not enabled, cleanup only the test namespaces.")
+        cleanup_sutest_ns()
         return
 
     with env.NextArtifactDir("cleanup_cluster"):
@@ -212,7 +221,7 @@ def cleanup_cluster(mute=False):
         prepare_user_pods.cleanup_cluster()
         cleanup_sutest_crs()
 
-    prepare_kserve.cleanup(mute)
+        prepare_kserve.cleanup(mute)
 
 
 @entrypoint()
@@ -236,7 +245,14 @@ def generate_plots(results_dirname):
             logging.info(f"Setting tests.prom_plot_workload isn't set, nothing else to generate.")
             return
 
-        with config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload):
+        index = config.ci_artifacts.get_config("matbench.lts.opensearch.index")
+        prom_index_suffix = config.ci_artifacts.get_config("tests.prom_plot_index_suffix")
+
+        with (
+                config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload),
+                config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export", False),
+                config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")
+        ):
             visualize.prepare_matbench()
 
             with env.NextArtifactDir(f"{prom_workload}__all"):
@@ -252,7 +268,10 @@ def generate_plots(results_dirname):
                 if current_results_dirname == results_dirname: continue
                 dirname = current_results_dirname.name
 
-                with env.NextArtifactDir(f"{prom_workload}__{dirname}"):
+                with (
+                        env.NextArtifactDir(f"{prom_workload}__{dirname}"),
+                        config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export", False),
+                ):
                     logging.info(f"Generating the plots with workload={prom_workload} for {current_results_dirname}")
                     try:
                         visualize.generate_from_dir(str(current_results_dirname), generate_lts=False)
@@ -305,7 +324,13 @@ def cleanup_sutest_crs():
     Cleans up the Custom Resources of the SUTest cluster
     """
 
-    run.run_toolbox("rhods", "update_datasciencecluster", enable=["kserve"])
+    has_rhods_operator = run.run("oc get deploy/rhods-operator -n redhat-ods-operator", check=False).returncode == 0
+    if not has_rhods_operator:
+        logging.warning("RHOAI operator not installed, cannot cleanup the CRDs")
+        return
+
+    prepare_kserve.dsc_enable_kserve()
+
     for cr_name in config.ci_artifacts.get_config("prepare.cleanup.crds"):
         run.run(f"oc delete {cr_name} --all -A")
 

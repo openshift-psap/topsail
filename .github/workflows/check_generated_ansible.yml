@@ -21,7 +21,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install fire pyyaml
+          python3 -m pip install fire pyyaml jsonpath_ng joblib
 
       - name: "Ensure that Ansible 'default' files match the Python entrypoint"
         run: |
