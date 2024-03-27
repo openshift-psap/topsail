@@ -53,7 +53,7 @@ def parse_once(results, dirname):
     results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
     results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
     results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
-
+    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
     results.metrics = _extract_metrics(dirname)
 
