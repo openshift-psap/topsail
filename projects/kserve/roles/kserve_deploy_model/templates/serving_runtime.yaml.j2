@@ -1,12 +1,12 @@
 apiVersion: serving.kserve.io/v1alpha1
 kind: ServingRuntime
 metadata:
-  name: {{ kserve_deploy_model_serving_runtime_name }}
+  name: {{ kserve_deploy_model_sr_name }}
   namespace: {{ kserve_deploy_model_namespace }}
   labels:
     opendatahub.io/dashboard: "true"
   annotations:
-    opendatahub.io/template-display-name: "ServingRuntime for {{ kserve_deploy_model_serving_runtime_name }} | Topsail"
+    opendatahub.io/template-display-name: "ServingRuntime for {{ kserve_deploy_model_sr_name }} | Topsail"
 spec:
   containers:
 {% if kserve_deploy_model_sr_container_flavor == "tgis+caikit" %} # tgis+caikit container flavor
@@ -29,7 +29,7 @@ spec:
 {% if kserve_deploy_model_secret_env_file_name is not none %}
     envFrom:
     - secretRef:
-        name: {{ kserve_deploy_model_serving_runtime_name }}-secret
+        name: {{ kserve_deploy_model_sr_name }}-secret
 {% endif %}
     resources:
       requests:
@@ -74,7 +74,7 @@ spec:
 {% if kserve_deploy_model_secret_env_file_name is not none %}
     envFrom:
     - secretRef:
-        name: {{ kserve_deploy_model_serving_runtime_name }}-secret
+        name: {{ kserve_deploy_model_sr_name }}-secret
 {% endif %}
     resources:
       requests:
@@ -114,7 +114,7 @@ spec:
 {% if kserve_deploy_model_secret_env_file_name is not none %}
     envFrom:
     - secretRef:
-        name: {{ kserve_deploy_model_serving_runtime_name }}-secret
+        name: {{ kserve_deploy_model_sr_name }}-secret
 {% endif %}
 
     resources:
@@ -173,7 +173,7 @@ spec:
 {% if kserve_deploy_model_sr_container_flavor == "tgis+caikit" %} # tgis+caikit container flavor
   - name: config
     configMap:
-      name: {{ kserve_deploy_model_serving_runtime_name }}-caikit-tgis-config
+      name: {{ kserve_deploy_model_sr_name }}-caikit-tgis-config
 {% endif %}
 {% if kserve_deploy_model_sr_shared_memory %}
   - name: shared-memory

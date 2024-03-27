@@ -9,7 +9,7 @@ kserve_deploy_model_namespace:
 
 # the name to give to the serving runtime
 # Mandatory value
-kserve_deploy_model_serving_runtime_name:
+kserve_deploy_model_sr_name:
 
 # the image of the Kserve serving runtime container
 # Mandatory value

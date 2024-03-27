@@ -11,7 +11,7 @@ class Kserve:
     @AnsibleMappedParams
     def deploy_model(self,
                      namespace,
-                     serving_runtime_name,
+                     sr_name,
                      sr_kserve_image, sr_kserve_resource_request,
                      sr_transformer_image, sr_transformer_resource_request,
                      inference_service_name,
@@ -37,7 +37,7 @@ class Kserve:
           name: the name of the resource to create
           namespace: the namespace in which the model should be deployed
 
-          serving_runtime_name: the name to give to the serving runtime
+          sr_name: the name to give to the serving runtime
           sr_container_flavor: name of the container flavor to use in the serving runtime (tgis+caikit or tgis)
           sr_shared_memory: if True, create a 2 Gi in-memory volume mounted on /dev/shm (for shards to communicate).
           sr_kserve_image: the image of the Kserve serving runtime container
