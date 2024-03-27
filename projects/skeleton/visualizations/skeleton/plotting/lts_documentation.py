@@ -52,7 +52,7 @@ def generateOneLtsDocumentationReport(entry):
     header += [html.H2("metadata")]
     metadata = []
 
-    metadata += [html.Li([html.B("settings:"), html.Code(f"{k}: {v}" for k, v in lts.metadata.settings.items())])]
+    metadata += [html.Li([html.B("settings:"), html.Code(f"{k}: {v}" for k, v in lts.metadata.settings.__dict__.items())])]
     metadata += [html.Li([html.B("start:"), html.Code(lts.metadata.start)])]
     metadata += [html.Li([html.B("presets:"), html.Code(", ".join(lts.metadata.presets))])]
     metadata += [html.Li([html.B("config:"), html.Code("(not shown for clarity)")])]
