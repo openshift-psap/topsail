@@ -36,7 +36,8 @@ def init(allow_no_config_file=False):
 
     config.init(pathlib.Path(config_file).parent)
 
-    if config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "").endswith("-plot"):
+    is_plot_test = config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "", warn=False).endswith("-plot")
+    if is_plot_test:
         pr_arg_1 = config.ci_artifacts.get_config("PR_POSITIONAL_ARG_1", "")
         if not pr_arg_1:
             raise ValueError("PR_POSITIONAL_ARG_1 should have been set ...")
@@ -47,7 +48,7 @@ def init(allow_no_config_file=False):
 
     workload_storage_dir = pathlib.Path(matbench_workload.replace(".", "/"))
 
-    if config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "").endswith("-plot"):
+    if is_plot_test:
         config.ci_artifacts.set_config("matbench.preset", config.ci_artifacts.get_config("PR_POSITIONAL_ARG_1", None), dump_command_args=False)
 
     matbench_preset = config.ci_artifacts.get_config("matbench.preset")
