@@ -629,7 +629,7 @@ matbench:
       test_name: null
     opensearch:
       export:
-        enabled: true
+        enabled: false
         enabled_on_replot: false
         fail_test_on_fail: true
       instance: smoke
