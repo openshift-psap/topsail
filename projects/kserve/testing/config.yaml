@@ -106,7 +106,6 @@ ci_presets:
 
   raw:
     kserve.raw_deployment.enabled: true
-    rhods.operator.stop: true # mandatory in 2.7
 
   tgis:
     kserve.inference_service.validation.method: fmaas.GenerationService/Generate
