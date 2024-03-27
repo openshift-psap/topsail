@@ -405,7 +405,7 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        TicketId: 229
+        TicketId:
         Project: PSAP/Watsonx/serving/scale/ci-dev
       deploy_cluster:
         target: cluster
