@@ -12,7 +12,7 @@ ci_presets:
 
     clusters.create.keep: true
     clusters.create.ocp.tags.Project: PSAP/Watsonx/serving/scale/home-dev
-    clusters.create.ocp.tags.TicketId: 229
+    clusters.create.ocp.tags.TicketId: null
 
   light_cluster:
     clusters.create.ocp.deploy_cluster.target: cluster_light
@@ -405,7 +405,7 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        TicketId: 229
+        TicketId:
         Project: PSAP/Watsonx/serving/scale/ci-dev
       deploy_cluster:
         target: cluster
