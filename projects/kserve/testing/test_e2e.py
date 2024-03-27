@@ -382,7 +382,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
-        serving_runtime_name=serving_runtime_name,
+        sr_name=serving_runtime_name,
         sr_kserve_image=consolidated_model["serving_runtime"]["kserve"]["image"],
         sr_kserve_resource_request=consolidated_model["serving_runtime"]["kserve"]["resource_request"],
 
@@ -488,7 +488,7 @@ def undeploy_consolidated_model(consolidated_model, namespace=None):
     model_name = consolidated_model["name"]
     args_dict = dict(
         namespace=namespace,
-        serving_runtime_name=model_name,
+        sr_name=model_name,
         inference_service_name=model_name,
     )
 
