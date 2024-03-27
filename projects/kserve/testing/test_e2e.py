@@ -320,16 +320,24 @@ def launch_deploy_consolidated_model(consolidated_model):
         deploy_consolidated_model(consolidated_model)
 
 
-def validate_model(namespace, model_name):
+def validate_model(namespace, *, model_name=None, model_names=None, container_flavor, artifact_dir_suffix=None):
+    if model_name and model_names:
+        raise ValueError("validate_model: cannot receive model_name and model_names")
+    if not (model_name or model_names):
+        raise ValueError("validate_model: must receive model_name or model_names")
+
     validate_kwargs = dict(
         namespace=namespace,
-        inference_service_names=[model_name],
+        inference_service_names=model_names or [model_name],
         method=config.ci_artifacts.get_config("kserve.inference_service.validation.method"),
         query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
         raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
     )
     if validate_kwargs["raw_deployment"]:
         validate_kwargs["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
+
+    validate_kwargs["artifact_dir_suffix"] = artifact_dir_suffix
+    validate_kwargs["sr_container_flavor"] = container_flavor
 
     run.run_toolbox("kserve", "validate_model", **validate_kwargs)
 
@@ -374,7 +382,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
-        serving_runtime_name=serving_runtime_name,
+        sr_name=serving_runtime_name,
         sr_kserve_image=consolidated_model["serving_runtime"]["kserve"]["image"],
         sr_kserve_resource_request=consolidated_model["serving_runtime"]["kserve"]["resource_request"],
 
@@ -460,7 +468,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
                 print("", file=f)
 
         if config.ci_artifacts.get_config("tests.e2e.validate_model"):
-            validate_model(namespace, model_name)
+            validate_model(namespace, model_name=model_name, container_flavor=args_dict["sr_container_flavor"])
 
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
@@ -480,7 +488,7 @@ def undeploy_consolidated_model(consolidated_model, namespace=None):
     model_name = consolidated_model["name"]
     args_dict = dict(
         namespace=namespace,
-        serving_runtime_name=model_name,
+        sr_name=model_name,
         inference_service_name=model_name,
     )
 
@@ -618,7 +626,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
         namespace = consolidate_model_namespace(consolidated_model)
 
     if config.ci_artifacts.get_config("tests.e2e.validate_model"):
-        validate_model(namespace, model_name)
+        validate_model(namespace, model_name=model_name, container_flavor=consolidated_model["serving_runtime"]["container_flavor"])
 
     if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")

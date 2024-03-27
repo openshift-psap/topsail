@@ -154,14 +154,14 @@ class Config:
             yaml.dump(self.config, f, indent=4, default_flow_style=False, sort_keys=False)
 
         if dump_command_args:
-            self.dump_command_args()
+            self.dump_command_args(mute=True)
 
         if (shared_dir := os.environ.get("SHARED_DIR")) and (shared_dir_path := pathlib.Path(shared_dir)) and shared_dir_path.exists():
 
             with open(shared_dir_path / "config.yaml", "w") as f:
                 yaml.dump(self.config, f, indent=4)
 
-    def dump_command_args(self):
+    def dump_command_args(self, mute=False):
         try:
             command_template = get_command_arg("dump", "config", None)
         except Exception as e:
@@ -257,12 +257,15 @@ def _set_config_environ(base_dir):
     return config_path
 
 
-def get_command_arg(group, command, arg, prefix=None, suffix=None):
+def get_command_arg(group, command, arg, prefix=None, suffix=None, mute=False):
     try:
-        logging.info(f"get_command_arg: {group} {command} {arg}")
+        if not mute:
+            logging.info(f"get_command_arg: {group} {command} {arg}")
+
         proc = run.run_toolbox_from_config(group, command, show_args=arg,
                                            prefix=prefix, suffix=suffix,
-                                           check=True, run_kwargs=dict(capture_stdout=True, capture_stderr=True))
+                                           check=True,
+                                           run_kwargs=dict(capture_stdout=True, capture_stderr=True, log_command=(not mute)))
     except subprocess.CalledProcessError as e:
         logging.error(e.stderr.strip().decode("ascii", "ignore"))
         raise

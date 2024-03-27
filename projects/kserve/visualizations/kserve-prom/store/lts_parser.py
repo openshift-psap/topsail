@@ -1,20 +1,18 @@
 import types
 import datetime
 import yaml
+import logging
 
 from .. import models
 from ..models import lts as models_lts
-from . import lts
 
 
-def generate_lts_payload(results, lts_results, import_settings, must_validate=False):
+def generate_lts_payload(results, import_settings, must_validate=False):
     lts_payload = types.SimpleNamespace()
 
     lts_payload.metadata = generate_lts_metadata(results, import_settings)
-    lts_payload.results = lts_results
-    lts_payload.kpis = lts.generate_lts_kpis(lts_payload)
-
-    lts.validate_lts_payload(lts_payload, import_settings, reraise=must_validate)
+    lts_payload.results = generate_lts_results(results)
+    # lts_payload.kpis is generated in the helper store
 
     return lts_payload
 
@@ -46,15 +44,21 @@ def generate_lts_settings(lts_metadata, results, import_settings):
 def generate_lts_metadata(results, import_settings):
     metadata = types.SimpleNamespace()
 
-    start_ts = next(results.metrics["sutest"]["kserve-e2e.* CPU usage"][0].values.keys().__iter__())
-    end_ts = list(results.metrics["sutest"]["kserve-e2e.* CPU usage"][0].values.keys())[-1]
+    try:
+        start_ts = next(results.metrics["sutest"]["kserve-e2e.* CPU usage"][0].values.keys().__iter__())
+        end_ts = list(results.metrics["sutest"]["kserve-e2e.* CPU usage"][0].values.keys())[-1]
+    except Exception as e:
+        logging.error(f"Could not find the test start/end timestamps ... ({e})")
+        start_ts = None
+        end_ts = None
 
     metadata.lts_schema_version = models_lts.LTS_SCHEMA_VERSION
-    metadata.start = datetime.datetime.utcfromtimestamp(start_ts)
-    metadata.end = datetime.datetime.utcfromtimestamp(end_ts)
+
+    metadata.start = datetime.datetime.utcfromtimestamp(start_ts) if start_ts else None
+    metadata.end = datetime.datetime.utcfromtimestamp(end_ts) if end_ts else None
 
     metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
-    metadata.config = config = yaml.dump(results.test_config.yaml_file, indent=4, default_flow_style=False, sort_keys=False, width=1000)
+    metadata.config = yaml.dump(results.test_config.yaml_file, indent=4, default_flow_style=False, sort_keys=False, width=1000)
 
     metadata.gpus = results.cluster_info.gpus
 

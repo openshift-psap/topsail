@@ -9,6 +9,7 @@ metadata:
     serving.kserve.io/deploymentMode: "{% if kserve_deploy_model_raw_deployment %}RawDeployment{% else %}Serverless{% endif %}"
   labels:
     opendatahub.io/dashboard: "true"
+    protocol: "grpconly" # workaround for https://issues.redhat.com/browse/RHOAIENG-165
   name: {{ kserve_deploy_model_inference_service_name }}
   namespace: {{ kserve_deploy_model_namespace }}
 spec:
@@ -20,5 +21,5 @@ spec:
     model:
       modelFormat:
         name: {{ kserve_deploy_model_inference_service_model_format }}
-      runtime: {{ kserve_deploy_model_serving_runtime_name }}
+      runtime: {{ kserve_deploy_model_sr_name }}
       storageUri: {{ kserve_deploy_model_storage_uri }}

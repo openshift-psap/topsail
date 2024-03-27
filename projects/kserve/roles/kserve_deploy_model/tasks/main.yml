@@ -56,14 +56,14 @@
       echo "Could not find key '{{ kserve_deploy_model_secret_env_file_key }}' in file {{ kserve_deploy_model_secret_env_file_name }}. Aborting."
       exit 1
     fi
-    oc create secret generic {{ kserve_deploy_model_serving_runtime_name }}-secret \
+    oc create secret generic {{ kserve_deploy_model_sr_name }}-secret \
        -n {{ kserve_deploy_model_namespace }} \
        -ojson \
        --dry-run=client \
        | jq --argjson data "$secret_data" '.data = $data' \
        | oc apply -f-
 
-    oc describe secret/{{ kserve_deploy_model_serving_runtime_name }}-secret \
+    oc describe secret/{{ kserve_deploy_model_sr_name }}-secret \
        -n {{ kserve_deploy_model_namespace }} \
        > {{ artifact_extra_logs_dir }}/artifacts/env-secrets.desc
 
@@ -89,7 +89,7 @@
   shell:
     set -o pipefail;
 
-    oc create cm {{ kserve_deploy_model_serving_runtime_name }}-caikit-tgis-config
+    oc create cm {{ kserve_deploy_model_sr_name }}-caikit-tgis-config
        -n {{ kserve_deploy_model_namespace }}
        --from-file=caikit.yml="{{ artifact_extra_logs_dir }}/src/caikit_tgit_config.yaml"
        --dry-run=client

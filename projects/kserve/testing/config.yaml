@@ -139,6 +139,7 @@ ci_presets:
     tests.mode: scale
     matbench.workload: projects.kserve.visualizations.kserve-scale
     tests.prom_plot_workload: null
+    kserve.model.serving_runtime.mute_logs: false
 
   scale_gpu:
     extends: [scale_test]

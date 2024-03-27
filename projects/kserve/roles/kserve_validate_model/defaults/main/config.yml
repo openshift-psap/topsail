@@ -15,6 +15,10 @@ kserve_validate_model_method:
 # Mandatory value
 kserve_validate_model_query_count:
 
+# name of the container flavor to use in the serving runtime (tgis+caikit or tgis)
+# Mandatory value
+kserve_validate_model_sr_container_flavor:
+
 # the model-id to pass to the inference service
 kserve_validate_model_model_id: not-used
 

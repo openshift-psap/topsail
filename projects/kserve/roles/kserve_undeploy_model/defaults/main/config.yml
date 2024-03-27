@@ -8,7 +8,7 @@
 kserve_undeploy_model_namespace:
 
 # the name to give to the serving runtime
-kserve_undeploy_model_serving_runtime_name:
+kserve_undeploy_model_sr_name:
 
 # the name to give to the inference service
 kserve_undeploy_model_inference_service_name:

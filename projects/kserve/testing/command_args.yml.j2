@@ -164,15 +164,15 @@ kserve deploy_model:
   namespace: {{ tests.scale.namespace.name }}
   sa_name: {{ kserve.sa_name }}
 
-  serving_runtime_name: {{ tests.scale.model.name }}
+  sr_name: {{ tests.scale.model.name.split("/")[-1] }}
 
   sr_kserve_image: {{ kserve.model.serving_runtime.kserve.image }}
   sr_kserve_resource_request: {{ tests.scale.model.serving_runtime.kserve.resource_request }}
-
+  inference_service_model_format: {{ tests.scale.model.inference_service.model_format }}
   sr_transformer_image: {{ kserve.model.serving_runtime.transformer.image }}
   sr_transformer_resource_request: {{ tests.scale.model.serving_runtime.transformer.resource_request }}
   sr_mute_logs: {{ kserve.model.serving_runtime.mute_logs }}
-
+  sr_container_flavor: {{ tests.scale.model.serving_runtime.container_flavor }}
   inference_service_name: {{ tests.scale.model.name }}
   storage_uri: {{ tests.scale.model.inference_service.storage_uri }}
 
@@ -183,7 +183,6 @@ kserve validate_model:
   namespace: {{ tests.scale.namespace.name }}
   inference_service_names: [{{ tests.scale.model.name }}]
 
-  dataset: {{ kserve.inference_service.validation.dataset }}
   query_count: {{ kserve.inference_service.validation.query_count }}
 {% endif %}
 

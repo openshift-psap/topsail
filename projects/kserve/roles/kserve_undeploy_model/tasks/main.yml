@@ -7,7 +7,7 @@
        InferenceService,ServingRuntime --all
     {% else %}
        InferenceService/{{ kserve_undeploy_model_inference_service_name }}
-       ServingRuntime/{{ kserve_undeploy_model_serving_runtime_name }}
+       ServingRuntime/{{ kserve_undeploy_model_sr_name }}
     {% endif %}
        -n {{ kserve_undeploy_model_namespace }}
        --ignore-not-found

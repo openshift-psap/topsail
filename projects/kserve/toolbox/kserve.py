@@ -11,7 +11,7 @@ class Kserve:
     @AnsibleMappedParams
     def deploy_model(self,
                      namespace,
-                     serving_runtime_name,
+                     sr_name,
                      sr_kserve_image, sr_kserve_resource_request,
                      sr_transformer_image, sr_transformer_resource_request,
                      inference_service_name,
@@ -37,7 +37,7 @@ class Kserve:
           name: the name of the resource to create
           namespace: the namespace in which the model should be deployed
 
-          serving_runtime_name: the name to give to the serving runtime
+          sr_name: the name to give to the serving runtime
           sr_container_flavor: name of the container flavor to use in the serving runtime (tgis+caikit or tgis)
           sr_shared_memory: if True, create a 2 Gi in-memory volume mounted on /dev/shm (for shards to communicate).
           sr_kserve_image: the image of the Kserve serving runtime container
@@ -75,7 +75,7 @@ class Kserve:
     @AnsibleMappedParams
     def undeploy_model(self,
                        namespace,
-                       serving_runtime_name="",
+                       sr_name="",
                        inference_service_name="",
                        all=False,
                      ):
@@ -84,7 +84,7 @@ class Kserve:
 
         Args:
           namespace: the namespace in which the model should be deployed
-          serving_runtime_name: the name to give to the serving runtime
+          sr_name: the name to give to the serving runtime
           inference_service_name: the name to give to the inference service
           all: delete all the inference services/servingruntime of the namespace
         """
@@ -98,6 +98,7 @@ class Kserve:
                        inference_service_names,
                        method,
                        query_count,
+                       sr_container_flavor,
                        model_id="not-used",
                        namespace="",
                        raw_deployment=False,
@@ -111,6 +112,7 @@ class Kserve:
 
         Args:
           inference_service_names: a list of names of the inference service to validate
+          sr_container_flavor: name of the container flavor to use in the serving runtime (tgis+caikit or tgis)
           method: the gRPC method to call
           model_id: the model-id to pass to the inference service
           query_count: number of query to perform
@@ -118,6 +120,9 @@ class Kserve:
           raw_deployment: if True, do not try to configure anything related to Serverless. Works only in-cluster at the moment.
           proto: if not empty, the proto file to pass to grpcurl
         """
+
+        if sr_container_flavor not in ("tgis+caikit", "tgis"):
+            raise ValueError(f"Unsupported container flavor: {sr_container_flavor}")
 
         return RunAnsibleRole(locals())
 
