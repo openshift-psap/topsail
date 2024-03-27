@@ -105,6 +105,7 @@ def prepare_rhods():
     """
     install_ocp_pipelines()
 
+    logging.info("inside preparing rhods")
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
     rhods.install(token_file)
 
@@ -210,6 +211,7 @@ def prepare_test_driver_namespace():
     Prepares the cluster for running the multi-user ci-artifacts operations
     """
 
+    logging.info("inside prepare_test_driver_namespace")
     namespace = config.ci_artifacts.get_config("base_image.namespace")
     service_account = config.ci_artifacts.get_config("base_image.user.service_account")
     role = config.ci_artifacts.get_config("base_image.user.role")
@@ -289,9 +291,10 @@ def prepare_sutest_scale_up():
     Scales up the SUTest cluster with the right number of nodes
     """
 
+    logging.info("inside prepare_sutest_scale_up")
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
         return
-
+    logging.info("prepare_sutest_scale_up continuing!!")
     node_count = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.count")
     extra = dict()
     if node_count is None:
@@ -307,7 +310,7 @@ def prepare_cluster():
     Prepares the cluster and the namespace for running pipelines scale tests
     """
     apply_prefer_pr()
-
+    logging.info("inside of prepare_cluster")
     with run.Parallel("prepare_cluster") as parallel:
         parallel.delayed(prepare_test_driver_namespace)
         parallel.delayed(prepare_sutest_scale_up)
@@ -341,6 +344,21 @@ def pipelines_run_many():
     _not_used__test_artifact_dir_p = [None]
     _pipelines_run_many(_not_used__test_artifact_dir_p)
 
+@entrypoint()
+def pipelines_run_stress():
+    """
+    Runs stress test of pipelines
+    """
+    _not_used__test_artifact_dir_p = [None]
+    _pipelines_run_many(_not_used__test_artifact_dir_p)
+
+@entrypoint()
+def pipelines_run_mixed():
+    """
+    Runs a mixed workload composed of various pipelines
+    """
+    _not_used__test_artifact_dir_p = [None]
+    _pipelines_run_many(_not_used__test_artifact_dir_p)
 
 def _pipelines_run_many(test_artifact_dir_p):
     ARTIFACTS_VERSION = "2023-06-05"
@@ -386,6 +404,14 @@ def _pipelines_run_many(test_artifact_dir_p):
 
     finally:
         run.run_toolbox("cluster", "capture_environment", mute_stdout=True, check=False)
+
+@entrypoint()
+def cleanup_sutest_ns():
+    """
+    Cleans up the SUTest namespaces
+    """
+
+    cleanup_scale_test()
 
 
 @entrypoint()
