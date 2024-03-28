@@ -34,6 +34,8 @@ def uninstall(mute=True):
 
     if RHODS_OPERATOR_MANIFEST_NAME not in installed_csv_cmd.stdout:
         logging.info("RHODS is not installed.")
+        # make sure that no core RHODS namespace is still there
+        run.run('oc get ns redhat-ods-applications redhat-ods-monitoring redhat-ods-operator --ignore-not-found')
         return
 
     if run.run(f'oc get datasciencecluster -oname | grep .', check=False).returncode == 0:
