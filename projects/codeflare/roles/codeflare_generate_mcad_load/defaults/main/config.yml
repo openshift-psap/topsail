@@ -44,10 +44,10 @@ codeflare_generate_mcad_load_timespan: 0
 codeflare_generate_mcad_load_distribution: poisson
 
 # namespace where MCAD is deployed
-codeflare_generate_mcad_load_mcad_namespace: opendatahub
+codeflare_generate_mcad_load_mcad_namespace: redhat-ods-applications
 
 # labels to find the MCAD controller pods
-codeflare_generate_mcad_load_mcad_labels: app=mcad-mcad
+codeflare_generate_mcad_load_mcad_labels: app.kubernetes.io/name=codeflare-operator
 
 # name of the MCAD controller deployment
-codeflare_generate_mcad_load_mcad_deploy: mcad-controller-mcad
+codeflare_generate_mcad_load_mcad_deploy: codeflare-operator-manager
