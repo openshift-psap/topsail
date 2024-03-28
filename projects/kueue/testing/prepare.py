@@ -6,7 +6,26 @@ from topsail.testing import env, config, run, rhods, visualize, configure_loggin
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
 def prepare():
-    prepare_rhoai()
+    with run.Parallel("prepare1") as parallel:
+        parallel.delayed(prepare_rhoai)
+        parallel.delayed(cluster_scale_up)
+
+    with run.Parallel("prepare2") as parallel:
+        parallel.delayed(prepare_gpu)
+
+
+def prepare_gpu():
+    if not config.ci_artifacts.get_config("gpu.prepare_cluster"):
+        return
+
+    prepare_gpu_operator.prepare_gpu_operator()
+
+    if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
+        toleration_key = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.key")
+        toleration_effect = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.effect")
+        prepare_gpu_operator.add_toleration(toleration_effect, toleration_key)
+
+    prepare_gpu_operator.wait_ready()
 
 
 def prepare_rhoai():
@@ -66,3 +85,21 @@ def cleanup_sutest_ns():
     #label = config.ci_artifacts.get_config("...")
     #run.run(f"oc delete ns -l{label}")
     pass
+
+def prepare_test_nodes(name, cfg, dry_mode):
+    extra = {}
+
+    extra["instance_type"] = cfg["node"]["instance_type"]
+    extra["scale"] = cfg["node"]["count"]
+
+    if dry_mode:
+        logging.info(f"dry_mode: scale up the cluster for the test '{name}': {extra} ")
+        return
+
+    run.run_toolbox_from_config("cluster", "set_scale", extra=extra)
+
+    if cfg["node"].get("wait_gpus", True):
+        if not config.ci_artifacts.get_config("tests.want_gpu"):
+            logging.error("Cannot wait for GPUs when tests.want_gpu is disabled ...")
+        else:
+            run.run_toolbox("gpu_operator", "wait_stack_deployed")

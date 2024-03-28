@@ -137,16 +137,32 @@ gpu:
     replicas: 1
 
 tests:
-  mode: kueue
+  mode: mcad
   dry_mode: false
   visualize: true
   capture_prom: true
   kueue:
     ...
+  mcad:
+    namespace: mcad-load-test
+
+    prepare_nodes: true
+    stop_on_error: true
+
+    tests_to_run: [cpu_light_all_schedulable]
+    distribution: poisson
+
+    test_multiple_values:
+      enabled: false
+      matbench_config_file: plot_multiple_tests.yaml
+      settings:
+        aw.count: [200, 500, 750, 1000]
+        aw.job.job_mode: [true, false]
+    test_templates_file: test_templates.yaml # relative to testing/codeflare directory
 
 matbench:
   preset: null
-  workload: projects.kueue.visualizations.kueue
+  workload: projects.kueue.visualizations.schedulers
   config_file: plots.yaml
   download:
     mode: prefer_cache

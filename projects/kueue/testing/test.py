@@ -14,7 +14,8 @@ import fire
 from topsail.testing import env, config, run, rhods, visualize, configure_logging, export
 configure_logging()
 
-import prepare
+import prepare, test_schedulers
+
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
@@ -72,10 +73,7 @@ def prepare_ci():
     """
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
-    if test_mode in ("kueue",):
-        prepare.prepare()
-    else:
-        raise KeyError(f"Invalid test mode: {test_mode}")
+    prepare.prepare()
 
 
 @entrypoint()
@@ -84,43 +82,27 @@ def test_ci():
     Runs the test from the CI
     """
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
-
     do_visualize = config.ci_artifacts.get_config("tests.visualize")
 
     try:
         test_artifact_dir_p = [None]
-        if test_mode == "kueue":
-            test_artifact_dir_p[0] = env.ARTIFACT_DIR
-            pass
-        else:
-            raise KeyError(f"Invalid test mode: {test_mode}")
+        test_artifact_dir_p[0] = env.ARTIFACT_DIR
+        test_schedulers.test()
     finally:
-        try:
-            if not do_visualize:
-                logging.info("Not generating the visualization because it isn't activated.")
-            elif test_artifact_dir_p[0] is not None:
-                with env.NextArtifactDir("plots"):
-                    visualize.prepare_matbench()
-                    generate_plots(test_artifact_dir_p[0])
-            else:
-                logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
+        if do_visualize:
+            run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
 
-        finally:
-            if do_visualize:
-                run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
+        if horreum_test := config.ci_artifacts.get_config("matbench.lts.horreum.test_name"):
+            logging.info(f"Saving Horreum test name: {horreum_test}")
+            with open(env.ARTIFACT_DIR / "test_name.horreum", "w") as f:
+                print(horreum_test, file=f)
+        else:
+            logging.info(f"No Horreum test name to save")
 
-            if horreum_test := config.ci_artifacts.get_config("matbench.lts.horreum.test_name"):
-                logging.info(f"Saving Horreum test name: {horreum_test}")
-                with open(env.ARTIFACT_DIR / "test_name.horreum", "w") as f:
-                    print(horreum_test, file=f)
-            else:
-                logging.info(f"No Horreum test name to save")
+        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+            cleanup_cluster(mute=True)
 
-            if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
-                cleanup_cluster(mute=True)
-
-            export.export_artifacts(env.ARTIFACT_DIR, "test_ci")
+        export.export_artifacts(env.ARTIFACT_DIR, "test_ci")
 
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)

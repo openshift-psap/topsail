@@ -1,0 +1,100 @@
+common:
+  aw:
+    job:
+      job_mode: false
+
+common_gpu:
+  extends: [common]
+  aw:
+    job:
+      template_name: gpu_burn
+    pod:
+      count: 1
+      runtime: 300
+      requests:
+        nvidia.com/gpu: 1
+  node:
+    instance_type: g4dn.xlarge
+    wait_gpus: true
+  timespan: 5 # minutes
+
+common_cpu:
+  extends: [common]
+  aw:
+    job:
+      template_name: sleeper
+    pod:
+      count: 1
+      runtime: 300
+      requests:
+        cpu: 100m
+  node:
+    instance_type: m6i.2xlarge
+    wait_gpus: false
+  timespan: 5 # minutes
+
+common_unschedulable:
+  aw:
+    states:
+      target: [Queueing, HeadOfLine, Pending, Failed]
+      unexpected: [Dispatched, Running, Completed]
+  node:
+    count: 0
+    wait_gpus: false
+
+common_scheduling: {}
+
+common_all_schedulable:
+  timespan: 1 # minutes
+
+common_job_mode:
+  aw:
+    job:
+      job_mode: true
+
+gpu_all_schedulable:
+  extends: [common_gpu, common_all_schedulable]
+  aw:
+    count: 10
+  node:
+    count: 1
+
+gpu_scheduling:
+  extends: [common_gpu, common_scheduling]
+  aw:
+    count: 20
+  node:
+    count: 1
+
+gpu_scheduling_job_mode:
+  extends: [gpu_scheduling, common_job_mode]
+
+gpu_unschedulable:
+  extends: [common_gpu, common_unschedulable]
+  aw:
+    count: 50
+
+common_light:
+  node:
+    count: 1
+
+cpu_light_all_schedulable:
+  extends: [common_cpu, common_light, common_all_schedulable]
+  aw:
+    count: 10
+
+cpu_light_scheduling:
+  extends: [common_cpu, common_light, common_scheduling]
+  aw:
+    count: 20
+
+cpu_light_scheduling_job_mode:
+  extends: [cpu_light_scheduling, common_job_mode]
+
+cpu_light_unschedulable:
+  extends: [common_cpu, common_light, common_unschedulable]
+  aw:
+    count: 200
+    pod:
+      requests:
+        cpu: 150
