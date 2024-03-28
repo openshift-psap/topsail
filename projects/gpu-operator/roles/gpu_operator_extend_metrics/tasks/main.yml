@@ -85,6 +85,7 @@
 
 
 - name: Force bounce the GPU DCGM daemonsets
+  when: gpu_operator_extend_metrics_wait_refresh | bool
   command:
     oc delete daemonsets nvidia-dcgm-exporter
        -n {{ gpu_operator_extend_metrics_namespace }}
@@ -93,6 +94,7 @@
 - name: Wait for the DaemonSets and capture artifacts
   block:
   - name: Wait for the DaemonSet to reappear
+    when: gpu_operator_extend_metrics_wait_refresh | bool
     command:
       oc get daemonsets nvidia-dcgm-exporter
          -n {{ gpu_operator_extend_metrics_namespace }}
@@ -103,6 +105,7 @@
     delay: 10
 
   - name: Wait for the DaemonSets to be all available
+    when: gpu_operator_extend_metrics_wait_refresh | bool
     shell:
       set -o pipefail;
       oc get daemonsets

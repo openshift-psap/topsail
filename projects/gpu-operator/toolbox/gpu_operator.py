@@ -175,7 +175,8 @@ class Gpu_Operator:
                        namespace="nvidia-gpu-operator",
                        configmap_name="metrics-config",
                        extra_metrics : list = None,
-                        ):
+                       wait_refresh=True,
+                       ):
         """
         Enable time-sharing in the GPU Operator ClusterPolicy
 
@@ -185,6 +186,7 @@ class Gpu_Operator:
           include_defaults: if True, include the default DCGM metrics in the custom config
           include_well_known: if True, include well-known interesting DCGM metrics in the custom config
           extra_metrics: if not None, a [{name,type,description}*] list of dictionnaries with the extra metrics to include in the custom config
+          wait_refresh: if True, wait for the DCGM components to take into account the new configuration
         """
 
         return RunAnsibleRole(locals())
