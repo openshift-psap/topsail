@@ -128,11 +128,6 @@ def cleanup_cluster(mute=False):
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    if not config.ci_artifacts.get_config("prepare.cleanup.enabled"):
-        logging.warning("prepare.cleanup.enabled not enabled, cleanup only the test namespaces.")
-        cleanup_sutest_ns()
-        return
-
     with env.NextArtifactDir("cleanup_cluster"):
         cleanup_sutest_ns()
         cluster_scale_down()
@@ -184,6 +179,15 @@ def cleanup_sutest_ns():
 def export_artifacts(artifacts_dirname):
     export.export_artifacts(artifacts_dirname)
 
+
+@entrypoint()
+def matbench_run_one():
+    """
+    Runs one test as part of a MatrixBenchmark benchmark
+    """
+
+    test_schedulers.matbench_run_one()
+
 # ---
 
 class Entrypoint:
@@ -205,6 +209,8 @@ class Entrypoint:
         self.export_artifacts = export_artifacts
 
         self.cleanup_sutest_ns = cleanup_sutest_ns
+
+        self.matbench_run_one = matbench_run_one
 
 
 def main():

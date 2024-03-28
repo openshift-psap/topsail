@@ -5,13 +5,18 @@ import copy
 import pathlib
 import yaml
 
+import topsail
 from topsail.testing import env, config, run, visualize, matbenchmark
+import prepare
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
-import prepare
+TOPSAIL_DIR = pathlib.Path(topsail.__file__).parent.parent
+RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
+os.chdir(TOPSAIL_DIR)
 
-def test(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_nodes=None):
+
+def test(name=None, dry_mode=None, do_visualize=None, capture_prom=None, prepare_nodes=None):
     """
     Runs the test from the CI
 
@@ -23,57 +28,50 @@ def test(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_no
       prepare_nodes: if False, do not scale up the cluster nodes
     """
 
-
     if dry_mode is not None:
         config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
-    if visualize is not None:
-        config.ci_artifacts.set_config("tests.visualize", visualize)
+    if do_visualize is not None:
+        config.ci_artifacts.set_config("tests.visualize", do_visualize)
     if capture_prom is not None:
         config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
     if prepare_nodes is not None:
         config.ci_artifacts.set_config("tests.mcad.prepare_nodes", prepare_nodes)
 
-    try:
-        failed_tests = []
-        tests_to_run = config.ci_artifacts.get_config("tests.mcad.tests_to_run") \
-            if not name else [name]
+    failed_tests = []
+    tests_to_run = config.ci_artifacts.get_config("tests.mcad.tests_to_run") \
+        if not name else [name]
 
-        for name in tests_to_run:
-            next_count = env.next_artifact_index()
-            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__test-case_{name}"):
-                try:
-                    failed = _run_test_and_visualize(name)
-                    if failed:
-                        failed_tests.append(name)
-                except Exception as e:
+    for name in tests_to_run:
+        with env.NextArtifactDir(f"test-case_{name}"):
+            try:
+                failed = _run_test_and_visualize(name)
+                if failed:
                     failed_tests.append(name)
-                    logging.error(f"*** Caught an exception during _run_test_and_visualize({name}): {e.__class__.__name__}: {e}")
-                    traceback.print_exc()
+            except Exception as e:
+                failed_tests.append(name)
+                logging.error(f"*** Caught an exception during _run_test_and_visualize({name}): {e.__class__.__name__}: {e}")
+                traceback.print_exc()
 
-                    with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
-                        print(traceback.format_exc(), file=f)
+                with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
+                    print(traceback.format_exc(), file=f)
 
-                    import bdb
-                    if isinstance(e, bdb.BdbQuit):
-                        raise
+                import bdb
+                if isinstance(e, bdb.BdbQuit):
+                    raise
 
-                if failed_tests and config.ci_artifacts.get_config("tests.mcad.stop_on_error"):
-                    logging.info("Error detected, and tests.mcad.stop_on_error is set. Aborting.")
-                    break
+            if failed_tests and config.ci_artifacts.get_config("tests.mcad.stop_on_error"):
+                logging.info("Error detected, and tests.mcad.stop_on_error is set. Aborting.")
+                break
 
-        if failed_tests:
-            with open(env.ARTIFACT_DIR / "FAILED_TESTS", "w") as f:
-                print("\n".join(failed_tests), file=f)
+    if failed_tests:
+        with open(env.ARTIFACT_DIR / "FAILED_TESTS", "w") as f:
+            print("\n".join(failed_tests), file=f)
 
-            msg = f"Caught exception(s) in [{', '.join(failed_tests)}], aborting."
-            logging.error(msg)
+        msg = f"Caught exception(s) in [{', '.join(failed_tests)}], aborting."
+        logging.error(msg)
 
-            raise RuntimeError(msg)
-    finally:
-        run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
+        raise RuntimeError(msg)
 
-        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
-            cleanup_cluster()
 
 
 def merge(a, b, path=None):
@@ -101,8 +99,7 @@ def save_matbench_files(name, cfg):
 def _run_test_multiple_values(name, test_artifact_dir_p):
     visualize.prepare_matbench()
 
-    next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test_multiple_values"):
+    with env.NextArtifactDir("mcad_load_test_multiple_values"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
         benchmark_values = config.ci_artifacts.get_config("tests.mcad.test_multiple_values.settings")
 
@@ -111,16 +108,17 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
         expe_name = "expe"
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
-            script_tpl=f"{sys.argv[0]} mcad_run_one_matbench",
+            script_tpl=f"{sys.argv[0]} matbench_run_one",
             stop_on_error=config.ci_artifacts.get_config("tests.mcad.stop_on_error"),
             common_settings=dict(name=name),
             expe_name=expe_name,
-            benchmark_values=benchmark_values
+            benchmark_values=benchmark_values,
+            test_files={},
         )
 
         logging.info(f"Benchmark configuration to run: \n{yaml.dump(json_benchmark_file, sort_keys=False)}")
 
-        benchmark_file = matbenchmark.save_benchmark_file(json_benchmark_file)
+        benchmark_file, yaml_content = matbenchmark.save_benchmark_file(json_benchmark_file)
 
         args = matbenchmark.set_benchmark_args(benchmark_file, expe_name)
 
@@ -163,8 +161,7 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
 
     logging.info("Test configuration: \n"+yaml.dump(cfg))
 
-    next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__prepare"):
+    with env.NextArtifactDir("prepare"):
         if prepare_nodes:
             prepare.prepare_test_nodes(name, cfg, dry_mode)
         else:
@@ -176,9 +173,7 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
 
             run.run_toolbox_from_config("codeflare", "cleanup_appwrappers")
 
-    next_count = env.next_artifact_index()
-    with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test"):
-
+    with env.NextArtifactDir("mcad_load_test"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
         save_matbench_files(name, cfg)
 
@@ -236,7 +231,7 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
                         failed = True
 
                 # must be part of the test directory
-                run.run_toolbox("cluster capture_environment >/dev/null")
+                run.run_toolbox("cluster", "capture_environment >/dev/null")
 
     logging.info(f"_run_test: Test '{name}' {'failed' if failed else 'passed'}.")
 
@@ -261,8 +256,7 @@ def _run_test_and_visualize(name, test_override_values=None):
             logging.info(f"Running in dry mode, skipping the visualization.")
 
         elif test_artifact_dir_p[0] is not None:
-            next_count = env.next_artifact_index()
-            with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
+            with env.NextArtifactDir("plots"):
                 visualize.prepare_matbench()
 
                 if do_test_multiple_values:
@@ -278,18 +272,15 @@ def _run_test_and_visualize(name, test_override_values=None):
     return failed
 
 
-def run_one_matbench():
-    with open("settings.yaml") as f:
-        settings = yaml.safe_load(f)
+def matbench_run_one():
+    with env.TempArtifactDir(RUN_DIR):
+        with open(env.ARTIFACT_DIR / "settings.yaml") as f:
+            settings = yaml.safe_load(f)
 
-    with open("skip", "w") as f:
-        print("Results are in a subdirectory, not here.", file=f)
+        with open(env.ARTIFACT_DIR / "skip", "w") as f:
+            print("Results are in a subdirectory, not here.", file=f)
 
-    name = settings.pop("name")
-
-    with env.TempArtifactDir(os.getcwd()):
-        ci_artifacts_base_dir = TESTING_THIS_DIR.parent.parent
-        os.chdir(ci_artifacts_base_dir)
+        name = settings.pop("name")
 
         failed = _run_test_and_visualize(name, settings)
 
