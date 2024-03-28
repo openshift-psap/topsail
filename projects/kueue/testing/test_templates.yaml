@@ -48,6 +48,7 @@ common_all_schedulable:
   timespan: 1 # minutes
 
 common_job_mode:
+  extends: [common]
   aw:
     job:
       job_mode: true
