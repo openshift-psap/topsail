@@ -18,3 +18,6 @@ gpu_operator_extend_metrics_configmap_name: metrics-config
 # if not None, a [{name,type,description}*] list of dictionnaries with the extra metrics to include in the custom config
 # Type: List
 gpu_operator_extend_metrics_extra_metrics: null
+
+# if True, wait for the DCGM components to take into account the new configuration
+gpu_operator_extend_metrics_wait_refresh: true

@@ -9,7 +9,7 @@
 - name: Ensure that the MCAD controller is ready
   shell:
     set -o pipefail;
-    oc get deploy/{{ codeflare_generate_mcad_load_mcad_deploy }} -n opendatahub --no-headers | awk '{print $2}'
+    oc get deploy/{{ codeflare_generate_mcad_load_mcad_deploy }} -n {{ codeflare_generate_mcad_load_mcad_namespace }} --no-headers | awk '{print $2}'
   register: mcad_ready_cmd
   delay: 10
   retries: 10
@@ -17,7 +17,7 @@
 
 - name: Save the MCAD controller deployment
   shell: |
-    oc get deploy/{{ codeflare_generate_mcad_load_mcad_deploy }}  -oyaml -n {{ codeflare_generate_mcad_load_mcad_namespace }} "{{ artifact_extra_logs_dir }}/mcad-deployment.yaml"
+    oc get deploy/{{ codeflare_generate_mcad_load_mcad_deploy }} -oyaml -n {{ codeflare_generate_mcad_load_mcad_namespace }} > "{{ artifact_extra_logs_dir }}/mcad-deployment.yaml"
     oc get deploy/{{ codeflare_generate_mcad_load_mcad_deploy }} -ojson -n {{ codeflare_generate_mcad_load_mcad_namespace }} > "{{ artifact_extra_logs_dir }}/mcad-deployment.json"
 
 - name: Save the MCAD controller Pods

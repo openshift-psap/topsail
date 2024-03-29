@@ -15,10 +15,15 @@ def prepare_gpu_operator():
     else:
         run.run_toolbox("gpu_operator", "deploy_from_operatorhub")
 
-def wait_ready():
-    run.run_toolbox_from_config("gpu_operator", "enable_time_sharing")
-    run.run_toolbox("gpu_operator", "extend_metrics", include_defaults=True, include_well_known=True)
-    run.run_toolbox("gpu_operator", "wait_stack_deployed")
+def wait_ready(*, enable_time_sharing=True, extend_metrics=True, wait_metrics=True, wait_stack_deployed=True):
+    if enable_time_sharing:
+        run.run_toolbox_from_config("gpu_operator", "enable_time_sharing")
+
+    if extend_metrics:
+        run.run_toolbox("gpu_operator", "extend_metrics", include_defaults=True, include_well_known=True, wait_refresh=wait_metrics)
+
+    if wait_stack_deployed:
+        run.run_toolbox("gpu_operator", "wait_stack_deployed")
 
 
 def cleanup_gpu_operator():

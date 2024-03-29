@@ -1,6 +1,5 @@
-This repository provides a few helper commands to deploy an entitled
-GPU OpenShift cluster. See [`Makefile`](Makefile) to understand what
-the commands actually do.
+This repository provides a few helper commands to deploy an OpenShift cluster.
+See [`Makefile`](Makefile) to understand what the commands actually do.
 
 Configuration
 -------------
@@ -14,8 +13,6 @@ TODAY ?= $(shell date '+%Y%m%d')
 CLUSTER_NAME ?= ${USER}-${TODAY}
 CLUSTER ?= ${PWD}/clusters/${CLUSTER_NAME}
 
-ENTITLEMENT_PEM ?= /path/to/entitlement.pem
-
 OCP_VERSION ?= 4.7
 OPENSHIFT_INSTALLER ?= ${UTILS_DIR}/installers/${OCP_VERSION}/openshift-install
 ```
@@ -24,7 +21,7 @@ Commands
 --------
 
 ```
-config_new_install|config_base_install -> manifest -> manitest_entitle -> install -> kubeconfig -> uninstall -> cleanup
+config_new_install|config_base_install -> manifest -> install -> kubeconfig -> uninstall -> cleanup
 ```
 
 ## `make config_new_install`
@@ -61,14 +58,6 @@ the resources to create when the OCP cluster is spawned. Mind that
 multi-document YAML files (with `---`) are not supported here (only
 the first document is created) (with OCP `4.6.12`).
 
-## `make manifest_entitle`
-
-Generates the entitlement manifest files from
-
-1. the [template file](utils/cluster-wide.entitlement.machineconfigs.yaml.template)
-2. the PEM file at `${ENTITLEMENT_PEM}`.
-3. the RHSM file at [`utils/rhsm.conf`](utils/rhsm.conf)
-
 ## `make install`
 
 Creates the OpenShift cluster.
@@ -90,7 +79,6 @@ Equivalent of:
 ```
 	make config_base_install
 	make manifest
-	make manifest_entitle
 	make install
 	make kubeconfig
 ```
@@ -103,7 +91,6 @@ Equivalent of
 	make config_base_install
 	make config_single-master
 	make manifest
-	make manifest_entitle
 	make manifest_single-master
 	make install
 	make kubeconfig

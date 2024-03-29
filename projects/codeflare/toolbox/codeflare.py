@@ -23,9 +23,9 @@ class Codeflare:
                            pod_requests={"cpu": "100m"},
                            timespan=0,
                            distribution="poisson",
-                           mcad_namespace="opendatahub",
-                           mcad_labels="app=mcad-mcad",
-                           mcad_deploy="mcad-controller-mcad",
+                           mcad_namespace="redhat-ods-applications",
+                           mcad_labels="app.kubernetes.io/name=codeflare-operator",
+                           mcad_deploy="codeflare-operator-manager",
                            ):
         """
         Generate MCAD load

@@ -1,4 +1,4 @@
-cluster_single-master_entitled:
+cluster_single-master:
 	@make all
 	@make has_installer
 	@make config_base_install
@@ -7,13 +7,12 @@ cluster_single-master_entitled:
 	@make config_fips
 	@make diff
 	@make manifest
-	@make manifest_entitle
 	@make manifest_single-master
 	@make manifest_spot
 	@make install
 	@make kubeconfig
 
-cluster_light: cluster_single-master_entitled
+cluster_light: cluster_single-master
 
 # ---
 
