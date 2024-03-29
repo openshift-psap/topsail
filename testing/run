@@ -56,6 +56,15 @@ prechecks() {
         # this is a workaround to avoid that.
         stty cols 80
 
+        LOCAL_CI_NAMESPACE=topsail
+        echo "Checking for local-ci Pods running in the cluster ..."
+        if oc get pods --field-selector=status.phase==Running -oname -n "$LOCAL_CI_NAMESPACE" | grep .; then
+            msg="ERROR: run: a pod is running in the local-ci namespace ($LOCAL_CI_NAMESPACE), aborting."
+            echo $msg | tee -a "$ARTIFACT_DIR/_ERROR"
+            oc get pods -n "$LOCAL_CI_NAMESPACE" | tee -a "$ARTIFACT_DIR/_ERROR"
+            exit 1
+        fi
+
         LOG_FILE=$ARTIFACT_DIR/run.log
         if [[ -f "$LOG_FILE" ]]; then
             mkdir -p "$ARTIFACT_DIR/_WARNING"
