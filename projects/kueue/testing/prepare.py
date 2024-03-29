@@ -10,10 +10,10 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 def prepare():
     with run.Parallel("prepare1") as parallel:
         parallel.delayed(prepare_rhoai)
-        parallel.delayed(prepare_scheduler_test)
 
     with run.Parallel("prepare2") as parallel:
         parallel.delayed(prepare_gpu)
+        parallel.delayed(prepare_scheduler_test)
 
 
 def prepare_scheduler_test():
@@ -24,7 +24,6 @@ def prepare_scheduler_test():
     else:
         logging.warning(f"Project '{namespace}' already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
-
 
 def prepare_gpu():
     if not config.ci_artifacts.get_config("gpu.prepare_cluster"):
