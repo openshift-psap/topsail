@@ -31,7 +31,7 @@
 - name: Generate scheduler load
   block:
   - name: Run the load test
-    debug: msg="Load generator running in the next task, expect some delays (timespan={{ codeflare_generate_scheduler_load_timespan }}min)... (job_mode={{ codeflare_generate_scheduler_load_job_mode }})"
+    debug: msg="Load generator running in the next task, expect some delays (timespan={{ codeflare_generate_scheduler_load_timespan }}min)... (mode={{ codeflare_generate_scheduler_load_mode }})"
 
   - name: Generate the scheduler load
     shell: |
@@ -43,7 +43,7 @@
         --aw_base_name "{{ codeflare_generate_scheduler_load_aw_base_name }}" \
         --aw_count "{{ codeflare_generate_scheduler_load_aw_count }}" \
         --job_template_name "{{ codeflare_generate_scheduler_load_job_template_name }}" \
-        --job_mode "{{ codeflare_generate_scheduler_load_job_mode }}" \
+        --mode "{{ codeflare_generate_scheduler_load_mode }}" \
         --pod_count "{{ codeflare_generate_scheduler_load_pod_count }}" \
         --pod_runtime "{{ codeflare_generate_scheduler_load_pod_runtime }}" \
         --pod_requests "{{ codeflare_generate_scheduler_load_pod_requests }}" \
@@ -124,7 +124,7 @@
     until: jobs_completed.rc == 1 or jobs_completed.rc == 0
     # failed when fatal
     failed_when: jobs_completed.rc != 0
-    when: codeflare_generate_scheduler_load_job_mode
+    when: codeflare_generate_scheduler_load_mode in ("job", "kueue")
 
   always:
   - name: Create a configmap for the end of the test timestamp

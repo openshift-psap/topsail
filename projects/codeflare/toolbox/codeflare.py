@@ -17,7 +17,7 @@ class Codeflare:
             job_template_name="sleeper",
             states_target=["Completed"],
             states_unexpected=["Failed"],
-            job_mode=False,
+            mode="job",
             aw_count=3,
             pod_count=1,
             pod_runtime=30,
@@ -34,7 +34,7 @@ class Codeflare:
           aw_base_name: name prefix for the AppWrapper resources
           aw_count: number of resources to create
           job_template_name: name of the job template to use inside the AppWrapper
-          job_mode: if true, create Jobs
+          mode: mcad (AppWrappers), kueue or job
           pod_count: number of Pods to create in each of the AppWrappers
           pod_runtime: run time parameter to pass to the Pod
           pod_requests: requests to pass to the Pod definition
