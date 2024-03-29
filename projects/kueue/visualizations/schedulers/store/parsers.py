@@ -25,7 +25,7 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_db"
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
-artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR = "*__codeflare__generate_mcad_load"
+artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR = "*__codeflare__generate_scheduler_load"
 artifact_dirnames.CODEFLARE_CLEANUP_APPWRAPPERS_DIR = "*__codeflare__cleanup_appwrappers"
 
 artifact_paths = None # store._parse_directory will turn it into a {str: pathlib.Path} dict base on ^^^
@@ -40,14 +40,11 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
 
-    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/pods.json",
-    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/jobs.json",
-    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/appwrappers.json",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR}/pods.json",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR}/jobs.json",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR}/appwrappers.json",
 
-    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/start_end_cm.yaml",
-    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-deployment.json",
-    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-controller.log",
-    f"{artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR}/mcad-pods.json",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR}/start_end_cm.yaml",
 
     f"{artifact_dirnames.CODEFLARE_CLEANUP_APPWRAPPERS_DIR}/start_end_cm.yaml",
 ]
@@ -84,7 +81,6 @@ def _parse_once(results, dirname):
     results.test_start_end_time = _parse_test_start_end_time(dirname)
     results.cleanup_times = _parse_cleanup_start_end_time(dirname)
 
-    results.mcad_image = _parse_mcad_image(dirname)
     results.test_case_config = _parse_test_case_config(dirname)
     results.test_case_properties = _parse_test_case_properties(results.test_case_config)
     results.file_locations = _parse_file_locations(dirname)
@@ -254,7 +250,7 @@ def _extract_cluster_info(nodes_info):
 
 @ignore_file_not_found
 def _parse_pod_times(dirname):
-    filename = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / "pods.json"
+    filename = artifact_paths.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR / "pods.json"
 
     with open(register_important_file(dirname, filename)) as f:
         try:
@@ -311,13 +307,13 @@ def _parse_pod_times(dirname):
 def _parse_resource_times(dirname):
     all_resource_times = {}
 
-    if not artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR:
-        raise FileNotFoundError(artifact_dirnames.CODEFLARE_GENERATE_MCAD_LOAD_DIR)
+    if not artifact_paths.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR:
+        raise FileNotFoundError(artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR)
 
     @ignore_file_not_found
     def parse(fname):
         print(f"Parsing {fname} ...")
-        file_path = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / fname
+        file_path = artifact_paths.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR / fname
 
         with open(register_important_file(dirname, file_path)) as f:
             data = yaml.safe_load(f)
@@ -396,7 +392,7 @@ def _parse_resource_times(dirname):
 
 @ignore_file_not_found
 def _parse_test_start_end_time(dirname):
-    with open(register_important_file(dirname, artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / 'start_end_cm.yaml')) as f:
+    with open(register_important_file(dirname, artifact_paths.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR / 'start_end_cm.yaml')) as f:
         start_end_cm = yaml.safe_load(f)
 
     test_start_end_time = types.SimpleNamespace()
@@ -438,23 +434,6 @@ def _parse_cleanup_start_end_time(dirname):
 
 
 @ignore_file_not_found
-def _parse_mcad_image(dirname):
-    filename = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / "mcad-pods.json"
-    mcad_image = types.SimpleNamespace()
-
-    with open(register_important_file(dirname, filename)) as f:
-        try:
-            json_file = json.load(f)
-        except Exception as e:
-            logging.error(f"Couldn't parse JSON file '{filename}': {e}")
-            return
-    mcad_image.image_id = json_file["items"][0]["status"]["containerStatuses"][0]["imageID"]
-    mcad_image.image = json_file["items"][0]["spec"]["containers"][0]["image"]
-
-    return mcad_image
-
-
-@ignore_file_not_found
 def _parse_test_case_config(dirname):
     filename =  "test_case_config.yaml"
 
@@ -476,9 +455,6 @@ def _parse_test_case_properties(test_case_config):
 
 def _parse_file_locations(dirname):
     file_locations = types.SimpleNamespace()
-
-    file_locations.mcad_logs = artifact_paths.CODEFLARE_GENERATE_MCAD_LOAD_DIR / "mcad-controller.log"
-    register_important_file(dirname, file_locations.mcad_logs)
 
     file_locations.test_config_file = pathlib.Path("config.yaml")
     register_important_file(dirname, file_locations.test_config_file)
