@@ -87,6 +87,9 @@ def cleanup_sutest_ns():
 def prepare_test_nodes(name, cfg, dry_mode):
     extra = {}
 
+    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+        return
+
     extra["instance_type"] = cfg["node"]["instance_type"]
     extra["scale"] = cfg["node"]["count"]
 
