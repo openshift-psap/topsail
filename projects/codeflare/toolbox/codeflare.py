@@ -8,44 +8,41 @@ class Codeflare:
     Commands relating to the Codeflare project
     """
 
-    @AnsibleRole("codeflare_generate_mcad_load")
+    @AnsibleRole("codeflare_generate_scheduler_load")
     @AnsibleMappedParams
-    def generate_mcad_load(self,
-                           namespace,
-                           aw_base_name="appwrapper",
-                           job_template_name="sleeper",
-                           states_target=["Completed"],
-                           states_unexpected=["Failed"],
-                           job_mode=False,
-                           aw_count=3,
-                           pod_count=1,
-                           pod_runtime=30,
-                           pod_requests={"cpu": "100m"},
-                           timespan=0,
-                           distribution="poisson",
-                           mcad_namespace="redhat-ods-applications",
-                           mcad_labels="app.kubernetes.io/name=codeflare-operator",
-                           mcad_deploy="codeflare-operator-manager",
-                           ):
+    def generate_scheduler_load(
+            self,
+            namespace,
+            aw_base_name="appwrapper",
+            job_template_name="sleeper",
+            states_target=["Completed"],
+            states_unexpected=["Failed"],
+            job_mode=False,
+            aw_count=3,
+            pod_count=1,
+            pod_runtime=30,
+            pod_requests={"cpu": "100m"},
+            timespan=0,
+            distribution="poisson",
+            scheduler_load_generator="projects/codeflare/subprojects/scheduler-load-generator/generator.py",
+    ):
         """
-        Generate MCAD load
+        Generate scheduler load
 
         Args:
           namespace: name of the namespace where the MCAD load will be generated
           aw_base_name: name prefix for the AppWrapper resources
+          aw_count: number of resources to create
           job_template_name: name of the job template to use inside the AppWrapper
-          job_mode: if true, create Jobs instead of AppWrappers
+          job_mode: if true, create Jobs
           pod_count: number of Pods to create in each of the AppWrappers
           pod_runtime: run time parameter to pass to the Pod
           pod_requests: requests to pass to the Pod definition
           states_target: list of expected target states
           states_unexpected: list of states that fail the test
-          aw_count: number of AppWrapper replicas to create
           timespan: number of minutes over which the AppWrappers should be created
           distribution: the distribution method to use to spread the resource creation over the requested timespan
-          mcad_namespace: namespace where MCAD is deployed
-          mcad_labels: labels to find the MCAD controller pods
-          mcad_deploy: name of the MCAD controller deployment
+          scheduler_load_generator: the path of the scheduler load generator to launch
         """
 
         return RunAnsibleRole(locals())

@@ -35,10 +35,10 @@ def test(name=None, dry_mode=None, do_visualize=None, capture_prom=None, prepare
     if capture_prom is not None:
         config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
     if prepare_nodes is not None:
-        config.ci_artifacts.set_config("tests.mcad.prepare_nodes", prepare_nodes)
+        config.ci_artifacts.set_config("tests.schedulers.prepare_nodes", prepare_nodes)
 
     failed_tests = []
-    tests_to_run = config.ci_artifacts.get_config("tests.mcad.tests_to_run") \
+    tests_to_run = config.ci_artifacts.get_config("tests.schedulers.tests_to_run") \
         if not name else [name]
 
     for name in tests_to_run:
@@ -59,8 +59,8 @@ def test(name=None, dry_mode=None, do_visualize=None, capture_prom=None, prepare
                 if isinstance(e, bdb.BdbQuit):
                     raise
 
-            if failed_tests and config.ci_artifacts.get_config("tests.mcad.stop_on_error"):
-                logging.info("Error detected, and tests.mcad.stop_on_error is set. Aborting.")
+            if failed_tests and config.ci_artifacts.get_config("tests.schedulers.stop_on_error"):
+                logging.info("Error detected, and tests.schedulers.stop_on_error is set. Aborting.")
                 break
 
     if failed_tests:
@@ -101,7 +101,7 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
 
     with env.NextArtifactDir("mcad_load_test_multiple_values"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
-        benchmark_values = config.ci_artifacts.get_config("tests.mcad.test_multiple_values.settings")
+        benchmark_values = config.ci_artifacts.get_config("tests.schedulers.test_multiple_values.settings")
 
         path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()]) + "_"
 
@@ -109,7 +109,7 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
             script_tpl=f"{sys.argv[0]} matbench_run_one",
-            stop_on_error=config.ci_artifacts.get_config("tests.mcad.stop_on_error"),
+            stop_on_error=config.ci_artifacts.get_config("tests.schedulers.stop_on_error"),
             common_settings=dict(name=name),
             expe_name=expe_name,
             benchmark_values=benchmark_values,
@@ -132,9 +132,9 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
 def _run_test(name, test_artifact_dir_p, test_override_values=None):
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
     capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
-    prepare_nodes = config.ci_artifacts.get_config("tests.mcad.prepare_nodes")
+    prepare_nodes = config.ci_artifacts.get_config("tests.schedulers.prepare_nodes")
 
-    test_templates_file = TESTING_THIS_DIR / config.ci_artifacts.get_config("tests.mcad.test_templates_file")
+    test_templates_file = TESTING_THIS_DIR / config.ci_artifacts.get_config("tests.schedulers.test_templates_file")
     with open(test_templates_file) as f:
         test_templates = yaml.safe_load(f)
 
@@ -165,7 +165,7 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
         if prepare_nodes:
             prepare.prepare_test_nodes(name, cfg, dry_mode)
         else:
-            logging.info("tests.mcad.prepare_nodes=False, skipping.")
+            logging.info("tests.schedulers.prepare_nodes=False, skipping.")
 
         if not dry_mode:
             if capture_prom:
@@ -207,10 +207,10 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
                 return
 
             try:
-                run.run_toolbox_from_config("codeflare", "generate_mcad_load", extra=extra)
+                run.run_toolbox_from_config("codeflare", "generate_scheduler_load", extra=extra)
             except Exception as e:
                 failed = True
-                logging.error(f"*** Caught an exception during generate_mcad_load({name}): {e.__class__.__name__}: {e}")
+                logging.error(f"*** Caught an exception during generate_scheduler_load({name}): {e.__class__.__name__}: {e}")
 
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
@@ -218,7 +218,7 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
 
             if not dry_mode:
                 try:
-                    run.run_toolbox_from_config("codeflare", "cleanup_appwrappers")
+                    run.run_toolbox_from_config("codeflare", "cleanup_appwrappers", mute_stdout=True)
                 except Exception as e:
                     logging.error(f"*** Caught an exception during cleanup_appwrappers({name}): {e.__class__.__name__}: {e}")
                     failed = True
@@ -240,7 +240,7 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
 
 def _run_test_and_visualize(name, test_override_values=None):
     failed = True
-    do_test_multiple_values = test_override_values is None and config.ci_artifacts.get_config("tests.mcad.test_multiple_values.enabled")
+    do_test_multiple_values = test_override_values is None and config.ci_artifacts.get_config("tests.schedulers.test_multiple_values.enabled")
     try:
         test_artifact_dir_p = [None]
         if do_test_multiple_values:
@@ -260,7 +260,7 @@ def _run_test_and_visualize(name, test_override_values=None):
                 visualize.prepare_matbench()
 
                 if do_test_multiple_values:
-                    matbench_config_file = config.ci_artifacts.get_config("tests.mcad.test_multiple_values.matbench_config_file")
+                    matbench_config_file = config.ci_artifacts.get_config("tests.schedulers.test_multiple_values.matbench_config_file")
                     with config.TempValue(config.ci_artifacts, "matbench.config_file", matbench_config_file):
                          visualize.generate_from_dir(test_artifact_dir_p[0])
                 else:

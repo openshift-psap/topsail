@@ -31,8 +31,6 @@ def _get_test_setup(entry):
     else:
         setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE ({entry.results.from_local_env.source_url})")]
 
-    mcad_log_file = entry.results.from_local_env.artifacts_basedir / entry.results.file_locations.mcad_logs
-    setup_info += [html.Li(html.A("MCAD logs", href=str(mcad_log_file), target="_blank"))]
     test_config_file = entry.results.from_local_env.artifacts_basedir / entry.results.file_locations.test_config_file
     setup_info += [html.Li(html.A("Test configuration", href=str(test_config_file), target="_blank"))]
 
@@ -67,9 +65,6 @@ def _get_test_setup(entry):
         nodes_info += [html.Li(nodes_info_li)]
 
     setup_info += [html.Ul(nodes_info)]
-
-    setup_info += [html.Li(["MCAD image: ", html.B(entry.results.mcad_image.image)])]
-    setup_info += [html.Ul(html.Li(html.I(entry.results.mcad_image.image_id)))]
 
     test_duration = (entry.results.test_start_end_time.end - entry.results.test_start_end_time.start).total_seconds() / 60
     test_speed = entry.results.test_case_properties.total_pod_count / test_duration

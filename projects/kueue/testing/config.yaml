@@ -43,22 +43,22 @@ ci_presets:
   # ---
 
   cpu_light_scheduling:
-    tests.mcad.tests_to_run: [cpu_light_scheduling, cpu_light_scheduling_job_mode]
-    tests.mcad.test_templates.cpu_light_scheduling.aw.count: 100
+    tests.schedulers.tests_to_run: [cpu_light_scheduling, cpu_light_scheduling_job_mode]
+    tests.schedulers.test_templates.cpu_light_scheduling.aw.count: 100
 
   cpu_light_unschedulable:
-    tests.mcad.tests_to_run: [cpu_light_unschedulable]
-    tests.mcad.test_multiple_values.enabled: true
-    tests.mcad.test_multiple_values.settings:
+    tests.schedulers.tests_to_run: [cpu_light_unschedulable]
+    tests.schedulers.test_multiple_values.enabled: true
+    tests.schedulers.test_multiple_values.settings:
       "aw.count": [200, 350, 500]
 
   cpu_all_schedulable:
     clusters.sutest.worker.fill_resources.enabled: true
-    tests.mcad.test_templates.common_light.node.count: 4
+    tests.schedulers.test_templates.common_light.node.count: 4
 
-    tests.mcad.tests_to_run: [cpu_light_all_schedulable]
-    tests.mcad.test_multiple_values.enabled: true
-    tests.mcad.test_multiple_values.settings:
+    tests.schedulers.tests_to_run: [cpu_light_all_schedulable]
+    tests.schedulers.test_multiple_values.enabled: true
+    tests.schedulers.test_multiple_values.settings:
       aw.count: [100, 150]
       aw.job.job_mode: [true, false]
 
@@ -156,7 +156,7 @@ rhods:
         memory: 500Mi
 
 gpu:
-  prepare_cluster: true
+  prepare_cluster: false
   time_sharing:
     replicas: 1
 
@@ -167,8 +167,8 @@ tests:
   capture_prom: true
   kueue:
     ...
-  mcad:
-    namespace: mcad-load-test
+  schedulers:
+    namespace: scheduler-load-test
 
     prepare_nodes: true
     stop_on_error: true

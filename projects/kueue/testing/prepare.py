@@ -4,25 +4,26 @@ import logging
 
 from topsail.testing import env, config, run, rhods, visualize, configure_logging, export, prepare_gpu_operator
 
+TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
 def prepare():
     with run.Parallel("prepare1") as parallel:
         parallel.delayed(prepare_rhoai)
-        parallel.delayed(prepare_mcad_test)
-        pass
+        parallel.delayed(prepare_scheduler_test)
 
     with run.Parallel("prepare2") as parallel:
         parallel.delayed(prepare_gpu)
 
 
-def prepare_mcad_test():
-    namespace = config.ci_artifacts.get_config("tests.mcad.namespace")
+def prepare_scheduler_test():
+    namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
+
     if run.run(f'oc get project -oname "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
     else:
         logging.warning(f"Project '{namespace}' already exists.")
-        (env.ARTIFACT_DIR / "MCAD_PROJECT_ALREADY_EXISTS").touch()
+        (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
 
 
 def prepare_gpu():
@@ -55,8 +56,9 @@ def prepare_rhoai():
 
 
 def cleanup_mcad_test():
-    namespace = config.ci_artifacts.get_config("tests.mcad.namespace")
+    namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
     run.run(f"oc delete namespace '{namespace}' --ignore-not-found")
+
 
 def cleanup_rhoai(mute=True):
     rhods.uninstall(mute)

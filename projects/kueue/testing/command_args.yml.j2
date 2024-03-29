@@ -36,9 +36,9 @@ rhods deploy_ods:
   version: {{ rhods.catalog.version }}
 
 codeflare cleanup_appwrappers:
-  namespace: {{ tests.mcad.namespace }}
+  namespace: {{ tests.schedulers.namespace }}
 
-codeflare generate_mcad_load:
-  namespace: {{ tests.mcad.namespace }}
-  distribution: {{ tests.mcad.distribution }}
+codeflare generate_scheduler_load:
+  namespace: {{ tests.schedulers.namespace }}
+  distribution: {{ tests.schedulers.distribution }}
   # the other parameters are passed at runtime with the --extra flag.
