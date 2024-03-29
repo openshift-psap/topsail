@@ -25,6 +25,9 @@ def prepare_scheduler_test():
         logging.warning(f"Project '{namespace}' already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
 
+    run.run(f"oc apply -f {TESTING_THIS_DIR}/kueue-queue.yaml -n {namespace}")
+
+
 def prepare_gpu():
     if not config.ci_artifacts.get_config("gpu.prepare_cluster"):
         return
