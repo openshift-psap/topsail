@@ -160,26 +160,73 @@ def multi_model_test_sequentially(locally=False):
 
 
 def test_models_longevity():
-    repeat = config.ci_artifacts.get_config("tests.e2e.longevity.repeat")
-    delay = config.ci_artifacts.get_config("tests.e2e.longevity.delay")
+    import pandas as pd # no need to import it in the main scope, takes long to load ...
+    sleep_interval = pd.Timedelta(config.ci_artifacts.get_config("tests.e2e.longevity.sleep_interval"))
+    total_duration = pd.Timedelta(config.ci_artifacts.get_config("tests.e2e.longevity.total_duration"))
+    test_on_finish = config.ci_artifacts.get_config("tests.e2e.longevity.test_on_finish")
+
+    start = datetime.datetime.now()
+    finish = start + total_duration
+    logging.info(f"Longevity test started at:     {start}")
+    logging.info(f"Longevity test will finish at: {finish}")
 
     reset_prometheus()
 
     deploy_models_concurrently()
 
-    for i in range(repeat):
+    run_final_test = False
+
+    watch_file = env.ARTIFACT_DIR / "stop"
+    watch_file.unlink(missing_ok=True)
+    logging.info(f"Touch {watch_file} to gracefully interrupt the longevity testing.")
+
+    i = -1
+    while datetime.datetime.now() < finish or run_final_test:
+        i += 1
         expe_name = f"longevity_{i}"
         with env.NextArtifactDir(expe_name):
-
             with open(env.ARTIFACT_DIR / "settings.longevity.yaml", "w") as f:
                 yaml.dump(dict(longevity_index=i), f, indent=4)
 
+            logging.info(f"Running test {i} ...")
             multi_model_test_concurrently(expe_name, with_kserve_prom=False)
 
-            if i != repeat-1:
-                logging.info(f"Sleeping for {delay} seconds after test #{i}...")
-                time.sleep(delay)
-                logging.info(f"Slept for {delay} seconds after test #{i}...")
+            if datetime.datetime.now() > finish:
+                what = "Final test finished" if run_final_test else f"Test {i} finished after the deadline"
+                logging.info(f"{what}. Done with the longevity testing.")
+                break
+
+            assert not run_final_test
+
+            test_end = datetime.datetime.now()
+            logging.info(f"Test {i} finished at: {test_end}")
+
+            next_start = test_end + sleep_interval
+            if next_start > finish:
+                logging.info(f"Test {i+1} would start too late ({next_start}).")
+                if not test_on_finish:
+                    logging.info(f"test_on_finish not set, all done.")
+                    break
+                logging.info(f"test_on_finish set. Running one more test.")
+                run_final_test = True
+                next_start = finish
+
+            logging.info(f"Test {i+1} starts at:   {next_start} (in {next_start - datetime.datetime.now()})")
+            logging.info(f"Longevity test ends at:   {finish} (in {finish - datetime.datetime.now()})")
+
+            logging.info(f"Touch {watch_file} to gracefully interrupt the longevity testing.")
+
+            while datetime.datetime.now() < next_start:
+                if not watch_file.exists():
+                    time.sleep(30)
+
+                if not watch_file.exists():
+                    continue
+
+                logging.warning(f"{watch_file} exists, stopping gracefully the longevity test.")
+                finish = test_end
+                run_final_test = False
+                break
 
     generate_kserve_prom_results("longevity")
 

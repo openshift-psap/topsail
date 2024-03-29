@@ -8,6 +8,6 @@ pylint
 awscli
 numpy
 joblib
-
+pandas
 jsonpath_ng
 state-signals==0.5.2
