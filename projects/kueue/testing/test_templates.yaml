@@ -1,10 +1,14 @@
-common:
-  aw:
-    job:
-      job_mode: false
+common_job_mode:
+  mode: job
+
+common_mcad_mode:
+  mode: mcad
+
+common_kueue_mode:
+  mode: kueue
 
 common_gpu:
-  extends: [common]
+  extends: [common_mcad_mode]
   aw:
     job:
       template_name: gpu_burn
@@ -19,7 +23,7 @@ common_gpu:
   timespan: 5 # minutes
 
 common_cpu:
-  extends: [common]
+  extends: [common_mcad_mode]
   aw:
     job:
       template_name: sleeper
@@ -46,12 +50,6 @@ common_scheduling: {}
 
 common_all_schedulable:
   timespan: 1 # minutes
-
-common_job_mode:
-  extends: [common]
-  aw:
-    job:
-      job_mode: true
 
 gpu_all_schedulable:
   extends: [common_gpu, common_all_schedulable]
@@ -88,6 +86,17 @@ cpu_light_scheduling:
   extends: [common_cpu, common_light, common_scheduling]
   aw:
     count: 20
+
+cpu_icelake_scheduling:
+  extends: [common_cpu, common_light, common_scheduling]
+  # 10 cpu per pod, 300 pods = 3000 cores
+  # 550 cores available in the cluster
+  aw:
+    count: 300
+    pod:
+      requests:
+        cpu: 5000
+
 
 cpu_light_scheduling_job_mode:
   extends: [cpu_light_scheduling, common_job_mode]

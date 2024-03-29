@@ -42,9 +42,17 @@ ci_presets:
 
   # ---
 
+  cpu_icelake_scheduling:
+    tests.schedulers.tests_to_run: [cpu_icelake_scheduling]
+    tests.schedulers.test_multiple_values.enabled: true
+    tests.schedulers.test_multiple_values.settings:
+      mode: [kueue, job, mcad]
+
   cpu_light_scheduling:
-    tests.schedulers.tests_to_run: [cpu_light_scheduling, cpu_light_scheduling_job_mode]
-    tests.schedulers.test_templates.cpu_light_scheduling.aw.count: 100
+    tests.schedulers.tests_to_run: [cpu_light_scheduling]
+    tests.schedulers.test_multiple_values.enabled: true
+    tests.schedulers.test_multiple_values.settings:
+      mode: [kueue, job, mcad]
 
   cpu_light_unschedulable:
     tests.schedulers.tests_to_run: [cpu_light_unschedulable]
@@ -60,7 +68,7 @@ ci_presets:
     tests.schedulers.test_multiple_values.enabled: true
     tests.schedulers.test_multiple_values.settings:
       aw.count: [100, 150]
-      aw.job.job_mode: [true, false]
+      mode: [kueue, job, mcad]
 
   # ---
 
@@ -161,7 +169,7 @@ gpu:
     replicas: 1
 
 tests:
-  mode: mcad
+  mode: job
   dry_mode: false
   visualize: true
   capture_prom: true

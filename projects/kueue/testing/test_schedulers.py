@@ -197,13 +197,11 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
             extra["timespan"] = cfg["timespan"]
             extra["aw_count"] = cfg["aw"]["count"]
             extra["timespan"] = cfg["timespan"]
+            extra["mode"] = cfg["mode"]
 
-            job_mode = cfg["aw"]["job"].get("job_mode")
-
-            extra["job_mode"] = bool(job_mode)
 
             if dry_mode:
-                logging.info(f"Running the load test '{name}' with {extra} {'in Job mode' if job_mode else ''} ...")
+                logging.info(f"Running the load test '{name}' with {extra} ...")
                 return
 
             try:
