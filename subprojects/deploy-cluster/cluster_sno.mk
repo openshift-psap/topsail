@@ -7,8 +7,6 @@ cluster_sno:
 	@make config_fips
 	@make diff
 	@make manifest
-	@make manifest_entitle
-	@make manifest_entitle_master
 	@make manifest_tags
 	@make manifest_spot
 	@make install

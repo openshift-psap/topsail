@@ -1,7 +1,7 @@
 include utils/config.mk
 
 all:
-	@echo "config_new_install|config_base_install -> manifest -> manifest_entitle -> install -> kubeconfig -> uninstall -> cleanup"
+	@echo "config_new_install|config_base_install -> manifest -> -> install -> kubeconfig -> uninstall -> cleanup"
 	@echo
 	@echo "CLUSTER_NAME = ${CLUSTER_NAME}"
 	@echo "CLUSTER_PATH = ${CLUSTER_PATH}"
@@ -22,7 +22,6 @@ include cluster_full.mk
 include cluster_single-master.mk
 include cluster_sno.mk
 
-include entitlement.mk
 include spot.mk
 include tags.mk
 include fips.mk

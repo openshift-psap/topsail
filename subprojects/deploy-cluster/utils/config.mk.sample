@@ -2,19 +2,11 @@ TODAY ?= $(shell date '+%Y%m%d')
 CLUSTER_NAME ?= ${USER}-${TODAY}
 CLUSTER_PATH ?= ${PWD}/clusters/${CLUSTER_NAME}
 
-ENTITLEMENT_PEM ?= # /path/to/entitlement.pem
-
 OCP_VERSION ?= 4.9.11
 
 # --- #
 
 UTILS_DIR = ${PWD}/utils
-
-# --- #
-
-ENTITLEMENT_RHSM = ${UTILS_DIR}/entitlement/rhsm.conf
-ENTITLEMENT_TEMPLATE = ${UTILS_DIR}/entitlement/cluster-wide.entitlement.machineconfigs.yaml.template
-ENTITLEMENT_DST_BASENAME = ${CLUSTER_PATH}/openshift/99-openshift-machineconfig-worker-entitlement
 
 # --- #
 
