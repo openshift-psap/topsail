@@ -41,7 +41,7 @@ class CompareTestSpeed():
         text = []
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
-            schedule_object_kind = "Job" if entry.results.test_case_properties.job_mode else "AppWrapper"
+            schedule_object_kind = "AppWrapper" if entry.results.test_case_properties.mode == "mcad" else "Job"
 
             test_cfg_setting = entry.settings.__dict__[first_variable]
 
@@ -149,8 +149,8 @@ class CompareCleanupSpeed():
 
             text += [html.Code(f"{first_variable}={test_cfg_setting}{f' {name}' if variables else ''}"), html.Br()]
 
-            if entry.results.test_case_properties.job_mode:
-                text += ["• Job mode enabled, cleanup time not relevant.", html.Br(), html.Br()]
+            if (mode := entry.results.test_case_properties.mode) != "mcad":
+                text += [f"• {mode} mode enabled, cleanup time not relevant.", html.Br(), html.Br()]
                 continue
 
             for event, time in sorted(entry.results.cleanup_times.__dict__.items(), key=lambda kv: kv[1]):
@@ -172,6 +172,9 @@ class CompareCleanupSpeed():
             text.append(html.Br())
 
         df = pd.DataFrame(data)
+        if df.empty:
+            return None, "Not data available ..."
+
         if len(ordered_vars) == 1:
             fig = px.area(df, x=first_variable, y="Duration", color="Event", markers=True)
         else:

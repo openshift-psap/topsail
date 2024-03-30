@@ -1,4 +1,5 @@
 import types
+import logging
 
 def _get_time_to_cleanup(results):
     start = results.cleanup_times.start
@@ -13,7 +14,11 @@ def _get_time_to_last_launch(results):
     if not results.resource_times:
         return 0, None
 
-    target_kind = "Job" if results.test_case_properties.job_mode else "AppWrapper"
+
+    target_kind = {"job": "Job",
+            "mcad": "AppWrapper",
+            "kueue": "Job"}[results.test_case_properties.mode]
+
     resource_time = sorted([resource_time for resource_time in results.resource_times.values() if resource_time.kind == target_kind], key=lambda t: t.creation)[-1]
 
     start_time = results.test_start_end_time.start
@@ -44,7 +49,8 @@ def generate_lts_results(results):
         _get_time_to_last_launch(results)
 
     results_lts.last_launch_to_last_schedule_sec = \
-        (last_schedule_time - last_launch_time).total_seconds()
+        (last_schedule_time - last_launch_time).total_seconds() \
+        if last_schedule_time and last_launch_time else None
 
     results_lts.time_to_cleanup_sec = \
         _get_time_to_cleanup(results)

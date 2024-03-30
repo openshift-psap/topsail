@@ -448,7 +448,7 @@ def _parse_test_case_properties(test_case_config):
     test_case_properties.aw_count = test_case_config["aw"]["count"]
     test_case_properties.aw_pod_count = test_case_config["aw"]["pod"]["count"]
     test_case_properties.total_pod_count = test_case_properties.aw_count *test_case_properties.aw_pod_count
-    test_case_properties.job_mode = test_case_config["aw"]["job"].get("job_mode", False)
+    test_case_properties.mode = test_case_config["mode"]
     test_case_properties.launch_duration = test_case_config["timespan"]
 
     return test_case_properties
