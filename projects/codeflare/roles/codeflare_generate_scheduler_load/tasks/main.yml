@@ -139,21 +139,30 @@
       oc get appwrappers -n {{ codeflare_generate_scheduler_load_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r >"{{ artifact_extra_logs_dir }}/appwrappers.status"
       oc describe appwrappers -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.desc"
     ignore_errors: true
+    when: codeflare_generate_scheduler_load_mode == "mcad"
 
   - name: Capture the state of the Jobs
     shell: |
-      oc get Jobs -ojson -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.json"
-      oc get Jobs -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.yaml"
-      oc describe Jobs -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.desc"
-      oc get Jobs -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.status"
+      oc get jobs -ojson -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.json"
+      oc get jobs -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.yaml"
+      oc describe jobs -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.desc"
+      oc get jobs -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.status"
     ignore_errors: true
 
   - name: Capture the state of the Pods
     shell: |
-      oc get Pods -ojson -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.json"
-      oc get Pods -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"
-      oc describe Pods -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
-      oc get Pods -owide -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.status"
+      oc get pods -ojson -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.json"
+      oc get pods -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"
+      oc describe pods -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
+      oc get pods -owide -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.status"
+    ignore_errors: true
+
+  - name: Capture the state of the workloads
+    shell: |
+      oc get workloads -ojson -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.json"
+      oc get workloads -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.yaml"
+      oc describe workloads -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.desc"
+      oc get workloads -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.status"
     ignore_errors: true
 
   - name: Capture the nodes of the cluster
