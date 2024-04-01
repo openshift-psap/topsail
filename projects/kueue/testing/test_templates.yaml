@@ -95,7 +95,7 @@ cpu_icelake_scheduling:
     count: 300
     pod:
       requests:
-        cpu: 5000
+        cpu: 10
 
 
 cpu_light_scheduling_job_mode:
