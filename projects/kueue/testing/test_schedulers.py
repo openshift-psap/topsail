@@ -197,21 +197,21 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
             extra["timespan"] = cfg["timespan"]
             extra["aw_count"] = cfg["aw"]["count"]
             extra["timespan"] = cfg["timespan"]
+            extra["mode"] = cfg["mode"]
 
-            job_mode = cfg["aw"]["job"].get("job_mode")
-
-            extra["job_mode"] = bool(job_mode)
 
             if dry_mode:
-                logging.info(f"Running the load test '{name}' with {extra} {'in Job mode' if job_mode else ''} ...")
+                logging.info(f"Running the load test '{name}' with {extra} ...")
                 return
 
             try:
                 run.run_toolbox_from_config("codeflare", "generate_scheduler_load", extra=extra)
             except Exception as e:
                 failed = True
-                logging.error(f"*** Caught an exception during generate_scheduler_load({name}): {e.__class__.__name__}: {e}")
-
+                msg = f"*** Caught an exception during generate_scheduler_load({name}): {e.__class__.__name__}: {e}"
+                logging.error(msg)
+                with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
+                    print(msg)
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)

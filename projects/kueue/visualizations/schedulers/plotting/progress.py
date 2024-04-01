@@ -2,6 +2,7 @@ from collections import defaultdict
 import datetime
 import statistics as stats
 import logging
+import datetime
 
 from dash import html
 import plotly.graph_objs as go
@@ -36,7 +37,7 @@ def generate_pod_progress_data(entry, key):
 
     count = 0
     YOTA = datetime.timedelta(microseconds=1)
-    for pod_time in sorted(entry.results.pod_times, key=lambda t: getattr(t, key, 0)):
+    for pod_time in sorted(entry.results.pod_times, key=lambda t: getattr(t, key, datetime.datetime.now())):
         if not getattr(pod_time, key, False):
             continue
 
@@ -79,7 +80,7 @@ def generate_launch_progress_data(entry):
     def delta(ts):
         return (ts - start_time).total_seconds() / 60
 
-    target_kind = "Job" if entry.results.test_case_properties.job_mode else "AppWrapper"
+    target_kind = "AppWrapper" if entry.results.test_case_properties.mode == "mcad" else "Job"
     name = f"{target_kind}s launched"
 
     data.append(dict(
@@ -155,7 +156,7 @@ class PodProgress():
         total_pod_count = entry.results.test_case_properties.total_pod_count
         fig.update_yaxes(title="Percentage")
         fig.update_xaxes(title="Timeline, in minutes after the start time")
-        schedule_object_kind = "Job" if entry.results.test_case_properties.job_mode else "AppWrapper"
+        schedule_object_kind = "AppWrapper" if entry.results.test_case_properties.mode == "mcad" else "Job"
         fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} {schedule_object_kind}s", title_x=0.5)
 
         fig.layout.yaxis.tickformat = ',.0%'

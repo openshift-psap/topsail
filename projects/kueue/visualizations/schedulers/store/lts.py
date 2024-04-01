@@ -22,7 +22,7 @@ def generate_lts_payload(results, import_settings):
     payload.metadata.config = results.test_config.yaml_file
     payload.metadata.ocp_version = results.sutest_ocp_version
     payload.metadata.settings = dict(import_settings)
-    payload.metadata.uuid = uuid.UUID(int=0) # temporary, to avoid the LTS failure
+    payload.metadata.test_uuid = uuid.UUID(int=0) # temporary, to avoid the LTS failure
 
     from . import lts_payload
     payload.results = lts_payload.generate_lts_results(results)

@@ -78,7 +78,7 @@ def sizeof_fmt(num, suffix=""):
 def main(dry_run=True,
          namespace=None,
          job_template_name="sleeper",
-         job_mode=False,
+         mode="job",
          pod_count=1,
          pod_runtime=30,
          pod_requests={"cpu": "1"},
@@ -96,7 +96,7 @@ def main(dry_run=True,
       dry_run: if True (default), only prepares the resources. If False, instanciate them in the cluster
       namespace: namespace in which the workload should be instanciated
       job_template_name: name of the job template to use inside the AppWrapper
-      job_mode: if true, create Jobs instead of AppWrappers
+      mode: mcad or kueue or job
       pod_count: number of Pods to create in each of the AppWrappers
       pod_runtime: run time parameter to pass to the Pod
       pod_requests: requests to pass to the Pod definition
@@ -116,8 +116,23 @@ def main(dry_run=True,
 
     logging.info(f"Using namespace '{namespace}' to deploy the workload.")
 
-    if job_mode:
-        logging.info("Running in Job mode")
+
+    job_mode = False
+    kueue_mode = False
+    mcad_mode = False
+    if mode == "job":
+        job_mode = True
+        logging.info(f"Running in {mode} mode")
+    elif mode == "kueue":
+        kueue_mode = True
+        logging.info("Running in Kueue mode")
+    elif mode == "mcad":
+        mcad_mode = True
+        logging.info("Running in AppWrapper mode")
+    else:
+        MODES = ("job", "mcad", "kueue")
+        logging.error(f"Received an invalid mode: '{mode}'. Must in in {MODES}")
+        sys.exit(1)
 
     logging.info(f"Running with a timespan of {timespan} minutes.")
     timespan_sec = timespan * 60
@@ -148,6 +163,9 @@ def main(dry_run=True,
         set_config(job, "spec.template.spec.containers[0].resources.limits", copy.deepcopy(pod_requests))
         set_config(job, "spec.template.spec.containers[0].resources.requests", copy.deepcopy(pod_requests))
 
+        if kueue_mode:
+            job["metadata"]["labels"]["kueue.x-k8s.io/queue-name"] = "local-queue"
+
         aw_genericitems = [dict(
             replicas = pod_count,
             completionstatus = "Complete",
@@ -161,7 +179,7 @@ def main(dry_run=True,
         set_config(appwrapper, "spec.resources.GenericItems", aw_genericitems)
 
 
-        if job_mode:
+        if job_mode or kueue_mode:
             resources = []
             for item in appwrapper["spec"]["resources"]["GenericItems"]:
                 replica = item["replicas"] # currently ignored
@@ -179,7 +197,7 @@ def main(dry_run=True,
                 yaml.dump(res, f)
                 print("---", file=f)
 
-        resource_name = job_name if job_mode else appwrapper_name
+        resource_name = job_name if (job_mode or kueue_mode) else appwrapper_name
         json_resource = "\n".join([json.dumps(res) for res in resources])
 
         return resource_name, json_resource

@@ -10,10 +10,10 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 def prepare():
     with run.Parallel("prepare1") as parallel:
         parallel.delayed(prepare_rhoai)
-        parallel.delayed(prepare_scheduler_test)
 
     with run.Parallel("prepare2") as parallel:
         parallel.delayed(prepare_gpu)
+        parallel.delayed(prepare_scheduler_test)
 
 
 def prepare_scheduler_test():
@@ -24,6 +24,8 @@ def prepare_scheduler_test():
     else:
         logging.warning(f"Project '{namespace}' already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
+
+    run.run(f"oc apply -f {TESTING_THIS_DIR}/kueue-queue.yaml -n {namespace}")
 
 
 def prepare_gpu():
@@ -84,6 +86,9 @@ def cleanup_sutest_ns():
 
 def prepare_test_nodes(name, cfg, dry_mode):
     extra = {}
+
+    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+        return
 
     extra["instance_type"] = cfg["node"]["instance_type"]
     extra["scale"] = cfg["node"]["count"]
