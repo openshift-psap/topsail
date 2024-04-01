@@ -208,8 +208,10 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
                 run.run_toolbox_from_config("codeflare", "generate_scheduler_load", extra=extra)
             except Exception as e:
                 failed = True
-                logging.error(f"*** Caught an exception during generate_scheduler_load({name}): {e.__class__.__name__}: {e}")
-
+                msg = f"*** Caught an exception during generate_scheduler_load({name}): {e.__class__.__name__}: {e}"
+                logging.error(msg)
+                with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
+                    print(msg)
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print("1" if failed else "0", file=f)
