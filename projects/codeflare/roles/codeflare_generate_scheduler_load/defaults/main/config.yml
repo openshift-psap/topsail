@@ -8,7 +8,7 @@
 codeflare_generate_scheduler_load_namespace:
 
 # name prefix for the AppWrapper resources
-codeflare_generate_scheduler_load_aw_base_name: appwrapper
+codeflare_generate_scheduler_load_base_name: appwrapper
 
 # name of the job template to use inside the AppWrapper
 codeflare_generate_scheduler_load_job_template_name: sleeper
@@ -25,7 +25,7 @@ codeflare_generate_scheduler_load_states_unexpected:
 codeflare_generate_scheduler_load_mode: job
 
 # number of resources to create
-codeflare_generate_scheduler_load_aw_count: 3
+codeflare_generate_scheduler_load_count: 3
 
 # number of Pods to create in each of the AppWrappers
 codeflare_generate_scheduler_load_pod_count: 1

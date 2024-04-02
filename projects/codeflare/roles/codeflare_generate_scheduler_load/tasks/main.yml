@@ -34,20 +34,20 @@
     debug: msg="Load generator running in the next task, expect some delays (timespan={{ codeflare_generate_scheduler_load_timespan }}min)... (mode={{ codeflare_generate_scheduler_load_mode }})"
 
   - name: Generate the scheduler load
-    shell: |
-      export ARTIFACT_DIR="{{ artifact_extra_logs_dir }}/artifacts"
+    shell:
+      export ARTIFACT_DIR="{{ artifact_extra_logs_dir }}/artifacts";
 
-      python3 "{{ codeflare_generate_scheduler_load_scheduler_load_generator }}" \
-        --dry_run "False" \
-        --namespace "{{ codeflare_generate_scheduler_load_namespace }}" \
-        --aw_base_name "{{ codeflare_generate_scheduler_load_aw_base_name }}" \
-        --aw_count "{{ codeflare_generate_scheduler_load_aw_count }}" \
-        --job_template_name "{{ codeflare_generate_scheduler_load_job_template_name }}" \
-        --mode "{{ codeflare_generate_scheduler_load_mode }}" \
-        --pod_count "{{ codeflare_generate_scheduler_load_pod_count }}" \
-        --pod_runtime "{{ codeflare_generate_scheduler_load_pod_runtime }}" \
-        --pod_requests "{{ codeflare_generate_scheduler_load_pod_requests }}" \
-        --timespan "{{ codeflare_generate_scheduler_load_timespan }}" \
+      python3 "{{ codeflare_generate_scheduler_load_scheduler_load_generator }}"
+        --dry_run "False"
+        --namespace "{{ codeflare_generate_scheduler_load_namespace }}"
+        --base_name "{{ codeflare_generate_scheduler_load_base_name }}"
+        --count "{{ codeflare_generate_scheduler_load_count }}"
+        --job_template_name "{{ codeflare_generate_scheduler_load_job_template_name }}"
+        --mode "{{ codeflare_generate_scheduler_load_mode }}"
+        --pod_count "{{ codeflare_generate_scheduler_load_pod_count }}"
+        --pod_runtime "{{ codeflare_generate_scheduler_load_pod_runtime }}"
+        --pod_requests "{{ codeflare_generate_scheduler_load_pod_requests }}"
+        --timespan "{{ codeflare_generate_scheduler_load_timespan }}"
         --distribution "{{ codeflare_generate_scheduler_load_distribution }}"
 
   - name: Define the variables
@@ -60,7 +60,7 @@
       set -o pipefail; set -e;
       appwrappers_json=$(oc get appwrappers -n {{ codeflare_generate_scheduler_load_namespace }} -ojson)
 
-      if [[ {{ codeflare_generate_scheduler_load_aw_count }} -lt 50 ]]; then
+      if [[ {{ codeflare_generate_scheduler_load_count }} -lt 50 ]]; then
         jq '.items[] | .metadata.name + " ==> "+ .status.state' -r <<< $appwrappers_json
       else
         echo "Too many appwrappers, hiding the individual status ..."
@@ -95,7 +95,7 @@
       set -o pipefail; set -e;
       jobs_json=$(oc get jobs -n {{ codeflare_generate_scheduler_load_namespace }} -ojson)
 
-      if [[ {{ codeflare_generate_scheduler_load_aw_count }} -lt 50 ]]; then
+      if [[ {{ codeflare_generate_scheduler_load_count }} -lt 50 ]]; then
         oc get jobs,pods -n {{ codeflare_generate_scheduler_load_namespace }} --no-headers
       else
         echo "Too many Jobs, hiding the individual status ..."
@@ -164,6 +164,7 @@
       oc describe workloads -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.desc"
       oc get workloads -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.status"
     ignore_errors: true
+    when: codeflare_generate_scheduler_load_mode == "kueue"
 
   - name: Capture the nodes of the cluster
     shell:
