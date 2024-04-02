@@ -136,7 +136,7 @@ class BaseStore():
         self.parse_always(results, dirname, import_settings)
 
         if self.lts_payload_model:
-            results.lts = lts_payload = self.generate_lts_payload(results, import_settings, must_validate=False)
+            results.lts = lts_payload = self.generate_lts_payload(results, import_settings)
             if self.models_kpis:
                 lts_payload.kpis = self.generate_lts_kpis(lts_payload)
 
