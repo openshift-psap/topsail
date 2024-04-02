@@ -145,7 +145,7 @@ class PodProgress():
         fig = go.Figure()
         for name in df.Name.unique():
             df_name = df[df.Name == name]
-            fig.add_trace(go.Scatter(x=df_name.Timestamp,
+            fig.add_trace(go.Scatter(x=df_name.Delta,
                                      y=df_name.Percentage,
                                      fill="tozeroy",
                                      mode='lines',
