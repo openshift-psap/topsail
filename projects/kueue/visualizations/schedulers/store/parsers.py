@@ -67,22 +67,27 @@ def _parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
 
     results.from_local_env = _parse_local_env(dirname)
-    results.test_config = _parse_test_config(dirname)
-
 
 def _parse_once(results, dirname):
+    results.test_config = _parse_test_config(dirname)
+    results.test_case_config = _parse_test_case_config(dirname)
+    results.test_case_properties = _parse_test_case_properties(results.test_case_config)
+
+    results.target_kind_name = "AppWrapper" if results.test_case_properties.mode == "mcad" else \
+        "Kueue Job" if results.test_case_properties.mode == "kueue" \
+        else "Job"
+    results.target_kind = "AppWrapper" if results.test_case_properties.mode == "mcad" else "Job"
+
     results.nodes_info = _parse_nodes_info(dirname) or {}
     results.cluster_info = _extract_cluster_info(results.nodes_info)
     results.sutest_ocp_version = _parse_ocp_version(dirname)
     results.metrics = _extract_metrics(dirname)
 
     results.pod_times = _parse_pod_times(dirname)
-    results.resource_times = _parse_resource_times(dirname)
+    results.resource_times = _parse_resource_times(dirname, results.test_case_properties.mode)
     results.test_start_end_time = _parse_test_start_end_time(dirname)
     results.cleanup_times = _parse_cleanup_start_end_time(dirname)
 
-    results.test_case_config = _parse_test_case_config(dirname)
-    results.test_case_properties = _parse_test_case_properties(results.test_case_config)
     results.file_locations = _parse_file_locations(dirname)
 
 
