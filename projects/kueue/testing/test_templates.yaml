@@ -8,7 +8,7 @@ common_kueue_mode:
   mode: kueue
 
 common_gpu:
-  extends: [common_mcad_mode]
+  extends: [common_kueue_mode]
   job:
     template_name: gpu_burn
   pod:
@@ -22,7 +22,7 @@ common_gpu:
   timespan: 5 # minutes
 
 common_cpu:
-  extends: [common_mcad_mode]
+  extends: [common_kueue_mode]
   job:
     template_name: sleeper
   pod:
