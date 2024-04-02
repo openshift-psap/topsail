@@ -9,14 +9,13 @@ common_kueue_mode:
 
 common_gpu:
   extends: [common_mcad_mode]
-  aw:
-    job:
-      template_name: gpu_burn
-    pod:
-      count: 1
-      runtime: 300
-      requests:
-        nvidia.com/gpu: 1
+  job:
+    template_name: gpu_burn
+  pod:
+    count: 1
+    runtime: 300
+    requests:
+      nvidia.com/gpu: 1
   node:
     instance_type: g4dn.xlarge
     wait_gpus: true
@@ -24,14 +23,13 @@ common_gpu:
 
 common_cpu:
   extends: [common_mcad_mode]
-  aw:
-    job:
-      template_name: sleeper
-    pod:
-      count: 1
-      runtime: 300
-      requests:
-        cpu: 100m
+  job:
+    template_name: sleeper
+  pod:
+    count: 1
+    runtime: 300
+    requests:
+      cpu: 100m
   node:
     instance_type: m6i.2xlarge
     wait_gpus: false
@@ -53,15 +51,13 @@ common_all_schedulable:
 
 gpu_all_schedulable:
   extends: [common_gpu, common_all_schedulable]
-  aw:
-    count: 10
+  count: 10
   node:
     count: 1
 
 gpu_scheduling:
   extends: [common_gpu, common_scheduling]
-  aw:
-    count: 20
+  count: 20
   node:
     count: 1
 
@@ -70,8 +66,7 @@ gpu_scheduling_job_mode:
 
 gpu_unschedulable:
   extends: [common_gpu, common_unschedulable]
-  aw:
-    count: 50
+  count: 50
 
 common_light:
   node:
@@ -79,23 +74,20 @@ common_light:
 
 cpu_light_all_schedulable:
   extends: [common_cpu, common_light, common_all_schedulable]
-  aw:
-    count: 10
+  count: 10
 
 cpu_light_scheduling:
   extends: [common_cpu, common_light, common_scheduling]
-  aw:
-    count: 20
+  count: 20
 
 cpu_icelake_scheduling:
   extends: [common_cpu, common_light, common_scheduling]
   # 10 cpu per pod, 300 pods = 3000 cores
   # 550 cores available in the cluster
-  aw:
-    count: 300
-    pod:
-      requests:
-        cpu: 10
+  count: 300
+  pod:
+    requests:
+      cpu: 10
 
 
 cpu_light_scheduling_job_mode:
@@ -103,8 +95,7 @@ cpu_light_scheduling_job_mode:
 
 cpu_light_unschedulable:
   extends: [common_cpu, common_light, common_unschedulable]
-  aw:
-    count: 200
-    pod:
-      requests:
-        cpu: 150
+  count: 200
+  pod:
+    requests:
+      cpu: 150

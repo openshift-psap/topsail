@@ -194,12 +194,12 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
             ]
 
             for (group, key) in configs:
-                if not key in cfg["aw"].get(group, {}): continue
-                extra[f"{group}_{key}"] = cfg["aw"][group][key]
+                if not key in cfg.get(group, {}): continue
+                extra[f"{group}_{key}"] = cfg[group][key]
 
-            extra["aw_base_name"] = name
+            extra["base_name"] = name
             extra["timespan"] = cfg["timespan"]
-            extra["aw_count"] = cfg["aw"]["count"]
+            extra["count"] = cfg["count"]
             extra["timespan"] = cfg["timespan"]
             extra["mode"] = cfg["mode"]
 
