@@ -26,6 +26,8 @@ def generate_pod_progress_data(entry, key):
         return (ts - start_time).total_seconds() / 60
 
     name = key.replace("_", " ").title()
+    if name == "Creation Time":
+        name = "Pod Creation"
 
     data.append(dict(
         Delta = delta(start_time),
@@ -137,7 +139,7 @@ class PodProgress():
 
         data = []
         data += generate_launch_progress_data(entry)
-        for key in "pod_scheduled", "container_finished":
+        for key in "creation_time", "pod_scheduled", "container_finished":
             data += generate_pod_progress_data(entry, key)
 
         df = pd.DataFrame(data)
