@@ -8,7 +8,7 @@ from .. import models
 from ..models import lts as models_lts
 
 
-def generate_lts_payload(results, import_settings, must_validate=False):
+def generate_lts_payload(results, import_settings):
     lts_payload = types.SimpleNamespace()
 
     lts_payload.metadata = generate_lts_metadata(results, import_settings)
