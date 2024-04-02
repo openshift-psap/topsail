@@ -12,8 +12,10 @@ import matrix_benchmarking.store.prom_db as store_prom_db
 import matrix_benchmarking.cli_args as cli_args
 
 import projects.core.visualizations.helpers.store as core_helpers_store
+from . import k8s_quantity
 
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
+K8S_TIME_MILLI_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 SHELL_DATE_TIME_FMT = "%a %b %d %H:%M:%S %Z %Y"
 ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
@@ -193,6 +195,14 @@ def parse_nodes_info(dirname, capture_state_dir, sutest_cluster=True):
             node_info.gpu.count = int(node["metadata"]["labels"].get("nvidia.com/gpu.count"))
         else :
             node_info.gpu = None
+
+        node_info.allocatable = types.SimpleNamespace()
+        node_info.allocatable.memory = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["memory"]))
+        node_info.allocatable.memory = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["memory"]))
+        node_info.allocatable.cpu = float(k8s_quantity.parse_quantity(node["status"]["allocatable"]["cpu"]))
+
+        node_info.allocatable.gpu = int(node["status"]["allocatable"].get("nvidia.com/gpu", 0))
+        node_info.allocatable.__dict__["nvidia.com/gpu"] = node_info.allocatable.gpu
 
     return nodes_info
 
