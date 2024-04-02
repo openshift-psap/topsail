@@ -309,7 +309,7 @@ def _parse_pod_times(dirname):
 
 
 @ignore_file_not_found
-def _parse_resource_times(dirname):
+def _parse_resource_times(dirname, mode):
     all_resource_times = {}
 
     if not artifact_paths.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR:
@@ -390,7 +390,8 @@ def _parse_resource_times(dirname):
             else:
                 logging.Warning(f"Completion time parsing not supported for resource type {kind}.")
 
-    parse("appwrappers.json")
+    if mode == "mcad":
+        parse("appwrappers.json")
     parse("jobs.json")
 
     return dict(all_resource_times)
