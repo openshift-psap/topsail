@@ -62,16 +62,16 @@ class CompareTestSpeed():
                 data[-1][first_variable] = test_cfg_setting
                 text += [f"• {_what}: {speed:.2f} {schedule_object_kind}s/minute", html.Br()]
 
-            launch_speed = entry.results.test_case_properties.aw_count / entry.results.test_case_properties.launch_duration
+            launch_speed = entry.results.test_case_properties.count / entry.results.test_case_properties.launch_duration
             add_data("Launch speed", launch_speed)
 
-            processing_speed = entry.results.test_case_properties.aw_count / test_duration
+            processing_speed = entry.results.test_case_properties.count / test_duration
             add_data("Processing speed", processing_speed)
 
             if entry.results.pod_times:
                 last_scheduled_pod_time = sorted(entry.results.pod_times, key=lambda t: t.pod_scheduled)[-1]
                 start_to_last_scheduled_duration = (last_scheduled_pod_time.pod_scheduled - entry.results.test_start_end_time.start).total_seconds() / 60
-                last_scheduled_speed = entry.results.test_case_properties.aw_count / start_to_last_scheduled_duration
+                last_scheduled_speed = entry.results.test_case_properties.count / start_to_last_scheduled_duration
                 add_data("Speed to last schedule", last_scheduled_speed)
 
             text += [html.Br()]

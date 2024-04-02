@@ -75,7 +75,7 @@ def generate_pod_progress_data(entry, key):
 def generate_launch_progress_data(entry):
     data = []
 
-    total_resource_count = entry.results.test_case_properties.aw_count
+    total_resource_count = entry.results.test_case_properties.count
 
     start_time = entry.results.test_start_end_time.start
 

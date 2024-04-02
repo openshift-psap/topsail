@@ -130,7 +130,7 @@ class ResourceMappingTimeline():
                                  ))
         fig.update_layout(showlegend=True)
 
-        fig.update_layout(title=f"Timeline of the Pod Count running on the cluster nodes", title_x=0.5,)
+        fig.update_layout(title=f"Timeline of the {entry.results.target_kind_name}'s Pod count<br>running on the cluster nodes", title_x=0.5,)
         fig.update_layout(yaxis_title="Pod count")
         fig.update_layout(xaxis_title=f"Timeline, in minutes after the start time")
 
@@ -202,8 +202,8 @@ class AppWrappersTimeline():
 
         fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
         fig.update_layout(barmode='stack')
-        aw_count = entry.results.test_case_config["aw"]["count"]
-        fig.update_layout(title=f"Timeline of the {aw_count} AppWrappers <br>progressing over the different States", title_x=0.5,)
+        count = entry.results.test_case_properties.count
+        fig.update_layout(title=f"Timeline of the {count} AppWrappers <br>progressing over the different States", title_x=0.5,)
         fig.update_layout(yaxis_title="")
         fig.update_layout(xaxis_title="Timeline (by date)")
 
