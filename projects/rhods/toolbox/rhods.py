@@ -159,3 +159,14 @@ class Rhods:
             sys.exit(1)
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("rhods_capture_state")
+    @AnsibleMappedParams
+    def capture_state(self):
+        """
+        Captures the state of the RHOAI deployment
+
+        Args:
+        """
+
+        return RunAnsibleRole(locals())
