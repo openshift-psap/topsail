@@ -321,9 +321,11 @@ ci_presets:
     tests.e2e.llm_load_test.args.concurrency: 16
 
   longevity:
+    extends: [10min]
     tests.e2e.mode: longevity
-    tests.e2e.longevity.repeat: 4
-    tests.e2e.longevity.delay: 60 # s
+
+  cpt_longevity:
+    extends: [longevity]
 
     matbench.lts.horreum.test_name: rhoai-kserve-longevity
     matbench.lts.opensearch.index: rhoai-kserve-longevity
@@ -340,19 +342,26 @@ ci_presets:
   hour_longevity:
     extends: [longevity]
 
-    tests.e2e.longevity.repeat: 4
-    tests.e2e.longevity.delay: 1200 # 20min
+    tests.e2e.longevity.sleep_interval: 15 min
+    tests.e2e.longevity.total_duration: 1 hour
 
-  multi_hour_longevity: # 12h
+  multi_hour_longevity:
     extends: [longevity]
-    tests.e2e.longevity.repeat: 8
-    tests.e2e.longevity.delay: 5400 # 90min
+    tests.e2e.longevity.sleep_interval: 20 min
+    tests.e2e.longevity.total_duration: 24 hours
 
-  multi_day_longevity: # 48h
+  multi_day_longevity:
     extends: [longevity]
 
-    tests.e2e.longevity.repeat: 4
-    tests.e2e.longevity.delay: 43200 # 12 hours
+    tests.e2e.longevity.sleep_interval: 12 hours
+    tests.e2e.longevity.total_duration: 3 days
+
+  longevity_large_model:
+    extends: [multi_hour_longevity, raw, tgis, use_intlab_minio]
+    kserve.model.directory_prefix: cpt
+    tests.e2e.models:
+    - codellama-34b-instruct-hf
+    - flan-t5-xl
 
   # many-model
 
@@ -607,8 +616,10 @@ tests:
           max_output_tokens: 800
           max_sequence_tokens: 3500
     longevity:
-      repeat: 2
-      delay: 30 # seconds
+      sleep_interval: 60 sec
+      # https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html
+      total_duration: 15 min
+      test_on_finish: true
 
 matbench:
   preset: null

@@ -191,7 +191,11 @@ def cleanup(mute=True):
 def update_serving_runtime_images():
     TEMPLATE_CMD = "oc get template/caikit-tgis-serving-template -n redhat-ods-applications"
     logging.info("Ensure that the Dashboard template resource is available ...")
-    run.run(TEMPLATE_CMD, capture_stdout=True)
+    try:
+        run.run(TEMPLATE_CMD, capture_stdout=True)
+    except Exception:
+        logging.error("update_serving_runtime_images: failed to get the dashboard templates ...")
+        raise
 
     def get_image(name):
         cmd = f"""{TEMPLATE_CMD} -ojson | jq --arg name "{name}" '.objects[0].spec.containers[] | select(.name == $name).image' -r"""
