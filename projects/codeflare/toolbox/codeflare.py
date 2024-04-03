@@ -25,6 +25,7 @@ class Codeflare:
             timespan=0,
             distribution="poisson",
             scheduler_load_generator="projects/codeflare/subprojects/scheduler-load-generator/generator.py",
+            kueue_queue="local-queue",
     ):
         """
         Generate scheduler load
@@ -43,6 +44,7 @@ class Codeflare:
           timespan: number of minutes over which the AppWrappers should be created
           distribution: the distribution method to use to spread the resource creation over the requested timespan
           scheduler_load_generator: the path of the scheduler load generator to launch
+          kueue_queue: the name of the Kueue queue to use
         """
 
         return RunAnsibleRole(locals())
