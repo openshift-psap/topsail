@@ -4,19 +4,7 @@ metadata:
   name: {{ pipelines_deploy_application_name }}
   namespace: {{ pipelines_deploy_application_namespace }}
 spec:
-  apiServer:
-    applyTektonCustomResource: true
-    archiveLogs: false
-    autoUpdatePipelineDefaultVersion: true
-    collectMetrics: true
-    dbConfigConMaxLifetimeSec: 120
-    deploy: true
-    enableOauth: true
-    enableSamplePipeline: true
-    injectDefaultScript: true
-    stripEOF: true
-    terminateStatus: Cancelled
-    trackArtifacts: true
+  dspVersion: v2
   database:
     mariaDB:
       deploy: true
@@ -25,21 +13,8 @@ spec:
       username: mlpipeline
   mlpipelineUI:
     deploy: true
-    image: quay.io/opendatahub/odh-ml-pipelines-frontend-container:beta-ui
+    image: quay.io/opendatahub/ds-pipelines-frontend:latest
   objectStorage:
-    externalStorage:
-      bucket: "{{ pipelines_deploy_application_name }}"
-      host: minio.{{ pipelines_deploy_application_namespace }}.svc.cluster.local
-      port: "9000"
-      s3CredentialsSecret:
-        accessKey: MINIO_S3_ACCESS_KEY
-        secretKey: MINIO_S3_SECRET_KEY
-        secretName: minio
-      scheme: http
-      secure: false
-  persistenceAgent:
-    deploy: true
-    numWorkers: 2
-  scheduledWorkflow:
-    cronScheduleTimezone: UTC
-    deploy: true
+    minio:
+      # Image field is required
+      image: 'quay.io/opendatahub/minio:RELEASE.2019-08-14T20-37-41Z-license-compliance'
