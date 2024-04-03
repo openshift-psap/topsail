@@ -173,9 +173,10 @@ tests:
   dry_mode: false
   visualize: true
   capture_prom: true
-  kueue:
-    ...
   schedulers:
+    kueue:
+      queue_name: local-queue
+
     namespace: scheduler-load-test
 
     prepare_nodes: true
