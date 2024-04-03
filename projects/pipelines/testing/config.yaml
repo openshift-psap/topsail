@@ -136,6 +136,9 @@ rhods:
     namespace_label:
       key: dsp-scale-test
       value: "true"
+    workbench:
+      imagestream: s2i-generic-data-science-notebook
+      imagestream_tag: 2023.1 # follow https://www.kubeflow.org/docs/components/pipelines/v2/migration/ to use a more recent image
   operator:
     # set to true to stop the RHODS operator
     stop: false
