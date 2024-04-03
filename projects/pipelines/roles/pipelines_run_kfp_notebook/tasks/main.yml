@@ -238,6 +238,13 @@
     failed_when: not notebook_pod_name_cmd.stdout
     # ---
 
+  - name: Install kfp_tekton
+    shell:
+      oc -n "{{ notebook_namespace }}"
+         -c "{{ notebook_container }}"
+         rsh "{{ notebook_pod_name_cmd.stdout }}"
+         pip install 'kfp_tekton==1.5.*' --quiet
+
   - name: Move the notebook files to HOME
     shell:
       oc -n "{{ notebook_namespace }}"
