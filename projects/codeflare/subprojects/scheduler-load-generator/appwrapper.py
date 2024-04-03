@@ -18,7 +18,7 @@ def prepare_appwrapper(namespace, job, priority, pod_count, pod_requests):
     config.set_config(appwrapper, "metadata.annotations.scheduleTime", "{SCHEDULE-TIME}")
 
     aw_genericitems = [dict(
-        replicas = pod_count,
+        replicas = 1,
         completionstatus = "Complete",
         custompodresources=[dict(
             replicas=1,
