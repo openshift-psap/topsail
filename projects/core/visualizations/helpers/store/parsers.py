@@ -7,6 +7,7 @@ import yaml
 import json
 import os
 from functools import reduce
+import urllib
 
 import matrix_benchmarking.store.prom_db as store_prom_db
 import matrix_benchmarking.cli_args as cli_args

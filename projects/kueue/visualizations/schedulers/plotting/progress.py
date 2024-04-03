@@ -26,6 +26,8 @@ def generate_pod_progress_data(entry, key):
         return (ts - start_time).total_seconds() / 60
 
     name = key.replace("_", " ").title()
+    if name == "Creation Time":
+        name = "Pod Creation"
 
     data.append(dict(
         Delta = delta(start_time),
@@ -73,15 +75,14 @@ def generate_pod_progress_data(entry, key):
 def generate_launch_progress_data(entry):
     data = []
 
-    total_resource_count = entry.results.test_case_properties.aw_count
+    total_resource_count = entry.results.test_case_properties.count
 
     start_time = entry.results.test_start_end_time.start
 
     def delta(ts):
         return (ts - start_time).total_seconds() / 60
 
-    target_kind = "AppWrapper" if entry.results.test_case_properties.mode == "mcad" else "Job"
-    name = f"{target_kind}s launched"
+    name = f"{entry.results.target_kind_name}s launched"
 
     data.append(dict(
         Delta = delta(start_time),
@@ -95,7 +96,7 @@ def generate_launch_progress_data(entry):
     YOTA = datetime.timedelta(microseconds=1)
 
     for resource_time in entry.results.resource_times.values():
-        if resource_time.kind != target_kind: continue
+        if resource_time.kind != entry.results.target_kind: continue
 
         count += 1
         data.append(dict(
@@ -138,7 +139,7 @@ class PodProgress():
 
         data = []
         data += generate_launch_progress_data(entry)
-        for key in "pod_scheduled", "container_finished":
+        for key in "creation_time", "pod_scheduled", "container_finished":
             data += generate_pod_progress_data(entry, key)
 
         df = pd.DataFrame(data)
@@ -146,7 +147,7 @@ class PodProgress():
         fig = go.Figure()
         for name in df.Name.unique():
             df_name = df[df.Name == name]
-            fig.add_trace(go.Scatter(x=df_name.Timestamp,
+            fig.add_trace(go.Scatter(x=df_name.Delta,
                                      y=df_name.Percentage,
                                      fill="tozeroy",
                                      mode='lines',
@@ -156,8 +157,8 @@ class PodProgress():
         total_pod_count = entry.results.test_case_properties.total_pod_count
         fig.update_yaxes(title="Percentage")
         fig.update_xaxes(title="Timeline, in minutes after the start time")
-        schedule_object_kind = "AppWrapper" if entry.results.test_case_properties.mode == "mcad" else "Job"
-        fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} {schedule_object_kind}s", title_x=0.5)
+
+        fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} {entry.results.target_kind_name}s", title_x=0.5)
 
         fig.layout.yaxis.tickformat = ',.0%'
 

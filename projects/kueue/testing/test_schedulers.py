@@ -4,6 +4,7 @@ import traceback
 import copy
 import pathlib
 import yaml
+import uuid
 
 import topsail
 from topsail.testing import env, config, run, visualize, matbenchmark
@@ -87,7 +88,7 @@ def merge(a, b, path=None):
 
 def save_matbench_files(name, cfg):
     with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
-        yaml.dump(dict(mcad_load_test=True, name=name), f)
+        yaml.dump(dict(scheduler_load_test=True, name=name), f)
 
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
         yaml.dump(config.ci_artifacts.config, f, indent=4)
@@ -95,11 +96,14 @@ def save_matbench_files(name, cfg):
     with open(env.ARTIFACT_DIR / "test_case_config.yaml", "w") as f:
         yaml.dump(cfg, f)
 
+    with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+        print(str(uuid.uuid4()), file=f)
+
 
 def _run_test_multiple_values(name, test_artifact_dir_p):
     visualize.prepare_matbench()
 
-    with env.NextArtifactDir("mcad_load_test_multiple_values"):
+    with env.NextArtifactDir("scheduler_load_test_multiple_values"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
         benchmark_values = config.ci_artifacts.get_config("tests.schedulers.test_multiple_values.settings")
 
@@ -173,7 +177,7 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
 
             run.run_toolbox_from_config("codeflare", "cleanup_appwrappers")
 
-    with env.NextArtifactDir("mcad_load_test"):
+    with env.NextArtifactDir("scheduler_load_test"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
         save_matbench_files(name, cfg)
 
@@ -190,12 +194,12 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
             ]
 
             for (group, key) in configs:
-                if not key in cfg["aw"].get(group, {}): continue
-                extra[f"{group}_{key}"] = cfg["aw"][group][key]
+                if not key in cfg.get(group, {}): continue
+                extra[f"{group}_{key}"] = cfg[group][key]
 
-            extra["aw_base_name"] = name
+            extra["base_name"] = name
             extra["timespan"] = cfg["timespan"]
-            extra["aw_count"] = cfg["aw"]["count"]
+            extra["count"] = cfg["count"]
             extra["timespan"] = cfg["timespan"]
             extra["mode"] = cfg["mode"]
 
@@ -231,7 +235,8 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
                         failed = True
 
                 # must be part of the test directory
-                run.run_toolbox("cluster", "capture_environment >/dev/null")
+                run.run_toolbox("cluster", "capture_environment", mute_stdout=True)
+                run.run_toolbox("rhods", "capture_state", mute_stdout=True)
 
     logging.info(f"_run_test: Test '{name}' {'failed' if failed else 'passed'}.")
 

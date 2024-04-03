@@ -10,27 +10,6 @@ from matrix_benchmarking.parse import json_dumper
 from .. import models
 from ..models import lts as models_lts
 
-def generate_lts_payload(results, import_settings):
-    # To know the available metrics:
-    # _=[print(m) for m in results.metrics["sutest"].keys()]
-
-    payload = types.SimpleNamespace()
-    payload.metadata = types.SimpleNamespace()
-    payload.metadata.start = results.test_start_end_time.start
-    payload.metadata.end = results.test_start_end_time.end
-    payload.metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
-    payload.metadata.config = results.test_config.yaml_file
-    payload.metadata.ocp_version = results.sutest_ocp_version
-    payload.metadata.settings = dict(import_settings)
-    payload.metadata.test_uuid = uuid.UUID(int=0) # temporary, to avoid the LTS failure
-
-    from . import lts_payload
-    payload.results = lts_payload.generate_lts_results(results)
-
-    validate_lts_payload(payload)
-
-    return payload
-
 
 def validate_lts_payload(lts_payload):
     json_lts = json.dumps(lts_payload, indent=4, default=functools.partial(json_dumper, strict=False))

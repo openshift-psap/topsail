@@ -46,19 +46,19 @@ ci_presets:
     tests.schedulers.tests_to_run: [cpu_icelake_scheduling]
     tests.schedulers.test_multiple_values.enabled: true
     tests.schedulers.test_multiple_values.settings:
-      mode: [kueue, job, mcad]
+      mode: [kueue, job] # mcad
 
   cpu_light_scheduling:
     tests.schedulers.tests_to_run: [cpu_light_scheduling]
     tests.schedulers.test_multiple_values.enabled: true
     tests.schedulers.test_multiple_values.settings:
-      mode: [kueue, job, mcad]
+      mode: [kueue, job] # mcad
 
   cpu_light_unschedulable:
     tests.schedulers.tests_to_run: [cpu_light_unschedulable]
     tests.schedulers.test_multiple_values.enabled: true
     tests.schedulers.test_multiple_values.settings:
-      "aw.count": [200, 350, 500]
+      count: [200, 350, 500]
 
   cpu_all_schedulable:
     clusters.sutest.worker.fill_resources.enabled: true
@@ -67,8 +67,8 @@ ci_presets:
     tests.schedulers.tests_to_run: [cpu_light_all_schedulable]
     tests.schedulers.test_multiple_values.enabled: true
     tests.schedulers.test_multiple_values.settings:
-      aw.count: [100, 150]
-      mode: [kueue, job, mcad]
+      count: [100, 150]
+      mode: [kueue, job] # mcad
 
   # ---
 
@@ -188,8 +188,8 @@ tests:
       enabled: false
       matbench_config_file: plot_multiple_tests.yaml
       settings:
-        aw.count: [200, 500, 750, 1000]
-        aw.job.job_mode: [true, false]
+        count: [200, 500, 750, 1000]
+        job.job_mode: [true, false]
     test_templates_file: test_templates.yaml # relative to testing/codeflare directory
 
 matbench:

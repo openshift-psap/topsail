@@ -37,10 +37,10 @@ def _get_test_setup(entry):
     managed = list(entry.results.cluster_info.control_plane)[0].managed \
         if entry.results.cluster_info.control_plane else False
 
-    sutest_ocp_version = entry.results.sutest_ocp_version
+    ocp_version = entry.results.ocp_version
 
 
-    setup_info += [html.Li(["Test running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
+    setup_info += [html.Li(["Test running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{ocp_version}")])]
 
     nodes_info = [
         html.Li([f"Total of {len(entry.results.cluster_info.node_count)} nodes in the cluster"]),
@@ -70,10 +70,9 @@ def _get_test_setup(entry):
     test_speed = entry.results.test_case_properties.total_pod_count / test_duration
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
 
-    schedule_object_kind = "AppWrapper" if entry.results.test_case_properties.mode == "mcad" else "Job"
 
-    setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} {schedule_object_kind}/minute")]))]
-    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} {schedule_object_kind}/minute")]))]
+    setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} {entry.results.target_kind_name}/minute")]))]
+    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} {entry.results.target_kind_name}/minute")]))]
 
     time_to_last_schedule_sec = entry.results.lts.results.time_to_last_schedule_sec
     time_to_last_launch_sec = entry.results.lts.results.time_to_last_launch_sec
@@ -173,8 +172,7 @@ class ErrorReport():
             setup_info
         )]
 
-        schedule_object_kind = "AppWrapper" if entry.results.test_case_properties.mode == "mcad" else "Job"
-        header += [html.H2(f"{schedule_object_kind} Completion Progress")]
+        header += [html.H2(f"{entry.results.target_kind_name} Completion Progress")]
 
         header += report.Plot_and_Text(f"Pod Completion Progress", args)
         header += html.Br()

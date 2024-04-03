@@ -21,7 +21,12 @@ def register():
 def ResourceMappingTimeline_generate_data(entry):
     data = []
 
+    start_time = entry.results.test_start_end_time.start
+
     hostnames_index = list(entry.results.nodes_info.keys()).index
+
+    def delta(ts):
+        return (ts - start_time).total_seconds() / 60
 
     for pod_time in entry.results.pod_times:
         pod_name = pod_time.pod_friendly_name
@@ -38,6 +43,7 @@ def ResourceMappingTimeline_generate_data(entry):
 
         data.append(dict(
             Time = pod_time.start_time,
+            Delta = delta(pod_time.start_time),
             Inc = 1,
             NodeName = f"Node {hostname_index}<br>{shortname}",
             PodName = pod_name,
@@ -45,6 +51,7 @@ def ResourceMappingTimeline_generate_data(entry):
 
         data.append(dict(
             Time = finish,
+            Delta = delta(finish),
             Inc = -1,
             NodeName = f"Node {hostname_index}<br>{shortname}",
             PodName = pod_name,
@@ -60,25 +67,29 @@ def ResourceMappingTimeline_generate_data(entry):
     for index, row in df.iterrows():
         data.append(dict(
             Time = row.Time - YOTA,
+            Delta = delta(row.Time - YOTA),
             Count = node_pod_count[row.NodeName],
             NodeName = row.NodeName,
         ))
         node_pod_count[row.NodeName] += row.Inc
         data.append(dict(
             Time = row.Time,
+            Delta = delta(row.Time),
             Count = node_pod_count[row.NodeName],
             NodeName = row.NodeName,
         ))
 
     for node in node_pod_count.keys():
         data.insert(0, dict(
-            Time =entry.results.test_start_end_time.start,
+            Time = entry.results.test_start_end_time.start,
+            Delta = delta(entry.results.test_start_end_time.start),
             Count = 0,
             NodeName = node,
         ))
 
         data.append(dict(
-            Time =entry.results.test_start_end_time.end,
+            Time = entry.results.test_start_end_time.end,
+            Delta = delta(entry.results.test_start_end_time.end),
             Count = 0,
             NodeName = node,
         ))
@@ -111,7 +122,7 @@ class ResourceMappingTimeline():
         fig = go.Figure()
         for name in df.NodeName.unique():
             df_name = df[df.NodeName == name]
-            fig.add_trace(go.Scatter(x=df_name.Time,
+            fig.add_trace(go.Scatter(x=df_name.Delta,
                                      y=df_name.Count,
                                      fill="tozeroy",
                                      mode='lines',
@@ -119,9 +130,9 @@ class ResourceMappingTimeline():
                                  ))
         fig.update_layout(showlegend=True)
 
-        fig.update_layout(title=f"Timeline of the Pod Count running on the cluster nodes", title_x=0.5,)
+        fig.update_layout(title=f"Timeline of the {entry.results.target_kind_name}'s Pod count<br>running on the cluster nodes", title_x=0.5,)
         fig.update_layout(yaxis_title="Pod count")
-        fig.update_layout(xaxis_title=f"Timeline (by date)")
+        fig.update_layout(xaxis_title=f"Timeline, in minutes after the start time")
 
         return fig, ""
 
@@ -191,8 +202,8 @@ class AppWrappersTimeline():
 
         fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
         fig.update_layout(barmode='stack')
-        aw_count = entry.results.test_case_config["aw"]["count"]
-        fig.update_layout(title=f"Timeline of the {aw_count} AppWrappers <br>progressing over the different States", title_x=0.5,)
+        count = entry.results.test_case_properties.count
+        fig.update_layout(title=f"Timeline of the {count} AppWrappers <br>progressing over the different States", title_x=0.5,)
         fig.update_layout(yaxis_title="")
         fig.update_layout(xaxis_title="Timeline (by date)")
 

@@ -13,12 +13,12 @@ class Codeflare:
     def generate_scheduler_load(
             self,
             namespace,
-            aw_base_name="appwrapper",
+            base_name="appwrapper",
             job_template_name="sleeper",
             states_target=["Completed"],
             states_unexpected=["Failed"],
             mode="job",
-            aw_count=3,
+            count=3,
             pod_count=1,
             pod_runtime=30,
             pod_requests={"cpu": "100m"},
@@ -31,8 +31,8 @@ class Codeflare:
 
         Args:
           namespace: name of the namespace where the MCAD load will be generated
-          aw_base_name: name prefix for the AppWrapper resources
-          aw_count: number of resources to create
+          base_name: name prefix for the AppWrapper resources
+          count: number of resources to create
           job_template_name: name of the job template to use inside the AppWrapper
           mode: mcad (AppWrappers), kueue or job
           pod_count: number of Pods to create in each of the AppWrappers
