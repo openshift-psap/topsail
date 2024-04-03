@@ -49,6 +49,7 @@
         --pod_requests "{{ codeflare_generate_scheduler_load_pod_requests }}"
         --timespan "{{ codeflare_generate_scheduler_load_timespan }}"
         --distribution "{{ codeflare_generate_scheduler_load_distribution }}"
+        --kueue_queue "{{ codeflare_generate_scheduler_load_kueue_queue }}"
 
   - name: Define the variables
     set_fact:

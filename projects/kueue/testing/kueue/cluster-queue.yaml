@@ -1,9 +1,3 @@
----
-apiVersion: kueue.x-k8s.io/v1beta1
-kind: ResourceFlavor
-metadata:
-  name: default-flavor
----
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: ClusterQueue
 metadata:
@@ -17,13 +11,6 @@ spec:
     - name: default-flavor # points to the ResourceFlavor
       resources:
       - name: "cpu"
-        nominalQuota: 1000
+        nominalQuota: 1000 # updated at runtime
       - name: "memory"
         nominalQuota: 100Gi
----
-apiVersion: kueue.x-k8s.io/v1beta1
-kind: LocalQueue
-metadata:
-  name: local-queue
-spec:
-  clusterQueue: cluster-queue # points to the ClusterQueue

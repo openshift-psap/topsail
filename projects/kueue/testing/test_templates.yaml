@@ -99,3 +99,15 @@ cpu_light_unschedulable:
   pod:
     requests:
       cpu: 150
+
+
+cpu_icelake_gang_scheduling:
+  extends: [common_cpu, common_light, common_scheduling]
+  # 10 cpu per pod, 300 pods = 3000 cores
+  # 550 cores available in the cluster
+  count: 300
+  pod:
+    count: 10
+    requests:
+      cpu: 1
+  timespan: 1 # minutes

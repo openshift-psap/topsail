@@ -25,7 +25,39 @@ def prepare_scheduler_test():
         logging.warning(f"Project '{namespace}' already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
 
-    run.run(f"oc apply -f {TESTING_THIS_DIR}/kueue-queue.yaml -n {namespace}")
+
+def prepare_kueue_queue(dry_mode):
+    namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
+
+    with env.NextArtifactDir(f"prepare_queue"):
+        if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+            node_label_selector = "node-role.kubernetes.io/worker"
+        else:
+            node_label_selector_key = config.ci_artifacts.get_config("clusters.sutest.compute.machienset.taint.key")
+            node_label_selector_value = config.ci_artifacts.get_config("clusters.sutest.compute.machienset.taint.value")
+            node_label_selector = f"{node_label_selector_key}={node_label_selector_value}"
+
+        # sum of the (CPU capacity - 2) for all of the worker nodes
+        cluster_queue_cpu_quota = run.run(f"oc get nodes -l{node_label_selector} -ojson | jq '[.items[] | .status.capacity.cpu | tonumber - 2] | add'", capture_stdout=True).stdout
+
+        if dry_mode:
+            logging.info(f"prepare_kueue_queue: prepare the kueue queues with cpu={total_cpu_count}")
+            return
+
+        run.run(f"""cat {TESTING_THIS_DIR}/kueue/resource-flavor.yaml \
+        | tee $ARTIFACT_DIR/resource-flavor.yaml \
+        | oc apply -f- -n {namespace}""")
+
+        run.run(f"""cat {TESTING_THIS_DIR}/kueue/cluster-queue.yaml \
+        | yq '.spec.resourceGroups[0].flavors[0].resources[0].nominalQuota = {cluster_queue_cpu_quota}' \
+        | tee $ARTIFACT_DIR/cluster-queue.yaml \
+        | oc apply -f- -n {namespace}""")
+
+        local_queue_name = config.ci_artifacts.get_config("tests.schedulers.kueue.queue_name")
+        run.run(f"""cat {TESTING_THIS_DIR}/kueue/local-queue.yaml \
+        | yq '.metadata.name = "{local_queue_name}"' \
+        | tee $ARTIFACT_DIR/local-queue.json \
+        | oc apply -f- -n {namespace}""")
 
 
 def prepare_gpu():
@@ -84,11 +116,11 @@ def cleanup_sutest_ns():
     cleanup_mcad_test()
 
 
-def prepare_test_nodes(name, cfg, dry_mode):
-    extra = {}
-
+def do_prepare_nodes(cfg, dry_mode):
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
         return
+
+    extra = {}
 
     extra["instance_type"] = cfg["node"]["instance_type"]
     extra["scale"] = cfg["node"]["count"]
@@ -99,8 +131,20 @@ def prepare_test_nodes(name, cfg, dry_mode):
 
     run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest", extra=extra)
 
-    if cfg["node"].get("wait_gpus", True):
-        if not config.ci_artifacts.get_config("tests.want_gpu"):
-            logging.error("Cannot wait for GPUs when tests.want_gpu is disabled ...")
-        else:
-            run.run_toolbox("gpu_operator", "wait_stack_deployed")
+    if not cfg["node"].get("wait_gpus", True):
+        return
+
+    if not config.ci_artifacts.get_config("tests.want_gpu"):
+        msg = "Cannot wait for GPUs when tests.want_gpu is disabled ..."
+        logging.error(msg)
+        raise ValueError(msg)
+
+    run.run_toolbox("gpu_operator", "wait_stack_deployed")
+
+
+def prepare_test_nodes(name, cfg, dry_mode):
+    extra = {}
+
+    do_prepare_nodes(cfg, dry_mode)
+
+    prepare_kueue_queue(dry_mode)

@@ -45,3 +45,6 @@ codeflare_generate_scheduler_load_distribution: poisson
 
 # the path of the scheduler load generator to launch
 codeflare_generate_scheduler_load_scheduler_load_generator: projects/codeflare/subprojects/scheduler-load-generator/generator.py
+
+# the name of the Kueue queue to use
+codeflare_generate_scheduler_load_kueue_queue: local-queue

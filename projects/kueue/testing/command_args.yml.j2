@@ -42,3 +42,4 @@ codeflare generate_scheduler_load:
   namespace: {{ tests.schedulers.namespace }}
   distribution: {{ tests.schedulers.distribution }}
   # the other parameters are passed at runtime with the --extra flag.
+  kueue_queue: {{ tests.schedulers.kueue.queue_name }}
