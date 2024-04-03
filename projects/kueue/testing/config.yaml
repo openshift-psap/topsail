@@ -42,6 +42,12 @@ ci_presets:
 
   # ---
 
+  cpu_icelake_gang_scheduling:
+    tests.schedulers.tests_to_run: [cpu_icelake_gang_scheduling]
+    tests.schedulers.test_multiple_values.enabled: true
+    tests.schedulers.test_multiple_values.settings:
+      mode: [kueue, job] # mcad
+
   cpu_icelake_scheduling:
     tests.schedulers.tests_to_run: [cpu_icelake_scheduling]
     tests.schedulers.test_multiple_values.enabled: true
