@@ -16,6 +16,12 @@
     state: directory
     mode: '0755'
 
+- name: Create the artifacts artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
 - name: Deploy the Minio server
   include_role:
     name: cluster_deploy_minio_s3_server
@@ -27,12 +33,12 @@
 - name: Prepare the template file
   template:
     src: "{{ pipelines_deploy_application_app_template }}"
-    dest: "{{ artifact_extra_logs_dir }}/src/000_dsp_application.yaml"
+    dest: "{{ artifact_extra_logs_dir }}/src/dsp_application.yaml"
     mode: '0400'
 
 - name: Create the application
   command:
-    oc apply -f "{{ artifact_extra_logs_dir }}/src/000_dsp_application.yaml"
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/dsp_application.yaml"
 
 - name: Wait for the deployments to be all available
   block:
@@ -62,30 +68,41 @@
     failed_when: deployments_not_ready.stdout | length > 0
 
   always:
+  - name: Save the status of the DSPApplication
+    shell:
+      oc get -oyaml
+         -f "{{ artifact_extra_logs_dir }}/src/dsp_application.yaml"
+         > "{{ artifact_extra_logs_dir }}/artifacts/dsp_application.yaml"
+    ignore_errors: true
+
   - name: Get the list of the deployments
     shell:
       oc get deploy
          -lcomponent=data-science-pipelines
          -n {{ pipelines_deploy_application_namespace }}
-         > "{{ artifact_extra_logs_dir }}/deployments.status"
+         > "{{ artifact_extra_logs_dir }}/artifacts/deployments.status"
+    ignore_errors: true
 
   - name: Get the list of the pods
     shell:
       oc get pods
         -lcomponent=data-science-pipelines
         -n {{ pipelines_deploy_application_namespace }}
-        > "{{ artifact_extra_logs_dir }}/pods.status"
+        > "{{ artifact_extra_logs_dir }}/artifacts/pods.status"
+    ignore_errors: true
 
   - name: Get the yaml of the pods
     shell:
       oc get pods -oyaml
         -lcomponent=data-science-pipelines
         -n {{ pipelines_deploy_application_namespace }}
-        > "{{ artifact_extra_logs_dir }}/pods.yaml"
+        > "{{ artifact_extra_logs_dir }}/artifacts/pods.yaml"
+    ignore_errors: true
 
   - name: Get the description of the pods
     shell:
       oc describe pods
         -lcomponent=data-science-pipelines
         -n {{ pipelines_deploy_application_namespace }}
-        > "{{ artifact_extra_logs_dir }}/pods.desc"
+        > "{{ artifact_extra_logs_dir }}/artifacts/pods.desc"
+    ignore_errors: true
