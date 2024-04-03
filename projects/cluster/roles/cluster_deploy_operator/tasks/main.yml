@@ -305,19 +305,21 @@
     fail: msg="Failed because the operator could not be installed from the CatalogSource"
 
   always:
-  - name: Store the YAML of the operator CSV that was installed (debug)
-    shell:
-      oc get ClusterServiceVersion/{{ operator_csv_name }}
-         -oyaml
-          -n "{{ cluster_deploy_operator_namespace }}"
-          > {{ artifact_extra_logs_dir }}/operator_csv.yml
-
   - name: Store the YAML of the subscription
     shell:
       oc get -f "{{ artifact_extra_logs_dir }}/src/002_sub.yml"
          -oyaml
          -n "{{ cluster_deploy_operator_namespace }}"
          > {{ artifact_extra_logs_dir }}/operator_sub.yml
+    ignore_errors: true
+
+  - name: Store the YAML of the operator CSV that was installed (debug)
+    shell:
+      oc get ClusterServiceVersion/{{ operator_csv_name }}
+         -oyaml
+          -n "{{ cluster_deploy_operator_namespace }}"
+          > {{ artifact_extra_logs_dir }}/operator_csv.yml
+    ignore_errors: true
 
 - name: Deploy the operator CustomResource from its ClusterServiceVersion
   include_tasks: deploy_cr.yml
