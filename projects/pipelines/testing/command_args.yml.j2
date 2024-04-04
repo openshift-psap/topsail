@@ -62,6 +62,8 @@ driver/cluster set_project_annotation/test_toleration:
 
 pipelines run_kfp_notebook:
   namespace: {{ rhods.pipelines.namespace }}
+  imagestream: {{ rhods.pipelines.workbench.imagestream }}
+  imagestream_tag: {% if rhods.pipelines.workbench.imagestream_tag %}"{{ rhods.pipelines.workbench.imagestream_tag }}"{% else %}null{% endif %}
   dsp_application_name: {{ rhods.pipelines.application.name }}
   notebook_filename: {{ tests.pipelines.notebook_filename }}
   notebook_directory: {{ tests.pipelines.notebook_directory }}

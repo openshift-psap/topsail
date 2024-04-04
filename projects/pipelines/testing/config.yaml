@@ -125,10 +125,10 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 655658
-    channel: stable
-    version: 2.6.0
-    version_name: rc1
+    tag: 697386
+    channel: alpha
+    version: 2.9.0
+    version_name: dspv2
   pipelines:
     application:
       name: sample
@@ -136,6 +136,9 @@ rhods:
     namespace_label:
       key: dsp-scale-test
       value: "true"
+    workbench:
+      imagestream: s2i-generic-data-science-notebook
+      imagestream_tag: 2023.1 # follow https://www.kubeflow.org/docs/components/pipelines/v2/migration/ to use a more recent image
   operator:
     # set to true to stop the RHODS operator
     stop: false

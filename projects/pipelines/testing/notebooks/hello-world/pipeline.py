@@ -29,6 +29,7 @@ def stage2(time1: datetime.datetime) -> datetime.datetime:
 
 def stage3(time2a: datetime.datetime, time2b: datetime.datetime, time2c: datetime.datetime):
     import datetime
+    import time
 
     print(f"Stage 2a ran at: {time2a}")
     print(f"Stage 2b ran at: {time2b}")
@@ -62,5 +63,5 @@ def my_pipeline():
     stage3_op(time2a.output, time2b.output, time2c.output)
 
 if __name__ == '__main__':
-    from kfp_tekton.compiler import TektonCompiler
-    TektonCompiler().compile(my_pipeline, __file__.replace('.py', '.yaml'))
+    from kfp.compiler import Compiler
+    Compiler().compile(my_pipeline, __file__.replace('.py', '.yaml'))

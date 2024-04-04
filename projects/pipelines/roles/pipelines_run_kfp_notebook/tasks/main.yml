@@ -43,7 +43,7 @@
     mode: '0644'
 
 - name: Lookup the imagestream tag
-  when: pipelines_run_kfp_notebook_imagestream_tag | length == 0
+  when: pipelines_run_kfp_notebook_imagestream_tag == None
   shell:
     set -o pipefail;
     oc get is/{{ pipelines_run_kfp_notebook_imagestream }}
@@ -58,7 +58,7 @@
 
 - name: Save the imagestream tag
   set_fact:
-    image_tag: "{% if pipelines_run_kfp_notebook_imagestream_tag %}{{ pipelines_run_kfp_notebook_imagestream_tag }}{% else %}{{ image_tag_cmd.stdout }}{% endif %}"
+    image_tag: "{% if pipelines_run_kfp_notebook_imagestream_tag != None %}{{ pipelines_run_kfp_notebook_imagestream_tag }}{% else %}{{ image_tag_cmd.stdout }}{% endif %}"
 
 - name: Set the name of the token secret
   set_fact:
@@ -183,9 +183,9 @@
     state: directory
     mode: '0755'
 
-- name: Delete the existing pipelines
+- name: Delete the existing workflows/pipelines
   command:
-    oc delete pipelineruns --all -n "{{ notebook_namespace }}"
+    oc delete workflows.argoproj.io --all -n "{{ notebook_namespace }}"
 
 # ---
 
@@ -259,15 +259,11 @@
   - name: Wait for the pipeline execution to complete
     shell:
       set -o pipefail;
-      oc get pipelineruns
-         --no-headers
-         --ignore-not-found
-         -n "{{ notebook_namespace }}"
-         | awk '{print $3}'
-    register: pipelineruns_wait
+      oc get workflow.argoproj.io -ojson -n "{{ notebook_namespace }}" | jq .items[0].status.phase -r
+    register: workflow_phase_cmd
     retries: 120
     delay: 10
-    until: ' pipelineruns_wait.stdout and "Running" not in pipelineruns_wait.stdout'
+    until: workflow_phase_cmd.stdout and "Running" not in workflow_phase_cmd.stdout
 
   - name: Generate MatrixBenchmark exit code file
     shell:
