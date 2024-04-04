@@ -45,6 +45,9 @@ def apply_prefer_pr(pr_number=None):
 
 
 def prepare_base_image_container(namespace):
+    if config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr"):
+        delete_istags(namespace)
+
     istag = config.get_command_arg("cluster", "build_push_image", "_istag", prefix="base_image")
 
     if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
@@ -59,15 +62,20 @@ def prepare_base_image_container(namespace):
     run.run_toolbox_from_config("cluster", "build_push_image", prefix="extended_image")
 
 
-def rebuild_driver_image(namespace, pr_number):
-    apply_prefer_pr(pr_number)
-
+def delete_istags(namespace):
     istag = config.get_command_arg("cluster", "build_push_image", "_istag", prefix="base_image")
 
     run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
+
     if config.ci_artifacts.get_config("base_image.extend.enabled"):
         istag = config.get_command_arg("cluster", "build_push_image", "_istag", prefix="extended_image")
         run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
+
+
+def rebuild_driver_image(namespace, pr_number):
+    apply_prefer_pr(pr_number)
+
+    delete_istags(namespace)
 
     prepare_base_image_container(namespace)
 
