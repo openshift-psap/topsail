@@ -1,3 +1,9 @@
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
 - name: Get the OpenShift Prometheus database
   include_role:
     name: cluster_prometheus_db
@@ -21,33 +27,37 @@
 
 - name: Save the pods status
   shell:
-    oc get pods -owide -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.status"
-  failed_when: false
+    oc get pods -owide -lpipeline/runid -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.status"
+  ignore_errors: true
 
 - name: Save the pods description
   shell:
-    oc describe pods  -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.desc"
-  failed_when: false
+    oc describe pods  -lpipeline/runid -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.desc"
+  ignore_errors: true
 
 - name: Save the pods definition
   shell:
-    oc get -oyaml pods  -lapp.kubernetes.io/managed-by=tekton-pipelines -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pods.yaml"
-  failed_when: false
+    oc get -oyaml pods  -lpipeline/runid -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.yaml"
+  ignore_errors: true
 
-- name: Save the pipeline status
-  shell:
-    oc get pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.status"
-  failed_when: false
+  # ---
 
-- name: Save the pipeline description
+- name: Save the workflow status
   shell:
-    oc describe pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.desc"
-  failed_when: false
+    oc get workflow.argoproj.io -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/workflow.status"
+  ignore_errors: true
 
-- name: Save the pipeline definition
+- name: Save the workflow description
   shell:
-    oc get -oyaml pipelineruns -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
-  failed_when: false
+    oc describe workflow.argoproj.io -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/workflow.desc"
+  ignore_errors: true
+
+- name: Save the workflow definition
+  shell:
+    oc get -oyaml workflow.argoproj.io -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/workflow.yaml"
+  ignore_errors: true
+
+  # ---
 
 - name: Save the notebook execution logs
   local_action:
@@ -55,7 +65,7 @@
     content: "{{ notebook_execution.stderr }}"
     dest: "{{ artifact_extra_logs_dir }}/notebook_execution.stderr"
     mode: '0644'
-  failed_when: false
+  ignore_errors: true
   when: notebook_execution is defined
 
 - name: Collect the execution artifacts
