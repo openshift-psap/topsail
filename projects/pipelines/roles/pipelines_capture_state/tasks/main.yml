@@ -40,44 +40,24 @@
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/events.json"
 
-- name: Save the pipeline status
+- name: Save the workflow status
   shell:
-    oc get pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.status"
+    oc get workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.status"
   ignore_errors: true
 
 - name: Save the pipeline description
   shell:
-    oc describe pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.desc"
+    oc describe workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.desc"
   ignore_errors: true
 
 - name: Save the pipeline definition
   shell:
-    oc get -oyaml pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.yaml"
+    oc get -oyaml workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.yaml"
   ignore_errors: true
 
 - name: Save the pipeline JSON definition
   shell:
-    oc get -ojson pipelineruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/pipelines.json"
-  ignore_errors: true
-
-- name: Save the taskrun status
-  shell:
-    oc get taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.status"
-  ignore_errors: true
-
-- name: Save the taskrun description
-  shell:
-    oc describe taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.desc"
-  ignore_errors: true
-
-- name: Save the taskrun definition
-  shell:
-    oc get -oyaml taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.yaml"
-  ignore_errors: true
-
-- name: Save the taskrun json definition
-  shell:
-    oc get -ojson taskruns -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/taskruns.json"
+    oc get -ojson workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.json"
   ignore_errors: true
 
 - name: Save the deployments definition
