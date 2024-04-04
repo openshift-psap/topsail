@@ -92,7 +92,7 @@ def compute_driver_node_requirement(user_count):
     return sizing.main(**kwargs)
 
 
-def cluster_scale_up(namespace, user_count):
+def cluster_scale_up(user_count):
     if config.ci_artifacts.get_config("clusters.driver.is_metal"):
         return
 
