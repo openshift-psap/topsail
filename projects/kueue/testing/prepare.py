@@ -33,8 +33,8 @@ def prepare_kueue_queue(dry_mode):
         if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
             node_label_selector = "node-role.kubernetes.io/worker"
         else:
-            node_label_selector_key = config.ci_artifacts.get_config("clusters.sutest.compute.machienset.taint.key")
-            node_label_selector_value = config.ci_artifacts.get_config("clusters.sutest.compute.machienset.taint.value")
+            node_label_selector_key = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.key")
+            node_label_selector_value = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.value")
             node_label_selector = f"{node_label_selector_key}={node_label_selector_value}"
 
         # sum of the (CPU capacity - 2) for all of the worker nodes
