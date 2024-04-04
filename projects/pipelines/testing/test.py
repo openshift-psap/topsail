@@ -14,7 +14,7 @@ import uuid
 import yaml
 import fire
 
-from topsail.testing import env, config, run, rhods, visualize, sizing
+from topsail.testing import env, config, run, rhods, visualize, sizing, prepare_user_pods
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 
@@ -129,52 +129,23 @@ def compute_node_requirement(driver=False, sutest=False):
         # --> 2668
         cpu_count = 1.5
         memory = 3
+        machine_type = config.ci_artifacts.get_config("clusters.driver.compute.machineset.type")
 
     if sutest:
         # must match 'roles/local_ci_run_multi/templates/job.yaml.j2'
         cpu_count = 1
         memory = 2
+        machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type")
 
     kwargs = dict(
         cpu = cpu_count,
         memory = memory,
-        machine_type = config.ci_artifacts.get_config("clusters.create.ocp.compute.type"),
+        machine_type = machine_type,
         user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
         )
 
     return sizing.main(**kwargs)
 
-
-def apply_prefer_pr():
-    if not config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr"):
-        return
-
-    pr_number = None
-
-    if os.environ.get("OPENSHIFT_CI"):
-        pr_number = os.environ.get("PULL_NUMBER")
-        if not pr_number:
-            logging.warning("apply_prefer_pr: OPENSHIFT_CI: base_image.repo.ref_prefer_pr is set but PULL_NUMBER is empty")
-            return
-
-    if os.environ.get("PERFLAB_CI"):
-        git_ref = os.environ.get("PERFLAB_GIT_REF")
-
-        try:
-            pr_number = int(re.compile("refs/pull/([0-9]+)/merge").match(git_ref).groups()[0])
-        except Exception as e:
-            logging.warning("apply_prefer_pr: PERFLAB_CI: base_image.repo.ref_prefer_pr is set cannot parse PERFLAB_GIT_REF={git_erf}: {e.__class__.__name__}: {e}")
-            return
-
-    if not pr_number:
-        logging.warning("apply_prefer_pr: Could not figure out the PR number. Keeping the default value.")
-        return
-
-    pr_ref = f"refs/pull/{pr_number}/merge"
-
-    logging.info(f"Setting '{pr_ref}' as ref for building the base image")
-    config.ci_artifacts.set_config("base_image.repo.ref", pr_ref)
-    config.ci_artifacts.set_config("base_image.repo.tag", f"pr-{pr_number}")
 
 @entrypoint()
 def prepare_pipelines_namespace():
@@ -210,77 +181,11 @@ def prepare_test_driver_namespace():
     Prepares the cluster for running the multi-user ci-artifacts operations
     """
 
-    namespace = config.ci_artifacts.get_config("base_image.namespace")
-    service_account = config.ci_artifacts.get_config("base_image.user.service_account")
-    role = config.ci_artifacts.get_config("base_image.user.role")
+    user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+    with run.Parallel("prepare_driver") as parallel:
 
-    #
-    # Prepare the driver namespace
-    #
-
-    if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
-        run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
-    else:
-        logging.warning(f"Project {namespace} already exists.")
-        (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
-
-    dedicated = "{}" if config.ci_artifacts.get_config("clusters.driver.compute.dedicated") \
-        else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
-
-    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="driver", suffix="test_node_selector", extra=dedicated)
-    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="driver", suffix="test_toleration", extra=dedicated)
-
-    #
-    # Prepare the driver machineset
-    #
-
-    if not config.ci_artifacts.get_config("clusters.driver.is_metal"):
-        nodes_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
-        extra = dict()
-        if nodes_count is None:
-            node_count = compute_node_requirement(driver=True)
-            extra["scale"] = node_count
-
-        run.run_toolbox_from_config("cluster", "set_scale", prefix="driver", extra=extra)
-
-    #
-    # Prepare the container image
-    #
-
-    istag = config.get_command_arg("cluster", "build_push_image --prefix base_image", "_istag")
-
-    if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
-        logging.info(f"Image {istag} already exists in namespace {namespace}. Don't build it.")
-    else:
-        run.run_toolbox_from_config("cluster", "build_push_image", prefix="base_image")
-
-    #
-    # Deploy Redis server for Pod startup synchronization
-    #
-
-    run.run_toolbox_from_config("cluster", "deploy_redis_server")
-
-    #
-    # Deploy Minio
-    #
-
-    run.run_toolbox_from_config(f"cluster", "deploy_minio_s3_server")
-
-    #
-    # Prepare the ServiceAccount
-    #
-
-    run.run(f"oc create serviceaccount {service_account} -n {namespace} --dry-run=client -oyaml | oc apply -f-")
-    run.run(f"oc adm policy add-cluster-role-to-user {role} -z {service_account} -n {namespace}")
-
-    #
-    # Prepare the Secret
-    #
-
-    secret_name = config.ci_artifacts.get_config("secrets.dir.name")
-    secret_env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
-
-    run.run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")
+        parallel.delayed(prepare_user_pods.prepare_user_pods, user_count)
+        parallel.delayed(prepare_user_pods.cluster_scale_up, user_count)
 
 
 @entrypoint()
@@ -306,7 +211,7 @@ def prepare_cluster():
     """
     Prepares the cluster and the namespace for running pipelines scale tests
     """
-    apply_prefer_pr()
+    prepare_user_pods.apply_prefer_pr()
 
     with run.Parallel("prepare_cluster") as parallel:
         parallel.delayed(prepare_test_driver_namespace)
@@ -441,7 +346,7 @@ def test_ci():
     Runs the Pipelines scale test from the CI
     """
 
-    apply_prefer_pr()
+    prepare_user_pods.apply_prefer_pr()
 
     try:
         test_artifact_dir_p = [None]
