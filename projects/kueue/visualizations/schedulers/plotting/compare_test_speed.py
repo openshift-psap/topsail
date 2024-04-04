@@ -41,8 +41,6 @@ class CompareTestSpeed():
         text = []
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
-            schedule_object_kind = "AppWrapper" if entry.results.test_case_properties.mode == "mcad" else "Job"
-
             test_cfg_setting = entry.settings.__dict__[first_variable]
 
             test_duration = (entry.results.test_start_end_time.end - entry.results.test_start_end_time.start).total_seconds() / 60
@@ -60,10 +58,11 @@ class CompareTestSpeed():
                     what = what,
                 ))
                 data[-1][first_variable] = test_cfg_setting
-                text += [f"• {_what}: {speed:.2f} {schedule_object_kind}s/minute", html.Br()]
+                text += [f"• {_what}: {speed:.2f} {entry.results.target_kind_name}s/minute", html.Br()]
 
-            launch_speed = entry.results.test_case_properties.count / entry.results.test_case_properties.launch_duration
-            add_data("Launch speed", launch_speed)
+            if (mode := entry.results.test_case_properties.mode) == "mcad":
+                launch_speed = entry.results.test_case_properties.count / entry.results.test_case_properties.launch_duration
+                add_data("Launch speed", launch_speed)
 
             processing_speed = entry.results.test_case_properties.count / test_duration
             add_data("Processing speed", processing_speed)

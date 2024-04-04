@@ -43,6 +43,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR}/pods.json",
     f"{artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR}/jobs.json",
     f"{artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR}/appwrappers.json",
+    f"{artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR}/workloads.json",
 
     f"{artifact_dirnames.CODEFLARE_GENERATE_SCHEDULER_LOAD_DIR}/start_end_cm.yaml",
 
@@ -160,6 +161,63 @@ def _parse_pod_times(dirname):
     return pod_times
 
 
+def __parse_appwrapper_times(item, resource_times):
+    if "annotations" in item["metadata"] and "scheduleTime" in item["metadata"]["annotations"]:
+        resource_times.conditions["OC Created"] = datetime.datetime.strptime(
+            item["metadata"]["annotations"]["scheduleTime"],
+            core_helpers_store_parsers.K8S_TIME_FMT)
+
+    elif not missing_label_warning_printed:
+        missing_label_warning_printed = True
+        logging.warning(f"scheduleTime label missing in AppWrapper {name} ...")
+
+    resource_times.conditions["ETCD Created"] = resource_times.creation
+
+    resource_times.completion = None
+    if not item.get("status"): return
+
+    if "controllerfirsttimestamp" in item["status"]:
+        resource_times.conditions["Discovered"] = datetime.datetime.strptime(
+            item["status"]["controllerfirsttimestamp"],
+            core_helpers_store_parsers.K8S_TIME_MILLI_FMT)
+
+    for condition in item["status"].get("conditions", []):
+        if condition.get("reason") != "PodsCompleted": continue
+        if condition.get("status") != "True": continue
+        if condition.get("type") != "Completed": continue
+        resource_times.completion = \
+            datetime.datetime.strptime(
+                condition["lastUpdateMicroTime"],
+                core_helpers_store_parsers.K8S_TIME_MILLI_FMT)
+        break
+
+    for condition in item["status"]["conditions"]:
+        resource_times.conditions[condition["type"]] = \
+            datetime.datetime.strptime(
+                condition["lastUpdateMicroTime"],
+                core_helpers_store_parsers.K8S_TIME_MILLI_FMT)
+
+
+def __parse_job_times(item, resource_times):
+    resource_times.completion = \
+        datetime.datetime.strptime(
+            item["status"].get("completionTime"),
+            core_helpers_store_parsers.K8S_TIME_FMT) \
+            if item["status"].get("completionTime") else None
+
+
+def __parse_workload_times(item, resource_times):
+    resource_times.parent_job_name = item["metadata"]["ownerReferences"][0]["name"]
+
+    resource_times.conditions["ETCD Created"] = resource_times.creation
+
+    for condition in item["status"]["conditions"]:
+        resource_times.conditions[condition["reason"]] = \
+            datetime.datetime.strptime(
+                condition["lastTransitionTime"],
+                core_helpers_store_parsers.K8S_TIME_FMT)
+
+
 @ignore_file_not_found
 def _parse_resource_times(dirname, mode):
     all_resource_times = {}
@@ -184,67 +242,41 @@ def _parse_resource_times(dirname, mode):
                 metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
 
             name = metadata["name"]
-            generate_name, found, suffix = name.rpartition("-")
-            remove_suffix = ((found and not suffix.isalpha()))
+            if kind == "Pod":
+                generate_name, found, suffix = name.rpartition("-")
+                remove_suffix = ((found and not suffix.isalpha()))
 
-            if remove_suffix:
-                name = generate_name # remove generated suffix
+                if remove_suffix:
+                    name = generate_name # remove generated suffix
 
             all_resource_times[f"{kind}/{name}"] = resource_times = types.SimpleNamespace()
 
             resource_times.kind = kind
             resource_times.name = name
             resource_times.creation = creationTimestamp
+            resource_times.conditions = {}
+
             if kind == "AppWrapper":
-                resource_times.aw_conditions = {}
-
-                if "annotations" in item["metadata"] and "scheduleTime" in item["metadata"]["annotations"]:
-                    resource_times.aw_conditions["OC Created"] = datetime.datetime.strptime(
-                        item["metadata"]["annotations"]["scheduleTime"],
-                        core_helpers_store_parsers.K8S_TIME_FMT)
-
-                elif not missing_label_warning_printed:
-                    missing_label_warning_printed = True
-                    logging.warning(f"scheduleTime label missing in AppWrapper {name} ...")
-
-                resource_times.aw_conditions["ETCD Created"] = resource_times.creation
-
-                resource_times.completion = None
-                if not item.get("status"): continue
-
-                if "controllerfirsttimestamp" in item["status"]:
-                    resource_times.aw_conditions["Discovered"] = datetime.datetime.strptime(
-                        item["status"]["controllerfirsttimestamp"],
-                        core_helpers_store_parsers.K8S_TIME_MILLI_FMT)
-
-                for condition in item["status"].get("conditions", []):
-                    if condition.get("reason") != "PodsCompleted": continue
-                    if condition.get("status") != "True": continue
-                    if condition.get("type") != "Completed": continue
-                    resource_times.completion = \
-                        datetime.datetime.strptime(
-                            condition["lastUpdateMicroTime"],
-                            core_helpers_store_parsers.K8S_TIME_MILLI_FMT)
-                    break
-
-                for condition in item["status"]["conditions"]:
-                    resource_times.aw_conditions[condition["type"]] = \
-                        datetime.datetime.strptime(
-                            condition["lastUpdateMicroTime"],
-                            core_helpers_store_parsers.K8S_TIME_MILLI_FMT)
+                __parse_appwrapper_times(item, resource_times)
 
             elif kind == "Job":
-                resource_times.completion = \
-                    datetime.datetime.strptime(
-                        item["status"].get("completionTime"),
-                        core_helpers_store_parsers.K8S_TIME_FMT) \
-                        if item["status"].get("completionTime") else None
+                __parse_job_times(item, resource_times)
+            elif kind == "Workload":
+                __parse_workload_times(item, resource_times)
             else:
                 logging.Warning(f"Completion time parsing not supported for resource type {kind}.")
 
+    parse("jobs.json")
+
     if mode == "mcad":
         parse("appwrappers.json")
-    parse("jobs.json")
+    if mode == "kueue":
+        parse("workloads.json")
+        for resource_time in all_resource_times.values():
+            continue
+            if resource_time.kind != "Workload": continue
+            parent_job_time = all_resource_times[f"Job/{resource_time.parent_job_name}"]
+            resource_time.conditions["Job Created"] = parent_job_time.creation
 
     return dict(all_resource_times)
 

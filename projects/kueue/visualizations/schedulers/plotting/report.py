@@ -11,7 +11,9 @@ def register():
     ControlPlaneReport()
     WorkerNodesReport()
     ResourceAllocationReport()
+    ResourceCreationReport()
     TimeInStateDistributionReport()
+
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -230,18 +232,20 @@ class ResourceAllocationReport():
 
         header += [html.H1("Resources Timelines")]
 
-        header += Plot_and_Text(f"AppWrappers Timeline", args)
+        header += Plot_and_Text(f"Resources Timeline", args)
 
-        header += Plot_and_Text(f"AppWrappers in State Timeline", args)
+        header += Plot_and_Text(f"Resources in State Timeline", args)
 
         header += Plot_and_Text(f"Resource Mapping Timeline", args)
+
+        header += Plot_and_Text("Pod Completion Progress", args)
 
         return None, header
 
 
 class TimeInStateDistributionReport():
     def __init__(self):
-        self.name = "report: Time in AppWrapper State Distribution"
+        self.name = "report: Time in State Distribution"
         self.id_name = self.name.lower().replace(" ", "_")
         self.no_graph = True
         self.is_report = True
@@ -251,7 +255,7 @@ class TimeInStateDistributionReport():
     def do_plot(self, *args):
 
         header = []
-        header += [html.P("These plots show the distribution of time spent in the different AppWrappers states.")]
+        header += [html.P("These plots show the distribution of time spent in the different AppWrappers/Kueue states.")]
 
         header += [html.H2("Overview of the Execution time distribution")]
         header += Plot_and_Text("Execution time distribution", args)
@@ -272,13 +276,35 @@ class TimeInStateDistributionReport():
 
         state_names = [] # set() do not preserve the order
         for resource_name, resource_times in entry.results.resource_times.items():
-            if resource_times.kind != "AppWrapper": continue
-            for condition_name, condition_ts in resource_times.aw_conditions.items():
+            if resource_times.kind not in ("AppWrapper", "Workload"): continue
+            for condition_name, condition_ts in resource_times.conditions.items():
                 if condition_name not in state_names:
                     state_names.append(condition_name)
 
         for state_name in state_names:
             header += Plot_and_Text("Execution time distribution",
                             set_config(dict(state=state_name), args))
+
+        return None, header
+
+class ResourceCreationReport():
+    def __init__(self):
+        self.name = "report: Resource Creation"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+
+        header += [html.H2("Resource Creation timeline")]
+        header += [Plot(f"Resource Creation Timeline", args)]
+        header += ["This plot shows the timeline of the resources creation."]
+
+        header += [html.H2("Resource Creation Delay")]
+        header += [Plot(f"Resource Creation Delay", args)]
+        header += ["This plot shows the delay of the resources creation: the line 'A -> B' in the legend show the delay between the creation of resource A and the creation of the resource B. Lower is better."]
 
         return None, header

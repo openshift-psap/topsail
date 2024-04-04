@@ -15,8 +15,8 @@ import matrix_benchmarking.common as common
 
 def register():
     ResourceMappingTimeline()
-    AppWrappersTimeline()
-    AppWrappersInStateTimeline()
+    ResourcesTimeline()
+    ResourcesInStateTimeline()
 
 def ResourceMappingTimeline_generate_data(entry):
     data = []
@@ -136,14 +136,14 @@ class ResourceMappingTimeline():
 
         return fig, ""
 
-def generateAppWrappersTimeline(entry):
+def generateResourcesTimeline(entry):
     data = []
     for resource_name, resource_times in entry.results.resource_times.items():
-        if resource_times.kind != "AppWrapper": continue
+        if resource_times.kind not in ("AppWrapper", "Workload"): continue
 
         current_name = None
         current_start = None
-        for condition_name, condition_ts in resource_times.aw_conditions.items():
+        for condition_name, condition_ts in resource_times.conditions.items():
             if current_name:
                 data.append(dict(
                     Name=resource_times.name,
@@ -165,9 +165,9 @@ def generateAppWrappersTimeline(entry):
             ))
     return data
 
-class AppWrappersTimeline():
+class ResourcesTimeline():
     def __init__(self):
-        self.name = "AppWrappers Timeline"
+        self.name = "Resources Timeline"
         self.id_name = self.name
 
         table_stats.TableStats._register_stat(self)
@@ -184,7 +184,7 @@ class AppWrappersTimeline():
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass
 
-        df = pd.DataFrame(generateAppWrappersTimeline(entry))
+        df = pd.DataFrame(generateResourcesTimeline(entry))
         if df.empty:
             return None, "Not data available ..."
 
@@ -203,16 +203,16 @@ class AppWrappersTimeline():
         fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
         fig.update_layout(barmode='stack')
         count = entry.results.test_case_properties.count
-        fig.update_layout(title=f"Timeline of the {count} AppWrappers <br>progressing over the different States", title_x=0.5,)
+        fig.update_layout(title=f"Timeline of the {count} {entry.results.target_kind_name}s <br>progressing over the different States", title_x=0.5,)
         fig.update_layout(yaxis_title="")
         fig.update_layout(xaxis_title="Timeline (by date)")
 
         return fig, ""
 
 
-class AppWrappersInStateTimeline():
+class ResourcesInStateTimeline():
     def __init__(self):
-        self.name = "AppWrappers in State Timeline"
+        self.name = "Resources in State Timeline"
         self.id_name = self.name
 
         table_stats.TableStats._register_stat(self)
@@ -226,7 +226,7 @@ class AppWrappersInStateTimeline():
             return {}, "ERROR: only one experiment must be selected"
 
         for entry in common.Matrix.all_records(settings, setting_lists):
-            src_data = generateAppWrappersTimeline(entry)
+            src_data = generateResourcesTimeline(entry)
 
         if not src_data:
             return None, "Not data available ..."
@@ -236,12 +236,18 @@ class AppWrappersInStateTimeline():
         def mytruncate(x, base=5):
             return base * int(x/base)
 
+        src_df = pd.DataFrame(src_data).sort_values(by=["Start"])
+
         YOTA = datetime.timedelta(microseconds=1)
         TIME_DELTA = 1 # seconds
-        for src_entry in src_data:
+        for src_row in src_df.values:
+            src_entry = dict(zip(src_df.keys(), src_row))
             current = copy.deepcopy(src_entry["Start"])
             current = current.replace(second=mytruncate(current.second, TIME_DELTA)).replace(microsecond=0)
             current += datetime.timedelta(seconds=TIME_DELTA) # avoid counting the state twice
+
+            if current >= src_entry["Finish"]:
+                current = src_entry["Finish"] - datetime.timedelta(seconds=TIME_DELTA)
 
             while current < src_entry["Finish"]:
                 histogram_data.append(dict(
@@ -258,7 +264,6 @@ class AppWrappersInStateTimeline():
                 current += datetime.timedelta(seconds=TIME_DELTA)
 
         df = pd.DataFrame(histogram_data).groupby(["State", "Time"]).count().reset_index()
-
         df = df.sort_values(by=["Time"]) # "ensures" that the states are ordered by appearance time
 
         fig = px.area(df,
@@ -272,8 +277,8 @@ class AppWrappersInStateTimeline():
                 # TypeError: Object of type timedelta is not JSON serializable
                 fig_data.x = [v.total_seconds() * 1000 for v in fig_data.x]
 
-        fig.update_layout(title=f"Count of the number of AppWrappers <br>in the different States", title_x=0.5,)
-        fig.update_layout(yaxis_title="AppWrappers count")
+        fig.update_layout(title=f"Count of the number of {entry.results.target_kind_name} <br>in the different States", title_x=0.5,)
+        fig.update_layout(yaxis_title=f"{entry.results.target_kind_name} count")
         fig.update_layout(xaxis_title=f"Timeline (by date, by step of {TIME_DELTA}s)")
 
         return fig, ""

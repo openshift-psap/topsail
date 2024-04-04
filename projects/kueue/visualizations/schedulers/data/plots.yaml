@@ -3,7 +3,7 @@ visualize:
   generate:
   - "report: Error report"
   - "report: Resource Allocation Timelines"
-  - "report: Time in AppWrapper State Distribution"
+  - "report: Time in State Distribution"
   - "report: Sutest Cluster CPU/Memory Usage"
   - "report: Control Plane Nodes Load"
   - "report: Worker Nodes Load"
