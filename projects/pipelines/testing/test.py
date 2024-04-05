@@ -226,7 +226,8 @@ def pipelines_run_one():
 
     try:
         prepare_pipelines_namespace()
-        run.run_toolbox_from_config("pipelines", "run_kfp_notebook")
+        if config.ci_artifacts.get_config("tests.pipelines.deploy_pipeline"):
+            run.run_toolbox_from_config("pipelines", "run_kfp_notebook")
     finally:
         run.run_toolbox_from_config("pipelines", "capture_state", mute_stdout=True)
 

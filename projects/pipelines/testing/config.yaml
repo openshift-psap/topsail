@@ -159,6 +159,7 @@ base_image:
     bucket_name: pipelines-scale-test-bucket
 tests:
   pipelines:
+    deploy_pipeline: true
     notebook_filename: kfp_hello_world.ipynb
     notebook_directory: projects/pipelines/testing/notebooks/hello-world
     user_count: 2
