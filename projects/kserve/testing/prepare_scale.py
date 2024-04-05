@@ -48,7 +48,7 @@ def prepare():
         namespace = config.ci_artifacts.get_config("base_image.namespace")
 
         parallel.delayed(prepare_user_pods.prepare_user_pods, user_count)
-        parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
+        parallel.delayed(prepare_user_pods.cluster_scale_up, user_count)
 
     # must be after prepare_kserve.prepare and before prepare_kserve.preload_image
     # must not be in a parallel group, because it updates the config file
@@ -112,7 +112,7 @@ def cluster_scale_up():
     user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
 
     with run.Parallel("cluster_scale_up") as parallel:
-        parallel.delayed(prepare_user_pods.cluster_scale_up, namespace, user_count)
+        parallel.delayed(prepare_user_pods.cluster_scale_up, user_count)
         parallel.delayed(scale_up_sutest)
 
 
