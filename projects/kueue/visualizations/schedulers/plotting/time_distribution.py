@@ -16,11 +16,10 @@ def register():
 def generateAppWrappersTimeInState(entry):
     data = []
     for resource_name, resource_times in entry.results.resource_times.items():
-        if resource_times.kind != "AppWrapper": continue
 
         current_name = None
         current_start = None
-        for condition_name, condition_ts in resource_times.aw_conditions.items():
+        for condition_name, condition_ts in resource_times.conditions.items():
             if current_name:
                 data.append(dict(
                     Name=resource_times.name,
