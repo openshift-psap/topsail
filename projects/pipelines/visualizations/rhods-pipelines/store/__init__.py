@@ -74,12 +74,6 @@ def simpleNamespacetoModel(obj, model):
 
     return model.parse_obj(_parse_entry(obj))
 
-
-
-def parsedObjectToModel(result):
-    return simpleNamespacetoModel(result, models.ParsedResultsModel)
-
-
 def load_cache(dirname):
     try:
         with open(dirname / CACHE_FILENAME, "rb") as f:
@@ -110,8 +104,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     if results:
         parsers._parse_always(results, dirname, import_settings)
 
-        modeled_results = parsedObjectToModel(results)
-        fn_add_to_matrix(modeled_results)
+        fn_add_to_matrix(results)
 
         return
 
@@ -129,8 +122,7 @@ def _parse_directory(fn_add_to_matrix, dirname, import_settings):
     parsers._parse_always(results, dirname, import_settings)
     parsers._parse_once(results, dirname)
 
-    modeled_results = parsedObjectToModel(results)
-    fn_add_to_matrix(modeled_results)
+    fn_add_to_matrix(results)
 
     with open(dirname / CACHE_FILENAME, "wb") as f:
         get_config = results.test_config.get

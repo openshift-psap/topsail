@@ -5,6 +5,6 @@ visualize:
   - "report: Performance report"
   - "report: User Execution Overview"
   - "report: Pod-Node Mapping"
-  - "report: RHODS Cluster CPU/Memory Usage"
+  - "report: Sutest Cluster CPU/Memory Usage"
   - "report: Driver Cluster CPU/Memory Usage"
   - "report: Control Plane Nodes Load"

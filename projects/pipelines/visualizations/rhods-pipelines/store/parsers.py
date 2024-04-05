@@ -15,6 +15,8 @@ import matrix_benchmarking.store.prom_db as store_prom_db
 
 from . import prom as rhods_pipelines_prom
 
+import projects.core.visualizations.helpers.store as core_helpers_store
+import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -82,6 +84,10 @@ def _parse_once(results, dirname):
     results.tester_job = _parse_tester_job(dirname)
     results.metrics = _extract_metrics(dirname)
     results.test_uuid = _parse_test_uuid(dirname)
+
+    capture_state_dir = pathlib.Path("000__local_ci__run_multi")
+    results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
+    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
 
 def _parse_local_env(dirname):
@@ -346,23 +352,11 @@ def _parse_tester_job(dirname):
     return job_info
 
 def _extract_metrics(dirname):
-    METRICS = {
+    db_files = {
         "sutest": ("000__local_ci__run_multi/prometheus_ocp.t*", rhods_pipelines_prom.get_sutest_metrics()),
-        "driver": ("000__local_ci__run_multi/prometheus_ocp.t*", rhods_pipelines_prom.get_driver_metrics()),
     }
 
-    metrics = {}
-    for name, (tarball_glob, metric) in METRICS.items():
-        try:
-            prom_tarball = list(dirname.glob(tarball_glob))[0]
-        except IndexError:
-            logging.warning(f"No {tarball_glob} in '{dirname}'.")
-            continue
-
-        register_important_file(dirname, prom_tarball.relative_to(dirname))
-        metrics[name] = store_prom_db.extract_metrics(prom_tarball, metric, dirname)
-
-    return metrics
+    return core_helpers_store_parsers.extract_metrics(dirname, db_files)
 
 @ignore_file_not_found
 def _parse_artifacts_version(dirname):
@@ -382,6 +376,8 @@ def _parse_pod_times(dirname, ci_pod_dir):
     def _parse_pod_times_file(filename, pod):
         pod_time = types.SimpleNamespace()
         pod_times.append(pod_time)
+        pod_time.is_pipeline_task = False
+        pod_time.is_dspa = False
 
         if pod["metadata"]["labels"].get("component") == "data-science-pipelines":
             pod_friendly_name = pod["metadata"]["labels"]["app"]
@@ -437,6 +433,9 @@ def _parse_pod_times(dirname, ci_pod_dir):
                 or pod_time.container_finished < finishedAt):
                 pod_time.container_finished = finishedAt
 
+        if "container_finished" not in pod_time.__dict__:
+            pod_time.container_finished = False
+
     for filename in filenames:
         with open(register_important_file(dirname, filename)) as f:
             try:
@@ -483,9 +482,9 @@ def _parse_resource_times(dirname, ci_pod_dir):
 
             all_resource_times[f"{kind}/{name}"] = creationTimestamp
 
-    parse("applications.json")
-    parse("deployments.json")
-    parse("workflow.json")
+    #parse("applications.json")
+    #parse("deployments.json")
+    #parse("workflow.json")
 
     return dict(all_resource_times)
 
