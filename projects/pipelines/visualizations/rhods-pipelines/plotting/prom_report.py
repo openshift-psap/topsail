@@ -2,9 +2,11 @@ from dash import html
 
 from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
+import matrix_benchmarking.common as common
+from ..store import prom
 
 def register():
-    RhodsCpuMemoryReport()
+    SutestCpuMemoryReport()
     DriverCpuMemoryReport()
     AuthenticationReport()
 
@@ -34,9 +36,9 @@ def add_pod_cpu_mem_usage(header, what, args, mem_only=False, cpu_only=False):
     header += html.Br()
 
 
-class RhodsCpuMemoryReport():
+class SutestCpuMemoryReport():
     def __init__(self):
-        self.name = "report: RHODS Cluster CPU/Memory Usage"
+        self.name = "report: Sutest Cluster CPU/Memory Usage"
         self.id_name = self.name.lower().replace("/", "-")
         self.no_graph = True
         self.is_report = True
@@ -44,19 +46,28 @@ class RhodsCpuMemoryReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
         header = []
+
         header += [html.P("These plots show an overview of the CPU and Memory usage during the execution of the test, for the cluster, the nodes, and various relevant Pods.")]
 
-        header += [html.H2("RHODS Cluster")]
-        header += [report.Plot("Prom: sutest cluster memory usage", args)]
-        header += [report.Plot("Prom: sutest cluster CPU usage", args)]
-
-        header += ["These plots show the CPU and memory capacity of the RHODS cluster."]
+        header += ["These plots show the CPU and memory capacity of the SUTest cluster."]
         header += html.Br()
         header += html.Br()
 
-        for what in "RHODS Dashboard", "RHODS Dashboard oauth-proxy", "KF Notebook Controller", "ODH Notebook Controller":
-            add_pod_cpu_mem_usage(header, what, args)
+        args_as_timeline = report.set_config(dict(as_timeline=True), args)
+        for metric_spec in prom.SUTEST_CONTAINER_LABELS:
+            plot_name = list(metric_spec.keys())[0]
+
+            header += [html.H2(plot_name)]
+            header += report.Plot_and_Text(f"Prom: {plot_name}: CPU usage", args_as_timeline)
+            header += report.Plot_and_Text(f"Prom: {plot_name}: Mem usage", args_as_timeline)
+
+
+        header += [html.H2("SUTest Cluster")]
+        header += report.Plot_and_Text("Prom: sutest cluster memory usage", args_as_timeline)
+        header += report.Plot_and_Text("Prom: sutest cluster CPU usage", args_as_timeline)
 
         return None, header
 

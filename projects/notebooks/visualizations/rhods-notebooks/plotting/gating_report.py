@@ -67,11 +67,4 @@ class GatingReportHealthCheck():
         header += ["This plot shows the idle time of the control plane nodes. Higher is better."]
         header += html.Br()
 
-        # Dashboard health
-        header += [html.H2("Dashboard health")]
-        header += report.Plot_and_Text("Prom: RHODS Dashboard: CPU usage",
-                                       report.set_config(dict(check_all_thresholds=True), args))
-        header += ["This plot shows the CPU usage of the Dashboard pods. Lower is better."]
-        header += html.Br()
-
         return None, header

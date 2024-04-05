@@ -29,7 +29,9 @@ class CallbackModule(default_CallbackModule):
         if ignore_errors not in (None, False):
             self._display.display(f"==> FAILED | ignore_errors={ignore_errors}", color=color)
 
-        try: self._display.display(f"msg: {result._result['msg']}", color=color)
+        try:
+            if result._result['msg'].strip():
+                self._display.display(f"msg: {result._result['msg']}", color=color)
         except KeyError: pass
 
         try:

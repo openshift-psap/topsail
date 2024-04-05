@@ -22,14 +22,6 @@
     state: directory
     mode: '0755'
 
-- name: Deploy the Minio server
-  include_role:
-    name: cluster_deploy_minio_s3_server
-  vars:
-    cluster_deploy_minio_s3_server_namespace: "{{ pipelines_deploy_application_namespace }}"
-    cluster_deploy_minio_s3_server_secret_properties_file: "{{ pipelines_deploy_application_secret_properties_file }}"
-    cluster_deploy_minio_s3_server_bucket_name: "{{ pipelines_deploy_application_name }}"
-
 - name: Prepare the template file
   template:
     src: "{{ pipelines_deploy_application_app_template }}"
@@ -48,8 +40,9 @@
          --ignore-not-found
          -lcomponent=data-science-pipelines
          -n {{ pipelines_deploy_application_namespace }}
+         --no-headers
     register: deployments
-    until: deployments.stdout | length > 0
+    until: deployments.stdout | length >= 9
     retries: 30
     delay: 10
 

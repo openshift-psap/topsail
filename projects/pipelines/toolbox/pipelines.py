@@ -9,14 +9,13 @@ class Pipelines:
 
     @AnsibleRole("pipelines_deploy_application")
     @AnsibleMappedParams
-    def deploy_application(self, name, namespace, secret_properties_file):
+    def deploy_application(self, name, namespace):
         """
         Deploy a Data Science Pipeline Application in a given namespace.
 
         Args:
           name: the name of the application to deploy
           namespace: the namespace in which the application should be deployed
-          secret_properties_file: Path of a file containing the properties of LDAP secrets. (See 'cluster deploy_ldap' command)
         """
 
         return RunAnsibleRole(locals())
