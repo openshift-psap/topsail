@@ -22,7 +22,6 @@ rhods deploy_ods:
 pipelines deploy_application:
   namespace: {{ rhods.pipelines.namespace }}
   name: {{ rhods.pipelines.application.name }}
-  secret_properties_file: {{ s3_ldap_password_location }}
 
 sutest/cluster set_scale:
   instance_type: {{ clusters.sutest.compute.machineset.type }}
