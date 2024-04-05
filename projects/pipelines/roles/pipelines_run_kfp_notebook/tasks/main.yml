@@ -118,12 +118,16 @@
     dspa_application_name: "{% if pipelines_run_kfp_notebook_dsp_application_name %}{{ pipelines_run_kfp_notebook_dsp_application_name }}{% else %}{{ dspa_name_cmd.stdout }}{% endif %}"
 
 - name: Compute the DSP address
-  shell: echo "https://$(oc get routes -n {{ notebook_namespace }} ds-pipeline-{{ dspa_application_name }} --template=\{\{.spec.host\}\})"
+  command:
+    oc get routes -n {{ notebook_namespace }} ds-pipeline-{{ dspa_application_name }} --template=\{\{.spec.host\}\}
+  retries: 30
+  delay: 10
+  until: dsp_route_cmd.rc == 0
   register: dsp_route_cmd
 
 - name: Save the DSP route
   set_fact:
-    dsp_route: "{{ dsp_route_cmd.stdout }}"
+    dsp_route: "https://{{ dsp_route_cmd.stdout }}"
 
 - name: Instantiate the notebook template
   template:
