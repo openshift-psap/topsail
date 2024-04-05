@@ -6,6 +6,11 @@ import ansible.executor
 
 # extends this class: https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/callback/default.py
 
+# mute this log message:
+# "Friday 05 April 2024  15:01:14 +0200 (0:00:04.215)       0:00:04.504 **********"
+import ansible_collections.ansible.posix.plugins.callback.profile_roles as profile_roles_mod
+profile_roles_mod.tasktime = lambda: ""
+
 INTERESTING_MODULE_PROPS = {
     "stat": ["path", "exists", "mode"],
     "invocation": None,
