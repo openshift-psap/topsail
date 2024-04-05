@@ -40,8 +40,9 @@
          --ignore-not-found
          -lcomponent=data-science-pipelines
          -n {{ pipelines_deploy_application_namespace }}
+         --no-headers
     register: deployments
-    until: deployments.stdout | length > 0
+    until: deployments.stdout | length >= 9
     retries: 30
     delay: 10
 
