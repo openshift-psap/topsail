@@ -36,7 +36,7 @@ IMPORTANT_FILES = [
 
     "000__local_ci__run_multi/artifacts/ci-pod-*/applications.json",
     "000__local_ci__run_multi/artifacts/ci-pod-*/deployments.json",
-    "000__local_ci__run_multi/artifacts/ci-pod-*/pipelines.json",
+    "000__local_ci__run_multi/artifacts/ci-pod-*/workflow.json",
 
     "001__notebooks__capture_state/nodes.json",
     "001__notebooks__capture_state/ocp_version.yml",
@@ -387,8 +387,8 @@ def _parse_pod_times(dirname, ci_pod_dir):
             pod_friendly_name = pod["metadata"]["labels"]["app"]
             pod_time.is_dspa = True
 
-        elif pod["metadata"]["labels"].get("app.kubernetes.io/managed-by") == "tekton-pipelines":
-            pod_friendly_name = pod["metadata"]["labels"]["tekton.dev/pipelineTask"]
+        elif pod["metadata"]["labels"].get("pipelines.kubeflow.org/pipeline-sdk-type") == "kfp":
+            pod_friendly_name = pod["metadata"]["labels"]["workflows.argoproj.io/workflow"]
             pod_time.is_pipeline_task = True
 
         elif pod["metadata"].get("generateName"):
@@ -400,6 +400,7 @@ def _parse_pod_times(dirname, ci_pod_dir):
                 pod_time.is_dspa = True
         else:
             pod_name = pod["metadata"]["name"]
+            pod_friendly_name = pod_name
 
         pod_time.pod_name = pod["metadata"]["name"]
         pod_time.pod_friendly_name = pod_friendly_name
@@ -461,7 +462,7 @@ def _parse_resource_times(dirname, ci_pod_dir):
     @ignore_file_not_found
     def parse(fname):
         print(f"Parsing {fname} ...")
-        file_path = (ci_pod_dir / "004__pipelines__capture_state" / fname).resolve().relative_to(dirname)
+        file_path = (ci_pod_dir / "004__pipelines__capture_state" / fname).absolute().resolve().relative_to(dirname.absolute())
 
         with open(register_important_file(dirname, file_path)) as f:
             data = yaml.safe_load(f)
@@ -484,7 +485,7 @@ def _parse_resource_times(dirname, ci_pod_dir):
 
     parse("applications.json")
     parse("deployments.json")
-    parse("pipelines.json")
+    parse("workflow.json")
 
     return dict(all_resource_times)
 
