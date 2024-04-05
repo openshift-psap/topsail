@@ -86,8 +86,6 @@ clusters:
       workers:
         type: m6a.2xlarge
         count: 2
-      compute:
-        type: m6i.2xlarge
 
   sutest:
     is_metal: false
@@ -97,6 +95,7 @@ clusters:
       dedicated: true
       machineset:
         name: rhods-pipelines
+        type: m6i.2xlarge
         count: null
         taint:
           key: only-rhods-pipelines
@@ -108,6 +107,7 @@ clusters:
       dedicated: true
       machineset:
         name: test-pods
+        type: m6i.2xlarge
         count: null
         taint:
           key: only-test-pods
