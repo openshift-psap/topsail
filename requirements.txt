@@ -1,7 +1,7 @@
 yq
 pyyaml
 fire
-ansible==2.9.*
+ansible
 jinja2==3.0.*
 flake8
 pylint
