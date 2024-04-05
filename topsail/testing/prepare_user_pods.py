@@ -55,7 +55,7 @@ def prepare_base_image_container(namespace):
     else:
         run.run_toolbox_from_config("cluster", "build_push_image", prefix="base_image")
 
-    if not config.ci_artifacts.get_config("base_image.extend.enabled"):
+    if not config.ci_artifacts.get_config("base_image.extend.enabled", False):
         logging.info("Base image extention not enabled.")
         return
 
@@ -67,7 +67,7 @@ def delete_istags(namespace):
 
     run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
 
-    if config.ci_artifacts.get_config("base_image.extend.enabled"):
+    if config.ci_artifacts.get_config("base_image.extend.enabled", False):
         istag = config.get_command_arg("cluster", "build_push_image", "_istag", prefix="extended_image")
         run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
 
