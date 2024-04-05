@@ -339,6 +339,7 @@ def test_ci():
     Runs the Pipelines scale test from the CI
     """
 
+    cleanup_scale_test()
     prepare_user_pods.apply_prefer_pr()
 
     try:
