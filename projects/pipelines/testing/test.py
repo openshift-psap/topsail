@@ -82,16 +82,9 @@ def install_ocp_pipelines():
 
 
 def uninstall_ocp_pipelines():
-    run.run(f"oc delete tektonconfigs.operator.tekton.dev --all")
     PIPELINES_OPERATOR_NAMESPACE = "openshift-operators"
     run.run(f"oc delete sub/{PIPELINES_OPERATOR_MANIFEST_NAME} -n {PIPELINES_OPERATOR_NAMESPACE} --ignore-not-found")
     run.run(f"oc delete csv -n {PIPELINES_OPERATOR_NAMESPACE} -loperators.coreos.com/{PIPELINES_OPERATOR_MANIFEST_NAME}.{PIPELINES_OPERATOR_NAMESPACE}")
-
-
-    webhooks_cmd = run.run("oc get validatingwebhookconfigurations,mutatingwebhookconfigurations -oname | grep tekton.dev", capture_stdout=True, check=False)
-    for webhook in webhooks_cmd.stdout.split("\n"):
-        if not webhook: continue # empty lines
-        run.run(f"oc delete {webhook}")
 
 
 def create_dsp_application():
