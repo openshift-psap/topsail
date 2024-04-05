@@ -126,12 +126,9 @@ class CallbackModule(default_CallbackModule):
 
     def _print_task_banner(self, task, head=False):
         if head:
-            self._display.display("---")
-            self._display.display("")
-            self._display.display("")
-            self._display.display("---")
-            self._display.display(f"{task.get_path().replace(os.getcwd()+'/', '')}")
-            self._display.display(f"{task}")
+            pass
+
+            #self._display.display(f"{task}")
 
         else:
             self._display.display("")
@@ -160,4 +157,16 @@ class CallbackModule(default_CallbackModule):
 
         self._display.display("")
 
-    def v2_runner_on_start(self, host, task): pass
+    def v2_runner_on_start(self, host, task):
+        pass
+
+    def v2_playbook_on_task_start(self, task, is_conditional):
+        self._display.display("")
+        self._display.display("~"*79)
+        self._display.display(f"~~ {task.get_path().replace(os.getcwd()+'/', '')}")
+        self._display.display(f"~~ {task}")
+
+        self._display.display("~"*79)
+
+        # followed by:
+        "Friday 05 April 2024  15:01:14 +0200 (0:00:04.215)       0:00:04.504 **********"
