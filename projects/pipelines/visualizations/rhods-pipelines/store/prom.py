@@ -16,7 +16,23 @@ def get_sutest_metrics(register=False):
 
     return all_metrics
 
+
+DRIVER_CONTAINER_LABELS = [
+    {"Test Pods": dict(namespace="pipelines-scale-test.*", container="main")},
+]
+
+
+def get_driver_metrics(register=False):
+    cluster_role = "driver"
+
+    all_metrics = []
+    all_metrics += core_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=DRIVER_CONTAINER_LABELS)
+
+    return all_metrics
+
+
 def register(only_initialize=False):
     register = not only_initialize
 
     get_sutest_metrics(register)
+    get_driver_metrics(register)

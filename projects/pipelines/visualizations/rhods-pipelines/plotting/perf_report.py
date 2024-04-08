@@ -72,6 +72,4 @@ class PerfReport():
         header += html.Br()
         header += ["This plot shows the idle time of the control plane nodes. Higher is better."]
 
-        prom_report.add_pod_cpu_mem_usage(header, "RHODS Dashboard", args, cpu_only=True)
-
         return None, header

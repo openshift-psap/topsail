@@ -43,19 +43,19 @@ def _get_test_setup(entry):
 
     setup_info += [html.Ul(test_config)]
 
-    managed = list(entry.results.rhods_cluster_info.control_plane)[0].managed \
-        if entry.results.rhods_cluster_info.control_plane else False
+    managed = list(entry.results.cluster_info.control_plane)[0].managed \
+        if entry.results.cluster_info.control_plane else False
 
-    sutest_ocp_version = entry.results.sutest_ocp_version
+    sutest_ocp_version = entry.results.ocp_version
 
     setup_info += [html.Li([html.B("RHODS "), html.B(html.Code(f"{entry.results.rhods_info.full_version}")), f" running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
 
     nodes_info = [
-        html.Li([f"Total of {len(entry.results.rhods_cluster_info.node_count)} nodes in the cluster"]),
+        html.Li([f"Total of {len(entry.results.cluster_info.node_count)} nodes in the cluster"]),
     ]
 
     for purpose in ["control_plane", "infra", "rhods_compute", "test_pods_only"]:
-        nodes = entry.results.rhods_cluster_info.__dict__.get(purpose)
+        nodes = entry.results.cluster_info.__dict__.get(purpose)
 
         purpose_str = f" {purpose} nodes"
         if purpose == "control_plane": purpose_str = f" nodes running OpenShift control plane"
