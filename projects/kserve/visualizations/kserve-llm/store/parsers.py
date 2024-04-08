@@ -11,12 +11,10 @@ import urllib.parse
 import uuid
 
 import matrix_benchmarking.cli_args as cli_args
-import matrix_benchmarking.store.prom_db as store_prom_db
 
 import projects.core.visualizations.helpers.store as core_helpers_store
 import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
 
-from . import prom as workload_prom
 from . import lts_parser
 
 register_important_file = None # will be when importing store/__init__.py
@@ -46,6 +44,7 @@ def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
 
     results.from_local_env = core_helpers_store_parsers.parse_local_env(dirname)
+
 
 def parse_once(results, dirname):
     results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
