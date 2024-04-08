@@ -463,10 +463,10 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 700131
+    tag: 703815
     channel: stable
     version: 2.8.1
-    version_name: rc1
+    version_name: rc2
   operator:
     # set to true to stop the RHODS operator
     stop: false
