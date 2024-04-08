@@ -683,7 +683,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
         svc_name = run.run(f"oc get svc -lserving.kserve.io/inferenceservice={model_name} -ojsonpath={{.items[0].metadata.name}} -n {namespace}", capture_stdout=True).stdout
         if not svc_name:
             raise RuntimeError(f"Failed to get the hostname for Service of InferenceService {namespace}/{model_name}")
-        port = 80
+        port = 8033
         host = f"{svc_name}.{namespace}.svc.cluster.local"
     else:
         host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
