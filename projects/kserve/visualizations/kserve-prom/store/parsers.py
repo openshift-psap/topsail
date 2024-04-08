@@ -52,7 +52,7 @@ def parse_once(results, dirname):
     results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
     results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
-    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir)
+    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
 
     results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
 

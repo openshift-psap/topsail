@@ -29,7 +29,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
 
     lts_settings.ocp_version = results.ocp_version
     version_name = results.test_config.get("rhods.catalog.version_name")
-    lts_settings.rhoai_version = f"{results.rhods_info.version}-{version_name}+{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
+    lts_settings.rhoai_version = results.rhods_info.full_version
 
     lts_settings.deployment_mode = "RawDeployment" if results.test_config.get("kserve.raw_deployment.enabled") else "Serverless"
 

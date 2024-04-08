@@ -25,7 +25,7 @@ def generate_lts_metadata(results, import_settings):
     metadata.settings = dict(import_settings)
 
     metadata.ocp_version = results.ocp_version
-    metadata.rhoai_version = f"{results.rhods_info.version}-{results.rhods_info.createdAt.strftime('%Y-%m-%d')}"
+    metadata.rhoai_version = results.rhods_info.full_version
 
     metadata.number_of_users = results.user_count
     metadata.number_of_inferenceservice_per_user = results.test_config.get("tests.scale.model.replicas")
