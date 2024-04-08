@@ -229,7 +229,7 @@ def extract_cluster_info(nodes_info):
 
 
 @ignore_file_not_found
-def parse_rhods_info(dirname, capture_state_dir):
+def parse_rhods_info(dirname, capture_state_dir, version_name=None):
     rhods_info = types.SimpleNamespace()
 
     with open(register_important_file(dirname, capture_state_dir / "rhods.version")) as f:
@@ -242,6 +242,12 @@ def parse_rhods_info(dirname, capture_state_dir):
     except ValueError as e:
         logging.error("Couldn't parse RHOAI version timestamp: {e}")
         rhods_info.createdAt = None
+
+    if version_name:
+        rhods_info.full_version = f"{rhods_info.version}-{version_name}+{rhods_info.createdAt.strftime('%Y-%m-%d')}"
+    else:
+        logging.info("parse_rhods_info: no version_name provided.")
+        rhods_info.full_version = None
 
     return rhods_info
 
