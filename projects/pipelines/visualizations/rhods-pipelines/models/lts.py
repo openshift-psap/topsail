@@ -11,7 +11,7 @@ class Metadata(matbench_models.Metadata):
     ocp_version: matbench_models.SemVer
     rhods_version: matbench_models.SemVer
     user_count: int
-    config: Any
+    config: str
 
 class SutestMetrics(matbench_models.ExclusiveModel):
     control_plane_node_cpu_idle: matbench_models.PrometheusValues = Field(..., alias="Sutest Control Plane Node CPU idle")
@@ -21,8 +21,8 @@ class SutestMetrics(matbench_models.ExclusiveModel):
 class Metrics(matbench_models.ExclusiveModel):
     sutest: SutestMetrics
 
-class Results(matbench_models.ExclusiveModel):
-    metrics: Metrics
+class Results(matbench_models.ExclusiveModel): pass
+
 
 class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata

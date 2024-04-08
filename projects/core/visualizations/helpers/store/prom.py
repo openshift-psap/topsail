@@ -295,18 +295,18 @@ def get_gpu_usage_metrics(cluster_role, register):
     all_metrics = []
 
     gpu_usage_metrics = [
-        {f"GPU memory used": 'DCGM_FI_DEV_FB_USED{exported_container="kserve-container"}'},
-        {f"GPU memory used (all GPUs)": 'sum(DCGM_FI_DEV_FB_USED{exported_container="kserve-container"})'},
-        {f"GPU active computes": 'DCGM_FI_PROF_SM_ACTIVE{exported_container="kserve-container"}'},
-        {f"GPU memory transfer utilization": 'DCGM_FI_DEV_MEM_COPY_UTIL{exported_container="kserve-container"}'},
-        {f"GPU memory unallocated": 'DCGM_FI_DEV_FB_FREE{exported_container="kserve-container"}'},
-        {f"GPU memory transfer (rx)": 'DCGM_FI_PROF_PCIE_RX_BYTES{exported_container="kserve-container"}'},
-        {f"GPU memory transfer (tx)": 'DCGM_FI_PROF_PCIE_TX_BYTES{exported_container="kserve-container"}'},
-        {f"GPU compute utilization (not 100% accurate)": 'DCGM_FI_DEV_GPU_UTIL{exported_container="kserve-container"}'},
-        {f"GPU engine usage (not 100% accurate)": 'DCGM_FI_PROF_GR_ENGINE_ACTIVE{exported_container="kserve-container"}'},
-        {f"GPU active fp16 pipe": 'DCGM_FI_PROF_PIPE_FP16_ACTIVE{exported_container="kserve-container"}'},
-        {f"GPU active fp32 pipe": 'DCGM_FI_PROF_PIPE_FP32_ACTIVE{exported_container="kserve-container"}'},
-        {f"GPU active fp64 pipe": 'DCGM_FI_PROF_PIPE_FP64_ACTIVE{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU memory used": 'DCGM_FI_DEV_FB_USED{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU memory used (all GPUs)": 'sum(DCGM_FI_DEV_FB_USED{exported_container="kserve-container"})'},
+        {f"{cluster_role.title()} GPU active computes": 'DCGM_FI_PROF_SM_ACTIVE{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU memory transfer utilization": 'DCGM_FI_DEV_MEM_COPY_UTIL{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU memory unallocated": 'DCGM_FI_DEV_FB_FREE{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU memory transfer (rx)": 'DCGM_FI_PROF_PCIE_RX_BYTES{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU memory transfer (tx)": 'DCGM_FI_PROF_PCIE_TX_BYTES{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU compute utilization (not 100% accurate)": 'DCGM_FI_DEV_GPU_UTIL{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU engine usage (not 100% accurate)": 'DCGM_FI_PROF_GR_ENGINE_ACTIVE{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU active fp16 pipe": 'DCGM_FI_PROF_PIPE_FP16_ACTIVE{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU active fp32 pipe": 'DCGM_FI_PROF_PIPE_FP32_ACTIVE{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU active fp64 pipe": 'DCGM_FI_PROF_PIPE_FP64_ACTIVE{exported_container="kserve-container"}'},
 
     ]
     all_metrics += gpu_usage_metrics

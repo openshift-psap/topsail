@@ -102,19 +102,15 @@ class PodNodeMappingReport():
         header += [html.P("""The Distribution plots are useful to visualize how the Pods were scheduled on the different Nodes.""")]
 
         header += [html.H2("Timeline")]
-        header += [Plot(f"Pod/Node timeline", set_config({"pipeline_task_only": True}, args))]
-        header += [html.P(f"This plot shows the timeline of the user pod mapping on the cluster's nodes, grouped by user, for the Pods generated during the Pipeline execution")]
 
-        header += [Plot(f"Pod/Node timeline", set_config({"dspa_only": True}, args))]
+        header += [Plot(f"Pod/Node timeline", set_config(dict(dspa_only=True), args))]
         header += [html.P(f"This plot shows the timeline of the user pod mapping on the cluster's nodes, grouped by user, for the Data Science Pipelines Application Pods")]
 
 
         header += [html.H2("Pod lifespan duration")]
 
-        header += [Plot(f"Pod lifespan duration", set_config({"pipeline_task_only": True}, args))]
-        header += [html.P(f"This plot show the distribution of the Pod lifespan duration,for the Pods generated during the Pipeline execution")]
 
-        header += [Plot(f"Pod lifespan duration", set_config({"dspa_only": True}, args))]
+        header += [Plot(f"Pod lifespan duration", set_config(dict(dspa_only=True), args))]
         header += [html.P(f"This plot show the distribution of the Pod lifespan duration,for the Data Science Pipelines Application Pods")]
 
         return None, header
@@ -156,12 +152,10 @@ class UserExecutionOverviewReport():
 
         header += [html.H2("Resource Creation timeline")]
         header += [Plot(f"Resource Creation Timeline", set_config(dict(dspa_only=True), args))]
-        header += [Plot(f"Resource Creation Timeline", set_config(dict(pipeline_task_only=True), args))]
         header += ["This plot shows the timeline of the resources creation."]
 
         header += [html.H2("Resource Creation Delay")]
         header += [Plot(f"Resource Creation Delay", set_config(dict(dspa_only=True), args))]
-        header += [Plot(f"Resource Creation Delay", set_config(dict(pipeline_task_only=True), args))]
         header += ["This plot shows the delay of the resources creation: the line 'A -> B' in the legend show the delay between the creation of resource A and the creation of the resource B. Lower is better."]
 
 
