@@ -119,7 +119,7 @@
       echo "All the Jobs have completed successfully. All done."
       exit 0 # done
     register: jobs_completed
-    retries: 60
+    retries: 180
     delay: 30
     # until fatal or done
     until: jobs_completed.rc == 1 or jobs_completed.rc == 0
@@ -136,34 +136,42 @@
   - name: Capture the state of the AppWrappers
     shell: |
       oc get appwrappers -ojson -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.json"
-      oc get appwrappers -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
+      if [[ {{ codeflare_generate_scheduler_load_count }} -lt 150 ]]; then
+        oc get appwrappers -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
+        oc describe appwrappers -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.desc"
+      fi
       oc get appwrappers -n {{ codeflare_generate_scheduler_load_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r >"{{ artifact_extra_logs_dir }}/appwrappers.status"
-      oc describe appwrappers -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.desc"
     ignore_errors: true
     when: codeflare_generate_scheduler_load_mode == "mcad"
 
   - name: Capture the state of the Jobs
     shell: |
       oc get jobs -ojson -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.json"
-      oc get jobs -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.yaml"
-      oc describe jobs -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.desc"
       oc get jobs -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.status"
+      if [[ {{ codeflare_generate_scheduler_load_count }} -lt 150 ]]; then
+        oc get jobs -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.yaml"
+        oc describe jobs -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.desc"
+      fi
     ignore_errors: true
 
   - name: Capture the state of the Pods
     shell: |
       oc get pods -ojson -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.json"
-      oc get pods -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"
-      oc describe pods -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
       oc get pods -owide -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.status"
+      if [[ {{ codeflare_generate_scheduler_load_count }} -lt 150 ]]; then
+        oc get pods -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"
+        oc describe pods -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
+      fi
     ignore_errors: true
 
   - name: Capture the state of the workloads
     shell: |
       oc get workloads -ojson -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.json"
-      oc get workloads -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.yaml"
-      oc describe workloads -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.desc"
       oc get workloads -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.status"
+      if [[ {{ codeflare_generate_scheduler_load_count }} -lt 150 ]]; then
+        oc get workloads -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.yaml"
+        oc describe workloads -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.desc"
+      fi
     ignore_errors: true
     when: codeflare_generate_scheduler_load_mode == "kueue"
 
