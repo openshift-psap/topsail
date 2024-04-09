@@ -161,6 +161,7 @@ ci_presets:
   gating:
     matbench.lts.opensearch.index_prefix: "psap-rhoai."
     matbench.lts.opensearch.instance: intlab
+    matbench.lts.opensearch.export.enabled: true
 
   gating_rehearsal:
     matbench.lts.opensearch.index_prefix: "psap-rhoai.rehearsal."
