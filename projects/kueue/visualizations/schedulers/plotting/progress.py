@@ -110,7 +110,19 @@ def generate_launch_progress_data(entry, resource_kind=None):
             ResourceName = resource_time.name,
         ))
 
+        if not hasattr(resource_time, "completion"): continue
+
+        data.append(dict(
+            Delta = delta(resource_time.completion),
+            Count = count,
+            Percentage = count / total_resource_count,
+            Timestamp = resource_time.completion,
+            Name = f"{resource_kind_name} Completed",
+            ResourceName = resource_time.name,
+        ))
+
     return data
+
 
 class PodProgress():
     def __init__(self):
