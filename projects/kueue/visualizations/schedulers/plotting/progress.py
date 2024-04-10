@@ -87,7 +87,7 @@ def generate_launch_progress_data(entry):
     count = 0
     YOTA = datetime.timedelta(microseconds=1)
 
-    for resource_time in entry.results.resource_times.values():
+    for resource_time in sorted(entry.results.resource_times.values(), key=lambda t: t.creation):
         if resource_time.kind != entry.results.target_kind: continue
 
         count += 1
