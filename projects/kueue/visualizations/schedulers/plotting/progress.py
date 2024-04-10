@@ -35,6 +35,7 @@ def generate_pod_progress_data(entry, key):
         Percentage = 0,
         Timestamp = start_time,
         Name = name,
+        ResourceName = "started",
     ))
 
     count = 0
@@ -51,6 +52,7 @@ def generate_pod_progress_data(entry, key):
             Percentage = count / total_pod_count,
             Timestamp = ts,
             Name = name,
+            ResourceName = pod_time.pod_name,
         ))
         count += 1
         data.append(dict(
@@ -59,6 +61,7 @@ def generate_pod_progress_data(entry, key):
             Percentage = count / total_pod_count,
             Timestamp = ts,
             Name = name,
+            ResourceName = pod_time.pod_name,
         ))
 
     return data
@@ -80,7 +83,7 @@ def generate_launch_progress_data(entry, resource_kind=None):
     else:
         resource_kind_name = resource_kind
 
-    name = f"{resource_kind_name}s created"
+    name = f"{resource_kind_name} Created"
 
     data.append(dict(
         Delta = delta(start_time),
@@ -88,6 +91,7 @@ def generate_launch_progress_data(entry, resource_kind=None):
         Percentage = 0,
         Timestamp = start_time,
         Name = name,
+        ResourceName = "started",
     ))
 
     count = 0
@@ -103,6 +107,7 @@ def generate_launch_progress_data(entry, resource_kind=None):
             Percentage = count / total_resource_count,
             Timestamp = resource_time.creation,
             Name = name,
+            ResourceName = resource_time.name,
         ))
 
     return data
@@ -141,18 +146,19 @@ class PodProgress():
         for name in df.Name.unique():
             df_name = df[df.Name == name]
             fig.add_trace(go.Scatter(x=df_name.Delta,
-                                     y=df_name.Percentage,
+                                     y=df_name.Count, #Percentage,
                                      fill="tozeroy",
                                      mode='lines',
                                      name=name,
+                                     hovertext=df.ResourceName,
                                  ))
 
         total_pod_count = entry.results.test_case_properties.total_pod_count
-        fig.update_yaxes(title="Percentage")
+        fig.update_yaxes(title="Number of objects")
         fig.update_xaxes(title="Timeline, in minutes after the start time")
 
         fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} {entry.results.target_kind_name}s", title_x=0.5)
 
-        fig.layout.yaxis.tickformat = ',.0%'
+        #fig.layout.yaxis.tickformat = ',.0%'
 
         return fig, ""
