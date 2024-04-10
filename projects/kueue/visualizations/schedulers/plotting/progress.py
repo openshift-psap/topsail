@@ -64,7 +64,7 @@ def generate_pod_progress_data(entry, key):
     return data
 
 
-def generate_launch_progress_data(entry):
+def generate_launch_progress_data(entry, resource_kind=None):
     data = []
 
     total_resource_count = entry.results.test_case_properties.count
@@ -74,7 +74,13 @@ def generate_launch_progress_data(entry):
     def delta(ts):
         return (ts - start_time).total_seconds() / 60
 
-    name = f"{entry.results.target_kind_name}s launched"
+    if resource_kind is None:
+        resource_kind = entry.results.target_kind
+        resource_kind_name = entry.results.target_kind_name
+    else:
+        resource_kind_name = resource_kind
+
+    name = f"{resource_kind_name}s created"
 
     data.append(dict(
         Delta = delta(start_time),
@@ -88,7 +94,7 @@ def generate_launch_progress_data(entry):
     YOTA = datetime.timedelta(microseconds=1)
 
     for resource_time in sorted(entry.results.resource_times.values(), key=lambda t: t.creation):
-        if resource_time.kind != entry.results.target_kind: continue
+        if resource_time.kind != resource_kind: continue
 
         count += 1
         data.append(dict(
@@ -121,7 +127,11 @@ class PodProgress():
             pass # entry is set
 
         data = []
+
         data += generate_launch_progress_data(entry)
+        if entry.results.test_case_properties.mode == "kueue":
+            data += generate_launch_progress_data(entry, "Workload")
+
         for key in "creation_time", "pod_scheduled", "container_finished":
             data += generate_pod_progress_data(entry, key)
 
