@@ -61,14 +61,6 @@ def generate_pod_progress_data(entry, key):
             Name = name,
         ))
 
-    data.append(dict(
-        Delta = delta(entry.results.test_start_end_time.end),
-        Count = count,
-        Percentage = count / total_pod_count,
-        Timestamp = entry.results.test_start_end_time.end,
-        Name = name,
-    ))
-
     return data
 
 
@@ -106,15 +98,6 @@ def generate_launch_progress_data(entry):
             Timestamp = resource_time.creation,
             Name = name,
         ))
-
-
-    data.append(dict(
-        Delta = delta(entry.results.test_start_end_time.end),
-        Count = count,
-        Percentage = count / total_resource_count,
-        Timestamp = entry.results.test_start_end_time.end,
-        Name = name,
-    ))
 
     return data
 
