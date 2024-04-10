@@ -137,6 +137,8 @@ class PodProgress():
         if entry.results.test_case_properties.mode == "kueue":
             data += generate_launch_progress_data(entry, "Workload")
 
+        data += generate_launch_progress_data(entry, "Job")
+
         for key in "creation_time", "pod_scheduled", "container_finished":
             data += generate_pod_progress_data(entry, key)
 
