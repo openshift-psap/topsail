@@ -184,6 +184,10 @@ class ResourcesTimeline():
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass
 
+        count = entry.results.test_case_properties.count
+        if count > 300:
+            return None, f"Too many objects ({count})for this plot ...."
+
         df = pd.DataFrame(generateResourcesTimeline(entry))
         if df.empty:
             return None, "Not data available ..."
@@ -202,7 +206,7 @@ class ResourcesTimeline():
 
         fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
         fig.update_layout(barmode='stack')
-        count = entry.results.test_case_properties.count
+
         fig.update_layout(title=f"Timeline of the {count} {entry.results.target_kind_name}s <br>progressing over the different States", title_x=0.5,)
         fig.update_layout(yaxis_title="")
         fig.update_layout(xaxis_title="Timeline (by date)")
