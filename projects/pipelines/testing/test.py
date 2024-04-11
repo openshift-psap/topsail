@@ -369,6 +369,10 @@ def generate_plots_from_pr_args():
 def generate_plots(results_dirname):
     visualize.generate_from_dir(str(results_dirname))
 
+@entrypoint()
+def rebuild_driver_image(pr_number):
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    prepare_user_pods.rebuild_driver_image(namespace, pr_number)
 
 class Pipelines:
     """
@@ -381,6 +385,7 @@ class Pipelines:
         self.prepare_pipelines_namespace = prepare_pipelines_namespace
         self.prepare_test_driver_namespace = prepare_test_driver_namespace
         self.prepare_sutest_scale_up = prepare_sutest_scale_up
+        self.rebuild_driver_image = rebuild_driver_image
 
         self.run_one = pipelines_run_one
         self.run = pipelines_run_many
