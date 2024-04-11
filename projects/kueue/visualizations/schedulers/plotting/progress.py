@@ -171,7 +171,7 @@ class PodProgress():
         fig.update_yaxes(title="Number of objects")
         fig.update_xaxes(title="Timeline, in minutes after the start time")
 
-        fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} {entry.results.target_kind_name}s", title_x=0.5)
+        fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} Pods from {entry.results.target_kind_name}s", title_x=0.5)
 
         #fig.layout.yaxis.tickformat = ',.0%'
 
