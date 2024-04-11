@@ -44,7 +44,7 @@
         | .status' -r
     register: app_ready_cmd
     until: app_ready_cmd.stdout == "True"
-    retries: 30
+    retries: 60
     delay: 10
 
   always:
