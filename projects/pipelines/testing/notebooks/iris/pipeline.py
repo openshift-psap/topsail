@@ -92,9 +92,9 @@ def train_model(
 
 @dsl.pipeline(name='iris-training-pipeline')
 def my_pipeline(
-    standard_scaler: bool,
-    min_max_scaler: bool,
-    neighbors: int,
+    standard_scaler: bool = True,
+    min_max_scaler: bool = False,
+    neighbors: int = 3,
 ):
     create_dataset_task = create_dataset()
 
