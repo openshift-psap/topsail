@@ -34,31 +34,18 @@
 
 - name: Wait for the deployments to be all available
   block:
-  - name: Wait for the deployments to be created
-    command:
-      oc get deploy
-         --ignore-not-found
-         -lcomponent=data-science-pipelines
-         -n {{ pipelines_deploy_application_namespace }}
-         --no-headers
-    register: deployments
-    until: deployments.stdout | length >= 9
-    retries: 30
-    delay: 10
 
-  - name: Wait for the deployments to be all available
+  - name: Wait for the application to be ready
     shell:
       set -o pipefail;
-      oc get deploy
-         -o=jsonpath="{range .items[*]}{.metadata.name}{' ='}{.status.unavailableReplicas}{'=\n'}{end}"
-         -lcomponent=data-science-pipelines
-         -n {{ pipelines_deploy_application_namespace }}
-         | grep -v "==" || true
-    register: deployments_not_ready
-    until: not deployments_not_ready.stdout
-    retries: 24
+      oc get -f "{{ artifact_extra_logs_dir }}/src/dsp_application.yaml" -ojson
+        | jq '.status.conditions[]
+        | select(.type == "Ready")
+        | .status' -r
+    register: app_ready_cmd
+    until: app_ready_cmd.stdout == "True"
+    retries: 30
     delay: 10
-    failed_when: deployments_not_ready.stdout | length > 0
 
   always:
   - name: Save the status of the DSPApplication
