@@ -205,6 +205,11 @@ def __parse_job_times(item, resource_times):
             core_helpers_store_parsers.K8S_TIME_FMT) \
             if item["status"].get("completionTime") else None
 
+    resource_times.deletion_time = \
+        datetime.datetime.strptime(
+            item["status"]["deletionTime"],
+            core_helpers_store_parsers.K8S_TIME_FMT)
+
 
 def __parse_workload_times(item, resource_times):
     resource_times.parent_job_name = item["metadata"]["ownerReferences"][0]["name"]
