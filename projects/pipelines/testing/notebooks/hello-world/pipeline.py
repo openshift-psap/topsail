@@ -3,7 +3,7 @@ import datetime
 from kfp import dsl
 from kfp import components
 
-
+@dsl.component(base_image='registry.redhat.io/ubi8/python-39')
 def stage1(index: int) -> datetime.datetime:
     import datetime
     import time
@@ -14,7 +14,7 @@ def stage1(index: int) -> datetime.datetime:
 
     return time1
 
-
+@dsl.component(base_image='registry.redhat.io/ubi8/python-39')
 def stage2(time1: datetime.datetime) -> datetime.datetime:
     import datetime
     import time
@@ -26,7 +26,7 @@ def stage2(time1: datetime.datetime) -> datetime.datetime:
 
     return time2
 
-
+@dsl.component(base_image='registry.redhat.io/ubi8/python-39')
 def stage3(time2a: datetime.datetime, time2b: datetime.datetime, time2c: datetime.datetime):
     import datetime
     import time
@@ -39,28 +39,20 @@ def stage3(time2a: datetime.datetime, time2b: datetime.datetime, time2c: datetim
     print(f"Stage 3 done: {datetime.datetime.now()}")
 
 
-stage1_op = components.create_component_from_func(
-    stage1, base_image='registry.redhat.io/ubi8/python-39')
-stage2_op = components.create_component_from_func(
-    stage2, base_image='registry.redhat.io/ubi8/python-39')
-stage3_op = components.create_component_from_func(
-    stage3, base_image='registry.redhat.io/ubi8/python-39')
-
-
 @dsl.pipeline(
     name='multi-stage-execution-pipeline',
     description='Shows how to create a multi-stage pipeline.'
 )
 def my_pipeline():
-    time1a = stage1_op(1)
-    time1b = stage1_op(2)
-    time1c = stage1_op(3)
+    time1a = stage1(1)
+    time1b = stage1(2)
+    time1c = stage1(3)
 
-    time2a = stage2_op(time1a.output)
-    time2b = stage2_op(time1b.output)
-    time2c = stage2_op(time1c.output)
+    time2a = stage2(time1a.output)
+    time2b = stage2(time1b.output)
+    time2c = stage2(time1c.output)
 
-    stage3_op(time2a.output, time2b.output, time2c.output)
+    stage3(time2a.output, time2b.output, time2c.output)
 
 if __name__ == '__main__':
     from kfp.compiler import Compiler
