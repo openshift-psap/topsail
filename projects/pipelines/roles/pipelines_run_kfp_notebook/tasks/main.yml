@@ -267,7 +267,8 @@
     register: workflow_phase_cmd
     retries: 120
     delay: 10
-    until: workflow_phase_cmd.stdout and "Running" not in workflow_phase_cmd.stdout
+    fail_when: '"Failed" in workflow_phase_cmd.stdout'
+    until: workflow_phase_cmd.stdout and "Succeeded" in workflow_phase_cmd.stdout
 
   - name: Generate MatrixBenchmark exit code file
     shell:
