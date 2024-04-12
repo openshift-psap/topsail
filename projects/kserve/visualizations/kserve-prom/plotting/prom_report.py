@@ -21,32 +21,6 @@ def register():
     LtsReport()
 
 
-def add_pod_cpu_mem_usage(header, what, args, mem_only=False, cpu_only=False):
-    if mem_only:
-        header += [html.H2(f"{what} Memory usage")]
-        descr = "memory"
-        these_plots_show = "This plot shows"
-    elif cpu_only:
-        header += [html.H2(f"{what} CPU usage")]
-        descr = "CPU"
-        these_plots_show = "This plot shows"
-    else:
-        header += [html.H2(f"{what} CPU and Memory usage")]
-        descr = "CPU and memory"
-        these_plots_show = "These plots show"
-
-    if not cpu_only:
-        header += report.Plot_and_Text(f"Prom: {what}: Mem usage", args)
-    if not mem_only:
-        header += report.Plot_and_Text(f"Prom: {what}: CPU usage", args)
-
-    header += [f"{these_plots_show} the {descr} usage of {what} Pods. "]
-    header += ["The ", html.Code("requests"), " and ", html.Code("limits"),
-                   " values are shown with a dashed line, ", html.I("if they are defined"), " in the Pod spec."]
-    header += html.Br()
-    header += html.Br()
-
-
 class SutestCpuMemoryReport():
     def __init__(self):
         self.name = "report: Sutest Cluster CPU/Memory Usage"
