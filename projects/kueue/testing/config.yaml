@@ -42,17 +42,27 @@ ci_presets:
 
   # ---
 
-  cpu_icelake_gang_scheduling:
-    tests.schedulers.tests_to_run: [cpu_icelake_gang_scheduling]
+  kueue_k8s_comparison:
     tests.schedulers.test_multiple_values.enabled: true
     tests.schedulers.test_multiple_values.settings:
       mode: [kueue, job] # mcad
 
+  cpu_icelake_gang_scheduling:
+    extends: [kueue_k8s_comparison]
+    tests.schedulers.tests_to_run: [cpu_icelake_gang_scheduling]
+
+
+  cpu_icelake_gang_scheduling_large:
+    extends: [kueue_k8s_comparison]
+    tests.schedulers.tests_to_run: [cpu_icelake_gang_scheduling_large]
+
   cpu_icelake_scheduling:
+    extends: [kueue_k8s_comparison]
     tests.schedulers.tests_to_run: [cpu_icelake_scheduling]
-    tests.schedulers.test_multiple_values.enabled: true
-    tests.schedulers.test_multiple_values.settings:
-      mode: [kueue, job] # mcad
+
+  cpu_icelake_scheduling_large:
+    extends: [kueue_k8s_comparison]
+    tests.schedulers.tests_to_run: [cpu_icelake_scheduling_large]
 
   cpu_light_scheduling:
     tests.schedulers.tests_to_run: [cpu_light_scheduling]
