@@ -25,8 +25,8 @@ def pi_approx(n:int) -> float:
 
 # Somewhat silly formula for a circle using two different approximations for pi
 @dsl.component(base_image='quay.io/hukhan/python:alpine3.6')
-def circle_area(pi1:float, pi2:float, r:float) -> float:
-    return pi1 * pi2 * r 
+def circle_area(pi1: float, pi2: float, r: float) -> float:
+    return pi1 * pi2 * r
 
 @dsl.component(base_image='quay.io/hukhan/python:alpine3.6')
 def print_msg(msg: str):
@@ -43,7 +43,7 @@ def pi_pipeline():
     # of a circle with radius 5
     pi1 = pi_approx(n=600)
     pi2 = pi_approx(n=600)
-    area_of_circle = circle_area(pi1=pi1.output, pi2=pi2.output, r=5)
+    area_of_circle = circle_area(pi1=pi1.output, pi2=pi2.output, r=5.0)
     print_msg(msg=f"area of circle: {area_of_circle.output}")
 
 if __name__ == '__main__':
