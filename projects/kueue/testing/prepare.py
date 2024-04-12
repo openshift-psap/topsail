@@ -10,10 +10,41 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 def prepare():
     with run.Parallel("prepare1") as parallel:
         parallel.delayed(prepare_rhoai)
+        if config.ci_artifacts.get_config("tests.deploy_coscheduler"):
+            parallel.delayed(prepare_coscheduler)
 
     with run.Parallel("prepare2") as parallel:
         parallel.delayed(prepare_gpu)
         parallel.delayed(prepare_scheduler_test)
+
+
+def prepare_coscheduler():
+    with env.NextArtifactDir("prepare_coscheduler"):
+        namespace = "openshift-secondary-scheduler-operator" # not working if using anything else
+        run.run_toolbox(
+            "cluster", "deploy_operator",
+            catalog="redhat-operators",
+            manifest_name="openshift-secondary-scheduler-operator",
+            namespace=namespace,
+        )
+
+        run.run("oc apply -f https://raw.githubusercontent.com/kubernetes-sigs/scheduler-plugins/master/manifests/coscheduling/crd.yaml")
+
+        run.run(f"""cat {TESTING_THIS_DIR}/coscheduling/rbac.yaml \
+        | tee {env.ARTIFACT_DIR}/rbac.yaml \
+        | oc apply -f- -n {namespace}""")
+
+        run.run(f"""cat {TESTING_THIS_DIR}/coscheduling/secondary-operator.yaml \
+        | tee {env.ARTIFACT_DIR}/secondary-operator.yaml \
+        | oc apply -f- -n {namespace}""")
+
+        run.run(f"""oc create cm coscheduler-config \
+          -n {namespace} \
+          --from-file=config.yaml={TESTING_THIS_DIR}/coscheduling/config.yaml \
+          --dry-run=client \
+          -oyaml \
+        | tee {env.ARTIFACT_DIR}/config-map.yaml \
+        | oc apply -f-""")
 
 
 def prepare_scheduler_test():

@@ -189,6 +189,7 @@ tests:
   dry_mode: false
   visualize: true
   capture_prom: true
+  deploy_coscheduler: true
   schedulers:
     kueue:
       queue_name: local-queue
