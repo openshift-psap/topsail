@@ -1,5 +1,7 @@
 - name: Check if AppWrappers are defined
-  command: oc get appwrapper -n default -oname
+  shell:
+    # oc get appwrapper -n default -oname
+    exit 1
   register: has_appwrapper_cmd
   failed_when: false
 
