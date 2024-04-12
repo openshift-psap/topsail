@@ -117,7 +117,7 @@
     set -e
     oc delete -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml" --ignore-not-found --timeout=180s
   register: delete_dsc_cmd
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Remove finalizer if needed
   shell: |
