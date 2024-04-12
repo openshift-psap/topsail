@@ -1,6 +1,7 @@
 - name: Ensure that there are no AppWrappers in the namespace
   shell:
     oc delete appwrappers --all -n "{{ codeflare_generate_scheduler_load_namespace }}" > /dev/null
+  when: codeflare_generate_scheduler_load_mode == "mcad"
 
 - name: Ensure that there are no Jobs in the namespace
   shell:
@@ -90,6 +91,7 @@
     until: appwrappers_completed.rc == 1 or appwrappers_completed.rc == 0
     # failed when fatal
     failed_when: appwrappers_completed.rc != 0
+    when: codeflare_generate_scheduler_load_mode == "mcad"
 
   - name: Wait for the Jobs to complete
     shell: |

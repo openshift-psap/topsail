@@ -1,13 +1,22 @@
+- name: Check if AppWrappers are defined
+  shell:
+    # oc get appwrapper -n default -oname
+    exit 1
+  register: has_appwrapper_cmd
+  failed_when: false
+
 - name: List all the AppWrappers in the namespace
   shell: |
     set -o pipefail;
     oc get appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r > "{{ artifact_extra_logs_dir }}/appwrappers.status"
     oc get appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
+  when: has_appwrapper_cmd.rc == 0
 
 - name: Count the AppWrappers in the namespace
   shell:
     set -o pipefail;
     oc get appwrappers -n {{ codeflare_cleanup_appwrappers_namespace }} -oname | wc -l
+  when: has_appwrapper_cmd.rc == 0
 
 - name: Create a configmap for the beginning of the test timestamp
   shell:
@@ -21,6 +30,7 @@
 - name: Delete all the AppWrappers in the namespace
   shell:
     oc delete appwrappers --all -n "{{ codeflare_cleanup_appwrappers_namespace }}" > /dev/null
+  when: has_appwrapper_cmd.rc == 0
 
 - name: Create a configmap after the deletion of the AppWrappers
   shell:
@@ -42,8 +52,10 @@
   shell:
     oc create
        -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
+  when: has_appwrapper_cmd.rc == 0
 
 - name: Wait for the canary AppWrapper to be discovered
+  when: has_appwrapper_cmd.rc == 0
   block:
   - name: Wait for the canary AppWrapper to be discovered
     command:

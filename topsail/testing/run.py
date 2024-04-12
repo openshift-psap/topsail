@@ -11,9 +11,11 @@ import joblib
 from . import env
 
 # create new process group, become its leader, except if we're already pid 1 (defacto group leader, setpgrp gets permission denied error)
-if os.getpid() != 1:
-    os.setpgrp()
-
+try:
+    if os.getpid() != 1:
+        os.setpgrp()
+except Exception as e:
+    logging.warning(f"Cannot call os.setpgrp: {e}")
 
 def run_toolbox_from_config(group, command, prefix=None, suffix=None, show_args=None, extra=None, artifact_dir_suffix=None, mute_stdout=False, check=True, run_kwargs=None):
     if extra is None:

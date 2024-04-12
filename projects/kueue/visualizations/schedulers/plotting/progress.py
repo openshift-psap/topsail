@@ -35,6 +35,7 @@ def generate_pod_progress_data(entry, key):
         Percentage = 0,
         Timestamp = start_time,
         Name = name,
+        ResourceName = "started",
     ))
 
     count = 0
@@ -51,6 +52,7 @@ def generate_pod_progress_data(entry, key):
             Percentage = count / total_pod_count,
             Timestamp = ts,
             Name = name,
+            ResourceName = pod_time.pod_name,
         ))
         count += 1
         data.append(dict(
@@ -59,20 +61,13 @@ def generate_pod_progress_data(entry, key):
             Percentage = count / total_pod_count,
             Timestamp = ts,
             Name = name,
+            ResourceName = pod_time.pod_name,
         ))
-
-    data.append(dict(
-        Delta = delta(entry.results.test_start_end_time.end),
-        Count = count,
-        Percentage = count / total_pod_count,
-        Timestamp = entry.results.test_start_end_time.end,
-        Name = name,
-    ))
 
     return data
 
 
-def generate_launch_progress_data(entry):
+def generate_launch_progress_data(entry, resource_kind=None):
     data = []
 
     total_resource_count = entry.results.test_case_properties.count
@@ -82,7 +77,13 @@ def generate_launch_progress_data(entry):
     def delta(ts):
         return (ts - start_time).total_seconds() / 60
 
-    name = f"{entry.results.target_kind_name}s launched"
+    if resource_kind is None:
+        resource_kind = entry.results.target_kind
+        resource_kind_name = entry.results.target_kind_name
+    else:
+        resource_kind_name = resource_kind
+
+    name = f"{resource_kind_name} Created"
 
     data.append(dict(
         Delta = delta(start_time),
@@ -90,13 +91,14 @@ def generate_launch_progress_data(entry):
         Percentage = 0,
         Timestamp = start_time,
         Name = name,
+        ResourceName = "started",
     ))
 
     count = 0
     YOTA = datetime.timedelta(microseconds=1)
 
-    for resource_time in entry.results.resource_times.values():
-        if resource_time.kind != entry.results.target_kind: continue
+    for resource_time in sorted(entry.results.resource_times.values(), key=lambda t: t.creation):
+        if resource_time.kind != resource_kind: continue
 
         count += 1
         data.append(dict(
@@ -105,18 +107,22 @@ def generate_launch_progress_data(entry):
             Percentage = count / total_resource_count,
             Timestamp = resource_time.creation,
             Name = name,
+            ResourceName = resource_time.name,
         ))
 
+        if not hasattr(resource_time, "completion"): continue
 
-    data.append(dict(
-        Delta = delta(entry.results.test_start_end_time.end),
-        Count = count,
-        Percentage = count / total_resource_count,
-        Timestamp = entry.results.test_start_end_time.end,
-        Name = name,
-    ))
+        data.append(dict(
+            Delta = delta(resource_time.completion),
+            Count = count,
+            Percentage = count / total_resource_count,
+            Timestamp = resource_time.completion,
+            Name = f"{resource_kind_name} Completed",
+            ResourceName = resource_time.name,
+        ))
 
     return data
+
 
 class PodProgress():
     def __init__(self):
@@ -138,7 +144,13 @@ class PodProgress():
             pass # entry is set
 
         data = []
+
         data += generate_launch_progress_data(entry)
+        if entry.results.test_case_properties.mode == "kueue":
+            data += generate_launch_progress_data(entry, "Workload")
+
+        data += generate_launch_progress_data(entry, "Job")
+
         for key in "creation_time", "pod_scheduled", "container_finished":
             data += generate_pod_progress_data(entry, key)
 
@@ -148,18 +160,19 @@ class PodProgress():
         for name in df.Name.unique():
             df_name = df[df.Name == name]
             fig.add_trace(go.Scatter(x=df_name.Delta,
-                                     y=df_name.Percentage,
+                                     y=df_name.Count, #Percentage,
                                      fill="tozeroy",
                                      mode='lines',
                                      name=name,
+                                     hovertext=df.ResourceName,
                                  ))
 
         total_pod_count = entry.results.test_case_properties.total_pod_count
-        fig.update_yaxes(title="Percentage")
+        fig.update_yaxes(title="Number of objects")
         fig.update_xaxes(title="Timeline, in minutes after the start time")
 
-        fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} {entry.results.target_kind_name}s", title_x=0.5)
+        fig.update_layout(title=f"Pod Completion Progress<br>for a total of {total_pod_count} Pods from {entry.results.target_kind_name}s", title_x=0.5)
 
-        fig.layout.yaxis.tickformat = ',.0%'
+        #fig.layout.yaxis.tickformat = ',.0%'
 
         return fig, ""

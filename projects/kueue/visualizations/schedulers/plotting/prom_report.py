@@ -1,37 +1,15 @@
 from dash import html
 
-from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
+import matrix_benchmarking.common as common
+
+from . import report
+from . import error_report
+from ..store import prom as prom_store
 
 def register():
     SutestCpuMemoryReport()
-
-
-def add_pod_cpu_mem_usage(header, what, args, mem_only=False, cpu_only=False):
-    if mem_only:
-        header += [html.H2(f"{what} Memory usage")]
-        descr = "memory"
-        these_plots_show = "This plot shows"
-    elif cpu_only:
-        header += [html.H2(f"{what} CPU usage")]
-        descr = "CPU"
-        these_plots_show = "This plot shows"
-    else:
-        header += [html.H2(f"{what} CPU and Memory usage")]
-        descr = "CPU and memory"
-        these_plots_show = "These plots show"
-
-    if not cpu_only:
-        header += [report.Plot(f"Prom: {what}: Mem usage", args)]
-    if not mem_only:
-        header += [report.Plot(f"Prom: {what}: CPU usage", args)]
-
-    header += [f"{these_plots_show} the {descr} usage of {what} Pods. "]
-    header += ["The ", html.Code("requests"), " and ", html.Code("limits"),
-                   " values are shown with a dashed line, ", html.I("if they are defined"), " in the Pod spec."]
-    header += html.Br()
-    header += html.Br()
-
+    PromSchedulingReport()
 
 class SutestCpuMemoryReport():
     def __init__(self):
@@ -43,18 +21,62 @@ class SutestCpuMemoryReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
         header = []
+
         header += [html.P("These plots show an overview of the CPU and Memory usage during the execution of the test, for the cluster, the nodes, and various relevant Pods.")]
 
-        header += [html.H2("Cluster under test")]
-        header += [report.Plot("Prom: sutest cluster memory usage", args)]
-        header += [report.Plot("Prom: sutest cluster CPU usage", args)]
-
-        for what in ["MCAD Controller"]:
-            add_pod_cpu_mem_usage(header, what, args)
-
-        header += ["These plots show the CPU and memory capacity of the system-under-test cluster."]
+        header += ["These plots show the CPU and memory capacity of the SUTest cluster."]
         header += html.Br()
         header += html.Br()
+
+        args_as_timeline = report.set_config(dict(as_timeline=True), args)
+        for metric_spec in prom_store.SUTEST_CONTAINER_LABELS:
+            plot_name = list(metric_spec.keys())[0]
+
+            header += [html.H2(plot_name)]
+            header += report.Plot_and_Text(f"Prom: {plot_name}: CPU usage", args_as_timeline)
+            header += report.Plot_and_Text(f"Prom: {plot_name}: Mem usage", args_as_timeline)
+
+        header += [html.H2("SUTest Cluster")]
+        header += report.Plot_and_Text("Prom: sutest cluster memory usage", args_as_timeline)
+        header += report.Plot_and_Text("Prom: sutest cluster CPU usage", args_as_timeline)
+
+        return None, header
+
+
+class PromSchedulingReport():
+    def __init__(self):
+        self.name = "report: Prometheus Scheduling"
+        self.id_name = self.name.lower().replace("/", "-")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+
+        header += [html.P("These plots show an overview of the scheduling, from Prometheus metrics")]
+
+        header += [html.H2("Scheduling")]
+        args_as_timeline = report.set_config(dict(as_timeline=True), args)
+
+        for metric_spec in prom_store.get_scheduling_metrics("sutest", register=False):
+            plot_name = list(metric_spec.keys())[0]
+
+            if "Batch Job" in plot_name: continue
+
+            header += [html.H3(plot_name)]
+
+            header += report.Plot_and_Text(f"Prom: {plot_name}", args_as_timeline)
+
+        header += [html.H3("Batch Jobs Status")]
+        header += report.Plot_and_Text(f"Prom: Batch Jobs Status", args_as_timeline)
+
+        header += [html.H2("SUTest Cluster")]
+        header += report.Plot_and_Text("Prom: sutest cluster memory usage", args_as_timeline)
+        header += report.Plot_and_Text("Prom: sutest cluster CPU usage", args_as_timeline)
 
         return None, header
