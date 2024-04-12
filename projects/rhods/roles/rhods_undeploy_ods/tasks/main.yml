@@ -47,3 +47,11 @@
   command:
     oc delete ns "{{ rhods_undeploy_ods_namespace }}"
        --wait=false
+
+- name: Delete the DSCI
+  shell:
+    set -o pipefail;
+    oc get dsci -ojson
+       | jq 'del(.items[].metadata.finalizers)'
+       | oc replace -f- -oname
+       | xargs echo oc delete --force
