@@ -49,6 +49,9 @@ def generate_lts_payload(results, import_settings):
 # ---
 
 def _get_time_to_cleanup(results):
+    if not results.cleanup_times:
+        return 0
+
     start = results.cleanup_times.start
     end = results.cleanup_times.end
     if not (start and end):
