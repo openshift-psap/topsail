@@ -8,6 +8,7 @@ from . import time_distribution
 from . import progress
 from . import compare_test_speed
 from . import compare_report
+from . import scheduling
 
 def register():
     error_report.register()
@@ -21,3 +22,4 @@ def register():
     progress.register()
     compare_test_speed.register()
     compare_report.register()
+    scheduling.register()

@@ -4,6 +4,7 @@ visualize:
   - "report: Error report"
   - "report: Resource Allocation Timelines"
   - "report: Time in State Distribution"
+  - "report: Prometheus Scheduling"
   - "report: Sutest Cluster CPU/Memory Usage"
   - "report: Control Plane Nodes Load"
   - "report: Worker Nodes Load"
