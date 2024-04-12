@@ -89,11 +89,9 @@ def _get_test_setup(entry):
         setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{time_to_last_schedule_sec/60:.2f} Pods/minute")]))]
         setup_info += [html.Ul(html.Li(["Time between the last resource launch and its schedule: ", html.Code(f"{last_launch_to_last_schedule_sec} seconds")]))]
 
-    time_to_cleanup_sec = entry.results.lts.results.time_to_cleanup_sec
-    cleanup_start = entry.results.cleanup_times.start
-    cleanup_end = entry.results.cleanup_times.end
-
-    setup_info += [html.Ul(html.Li([f"Time to cleanup: ", html.Code(f"{time(time_to_cleanup_sec)}")]))]
+    if entry.results.cleanup_times:
+        time_to_cleanup_sec = entry.results.lts.results.time_to_cleanup_sec
+        setup_info += [html.Ul(html.Li([f"Time to cleanup: ", html.Code(f"{time(time_to_cleanup_sec)}")]))]
 
     setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
     return setup_info
