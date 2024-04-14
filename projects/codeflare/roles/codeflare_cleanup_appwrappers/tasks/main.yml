@@ -1,8 +1,13 @@
 - name: Check if AppWrappers are defined
   shell:
-    # oc get appwrapper -n default -oname
     exit 1
   register: has_appwrapper_cmd
+  failed_when: false
+
+- name: Check if PodGroups are defined
+  shell:
+    exit 1
+  register: has_podgroups_cmd
   failed_when: false
 
 - name: List all the AppWrappers in the namespace
@@ -31,6 +36,11 @@
   shell:
     oc delete appwrappers --all -n "{{ codeflare_cleanup_appwrappers_namespace }}" > /dev/null
   when: has_appwrapper_cmd.rc == 0
+
+- name: Delete all the PodGroups in the namespace
+  shell:
+    oc delete podgroups --all -n "{{ codeflare_cleanup_appwrappers_namespace }}" > /dev/null
+  when: has_podgroups_cmd.rc == 0
 
 - name: Create a configmap after the deletion of the AppWrappers
   shell:
