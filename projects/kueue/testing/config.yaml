@@ -45,7 +45,7 @@ ci_presets:
   kueue_k8s_comparison:
     tests.schedulers.test_multiple_values.enabled: true
     tests.schedulers.test_multiple_values.settings:
-      mode: [kueue, job] # mcad
+      mode: [coscheduler, kueue, job] # mcad, kueue
 
   cpu_icelake_gang_scheduling:
     extends: [kueue_k8s_comparison]
