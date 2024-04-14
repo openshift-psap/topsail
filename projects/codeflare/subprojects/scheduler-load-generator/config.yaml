@@ -11,6 +11,8 @@ job_templates:
     spec:
       backoffLimit: 0
       template:
+        metadata:
+          labels: {}
         spec:
           restartPolicy: Never
           containers:
