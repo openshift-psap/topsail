@@ -21,7 +21,7 @@ codeflare_generate_scheduler_load_states_target:
 codeflare_generate_scheduler_load_states_unexpected:
 - Failed
 
-# mcad (AppWrappers), kueue or job
+# mcad (AppWrappers), kueue, coscheduler or job
 codeflare_generate_scheduler_load_mode: job
 
 # number of resources to create
