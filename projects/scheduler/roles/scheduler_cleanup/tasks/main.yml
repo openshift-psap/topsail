@@ -1,0 +1,52 @@
+# ---
+- name: Check if AppWrappers are defined
+  shell:
+    exit 1
+  register: has_appwrapper_cmd
+  failed_when: false
+
+- name: List all the AppWrappers in the namespace
+  shell: |
+    set -o pipefail;
+    oc get appwrappers -n {{ scheduler_cleanup_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r > "{{ artifact_extra_logs_dir }}/appwrappers.status"
+    oc get appwrappers -n {{ scheduler_cleanup_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
+  when: has_appwrapper_cmd.rc == 0
+
+- name: Count the AppWrappers in the namespace
+  shell:
+    set -o pipefail;
+    oc get appwrappers -n {{ scheduler_cleanup_namespace }} -oname | wc -l
+  when: has_appwrapper_cmd.rc == 0
+
+- name: Create a configmap for the beginning of the test timestamp
+  shell:
+    oc delete cm start deleted end -n "{{ scheduler_cleanup_namespace }}" --ignore-not-found;
+    oc create configmap start -n "{{ scheduler_cleanup_namespace }}" ;
+
+- name: Delete all the AppWrappers in the namespace
+  shell:
+    oc delete appwrappers --all -n "{{ scheduler_cleanup_namespace }}" > /dev/null
+  when: has_appwrapper_cmd.rc == 0
+
+- name: Create a configmap after the deletion of the AppWrappers
+  shell:
+    oc create configmap deleted -n "{{ scheduler_cleanup_namespace }}" ;
+
+# ---
+
+- name: Check if PodGroups are defined
+  shell:
+    exit 1
+  register: has_podgroups_cmd
+  failed_when: false
+
+- name: Delete all the PodGroups in the namespace
+  shell:
+    oc delete podgroups --all -n "{{ scheduler_cleanup_namespace }}" > /dev/null
+  when: has_podgroups_cmd.rc == 0
+
+# ---
+
+- name: Delete all the Jobs in the namespace
+  shell:
+    oc delete jobs --all -n "{{ scheduler_cleanup_namespace }}" > /dev/null

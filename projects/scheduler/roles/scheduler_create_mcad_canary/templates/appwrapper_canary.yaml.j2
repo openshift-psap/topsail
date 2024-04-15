@@ -1,0 +1,49 @@
+apiVersion: workload.codeflare.dev/v1beta1
+kind: AppWrapper
+metadata:
+  name: appwrapper-canary
+  namespace: {{ scheduler_create_mcad_canary_namespace }}
+spec:
+  priority: 10
+  resources:
+    GenericItems:
+    - completionstatus: Complete
+      custompodresources:
+      - replicas: 1
+        limits:
+          cpu: "100m"
+        requests:
+          cpu: "100m"
+      generictemplate:
+        apiVersion: batch/v1
+        kind: Job
+        metadata:
+          name: appwrapper-canary
+          namespace: {{ scheduler_create_mcad_canary_namespace }}
+        spec:
+          backoffLimit: 0
+          template:
+            spec:
+              containers:
+              - args:
+                - "true"
+                command:
+                - bash
+                - -c
+                image: registry.access.redhat.com/ubi8/ubi
+                name: main
+                resources:
+                  limits:
+                    cpu: 100m
+                  requests:
+                    cpu: 100m
+                runAsNonRoot: true
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+                  seccompProfile:
+                    type: RuntimeDefault
+              restartPolicy: Never
+      replicas: 1

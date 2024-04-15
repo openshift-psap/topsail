@@ -1,0 +1,11 @@
+common_scheduling:
+  count: 1
+  mode: "job"
+  pod:
+    count: 1
+    runtime: 60
+    requests:
+      cpu: 1
+      memory: null
+      nvidia.com/gpu: null
+  timespan: 1

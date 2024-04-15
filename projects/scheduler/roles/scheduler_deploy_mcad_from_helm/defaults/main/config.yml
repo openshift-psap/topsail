@@ -1,0 +1,20 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Scheduler.deploy_mcad_from_helm
+
+# Parameters
+# name of the namespace where MCAD should be deployed
+# Mandatory value
+scheduler_deploy_mcad_from_helm_namespace:
+
+# name of the GIT repo to clone
+scheduler_deploy_mcad_from_helm_git_repo: https://github.com/project-codeflare/multi-cluster-app-dispatcher
+
+# name of the GIT branch to fetch
+scheduler_deploy_mcad_from_helm_git_ref: main
+
+# name of the image registry where the image is stored
+scheduler_deploy_mcad_from_helm_image_repo: quay.io/project-codeflare/mcad-controller
+
+# tag of the image to use
+scheduler_deploy_mcad_from_helm_image_tag: stable

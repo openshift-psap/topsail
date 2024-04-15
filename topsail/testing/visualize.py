@@ -267,6 +267,10 @@ def call_analyze_lts(step_idx, common_args, common_env_str):
 
 def log_has_errors(log_file):
     has_errors = False
+    if not log_file.exists():
+        logging.error(f"Log file {log_file} does not exist...")
+        return True
+
     with open(log_file) as log_f:
         for line in log_f.readlines():
             if not line.startswith("ERROR"):

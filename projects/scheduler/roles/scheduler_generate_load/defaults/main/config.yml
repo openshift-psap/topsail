@@ -1,0 +1,50 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Scheduler.generate_load
+
+# Parameters
+# name of the namespace where the scheduler load will be generated
+# Mandatory value
+scheduler_generate_load_namespace:
+
+# name prefix for the scheduler resources
+scheduler_generate_load_base_name: sched-test-
+
+# name of the job template to use inside the AppWrapper
+scheduler_generate_load_job_template_name: sleeper
+
+# list of expected target states
+scheduler_generate_load_states_target:
+- Completed
+
+# list of states that fail the test
+scheduler_generate_load_states_unexpected:
+- Failed
+
+# mcad, kueue, coscheduling or job
+scheduler_generate_load_mode: job
+
+# number of resources to create
+scheduler_generate_load_count: 3
+
+# number of Pods to create in each of the AppWrappers
+scheduler_generate_load_pod_count: 1
+
+# run time parameter to pass to the Pod
+scheduler_generate_load_pod_runtime: 30
+
+# requests to pass to the Pod definition
+scheduler_generate_load_pod_requests:
+  cpu: 100m
+
+# number of minutes over which the resources should be created
+scheduler_generate_load_timespan: 0
+
+# the distribution method to use to spread the resource creation over the requested timespan
+scheduler_generate_load_distribution: poisson
+
+# the path of the scheduler load generator to launch
+scheduler_generate_load_scheduler_load_generator: projects/scheduler/subprojects/scheduler-load-generator/generator.py
+
+# the name of the Kueue queue to use
+scheduler_generate_load_kueue_queue: local-queue

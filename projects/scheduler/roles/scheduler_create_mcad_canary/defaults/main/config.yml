@@ -1,0 +1,8 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Scheduler.create_mcad_canary
+
+# Parameters
+# name of the namespace where the canary should be generated
+# Mandatory value
+scheduler_create_mcad_canary_namespace:
