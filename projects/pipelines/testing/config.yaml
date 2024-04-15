@@ -61,6 +61,19 @@ ci_presets:
     tests.pipelines.notebook_filename: kfp_iris.ipynb
     tests.pipelines.notebook_directory: projects/pipelines/testing/notebooks/iris
 
+  single_project:
+    tests.pipelines.use_single_project: true
+
+  mixed_workload:
+    tests.pipelines.mixed.enabled: true
+    tests.pipelines.mixed.workloads:
+    - repeat: 2
+      notebook_filename: kfp_hello_world.ipynb
+      notebook_directory: projects/pipelines/testing/notebooks/hello-world
+    - repeat: 1
+      notebook_filename: kfp_iris.ipynb
+      notebook_directory: projects/pipelines/testing/notebooks/iris
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -171,6 +184,13 @@ tests:
     user_count: 2
     sleep_factor: 1
     user_batch_size: 1
+    use_single_project: true
+    mixed:
+      enabled: false
+      workloads:
+      - repeat: 1
+        notebook_filename: kfp_hello_world.ipynb
+        notebook_directory: projects/pipelines/testing/notebooks/hello-world
 matbench:
   preset: null
   workload: projects.pipelines.visualizations.rhods-pipelines
