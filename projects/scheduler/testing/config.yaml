@@ -42,49 +42,43 @@ ci_presets:
 
   # ---
 
-  kueue_k8s_comparison:
+  schedulers_comparison:
     tests.schedulers.matbenchmarking.enabled: true
-    tests.schedulers.test_settings:
-      mode: [coscheduling, kueue, job] # mcad, kueue
+    tests.schedulers.test_settings.mode: [coscheduling, kueue, job] # mcad, kueue
+
+  cpu_icelake_gang_scheduling_light:
+    extends: [schedulers_comparison]
+    tests.schedulers.tests_to_run: [common_scheduling]
+    tests.schedulers.test_settings.count: 30
+    tests.schedulers.test_settings.pod.count: 10
+    tests.schedulers.test_settings.pod.requests.cpu: 1
+    tests.schedulers.test_settings.timespan: 1 # minutes
 
   cpu_icelake_gang_scheduling:
-    extends: [kueue_k8s_comparison]
-    tests.schedulers.tests_to_run: [cpu_icelake_gang_scheduling]
-
+    extends: [schedulers_comparison]
+    tests.schedulers.tests_to_run: [common_scheduling]
+    tests.schedulers.test_settings.count: 300
+    tests.schedulers.test_settings.pod.count: 10
+    tests.schedulers.test_settings.pod.requests.cpu: 1
+    tests.schedulers.test_settings.timespan: 1 # minutes
 
   cpu_icelake_gang_scheduling_large:
-    extends: [kueue_k8s_comparison]
-    tests.schedulers.tests_to_run: [cpu_icelake_gang_scheduling_large]
+    extends: [schedulers_comparison]
+    tests.schedulers.tests_to_run: [common_scheduling]
+    tests.schedulers.test_settings.count: 3000
+    tests.schedulers.test_settings.pod.count: 10
+    tests.schedulers.test_settings.pod.requests.cpu: 1
+    tests.schedulers.test_settings.timespan: 10 # minutes
 
-  cpu_icelake_scheduling:
-    extends: [kueue_k8s_comparison]
-    tests.schedulers.tests_to_run: [cpu_icelake_scheduling]
+  cpu_icelake_gang_scheduling_larger:
+    extends: [schedulers_comparison]
+    tests.schedulers.tests_to_run: [common_scheduling]
+    tests.schedulers.test_settings.count: 10
+    tests.schedulers.test_settings.pod.count: 3
+    tests.schedulers.test_settings.pod.requests.cpu: 50
+    tests.schedulers.test_settings.pod.runtime: 180
+    tests.schedulers.test_settings.timespan: 1 # minutes
 
-  cpu_icelake_scheduling_large:
-    extends: [kueue_k8s_comparison]
-    tests.schedulers.tests_to_run: [cpu_icelake_scheduling_large]
-
-  cpu_light_scheduling:
-    tests.schedulers.tests_to_run: [cpu_light_scheduling]
-    tests.schedulers.matbenchmarking.enabled: true
-    tests.schedulers.test_settings:
-      mode: [kueue, job] # mcad
-
-  cpu_light_unschedulable:
-    tests.schedulers.tests_to_run: [cpu_light_unschedulable]
-    tests.schedulers.matbenchmarking.enabled: true
-    tests.schedulers.test_settings:
-      count: [200, 350, 500]
-
-  cpu_all_schedulable:
-    clusters.sutest.worker.fill_resources.enabled: true
-    tests.schedulers.test_templates.common_light.node.count: 4
-
-    tests.schedulers.tests_to_run: [cpu_light_all_schedulable]
-    tests.schedulers.matbenchmarking.enabled: true
-    tests.schedulers.test_settings:
-      count: [100, 150]
-      mode: [kueue, job] # mcad
 
   # ---
 
@@ -195,20 +189,27 @@ tests:
 
     namespace: scheduler-load-test
 
-    prepare_nodes: true
+    prepare_nodes: false
     stop_on_error: true
 
-    tests_to_run: [cpu_light_all_schedulable]
+    tests_to_run: [common_scheduling]
     distribution: poisson
     test_templates_file: test_templates.yaml # relative to testing/codeflare directory
 
     matbenchmarking:
-      enabled: false
+      enabled: true
       visu_file: plot_multiple_tests.yaml
 
+    # placeholder for PR-args override
     test_settings:
-      count: 150
-      mode: "coscheduling"
+      count: null
+      mode: ["kueue", "job"]
+      pod:
+        count: null
+        runtime: null
+        requests:
+          cpu: null
+      timespan: null
 
 matbench:
   preset: null

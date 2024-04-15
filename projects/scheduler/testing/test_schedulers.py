@@ -99,15 +99,35 @@ def save_matbench_files(name, cfg):
     with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
         print(str(uuid.uuid4()), file=f)
 
+def remove_none_values(d):
+    for k in list(d.keys()):
+        v = d[k]
+        if v is None or v is {}:
+            del d[k]
+        elif isinstance(v, dict):
+            remove_none_values(d[k])
+            if not d[k]:
+                del d[k]
+
 
 def _run_test_matbenchmarking(name, test_artifact_dir_p):
     visualize.prepare_matbench()
 
     with env.NextArtifactDir("matbenchmarking"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
-        benchmark_values = config.ci_artifacts.get_config("tests.schedulers.test_settings")
+        benchmark_values = copy.deepcopy(config.ci_artifacts.get_config("tests.schedulers.test_settings"))
+        remove_none_values(benchmark_values)
 
-        path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()]) + "_"
+        test_configuration = {}
+        for k in list(benchmark_values.keys()):
+            v = benchmark_values[k]
+            if isinstance(v, list):
+                continue
+
+            test_configuration[k] = v
+            del benchmark_values[k]
+
+        path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()])
 
         expe_name = "expe"
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
@@ -115,9 +135,9 @@ def _run_test_matbenchmarking(name, test_artifact_dir_p):
             script_tpl=f"{sys.argv[0]} matbench_run_one",
             stop_on_error=config.ci_artifacts.get_config("tests.schedulers.stop_on_error"),
             common_settings=dict(name=name),
+            test_files={"test_config.yaml": test_configuration},
             expe_name=expe_name,
             benchmark_values=benchmark_values,
-            test_files={},
         )
 
         logging.info(f"Benchmark configuration to run: \n{yaml.dump(json_benchmark_file, sort_keys=False)}")
@@ -160,8 +180,11 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
             del cfg["extends"]
 
     if test_override_values:
-        for key, value in test_override_values.items():
-            config.set_jsonpath(cfg, key, value)
+        overrides = copy.deepcopy(test_override_values)
+        remove_none_values(overrides)
+        cfg = merge(cfg, overrides)
+
+    remove_none_values(cfg)
 
     logging.info("Test configuration: \n"+yaml.dump(cfg))
 
@@ -202,7 +225,6 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
             extra["count"] = cfg["count"]
             extra["timespan"] = cfg["timespan"]
             extra["mode"] = cfg["mode"]
-
 
             if dry_mode:
                 logging.info(f"Running the load test '{name}' with {extra} ...")
@@ -289,8 +311,11 @@ def matbench_run_one():
         with open(env.ARTIFACT_DIR / "skip", "w") as f:
             print("Results are in a subdirectory, not here.", file=f)
 
+        with open(env.ARTIFACT_DIR / "test_config.yaml") as f:
+            test_config = yaml.safe_load(f)
+
         name = settings.pop("name")
 
-        failed = _run_test_and_visualize(name, settings)
+        failed = _run_test_and_visualize(name, test_config | settings)
 
     sys.exit(1 if failed else 0)

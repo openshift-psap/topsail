@@ -30,20 +30,20 @@ def prepare_coscheduling():
 
         run.run("oc apply -f https://raw.githubusercontent.com/kubernetes-sigs/scheduler-plugins/master/manifests/coscheduling/crd.yaml")
 
-        run.run(f"""cat {TESTING_THIS_DIR}/coscheduling/rbac.yaml \
-        | tee {env.ARTIFACT_DIR}/rbac.yaml \
+        run.run(f"""cat "{TESTING_THIS_DIR}/coscheduling/rbac.yaml" \
+        | tee "{env.ARTIFACT_DIR}/rbac.yaml" \
         | oc apply -f- -n {namespace}""")
 
-        run.run(f"""cat {TESTING_THIS_DIR}/coscheduling/secondary-operator.yaml \
-        | tee {env.ARTIFACT_DIR}/secondary-operator.yaml \
+        run.run(f"""cat "{TESTING_THIS_DIR}/coscheduling/secondary-operator.yaml" \
+        | tee "{env.ARTIFACT_DIR}/secondary-operator.yaml" \
         | oc apply -f- -n {namespace}""")
 
         run.run(f"""oc create cm coscheduling-config \
           -n {namespace} \
-          --from-file=config.yaml={TESTING_THIS_DIR}/coscheduling/config.yaml \
+        --from-file=config.yaml="{TESTING_THIS_DIR}/coscheduling/config.yaml" \
           --dry-run=client \
           -oyaml \
-        | tee {env.ARTIFACT_DIR}/config-map.yaml \
+        | tee "{env.ARTIFACT_DIR}/config-map.yaml" \
         | oc apply -f-""")
 
 
@@ -75,19 +75,19 @@ def prepare_kueue_queue(dry_mode):
             logging.info(f"prepare_kueue_queue: prepare the kueue queues with cpu={total_cpu_count}")
             return
 
-        run.run(f"""cat {TESTING_THIS_DIR}/kueue/resource-flavor.yaml \
-        | tee $ARTIFACT_DIR/resource-flavor.yaml \
+        run.run(f"""cat "{TESTING_THIS_DIR}/kueue/resource-flavor.yaml" \
+        | tee "$ARTIFACT_DIR/resource-flavor.yaml" \
         | oc apply -f- -n {namespace}""")
 
-        run.run(f"""cat {TESTING_THIS_DIR}/kueue/cluster-queue.yaml \
+        run.run(f"""cat "{TESTING_THIS_DIR}/kueue/cluster-queue.yaml" \
         | yq '.spec.resourceGroups[0].flavors[0].resources[0].nominalQuota = {cluster_queue_cpu_quota}' \
-        | tee $ARTIFACT_DIR/cluster-queue.yaml \
+        | tee "$ARTIFACT_DIR/cluster-queue.yaml" \
         | oc apply -f- -n {namespace}""")
 
         local_queue_name = config.ci_artifacts.get_config("tests.schedulers.kueue.queue_name")
-        run.run(f"""cat {TESTING_THIS_DIR}/kueue/local-queue.yaml \
+        run.run(f"""cat "{TESTING_THIS_DIR}/kueue/local-queue.yaml" \
         | yq '.metadata.name = "{local_queue_name}"' \
-        | tee $ARTIFACT_DIR/local-queue.json \
+        | tee "$ARTIFACT_DIR/local-queue.json" \
         | oc apply -f- -n {namespace}""")
 
 

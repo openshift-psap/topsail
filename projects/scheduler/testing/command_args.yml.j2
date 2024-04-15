@@ -26,7 +26,7 @@ cluster fill_workernodes:
   label_selector: {{ clusters.sutest.worker.label }}
 
 #
-# Scale test - deploy RHODS
+# deploy RHODS
 #
 
 rhods deploy_ods:
@@ -35,10 +35,14 @@ rhods deploy_ods:
   channel: {{ rhods.catalog.channel }}
   version: {{ rhods.catalog.version }}
 
-codeflare cleanup_appwrappers:
+#
+# ---
+#
+
+scheduler cleanup:
   namespace: {{ tests.schedulers.namespace }}
 
-codeflare generate_scheduler_load:
+scheduler generate_load:
   namespace: {{ tests.schedulers.namespace }}
   distribution: {{ tests.schedulers.distribution }}
   # the other parameters are passed at runtime with the --extra flag.
