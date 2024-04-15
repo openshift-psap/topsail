@@ -29,26 +29,26 @@ def prepare_base_job(namespace, job_template_name, base_name, pod_runtime, pod_r
 
 
 def prepare_standalone_job(base_job):
-    standalone_job = copy.deepcopy(base_job)
-    name = config.get_config("metadata.name", standalone_job)
+    new_job = copy.deepcopy(base_job)
+    name = config.get_config("metadata.name", new_job)
 
-    standalone_name = f"job-standalone-{name}"
-    config.set_config(standalone_job, "metadata.name", standalone_name)
+    new_name = f"job-standalone-{name}"
+    config.set_config(new_job, "metadata.name", new_name)
 
-    # pod_count = standalone_job["spec"].get("parallelism", 1)
+    # pod_count = new_job["spec"].get("parallelism", 1)
     # if pod_count != 1:
-    #     logging.info(f"prepare_standalone_job: {pod_count} are requests. Turn the resource requests into a single request.")
-    #     standalone_job["spec"]["parallelism"] = 1
-    #     standalone_job["spec"]["completions"] = 1
+    #     logging.info(f"prepare_new_job: {pod_count} are requests. Turn the resource requests into a single request.")
+    #     new_job["spec"]["parallelism"] = 1
+    #     new_job["spec"]["completions"] = 1
 
-    #     requests = standalone_job["spec"]["template"]["spec"]["containers"][0]["resources"]["requests"]
+    #     requests = new_job["spec"]["template"]["spec"]["containers"][0]["resources"]["requests"]
     #     for k, v in requests.items():
     #         qte = k8s_quantity.parse_quantity(v)
     #         requests[k] = str(qte * pod_count)
 
-    #     limits = standalone_job["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]
+    #     limits = new_job["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]
     #     for k, v in limits.items():
     #         qte = k8s_quantity.parse_quantity(v)
     #         limits[k] = str(qte * pod_count)
 
-    return standalone_job,
+    return new_job,

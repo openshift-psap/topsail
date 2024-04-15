@@ -45,7 +45,7 @@ ci_presets:
   kueue_k8s_comparison:
     tests.schedulers.matbenchmarking.enabled: true
     tests.schedulers.test_settings:
-      mode: [coscheduler, kueue, job] # mcad, kueue
+      mode: [coscheduling, kueue, job] # mcad, kueue
 
   cpu_icelake_gang_scheduling:
     extends: [kueue_k8s_comparison]
@@ -188,7 +188,7 @@ tests:
   dry_mode: false
   visualize: true
   capture_prom: true
-  deploy_coscheduler: true
+  deploy_coscheduling: true
   schedulers:
     kueue:
       queue_name: local-queue
@@ -208,7 +208,7 @@ tests:
 
     test_settings:
       count: 150
-      mode: "coscheduler"
+      mode: "coscheduling"
 
 matbench:
   preset: null

@@ -10,16 +10,16 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 def prepare():
     with run.Parallel("prepare1") as parallel:
         parallel.delayed(prepare_rhoai)
-        if config.ci_artifacts.get_config("tests.deploy_coscheduler"):
-            parallel.delayed(prepare_coscheduler)
+        if config.ci_artifacts.get_config("tests.deploy_coscheduling"):
+            parallel.delayed(prepare_coscheduling)
 
     with run.Parallel("prepare2") as parallel:
         parallel.delayed(prepare_gpu)
         parallel.delayed(prepare_scheduler_test)
 
 
-def prepare_coscheduler():
-    with env.NextArtifactDir("prepare_coscheduler"):
+def prepare_coscheduling():
+    with env.NextArtifactDir("prepare_coscheduling"):
         namespace = "openshift-secondary-scheduler-operator" # not working if using anything else
         run.run_toolbox(
             "cluster", "deploy_operator",
@@ -38,7 +38,7 @@ def prepare_coscheduler():
         | tee {env.ARTIFACT_DIR}/secondary-operator.yaml \
         | oc apply -f- -n {namespace}""")
 
-        run.run(f"""oc create cm coscheduler-config \
+        run.run(f"""oc create cm coscheduling-config \
           -n {namespace} \
           --from-file=config.yaml={TESTING_THIS_DIR}/coscheduling/config.yaml \
           --dry-run=client \

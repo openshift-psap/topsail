@@ -69,7 +69,7 @@ def _get_time_to_last_launch(results):
         "job": "Job",
         "mcad": "AppWrapper",
         "kueue": "Job",
-        "coscheduler": "Job",
+        "coscheduling": "Job",
     }[results.test_case_properties.mode]
 
     resource_time = sorted([resource_time for resource_time in results.resource_times.values() if resource_time.kind == target_kind], key=lambda t: t.creation)[-1]

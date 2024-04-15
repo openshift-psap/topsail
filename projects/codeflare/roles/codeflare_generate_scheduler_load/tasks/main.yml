@@ -10,7 +10,7 @@
 - name: Ensure that there are no PodGroup in the namespace
   shell:
     oc delete podgroups --all -n "{{ codeflare_generate_scheduler_load_namespace }}" > /dev/null
-  when: codeflare_generate_scheduler_load_mode == "coscheduler"
+  when: codeflare_generate_scheduler_load_mode == "coscheduling"
 
 - name: Create the src artifacts directory
   file:
@@ -191,7 +191,7 @@
         oc describe podgroups -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.desc"
       fi
     ignore_errors: true
-    when: codeflare_generate_scheduler_load_mode == "coscheduler"
+    when: codeflare_generate_scheduler_load_mode == "coscheduling"
 
   - name: Capture the nodes of the cluster
     shell:

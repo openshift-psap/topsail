@@ -3,7 +3,7 @@
 # Source component: Codeflare.generate_scheduler_load
 
 # Parameters
-# name of the namespace where the MCAD load will be generated
+# name of the namespace where the scheduler load will be generated
 # Mandatory value
 codeflare_generate_scheduler_load_namespace:
 
@@ -21,7 +21,7 @@ codeflare_generate_scheduler_load_states_target:
 codeflare_generate_scheduler_load_states_unexpected:
 - Failed
 
-# mcad (AppWrappers), kueue, coscheduler or job
+# mcad, kueue, coscheduling or job
 codeflare_generate_scheduler_load_mode: job
 
 # number of resources to create
@@ -37,7 +37,7 @@ codeflare_generate_scheduler_load_pod_runtime: 30
 codeflare_generate_scheduler_load_pod_requests:
   cpu: 100m
 
-# number of minutes over which the AppWrappers should be created
+# number of minutes over which the resources should be created
 codeflare_generate_scheduler_load_timespan: 0
 
 # the distribution method to use to spread the resource creation over the requested timespan

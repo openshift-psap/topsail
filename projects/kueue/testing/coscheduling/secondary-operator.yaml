@@ -5,5 +5,5 @@ metadata:
   namespace: openshift-secondary-scheduler-operator
 spec:
   managementState: Managed
-  schedulerConfig: coscheduler-config
+  schedulerConfig: coscheduling-config
   schedulerImage: registry.k8s.io/scheduler-plugins/kube-scheduler:v0.27.8

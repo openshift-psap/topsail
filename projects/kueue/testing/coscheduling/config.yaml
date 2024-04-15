@@ -4,7 +4,7 @@ kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
 profiles:
-- schedulerName: coscheduler
+- schedulerName: coscheduling
   plugins:
     multiPoint:
       enabled:

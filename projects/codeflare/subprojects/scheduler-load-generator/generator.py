@@ -21,7 +21,7 @@ import run, config, utils
 import job as job_mod
 import appwrapper as appwrapper_mod
 import kueue as kueue_mod
-import coscheduler as coscheduler_mod
+import coscheduling as coscheduling_mod
 
 def main(dry_run=True,
          namespace=None,
@@ -88,12 +88,12 @@ def main(dry_run=True,
         mcad_mode = True
         logging.info("Running in AppWrapper mode")
         kind_name = "AppWrappers Jobs"
-    elif mode == "coscheduler":
-        coscheduler_mode = True
-        logging.info("Running in Coscheduler mode")
-        kind_name = "Coscheduler Jobs"
+    elif mode == "coscheduling":
+        coscheduling_mode = True
+        logging.info("Running in Coscheduling mode")
+        kind_name = "Coscheduling Jobs"
     else:
-        MODES = ("job", "mcad", "kueue", "coscheduler")
+        MODES = ("job", "mcad", "kueue", "coscheduling")
         logging.error(f"Received an invalid mode: '{mode}'. Must in in {MODES}")
         sys.exit(1)
 
@@ -105,8 +105,8 @@ def main(dry_run=True,
         resources = job_mod.prepare_standalone_job(job)
     elif kueue_mode:
         resources = kueue_mod.prepare_kueue_job(job, kueue_queue)
-    elif coscheduler_mode:
-        resources = coscheduler_mod.prepare_coscheduler_job(job)
+    elif coscheduling_mode:
+        resources = coscheduling_mod.prepare_coscheduling_job(job)
     else:
         resources = appwrapper_mod.prepare_appwrapper(namespace, job, priority, pod_count, pod_requests)
 

@@ -31,17 +31,17 @@ class Codeflare:
         Generate scheduler load
 
         Args:
-          namespace: name of the namespace where the MCAD load will be generated
+          namespace: name of the namespace where the scheduler load will be generated
           base_name: name prefix for the AppWrapper resources
           count: number of resources to create
           job_template_name: name of the job template to use inside the AppWrapper
-          mode: mcad (AppWrappers), kueue, coscheduler or job
+          mode: mcad, kueue, coscheduling or job
           pod_count: number of Pods to create in each of the AppWrappers
           pod_runtime: run time parameter to pass to the Pod
           pod_requests: requests to pass to the Pod definition
           states_target: list of expected target states
           states_unexpected: list of states that fail the test
-          timespan: number of minutes over which the AppWrappers should be created
+          timespan: number of minutes over which the resources should be created
           distribution: the distribution method to use to spread the resource creation over the requested timespan
           scheduler_load_generator: the path of the scheduler load generator to launch
           kueue_queue: the name of the Kueue queue to use
