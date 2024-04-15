@@ -4,7 +4,7 @@ from kfp import components
 @dsl.component(base_image='quay.io/hukhan/python:alpine3.6')
 def cbrt_loop(n:int, x:int) -> int:
     import math, time
-    
+
     i = 0
     end_time = time.time() + n
     while end_time >= time.time():

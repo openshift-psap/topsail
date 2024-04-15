@@ -3,7 +3,7 @@ from kfp import components
 
 # For more info see: https://stackoverflow.com/questions/18036367/leibniz-formula-for-%CF%80-is-this-any-good-python
 # (doesn't need to converge well, just want load)
-@dsl.component(base_image='quay.io/hukhan/python:alpine3.6')
+@dsl.component(base_image='registry.redhat.io/ubi8/python-39')
 def pi_approx(n:int) -> float:
     import time
 
@@ -24,11 +24,11 @@ def pi_approx(n:int) -> float:
     return 4.0 * p
 
 # Somewhat silly formula for a circle using two different approximations for pi
-@dsl.component(base_image='quay.io/hukhan/python:alpine3.6')
+@dsl.component(base_image='registry.redhat.io/ubi8/python-39')
 def circle_area(pi1: float, pi2: float, r: float) -> float:
     return pi1 * pi2 * r
 
-@dsl.component(base_image='quay.io/hukhan/python:alpine3.6')
+@dsl.component(base_image='registry.redhat.io/ubi8/python-39')
 def print_msg(msg: str):
     """Print a message."""
     print(msg)
