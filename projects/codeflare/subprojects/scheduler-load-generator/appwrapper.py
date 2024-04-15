@@ -32,4 +32,4 @@ def prepare_appwrapper(namespace, job, priority, pod_count, pod_requests):
     config.set_config(appwrapper, "metadata.namespace", namespace)
     config.set_config(appwrapper, "spec.priority", priority)
 
-    return appwrapper
+    return appwrapper,

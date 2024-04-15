@@ -7,6 +7,11 @@
   shell:
     oc delete jobs --all -n "{{ codeflare_generate_scheduler_load_namespace }}" > /dev/null
 
+- name: Ensure that there are no PodGroup in the namespace
+  shell:
+    oc delete podgroups --all -n "{{ codeflare_generate_scheduler_load_namespace }}" > /dev/null
+  when: codeflare_generate_scheduler_load_mode == "coscheduler"
+
 - name: Create the src artifacts directory
   file:
     path: "{{ artifact_extra_logs_dir }}/src/"
@@ -127,7 +132,7 @@
     until: jobs_completed.rc == 1 or jobs_completed.rc == 0
     # failed when fatal
     failed_when: jobs_completed.rc != 0
-    when: codeflare_generate_scheduler_load_mode in ("job", "kueue")
+    when: codeflare_generate_scheduler_load_mode != "mcad"
 
   always:
   - name: Create a configmap for the end of the test timestamp
@@ -176,6 +181,17 @@
       fi
     ignore_errors: true
     when: codeflare_generate_scheduler_load_mode == "kueue"
+
+  - name: Capture the state of the podgroups
+    shell: |
+      oc get podgroups -ojson -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.json"
+      oc get podgroups -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.status"
+      if [[ {{ codeflare_generate_scheduler_load_count }} -lt 150 ]]; then
+        oc get podgroups -oyaml -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.yaml"
+        oc describe podgroups -n {{ codeflare_generate_scheduler_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.desc"
+      fi
+    ignore_errors: true
+    when: codeflare_generate_scheduler_load_mode == "coscheduler"
 
   - name: Capture the nodes of the cluster
     shell:

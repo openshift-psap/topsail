@@ -71,9 +71,13 @@ def parse_once(results, dirname):
     results.test_case_config = _parse_test_case_config(dirname)
     results.test_case_properties = _parse_test_case_properties(results.test_case_config)
 
-    results.target_kind_name = "AppWrapper" if results.test_case_properties.mode == "mcad" else \
-        "Kueue Job" if results.test_case_properties.mode == "kueue" \
-        else "Job"
+    if results.test_case_properties.mode == "mcad":
+        results.target_kind_name = "AppWrapper"
+    elif results.test_case_properties.mode == "job":
+        results.target_kind_name = "K8s Jobs"
+    else:
+        results.target_kind_name = f"{results.test_case_properties.mode.title()} Jobs"
+
     results.target_kind = "AppWrapper" if results.test_case_properties.mode == "mcad" else "Job"
 
     results.metrics = _extract_metrics(dirname)
@@ -81,13 +85,16 @@ def parse_once(results, dirname):
     results.pod_times = _parse_pod_times(dirname)
     results.resource_times = _parse_resource_times(dirname, results.test_case_properties.mode)
     results.test_start_end_time = _parse_test_start_end_time(dirname)
-    results.cleanup_times = _parse_cleanup_start_end_time(dirname)
+    if results.test_case_properties.mode == "mcad":
+        results.cleanup_times = _parse_cleanup_start_end_time(dirname)
+    else:
+        results.cleanup_times = {}
 
     results.file_locations = _parse_file_locations(dirname)
 
     capture_state_dir = artifact_paths.RHODS_CAPTURE_STATE_DIR
     results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
-    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir)
+    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
     results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
     results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
     results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)

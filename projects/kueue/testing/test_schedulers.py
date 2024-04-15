@@ -100,12 +100,12 @@ def save_matbench_files(name, cfg):
         print(str(uuid.uuid4()), file=f)
 
 
-def _run_test_multiple_values(name, test_artifact_dir_p):
+def _run_test_matbenchmarking(name, test_artifact_dir_p):
     visualize.prepare_matbench()
 
-    with env.NextArtifactDir("scheduler_load_test_multiple_values"):
+    with env.NextArtifactDir("matbenchmarking"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
-        benchmark_values = config.ci_artifacts.get_config("tests.schedulers.test_multiple_values.settings")
+        benchmark_values = config.ci_artifacts.get_config("tests.schedulers.test_settings")
 
         path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()]) + "_"
 
@@ -128,7 +128,7 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
 
         failed = matbenchmark.run_benchmark(args)
         if failed:
-            logging.error(f"_run_test_multiple_values: matbench benchmark failed :/")
+            logging.error(f"_run_test_matbenchmarking: matbench benchmark failed :/")
 
     return failed
 
@@ -245,12 +245,14 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
 
 def _run_test_and_visualize(name, test_override_values=None):
     failed = True
-    do_test_multiple_values = test_override_values is None and config.ci_artifacts.get_config("tests.schedulers.test_multiple_values.enabled")
+    do_matbenchmarking = test_override_values is None and config.ci_artifacts.get_config("tests.schedulers.matbenchmarking.enabled")
     try:
         test_artifact_dir_p = [None]
-        if do_test_multiple_values:
-            failed = _run_test_multiple_values(name, test_artifact_dir_p)
+        if do_matbenchmarking:
+            failed = _run_test_matbenchmarking(name, test_artifact_dir_p)
         else:
+            if test_override_values is None:
+                test_override_values = config.ci_artifacts.get_config("tests.schedulers.test_settings")
             failed = _run_test(name, test_artifact_dir_p, test_override_values)
     finally:
         dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
@@ -264,9 +266,9 @@ def _run_test_and_visualize(name, test_override_values=None):
             with env.NextArtifactDir("plots"):
                 visualize.prepare_matbench()
 
-                if do_test_multiple_values:
-                    matbench_config_file = config.ci_artifacts.get_config("tests.schedulers.test_multiple_values.matbench_config_file")
-                    with config.TempValue(config.ci_artifacts, "matbench.config_file", matbench_config_file):
+                if do_matbenchmarking:
+                    visu_file = config.ci_artifacts.get_config("tests.schedulers.matbenchmarking.visu_file")
+                    with config.TempValue(config.ci_artifacts, "matbench.config_file", visu_file):
                          visualize.generate_from_dir(test_artifact_dir_p[0])
                 else:
                      visualize.generate_from_dir(test_artifact_dir_p[0])

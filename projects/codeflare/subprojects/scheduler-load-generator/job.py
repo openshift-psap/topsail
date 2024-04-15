@@ -27,6 +27,7 @@ def prepare_base_job(namespace, job_template_name, base_name, pod_runtime, pod_r
 
     return job
 
+
 def prepare_standalone_job(base_job):
     standalone_job = copy.deepcopy(base_job)
     name = config.get_config("metadata.name", standalone_job)
@@ -50,4 +51,4 @@ def prepare_standalone_job(base_job):
     #         qte = k8s_quantity.parse_quantity(v)
     #         limits[k] = str(qte * pod_count)
 
-    return standalone_job
+    return standalone_job,

@@ -43,9 +43,9 @@ ci_presets:
   # ---
 
   kueue_k8s_comparison:
-    tests.schedulers.test_multiple_values.enabled: true
-    tests.schedulers.test_multiple_values.settings:
-      mode: [kueue, job] # mcad
+    tests.schedulers.matbenchmarking.enabled: true
+    tests.schedulers.test_settings:
+      mode: [coscheduler, kueue, job] # mcad, kueue
 
   cpu_icelake_gang_scheduling:
     extends: [kueue_k8s_comparison]
@@ -66,14 +66,14 @@ ci_presets:
 
   cpu_light_scheduling:
     tests.schedulers.tests_to_run: [cpu_light_scheduling]
-    tests.schedulers.test_multiple_values.enabled: true
-    tests.schedulers.test_multiple_values.settings:
+    tests.schedulers.matbenchmarking.enabled: true
+    tests.schedulers.test_settings:
       mode: [kueue, job] # mcad
 
   cpu_light_unschedulable:
     tests.schedulers.tests_to_run: [cpu_light_unschedulable]
-    tests.schedulers.test_multiple_values.enabled: true
-    tests.schedulers.test_multiple_values.settings:
+    tests.schedulers.matbenchmarking.enabled: true
+    tests.schedulers.test_settings:
       count: [200, 350, 500]
 
   cpu_all_schedulable:
@@ -81,8 +81,8 @@ ci_presets:
     tests.schedulers.test_templates.common_light.node.count: 4
 
     tests.schedulers.tests_to_run: [cpu_light_all_schedulable]
-    tests.schedulers.test_multiple_values.enabled: true
-    tests.schedulers.test_multiple_values.settings:
+    tests.schedulers.matbenchmarking.enabled: true
+    tests.schedulers.test_settings:
       count: [100, 150]
       mode: [kueue, job] # mcad
 
@@ -97,7 +97,6 @@ secrets:
   keep_cluster_password_file: get_cluster.password
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   model_s3_cred: .awscred
-  kserve_model_secret_settings: watsonx-models.yaml
   opensearch_instances: opensearch.yaml
   aws_credentials: .awscred
 
@@ -189,6 +188,7 @@ tests:
   dry_mode: false
   visualize: true
   capture_prom: true
+  deploy_coscheduler: true
   schedulers:
     kueue:
       queue_name: local-queue
@@ -200,14 +200,15 @@ tests:
 
     tests_to_run: [cpu_light_all_schedulable]
     distribution: poisson
-
-    test_multiple_values:
-      enabled: false
-      matbench_config_file: plot_multiple_tests.yaml
-      settings:
-        count: [200, 500, 750, 1000]
-        job.job_mode: [true, false]
     test_templates_file: test_templates.yaml # relative to testing/codeflare directory
+
+    matbenchmarking:
+      enabled: false
+      visu_file: plot_multiple_tests.yaml
+
+    test_settings:
+      count: 150
+      mode: "coscheduler"
 
 matbench:
   preset: null

@@ -35,7 +35,7 @@ class Codeflare:
           base_name: name prefix for the AppWrapper resources
           count: number of resources to create
           job_template_name: name of the job template to use inside the AppWrapper
-          mode: mcad (AppWrappers), kueue or job
+          mode: mcad (AppWrappers), kueue, coscheduler or job
           pod_count: number of Pods to create in each of the AppWrappers
           pod_runtime: run time parameter to pass to the Pod
           pod_requests: requests to pass to the Pod definition

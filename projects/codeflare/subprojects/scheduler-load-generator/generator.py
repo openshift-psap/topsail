@@ -21,6 +21,7 @@ import run, config, utils
 import job as job_mod
 import appwrapper as appwrapper_mod
 import kueue as kueue_mod
+import coscheduler as coscheduler_mod
 
 def main(dry_run=True,
          namespace=None,
@@ -87,8 +88,12 @@ def main(dry_run=True,
         mcad_mode = True
         logging.info("Running in AppWrapper mode")
         kind_name = "AppWrappers Jobs"
+    elif mode == "coscheduler":
+        coscheduler_mode = True
+        logging.info("Running in Coscheduler mode")
+        kind_name = "Coscheduler Jobs"
     else:
-        MODES = ("job", "mcad", "kueue")
+        MODES = ("job", "mcad", "kueue", "coscheduler")
         logging.error(f"Received an invalid mode: '{mode}'. Must in in {MODES}")
         sys.exit(1)
 
@@ -97,14 +102,20 @@ def main(dry_run=True,
 
     job = job_mod.prepare_base_job(namespace, job_template_name, base_name, pod_runtime, pod_requests, pod_count, kueue_mode)
     if job_mode:
-        resource = job_mod.prepare_standalone_job(job)
+        resources = job_mod.prepare_standalone_job(job)
     elif kueue_mode:
-        resource = kueue_mod.prepare_kueue_job(job, kueue_queue)
+        resources = kueue_mod.prepare_kueue_job(job, kueue_queue)
+    elif coscheduler_mode:
+        resources = coscheduler_mod.prepare_coscheduler_job(job)
     else:
-        resource = appwrapper_mod.prepare_appwrapper(namespace, job, priority, pod_count, pod_requests)
+        resources = appwrapper_mod.prepare_appwrapper(namespace, job, priority, pod_count, pod_requests)
 
-    resource_name_template = config.get_config("metadata.name", resource)
-    resource_json_template = utils.get_json_resource([resource])
+    if not resources:
+        logging.error("No resource to be created ...")
+        sys.exit(1)
+
+    resource_name_template = config.get_config("metadata.name", resources[0])
+    resource_json_template = utils.get_json_resource(resources)
     verbose_resource_creation = count < 50
 
     processes = []
@@ -165,6 +176,7 @@ def main(dry_run=True,
     if visualize:
         import visualize_schedule
         visualize_schedule.main(config.ARTIFACT_DIR, schedule_result)
+
 
 if __name__ == "__main__":
     try:

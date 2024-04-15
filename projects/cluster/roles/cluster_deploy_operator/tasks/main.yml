@@ -245,7 +245,7 @@
       oc get InstallPlan
          -n "{{ cluster_deploy_operator_namespace }}"
          -oname
-         -loperators.coreos.com/"{{ cluster_deploy_operator_manifest_name }}.{{ cluster_deploy_operator_namespace }}"
+         "-loperators.coreos.com/{{ (cluster_deploy_operator_manifest_name + "." + cluster_deploy_operator_namespace)[:63] }}"
     register: operator_installplan_name
     until: operator_installplan_name.stdout != ""
     retries: 20
