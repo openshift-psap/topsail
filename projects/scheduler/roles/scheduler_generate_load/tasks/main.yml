@@ -1,0 +1,207 @@
+---
+- name: Check if AppWrappers are defined
+  shell:
+    exit 1
+  register: has_appwrapper_cmd
+  failed_when: false
+
+- name: Ensure that there are no AppWrappers in the namespace
+  shell:
+    oc delete appwrappers --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
+  when: has_appwrapper_cmd.rc == 0
+
+- name: Ensure that there are no Jobs in the namespace
+  shell:
+    oc delete jobs --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
+
+- name: Ensure that there are no PodGroup in the namespace
+  shell:
+    oc delete podgroups --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
+  when: scheduler_generate_load_mode == "coscheduling"
+
+# ---
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the generator artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/generator-artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Create the namespace if it does not exist
+  shell:
+    set -o pipefail;
+    oc create ns "{{ scheduler_generate_load_namespace }}" -oyaml --dry-run=client | tee "{{ artifact_extra_logs_dir }}/src/namespace.yaml" | oc apply -f-
+
+- name: Create a configmap for the beginning of the test timestamp
+  shell:
+    oc delete cm start end -n "{{ scheduler_generate_load_namespace }}" --ignore-not-found;
+    oc create configmap start -n "{{ scheduler_generate_load_namespace }}" ;
+
+- name: Generate scheduler load
+  block:
+  - name: Run the load test
+    debug: msg="Load generator running in the next task, expect some delays (timespan={{ scheduler_generate_load_timespan }}min)... (mode={{ scheduler_generate_load_mode }})"
+
+  - name: Generate the scheduler load
+    shell:
+      export ARTIFACT_DIR="{{ artifact_extra_logs_dir }}/generator-artifacts";
+
+      python3 "{{ scheduler_generate_load_scheduler_load_generator }}"
+        --dry_run "False"
+        --namespace "{{ scheduler_generate_load_namespace }}"
+        --base_name "{{ scheduler_generate_load_base_name }}"
+        --count "{{ scheduler_generate_load_count }}"
+        --job_template_name "{{ scheduler_generate_load_job_template_name }}"
+        --mode "{{ scheduler_generate_load_mode }}"
+        --pod_count "{{ scheduler_generate_load_pod_count }}"
+        --pod_runtime "{{ scheduler_generate_load_pod_runtime }}"
+        --pod_requests "{{ scheduler_generate_load_pod_requests }}"
+        --timespan "{{ scheduler_generate_load_timespan }}"
+        --distribution "{{ scheduler_generate_load_distribution }}"
+        --kueue_queue "{{ scheduler_generate_load_kueue_queue }}"
+
+  - name: Define the variables
+    set_fact:
+      success_states: "{{ scheduler_generate_load_states_target | map('to_json') | join(', ') }}"
+      failed_states: "{{ scheduler_generate_load_states_unexpected | map('to_json') | join(', ') }}"
+
+  - name: Wait for the AppWrappers to complete
+    shell: |
+      set -o pipefail; set -e;
+      appwrappers_json=$(oc get appwrappers -n {{ scheduler_generate_load_namespace }} -ojson)
+
+      if [[ {{ scheduler_generate_load_count }} -lt 50 ]]; then
+        jq '.items[] | .metadata.name + " ==> "+ .status.state' -r <<< $appwrappers_json
+      else
+        echo "Too many appwrappers, hiding the individual status ..."
+      fi
+
+      appwrapper_count=$(jq '.items | length' <<< $appwrappers_json)
+      appwrapper_successes=$(jq '[.items[] | select(.status.state | IN({{ success_states }}))] | length' <<< $appwrappers_json)
+      appwrapper_failed=$(jq '[.items[] | select(.status.state | IN({{ failed_states }}))] | length' <<< $appwrappers_json)
+
+      if [[ "$appwrapper_failed" != 0 ]]; then
+        echo "Found $appwrapper_failed AppWrapper(s) in one of the unexpected states '{{ failed_states }}' , aborting."
+        exit 1 # fatal
+      fi
+
+      if [[ "$appwrapper_count" != "$appwrapper_successes" ]]; then
+         echo "Only $appwrapper_successes/$appwrapper_count AppWrappers are in the expected states '{{ success_states }}'. Continue waiting ...."
+         exit 2 # retry
+      fi
+
+      echo "All the AppWrappers have completed successfully. All done."
+      exit 0 # done
+    register: appwrappers_completed
+    retries: 120
+    delay: 30
+    # until fatal or done
+    until: appwrappers_completed.rc == 1 or appwrappers_completed.rc == 0
+    # failed when fatal
+    failed_when: appwrappers_completed.rc != 0
+    when: scheduler_generate_load_mode == "mcad"
+
+  - name: Wait for the Jobs to complete
+    shell: |
+      set -o pipefail; set -e;
+      jobs_json=$(oc get jobs -n {{ scheduler_generate_load_namespace }} -ojson)
+
+      if [[ {{ scheduler_generate_load_count }} -lt 50 ]]; then
+        oc get jobs,pods -n {{ scheduler_generate_load_namespace }} --no-headers
+      else
+        echo "Too many Jobs, hiding the individual status ..."
+      fi
+
+      jobs_count=$(jq '.items | length' <<< $jobs_json)
+      jobs_active=$(jq '[.items[] | select(.status.active and .status.active != 0)] | length' <<< $jobs_json)
+      jobs_failed=$(jq '[.items[] | select(.status.failed and .status.failed != 0)] | length' <<< $jobs_json)
+
+      if [[ "$jobs_failed" != 0 ]]; then
+        echo "Found $jobs_failed failed Jobs(s), aborting."
+        exit 1 # fatal
+      fi
+
+      if [[ "$jobs_active" != 0 ]]; then
+         echo "$jobs_active/$jobs_count Jobs still active. Continue waiting ...."
+         exit 2 # retry
+      fi
+
+      echo "All the Jobs have completed successfully. All done."
+      exit 0 # done
+    register: jobs_completed
+    retries: 180
+    delay: 30
+    # until fatal or done
+    until: jobs_completed.rc == 1 or jobs_completed.rc == 0
+    # failed when fatal
+    failed_when: jobs_completed.rc != 0
+    when: scheduler_generate_load_mode != "mcad"
+
+  always:
+  - name: Create a configmap for the end of the test timestamp
+    shell:
+      oc create configmap end -n "{{ scheduler_generate_load_namespace }}" ;
+      oc get cm start end -oyaml -n "{{ scheduler_generate_load_namespace }}" > "{{ artifact_extra_logs_dir }}/start_end_cm.yaml"
+
+  - name: Capture the state of the AppWrappers
+    shell: |
+      oc get appwrappers -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.json"
+      if [[ {{ scheduler_generate_load_count }} -lt 150 ]]; then
+        oc get appwrappers -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
+        oc describe appwrappers -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.desc"
+      fi
+      oc get appwrappers -n {{ scheduler_generate_load_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r >"{{ artifact_extra_logs_dir }}/appwrappers.status"
+    when: scheduler_generate_load_mode == "mcad"
+    ignore_errors: true
+
+  - name: Capture the state of the Jobs
+    shell: |
+      oc get jobs -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.json"
+      oc get jobs -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.status"
+      if [[ {{ scheduler_generate_load_count }} -lt 150 ]]; then
+        oc get jobs -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.yaml"
+        oc describe jobs -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.desc"
+      fi
+    ignore_errors: true
+
+  - name: Capture the state of the Pods
+    shell: |
+      oc get pods -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.json"
+      oc get pods -owide -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.status"
+      if [[ {{ scheduler_generate_load_count }} -lt 150 ]]; then
+        oc get pods -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"
+        oc describe pods -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
+      fi
+    ignore_errors: true
+
+  - name: Capture the state of the workloads
+    shell: |
+      oc get workloads -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.json"
+      oc get workloads -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.status"
+      if [[ {{ scheduler_generate_load_count }} -lt 150 ]]; then
+        oc get workloads -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.yaml"
+        oc describe workloads -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.desc"
+      fi
+    when: scheduler_generate_load_mode == "kueue"
+    ignore_errors: true
+
+  - name: Capture the state of the podgroups
+    shell: |
+      oc get podgroups -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.json"
+      oc get podgroups -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.status"
+      if [[ {{ scheduler_generate_load_count }} -lt 150 ]]; then
+        oc get podgroups -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.yaml"
+        oc describe podgroups -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.desc"
+      fi
+    when: scheduler_generate_load_mode == "coscheduling"
+    ignore_errors: true
+
+  - name: Capture the nodes of the cluster
+    shell:
+      oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/nodes.json"

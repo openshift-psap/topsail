@@ -1,0 +1,63 @@
+- name: Check if AppWrappers are defined
+  shell:
+    exit 1
+
+# ---
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Prepare the template AppWrapper
+  template:
+    src: "{{ scheduler_create_mcad_canary_appwrapper_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
+    mode: '0400'
+
+- name: Create the canary AppWrapper
+  shell:
+    oc create
+       -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
+
+- name: Wait for the canary AppWrapper to be discovered
+  block:
+  - name: Wait for the canary AppWrapper to be discovered
+    command:
+      oc get
+         -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
+         -ojsonpath={.status.controllerfirsttimestamp}
+    register: has_controllerfirsttimestamp_cmd
+    until: has_controllerfirsttimestamp_cmd.stdout | length > 0
+    retries: 200
+    delay: 15
+
+  - name: Wait for the canary AppWrapper to be scheduled
+    command:
+      oc get
+         -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"
+         -ojsonpath={.status.state}
+    register: aw_state_cmd
+    until: aw_state_cmd.stdout == "Completed"
+    retries: 200
+    delay: 15
+  always:
+  - name: Create a configmap for the end of the test timestamp
+    shell: |
+      oc create configmap end -n "{{ scheduler_create_mcad_canary }}" ;
+      oc get cm start deleted end -oyaml -n "{{ scheduler_create_mcad_canary }}" > "{{ artifact_extra_logs_dir }}/start_end_cm.yaml"
+      oc delete cm start deleted end -n "{{ scheduler_create_mcad_canary }}" --ignore-not-found;
+
+  - name: Capture the state of the AppWrappers
+    shell: |
+      oc get appwrappers -oyaml -n {{ scheduler_create_mcad_canary }} > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
+      oc get appwrappers -n {{ scheduler_create_mcad_canary }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r >"{{ artifact_extra_logs_dir }}/appwrappers.status"
+      oc describe appwrappers -n {{ scheduler_create_mcad_canary }} > "{{ artifact_extra_logs_dir }}/appwrappers.desc"
+    ignore_errors: true
+
+  - name: Delete the canary AppWrapper in the namespace
+    command:
+      oc delete
+         --ignore-not-found
+         -f "{{ artifact_extra_logs_dir }}/src/appwrapper.yaml"

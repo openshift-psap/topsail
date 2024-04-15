@@ -1,8 +1,0 @@
-# Auto-generated file, do not edit manually ...
-# Toolbox generate command: repo generate_ansible_default_settings
-# Source component: Codeflare.cleanup_appwrappers
-
-# Parameters
-# name of the namespace where the AppWrappers are deployed
-# Mandatory value
-codeflare_cleanup_appwrappers_namespace:
