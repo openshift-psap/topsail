@@ -16,6 +16,14 @@ def _setup_brew_registry(token_file):
 
 # ---
 
+def install_servicemesh():
+    run.run_toolbox("cluster", "deploy_operator",
+                    catalog="redhat-operators",
+                    manifest_name="servicemeshoperator",
+                    namespace="all",
+                    artifact_dir_suffix="servicemesh")
+
+
 def install(token_file=None, force=False):
     installed_csv_cmd = run.run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
 
@@ -25,6 +33,8 @@ def install(token_file=None, force=False):
 
     if token_file:
         _setup_brew_registry(token_file)
+
+    install_servicemesh()
 
     run.run_toolbox_from_config("rhods", "deploy_ods")
 
