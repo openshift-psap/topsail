@@ -490,15 +490,6 @@ prepare:
       namespaces:
       - knative-eventing
       - knative-serving
-  - name: servicemeshoperator
-    catalog: redhat-operators
-    namespace: all
-    cleanup:
-      crds:
-      - servicemeshmemberrolls.maistra.io
-      - servicemeshcontrolplanes.maistra.io
-      namespaces:
-      - istio-system
   cleanup:
     enabled: true
     crds:
