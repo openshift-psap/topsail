@@ -43,7 +43,6 @@ ENV USER_NAME=psap-ci-runner \
     USER=psap-ci-runner \
     HOME=/opt/topsail/src \
     INSIDE_CI_IMAGE="y"
-ENV ANSIBLE_CONFIG="${HOME}/config/ansible.cfg"
 
 ENV PYTHONPATH=$HOME
 
@@ -52,11 +51,7 @@ COPY . ${HOME}/
 # Install Python requirements
 
 RUN pip install --quiet --no-cache-dir -r ${HOME}/requirements.txt && \
-    (cd ${HOME} && ./topsail/testing/visualize.py prepare_matbench)
-
-# Prepare the CI `run` entrypoint
-
-# Prepare the CI `matbench`
+    (cd ${HOME} && ./projects/core/library/visualize.py prepare_matbench)
 
 # Ensure directory permissions are properly set
 
@@ -67,7 +62,7 @@ RUN echo -e '#!/usr/bin/env bash \n\
 exec ${HOME}/testing/run "$@" \n\
 ' > /usr/local/bin/run; chmod ugo+x /usr/local/bin/run \
  \
- && ln -s ${HOME}/subprojects/matrix-benchmarking/bin/matbench /usr/local/bin/ \
+ && ln -s ${HOME}/projects/core/subprojects/matrix-benchmarking/bin/matbench /usr/local/bin/ \
  \
  && mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R \
  && chgrp -R 0 "${VIRTUAL_ENV}" \

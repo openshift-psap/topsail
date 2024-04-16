@@ -9,7 +9,7 @@ import functools
 
 import fire
 
-from topsail.testing import env, config, visualize
+from projects.core.library import env, config, visualize
 
 import prepare_mcad, test_mcad
 import prepare_sdk_user, test_sdk_user

@@ -11,8 +11,9 @@ import functools
 import yaml
 import fire
 
-from topsail.testing import env, config, run, rhods, visualize, configure_logging, prepare_user_pods, export
+from projects.core.library import env, config, run, visualize, configure_logging, export
 configure_logging()
+from projects.local_ci.library import prepare_user_pods
 
 import prepare_scale, test_scale, test_e2e
 import prepare_kserve

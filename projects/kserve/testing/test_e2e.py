@@ -15,11 +15,10 @@ import fire
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
-import topsail
-from topsail.testing import env, config, run, visualize, matbenchmark
 import prepare_scale, test_scale, prepare_kserve
+from projects.core.library import env, config, run, visualize, matbenchmark
+TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
-TOPSAIL_DIR = pathlib.Path(topsail.__file__).parent.parent
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 

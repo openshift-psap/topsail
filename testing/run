@@ -118,7 +118,7 @@ prechecks() {
     echo "Saving TOPSAIL git version into ${ARTIFACT_DIR}/topsail.git_version"
     (git describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/topsail.git_version
     # store `matrix-benchmarking` version in use
-    (git -C "$THIS_DIR/../subprojects/matrix-benchmarking" describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/matbench.git_version
+    (git -C "$THIS_DIR/../projects/core/subprojects/matrix-benchmarking" describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/matbench.git_version
 
     if [[ "${PULL_NUMBER:-}" ]]; then
         PR_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PULL_NUMBER"

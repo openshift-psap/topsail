@@ -6,13 +6,11 @@ import pathlib
 import yaml
 import uuid
 
-import topsail
-from topsail.testing import env, config, run, visualize, matbenchmark
+from projects.core.library import env, config, run, visualize, matbenchmark
 import prepare
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-
-TOPSAIL_DIR = pathlib.Path(topsail.__file__).parent.parent
+TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 

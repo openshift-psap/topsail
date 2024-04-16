@@ -2,7 +2,9 @@ import os
 import pathlib
 import logging
 
-from topsail.testing import env, config, run, rhods, visualize, configure_logging, export, prepare_gpu_operator
+from projects.core.library import env, config, run, visualize, configure_logging, export
+from projects.rhods.library import prepare_rhoai as prepare_rhoai_mod
+from projects.gpu_operator.library import prepare_gpu_operator
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
@@ -110,7 +112,7 @@ def prepare_rhoai():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
-    rhods.install(token_file)
+    prepare_rhoai_mod.install(token_file)
 
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
     run.run_toolbox(
@@ -126,7 +128,7 @@ def cleanup_namespace_test():
 
 
 def cleanup_rhoai(mute=True):
-    rhods.uninstall(mute)
+    prepare_rhoai_mod.uninstall(mute)
 
 
 def cluster_scale_down(to_zero):

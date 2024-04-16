@@ -3,7 +3,9 @@ import os
 import logging
 import time
 
-from topsail.testing import env, config, run, rhods, sizing
+from projects.core.library import env, config, run, sizing
+from projects.rhods.library import prepare_rhoai
+
 import test_scale
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
@@ -135,7 +137,7 @@ def prepare():
                                  namespace=operator['namespace'],
                                  artifact_dir_suffix=operator['name'])
 
-    rhods.install(token_file)
+    prepare_rhoai.install(token_file)
 
     dsc_enable_kserve()
 
@@ -180,7 +182,7 @@ def undeploy_operator(operator, mute=True):
 
 
 def cleanup(mute=True):
-    rhods.uninstall(mute)
+    prepare_rhoai.uninstall(mute)
 
     if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
         with run.Parallel("cleanup_kserve") as parallel:

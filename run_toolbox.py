@@ -8,7 +8,7 @@ except ModuleNotFoundError:
     print("The toolbox requires the Python `fire` package, see requirements.txt for a full list of requirements")
     sys.exit(1)
 
-import topsail
+import projects.core.library.ansible_toolbox
 
 def main(no_exit=False):
     # Print help rather than opening a pager
@@ -17,7 +17,7 @@ def main(no_exit=False):
     # Launch CLI, get a runnable
     runnable = None
     try:
-        runnable = fire.Fire(topsail.Toolbox())
+        runnable = fire.Fire(projects.core.library.ansible_toolbox.Toolbox())
     except fire.core.FireExit:
         if not no_exit:
             raise

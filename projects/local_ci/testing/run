@@ -1,0 +1,241 @@
+#!/usr/bin/env python
+
+import sys, os
+import pathlib
+import subprocess
+import fire
+import logging
+logging.getLogger().setLevel(logging.INFO)
+import datetime
+import time
+import functools
+
+import yaml
+import jsonpath_ng
+
+from projects.core.library import env, config, run, configure_logging
+configure_logging()
+
+
+TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
+
+initialized = False
+def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
+    global initialized
+    if initialized:
+        logging.debug("Already initialized.")
+        return
+    initialized = True
+
+    env.init()
+    config.init(TESTING_THIS_DIR)
+
+
+def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
+    def decorator(fct):
+        @functools.wraps(fct)
+        def wrapper(*args, **kwargs):
+            init(ignore_secret_path, apply_preset_from_pr_args)
+            fct(*args, **kwargs)
+
+        return wrapper
+    return decorator
+
+
+@entrypoint()
+def local_ci_prepare():
+    """
+    Prepares the cluster for running Local-CI commands.
+    """
+
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    service_account = config.ci_artifacts.get_config("base_image.user.service_account")
+    role = config.ci_artifacts.get_config("base_image.user.role")
+
+    #
+    # Prepare the container image
+    #
+
+    # keep this command (cluster build_push_image) first, it creates the namespace
+
+    istag = config.get_command_arg("cluster", "build_push_image", "_istag")
+    try:
+        run.run(f"oc get istag {istag} -n {namespace} -oname >/dev/null")
+        has_istag = True
+        logging.info(f"Image {istag} already exists in namespace {namespace}. Don't build it.")
+    except subprocess.CalledProcessError:
+        has_istag = False
+
+    if not has_istag:
+        run.run_toolbox_from_config("cluster", "build_push_image")
+
+    #
+    # Prepare the ServiceAccount
+    #
+
+    run.run(f"oc create serviceaccount {service_account} -n {namespace} --dry-run=client -oyaml | oc apply -f-")
+    run.run(f"oc adm policy add-cluster-role-to-user {role} -z {service_account} -n {namespace}")
+
+    #
+    # Prepare the Secrets
+    #
+
+    for secret_name, secret_data in config.ci_artifacts.get_config("secrets").items():
+        secret_env_key = secret_data["env_key"]
+
+        run.run(f"oc create secret generic {secret_name} --from-file=${secret_env_key} -n {namespace} --dry-run=client -oyaml | oc apply -f-")
+
+    return None
+
+
+@entrypoint()
+def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True, step=None,
+                 check_clean_diff=True, check_branch_synced=True, pr_config=None, retrieve_artifacts=True,
+                 test_args=None):
+    """
+    Runs a CI workload.
+
+    Args:
+      workload: The name of the workload to execute
+      workload_identifier: An identifier to use when exporting the artifacts (default: the workload name)
+      export: A flag to disable exporting the artifacts
+      pr_number: The GitHub PR number to use for running the command (default: the 'main' branch)
+      step: The pipeline step to execute. If empty (default), execute all the steps of the pipeline.
+      check_clean_diff: If True, bail out if `git diff` is dirty.
+      check_branch_synced: If True, bail out if the git branch isn't synced with its upstream branch.
+      pr_config: Optional path to a PR config file (avoids fetching Github PR json).
+      retrieve_artifacts: If False, do not retrieve locally the test artifacts.
+      test_args: List of arguments to give to the test. Overrides what is found in the configuration file.
+    """
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
+
+    if pr_config and not pathlib.Path(pr_config).exists():
+        logging.fatal(f"--pr-config={pr_config} config file does not exist, aborting.")
+        sys.exit(1)
+
+    try:
+        logging.info("Checking if `git diff` is clean ...")
+        run.run("git diff --quiet")
+        diff_is_clean = True
+    except subprocess.CalledProcessError:
+        diff_is_clean = False
+        if check_clean_diff:
+            logging.fatal(f"Git diff isn't clean, bailing out.")
+            logging.info("Pass the flag --check-clean-diff=False to bypass this.")
+            sys.exit(1)
+        else:
+            logging.warning(f"Git diff isn't clean.")
+
+    try:
+        logging.info("Checking if the branch is synced with upstream ...")
+        run.run('test "$(git rev-parse HEAD)" == "$(git rev-parse $(git rev-parse --abbrev-ref --symbolic-full-name @{u}))"')
+    except subprocess.CalledProcessError:
+        if not diff_is_clean:
+            logging.warning(f"Git branch isn't in sync with its upstream branch.")
+        elif check_branch_synced:
+            logging.fatal(f"Git branch isn't in sync with its upstream branch.")
+            logging.info("Pass the flag --check-branch-synced=False or --check-clean-diff=False to bypass this.")
+            sys.exit(1)
+
+    workloads = config.ci_artifacts.get_config("workloads")
+    if not workload in workloads:
+        logging.fatal(f"Invalid workload '{workload}'. Must be in {', '.join(workloads.keys())}")
+        sys.exit(1)
+
+    env_ci_artifact_base_dir = pathlib.Path(os.environ.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
+    ci_artifact_base_dir = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d-%H%M')}" / workload
+
+    workload_data = workloads[workload]
+    command_group = workload_data["command_group"]
+
+    _test_args = test_args or workload_data.get("test_args", []) or []
+    if isinstance(test_args, str):
+        logging.fatal(f"Invalid test args {_test_args} for workload {workload}. Expected a list of strings. In the CLI, add [] around the single element if needed.")
+        sys.exit(1)
+
+    test_args = list(_test_args)
+
+    if workload_identifier is None:
+        workload_identifier = workload
+
+    ts_id = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+
+    if step and step not in workload_data["steps"]:
+        logging.fatal(f"Invalid step name {step} for workload {workload}. Expected one of '{', '.join(workload_data['steps'])}'")
+        sys.exit(1)
+
+    steps = workload_data["steps"] \
+        if not step else [step]
+
+    try:
+        logging.info(f"Checking that no Pod is running in {namespace} ...")
+        run.run(f"oc get pod --field-selector=status.phase==Running -oname -n {namespace} | grep .")
+        logging.fatal(f"Found Pods running in {namespace}, bailing out.")
+        sys.exit(1)
+    except subprocess.CalledProcessError:
+        pass
+
+    logging.info("Cleanup up the workflow Pods ...")
+    for step_idx, step_name in enumerate(steps):
+        run.run(f"oc delete pod/{workload}-{step_idx:03d}-{step_name} -n {namespace} --ignore-not-found")
+
+    failed = []
+    for step_idx, step_name in enumerate(steps):
+        if failed and not workload_data["steps"][step_name].get("always_run", False):
+            print(f"Test step '{failed}' failed, skipping {step_name} ...")
+            continue
+
+        step_dirname = f"{step_idx:03d}__{step_name}"
+
+        os.environ["ARTIFACT_DIR"] = str(ci_artifact_base_dir / step_dirname)
+        command = workload_data["steps"][step_name]["command"]
+
+        extra = dict(
+            ci_command=command,
+            pr_number=pr_number,
+            export_test_run_identifier=f"{ts_id}/{step_dirname}",
+            export=export,
+            pod_name=f"{workload}-{step_idx:03d}-{step_name}".replace("_", "-"),
+            test_name=f"{command_group}/{workload_identifier}",
+            test_args=test_args,
+            retrieve_artifacts=retrieve_artifacts,
+        )
+
+        if pr_config is not None:
+            extra["pr_config"] = pr_config
+
+        if pr_number:
+            extra["update_git"] = True
+
+        try:
+            run.run_toolbox_from_config("local_ci", "run", suffix=command_group, extra=extra)
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Step {step_dirname} failed (command '{e.cmd}') --> {e.returncode}")
+            failed.append(step_dirname)
+
+    if failed:
+        logging.fatal(f"Steps [{', '.join(failed)}] of workload '{workload}' failed :/")
+        sys.exit(1)
+
+class LocalCi:
+    """
+    Commands for launching the Local CI
+    """
+
+    def __init__(self):
+        self.prepare = local_ci_prepare
+        self.run = local_ci_run
+
+def main():
+    # Print help rather than opening a pager
+    fire.core.Display = lambda lines, out: print(*lines, file=out)
+
+    fire.Fire(LocalCi())
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command '{e.cmd}' failed --> {e.returncode}")
+        sys.exit(1)

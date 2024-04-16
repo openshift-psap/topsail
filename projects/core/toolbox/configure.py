@@ -4,10 +4,10 @@ import logging
 
 import pathlib
 
-from topsail.testing import env, config, run, rhods, visualize, configure_logging, prepare_user_pods, export
+from projects.core.library import env, config, run, configure_logging
 configure_logging()
 
-TOPSAIL_DIR = pathlib.Path(__file__).absolute().parent.parent.parent.parent
+TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
 class Configure:
     """

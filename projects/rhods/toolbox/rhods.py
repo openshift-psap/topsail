@@ -1,8 +1,11 @@
 import sys
 import logging
 
-from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
-
+from projects.core.library.ansible_toolbox import (
+    RunAnsibleRole, AnsibleRole,
+    AnsibleMappedParams, AnsibleConstant,
+    AnsibleSkipConfigGeneration
+)
 
 class Rhods:
     """

@@ -51,7 +51,7 @@
       echo "$installer"
       exit 0
     fi
-    ls subprojects/deploy-cluster/utils/installers/*/openshift-install | head -1
+    ls projects/cluster/subprojects/deploy-cluster/utils/installers/*/openshift-install | head -1
   register: openshift_install_cmd
 
 - name: Trigger openshift-install cluster deletion
