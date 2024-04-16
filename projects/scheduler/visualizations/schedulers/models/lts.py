@@ -15,9 +15,9 @@ class Metadata(matbench_models.Metadata):
 
 class Results(matbench_models.ExclusiveModel):
     last_launch_to_last_schedule_sec: float
-    time_to_cleanup_sec: float
     time_to_last_launch_sec: float
     time_to_last_schedule_sec: float
+    time_to_test_sec: float
 
 class Payload(BaseModel):
     metadata: Metadata

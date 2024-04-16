@@ -29,8 +29,7 @@ def generate_lts_results(results):
         (last_schedule_time - last_launch_time).total_seconds() \
         if last_schedule_time and last_launch_time else None
 
-    results_lts.time_to_cleanup_sec = \
-        _get_time_to_cleanup(results)
+    results_lts.time_to_test_sec = (results.test_start_end_time.end - results.test_start_end_time.start).total_seconds()
 
     return results_lts
 
@@ -47,18 +46,6 @@ def generate_lts_payload(results, import_settings):
     return payload
 
 # ---
-
-def _get_time_to_cleanup(results):
-    if not results.cleanup_times:
-        return 0
-
-    start = results.cleanup_times.start
-    end = results.cleanup_times.end
-    if not (start and end):
-        return 0
-
-    return (end - start).total_seconds()
-
 
 def _get_time_to_last_launch(results):
     if not results.resource_times:

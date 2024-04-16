@@ -66,7 +66,8 @@ def _get_test_setup(entry):
 
     setup_info += [html.Ul(nodes_info)]
 
-    test_duration = (entry.results.test_start_end_time.end - entry.results.test_start_end_time.start).total_seconds() / 60
+    test_duration = entry.results.lts.results.time_to_test_sec / 60
+
     test_speed = entry.results.test_case_properties.total_pod_count / test_duration
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
 
@@ -84,13 +85,24 @@ def _get_test_setup(entry):
         else:
             return f"{sec/60:.1f} minutes"
 
+    def _get_time_to_cleanup(results):
+        if not results.cleanup_times:
+            return 0
+
+        start = results.cleanup_times.start
+        end = results.cleanup_times.end
+        if not (start and end):
+            return 0
+
+        return (end - start).total_seconds()
+
     if last_launch_to_last_schedule_sec:
         setup_info += [html.Li(["Time to last Pod schedule: ", html.Code(f"{time_to_last_schedule_sec/60:.1f} minutes")])]
         setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{time_to_last_schedule_sec/60:.2f} Pods/minute")]))]
         setup_info += [html.Ul(html.Li(["Time between the last resource launch and its schedule: ", html.Code(f"{last_launch_to_last_schedule_sec} seconds")]))]
 
     if entry.results.cleanup_times:
-        time_to_cleanup_sec = entry.results.lts.results.time_to_cleanup_sec
+        time_to_cleanup_sec = _get_time_to_cleanup(results)
         setup_info += [html.Ul(html.Li([f"Time to cleanup: ", html.Code(f"{time(time_to_cleanup_sec)}")]))]
 
     setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
@@ -177,5 +189,8 @@ class ErrorReport():
         header += html.Br()
 
         header += report.Plot_and_Text(f"Resource Mapping Timeline", args)
+
+        header += report.Plot_and_Text(f"Resource Mapping Timeline", report.set_config(dict(all_at_once=True), args))
+        header += report.Plot_and_Text(f"Resource Mapping Timeline", report.set_config(dict(all_at_once=True, by_pod=True), args))
 
         return None, header
