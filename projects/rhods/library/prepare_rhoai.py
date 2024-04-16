@@ -20,7 +20,7 @@ def install_servicemesh():
                     catalog="redhat-operators",
                     manifest_name="servicemeshoperator",
                     namespace="all",
-                    artifact_dir_suffix="servicemesh")
+                    artifact_dir_suffix="_service-mesh")
 
 
 def install(token_file=None, force=False):
@@ -33,9 +33,9 @@ def install(token_file=None, force=False):
     if token_file:
         _setup_brew_registry(token_file)
 
-    install_servicemesh()
-
-    run.run_toolbox_from_config("rhods", "deploy_ods")
+    with run.Parallel("install_rhoai") as parallel:
+        parallel.delayed(install_servicemesh)
+        parallel.delayed(run.run_toolbox_from_config, "rhods", "deploy_ods")
 
 
 def uninstall(mute=True):
