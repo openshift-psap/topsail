@@ -178,14 +178,6 @@ class WorkerNodesReport():
         header = []
         header += [html.H1("Worker Nodes Load")]
 
-        header += Plot_and_Text(f"Prom: Sutest Worker Node CPU usage", args)
-        header += html.Br()
-        header += html.Br()
-
-        header += Plot_and_Text(f"Prom: Sutest Worker Node CPU idle", args)
-        header += html.Br()
-        header += html.Br()
-
         header += [html.H1("Node Resource Allocation")]
 
         header += ["These plots shows the CPU, memory and GPU allocation in the worker nodes of the cluster."]
@@ -195,20 +187,27 @@ class WorkerNodesReport():
         for entry in common.Matrix.all_records(settings, setting_lists):
             break
 
-        for node_name in sorted(entry.results.nodes_info):
-            node = entry.results.nodes_info[node_name]
-            if node.control_plane: continue
-            header += [html.H1(f"Node {node.name}")]
+        for what in "cpu", "memory", "gpu":
+            header += [html.H1(what.title())]
 
-            for what in "cpu", "memory", "gpu":
+            header += Plot_and_Text(f"Node Resource Allocation", set_config(dict(what=what), args))
+            header += html.Br()
+            header += html.Br()
 
-                if what == "gpu" and node.allocatable.gpu == 0:
-                    header += [html.P("No GPU on this node."), html.Br()]
-                    continue
+        header += [html.H2("SUTest Cluster")]
+        header += Plot_and_Text("Prom: sutest cluster memory usage", args)
+        header += Plot_and_Text("Prom: sutest cluster CPU usage", args)
 
-                header += Plot_and_Text(f"Node Resource Allocation", set_config(dict(what=what, instance=node.name), args))
-                header += html.Br()
-                header += html.Br()
+        header += [html.H2("Worker Node CPU usage")]
+
+        header += Plot_and_Text(f"Prom: Sutest Worker Node CPU usage", args)
+        header += html.Br()
+        header += html.Br()
+
+        header += Plot_and_Text(f"Prom: Sutest Worker Node CPU idle", args)
+        header += html.Br()
+
+        header += html.Br()
 
         return None, header
 

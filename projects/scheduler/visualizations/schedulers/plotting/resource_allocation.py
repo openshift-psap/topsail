@@ -7,6 +7,7 @@ from dash import html
 import plotly.graph_objs as go
 import pandas as pd
 import plotly.express as px
+import plotly.subplots as sp
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
@@ -14,15 +15,15 @@ import matrix_benchmarking.common as common
 def register():
     NodeResourceAllocation()
 
-def get_data(entry, cfg__instance, memory=False, cpu=False, gpu=False):
+def get_data(entry, node, what):
     cluster_role = "sutest"
 
-    value_divisor = 1024*1024*1024 if memory else 1
-    if memory:
+    value_divisor = 1024*1024*1024 if what == "memory" else 1
+    if what == "memory":
         resource_name = "memory"
-    elif cpu:
+    elif what == "cpu":
         resource_name = "cpu"
-    elif gpu:
+    elif what == "gpu":
         resource_name = "nvidia.com/gpu"
         total_metric_name = f"{cluster_role.title()} Control Plane Node Total GPU"
 
@@ -36,47 +37,28 @@ def get_data(entry, cfg__instance, memory=False, cpu=False, gpu=False):
         return pd.DataFrame([])
 
     for metric in entry.results.metrics[cluster_role][request_metric_name]:
-        if cfg__instance != metric.metric.get("node", ""): continue
+        if metric.metric.get("node", "") != node.name: continue
         if resource_name != metric.metric.get("resource", ""): continue
 
+        total_value = node.allocatable.__dict__[resource_name] / value_divisor
         for ts, val in metric.values.items():
-            data.append(
-                dict(type="3. Request",
-                     ts=datetime.datetime.fromtimestamp(ts),
-                     value=float(val) / value_divisor,
-                     )
-            )
+            requested = float(val) / value_divisor
+            available = total_value - requested
 
-    for metric in entry.results.metrics[cluster_role][limit_metric_name]:
-        if cfg__instance != metric.metric.get("node", ""): continue
-        if resource_name != metric.metric.get("resource", ""): continue
+            data.append(dict(
+                type=f"2. Available",
+                ts=datetime.datetime.fromtimestamp(ts),
+                value=available,
+            ))
 
-        for ts, val in metric.values.items():
-            data.append(
-                dict(type="2. Limit",
-                     ts=datetime.datetime.fromtimestamp(ts),
-                     value=float(val) / value_divisor,
-                     )
-            )
+            data.append(dict(
+                type=f"1. Requested",
+                ts=datetime.datetime.fromtimestamp(ts),
+                value=requested,
+            ))
 
-    if not data:
-        return pd.DataFrame([])
+    return data
 
-    node = entry.results.nodes_info.get(cfg__instance)
-    if not node:
-        logging.error(f"No information about node '{cfg_instance}'")
-    else:
-        df = pd.DataFrame(data)
-        start_ts = pd.DataFrame(data)["ts"].min()
-        end_ts = pd.DataFrame(data)["ts"].max()
-
-        total_value = entry.results.nodes_info[cfg__instance].allocatable.__dict__[resource_name] / value_divisor
-        data += [
-            dict(type="1. Total", ts=start_ts, value=total_value),
-            dict(type="1. Total", ts=end_ts, value=total_value),
-        ]
-
-    return pd.DataFrame(data).sort_values(by=["type", "ts"])
 
 class NodeResourceAllocation():
     def __init__(self):
@@ -97,45 +79,52 @@ class NodeResourceAllocation():
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass # entry is set
 
-        cfg__instance = cfg.get("instance", "")
-        if not cfg__instance:
-            return None, "No 'instance' parameter received"
-
         cfg__what = cfg.get("what", "")
 
-        memory = False
-        cpu = False
-        gpu = False
         if not cfg__what:
             return None, "No 'what' parameter received"
 
-        elif cfg__what == "memory":
-            memory = True
-        elif cfg__what == "cpu":
-            cpu = True
-        elif cfg__what == "gpu":
-            gpu = True
-        else:
-            return None, f"Invalid 'what' parameter received ({what})"
+        elif cfg__what not in ("memory", "cpu", "gpu"):
+            return None, f"Invalid 'what' parameter received ({cfg__what})"
 
-        df = get_data(entry, cfg__instance, memory=memory, gpu=gpu, cpu=cpu)
+        subplots = []
+        for node_name in sorted(entry.results.nodes_info):
+            node = entry.results.nodes_info[node_name]
+            if node.control_plane: continue
 
-        if df.empty:
-            return None, "Not data available ..."
+            data = get_data(entry, node, cfg__what)
 
-        fig = px.line(df, x="ts", y="value", color='type')
-        if memory:
-            fig.update_yaxes(title="Memory usage (in Gi)")
+            df = pd.DataFrame(data)
+            if df.empty:
+                continue
+
+            df = df.sort_values(by=["type", "ts"])
+
+            sub_fig = px.area(df, x="ts", y="value", color='type')
+
+            subplots.append(list(sub_fig["data"]))
+
+        if not subplots:
+            return None, "No thing to show"
+
+        fig = sp.make_subplots(rows=len(subplots), cols=1, shared_xaxes=True)
+        for idx, subplot in enumerate(subplots):
+            for trace in subplot:
+                fig.append_trace(trace, row=idx+1, col=1)
+                if idx != 0:
+                    fig.data[-1].showlegend = False
+
+        if cfg__what == "memory":
             title_what = "Memory"
-        elif cpu:
-            fig.update_yaxes(title="CPU usage (in core)")
+            yaxis_title = "in Gi"
+        elif cfg__what == "cpu":
             title_what = "CPU"
-        elif gpu:
-            fig.update_yaxes(title="GPU usage (in GPU count)")
+            yaxis_title = "in core"
+        elif cfg__what == "gpu":
             title_what = "GPU"
+            yaxis_title = "in GPU count"
 
-        fig.update_xaxes(title="Timeline")
-        fig.update_layout(title=f"<b>{title_what} usage</b><br>of Node '{cfg__instance}'", title_x=0.5)
+        fig.update_layout(title=f"<b>{title_what} usage</b> of the worker nodes<br>{yaxis_title}", title_x=0.5)
         fig.update_yaxes(range=[0, df["value"].max()*1.1])
 
         return fig, ""

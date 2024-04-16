@@ -74,9 +74,9 @@ def parse_once(results, dirname):
     if results.test_case_properties.mode == "mcad":
         results.target_kind_name = "AppWrapper"
     elif results.test_case_properties.mode == "job":
-        results.target_kind_name = "K8s Jobs"
+        results.target_kind_name = "K8s Job"
     else:
-        results.target_kind_name = f"{results.test_case_properties.mode.title()} Jobs"
+        results.target_kind_name = f"{results.test_case_properties.mode.title()} Job"
 
     results.target_kind = "AppWrapper" if results.test_case_properties.mode == "mcad" else "Job"
 

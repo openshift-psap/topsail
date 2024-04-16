@@ -18,7 +18,9 @@ def register():
     ResourcesTimeline()
     ResourcesInStateTimeline()
 
-def ResourceMappingTimeline_generate_data(entry):
+
+
+def ResourceMappingTimeline_generate_raw_data(entry):
     data = []
 
     start_time = entry.results.test_start_end_time.start
@@ -41,11 +43,13 @@ def ResourceMappingTimeline_generate_data(entry):
         except ValueError:
             hostname_index = -1
 
+        node_name = f"Node {hostname_index}<br>{shortname}"
+
         data.append(dict(
             Time = pod_time.start_time,
             Delta = delta(pod_time.start_time),
             Inc = 1,
-            NodeName = f"Node {hostname_index}<br>{shortname}",
+            NodeName = node_name,
             PodName = pod_name,
         ))
 
@@ -53,31 +57,47 @@ def ResourceMappingTimeline_generate_data(entry):
             Time = finish,
             Delta = delta(finish),
             Inc = -1,
-            NodeName = f"Node {hostname_index}<br>{shortname}",
+            NodeName = node_name,
             PodName = pod_name,
         ))
 
-    if not data:
+    return data
+
+
+def ResourceMappingTimeline_generate_data_by_node(entry):
+    raw_data = ResourceMappingTimeline_generate_raw_data(entry)
+    if not raw_data:
         return []
 
-    df = pd.DataFrame(data).sort_values(by="Time")
+    start_time = entry.results.test_start_end_time.start
+    def delta(ts):
+        return (ts - start_time).total_seconds() / 60
+
+    df = pd.DataFrame(raw_data).sort_values(by="Time")
     YOTA = datetime.timedelta(microseconds=1)
     node_pod_count = defaultdict(int)
     data = []
+
+    node_names = set()
     for index, row in df.iterrows():
-        data.append(dict(
-            Time = row.Time - YOTA,
-            Delta = delta(row.Time - YOTA),
-            Count = node_pod_count[row.NodeName],
-            NodeName = row.NodeName,
-        ))
+        node_names.add(row.NodeName)
+
+    for index, row in df.iterrows():
+        for node_name in node_names:
+            data.append(dict(
+                Time = row.Time - YOTA,
+                Delta = delta(row.Time - YOTA),
+                Count = node_pod_count[node_name],
+                NodeName = node_name,
+            ))
         node_pod_count[row.NodeName] += row.Inc
-        data.append(dict(
-            Time = row.Time,
-            Delta = delta(row.Time),
-            Count = node_pod_count[row.NodeName],
-            NodeName = row.NodeName,
-        ))
+        for node_name in node_names:
+            data.append(dict(
+                Time = row.Time,
+                Delta = delta(row.Time),
+                Count = node_pod_count[node_name],
+                NodeName = node_name,
+            ))
 
     for node in node_pod_count.keys():
         data.insert(0, dict(
@@ -96,6 +116,49 @@ def ResourceMappingTimeline_generate_data(entry):
 
     return data
 
+
+def ResourceMappingTimeline_generate_data_by_pod(entry):
+    raw_data = ResourceMappingTimeline_generate_raw_data(entry)
+    if not raw_data:
+        return []
+
+    df = pd.DataFrame(raw_data).sort_values(by="Time")
+
+    start_time = entry.results.test_start_end_time.start
+    def delta(ts):
+        return (ts - start_time).total_seconds() / 60
+
+    pod_names = set()
+    pod_node = {}
+    for index, row in df.iterrows():
+        pod_names.add(row.PodName)
+        if row.PodName not in pod_node:
+            pod_node[row.PodName] = row.NodeName
+
+    YOTA = datetime.timedelta(microseconds=1)
+    pod_states = defaultdict(int)
+    data = []
+    for index, row in df.iterrows():
+        for pod_name in pod_names:
+            data.append(dict(
+                Delta = delta(row.Time - YOTA),
+                PodName = pod_name,
+                Count = pod_states[pod_name],
+                NodeName = pod_node[pod_name],
+            ))
+
+        pod_states[row.PodName] += row.Inc
+
+        for pod_name in pod_names:
+            data.append(dict(
+                Delta = delta(row.Time + YOTA),
+                PodName = pod_name,
+                Count = pod_states[pod_name],
+                NodeName = pod_node[pod_name],
+            ))
+
+    return data
+
 class ResourceMappingTimeline():
     def __init__(self):
         self.name = "Resource Mapping Timeline"
@@ -111,24 +174,35 @@ class ResourceMappingTimeline():
         if common.Matrix.count_records(settings, setting_lists) != 1:
             return {}, "ERROR: only one experiment must be selected"
 
+        cfg__all_at_one = cfg.get("all_at_once", False)
+        cfg__by_pod = cfg.get("by_pod", False)
+
         for entry in common.Matrix.all_records(settings, setting_lists):
-            data = ResourceMappingTimeline_generate_data(entry)
+            pass # entry is set
+
+        if cfg__by_pod:
+            data = ResourceMappingTimeline_generate_data_by_pod(entry)
+        else:
+            data = ResourceMappingTimeline_generate_data_by_node(entry)
 
         if not data:
             return None, "Not data available ..."
 
         df = pd.DataFrame(data)
 
-        fig = go.Figure()
-        for name in df.NodeName.unique():
-            df_name = df[df.NodeName == name]
-            fig.add_trace(go.Scatter(x=df_name.Delta,
-                                     y=df_name.Count,
-                                     fill="tozeroy",
-                                     mode='lines',
-                                     name=name,
-                                 ))
-        fig.update_layout(showlegend=True)
+        if cfg__all_at_one:
+            fig = px.area(df, x="Delta", y="Count", color="PodName" if cfg__by_pod else "NodeName")
+        else:
+            fig = go.Figure()
+            for name in df.NodeName.unique():
+                df_name = df[df.NodeName == name]
+                fig.add_trace(go.Scatter(x=df_name.Delta,
+                                        y=df_name.Count,
+                                         fill="tozeroy",
+                                         mode='lines',
+                                         name=name,
+                                         ))
+            fig.update_layout(showlegend=True)
 
         fig.update_layout(title=f"Timeline of the {entry.results.target_kind_name}'s Pod count<br>running on the cluster nodes", title_x=0.5,)
         fig.update_layout(yaxis_title="Pod count")

@@ -178,4 +178,7 @@ class ErrorReport():
 
         header += report.Plot_and_Text(f"Resource Mapping Timeline", args)
 
+        header += report.Plot_and_Text(f"Resource Mapping Timeline", report.set_config(dict(all_at_once=True), args))
+        header += report.Plot_and_Text(f"Resource Mapping Timeline", report.set_config(dict(all_at_once=True, by_pod=True), args))
+
         return None, header
