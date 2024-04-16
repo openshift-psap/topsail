@@ -1,4 +1,0 @@
----
-gpu_operator_resource_namespace_file: projects/gpu-operator/roles/gpu_operator_deploy_from_operatorhub/files/010_namespace.yml
-gpu_operator_operatorhub_group: projects/gpu-operator/roles/gpu_operator_deploy_from_operatorhub/templates/010_operator_group.yml.j2
-gpu_operator_operatorhub_sub: projects/gpu-operator/roles/gpu_operator_deploy_from_operatorhub/templates/020_operator_sub.yml.j2

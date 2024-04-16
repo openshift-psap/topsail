@@ -2,7 +2,7 @@ title = "topsail gitleaks config"
 
 [allowlist]
   paths = [
-    '''roles/cluster/cluster_deploy_ldap/templates/bind-secret.yml''',
-    '''roles/cluster/cluster_deploy_ldap/templates/secret.yml''',
+    '''./projects/cluster/roles/cluster_deploy_ldap/templates/bind-secret.yml''',
+    '''./projects/cluster/roles/cluster_deploy_ldap/templates/secret.yml''',
     '''testing/utils/openshift_clusters/clusters.sh''',
   ]

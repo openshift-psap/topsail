@@ -14,7 +14,7 @@ import test_scale
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
-from topsail.testing import env, config, run, configure_logging
+from projects.core.library import env, config, run, configure_logging
 configure_logging()
 
 def deploy(

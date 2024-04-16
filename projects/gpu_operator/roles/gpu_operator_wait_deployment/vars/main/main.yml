@@ -1,0 +1,1 @@
+gpu_operator_fetch_pod_metrics_script: projects/gpu_operator/roles/gpu_operator_wait_deployment/files/fetch_pod_metrics.sh

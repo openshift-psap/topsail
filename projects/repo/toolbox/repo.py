@@ -1,11 +1,12 @@
 import os
 import pathlib
 
-import topsail
 
 from projects.repo.scripts.validate_role_files import main as role_files_main
 from projects.repo.scripts.validate_role_vars_used import main as role_vars_used_main
 import projects.repo.scripts.ansible_default_config
+
+import projects.core.library.ansible_toolbox
 
 TOOLBOX_THIS_DIR = pathlib.Path(__file__).absolute().parent
 PROJECT_DIR = TOOLBOX_THIS_DIR.parent
@@ -60,5 +61,5 @@ class Repo:
         """
         Generate the 'defaults/main/config.yml' file of the Ansible roles, based on the Python definition.
         """
-        projects.repo.scripts.ansible_default_config.generate_all(topsail.Toolbox())
+        projects.repo.scripts.ansible_default_config.generate_all(projects.core.library.ansible_toolbox.Toolbox())
         exit(0)

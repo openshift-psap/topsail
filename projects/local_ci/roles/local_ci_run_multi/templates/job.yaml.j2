@@ -1,0 +1,262 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: topsail
+    test: {{ local_ci_run_multi_job_name }}
+  name: {{ local_ci_run_multi_job_name }}
+  namespace: {{ local_ci_run_multi_namespace }}
+spec:
+  parallelism: {{ local_ci_run_multi_user_count }}
+  completions: {{ local_ci_run_multi_user_count }}
+  activeDeadlineSeconds: 18000
+  backoffLimit: 0
+  completionMode: Indexed
+  template:
+    metadata:
+      name: ods-ci-loadtest
+    spec:
+      serviceAccount: "{{ local_ci_run_multi_service_account }}"
+      containers:
+      - name: main
+        command:
+        - bash
+        - -c
+        args:
+        - |
+          set -o errexit
+          set -o pipefail
+          set -o nounset
+          set -o errtrace
+          set -x
+
+          JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-0}
+
+          trap 'touch "$ARTIFACT_DIR/.local_ci_done"' EXIT
+
+          git config --global --add safe.directory '*'
+
+{% if local_ci_run_multi_git_pull %}
+
+          git fetch origin \
+{% if local_ci_run_multi_git_pull is true %}
+              "$OPENSHIFT_BUILD_REFERENCE"
+{% else %}
+              "{{ local_ci_run_multi_git_pull }}"
+{% endif %}
+          git reset --hard FETCH_HEAD
+{% endif %}
+
+{% if local_ci_run_multi_variable_overrides %}
+          cat > "${ARTIFACT_DIR}/variable_overrides" << EOF
+          {{ local_ci_run_variable_overrides_cmd.stdout | indent(6) }}
+          EOF
+{% endif %}
+
+{% if local_ci_run_multi_use_local_config %}
+          cp /mnt/pipeline_scale_test_config/config.yaml $SHARED_DIR/config.yaml
+{% endif %}
+
+{% if local_ci_run_multi_state_signal_redis_server %}
+          # Use StateSignal-barrier to wait for all the Pods to be ready
+          echo "Running with user $JOB_COMPLETION_INDEX / $USER_COUNT"
+          STATE_SIGNAL_DELAY=-1 # delay for all the Pods to reach the entry barrier
+          if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
+              python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" \
+                      --exporter "$USER_COUNT" \
+                      --delay "$STATE_SIGNAL_DELAY" &
+          fi
+
+          safe_exit() {
+              set +x
+              ret_code=$1
+              # mark this test as failed
+              echo $ret_code > "$ARTIFACT_DIR/test.exit_code"
+              touch "$ARTIFACT_DIR/FAILURES"
+              ABORT_ON_FAILURE={{ local_ci_run_multi_abort_on_failure }} # set via the Job template
+              if [[ "$ABORT_ON_FAILURE" == true ]]; then
+                  echo "ABORT_ON_FAILURE is set, aborting the execution."
+                  exit 1
+              else
+                  # exit the Pod successfully, so that all the Pod logs are retrieved.
+                  # without this, we don't know why the 'fail' event was generated.
+                  echo "ABORT_ON_FAILURE isn't set, exit peacefully to keep the other Pods running."
+                  exit 0
+              fi
+          }
+
+          echo "statesignal_setup: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
+          if ! python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER"; then
+              # fails if the all Pods don't reach the barrier in time
+              echo "StateSignal syncrhonization failed :( (errcode=$?)"
+
+              safe_exit 1
+          fi
+          echo "statesignal_ready: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
+{% endif %}
+
+          # Sleep for a while for a staggered start
+
+          sleep_delay=$(python3 -c "print(int($JOB_COMPLETION_INDEX / $USER_BATCH_SIZE) * $SLEEP_FACTOR)")
+
+          echo "Waiting $sleep_delay seconds before starting (job index: $JOB_COMPLETION_INDEX, sleep factor: $SLEEP_FACTOR)"
+
+          sleep "$sleep_delay"
+          echo "launch_delay: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
+
+          if ! "$HOME"/testing/run {{ local_ci_run_multi_ci_command }} |& tee "${ARTIFACT_DIR}/run.log"; then
+              safe_exit 1
+          fi
+
+          echo 0 > "$ARTIFACT_DIR/test.exit_code"
+          exit
+        image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_multi_namespace }}/{{ local_ci_run_multi_istag }}"
+        imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        runAsNonRoot: True
+        resources:
+          requests:
+            cpu: 250m
+            memory: 2Gi
+        env:
+        - name: ARTIFACT_DIR
+          value: /logs/artifacts
+        - name: TOPSAIL_LOCAL_CI_MULTI
+          value: "true"
+{% set ocp_keys = ["OPENSHIFT_CI", "JOB_SPEC", "PULL_NUMBER", "REPO_OWNER", "REPO_NAME", "PULL_BASE_REF", "ENTRYPOINT_OPTIONS"] %}
+{% set jenkins_keys = ["PERFLAB_CI", "JENKINS_JUMPHOST", "JENKINS_BUILD_NUMBER", "JENKINS_JOB", "JENKINS_INSTANCE"] %}
+{% set local_ci_keys = ["TOPSAIL_LOCAL_CI", "TOPSAIL_LOCAL_CI_BUCKET_NAME", "TEST_RUN_IDENTIFIER"] %}
+{% set common_keys = ["JOB_NAME", "JOB_NAME_SAFE"] %}
+{% for key in ocp_keys + jenkins_keys + local_ci_keys + common_keys %}
+{% set value = lookup('env', key) %}
+{% if value %}
+        - name: "{{ key }}"
+          value: '{{ value }}'
+{% endif %}
+{% endfor %}
+        - name: KUBECONFIG # Kubernetes is accessed via the in-Pod credentials
+          value: ""
+{% if local_ci_run_multi_secret_name %}
+        - name: {{ local_ci_run_multi_secret_env_key }}
+          value: /mnt/secrets/{{ local_ci_run_multi_secret_name }}
+{% endif %}
+        - name: SHARED_DIR
+          value: /mnt/shared
+        - name: USER_COUNT
+          value: "{{ local_ci_run_multi_user_count }}"
+{% if local_ci_run_multi_state_signal_redis_server %}
+        - name: STATE_SIGNAL_BARRIER
+          value: projects/local_ci/subprojects/state-signal-utils//state-signal_barrier.py
+        - name: REDIS_SERVER
+          value: "{{ local_ci_run_multi_state_signal_redis_server }}"
+{% endif %}
+        - name: SLEEP_FACTOR
+          value: "{{ local_ci_run_multi_sleep_factor }}"
+        - name: USER_BATCH_SIZE
+          value: "{{ local_ci_run_multi_user_batch_size }}"
+        volumeMounts:
+        - mountPath: /logs/artifacts
+          name: artifacts
+        - mountPath: /mnt/shared
+          name: shared-dir
+{% if local_ci_run_multi_secret_name %}
+        - mountPath: /mnt/secrets/{{ local_ci_run_multi_secret_name }}
+          name: {{ local_ci_run_multi_secret_name }}
+{% endif %}
+{% if local_ci_run_multi_use_local_config %}
+        - mountPath: /mnt/pipeline_scale_test_config
+          name: {{ local_ci_run_multi_job_name }}-config
+{% endif %}
+{% if local_ci_run_multi_retrieve_artifacts %}
+      - name: artifacts-exporter
+        command:
+        - bash
+        - -c
+        args:
+        - |
+          set -o errexit
+          set -o pipefail
+          set -o nounset
+          set -o errtrace
+
+          JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-0}
+
+          echo 'Waiting for the main container to be done ...'
+          set +x
+          while [[ ! -f "$ARTIFACT_DIR/.local_ci_done" ]]; do
+            sleep 1
+          done
+          set -x
+          echo 'The main container is done ...'
+
+          echo 'Exporting to the local S3 server ...'
+          export AWS_SHARED_CREDENTIALS_FILE=/tmp/awscreds
+          bash -ce '
+          source "${{ local_ci_run_multi_secret_env_key }}/{{ local_ci_run_multi_minio_secret_key_key }}"
+          cat > $AWS_SHARED_CREDENTIALS_FILE <<EOF
+          [default]
+          aws_access_key_id = minio
+          aws_secret_access_key = $user_password
+          EOF'
+
+          S3_ENDPOINT_URL="http://minio.$MINIO_NAMESPACE.svc.cluster.local:9000"
+          _aws() {
+            aws "--endpoint-url=$S3_ENDPOINT_URL" "$@"
+          }
+
+          dest="s3://$S3_BUCKET_NAME/ci-pod-$JOB_COMPLETION_INDEX"
+          _aws s3 cp "$ARTIFACT_DIR" "$dest" --recursive --acl public-read
+
+          echo 'All done, bye.'
+
+          exit 0
+        image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_multi_namespace }}/{{ local_ci_run_multi_istag }}"
+        imagePullPolicy: Always
+        env:
+        - name: MINIO_NAMESPACE
+          value: "{{ local_ci_run_multi_minio_namespace }}"
+        - name: S3_BUCKET_NAME
+          value: "{{ local_ci_run_multi_minio_bucket_name }}"
+{% if local_ci_run_multi_secret_name %}
+        - name: {{ local_ci_run_multi_secret_env_key }}
+          value: /mnt/secrets/{{ local_ci_run_multi_secret_name }}
+{% endif %}
+        - name: ARTIFACT_DIR
+          value: /logs/artifacts
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+          seccompProfile:
+            type: RuntimeDefault
+        runAsNonRoot: True
+        volumeMounts:
+        - mountPath: /logs/artifacts
+          name: artifacts
+{% if local_ci_run_multi_secret_name %}
+        - name: {{ local_ci_run_multi_secret_name }}
+          mountPath: /mnt/secrets/{{ local_ci_run_multi_secret_name }}
+{% endif %}
+{% endif %}
+      restartPolicy: Never
+      volumes:
+      - name: artifacts
+        emptyDir: {}
+      - name: shared-dir
+        emptyDir: {}
+{% if local_ci_run_multi_secret_name %}
+      - name: {{ local_ci_run_multi_secret_name }}
+        secret:
+          secretName: {{ local_ci_run_multi_secret_name }}
+{% endif %}
+{% if local_ci_run_multi_use_local_config %}
+      - name: {{ local_ci_run_multi_job_name }}-config
+        configMap:
+          name: {{ local_ci_run_multi_job_name }}-config
+{% endif %}

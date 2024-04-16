@@ -12,7 +12,7 @@ import functools
 import yaml
 import fire
 
-from topsail.testing import env, config, run, rhods, visualize
+from projects.core.library import env, config, run, rhods, visualize
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 

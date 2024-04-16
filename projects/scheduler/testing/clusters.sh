@@ -17,4 +17,4 @@ clusters_create__check_test_size() {
 
 export -f clusters_create__check_test_size
 
-exec "$TESTING_UTILS_DIR/openshift_clusters/clusters.sh" "$@"
+exec "$TOPSAIL_DIR/projects/cluster/subprojects/deploy-topsail-clusters/clusters.sh" "$@"

@@ -5,7 +5,7 @@ from codeflare_sdk.cluster.cluster import Cluster, ClusterConfiguration
 from codeflare_sdk.job.jobs import DDPJobDefinition
 from time import sleep
 
-from topsail.testing import env, config, run, visualize
+from projects.core.library import env, config, run, visualize
 
 
 def main():

@@ -3,8 +3,11 @@ import pathlib
 import os
 import yaml
 
-from topsail.testing import env, config, run, prepare_gpu_operator, prepare_user_pods, prepare_gpu_operator, merge_dicts, sizing
+from projects.core.library import env, config, run, merge_dicts, sizing
 import prepare_kserve
+
+from projects.gpu_operator.library import prepare_gpu_operator
+from projects.local_ci.library import prepare_user_pods
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 

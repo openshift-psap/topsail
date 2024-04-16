@@ -1,8 +1,11 @@
 import sys
 import logging
 
-from topsail._common import RunAnsibleRole, AnsibleRole, AnsibleMappedParams, AnsibleConstant, AnsibleSkipConfigGeneration
-
+from projects.core.library.ansible_toolbox import (
+    RunAnsibleRole, AnsibleRole,
+    AnsibleMappedParams, AnsibleConstant,
+    AnsibleSkipConfigGeneration
+)
 
 class Rhods:
     """
@@ -93,18 +96,6 @@ class Rhods:
         """
 
         return RunAnsibleRole(locals())
-
-    @AnsibleRole("rhods_cleanup_aws")
-    @AnsibleMappedParams
-    def cleanup_aws(self, openshift_installer=""):
-        """
-        Cleanup AWS from RHODS dangling resources
-
-        Args:
-          openshift_installer: path of the openshift_installer to use. If empty, download it.
-        """
-
-        return RunAnsibleRole()
 
     @AnsibleRole("cluster_prometheus_db")
     @AnsibleSkipConfigGeneration # see cluster.reset_prometheus_db

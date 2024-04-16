@@ -14,7 +14,9 @@ import uuid
 import yaml
 import fire
 
-from topsail.testing import env, config, run, rhods, visualize, sizing, prepare_user_pods
+from projects.core.library import env, config, run, visualize, sizing
+from projects.rhods.library import prepare_rhoai
+from projects.local_ci.library import prepare_user_pods
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 
@@ -99,7 +101,7 @@ def prepare_rhods():
     install_ocp_pipelines()
 
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
-    rhods.install(token_file)
+    prepare_rhoai.install(token_file)
 
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
 
@@ -313,13 +315,13 @@ def cleanup_cluster():
     # uninstall RHODS
     #
 
-    rhods.uninstall()
+    prepare_rhoai.uninstall()
 
     #
     # uninstall LDAP
     #
 
-    rhods.uninstall_ldap()
+    prepare_rhoai.uninstall_ldap()
 
     #
     # uninstall the pipelines operator

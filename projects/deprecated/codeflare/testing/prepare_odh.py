@@ -1,7 +1,7 @@
 import logging
 import pathlib
 
-from topsail.testing import env, config, run
+from projects.core.library import env, config, run
 
 def prepare_odh():
     odh_namespace = config.ci_artifacts.get_config("odh.namespace")
