@@ -94,18 +94,6 @@ class Rhods:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("rhods_cleanup_aws")
-    @AnsibleMappedParams
-    def cleanup_aws(self, openshift_installer=""):
-        """
-        Cleanup AWS from RHODS dangling resources
-
-        Args:
-          openshift_installer: path of the openshift_installer to use. If empty, download it.
-        """
-
-        return RunAnsibleRole()
-
     @AnsibleRole("cluster_prometheus_db")
     @AnsibleSkipConfigGeneration # see cluster.reset_prometheus_db
     @AnsibleConstant("", "cluster_prometheus_db_mode", "reset")
