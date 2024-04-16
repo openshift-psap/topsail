@@ -281,7 +281,7 @@ def get_jsonpath(config, jsonpath):
     return jsonpath_ng.parse(jsonpath).find(config)[0].value
 
 
-def init(base_dir):
+def init(base_dir, apply_preset_from_pr_args=False):
     global ci_artifacts
 
     if ci_artifacts:
@@ -292,3 +292,8 @@ def init(base_dir):
     ci_artifacts = Config(config_path)
 
     ci_artifacts.apply_config_overrides()
+
+    if not apply_preset_from_pr_args:
+        ci_artifacts.apply_preset_from_pr_args()
+        # reapply to force overrides on top of presets
+        ci_artifacts.apply_config_overrides()

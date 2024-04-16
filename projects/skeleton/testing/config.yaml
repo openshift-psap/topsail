@@ -50,6 +50,8 @@ secrets:
   aws_credentials: .awscred
 
 clusters:
+  metal_provides:
+    node_name: profile-to-apply
   create:
     type: single # can be: single, ocp, managed
     keep: false

@@ -30,18 +30,23 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     initialized = True
 
     env.init()
-    config.init(TESTING_THIS_DIR)
+    config.init(TESTING_THIS_DIR, apply_preset_from_pr_args)
 
-    if apply_preset_from_pr_args:
-        config.ci_artifacts.apply_preset_from_pr_args()
+    if not ignore_secret_path:
+        if not PSAP_ODS_SECRET_PATH.exists():
+            raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-    if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
-        raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
-
+        run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
 
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
-    config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
+    is_metal = config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
 
+    if is_metal:
+        metal_profiles = config.ci_artifacts.get_config("clusters.metal_profiles")
+        profile_applied = config.ci_artifacts.detect_apply_cluster_profile(metal_profiles)
+
+        if not profile_applied:
+            raise ValueError("Bare-metal cluster not recognized :/ ")
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     def decorator(fct):

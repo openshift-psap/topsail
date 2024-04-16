@@ -32,10 +32,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     initialized = True
 
     env.init()
-    config.init(TESTING_THIS_DIR)
-
-    if apply_preset_from_pr_args:
-        config.ci_artifacts.apply_preset_from_pr_args()
+    config.init(TESTING_THIS_DIR, apply_preset_from_pr_args)
 
     if not ignore_secret_path:
         if not PSAP_ODS_SECRET_PATH.exists():
