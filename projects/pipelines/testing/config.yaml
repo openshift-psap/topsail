@@ -67,6 +67,8 @@ secrets:
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   opensearch_instances: opensearch.yaml
 clusters:
+  metal:
+    e26-h23-000-r650: icelake
   create:
     type: single # can be: single, ocp, managed
     keep: false
