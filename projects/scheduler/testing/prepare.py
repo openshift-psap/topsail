@@ -58,6 +58,13 @@ def prepare_scheduler_test():
         logging.warning(f"Project '{namespace}' already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
 
+    metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
+    dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
+    if not metal and dedicated:
+        extra = dict(project=namespace)
+        run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_node_selector", extra=extra, mute_stdout=True)
+        run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_toleration", extra=extra, mute_stdout=True)
+
 
 def prepare_kueue_queue(dry_mode):
     namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
