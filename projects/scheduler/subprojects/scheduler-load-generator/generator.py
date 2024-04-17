@@ -76,6 +76,7 @@ def main(dry_run=True,
     job_mode = False
     kueue_mode = False
     mcad_mode = False
+    coscheduling_mode = False
     if mode == "job":
         job_mode = True
         logging.info(f"Running in {mode} mode")
@@ -107,8 +108,10 @@ def main(dry_run=True,
         resources = kueue_mod.prepare_kueue_job(job, kueue_queue)
     elif coscheduling_mode:
         resources = coscheduling_mod.prepare_coscheduling_job(job)
-    else:
+    elif mcad_mode:
         resources = appwrapper_mod.prepare_appwrapper(namespace, job, priority, pod_count, pod_requests)
+    else:
+        raise ValueError(f"Impossible branch (mode: {mode})...")
 
     if not resources:
         logging.error("No resource to be created ...")
