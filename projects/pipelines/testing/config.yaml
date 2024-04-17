@@ -184,7 +184,7 @@ tests:
     user_count: 2
     sleep_factor: 1
     user_batch_size: 1
-    use_single_project: true
+    use_single_project: false
     mixed:
       enabled: false
       workloads:
