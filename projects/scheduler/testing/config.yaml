@@ -44,7 +44,7 @@ ci_presets:
 
   schedulers_comparison:
     tests.schedulers.matbenchmarking.enabled: true
-    tests.schedulers.test_settings.mode: [coscheduling, kueue, job, mcad] # mcad, kueue
+    tests.schedulers.test_settings.mode: [coscheduling, kueue, job] # mcad not available in 2.9
 
   cpu_icelake_scheduling:
     extends: [schedulers_comparison]
@@ -202,7 +202,7 @@ tests:
     # placeholder for PR-args override
     test_settings:
       count: null
-      mode: [kueue, job, coscheduling, mcad]
+      mode: [job] # kueue, coscheduling, mcad
       pod:
         count: null
         runtime: null
