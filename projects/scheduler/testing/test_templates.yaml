@@ -9,3 +9,7 @@ common_scheduling:
       memory: null
       nvidia.com/gpu: null
   timespan: 1
+  node:
+    count: 1
+    instance_type: m6i.2xlarge
+    wait_gpus: false

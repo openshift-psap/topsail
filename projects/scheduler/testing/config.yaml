@@ -209,6 +209,10 @@ tests:
         requests:
           cpu: null
       timespan: null
+      node:
+        count: null
+        instance_type: null
+        wait_gpus: null
 
 matbench:
   preset: null
