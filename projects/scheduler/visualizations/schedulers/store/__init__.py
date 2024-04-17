@@ -12,8 +12,9 @@ import projects.core.visualizations.helpers.store as core_helpers_store
 import projects.core.visualizations.helpers.store as core_helpers
 
 from . import parsers
-from ..models import lts as models_lts
 from . import lts_parser
+from ..models import lts as models_lts
+from ..models import kpi as models_kpi
 
 CACHE_FILENAME = "cache.pickle"
 IMPORTANT_FILES = parsers.IMPORTANT_FILES
@@ -25,6 +26,9 @@ local_store = core_helpers_store.BaseStore(
 
     lts_payload_model=models_lts.Payload,
     generate_lts_payload=lts_parser.generate_lts_payload,
+
+    models_kpis=models_kpi.KPIs,
+    get_kpi_labels=lts_parser.get_kpi_labels,
 )
 
 parsers.register_important_file = local_store.register_important_file

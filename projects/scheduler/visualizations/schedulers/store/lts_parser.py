@@ -2,16 +2,20 @@ import types
 import logging
 import uuid
 
+from .. import models
+from ..models import lts as models_lts
 
 def generate_lts_metadata(results, import_settings):
     metadata = types.SimpleNamespace()
+    metadata.lts_schema_version = models_lts.LTS_SCHEMA_VERSION
     metadata.start = results.test_start_end_time.start
     metadata.end = results.test_start_end_time.end
     metadata.presets = results.test_config.get("ci_presets.names") or ["no_preset_defined"]
     metadata.config = results.test_config.yaml_file
-    metadata.ocp_version = results.ocp_version
-    metadata.settings = dict(import_settings)
-    metadata.test_uuid = uuid.UUID(int=0, version=4) # temporary, to avoid the LTS failure
+
+    metadata.test_uuid = results.test_uuid
+
+    metadata.settings = generate_lts_settings(metadata, results, dict(import_settings))
 
     return metadata
 
@@ -42,6 +46,7 @@ def generate_lts_payload(results, import_settings):
 
     payload.metadata = generate_lts_metadata(results, import_settings)
     payload.results = generate_lts_results(results)
+    # lts_payload.kpis is generated in the helper store
 
     return payload
 
@@ -77,3 +82,35 @@ def _get_time_to_last_schedule(results):
 
     last_schedule = pod_time.pod_scheduled
     return (last_schedule - start_time).total_seconds(), last_schedule
+
+
+def generate_lts_settings(lts_metadata, results, import_settings):
+    lts_settings = types.SimpleNamespace()
+    lts_settings.kpi_settings_version = models_lts.KPI_SETTINGS_VERSION
+
+    lts_settings.ocp_version = results.ocp_version
+    lts_settings.rhoai_version = results.rhods_info.full_version
+    lts_settings.ci_engine = results.from_env.test.ci_engine
+    lts_settings.run_id = results.from_env.test.run_id
+    lts_settings.test_path = results.from_env.test.test_path
+    lts_settings.urls = results.from_env.test.urls
+
+    test_case_properties = results.test_case_properties
+    lts_settings.test_mode = test_case_properties.mode
+    lts_settings.obj_count = test_case_properties.count
+    lts_settings.total_pod_count = test_case_properties.total_pod_count
+    lts_settings.pod_runtime = test_case_properties.pod_runtime
+    lts_settings.launch_duration = test_case_properties.launch_duration
+
+    return lts_settings
+
+
+def get_kpi_labels(lts_payload):
+    kpi_labels = dict(lts_payload.metadata.settings.__dict__)
+
+    kpi_labels["@timestamp"] = lts_payload.metadata.start.strftime('%Y-%m-%dT%H:%M:%S.%fZ') \
+        if lts_payload.metadata.start else None
+
+    kpi_labels["test_uuid"] = lts_payload.metadata.test_uuid
+
+    return kpi_labels
