@@ -14,9 +14,9 @@ class Configure:
     Commands relating to TOPSAIL testing configuration
     """
 
-    def init(self, project, show_export=False, shell=True, preset=None, presets=[]):
+    def enter(self, project, show_export=False, shell=True, preset=None, presets=[]):
         """
-        Initializes a custom configuration file for a TOPSAIL project
+        Enter into a custom configuration file for a TOPSAIL project
 
         Args:
           project: the name of the projec to configure
