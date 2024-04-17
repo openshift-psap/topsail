@@ -293,7 +293,7 @@ def init(base_dir, apply_preset_from_pr_args=False):
 
     ci_artifacts.apply_config_overrides()
 
-    if not apply_preset_from_pr_args:
+    if apply_preset_from_pr_args:
         ci_artifacts.apply_preset_from_pr_args()
         # reapply to force overrides on top of presets
         ci_artifacts.apply_config_overrides()
