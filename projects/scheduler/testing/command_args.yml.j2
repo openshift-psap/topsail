@@ -42,6 +42,9 @@ rhods deploy_ods:
 scheduler cleanup:
   namespace: {{ tests.schedulers.namespace }}
 
+scheduler create_mcad_canary:
+  namespace: {{ tests.schedulers.namespace }}
+
 scheduler generate_load:
   namespace: {{ tests.schedulers.namespace }}
   distribution: {{ tests.schedulers.distribution }}
