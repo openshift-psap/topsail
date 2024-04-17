@@ -8,8 +8,11 @@
   command:
     oc delete {{ prometheus_pod_name_cmd.stdout }}
        -n {{ cluster_prometheus_db_namespace }}
-       --timeout=300s
+       --timeout=60s
   when: 'cluster_prometheus_db_namespace != "redhat-ods-monitoring"'
+  register: prometheus_deleted_cmd
+  retries: 5
+  delay: 30
 
 - name: Delete Prometheus Pod and PVC (redhat-ods-monitoring only)
   command: oc delete pvc/prometheus-data {{ prometheus_pod_name_cmd.stdout }} -n {{ cluster_prometheus_db_namespace }}

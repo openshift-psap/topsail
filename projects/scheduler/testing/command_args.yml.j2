@@ -35,11 +35,25 @@ rhods deploy_ods:
   channel: {{ rhods.catalog.channel }}
   version: {{ rhods.catalog.version }}
 
+# ---
+
+sutest/cluster set_project_annotation/scale_test_node_selector:
+  key: openshift.io/node-selector
+  value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"
+
+sutest/cluster set_project_annotation/scale_test_toleration:
+  key: scheduler.alpha.kubernetes.io/defaultTolerations
+  value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
+
+
 #
 # ---
 #
 
 scheduler cleanup:
+  namespace: {{ tests.schedulers.namespace }}
+
+scheduler create_mcad_canary:
   namespace: {{ tests.schedulers.namespace }}
 
 scheduler generate_load:

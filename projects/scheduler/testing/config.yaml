@@ -44,15 +44,19 @@ ci_presets:
 
   schedulers_comparison:
     tests.schedulers.matbenchmarking.enabled: true
-    tests.schedulers.test_settings.mode: [coscheduling, kueue, job] # mcad, kueue
+    tests.schedulers.test_settings.mode: [coscheduling, kueue, job] # mcad not available in 2.9
 
-  cpu_icelake_gang_scheduling_light:
+  cpu_icelake_scheduling:
     extends: [schedulers_comparison]
     tests.schedulers.tests_to_run: [common_scheduling]
+    tests.schedulers.test_settings.count: 300
+    tests.schedulers.test_settings.pod.count: 1
+    tests.schedulers.test_settings.pod.requests.cpu: 100m
+    tests.schedulers.test_settings.timespan: 1
+
+  cpu_icelake_gang_scheduling_light:
+    extends: [cpu_icelake_gang_scheduling]
     tests.schedulers.test_settings.count: 30
-    tests.schedulers.test_settings.pod.count: 10
-    tests.schedulers.test_settings.pod.requests.cpu: 1
-    tests.schedulers.test_settings.timespan: 1 # minutes
 
   cpu_icelake_gang_scheduling:
     extends: [schedulers_comparison]
@@ -63,21 +67,16 @@ ci_presets:
     tests.schedulers.test_settings.timespan: 1 # minutes
 
   cpu_icelake_gang_scheduling_large:
-    extends: [schedulers_comparison]
-    tests.schedulers.tests_to_run: [common_scheduling]
+    extends: [cpu_icelake_gang_scheduling]
     tests.schedulers.test_settings.count: 3000
-    tests.schedulers.test_settings.pod.count: 10
-    tests.schedulers.test_settings.pod.requests.cpu: 1
     tests.schedulers.test_settings.timespan: 10 # minutes
 
   cpu_icelake_gang_scheduling_larger:
-    extends: [schedulers_comparison]
-    tests.schedulers.tests_to_run: [common_scheduling]
+    extends: [cpu_icelake_gang_scheduling]
     tests.schedulers.test_settings.count: 10
     tests.schedulers.test_settings.pod.count: 3
     tests.schedulers.test_settings.pod.requests.cpu: 50
     tests.schedulers.test_settings.pod.runtime: 180
-    tests.schedulers.test_settings.timespan: 1 # minutes
 
 
   # ---
@@ -203,13 +202,17 @@ tests:
     # placeholder for PR-args override
     test_settings:
       count: null
-      mode: ["kueue", "job"]
+      mode: [job] # kueue, coscheduling, mcad
       pod:
         count: null
         runtime: null
         requests:
           cpu: null
       timespan: null
+      node:
+        count: null
+        instance_type: null
+        wait_gpus: null
 
 matbench:
   preset: null

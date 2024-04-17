@@ -347,6 +347,7 @@ def _parse_test_case_properties(test_case_config):
 
     test_case_properties.count = test_case_config["count"]
     test_case_properties.pod_count = test_case_config["pod"]["count"]
+    test_case_properties.pod_runtime = test_case_config["pod"]["runtime"]
     test_case_properties.total_pod_count = test_case_properties.count * test_case_properties.pod_count
     test_case_properties.mode = test_case_config["mode"]
     test_case_properties.launch_duration = test_case_config["timespan"]

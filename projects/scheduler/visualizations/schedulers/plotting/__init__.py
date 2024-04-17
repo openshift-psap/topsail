@@ -9,6 +9,7 @@ from . import progress
 from . import compare_test_speed
 from . import compare_report
 from . import scheduling
+from . import lts_documentation
 
 def register():
     error_report.register()
@@ -23,3 +24,4 @@ def register():
     compare_test_speed.register()
     compare_report.register()
     scheduling.register()
+    lts_documentation.register()
