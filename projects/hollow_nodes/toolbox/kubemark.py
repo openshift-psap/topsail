@@ -24,12 +24,12 @@ class Kubemark:
         return RunAnsibleRole(locals())
 
 
-    @AnsibleRole("cluster_deploy_kubemark_nodes")
+    @AnsibleRole("kubemark_deploy_nodes")
     @AnsibleMappedParams
-    def deploy_kubemark_nodes(self,
-                              namespace="openshift-cluster-api",
-                              deployment_name="kubemark-md",
-                              count=4):
+    def deploy_nodes(self,
+                     namespace="openshift-cluster-api",
+                     deployment_name="kubemark-md",
+                     count=4):
         """
         Deploy a set of Kubemark nodes
 
