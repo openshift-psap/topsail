@@ -40,6 +40,10 @@ def validate_role_vars_files(dirname, yaml_doc):
             messages.append(f"{key}:{value} --> likely not a path, ignoring")
             continue
 
+        if key in yaml_doc.get("__safe", []):
+            # in the safe list, ignoring
+            continue
+
         errors.append(f"{key}: {value} --> not found")
         continue
 
