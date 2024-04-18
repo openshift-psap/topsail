@@ -58,13 +58,15 @@ def prepare_scheduler_test():
         logging.warning(f"Project '{namespace}' already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
 
-    metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
     dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
-    if not metal and dedicated:
+
+    if dedicated:
         extra = dict(project=namespace)
         run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_node_selector", extra=extra, mute_stdout=True)
         run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_toleration", extra=extra, mute_stdout=True)
-
+    else:
+        # ensure that the annotation is not set
+        run.run(f"oc annotate ns/{namespace} openshift.io/node-selector- scheduler.alpha.kubernetes.io/defaultTolerations-")
 
 def prepare_kueue_queue(dry_mode):
     namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
@@ -156,8 +158,33 @@ def cleanup_sutest_ns():
     cleanup_namespace_test()
 
 
+def do_prepare_kwok_nodes(cfg, dry_mode):
+    extra = {}
+    extra["scale"] = cfg["node"]["count"]
+
+    if dry_mode:
+        logging.info(f"dry_mode: scale up the cluster with {extra['scale']} kwok nodes.")
+        return
+
+    run.run_toolbox("kwok", "deploy_kwok_controller")
+    run.run_toolbox_from_config("kwok", "set_scale", prefix="sutest", extra=extra)
+
+
 def do_prepare_nodes(cfg, dry_mode):
+    try:
+        want_kwok_nodes = cfg["node"]["instance_type"] == "kwok"
+    except KeyError:
+        want_kwok_nodes = False
+
+    if want_kwok_nodes:
+        return do_prepare_kwok_nodes(cfg, dry_mode)
+
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+        # cleanup the config
+        # easier to read in the reports
+        try: del cfg["node"]
+        except KeyError: pass
+
         return
 
     extra = {}
@@ -166,7 +193,7 @@ def do_prepare_nodes(cfg, dry_mode):
     extra["scale"] = cfg["node"]["count"]
 
     if dry_mode:
-        logging.info(f"dry_mode: scale up the cluster for the test '{name}': {extra} ")
+        logging.info(f"dry_mode: scale up the cluster for the test: {extra} ")
         return
 
     run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest", extra=extra)
@@ -182,9 +209,7 @@ def do_prepare_nodes(cfg, dry_mode):
     run.run_toolbox("gpu_operator", "wait_stack_deployed")
 
 
-def prepare_test_nodes(name, cfg, dry_mode):
-    extra = {}
-
+def prepare_test_nodes(cfg, dry_mode):
     do_prepare_nodes(cfg, dry_mode)
 
     prepare_kueue_queue(dry_mode)

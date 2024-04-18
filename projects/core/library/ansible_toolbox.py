@@ -11,6 +11,7 @@ import inspect
 import shutil
 import shlex
 import importlib
+import logging
 
 from projects.core.library import config
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
@@ -37,7 +38,7 @@ class Toolbox:
             try:
                 self.__dict__[toolbox_name] = getattr(mod, toolbox_name.title())
             except AttributeError as e:
-                logging.fatal(str(e)) # AttributeError: module 'projects.notebooks.toolbox.notebooks' has no attribute 'Notebooks'
+                logging.fatal(str(e)) # eg: AttributeError: module 'projects.notebooks.toolbox.notebooks' has no attribute 'Notebooks'
                 sys.exit(1)
 
 

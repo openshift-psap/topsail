@@ -1,0 +1,29 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Kwok.set_scale
+
+# Parameters
+# The number of required nodes with given instance type
+# Mandatory value
+kwok_set_scale_scale:
+
+# Taint to apply to the machineset.
+kwok_set_scale_taint: null
+
+# Name to give to the new machineset.
+kwok_set_scale_name: kwok-machine
+
+# Role of the new nodes
+kwok_set_scale_role: worker
+
+# number of CPU allocatable
+kwok_set_scale_cpu: 32
+
+# number of Gi of memory allocatable
+kwok_set_scale_memory: 256
+
+# number of nvidia.com/gpu allocatable
+kwok_set_scale_gpu: null
+
+# number of Pods allocatable
+kwok_set_scale_pods: 250

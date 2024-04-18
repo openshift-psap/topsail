@@ -71,8 +71,8 @@ def _get_test_setup(entry):
     test_speed = entry.results.test_case_properties.total_pod_count / test_duration
     setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
 
-
-    setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} {entry.results.target_kind_name}/minute")]))]
+    if entry.results.test_case_properties.launch_duration != 0:
+        setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} {entry.results.target_kind_name}/minute")]))]
     setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} {entry.results.target_kind_name}/minute")]))]
 
     time_to_last_schedule_sec = entry.results.lts.results.time_to_last_schedule_sec

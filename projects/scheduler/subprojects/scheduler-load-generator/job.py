@@ -19,6 +19,7 @@ def prepare_base_job(namespace, job_template_name, base_name, pod_runtime, pod_r
     config.set_config(job, "metadata.namespace", namespace)
     config.set_config(job, "metadata.annotations.scheduleTime", "{SCHEDULE-TIME}")
     config.set_config(job, "spec.template.spec.containers[0].env[0].value", str(int(pod_runtime)))
+    config.set_config(job, "spec.template.metadata.annotations.runtime", str(int(pod_runtime)))
     config.set_config(job, "spec.template.spec.containers[0].resources.limits", copy.deepcopy(pod_requests))
     config.set_config(job, "spec.template.spec.containers[0].resources.requests", copy.deepcopy(pod_requests))
 

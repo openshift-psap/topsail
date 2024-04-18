@@ -16,6 +16,14 @@ sutest/cluster set_scale:
   instance_type: SET_AT_RUNTIME
   scale: SET_AT_RUNTIME
 
+
+sutest/kwok set_scale:
+  name: {{ clusters.sutest.compute.machineset.name }}
+  taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
+  role: {{ clusters.sutest.compute.machineset.taint.key }}
+  scale: SET_AT_RUNTIME
+
+
 # ---
 
 gpu_operator enable_time_sharing:

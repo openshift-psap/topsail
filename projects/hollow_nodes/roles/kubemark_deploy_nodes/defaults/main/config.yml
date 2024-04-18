@@ -1,13 +1,13 @@
 # Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
-# Source component: Kubemark.deploy_kubemark_nodes
+# Source component: Kubemark.deploy_nodes
 
 # Parameters
 # the namespace in which the MachineDeployment will be created
-cluster_deploy_kubemark_nodes_namespace: openshift-cluster-api
+kubemark_deploy_nodes_namespace: openshift-cluster-api
 
 # the name of the MachineDeployment
-cluster_deploy_kubemark_nodes_deployment_name: kubemark-md
+kubemark_deploy_nodes_deployment_name: kubemark-md
 
 # the number of nodes to deploy
-cluster_deploy_kubemark_nodes_count: 4
+kubemark_deploy_nodes_count: 4
