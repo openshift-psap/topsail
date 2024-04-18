@@ -218,7 +218,7 @@ def call_upload_lts(step_idx, common_args, common_env_str):
     log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_upload_lts.log"
 
     env_file = pathlib.Path(".env.generated.yaml")
-    generate_opensearch_config_yaml_env(env_file)
+    #generate_opensearch_config_yaml_env(env_file)
 
     cmd = f"{common_env_str} matbench upload_lts {upload_args_str} |& tee > {log_file}"
 
@@ -240,7 +240,7 @@ def call_analyze_lts(step_idx, common_args, common_env_str):
     log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_analyze_lts.log"
 
     env_file = pathlib.Path(".env.generated.yaml")
-    generate_opensearch_config_yaml_env(env_file)
+    #generate_opensearch_config_yaml_env(env_file)
 
     cmd = f"{common_env_str} matbench analyze_lts {analyze_args_str} |& tee > {log_file}"
 
