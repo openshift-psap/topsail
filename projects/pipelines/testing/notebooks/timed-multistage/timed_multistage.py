@@ -1,7 +1,7 @@
 from kfp import dsl
 from kfp import components
 
-@dsl.component(base_image='quay.io/hukhan/python:alpine3.6')
+@dsl.component(base_image='registry.redhat.io/ubi8/python-39')
 def cbrt_loop(n:int, x:int) -> int:
     import math, time
 
@@ -13,7 +13,7 @@ def cbrt_loop(n:int, x:int) -> int:
 
     return i
 
-@dsl.component(base_image='quay.io/hukhan/python:alpine3.6')
+@dsl.component(base_image='registry.redhat.io/ubi8/python-39')
 def print_msg(msg: str):
     """Print a message."""
     print(msg)
@@ -50,5 +50,7 @@ def timed_multistage_pipeline():
     print_msg(msg=f"p1: {h1}\np2: {h2}\np3: {h3}\np4: {h4}")
 
 if __name__ == '__main__':
-    from kfp_tekton.compiler import TektonCompiler
-    TektonCompiler().compile(timed_multistage_pipeline, __file__.replace('.py', '.yaml'))
+    from kfp.compiler import Compiler
+    Compiler().compile(
+        pipeline_func=timed_multistage_pipeline,
+        package_path=__file__.replace('.py', '-v2.yaml'))
