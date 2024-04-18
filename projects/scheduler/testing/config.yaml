@@ -78,6 +78,14 @@ ci_presets:
     tests.schedulers.test_settings.pod.requests.cpu: 50
     tests.schedulers.test_settings.pod.runtime: 180
 
+  kwok:
+    ci_presets.metal["clusters.sutest.compute.dedicated"]: true
+    clusters.sutest.compute.dedicated: true
+    tests.schedulers.test_settings.node.instance_type: kwok
+    tests.schedulers.test_settings.node.count: 10
+    tests.schedulers.test_settings.node.wait_gpus: false
+    tests.schedulers.test_settings.pod.runtime: 120 # s
+    tests.schedulers.test_settings.timespan: 0 # minutes
 
   # ---
 
@@ -127,14 +135,15 @@ clusters:
       dedicated: true
       machineset:
         name: workload-pods
-        type: g4dn.2xlarge
-        count: null
-        disk_size: 400 # GB for the root partition
-        spot: false
         taint:
           key: only-workload-pods
           value: "yes"
           effect: NoSchedule
+        kwok:
+          cpu: 32
+          memory: 128
+          gpu: 0
+          pods: 250
     worker:
       label: initial_worker_node=true
       fill_resources:
