@@ -24,3 +24,34 @@ class Kwok:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("kwok_set_scale")
+    @AnsibleMappedParams
+    def set_scale(
+            self,
+            scale,
+            taint=None,
+            name="kwok-machine",
+            role="worker",
+            cpu=32,
+            memory=256,
+            gpu=None,
+            pods=250,
+    ):
+        """
+        Deploy a set of KWOK nodes
+
+        Args:
+          scale: The number of required nodes with given instance type
+          taint: Taint to apply to the machineset.
+          name: Name to give to the new machineset.
+          role: Role of the new nodes
+
+          cpu: number of CPU allocatable
+          memory: number of Gi of memory allocatable
+          gpu: number of nvidia.com/gpu allocatable
+          pods: number of Pods allocatable
+        """
+
+        return RunAnsibleRole(locals())

@@ -1,0 +1,43 @@
+---
+- name: Create the source directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Parse the taint
+  when: kwok_set_scale_taint is not none
+  set_fact:
+    taint_key: "{{ kwok_set_scale_taint.partition('=')[0] }}"
+    taint_value: "X{{ kwok_set_scale_taint.partition('=')[-1].partition(':')[0] | escape }}"
+    # Note: 'X' is prepended to the taint value to prevent the cast to 'True'.
+    # it is then removed by using the taint value with '{{ taint_value[1:] }}'
+    # Silly.
+    taint_effect: "{{ kwok_set_scale_taint.partition(':')[-1] }}"
+
+- name: Prepare the node template
+  template:
+    src: "{{ kwok_node_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/kwok_node_template.yaml"
+    mode: '0400'
+
+- name: Delete the existing nodes of the group
+  command:
+    oc delete nodes -ltopsail.machineset={{ kwok_set_scale_name }}
+
+- name: Create the new node group
+  shell: |
+    set -e
+    set -o pipefail
+
+    {% for idx in range(kwok_set_scale_scale) %}
+    cat "{{ artifact_extra_logs_dir }}/src/kwok_node_template.yaml" \
+        | yq '.metadata.name = "{{ kwok_set_scale_name }}-{{ idx }}"' \
+        | oc apply -f-
+    {% endfor %}
