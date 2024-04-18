@@ -110,7 +110,7 @@ def generate_launch_progress_data(entry, resource_kind=None):
             ResourceName = resource_time.name,
         ))
 
-        if not hasattr(resource_time, "completion"): continue
+        if not hasattr(resource_time, "completion") or resource_time.completion is None: continue
 
         data.append(dict(
             Delta = delta(resource_time.completion),
