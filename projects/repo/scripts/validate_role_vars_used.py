@@ -28,6 +28,7 @@ def validate_role_vars_used(dirname, filename, yaml_doc):
     successes = 0
     role_name = dirname.name
     for key in yaml_doc:
+        if key == "__safe": continue
 
         grep_command = ["grep", key, dirname,
                         "--dereference-recursive"]
