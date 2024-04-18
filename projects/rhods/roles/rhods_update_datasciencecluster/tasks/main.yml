@@ -113,7 +113,7 @@
 - name: Create the DataScienceCluster
   shell: |
     set -e
-    oc create -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml" # --server-side --force-conflicts
 
 - name: Wait for the DataScienceCluster to be ready and capture artifacts
   block:
