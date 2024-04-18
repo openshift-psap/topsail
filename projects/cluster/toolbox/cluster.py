@@ -55,6 +55,7 @@ class Cluster:
 
         return RunAnsibleRole(opts)
 
+
     @AnsibleRole("cluster_upgrade_to_image")
     @AnsibleMappedParams
     def upgrade_to_image(self, image):
