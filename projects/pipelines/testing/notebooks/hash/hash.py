@@ -26,12 +26,12 @@ def print_msg(msg: str):
 def hash_pipeline():   
     # Create 4 hash loop components that run for 10 minutes
     duration = 600
-    h1 = hash_loop(duration)
-    h2 = hash_loop(duration)
-    h3 = hash_loop(duration)
-    h4 = hash_loop(duration)
+    h1 = hash_loop(n=duration)
+    h2 = hash_loop(n=duration)
+    h3 = hash_loop(n=duration)
+    h4 = hash_loop(n=duration)
 
-    print_msg(f"{h1.output}\n{h2.output}\n{h3.output}\n{h4.output}")
+    print_msg(msg=f"{h1.output}\n{h2.output}\n{h3.output}\n{h4.output}")
 
 if __name__ == '__main__':
     from kfp.compiler import Compiler
