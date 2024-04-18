@@ -12,9 +12,9 @@ class Kubemark:
     Commands relating to kubemark deployment
     """
 
-    @AnsibleRole("cluster_deploy_kubemark_capi_provider")
+    @AnsibleRole("kubemark_deploy_capi_provider")
     @AnsibleMappedParams
-    def deploy_kubemark_capi_provider(self):
+    def deploy_capi_provider(self):
         """
         Deploy the Kubemark Cluster-API provider
 
