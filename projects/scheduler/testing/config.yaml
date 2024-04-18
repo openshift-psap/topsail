@@ -46,6 +46,18 @@ ci_presets:
     tests.schedulers.matbenchmarking.enabled: true
     tests.schedulers.test_settings.mode: [coscheduling, kueue, job] # mcad not available in 2.9
 
+  kueue_only:
+    tests.schedulers.matbenchmarking.enabled: false
+    tests.schedulers.test_settings.mode: kueue
+
+  job_only:
+    tests.schedulers.matbenchmarking.enabled: false
+    tests.schedulers.test_settings.mode: job
+
+  just_test:
+    tests.visualize: false
+    tests.capture_prom: false
+
   cpu_icelake_scheduling:
     extends: [schedulers_comparison]
     tests.schedulers.tests_to_run: [common_scheduling]
