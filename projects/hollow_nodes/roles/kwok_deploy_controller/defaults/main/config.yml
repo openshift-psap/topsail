@@ -1,0 +1,10 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Kwok.deploy_kwok_controller
+
+# Parameters
+# namespace where KWOK will be deployed. Cannot be changed at the moment.
+kwok_deploy_controller_namespace: kube-system
+
+# if true, undeploys KWOK instead of deploying it.
+kwok_deploy_controller_undeploy: false

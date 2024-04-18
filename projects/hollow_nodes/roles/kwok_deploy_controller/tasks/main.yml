@@ -1,0 +1,79 @@
+---
+- name: Create the source directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Get the latest version
+  shell:
+    set -o pipefail;
+    curl -Ssf "https://api.github.com/repos/{{ kwok_repo }}/releases/latest" | jq -r '.tag_name'
+  register: kwok_version_cmd
+
+- name: Fetch KWOK and its CRD
+  shell:
+    set -o pipefail;
+
+    curl -L -Ssf "https://github.com/{{ kwok_repo }}/releases/download/{{ kwok_version_cmd.stdout}}/kwok.yaml"
+    | yq '.metadata.namespace = "{{ kwok_deploy_controller_namespace }}"'
+    > "{{ artifact_extra_logs_dir }}/src/kwok-{{ kwok_version_cmd.stdout }}.yaml"
+
+- name: Fetch the default custom resources of stages
+  shell:
+    curl -L -Ssf "https://github.com/{{ kwok_repo }}/releases/download/{{ kwok_version_cmd.stdout}}/stage-fast.yaml"
+    > "{{ artifact_extra_logs_dir }}/src/stage-fast-{{ kwok_version_cmd.stdout }}.yaml"
+
+- name: Delete KWOK nodes if requested
+  command:
+    oc delete nodes -ltype=kwok
+  when: kwok_deploy_controller_undeploy | bool
+
+- name: Delete KWOK and its stages if requested
+  command:
+    oc delete -f "{{ artifact_extra_logs_dir }}/src/kwok-{{ kwok_version_cmd.stdout }}.yaml" --ignore-not-found
+  when: kwok_deploy_controller_undeploy | bool
+
+
+- name: Exit if doing the undeployment
+  meta: end_play
+  when: kwok_deploy_controller_undeploy | bool
+
+- name: Create the namespace
+  shell:
+    set -o pipefail;
+
+    oc create ns "{{ kwok_deploy_controller_namespace }}" --dry-run=client -oyaml | oc apply -f-
+
+- name: Deploy KWOK and its stages
+  shell:
+    set -e;
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/kwok-{{ kwok_version_cmd.stdout }}.yaml";
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/stage-fast-{{ kwok_version_cmd.stdout }}.yaml"
+
+- name: Wait for the deployment to be ready and capture artifacts
+  block:
+  - name: Wait for the deployment to be ready
+    shell:
+      set -o pipefail;
+      oc get deploy
+         -o=jsonpath="{range .items[*]}{.metadata.name}{' ='}{.status.unavailableReplicas}{'=\n'}{end}"
+         -n "{{ kwok_deploy_controller_namespace }}" -lapp=kwok-controller
+        | grep -v "==" || true
+    register: deployments_not_ready
+    until: not deployments_not_ready.stdout
+    retries: 24
+    delay: 10
+    failed_when: deployments_not_ready.stdout | length > 0
+  always:
+  - name: Capture the state of Pod
+    shell:
+      set -e;
+      oc get pods -n -lapp=kwok-controller > "{{ artifact_extra_logs_dir }}/artifacts/pod.status";
+      oc logs deploy/kwok-controller -n "{{ kwok_deploy_controller_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pod.log";
