@@ -174,7 +174,7 @@
     shell: |
       oc get pods -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.json"
       oc get pods -owide -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.status"
-      if [[ {{ scheduler_generate_load_count }} -lt 150 ]]; then
+      if [[ {{ scheduler_generate_load_count * scheduler_generate_load_pod_count }} -lt 150 ]]; then
         oc get pods -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"
         oc describe pods -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
       fi
