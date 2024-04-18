@@ -13,6 +13,8 @@ job_templates:
       template:
         metadata:
           labels: {}
+          annotations:
+            runtime: ...
         spec:
           restartPolicy: Never
           containers:
