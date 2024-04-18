@@ -202,7 +202,7 @@ tests:
     # placeholder for PR-args override
     test_settings:
       count: null
-      mode: [job] # kueue, coscheduling, mcad
+      mode: [kueue, coscheduling, job] # job, kueue, coscheduling, mcad
       pod:
         count: null
         runtime: null
