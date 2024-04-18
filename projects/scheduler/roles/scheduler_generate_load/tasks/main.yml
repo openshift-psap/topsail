@@ -138,6 +138,14 @@
     failed_when: jobs_completed.rc != 0
     when: scheduler_generate_load_mode != "mcad"
 
+  - name: Count how many jobs succeeded
+    shell:
+      set -o pipefail;
+      oc get jobs -n {{ scheduler_generate_load_namespace }} -ojson | jq '[.items[] | select(.status.succeeded)] | length'
+    register: job_succeeded
+    failed_when: job_succeeded.stdout | int != scheduler_generate_load_count
+    when: scheduler_generate_load_mode != "mcad"
+
   always:
   - name: Create a configmap for the end of the test timestamp
     shell:
