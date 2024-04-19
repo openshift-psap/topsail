@@ -74,6 +74,9 @@ ci_presets:
       notebook_filename: kfp_iris.ipynb
       notebook_directory: projects/pipelines/testing/notebooks/iris
 
+  stress:
+    tests.pipelines.user_count: 100000
+
 secrets:
   dir:
     name: psap-ods-secret
