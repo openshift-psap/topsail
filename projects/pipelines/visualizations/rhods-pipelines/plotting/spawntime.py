@@ -166,7 +166,7 @@ class RunTimeDistribution():
         for step_name in steps:
             step_df = data_df[data_df["Step Name"] == step_name]
             logging.info(step_df)
-            q1, median, q3 = stats.quantiles(step_df["Step Duration"]) if len(step_df["Step Duration"]) > 1 else (step_df["Step Duration"][0], step_df["Step Duration"][0], step_df["Step Duration"][0])
+            q1, median, q3 = stats.quantiles(step_df["Step Duration"]) if len(step_df["Step Duration"]) > 1 else (step_df["Step Duration"].iloc[0], step_df["Step Duration"].iloc[0], step_df["Step Duration"].iloc[0])
             q1_dist = median-q1
             q3_dist = q3-median
             stats_data.append(dict(
