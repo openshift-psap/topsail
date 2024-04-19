@@ -170,5 +170,5 @@
 - name: Dump the content of the DSPApplication database
   shell:
     oc rsh -n {{ namespace }}
-       deploy/mariadb-sample
+       deploy/mariadb-{{ dspa_application_name }}
        mysqldump -u root mlpipeline > "{{ artifact_extra_logs_dir }}/database.sql"

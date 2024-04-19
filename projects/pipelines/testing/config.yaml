@@ -154,6 +154,8 @@ rhods:
   pipelines:
     application:
       name: sample
+    notebook:
+      name: SET_AT_RUNTIME
     namespace: pipelines-test
     namespace_label:
       key: dsp-scale-test

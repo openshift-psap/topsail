@@ -220,12 +220,18 @@ def pipelines_run_one():
 
     use_single_project = config.ci_artifacts.get_config("tests.pipelines.use_single_project")
 
-    if not use_single_project:
-        if job_index := os.environ.get("JOB_COMPLETION_INDEX"):
+    if job_index := os.environ.get("JOB_COMPLETION_INDEX"):
+        if use_single_project:
+            notebook_name = f"user-{job_index}"
+            config.ci_artifacts.set_config("rhods.pipelines.notebook.name", notebook_name)
+            application_name = f"user-{job_index}-sample"
+            config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
+        else:
             namespace = config.ci_artifacts.get_config("rhods.pipelines.namespace")
             new_namespace = f"{namespace}-user-{job_index}"
             logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
             config.ci_artifacts.set_config("rhods.pipelines.namespace", new_namespace)
+            config.ci_artifacts.set_config("rhods.pipelines.notebook.name", "")
 
     try:
         prepare_pipelines_namespace()

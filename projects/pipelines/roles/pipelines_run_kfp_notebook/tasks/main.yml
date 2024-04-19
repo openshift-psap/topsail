@@ -62,7 +62,7 @@
 
 - name: Set the name of the token secret
   set_fact:
-    secret_token_name: "secret-token"
+    secret_token_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}-{% endif %}secret-token"
 
 - name: Get the image address
   command:
@@ -79,7 +79,7 @@
 
 - name: Define the test environment
   set_fact:
-    notebook_name: pipeline-notebook
+    notebook_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}-{% endif %}pipeline-notebook"
     notebook_container: pipeline-notebook
     notebook_namespace: "{% if pipelines_run_kfp_notebook_namespace | length > 0 %}{{ pipelines_run_kfp_notebook_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
     notebook_src_template_dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook.yaml"

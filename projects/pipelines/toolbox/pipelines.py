@@ -31,6 +31,7 @@ class Pipelines:
                          dsp_application_name="",
                          imagestream="s2i-generic-data-science-notebook",
                          imagestream_tag="",
+                         notebook_name="",
                          notebook_directory="testing/pipelines/notebooks/hello-world",
                          notebook_filename="kfp_hello_world.ipynb",
                          stop_on_exit=True,
@@ -45,6 +46,7 @@ class Pipelines:
           dsp_application_name: The name of the DSPipelines Application to use. If empty, lookup the application name in the namespace.
           imagestream: Imagestream to use to look up the notebook Pod image.
           imagestream_tag: Imagestream tag to use to look up the notebook Pod image. If emtpy and and the image stream has only one tag, use it. Fails otherwise.
+          notebook_name: A prefix to add the name of the notebook to differential notebooks in the same project
           notebook_directory: Directory containing the files to mount in the notebook.
           notebook_filename: Name of the ipynb notebook file to execute with JupyterLab.
           stop_on_exit: If False, keep the notebook running after the test.
