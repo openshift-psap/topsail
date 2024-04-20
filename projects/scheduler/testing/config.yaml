@@ -49,10 +49,12 @@ ci_presets:
   kueue_only:
     tests.schedulers.matbenchmarking.enabled: false
     tests.schedulers.test_settings.mode: kueue
+    tests.deploy_coscheduling: false
 
   job_only:
     tests.schedulers.matbenchmarking.enabled: false
     tests.schedulers.test_settings.mode: job
+    tests.deploy_coscheduling: false
 
   just_test:
     tests.visualize: false
