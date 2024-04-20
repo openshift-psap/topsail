@@ -21,7 +21,7 @@
   shell:
     set -o pipefail;
 
-    curl -L -Ssf "https://github.com/{{ kwok_repo }}/releases/download/{{ kwok_version_cmd.stdout}}/kwok.yaml"
+    curl -L -Ssf "https://github.com/{{ kwok_repo }}/releases/download/{{ kwok_version_cmd.stdout }}/kwok.yaml"
     | yq '.metadata.namespace = "{{ kwok_deploy_controller_namespace }}"'
     > "{{ artifact_extra_logs_dir }}/src/kwok-{{ kwok_version_cmd.stdout }}.yaml"
 
