@@ -69,3 +69,51 @@ scheduler generate_load:
   distribution: {{ tests.schedulers.distribution }}
   # the other parameters are passed at runtime with the --extra flag.
   kueue_queue: {{ tests.schedulers.kueue.queue_name }}
+
+
+#
+# ---
+#
+
+base_image/cluster build_push_image:
+  namespace: "{{ base_image.namespace }}"
+  image_local_name: "{{ base_image.imagestream }}"
+  tag: "{{ base_image.repo.tag }}"
+  _istag: "{{ base_image.imagestream }}:{{ base_image.repo.tag }}"
+
+  git_repo: "{{ base_image.repo.url }}"
+  git_ref: "{{ base_image.repo.ref }}" # may be overwritten at runtime with the PR ref
+  dockerfile_path: "{{ base_image.repo.dockerfile_path }}"
+
+driver/cluster set_scale:
+  instance_type: {{ clusters.driver.compute.machineset.type }}
+  name: {{ clusters.driver.compute.machineset.name }}
+{% if clusters.driver.compute.dedicated %}
+  taint: {{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}:{{ clusters.driver.compute.machineset.taint.effect }}
+{% endif %}
+  spot: {{ clusters.driver.compute.machineset.spot }}
+  scale: SET_AT_RUNTIME
+
+driver/cluster set_project_annotation/test_node_selector:
+  key: openshift.io/node-selector
+  value: "{{ clusters.driver.compute.machineset.taint.key }}={{ clusters.driver.compute.machineset.taint.value }}"
+  project: {{ base_image.namespace }}
+
+driver/cluster set_project_annotation/test_toleration:
+  key: scheduler.alpha.kubernetes.io/defaultTolerations
+  value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.driver.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.driver.compute.machineset.taint.key }}\"}]'
+  project: {{ base_image.namespace }}
+
+local_ci run_multi/kwok-controller:
+  user_count: "10"
+  namespace: "{{ base_image.namespace }}"
+  job_name: kwok-job-controller
+
+  istag: "{{ base_image.imagestream }}:{{ base_image.tag }}"
+  service_account: "{{ base_image.user.service_account }}"
+
+  ci_command: "scheduler test run_kwok_job_controller"
+  state_signal_redis_server: null
+  sleep_factor: 0
+  retrieve_artifacts: false
+  capture_prom_db: false

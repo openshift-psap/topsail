@@ -176,6 +176,23 @@ clusters:
           effect: NoSchedule
   cleanup_on_exit: false
 
+base_image:
+  namespace: scheduler-load-test-kwok-helper
+  imagestream: topsail
+  repo:
+    url: https://github.com/openshift-psap/topsail/
+    tag: main
+    ref: main
+    ref_prefer_pr: true
+    dockerfile_path: build/Dockerfile
+  user:
+    service_account: ci-artifacts
+    role: cluster-admin
+  minio:
+    enabled: false
+  startup_synchronization:
+    enabled: false
+
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
@@ -203,6 +220,7 @@ tests:
   visualize: true
   capture_prom: true
   deploy_coscheduling: true
+  deploy_kwok: true
   schedulers:
     kueue:
       queue_name: local-queue
