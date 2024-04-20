@@ -121,7 +121,7 @@ clusters:
   create:
     type: single # can be: single, ocp, managed
     keep: false
-    name_prefix: kserve-ci
+    name_prefix: scheduler-ci
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
@@ -203,11 +203,6 @@ rhods:
   operator:
     # set to true to stop the RHODS operator
     stop: false
-    customize:
-      kserve:
-        enabled: false
-        cpu: 500m
-        memory: 500Mi
 
 gpu:
   prepare_cluster: false
