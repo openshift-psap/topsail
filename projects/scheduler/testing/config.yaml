@@ -195,10 +195,10 @@ base_image:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 706700
+    tag: 711514
     channel: fast
     version: 2.9.0
-    version_name: nightly-52
+    version_name: rc1
   operator:
     # set to true to stop the RHODS operator
     stop: false
