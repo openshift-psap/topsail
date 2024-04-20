@@ -132,13 +132,15 @@ def prepare_user_pods(user_count):
         # Deploy Redis server for Pod startup synchronization
         #
 
-        parallel.delayed(run.run_toolbox_from_config, "cluster", "deploy_redis_server")
+        if config.ci_artifacts.get_config("base_image.startup_synchronization.enabled", True):
+            parallel.delayed(run.run_toolbox_from_config, "cluster", "deploy_redis_server")
 
         #
         # Deploy Minio
         #
 
-        parallel.delayed(run.run_toolbox_from_config, "cluster", "deploy_minio_s3_server")
+        if config.ci_artifacts.get_config("base_image.minio.enabled", True):
+            parallel.delayed(run.run_toolbox_from_config, "cluster", "deploy_minio_s3_server")
 
     #
     # Prepare the driver namespace annotations
