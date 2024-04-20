@@ -16,13 +16,17 @@ sutest/cluster set_scale:
   instance_type: SET_AT_RUNTIME
   scale: SET_AT_RUNTIME
 
-
 sutest/kwok set_scale:
   name: {{ clusters.sutest.compute.machineset.name }}
   taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
   role: {{ clusters.sutest.compute.machineset.taint.key }}
-  scale: SET_AT_RUNTIME
 
+  cpu: {{ kwok.nodes.spec.cpu }}
+  memory: {{ kwok.nodes.spec.memory }}
+  gpu: {{ kwok.nodes.spec.gpu }}
+  pods: {{ kwok.nodes.spec.pods }}
+
+  scale: SET_AT_RUNTIME
 
 # ---
 
@@ -104,16 +108,22 @@ driver/cluster set_project_annotation/test_toleration:
   value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.driver.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.driver.compute.machineset.taint.key }}\"}]'
   project: {{ base_image.namespace }}
 
-local_ci run_multi/kwok-controller:
-  user_count: "10"
+local_ci run_multi/kwok-job-controller:
+  user_count: {{ kwok.job_controller.count }}
   namespace: "{{ base_image.namespace }}"
   job_name: kwok-job-controller
 
-  istag: "{{ base_image.imagestream }}:{{ base_image.tag }}"
+  istag: "{{ base_image.imagestream }}:{{ base_image.repo.tag }}"
   service_account: "{{ base_image.user.service_account }}"
 
   ci_command: "scheduler test run_kwok_job_controller"
+
+  secret_name: "{{ secrets.dir.name }}"
+  secret_env_key: "{{ secrets.dir.env_key }}"
+
   state_signal_redis_server: null
   sleep_factor: 0
   retrieve_artifacts: false
   capture_prom_db: false
+
+  launch_as_daemon: true

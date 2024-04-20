@@ -93,6 +93,8 @@ ci_presets:
   kwok:
     ci_presets.metal["clusters.sutest.compute.dedicated"]: true
     clusters.sutest.compute.dedicated: true
+    kwok.enabled: true
+
     tests.schedulers.test_settings.node.instance_type: kwok
     tests.schedulers.test_settings.node.count: 10
     tests.schedulers.test_settings.node.wait_gpus: false
@@ -151,11 +153,6 @@ clusters:
           key: only-workload-pods
           value: "yes"
           effect: NoSchedule
-        kwok:
-          cpu: 32
-          memory: 128
-          gpu: 0
-          pods: 250
     worker:
       label: initial_worker_node=true
       fill_resources:
@@ -177,7 +174,7 @@ clusters:
   cleanup_on_exit: false
 
 base_image:
-  namespace: scheduler-load-test-kwok-helper
+  namespace: kwok-job-controller
   imagestream: topsail
   repo:
     url: https://github.com/openshift-psap/topsail/
@@ -209,13 +206,23 @@ gpu:
   time_sharing:
     replicas: 1
 
+kwok:
+  enabled: false
+  job_controller:
+    count: 10
+  nodes:
+    spec:
+      cpu: 32
+      memory: 128
+      gpu: 0
+      pods: 250
+
 tests:
   mode: job
   dry_mode: false
   visualize: true
   capture_prom: true
   deploy_coscheduling: true
-  deploy_kwok: true
   schedulers:
     kueue:
       queue_name: local-queue

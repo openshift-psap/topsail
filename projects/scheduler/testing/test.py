@@ -185,6 +185,23 @@ def matbench_run_one():
 
     test_schedulers.matbench_run_one()
 
+
+@entrypoint(ignore_secret_path=True)
+def run_kwok_job_controller():
+    """
+    Runs KWOK Job Controller
+    """
+
+    controller_path = TESTING_THIS_DIR / "kwok-job-controller" / "controller.py"
+    if not controller_path.exists():
+        raise FileNotFoundError(f"Controller file not found: {controller_path}")
+
+    namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
+
+    run.run(f"kopf run {controller_path} -n {namespace}")
+
+    raise ValueError("kopf controller should not return ...")
+
 # ---
 
 class Entrypoint:
@@ -209,6 +226,7 @@ class Entrypoint:
 
         self.matbench_run_one = matbench_run_one
 
+        self.run_kwok_job_controller = run_kwok_job_controller
 
 def main():
     # Print help rather than opening a pager

@@ -18,12 +18,19 @@ def prepare():
         parallel.delayed(prepare_rhoai)
         if config.ci_artifacts.get_config("tests.deploy_coscheduling"):
             parallel.delayed(prepare_coscheduling)
-        if config.ci_artifacts.get_config("tests.deploy_kwok"):
-            parallel.delayed(prepare_kwok)
+
+        if config.ci_artifacts.get_config("kwok.enabled"):
+            user_count = config.ci_artifacts.get_config("kwok.job_controller.count")
+            parallel.delayed(prepare_user_pods.prepare_user_pods, user_count)
+            parallel.delayed(prepare_user_pods.cluster_scale_up, user_count)
+            parallel.delayed(run.run_toolbox, "kwok", "deploy_kwok_controller")
 
     with run.Parallel("prepare2") as parallel:
         parallel.delayed(prepare_gpu)
         parallel.delayed(prepare_scheduler_namespace)
+
+        if config.ci_artifacts.get_config("kwok.enabled"):
+            parallel.delayed(prepare_kwok_job_controller)
 
 
 def prepare_coscheduling():
@@ -73,6 +80,7 @@ def prepare_scheduler_namespace():
     else:
         # ensure that the annotation is not set
         run.run(f"oc annotate ns/{namespace} openshift.io/node-selector- scheduler.alpha.kubernetes.io/defaultTolerations-")
+
 
 def prepare_kueue_queue(dry_mode):
     namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
@@ -164,6 +172,10 @@ def cleanup_sutest_ns():
     cleanup_namespace_test()
 
 
+def prepare_kwok_job_controller():
+    run.run_toolbox_from_config("local_ci", "run_multi", suffix="kwok-job-controller")
+
+
 def do_prepare_kwok_nodes(cfg, dry_mode):
     extra = {}
     extra["scale"] = cfg["node"]["count"]
@@ -172,7 +184,6 @@ def do_prepare_kwok_nodes(cfg, dry_mode):
         logging.info(f"dry_mode: scale up the cluster with {extra['scale']} kwok nodes.")
         return
 
-    run.run_toolbox("kwok", "deploy_kwok_controller")
     run.run_toolbox_from_config("kwok", "set_scale", prefix="sutest", extra=extra)
 
 
