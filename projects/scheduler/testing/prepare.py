@@ -23,7 +23,7 @@ def prepare():
 
     with run.Parallel("prepare2") as parallel:
         parallel.delayed(prepare_gpu)
-        parallel.delayed(prepare_scheduler_test)
+        parallel.delayed(prepare_scheduler_namespace)
 
 
 def prepare_coscheduling():
@@ -55,7 +55,7 @@ def prepare_coscheduling():
         | oc apply -f-""")
 
 
-def prepare_scheduler_test():
+def prepare_scheduler_namespace():
     namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
 
     if run.run(f'oc get project -oname "{namespace}" 2>/dev/null', check=False).returncode != 0:
