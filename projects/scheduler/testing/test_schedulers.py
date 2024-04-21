@@ -189,7 +189,7 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
     with env.NextArtifactDir("prepare"):
         if prepare_nodes:
             prepare.prepare_test_nodes(cfg, dry_mode)
-            prepare.prepare_scheduler_test()
+            prepare.prepare_scheduler_namespace()
         else:
             logging.info("tests.schedulers.prepare_nodes=False, skipping.")
 

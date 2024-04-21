@@ -55,7 +55,7 @@ local_ci_run_multi_capture_prom_db: true
 # Type: Bool
 local_ci_run_multi_git_pull: false
 
-# Optional address of the Redis server to pass to StateSignal synchronization.
+# Optional address of the Redis server to pass to StateSignal synchronization. If empty, do not perform any synchronization.
 local_ci_run_multi_state_signal_redis_server: null
 
 # Delay (in seconds) between the start of each of the users.
@@ -69,3 +69,6 @@ local_ci_run_multi_abort_on_failure: false
 
 # if true, fails the execution if any of the Pods failed. If false, fails it if none of the Pods succeed.
 local_ci_run_multi_need_all_success: false
+
+# if true, do not wait for the job to complete. Most of the options above become irrelevant
+local_ci_run_multi_launch_as_daemon: false

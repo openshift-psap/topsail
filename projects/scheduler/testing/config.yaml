@@ -49,10 +49,12 @@ ci_presets:
   kueue_only:
     tests.schedulers.matbenchmarking.enabled: false
     tests.schedulers.test_settings.mode: kueue
+    tests.deploy_coscheduling: false
 
   job_only:
     tests.schedulers.matbenchmarking.enabled: false
     tests.schedulers.test_settings.mode: job
+    tests.deploy_coscheduling: false
 
   just_test:
     tests.visualize: false
@@ -93,6 +95,8 @@ ci_presets:
   kwok:
     ci_presets.metal["clusters.sutest.compute.dedicated"]: true
     clusters.sutest.compute.dedicated: true
+    kwok.enabled: true
+
     tests.schedulers.test_settings.node.instance_type: kwok
     tests.schedulers.test_settings.node.count: 10
     tests.schedulers.test_settings.node.wait_gpus: false
@@ -121,7 +125,7 @@ clusters:
   create:
     type: single # can be: single, ocp, managed
     keep: false
-    name_prefix: kserve-ci
+    name_prefix: scheduler-ci
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
@@ -151,11 +155,6 @@ clusters:
           key: only-workload-pods
           value: "yes"
           effect: NoSchedule
-        kwok:
-          cpu: 32
-          memory: 128
-          gpu: 0
-          pods: 250
     worker:
       label: initial_worker_node=true
       fill_resources:
@@ -176,26 +175,49 @@ clusters:
           effect: NoSchedule
   cleanup_on_exit: false
 
+base_image:
+  namespace: kwok-job-controller
+  imagestream: topsail
+  repo:
+    url: https://github.com/openshift-psap/topsail/
+    tag: main
+    ref: main
+    ref_prefer_pr: true
+    dockerfile_path: build/Dockerfile
+  user:
+    service_account: ci-artifacts
+    role: cluster-admin
+  minio:
+    enabled: false
+  startup_synchronization:
+    enabled: false
+
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 706700
+    tag: 711514
     channel: fast
     version: 2.9.0
-    version_name: nightly-52
+    version_name: rc1
   operator:
     # set to true to stop the RHODS operator
     stop: false
-    customize:
-      kserve:
-        enabled: false
-        cpu: 500m
-        memory: 500Mi
 
 gpu:
   prepare_cluster: false
   time_sharing:
     replicas: 1
+
+kwok:
+  enabled: false
+  job_controller:
+    count: 10
+  nodes:
+    spec:
+      cpu: 32
+      memory: 128
+      gpu: 0
+      pods: 250
 
 tests:
   mode: job

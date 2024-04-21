@@ -73,6 +73,43 @@
   delay: 5
   until: wait_ci_job_start.stdout
 
+- name: Wait for the daemon pods
+  when: local_ci_run_multi_launch_as_daemon
+  block:
+  - name: Wait for all the pods to become active
+    shell:
+      set -o pipefail;
+      oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
+      -ojson
+      | jq '.status.failed + .status.ready + .status.succeeded'
+    register: job_pods_launched
+    retries: 30
+    delay: 10
+    until: job_pods_launched.stdout | int == local_ci_run_multi_user_count
+
+  - name: Capture the state of the Pods
+    shell:
+      oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
+      -oyaml > "{{ artifact_extra_logs_dir }}/ci_job.yaml";
+
+      oc get pods -owide
+        -ljob-name={{ local_ci_run_multi_job_name }}
+        -n {{ local_ci_run_multi_namespace }}
+        > "{{ artifact_extra_logs_dir }}/ci_pods.status"
+    ignore_errors: true
+
+  - name: Check that no pod failed
+    shell:
+      set -o pipefail;
+      oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml" -ojson
+         | jq '.status.failed'
+    register: job_pods_failed
+    failed_when: job_pods_failed.rc != 0 or job_pods_failed.stdout_lines[0] != "null"
+
+  - name: Terminate the play is launching as a daemon
+    meta:
+      end_play
+
 - name: Wait for the CI Job to terminate
   command:
     oc get -f "{{ artifact_extra_logs_dir }}/src/000_job.yaml"
@@ -195,7 +232,7 @@
 
 - name: Extract the test artifacts from the Minio S3 container
   shell: |
-    set -o pipefail
+    set -e
 
     oc -n {{ local_ci_run_multi_minio_namespace }} -c ubi8 \
        rsync "{{ minio_podname_cmd.stdout }}:/artifacts/to_export/" "{{ artifact_extra_logs_dir }}/artifacts" --quiet

@@ -93,6 +93,7 @@ class Local_Ci:
                   user_batch_size=1,
                   abort_on_failure=False,
                   need_all_success=False,
+                  launch_as_daemon=False,
                   ):
         """
         Runs a given CI command in parallel from multiple Pods
@@ -114,11 +115,13 @@ class Local_Ci:
             use_local_config: If true, gives the local configuration file ($CI_ARTIFACTS_FROM_CONFIG_FILE) to the Pods.
             capture_prom_db: If True, captures the Prometheus DB of the systems.
             git_pull: If True, update the repo in the image with the latest version of the build ref before running the command in the Pods.
-            state_signal_redis_server: Optional address of the Redis server to pass to StateSignal synchronization.
+            state_signal_redis_server: Optional address of the Redis server to pass to StateSignal synchronization. If empty, do not perform any synchronization.
             sleep_factor: Delay (in seconds) between the start of each of the users.
             user_batch_size: Number of users to launch after the sleep delay.
             abort_on_failure: If true, let the Job abort the parallel execution on the first Pod failure. If false, ignore the process failure and track the overall failure count with a flag.
             need_all_success: if true, fails the execution if any of the Pods failed. If false, fails it if none of the Pods succeed.
+
+            launch_as_daemon: if true, do not wait for the job to complete. Most of the options above become irrelevant
         """
 
         if retrieve_artifacts and not (minio_namespace and minio_bucket_name):

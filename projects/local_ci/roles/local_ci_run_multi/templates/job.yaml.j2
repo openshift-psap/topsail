@@ -13,8 +13,6 @@ spec:
   backoffLimit: 0
   completionMode: Indexed
   template:
-    metadata:
-      name: ods-ci-loadtest
     spec:
       serviceAccount: "{{ local_ci_run_multi_service_account }}"
       containers:
@@ -57,16 +55,6 @@ spec:
           cp /mnt/pipeline_scale_test_config/config.yaml $SHARED_DIR/config.yaml
 {% endif %}
 
-{% if local_ci_run_multi_state_signal_redis_server %}
-          # Use StateSignal-barrier to wait for all the Pods to be ready
-          echo "Running with user $JOB_COMPLETION_INDEX / $USER_COUNT"
-          STATE_SIGNAL_DELAY=-1 # delay for all the Pods to reach the entry barrier
-          if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
-              python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" \
-                      --exporter "$USER_COUNT" \
-                      --delay "$STATE_SIGNAL_DELAY" &
-          fi
-
           safe_exit() {
               set +x
               ret_code=$1
@@ -84,6 +72,16 @@ spec:
                   exit 0
               fi
           }
+
+{% if local_ci_run_multi_state_signal_redis_server %}
+          # Use StateSignal-barrier to wait for all the Pods to be ready
+          echo "Running with user $JOB_COMPLETION_INDEX / $USER_COUNT"
+          STATE_SIGNAL_DELAY=-1 # delay for all the Pods to reach the entry barrier
+          if [[ $JOB_COMPLETION_INDEX == 0 ]]; then
+              python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER" \
+                      --exporter "$USER_COUNT" \
+                      --delay "$STATE_SIGNAL_DELAY" &
+          fi
 
           echo "statesignal_setup: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
           if ! python3 "$STATE_SIGNAL_BARRIER" "$REDIS_SERVER"; then
