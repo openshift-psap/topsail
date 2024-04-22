@@ -1,7 +1,8 @@
 import pathlib
 import logging
 
-from projects.core.library import run, config
+from projects.core.library import run, config, env
+
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
 TESTING_UTILS_DIR = TOPSAIL_DIR / "testing" / "utils"
@@ -33,9 +34,9 @@ def install(token_file=None, force=False):
     if token_file:
         _setup_brew_registry(token_file)
 
-    with run.Parallel("install_rhoai") as parallel:
-        parallel.delayed(install_servicemesh)
-        parallel.delayed(run.run_toolbox_from_config, "rhods", "deploy_ods")
+    with env.NextArtifactDir("install_rhoai"):
+        install_servicemesh()
+        run.run_toolbox_from_config("rhods", "deploy_ods")
 
 
 def uninstall(mute=True):
