@@ -60,7 +60,7 @@ driver/cluster set_project_annotation/test_toleration:
   project: {{ base_image.namespace }}
 
 pipelines run_kfp_notebook:
-  name: {{ rhods.pipelines.notebook.name }}
+  notebook_name: {{ rhods.pipelines.notebook.name }}
   namespace: {{ rhods.pipelines.namespace }}
   imagestream: {{ rhods.pipelines.workbench.imagestream }}
   imagestream_tag: {% if rhods.pipelines.workbench.imagestream_tag %}"{{ rhods.pipelines.workbench.imagestream_tag }}"{% else %}null{% endif %}
