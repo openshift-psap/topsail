@@ -27,7 +27,7 @@
 
 - name: Fetch the default custom resources of stages
   shell:
-    curl -L -Ssf "https://github.com/{{ kwok_repo }}/releases/download/{{ kwok_version_cmd.stdout}}/stage-fast.yaml"
+    curl -L -Ssf "https://github.com/{{ kwok_repo }}/releases/download/{{ kwok_version_cmd.stdout }}/stage-fast.yaml"
     > "{{ artifact_extra_logs_dir }}/src/stage-fast-{{ kwok_version_cmd.stdout }}.yaml"
 
 - name: Delete KWOK nodes if requested
