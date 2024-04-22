@@ -218,20 +218,22 @@ def pipelines_run_one():
     Runs a single Pipeline scale test.
     """
 
-    use_single_project = config.ci_artifacts.get_config("tests.pipelines.use_single_project")
+    project_count = config.ci_artifacts.get_config("tests.pipelines.project_count")
+    user_count = config.ci_artifacts.get_config("tests.pipelines.project_count")
+    # TODO
+    pipelines_per_user = config.ci_artifacts.get_config("tests.pipelines.project_count")
 
-    if job_index := os.environ.get("JOB_COMPLETION_INDEX"):
-        if use_single_project:
-            notebook_name = f"user-{job_index}"
-            config.ci_artifacts.set_config("rhods.pipelines.notebook.name", notebook_name)
-            application_name = f"user-{job_index}-sample"
-            config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
-        else:
-            namespace = config.ci_artifacts.get_config("rhods.pipelines.namespace")
-            new_namespace = f"{namespace}-user-{job_index}"
-            logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
-            config.ci_artifacts.set_config("rhods.pipelines.namespace", new_namespace)
-            config.ci_artifacts.set_config("rhods.pipelines.notebook.name", "")
+    if user_index := os.environ.get("JOB_COMPLETION_INDEX"):
+        notebook_name = f"user{user_index}"
+        config.ci_artifacts.set_config("rhods.pipelines.notebook.name", notebook_name)
+        application_name = f"user{user_index}-sample"
+        config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
+
+        namespace = config.ci_artifacts.get_config("rhods.pipelines.namespace")
+        ns_index = user_index % project_count
+        new_namespace = f"{namespace}-n{ns_index}"
+        logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
+        config.ci_artifacts.set_config("rhods.pipelines.namespace", new_namespace)
 
     try:
         prepare_pipelines_namespace()
