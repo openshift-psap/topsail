@@ -19,3 +19,9 @@ rhods_deploy_ods_version:
 
 # if True, pass the flag to disable DSC configuration
 rhods_deploy_ods_disable_dsc_config: false
+
+# if True, deploys a OpenDataHub manifest instead of RHOAI
+rhods_deploy_ods_opendatahub: false
+
+# if True, deploys RHOAI with the Managed Service flag. If False, deploys it as Self-Managed.
+rhods_deploy_ods_managed_rhoai: true
