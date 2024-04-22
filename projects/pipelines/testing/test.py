@@ -220,12 +220,11 @@ def pipelines_run_one():
 
     project_count = config.ci_artifacts.get_config("tests.pipelines.project_count")
     user_count = config.ci_artifacts.get_config("tests.pipelines.project_count")
-    # TODO
     pipelines_per_user = config.ci_artifacts.get_config("tests.pipelines.project_count")
 
+    uid = -1
     if user_index := os.environ.get("JOB_COMPLETION_INDEX"):
-        notebook_name = f"user{user_index}"
-        config.ci_artifacts.set_config("rhods.pipelines.notebook.name", notebook_name)
+        uid = user_index
         application_name = f"user{user_index}-sample"
         config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
 
@@ -238,7 +237,15 @@ def pipelines_run_one():
     try:
         prepare_pipelines_namespace()
         if config.ci_artifacts.get_config("tests.pipelines.deploy_pipeline"):
-            run.run_toolbox_from_config("pipelines", "run_kfp_notebook")
+            user_pipeline_delay = int(config.ci_artifacts.get_config("tests.pipelines.user_pipeline_delay"))
+            with run.Parallel("launch_pipelines") as parallel:
+                for pipeline_num in range(pipelines_per_user):
+                    logging.info(f"Running run_kfp_notebook for pipeline {pipeline_num}")
+                    notebook_name = f"user{uid}-run{pipeline_num}"
+                    parallel.delayed(run.run_toolbox_from_config, "pipelines", "run_kfp_notebook", extra={"notebook_name": notebook_name})
+                    if pipeline_num != pipelines_per_user - 1:
+                        time.sleep(user_pipeline_delay)
+
     finally:
         run.run_toolbox_from_config("pipelines", "capture_state", mute_stdout=True)
 

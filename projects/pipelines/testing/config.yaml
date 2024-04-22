@@ -183,6 +183,7 @@ tests:
     project_count: 2
     user_count: 2
     pipelines_per_user: 1
+    user_pipelines_delay: 5
     sleep_factor: 1
     user_batch_size: 1
     use_single_project: false
