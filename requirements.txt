@@ -12,3 +12,4 @@ pandas
 jsonpath_ng
 state-signals==0.5.2
 kopf
+kubernetes
