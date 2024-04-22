@@ -35,6 +35,7 @@ ci_presets:
 
   scale_test:
     tests.pipelines.user_count: 100
+    tests.pipelines.project_count: 100
     tests.pipelines.sleep_factor: 1
 
   load_aware:
@@ -42,6 +43,7 @@ ci_presets:
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
     tests.pipelines.user_count: 5
+    tests.pipelines.project_count: 5
     clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/load-aware
     clusters.create.ocp.tags.TicketId: 115
 
@@ -62,20 +64,12 @@ ci_presets:
     tests.pipelines.notebook_directory: projects/pipelines/testing/notebooks/iris
 
   single_project:
-    tests.pipelines.use_single_project: true
+    tests.pipelines.project_count: 1
 
   mixed_workload:
-    tests.pipelines.mixed.enabled: true
-    tests.pipelines.mixed.workloads:
-    - repeat: 2
-      notebook_filename: kfp_hello_world.ipynb
-      notebook_directory: projects/pipelines/testing/notebooks/hello-world
-    - repeat: 1
-      notebook_filename: kfp_iris.ipynb
-      notebook_directory: projects/pipelines/testing/notebooks/iris
-
-  stress:
-    tests.pipelines.user_count: 100000
+    tests.pipelines.user_count: 25
+    tests.pipelines.pipelines_per_user: 2
+    tests.pipelines.project_count: 5
 
 secrets:
   dir:
@@ -186,16 +180,12 @@ tests:
     deploy_pipeline: true
     notebook_filename: kfp_hello_world.ipynb
     notebook_directory: projects/pipelines/testing/notebooks/hello-world
+    project_count: 2
     user_count: 2
+    pipelines_per_user: 1
     sleep_factor: 1
     user_batch_size: 1
     use_single_project: false
-    mixed:
-      enabled: false
-      workloads:
-      - repeat: 1
-        notebook_filename: kfp_hello_world.ipynb
-        notebook_directory: projects/pipelines/testing/notebooks/hello-world
 matbench:
   preset: null
   workload: projects.pipelines.visualizations.rhods-pipelines
