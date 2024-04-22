@@ -1,12 +1,14 @@
 ---
 - name: Create RHODS namespaces
-  shell:
-    set -o pipefail;
-    oc create ns {{ item }} --dry-run=client -oyaml | oc apply -f-
-  loop:
-  - "{{ rhods_namespace }}"
-  - redhat-ods-applications
-  - redhat-ods-monitoring
+  shell: |
+    set -o pipefail
+    oc create ns {{ rhods_namespace }} --dry-run=client -oyaml | oc apply -f-
+    oc create ns redhat-ods-applications --dry-run=client -oyaml | oc apply -f-
+    oc create ns redhat-ods-monitoring --dry-run=client -oyaml | oc apply -f-
+
+- name: Distinguish ODH from RHOAI
+  set_fact:
+    catalog_name: "{% if rhods_deploy_ods_opendatahub %}opendatahub-catalog{% else %}addon-managed-odh-catalog{% endif %}"
 
 - name: Create the src directory
   file:
@@ -27,8 +29,13 @@
   command: oc create -f "{{ artifact_extra_logs_dir }}/src/000_rhods_catalog.yml"
 
 - name: Create dummy secrets
+  when: rhods_deploy_ods_managed_rhoai | bool
   shell: |
     set -o pipefail
+    set -e
+
+    oc create ns redhat-ods-monitoring --dry-run=client -oyaml | oc apply -f-
+
     oc create secret generic redhat-rhods-deadmanssnitch -n redhat-ods-monitoring \
                --from-literal="SNITCH_URL=https://nosnch.in/c2354d53d2" \
                -oyaml --dry-run=client \
@@ -62,7 +69,7 @@
   include_role:
     name: cluster_deploy_operator
   vars:
-    cluster_deploy_operator_catalog: "{{ rhods_catalog_name }}"
+    cluster_deploy_operator_catalog: "{{ catalog_name }}"
     cluster_deploy_operator_manifest_name: "{{ rhods_manifest_name }}"
     cluster_deploy_operator_namespace: "{{ rhods_namespace }}"
     cluster_deploy_operator_all_namespaces: "True"
@@ -70,6 +77,7 @@
     cluster_deploy_operator_channel: "{{ rhods_deploy_ods_channel }}"
     cluster_deploy_operator_version: "{{ rhods_deploy_ods_version }}"
     cluster_deploy_operator_config_env_names: "[{% if rhods_deploy_ods_disable_dsc_config %}\"DISABLE_DSC_CONFIG\"{% endif %}]"
+    cluster_deploy_operator_csv_base_name: "{% if rhods_deploy_ods_opendatahub %}opendatahub-operator{% endif %}"
 
 - name: Wait for the DataScienceCluster resource to be created
   command:
@@ -78,3 +86,26 @@
   until: has_datasciencecluster_cmd.stdout
   retries: 60
   delay: 10
+  when: rhods_deploy_ods_managed_rhoai | bool
+
+- name: Wait for the DSCI resource to be created
+  command:
+    oc get DSCInitialization -oname
+  register: has_dsci_cmd
+  until: has_dsci_cmd.stdout
+  retries: 60
+  delay: 10
+
+- name: Patch the DSCI to make ODH look like RHOAI
+  shell: |
+    set -e;
+
+    oc patch {{ has_dsci_cmd.stdout }} --patch {% raw %}'{"spec": {"applicationsNamespace": "redhat-ods-applications"}}'{% endraw %} --type merge
+    oc patch {{ has_dsci_cmd.stdout }} --patch {% raw %}'{"spec": {"monitoring": {"namespace": "redhat-ods-monitoring"}}}'{% endraw %} --type merge
+  when: rhods_deploy_ods_opendatahub | bool
+
+- name: Patch the DSCI to make Self-Managed look like RHOAI-Managed
+  shell: |
+    oc patch {{ has_dsci_cmd.stdout }} --patch {% raw %}'{"spec": {"monitoring": {"managementState": "Managed"}}}'{% endraw %} --type merge
+
+  when: not rhods_deploy_ods_managed_rhoai

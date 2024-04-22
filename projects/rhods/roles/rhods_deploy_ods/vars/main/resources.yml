@@ -2,7 +2,6 @@
 rhods_install_ods_catalog: templates/catalog.yml.j2
 
 rhods_namespace: redhat-ods-operator
-rhods_catalog_name: addon-managed-odh-catalog
 rhods_catalog_display_name: Red Hat Openshift Data Science
 rhods_catalog_publish: Red Hat RHODS team
-rhods_manifest_name: rhods-operator
+rhods_manifest_name: "rhods-operator"
