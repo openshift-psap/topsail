@@ -211,7 +211,7 @@ gpu:
 kwok:
   enabled: false
   job_controller:
-    count: 10
+    count: 1
   nodes:
     spec:
       cpu: 32
