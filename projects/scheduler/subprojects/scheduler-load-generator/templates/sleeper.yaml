@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ...
+  namespace: ...
+  annotations:
+    scheduleTime: ...
+  labels: {}
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels: {}
+      annotations:
+        runtime: ...
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        command:
+        - bash
+        - -c
+        args:
+        - sleep $RUNTIME
+        env:
+        - name: RUNTIME # should say the 1st env in the list
+          value: ...
+        image: registry.access.redhat.com/ubi8/ubi
+        resources:
+          limits: {}
+          requests: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
+          runAsNonRoot: true
