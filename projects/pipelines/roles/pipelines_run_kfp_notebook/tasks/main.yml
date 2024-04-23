@@ -148,7 +148,7 @@
 
 # ---
 
-- name: Save the DSP route
+- name: Save the Service Account
   set_fact:
     sa_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}-{% endif %}pipeline-sa"
     sa_cluster_role: cluster-admin

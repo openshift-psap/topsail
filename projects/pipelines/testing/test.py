@@ -152,6 +152,7 @@ def prepare_pipelines_namespace():
     else:
         logging.warning(f"Project {namespace} already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
+        return
 
     run.run(f"oc label namespace/{namespace} opendatahub.io/dashboard=true --overwrite")
 
@@ -225,14 +226,14 @@ def pipelines_run_one():
     uid = -1
     if user_index := os.environ.get("JOB_COMPLETION_INDEX"):
         uid = user_index
-        application_name = f"user{user_index}-sample"
-        config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
 
         namespace = config.ci_artifacts.get_config("rhods.pipelines.namespace")
         ns_index = int(user_index) % int(project_count)
         new_namespace = f"{namespace}-n{ns_index}"
         logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
         config.ci_artifacts.set_config("rhods.pipelines.namespace", new_namespace)
+        application_name = f"user{user_index}-sample"
+        config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
 
     try:
         prepare_pipelines_namespace()
