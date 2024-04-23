@@ -22,21 +22,30 @@
   set_fact:
     ods_namespace: redhat-ods-operator
 
+- name: Get the name of the operator deployment
+  command:
+    oc get deploy
+       -loperators.coreos.com/rhods-operator.redhat-ods-operator
+       -oname
+       -n "{{ ods_namespace }}"
+  register: operator_name_cmd
+  failed_when: not operator_name_cmd.stdout
+
 - name: Ensure that the operator exists
   command:
-    oc get deploy/rhods-operator
+    oc get {{ operator_name_cmd.stdout }}
        -n "{{ ods_namespace }}"
 
 - name: Check if the operator is stopped
   command:
-    oc get deploy/rhods-operator
+    oc get {{ operator_name_cmd.stdout }}
        -n "{{ ods_namespace }}"
        -ojsonpath={.spec.replicas}
   register: rhods_operator_replicas_cmd
 
 - name: Scale up the operator if it was stopped
   command:
-    oc scale deploy/rhods-operator
+    oc scale {{ operator_name_cmd.stdout }}
        --replicas=1
        -n "{{ ods_namespace }}"
   when: rhods_operator_replicas_cmd.stdout == "0"
@@ -72,18 +81,33 @@
        --ignore-not-found
        > "{{ artifact_extra_logs_dir }}/artifacts/datascience_cluster_old.yaml"
 
+- name: Get the name of the components
+  shell:
+    set -o pipefail;
+    oc get crd/datascienceclusters.datasciencecluster.opendatahub.io -ojson
+     | jq -r ' .spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.components.properties | keys[]'
+  register: dsc_components_cmd
+
 - name: Prepare the DataScienceCluster resource
   template:
     src: "{{ datascience_cluster_file }}"
     dest: "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
     mode: '0700'
 
+- name: Disable the not-wanted components
+  shell: |
+    set -e;
+    {% for component in dsc_components_cmd.stdout_lines %}
+    {% if component not in rhods_update_datasciencecluster_enable %}
+    yq -yi '.spec.components.{{ component }}.managementState = "Removed"' "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml";
+    {% endif -%}
+    {% endfor %}
+
 - name: Set the DSC extra values
   when: rhods_update_datasciencecluster_extra_settings | length > 0
   shell: |
     set -o pipefail;
     set -e;
-
     {% for setting_key, setting_value in rhods_update_datasciencecluster_extra_settings.items() %}
     yq -yi --argjson value "$(echo "{{ setting_value }}" | yq)" '.{{ setting_key }} = $value' "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
     {% endfor %}
@@ -91,7 +115,7 @@
 - name: Create the DataScienceCluster
   shell: |
     set -e
-    oc apply -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml" # --server-side --force-conflicts
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml" --server-side --force-conflicts
 
 - name: Wait for the DataScienceCluster to be ready and capture artifacts
   block:

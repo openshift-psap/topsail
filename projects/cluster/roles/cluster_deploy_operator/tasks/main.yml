@@ -11,6 +11,18 @@
   fail: msg="Bailing out. This role requires 'cluster_deploy_operator_namespace'"
   when: cluster_deploy_operator_namespace is undefined
 
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
 - name: Create variables
   set_fact:
     has_version_request: "{{ cluster_deploy_operator_version | default('', true) | string | length > 0 }}"
@@ -51,13 +63,23 @@
       oc get CatalogSource/{{ cluster_deploy_operator_catalog }}
          -n {{ cluster_deploy_operator_catalog_namespace }}
 
+  - name: Ensure the CatalogSource is ready
+    command:
+      oc get catalogsource/{{ cluster_deploy_operator_catalog }}
+         -n {{ cluster_deploy_operator_catalog_namespace }}
+         -ojsonpath={.status.connectionState.lastObservedState}
+    until: '"READY" in catalogsource_connection_state_cmd.stdout'
+    retries: 15
+    delay: 30
+    register: catalogsource_connection_state_cmd
+
   - name: Capture the state of the CatalogSource (debug)
     shell:
       oc get -oyaml CatalogSource/{{ cluster_deploy_operator_catalog }}
          -n {{ cluster_deploy_operator_catalog_namespace }}
          -oyaml
-      > {{ artifact_extra_logs_dir }}/catalogsource.yml
-    failed_when: false
+      > {{ artifact_extra_logs_dir }}/artifacts/catalogsource.yaml
+    ignore_errors: true
 
   - name: Ensure that the operator package manifest exists
     command:
@@ -67,30 +89,30 @@
     retries: 15
     delay: 30
 
-  - name: Save the operator PackageManifest YAML (debug)
-    shell:
-      oc get packagemanifests/{{ cluster_deploy_operator_manifest_name }}
-         -n {{ cluster_deploy_operator_catalog_namespace }}
-         -oyaml
-         > {{ artifact_extra_logs_dir }}/operator_packagemanifest.yml
-
   - name: Store the operator PackageManifest JSON
     shell:
       oc get packagemanifests/{{ cluster_deploy_operator_manifest_name }}
          -n {{ cluster_deploy_operator_catalog_namespace }}
          -ojson
-         > {{ artifact_extra_logs_dir }}/operator_packagemanifest.json
-
+         > {{ artifact_extra_logs_dir }}/artifacts/operator_packagemanifest.json
   rescue:
   - name: Capture the Catalog Operator logs (debug)
     shell:
       oc logs deployment.apps/catalog-operator
          -n openshift-operator-lifecycle-manager
-         > {{ artifact_extra_logs_dir }}/catalog_operator.log
-    failed_when: false
+         > {{ artifact_extra_logs_dir }}/artifacts/catalog_operator.log
+    ignore_errors: true
 
   - name: Indicate where the Catalog-operator logs have been saved
-    debug: msg="The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.log"
+    debug: msg="The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/artifacts/catalog_operator.log"
+
+  - name: Store the YAML of the subscription
+    shell:
+      oc get -f "{{ artifact_extra_logs_dir }}/src/002_sub.yaml"
+         -oyaml
+         -n "{{ cluster_deploy_operator_namespace }}"
+         > {{ artifact_extra_logs_dir }}/operator_sub.yaml
+    ignore_errors: true
 
   - name: Mark the failure as flake
     shell:
@@ -99,6 +121,37 @@
 
   - name: Failed because the operator could not be found in the CatalogSource
     fail: msg="Failed because the operator could not be found in the CatalogSource"
+
+  always:
+  - name: Save the operator PackageManifest YAML (debug)
+    shell:
+      oc get packagemanifests/{{ cluster_deploy_operator_manifest_name }}
+         -n {{ cluster_deploy_operator_catalog_namespace }}
+         -oyaml
+         > {{ artifact_extra_logs_dir }}/artifacts/operator_packagemanifest.yaml
+    ignore_errors: true
+
+  - name: Store the YAML of the subscription
+    shell:
+      oc get -f "{{ artifact_extra_logs_dir }}/src/002_sub.yaml"
+         -oyaml
+         -n "{{ cluster_deploy_operator_namespace }}"
+         > {{ artifact_extra_logs_dir }}/artifacts/operator_sub.yaml
+    ignore_errors: true
+
+  - name: Get the state of the Pods
+    shell:
+      oc get pods
+         -n "{{ cluster_deploy_operator_namespace }}"
+         -lolm.catalogSource={{ cluster_deploy_operator_catalog }}
+         > {{ artifact_extra_logs_dir }}/artifacts/catalogsource_pod.status
+
+  - name: Get the description of the Pods
+    shell:
+      oc describe pods
+         -n "{{ cluster_deploy_operator_namespace }}"
+         -lolm.catalogSource={{ cluster_deploy_operator_catalog }}
+         > {{ artifact_extra_logs_dir }}/artifacts/catalogsource_pod.descr
 
 - name: List the available channels if requested
   when: cluster_deploy_operator_channel == "?"
@@ -110,12 +163,12 @@
             "channel": .name,
             "version": .currentCSVDesc.version
          }'
-         "{{ artifact_extra_logs_dir }}/operator_packagemanifest.json"
+         "{{ artifact_extra_logs_dir }}/artifacts/operator_packagemanifest.json"
     register: available_channels_cmd
 
   - name: Get the default channel (debug)
     command:
-      jq -r .status.defaultChannel "{{ artifact_extra_logs_dir }}/operator_packagemanifest.json"
+      jq -r .status.defaultChannel "{{ artifact_extra_logs_dir }}/artifacts/operator_packagemanifest.json"
     register: default_channel_cmd
 
   - name: Fail with the listing the available channels
@@ -132,7 +185,7 @@
     command:
       jq -r
          '.status.defaultChannel'
-         {{ artifact_extra_logs_dir }}/operator_packagemanifest.json
+         {{ artifact_extra_logs_dir }}/artifacts/operator_packagemanifest.json
     register: operator_channel_cmd
     failed_when: not operator_channel_cmd.stdout
 
@@ -155,7 +208,7 @@
   command:
     jq -r
       '.status.channels[] | select(.name == "{{ operator_channel }}") | .currentCSV'
-      {{ artifact_extra_logs_dir }}/operator_packagemanifest.json
+      {{ artifact_extra_logs_dir }}/artifacts/operator_packagemanifest.json
   register: operator_csv_name_cmd
   failed_when: not operator_csv_name_cmd.stdout
 
@@ -176,20 +229,14 @@
   rescue:
   - name: Store the CSV version from the parameter
     set_fact:
-      operator_csv_name: "{{ cluster_deploy_operator_manifest_name }}.{{ cluster_deploy_operator_version }}"
+      operator_csv_name: "{{ cluster_deploy_operator_csv_base_name if cluster_deploy_operator_csv_base_name else cluster_deploy_operator_manifest_name }}.{{ cluster_deploy_operator_version }}"
 
 - name: Store the CSV version
   set_fact:
     starting_csv: "{{ operator_csv_name }}"
 
 - name: Store the version of the Operator that will be installed
-  shell: echo "{{ starting_csv }}" > "{{ artifact_extra_logs_dir }}/operator_csv_name.txt"
-
-- name: Create the src directory
-  file:
-    path: "{{ artifact_extra_logs_dir }}/src"
-    state: directory
-    mode: '0755'
+  shell: echo "{{ starting_csv }}" > "{{ artifact_extra_logs_dir }}/artifacts/operator_csv_name.txt"
 
 - name: "Create the Subscription"
   debug: msg="starting_csv is {{ starting_csv }}"
@@ -199,18 +246,18 @@
   - name: Instantiate the Namespace template
     template:
       src: "{{ cluster_deploy_operator_res_ns }}"
-      dest: "{{ artifact_extra_logs_dir }}/src/000_namespace.yml"
+      dest: "{{ artifact_extra_logs_dir }}/src/000_namespace.yaml"
       mode: '0400'
 
   - name: Check if the namespace exists
     command: oc get "ns/{{ cluster_deploy_operator_namespace }}"
-    failed_when: false
+    ignore_errors: true
     register: namespace_exists_cmd
 
   - name: Create the namespace resource
     when: namespace_exists_cmd.rc == 1
     command:
-      oc create -f "{{ artifact_extra_logs_dir }}/src/000_namespace.yml"
+      oc create -f "{{ artifact_extra_logs_dir }}/src/000_namespace.yaml"
 
   - name: Mark the namespace for monitoring, if requested
     when: cluster_deploy_operator_namespace_monitoring | bool
@@ -223,20 +270,20 @@
   - name: Instantiate the OperatorGroup template
     template:
       src: "{{ cluster_deploy_operator_res_group }}"
-      dest: "{{ artifact_extra_logs_dir }}/src/001_operator_group.yml"
+      dest: "{{ artifact_extra_logs_dir }}/src/001_operator_group.yaml"
       mode: '0400'
 
   - name: Instantiate the OperatorHub OperatorGroup resource
-    command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_operator_group.yml"
+    command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_operator_group.yaml"
 
 - name: "Create the Subscription for {{ operator_csv_name }}"
   template:
     src: "{{ cluster_deploy_operator_res_sub }}"
-    dest: "{{ artifact_extra_logs_dir }}/src/002_sub.yml"
+    dest: "{{ artifact_extra_logs_dir }}/src/002_sub.yaml"
     mode: '0400'
 
 - name: Instantiate the Subscription
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/002_sub.yml"
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/002_sub.yaml"
 
 - name: Make sure the InstallPlan is deployed
   block:
@@ -284,6 +331,13 @@
     fail: msg="ClusterServiceVersion install not successful ({{ operator_csv_phase.stdout }})"
     when: operator_csv_phase.stdout != "Succeeded"
 
+  - name: Capture the Catalog Operator logs (debug)
+    shell:
+      oc logs deployment.apps/catalog-operator
+        -n openshift-operator-lifecycle-manager
+        > {{ artifact_extra_logs_dir }}/artifacts/catalog_operator.log
+    ignore_errors: true
+
   rescue:
   - name: Store the CSV that have been installed
     shell:
@@ -291,15 +345,8 @@
           -n "{{ cluster_deploy_operator_namespace }}"
           > {{ artifact_extra_logs_dir }}/all_csv.status
 
-  - name: Capture the Catalog Operator logs (debug)
-    shell:
-      oc logs deployment.apps/catalog-operator
-        -n openshift-operator-lifecycle-manager
-        > {{ artifact_extra_logs_dir }}/catalog_operator.log
-    failed_when: false
-
   - name: Indicate where the Catalog-operator logs have been saved
-    debug: msg="The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/catalog_operator.log"
+    debug: msg="The logs of Catalog Operator have been saved in {{ artifact_extra_logs_dir }}/artifacts/catalog_operator.log"
 
   - name: Failed because the operator could not be installed from the CatalogSource
     fail: msg="Failed because the operator could not be installed from the CatalogSource"
@@ -307,10 +354,10 @@
   always:
   - name: Store the YAML of the subscription
     shell:
-      oc get -f "{{ artifact_extra_logs_dir }}/src/002_sub.yml"
+      oc get -f "{{ artifact_extra_logs_dir }}/src/002_sub.yaml"
          -oyaml
          -n "{{ cluster_deploy_operator_namespace }}"
-         > {{ artifact_extra_logs_dir }}/operator_sub.yml
+         > {{ artifact_extra_logs_dir }}/artifacts/operator_sub.yaml
     ignore_errors: true
 
   - name: Store the YAML of the operator CSV that was installed (debug)
@@ -318,7 +365,7 @@
       oc get ClusterServiceVersion/{{ operator_csv_name }}
          -oyaml
           -n "{{ cluster_deploy_operator_namespace }}"
-          > {{ artifact_extra_logs_dir }}/operator_csv.yml
+          > {{ artifact_extra_logs_dir }}/artifacts/operator_csv.yaml
     ignore_errors: true
 
 - name: Deploy the operator CustomResource from its ClusterServiceVersion

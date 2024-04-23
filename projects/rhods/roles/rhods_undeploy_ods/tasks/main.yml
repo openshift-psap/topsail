@@ -1,14 +1,28 @@
 ---
+- name: Get the name of the operator deployment
+  command:
+    oc get deploy -loperators.coreos.com/rhods-operator.redhat-ods-operator
+       -oname
+       -n "{{ rhods_undeploy_ods_namespace }}"
+  register: operator_name_cmd
+
+- name: Inform if not deployed
+  debug: msg="RHOAI operator not installed, nothing to do."
+
+- name: Exit if not deployed
+  meta: end_play
+  when: not operator_name_cmd.stdout
+
 - name: Check if the operator is stopped
   command:
-    oc get deploy/rhods-operator
+    oc get {{ operator_name_cmd.stdout }}
        -n "{{ rhods_undeploy_ods_namespace }}"
        -ojsonpath={.spec.replicas}
   register: rhods_operator_replicas_cmd
 
 - name: Scale up the operator if it was stopped
   command:
-    oc scale deploy/rhods-operator
+    oc scale {{ operator_name_cmd.stdout }}
        --replicas=1
        -n "{{ rhods_undeploy_ods_namespace }}"
   when: rhods_operator_replicas_cmd.stdout == "0"
@@ -47,6 +61,7 @@
   command:
     oc delete ns "{{ rhods_undeploy_ods_namespace }}"
        --wait=false
+       --ignore-not-found
 
 - name: Delete the DSCI
   shell:

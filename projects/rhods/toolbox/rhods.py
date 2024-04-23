@@ -14,7 +14,7 @@ class Rhods:
 
     @AnsibleRole("rhods_deploy_ods")
     @AnsibleMappedParams
-    def deploy_ods(self, catalog_image, tag, channel="", version="", disable_dsc_config=False):
+    def deploy_ods(self, catalog_image, tag, channel="", version="", disable_dsc_config=False, opendatahub=False, managed_rhoai=True):
         """
         Deploy ODS operator from its custom catalog
 
@@ -24,7 +24,11 @@ class Rhods:
           channel: The channel to use for the deployment. Let empty to use the default channel.
           version: The version to deploy. Let empty to install the last version available.
           disable_dsc_config: if True, pass the flag to disable DSC configuration
+          opendatahub: if True, deploys a OpenDataHub manifest instead of RHOAI
+          managed_rhoai: if True, deploys RHOAI with the Managed Service flag. If False, deploys it as Self-Managed.
         """
+        if opendatahub and managed_rhoai:
+            raise ValueError("Cannot deploy with --opendatahub and --managed-rhoai")
 
         return RunAnsibleRole(locals())
 

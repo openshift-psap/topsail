@@ -10,9 +10,10 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 OCP_PULL_SECRET="secret/pull-secret -n openshift-config"
 SERVER=brew.registry.redhat.io
 IMAGE_CONTENT_SOURCE_POLICY="$THIS_DIR/brew-registry-icsp.yaml"
+IMAGE_CONFIG="$THIS_DIR/image-config.yaml"
 
 echo "Checking if the ICSP already exists ..."
-if oc get -f ./brew-registry-icsp.yaml 2>/dev/null; then
+if oc get -f $IMAGE_CONTENT_SOURCE_POLICY  2>/dev/null; then
     echo "Brew ICSP already exists, assuming that Brew is already configured."
     exit 0
 fi
@@ -43,5 +44,12 @@ oc set data $OCP_PULL_SECRET --from-file=.dockerconfigjson=<(echo "$updated_pull
 echo "Applying the $SERVER ImageContentSourcePolicy"
 
 oc apply -f "$IMAGE_CONTENT_SOURCE_POLICY"
+
+# to access ODH nightlies in registry-proxy.engineering.redhat.com
+# without hitting certificate errors
+
+echo "Applying the Image config for registry-proxy.engineering.redhat.com ..."
+
+oc apply -f "$IMAGE_CONFIG"
 
 echo "Done."
