@@ -219,8 +219,8 @@ def pipelines_run_one():
     """
 
     project_count = config.ci_artifacts.get_config("tests.pipelines.project_count")
-    user_count = config.ci_artifacts.get_config("tests.pipelines.project_count")
-    pipelines_per_user = config.ci_artifacts.get_config("tests.pipelines.project_count")
+    user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+    pipelines_per_user = config.ci_artifacts.get_config("tests.pipelines.pipelines_per_user")
 
     uid = -1
     if user_index := os.environ.get("JOB_COMPLETION_INDEX"):

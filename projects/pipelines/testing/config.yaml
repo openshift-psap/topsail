@@ -66,6 +66,11 @@ ci_presets:
   single_project:
     tests.pipelines.project_count: 1
 
+  mixed_light:
+    tests.pipelines.user_count: 4
+    tests.pipelines.pipelines_per_user: 2
+    tests.pipelines.project_count: 2
+
   mixed_workload:
     tests.pipelines.user_count: 25
     tests.pipelines.pipelines_per_user: 2
