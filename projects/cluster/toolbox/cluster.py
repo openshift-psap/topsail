@@ -89,6 +89,7 @@ class Cluster:
                         namespace_monitoring: bool = False,
                         all_namespaces: bool = False,
                         config_env_names: list = [],
+                        csv_base_name=None,
                         ):
         """
         Deploy an operator from OperatorHub catalog entry.
@@ -105,6 +106,7 @@ class Cluster:
             all_namespaces: If set, deploy the CSV in all the namespaces.
             catalog_namespace: Namespace in which the CatalogSource will be deployed
             config_env_names: If not empty, a list of config env names to pass to the subscription
+            csv_base_name: if not empty, base name of the CSV. If empty, use the manifest_name.
         """
 
         if namespace == "all":
