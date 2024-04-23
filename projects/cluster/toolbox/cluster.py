@@ -605,3 +605,28 @@ class Cluster:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("cluster_download_to_pvc")
+    @AnsibleMappedParams
+    def download_to_pvc(self,
+                         source,
+                         pvc_name,
+                         namespace,
+                         creds="",
+                         storage_dir="/",
+                         clean_first=False,
+                         ):
+        """
+        Downloads the a dataset into a PVC of the cluster
+
+        Args:
+            source: URL of the source data
+            dest_dir: directory in the PVC where the data will be stored
+            pvc_name: Name of the PVC that will be create to store the dataset files.
+            namespace: Name of the namespace in which the PVC will be created
+            creds: Path to credentials to use for accessing the dataset.
+            clean_first: if True, clears the storage directory before downloading.
+            storage_dir: the path where to store the downloaded files, in the PVC
+        """
+
+        return RunAnsibleRole(locals())
