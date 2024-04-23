@@ -187,10 +187,6 @@
     state: directory
     mode: '0755'
 
-- name: Delete the existing workflows/pipelines
-  command:
-    oc delete workflows.argoproj.io --all -n "{{ notebook_namespace }}"
-
 # ---
 
 - name: Run the test notebook
