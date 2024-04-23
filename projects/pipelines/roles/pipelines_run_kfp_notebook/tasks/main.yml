@@ -279,7 +279,7 @@
 
   always:
   - name: Delete the secret token
-    command: oc delete secret/secret_token_name -n "{{ notebook_namespace }}" --ignore-not-found
+    command: oc delete secret/{{ secret_token_name }} -n "{{ notebook_namespace }}" --ignore-not-found
     failed_when: false
 
   - name: Capture the artifacts
