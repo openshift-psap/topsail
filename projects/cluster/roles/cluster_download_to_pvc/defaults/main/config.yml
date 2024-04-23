@@ -1,0 +1,25 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.download_to_pvc
+
+# Parameters
+# URL of the source data
+# Mandatory value
+cluster_download_to_pvc_source:
+
+# Name of the PVC that will be create to store the dataset files.
+# Mandatory value
+cluster_download_to_pvc_pvc_name:
+
+# Name of the namespace in which the PVC will be created
+# Mandatory value
+cluster_download_to_pvc_namespace:
+
+# Path to credentials to use for accessing the dataset.
+cluster_download_to_pvc_creds:
+
+# the path where to store the downloaded files, in the PVC
+cluster_download_to_pvc_storage_dir: /
+
+# if True, clears the storage directory before downloading.
+cluster_download_to_pvc_clean_first: false
