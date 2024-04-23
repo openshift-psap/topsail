@@ -5,12 +5,10 @@ from projects.core.library import run, config, env
 
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
-TESTING_UTILS_DIR = TOPSAIL_DIR / "testing" / "utils"
-
 RHODS_OPERATOR_MANIFEST_NAME = "rhods-operator"
 
 def _setup_brew_registry(token_file):
-    brew_setup_script = TESTING_UTILS_DIR / "brew.registry.redhat.io" / "setup.sh"
+    brew_setup_script = TOPSAIL_DIR / "projects" / "rhods" / "utils" / "brew.registry.redhat.io" / "setup.sh"
 
     return run.run(f'"{brew_setup_script}" "{token_file}"')
 
