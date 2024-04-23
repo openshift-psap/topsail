@@ -9,6 +9,7 @@ from collections import defaultdict
 import datetime
 import logging
 logging.getLogger().setLevel(logging.INFO)
+import importlib
 
 import subprocess
 
@@ -64,6 +65,8 @@ def main(dry_run=True,
       kueue_queue: name of the Kueue queue to use, in Kueue mode
     """
 
+    config.load_config()
+
     if namespace is None:
         logging.info("Getting the current project name ...")
 
@@ -101,15 +104,21 @@ def main(dry_run=True,
     logging.info(f"Running with a timespan of {timespan} minutes.")
     timespan_sec = timespan * 60
 
-    job = job_mod.prepare_base_job(namespace, job_template_name, base_name, pod_runtime, pod_requests, pod_count, kueue_mode)
+    try:
+        preparator = importlib.import_module(f"preparators.{job_template_name}")
+    except ModuleNotFoundError:
+        logging.fatal(f"No 'preparators' module named '{job_template_name}'")
+        raise
+
+    base_resource = preparator.prepare(namespace, job_template_name, base_name, pod_runtime, pod_requests, pod_count)
     if job_mode:
-        resources = job_mod.prepare_standalone_job(job)
+        resources = job_mod.prepare_k8s_job(base_resource)
     elif kueue_mode:
-        resources = kueue_mod.prepare_kueue_job(job, kueue_queue)
+        resources = kueue_mod.prepare_kueue_job(base_resource, kueue_queue)
     elif coscheduling_mode:
-        resources = coscheduling_mod.prepare_coscheduling_job(job)
+        resources = coscheduling_mod.prepare_coscheduling_job(base_resource)
     elif mcad_mode:
-        resources = appwrapper_mod.prepare_appwrapper(namespace, job, priority, pod_count, pod_requests)
+        resources = appwrapper_mod.prepare_appwrapper(namespace, base_resource, priority, pod_count, pod_requests)
     else:
         raise ValueError(f"Impossible branch (mode: {mode})...")
 
