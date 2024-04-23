@@ -13,7 +13,7 @@
 - name: Check if RHODS CSV exists
   shell:
     set -o pipefail;
-    oc get csv -n redhat-ods-operator -oname | grep rhods-operator
+    oc get csv -n redhat-ods-operator -oname -loperators.coreos.com/rhods-operator.redhat-ods-operator
   register: has_rhods_csv_cmd
 
 - name: Save the RHODS CSV
