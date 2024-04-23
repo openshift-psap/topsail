@@ -140,7 +140,7 @@ def prepare_rhoai():
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
     run.run_toolbox(
         "rhods", "update_datasciencecluster",
-        enable=["kueue", "codeflare"],
+        enable=["kueue", "codeflare", "trainingoperator"],
         name=None if has_dsc else "default-dsc",
     )
 
@@ -173,7 +173,14 @@ def cleanup_sutest_ns():
 
 
 def prepare_kwok_job_controller():
-    run.run_toolbox_from_config("local_ci", "run_multi", suffix="kwok-job-controller")
+    with env.NextArtifactDir("prepare_kwok_job_controller"):
+        run.run_toolbox_from_config("local_ci", "run_multi", suffix="kwok-job-controller")
+        controller_dir = TESTING_THIS_DIR / "kwok-job-controller"
+
+        run.run("oc delete --ignore-not-found stage.kwok.x-k8s.io/pod-ready stage.kwok.x-k8s.io/pod-complete")
+
+        for yaml_file in controller_dir.glob("*.yaml"):
+            run.run(f"cat {yaml_file} | tee {env.ARTIFACT_DIR / yaml_file.name} | oc apply -f-")
 
 
 def do_prepare_kwok_nodes(cfg, dry_mode):
