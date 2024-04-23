@@ -1,0 +1,124 @@
+---
+
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Delete the creds secret, if it exists
+  command:
+    oc delete secret/download-secret
+       -n {{ cluster_download_to_pvc_namespace }}
+       --ignore-not-found=true
+  when: cluster_download_to_pvc_creds | length > 0
+
+- name: Create the s3 secret
+  command:
+    oc create secret generic s3-secret
+       -n {{ cluster_download_to_pvc_namespace }}
+       --from-file=awscred={{ cluster_download_to_pvc_creds }}
+  when: cluster_download_to_pvc_creds | length > 0
+
+- name: Create the entrypoint ConfigMap file
+  shell:
+    oc create cm download-to-pvc
+       --from-file="entrypoint.sh={{ entrypoint }}"
+       -n {{ cluster_download_to_pvc_namespace }}
+       --dry-run=client
+       -oyaml
+       > {{ artifact_extra_logs_dir }}/configmap_entrypoint.yaml
+
+- name: Create the entrypoint ConfigMap resource
+  command:
+    oc apply -f {{ artifact_extra_logs_dir }}/configmap_entrypoint.yaml
+
+- name: Apply the PVC template
+  template:
+    src: "{{ pvc_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/pvc.yaml"
+    mode: '0400'
+
+- name: Check if the PVC already exists
+  command: oc get -f "{{ artifact_extra_logs_dir }}/src/pvc.yaml" -oname
+  failed_when: false
+  register: has_pvc_cmd
+
+- name: Create a PVC if it does not exist
+  when: has_pvc_cmd.rc != 0
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/pvc.yaml"
+
+- name: Apply the Pod template
+  template:
+    src: "{{ pod_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/pod.yaml"
+    mode: '0400'
+
+- name: Delete the Pod, if it exists
+  command:
+    oc delete -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
+       --ignore-not-found=true
+
+- name: Create a Pod for downloading the COCO dataset
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
+
+- name: Wait for the download and delete the secret
+  block:
+  - name: Wait for the downloader Pod to start
+    command:
+      oc get -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
+         --no-headers
+         -ocustom-columns=phase:status.phase
+    register: wait_downloader_pod_start
+    until: "'Pending' not in wait_downloader_pod_start.stdout "
+    retries: 12
+    delay: 10
+
+  - name: Wait for the downloader Pod to terminate
+    command:
+      oc get -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
+         --no-headers
+         -ocustom-columns=phase:status.phase
+    register: wait_downloader_pod_cmd
+    until: "'Succeeded' in wait_downloader_pod_cmd.stdout or 'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout"
+    retries: 600
+    delay: 10
+  always:
+  - name: Delete the creds secret, if it was created
+    command:
+      oc delete secret/download-secret
+         -n {{ cluster_download_to_pvc_namespace }}
+         --ignore-not-found=true
+    when: cluster_download_to_pvc_creds | length > 0
+
+- name: Get the logs of the download Pod (debug)
+  shell:
+    oc logs download-to-{{ cluster_download_to_pvc_pvc_name }}
+       -n {{ cluster_download_to_pvc_namespace }}
+       > {{ artifact_extra_logs_dir }}/artifacts/pod.log
+  ignore_errors: true
+
+- name: Get the description of the download Pod (debug)
+  shell:
+    oc describe pod/download-to-{{ cluster_download_to_pvc_pvc_name }}
+       -n {{ cluster_download_to_pvc_namespace }}
+       > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
+  ignore_errors: true
+
+- name: Capture the state of the PVC
+  shell:
+    oc get -f "{{ artifact_extra_logs_dir }}/src/pvc.yaml"
+       -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/pvc.yaml"
+  ignore_errors: true
+
+- name: Fail if the the downloader Pod failed
+  when: "'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout"
+  fail: msg="The download failed ..."

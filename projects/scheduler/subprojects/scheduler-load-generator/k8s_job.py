@@ -1,9 +1,7 @@
-import sys
 import copy
 import logging
 
-import config, k8s_quantity
-
+import config
 
 def prepare_k8s_job(base_job):
     new_job = copy.deepcopy(base_job)

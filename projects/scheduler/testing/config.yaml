@@ -195,10 +195,12 @@ base_image:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 711514
-    channel: fast
-    version: 2.9.0
-    version_name: rc1
+    tag: 712547
+    channel: odh-nightlies
+    version: 1.18.0
+    version_name: nightly
+    opendatahub: true
+    managed_rhoi: false
   operator:
     # set to true to stop the RHODS operator
     stop: false

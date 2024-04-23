@@ -1,0 +1,4 @@
+---
+entrypoint: 'projects/cluster/roles/cluster_download_to_pvc/files/entrypoint.sh'
+pod_template: 'templates/pod.yml.j2'
+pvc_template: 'templates/pvc.yml.j2'

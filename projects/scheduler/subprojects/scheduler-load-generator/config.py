@@ -7,13 +7,31 @@ import json
 
 ARTIFACT_DIR = pathlib.Path(os.environ.get("ARTIFACT_DIR", "."))
 
-with open(pathlib.Path(__file__).parent / "config.yaml") as f:
-    main_config = yaml.safe_load(f)
+main_config = None
 
-def get_config(jsonpath, config=main_config):
-    return jsonpath_ng.parse(jsonpath).find(config)[0].value
+def load_config():
+    global main_config
+
+
+    job_templates = {}
+    main_config = dict(job_templates=job_templates)
+
+    for fname in (pathlib.Path(__file__).parent / "templates").glob("*.yaml"):
+        with open(fname) as f:
+            job_templates[fname.stem] = yaml.safe_load(f)
+
+    return main_config
+
+
+def get_config(jsonpath, config=None):
+    if config is None:
+        config = main_config
+
+    try:
+        return jsonpath_ng.parse(jsonpath).find(config)[0].value
+    except IndexError:
+        raise IndexError(f"Couldn't find {jsonpath} key ...")
 
 
 def set_config(config, jsonpath, value):
-    get_config(jsonpath, config=config) # will raise an exception if the jsonpath does not exist
-    jsonpath_ng.parse(jsonpath).update(config, value)
+    jsonpath_ng.parse(jsonpath).update_or_create(config, value)
