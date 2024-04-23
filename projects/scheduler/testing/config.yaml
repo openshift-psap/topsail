@@ -200,6 +200,7 @@ rhods:
     version: 2.10.0
     version_name: nightly
     opendatahub: false
+    managed_rhoi: true
   operator:
     # set to true to stop the RHODS operator
     stop: false
