@@ -15,9 +15,16 @@ def _setup_brew_registry(token_file):
 # ---
 
 def install_servicemesh():
+    SERVICE_MESH_MANIFEST_NAME = "servicemeshoperator"
+    installed_csv_cmd = run.run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
+
+    if SERVICE_MESH_MANIFEST_NAME in installed_csv_cmd.stdout:
+        logging.info("Operator '{SERVICE_MESH_MANIFEST_NAME}' is already installed.")
+        return
+
     run.run_toolbox("cluster", "deploy_operator",
                     catalog="redhat-operators",
-                    manifest_name="servicemeshoperator",
+                    manifest_name=SERVICE_MESH_MANIFEST_NAME,
                     namespace="all",
                     artifact_dir_suffix="_service-mesh")
 
