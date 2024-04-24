@@ -152,7 +152,6 @@ def prepare_pipelines_namespace():
     else:
         logging.warning(f"Project {namespace} already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
-        return
 
     run.run(f"oc label namespace/{namespace} opendatahub.io/dashboard=true --overwrite")
 
