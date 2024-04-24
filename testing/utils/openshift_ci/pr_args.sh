@@ -89,16 +89,18 @@ else
     last_comment_page_json=$(curl -sSf "$PR_LAST_COMMENT_PAGE_URL")
 fi
 
-REQUIRED_AUTHOR_ASSOCIATION=CONTRIBUTOR
+REQUIRED_AUTHOR_ASSOCIATION=("CONTRIBUTOR" "COLLABORATOR")
 
 echo "PR comments URL: $PR_COMMENTS_URL" >&2
 last_user_test_comment=$(echo "$last_comment_page_json" \
-                             | jq '.[] | select(.author_association == "'$REQUIRED_AUTHOR_ASSOCIATION'") | .body' \
+                             | jq '.[]
+                             | select(.author_association == "'${REQUIRED_AUTHOR_ASSOCIATION[0]}'", .author_association == "'${REQUIRED_AUTHOR_ASSOCIATION[1]}'")
+                             | .body' \
                              | (grep "$test_anchor" || true) \
                              | tail -1 | jq -r)
 
 if [[ -z "$last_user_test_comment" ]]; then
-    echo "ERROR: last comment of from a '$REQUIRED_AUTHOR_ASSOCIATION' could not be found (searching for '$test_anchor') ..." >&2
+    echo "ERROR: last comment of from a '${REQUIRED_AUTHOR_ASSOCIATION[@]}' could not be found (searching for '$test_anchor') ..." >&2
     exit 1
 fi
 
