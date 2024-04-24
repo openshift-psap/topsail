@@ -608,14 +608,15 @@ class Cluster:
 
     @AnsibleRole("cluster_download_to_pvc")
     @AnsibleMappedParams
-    def download_to_pvc(self,
-                         source,
-                         pvc_name,
-                         namespace,
-                         creds="",
-                         storage_dir="/",
-                         clean_first=False,
-                         ):
+    def download_to_pvc(
+            self,
+            pvc_name,
+            namespace,
+            source,
+            creds="",
+            storage_dir="/",
+            clean_first=False,
+    ):
         """
         Downloads the a dataset into a PVC of the cluster
 
