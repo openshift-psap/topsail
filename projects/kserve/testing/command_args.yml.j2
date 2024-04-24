@@ -25,9 +25,6 @@ rhods deploy_ods:
   tag: {{ rhods.catalog.tag }}
   channel: {{ rhods.catalog.channel }}
   version: {{ rhods.catalog.version }}
-{% if kserve.raw_deployment.enabled %}
-  disable_dsc_config: true
-{% endif %}
 
 #
 # Scale test - Run one
