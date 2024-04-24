@@ -32,6 +32,7 @@ ci_presets:
     extends: [metal]
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
+    clusters.sutest.compute.machineset.type: "Icelake"
 
   scale_test:
     tests.pipelines.user_count: 100
@@ -87,7 +88,7 @@ secrets:
   opensearch_instances: opensearch.yaml
 clusters:
   metal_profiles:
-    e26-h23-000-r650: cluster_icelake
+    e26-h23-000-r650: icelake
   create:
     type: single # can be: single, ocp, managed
     keep: false
