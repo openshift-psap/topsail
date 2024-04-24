@@ -166,8 +166,6 @@ def prepare_pipelines_namespace():
     run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="pipelines_node_selector", extra=dedicated)
     run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="pipelines_toleration" , extra=dedicated)
 
-    create_dsp_application()
-
 
 @entrypoint()
 def prepare_test_driver_namespace():
@@ -236,16 +234,20 @@ def pipelines_run_one():
         config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
 
     try:
+
         prepare_pipelines_namespace()
-        if config.ci_artifacts.get_config("tests.pipelines.deploy_pipeline"):
-            user_pipeline_delay = int(config.ci_artifacts.get_config("tests.pipelines.user_pipeline_delay"))
-            with run.Parallel("launch_pipelines") as parallel:
-                for pipeline_num in range(pipelines_per_user):
-                    logging.info(f"Running run_kfp_notebook for pipeline {pipeline_num}")
-                    notebook_name = f"user{uid}-run{pipeline_num}"
-                    parallel.delayed(run.run_toolbox_from_config, "pipelines", "run_kfp_notebook", extra={"notebook_name": notebook_name})
-                    if pipeline_num != pipelines_per_user - 1:
-                        time.sleep(user_pipeline_delay)
+        create_dsp_application()
+
+        if not config.ci_artifacts.get_config("tests.pipelines.deploy_pipeline"):
+            return
+
+        user_pipeline_delay = int(config.ci_artifacts.get_config("tests.pipelines.user_pipeline_delay"))
+        for pipeline_num in range(pipelines_per_user):
+            logging.info(f"Running run_kfp_notebook for pipeline {pipeline_num}")
+            notebook_name = f"user{uid}-run{pipeline_num}"
+            run.run_toolbox_from_config("pipelines", "run_kfp_notebook", extra={"notebook_name": notebook_name})
+            if pipeline_num != pipelines_per_user - 1:
+                time.sleep(user_pipeline_delay)
 
     finally:
         run.run_toolbox_from_config("pipelines", "capture_state", mute_stdout=True)
