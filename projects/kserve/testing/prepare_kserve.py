@@ -36,30 +36,6 @@ EOF
 """)
 
 
-def enable_kserve_raw_deployment_dsci():
-    run.run("""\
-    cat <<EOF | oc apply -f-
-apiVersion: dscinitialization.opendatahub.io/v1
-kind: DSCInitialization
-metadata:
-  name: default-dsci
-spec:
-  applicationsNamespace: redhat-ods-applications
-  monitoring:
-    managementState: Managed
-    namespace: redhat-ods-monitoring
-  serviceMesh:
-    controlPlane:
-      metricsCollection: Istio
-      name: data-science-smcp
-      namespace: istio-system
-    managementState: Removed
-  trustedCABundle:
-    managementState: Managed
-    customCABundle: ""
-EOF
-""")
-
 
 def enable_kserve_raw_deployment():
     run.run("""
@@ -111,8 +87,6 @@ def dsc_enable_kserve():
     extra_settings = {}
     if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
         extra_settings["spec.components.kserve.serving.managementState"] = "Removed"
-
-        enable_kserve_raw_deployment_dsci()
 
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
     run.run_toolbox("rhods", "update_datasciencecluster",
