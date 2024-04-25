@@ -1,0 +1,43 @@
+{% set secrets_location = false | or_env(secrets.dir.env_key) %}
+{% if not secrets_location %}
+  {{ ("ERROR: secrets_location must be defined (secrets.dir.name="+ secrets.dir.name|string +" or env(secrets.dir.env_key=" + secrets.dir.env_key|string + ")) ") | raise_exception }}
+{% endif %}
+{% set s3_ldap_password_location = secrets_location + "/" + secrets.s3_ldap_password_file %}
+
+# ---
+
+sutest/cluster set_scale:
+  name: {{ clusters.sutest.compute.machineset.name }}
+  instance_type: {{ clusters.sutest.compute.machineset.type }}
+{% if clusters.sutest.compute.dedicated %}
+  taint: {{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}:{{ clusters.sutest.compute.machineset.taint.effect }}
+{% endif %}
+  disk_size: {{ clusters.sutest.compute.machineset.disk_size }}
+  spot: {{ clusters.sutest.compute.machineset.spot }}
+  scale: SET_AT_RUNTIME
+
+
+gpu_operator enable_time_sharing:
+  replicas: {{ gpu.time_sharing.replicas }}
+
+#
+# deploy RHODS
+#
+
+rhods deploy_ods:
+  catalog_image: {{ rhods.catalog.image }}
+  tag: {{ rhods.catalog.tag }}
+  channel: {{ rhods.catalog.channel }}
+  version: {{ rhods.catalog.version }}
+  opendatahub: {{ rhods.catalog.opendatahub }}
+  managed_rhoai: {{ rhods.catalog.managed_rhoai }}
+
+# ---
+
+sutest/cluster set_project_annotation/scale_test_node_selector:
+  key: openshift.io/node-selector
+  value: "{{ clusters.sutest.compute.machineset.taint.key }}={{ clusters.sutest.compute.machineset.taint.value }}"
+
+sutest/cluster set_project_annotation/scale_test_toleration:
+  key: scheduler.alpha.kubernetes.io/defaultTolerations
+  value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'

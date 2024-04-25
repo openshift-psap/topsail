@@ -1,0 +1,162 @@
+ci_presets:
+  # name of the presets to apply, or null if no preset
+  name: null
+  # list of names of the presets to apply, or a single name, or null if no preset
+  names: null
+
+  single:
+    clusters.create.type: single
+
+  keep:
+    clusters.create.keep: true
+    clusters.create.ocp.tags.Project: PSAP/Project/FineTuning
+    # clusters.create.ocp.tags.TicketId:
+
+  light_cluster:
+    clusters.create.ocp.deploy_cluster.target: cluster_light
+
+  light:
+    extends: [light_cluster]
+
+  quick:
+    tests.sleep_duration: 0
+
+  metal:
+    clusters.sutest.is_metal: true
+    clusters.driver.is_metal: true
+    clusters.sutest.compute.dedicated: false
+    clusters.driver.compute.dedicated: false
+
+  not_metal:
+    clusters.sutest.is_metal: false
+    clusters.driver.is_metal: false
+
+  use_intlab_os:
+    matbench.lts.opensearch.index_prefix: "psap-rhoai."
+    matbench.lts.opensearch.instance: intlab
+
+  use_smoke_os:
+    matbench.lts.opensearch.instance: smoke
+
+  cluster_dgx:
+    clusters.sutest.compute.machineset.type: "DGX A100-40GB"
+
+  cluster_icelake:
+    clusters.sutest.compute.machineset.type: "Icelake"
+
+secrets:
+  dir:
+    name: psap-ods-secret
+    env_key: PSAP_ODS_SECRET_PATH
+  # name of the file containing the properties of LDAP secrets
+  s3_ldap_password_file: s3_ldap.passwords
+  keep_cluster_password_file: get_cluster.password
+  brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+  opensearch_instances: opensearch.yaml
+  aws_credentials: .awscred
+
+clusters:
+  metal_profiles:
+    p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
+    e26-h23-000-r650: cluster_icelake
+  create:
+    type: single # can be: single, ocp, managed
+    keep: false
+    name_prefix: fine-tuning-ci
+    ocp:
+      # list of tags to apply to the machineset when creating the cluster
+      tags:
+        # TicketId: "..."
+        Project: PSAP/Project/FineTuning
+      deploy_cluster:
+        target: cluster
+      base_domain: psap.aws.rhperfscale.org
+      version: 4.15.9
+      region: us-west-2
+      control_plane:
+        type: m6a.xlarge
+      workers:
+        type: m6a.2xlarge
+        count: 2
+
+  sutest:
+    is_metal: false
+    lab:
+      name: null
+    compute:
+      dedicated: true
+      machineset:
+        name: workload-pods
+        type: m6i.2xlarge
+        count: null
+        taint:
+          key: only-workload-pods
+          value: "yes"
+          effect: NoSchedule
+  driver:
+    is_metal: false
+    compute:
+      dedicated: true
+      machineset:
+        name: test-pods
+        count: null
+        type: m6i.2xlarge
+        taint:
+          key: only-test-pods
+          value: "yes"
+          effect: NoSchedule
+  cleanup_on_exit: false
+
+rhods:
+  catalog:
+    image: brew.registry.redhat.io/rh-osbs/iib
+    tag: 712547
+    channel: odh-nightlies
+    version: 1.18.0
+    version_name: nightly
+    opendatahub: true
+    managed_rhoi: false
+  operator:
+    # set to true to stop the RHODS operator
+    stop: false
+
+gpu:
+  prepare_cluster: false
+  time_sharing:
+    replicas: 1
+
+tests:
+  ...
+
+matbench:
+  preset: null
+  workload: projects.fine_tuning.visualizations.fine_tuning
+  config_file: plots.yaml
+  download:
+    mode: prefer_cache
+    url:
+    url_file:
+    # if true, copy the results downloaded by `matbench download` into the artifacts directory
+    save_to_artifacts: false
+  ignore_exit_code: true
+  # directory to plot. Set by testing/common/visualize.py before launching the visualization
+  test_directory: null
+  lts:
+    generate: true
+    horreum:
+      test_name: null
+    opensearch:
+      export: true
+      fail_test_on_fail: false
+      instance: smoke
+      index: topsail-fine-tuning
+      index_prefix: ""
+    regression_analyses:
+      enabled: true
+      # if the regression analyses fail, mark the test as failed
+      fail_test_on_regression: true
+export_artifacts:
+  enabled: false
+  bucket: rhoai-cpt-artifacts
+  path_prefix: cpt/fine-tuning
+  dest: null # will be set by the export code
