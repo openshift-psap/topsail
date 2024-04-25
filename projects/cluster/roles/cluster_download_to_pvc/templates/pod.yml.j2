@@ -13,8 +13,8 @@ spec:
     - name: DOWNLOAD_SOURCE
       value: "{{ cluster_download_to_pvc_source }}"
 {% if cluster_download_to_pvc_creds|length %}
-    - name: CRED_FILE_DIR
-      value: /mnt/download-secret
+    - name: CRED_FILE
+      value: /mnt/download-secret/cred
 {% endif %}
     - name: STORAGE_DIR
       value: /storage/{{ cluster_download_to_pvc_storage_dir }}
@@ -22,7 +22,7 @@ spec:
       value: "{{ cluster_download_to_pvc_clean_first }}"
     volumeMounts:
 {% if cluster_download_to_pvc_creds|length %}
-    - name: s3-secret
+    - name: download-secret
       mountPath: /mnt/download-secret
       readOnly: true
 {% endif %}
@@ -31,7 +31,7 @@ spec:
       readOnly: true
       subPath: entrypoint.sh
     - name: storage
-      mountPath: /storage/
+      mountPath: /storage
   volumes:
 {% if cluster_download_to_pvc_creds|length %}
   - name: download-secret

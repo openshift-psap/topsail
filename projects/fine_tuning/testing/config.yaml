@@ -9,7 +9,7 @@ ci_presets:
 
   keep:
     clusters.create.keep: true
-    clusters.create.ocp.tags.Project: PSAP/Project/Subproject
+    clusters.create.ocp.tags.Project: PSAP/Project/FineTuning
     # clusters.create.ocp.tags.TicketId:
 
   light_cluster:
@@ -38,8 +38,6 @@ ci_presets:
   use_smoke_os:
     matbench.lts.opensearch.instance: smoke
 
-# ---
-
   cluster_dgx:
     clusters.sutest.compute.machineset.type: "DGX A100-40GB"
 
@@ -64,16 +62,16 @@ clusters:
   create:
     type: single # can be: single, ocp, managed
     keep: false
-    name_prefix: skeleton-ci
+    name_prefix: fine-tuning-ci
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
         # TicketId: "..."
-        Project: PSAP/Project/Subproject
+        Project: PSAP/Project/FineTuning
       deploy_cluster:
         target: cluster
       base_domain: psap.aws.rhperfscale.org
-      version: 4.12.12
+      version: 4.15.9
       region: us-west-2
       control_plane:
         type: m6a.xlarge
@@ -108,12 +106,31 @@ clusters:
           value: "yes"
           effect: NoSchedule
   cleanup_on_exit: false
+
+rhods:
+  catalog:
+    image: brew.registry.redhat.io/rh-osbs/iib
+    tag: 712547
+    channel: odh-nightlies
+    version: 1.18.0
+    version_name: nightly
+    opendatahub: true
+    managed_rhoi: false
+  operator:
+    # set to true to stop the RHODS operator
+    stop: false
+
+gpu:
+  prepare_cluster: false
+  time_sharing:
+    replicas: 1
+
 tests:
-  capture_prometheus: true
-  sleep_duration: 5 # minutes
+  ...
+
 matbench:
   preset: null
-  workload: projects.skeleton.visualizations.skeleton
+  workload: projects.fine_tuning.visualizations.fine_tuning
   config_file: plots.yaml
   download:
     mode: prefer_cache
@@ -132,14 +149,14 @@ matbench:
       export: true
       fail_test_on_fail: false
       instance: smoke
-      index: topsail-skeleton
+      index: topsail-fine-tuning
       index_prefix: ""
     regression_analyses:
       enabled: true
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
 export_artifacts:
-  enabled: true
+  enabled: false
   bucket: rhoai-cpt-artifacts
-  path_prefix: cpt/skeleton
+  path_prefix: cpt/fine-tuning
   dest: null # will be set by the export code

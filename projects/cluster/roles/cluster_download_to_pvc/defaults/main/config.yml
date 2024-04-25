@@ -3,10 +3,6 @@
 # Source component: Cluster.download_to_pvc
 
 # Parameters
-# URL of the source data
-# Mandatory value
-cluster_download_to_pvc_source:
-
 # Name of the PVC that will be create to store the dataset files.
 # Mandatory value
 cluster_download_to_pvc_pvc_name:
@@ -14,6 +10,10 @@ cluster_download_to_pvc_pvc_name:
 # Name of the namespace in which the PVC will be created
 # Mandatory value
 cluster_download_to_pvc_namespace:
+
+# URL of the source data
+# Mandatory value
+cluster_download_to_pvc_source:
 
 # Path to credentials to use for accessing the dataset.
 cluster_download_to_pvc_creds:

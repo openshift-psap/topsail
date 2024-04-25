@@ -21,9 +21,9 @@
 
 - name: Create the s3 secret
   command:
-    oc create secret generic s3-secret
+    oc create secret generic download-secret
        -n {{ cluster_download_to_pvc_namespace }}
-       --from-file=awscred={{ cluster_download_to_pvc_creds }}
+       --from-file=cred={{ cluster_download_to_pvc_creds }}
   when: cluster_download_to_pvc_creds | length > 0
 
 - name: Create the entrypoint ConfigMap file
@@ -66,7 +66,7 @@
     oc delete -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
        --ignore-not-found=true
 
-- name: Create a Pod for downloading the COCO dataset
+- name: Create a Pod for downloading the dataset
   command:
     oc apply -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
 
