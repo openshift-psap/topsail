@@ -6,7 +6,7 @@ from projects.core.library import run, config, env
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
 RHODS_OPERATOR_MANIFEST_NAME = "rhods-operator"
-
+RHODS_NAMESPACE = "redhat-ods-operator"
 def _setup_brew_registry(token_file):
     brew_setup_script = TOPSAIL_DIR / "projects" / "rhods" / "utils" / "brew.registry.redhat.io" / "setup.sh"
 
@@ -16,10 +16,10 @@ def _setup_brew_registry(token_file):
 
 def install_servicemesh():
     SERVICE_MESH_MANIFEST_NAME = "servicemeshoperator"
-    installed_csv_cmd = run.run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
+    installed_csv_cmd = run.run("oc get csv -oname -n openshift-operators", capture_stdout=True)
 
     if SERVICE_MESH_MANIFEST_NAME in installed_csv_cmd.stdout:
-        logging.info("Operator '{SERVICE_MESH_MANIFEST_NAME}' is already installed.")
+        logging.info(f"Operator '{SERVICE_MESH_MANIFEST_NAME}' is already installed.")
         return
 
     run.run_toolbox("cluster", "deploy_operator",
@@ -28,13 +28,19 @@ def install_servicemesh():
                     namespace="all",
                     artifact_dir_suffix="_service-mesh")
 
+def is_rhoai_installed():
+    installed_csv_cmd = run.run(f"oc get csv -loperators.coreos.com/{RHODS_OPERATOR_MANIFEST_NAME}.{RHODS_NAMESPACE}"
+                                f" -n {RHODS_NAMESPACE}", capture_stdout=True, capture_stderr=True)
+
+    return "No resources found" not in installed_csv_cmd.stderr
+
 
 def install(token_file=None, force=False):
-    installed_csv_cmd = run.run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
-
-    if not force and RHODS_OPERATOR_MANIFEST_NAME in installed_csv_cmd.stdout:
+    if is_rhoai_installed():
         logging.info(f"Operator '{RHODS_OPERATOR_MANIFEST_NAME}' is already installed.")
-        return
+
+        if not force:
+            return
 
     if token_file:
         _setup_brew_registry(token_file)
@@ -45,12 +51,10 @@ def install(token_file=None, force=False):
 
 
 def uninstall(mute=True):
-    installed_csv_cmd = run.run("oc get csv -oname -n redhat-ods-operator", capture_stdout=True)
-
-    if RHODS_OPERATOR_MANIFEST_NAME not in installed_csv_cmd.stdout:
+    if not is_rhoai_installed():
         logging.info("RHODS is not installed.")
         # make sure that no core RHODS namespace is still there
-        run.run('oc get ns redhat-ods-applications redhat-ods-monitoring redhat-ods-operator --ignore-not-found')
+        run.run(f"oc get ns redhat-ods-applications redhat-ods-monitoring {RHODS_NAMESPACE} --ignore-not-found")
     else:
         if run.run(f'oc get datasciencecluster -oname | grep .', check=False).returncode == 0:
             run.run_toolbox("rhods", "update_datasciencecluster")
