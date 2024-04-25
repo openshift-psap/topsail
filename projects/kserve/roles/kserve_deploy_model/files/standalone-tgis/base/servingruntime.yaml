@@ -1,0 +1,48 @@
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: standalone-tgis-servingruntime # {{ kserve_deploy_model_sr_name }}
+  labels:
+    opendatahub.io/dashboard: "true"
+  annotations:
+    opendatahub.io/template-display-name: "ServingRuntime for TGIS | Topsail" 
+spec:
+  containers:
+ # tgis container flavor
+  - name: kserve-container
+    image: quay.io/opendatahub/text-generation-inference:fast # {{ kserve_deploy_model_sr_kserve_image }}
+    command: ["text-generation-launcher"]
+    args:
+      - --model-name=/mnt/models/
+      - --port=3000
+      - --grpc-port=8033
+    env:
+      # base settings. will be merged with any env vars in InferenceServices which reference this runtime
+      - name: "TRANSFORMERS_CACHE"
+        value: "/tmp/transformers_cache"
+      - name: "MAX_BATCH_SIZE"
+        value: "96"
+      - name: "MAX_CONCURRENT_REQUESTS"
+        value: "128"
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 3000
+    livenessProbe:
+      exec:
+        command: [echo, "alive"]
+      initialDelaySeconds: 30
+    ports:
+    - containerPort: 8033
+      protocol: TCP
+    volumeMounts:
+    - name: cache-volume
+      mountPath: /shared_model_storage/transformers_cache
+  volumes:
+  - name:  cache-volume
+    emptyDir:
+      sizeLimit: 180Gi
+  multiModel: false
+  supportedModelFormats:
+  - autoSelect: true
+    name: pytorch

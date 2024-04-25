@@ -1,0 +1,33 @@
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: vllm-servingruntime # {{ kserve_deploy_model_sr_name }}
+  labels:
+    opendatahub.io/dashboard: "true"
+  annotations:
+    opendatahub.io/template-display-name: "ServingRuntime for vLLM | Topsail"
+spec:
+  builtInAdapter:
+    modelLoadingTimeoutMillis: 90000
+  containers:
+    - args: # Merged with args in inferenceservice
+        - --model=/mnt/models/
+        - --download-dir=/models-cache
+        - --port=8080
+      image: quay.io/rh-aiservices-bu/vllm-openai-ubi9:0.4.0.post1 # {{ kserve_deploy_model_sr_kserve_image }}
+      name: kserve-container
+      ports:
+        - containerPort: 8080
+          name: http1
+          protocol: TCP
+      resources:
+        requests: # overwritten by InferenceService
+          cpu: 4
+          memory: 8Gi 
+          nvidia.com/gpu: 1
+        limits:
+          nvidia.com/gpu: 1
+  multiModel: false
+  supportedModelFormats:
+    - autoSelect: true
+      name: pytorch

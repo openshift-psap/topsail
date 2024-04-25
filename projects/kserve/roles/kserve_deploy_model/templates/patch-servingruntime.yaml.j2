@@ -1,0 +1,17 @@
+
+# Override runtime name, must also be set in InferenceService!
+{% if kserve_deploy_model_sr_name %}
+- op: replace
+  path: /metadata/name
+  value: {{ kserve_deploy_model_sr_name }}
+{% endif %}
+
+# First, test that the item is still at the list index you expect
+- op: test
+  path: /spec/containers/0/name
+  value: kserve-container
+
+# Now that you know your item is still at index-0, it's safe to patch its command
+- op: replace
+  path: /spec/containers/0/image
+  value: {{ kserve_deploy_model_sr_kserve_image }}

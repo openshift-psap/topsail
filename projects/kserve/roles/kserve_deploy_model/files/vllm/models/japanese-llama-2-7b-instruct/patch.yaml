@@ -1,0 +1,19 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    model:
+      storageUri: s3://psap-hf-models/ELYZA-japanese-Llama-2-7b-instruct/ELYZA-japanese-Llama-2-7b-instruct
+      args:
+        - --dtype=float16
+        - --tensor-parallel-size=1
+        - --max-model-len=4096
+      resources:
+        requests:
+          cpu: "8"
+          memory: "20Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          nvidia.com/gpu: "1"

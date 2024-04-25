@@ -1,0 +1,19 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    model:
+      storageUri: s3://psap-hf-models/CodeLlama-34b-Instruct-hf/CodeLlama-34b-Instruct-hf
+      args:
+        - --dtype=float16
+        - --tensor-parallel-size=4
+        - --max-model-len=4096
+      resources:
+        requests:
+          cpu: "8"
+          memory: "40Gi"
+          nvidia.com/gpu: "4"
+        limits:
+          nvidia.com/gpu: "4"

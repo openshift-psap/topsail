@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: watsonx-e2e # "{{ kserve_deploy_model_namespace }}"
+
+resources:
+- ../vllm/models/mpt-7b-instruct2 # "../{{ kserve_deploy_model_sr_runtime }}/models/{{ kserve_deploy_model_model_name }}"
+
+patches:
+- path: patch-servingruntime.yaml
+  target:
+    kind: ServingRuntime
+  options:
+    allowNameChange: true
+- path: patch-inferenceservice.yaml
+  target:
+    kind: InferenceService
+  options:
+    allowNameChange: true

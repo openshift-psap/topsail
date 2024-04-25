@@ -1,0 +1,24 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    model:
+      storageUri: s3://psap-hf-models/flan-t5-xxl/flan-t5-xxl
+      env:
+      - name: DEPLOYMENT_FRAMEWORK
+        value: tgis_native
+      - name: FLASH_ATTENTION
+        value: "false"
+      - name: MAX_NEW_TOKENS
+        value: "2047"
+      - name: MAX_SEQUENCE_LENGTH
+        value: "2048"
+      resources:
+        requests:
+          cpu: "8"
+          memory: "40Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          nvidia.com/gpu: "1"

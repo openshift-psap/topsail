@@ -1,0 +1,43 @@
+{% if kserve_deploy_model_inference_service_name %}
+- op: replace
+  path: /metadata/name
+  value: {{ kserve_deploy_model_inference_service_name }}
+{% endif %}
+
+
+{% if kserve_deploy_model_raw_deployment %}
+- op: replace
+  path: /metadata/annotations/serving.kserve.io~1deploymentMode
+  value: "RawDeployment"
+{% else %}
+- op: replace
+  path: /metadata/annotations/serving.kserve.io~1deploymentMode
+  value: "Serverless"
+- op: replace
+  path: /metadata/annotations/serving.knative.openshift.io~1enablePassthrough
+  value: "true"
+- op: replace
+  path: /metadata/annotations/sidecar.istio.io~1inject
+  value: "true"
+- op: replace
+  path: /metadata/annotations/sidecar.istio.io~1rewriteAppHTTPProbers
+  value: "true"
+{% endif %}
+
+{% if kserve_deploy_model_sr_name %}
+- op: replace
+  path: /spec/predictor/model/runtime
+  value: {{ kserve_deploy_model_sr_name }}
+{% endif %}
+
+{% if kserve_deploy_model_inference_service_min_replicas %}
+- op: replace
+  path: /spec/predictor/minReplicas
+  value: {{ kserve_deploy_model_inference_service_min_replicas }}
+{% endif %}
+
+
+
+
+
+

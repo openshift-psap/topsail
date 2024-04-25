@@ -1,0 +1,32 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    model:
+      storageUri: s3://psap-hf-models/CodeLlama-34b-Instruct-hf/CodeLlama-34b-Instruct-hf
+      env:
+      - name: MAX_BATCH_SIZE
+        value: "256"
+      - name: MAX_CONCURRENT_REQUESTS
+        value: "384"
+      - name: NUM_GPUS
+        value: "4"
+      - name: RAYON_NUM_THREADS
+        value: "8"
+      - name: DEPLOYMENT_FRAMEWORK
+        value: tgis_native
+      - name: FLASH_ATTENTION
+        value: "true"
+      - name: MAX_NEW_TOKENS
+        value: "4095"
+      - name: MAX_SEQUENCE_LENGTH
+        value: "4096"
+      resources:
+        requests:
+          cpu: "8"
+          memory: "40Gi"
+          nvidia.com/gpu: "4"
+        limits:
+          nvidia.com/gpu: "4"
