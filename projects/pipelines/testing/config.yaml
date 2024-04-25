@@ -146,11 +146,11 @@ ldap:
     prefix: psapuser
 rhods:
   catalog:
-    image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 697386
-    channel: alpha
+    image: registry-proxy.engineering.redhat.com/rh-osbs/iib
+    tag: 711474
+    channel: fast
     version: 2.9.0
-    version_name: dspv2
+    version_name: RC1
   pipelines:
     application:
       name: sample
