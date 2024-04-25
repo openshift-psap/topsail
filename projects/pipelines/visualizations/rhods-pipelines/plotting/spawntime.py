@@ -1,6 +1,5 @@
 from collections import defaultdict
 import datetime
-import logging
 import statistics as stats
 
 from dash import html
@@ -156,7 +155,6 @@ class RunTimeDistribution():
 
         data_df = pd.DataFrame(data)
         data_df = data_df.sort_values(by=["Step Name"])
-        logging.info(data_df)
 
         stats_data = []
         base_value = 0
@@ -165,7 +163,6 @@ class RunTimeDistribution():
         msg = []
         for step_name in steps:
             step_df = data_df[data_df["Step Name"] == step_name]
-            logging.info(step_df)
             q1, median, q3 = stats.quantiles(step_df["Step Duration"]) if len(step_df["Step Duration"]) > 1 else (step_df["Step Duration"].iloc[0], step_df["Step Duration"].iloc[0], step_df["Step Duration"].iloc[0])
             q1_dist = median-q1
             q3_dist = q3-median
@@ -228,7 +225,6 @@ class ResourceCreationTimeline():
 
         data = []
         for user_idx, user_data in entry.results.user_data.items():
-
             for pod_time in user_data.pod_times:
                 if cfg__dspa_only:
                     continue
@@ -236,21 +232,28 @@ class ResourceCreationTimeline():
                 if not pod_time.is_pipeline_task:
                     continue
 
+                if f"user{user_idx}-" not in pod_time.pod_friendly_name:
+                    continue
+                resource_key = resource_name.replace(f"user{user_idx}", "userX")
                 data.append({
                         "User Index": user_idx,
                         "User Name": f"User #{user_idx:03d}",
                         "Resource": f"Pod/{pod_time.pod_friendly_name}",
+                        "Resource Type": resource_key,
                         "Create Time": pod_time.creation_time,
                     })
 
             for resource_name, creation_time in user_data.resource_times.items():
                 if cfg__pipeline_task_only:
                     continue
-
+                if f"user{user_idx}-" not in resource_name:
+                    continue
+                resource_key = resource_name.replace(f"user{user_idx}", "userX")
                 data.append({
                         "User Index": user_idx,
                         "User Name": f"User #{user_idx:03d}",
                         "Resource": resource_name,
+                        "Resource Type": resource_key,
                         "Create Time": creation_time,
                     })
 
@@ -259,7 +262,7 @@ class ResourceCreationTimeline():
 
         df = pd.DataFrame(data).sort_values(by=["User Index", "Resource"], ascending=True)
 
-        fig = px.line(df, x="Create Time", y="User Name", color="Resource", title="Resource creation time")
+        fig = px.line(df, x="Create Time", y="User Name", color="Resource Type", title="Resource creation time", markers=True)
 
         fig.update_layout(xaxis_title="Timeline (in seconds)")
         fig.update_layout(yaxis_title="")
@@ -301,23 +304,25 @@ class ResourceCreationDelay():
         cfg__dspa_only = cfg.get("dspa_only", False)
         cfg__pipeline_task_only = cfg.get("pipeline_task_only", False)
 
-        mapping = {
-            "DataSciencePipelinesApplication/sample": {
-                "Deployment": ["ds-pipeline-persistenceagent-sample", "ds-pipeline-sample", "ds-pipeline-scheduledworkflow-sample", "ds-pipeline-ui-sample", "mariadb-sample"],
-            },
-        }
-
         data = []
         for user_idx, user_data in entry.results.user_data.items():
-
+            mapping = {
+                f"DataSciencePipelinesApplication/user{user_idx}-sample": {
+                    "Deployment": [
+                        f"ds-pipeline-persistenceagent-user{user_idx}-sample",
+                        f"ds-pipeline-user{user_idx}-sample",
+                        f"ds-pipeline-scheduledworkflow-user{user_idx}-sample",
+                        f"ds-pipeline-ui-user{user_idx}-sample",
+                        f"mariadb-user{user_idx}-sample",
+                    ],
+                },
+            }
             for base_name, dependencies in mapping.items():
                 if cfg__pipeline_task_only:
                     continue
-
                 try:
                     base_time = user_data.resource_times[base_name]
                 except KeyError: continue
-
                 for dep_kind, dep_names in dependencies.items():
                     for dep_name in dep_names:
                         try: dep_time = user_data.resource_times[f"{dep_kind}/{dep_name}"]
@@ -325,9 +330,11 @@ class ResourceCreationDelay():
 
                         duration = (dep_time - base_time).total_seconds()
 
+                        start_key = base_name.replace(f"user{user_idx}", "userX")
+                        end_key = f"{dep_kind}/{dep_name}".replace(f"user{user_idx}", "userX")
                         data.append({
                             "Base": base_name,
-                            "Mapping Name": f"{base_name} -> {dep_kind}/{dep_name}",
+                            "Mapping Name": f"{start_key} -> {end_key}",
                             "Duration": duration,
                             "User Index": user_idx,
                             "User Name": f"User #{user_idx:03d}",
