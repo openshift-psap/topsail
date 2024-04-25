@@ -131,14 +131,6 @@
          > {{ artifact_extra_logs_dir }}/artifacts/operator_packagemanifest.yaml
     ignore_errors: true
 
-  - name: Store the YAML of the subscription
-    shell:
-      oc get -f "{{ artifact_extra_logs_dir }}/src/002_sub.yaml"
-         -oyaml
-         -n "{{ cluster_deploy_operator_namespace }}"
-         > {{ artifact_extra_logs_dir }}/artifacts/operator_sub.yaml
-    ignore_errors: true
-
   - name: Get the state of the Pods
     shell:
       oc get pods
