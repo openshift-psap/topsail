@@ -59,14 +59,14 @@ class Pipelines:
 
     @AnsibleRole("pipelines_capture_state")
     @AnsibleMappedParams
-    def capture_state(self, dsp_application_name="", namespace="", run_name=""):
+    def capture_state(self, dsp_application_name="", namespace="", user_id=""):
         """
         Captures the state of a Data Science Pipeline Application in a given namespace.
 
         Args:
           dsp_application_name: the name of the application
           namespace: the namespace in which the application was deployed
-          run_name: identifier of the run to capture
+          user_id: identifier of the user to capture
         """
 
         return RunAnsibleRole(locals())

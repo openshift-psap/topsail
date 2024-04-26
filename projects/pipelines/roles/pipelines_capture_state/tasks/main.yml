@@ -8,7 +8,7 @@
 - name: Define the test environment
   set_fact:
     namespace: "{% if pipelines_capture_state_namespace | length > 0 %}{{ pipelines_capture_state_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
-    run_name: "{{ pipelines_capture_state_run_name }}"
+    user_id: "{{ pipelines_capture_state_user_id }}"
 
 - name: Compute the DSP application name
   shell:
@@ -60,7 +60,7 @@
   shell:
     set -o pipefail;
     oc get -ojson workflow.argoproj.io -n "{{ namespace }}"
-      | jq 'select(.items[].metadata.annotations."pipelines.kubeflow.org/run_name"=="{{ run_name }}")'
+      | jq 'select(.items[].metadata.annotations."pipelines.kubeflow.org/run_name" | contains("user{{ user_id }}"))'
       > "{{ artifact_extra_logs_dir }}/workflow.json"
   ignore_errors: true
 

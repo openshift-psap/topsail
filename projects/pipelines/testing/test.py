@@ -221,7 +221,7 @@ def pipelines_run_one():
     user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
     pipelines_per_user = config.ci_artifacts.get_config("tests.pipelines.pipelines_per_user")
 
-    uid = -1
+    uid = "-1"
     if user_index := os.environ.get("JOB_COMPLETION_INDEX"):
         uid = user_index
 
@@ -250,7 +250,7 @@ def pipelines_run_one():
                 time.sleep(user_pipeline_delay)
 
     finally:
-        run.run_toolbox_from_config("pipelines", "capture_state", mute_stdout=True)
+        run.run_toolbox_from_config("pipelines", "capture_state", mute_stdout=True, extra={"user_id": uid})
 
 
 @entrypoint()

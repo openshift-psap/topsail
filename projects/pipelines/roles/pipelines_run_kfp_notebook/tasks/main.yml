@@ -260,7 +260,7 @@
   - name: Get the name of the workflow
     shell:
       set -o pipefail;
-      oc get workflow.argoproj.io -n "{{ notebook_namespace }}" -ojson | jq '.items[].metadata | select(.annotations."pipelines.kubeflow.org/run_name"=="{{ run_name }}")|.name' | head -1
+      oc get workflow.argoproj.io -n "{{ notebook_namespace }}" -ojson | jq '.items[].metadata | select(.annotations."pipelines.kubeflow.org/run_name"=="{{ run_name }}")|.name' -r | head -1
     register: generated_pipeline_name_cmd
     retries: 10
     delay: 2
@@ -269,7 +269,7 @@
   - name: Wait for the pipeline execution to complete
     shell:
       set -o pipefail;
-      oc get workflow.argoproj.io/{{ generated_pipeline_name_cmd.stdout }} -ojson -n "{{ notebook_namespace }}" | jq .items[0].status.phase -r
+      oc get workflow.argoproj.io/{{ generated_pipeline_name_cmd.stdout }} -ojson -n "{{ notebook_namespace }}" | jq .status.phase -r
     register: workflow_phase_cmd
     retries: 120
     delay: 10
