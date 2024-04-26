@@ -71,6 +71,7 @@ pipelines run_kfp_notebook:
 pipelines capture_state:
   namespace: {{ rhods.pipelines.namespace }}
   dsp_application_name: {{ rhods.pipelines.application.name }}
+  run_name: {{ rhods.pipelines.notebook.name }}
 
 base_image/cluster build_push_image:
   namespace: "{{ base_image.namespace }}"
