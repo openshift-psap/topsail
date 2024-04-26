@@ -132,8 +132,31 @@ gpu:
   time_sharing:
     replicas: 1
 
+fine_tuning:
+  image: "quay.io/modh/fms-hf-tuning:01b3824c9aba22d9d0695399681e6f0507840e7f"
+  pvc_name: fine-tuning-storage
+  sources:
+    twitter_complaints_small.json:
+      type: dataset
+      source_dir: 'https://raw.githubusercontent.com/foundation-model-stack/fms-hf-tuning/b48249fab3df124d6b85cc8ce59b9e5a66ea6dcb/tests/data'
+
+    alpaca_data.json:
+      type: dataset
+      source_dir: 'https://raw.githubusercontent.com/gururise/AlpacaDataCleaned/main'
+
+    bloom-560m:
+      type: model
+      source_dir: 's3://psap-watsonx-models/fine-tuning/bigscience'
+      secret_key: secrets.aws_credentials
+
 tests:
-  ...
+  capture_prom: true
+  capture_prom_uwm: false
+  visualize: false
+  fine_tuning:
+    namespace: fine-tuning-testing
+    model_name: bloom-560m
+    dataset_name: twitter_complaints_small.json
 
 matbench:
   preset: null

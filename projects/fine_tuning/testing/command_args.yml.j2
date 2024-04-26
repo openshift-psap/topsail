@@ -20,6 +20,16 @@ sutest/cluster set_scale:
 gpu_operator enable_time_sharing:
   replicas: {{ gpu.time_sharing.replicas }}
 
+sutest/cluster preload_image/kserve-runtime:
+  namespace: "{{ tests.fine_tuning.namespace }}"
+  name: SET_AT_RUNTIME
+  image: SET_AT_RUNTIME
+
+  node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
+  node_selector_value: "{{ clusters.sutest.compute.machineset.taint.value }}"
+  pod_toleration_effect: {{ clusters.sutest.compute.machineset.taint.effect }}
+  pod_toleration_key: {{ clusters.sutest.compute.machineset.taint.key }}
+
 #
 # deploy RHODS
 #
@@ -41,3 +51,30 @@ sutest/cluster set_project_annotation/scale_test_node_selector:
 sutest/cluster set_project_annotation/scale_test_toleration:
   key: scheduler.alpha.kubernetes.io/defaultTolerations
   value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
+
+fine_tuning run_fine_tuning_job:
+  name: fine-tuning
+  namespace: "{{ tests.fine_tuning.namespace }}"
+  pvc_name: "{{ fine_tuning.pvc_name }}"
+  container_image: "{{ fine_tuning.image }}"
+
+  model: {{ tests.fine_tuning.model_name }}
+  dataset: {{ tests.fine_tuning.dataset_name }}
+
+cluster download_to_pvc:
+  name: SET_AT_RUNTIME
+
+  pvc_name: "{{ fine_tuning.pvc_name }}"
+  namespace: "{{ tests.fine_tuning.namespace }}"
+
+  source: SET_AT_RUNTIME
+  storage_dir: SET_AT_RUNTIME
+
+
+cluster reset_prometheus_db/uwm:
+  label: app.kubernetes.io/instance=user-workload,app.kubernetes.io/component=prometheus
+  namespace: openshift-user-workload-monitoring
+
+cluster dump_prometheus_db/uwm:
+  label: app.kubernetes.io/instance=user-workload,app.kubernetes.io/component=prometheus
+  namespace: openshift-user-workload-monitoring
