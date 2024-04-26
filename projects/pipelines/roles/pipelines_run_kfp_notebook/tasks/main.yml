@@ -267,7 +267,7 @@
 
   - name: Check if the pipeline ended in Failure
     fail: msg="the pipeline execution finished but ended as Failed"
-    when: '"Failed" in workflow_phase_cmd.stdout'
+    when: '"Failed" in workflow_phase_cmd.stdout or "null" in workflow_phase_cmd.stdout'
 
   - name: Generate MatrixBenchmark exit code file
     shell:
