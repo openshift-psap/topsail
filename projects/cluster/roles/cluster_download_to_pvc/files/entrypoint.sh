@@ -20,18 +20,17 @@ if [[ "$DOWNLOAD_SOURCE" == "https://huggingface.co/"* ]];
 then
     dnf install --quiet -y git-lfs
 
-
     git clone "$DOWNLOAD_SOURCE" "$STORAGE_DIR" --depth=1
 
 elif [[ "$DOWNLOAD_SOURCE" == "s3://"* ]];
 then
     if [[ -z "${CRED_FILE:-}" ]];
     then
-        echo "ERROR: no creds provided :/"
+        echo "ERROR: no credentials provided :/"
         exit 1
     fi
     if [[ ! -f "${CRED_FILE}" ]]; then
-        echo "ERROR: cred file does not exist :/"
+        echo "ERROR: credentials file does not exist :/"
         exit 1
     fi
 
@@ -44,7 +43,7 @@ then
 
     export AWS_SHARED_CREDENTIALS_FILE=$CRED_FILE
 
-    aws s3 cp "$DOWNLOAD_SOURCE" "${STORAGE_DIR}/" --recursive --quiet
+    aws s3 cp "$DOWNLOAD_SOURCE" "${STORAGE_DIR}/${SOURCE_NAME}" --recursive --quiet
 else
     cd "${STORAGE_DIR}"
 
@@ -62,6 +61,6 @@ fi
 echo "All done!"
 
 cd "${STORAGE_DIR}"
-find
+find . -type f -exec md5sum {} \;
 
 exit 0
