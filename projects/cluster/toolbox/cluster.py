@@ -610,9 +610,10 @@ class Cluster:
     @AnsibleMappedParams
     def download_to_pvc(
             self,
+            name,
+            source,
             pvc_name,
             namespace,
-            source,
             creds="",
             storage_dir="/",
             clean_first=False,
@@ -621,8 +622,8 @@ class Cluster:
         Downloads the a dataset into a PVC of the cluster
 
         Args:
+            name: Name of the data source
             source: URL of the source data
-            dest_dir: directory in the PVC where the data will be stored
             pvc_name: Name of the PVC that will be create to store the dataset files.
             namespace: Name of the namespace in which the PVC will be created
             creds: Path to credentials to use for accessing the dataset.
