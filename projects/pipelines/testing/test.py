@@ -88,8 +88,9 @@ def uninstall_ocp_pipelines():
 
 
 def create_dsp_application():
-    run.run_toolbox_from_config("pipelines", "deploy_application")
-
+    dspa_name = config.ci_artifacts.get_config("rhods.pipelines.application.name")
+    if run.run(f'oc get dspa/"{dspa_name}" 2>/dev/null', check=False).returncode != 0:
+        run.run_toolbox_from_config("pipelines", "deploy_application")
 
 @entrypoint()
 def prepare_rhods():
@@ -229,7 +230,7 @@ def pipelines_run_one():
         new_namespace = f"{namespace}-n{ns_index}"
         logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
         config.ci_artifacts.set_config("rhods.pipelines.namespace", new_namespace)
-        application_name = f"user{user_index}-sample"
+        application_name = f"n{ns_index}-sample"
         config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
 
     try:
