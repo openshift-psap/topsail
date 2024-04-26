@@ -86,6 +86,7 @@
     notebook_file_cm_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}-{% endif %}pipeline-notebook-files"
     capture_prom_db: pipelines_run_kfp_notebook_capture_prom_db
     notebook_image_address: "{{ rhods_image_address_cmd.stdout }}"
+    run_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}-{% endif %}"
 
 - name: Define the test environment
   set_fact:
@@ -256,10 +257,20 @@
               && jupyter nbconvert --to html results/$(basename "$NOTEBOOK_FILENAME" .ipynb).executed.ipynb'
     register: notebook_execution
 
+  - name: Get the name of the workflow
+    shell:
+      oc get workflow.argoproj.io -n "{{ notebook_namespace }}"
+        | grep "{{ run_name }}"
+        | awk '{ print $1 }'
+    register: generated_pipeline_name_cmd
+    retries: 10
+    delay: 2
+    until: generated_pipeline_name_cmd.stdout | length > 0
+
   - name: Wait for the pipeline execution to complete
     shell:
       set -o pipefail;
-      oc get workflow.argoproj.io -ojson -n "{{ notebook_namespace }}" | jq .items[0].status.phase -r
+      oc get workflow.argoproj.io/{{ generated_pipeline_name_cmd.stdout }} -ojson -n "{{ notebook_namespace }}" | jq .items[0].status.phase -r
     register: workflow_phase_cmd
     retries: 120
     delay: 10

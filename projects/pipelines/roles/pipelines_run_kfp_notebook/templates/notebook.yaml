@@ -56,6 +56,8 @@ spec:
           value: "{{ dsp_route }}"
         - name: NOTEBOOK_FILES
           value: /mnt/notebook_files
+        - name: RUN_NAME
+          value: "{{ run_name }}"
         image: {{ notebook_image_address }}
         imagePullPolicy: Always
         livenessProbe:
