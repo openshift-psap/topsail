@@ -18,8 +18,13 @@ ci_presets:
   light:
     extends: [light_cluster]
 
-  quick:
-    tests.sleep_duration: 0
+
+  gpu:
+    gpu.prepare_cluster: true
+    clusters.sutest.compute.machineset.type: g4dn.2xlarge
+
+
+  # ---
 
   metal:
     clusters.sutest.is_metal: true
@@ -37,6 +42,8 @@ ci_presets:
 
   use_smoke_os:
     matbench.lts.opensearch.instance: smoke
+
+  # ---
 
   cluster_dgx:
     clusters.sutest.compute.machineset.type: "DGX A100-40GB"
