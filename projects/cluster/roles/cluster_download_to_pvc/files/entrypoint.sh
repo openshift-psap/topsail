@@ -61,6 +61,7 @@ fi
 echo "All done!"
 
 cd "${STORAGE_DIR}"
-find . -type f -exec md5sum {} \;
+
+find . -type f -exec sha256sum {} \;
 
 exit 0
