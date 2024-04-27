@@ -60,7 +60,7 @@
   shell:
     set -o pipefail;
     oc get -ojson workflow.argoproj.io -n "{{ namespace }}"
-      | jq 'select(.items[].metadata.annotations."pipelines.kubeflow.org/run_name" | contains("user{{ user_id }}"))'
+      | jq ['select(.items[].metadata.annotations."pipelines.kubeflow.org/run_name" | contains("user{{ user_id }}"))']
       > "{{ artifact_extra_logs_dir }}/workflow.json"
   ignore_errors: true
 

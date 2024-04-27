@@ -216,13 +216,15 @@ def _parse_pod_times(dirname, ci_pod_dir):
         pod_times.append(pod_time)
         pod_time.is_pipeline_task = False
         pod_time.is_dspa = False
+        pod_time.parent_workflow = ""
 
         if pod["metadata"]["labels"].get("component") == "data-science-pipelines":
             pod_friendly_name = pod["metadata"]["labels"]["app"]
             pod_time.is_dspa = True
 
-        elif pod["metadata"]["labels"].get("pipelines.kubeflow.org/pipeline-sdk-type") == "kfp":
-            pod_friendly_name = pod["metadata"]["labels"]["workflows.argoproj.io/workflow"]
+        elif pod["metadata"]["labels"].get("pipelines.kubeflow.org/v2_component") == "true":
+            pod_friendly_name = pod["metadata"]["name"]
+            pod_time.parent_workflow = pod["metadata"]["labels"]["workflows.argoproj.io/workflow"]
             pod_time.is_pipeline_task = True
 
         elif pod["metadata"].get("generateName"):
@@ -306,23 +308,27 @@ def _parse_resource_times(dirname, ci_pod_dir):
 
         file_path = (state_dirs[0] / fname).resolve().absolute().relative_to(dirname.absolute())
         with open(register_important_file(dirname, file_path)) as f:
-            data = yaml.safe_load(f)
+            data = json.load(f)
 
-        for item in data["items"]:
-            metadata = item["metadata"]
+        if type(data) is dict:
+            data = [data]
 
-            kind = item["kind"]
-            creationTimestamp = datetime.datetime.strptime(
-                metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+        for entry in data:
+            for item in entry["items"]:
+                metadata = item["metadata"]
 
-            name = metadata["name"]
-            generate_name, found, suffix = name.rpartition("-")
-            remove_suffix = ((found and not suffix.isalpha()))
+                kind = item["kind"]
+                creationTimestamp = datetime.datetime.strptime(
+                    metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
 
-            if remove_suffix:
-                name = generate_name # remove generated suffix
+                name = metadata["name"]
+                generate_name, found, suffix = name.rpartition("-")
+                remove_suffix = ((found and not suffix.isalpha()))
 
-            all_resource_times[f"{kind}/{name}"] = creationTimestamp
+                if remove_suffix:
+                    name = generate_name # remove generated suffix
+
+                all_resource_times[f"{kind}/{name}"] = creationTimestamp
 
     parse("applications.json")
     parse("deployments.json")

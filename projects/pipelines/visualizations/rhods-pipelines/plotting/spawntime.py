@@ -1,6 +1,7 @@
 from collections import defaultdict
 import datetime
 import statistics as stats
+import re
 
 from dash import html
 import plotly.graph_objs as go
@@ -223,32 +224,15 @@ class ResourceCreationTimeline():
         cfg__dspa_only = cfg.get("dspa_only", False)
         cfg__pipeline_task_only = cfg.get("pipeline_task_only", False)
 
+        workflow_mapping = {}
         data = []
         for user_idx, user_data in entry.results.user_data.items():
-            for pod_time in user_data.pod_times:
-                if cfg__dspa_only:
-                    continue
-
-                if not pod_time.is_pipeline_task:
-                    continue
-
-                if f"user{user_idx}-" not in pod_time.pod_friendly_name:
-                    continue
-                resource_key = resource_name.replace(f"user{user_idx}", "userX")
-                data.append({
-                        "User Index": user_idx,
-                        "User Name": f"User #{user_idx:03d}",
-                        "Resource": f"Pod/{pod_time.pod_friendly_name}",
-                        "Resource Type": resource_key,
-                        "Create Time": pod_time.creation_time,
-                    })
-
             for resource_name, creation_time in user_data.resource_times.items():
-                if cfg__pipeline_task_only:
-                    continue
-                if f"user{user_idx}-" not in resource_name:
-                    continue
+                resource_type, resource_id = resource_name.split("/")
+                if resource_type == "Workflow":
+                    workflow_mapping[resource_id] = user_idx
                 resource_key = resource_name.replace(f"user{user_idx}", "userX")
+                resource_key = re.sub(r'n([0-9])+', "nX", resource_key)
                 data.append({
                         "User Index": user_idx,
                         "User Name": f"User #{user_idx:03d}",
@@ -256,7 +240,21 @@ class ResourceCreationTimeline():
                         "Resource Type": resource_key,
                         "Create Time": creation_time,
                     })
-
+        for user_idx, user_data in entry.results.user_data.items():
+            for pod_time in user_data.pod_times:
+                actual_user = user_idx
+                if pod_time.parent_workflow != "" and pod_time.parent_workflow in workflow_mapping:
+                    actual_user = workflow_mapping[pod_time.parent_workflow]
+                resource_name = f"Pod/{pod_time.pod_friendly_name}"
+                resource_key = resource_name.replace(f"user{actual_user}", "userX")
+                resource_key = re.sub(r'n([0-9])+', "nX", resource_key)
+                data.append({
+                        "User Index": actual_user,
+                        "User Name": f"User #{actual_user:03d}",
+                        "Resource": f"Pod/{pod_time.pod_friendly_name}",
+                        "Resource Type": resource_key,
+                        "Create Time": pod_time.creation_time,
+                    })
         if not data:
             return None, "No data available"
 
