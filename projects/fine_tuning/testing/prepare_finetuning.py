@@ -10,15 +10,20 @@ TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
 def prepare():
-
     with run.Parallel("prepare1") as parallel:
         parallel.delayed(prepare_rhoai)
         parallel.delayed(scale_up_sutest)
 
-    prepare_gpu()
+    with run.Parallel("prepare2") as parallel:
+        parallel.delayed(prepare_gpu)
+        parallel.delayed(prepare_namespace)
+
+    with run.Parallel("prepare3") as parallel:
+        parallel.delayed(preload_image)
+
 
 def prepare_kueue_queue(dry_mode):
-    namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
+    namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
 
     with env.NextArtifactDir(f"prepare_queue"):
         if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
@@ -79,6 +84,66 @@ def prepare_rhoai():
         name=None if has_dsc else "default-dsc",
     )
 
+def set_namespace_annotations():
+    metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
+    dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
+    namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
+
+    if not metal and dedicated:
+        extra = dict(project=namespace)
+        run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_node_selector", extra=extra, mute_stdout=True)
+        run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_toleration", extra=extra, mute_stdout=True)
+
+
+def download_data_sources():
+    namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
+    model_name = config.ci_artifacts.get_config("tests.fine_tuning.model_name")
+    dataset_name = config.ci_artifacts.get_config("tests.fine_tuning.dataset_name")
+
+    pvc_name = config.ci_artifacts.get_config("fine_tuning.pvc_name")
+    sources = config.ci_artifacts.get_config(f"fine_tuning.sources")
+
+    for source_name in [model_name, dataset_name]:
+        if pvc_name in run.run(f"oc get pvc -n {namespace} -oname -l{source_name}=yes", check=False, capture_stdout=True).stdout:
+            logging.info(f"PVC {pvc_name} already has data source '{source_name}'")
+            continue
+
+        logging.info(f"PVC {pvc_name} does not container data source '{source_name}'. Downloading it ...")
+
+        if source_name not in sources:
+            msg = f"Source '{source_name}' not in {', '.join(sources.keys())} ..."
+            logging.error(msg)
+            raise ValueError(msg)
+
+        source = sources[source_name]["source_dir"].rstrip("/") + "/" + source_name
+        storage_dir = "/" + sources[source_name]["type"]
+        extra = dict(source=source, storage_dir=storage_dir, name=source_name)
+
+        if secret_key := sources[source_name].get("secret_key", None):
+            env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
+            cred_file = pathlib.Path(os.environ[env_key]) / config.ci_artifacts.get_config(secret_key)
+            if not cred_file.exists():
+                msg = f"Credential file '{cred_file}' does not exist (${env_key} / *{secret_key})"
+                logging.error(lsg)
+                raise ValueError(msg)
+
+            extra["creds"] = str(cred_file)
+
+        run.run_toolbox_from_config("cluster", "download_to_pvc", extra=extra)
+
+
+def prepare_namespace():
+    namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
+
+    if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
+        run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
+    else:
+        logging.warning(f"Project {namespace} already exists.")
+
+    with env.NextArtifactDir("prepare_namespace"):
+        set_namespace_annotations()
+        download_data_sources()
+
 
 def scale_up_sutest():
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
@@ -97,6 +162,24 @@ def cleanup_rhoai(mute=True):
     prepare_rhoai_mod.uninstall(mute)
 
 
+def cleanup_cluster():
+    with env.NextArtifactDir("cleanup_cluster"):
+        cleanup_sutest_ns()
+        cluster_scale_down(to_zero=True)
+
+        cleanup_rhoai()
+
+
+def cleanup_sutest_ns():
+    cleanup_namespace_test()
+
+
+def cleanup_sutest_ns():
+    namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
+    # do not delete it ... (to save the PVC)
+    # empty the namespace
+
+
 def cluster_scale_down(to_zero):
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
         return
@@ -111,5 +194,25 @@ def cluster_scale_down(to_zero):
     run.run(f"oc scale --replicas={replicas} machineset/{machineset_name} -n openshift-machine-api")
 
 
-def cleanup_sutest_ns():
-    cleanup_namespace_test()
+def preload_image():
+    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+        return
+
+    if not config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
+        return
+
+    def preload(image, name):
+        RETRIES = 3
+        extra = dict(image=image, name=name)
+
+        for i in range(RETRIES):
+            try:
+                run.run_toolbox_from_config("cluster", "preload_image", prefix="sutest", suffix="kserve-runtime", extra=extra)
+
+                break
+            except Exception:
+                logging.warning(f"Preloading of '{image}' try #{i+1}/{RETRIES} failed :/")
+                if i+1 == RETRIES:
+                    raise
+
+    preload(config.ci_artifacts.get_config("fine_tuning.image"), "fine-tuning-image")

@@ -20,6 +20,13 @@ def validate_role_vars_files(dirname, yaml_doc):
     errors = []
     messages = []
     for key, value in yaml_doc.items():
+        if key == "__safe":
+            # safe list, ignoring
+            if not isinstance(value, list):
+                errors.append(f"{key}: {value} --> shoud be a list")
+
+            continue
+
         if not isinstance(value, str):
             messages.append(f"{key}:{value} --> not a string ({value.__class__.__name__}), ignoring.")
             continue

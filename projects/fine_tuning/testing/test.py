@@ -82,7 +82,9 @@ def test_ci():
         test_finetuning.test()
     finally:
         try:
-            if test_artifact_dir_p[0] is not None:
+            if not config.ci_artifacts.get_config("tests.visualize"):
+                logging.warning("Not generating the visualization as it is disabled in the configuration.")
+            elif test_artifact_dir_p[0] is not None:
                 next_count = env.next_artifact_index()
                 with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
                     visualize.prepare_matbench()
@@ -117,11 +119,7 @@ def cleanup_cluster(mute=False):
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    with env.NextArtifactDir("cleanup_cluster"):
-        cleanup_sutest_ns()
-        cluster_scale_down()
-
-        prepare.cleanup_rhoai(mute)
+    prepare_finetuning.cleanup_cluster()
 
 
 @entrypoint(ignore_secret_path=True)
@@ -132,6 +130,14 @@ def generate_plots(results_dirname):
 @entrypoint(ignore_secret_path=True)
 def export_artifacts(artifacts_dirname):
     export.export_artifacts(artifacts_dirname)
+
+@entrypoint(ignore_secret_path=True)
+def prepare_namespace():
+    """
+    Prepares the namespace where the fine-tuning jobs will be executed
+    """
+
+    return prepare_finetuning.prepare_namespace()
 
 # ---
 
@@ -149,6 +155,9 @@ class Entrypoint:
 
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
         self.generate_plots = generate_plots
+        self.prepare_namespace = prepare_namespace
+
+# ---
 
 def main():
     # Print help rather than opening a pager

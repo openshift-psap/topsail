@@ -90,7 +90,7 @@ class CallbackModule(default_CallbackModule):
 
         self._display.display(f"", color=color)
         if "\n" in str_cmd:
-            self._display.display(f"<command>\n{str_cmd}</command>", color=color)
+            self._display.display(f"<command>\n{str_cmd}\n</command>", color=color)
         else:
             self._display.display(f"<command> {str_cmd}", color=color)
 
@@ -154,7 +154,7 @@ class CallbackModule(default_CallbackModule):
 
         self.__print_std_lines(result, "stdout", color)
         self.__print_std_lines(result, "stderr", color)
-        self._display.display(f"==> FAILED attempt #{result._result['attempts']}/{result._task.retries}", color=color)
+        self._display.display(f"==> failed attempt #{result._result['attempts']}/{result._task.retries}", color=color)
 
 
         self._display.display("")

@@ -12,23 +12,27 @@
     state: directory
     mode: '0755'
 
+- name: Store the safe name of the data source
+  set_fact:
+    data_source_name: "{{ cluster_download_to_pvc_name | replace('.', '-') | replace('_', '-') }}"
+
 - name: Delete the creds secret, if it exists
   command:
-    oc delete secret/download-secret
+    oc delete secret/download-secret-{{ data_source_name }}
        -n {{ cluster_download_to_pvc_namespace }}
        --ignore-not-found=true
   when: cluster_download_to_pvc_creds | length > 0
 
 - name: Create the s3 secret
   command:
-    oc create secret generic download-secret
+    oc create secret generic download-secret-{{ data_source_name }}
        -n {{ cluster_download_to_pvc_namespace }}
        --from-file=cred={{ cluster_download_to_pvc_creds }}
   when: cluster_download_to_pvc_creds | length > 0
 
 - name: Create the entrypoint ConfigMap file
   shell:
-    oc create cm download-to-pvc
+    oc create cm download-to-pvc-{{ data_source_name }}
        --from-file="entrypoint.sh={{ entrypoint }}"
        -n {{ cluster_download_to_pvc_namespace }}
        --dry-run=client
@@ -88,27 +92,27 @@
          --no-headers
          -ocustom-columns=phase:status.phase
     register: wait_downloader_pod_cmd
-    until: "'Succeeded' in wait_downloader_pod_cmd.stdout or 'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout"
+    until: "'Succeeded' in wait_downloader_pod_cmd.stdout or 'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout or not wait_downloader_pod_cmd.stdout"
     retries: 600
     delay: 10
   always:
   - name: Delete the creds secret, if it was created
     command:
-      oc delete secret/download-secret
+      oc delete secret/download-secret-{{ data_source_name }}
          -n {{ cluster_download_to_pvc_namespace }}
          --ignore-not-found=true
     when: cluster_download_to_pvc_creds | length > 0
 
 - name: Get the logs of the download Pod (debug)
   shell:
-    oc logs download-to-{{ cluster_download_to_pvc_pvc_name }}
+    oc logs download-{{ data_source_name }}-to-{{ cluster_download_to_pvc_pvc_name }}
        -n {{ cluster_download_to_pvc_namespace }}
        > {{ artifact_extra_logs_dir }}/artifacts/pod.log
   ignore_errors: true
 
 - name: Get the description of the download Pod (debug)
   shell:
-    oc describe pod/download-to-{{ cluster_download_to_pvc_pvc_name }}
+    oc describe pod/download-{{ data_source_name }}-to-{{ cluster_download_to_pvc_pvc_name }}
        -n {{ cluster_download_to_pvc_namespace }}
        > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
   ignore_errors: true
@@ -118,6 +122,11 @@
     oc get -f "{{ artifact_extra_logs_dir }}/src/pvc.yaml"
        -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/pvc.yaml"
   ignore_errors: true
+
+- name: Label the PVC if the download succeeded
+  when: "'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout"
+  command:
+    oc label pvc/{{ cluster_download_to_pvc_pvc_name }} {{ cluster_download_to_pvc_name }}=yes --overwrite
 
 - name: Fail if the the downloader Pod failed
   when: "'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout"
