@@ -305,13 +305,14 @@ class ResourceCreationDelay():
         data = []
         for user_idx, user_data in entry.results.user_data.items():
             mapping = {
-                f"DataSciencePipelinesApplication/user{user_idx}-sample": {
+                f"DataSciencePipelinesApplication/n0-sample": {
                     "Deployment": [
-                        f"ds-pipeline-persistenceagent-user{user_idx}-sample",
-                        f"ds-pipeline-user{user_idx}-sample",
-                        f"ds-pipeline-scheduledworkflow-user{user_idx}-sample",
-                        f"ds-pipeline-ui-user{user_idx}-sample",
-                        f"mariadb-user{user_idx}-sample",
+                        f"ds-pipeline-persistenceagent-n0-sample",
+                        f"ds-pipeline-n0-sample",
+                        f"ds-pipeline-scheduledworkflow-n0-sample",
+                        f"ds-pipeline-workflow-controller-n0-sample",
+                        f"ds-pipeline-ui-n0-sample",
+                        f"mariadb-n0-sample",
                     ],
                 },
             }
