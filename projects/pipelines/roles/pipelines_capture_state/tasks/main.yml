@@ -57,10 +57,10 @@
   ignore_errors: true
 
 - name: Save the pipeline JSON definition
-  shell: >
+  shell:
     set -o pipefail;
     oc get -ojson workflow.argoproj.io -n "{{ namespace }}"
-    | jq '[[.items[] | select(.metadata.annotations."pipelines.kubeflow.org/run_name"|contains("user{{ user_id }}-"))]] | {"apiVersion"{{ ":" }} "v1", "items"{{ ":" }} add}'
+      | jq '[[.items[] | select(.metadata.annotations."pipelines.kubeflow.org/run_name"|contains("user{{ user_id }}-"))]] | {"apiVersion"{{ ":" }} "v1", "items"{{ ":" }} add}'
       > "{{ artifact_extra_logs_dir }}/workflow.json"
   ignore_errors: true
 
