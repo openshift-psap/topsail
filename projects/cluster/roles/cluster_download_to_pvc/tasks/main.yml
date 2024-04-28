@@ -83,7 +83,7 @@
          -ocustom-columns=phase:status.phase
     register: wait_downloader_pod_start
     until: "'Pending' not in wait_downloader_pod_start.stdout "
-    retries: 12
+    retries: 30
     delay: 10
 
   - name: Wait for the downloader Pod to terminate
@@ -103,25 +103,25 @@
          --ignore-not-found=true
     when: cluster_download_to_pvc_creds | length > 0
 
-- name: Get the logs of the download Pod (debug)
-  shell:
-    oc logs download-{{ data_source_name }}-to-{{ cluster_download_to_pvc_pvc_name }}
-       -n {{ cluster_download_to_pvc_namespace }}
-       > {{ artifact_extra_logs_dir }}/artifacts/pod.log
-  ignore_errors: true
+  - name: Get the logs of the download Pod (debug)
+    shell:
+      oc logs download-{{ data_source_name }}-to-{{ cluster_download_to_pvc_pvc_name }}
+         -n {{ cluster_download_to_pvc_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.log
+    ignore_errors: true
 
-- name: Get the description of the download Pod (debug)
-  shell:
-    oc describe pod/download-{{ data_source_name }}-to-{{ cluster_download_to_pvc_pvc_name }}
-       -n {{ cluster_download_to_pvc_namespace }}
-       > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
-  ignore_errors: true
+  - name: Get the description of the download Pod (debug)
+    shell:
+      oc describe pod/download-{{ data_source_name }}-to-{{ cluster_download_to_pvc_pvc_name }}
+         -n {{ cluster_download_to_pvc_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
+    ignore_errors: true
 
-- name: Capture the state of the PVC
-  shell:
-    oc get -f "{{ artifact_extra_logs_dir }}/src/pvc.yaml"
-       -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/pvc.yaml"
-  ignore_errors: true
+  - name: Capture the state of the PVC
+    shell:
+      oc get -f "{{ artifact_extra_logs_dir }}/src/pvc.yaml"
+         -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/pvc.yaml"
+    ignore_errors: true
 
 - name: Label the PVC if the download succeeded
   when: "'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout"
