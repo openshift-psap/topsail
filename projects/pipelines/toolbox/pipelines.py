@@ -59,7 +59,7 @@ class Pipelines:
 
     @AnsibleRole("pipelines_capture_state")
     @AnsibleMappedParams
-    def capture_state(self, dsp_application_name="", namespace="", user_id=""):
+    def capture_state(self, dsp_application_name="", namespace="", user_id="", user_count=0):
         """
         Captures the state of a Data Science Pipeline Application in a given namespace.
 

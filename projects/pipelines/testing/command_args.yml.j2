@@ -72,6 +72,7 @@ pipelines capture_state:
   namespace: {{ rhods.pipelines.namespace }}
   dsp_application_name: {{ rhods.pipelines.application.name }}
   user_id: SET_AT_RUNTIME
+  user_count: {{ tests.pipelines.user_count }}
 
 base_image/cluster build_push_image:
   namespace: "{{ base_image.namespace }}"
