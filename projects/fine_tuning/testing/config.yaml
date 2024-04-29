@@ -150,15 +150,15 @@ fine_tuning:
       secret_key: secrets.aws_credentials
 
 tests:
-  capture_prom: false
+  capture_prom: true
   capture_prom_uwm: false
-  visualize: false
+  visualize: true
   dry_mode: false
   fine_tuning:
     namespace: fine-tuning-testing
     matbenchmarking:
       enabled: true
-      visu_file: plot_multiple_tests.yaml
+      visu_file: plots.yaml
       stop_on_error: true
     test_settings:
       model_name: bloom-560m
@@ -189,7 +189,7 @@ matbench:
       index: topsail-fine-tuning
       index_prefix: ""
     regression_analyses:
-      enabled: true
+      enabled: false
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
 export_artifacts:
