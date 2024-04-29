@@ -150,13 +150,20 @@ fine_tuning:
       secret_key: secrets.aws_credentials
 
 tests:
-  capture_prom: true
+  capture_prom: false
   capture_prom_uwm: false
   visualize: false
+  dry_mode: false
   fine_tuning:
     namespace: fine-tuning-testing
-    model_name: bloom-560m
-    dataset_name: twitter_complaints_small.json
+    matbenchmarking:
+      enabled: true
+      visu_file: plot_multiple_tests.yaml
+      stop_on_error: true
+    test_settings:
+      model_name: bloom-560m
+      dataset_name: twitter_complaints_small.json
+      gpu: [1, 2, 4, 6, 8]
 
 matbench:
   preset: null
@@ -176,7 +183,7 @@ matbench:
     horreum:
       test_name: null
     opensearch:
-      export: true
+      export: false
       fail_test_on_fail: false
       instance: smoke
       index: topsail-fine-tuning
