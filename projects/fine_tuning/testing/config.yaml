@@ -17,7 +17,8 @@ ci_presets:
 
   light:
     extends: [light_cluster]
-
+    tests.fine_tuning.matbenchmarking.enabled: false
+    tests.fine_tuning.test_settings.gpu: null
 
   gpu:
     gpu.prepare_cluster: true
