@@ -2,6 +2,7 @@ visualize:
 - id: scale_test
   generate:
   - "report: Error report"
+  - "report: SFTTrainer report"
   - "report: Sutest Cluster CPU/Memory Usage"
   - "report: Control Plane Nodes Load"
   - "report: LTS Documentation"

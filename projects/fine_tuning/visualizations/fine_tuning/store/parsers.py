@@ -26,7 +26,8 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
-artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_db"
+artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db"
+artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tuning_job"
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
 IMPORTANT_FILES = [
@@ -34,7 +35,8 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/_ansible.log",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
-    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml"
+    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
+    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.log",
 ]
 
 
@@ -58,6 +60,8 @@ def parse_once(results, dirname):
     results.metrics = _extract_metrics(dirname)
 
     results.test_start_end_time = _parse_start_end_time(dirname)
+
+    results.sft_training_metrics = _parse_sft_training_logs(dirname)
 
 
 def _extract_metrics(dirname):
@@ -87,3 +91,21 @@ def _parse_start_end_time(dirname):
         test_start_end_time.end = datetime.datetime.strptime(time_str, ANSIBLE_LOG_TIME_FMT)
 
     return test_start_end_time
+
+SFT_TRAINER_RESULTS_KEYS = ["train_runtime", "train_samples_per_second", "train_steps_per_second", "train_tokens_per_second", "train_loss", "epoch"]
+
+@core_helpers_store_parsers.ignore_file_not_found
+def _parse_sft_training_logs(dirname):
+    sft_training_metrics = types.SimpleNamespace()
+    with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f:
+        for line in f.readlines():
+            if line.startswith("{'train_runtime'"):
+                results = json.loads(line.replace("'", '"'))
+                # {'train_runtime': 1.5203, 'train_samples_per_second': 6.578, 'train_steps_per_second': 0.658, 'train_tokens_per_second': 306.518, 'train_loss': 4.817451000213623, 'epoch': 1.0}
+
+                # this will raise a KeyError if a key is missing in `results`
+                # this means that we are not parsing the data we're expecting.
+                for key in SFT_TRAINER_RESULTS_KEYS:
+                    setattr(sft_training_metrics, key, results[key])
+
+    return sft_training_metrics
