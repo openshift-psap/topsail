@@ -325,7 +325,7 @@ def _parse_resource_times(dirname, ci_pod_dir):
                 generate_name, found, suffix = name.rpartition("-")
                 remove_suffix = ((found and not suffix.isalpha()))
 
-                if remove_suffix:
+                if remove_suffix and kind != "Workflow":
                     name = generate_name # remove generated suffix
 
                 all_resource_times[f"{kind}/{name}"] = creationTimestamp
