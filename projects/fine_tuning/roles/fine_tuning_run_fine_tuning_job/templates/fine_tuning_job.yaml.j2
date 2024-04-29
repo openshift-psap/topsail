@@ -37,7 +37,11 @@ spec:
                 #ephemeral-storage: 100Gi
 {% if fine_tuning_run_fine_tuning_job_request_equals_limits %}
               limits: *request_block
+{% elif fine_tuning_run_fine_tuning_job_gpu %}
+              limits:
+                nvidia.com/gpu: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
 {% endif %}
+
           volumes:
           - name: storage-volume
             persistentVolumeClaim:
