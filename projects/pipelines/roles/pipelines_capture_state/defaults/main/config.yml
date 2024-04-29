@@ -8,3 +8,9 @@ pipelines_capture_state_dsp_application_name:
 
 # the namespace in which the application was deployed
 pipelines_capture_state_namespace:
+
+# identifier of the user to capture
+pipelines_capture_state_user_id:
+
+# how many total users there are in the scale test being run
+pipelines_capture_state_user_count: 0

@@ -67,6 +67,7 @@ class Pipelines:
           dsp_application_name: the name of the application
           namespace: the namespace in which the application was deployed
           user_id: identifier of the user to capture
+          user_count: how many total users there are in the scale test being run
         """
 
         return RunAnsibleRole(locals())
