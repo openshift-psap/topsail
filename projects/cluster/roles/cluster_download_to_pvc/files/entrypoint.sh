@@ -62,6 +62,6 @@ echo "All done!"
 
 cd "${STORAGE_DIR}"
 
-find . -type f -exec sha256sum {} \;
+find . ! -path '*/.git/*' -type f -exec sha256sum {} \;
 
 exit 0
