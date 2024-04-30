@@ -18,6 +18,16 @@ spec:
             env:
             - name: SFT_TRAINER_CONFIG_JSON_PATH
               value: /mnt/config/config.json
+            - name: DATASET_SOURCE
+              value: "/mnt/storage/dataset/{{ fine_tuning_run_fine_tuning_job_dataset_name }}"
+            - name: DATASET_DEST
+              value: "/mnt/output/dataset.json"
+            - name: DATASET_REPLICAS
+              value: "{{ fine_tuning_run_fine_tuning_job_dataset_replicas }}"
+{% if fine_tuning_run_fine_tuning_job_dataset_transform %}
+            - name: DATASET_TRANSFORM
+              value: "/mnt/entrypoint/{{ fine_tuning_run_fine_tuning_job_dataset_transform }}"
+{% endif %}
             volumeMounts:
             - name: storage-volume
               mountPath: /mnt/storage

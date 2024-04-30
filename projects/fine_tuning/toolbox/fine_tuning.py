@@ -21,7 +21,8 @@ class Fine_Tuning:
 
             model_name,
             dataset_name,
-
+            dataset_replicas=1,
+            dataset_transform=None,
             container_image="quay.io/modh/fms-hf-tuning:01b3824c9aba22d9d0695399681e6f0507840e7f",
 
             gpu=0,
@@ -39,7 +40,8 @@ class Fine_Tuning:
 
           model_name: the name of the model to use inside the /dataset directory of the PVC
           dataset_name: the name of the dataset to use inside the /model directory of the PVC
-
+          dataset_replicas: number of replications of the dataset to use, to artificially extend the fine-tuning effort
+          dataset_transform: name of the transformation to apply to the dataset
           container_image: the image to use for the fine-tuning container
           gpu: the number of GPUs to request for the fine-tuning job
           memory: the number of RAM gigs to request for to the fine-tuning job (in Gigs)
