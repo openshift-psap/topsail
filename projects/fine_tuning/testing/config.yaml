@@ -168,9 +168,9 @@ tests:
       stop_on_error: true
     test_settings:
       model_name: bloom-560m
-      dataset_name: twitter_complaints_small.json
-      gpu: 0
-      dataset_replicas: 2
+      dataset_name: alpaca_data.json
+      gpu: 1
+      dataset_replication: [0.1, 0.2, 0.4. 0.6]
 
 matbench:
   preset: null
