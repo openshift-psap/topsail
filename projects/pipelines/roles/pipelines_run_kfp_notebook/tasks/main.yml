@@ -89,7 +89,7 @@
     run_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}{% endif %}"
     run_count: "{{ pipelines_run_kfp_notebook_run_count }}"
 
-- name: Define the test environment
+- name: Define the search labels
   set_fact:
     notebook_search_labels: "-lci-artifacts.single-notebook-perf=true -lapp={{ notebook_name }}"
 
