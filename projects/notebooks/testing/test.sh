@@ -155,7 +155,7 @@ export_artifacts() {
         _error "No artifact dir provided as \$1 ..."
     fi
 
-    ./topsail/testing/export.py export_artifacts "$export_artifact_dir" $test_step
+    ./projects/core/library/export.py export_artifacts "$export_artifact_dir" $test_step
 }
 
 # ---
