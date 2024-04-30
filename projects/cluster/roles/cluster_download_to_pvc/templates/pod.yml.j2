@@ -19,7 +19,7 @@ spec:
       value: /mnt/download-secret/cred
 {% endif %}
     - name: SOURCE_NAME
-      value: {{ data_source_name }}
+      value: {{ cluster_download_to_pvc_name }}
     - name: STORAGE_DIR
       value: /storage/{{ cluster_download_to_pvc_storage_dir }}
     - name: CLEAN_FIRST

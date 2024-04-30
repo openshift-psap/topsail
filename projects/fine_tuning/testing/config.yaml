@@ -144,11 +144,16 @@ fine_tuning:
     alpaca_data.json:
       type: dataset
       source_dir: 'https://raw.githubusercontent.com/gururise/AlpacaDataCleaned/main'
+      transform: convert_alpaca.py
 
     bloom-560m:
       type: model
       source_dir: 's3://psap-watsonx-models/fine-tuning/bigscience'
       secret_key: secrets.aws_credentials
+
+    gpt_bigcode-santacoder:
+      type: model
+      source_dir: 'https://huggingface.co/bigcode'
 
 tests:
   capture_prom: true
@@ -164,7 +169,8 @@ tests:
     test_settings:
       model_name: bloom-560m
       dataset_name: twitter_complaints_small.json
-      gpu: [1, 2, 4, 6, 8]
+      gpu: 0
+      dataset_replicas: 2
 
 matbench:
   preset: null
@@ -184,7 +190,10 @@ matbench:
     horreum:
       test_name: null
     opensearch:
-      export: false
+      export:
+        enabled: false
+        enabled_on_replot: false
+        fail_test_on_fail: true
       fail_test_on_fail: false
       instance: smoke
       index: topsail-fine-tuning

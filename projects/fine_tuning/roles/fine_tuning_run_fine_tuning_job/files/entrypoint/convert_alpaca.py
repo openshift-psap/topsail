@@ -7,14 +7,17 @@ PROMPT_DICT = {
     "prompt_input": (
         "Below is an instruction that describes a task, paired with an input that provides further context. "
         "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:"
+        "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Label:"
     ),
     "prompt_no_input": (
         "Below is an instruction that describes a task. "
         "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\n{instruction}\n\n### Response:"
+        "### Instruction:\n{instruction}\n\n### Label:"
     ),
 }
+
+src = pathlib.Path(sys.argv[1])
+dest = pathlib.Path(sys.argv[2])
 
 def format_alpaca_fn(example):
     prompt_input, prompt_no_input = PROMPT_DICT['prompt_input'], PROMPT_DICT['prompt_no_input']
@@ -22,11 +25,12 @@ def format_alpaca_fn(example):
     output = f"{output} {example['output']}"
     return {"output": output}
 
-datafile = pathlib.Path(sys.argv[1])
-print(f"Converting {datafile} ...")
-ds = datasets.load_dataset('json', data_files=str(datafile))
+
+print(f"Converting {src} ...")
+ds = datasets.load_dataset('json', data_files=str(src))
 
 alpaca_ds = ds['train'].map(format_alpaca_fn, remove_columns=['instruction', 'input'])
-dest = pathlib.Path("/tmp") / ("sft_"+datafile.name)
+
 print(f"Saving into {dest} ...")
+
 alpaca_ds.to_json(dest)

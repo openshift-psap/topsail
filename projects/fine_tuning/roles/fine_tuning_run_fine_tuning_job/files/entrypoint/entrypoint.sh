@@ -15,4 +15,10 @@ else
     echo "No GPU seem to be available."
 fi
 
+if [[ "${DATASET_TRANSFORM:-}" ]]; then
+    python "$DATASET_TRANSFORM" "$DATASET_SOURCE" "$DATASET_DEST"
+else
+    cp "$DATASET_SOURCE" "$DATASET_DEST"
+fi
+
 exec python launch_training.py

@@ -129,8 +129,10 @@ matbench:
     horreum:
       test_name: null
     opensearch:
-      export: true
-      fail_test_on_fail: false
+      export:
+        enabled: false
+        enabled_on_replot: false
+        fail_test_on_fail: true
       instance: smoke
       index: topsail-skeleton
       index_prefix: ""

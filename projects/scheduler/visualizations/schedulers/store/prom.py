@@ -5,6 +5,7 @@ import matrix_benchmarking.plotting.prom as plotting_prom
 SUTEST_CONTAINER_LABELS = [
     {"Kueue controller": dict(namespace="redhat-ods-applications", pod="kueue-controller-manager-.*")},
     {"Codeflare controller": dict(namespace="redhat-ods-applications", pod="codeflare-operator-manager-.*")},
+    {"Kubeflow Training operator": dict(namespace="redhat-ods-applications", pod="kubeflow-training-operator-.*")},
 ]
 
 
