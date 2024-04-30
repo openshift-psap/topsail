@@ -171,10 +171,10 @@ tests:
       visu_file: plots.yaml
       stop_on_error: true
     test_settings:
-      model_name: bloom-560m
-      dataset_name: alpaca_data.json
+      model_name: gpt_bigcode-santacoder
+      dataset_name: twitter_complaints_small.json
       gpu: 1
-      dataset_replication: [0.1, 0.2, 0.4. 0.6]
+      dataset_replication: [1, 10, 20, 50, 100]
 
 matbench:
   preset: null
