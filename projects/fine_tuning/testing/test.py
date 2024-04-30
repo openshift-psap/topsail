@@ -81,26 +81,12 @@ def test_ci():
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
         test_finetuning.test()
     finally:
-        try:
-            if not config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.enabled"):
-                logging.warning("Not generating the visualization as it was already generated and it wasn't a MatBenchmarking run.")
-            elif not config.ci_artifacts.get_config("tests.visualize"):
-                logging.warning("Not generating the visualization as it is disabled in the configuration.")
-            elif test_artifact_dir_p[0] is not None:
-                next_count = env.next_artifact_index()
-                with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
-                    visualize.prepare_matbench()
-                    generate_plots(test_artifact_dir_p[0])
-            else:
-                logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
+        run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
 
-        finally:
-            run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
+        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+            cleanup_cluster()
 
-            if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
-                cleanup_cluster()
-
-            export.export_artifacts(env.ARTIFACT_DIR, test_step="test_ci")
+        export.export_artifacts(env.ARTIFACT_DIR, test_step="test_ci")
 
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
