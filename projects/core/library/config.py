@@ -88,7 +88,7 @@ class Config:
             logging.error(f"Preset '{name}' does not exists :/")
             raise
 
-        logging.info(f"Appling preset '{name}' ==> {values}")
+        logging.info(f"Applying preset '{name}' ==> {values}")
         if not values:
             raise ValueError(f"Preset '{name}' does not exists")
 
