@@ -21,4 +21,9 @@ else
     cp "$DATASET_SOURCE" "$DATASET_DEST"
 fi
 
-exec python launch_training.py
+
+if [[ -z "${NUM_GPUS:-1}" || "${NUM_GPUS:-1}" == 1 ]]; then
+    exec python launch_training.py
+fi
+
+exec python /app/accelerate_launch.py

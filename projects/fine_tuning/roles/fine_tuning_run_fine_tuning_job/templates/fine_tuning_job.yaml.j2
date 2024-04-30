@@ -28,6 +28,10 @@ spec:
             - name: DATASET_TRANSFORM
               value: "/mnt/entrypoint/{{ fine_tuning_run_fine_tuning_job_dataset_transform }}"
 {% endif %}
+{% if fine_tuning_run_fine_tuning_job_gpu %}
+            - name: NUM_GPUS
+              value: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
+{% endif %}
             volumeMounts:
             - name: storage-volume
               mountPath: /mnt/storage
