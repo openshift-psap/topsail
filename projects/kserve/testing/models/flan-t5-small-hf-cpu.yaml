@@ -1,8 +1,0 @@
-extends: flan-t5-small-hf
-
-serving_runtime:
-  kserve:
-    resource_request:
-      cpu: 5
-      memory: 2 # in Gi
-      nvidia.com/gpu: 0

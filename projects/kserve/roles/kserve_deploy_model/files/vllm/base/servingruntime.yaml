@@ -1,7 +1,7 @@
 apiVersion: serving.kserve.io/v1alpha1
 kind: ServingRuntime
 metadata:
-  name: vllm-servingruntime # {{ kserve_deploy_model_sr_name }}
+  name: vllm-servingruntime # Overwritten by templates
   labels:
     opendatahub.io/dashboard: "true"
   annotations:
@@ -14,16 +14,16 @@ spec:
         - --model=/mnt/models/
         - --download-dir=/models-cache
         - --port=8080
-      image: quay.io/rh-aiservices-bu/vllm-openai-ubi9:0.4.0.post1 # {{ kserve_deploy_model_sr_kserve_image }}
+      image: quay.io/rh-aiservices-bu/vllm-openai-ubi9:0.4.0.post1 # Overwritten by templates
       name: kserve-container
       ports:
         - containerPort: 8080
           name: http1
           protocol: TCP
       resources:
-        requests: # overwritten by InferenceService
+        requests: # Overwritten by InferenceService
           cpu: 4
-          memory: 8Gi 
+          memory: 8Gi
           nvidia.com/gpu: 1
         limits:
           nvidia.com/gpu: 1

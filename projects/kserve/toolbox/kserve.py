@@ -22,7 +22,7 @@ class Kserve:
                      inference_service_name,
                      inference_service_min_replicas : int = None,
                      delete_others=True,
-                     limits_equals_requests=True,
+                     #limits_equals_requests=True,
                      raw_deployment=False,
                      ):
         """
@@ -76,12 +76,12 @@ class Kserve:
     @AnsibleMappedParams
     def validate_model(self,
                        inference_service_names,
-                       method,
                        query_count,
-                       sr_container_flavor,
+                       runtime,
                        model_id="not-used",
                        namespace="",
                        raw_deployment=False,
+                       method=None,
                        proto=None,
                        ):
         """
@@ -92,8 +92,8 @@ class Kserve:
 
         Args:
           inference_service_names: a list of names of the inference service to validate
-          sr_container_flavor: name of the container flavor to use in the serving runtime (tgis+caikit or tgis)
-          method: the gRPC method to call
+          runtime: name of the runtime used (standalone-tgis or vllm)
+          method: the gRPC method to call #TODO remove?
           model_id: the model-id to pass to the inference service
           query_count: number of query to perform
           namespace: the namespace in which the Serving stack was deployed. If empty, use the current project.
@@ -101,8 +101,8 @@ class Kserve:
           proto: if not empty, the proto file to pass to grpcurl
         """
 
-        if sr_container_flavor not in ("tgis+caikit", "tgis"):
-            raise ValueError(f"Unsupported container flavor: {sr_container_flavor}")
+        if runtime not in ("standalone-tgis", "vllm"):
+            raise ValueError(f"Unsupported runtime: {runtime}")
 
         return RunAnsibleRole(locals())
 

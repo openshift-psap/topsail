@@ -2,31 +2,22 @@ apiVersion: serving.kserve.io/v1beta1
 kind: InferenceService
 metadata:
   annotations:
+    # Overwritten by templates
     serving.kserve.io/enable-prometheus-scraping: "true"
-    #{% if kserve_deploy_model_raw_deployment %}
-    serving.kserve.io/deploymentMode: "RawDeployment" # template if raw
-    #{% else %}
-    #serving.kserve.io/deploymentMode: "Serverless" # template if raw
-    #serving.knative.openshift.io/enablePassthrough: "true" # template if not raw
-    #sidecar.istio.io/inject: "true" # template if not raw
-    #sidecar.istio.io/rewriteAppHTTPProbers: "true" # template if not raw
-    #{% endif %}"
+    serving.kserve.io/deploymentMode: "RawDeployment"
   labels:
     opendatahub.io/dashboard: "true"
   name: isvc
 spec:
   predictor:
-    minReplicas: 1 #{{ kserve_deploy_model_inference_service_min_replicas }}
+    minReplicas: 1 # Overwritten by templates
     serviceAccountName: sa
     model:
       modelFormat:
         name: pytorch
-      runtime: standalone-tgis-servingruntime
+      runtime: standalone-tgis-servingruntime # Overwritten by templates
       storageUri: s3://override
       resources:
         requests:
           cpu: "2"
           memory: "10Gi"
-          nvidia.com/gpu: "1"
-        limits:
-          nvidia.com/gpu: "1"

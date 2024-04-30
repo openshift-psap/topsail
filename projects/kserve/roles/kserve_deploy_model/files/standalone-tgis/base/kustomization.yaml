@@ -1,14 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: watsonx-e2e-perf # {{ kserve_deploy_model_namespace }}
-
-#configMapGenerator:
-#  - name: isvc-env-cm
-#    literals:
-#    - TRANSFORMERS_CACHE="/tmp/transformers_cache"
-#    - MAX_BATCH_SIZE="96"
-#    - MAX_CONCURRENT_REQUESTS="128"
+namespace: watsonx-e2e-perf
 
 resources:
   - servingruntime.yaml

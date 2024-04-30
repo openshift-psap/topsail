@@ -5,17 +5,20 @@ metadata:
 spec:
   predictor:
     model:
-      storageUri: s3://psap-hf-models/flan-t5-small/flan-t5-small
+      storageUri: s3://psap-hf-models/mistral-7b/mistral-7b
       env:
       - name: DEPLOYMENT_FRAMEWORK
         value: tgis_native
       - name: FLASH_ATTENTION
-        value: "false"
+        value: "true"
       - name: MAX_NEW_TOKENS
-        value: "2047"
+        value: "4095"
       - name: MAX_SEQUENCE_LENGTH
-        value: "2048"
+        value: "4096"
       resources:
         requests:
-          cpu: "2"
-          memory: "4Gi"
+          cpu: "8"
+          memory: "40Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          nvidia.com/gpu: "1"

@@ -73,6 +73,8 @@
   copy:
     src: "files/{{ kserve_deploy_model_runtime }}/"
     dest: "{{ artifact_extra_logs_dir }}/src/{{ kserve_deploy_model_runtime }}"
+    mode: '0400'
+    directory_mode: '0755'
 
 - name: Create the patch directory
   file:
@@ -80,17 +82,17 @@
     state: directory
     mode: '0755'
 
-- name:  Apply the templates for this runtime
+- name: Apply the templates for this runtime
   template:
     src: "{{ servingruntime_patch_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/patch/patch-servingruntime.yaml"
     mode: '0400'
-- name:  Apply the templates for this inferenceservice
+- name: Apply the templates for this inferenceservice
   template:
     src: "{{ inferenceservice_patch_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/patch/patch-inferenceservice.yaml"
     mode: '0400'
-- name:  Apply the templates for kustomization.yaml
+- name: Apply the templates for kustomization.yaml
   template:
     src: "{{ kustomization_patch_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/patch/kustomization.yaml"
@@ -98,7 +100,7 @@
 
 - name: Build the ServingRuntime and InferenceService with kustomize
   shell:
-    kustomize build {{ artifact_extra_logs_dir }}/src/patch/ >> {{ artifact_extra_logs_dir }}/src/serving-runtime-and-isvc.yaml
+    oc kustomize {{ artifact_extra_logs_dir }}/src/patch/ >> {{ artifact_extra_logs_dir }}/src/serving-runtime-and-isvc.yaml
 
 # --server-side is required here because multiple concurrent users
 # might try to create the ServingRuntime simultaneously.
@@ -168,7 +170,7 @@
           exit 3;
       fi;
 
-      echo "Container terminated without reboot, all good :)" >&2
+      echo "initContainer terminated without reboot, all good :)" >&2
 
     # wait up to 60 minutes
     retries: 120
@@ -189,7 +191,8 @@
         exit 2;
       fi;
       oc get inferenceservice/{{ kserve_deploy_model_inference_service_name }} \
-         -ojsonpath={.status.modelStatus.states.targetModelState}
+         -ojsonpath={.status.modelStatus.states.targetModelState} \
+         -n {{ kserve_deploy_model_namespace }}
     register: inference_service_state_cmd
     # wait up to 90 minutes
     retries: 180
@@ -237,12 +240,14 @@
   - name: Capture the state of the InferenceService resource
     shell:
       oc get inferenceservice/{{ kserve_deploy_model_inference_service_name }}
+         -n {{ kserve_deploy_model_namespace }}
          -oyaml
          > {{ artifact_extra_logs_dir }}/artifacts/inference_service.yaml
 
   - name: Capture the state of the ServingRuntime resource
     shell:
       oc get servingruntime/{{ kserve_deploy_model_sr_name }}
+         -n {{ kserve_deploy_model_namespace }}
          -oyaml
          > {{ artifact_extra_logs_dir }}/artifacts/serving_runtime.yaml
 

@@ -1,15 +1,12 @@
+# {% if kserve_deploy_model_sr_name %}
+# - op: replace
+#   path: /metadata/name
+#   value: {{ kserve_deploy_model_sr_name }}
 
-#if {{ kserve_deploy_model_sr_name }}
-#- op: replace
-#  path: /metadata/name
-#  value: vllm-servingruntime-7 #{{ kserve_deploy_model_sr_name }}
-
-# First, test that the item is still at the list index you expect
 - op: test
   path: /spec/containers/0/name
   value: kserve-container
 
-# Now that you know your item is still at index-0, it's safe to patch its command
 - op: replace
   path: /spec/containers/0/image
-  value: quay.io/rh-aiservices-bu/vllm-openai-ubi9:0.4.0.post1 #{{ kserve_deploy_model_sr_kserve_image }}
+  value: quay.io/rh-aiservices-bu/vllm-openai-ubi9:0.4.0.post1 # {{ kserve_deploy_model_sr_kserve_image }}

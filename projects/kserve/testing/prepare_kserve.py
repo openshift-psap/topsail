@@ -60,7 +60,7 @@ def customize_rhods():
             break
         tries -= 1
         if tries == 0:
-            raise RuntimeException("RHODS Operator pod didn't disappear ...")
+            raise RuntimeError("RHODS Operator pod didn't disappear ...")
         time.sleep(2)
 
     if config.ci_artifacts.get_config("rhods.operator.customize.kserve.enabled"):

@@ -56,7 +56,7 @@
     dest="{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}/answers.json"
     query="{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}/questions.json"
 
-    {% if kserve_validate_model_sr_container_flavor == "tgis" %}
+    {% if kserve_validate_model_runtime == "standalone-tgis" %}
     GRPCURL_DATA='{
         "requests": [ {
                 "text": "At what temperature does Nitrogen boil?"
@@ -69,8 +69,6 @@
             }
         }
     }'
-    {% else %}
-    GRPCURL_DATA='{"text": "At what temperature does liquid Nitrogen boil?"}'
     {% endif %}
 
     echo $GRPCURL_DATA >> "$query"
@@ -82,7 +80,7 @@
         -H "mm-model-id: {{ kserve_validate_model_model_id }}" \
         {{ model_endpoint_cmd.stdout }} \
         {{ kserve_validate_model_method }} >> "$dest"
-       echo "Call $i/{{ kserve_validate_model_query_count }} passed"
+      echo "Call $i/{{ kserve_validate_model_query_count }} passed"
     done
   register: grpcurl_working_cmd
   retries: 5
