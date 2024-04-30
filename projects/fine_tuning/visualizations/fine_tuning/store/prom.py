@@ -10,7 +10,10 @@ import projects.core.visualizations.helpers.store.prom as core_prom_store
 
 
 SUTEST_CONTAINER_LABELS = [
-    {"Serving Runtime kserve container": dict(namespace="kserve.*", container="kserve-container")},
+    {"Kueue controller": dict(namespace="redhat-ods-applications", pod="kueue-controller-manager-.*")},
+    {"Codeflare controller": dict(namespace="redhat-ods-applications", pod="codeflare-operator-manager-.*")},
+    {"Kubeflow Training operator": dict(namespace="redhat-ods-applications", pod="kubeflow-training-operator-.*")},
+    {"Training Pods": dict(namespace="fine-tuning-testing", container="pytorch")},
 ]
 
 
