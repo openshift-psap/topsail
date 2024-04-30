@@ -87,6 +87,7 @@
     capture_prom_db: pipelines_run_kfp_notebook_capture_prom_db
     notebook_image_address: "{{ rhods_image_address_cmd.stdout }}"
     run_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}{% endif %}"
+    run_count: "{{ pipelines_run_kfp_notebook_run_count }}"
 
 - name: Define the test environment
   set_fact:

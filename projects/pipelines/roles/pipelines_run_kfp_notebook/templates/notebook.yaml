@@ -58,6 +58,8 @@ spec:
           value: /mnt/notebook_files
         - name: RUN_NAME
           value: "{{ run_name }}"
+        - name: RUN_COUNT
+          value: "{{ run_count }}"
         image: {{ notebook_image_address }}
         imagePullPolicy: Always
         livenessProbe:

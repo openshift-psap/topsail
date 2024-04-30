@@ -77,6 +77,12 @@ ci_presets:
     tests.pipelines.pipelines_per_user: 4
     tests.pipelines.project_count: 5
 
+  multiple_runs:
+    tests.pipelines.user_count: 1
+    tests.pipelines.pipelines_per_user: 1
+    tests.pipelines.project_count: 1
+    tests.pipelines.runs_per_pipeline: 2
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -189,6 +195,7 @@ tests:
     project_count: 2
     user_count: 2
     pipelines_per_user: 1
+    runs_per_pipeline: 1
     user_pipeline_delay: 5
     sleep_factor: 1
     user_batch_size: 1

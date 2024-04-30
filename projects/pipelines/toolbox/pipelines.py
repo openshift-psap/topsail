@@ -34,6 +34,7 @@ class Pipelines:
                          notebook_name="",
                          notebook_directory="testing/pipelines/notebooks/hello-world",
                          notebook_filename="kfp_hello_world.ipynb",
+                         run_count=0,
                          stop_on_exit=True,
                          capture_artifacts=True,
                          capture_prom_db=False,
@@ -49,6 +50,7 @@ class Pipelines:
           notebook_name: A prefix to add the name of the notebook to differential notebooks in the same project
           notebook_directory: Directory containing the files to mount in the notebook.
           notebook_filename: Name of the ipynb notebook file to execute with JupyterLab.
+          run_count: Number of times to run the pipeline
           stop_on_exit: If False, keep the notebook running after the test.
           capture_artifacts: If False, disable the post-test artifact collection.
           capture_prom_db: If True, captures the Prometheus DB of the systems.

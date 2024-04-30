@@ -24,6 +24,9 @@ pipelines_run_kfp_notebook_notebook_directory: testing/pipelines/notebooks/hello
 # Name of the ipynb notebook file to execute with JupyterLab.
 pipelines_run_kfp_notebook_notebook_filename: kfp_hello_world.ipynb
 
+# Number of times to run the pipeline
+pipelines_run_kfp_notebook_run_count: 0
+
 # If False, keep the notebook running after the test.
 pipelines_run_kfp_notebook_stop_on_exit: true
 
