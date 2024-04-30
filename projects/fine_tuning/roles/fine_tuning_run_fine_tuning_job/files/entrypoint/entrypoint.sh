@@ -21,6 +21,10 @@ else
     cp "$DATASET_SOURCE" "$DATASET_DEST"
 fi
 
+if [[ "${DATASET_REPLICATION:-1}" != 1 ]]; then
+    python /mnt/entrypoint/convert_replicate.py "$DATASET_DEST" /tmp/temp_ds.json "$DATASET_REPLICATION"
+    mv /tmp/temp_ds.json "$DATASET_DEST"
+fi
 
 if [[ -z "${NUM_GPUS:-1}" || "${NUM_GPUS:-1}" == 1 ]]; then
     exec python launch_training.py
