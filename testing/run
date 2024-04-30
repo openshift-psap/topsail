@@ -79,7 +79,7 @@ prechecks() {
         DEST="${ARTIFACT_DIR}/variable_overrides"
         "$THIS_DIR/utils/openshift_ci/pr_args.sh" "$DEST"
         if [[ -f "$DEST" ]]; then
-            echo "Variables overriden from PR:"
+            echo "Variables overridden from PR:"
             cat "$DEST"
             echo "---"
         fi
