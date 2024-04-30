@@ -20,7 +20,7 @@ if [[ "$DOWNLOAD_SOURCE" == "https://huggingface.co/"* ]];
 then
     dnf install --quiet -y git-lfs
 
-    git clone "$DOWNLOAD_SOURCE" "$STORAGE_DIR" --depth=1
+    git clone "$DOWNLOAD_SOURCE" "$STORAGE_DIR/${SOURCE_NAME}" --depth=1
 
 elif [[ "$DOWNLOAD_SOURCE" == "s3://"* ]];
 then
