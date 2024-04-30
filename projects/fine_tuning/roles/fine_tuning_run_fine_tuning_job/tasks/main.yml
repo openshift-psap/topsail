@@ -30,7 +30,7 @@
 
     oc create cm {{ fine_tuning_run_fine_tuning_job_name }}-config
        -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       --from-file=config.json="{{ artifact_extra_logs_dir }}/src/config.json"
+       --from-file=config.json=<(cat "{{ artifact_extra_logs_dir }}/src/config.json")
        --dry-run=client
        -oyaml
        | oc apply -f-

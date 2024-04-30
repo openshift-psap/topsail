@@ -14,9 +14,11 @@ def prepare():
         parallel.delayed(prepare_rhoai)
         parallel.delayed(scale_up_sutest)
 
+
+    test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings")
     with run.Parallel("prepare2") as parallel:
         parallel.delayed(prepare_gpu)
-        parallel.delayed(prepare_namespace)
+        parallel.delayed(prepare_namespace, test_settings)
 
     with run.Parallel("prepare3") as parallel:
         parallel.delayed(preload_image)
@@ -89,19 +91,32 @@ def set_namespace_annotations():
     dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
     namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
 
-    if not metal and dedicated:
-        extra = dict(project=namespace)
-        run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_node_selector", extra=extra, mute_stdout=True)
-        run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_toleration", extra=extra, mute_stdout=True)
+    if metal:
+        logging.info("Running in a bare-metal environment, not setting the namespace node-isolation annotations")
+        return
+
+    if not dedicated:
+        logging.info("Running without dedicated nodes, not setting the namespace node-isolation annotations")
+        return
+
+    if config.ci_artifacts.get_config("tests.dry_mode"):
+        logging.info("tests.dry_mode is not, skipping setting the node-isolation namespace annotation")
+        return
+
+    extra = dict(project=namespace)
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_node_selector", extra=extra, mute_stdout=True)
+    run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_toleration", extra=extra, mute_stdout=True)
 
 
-def download_data_sources():
+def download_data_sources(test_settings):
     namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
-    model_name = config.ci_artifacts.get_config("tests.fine_tuning.model_name")
-    dataset_name = config.ci_artifacts.get_config("tests.fine_tuning.dataset_name")
+    model_name = test_settings["model_name"]
+    dataset_name = test_settings["dataset_name"]
 
     pvc_name = config.ci_artifacts.get_config("fine_tuning.pvc_name")
     sources = config.ci_artifacts.get_config(f"fine_tuning.sources")
+
+    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
 
     for source_name in [model_name, dataset_name]:
         if pvc_name in run.run(f"oc get pvc -n {namespace} -oname -l{source_name}=yes", check=False, capture_stdout=True).stdout:
@@ -129,10 +144,14 @@ def download_data_sources():
 
             extra["creds"] = str(cred_file)
 
+        if dry_mode:
+            logging.info(f"tests.dry_mode is not, skipping running download_to_pvc({extra})")
+            continue
+
         run.run_toolbox_from_config("cluster", "download_to_pvc", extra=extra)
 
 
-def prepare_namespace():
+def prepare_namespace(test_settings):
     namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
 
     if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
@@ -142,7 +161,7 @@ def prepare_namespace():
 
     with env.NextArtifactDir("prepare_namespace"):
         set_namespace_annotations()
-        download_data_sources()
+        download_data_sources(test_settings)
 
 
 def scale_up_sutest():

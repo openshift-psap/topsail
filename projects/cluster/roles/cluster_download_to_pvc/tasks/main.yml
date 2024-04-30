@@ -124,9 +124,12 @@
     ignore_errors: true
 
 - name: Label the PVC if the download succeeded
-  when: "'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout"
+  when: "not ('Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout)"
   command:
-    oc label pvc/{{ cluster_download_to_pvc_pvc_name }} {{ cluster_download_to_pvc_name }}=yes --overwrite
+    oc label pvc/{{ cluster_download_to_pvc_pvc_name }}
+       -n {{ cluster_download_to_pvc_namespace }}
+       {{ cluster_download_to_pvc_name }}=yes
+       --overwrite
 
 - name: Fail if the the downloader Pod failed
   when: "'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout"

@@ -19,8 +19,8 @@ class Fine_Tuning:
             namespace,
             pvc_name,
 
-            model,
-            dataset,
+            model_name,
+            dataset_name,
 
             container_image="quay.io/modh/fms-hf-tuning:01b3824c9aba22d9d0695399681e6f0507840e7f",
 
@@ -37,8 +37,8 @@ class Fine_Tuning:
           namespace: the name of the namespace where the scheduler load will be generated
           pvc_name: the name of the PVC where the model and dataset are stored
 
-          model: the name of the model to use inside the /dataset directory of the PVC
-          dataset: the name of the dataset to use inside the /model directory of the PVC
+          model_name: the name of the model to use inside the /dataset directory of the PVC
+          dataset_name: the name of the dataset to use inside the /model directory of the PVC
 
           container_image: the image to use for the fine-tuning container
           gpu: the number of GPUs to request for the fine-tuning job

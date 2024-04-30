@@ -82,7 +82,9 @@ def test_ci():
         test_finetuning.test()
     finally:
         try:
-            if not config.ci_artifacts.get_config("tests.visualize"):
+            if not config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.enabled"):
+                logging.warning("Not generating the visualization as it was already generated and it wasn't a MatBenchmarking run.")
+            elif not config.ci_artifacts.get_config("tests.visualize"):
                 logging.warning("Not generating the visualization as it is disabled in the configuration.")
             elif test_artifact_dir_p[0] is not None:
                 next_count = env.next_artifact_index()
@@ -139,6 +141,15 @@ def prepare_namespace():
 
     return prepare_finetuning.prepare_namespace()
 
+
+@entrypoint()
+def matbench_run_one():
+    """
+    Runs one test as part of a MatrixBenchmark benchmark
+    """
+
+    test_finetuning.matbench_run_one()
+
 # ---
 
 class Entrypoint:
@@ -157,6 +168,7 @@ class Entrypoint:
         self.generate_plots = generate_plots
         self.prepare_namespace = prepare_namespace
 
+        self.matbench_run_one = matbench_run_one
 # ---
 
 def main():

@@ -1,8 +1,8 @@
 ---
-training_data_path: "/mnt/storage/dataset/{{ fine_tuning_run_fine_tuning_job_dataset }}"
+training_data_path: "/mnt/storage/dataset/{{ fine_tuning_run_fine_tuning_job_dataset_name }}"
 
-model_name_or_path: "/mnt/storage/model/{{ fine_tuning_run_fine_tuning_job_model }}"
-tokenizer_name_or_path: "/mnt/storage/model/{{ fine_tuning_run_fine_tuning_job_model }}"
+model_name_or_path: "/mnt/storage/model/{{ fine_tuning_run_fine_tuning_job_model_name }}"
+tokenizer_name_or_path: "/mnt/storage/model/{{ fine_tuning_run_fine_tuning_job_model_name }}"
 
 response_template: "\n### Label:"
 

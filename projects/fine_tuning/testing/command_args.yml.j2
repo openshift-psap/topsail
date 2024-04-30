@@ -58,8 +58,8 @@ fine_tuning run_fine_tuning_job:
   pvc_name: "{{ fine_tuning.pvc_name }}"
   container_image: "{{ fine_tuning.image }}"
 
-  model: {{ tests.fine_tuning.model_name }}
-  dataset: {{ tests.fine_tuning.dataset_name }}
+  model_name: {{ tests.fine_tuning.test_settings.model_name }}
+  dataset_name: {{ tests.fine_tuning.test_settings.dataset_name }}
 
 cluster download_to_pvc:
   name: SET_AT_RUNTIME

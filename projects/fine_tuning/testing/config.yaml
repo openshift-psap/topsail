@@ -17,7 +17,8 @@ ci_presets:
 
   light:
     extends: [light_cluster]
-
+    tests.fine_tuning.matbenchmarking.enabled: false
+    tests.fine_tuning.test_settings.gpu: null
 
   gpu:
     gpu.prepare_cluster: true
@@ -152,11 +153,18 @@ fine_tuning:
 tests:
   capture_prom: true
   capture_prom_uwm: false
-  visualize: false
+  visualize: true
+  dry_mode: false
   fine_tuning:
     namespace: fine-tuning-testing
-    model_name: bloom-560m
-    dataset_name: twitter_complaints_small.json
+    matbenchmarking:
+      enabled: true
+      visu_file: plots.yaml
+      stop_on_error: true
+    test_settings:
+      model_name: bloom-560m
+      dataset_name: twitter_complaints_small.json
+      gpu: [1, 2, 4, 6, 8]
 
 matbench:
   preset: null
@@ -176,13 +184,13 @@ matbench:
     horreum:
       test_name: null
     opensearch:
-      export: true
+      export: false
       fail_test_on_fail: false
       instance: smoke
       index: topsail-fine-tuning
       index_prefix: ""
     regression_analyses:
-      enabled: true
+      enabled: false
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
 export_artifacts:
