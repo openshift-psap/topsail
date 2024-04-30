@@ -179,9 +179,7 @@ def test(dry_mode=None, do_visualize=None, capture_prom=None):
         with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
             print(traceback.format_exc(), file=f)
 
-        import bdb
-        if isinstance(e, bdb.BdbQuit):
-            raise
+        raise
 
 
 def _run_test_matbenchmarking():
