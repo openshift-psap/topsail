@@ -169,7 +169,8 @@ tests:
     test_settings:
       model_name: bloom-560m
       dataset_name: twitter_complaints_small.json
-      gpu: [1, 2, 4, 6, 8]
+      gpu: 0
+      dataset_replicas: 2
 
 matbench:
   preset: null
