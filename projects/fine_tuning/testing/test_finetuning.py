@@ -76,6 +76,12 @@ def _run_test(test_override_values):
 
     logging.info(f"Test configuration to run: \n{yaml.dump(test_settings, sort_keys=False)}")
 
+    sources = config.ci_artifacts.get_config(f"fine_tuning.sources")
+    dataset_source = sources[test_settings["dataset_name"]]
+
+    if transform := dataset_source.get("transform", False):
+        test_settings["dataset_transform"] = transform
+
     prepare_finetuning.prepare_namespace(test_settings)
     exit_code = 1
     reset_prometheus()

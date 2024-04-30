@@ -144,11 +144,16 @@ fine_tuning:
     alpaca_data.json:
       type: dataset
       source_dir: 'https://raw.githubusercontent.com/gururise/AlpacaDataCleaned/main'
+      transform: convert_alpaca.py
 
     bloom-560m:
       type: model
       source_dir: 's3://psap-watsonx-models/fine-tuning/bigscience'
       secret_key: secrets.aws_credentials
+
+    gpt_bigcode-santacoder:
+      type: model
+      source_dir: 'https://huggingface.co/bigcode'
 
 tests:
   capture_prom: true
