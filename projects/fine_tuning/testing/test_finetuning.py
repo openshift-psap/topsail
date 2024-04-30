@@ -104,8 +104,10 @@ def _run_test(test_override_values):
 
             exc = None
             exc = run.run_and_catch(exc, dump_prometheus)
-            exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)
-            exc = run.run_and_catch(exc, run.run_toolbox, "rhods", "capture_state", mute_stdout=True)
+            if config.ci_artifacts.get_config("tests.capture_state"):
+                exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)
+                exc = run.run_and_catch(exc, run.run_toolbox, "rhods", "capture_state", mute_stdout=True)
+
             if exc:
                 raise exc
 

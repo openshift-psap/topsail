@@ -161,6 +161,7 @@ fine_tuning:
 tests:
   capture_prom: true
   capture_prom_uwm: false
+  capture_state: true
   visualize: true
   dry_mode: false
   fine_tuning:
