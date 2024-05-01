@@ -61,81 +61,84 @@
   command:
     oc create -f "{{ artifact_extra_logs_dir }}/src/fine_tuning_job.yaml"
 
-- name: Wait for the Pod to start running
-  shell:
-    set -o pipefail;
-    oc get pods -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       --no-headers | awk '{print $3}'
-  register: wait_pod_start
-  retries: 20
-  delay: 5
-  until: wait_pod_start.stdout in ["Running", "Error", "Init:Error", "Completed", "NotReady", "CrashLoopBackOff"]
+- name: Wait for the job completion
+  block:
+  - name: Wait for the Pod to start running
+    shell:
+      set -o pipefail;
+      oc get pods -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+         --no-headers | awk '{print $3}'
+    register: wait_pod_start
+    retries: 20
+    delay: 5
+    until: wait_pod_start.stdout in ["Running", "Error", "Init:Error", "Completed", "NotReady", "CrashLoopBackOff"]
 
-- name: Fail if the Pod did not start successfully
-  fail: msg="Pod in error state"
-  when: wait_pod_start.stdout in ["Error", "Init:Error", "CrashLoopBackOff"]
+  - name: Fail if the Pod did not start successfully
+    fail: msg="Pod in error state"
+    when: wait_pod_start.stdout in ["Error", "Init:Error", "CrashLoopBackOff"]
 
-- name: Wait for the main container to finish running
-  shell:
-    set -o pipefail;
-    oc get pods -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       --no-headers | awk '{print $3}'
-  register: wait_pod_start
-  retries: 30
-  delay: 10
-  until: wait_pod_start.stdout != "Running"
+  - name: Wait for the main container to finish running
+    shell:
+      set -o pipefail;
+      oc get pods -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+         --no-headers | awk '{print $3}'
+    register: wait_pod_start
+    retries: 30
+    delay: 10
+    until: wait_pod_start.stdout != "Running"
 
-- name: Capture the state of the InferenceService Pod resource
-  shell:
-    set -o pipefail;
+  - name: Fail if the Pod did not complete properly
+    fail: msg="Pod in '{{ wait_pod_start.stdout }}' state"
+    when: wait_pod_start.stdout not in ["Completed"]
 
-    oc get pod
-       -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
-       -oyaml
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       > {{ artifact_extra_logs_dir }}/artifacts/pod.yaml;
+  always:
+  - name: Capture the state of the InferenceService Pod resource
+    shell:
+      set -o pipefail;
 
-    oc get pod
-       -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
-       -owide
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       > {{ artifact_extra_logs_dir }}/artifacts/pod.status;
-
-    oc describe pod
-       -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
-
-    oc logs $(
       oc get pod
          -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+         -oyaml
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-         -oname | head -1)
-      -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-      > {{ artifact_extra_logs_dir }}/artifacts/pod.log
-  ignore_errors: true
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.yaml;
 
-- name: Capture the state of the InferenceService Pod resource
-  shell:
-    set -o pipefail;
+      oc get pod
+         -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+         -owide
+         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.status;
 
-    oc get pytorchjob/{{ fine_tuning_run_fine_tuning_job_name }}
-       -oyaml
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.yaml;
+      oc describe pod
+         -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
 
-    oc get pytorchjob/{{ fine_tuning_run_fine_tuning_job_name }}
-       -owide
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.status;
+      oc logs $(
+        oc get pod
+           -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+           -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+           -oname | head -1)
+        -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+        > {{ artifact_extra_logs_dir }}/artifacts/pod.log
+    ignore_errors: true
 
-    oc describe pytorchjob/{{ fine_tuning_run_fine_tuning_job_name }}
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.desc
-  ignore_errors: true
+  - name: Capture the state of the InferenceService Pod resource
+    shell:
+      set -o pipefail;
 
-- name: Fail if the Pod did not complete properly
-  fail: msg="Pod in '{{ wait_pod_start.stdout }}' state"
-  when: wait_pod_start.stdout not in ["Completed"]
+      oc get pytorchjob/{{ fine_tuning_run_fine_tuning_job_name }}
+         -oyaml
+         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.yaml;
+
+      oc get pytorchjob/{{ fine_tuning_run_fine_tuning_job_name }}
+         -owide
+         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.status;
+
+      oc describe pytorchjob/{{ fine_tuning_run_fine_tuning_job_name }}
+         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.desc
+    ignore_errors: true
