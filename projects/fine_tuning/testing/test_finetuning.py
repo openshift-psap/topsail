@@ -104,8 +104,10 @@ def _run_test(test_override_values):
 
             exc = None
             exc = run.run_and_catch(exc, dump_prometheus)
-            exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)
-            exc = run.run_and_catch(exc, run.run_toolbox, "rhods", "capture_state", mute_stdout=True)
+            if config.ci_artifacts.get_config("tests.capture_state"):
+                exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)
+                exc = run.run_and_catch(exc, run.run_toolbox, "rhods", "capture_state", mute_stdout=True)
+
             if exc:
                 raise exc
 
@@ -171,7 +173,8 @@ def test(dry_mode=None, do_visualize=None, capture_prom=None):
         config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
 
     try:
-        _run_test_and_visualize()
+        failed = _run_test_and_visualize()
+        return failed
     except Exception as e:
         logging.error(f"*** Caught an exception during _run_test_and_visualize: {e.__class__.__name__}: {e}")
         traceback.print_exc()
@@ -179,9 +182,7 @@ def test(dry_mode=None, do_visualize=None, capture_prom=None):
         with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
             print(traceback.format_exc(), file=f)
 
-        import bdb
-        if isinstance(e, bdb.BdbQuit):
-            raise
+        raise
 
 
 def _run_test_matbenchmarking():

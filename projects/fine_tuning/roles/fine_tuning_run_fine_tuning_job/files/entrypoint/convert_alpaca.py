@@ -26,7 +26,7 @@ def format_alpaca_fn(example):
     return {"output": output}
 
 
-print(f"Converting {src} ...")
+print(f"Converting {src} from Alpaca format to SFTTrainer ...")
 ds = datasets.load_dataset('json', data_files=str(src))
 
 alpaca_ds = ds['train'].map(format_alpaca_fn, remove_columns=['instruction', 'input'])

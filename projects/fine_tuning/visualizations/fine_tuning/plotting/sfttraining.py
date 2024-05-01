@@ -32,7 +32,7 @@ def generateSFTTrainingData(entries, _variables, _ordered_vars, sfttraining_key)
         except AttributeError:
             datum["gpu"] = 1
 
-        datum[sfttraining_key] = getattr(entry.results.sft_training_metrics, sfttraining_key)
+        datum[sfttraining_key] = getattr(entry.results.sft_training_metrics, sfttraining_key, 0)
 
         data.append(datum)
 
