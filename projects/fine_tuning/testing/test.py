@@ -54,7 +54,7 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
         @functools.wraps(fct)
         def wrapper(*args, **kwargs):
             init(ignore_secret_path, apply_preset_from_pr_args)
-            fct(*args, **kwargs)
+            return fct(*args, **kwargs)
 
         return wrapper
     return decorator
@@ -79,7 +79,9 @@ def test_ci():
     try:
         test_artifact_dir_p = [None]
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
-        test_finetuning.test()
+
+        failed = test_finetuning.test()
+        return 1 if failed else 0
     finally:
         run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
 

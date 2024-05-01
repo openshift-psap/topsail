@@ -173,7 +173,8 @@ def test(dry_mode=None, do_visualize=None, capture_prom=None):
         config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
 
     try:
-        _run_test_and_visualize()
+        failed = _run_test_and_visualize()
+        return failed
     except Exception as e:
         logging.error(f"*** Caught an exception during _run_test_and_visualize: {e.__class__.__name__}: {e}")
         traceback.print_exc()
