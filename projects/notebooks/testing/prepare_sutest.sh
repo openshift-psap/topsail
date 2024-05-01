@@ -66,9 +66,8 @@ prepare_ocp_sutest_deploy_rhods() {
 
     setup_brew_registry
 
-    process_ctrl::run_in_bg \
-        process_ctrl::retry 5 3m \
-            ./run_toolbox.py from_config rhods deploy_ods
+    process_ctrl::retry 5 3m \
+                        ./run_toolbox.py from_config rhods deploy_ods
 
     if ! oc get group/dedicated-admins >/dev/null 2>/dev/null; then
         echo "Create the dedicated-admins group"
