@@ -119,13 +119,13 @@ ci_presets:
         max_concurrency: 2
 
   quick_raw_vllm:
-    extends: [quick_raw]
+    extends: [raw, e2e_gpu, vllm]
     tests.e2e.models:
     - name: mpt-7b-instruct2
       testing:
         size: small
-        max_concurrency: 2
-    kserve.model.runtime: vllm
+        max_concurrency: 4
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8]
 
 # TODO delete
   local_quick_raw:
@@ -151,6 +151,16 @@ ci_presets:
 
   10min:
     tests.e2e.llm_load_test.args.duration: 600
+
+  vllm:
+    kserve.model.runtime: vllm
+    e2e.llm_load_test.args:
+      plugin: "openai_plugin"
+      streaming: true
+      interface: "http"
+      #model_name: "/mnt/models/"
+      #host: "http://localhost:8033"
+      #endpoint: "/v1/chat/completions"
 
   # ---
 

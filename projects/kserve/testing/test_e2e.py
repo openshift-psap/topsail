@@ -698,6 +698,9 @@ def test_consolidated_model(consolidated_model, namespace=None):
     llm_load_test_dataset_sample_args = config.ci_artifacts.get_config(f"tests.e2e.llm_load_test.dataset_size.{size_name}")
     llm_load_test_args |= llm_load_test_dataset_sample_args
 
+    if llm_load_test_args.get("plugin") == "openai_plugin":
+        model_name = "/mnt/models/"
+
     args_dict = dict(
         host=host,
         port=port,
