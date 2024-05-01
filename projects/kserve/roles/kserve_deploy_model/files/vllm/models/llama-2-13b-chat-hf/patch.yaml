@@ -12,8 +12,8 @@ spec:
         - --max-model-len=4096
       resources:
         requests:
-          cpu: "8"
-          memory: "40Gi"
+          cpu: "2"
+          memory: "24Gi"
           nvidia.com/gpu: "1"
         limits:
           nvidia.com/gpu: "1"

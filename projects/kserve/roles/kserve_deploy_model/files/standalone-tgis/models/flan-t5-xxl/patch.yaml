@@ -17,8 +17,8 @@ spec:
         value: "2048"
       resources:
         requests:
-          cpu: "8"
-          memory: "40Gi"
+          cpu: "4"
+          memory: "24Gi"
           nvidia.com/gpu: "1"
         limits:
           nvidia.com/gpu: "1"

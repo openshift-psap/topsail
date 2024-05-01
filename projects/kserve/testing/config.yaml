@@ -158,9 +158,9 @@ ci_presets:
       plugin: "openai_plugin"
       streaming: true
       interface: "http"
-      #model_name: "/mnt/models/"
-      #host: "http://localhost:8033"
-      #endpoint: "/v1/chat/completions"
+      # model_name: "/mnt/models/"
+      # host: "http://localhost:8033"
+      # endpoint: "/v1/chat/completions"
 
   # ---
 
