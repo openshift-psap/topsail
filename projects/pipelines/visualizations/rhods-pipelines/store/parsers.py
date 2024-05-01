@@ -199,6 +199,7 @@ def _extract_metrics(dirname):
     db_files = {
         "sutest": (f"{artifact_paths.LOCAL_CI__RUN_MULTI}/prometheus_ocp.t*", rhods_pipelines_prom.get_sutest_metrics()),
         "driver": (f"{artifact_paths.LOCAL_CI__RUN_MULTI}/prometheus_ocp.t*", rhods_pipelines_prom.get_driver_metrics()),
+        "dspa": (f"{artifact_paths.LOCAL_CI__RUN_MULTI}/prometheus_ocp.t*", rhods_pipelines_prom.get_dspa_metrics()),
     }
 
     return core_helpers_store_parsers.extract_metrics(dirname, db_files)
