@@ -245,10 +245,7 @@ sutest_cleanup() {
             ./run_toolbox.py rhods update_datasciencecluster
         fi
 
-        # this is necessary because of RHODS-8002
-        # ./run_toolbox.py rhods undeploy_ods
-        _info "Force delete RHODS"
-        ./run_toolbox.py rhods delete_ods
+        ./run_toolbox.py rhods undeploy_ods
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.delete_test_namespaces; then
