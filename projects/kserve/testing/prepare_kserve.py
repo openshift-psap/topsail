@@ -164,7 +164,12 @@ def cleanup(mute=True):
                 undeploy_operator(operator)
 
 
-def update_serving_runtime_images():
+def update_serving_runtime_images(runtime=None):
+    if runtime == "vllm":
+        #TODO when RHOAI is ready we will get the vLLM image from a template as well
+        # For now, it should be set in the config.yaml
+        return
+    
     TEMPLATE_CMD = "oc get template/caikit-tgis-serving-template -n redhat-ods-applications"
     logging.info("Ensure that the Dashboard template resource is available ...")
     try:
@@ -178,10 +183,10 @@ def update_serving_runtime_images():
         return run.run(cmd, capture_stdout=True).stdout
 
     kserve_image = get_image("kserve-container")
-    transformer_image = get_image("transformer-container")
+    #transformer_image = get_image("transformer-container")
 
     config.ci_artifacts.set_config("kserve.model.serving_runtime.kserve.image", kserve_image.strip())
-    config.ci_artifacts.set_config("kserve.model.serving_runtime.transformer.image", transformer_image.strip())
+    #config.ci_artifacts.set_config("kserve.model.serving_runtime.transformer.image", transformer_image.strip())
 
 
 def preload_image():

@@ -89,7 +89,7 @@ ci_presets:
     extends: [e2e]
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.spot: false
-    clusters.sutest.compute.machineset.type: g4dn.2xlarge
+    clusters.sutest.compute.machineset.type: g5.2xlarge
 
   raw:
     kserve.raw_deployment.enabled: true
@@ -121,11 +121,11 @@ ci_presets:
   quick_raw_vllm:
     extends: [raw, e2e_gpu, vllm]
     tests.e2e.models:
-    - name: mpt-7b-instruct2
+    - name: phi-2
       testing:
         size: small
         max_concurrency: 4
-    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8]
+    tests.e2e.llm_load_test.args.concurrency: 2
 
 # TODO delete
   local_quick_raw:
@@ -154,6 +154,8 @@ ci_presets:
 
   vllm:
     kserve.model.runtime: vllm
+    # IBM image hardcoded until RHOAI includes an image in the release
+    kserve.model.serving_runtime.kserve.image: "quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-01"
     e2e.llm_load_test.args:
       plugin: "openai_plugin"
       streaming: true
@@ -404,7 +406,7 @@ clusters:
       dedicated: true
       machineset:
         name: workload-pods
-        type: g4dn.2xlarge
+        type: g5.2xlarge
         count: null
         disk_size: 400 # GB for the root partition
         spot: false

@@ -14,7 +14,7 @@ spec:
         - --model=/mnt/models/
         - --download-dir=/models-cache
         - --port=8080
-      image: quay.io/rh-aiservices-bu/vllm-openai-ubi9:0.4.0.post1 # Overwritten by templates
+      image: quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-01 # Overwritten by templates
       name: kserve-container
       ports:
         - containerPort: 8080

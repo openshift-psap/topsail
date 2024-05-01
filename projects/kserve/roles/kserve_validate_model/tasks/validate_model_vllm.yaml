@@ -20,7 +20,7 @@
                       -ojsonpath={.items[0].metadata.name} \
                       -n {{ kserve_validate_model_namespace }});
 
-      echo "${svc_name}.{{ kserve_validate_model_namespace }}.svc.cluster.local:80"
+      echo "http://${svc_name}.{{ kserve_validate_model_namespace }}.svc.cluster.local:8080"
     else
       # outside the cluster
       # port-forwaring enabled in the next task
@@ -31,8 +31,8 @@
        -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }} \
        -n {{ kserve_validate_model_namespace }} \
        -ojsonpath='{.items[0].status.url}' \
-       | sed 's|https://||' \
-       | sed 's/$/:443/'
+       | sed 's|https:/http:/||' \
+       | sed 's/$/:8080/'
     {% endif %}
   register: model_endpoint_cmd
 

@@ -9,4 +9,4 @@
 
 - op: replace
   path: /spec/containers/0/image
-  value: quay.io/rh-aiservices-bu/vllm-openai-ubi9:0.4.0.post1 # {{ kserve_deploy_model_sr_kserve_image }}
+  value: quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-01 # {{ kserve_deploy_model_sr_kserve_image }}
