@@ -89,7 +89,7 @@ else
     last_comment_page_json=$(curl -sSf "$PR_LAST_COMMENT_PAGE_URL")
 fi
 
-REQUIRED_AUTHOUR=$(jq -r .user.login <<< "$pr_json")
+REQUIRED_AUTHOR=$(jq -r .user.login <<< "$pr_json")
 REQUIRED_AUTHOR_ASSOCIATION="CONTRIBUTOR"
 
 echo "PR comments URL: $PR_COMMENTS_URL" >&2
@@ -98,10 +98,10 @@ last_user_test_comment=$(echo "$last_comment_page_json" \
 last_user_test_issuer=$(echo "$last_comment_page_json" \
 	                     | jq -r '.[-1] | .user.login')
 last_user_test_issuer_status=$(echo "$last_comment_page_json" \
-			     | jq -r '.[-1] | .user.login == "'$REQUIRED_AUTHOUR'" or .author_association == "'$REQUIRED_AUTHOR_ASSOCIATION'"')
+			     | jq -r '.[-1] | .user.login == "'$REQUIRED_AUTHOR'" or .author_association == "'$REQUIRED_AUTHOR_ASSOCIATION'"')
 
 if [[ -z "$last_user_test_comment" ]] || [[ "$last_user_test_issuer" == "false" ]]; then
-    echo "ERROR: last comment of either from a '$REQUIRED_AUTHOR_ASSOCIATION' or '$REQUIRED_AUTHOUR' could not be found (searching for '$test_anchor') ..." >&2
+    echo "ERROR: last comment of either from a '$REQUIRED_AUTHOR_ASSOCIATION' or '$REQUIRED_AUTHOR' could not be found (searching for '$test_anchor') ..." >&2
     exit 1
 fi
 
