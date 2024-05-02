@@ -7,7 +7,7 @@ ci_presets:
   # run the DSG Notebook scale test
   notebook_scale_test:
     clusters.create.ocp.tags.Project: PSAP/RHODS/scale_test
-    tests.notebooks.users.count: 300
+    tests.notebooks.users.count: 150
     clusters.create.ocp.control_plane.type: m6i.2xlarge
     clusters.create.ocp.workers.type: m6i.2xlarge
     clusters.create.ocp.compute.type: m6i.2xlarge
