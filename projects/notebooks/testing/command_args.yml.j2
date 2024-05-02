@@ -26,6 +26,8 @@ rhods deploy_ods:
   tag: {{ rhods.catalog.tag }}
   channel: {{ rhods.catalog.channel }}
   version: {{ rhods.catalog.version }}
+  opendatahub: {{ rhods.catalog.opendatahub }}
+  managed_rhoai: {{ rhods.catalog.managed_rhoai }}
 
 sutest/cluster set_scale:
   instance_type: {{ clusters.create.ocp.compute.type }}

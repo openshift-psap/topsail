@@ -211,10 +211,12 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 717666
-    channel: fast
-    version: 2.9.0
-    version_name: rc3
+    tag: 712547
+    channel: odh-nightlies
+    version: 1.18.0
+    version_name: nightly
+    opendatahub: true
+    managed_rhoi: false
   notebooks:
     customize:
       enabled: true
