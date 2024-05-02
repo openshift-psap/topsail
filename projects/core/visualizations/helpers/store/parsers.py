@@ -142,8 +142,13 @@ def parse_env(dirname, test_config, capture_state_operators_dir):
             s3_path = f"prow/{pull_number}/{build_id}/test_ci"
 
         elif ansible_env.get("PERFLAB_CI") == "true":
-            build_number = os.environ["JENKINS_BUILD_NUMBER"]
-            job = os.environ["JENKINS_JOB"] # "job/ExternalTeams/job/RHODS/job/topsail"
+            if os.environ.get("PERFLAB_CI") == "true":
+                build_number = os.environ["JENKINS_BUILD_NUMBER"]
+                job = os.environ["JENKINS_JOB"]  # "job/ExternalTeams/job/RHODS/job/topsail"
+            else:
+                build_number = "---"
+                job = "job/ExternalTeams/job/RHODS/job/topsail"
+
             job_id = job[4:].replace("/job/", "_")
 
             s3_path = f"middleware_jenkins/{job_id}/{build_number}"
