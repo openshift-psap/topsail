@@ -59,9 +59,12 @@ def _rewrite_settings(settings_dict):
 
     return settings_dict
 
-
-build_lts_payloads = local_store.build_lts_payloads
 parsers.register_important_file = local_store.register_important_file
+build_lts_payloads = local_store.build_lts_payloads
+is_mandatory_file = local_store.is_mandatory_file
+is_cache_file = local_store.is_cache_file
+is_important_file = local_store.is_important_file
+
 # delegate the parsing to the simple_store
 store.register_custom_rewrite_settings(_rewrite_settings)
 store_simple.register_custom_parse_results(local_store.parse_directory)
