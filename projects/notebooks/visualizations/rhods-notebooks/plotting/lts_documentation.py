@@ -52,7 +52,8 @@ def generateOneLtsDocumentationReport(entry):
     metadata = []
 
     metadata += [html.Li([html.B("settings:"), html.Code(", ".join(f"{k}={v}" for k, v in lts.metadata.settings.items()))])]
-    metadata += [html.Li([html.B("start:"), html.Code(lts.metadata.start)])]
+    if hasattr(lts.metadata, "start"):
+        metadata += [html.Li([html.B("start:"), html.Code(lts.metadata.start)])]
     metadata += [html.Li([html.B("presets:"), html.Code(", ".join(lts.metadata.presets))])]
     metadata += [html.Li([html.B("test:"), html.Code(lts.metadata.test)])]
     metadata += [html.Li([html.B("ocp_version:"), html.Code(lts.metadata.ocp_version)])]
