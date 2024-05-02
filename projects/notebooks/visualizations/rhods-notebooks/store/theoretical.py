@@ -11,7 +11,7 @@ def get_possible_machines():
     data = possible_machines_cache = []
 
     group = None
-    with open(pathlib.Path(__file__).parent / "data" / "machines") as f:
+    with open(pathlib.Path(__file__).parent.parent / "data" / "machines") as f:
         for _line in f.readlines():
             line = _line.strip()
             if line.startswith("# "):

@@ -6,10 +6,7 @@ from collections import defaultdict, OrderedDict
 import logging
 import pytz
 
-from . import store_thresholds
-from . import models
-
-from .plotting import prom
+from . import prom
 
 import matrix_benchmarking.common as common
 
@@ -148,22 +145,5 @@ def _generate_pod_timings(pod_times, start, end):
         output['container_ready_time'] = (pod_times.containers_ready - pod_times.pod_initialized).total_seconds()
     if hasattr(pod_times, 'containers_ready'):
         output['user_notification'] = (end - pod_times.containers_ready).total_seconds()
-
-    return output
-
-
-def _gather_prom_metrics(results) -> dict:
-    entry = types.SimpleNamespace()
-    entry.results = results
-
-    output = {}
-    for cluster_role, metric_names in lts_metrics.items():
-        for metric_name in metric_names:
-            logging.info(f"Gathering {metric_name[0]}")
-
-            output[metric_name[0]] = {
-                'data': [promvalue for promvalue in prom.get_metrics('sutest')(entry, metric_name[0])],
-                'query': metric_name[1]
-            }
 
     return output

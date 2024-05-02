@@ -33,4 +33,4 @@ def get_last_user_steps(entry: MatrixEntry) -> list:
     return last_user.output
 
 def get_control_nodes(entry: MatrixEntry) -> list:
-    return [node.name for node in entry.results.rhods_cluster_info.control_plane]
+    return [node.name for node in entry.results.cluster_info.control_plane]

@@ -133,7 +133,7 @@ def _get_cluster_mem_cpu(cluster_role, register):
 
 
 def _get_container_mem_cpu(cluster_role, register, label_sets):
-    from ..horreum_lts_store import register_lts_metric
+    from .lts_parser_helpers import register_lts_metric
     all_metrics = []
 
     for plot_name_labels in label_sets:
@@ -198,7 +198,7 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
         name, rq = list(metric.items())[0]
 
         if 'CPU idle' in name and cluster_role == 'sutest':
-            from ..horreum_lts_store import register_lts_metric
+            from .lts_parser_helpers import register_lts_metric
             register_lts_metric(cluster_role, metric)
         if register:
             plotting_prom.Plot({name: rq},
@@ -268,7 +268,7 @@ def _get_apiserver_errcodes(cluster_role, register):
         name, rq = list(metric.items())[0]
 
         if 'server errors' in name and cluster_role == 'sutest':
-            from ..horreum_lts_store import register_lts_metric
+            from .lts_parser_helpers import register_lts_metric
             register_lts_metric(cluster_role, metric)
         if register:
             plotting_prom.Plot({name: rq},
