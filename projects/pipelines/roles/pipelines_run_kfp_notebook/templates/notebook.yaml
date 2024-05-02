@@ -60,6 +60,8 @@ spec:
           value: "{{ run_name }}"
         - name: RUN_COUNT
           value: "{{ run_count }}"
+        - name: RUN_DELAY
+          value: "{{ run_delay }}"
         image: {{ notebook_image_address }}
         imagePullPolicy: Always
         livenessProbe:

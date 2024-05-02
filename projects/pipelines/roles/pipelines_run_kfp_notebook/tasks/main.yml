@@ -88,6 +88,7 @@
     notebook_image_address: "{{ rhods_image_address_cmd.stdout }}"
     run_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}{% endif %}"
     run_count: "{{ pipelines_run_kfp_notebook_run_count }}"
+    run_delay: "{{ pipelines_run_kfp_notebook_run_delay }}"
 
 - name: Define the search labels
   set_fact:
@@ -258,10 +259,10 @@
               && jupyter nbconvert --to html results/$(basename "$NOTEBOOK_FILENAME" .ipynb).executed.ipynb'
     register: notebook_execution
 
-  - name: Get the name of the workflow
+  - name: Get the name of the workflows
     shell:
       set -o pipefail;
-      oc get workflow.argoproj.io -n "{{ notebook_namespace }}" -ojson | jq '.items[].metadata | select(.annotations."pipelines.kubeflow.org/run_name"=="{{ run_name }}")|.name' -r | head -1
+      oc get workflow.argoproj.io -n "{{ notebook_namespace }}" -ojson | jq '.items[].metadata | select(.annotations."pipelines.kubeflow.org/run_name"=="{{ run_name }}")|.name' -r
     register: generated_pipeline_name_cmd
     retries: 10
     delay: 2
@@ -270,7 +271,7 @@
   - name: Wait for the pipeline execution to complete
     shell:
       set -o pipefail;
-      oc get workflow.argoproj.io/{{ generated_pipeline_name_cmd.stdout }} -ojson -n "{{ notebook_namespace }}" | jq .status.phase -r
+      oc get workflow.argoproj.io {{ generated_pipeline_name_cmd.stdout_lines | join(" ") }} -ojson -n "{{ notebook_namespace }}" | jq .items[].status.phase -r
     register: workflow_phase_cmd
     retries: 120
     delay: 10

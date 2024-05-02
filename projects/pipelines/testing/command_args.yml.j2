@@ -61,6 +61,7 @@ driver/cluster set_project_annotation/test_toleration:
 
 pipelines run_kfp_notebook:
   run_count: {{ tests.pipelines.runs_per_pipeline }}
+  run_delay: {{ tests.pipelines.run_delay }}
   notebook_name: {{ rhods.pipelines.notebook.name }}
   namespace: {{ rhods.pipelines.namespace }}
   imagestream: {{ rhods.pipelines.workbench.imagestream }}

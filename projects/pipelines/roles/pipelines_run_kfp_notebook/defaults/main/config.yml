@@ -27,6 +27,9 @@ pipelines_run_kfp_notebook_notebook_filename: kfp_hello_world.ipynb
 # Number of times to run the pipeline
 pipelines_run_kfp_notebook_run_count: 0
 
+# Number of seconds to wait before trigger the next run from the notebook
+pipelines_run_kfp_notebook_run_delay: 0
+
 # If False, keep the notebook running after the test.
 pipelines_run_kfp_notebook_stop_on_exit: true
 
