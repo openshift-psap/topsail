@@ -103,9 +103,9 @@ last_user_test_issuer_status=$(echo "$last_comment_page_json" \
 if [[ -z "$last_user_test_comment" ]] || [[ "$last_user_test_issuer" == "false" ]]; then
     echo "ERROR: last comment of either from a '$REQUIRED_AUTHOR_ASSOCIATION' or '$REQUIRED_AUTHOUR' could not be found (searching for '$test_anchor') ..." >&2
     exit 1
-else
-    echo "INFO: last test comment '$last_user_test_comment' issued by $last_user_test_issuer"
 fi
+
+echo "INFO: last test comment '$last_user_test_comment' issued by $last_user_test_issuer"
 
 pos_args=$(echo "$last_user_test_comment" |
                (grep "$test_anchor" || true) | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
