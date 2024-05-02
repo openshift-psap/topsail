@@ -20,7 +20,7 @@ def register():
 
 def _get_test_setup(entry):
     setup_info = []
-    if entry.results.from_env and entry.results.from_env.pr:
+    if entry.results.from_env and hasattr(entry.results.from_env, "pr"):
         pr = entry.results.from_env.pr
         if entry.results.from_pr:
             title = html.B(entry.results.from_pr["title"])
@@ -90,10 +90,10 @@ def _get_test_setup(entry):
 
     setup_info += [html.Ul(test_config)]
 
-    managed = list(entry.results.rhods_cluster_info.control_plane)[0].managed \
-        if entry.results.rhods_cluster_info.control_plane else False
+    managed = list(entry.results.cluster_info.control_plane)[0].managed \
+        if entry.results.cluster_info.control_plane else False
 
-    sutest_ocp_version = entry.results.sutest_ocp_version
+    sutest_ocp_version = entry.results.ocp_version
 
     version_ts = entry.results.rhods_info.createdAt.strftime("%Y-%m-%d") \
         if entry.results.rhods_info.createdAt else entry.results.rhods_info.createdAt_raw
@@ -101,11 +101,11 @@ def _get_test_setup(entry):
     setup_info += [html.Li([html.B("RHODS "), html.B(html.Code(f"{entry.results.rhods_info.version}-{version_ts}")), f" running on ", "OpenShift Dedicated" if managed else "OCP", html.Code(f" v{sutest_ocp_version}")])]
 
     nodes_info = [
-        html.Li([f"Total of {len(entry.results.rhods_cluster_info.node_count)} nodes in the cluster"]),
+        html.Li([f"Total of {len(entry.results.cluster_info.node_count)} nodes in the cluster"]),
     ]
 
     for purpose in ["control_plane", "infra", "rhods_compute", "test_pods_only"]:
-        nodes = entry.results.rhods_cluster_info.__dict__.get(purpose)
+        nodes = entry.results.cluster_info.__dict__.get(purpose)
 
         purpose_str = f" {purpose} nodes"
         if purpose == "control_plane": purpose_str = f" nodes running OpenShift control plane"
