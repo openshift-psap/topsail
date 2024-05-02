@@ -56,8 +56,8 @@ spec:
           value: "{{ dsp_route }}"
         - name: NOTEBOOK_FILES
           value: /mnt/notebook_files
-        - name: RUN_NAME
-          value: "{{ run_name }}"
+        - name: PIPELINE_NAME
+          value: "{{ pipeline_name }}"
         - name: RUN_COUNT
           value: "{{ run_count }}"
         - name: RUN_DELAY
