@@ -83,6 +83,10 @@ class BaseStore():
         artifact_paths = types.SimpleNamespace()
         for artifact_dirname, unresolved_dirname in self.artifact_dirnames.__dict__.items():
             direct_resolution = dirname / unresolved_dirname
+            if direct_resolution.exists():
+                artifact_paths.__dict__[artifact_dirname] = pathlib.Path(unresolved_dirname)
+                continue
+
             resolutions = list(dirname.glob(unresolved_dirname))
             resolved_dir = None
 
