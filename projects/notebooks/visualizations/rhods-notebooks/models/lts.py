@@ -17,17 +17,13 @@ class NotebookScaleMetadata(matbench_models.Metadata):
 class NotebookScaleData(matbench_models.ExclusiveModel):
     users: List[user.UserData]
     config: BaseModel
-    metrics: prom.PromValues
-    thresholds: BaseModel
-    cluster_info: metadata.ClusterInfo
 
 
-class NotebookScalePayload(matbench_models.ExclusiveModel):
-    schema_name: matbench_models.create_schema_field("rhods-notebooks") = Field(alias="$schema")
-    data: NotebookScaleData
+class Payload(matbench_models.ExclusiveModel):
+    results: NotebookScaleData
     metadata: NotebookScaleMetadata
 
     class Config:
         fields = {'schema_name': '$schema'}
 
-NotebookScalePayload.update_forward_refs()
+Payload.update_forward_refs()

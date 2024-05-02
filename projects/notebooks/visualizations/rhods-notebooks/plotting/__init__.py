@@ -4,7 +4,6 @@ import plotly.graph_objs as go
 import pandas as pd
 import plotly.express as px
 
-from . import prom
 from . import completion
 from . import report
 from . import mapping
@@ -19,8 +18,9 @@ from . import multi_notebook_spawn_time
 from . import gating_report
 from . import lts_documentation
 
+from ..store import prom
+
 def register():
-    prom.register()
     completion.register()
     report.register()
     mapping.register()
@@ -34,3 +34,4 @@ def register():
     multi_notebook_spawn_time.register()
     gating_report.register()
     lts_documentation.register()
+    prom.register()

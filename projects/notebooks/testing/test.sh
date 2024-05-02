@@ -65,7 +65,7 @@ connect_ci() {
         set_config PR_POSITIONAL_ARG_EXTRA_METAL "$METAL_PROFILE"
     fi
 
-    if [[ "${JOB_NAME_SAFE:-}" != "plot" ]]; then
+    if [[ "$(get_config "PR_POSITIONAL_ARG_0")" != *"-plot" ]]; then
         set_presets_from_pr_args
     fi
 

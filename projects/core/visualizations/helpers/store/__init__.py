@@ -62,19 +62,31 @@ class BaseStore():
     def is_cache_file(self, filename):
         return filename.name == self.cache_filename
 
-
     def register_important_file(self, base_dirname, filename):
-        if not self.is_important_file(filename):
-            logging.warning(f"File '{filename}' not part of the important file list :/")
-            if pathlib.Path(filename).is_absolute():
-                logging.warning(f"File '{filename}' is an absolute path. Should be relative to {base_dirname}.")
+        to_return = base_dirname / filename
+        if self.is_important_file(filename):
+            return to_return
 
-        return base_dirname / filename
+        filename_resolved = (base_dirname / filename).resolve().relative_to(base_dirname.resolve())
+        if self.is_important_file(filename_resolved):
+            # filename is composed of ..
+            # accept it
+            return to_return
+
+        logging.warning(f"File '{filename}' not part of the important file list :/")
+        if pathlib.Path(filename).is_absolute():
+            logging.warning(f"File '{filename}' is an absolute path. Should be relative to {base_dirname}.")
+
+        return to_return
 
     def resolve_artifact_dirnames(self, dirname):
         artifact_paths = types.SimpleNamespace()
         for artifact_dirname, unresolved_dirname in self.artifact_dirnames.__dict__.items():
             direct_resolution = dirname / unresolved_dirname
+            if direct_resolution.exists():
+                artifact_paths.__dict__[artifact_dirname] = pathlib.Path(unresolved_dirname)
+                continue
+
             resolutions = list(dirname.glob(unresolved_dirname))
             resolved_dir = None
 

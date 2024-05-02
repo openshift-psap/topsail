@@ -93,10 +93,10 @@ prepare() {
         fi
     fi
 
-    process_ctrl::run_in_bg prepare_sutest_cluster
     process_ctrl::run_in_bg prepare_driver_cluster
 
-    process_ctrl::wait_bg_processes
-
+    prepare_sutest_cluster
     sutest_wait_rhods_launch
+
+    process_ctrl::wait_bg_processes
 }

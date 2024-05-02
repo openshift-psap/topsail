@@ -53,7 +53,7 @@ prepare_sutest_cluster() {
 setup_brew_registry() {
     local token_file=$PSAP_ODS_SECRET_PATH/$(get_config secrets.brew_registry_redhat_io_token_file)
 
-    "$TESTING_UTILS_DIR"/brew.registry.redhat.io/setup.sh "$token_file"
+    ./projects/rhods/utils/brew.registry.redhat.io/setup.sh "$token_file"
 }
 
 prepare_ocp_sutest_deploy_rhods() {
@@ -66,9 +66,8 @@ prepare_ocp_sutest_deploy_rhods() {
 
     setup_brew_registry
 
-    process_ctrl::run_in_bg \
-        process_ctrl::retry 5 3m \
-            ./run_toolbox.py from_config rhods deploy_ods
+    process_ctrl::retry 5 3m \
+                        ./run_toolbox.py from_config rhods deploy_ods
 
     if ! oc get group/dedicated-admins >/dev/null 2>/dev/null; then
         echo "Create the dedicated-admins group"
@@ -245,10 +244,7 @@ sutest_cleanup() {
             ./run_toolbox.py rhods update_datasciencecluster
         fi
 
-        # this is necessary because of RHODS-8002
-        # ./run_toolbox.py rhods undeploy_ods
-        _info "Force delete RHODS"
-        ./run_toolbox.py rhods delete_ods
+        ./run_toolbox.py rhods undeploy_ods
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.delete_test_namespaces; then

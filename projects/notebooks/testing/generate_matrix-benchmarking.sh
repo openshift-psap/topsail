@@ -20,7 +20,7 @@ export MATBENCH_WORKLOAD_BASE_DIR=$TOPSAIL_DIR
 export MATBENCH_WORKLOAD=projects.notebooks.visualizations.$(get_config matbench.workload)
 WORKLOAD_STORAGE_DIR="$(echo "$MATBENCH_WORKLOAD" | tr . /)"
 
-if [[ "${JOB_NAME_SAFE:-}" == "plot" ]]; then
+if [[ "$(get_config "PR_POSITIONAL_ARG_0")" != *"-plot" ]]; then
     set_config_from_pr_arg 1 "matbench.preset"
 fi
 

@@ -11,7 +11,7 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 from . import spawntime
-from . import utils
+from ..store import utils
 
 def register():
     LaunchTimeDistribution("Launch time distribution")
