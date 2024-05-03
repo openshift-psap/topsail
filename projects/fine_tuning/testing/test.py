@@ -81,6 +81,8 @@ def test_ci():
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
 
         failed = test_finetuning.test()
+        logging.info("test_finetuning.test " + ("failed" if failed else "passed"))
+
         return 1 if failed else 0
     finally:
         run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
