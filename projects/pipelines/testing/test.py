@@ -245,7 +245,7 @@ def pipelines_run_one():
         user_pipeline_delay = int(config.ci_artifacts.get_config("tests.pipelines.user_pipeline_delay"))
         for pipeline_num in range(pipelines_per_user):
             logging.info(f"Running run_kfp_notebook for pipeline {pipeline_num}")
-            notebook_name = f"user{uid}-run{pipeline_num}"
+            notebook_name = f"user{uid}-pl{pipeline_num}"
             run.run_toolbox_from_config("pipelines", "run_kfp_notebook", extra={"notebook_name": notebook_name})
             if pipeline_num != pipelines_per_user - 1:
                 time.sleep(user_pipeline_delay)

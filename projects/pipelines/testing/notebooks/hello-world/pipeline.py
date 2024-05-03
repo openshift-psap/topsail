@@ -43,14 +43,21 @@ def stage3(time2a: float, time2b: float, time2c: float):
 )
 def my_pipeline():
     time1a = stage1(index=1)
+    time1a.set_caching_options(False)
     time1b = stage1(index=2)
+    time1b.set_caching_options(False)
     time1c = stage1(index=3)
+    time1c.set_caching_options(False)
 
     time2a = stage2(time1=time1a.output)
+    time2a.set_caching_options(False)
     time2b = stage2(time1=time1b.output)
+    time2b.set_caching_options(False)
     time2c = stage2(time1=time1c.output)
+    time2c.set_caching_options(False)
 
-    stage3(time2a=time2a.output, time2b=time2b.output, time2c=time2c.output)
+    time3 = stage3(time2a=time2a.output, time2b=time2b.output, time2c=time2c.output)
+    time3.set_caching_options(False)
 
 if __name__ == '__main__':
     from kfp.compiler import Compiler
