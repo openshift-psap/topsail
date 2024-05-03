@@ -37,6 +37,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
     f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.log",
+    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.json",
 ]
 
 
@@ -62,6 +63,7 @@ def parse_once(results, dirname):
     results.test_start_end_time = _parse_start_end_time(dirname)
 
     results.sft_training_metrics = _parse_sft_training_logs(dirname)
+    results.allocated_resources = _parse_allocated_resources(dirname)
 
 
 def _extract_metrics(dirname):
@@ -92,7 +94,12 @@ def _parse_start_end_time(dirname):
 
     return test_start_end_time
 
-SFT_TRAINER_RESULTS_KEYS = ["train_runtime", "train_samples_per_second", "train_steps_per_second", "train_tokens_per_second", "train_loss", "epoch"]
+SFT_TRAINER_RESULTS_KEYS = {
+    "train_runtime": types.SimpleNamespace(lower_better=True, units="seconds", title="runtime"),
+    "train_samples_per_second": types.SimpleNamespace(lower_better=False, units="samples/second"),
+    "train_steps_per_second": types.SimpleNamespace(lower_better=False, units="steps/second"),
+    "train_tokens_per_second": types.SimpleNamespace(lower_better=False, units="tokens/second"),
+}
 
 @core_helpers_store_parsers.ignore_file_not_found
 def _parse_sft_training_logs(dirname):
@@ -109,3 +116,17 @@ def _parse_sft_training_logs(dirname):
                     setattr(sft_training_metrics, key, results[key])
 
     return sft_training_metrics
+
+
+def _parse_allocated_resources(dirname):
+    allocated_resources = types.SimpleNamespace()
+    with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.json")) as f:
+        pod_def = json.load(f)
+
+    try:
+        allocated_resources.gpu = int(pod_def["items"][0]["spec"]["containers"][0]["resources"]["limits"]["nvidia.com/gpu"])
+        print(allocated_resources.gpu)
+    except (IndexError, KeyError):
+        allocated_resources.gpu = 0
+
+    return allocated_resources

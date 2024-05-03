@@ -25,18 +25,29 @@ def register():
 def generateSFTTrainingData(entries, _variables, _ordered_vars, sfttraining_key):
     data = []
 
+    variables = [v for v in _variables if v != "gpu"]
+
     for entry in entries:
         datum = dict()
-        try:
-            datum["gpu"] = entry.settings.gpu
-        except AttributeError:
-            datum["gpu"] = 1
-
+        datum["gpu"] = entry.results.allocated_resources.gpu
         datum[sfttraining_key] = getattr(entry.results.sft_training_metrics, sfttraining_key, 0)
+        datum["name"] = entry.get_name(variables)
 
         data.append(datum)
 
-    return data
+    ref = None
+    for datum in data:
+        if datum["gpu"] == 1:
+            ref = datum[sfttraining_key]
+
+    if not ref:
+        return data, None
+
+    for datum in data:
+        datum[f"{sfttraining_key}_speedup"] = speedup = ref / datum[sfttraining_key]
+        datum[f"{sfttraining_key}_efficiency"] = speedup / datum["gpu"]
+
+    return data, ref
 
 
 class SFTTraining():
@@ -52,13 +63,19 @@ class SFTTraining():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg__sft_key = cfg.get("sfttraining_key", False)
+        cfg__speedup = cfg.get("speedup", False)
+        cfg__efficiency = cfg.get("efficiency", False)
+
+        from ..store import parsers
+        key_properties = parsers.SFT_TRAINER_RESULTS_KEYS[cfg__sft_key]
 
         if not cfg__sft_key:
             raise ValueError("'sfttraining_key' is a mandatory parameter ...")
 
         entries = common.Matrix.all_records(settings, setting_lists)
 
-        df = pd.DataFrame(generateSFTTrainingData(entries, variables, ordered_vars, cfg__sft_key))
+        data, has_speedup = generateSFTTrainingData(entries, variables, ordered_vars, cfg__sft_key)
+        df = pd.DataFrame(data)
 
         if df.empty:
             return None, "Not data available ..."
@@ -66,21 +83,40 @@ class SFTTraining():
         x_key = "gpu"
         df = df.sort_values(by=[x_key], ascending=False)
 
-        y_name = "Time Per Output Token"
-        y_unit = "ms/token"
         y_key = cfg__sft_key
+        if (cfg__speedup or cfg__efficiency) and not has_speedup:
+            return None, "Cannot compute the speedup & efficiency (reference value not found)"
 
-        fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key)
+        if cfg__speedup:
+            y_key += "_speedup"
+        elif cfg__efficiency:
+            y_key += "_efficiency"
+
+        fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
 
 
         for i in range(len(fig.data)):
             fig.data[i].update(mode='lines+markers+text')
 
         fig.update_xaxes(title="Number of GPUs used for the fine-tuning")
+        y_title = getattr(key_properties, "title", "speed")
+        y_units = key_properties.units
 
-        #fig.update_yaxes(title=f"❮ Mean {y_name} (in {y_unit})<br>Lower is better")
-        fig.update_layout(title=cfg__sft_key, title_x=0.5,)
-        #fig.update_layout(legend_title_text="Model name")
+        if cfg__speedup:
+            what = ", GPU speedup"
+            y_lower_better = False
+        elif cfg__efficiency:
+            what = ", GPU efficiency"
+            y_lower_better = False
+        else:
+            y_lower_better = key_properties.lower_better
+            what = f", in {y_units}"
+
+        y_title = f"Fine-tuning {y_title}{what}. "
+        title = y_title + "<br>"+("Lower is better" if y_lower_better else "Higher is better") + "."
+        fig.update_yaxes(title=("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else ""))
+        fig.update_layout(title=title, title_x=0.5,)
+        fig.update_layout(legend_title_text="Configuration")
 
         # ❯ or ❮
 
