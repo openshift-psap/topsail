@@ -31,6 +31,7 @@ artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tu
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
 IMPORTANT_FILES = [
+    ".uuid",
     "config.yaml",
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/_ansible.log",
