@@ -1,0 +1,11 @@
+extends: base-standalone-tgis
+serving_runtime:
+    kserve:
+        resource_request:
+            nvidia.com/gpu: 1
+            memory: 80Gi
+        extra_env:
+            MAX_CONCURRENT_REQUESTS: 128
+            MAX_BATCH_SIZE: 96
+inference_service:
+  storage_uri: "s3://psap-hf-models/mistral-7b/mistral-7b"
