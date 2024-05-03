@@ -106,5 +106,7 @@ class SFTTrainerReport():
         for key in parsers.SFT_TRAINER_RESULTS_KEYS:
             header += [html.H3(key)]
             header += Plot_and_Text("SFTTraining", set_config(dict(sfttraining_key=key), args))
+            header += Plot_and_Text("SFTTraining", set_config(dict(sfttraining_key=key, speedup=True), args))
+            header += Plot_and_Text("SFTTraining", set_config(dict(sfttraining_key=key, efficiency=True), args))
 
         return None, header

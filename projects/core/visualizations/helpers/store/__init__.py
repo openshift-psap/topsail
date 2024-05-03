@@ -42,7 +42,7 @@ class BaseStore():
 
     def is_mandatory_file(self, filename):
         return (
-            filename.name in ("settings", "exit_code", "config.yaml")
+            filename.name in ("settings", "exit_code", "config.yaml", "skip")
             or filename.name in self.extra_mandatory_files
             or filename.name.startswith("settings.")
         )

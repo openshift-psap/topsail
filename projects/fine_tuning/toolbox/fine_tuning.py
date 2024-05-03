@@ -29,6 +29,11 @@ class Fine_Tuning:
             memory=10,
             cpu=1,
             request_equals_limits=False,
+
+            per_device_train_batch_size=4,
+            per_device_eval_batch_size=4,
+            use_flash_attn=False,
+
     ):
         """
         Run a simple fine-tuning Job.
@@ -47,6 +52,10 @@ class Fine_Tuning:
           memory: the number of RAM gigs to request for to the fine-tuning job (in Gigs)
           cpu: the number of CPU cores to request for the fine-tuning job (in cores)
           request_equals_limits: if True, sets the 'limits' of the job with the same value as the request.
+
+          per_device_train_batch_size: batch size to use for the model fine-tuning training
+          per_device_eval_batch_size: batch size to use for the model fine-tuning evaluation
+          use_flash_attn: Enables/disables Flash Attention
         """
 
         return RunAnsibleRole(locals())

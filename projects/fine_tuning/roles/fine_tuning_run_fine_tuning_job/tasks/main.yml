@@ -100,6 +100,12 @@
 
       oc get pod
          -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+         -ojson
+         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.json;
+
+      oc get pod
+         -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
          -oyaml
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pod.yaml;
