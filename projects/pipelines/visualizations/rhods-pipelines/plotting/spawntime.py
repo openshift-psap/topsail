@@ -242,8 +242,8 @@ class ResourceCreationTimeline():
                 resource_key = resource_name.replace(f"user{user_idx}", "userX")
                 resource_key = re.sub(r'n([0-9]+)-', "nX-", resource_key)
                 if resource_name.split("/")[0] == "Workflow":
-                    workflow_idx = [i for (i, v) in enumerate(workflow_ordering[user_idx]) if v["name"] == resource_name][0]
-                    resource_key = f"Workflow/run{workflow_idx}"
+                    workflow_run_name = user_data.workflow_run_names[resource_name.split("/")[1]]
+                    resource_key = f"Workflow/{workflow_run_name}"
                 data.append({
                         "User Index": int(user_idx),
                         "User Name": f"User #{user_idx:03d}",

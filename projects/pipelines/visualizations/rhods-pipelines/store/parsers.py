@@ -157,6 +157,7 @@ def _parse_user_data(dirname, user_count):
 
         data.resource_times = _parse_resource_times(dirname, ci_pod_dirname)
         data.pod_times = _parse_pod_times(dirname, ci_pod_dirname)
+        data.workflow_run_names = _parse_workflow_run_names(dirname, ci_pod_dirname)
 
     return user_data
 
@@ -336,3 +337,43 @@ def _parse_resource_times(dirname, ci_pod_dir):
     parse("workflow.json")
 
     return dict(all_resource_times)
+
+def _parse_workflow_run_names(dirname, ci_pod_dir):
+    all_workflow_run_names = {}
+    logging.info(f"Parsing {ci_pod_dir.name} ...")
+
+    @ignore_file_not_found
+    def parse(fname):
+        state_dirs = list(ci_pod_dir.glob("*__pipelines__capture_state"))
+        if not state_dirs:
+            logging.error(f"No '*__pipelines__capture_state' available in {dirname} ...")
+            return
+
+        file_path = (state_dirs[0] / fname).resolve().absolute().relative_to(dirname.absolute())
+        with open(register_important_file(dirname, file_path)) as f:
+            data = json.load(f)
+
+        if type(data) is dict:
+            data = [data]
+
+        for entry in data:
+            for item in entry["items"]:
+                metadata = item["metadata"]
+
+                kind = item["kind"]
+                creationTimestamp = datetime.datetime.strptime(
+                    metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+
+                name = metadata["name"]
+                generate_name, found, suffix = name.rpartition("-")
+                remove_suffix = ((found and not suffix.isalpha()))
+
+                if remove_suffix and kind != "Workflow":
+                    name = generate_name # remove generated suffix
+
+                if kind == "Workflow":
+                    all_workflow_run_names[f"{name}"] = metadata["annotations"]["pipelines.kubeflow.org/run_name"]
+
+    parse("workflow.json")
+
+    return dict(all_workflow_run_names)

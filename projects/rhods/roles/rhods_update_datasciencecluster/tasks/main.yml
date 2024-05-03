@@ -112,28 +112,6 @@
     yq -yi --argjson value "$(echo "{{ setting_value }}" | yq)" '.{{ setting_key }} = $value' "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml"
     {% endfor %}
 
-- name: Ensure the DataScienceCluster is not present
-  shell: |
-    set -e
-    oc delete -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml" --ignore-not-found --timeout=180s
-  register: delete_dsc_cmd
-  ignore_errors: true
-
-- name: Remove finalizer if needed
-  shell: |
-    set -e
-    oc patch -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml" -p '{"metadata":{"finalizers":null}}' --type=merge
-  when: delete_dsc_cmd.rc != 0
-
-- name: Wait till DataScienceCluster is no longer showing
-  shell: |
-    oc get -oname -f "{{ artifact_extra_logs_dir }}/src/datascience_cluster.yaml" --ignore-not-found
-  when: delete_dsc_cmd.rc != 0
-  register: waiting_for_dsc_rm_cmd
-  until: waiting_for_dsc_rm_cmd.stdout == ""
-  retries: 10
-  delay: 6
-
 - name: Create the DataScienceCluster
   shell: |
     set -e
