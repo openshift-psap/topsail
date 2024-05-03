@@ -97,7 +97,6 @@ def prepare_rhods():
     """
     Prepares the cluster for running RHODS pipelines scale tests.
     """
-    install_ocp_pipelines()
 
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
     prepare_rhoai.install(token_file)
@@ -109,6 +108,8 @@ def prepare_rhods():
     customize_rhods()
 
     run.run_toolbox_from_config("cluster", "deploy_ldap")
+
+    install_ocp_pipelines()
 
 
 def compute_node_requirement(driver=False, sutest=False):
