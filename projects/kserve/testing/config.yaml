@@ -156,13 +156,12 @@ ci_presets:
     kserve.model.runtime: vllm
     # IBM image hardcoded until RHOAI includes an image in the release
     kserve.model.serving_runtime.kserve.image: "quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-01"
-    e2e.llm_load_test.args:
-      plugin: "openai_plugin"
-      streaming: true
-      interface: "http"
-      # model_name: "/mnt/models/"
-      # host: "http://localhost:8033"
-      # endpoint: "/v1/chat/completions"
+    e2e.llm_load_test.args.plugin: "openai_plugin"
+    e2e.llm_load_test.args.streaming: true
+    e2e.llm_load_test.args.interface: "http"
+      # e2e.llm_load_test.args.model_name: "/mnt/models/"
+      # e2e.llm_load_test.args.host: "http://localhost:8033"
+      # e2e.llm_load_test.args.endpoint: "/v1/chat/completions"
 
   # ---
 
