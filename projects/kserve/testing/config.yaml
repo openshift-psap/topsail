@@ -124,8 +124,9 @@ ci_presets:
     - name: phi-2
       testing:
         size: small
-        max_concurrency: 4
-    tests.e2e.llm_load_test.args.concurrency: 2
+        max_concurrency: 64
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
 
 # TODO delete
   local_quick_raw:
@@ -156,12 +157,12 @@ ci_presets:
     kserve.model.runtime: vllm
     # IBM image hardcoded until RHOAI includes an image in the release
     kserve.model.serving_runtime.kserve.image: "quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-01"
-    e2e.llm_load_test.args.plugin: "openai_plugin"
-    e2e.llm_load_test.args.streaming: true
-    e2e.llm_load_test.args.interface: "http"
-      # e2e.llm_load_test.args.model_name: "/mnt/models/"
-      # e2e.llm_load_test.args.host: "http://localhost:8033"
-      # e2e.llm_load_test.args.endpoint: "/v1/chat/completions"
+    tests.e2e.llm_load_test.args.plugin: "openai_plugin"
+    tests.e2e.llm_load_test.args.streaming: true
+    tests.e2e.llm_load_test.args.interface: "http"
+      # tests.e2e.llm_load_test.args.model_name: "/mnt/models/"
+      # tests.e2e.llm_load_test.args.host: "http://localhost:8033"
+      # tests.e2e.llm_load_test.args.endpoint: "/v1/chat/completions"
 
   # ---
 
@@ -521,8 +522,8 @@ tests:
   mode: e2e
 
   dry_mode: false
-  visualize: false
-  capture_prom: false
+  visualize: true
+  capture_prom: true
   prom_plot_workload: projects.kserve.visualizations.kserve-prom
   prom_plot_index_suffix: -prom
   scale:
