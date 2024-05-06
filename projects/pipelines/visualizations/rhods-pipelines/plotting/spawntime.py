@@ -239,11 +239,11 @@ class ResourceCreationTimeline():
                     workflow_ordering[user_idx] = sorted(workflow_ordering[user_idx], key=lambda x: x["creation_time"])
         for user_idx, user_data in entry.results.user_data.items():
             for resource_name, creation_time in user_data.resource_times.items():
-                resource_key = resource_name.replace(f"user{user_idx}", "userX")
-                resource_key = re.sub(r'n([0-9]+)-', "nX-", resource_key)
+                resource_key = re.sub(r'n([0-9]+)-', "nX-", resource_name)
                 if resource_name.split("/")[0] == "Workflow":
                     workflow_run_name = user_data.workflow_run_names[resource_name.split("/")[1]]
                     resource_key = f"Workflow/{workflow_run_name}"
+                resource_key = resource_key.replace(f"user{user_idx}-", "")
                 data.append({
                         "User Index": int(user_idx),
                         "User Name": f"User #{user_idx:03d}",
