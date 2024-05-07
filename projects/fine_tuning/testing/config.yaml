@@ -89,6 +89,12 @@ ci_presets:
   cluster_icelake:
     clusters.sutest.compute.machineset.type: "Icelake"
 
+  simple_flash_attention:
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+    tests.fine_tuning.test_settings.dataset_replication: 1
+    tests.fine_tuning.test_settings.gpu: [1, 2, 4]
+    tests.fine_tuning.test_settings.use_flash_attn: [true]
+
 secrets:
   dir:
     name: psap-ods-secret
