@@ -43,6 +43,8 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.LOCAL_CI__RUN_MULTI}/artifacts/ci-pod-*/*__pipelines__capture_state/deployments.json",
     f"{artifact_dirnames.LOCAL_CI__RUN_MULTI}/artifacts/ci-pod-*/*__pipelines__capture_state/pipelines.json",
 
+    f"{artifact_dirnames.LOCAL_CI__RUN_MULTI}/artifacts/ci-pod-*/*__pipelines__run_kfp_notebook/notebook-artifacts/*_runs.json",
+
     f"{artifact_dirnames.NOTEBOOKS_CAPTURE_STATE}/nodes.json",
     f"{artifact_dirnames.NOTEBOOKS_CAPTURE_STATE}/ocp_version.yml",
     f"{artifact_dirnames.NOTEBOOKS_CAPTURE_STATE}/rhods.version",
@@ -158,6 +160,7 @@ def _parse_user_data(dirname, user_count):
         data.resource_times = _parse_resource_times(dirname, ci_pod_dirname)
         data.pod_times = _parse_pod_times(dirname, ci_pod_dirname)
         data.workflow_run_names = _parse_workflow_run_names(dirname, ci_pod_dirname)
+        data.submit_run_times =  _parse_submit_run_times(dirname, ci_pod_dir)
 
     return user_data
 
@@ -377,3 +380,24 @@ def _parse_workflow_run_names(dirname, ci_pod_dir):
     parse("workflow.json")
 
     return dict(all_workflow_run_names)
+
+@ignore_file_not_found
+def _parse_submit_run_times(dirname, ci_pod_dir):
+    all_submit_run_times = {}
+    logging.info(f"Parsing submit run times for {ci_pod_dir.name} ...")
+
+
+    run_times_files = list(ci_pod_dir.glob("*__pipelines__run_kfp_notebook/notebook-artifacts/*_runs.json"))
+    if not run_times_files:
+        logging.error(f"No run times JSON files available in {dirname} ...")
+        return
+
+    paths = [run_times_file.resolve().absolute().relative_to(dirname.absolute()) for run_times_file in run_times_files]
+    for path in paths:
+        with open(register_important_file(dirname, path)) as f:
+            data = json.load(f)
+
+        for run_name, submit_time in data.items():
+            all_submit_run_times[run_name] = datetime.fromisoformat(submit_time)
+
+    return dict(all_submit_run_times)

@@ -16,6 +16,7 @@ def register():
     RunTimeDistribution("Median runtime timeline")
     ResourceCreationTimeline()
     ResourceCreationDelay()
+    RunCreationDelay()
 
 def add_progress(entry, hide_failed_users, only_prefix=[], remove_prefix=True):
     data = []
@@ -415,3 +416,85 @@ class ResourceCreationDelay():
         fig.update_layout(title=title, title_x=0.5,)
 
         return fig, ""
+
+class RunCreationDelay():
+    def __init__(self):
+        self.name = "Run Creation Delay Timeline"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
+        if expe_cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            pass # entry is set
+
+        cfg__dspa_only = cfg.get("dspa_only", False)
+        cfg__pipeline_task_only = cfg.get("pipeline_task_only", False)
+
+        workflow_mapping = {}
+        workflow_ordering = {}
+        data = []
+        # Assemble the workflow names
+        for user_idx, user_data in entry.results.user_data.items():
+            for resource_name, creation_time in user_data.resource_times.items():
+                resource_type, resource_id = resource_name.split("/")
+                if resource_type == "Workflow":
+                    workflow_mapping[resource_id] = user_idx
+                    if user_idx not in workflow_ordering:
+                        workflow_ordering[user_idx] = []
+                    workflow_ordering[user_idx].append({"name": resource_name, "creation_time": creation_time})
+                    workflow_ordering[user_idx] = sorted(workflow_ordering[user_idx], key=lambda x: x["creation_time"])
+        for user_idx, user_data in entry.results.user_data.items():
+            for resource_name, creation_time in user_data.resource_times.items():
+                resource_key = re.sub(r'n([0-9]+)-', "nX-", resource_name)
+                if resource_name.split("/")[0] == "Workflow":
+                    workflow_run_name = user_data.workflow_run_names[resource_name.split("/")[1]]
+                    resource_key = f"Workflow/{workflow_run_name}"
+                    resource_key = resource_key.replace(f"user{user_idx}-", "")
+                    data.append({
+                            "User Index": int(user_idx),
+                            "User Name": f"User #{user_idx:03d}",
+                            "Resource": resource_name,
+                            "Resource Type": resource_key,
+                            "Delay Time": creation_time - user_data.submit_run_times["workflow_run_name"],
+                        })
+        if not data:
+            return None, "No data available"
+
+        df = pd.DataFrame(data).sort_values(by=["User Index", "Resource"], ascending=True)
+
+        fig = px.line(
+            df,
+            x="Delay Time",
+            y="User Name",
+            color="Resource Type",
+            title="Run creation delay time",
+            markers=True,
+            category_orders={
+                "User Name": df["User Name"].drop_duplicates().tolist()
+            }
+        )
+
+        fig.update_layout(xaxis_title="Timeline (in seconds)")
+        fig.update_layout(yaxis_title="")
+
+        what = ""
+        if cfg__dspa_only:
+            what = "DSPApplication "
+        if cfg__pipeline_task_only:
+            what = "Pipelines "
+
+        title = f"{what}Run Creation Delay Timeline"
+
+        fig.update_layout(title=title, title_x=0.5,)
+
+        return fig, ""
+
