@@ -419,7 +419,7 @@ class ResourceCreationDelay():
 
 class RunCreationDelay():
     def __init__(self):
-        self.name = "Run Creation Delay Timeline"
+        self.name = "Run Creation Delay"
         self.id_name = self.name
 
         table_stats.TableStats._register_stat(self)
@@ -463,27 +463,45 @@ class RunCreationDelay():
                             "User Index": int(user_idx),
                             "User Name": f"User #{user_idx:03d}",
                             "Resource": resource_name,
-                            "Resource Type": resource_key,
-                            "Delay Time": creation_time - user_data.submit_run_times["workflow_run_name"],
+                            "Run Name": resource_key,
+                            "Delay Time": (creation_time - user_data.submit_run_times[workflow_run_name]).total_seconds(),
                         })
         if not data:
             return None, "No data available"
 
-        df = pd.DataFrame(data).sort_values(by=["User Index", "Resource"], ascending=True)
+        data_df = pd.DataFrame(data)
+        data_df = data_df.sort_values(by=["Run Name"])
 
-        fig = px.line(
-            df,
-            x="Delay Time",
-            y="User Name",
-            color="Resource Type",
-            title="Run creation delay time",
-            markers=True,
-            category_orders={
-                "User Name": df["User Name"].drop_duplicates().tolist()
-            }
-        )
+        stats_data = []
+        base_value = 0
+        run_steps = data_df["Run Name"].unique()
+        msg = []
 
-        fig.update_layout(xaxis_title="Timeline (in seconds)")
+        for run_step in run_steps:
+            step_df = data_df[data_df["Run Name"] == run_step]
+            q1, median, q3 = stats.quantiles(step_df["Delay Time"]) if len(step_df["Delay Time"]) > 1 else (step_df["Delay Time"].iloc[0], step_df["Delay Time"].iloc[0], step_df["Delay Time"].iloc[0])
+            q1_dist = median-q1
+            q3_dist = q3-median
+            stats_data.append(dict(
+                Runs=run_step,
+                MedianDuration=median,
+                Q1=q1_dist,
+                Q3=q3_dist,
+                UserCount=str(entry.results.user_count),
+            ))
+
+            q1_txt = f"-{q1_dist:.0f}s" if round(q1_dist) >= 2 else ""
+            q3_txt = f"+{q3_dist:.0f}s" if round(q3_dist) >= 2 else ""
+            msg += [f"{run_step}: {median:.0f}s {q1_txt}{q3_txt}", html.Br()]
+
+        stats_df = pd.DataFrame(stats_data)
+
+        fig = px.bar(stats_df,
+                     x="Runs", y="MedianDuration", color="Runs",
+                     error_x_minus="Q1", error_x="Q3",
+                     title="Median Run Creation Delay")
+
+        fig.update_layout(xaxis_title="Delay Distribution (in seconds)")
         fig.update_layout(yaxis_title="")
 
         what = ""
@@ -496,5 +514,5 @@ class RunCreationDelay():
 
         fig.update_layout(title=title, title_x=0.5,)
 
-        return fig, ""
+        return fig, msg
 

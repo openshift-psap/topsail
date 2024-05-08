@@ -160,7 +160,7 @@ def _parse_user_data(dirname, user_count):
         data.resource_times = _parse_resource_times(dirname, ci_pod_dirname)
         data.pod_times = _parse_pod_times(dirname, ci_pod_dirname)
         data.workflow_run_names = _parse_workflow_run_names(dirname, ci_pod_dirname)
-        data.submit_run_times =  _parse_submit_run_times(dirname, ci_pod_dir)
+        data.submit_run_times =  _parse_submit_run_times(dirname, ci_pod_dirname)
 
     return user_data
 
@@ -398,6 +398,7 @@ def _parse_submit_run_times(dirname, ci_pod_dir):
             data = json.load(f)
 
         for run_name, submit_time in data.items():
-            all_submit_run_times[run_name] = datetime.fromisoformat(submit_time)
+            # Drop all granularity finer than the second, since th K8S timestamps don't include it
+            all_submit_run_times[run_name] = datetime.datetime.fromisoformat(submit_time).replace(microsecond=0)
 
     return dict(all_submit_run_times)
