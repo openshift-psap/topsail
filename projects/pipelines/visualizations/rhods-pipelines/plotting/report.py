@@ -159,7 +159,7 @@ class UserExecutionOverviewReport():
         header += ["This plot shows the delay of the resources creation: the line 'A -> B' in the legend show the delay between the creation of resource A and the creation of the resource B. Lower is better."]
 
         header += [html.H2("Run Creation Delay")]
-        header += [Plot(f"Run Creation Delay", set_config(dict(dspa_only=True), args))]
+        header += Plot_and_Text(f"Run Creation Delay", set_config(dict(dspa_only=True), args))
         header += ["This plot shows how long the delay is between when a Run is submitted via the API and when the OCP resource is created. The lower the better."]
 
         return None, header

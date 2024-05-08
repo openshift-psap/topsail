@@ -501,8 +501,8 @@ class RunCreationDelay():
                      error_x_minus="Q1", error_x="Q3",
                      title="Median Run Creation Delay")
 
-        fig.update_layout(xaxis_title="Delay Distribution (in seconds)")
-        fig.update_layout(yaxis_title="")
+        fig.update_layout(xaxis_title="Runs in Order of Execution")
+        fig.update_layout(yaxis_title="Delay from Submitting to Creation (in seconds)")
 
         what = ""
         if cfg__dspa_only:
@@ -510,7 +510,7 @@ class RunCreationDelay():
         if cfg__pipeline_task_only:
             what = "Pipelines "
 
-        title = f"{what}Run Creation Delay Timeline"
+        title = f"{what}Run Creation Delay Distribution"
 
         fig.update_layout(title=title, title_x=0.5,)
 
