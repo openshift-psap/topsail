@@ -160,7 +160,7 @@ class UserExecutionOverviewReport():
 
         header += [html.H2("Run Creation Delay")]
         header += Plot_and_Text(f"Run Creation Delay", set_config(dict(dspa_only=True), args))
-        header += ["This plot shows how long the delay is between when a Run is submitted via the API and when the OCP resource is created. The lower the better."]
+        header += ["This plot shows how long the delay is between when a Run is submitted via the API and when the root Workflow of the Pipeline is created. The lower the better."]
 
         return None, header
 

@@ -408,7 +408,7 @@ def _parse_workflow_start_times(dirname, ci_pod_dir):
         for entry in data:
             for item in entry["items"]:
                 metadata = item["metadata"]
-                status = item["metadata"]
+                status = item["status"]
                 kind = item["kind"]
                 creationTimestamp = datetime.datetime.strptime(
                     metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)

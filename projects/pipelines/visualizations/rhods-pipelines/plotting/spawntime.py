@@ -498,11 +498,11 @@ class RunCreationDelay():
 
         fig = px.bar(stats_df,
                      x="Runs", y="MedianDuration", color="Runs",
-                     error_x_minus="Q1", error_x="Q3",
+                     error_y_minus="Q1", error_y="Q3",
                      title="Median Run Creation Delay")
 
         fig.update_layout(xaxis_title="Runs in Order of Execution")
-        fig.update_layout(yaxis_title="Delay from Submitting to Creation (in seconds)")
+        fig.update_layout(yaxis_title="Delay Between Submitting Run and It Being Created (in seconds)")
 
         what = ""
         if cfg__dspa_only:
