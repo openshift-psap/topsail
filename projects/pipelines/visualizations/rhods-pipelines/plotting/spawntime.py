@@ -464,7 +464,7 @@ class RunCreationDelay():
                             "User Name": f"User #{user_idx:03d}",
                             "Resource": resource_name,
                             "Run Name": resource_key,
-                            "Delay Time": (creation_time - user_data.submit_run_times[workflow_run_name]).total_seconds(),
+                            "Delay Time": (user_data.workflow_start_times[resource_name.split("/")[1]] - user_data.submit_run_times[workflow_run_name]).total_seconds(),
                         })
         if not data:
             return None, "No data available"
