@@ -199,6 +199,9 @@ ci_presets:
     kserve.storage_config.use_https: "1"
     kserve.storage_config.verify_ssl: "0"
 
+  skip_opensearch_export:
+    matbench.lts.opensearch.export.enabled: false
+
   # ---
   # single-model
   # ---

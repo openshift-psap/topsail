@@ -557,6 +557,7 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
     with context:
         settings_filename = "settings.model.yaml" if matbenchmarking else "settings.yaml"
 
+        logging.info("Putting settings files in ARTIFACT_DIR: %s", env.ARTIFACT_DIR)
         with open(env.ARTIFACT_DIR / settings_filename, "w") as f:
             settings = dict(
                 e2e_test=True,
@@ -633,6 +634,10 @@ def matbenchmark_run_llm_load_test(namespace, llm_load_test_args, model_max_conc
 
 
 def run_one_matbench():
+    logging.info("In run_one_matbench. RUN_DIR: %s, ARTIFACT_DIR: %s", RUN_DIR, env.ARTIFACT_DIR)
+    ls_cwd = os.listdir()
+    ls_art = os.listdir(env.ARTIFACT_DIR)
+    logging.info("In run_one_matbench. Files in cwd: %s, \n files in ARTIFACT_DIR: %s", ls_cwd, ls_art)
     with env.TempArtifactDir(RUN_DIR):
         with open(env.ARTIFACT_DIR / "settings.yaml") as f:
             settings = yaml.safe_load(f)
