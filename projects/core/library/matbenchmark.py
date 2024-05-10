@@ -106,7 +106,7 @@ def run_benchmark(args):
         return True # failed
 
     try:
-        run.run(f"{cmd} --run 2>&1 | tee -a '{rehearsal_log_file}'")
+        run.run(f"{cmd} --run 2>&1 | tee -a '{test_log_file}'")
         logging.info("Benchmark done.")
     except Exception as e:
         logging.error(f"MatrixBenchmark benchmark failed.")
