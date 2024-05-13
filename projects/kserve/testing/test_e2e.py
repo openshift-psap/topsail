@@ -14,8 +14,8 @@ import fire
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
-import test_scale, prepare_kserve
-from projects.core.library import env, config, run, visualize, matbenchmark, merge_dicts
+import prepare_scale, test_scale, prepare_kserve
+from projects.core.library import env, config, run, visualize, matbenchmark
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
@@ -80,46 +80,7 @@ def consolidate_model(index=None, name=None, show=True):
         if not model_config:
             raise IndexError(f"Could not find model with name {name} for in model list. {model_list}")
     
-    return consolidate_model_config(model_config=model_config, index=index, show=show)
-
-
-def consolidate_model_config(config_location=None, model_config=None, index=None, show=True):
-
-    test_config = config.ci_artifacts.get_config(config_location) if config_location \
-        else {}
-
-    model_config = merge_dicts(test_config, model_config)
-
-    # model_config.name must be set
-    isvc_name = model_config.get("name")
-
-    if not isvc_name:
-        raise RuntimeError(f"Couldn't find a name for consolidating the model configuration ... {config_location}={test_config} and model_name={model_config}")
-
-    model_name = model_config.get("model")
-
-    # If model_config.model is not set, assume name is model
-    if not model_name:
-        model_name = model_config.get("name")
-        model_config["model"] = model_config.get("name")
-
-    # kserve_model = config(kserve.model)
-    kserve_model_config = config.ci_artifacts.get_config("kserve.model")
-
-    model_config = merge_dicts(model_config, kserve_model_config)
-
-    if index is not None:
-        model_config["index"] = index
-
-    if config_location:
-        config.ci_artifacts.set_config(config_location, model_config)
-
-    if show:
-        dump = yaml.dump(model_config,  default_flow_style=False, sort_keys=False).strip()
-        logging.info(f"Consolidated configuration for model '{model_name}':\n{dump}")
-
-    return model_config
-
+    return prepare_scale.consolidate_model_config(model_config=model_config, index=index, show=show)
 
 # ---
 

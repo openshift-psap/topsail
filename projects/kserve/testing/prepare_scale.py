@@ -3,8 +3,8 @@ import pathlib
 import os
 import yaml
 
-from projects.core.library import env, config, run, sizing
-import prepare_kserve, test_e2e
+from projects.core.library import env, config, run, sizing, merge_dicts
+import prepare_kserve
 
 from projects.gpu_operator.library import prepare_gpu_operator
 from projects.local_ci.library import prepare_user_pods
@@ -32,7 +32,7 @@ def prepare():
 
     test_mode = config.ci_artifacts.get_config("tests.mode")
     if test_mode == "scale":
-        test_e2e.consolidate_model_config("tests.scale.model")
+        consolidate_model_config("tests.scale.model")
         config.ci_artifacts.set_config("tests.scale.model.consolidated", True)
         user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
     elif test_mode in ("e2e", "prepare_only"):
@@ -128,3 +128,41 @@ def cluster_scale_down(to_zero=False):
     with run.Parallel("cluster_scale_down") as parallel:
         parallel.delayed(run.run_toolbox_from_config, "cluster", "set_scale", prefix="sutest", extra=extra)
         parallel.delayed(run.run_toolbox_from_config, "cluster", "set_scale", prefix="driver", extra=extra)
+
+def consolidate_model_config(config_location=None, model_config=None, index=None, show=True):
+
+    test_config = config.ci_artifacts.get_config(config_location) if config_location \
+        else {}
+
+    model_config = merge_dicts(test_config, model_config)
+
+    # model_config.name must be set
+    isvc_name = model_config.get("name")
+
+    if not isvc_name:
+        raise RuntimeError(f"Couldn't find a name for consolidating the model configuration ... {config_location}={test_config} and model_name={model_config}")
+
+    model_name = model_config.get("model")
+
+    # If model_config.model is not set, assume name is model
+    if not model_name:
+        model_name = model_config.get("name")
+        model_config["model"] = model_config.get("name")
+
+    # kserve_model = config(kserve.model)
+    kserve_model_config = config.ci_artifacts.get_config("kserve.model")
+
+    model_config = merge_dicts(model_config, kserve_model_config)
+
+    if index is not None:
+        model_config["index"] = index
+
+    if config_location:
+        config.ci_artifacts.set_config(config_location, model_config)
+
+    if show:
+        dump = yaml.dump(model_config,  default_flow_style=False, sort_keys=False).strip()
+        logging.info(f"Consolidated configuration for model '{model_name}':\n{dump}")
+
+    return model_config
+

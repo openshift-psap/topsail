@@ -7,7 +7,7 @@ import datetime
 import uuid
 
 from projects.core.library import env, config, run
-import prepare_scale, test_e2e
+import prepare_scale
 
 def test(test_artifact_dir_p=None):
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
@@ -191,7 +191,7 @@ def run_one():
     sync_file.unlink(missing_ok=True)
 
     try:
-        test_e2e.consolidate_model_config("tests.scale.model")
+        prepare_scale.consolidate_model_config("tests.scale.model")
         config.ci_artifacts.set_config("tests.scale.model.consolidated", True)
 
         prepare_user_sutest_namespace(namespace)
