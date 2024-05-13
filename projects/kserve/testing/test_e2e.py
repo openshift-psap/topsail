@@ -2,6 +2,14 @@
 
 import sys, os
 import pathlib
+
+from projects.core.library import config
+TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
+
+RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
+ARTIF_DIR = os.environ.get("ARTIFACT_DIR")
+print(f"STARTING test_e2e with RUN_DIR= { RUN_DIR }, ARTIFACT_DIR = { ARTIF_DIR }")
+
 import subprocess
 import logging
 import datetime
@@ -14,11 +22,10 @@ import fire
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
+from projects.core.library import env, run, visualize, matbenchmark
 import prepare_scale, test_scale, prepare_kserve
-from projects.core.library import env, config, run, visualize, matbenchmark
-TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
-RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
+print(f"STARTING test_e2e with RUN_DIR= { RUN_DIR }, ARTIFACT_DIR = { ARTIF_DIR }")
 os.chdir(TOPSAIL_DIR)
 
 # ---
@@ -595,10 +602,9 @@ def matbenchmark_run_llm_load_test(namespace, llm_load_test_args, model_max_conc
 
 
 def run_one_matbench():
-    logging.info("In run_one_matbench. RUN_DIR: %s, ARTIFACT_DIR: %s", RUN_DIR, env.ARTIFACT_DIR)
-    ls_cwd = os.listdir()
-    ls_art = os.listdir(env.ARTIFACT_DIR)
-    logging.info("In run_one_matbench. Files in cwd: %s, \n files in ARTIFACT_DIR: %s", ls_cwd, ls_art)
+    cwd = pathlib.Path(os.getcwd()) # for run_one_matbench
+    logging.info("In run_one_matbench. CWD: %s, RUN_DIR: %s, ARTIFACT_DIR: %s", cwd, RUN_DIR, env.ARTIFACT_DIR)
+
     with env.TempArtifactDir(RUN_DIR):
         with open(env.ARTIFACT_DIR / "settings.yaml") as f:
             settings = yaml.safe_load(f)
