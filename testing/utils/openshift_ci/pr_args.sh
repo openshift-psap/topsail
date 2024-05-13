@@ -99,7 +99,7 @@ last_user_test_comment=$(echo "$last_comment_page_json" \
                              | tail -1 | jq -r)
 
 if [[ -z "$last_user_test_comment" ]]; then
-    echo "ERROR: last comment of from a '$REQUIRED_AUTHOR_ASSOCIATION' could not be found (searching for '$test_anchor') ..." >&2
+    echo "ERROR: last comment of from a '$REQUIRED_AUTHOR_ASSOCIATION' or author=$REQUIRED_AUTHOR could not be found (searching for '$test_anchor') ..." >&2
     exit 1
 fi
 
