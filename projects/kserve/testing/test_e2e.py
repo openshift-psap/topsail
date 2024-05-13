@@ -654,7 +654,13 @@ def test_consolidated_model(consolidated_model, namespace=None):
         svc_name = run.run(f"oc get svc -lserving.kserve.io/inferenceservice={inference_service_name} -ojsonpath={{.items[0].metadata.name}} -n {namespace}", capture_stdout=True).stdout
         if not svc_name:
             raise RuntimeError(f"Failed to get the hostname for Service of InferenceService {namespace}/{model_name}")
-        port = 8033
+         
+        # TODO this should probably be based on whether we are using http or gRPC.
+        if config.ci_artifacts.get_config("kserve.model.runtime") == "vllm":
+            port = 8080
+        else: # Assume TGIS gRPC
+            port = 8033
+
         host = f"{svc_name}.{namespace}.svc.cluster.local"
     else:
         host_url = run.run(f"oc get inferenceservice/{inference_service_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
