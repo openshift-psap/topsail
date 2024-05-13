@@ -32,9 +32,11 @@ ci_presets:
     extends: [metal]
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
+    clusters.sutest.compute.machineset.type: "Icelake"
 
   scale_test:
     tests.pipelines.user_count: 100
+    tests.pipelines.project_count: 100
     tests.pipelines.sleep_factor: 1
 
   load_aware:
@@ -42,6 +44,7 @@ ci_presets:
     clusters.sutest.compute.dedicated: false
     clusters.driver.compute.dedicated: false
     tests.pipelines.user_count: 5
+    tests.pipelines.project_count: 5
     clusters.create.ocp.tags.Project: PSAP/RHODS/Pipelines/load-aware
     clusters.create.ocp.tags.TicketId: 115
 
@@ -57,6 +60,30 @@ ci_presets:
     tests.pipelines.notebook_filename: kfp_timed_multistage.ipynb
     tests.pipelines.notebook_directory: projects/pipelines/testing/notebooks/timed-multistage
 
+  pipeline_iris:
+    tests.pipelines.notebook_filename: kfp_iris.ipynb
+    tests.pipelines.notebook_directory: projects/pipelines/testing/notebooks/iris
+
+  single_project:
+    tests.pipelines.project_count: 1
+
+  mixed_light:
+    tests.pipelines.user_count: 4
+    tests.pipelines.pipelines_per_user: 2
+    tests.pipelines.project_count: 2
+
+  mixed_workload:
+    tests.pipelines.user_count: 25
+    tests.pipelines.pipelines_per_user: 4
+    tests.pipelines.project_count: 5
+
+  multiple_runs:
+    tests.pipelines.user_count: 1
+    tests.pipelines.pipelines_per_user: 1
+    tests.pipelines.project_count: 1
+    tests.pipelines.runs_per_pipeline: 2
+    tests.pipelines.run_delay: 15
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -67,7 +94,7 @@ secrets:
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   opensearch_instances: opensearch.yaml
 clusters:
-  metal:
+  metal_profiles:
     e26-h23-000-r650: icelake
   create:
     type: single # can be: single, ocp, managed
@@ -127,20 +154,22 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 697386
-    channel: alpha
+    tag: 711514
+    channel: fast
     version: 2.9.0
-    version_name: dspv2
+    version_name: rc1
   pipelines:
     application:
       name: sample
+    notebook:
+      name: SET_AT_RUNTIME
     namespace: pipelines-test
     namespace_label:
       key: dsp-scale-test
       value: "true"
     workbench:
       imagestream: s2i-generic-data-science-notebook
-      imagestream_tag: 2023.1 # follow https://www.kubeflow.org/docs/components/pipelines/v2/migration/ to use a more recent image
+      imagestream_tag: 2024.1 # follow https://www.kubeflow.org/docs/components/pipelines/v2/migration/ to use a more recent image
   operator:
     # set to true to stop the RHODS operator
     stop: false
@@ -164,9 +193,15 @@ tests:
     deploy_pipeline: true
     notebook_filename: kfp_hello_world.ipynb
     notebook_directory: projects/pipelines/testing/notebooks/hello-world
+    project_count: 2
     user_count: 2
+    pipelines_per_user: 1
+    runs_per_pipeline: 1
+    run_delay: 10
+    user_pipeline_delay: 5
     sleep_factor: 1
     user_batch_size: 1
+    use_single_project: false
 matbench:
   preset: null
   workload: projects.pipelines.visualizations.rhods-pipelines
@@ -185,7 +220,10 @@ matbench:
     horreum:
       test_name: null
     opensearch:
-      export: false
+      export:
+        enabled: false
+        enabled_on_replot: false
+        fail_test_on_fail: false
       fail_test_on_fail: false
       instance: smoke
       index: pipelines

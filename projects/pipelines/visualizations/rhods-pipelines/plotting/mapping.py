@@ -27,8 +27,8 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
             if pipeline_task_only and not pod_time.is_pipeline_task:
                 continue
 
-            pod_name = pod_time.pod_friendly_name
-            hostname = pod_time.hostname
+            pod_name = pod_time.pod_friendly_name or "podname"
+            hostname = pod_time.hostname or "hostname"
 
             shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "").replace(".ec2.internal", "")
             if pod_time.container_finished:
@@ -41,15 +41,17 @@ def generate_data(entry, cfg, dspa_only=False, pipeline_task_only=False):
             except ValueError:
                 hostname_index = -1
 
+            start_time = pod_time.start_time or finish # Handle the exceptional case that there is no startime
+
             user_index = f"User #{user_idx:02d}"
             data.append(dict(
                 UserIndex = user_index,
                 PodOwner = f"{pod_name} -- {user_index}",
                 PodName = pod_name,
                 UserIdx = user_idx,
-                PodStart = pod_time.start_time,
+                PodStart = start_time,
                 PodFinish = finish,
-                Duration = (finish - pod_time.start_time).total_seconds(),
+                Duration = (finish - start_time).total_seconds(),
                 NodeIndex = f"Node {hostname_index}",
                 NodeName = f"Node {hostname_index}<br>{shortname}",
                 Count=1,

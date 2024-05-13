@@ -56,6 +56,12 @@ spec:
           value: "{{ dsp_route }}"
         - name: NOTEBOOK_FILES
           value: /mnt/notebook_files
+        - name: PIPELINE_NAME
+          value: "{{ pipeline_name }}"
+        - name: RUN_COUNT
+          value: "{{ run_count }}"
+        - name: RUN_DELAY
+          value: "{{ run_delay }}"
         image: {{ notebook_image_address }}
         imagePullPolicy: Always
         livenessProbe:

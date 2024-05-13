@@ -43,6 +43,8 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.LOCAL_CI__RUN_MULTI}/artifacts/ci-pod-*/*__pipelines__capture_state/deployments.json",
     f"{artifact_dirnames.LOCAL_CI__RUN_MULTI}/artifacts/ci-pod-*/*__pipelines__capture_state/pipelines.json",
 
+    f"{artifact_dirnames.LOCAL_CI__RUN_MULTI}/artifacts/ci-pod-*/*__pipelines__run_kfp_notebook/notebook-artifacts/*_runs.json",
+
     f"{artifact_dirnames.NOTEBOOKS_CAPTURE_STATE}/nodes.json",
     f"{artifact_dirnames.NOTEBOOKS_CAPTURE_STATE}/ocp_version.yml",
     f"{artifact_dirnames.NOTEBOOKS_CAPTURE_STATE}/rhods.version",
@@ -157,6 +159,10 @@ def _parse_user_data(dirname, user_count):
 
         data.resource_times = _parse_resource_times(dirname, ci_pod_dirname)
         data.pod_times = _parse_pod_times(dirname, ci_pod_dirname)
+        data.workflow_run_names = _parse_workflow_run_names(dirname, ci_pod_dirname)
+        data.workflow_start_times =  _parse_workflow_start_times(dirname, ci_pod_dirname)
+        data.submit_run_times =  _parse_submit_run_times(dirname, ci_pod_dirname)
+
 
     return user_data
 
@@ -199,6 +205,7 @@ def _extract_metrics(dirname):
     db_files = {
         "sutest": (f"{artifact_paths.LOCAL_CI__RUN_MULTI}/prometheus_ocp.t*", rhods_pipelines_prom.get_sutest_metrics()),
         "driver": (f"{artifact_paths.LOCAL_CI__RUN_MULTI}/prometheus_ocp.t*", rhods_pipelines_prom.get_driver_metrics()),
+        "dspa": (f"{artifact_paths.LOCAL_CI__RUN_MULTI}/prometheus_ocp.t*", rhods_pipelines_prom.get_dspa_metrics()),
     }
 
     return core_helpers_store_parsers.extract_metrics(dirname, db_files)
@@ -216,13 +223,15 @@ def _parse_pod_times(dirname, ci_pod_dir):
         pod_times.append(pod_time)
         pod_time.is_pipeline_task = False
         pod_time.is_dspa = False
+        pod_time.parent_workflow = ""
 
         if pod["metadata"]["labels"].get("component") == "data-science-pipelines":
             pod_friendly_name = pod["metadata"]["labels"]["app"]
             pod_time.is_dspa = True
 
-        elif pod["metadata"]["labels"].get("pipelines.kubeflow.org/pipeline-sdk-type") == "kfp":
-            pod_friendly_name = pod["metadata"]["labels"]["workflows.argoproj.io/workflow"]
+        elif pod["metadata"]["labels"].get("pipelines.kubeflow.org/v2_component") == "true":
+            pod_friendly_name = pod["metadata"]["name"]
+            pod_time.parent_workflow = pod["metadata"]["labels"]["workflows.argoproj.io/workflow"]
             pod_time.is_pipeline_task = True
 
         elif pod["metadata"].get("generateName"):
@@ -306,26 +315,142 @@ def _parse_resource_times(dirname, ci_pod_dir):
 
         file_path = (state_dirs[0] / fname).resolve().absolute().relative_to(dirname.absolute())
         with open(register_important_file(dirname, file_path)) as f:
-            data = yaml.safe_load(f)
+            data = json.load(f)
 
-        for item in data["items"]:
-            metadata = item["metadata"]
+        if type(data) is dict:
+            data = [data]
 
-            kind = item["kind"]
-            creationTimestamp = datetime.datetime.strptime(
-                metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+        for entry in data:
+            for item in entry["items"]:
+                metadata = item["metadata"]
 
-            name = metadata["name"]
-            generate_name, found, suffix = name.rpartition("-")
-            remove_suffix = ((found and not suffix.isalpha()))
+                kind = item["kind"]
+                creationTimestamp = datetime.datetime.strptime(
+                    metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
 
-            if remove_suffix:
-                name = generate_name # remove generated suffix
+                name = metadata["name"]
+                generate_name, found, suffix = name.rpartition("-")
+                remove_suffix = ((found and not suffix.isalpha()))
 
-            all_resource_times[f"{kind}/{name}"] = creationTimestamp
+                if remove_suffix and kind != "Workflow":
+                    name = generate_name # remove generated suffix
+
+                all_resource_times[f"{kind}/{name}"] = creationTimestamp
 
     parse("applications.json")
     parse("deployments.json")
     parse("workflow.json")
 
     return dict(all_resource_times)
+
+def _parse_workflow_run_names(dirname, ci_pod_dir):
+    all_workflow_run_names = {}
+    logging.info(f"Parsing {ci_pod_dir.name} ...")
+
+    @ignore_file_not_found
+    def parse(fname):
+        state_dirs = list(ci_pod_dir.glob("*__pipelines__capture_state"))
+        if not state_dirs:
+            logging.error(f"No '*__pipelines__capture_state' available in {dirname} ...")
+            return
+
+        file_path = (state_dirs[0] / fname).resolve().absolute().relative_to(dirname.absolute())
+        with open(register_important_file(dirname, file_path)) as f:
+            data = json.load(f)
+
+        if type(data) is dict:
+            data = [data]
+
+        for entry in data:
+            for item in entry["items"]:
+                metadata = item["metadata"]
+
+                kind = item["kind"]
+                creationTimestamp = datetime.datetime.strptime(
+                    metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+
+                name = metadata["name"]
+                generate_name, found, suffix = name.rpartition("-")
+                remove_suffix = ((found and not suffix.isalpha()))
+
+                if remove_suffix and kind != "Workflow":
+                    name = generate_name # remove generated suffix
+
+                if kind == "Workflow":
+                    all_workflow_run_names[f"{name}"] = metadata["annotations"]["pipelines.kubeflow.org/run_name"]
+
+    parse("workflow.json")
+
+    return dict(all_workflow_run_names)
+
+def _parse_workflow_start_times(dirname, ci_pod_dir):
+    """
+    Measure the start time as .status.nodes[].startedAt where the .status.nodes[].templateName == 'root'
+    This is the time that the first stage of the pipeline is started
+    """
+    all_workflow_start_times = {}
+    logging.info(f"Parsing {ci_pod_dir.name} ...")
+
+    @ignore_file_not_found
+    def parse(fname):
+        state_dirs = list(ci_pod_dir.glob("*__pipelines__capture_state"))
+        if not state_dirs:
+            logging.error(f"No '*__pipelines__capture_state' available in {dirname} ...")
+            return
+
+        file_path = (state_dirs[0] / fname).resolve().absolute().relative_to(dirname.absolute())
+        with open(register_important_file(dirname, file_path)) as f:
+            data = json.load(f)
+
+        if type(data) is dict:
+            data = [data]
+
+        for entry in data:
+            for item in entry["items"]:
+                metadata = item["metadata"]
+                status = item["status"]
+                kind = item["kind"]
+                creationTimestamp = datetime.datetime.strptime(
+                    metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+
+                name = metadata["name"]
+                generate_name, found, suffix = name.rpartition("-")
+                remove_suffix = ((found and not suffix.isalpha()))
+
+                if remove_suffix and kind != "Workflow":
+                    name = generate_name # remove generated suffix
+
+                if kind == "Workflow":
+                    root_node = {}
+                    for node_name, node_spec in status["nodes"].items():
+                        if node_spec["templateName"] == "root":
+                            root_node = node_spec
+                            break
+                    all_workflow_start_times[f"{name}"] = datetime.datetime.strptime(
+                        root_node["startedAt"], core_helpers_store_parsers.K8S_TIME_FMT)
+
+    parse("workflow.json")
+
+    return dict(all_workflow_start_times)
+
+@ignore_file_not_found
+def _parse_submit_run_times(dirname, ci_pod_dir):
+    all_submit_run_times = {}
+    logging.info(f"Parsing submit run times for {ci_pod_dir.name} ...")
+
+
+    run_times_files = list(ci_pod_dir.glob("*__pipelines__run_kfp_notebook/notebook-artifacts/*_runs.json"))
+    if not run_times_files:
+        logging.error(f"No run times JSON files available in {dirname} ...")
+        return
+
+    paths = [run_times_file.resolve().absolute().relative_to(dirname.absolute()) for run_times_file in run_times_files]
+    for path in paths:
+        with open(register_important_file(dirname, path)) as f:
+            data = json.load(f)
+
+        for run_name, submit_time in data.items():
+            # Drop all granularity finer than the second, since th K8S timestamps don't include it
+            all_submit_run_times[run_name] = datetime.datetime.fromisoformat(submit_time).replace(microsecond=0)
+
+    return dict(all_submit_run_times)

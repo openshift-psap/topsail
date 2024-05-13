@@ -15,11 +15,20 @@ pipelines_run_kfp_notebook_imagestream: s2i-generic-data-science-notebook
 # Imagestream tag to use to look up the notebook Pod image. If emtpy and and the image stream has only one tag, use it. Fails otherwise.
 pipelines_run_kfp_notebook_imagestream_tag:
 
+# A prefix to add the name of the notebook to differential notebooks in the same project
+pipelines_run_kfp_notebook_notebook_name:
+
 # Directory containing the files to mount in the notebook.
 pipelines_run_kfp_notebook_notebook_directory: testing/pipelines/notebooks/hello-world
 
 # Name of the ipynb notebook file to execute with JupyterLab.
 pipelines_run_kfp_notebook_notebook_filename: kfp_hello_world.ipynb
+
+# Number of times to run the pipeline
+pipelines_run_kfp_notebook_run_count: 0
+
+# Number of seconds to wait before trigger the next run from the notebook
+pipelines_run_kfp_notebook_run_delay: 0
 
 # If False, keep the notebook running after the test.
 pipelines_run_kfp_notebook_stop_on_exit: true

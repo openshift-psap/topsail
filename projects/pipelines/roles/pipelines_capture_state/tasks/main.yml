@@ -1,4 +1,15 @@
 ---
+- name: Assemble known pod prefixes
+  set_fact:
+    known_pod_prefixes:
+      - "ds-pipeline"
+      - "mariadb"
+      - "minio"
+
+- name: Check if the test is small (< 50 users)
+  set_fact:
+    is_small_test: "{% if pipelines_capture_state_user_count < 50 %}true{% else %}false{% endif %}"
+
 - name: Get the name of the current project
   command:
     oc project --short
@@ -8,6 +19,7 @@
 - name: Define the test environment
   set_fact:
     namespace: "{% if pipelines_capture_state_namespace | length > 0 %}{{ pipelines_capture_state_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
+    user_id: "{{ pipelines_capture_state_user_id }}"
 
 - name: Compute the DSP application name
   shell:
@@ -33,36 +45,56 @@
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/events.status"
   ignore_errors: true
+  when: is_small_test
 
 - name: Get the json definition of the events
   shell:
     oc get events -ojson
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/events.json"
+  when: is_small_test
 
 - name: Save the workflow status
   shell:
     oc get workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.status"
   ignore_errors: true
+  when: is_small_test
 
 - name: Save the pipeline description
   shell:
     oc describe workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.desc"
   ignore_errors: true
+  when: is_small_test
 
 - name: Save the pipeline definition
   shell:
     oc get -oyaml workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.yaml"
   ignore_errors: true
+  when: is_small_test
 
 - name: Save the pipeline JSON definition
   shell:
-    oc get -ojson workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.json"
+    set -o pipefail;
+    oc get -ojson workflow.argoproj.io -n "{{ namespace }}"
+      | jq '[[.items[] | select(.metadata.annotations."pipelines.kubeflow.org/run_name"|contains("user{{ user_id }}-"))]] | {"apiVersion"{{ ":" }} "v1", "items"{{ ":" }} add}'
+      > "{{ artifact_extra_logs_dir }}/workflow.json"
   ignore_errors: true
 
 - name: Save the deployments definition
   shell:
     oc get -ojson deployments -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/deployments.json"
+
+- name: Assemble workflow pod prefixes
+  shell:
+    set -o pipefail;
+    cat "{{ artifact_extra_logs_dir }}/workflow.json"
+      | jq -r '.items[].metadata.name'
+  ignore_errors: true
+  register: workflow_pod_prefix_cmd
+
+- name: Assemble all allowed prefixes
+  set_fact:
+    all_allowed_prefixes: "{{ known_pod_prefixes + workflow_pod_prefix_cmd.stdout_lines }}"
 
 - name: Save the status of the pods
   shell:
@@ -70,12 +102,18 @@
        -n "{{ namespace }}"
        > "{{ artifact_extra_logs_dir }}/pods.status"
   register: dspa_pod_names_cmd
+  when: is_small_test
 
 - name: Get the names of the pods
-  command:
-    oc get pods
-       -n "{{ namespace }}"
-       -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+  shell: |
+    set -o pipefail;
+    all_pods=$(oc get pods -n "{{ namespace }}" -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+    prefixes={{ all_allowed_prefixes | join(' ') | quote }}
+    for pod_name in $all_pods; do
+      for prefix in $prefixes; do
+        echo $pod_name | grep $prefix || true
+      done
+    done
   register: dspa_pod_names_cmd
 
 - name: Create the pods directory
@@ -92,6 +130,7 @@
        --all-containers --prefix
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.log"
   ignore_errors: true
+  when: is_small_test
 
 - name: Capture the description of the application pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
@@ -100,6 +139,7 @@
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.desc"
   ignore_errors: true
+  when: is_small_test
 
 - name: Capture the yaml definition of the pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
@@ -109,6 +149,7 @@
        -oyaml
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.yaml"
   ignore_errors: true
+  when: is_small_test
 
 - name: Capture the json definition of the pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
@@ -170,5 +211,6 @@
 - name: Dump the content of the DSPApplication database
   shell:
     oc rsh -n {{ namespace }}
-       deploy/mariadb-sample
+       deploy/mariadb-{{ dspa_application_name }}
        mysqldump -u root mlpipeline > "{{ artifact_extra_logs_dir }}/database.sql"
+  when: is_small_test

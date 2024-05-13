@@ -1,3 +1,5 @@
+import logging
+
 import projects.core.visualizations.helpers.store.prom as core_prom_store
 import matrix_benchmarking.plotting.prom.cpu_memory as plotting_prom_cpu_memory
 
@@ -30,9 +32,21 @@ def get_driver_metrics(register=False):
 
     return all_metrics
 
+DSPA_CONTAINER_LABELS = [
+    {"DSPA Pods": dict(namespace="pipelines-test-.*", pod="ds-pipeline-.*")},
+]
+
+def get_dspa_metrics(register=False):
+    cluster_role = "dspa"
+
+    all_metrics = []
+    all_metrics += core_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=DSPA_CONTAINER_LABELS)
+
+    return all_metrics
 
 def register(only_initialize=False):
     register = not only_initialize
 
+    get_dspa_metrics(register)
     get_sutest_metrics(register)
     get_driver_metrics(register)

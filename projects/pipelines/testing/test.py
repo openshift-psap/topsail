@@ -88,15 +88,15 @@ def uninstall_ocp_pipelines():
 
 
 def create_dsp_application():
-    run.run_toolbox_from_config("pipelines", "deploy_application")
-
+    dspa_name = config.ci_artifacts.get_config("rhods.pipelines.application.name")
+    if run.run(f'oc get dspa/"{dspa_name}" 2>/dev/null', check=False).returncode != 0:
+        run.run_toolbox_from_config("pipelines", "deploy_application")
 
 @entrypoint()
 def prepare_rhods():
     """
     Prepares the cluster for running RHODS pipelines scale tests.
     """
-    install_ocp_pipelines()
 
     token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
     prepare_rhoai.install(token_file)
@@ -108,6 +108,8 @@ def prepare_rhods():
     customize_rhods()
 
     run.run_toolbox_from_config("cluster", "deploy_ldap")
+
+    install_ocp_pipelines()
 
 
 def compute_node_requirement(driver=False, sutest=False):
@@ -165,8 +167,6 @@ def prepare_pipelines_namespace():
     run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="pipelines_node_selector", extra=dedicated)
     run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="pipelines_toleration" , extra=dedicated)
 
-    create_dsp_application()
-
 
 @entrypoint()
 def prepare_test_driver_namespace():
@@ -218,18 +218,40 @@ def pipelines_run_one():
     Runs a single Pipeline scale test.
     """
 
-    if job_index := os.environ.get("JOB_COMPLETION_INDEX"):
+    project_count = config.ci_artifacts.get_config("tests.pipelines.project_count")
+    user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+    pipelines_per_user = config.ci_artifacts.get_config("tests.pipelines.pipelines_per_user")
+
+    uid = "-1"
+    if user_index := os.environ.get("JOB_COMPLETION_INDEX"):
+        uid = user_index
+
         namespace = config.ci_artifacts.get_config("rhods.pipelines.namespace")
-        new_namespace = f"{namespace}-user-{job_index}"
+        ns_index = int(user_index) % int(project_count)
+        new_namespace = f"{namespace}-n{ns_index}"
         logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
         config.ci_artifacts.set_config("rhods.pipelines.namespace", new_namespace)
+        application_name = f"n{ns_index}-sample"
+        config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
 
     try:
+
         prepare_pipelines_namespace()
-        if config.ci_artifacts.get_config("tests.pipelines.deploy_pipeline"):
-            run.run_toolbox_from_config("pipelines", "run_kfp_notebook")
+        create_dsp_application()
+
+        if not config.ci_artifacts.get_config("tests.pipelines.deploy_pipeline"):
+            return
+
+        user_pipeline_delay = int(config.ci_artifacts.get_config("tests.pipelines.user_pipeline_delay"))
+        for pipeline_num in range(pipelines_per_user):
+            logging.info(f"Running run_kfp_notebook for pipeline {pipeline_num}")
+            notebook_name = f"user{uid}-pl{pipeline_num}"
+            run.run_toolbox_from_config("pipelines", "run_kfp_notebook", extra={"notebook_name": notebook_name})
+            if pipeline_num != pipelines_per_user - 1:
+                time.sleep(user_pipeline_delay)
+
     finally:
-        run.run_toolbox_from_config("pipelines", "capture_state", mute_stdout=True)
+        run.run_toolbox_from_config("pipelines", "capture_state", mute_stdout=True, extra={"user_id": uid})
 
 
 @entrypoint()
@@ -357,6 +379,9 @@ def test_ci():
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
     finally:
+
+        run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
+
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             pipelines_cleanup_cluster()
 
@@ -369,6 +394,10 @@ def generate_plots_from_pr_args():
 def generate_plots(results_dirname):
     visualize.generate_from_dir(str(results_dirname))
 
+@entrypoint()
+def rebuild_driver_image(pr_number):
+    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    prepare_user_pods.rebuild_driver_image(namespace, pr_number)
 
 class Pipelines:
     """
@@ -381,6 +410,7 @@ class Pipelines:
         self.prepare_pipelines_namespace = prepare_pipelines_namespace
         self.prepare_test_driver_namespace = prepare_test_driver_namespace
         self.prepare_sutest_scale_up = prepare_sutest_scale_up
+        self.rebuild_driver_image = rebuild_driver_image
 
         self.run_one = pipelines_run_one
         self.run = pipelines_run_many

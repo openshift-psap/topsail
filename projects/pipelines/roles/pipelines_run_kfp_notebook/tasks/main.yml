@@ -62,7 +62,7 @@
 
 - name: Set the name of the token secret
   set_fact:
-    secret_token_name: "secret-token"
+    secret_token_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}-{% endif %}secret-token"
 
 - name: Get the image address
   command:
@@ -79,15 +79,18 @@
 
 - name: Define the test environment
   set_fact:
-    notebook_name: pipeline-notebook
-    notebook_container: pipeline-notebook
+    notebook_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}-{% endif %}pipeline-notebook"
+    notebook_container: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}-{% endif %}pipeline-notebook"
     notebook_namespace: "{% if pipelines_run_kfp_notebook_namespace | length > 0 %}{{ pipelines_run_kfp_notebook_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
     notebook_src_template_dest: "{{ artifact_extra_logs_dir }}/src/000_rhods_notebook.yaml"
-    notebook_file_cm_name: pipeline-notebook-files
+    notebook_file_cm_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}-{% endif %}pipeline-notebook-files"
     capture_prom_db: pipelines_run_kfp_notebook_capture_prom_db
     notebook_image_address: "{{ rhods_image_address_cmd.stdout }}"
+    pipeline_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}{% endif %}"
+    run_count: "{{ pipelines_run_kfp_notebook_run_count }}"
+    run_delay: "{{ pipelines_run_kfp_notebook_run_delay }}"
 
-- name: Define the test environment
+- name: Define the search labels
   set_fact:
     notebook_search_labels: "-lci-artifacts.single-notebook-perf=true -lapp={{ notebook_name }}"
 
@@ -148,9 +151,9 @@
 
 # ---
 
-- name: Save the DSP route
+- name: Save the Service Account
   set_fact:
-    sa_name: pipeline-sa
+    sa_name: "{% if pipelines_run_kfp_notebook_notebook_name != '' %}{{ pipelines_run_kfp_notebook_notebook_name }}-{% endif %}pipeline-sa"
     sa_cluster_role: cluster-admin
 
 - name: Create the service account that will be used in the Notebook
@@ -186,10 +189,6 @@
     path: "{{ artifact_extra_logs_dir }}/notebook-artifacts/"
     state: directory
     mode: '0755'
-
-- name: Delete the existing workflows/pipelines
-  command:
-    oc delete workflows.argoproj.io --all -n "{{ notebook_namespace }}"
 
 # ---
 
@@ -260,14 +259,28 @@
               && jupyter nbconvert --to html results/$(basename "$NOTEBOOK_FILENAME" .ipynb).executed.ipynb'
     register: notebook_execution
 
+  - name: Get the name of the workflows
+    shell:
+      set -o pipefail;
+      oc get workflow.argoproj.io -n "{{ notebook_namespace }}" -ojson | jq '.items[].metadata | select(.annotations."pipelines.kubeflow.org/run_name" | contains("{{ pipeline_name }}"))|.name' -r
+    register: generated_pipeline_name_cmd
+    retries: 10
+    delay: 2
+    until: generated_pipeline_name_cmd.stdout | length > 0
+
   - name: Wait for the pipeline execution to complete
     shell:
       set -o pipefail;
-      oc get workflow.argoproj.io -ojson -n "{{ notebook_namespace }}" | jq .items[0].status.phase -r
+      oc get workflow.argoproj.io {{ generated_pipeline_name_cmd.stdout_lines | join(" ") }} -ojson -n "{{ notebook_namespace }}"
+        | {% if generated_pipeline_name_cmd.stdout_lines | length > 1 %}jq .items[].status.phase -r{% else %}jq .status.phase -r{% endif %}
     register: workflow_phase_cmd
     retries: 120
     delay: 10
-    until: workflow_phase_cmd.stdout and "Running" not in workflow_phase_cmd.stdout
+    until: workflow_phase_cmd.stdout and "Running" not in workflow_phase_cmd.stdout and "Pending" not in workflow_phase_cmd.stdout
+
+  - name: Check if the pipeline ended in Failure
+    fail: msg="the pipeline execution finished but ended as Failed"
+    when: '"Failed" in workflow_phase_cmd.stdout or "null" in workflow_phase_cmd.stdout'
 
   - name: Generate MatrixBenchmark exit code file
     shell:
@@ -275,7 +288,7 @@
 
   always:
   - name: Delete the secret token
-    command: oc delete secret/secret_token_name -n "{{ notebook_namespace }}" --ignore-not-found
+    command: oc delete secret/{{ secret_token_name }} -n "{{ notebook_namespace }}" --ignore-not-found
     failed_when: false
 
   - name: Capture the artifacts
