@@ -132,6 +132,19 @@ class SuccessCountDistribution():
 
 # ---
 
+# See https://github.com/IBM/vllm/blob/21fb852e754158a37230cfa6e7faf77c0b814896/vllm/entrypoints/grpc/grpc_server.py#L415
+def convertvLLMFinishReason(reason):
+    if reason == "length":
+        return 1 #TODO could also be 6 / TOKEN_LIMIT
+    elif reason == "stop":
+        return 2 #TODO could also be 5 / STOP_SEQUENCE
+    elif reason == "abort":
+        return 3
+    else:
+        logging.warning("Unrecognized finish_reason: %s", reason)
+        return None
+
+
 def generateFinishReasonData(entries, variables):
     # https://github.com/IBM/text-generation-inference/blob/88f2a0b858b9f080f42cde388c4ebec961b9fa7d/proto/generation.proto#L155-L172
     STOP_REASONS = {
@@ -169,7 +182,10 @@ def generateFinishReasonData(entries, variables):
             #elif reason == 1: # MAX_TOKENS: good, ignore
             #    continue
             else:
-                reason = STOP_REASONS[reason]
+                if isinstance(reason, str): # vLLM
+                    reason = STOP_REASONS[convertvLLMFinishReason(reason)]
+                else:
+                    reason = STOP_REASONS[reason]
 
             finishReasons[reason] += 1
 
