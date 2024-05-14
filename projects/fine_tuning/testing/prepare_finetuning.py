@@ -118,7 +118,16 @@ def download_data_sources(test_settings):
 
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
 
-    for source_name in [model_name, dataset_name]:
+    sources_name = [dataset_name]
+    if model_name is None:
+        multi_models = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.models")
+        for model in multi_models:
+            sources_name.append(model["name"])
+    else:
+        sources_name.append(model_name)
+
+
+    for source_name in sources_name:
         if pvc_name in run.run(f"oc get pvc -n {namespace} -oname -l{source_name}=yes", check=False, capture_stdout=True).stdout:
             logging.info(f"PVC {pvc_name} already has data source '{source_name}'")
             continue

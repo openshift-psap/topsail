@@ -6,6 +6,7 @@ import pathlib
 import yaml
 import uuid
 import time
+import threading
 
 from projects.core.library import env, config, run, visualize, matbenchmark
 import prepare_finetuning
@@ -52,6 +53,25 @@ def dump_prometheus(delay=60):
             parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
 
 
+def generate_prom_results(expe_name):
+    anchor_file = env.ARTIFACT_DIR / ".matbench_prom_db_dir"
+    if anchor_file.exists():
+        raise ValueError(f"File {anchor_file} already exist. It should be in a dedicated directory.")
+
+    # flag file for fine-tuning-prom visualization
+    with open(anchor_file, "w") as f:
+        print(expe_name, file=f)
+
+    with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+        print(str(uuid.uuid4()), file=f)
+
+    with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+        yaml.dump(config.ci_artifacts.config, f, indent=4)
+
+    dump_prometheus()
+
+    run.run_toolbox("rhods", "capture_state", run_kwargs=dict(capture_stdout=True))
+
 
 def prepare_matbench_test_files():
 
@@ -73,6 +93,7 @@ def _run_test(test_override_values):
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
 
     test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings") | test_override_values
+    do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
 
     logging.info(f"Test configuration to run: \n{yaml.dump(test_settings, sort_keys=False)}")
 
@@ -84,7 +105,9 @@ def _run_test(test_override_values):
 
     prepare_finetuning.prepare_namespace(test_settings)
     exit_code = 1
-    reset_prometheus()
+
+    if not do_multi_model:
+        reset_prometheus()
 
     with env.NextArtifactDir("test_fine_tuning"):
         test_artifact_dir = env.ARTIFACT_DIR
@@ -103,7 +126,9 @@ def _run_test(test_override_values):
                 print(f"{exit_code}", file=f)
 
             exc = None
-            exc = run.run_and_catch(exc, dump_prometheus)
+            if not do_multi_model:
+                exc = run.run_and_catch(exc, dump_prometheus)
+
             if config.ci_artifacts.get_config("tests.capture_state"):
                 exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)
                 exc = run.run_and_catch(exc, run.run_toolbox, "rhods", "capture_state", mute_stdout=True)
@@ -116,12 +141,67 @@ def _run_test(test_override_values):
     return test_artifact_dir, failed
 
 
+def _run_test_multi_model():
+    if (model_name := config.ci_artifacts.get_config("tests.fine_tuning.test_settings.model_name")) is not None:
+        logging.warning(f"tests.fine_tuning.test_settings.model_name should be 'null' for the multi-model test. Current value ({model_name}) ignored.")
+
+    multi_models = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.models")
+
+    failed = False
+
+    lock = threading.Lock()
+    counter_p = [0]
+    def run_in_env(job_index, model_name):
+        job_name = f"job-{job_index}-{model_name}"
+
+        with env.NextArtifactDir(f"multi_model_{model_name}", lock=lock, counter_p=counter_p):
+            test_failed =_run_test(dict(model_name=model_name, name=job_name))
+        if not test_failed:
+            return
+
+        with lock:
+            nonlocal failed
+            failed = True
+
+    reset_prometheus()
+
+    with env.NextArtifactDir("multi_model"):
+        try:
+            job_index = 0
+            with run.Parallel("multi_model", dedicated_dir=False, exit_on_exception=False) as parallel:
+                test_artifact_dir = env.ARTIFACT_DIR
+                for model in multi_models:
+                    for idx in range(model.get("replicas", 1)):
+                        parallel.delayed(run_in_env, job_index, model["name"])
+                        job_index += 1
+
+        except Exception as e:
+            import traceback; traceback.print_exc()
+
+            with lock:
+                failed = True
+        finally:
+            generate_prom_results("multi-model")
+
+    return test_artifact_dir, failed
+
+
 def _run_test_and_visualize(test_override_values=None):
     failed = True
     do_matbenchmarking = test_override_values is None and config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.enabled")
+    do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
+
+    if do_matbenchmarking and do_multi_model:
+        msg = "Cannot do matbenchmarking and multi-model at the same time"
+        logging.error(msg)
+        raise ValueError(msg)
+
     test_artifact_dir = None
     try:
-        if do_matbenchmarking:
+        if do_multi_model:
+            test_artifact_dir, failed = _run_test_multi_model()
+
+        elif do_matbenchmarking:
             test_artifact_dir, failed = _run_test_matbenchmarking()
 
         else:
@@ -138,21 +218,49 @@ def _run_test_and_visualize(test_override_values=None):
             logging.info(f"Running in dry mode, skipping the visualization.")
 
         elif test_artifact_dir is not None:
-            with env.NextArtifactDir("plots"):
-                visualize.prepare_matbench()
+            generate_visualization(do_matbenchmarking, test_artifact_dir)
 
-                if do_matbenchmarking:
-                    visu_file = config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.visu_file")
-                    with config.TempValue(config.ci_artifacts, "matbench.config_file", visu_file):
-                         visualize.generate_from_dir(test_artifact_dir)
-                else:
-                     visualize.generate_from_dir(test_artifact_dir)
         else:
             logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
     logging.info(f"_run_test_and_visualize: Test {'failed' if failed else 'passed'}.")
 
     return failed
+
+
+def generate_visualization(do_matbenchmarking, test_artifact_dir):
+    exc = None
+
+    with env.NextArtifactDir("plots"):
+        visualize.prepare_matbench()
+
+        if do_matbenchmarking:
+            visu_file = config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.visu_file")
+            with config.TempValue(config.ci_artifacts, "matbench.config_file", visu_file):
+                exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
+
+        else:
+            exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
+
+    prom_plot_workload = config.ci_artifacts.get_config("tests.prom_plot_workload")
+    if not prom_plot_workload:
+        logging.info(f"Setting tests.prom_plot_workload isn't set, nothing else to generate.")
+
+        if exc:
+            raise exc
+
+        return
+
+    with (
+            env.NextArtifactDir("prom_plots"),
+            config.TempValue(config.ci_artifacts, "matbench.workload", prom_plot_workload)
+    ):
+        logging.info(f"Generating the plots with workload={prom_plot_workload}")
+
+        exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
+
+    if exc:
+        raise exc
 
 
 def test(dry_mode=None, do_visualize=None, capture_prom=None):

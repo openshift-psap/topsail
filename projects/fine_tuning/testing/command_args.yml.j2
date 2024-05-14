@@ -53,7 +53,7 @@ sutest/cluster set_project_annotation/scale_test_toleration:
   value: '[{\"operator\": \"Exists\", \"effect\": \"{{ clusters.sutest.compute.machineset.taint.effect }}\", \"key\": \"{{ clusters.sutest.compute.machineset.taint.key }}\"}]'
 
 fine_tuning run_fine_tuning_job:
-  name: fine-tuning
+  name: {{ tests.fine_tuning.test_settings.job_name }}
   namespace: "{{ tests.fine_tuning.namespace }}"
   pvc_name: "{{ fine_tuning.pvc_name }}"
   container_image: "{{ fine_tuning.image }}"
