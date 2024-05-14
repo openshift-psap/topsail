@@ -44,30 +44,31 @@
 
 # Fail if "files/{{ kserve_deploy_model_runtime }}" don't exist
 - name: Check for runtime
-  stat: path="files/{{ kserve_deploy_model_runtime }}"
+  ansible.builtin.stat:
+    path: "files/{{ kserve_deploy_model_runtime }}"
   register: runtime_dir
 
 - name: Fail if doesn't exist
   fail: msg="The files for deploying this runtime do not exist"
-  when: runtime_dir.stat.isdir is defined and runtime_dir.stat.isdir
+  when: not (runtime_dir.stat.isdir is defined and runtime_dir.stat.isdir)
 
-# Fail if "templates/{{ kserve_deploy_model_runtime }}" don't exist
+# Fail if "templates/" don't exist
 - name: Check for runtime templates
-  stat: path="templates/{{ kserve_deploy_model_runtime }}"
+  ansible.builtin.stat: path="templates/"
   register: runtime_templates_dir
 
 - name: Fail if doesn't exist
   fail: msg="Runtime template files don't exist"
-  when: runtime_templates_dir.stat.isdir is defined and runtime_templates_dir.stat.isdir
+  when: not (runtime_templates_dir.stat.isdir is defined and runtime_templates_dir.stat.isdir)
 
 # Fail if "files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}" doesn't exist
 - name: Check for model files
-  stat: path="files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}"
+  ansible.builtin.stat: path="files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}"
   register: model_dir
 
 - name: Fail if the model files don't exist
-  fail: msg="Model files don't exist"
-  when: model_dir.stat.isdir is defined and model_dir.stat.isdir
+  fail: msg="Model files don't exist at files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}"
+  when: not (model_dir.stat.isdir is defined and model_dir.stat.isdir)
 
 - name: Copy the kustomize files for this runtime
   copy:

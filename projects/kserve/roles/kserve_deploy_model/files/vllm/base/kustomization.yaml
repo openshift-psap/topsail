@@ -4,8 +4,8 @@ kind: Kustomization
 namespace: watsonx-e2e-perf # Overwritten by templates
 
 resources:
-  - servingruntime.yaml
-  - inferenceservice.yaml
+- servingruntime.yaml
+- inferenceservice.yaml
 
 configurations:
 - configuration.yaml

@@ -7,8 +7,8 @@ spec:
     model:
       storageUri: s3://psap-hf-models/mpt-7b-instruct2/mpt-7b-instruct2
       args:
-        - --max-model-len=2048
-        - --uvicorn-log-level=debug
+      - --max-model-len=2048
+      - --uvicorn-log-level=debug
       resources:
         requests:
           cpu: "2"

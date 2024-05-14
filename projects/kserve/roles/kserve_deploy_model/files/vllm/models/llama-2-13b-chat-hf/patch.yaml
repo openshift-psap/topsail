@@ -7,9 +7,9 @@ spec:
     model:
       storageUri: s3://psap-hf-models/Llama-2-13b-chat-hf/Llama-2-13b-chat-hf
       args:
-        - --dtype=float16
-        - --tensor-parallel-size=1
-        - --max-model-len=4096
+      - --dtype=float16
+      - --tensor-parallel-size=1
+      - --max-model-len=4096
       resources:
         requests:
           cpu: "2"

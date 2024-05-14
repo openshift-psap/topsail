@@ -10,24 +10,24 @@ spec:
   builtInAdapter:
     modelLoadingTimeoutMillis: 90000
   containers:
-    - args: # Merged with args in inferenceservice
-        - --model=/mnt/models/
-        - --download-dir=/models-cache
-        - --port=8080
-      image: quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-01 # Overwritten by templates
-      name: kserve-container
-      ports:
-        - containerPort: 8080
-          name: http1
-          protocol: TCP
-      resources:
-        requests: # Overwritten by InferenceService
-          cpu: 4
-          memory: 8Gi
-          nvidia.com/gpu: 1
-        limits:
-          nvidia.com/gpu: 1
+  - args: # Merged with args in inferenceservice
+    - --model=/mnt/models/
+    - --download-dir=/models-cache
+    - --port=8080
+    image: quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-01 # Overwritten by templates
+    name: kserve-container
+    ports:
+    - containerPort: 8080
+      name: http1
+      protocol: TCP
+    resources:
+      requests: # Overwritten by InferenceService
+        cpu: 4
+        memory: 8Gi
+        nvidia.com/gpu: 1
+      limits:
+        nvidia.com/gpu: 1
   multiModel: false
   supportedModelFormats:
-    - autoSelect: true
-      name: pytorch
+  - autoSelect: true
+    name: pytorch

@@ -12,17 +12,18 @@ spec:
     image: quay.io/opendatahub/text-generation-inference:fast
     command: ["text-generation-launcher"]
     args:
-      - --model-name=/mnt/models/
-      - --port=3000
-      - --grpc-port=8033
+    - --model-name=/mnt/models/
+    - --port=3000
+    - --grpc-port=8033
     env:
-      # Base settings. will be merged with any env vars in InferenceServices which reference this runtime
-      - name: "TRANSFORMERS_CACHE"
-        value: "/tmp/transformers_cache"
-      - name: "MAX_BATCH_SIZE"
-        value: "96"
-      - name: "MAX_CONCURRENT_REQUESTS"
-        value: "128"
+    # Base settings. will be merged with any env vars in InferenceServices
+    # which reference this runtime
+    - name: "TRANSFORMERS_CACHE"
+      value: "/tmp/transformers_cache"
+    - name: "MAX_BATCH_SIZE"
+      value: "96"
+    - name: "MAX_CONCURRENT_REQUESTS"
+      value: "128"
     readinessProbe:
       httpGet:
         path: /health

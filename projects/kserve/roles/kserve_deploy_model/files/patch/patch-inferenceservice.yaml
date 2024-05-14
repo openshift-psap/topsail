@@ -1,3 +1,7 @@
+# ---
+# This file will get overwritten by the .j2 templates in ../../templates/
+# This is just meant to be an example
+
 # {% if kserve_deploy_model_inference_service_name %}
 # - op: replace
 #   path: /metadata/name

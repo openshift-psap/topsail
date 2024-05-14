@@ -132,7 +132,7 @@ ci_presets:
   vllm:
     kserve.model.runtime: vllm
     # IBM image hardcoded until RHOAI includes an image in the release
-    kserve.model.serving_runtime.kserve.image: "quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-01"
+    kserve.model.serving_runtime.kserve.image: "quay.io/wxpe/tgis-vllm:release.2ac2b2d" #"quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-14"
     tests.e2e.llm_load_test.args.plugin: "openai_plugin"
     tests.e2e.llm_load_test.args.streaming: true
     tests.e2e.llm_load_test.args.interface: "http"
@@ -236,7 +236,7 @@ ci_presets:
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
     export_artifacts.enabled: true
 
-  # -- 
+  # --
   # single-model vLLM
   # --
   vllm_cpt_single_model_gating_light:
@@ -254,8 +254,8 @@ ci_presets:
     tests.e2e.models:
     - name: japanese-llama-2-7b-instruct
       testing:
-        size: small
-        max_concurrency: 32
+       size: small
+       max_concurrency: 64
     - name: llama-2-13b-chat-hf
       testing:
         size: small
@@ -263,7 +263,7 @@ ci_presets:
     - name: mpt-7b-instruct2
       testing:
         size: small
-        max_concurrency: 32
+        max_concurrency: 64
     - name: llama-2-70b-chat-hf
       testing:
         size: large

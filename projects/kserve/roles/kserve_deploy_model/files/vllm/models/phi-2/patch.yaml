@@ -7,8 +7,8 @@ spec:
     model:
       storageUri: s3://psap-hf-models/phi-2/phi-2
       args:
-        - --uvicorn-log-level=debug
-        - --trust-remote-code
+      - --uvicorn-log-level=debug
+      - --trust-remote-code
       resources:
         requests:
           cpu: "2"

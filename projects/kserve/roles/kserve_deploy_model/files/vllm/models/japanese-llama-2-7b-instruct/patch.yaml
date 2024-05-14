@@ -7,9 +7,9 @@ spec:
     model:
       storageUri: s3://psap-hf-models/ELYZA-japanese-Llama-2-7b-instruct/ELYZA-japanese-Llama-2-7b-instruct
       args:
-        - --dtype=float16
-        - --tensor-parallel-size=1
-        - --max-model-len=4096
+      - --dtype=float16
+      - --tensor-parallel-size=1
+      - --max-model-len=4096
       resources:
         requests:
           cpu: "2"
