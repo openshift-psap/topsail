@@ -1,7 +1,7 @@
 ci_presets:
   # name of the presets to apply, or null if no preset
   name: null
-  # list of names of the presets to apply, or a single name, or null if no preset
+  # list of names of presets to apply, or a single name, or null if not preset
   names: null
   single:
     clusters.create.type: single
@@ -117,30 +117,6 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 2
-
-  quick_raw_vllm:
-    extends: [raw, e2e_gpu, vllm]
-    tests.e2e.models:
-    - name: phi-2
-      testing:
-        size: small
-        max_concurrency: 64
-    tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
-
-# TODO delete
-  local_quick_raw:
-    extends: [quick_raw, use_intlab_minio, metal]
-
-    tests.visualize: false
-    tests.capture_prom: false
-    tests.e2e.matbenchmark.enabled: false
-    tests.e2e.models:
-    - name: flan-t5-small
-      testing:
-        size: small
-        max_concurrency: 2
-    tests.e2e.llm_load_test.args.concurrency: 2
 
   # ---
 
@@ -259,6 +235,48 @@ ci_presets:
     # small models will stop at 32
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
     export_artifacts.enabled: true
+
+  # -- 
+  # single-model vLLM
+  # --
+  vllm_cpt_single_model_gating_light:
+    extends: [raw, e2e_gpu, vllm]
+    tests.e2e.models:
+    - name: phi-2
+      testing:
+        size: small
+        max_concurrency: 64
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
+
+  vllm_cpt_single_model_gating:
+    extends: [e2e_perf, 3min, raw, use_intlab_minio, vllm] # TODO gating
+    tests.e2e.models:
+    - name: japanese-llama-2-7b-instruct
+      testing:
+        size: small
+        max_concurrency: 32
+    - name: llama-2-13b-chat-hf
+      testing:
+        size: small
+        max_concurrency: 32
+    - name: mpt-7b-instruct2
+      testing:
+        size: small
+        max_concurrency: 32
+    - name: llama-2-70b-chat-hf
+      testing:
+        size: large
+    - name: codellama-34b-instruct-hf
+      testing:
+        size: large
+    # matbench.lts.horreum.test_name: rhoai-kserve-single
+    # matbench.lts.opensearch.index: rhoai-kserve-single
+
+    tests.e2e.matbenchmark.enabled: true
+    # small models will stop at 32
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
+    # export_artifacts.enabled: true
 
   # ---
   # multi-model
