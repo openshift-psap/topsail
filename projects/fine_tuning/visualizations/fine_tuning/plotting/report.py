@@ -94,6 +94,8 @@ class SFTTrainerReport():
         table_stats.TableStats._register_stat(self)
 
     def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
         header = []
 
         header += [html.P("These plots show an overview of the metrics extracted from SFTTrainer logs.")]
@@ -106,6 +108,9 @@ class SFTTrainerReport():
         for key in parsers.SFT_TRAINER_RESULTS_KEYS:
             header += [html.H3(key)]
             header += Plot_and_Text("SFTTraining", set_config(dict(sfttraining_key=key), args))
+
+            if "gpu" not in ordered_vars: continue
+
             header += Plot_and_Text("SFTTraining", set_config(dict(sfttraining_key=key, speedup=True), args))
             header += Plot_and_Text("SFTTraining", set_config(dict(sfttraining_key=key, efficiency=True), args))
 
