@@ -22,22 +22,30 @@ def register():
     SFTTraining()
 
 
-def generateSFTTrainingData(entries, _variables, _ordered_vars, sfttraining_key):
+def generateSFTTrainingData(entries, x_key, _variables, sfttraining_key, compute_speedup=False):
     data = []
 
-    variables = [v for v in _variables if v != "gpu"]
+
+    variables = [v for v in _variables if v != x_key]
 
     for entry in entries:
         datum = dict()
-        datum["gpu"] = entry.results.allocated_resources.gpu
+        if x_key == "gpu":
+            datum[x_key] = entry.results.allocated_resources.gpu
+        else:
+            datum[x_key] = entry.settings.__dict__[x_key]
+
         datum[sfttraining_key] = getattr(entry.results.sft_training_metrics, sfttraining_key, 0)
         datum["name"] = entry.get_name(variables)
 
         data.append(datum)
 
+    if not compute_speedup:
+        return data, None
+
     ref = None
     for datum in data:
-        if datum["gpu"] == 1:
+        if datum[x_key] == 1:
             ref = datum[sfttraining_key]
 
     if not ref:
@@ -45,7 +53,7 @@ def generateSFTTrainingData(entries, _variables, _ordered_vars, sfttraining_key)
 
     for datum in data:
         datum[f"{sfttraining_key}_speedup"] = speedup = ref / datum[sfttraining_key]
-        datum[f"{sfttraining_key}_efficiency"] = speedup / datum["gpu"]
+        datum[f"{sfttraining_key}_efficiency"] = speedup / datum[x_key]
 
     return data, ref
 
@@ -74,13 +82,17 @@ class SFTTraining():
 
         entries = common.Matrix.all_records(settings, setting_lists)
 
-        data, has_speedup = generateSFTTrainingData(entries, variables, ordered_vars, cfg__sft_key)
+        has_gpu = "gpu" in ordered_vars
+        x_key = "gpu" if has_gpu else (ordered_vars[0] if ordered_vars else "expe")
+
+        compute_speedup = has_gpu
+
+        data, has_speedup = generateSFTTrainingData(entries, x_key, variables, cfg__sft_key, compute_speedup)
         df = pd.DataFrame(data)
 
         if df.empty:
             return None, "Not data available ..."
 
-        x_key = "gpu"
         df = df.sort_values(by=[x_key], ascending=False)
 
         y_key = cfg__sft_key
@@ -98,15 +110,19 @@ class SFTTraining():
         for i in range(len(fig.data)):
             fig.data[i].update(mode='lines+markers+text')
 
-        fig.update_xaxes(title="Number of GPUs used for the fine-tuning")
+        if has_gpu:
+            fig.update_xaxes(title="Number of GPUs used for the fine-tuning")
+        else:
+            fig.update_xaxes(title=x_key)
+
         y_title = getattr(key_properties, "title", "speed")
         y_units = key_properties.units
 
         if cfg__speedup:
-            what = ", GPU speedup"
+            what = " speedup"
             y_lower_better = False
         elif cfg__efficiency:
-            what = ", GPU efficiency"
+            what = " efficiency"
             y_lower_better = False
         else:
             y_lower_better = key_properties.lower_better

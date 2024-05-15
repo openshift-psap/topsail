@@ -16,7 +16,7 @@ from dash import html
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
-from . import error_report, report
+from . import report
 
 def register():
     LtsDocumentationReport()
@@ -44,7 +44,6 @@ class LtsDocumentationReport():
             header += [html.Hr()]
         return None, header
 
-
 def generateOneLtsDocumentationReport(entry):
     lts = entry.results.lts
 
@@ -56,11 +55,45 @@ def generateOneLtsDocumentationReport(entry):
     metadata += [html.Li([html.B("start:"), html.Code(lts.metadata.start)])]
     metadata += [html.Li([html.B("presets:"), html.Code(", ".join(lts.metadata.presets))])]
     metadata += [html.Li([html.B("config:"), html.Code("(not shown for clarity)")])]
+    gpus = []
+    for gpu in lts.metadata.gpus:
+        gpus.append(html.Li(html.Code(", ".join(f"{k}={v}" for k, v in gpu.__dict__.items()))))
+    metadata += [html.Li([html.B("GPUs:"), html.Ul(gpus)])]
+
     header += [html.Ul(metadata)]
+
+    header += [html.H2("kpis")]
+    kpis = []
+    for name, kpi in lts.kpis.items():
+        labels = {k:v for k, v in kpi.__dict__.items() if k not in ("unit", "help", "timestamp", "value")}
+        labels_str = ", ".join(f"{k}=\"{v}\"" for k, v in labels.items())
+        kpis += [html.Li([html.P([html.Code(f"# HELP {name} {kpi.help}"), html.Br(),
+                                  html.Code(f"# UNIT {name} {kpi.unit}"), html.Br(),
+                                  html.Code(f"{name}{{{labels_str}}} {kpi.value}")])])]
+
+    header += [html.Ul(kpis)]
 
     header += [html.H2("results")]
     results = []
-    results += [html.Ul(html.Li([html.B("skeleton_results:"), html.Code(lts.results.skeleton_results)]))]
+
+    results += [html.H3("metrics")]
+    all_metrics = []
+    for field_name, metric_values in lts.results.metrics.dict().items():
+        all_metrics += [html.Li(html.H4(field_name))]
+        field_metrics = []
+        for idx, metric_value in enumerate(metric_values):
+            field_metrics += [html.Li(html.H5(f"#{idx} metric/value"))]
+            field_metrics += [html.Ul([
+                html.Code(", ".join(f"{k}={v}" for k, v in metric_value["metric"].items()) or "(No metric metadata)"),
+                html.Br(),html.Br(),
+                html.Code(str(metric_value["values"])),
+            ])]
+
+        all_metrics += [html.Ul(field_metrics)]
+
+
+
+    results += [html.Ul(all_metrics)]
 
     header += [html.Ul(results)]
 

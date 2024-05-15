@@ -63,8 +63,14 @@ def init():
     _set_tls_artifact_dir(artifact_dir)
 
 
-def NextArtifactDir(name):
-    next_count = next_artifact_index()
+def NextArtifactDir(name, *, lock=None, counter_p=None):
+    if lock:
+        with lock:
+            next_count = counter_p[0]
+            counter_p[0] += 1
+    else:
+        next_count = next_artifact_index()
+
     dirname = get_tls_artifact_dir() / f"{next_count:03d}__{name}"
 
     return TempArtifactDir(dirname)

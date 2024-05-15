@@ -7,8 +7,13 @@ from dash import dcc
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+try:
+    from . import error_report
+except ImportError:
+    error_report = None
+
 def register():
-    SFTTrainerReport()
+    pass
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -82,36 +87,3 @@ def Plot_and_Text(name, args):
                        }))
 
     return data
-
-
-class SFTTrainerReport():
-    def __init__(self):
-        self.name = "report: SFTTrainer report"
-        self.id_name = self.name.lower().replace(" ", "_")
-        self.no_graph = True
-        self.is_report = True
-
-        table_stats.TableStats._register_stat(self)
-
-    def do_plot(self, *args):
-        ordered_vars, settings, setting_lists, variables, cfg = args
-
-        header = []
-
-        header += [html.P("These plots show an overview of the metrics extracted from SFTTrainer logs.")]
-
-        header += html.Br()
-        header += html.Br()
-        header += [html.H2("SFT-Trainer metrics")]
-        from ..store import parsers
-
-        for key in parsers.SFT_TRAINER_RESULTS_KEYS:
-            header += [html.H3(key)]
-            header += Plot_and_Text("SFTTraining", set_config(dict(sfttraining_key=key), args))
-
-            if "gpu" not in ordered_vars: continue
-
-            header += Plot_and_Text("SFTTraining", set_config(dict(sfttraining_key=key, speedup=True), args))
-            header += Plot_and_Text("SFTTraining", set_config(dict(sfttraining_key=key, efficiency=True), args))
-
-        return None, header

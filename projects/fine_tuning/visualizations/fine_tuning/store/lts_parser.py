@@ -37,16 +37,9 @@ def generate_lts_results(results):
     results_lts = types.SimpleNamespace()
 
     results_lts.skeleton_results = True
-    results_lts.metrics = _gather_prom_metrics(results.metrics["sutest"], models_lts.Metrics)
 
     return results_lts
 
-
-def _gather_prom_metrics(metrics, model) -> dict:
-    data = {metric_name: metrics[metric_name]
-            for metric_name in model.schema()["properties"].keys()}
-
-    return model(**data)
 
 def get_kpi_labels(lts_payload):
     kpi_labels = dict(lts_payload.metadata.settings.__dict__)
