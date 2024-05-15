@@ -333,7 +333,6 @@ def parse_local_env(dirname):
         from_local_env.artifacts_basedir = from_local_env.source_url
 
     else:
-        logging.warning(f"Unknown execution environment: JOB_NAME_SAFE={job_name} ARTIFACT_DIR={os.environ.get('ARTIFACT_DIR')}")
         from_local_env.artifacts_basedir = dirname.absolute()
 
     return from_local_env
