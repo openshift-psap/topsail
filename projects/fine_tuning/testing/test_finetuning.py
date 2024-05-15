@@ -73,12 +73,14 @@ def generate_prom_results(expe_name):
     run.run_toolbox("rhods", "capture_state", run_kwargs=dict(capture_stdout=True))
 
 
-def prepare_matbench_test_files():
+def prepare_matbench_test_files(job_index=None):
 
     with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
         settings = dict(
             fine_tuning=True,
         )
+        if job_index is not None:
+            settings["job_index"] = job_index
 
         yaml.dump(settings, f, indent=4)
 
@@ -89,7 +91,7 @@ def prepare_matbench_test_files():
             print(str(uuid.uuid4()), file=f)
 
 
-def _run_test(test_override_values):
+def _run_test(test_override_values, job_index=None):
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
 
     test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings") | test_override_values
@@ -112,7 +114,7 @@ def _run_test(test_override_values):
     with env.NextArtifactDir("test_fine_tuning"):
         test_artifact_dir = env.ARTIFACT_DIR
 
-        prepare_matbench_test_files()
+        prepare_matbench_test_files(job_index)
 
         try:
             if dry_mode:
@@ -155,7 +157,7 @@ def _run_test_multi_model():
         job_name = f"job-{job_index}-{model_name}"
 
         with env.NextArtifactDir(f"multi_model_{model_name}", lock=lock, counter_p=counter_p):
-            test_failed =_run_test(dict(model_name=model_name, name=job_name))
+            test_failed =_run_test(dict(model_name=model_name, name=job_name), job_index=job_index)
         if not test_failed:
             return
 
