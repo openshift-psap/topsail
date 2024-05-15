@@ -70,7 +70,9 @@ def generate_prom_results(expe_name):
 
     dump_prometheus()
 
-    run.run_toolbox("rhods", "capture_state", run_kwargs=dict(capture_stdout=True))
+    if config.ci_artifacts.get_config("tests.capture_state"):
+        run.run_toolbox("rhods", "capture_state", mute_stdout=True)
+        run.run_toolbox("cluster", "capture_environment", mute_stdout=True)
 
 
 def prepare_matbench_test_files(job_index=None):
