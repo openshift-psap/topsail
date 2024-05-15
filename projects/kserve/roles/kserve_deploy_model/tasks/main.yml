@@ -43,32 +43,44 @@
 # Serving Runtime
 
 # Fail if "files/{{ kserve_deploy_model_runtime }}" don't exist
+- name: Check if runtime deployment files exist
+  debug:
+    msg: "Checking if path {{ role_path }}/files/{{ kserve_deploy_model_runtime }} exists"
+
 - name: Check for runtime
   ansible.builtin.stat:
-    path: "files/{{ kserve_deploy_model_runtime }}"
+    path: "{{ role_path }}/files/{{ kserve_deploy_model_runtime }}"
   register: runtime_dir
 
 - name: Fail if doesn't exist
   fail: msg="The files for deploying this runtime do not exist"
   when: not (runtime_dir.stat.isdir is defined and runtime_dir.stat.isdir)
 
-# Fail if "templates/" don't exist
-- name: Check for runtime templates
-  ansible.builtin.stat: path="templates/"
-  register: runtime_templates_dir
-
-- name: Fail if doesn't exist
-  fail: msg="Runtime template files don't exist"
-  when: not (runtime_templates_dir.stat.isdir is defined and runtime_templates_dir.stat.isdir)
-
 # Fail if "files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}" doesn't exist
+- name: Check if template files exist
+  debug:
+    msg: "Checking if path {{ role_path }}/files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }} exists"
+
 - name: Check for model files
-  ansible.builtin.stat: path="files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}"
+  ansible.builtin.stat: path="{{ role_path }}/files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}"
   register: model_dir
 
 - name: Fail if the model files don't exist
   fail: msg="Model files don't exist at files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}"
   when: not (model_dir.stat.isdir is defined and model_dir.stat.isdir)
+
+# Fail if "templates/" don't exist
+- name: Check if template files exist
+  debug:
+    msg: "Checking if path {{ role_path }}/templates exists"
+
+- name: Check for runtime templates
+  ansible.builtin.stat: path="{{ role_path }}/templates"
+  register: runtime_templates_dir
+
+- name: Fail if doesn't exist
+  fail: msg="Runtime template files don't exist"
+  when: not (runtime_templates_dir.stat.isdir is defined and runtime_templates_dir.stat.isdir)
 
 - name: Copy the kustomize files for this runtime
   copy:

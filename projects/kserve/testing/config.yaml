@@ -132,7 +132,7 @@ ci_presets:
   vllm:
     kserve.model.runtime: vllm
     # IBM image hardcoded until RHOAI includes an image in the release
-    kserve.model.serving_runtime.kserve.image: "quay.io/wxpe/tgis-vllm:release.2ac2b2d" #"quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-14"
+    kserve.model.serving_runtime.kserve.image: "quay.io/wxpe/tgis-vllm:release.2ac2b2d" # "quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-14"
     tests.e2e.llm_load_test.args.plugin: "openai_plugin"
     tests.e2e.llm_load_test.args.streaming: true
     tests.e2e.llm_load_test.args.interface: "http"
@@ -250,7 +250,7 @@ ci_presets:
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
 
   vllm_cpt_single_model_gating:
-    extends: [e2e_perf, 3min, raw, use_intlab_minio, vllm] # TODO gating
+    extends: [e2e_perf, gating, 3min, raw, use_intlab_minio, vllm]
     tests.e2e.models:
     - name: japanese-llama-2-7b-instruct
       testing:
@@ -270,13 +270,13 @@ ci_presets:
     - name: codellama-34b-instruct-hf
       testing:
         size: large
-    # matbench.lts.horreum.test_name: rhoai-kserve-single
-    # matbench.lts.opensearch.index: rhoai-kserve-single
+    matbench.lts.horreum.test_name: rhoai-kserve-single
+    matbench.lts.opensearch.index: rhoai-kserve-single
 
     tests.e2e.matbenchmark.enabled: true
     # small models will stop at 32
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
-    # export_artifacts.enabled: true
+    export_artifacts.enabled: true
 
   # ---
   # multi-model

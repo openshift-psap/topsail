@@ -23,7 +23,7 @@ spec:
       - name: tmp
         mountPath: /tmp
       - name: home
-        mountPath: /home/vllm 
+        mountPath: /home/vllm
     volumes:
     - name: shared-memory
       emptyDir:
@@ -32,4 +32,4 @@ spec:
     - name: tmp
       emptyDir: {}
     - name: home
-      emptyDir: {}  
+      emptyDir: {}
