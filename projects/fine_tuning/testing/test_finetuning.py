@@ -134,9 +134,12 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
                 print(1 if failed else 0, file=f)
 
             exc = None
+
             if not do_multi_model:
                 exc = run.run_and_catch(exc, generate_prom_results, "single-model")
 
+            if config.ci_artifacts.get_config("tests.evaluate_model"):
+                exc = run.run_and_catch(exc, run.run_toolbox, "fine_tuning", "evaluate_model")
             if config.ci_artifacts.get_config("tests.capture_state"):
                 exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)
                 exc = run.run_and_catch(exc, run.run_toolbox, "rhods", "capture_state", mute_stdout=True)

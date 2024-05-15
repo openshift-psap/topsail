@@ -1,0 +1,70 @@
+apiVersion: kubeflow.org/v1
+kind: PyTorchJob
+metadata:
+  name: {{ fine_tuning_run_fine_tuning_job_name }}
+  namespace: {{ fine_tuning_run_fine_tuning_job_namespace }}
+spec:
+  pytorchReplicaSpecs:
+    Master:
+      replicas: 1
+      restartPolicy: Never
+      template:
+        spec:
+          containers:
+          - name: pytorch
+            image: {{ fine_tuning_run_fine_tuning_job_container_image }}
+            imagePullPolicy: IfNotPresent
+            command: [bash, "/mnt/entrypoint/{{ fine_tuning_job_entrypoint_name }}"]
+            env:
+            - name: SFT_TRAINER_CONFIG_JSON_PATH
+              value: /mnt/config/config.json
+            - name: DATASET_SOURCE
+              value: "/mnt/storage/dataset/{{ fine_tuning_run_fine_tuning_job_dataset_name }}"
+            - name: DATASET_DEST
+              value: "/mnt/output/dataset.json"
+            - name: DATASET_REPLICATION
+              value: "{{ fine_tuning_run_fine_tuning_job_dataset_replication }}"
+{% if fine_tuning_run_fine_tuning_job_dataset_transform %}
+            - name: DATASET_TRANSFORM
+              value: "/mnt/entrypoint/{{ fine_tuning_run_fine_tuning_job_dataset_transform }}"
+{% endif %}
+{% if fine_tuning_run_fine_tuning_job_gpu %}
+            - name: NUM_GPUS
+              value: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
+{% endif %}
+            volumeMounts:
+            - name: storage-volume
+              mountPath: /mnt/storage
+            - name: entrypoint-volume
+              mountPath: /mnt/entrypoint
+            - name: config-volume
+              mountPath: /mnt/config
+            - name: output-volume
+              mountPath: /mnt/output
+            resources:
+              requests: &request_block
+{% if fine_tuning_run_fine_tuning_job_gpu %}
+                nvidia.com/gpu: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
+{% endif %}
+                memory: "{{ fine_tuning_run_fine_tuning_job_memory }}Gi"
+                cpu: "{{ fine_tuning_run_fine_tuning_job_cpu }}"
+                #ephemeral-storage: 100Gi
+{% if fine_tuning_run_fine_tuning_job_request_equals_limits %}
+              limits: *request_block
+{% elif fine_tuning_run_fine_tuning_job_gpu %}
+              limits:
+                nvidia.com/gpu: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
+{% endif %}
+
+          volumes:
+          - name: storage-volume
+            persistentVolumeClaim:
+              claimName: {{ fine_tuning_run_fine_tuning_job_pvc_name }}
+          - name: config-volume
+            configMap:
+              name: {{ fine_tuning_run_fine_tuning_job_name }}-config
+          - name: entrypoint-volume
+            configMap:
+              name: {{ fine_tuning_run_fine_tuning_job_name }}-entrypoint
+          - name: output-volume
+            emptyDir: {}
