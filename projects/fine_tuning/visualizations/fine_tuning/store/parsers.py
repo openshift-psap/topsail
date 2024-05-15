@@ -11,12 +11,9 @@ import uuid
 import jsonpath_ng
 
 import matrix_benchmarking.cli_args as cli_args
-import matrix_benchmarking.store.prom_db as store_prom_db
 
 import projects.core.visualizations.helpers.store as core_helpers_store
 import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
-
-from . import prom as workload_prom
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -26,14 +23,12 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
-artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db"
 artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tuning_job"
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
 IMPORTANT_FILES = [
     ".uuid",
     "config.yaml",
-    f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/_ansible.log",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
@@ -59,24 +54,10 @@ def parse_once(results, dirname):
     results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
     results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
-    results.metrics = _extract_metrics(dirname)
-
     results.test_start_end_time = _parse_start_end_time(dirname)
 
     results.sft_training_metrics = _parse_sft_training_logs(dirname)
     results.allocated_resources = _parse_allocated_resources(dirname)
-
-
-def _extract_metrics(dirname):
-    if not artifact_paths.CLUSTER_DUMP_PROM_DB_DIR:
-        logging.warning("No database directory, skipping metrics extraction")
-        return dict(sutest={})
-
-    db_files = {
-        "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
-    }
-
-    return core_helpers_store_parsers.extract_metrics(dirname, db_files)
 
 
 @core_helpers_store_parsers.ignore_file_not_found
