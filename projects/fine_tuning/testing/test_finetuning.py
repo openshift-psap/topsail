@@ -7,6 +7,7 @@ import yaml
 import uuid
 import time
 import threading
+import traceback
 
 from projects.core.library import env, config, run, visualize, matbenchmark
 import prepare_finetuning
@@ -70,7 +71,9 @@ def generate_prom_results(expe_name):
 
     dump_prometheus()
 
-    run.run_toolbox("rhods", "capture_state", run_kwargs=dict(capture_stdout=True))
+    if config.ci_artifacts.get_config("tests.capture_state"):
+        run.run_toolbox("rhods", "capture_state", mute_stdout=True)
+        run.run_toolbox("cluster", "capture_environment", mute_stdout=True)
 
 
 def prepare_matbench_test_files(job_index=None):
@@ -106,7 +109,7 @@ def _run_test(test_override_values, job_index=None):
         test_settings["dataset_transform"] = transform
 
     prepare_finetuning.prepare_namespace(test_settings)
-    exit_code = 1
+    failed = True
 
     if not do_multi_model:
         reset_prometheus()
@@ -122,10 +125,10 @@ def _run_test(test_override_values, job_index=None):
             else:
                 run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
                                             extra=test_settings)
-            exit_code = 0
+            failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
-                print(f"{exit_code}", file=f)
+                print(1 if failed else 0, file=f)
 
             exc = None
             if not do_multi_model:
@@ -136,9 +139,13 @@ def _run_test(test_override_values, job_index=None):
                 exc = run.run_and_catch(exc, run.run_toolbox, "rhods", "capture_state", mute_stdout=True)
 
             if exc:
+                logging.warning(f"Test configuration crashed ({exc}): \n{yaml.dump(test_settings, sort_keys=False)}")
+
                 raise exc
 
-    failed = False if exit_code == 0 else True
+    if failed:
+        logging.warning(f"Test configuration failed: \n{yaml.dump(test_settings, sort_keys=False)}")
+
 
     return test_artifact_dir, failed
 
@@ -157,13 +164,13 @@ def _run_test_multi_model():
         job_name = f"job-{job_index}-{model_name}"
 
         with env.NextArtifactDir(f"multi_model_{model_name}", lock=lock, counter_p=counter_p):
-            test_failed =_run_test(dict(model_name=model_name, name=job_name), job_index=job_index)
-        if not test_failed:
-            return
+            test_artifact_dir, test_failed = _run_test(dict(model_name=model_name, name=job_name), job_index=job_index)
 
-        with lock:
+        if test_failed:
+            logging.warning(f"_run_test_multi_model: test {job_name=} failed :/")
             nonlocal failed
-            failed = True
+            with lock:
+                failed = True
 
     reset_prometheus()
 
@@ -176,9 +183,11 @@ def _run_test_multi_model():
                     for idx in range(model.get("replicas", 1)):
                         parallel.delayed(run_in_env, job_index, model["name"])
                         job_index += 1
+            logging.info(f"Parallel multi-model test code completed successfully")
 
         except Exception as e:
-            import traceback; traceback.print_exc()
+            logging.error(f"Parallel multi-model test code throw an exception: {e}")
+            traceback.print_exc()
 
             with lock:
                 failed = True
@@ -201,12 +210,15 @@ def _run_test_and_visualize(test_override_values=None):
     test_artifact_dir = None
     try:
         if do_multi_model:
+            logging.info("_run_test_and_visualize: testing in multi-model mode")
             test_artifact_dir, failed = _run_test_multi_model()
 
         elif do_matbenchmarking:
+            logging.info("_run_test_and_visualize: testing in matbenchmarking mode")
             test_artifact_dir, failed = _run_test_matbenchmarking()
 
         else:
+            logging.info("_run_test_and_visualize: testing in single-model mode")
             if test_override_values is None:
                 test_override_values = config.ci_artifacts.get_config("tests.fine_tuning.test_settings")
             test_artifact_dir, failed = _run_test(test_override_values)

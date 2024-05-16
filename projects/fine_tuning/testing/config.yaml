@@ -175,7 +175,7 @@ tests:
       enabled: true
       models:
       - name: bloom-560m
-        replicas: 4
+        replicas: 2
     test_settings:
       name: fine-tuning
       model_name: null
