@@ -108,7 +108,7 @@ def _run_test(test_override_values, job_index=None):
         test_settings["dataset_transform"] = transform
 
     prepare_finetuning.prepare_namespace(test_settings)
-    exit_code = 1
+    failed = True
 
     if not do_multi_model:
         reset_prometheus()
@@ -124,10 +124,10 @@ def _run_test(test_override_values, job_index=None):
             else:
                 run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
                                             extra=test_settings)
-            exit_code = 0
+            failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
-                print(f"{exit_code}", file=f)
+                print(1 if failed else 0, file=f)
 
             exc = None
             if not do_multi_model:
@@ -159,13 +159,13 @@ def _run_test_multi_model():
         job_name = f"job-{job_index}-{model_name}"
 
         with env.NextArtifactDir(f"multi_model_{model_name}", lock=lock, counter_p=counter_p):
-            test_failed =_run_test(dict(model_name=model_name, name=job_name), job_index=job_index)
-        if not test_failed:
-            return
+            test_artifact_dir, test_failed = _run_test(dict(model_name=model_name, name=job_name), job_index=job_index)
 
-        with lock:
+        if test_failed:
+            logging.warning(f"_run_test_multi_model: test {job_name=} failed :/")
             nonlocal failed
-            failed = True
+            with lock:
+                failed = True
 
     reset_prometheus()
 
