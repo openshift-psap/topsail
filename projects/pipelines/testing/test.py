@@ -212,14 +212,15 @@ def prepare_cluster():
         parallel.delayed(prepare_sutest_scale_up)
         parallel.delayed(prepare_rhods)
 
-    # Update the MAX_CONCURRENT_RECONCILES
+    # Update the MAX_CONCURRENT_RECONCILES if needed
     max_concurrent_reconciles = config.ci_artifacts.get_config("tests.pipelines.max_concurrent_reconciles")
-    updated_param = {
-        "data": {
-            "MAX_CONCURRENT_RECONCILES": str(max_concurrent_reconciles)
+    if max_concurrent_reconciles is not None:
+        updated_param = {
+            "data": {
+                "MAX_CONCURRENT_RECONCILES": str(max_concurrent_reconciles)
+            }
         }
-    }
-    run.run(f"oc patch cm data-science-pipelines-operator-dspo-parameters -n redhat-ods-applications --patch '{json.dumps(updated_param)}'")
+        run.run(f"oc patch cm data-science-pipelines-operator-dspo-parameters -n redhat-ods-applications --patch '{json.dumps(updated_param)}'")
 
 @entrypoint()
 def pipelines_run_one():
