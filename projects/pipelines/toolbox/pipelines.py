@@ -39,6 +39,7 @@ class Pipelines:
                          stop_on_exit=True,
                          capture_artifacts=True,
                          capture_prom_db=False,
+                         user_count=0,
                          ):
         """
         Run a notebook in a given notebook image.
@@ -56,6 +57,7 @@ class Pipelines:
           stop_on_exit: If False, keep the notebook running after the test.
           capture_artifacts: If False, disable the post-test artifact collection.
           capture_prom_db: If True, captures the Prometheus DB of the systems.
+          user_count: Does not change the test, but needed to decide which artifacts to save
         """
 
         return RunAnsibleRole(locals())

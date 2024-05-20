@@ -4,6 +4,10 @@
     state: directory
     mode: '0755'
 
+- name: Check if the test is small (< 50 users)
+  set_fact:
+    is_small_test: "{% if pipelines_run_kfp_notebook_user_count < 50 %}true{% else %}false{% endif %}"
+
 - name: Get the OpenShift Prometheus database
   include_role:
     name: cluster_prometheus_db
@@ -34,11 +38,13 @@
   shell:
     oc describe pods  -lpipeline/runid -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.desc"
   ignore_errors: true
+  when: is_small_test
 
 - name: Save the pods definition
   shell:
     oc get -oyaml pods  -lpipeline/runid -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.yaml"
   ignore_errors: true
+  when: is_small_test
 
   # ---
 
@@ -51,11 +57,13 @@
   shell:
     oc describe workflow.argoproj.io -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/workflow.desc"
   ignore_errors: true
+  when: is_small_test
 
 - name: Save the workflow definition
   shell:
     oc get -oyaml workflow.argoproj.io -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/workflow.yaml"
   ignore_errors: true
+  when: is_small_test
 
   # ---
 

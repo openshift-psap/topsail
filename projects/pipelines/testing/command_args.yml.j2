@@ -60,6 +60,7 @@ driver/cluster set_project_annotation/test_toleration:
   project: {{ base_image.namespace }}
 
 pipelines run_kfp_notebook:
+  user_count: {{ tests.pipelines.user_count }}
   run_count: {{ tests.pipelines.runs_per_pipeline }}
   run_delay: {{ tests.pipelines.run_delay }}
   notebook_name: {{ rhods.pipelines.notebook.name }}
