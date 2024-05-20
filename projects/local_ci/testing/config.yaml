@@ -9,7 +9,8 @@ base_image:
     service_account: topsail
     role: cluster-admin
 secrets:
-  psap-ods-secret:
+  dir:
+    name: psap-ods-secret
     env_key: PSAP_ODS_SECRET_PATH
 
 workloads:
@@ -68,3 +69,14 @@ workloads:
       # post_scale_down:
       #   command: kserve test cluster_scale_down
       #   always_run: true
+
+  finetuning:
+    command_group: rhods
+    test_args:
+    steps:
+      prepare:
+        command: finetuning test prepare_ci
+      test:
+        command: finetuning test test_ci
+      post_cleanup_cluster:
+        command: finetuning test cleanup_cluster_ci

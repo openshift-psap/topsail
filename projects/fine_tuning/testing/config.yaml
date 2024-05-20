@@ -89,6 +89,9 @@ ci_presets:
   cluster_icelake:
     clusters.sutest.compute.machineset.type: "Icelake"
 
+  cluster_a30_dev:
+    clusters.sutest.compute.machineset.type: "A30 Dev Env"
+
   simple_flash_attention:
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.dataset_replication: 1
@@ -110,6 +113,7 @@ clusters:
   metal_profiles:
     p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
     e26-h23-000-r650: cluster_icelake
+    bb37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30_dev
   create:
     type: single # can be: single, ocp, managed
     keep: false
@@ -232,6 +236,7 @@ tests:
       count: 20
       kueue_name: local-queue
       timespan: 0
+    evaluate_model: false
 matbench:
   preset: null
   workload: projects.fine_tuning.visualizations.fine_tuning
