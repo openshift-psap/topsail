@@ -34,6 +34,7 @@ class Fine_Tuning:
             per_device_eval_batch_size=4,
             use_flash_attn=False,
 
+            prepare_only=False,
     ):
         """
         Run a simple fine-tuning Job.
@@ -56,6 +57,8 @@ class Fine_Tuning:
           per_device_train_batch_size: batch size to use for the model fine-tuning training
           per_device_eval_batch_size: batch size to use for the model fine-tuning evaluation
           use_flash_attn: Enables/disables Flash Attention
+
+          prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
         """
 
         return RunAnsibleRole(locals())

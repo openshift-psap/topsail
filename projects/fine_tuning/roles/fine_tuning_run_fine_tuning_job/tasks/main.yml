@@ -10,6 +10,7 @@
     path: "{{ artifact_extra_logs_dir }}/artifacts/"
     state: directory
     mode: '0755'
+  when: not fine_tuning_run_fine_tuning_job_prepare_only
 
 - name: Prepare the config file template
   template:
@@ -21,8 +22,8 @@
   shell:
     set -o pipefail;
 
-    cat "{{ artifact_extra_logs_dir }}/src/base_config.yaml"
-     | yq > "{{ artifact_extra_logs_dir }}/src/config.json"
+    cat "{{ artifact_extra_logs_dir }}/src/base_config.yaml" | yq
+      > "{{ artifact_extra_logs_dir }}/src/config.json"
 
 - name: Prepare the config ConfigMap
   shell:
@@ -33,6 +34,7 @@
        --from-file=config.json=<(cat "{{ artifact_extra_logs_dir }}/src/config.json")
        --dry-run=client
        -oyaml
+       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_config.yaml"
        | oc apply -f-
 
 - name: Prepare the entrypoint ConfigMap
@@ -50,16 +52,24 @@
 - name: Prepare the template file
   template:
     src: "{{ fine_tuning_job_template }}"
-    dest: "{{ artifact_extra_logs_dir }}/src/fine_tuning_job.yaml"
+    dest: "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml"
     mode: '0400'
 
 - name: Delete the fine-tuning job, if it exists
   command:
-    oc delete -f "{{ artifact_extra_logs_dir }}/src/fine_tuning_job.yaml" --ignore-not-found
+    oc delete -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml" --ignore-not-found
+
+- name: Cleanup the other pytorchjobs
+  command:
+    oc delete pytorchjobs --all -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+
+- name: Exit the play in 'prepare_only' mode
+  meta: end_play
+  when: fine_tuning_run_fine_tuning_job_prepare_only | bool
 
 - name: Create the fine-tuning job
   command:
-    oc create -f "{{ artifact_extra_logs_dir }}/src/fine_tuning_job.yaml"
+    oc create -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml"
 
 - name: Wait for the job completion
   block:
@@ -94,7 +104,7 @@
     when: wait_pod_start.stdout not in ["Completed"]
 
   always:
-  - name: Capture the state of the InferenceService Pod resource
+  - name: Capture the state of the fine-tuning Pod resource
     shell:
       set -o pipefail;
 
@@ -130,7 +140,7 @@
         > {{ artifact_extra_logs_dir }}/artifacts/pod.log
     ignore_errors: true
 
-  - name: Capture the state of the InferenceService Pod resource
+  - name: Capture the state of the fine-tuning Pod resource
     shell:
       set -o pipefail;
 
