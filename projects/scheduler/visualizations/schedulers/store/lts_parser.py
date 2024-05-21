@@ -56,13 +56,9 @@ def _get_time_to_last_launch(results):
     if not results.resource_times:
         return 0, None
 
-
-    target_kind = {
-        "job": "Job",
-        "mcad": "AppWrapper",
-        "kueue": "Job",
-        "coscheduling": "Job",
-    }[results.test_case_properties.mode]
+    target_kind = results.test_case_properties.resource_kind.title()
+    if target_kind == "Pytorchjob":
+        target_kind = "PyTorchJob"
 
     resource_time = sorted([resource_time for resource_time in results.resource_times.values() if resource_time.kind == target_kind], key=lambda t: t.creation)[-1]
 
