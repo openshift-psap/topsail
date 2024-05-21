@@ -52,3 +52,6 @@ fine_tuning_run_fine_tuning_job_per_device_eval_batch_size: 4
 
 # Enables/disables Flash Attention
 fine_tuning_run_fine_tuning_job_use_flash_attn: false
+
+# if True, only prepare the environment but do not run the fine-tuning job.
+fine_tuning_run_fine_tuning_job_prepare_only: false
