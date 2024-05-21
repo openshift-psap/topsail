@@ -13,7 +13,7 @@ def prepare_base_job(namespace, job_template_name, base_name, pod_runtime):
 
 
     resource = copy.deepcopy(job_template)
-    name = f"{base_name}-{{INDEX}}-{pod_runtime}s".replace("_", "-") # template name for create_appwrapper function
+    name = f"{base_name}-{{INDEX}}-{pod_runtime}s".replace("_", "-") # template name for utils.create_resource function
 
     config.set_config(resource, "metadata.name", name)
     config.set_config(resource, "metadata.namespace", namespace)
