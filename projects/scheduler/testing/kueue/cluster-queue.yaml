@@ -6,7 +6,7 @@ spec:
   namespaceSelector: {} # Available to all namespaces
   queueingStrategy: BestEffortFIFO # Default queueing strategy
   resourceGroups:
-  - coveredResources: ["cpu", "memory"]
+  - coveredResources: ["cpu", "memory", "nvidia.com/gpu"]
     flavors:
     - name: default-flavor # points to the ResourceFlavor
       resources:
@@ -14,3 +14,5 @@ spec:
         nominalQuota: 1000 # updated at runtime
       - name: "memory"
         nominalQuota: 100Gi
+      - name: "nvidia.com/gpu"
+        nominalQuota: 0 # updated at runtime
