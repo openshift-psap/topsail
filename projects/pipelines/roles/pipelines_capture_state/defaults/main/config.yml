@@ -12,5 +12,5 @@ pipelines_capture_state_namespace:
 # identifier of the user to capture
 pipelines_capture_state_user_id:
 
-# how many total users there are in the scale test being run
-pipelines_capture_state_user_count: 0
+# whether to capture extra descriptions and YAML's
+pipelines_capture_state_capture_extra_artifacts: true

@@ -39,5 +39,5 @@ pipelines_run_kfp_notebook_capture_artifacts: true
 # If True, captures the Prometheus DB of the systems.
 pipelines_run_kfp_notebook_capture_prom_db: false
 
-# Does not change the test, but needed to decide which artifacts to save
-pipelines_run_kfp_notebook_user_count: 0
+# whether to capture extra descriptions and YAML's
+pipelines_run_kfp_notebook_capture_extra_artifacts: true

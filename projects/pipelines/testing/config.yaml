@@ -202,7 +202,7 @@ tests:
     user_pipeline_delay: 5
     sleep_factor: 1
     user_batch_size: 1
-    use_single_project: false
+    capture_extra_artifacts: false
 matbench:
   preset: null
   workload: projects.pipelines.visualizations.rhods-pipelines
