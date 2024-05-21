@@ -99,6 +99,7 @@ def _run_test(test_override_values, job_index=None):
 
     test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings") | test_override_values
     do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
+    do_many_model = config.ci_artifacts.get_config("tests.fine_tuning.many_model.enabled")
 
     logging.info(f"Test configuration to run: \n{yaml.dump(test_settings, sort_keys=False)}")
 
@@ -121,7 +122,9 @@ def _run_test(test_override_values, job_index=None):
 
         try:
             if dry_mode:
-                logging.info("tests.dry_mode is enabled, NOT running toolbox 'fine_tuning run_toolbox_from_config'")
+                logging.info("tests.dry_mode is enabled, NOT running with {test_settings} | {do_multi_model=} | {do_many_model=}")
+            elif do_many_model:
+                _run_test_many_model(test_settings)
             else:
                 run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
                                             extra=test_settings)
@@ -375,3 +378,15 @@ def matbench_run_one():
         failed = _run_test_and_visualize(test_config | settings)
 
     sys.exit(1 if failed else 0)
+
+
+def _run_test_many_model(test_settings):
+    run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
+                                extra=test_settings | dict(prepare_only=True))
+    artifact_dir = list(env.ARTIFACT_DIR.glob("*__fine_tuning__run_fine_tuning_job"))[-1]
+
+    fine_tuning_job_base = artifact_dir / "src" / "pytorchjob_fine_tuning.yaml"
+    if not fine_tuning_job_base.exists():
+        raise FileNotFoundError(f"Something went wrong with the fine tuning job preparation. {fine_tuning_job_base} does not exist.")
+
+    run.run_toolbox_from_config("scheduler", "generate_load", extra=dict(job_template_name=str(fine_tuning_job_base)))
