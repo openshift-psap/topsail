@@ -19,7 +19,7 @@ from . import prom as workload_prom
 register_important_file = None # will be when importing store/__init__.py
 
 artifact_dirnames = types.SimpleNamespace()
-artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_db"
+artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "**/*__cluster__dump_prometheus_db"
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
 artifact_dirnames.SCHEDULER_GENERATE_LOAD_DIR = "*__scheduler__generate_load"
 artifact_dirnames.SCHEDULER_CLEANUP = "*__scheduler__cleanup"
