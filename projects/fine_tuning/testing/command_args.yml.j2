@@ -79,3 +79,14 @@ cluster reset_prometheus_db/uwm:
 cluster dump_prometheus_db/uwm:
   label: app.kubernetes.io/instance=user-workload,app.kubernetes.io/component=prometheus
   namespace: openshift-user-workload-monitoring
+
+# many model test
+
+scheduler generate_load:
+  namespace: "{{ tests.fine_tuning.namespace }}"
+  base_name: "many-model-fine-tuning"
+  mode: kueue
+  count: {{ tests.fine_tuning.many_model.count }}
+  timespan: {{ tests.fine_tuning.many_model.timespan }}
+  pod_requests: null
+  resource_kind: pytorchjob

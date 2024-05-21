@@ -138,6 +138,14 @@ def prepare_namespace(test_settings):
         set_namespace_annotations()
         download_data_sources(test_settings)
 
+    if not config.ci_artifacts.get_config("tests.fine_tuning.many_model.enabled"):
+        return
+
+    from projects.scheduler.testing.prepare import prepare_kueue_queue
+    local_kueue_name = config.ci_artifacts.get_config("tests.fine_tuning.many_model.kueue_name")
+    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
+    prepare_kueue_queue(False, namespace, local_kueue_name)
+
 
 def scale_up_sutest():
     if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
