@@ -105,7 +105,7 @@ def _get_test_setup(entry):
         time_to_cleanup_sec = _get_time_to_cleanup(results)
         setup_info += [html.Ul(html.Li([f"Time to cleanup: ", html.Code(f"{time(time_to_cleanup_sec)}")]))]
 
-    setup_info += [html.Li(["Test-case configuration: ", html.B(entry.settings.name), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
+    setup_info += [html.Li(["Test-case configuration: ", html.B(getattr(entry.settings, "name", "")), html.Code(yaml.dump(entry.results.test_case_config), style={"white-space": "pre-wrap"})])]
     return setup_info
 
 
