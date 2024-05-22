@@ -59,8 +59,9 @@
 
   - name: Define the variables
     set_fact:
-      success_states: "{{ scheduler_generate_load_states_target | map('to_json') | join(', ') }}"
-      failed_states: "{{ scheduler_generate_load_states_unexpected | map('to_json') | join(', ') }}"
+      success_states: "{{ scheduler_generate_load_aw_states_target | map('to_json') | join(', ') }}"
+      failed_states: "{{ scheduler_generate_load_aw_states_unexpected | map('to_json') | join(', ') }}"
+    when: scheduler_generate_load_mode == "mcad"
 
   - name: Wait for the AppWrappers to complete
     shell: |
