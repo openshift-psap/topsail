@@ -1,0 +1,47 @@
+- name: Count successful tests
+  shell:
+    set -o pipefail;
+    (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep '^0$' || true) | wc -l
+  register: success_count_cmd
+  ignore_errors: true
+
+- name: Count failed tests
+  shell:
+    set -o pipefail;
+    (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code | grep -v '^0$' || true) | wc -l
+  ignore_errors: true
+
+- name: Show failed tests
+  shell: |
+    for f in "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.log; do
+      [[ "$(cat $(dirname "$f")/test.exit_code)" == 0 ]] && continue
+      echo -e "\n=== $f ==="
+      grep 'FAIL' $f | grep -v "^| FAIL|" | head -1
+      echo ""
+    done > "{{ artifact_extra_logs_dir }}"/failed_tests
+  ignore_errors: true
+
+- name: Save the success count and failed tests
+  shell:
+    echo "{{ success_count_cmd.stdout }}/{{ notebooks_ods_ci_scale_test_user_count }}"
+         > "{{ artifact_extra_logs_dir }}/success_count"
+
+# ---
+
+- name: Generate a UUID for the test
+  shell:
+    uuidgen > "{{ artifact_extra_logs_dir }}/.uuid"
+
+- name: Generate MatrixBenchmark settings file
+  shell: |
+    cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
+    test_case={{ notebooks_ods_ci_scale_test_ods_ci_test_case }}
+    exclude_tags={{ notebooks_ods_ci_scale_test_ods_ci_exclude_tags }}
+    user_count={{ notebooks_ods_ci_scale_test_user_count }}
+    EOF
+  ignore_errors: true
+
+- name: Generate MatrixBenchmark exit code file
+  shell:
+    (test -z "$(oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ notebooks_ods_ci_scale_test_namespace }})" && echo 0 || echo 1) > "{{ artifact_extra_logs_dir }}/exit_code"
+  ignore_errors: true

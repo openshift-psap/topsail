@@ -1,0 +1,63 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Notebooks.dashboard_scale_test
+
+# Parameters
+# Missing documentation for namespace
+# Mandatory value
+notebooks_dashboard_scale_test_namespace:
+
+# Missing documentation for idp_name
+# Mandatory value
+notebooks_dashboard_scale_test_idp_name:
+
+# Missing documentation for username_prefix
+# Mandatory value
+notebooks_dashboard_scale_test_username_prefix:
+
+# Missing documentation for user_count
+# Mandatory value
+# Type: Int
+notebooks_dashboard_scale_test_user_count:
+
+# Missing documentation for secret_properties_file
+# Mandatory value
+notebooks_dashboard_scale_test_secret_properties_file:
+
+# Missing documentation for minio_namespace
+# Mandatory value
+notebooks_dashboard_scale_test_minio_namespace:
+
+# Missing documentation for minio_bucket_name
+# Mandatory value
+notebooks_dashboard_scale_test_minio_bucket_name:
+
+# Missing documentation for user_index_offset
+# Type: Int
+notebooks_dashboard_scale_test_user_index_offset: 0
+
+# Missing documentation for artifacts_collected
+notebooks_dashboard_scale_test_artifacts_collected: all
+
+# Missing documentation for user_sleep_factor
+notebooks_dashboard_scale_test_user_sleep_factor: 1.0
+
+# Missing documentation for user_batch_size
+# Type: Int
+notebooks_dashboard_scale_test_user_batch_size: 1
+
+# Missing documentation for ods_ci_istag
+notebooks_dashboard_scale_test_ods_ci_istag:
+
+# Missing documentation for ods_ci_test_case
+notebooks_dashboard_scale_test_ods_ci_test_case: notebook_dsg_test.robot
+
+# Missing documentation for state_signal_redis_server
+notebooks_dashboard_scale_test_state_signal_redis_server:
+
+# Missing documentation for toleration_key
+notebooks_dashboard_scale_test_toleration_key:
+
+# Missing documentation for capture_prom_db
+# Type: Bool
+notebooks_dashboard_scale_test_capture_prom_db: true

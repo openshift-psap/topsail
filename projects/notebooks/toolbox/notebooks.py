@@ -203,3 +203,29 @@ class Notebooks:
         """
 
         return RunAnsibleRole()
+
+
+    @AnsibleRole("notebooks_dashboard_scale_test")
+    @AnsibleMappedParams
+    def dashboard_scale_test(
+            self,
+            namespace,
+            idp_name, username_prefix, user_count: int,
+            secret_properties_file,
+            minio_namespace,
+            minio_bucket_name,
+            user_index_offset: int = 0,
+            artifacts_collected="all",
+            user_sleep_factor=1.0,
+            user_batch_size: int = 1,
+            ods_ci_istag="",
+            ods_ci_test_case="notebook_dsg_test.robot",
+            state_signal_redis_server="",
+            toleration_key="",
+            capture_prom_db: bool = True,
+    ):
+        """
+        Runs the Dashboard scale test
+        """
+
+        return RunAnsibleRole()
