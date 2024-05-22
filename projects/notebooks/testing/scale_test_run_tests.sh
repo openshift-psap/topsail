@@ -132,7 +132,9 @@ run_test() {
     fi
 
     failed=0
-    if [[ "$test_flavor" == "ods-ci" ]]; then
+    if [[ "$test_flavor" == "dashboard-scale-test" ]]; then
+        run_dashboard_scale_test || failed=1
+    elif [[ "$test_flavor" == "ods-ci" ]]; then
         run_ods_ci_test || failed=1
     elif [[ "$test_flavor" == "notebook-performance" ]]; then
         run_single_notebook_tests "$repeat_idx" || failed=1

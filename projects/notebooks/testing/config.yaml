@@ -65,6 +65,9 @@ ci_presets:
     extends: [notebook_performance]
     tests.notebook_performance.test_only_one_image: true
 
+  dashboard_scale_test:
+    tests.notebooks.test_flavor: dashboard-scale-test
+
   cleanup:
     tests.notebooks.cleanup.on_exit.skip_if_le_than_users: 0
     tests.notebooks.cleanup.on_exit.driver.delete_test_namespaces: true
@@ -344,6 +347,10 @@ tests:
           repeat: 5
       # for faster smoke testing
       test_only_one_image: false
+
+    dashboard_scale_test: # enabled by setting 'tests.notebooks.test_flavor: dashboard-scale-test'
+      option: true
+
     # List of preset configurations to run as part of the 'gating' test
     gating_tests:
     - notebook_scale_test_dsg

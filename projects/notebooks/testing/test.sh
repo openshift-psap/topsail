@@ -42,8 +42,9 @@ KUBECONFIG_SUTEST="${KUBECONFIG_SUTEST:-${KUBECONFIG:-}}" # system under test
 source "$TESTING_NOTEBOOKS_DIR"/prepare_common.sh
 source "$TESTING_NOTEBOOKS_DIR"/prepare_driver.sh
 source "$TESTING_NOTEBOOKS_DIR"/prepare_sutest.sh
-source "$TESTING_NOTEBOOKS_DIR"/scale_test_ods_ci.sh
 source "$TESTING_NOTEBOOKS_DIR"/scale_test_run_tests.sh
+source "$TESTING_NOTEBOOKS_DIR"/scale_test_ods_ci.sh
+source "$TESTING_NOTEBOOKS_DIR"/dashboard_scale_test.sh
 source "$TESTING_NOTEBOOKS_DIR"/single_notebook_performance_test.sh
 
 # ---
