@@ -54,7 +54,11 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
         @functools.wraps(fct)
         def wrapper(*args, **kwargs):
             init(ignore_secret_path, apply_preset_from_pr_args)
-            return fct(*args, **kwargs)
+            exit_code = fct(*args, **kwargs)
+            logging.info(f"exit code of {fct.__qualname__}: {exit_code}")
+            if exit_code is None:
+                exit_code = 0
+            raise SystemExit(exit_code)
 
         return wrapper
     return decorator
