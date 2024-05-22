@@ -13,13 +13,11 @@ scheduler_generate_load_base_name: sched-test-
 # name of the job template to use inside the AppWrapper
 scheduler_generate_load_job_template_name: sleeper
 
-# list of expected target states
-scheduler_generate_load_states_target:
-- Completed
+# list of expected AppWrapper target states
+scheduler_generate_load_aw_states_target: null
 
-# list of states that fail the test
-scheduler_generate_load_states_unexpected:
-- Failed
+# list of AppWrapper states that fail the test
+scheduler_generate_load_aw_states_unexpected: null
 
 # mcad, kueue, coscheduling or job
 scheduler_generate_load_mode: job
