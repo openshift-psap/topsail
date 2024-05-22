@@ -195,3 +195,23 @@ notebooks cleanup:
 
 cluster undeploy_ldap:
   idp_name: {{ ldap.idp_name }}
+
+
+notebooks dashboard_scale_test:
+  namespace: {{ tests.notebooks.namespace }}
+  artifacts_collected: {{ tests.notebooks.artifacts_collected }}
+  idp_name: {{ ldap.idp_name }}
+  artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_tag }}"
+  ods_ci_istag: "{{ tests.notebooks.imagestream_name }}:{{ ods_ci_tag }}"
+  ods_ci_test_case: {{ tests.notebooks.ods_ci.test_case }}
+  minio_namespace: {{ minio_namespace }}
+  minio_bucket_name: {{ tests.notebooks.minio_bucket_name }}
+  user_sleep_factor: {{ tests.notebooks.users.sleep_factor }}
+  user_batch_size: {{ tests.notebooks.users.batch_size }}
+  secret_properties_file: {{ s3_ldap_password_location }}
+  state_signal_redis_server: {{ redis_internal_address }}
+  toleration_key: {{ clusters.driver.compute.machineset.taint.key }}
+  user_count: {{ tests.notebooks.users.count }}
+  user_index_offset: {{ tests.notebooks.users.start_offset }}
+  username_prefix: {{ ldap.users.prefix }}
+  capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
