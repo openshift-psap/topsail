@@ -185,10 +185,34 @@
       oc get pods -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.json"
       oc get pods -owide -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.status"
       {% if not is_large_test %}
-      oc get pods -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"1
+      oc get pods -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"
       oc describe pods -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
       {% endif %}
     ignore_errors: true
+
+  - name: Create the test Pod logs directory
+    file:
+      path: "{{ artifact_extra_logs_dir }}/logs"
+      state: directory
+      mode: '0755'
+
+  - name: Get the names of the tester_pods
+    command:
+      oc get pods -oname -n {{ scheduler_generate_load_namespace }}
+    register: pod_names_cmd
+    ignore_errors: true
+    # mute to reduce the log length
+    no_log: true
+
+  - name: Get the logs of the tester Pod
+    shell:
+      oc logs {{ item }} --all-containers --prefix
+         -n {{ scheduler_generate_load_namespace }}
+         > "{{ artifact_extra_logs_dir }}/logs/$(basename "{{ item }}").log"
+    loop: "{{ pod_names_cmd.stdout_lines }}"
+    ignore_errors: true
+    # mute to reduce the log length
+    no_log: true
 
   - name: Capture the state of the workloads
     shell: |
