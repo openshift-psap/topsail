@@ -9,7 +9,6 @@ import yaml
 from dash import html
 from dash import dcc
 
-from matrix_benchmarking.common import Matrix
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
@@ -66,14 +65,17 @@ def _get_test_setup(entry):
 
     setup_info += [html.Ul(nodes_info)]
 
-    test_duration = entry.results.lts.results.time_to_test_sec / 60
+    setup_info += [html.Li(["Test duration: ", html.Code(f"{entry.results.lts.results.test_duration/60:.1f} minutes"), "for", html.Code([str(entry.results.test_case_properties.count), entry.results.target_kind_name])])]
 
-    test_speed = entry.results.test_case_properties.total_pod_count / test_duration
-    setup_info += [html.Li(["Test duration: ", html.Code(f"{test_duration:.1f} minutes")])]
+    setup_info += [html.Ul(html.Li(["Test throughput of ", html.Code(f"{entry.results.lts.results.actual_throughput:.2f} {entry.results.target_kind_name}/minute")]))]
+    setup_info += [html.Ul(html.Ul(html.Li([f"Average time per job:", html.Code(f"{entry.results.lts.results.avg_time_per_job:.2f} seconds")])))]
 
-    if entry.results.test_case_properties.launch_duration != 0:
-        setup_info += [html.Ul(html.Li(["Launch speed of ", html.Code(f"{entry.results.test_case_properties.total_pod_count/entry.results.test_case_properties.launch_duration:.2f} {entry.results.target_kind_name}/minute")]))]
-    setup_info += [html.Ul(html.Li(["Test speed of ", html.Code(f"{test_speed:.2f} {entry.results.target_kind_name}/minute")]))]
+    setup_info += [html.Ul(html.Li([f"{entry.results.target_kind_name} theoretical throughput of ", html.Code(f"{entry.results.lts.results.job_theoretical_throughput:.2f} {entry.results.target_kind_name}/minute")]))]
+    setup_info += [html.Ul(html.Ul(html.Li([f" median runtime:", html.Code(f"{entry.results.lts.results.job_median_runtime:.2f} seconds")])))]
+
+    setup_info += [html.Ul(html.Li([f"Pod theoretical throughput of ", html.Code(f"{entry.results.lts.results.pod_theoretical_throughput:.2f} Pod/minute")]))]
+    setup_info += [html.Ul(html.Ul(html.Li([f"median runtime:", html.Code(f"{entry.results.lts.results.pod_median_runtime:.2f} seconds")])))]
+    setup_info += [html.Li(["Max concurrency: ", html.Code(f"{entry.results.lts.results.max_concurrency} Pods running simultaneously")])]
 
     time_to_last_schedule_sec = entry.results.lts.results.time_to_last_schedule_sec
     time_to_last_launch_sec = entry.results.lts.results.time_to_last_launch_sec

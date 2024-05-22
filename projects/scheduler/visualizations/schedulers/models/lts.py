@@ -43,6 +43,14 @@ class Results(matbench_models.ExclusiveModel):
     time_to_last_schedule_sec: float
     time_to_test_sec: float
 
+    actual_throughput: float
+    job_median_runtime: float
+    job_theoretical_throughput: float
+    max_concurrency: float
+    pod_median_runtime: float
+    pod_theoretical_throughput: float
+    avg_time_per_job: float
+    test_duration: float
 
 class KPI(matbench_models.KPI, Settings): pass
 

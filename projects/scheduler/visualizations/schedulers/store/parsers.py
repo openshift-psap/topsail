@@ -146,13 +146,15 @@ def _parse_pod_times(dirname):
       start_time_str = pod["status"].get("startTime")
       pod_time.start_time = None if not start_time_str else \
           datetime.datetime.strptime(start_time_str, core_helpers_store_parsers.K8S_TIME_FMT)
+      pod_time.conditions = {}
 
       for condition in pod["status"].get("conditions", []):
           last_transition = datetime.datetime.strptime(condition["lastTransitionTime"], core_helpers_store_parsers.K8S_TIME_FMT)
 
+          pod_time.conditions[condition["type"]] = last_transition
+
           if condition["type"] == "ContainersReady":
               pod_time.containers_ready = last_transition
-
           elif condition["type"] == "Initialized":
               pod_time.pod_initialized = last_transition
           elif condition["type"] == "PodScheduled":
@@ -233,6 +235,12 @@ def __parse_workload_times(item, resource_times):
 def __parse_pytorchjob_times(item, resource_times):
     resource_times.conditions["ETCD Created"] = resource_times.creation
 
+    resource_times.start = \
+        datetime.datetime.strptime(
+            item["status"].get("startTime"),
+            core_helpers_store_parsers.K8S_TIME_FMT) \
+            if item["status"].get("startTime") else None
+
     resource_times.completion = \
         datetime.datetime.strptime(
             item["status"].get("completionTime"),
@@ -244,6 +252,11 @@ def __parse_pytorchjob_times(item, resource_times):
             datetime.datetime.strptime(
                 condition["lastTransitionTime"],
                 core_helpers_store_parsers.K8S_TIME_FMT)
+
+    if resource_times.start and resource_times.completion:
+        resource_times.duration = (resource_times.completion - resource_times.start).total_seconds()
+    else:
+        resource_times.duration = None
 
 
 @ignore_file_not_found

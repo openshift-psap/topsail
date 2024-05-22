@@ -2,6 +2,9 @@ import types
 import logging
 import uuid
 
+import pandas as pd
+import statistics as stats
+
 from .. import models
 from ..models import lts as models_lts
 
@@ -35,6 +38,16 @@ def generate_lts_results(results):
 
     results_lts.time_to_test_sec = (results.test_start_end_time.end - results.test_start_end_time.start).total_seconds()
 
+    results_lts.job_median_runtime = _get_median_runtime(results, results.test_case_properties.resource_kind)
+
+    results_lts.pod_median_runtime = _get_pod_median_runtime(results)
+    results_lts.max_concurrency = _get_max_concurrency(results)
+    results_lts.job_theoretical_throughput = 1/(results_lts.job_median_runtime/60) * results_lts.max_concurrency
+    results_lts.pod_theoretical_throughput = 1/(results_lts.pod_median_runtime/60) * results_lts.max_concurrency
+    results_lts.test_duration = results_lts.time_to_test_sec
+    results_lts.actual_throughput = results.test_case_properties.count / results_lts.test_duration * 60
+
+    results_lts.avg_time_per_job = results_lts.test_duration / (results.test_case_properties.count / results_lts.max_concurrency)
     return results_lts
 
 
@@ -110,3 +123,38 @@ def get_kpi_labels(lts_payload):
     kpi_labels["test_uuid"] = lts_payload.metadata.test_uuid
 
     return kpi_labels
+
+
+def _get_median_runtime(results, kind):
+    durations = []
+    for resource_name, resource_times in results.resource_times.items():
+        if resource_times.kind.lower() != kind.lower(): continue
+
+        durations.append(resource_times.duration)
+
+    if len(durations) <= 2:
+        return None
+
+    return stats.median(durations)
+
+
+def _get_pod_median_runtime(results):
+    durations = []
+
+    for pod_times in results.pod_times:
+        duration = pod_times.container_finished - pod_times.start_time
+        durations.append(duration.total_seconds())
+
+    if len(durations) <= 2:
+        return None
+
+    return stats.median(durations)
+
+
+def _get_max_concurrency(results):
+    from ..plotting import mapping
+
+    data = mapping.ResourceMappingTimeline_generate_data_by_all(results)
+    df = pd.DataFrame(data)
+
+    return df["Count"].max()
