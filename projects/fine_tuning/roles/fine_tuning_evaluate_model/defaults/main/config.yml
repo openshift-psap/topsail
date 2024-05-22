@@ -1,54 +1,54 @@
 # Auto-generated file, do not edit manually ...
 # Toolbox generate command: repo generate_ansible_default_settings
-# Source component: Fine_Tuning.run_fine_tuning_job
+# Source component: Fine_Tuning.evaluate_model
 
 # Parameters
 # the name of the fine-tuning job to create
 # Mandatory value
-fine_tuning_run_fine_tuning_job_name:
+fine_tuning_evaluate_model_name:
 
 # the name of the namespace where the scheduler load will be generated
 # Mandatory value
-fine_tuning_run_fine_tuning_job_namespace:
+fine_tuning_evaluate_model_namespace:
 
 # the name of the PVC where the model and dataset are stored
 # Mandatory value
-fine_tuning_run_fine_tuning_job_pvc_name:
+fine_tuning_evaluate_model_pvc_name:
 
 # the name of the model to use inside the /dataset directory of the PVC
 # Mandatory value
-fine_tuning_run_fine_tuning_job_model_name:
+fine_tuning_evaluate_model_model_name:
 
 # the name of the dataset to use inside the /model directory of the PVC
 # Mandatory value
-fine_tuning_run_fine_tuning_job_dataset_name:
+fine_tuning_evaluate_model_eval_dataset_name:
 
 # number of replications of the dataset to use, to artificially extend or reduce the fine-tuning effort
-fine_tuning_run_fine_tuning_job_dataset_replication: 1
+fine_tuning_evaluate_model_dataset_replication: 1
 
 # name of the transformation to apply to the dataset
-fine_tuning_run_fine_tuning_job_dataset_transform: null
+fine_tuning_evaluate_model_dataset_transform: null
 
 # the image to use for the fine-tuning container
-fine_tuning_run_fine_tuning_job_container_image: quay.io/modh/fms-hf-tuning:01b3824c9aba22d9d0695399681e6f0507840e7f
+fine_tuning_evaluate_model_container_image: quay.io/modh/fms-hf-tuning:01b3824c9aba22d9d0695399681e6f0507840e7f
 
 # the number of GPUs to request for the fine-tuning job
-fine_tuning_run_fine_tuning_job_gpu: 0
+fine_tuning_evaluate_model_gpu: 0
 
 # the number of RAM gigs to request for to the fine-tuning job (in Gigs)
-fine_tuning_run_fine_tuning_job_memory: 10
+fine_tuning_evaluate_model_memory: 10
 
 # the number of CPU cores to request for the fine-tuning job (in cores)
-fine_tuning_run_fine_tuning_job_cpu: 1
+fine_tuning_evaluate_model_cpu: 1
 
 # if True, sets the 'limits' of the job with the same value as the request.
-fine_tuning_run_fine_tuning_job_request_equals_limits: false
+fine_tuning_evaluate_model_request_equals_limits: false
 
 # batch size to use for the model fine-tuning training
-fine_tuning_run_fine_tuning_job_per_device_train_batch_size: 4
+fine_tuning_evaluate_model_per_device_train_batch_size: 4
 
 # batch size to use for the model fine-tuning evaluation
-fine_tuning_run_fine_tuning_job_per_device_eval_batch_size: 4
+fine_tuning_evaluate_model_per_device_eval_batch_size: 4
 
 # Enables/disables Flash Attention
-fine_tuning_run_fine_tuning_job_use_flash_attn: false
+fine_tuning_evaluate_model_use_flash_attn: false

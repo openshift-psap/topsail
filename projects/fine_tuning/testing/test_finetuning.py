@@ -96,8 +96,15 @@ def prepare_matbench_test_files(job_index=None):
 
 def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
+    eval_only_mode = config.ci_artifacts.get_config("tests.fine_tuning.eval_only_mode")
+    run_evaluation = eval_only_mode | config.ci_artifacts.get_config("tests.fine_tuning.evaluate_model")
 
     test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings") | test_override_values
+
+    eval_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings") | test_override_values
+    eval_settings.pop("dataset_name")
+    eval_settings["eval_dataset_name"] = config.ci_artifacts.get_config("tests.fine_tuning.eval_dataset_name")
+
     do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
     do_many_model = config.ci_artifacts.get_config("tests.fine_tuning.many_model.enabled")
 
@@ -125,6 +132,8 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
                 logging.info("tests.dry_mode is enabled, NOT running with {test_settings} | {do_multi_model=} | {do_many_model=}")
             elif do_many_model:
                 _run_test_many_model(test_settings)
+            elif eval_only_mode:
+                logging.info("tests.eval_only_mode is enabled, NOT running fine-tuning job, only the evaluation script")
             else:
                 run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
                                             extra=test_settings)
@@ -135,11 +144,11 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
             exc = None
 
+            if run_evaluation:
+                run.run_toolbox_from_config("fine_tuning", "evaluate_model", extra=eval_settings)
+
             if not do_multi_model:
                 exc = run.run_and_catch(exc, generate_prom_results, "single-model")
-
-            if config.ci_artifacts.get_config("tests.fine_tuning.evaluate_model"):
-                exc = run.run_and_catch(exc, run.run_toolbox, "fine_tuning", "evaluate_model")
 
             if config.ci_artifacts.get_config("tests.capture_state"):
                 exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)

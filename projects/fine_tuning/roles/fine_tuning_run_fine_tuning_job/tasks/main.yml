@@ -53,6 +53,9 @@
        | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml"
        | oc apply -f-
 
+- debug:
+    msg: "Model path: /mnt/storage/model/{{ fine_tuning_run_fine_tuning_job_model_name }}"
+
 - name: Prepare the template file
   template:
     src: "{{ fine_tuning_job_template }}"

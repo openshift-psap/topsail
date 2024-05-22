@@ -63,13 +63,13 @@ fine_tuning run_fine_tuning_job:
   dataset_replication: {{ tests.fine_tuning.test_settings.dataset_replication }}
 
 fine_tuning evaluate_model:
-  name: fine-tuning-evaluation
+  name: {{ tests.fine_tuning.test_settings.job_name }}-evaluation
   namespace: "{{ tests.fine_tuning.namespace }}"
   pvc_name: "{{ fine_tuning.pvc_name }}"
   container_image: "{{ fine_tuning.image }}"
 
   model_name: {{ tests.fine_tuning.test_settings.model_name }}
-  dataset_name: {{ tests.fine_tuning.test_settings.dataset_name }}
+  eval_dataset_name: {{ tests.fine_tuning.eval_dataset_name }}
   dataset_replication: {{ tests.fine_tuning.test_settings.dataset_replication }}
 
 cluster download_to_pvc:

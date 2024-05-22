@@ -98,6 +98,16 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: [1, 2, 4]
     tests.fine_tuning.test_settings.use_flash_attn: [true]
 
+  simple_dev_test:
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+    tests.fine_tuning.test_settings.dataset_replication: 1
+    tests.fine_tuning.test_settings.model_name: bloom-560m
+    tests.fine_tuning.test_settings.gpu: 1
+    tests.fine_tuning.test_settings.use_flash_attn: false
+    tests.fine_tuning.multi_model.enabled: false
+    tests.fine_tuning.eval_only_mode: true
+    tests.fine_tuning.eval_dataset_name: twitter_complaints_small.json
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -236,7 +246,9 @@ tests:
       count: 20
       kueue_name: local-queue
       timespan: 0
+    eval_only_mode: false
     evaluate_model: false
+    eval_dataset_name: twitter_complaints_small.json
 matbench:
   preset: null
   workload: projects.fine_tuning.visualizations.fine_tuning

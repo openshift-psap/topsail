@@ -32,13 +32,9 @@ else
 	echo "No GPU seem to be available."
 fi
 
-if [[ -z "${NUM_GPUS:-1}" || "${NUM_GPUS:-1}" == 1 ]]; then
-	echo "Running with a single process"
-	exec python launch_training.py
-fi
-
 echo "Running with $NUM_GPUS GPUs"
 echo "Running evaluation script"
 echo "model=$MODEL_PATH"
 echo "data_path=$DATASET_DEST"
-exec python /tmp/fms-hf-tuning/scripts/run_evaluation.py --model $MODEL_PATH
+echo "Dataset size: $(cat $DATASET_DEST | wc -l) lines"
+exec python /tmp/fms-hf-tuning/scripts/run_evaluation.py --model=$MODEL_PATH --data_path=$DATASET_DEST

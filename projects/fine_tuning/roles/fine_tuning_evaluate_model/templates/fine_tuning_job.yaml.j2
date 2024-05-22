@@ -21,7 +21,7 @@ spec:
             - name: MODEL_PATH
               value: "/mnt/storage/model/{{ fine_tuning_evaluate_model_model_name }}"
             - name: DATASET_SOURCE
-              value: "/mnt/storage/dataset/{{ fine_tuning_evaluate_model_dataset_name }}"
+              value: "/mnt/storage/dataset/{{ fine_tuning_evaluate_model_eval_dataset_name }}"
             - name: DATASET_DEST
               value: "/mnt/output/dataset.json"
             - name: DATASET_REPLICATION
