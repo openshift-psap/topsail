@@ -32,6 +32,14 @@ ci_presets:
     tests.fine_tuning.multi_model.enabled: true
     tests.fine_tuning.test_settings.model_name: null
 
+  dgx_multi_model:
+    extends: [multi_model]
+    tests.fine_tuning.multi_model.models:
+    - name: gpt_bigcode-santacoder
+      replicas: 8
+    tests.fine_tuning.test_settings.gpu: 1
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+
   many_model:
     tests.prom_plot_workload: null
     tests.fine_tuning.many_model.enabled: true
