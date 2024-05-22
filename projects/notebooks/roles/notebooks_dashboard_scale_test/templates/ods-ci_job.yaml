@@ -1,0 +1,111 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s3cmd-config
+data:
+  s3cfg: |
+    # Setup endpoint
+    host_base = $S3_HOST_BASE
+    host_bucket = $S3_HOST_BUCKET
+    bucket_location = us-east-1
+    use_https = False
+
+    # Setup access keys
+    access_key = $S3_ACCESS_KEY
+    secret_key = $S3_SECRET_KEY
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    deployment: ods-ci
+  name: ods-ci
+spec:
+  parallelism: {{ notebooks_dashboard_scale_test_user_count }}
+  completions: {{ notebooks_dashboard_scale_test_user_count }}
+  activeDeadlineSeconds: 18000
+  backoffLimit: 0
+  completionMode: Indexed
+  template:
+    metadata:
+      name: ods-ci-loadtest
+    spec:
+      containers:
+      - image: "{{ rhods_ods_ci_image }}"
+        imagePullPolicy: Always
+        name: main
+        command: ['bash', '/mnt/dashboard-scale-test-entrypoint/entrypoint.sh']
+        env:
+        - name: RUN_ROBOT_TEST_CASE
+          value: "{{ notebooks_dashboard_scale_test_ods_ci_test_case }}"
+        - name: ARTIFACT_DIR
+          value: /mnt/shared-dir/ods-ci
+        - name: SLEEP_FACTOR
+          value: "{{ notebooks_dashboard_scale_test_user_sleep_factor }}"
+        - name: USER_BATCH_SIZE
+          value: "{{ notebooks_dashboard_scale_test_user_batch_size }}"
+        - name: USER_COUNT
+          value: "{{ notebooks_dashboard_scale_test_user_count }}"
+        - name: USER_INDEX_OFFSET
+          value: "{{ notebooks_dashboard_scale_test_user_index_offset }}"
+        - name: REDIS_SERVER
+          value: "{{ notebooks_dashboard_scale_test_state_signal_redis_server }}"
+        volumeMounts:
+        - name: shared-dir
+          mountPath: /mnt/shared-dir
+        - name: ods-ci-test-variables
+          mountPath: /mnt/ods-ci-test-variables
+        - name: dashboard-scale-test-entrypoint
+          mountPath: /mnt/dashboard-scale-test-entrypoint
+        resources:
+          requests:
+            memory: 750M
+            cpu: 0.2
+          limits:
+            memory: 750M
+            cpu: 0.2
+      - image: "{{ rhods_artifacts_exporter_image }}"
+        name: artifacts-exporter
+        command: ['bash', '/mnt/dashboard-scale-test-entrypoint/artifacts-exporter.sh']
+        env:
+        - name: ARTIFACTS_COLLECTED
+          value: "{{ notebooks_dashboard_scale_test_artifacts_collected }}"
+        - name: ARTIFACT_DIR
+          value: "/mnt/shared-dir/ods-ci"
+        - name: BUCKET_DEST_DIR
+          value: "ods-ci"
+        - name: USER_COUNT
+          value: "{{ notebooks_dashboard_scale_test_user_count }}"
+        - name: MINIO_NAMESPACE
+          value: "{{ notebooks_dashboard_scale_test_minio_namespace }}"
+        - name: S3_BUCKET_NAME
+          value: "{{ notebooks_dashboard_scale_test_minio_bucket_name }}"
+        volumeMounts:
+        - name: s3cmd-config
+          mountPath: /mnt/s3-config
+        - name: shared-dir
+          mountPath: /mnt/shared-dir
+        - name: ods-ci-test-variables
+          mountPath: /mnt/ods-ci-test-variables
+        - name: dashboard-scale-test-entrypoint
+          mountPath: /mnt/dashboard-scale-test-entrypoint
+      restartPolicy: Never
+{% if notebooks_dashboard_scale_test_toleration_key|length %}
+      tolerations:
+      - effect: NoSchedule
+        key: {{ notebooks_dashboard_scale_test_toleration_key }}
+        operator: Exists
+{% endif %}
+      volumes:
+      - name: ods-ci-test-variables
+        secret:
+          secretName: ods-ci-test-variables
+      - name: s3cmd-config
+        configMap:
+          name: s3cmd-config
+      - name: dashboard-scale-test-entrypoint
+        configMap:
+          name: dashboard-scale-test-entrypoint
+      - name: shared-dir
+        emptyDir: {}
