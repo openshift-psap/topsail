@@ -135,7 +135,7 @@ def _run_test(test_override_values, job_index=None):
 
             exc = None
             if not do_multi_model:
-                exc = run.run_and_catch(exc, dump_prometheus)
+                exc = run.run_and_catch(exc, generate_prom_results, "single-model")
 
             if config.ci_artifacts.get_config("tests.capture_state"):
                 exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)
