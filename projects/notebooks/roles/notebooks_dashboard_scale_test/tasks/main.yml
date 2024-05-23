@@ -1,0 +1,244 @@
+---
+- name: Ensure that the secret properties file exists
+  stat:
+    path: "{{ notebooks_dashboard_scale_test_secret_properties_file }}"
+
+- name: Ensure that the user count is set
+  fail: msg="user count isn't set"
+  when: notebooks_dashboard_scale_test_user_count | int < 0
+
+- name: Ensure that the IDP name is set
+  fail: msg="idp name isn't set"
+  when: not notebooks_dashboard_scale_test_idp_name
+
+- name: Ensure that the username prefix is set
+  fail: msg="username prefix isn't set"
+  when: not notebooks_dashboard_scale_test_username_prefix
+
+- name: Define the test namespace
+  set_fact:
+    tester_namespace: "{{ notebooks_dashboard_scale_test_namespace }}"
+
+- name: Define the test environments
+  set_fact:
+    rhods_ods_ci_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ notebooks_dashboard_scale_test_ods_ci_istag }}
+    rhods_artifacts_exporter_image: image-registry.openshift-image-registry.svc:5000/{{ tester_namespace }}/{{ notebooks_dashboard_scale_test_artifacts_exporter_istag }}
+    tester_job_name: ods-ci
+    test_artifacts_collected: "{{ notebooks_dashboard_scale_test_artifacts_collected }}"
+    capture_prom_db: "{{ notebooks_dashboard_scale_test_capture_prom_db }}"
+
+- name: Fetch RHODS endpoints from the SUT cluster
+  block:
+  - name: Test the connectivity of the SUT cluster
+    command: oc whoami --show-console
+
+  - name: Get RHODS dashboard address (SUT cluster)
+    command: oc get route/rhods-dashboard -n redhat-ods-applications -ojsonpath={.spec.host}
+    register: rhods_dashboard_hostname_cmd
+
+  - name: Get OCP console URL (SUT cluster)
+    command: oc whoami --show-console
+    register: oc_console_url_cmd
+
+  - name: Get OCP API URL (SUT cluster)
+    command: oc whoami --show-server
+    register: oc_api_url_cmd
+
+  - name: Get the RHODS CSV name
+    shell:
+      set -o pipefail;
+      oc get csv -oname -n redhat-ods-operator | grep rhods-operator
+    register: rhods_csv_cmd
+
+  - name: Get the RHODS version
+    shell:
+      set -o pipefail;
+      oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
+    register: rhods_version_cmd
+
+- name: Get the ODS-CI sample var file
+  shell:
+    oc debug istag/{{ notebooks_dashboard_scale_test_ods_ci_istag }}
+       -n {{ tester_namespace }}
+       -- cat ods_ci/test-variables.yml > /tmp/test-variables.yml.example
+
+- name: Apply the ODS-CI template
+  shell: |
+    set -o pipefail;
+    set -e;
+
+    OCP_CONSOLE_URL="{{ oc_console_url_cmd.stdout }}";
+    OCP_API_URL="{{ oc_api_url_cmd.stdout }}";
+    ODH_DASHBOARD_URL="https://{{ rhods_dashboard_hostname_cmd.stdout }}";
+
+    TEST_USER_AUTH_TYPE="{{ notebooks_dashboard_scale_test_idp_name }}";
+    TEST_USER_USERNAME="{{ notebooks_dashboard_scale_test_username_prefix }}#{USER_INDEX}";
+
+    export TEST_USER_PASSWORD="PASSWORD_WILL_BE_HERE";
+
+    TEST_VAR_SAFE={{ artifact_extra_logs_dir }}/test-variables_safe.yml
+    TEST_VAR_FULL=/tmp/test-variables.yml
+
+    cat /tmp/test-variables.yml.example | \
+      yq -y .OCP_CONSOLE_URL=\"${OCP_CONSOLE_URL}\" | \
+      yq -y .OCP_API_URL=\"${OCP_API_URL}\" | \
+      yq -y .ODH_DASHBOARD_URL=\"${ODH_DASHBOARD_URL}\" | \
+      yq -y .RHODS_VERSION=\"${RHODS_VERSION}\" | \
+      yq -y .TEST_USER.AUTH_TYPE=\"${TEST_USER_AUTH_TYPE}\" | \
+      yq -y .TEST_USER.USERNAME=\"${TEST_USER_USERNAME}\" \
+        > "$TEST_VAR_SAFE"
+
+    cp "$TEST_VAR_SAFE" "$TEST_VAR_FULL"
+
+    TEST_USER_PASSWORD="$(cat "{{ notebooks_dashboard_scale_test_secret_properties_file }}" | grep '^user_password=' | cut -d= -f2)";
+
+    yq -yi .TEST_USER.PASSWORD=\"${TEST_USER_PASSWORD}\" "$TEST_VAR_FULL"
+
+- name: Delete the ODS-CI secret, it it exists
+  command:
+    oc delete secret ods-ci-test-variables
+       -n {{ tester_namespace }}
+       --ignore-not-found
+
+- name: Create the ODS-CI secret
+  command:
+    oc create secret generic ods-ci-test-variables
+       --from-file test-variables.yml=/tmp/test-variables.yml
+       -n {{ tester_namespace }}
+
+- name: Delete the ODS-CI secret file
+  file:
+    path: /tmp/test-variables.yml
+    state: absent
+
+- name: Create the src artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Instantiate the RHODS tester job template
+  template:
+    src: "{{ notebooks_dashboard_scale_test_job }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/000_notebooks_dashboard_scale_test.yaml"
+    mode: '0400'
+
+- name: Delete the RHODS test entrypoint, if it exists
+  command:
+    oc delete cm/dashboard-scale-test-entrypoint
+       -n {{ tester_namespace }}
+       --ignore-not-found
+
+- name: Create the RHODS test entrypoint
+  command:
+    oc create cm dashboard-scale-test-entrypoint
+       "--from-file=entrypoint.sh={{ notebooks_dashboard_scale_test_entrypoint }}"
+       "--from-file=state-signal_barrier.py={{ notebooks_dashboard_scale_test_state_signal_barrier }}"
+       "--from-file=artifacts-exporter.sh={{ notebooks_dashboard_scale_test_s3_artifacts_exporter_sidecar }}"
+       "--from-file={{ notebooks_dashboard_scale_test_test_case_directory }}"
+       -n {{ tester_namespace }}
+
+- name: Empty the Minio S3 bucket
+  shell: |
+    oc -c mc -n {{ notebooks_dashboard_scale_test_minio_namespace }} rsh $(oc get pod -lapp=minio -n {{ notebooks_dashboard_scale_test_minio_namespace }} -oname) \
+       mc --config-dir /tmp rm minio/{{ notebooks_dashboard_scale_test_minio_bucket_name }}/ --recursive --force --quiet >/dev/null;
+    oc -c mc -n {{ notebooks_dashboard_scale_test_minio_namespace }} rsh $(oc get pod -lapp=minio -n {{ notebooks_dashboard_scale_test_minio_namespace }} -oname) \
+       rm -rf /artifacts/to_export > /dev/null
+    oc -c mc -n {{ notebooks_dashboard_scale_test_minio_namespace }} rsh $(oc get pod -lapp=minio -n {{ notebooks_dashboard_scale_test_minio_namespace }} -oname) \
+       mc --config-dir /tmp cp /etc/os-release minio/{{ notebooks_dashboard_scale_test_minio_bucket_name }}; # without it, cp may fail if the bucket is empty
+  failed_when: false
+
+- name: Delete the RHODS tester job, if it exists
+  command:
+    oc delete
+       -f "{{ artifact_extra_logs_dir }}/src/000_notebooks_dashboard_scale_test.yaml"
+       --ignore-not-found
+       -n {{ tester_namespace }}
+
+# ---
+
+- name: Cleanup the Prometheus databases of the sutest cluster
+  when: capture_prom_db | bool
+  block:
+  - name: Cleanup the RHODS Prometheus database of the sutest cluster
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: reset
+      cluster_prometheus_db_label: deployment=prometheus
+      cluster_prometheus_db_namespace: redhat-ods-monitoring
+
+  - name: Cleanup the Prometheus database of the sutest cluster
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: reset
+
+- name: Cleanup the Prometheus database of the driver cluster
+  when: capture_prom_db | bool
+  include_role:
+    name: cluster_prometheus_db
+  vars:
+    cluster_prometheus_db_mode: reset
+
+# ---
+
+- name: Create the RHODS test job
+  shell:
+    set -o pipefail;
+    cat "{{ artifact_extra_logs_dir }}/src/000_notebooks_dashboard_scale_test.yaml"
+      | sed 's/$JOB_CREATION_TIME/'$(date "+%Y-%m-%dT%H:%M:%SZ" --utc)'/'
+      | oc create -f- -n "{{ tester_namespace }}"
+
+- name: Wait for the RHODS tester job to start
+  shell:
+    oc get jobs/ods-ci -ojsonpath={.status.startTime} -n {{ tester_namespace }}
+  register: wait_rhods_test_job_start
+  retries: 12
+  delay: 5
+  until: wait_rhods_test_job_start.stdout
+
+- name: Wait for the RHODS tester job to terminate
+  command:
+    oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ tester_namespace }}
+  register: wait_rhods_test_job
+  retries: 180
+  delay: 60
+  until: not wait_rhods_test_job.stdout
+  failed_when: false
+
+- name: Test if the Notebook Pods did not crash (reboot)
+  shell:
+    set -o pipefail;
+    oc get pods -lopendatahub.io/dashboard=true -A -ojsonpath='{range .items[*]}{range .status.containerStatuses[*]}{.restartCount}{"\n"}{end}{end}'
+       | tr ' ' '\n'
+       | python -c "import sys; print(sum(int(l) for l in sys.stdin))"
+  register: check_pod_restart_count_cmd
+  failed_when: false
+
+- name: Capture the sutest cluster artifacts
+  include_tasks: artifacts_sutest.yml
+
+- name: Capture the driver cluster artifacts
+  include_tasks: artifacts_driver.yml
+
+- name: Capture the rest of the artifacts
+  include_tasks: artifacts.yml
+
+- name: Show the artifacts directory
+  debug: msg="The test artifacts have been stored in {{ artifact_extra_logs_dir }}"
+
+- name: Test if the RHODS test job crashed
+  command:
+    oc get jobs/ods-ci -ojsonpath={.status.failed} -n {{ tester_namespace }}
+  register: check_rhods_test_job
+  failed_when: check_rhods_test_job.stdout | length > 0
+
+- name: Count how many jobs succeeded, fail in none succeeded
+  shell:
+    set -o pipefail;
+    (cat "{{ artifact_extra_logs_dir }}"/ods-ci/ods-ci-*/test.exit_code || true)
+      | (grep '^0$' || true)
+      | wc -l
+  register: success_count_cmd
+  failed_when: success_count_cmd.stdout == "0"

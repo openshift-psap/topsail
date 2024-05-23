@@ -1,0 +1,124 @@
+- name: Create the sutest artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts-sutest/"
+    state: directory
+    mode: '0755'
+
+- name: Capture the artifacts of the sutest cluster
+  block:
+  - name: Get the ODH Dashboard Config
+    shell:
+      oc get odhdashboardconfig/odh-dashboard-config -oyaml
+         -n redhat-ods-applications
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/odh-dashboard-config.yaml"
+    failed_when: false
+    ignore_errors: true
+
+  - name: Get the RHODS CSV name
+    shell:
+      oc get csv -oname -n redhat-ods-operator | grep rhods-operator
+    register: rhods_csv_cmd
+    ignore_errors: true
+
+  - name: Store the RHODS version
+    shell:
+      oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods.version"
+    ignore_errors: true
+    failed_when: false
+
+  - name: Store the RHODS creation timestamp
+    shell:
+      oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname -ojsonpath={.metadata.annotations.createdAt}
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods.createdAt"
+    ignore_errors: true
+    failed_when: false
+
+  - name: Store the RHODS CSV
+    shell:
+      oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oyaml
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/rhods.csv.yaml"
+    ignore_errors: true
+    failed_when: false
+
+  - name: Store OpenShift YAML version
+    shell:
+      oc version -oyaml > "{{ artifact_extra_logs_dir }}/artifacts-sutest/ocp_version.yml"
+    ignore_errors: true
+
+  - name: Store the Cluster nodes in yaml
+    shell:
+      oc get nodes -oyaml > "{{ artifact_extra_logs_dir }}/artifacts-sutest/nodes.yaml"
+    ignore_errors: true
+
+  - name: Store the Cluster nodes in json
+    shell:
+      oc get nodes -ojson > "{{ artifact_extra_logs_dir }}/artifacts-sutest/nodes.json"
+    ignore_errors: true
+
+  - name: Store the Cluster machines status
+    shell:
+      oc get machines -n openshift-machine-api -owide > "{{ artifact_extra_logs_dir }}/artifacts-sutest/machines.status"
+    ignore_errors: true
+
+  - name: Store the Cluster machines description
+    shell:
+      oc describe machines -n openshift-machine-api > "{{ artifact_extra_logs_dir }}/artifacts-sutest/machines.desc"
+    ignore_errors: true
+
+  - name: Get the description of the nodes
+    shell:
+      oc describe nodes
+          > "{{ artifact_extra_logs_dir }}/artifacts-sutest/nodes.descr"
+    ignore_errors: true
+
+  - name: Get the definition of all the statefulsets
+    shell:
+      oc get statefulsets -ojson -A
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/statefulsets.json"
+    ignore_errors: true
+
+  - name: Get the definition of all the routes
+    shell:
+      oc get routes -ojson -A
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/routes.json"
+    ignore_errors: true
+
+  - name: Get the definition of all the services
+    shell:
+      oc get services -ojson -A
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/services.json"
+    ignore_errors: true
+
+  - name: Get the (safe) definition of the secrets
+    shell:
+      oc get -A secrets -ojson | jq 'del(.items[].data) | del(.items[].metadata.annotations)'
+        > "{{ artifact_extra_logs_dir }}/artifacts-sutest/secrets_safe.json"
+    ignore_errors: true
+
+  - name: Get the status of all the pvc
+    shell:
+      oc get pvc -A
+         > "{{ artifact_extra_logs_dir }}/artifacts-sutest/pvc.status"
+    ignore_errors: true
+
+  - name: Get the OpenShift Prometheus database
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: dump
+      cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_ocp
+    when: capture_prom_db | bool
+    ignore_errors: true
+
+  - name: Get the RHODS Prometheus database
+    include_role:
+      name: cluster_prometheus_db
+    vars:
+      cluster_prometheus_db_mode: dump
+      cluster_prometheus_db_label: deployment=prometheus
+      cluster_prometheus_db_namespace: redhat-ods-monitoring
+      cluster_prometheus_db_directory: /prometheus/data
+      cluster_prometheus_db_dump_name_prefix: artifacts-sutest/prometheus_rhods
+    when: capture_prom_db | bool
+    ignore_errors: true
