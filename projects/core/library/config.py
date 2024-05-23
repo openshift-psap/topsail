@@ -141,7 +141,7 @@ class Config:
                 raise RuntimeError(msg)
 
         try:
-            self.get_config(jsonpath, value, print=False) # will raise an exception if the jsonpath does not exist
+            self.get_config(jsonpath, print=False) # will raise an exception if the jsonpath does not exist
             jsonpath_ng.parse(jsonpath).update(self.config, value)
         except Exception as ex:
             logging.error(f"set_config: {jsonpath}={value} --> {ex}")
