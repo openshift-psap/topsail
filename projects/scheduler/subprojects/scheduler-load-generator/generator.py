@@ -104,11 +104,15 @@ def main(dry_run=True,
     logging.info(f"Running with a timespan of {timespan} minutes.")
     timespan_sec = timespan * 60
 
-    try:
-        preparator = importlib.import_module(f"preparators.{job_template_name}")
-    except ModuleNotFoundError:
-        logging.fatal(f"No 'preparators' module named '{job_template_name}'")
-        raise
+
+    if pathlib.Path(job_template_name).exists():
+        import preparators.existing as preparator
+    else:
+        try:
+            preparator = importlib.import_module(f"preparators.{job_template_name}")
+        except ModuleNotFoundError:
+            logging.fatal(f"No 'preparators' module named '{job_template_name}'")
+            raise
 
     base_resource = preparator.prepare(namespace, job_template_name, base_name, pod_runtime, pod_requests, pod_count)
     if job_mode:

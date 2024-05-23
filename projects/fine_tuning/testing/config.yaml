@@ -26,7 +26,17 @@ ci_presets:
   gpu:
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
+  # ---
 
+  multi_model:
+    tests.fine_tuning.multi_model.enabled: true
+    tests.fine_tuning.test_settings.model_name: null
+
+  many_model:
+    tests.prom_plot_workload: null
+    tests.fine_tuning.many_model.enabled: true
+    matbench.workload: projects.scheduler.visualizations.schedulers
+    tests.fine_tuning.test_settings.gpu: 1
 
   # ---
 
@@ -172,13 +182,13 @@ tests:
       visu_file: plots.yaml
       stop_on_error: true
     multi_model:
-      enabled: true
+      enabled: false
       models:
       - name: bloom-560m
         replicas: 2
     test_settings:
       name: fine-tuning
-      model_name: null
+      model_name: bloom-560m
       dataset_name: twitter_complaints_small.json
       gpu: 0
       dataset_replication: 1
@@ -187,6 +197,11 @@ tests:
       per_device_train_batch_size: 4
       per_device_eval_batch_size: 4
       # ---
+    many_model:
+      enabled: false
+      count: 20
+      kueue_name: local-queue
+      timespan: 0
 matbench:
   preset: null
   workload: projects.fine_tuning.visualizations.fine_tuning

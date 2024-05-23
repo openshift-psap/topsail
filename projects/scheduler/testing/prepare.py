@@ -82,10 +82,14 @@ def prepare_scheduler_namespace():
         run.run(f"oc annotate ns/{namespace} openshift.io/node-selector- scheduler.alpha.kubernetes.io/defaultTolerations-")
 
 
-def prepare_kueue_queue(dry_mode):
-    namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
+def prepare_kueue_queue(dry_mode, namespace=None, local_queue_name=None):
+    if namespace is None:
+        namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
 
-    with env.NextArtifactDir(f"prepare_queue"):
+    if local_queue_name is None:
+        local_queue_name = config.ci_artifacts.get_config("tests.schedulers.kueue.queue_name")
+
+    with env.NextArtifactDir(f"prepare_kueue"):
         if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
             node_label_selector = "node-role.kubernetes.io/worker"
         else:
@@ -94,10 +98,15 @@ def prepare_kueue_queue(dry_mode):
             node_label_selector = f"{node_label_selector_key}={node_label_selector_value}"
 
         # sum of the (CPU capacity - 2) for all of the worker nodes
-        cluster_queue_cpu_quota = run.run(f"oc get nodes -l{node_label_selector} -ojson | jq '[.items[] | .status.capacity.cpu | tonumber - 2] | add'", capture_stdout=True).stdout
+        cluster_queue_cpu_quota = run.run(f"oc get nodes -l{node_label_selector} -ojson | jq '[.items[] | .status.capacity.cpu | tonumber - 2] | add'", capture_stdout=True).stdout.strip()
+
+        # sum of all the GPUs
+        cluster_queue_gpu_quota = run.run(f"oc get nodes -l{node_label_selector} -ojson | jq '[.items[] | .status.capacity[\"nvidia.com/gpu\"] | tonumber?] | add'", capture_stdout=True).stdout.strip()
+        if cluster_queue_gpu_quota == "null":
+            cluster_queue_gpu_quota = 0
 
         if dry_mode:
-            logging.info(f"prepare_kueue_queue: prepare the kueue queues with cpu={total_cpu_count}")
+            logging.info(f"prepare_kueue_queue: prepare the kueue queues with cpu={cluster_queue_cpu_quota}, gpu={cluster_queue_gpu_quota}")
             return
 
         run.run(f"""cat "{TESTING_THIS_DIR}/kueue/resource-flavor.yaml" \
@@ -106,10 +115,10 @@ def prepare_kueue_queue(dry_mode):
 
         run.run(f"""cat "{TESTING_THIS_DIR}/kueue/cluster-queue.yaml" \
         | yq '.spec.resourceGroups[0].flavors[0].resources[0].nominalQuota = {cluster_queue_cpu_quota}' \
+        | yq '.spec.resourceGroups[0].flavors[0].resources[2].nominalQuota = {cluster_queue_gpu_quota}' \
         | tee "$ARTIFACT_DIR/cluster-queue.yaml" \
         | oc apply -f- -n {namespace}""")
 
-        local_queue_name = config.ci_artifacts.get_config("tests.schedulers.kueue.queue_name")
         run.run(f"""cat "{TESTING_THIS_DIR}/kueue/local-queue.yaml" \
         | yq '.metadata.name = "{local_queue_name}"' \
         | tee "$ARTIFACT_DIR/local-queue.json" \

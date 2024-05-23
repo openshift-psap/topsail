@@ -48,3 +48,6 @@ scheduler_generate_load_scheduler_load_generator: projects/scheduler/subprojects
 
 # the name of the Kueue queue to use
 scheduler_generate_load_kueue_queue: local-queue
+
+# the kind of resource created by the load generator
+scheduler_generate_load_resource_kind: job

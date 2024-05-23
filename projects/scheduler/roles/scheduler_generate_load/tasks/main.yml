@@ -1,24 +1,20 @@
 ---
-- name: Check if AppWrappers are defined
-  shell:
-    exit 1
-  register: has_appwrapper_cmd
-  failed_when: false
+- name: Ensure that the resource kind is supported
+  fail: msg="unsupported resource kind ({{ scheduler_generate_load_resource_kind }})"
+  when: scheduler_generate_load_resource_kind not in ("job", "pytorchjob", "appwrapper")
 
-- name: Ensure that there are no AppWrappers in the namespace
+- name: Ensure that there are no resource in the namespace
   shell:
-    oc delete appwrappers --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
-  when: has_appwrapper_cmd.rc == 0
-
-- name: Ensure that there are no Jobs in the namespace
-  shell:
-    oc delete jobs --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
+    oc delete {{ scheduler_generate_load_resource_kind }} --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
 
 - name: Ensure that there are no PodGroup in the namespace
   shell:
     oc delete podgroups --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
   when: scheduler_generate_load_mode == "coscheduling"
 
+- name: Ensure that there are no Pod in the namespace
+  shell:
+    oc delete pods --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
 # ---
 
 - name: Create the src artifacts directory
@@ -44,9 +40,7 @@
     debug: msg="Load generator running in the next task, expect some delays (timespan={{ scheduler_generate_load_timespan }}min)... (mode={{ scheduler_generate_load_mode }})"
 
   - name: Generate the scheduler load
-    shell:
-      export ARTIFACT_DIR="{{ artifact_extra_logs_dir }}/generator-artifacts";
-
+    command:
       python3 "{{ scheduler_generate_load_scheduler_load_generator }}"
         --dry_run "False"
         --namespace "{{ scheduler_generate_load_namespace }}"
@@ -60,6 +54,8 @@
         --timespan "{{ scheduler_generate_load_timespan }}"
         --distribution "{{ scheduler_generate_load_distribution }}"
         --kueue_queue "{{ scheduler_generate_load_kueue_queue }}"
+    environment:
+      ARTIFACT_DIR: "{{ artifact_extra_logs_dir }}/generator-artifacts"
 
   - name: Define the variables
     set_fact:
@@ -102,32 +98,54 @@
     failed_when: appwrappers_completed.rc != 0
     when: scheduler_generate_load_mode == "mcad"
 
+  - name: Define the status path
+    set_fact:
+      status_path: '{%if scheduler_generate_load_resource_kind == "job" %}.status{% else %}.status.replicaStatuses.Master{% endif %}'
+    when: scheduler_generate_load_resource_kind == "job" or scheduler_generate_load_resource_kind == "pytorchjob"
+
+  - name: Define if the test is small
+    set_fact:
+      is_small_test: '{% if scheduler_generate_load_count < 50 %}true{% else %}false{% endif %}'
+      is_large_test: '{% if scheduler_generate_load_count > 150 %}true{% else %}false{% endif %}'
+
   - name: Wait for the Jobs to complete
     shell: |
       set -o pipefail; set -e;
-      jobs_json=$(oc get jobs -n {{ scheduler_generate_load_namespace }} -ojson)
+      jobs_json=$(oc get {{ scheduler_generate_load_resource_kind }} -n {{ scheduler_generate_load_namespace }} -ojson)
 
-      if [[ {{ scheduler_generate_load_count }} -lt 50 ]]; then
-        oc get jobs,pods -n {{ scheduler_generate_load_namespace }} --no-headers
-      else
-        echo "Too many Jobs, hiding the individual status ..."
-      fi
+      {% if is_small_test %}
+        oc get {{ scheduler_generate_load_resource_kind }},pods -n {{ scheduler_generate_load_namespace }} --no-headers
+      {% else %}
+        echo "Too many {{ scheduler_generate_load_resource_kind }}, hiding the individual status ..."
+      {% endif %}
 
       jobs_count=$(jq '.items | length' <<< $jobs_json)
-      jobs_active=$(jq '[.items[] | select(.status.active and .status.active != 0)] | length' <<< $jobs_json)
-      jobs_failed=$(jq '[.items[] | select(.status.failed and .status.failed != 0)] | length' <<< $jobs_json)
+      jobs_active=$(jq '[.items[] | select({{ status_path }}.active and {{ status_path }}.active != 0)] | length' <<< $jobs_json)
+      jobs_failed=$(jq '[.items[] | select({{ status_path }}.failed and {{ status_path }}.failed != 0)] | length' <<< $jobs_json)
+
+      {% if scheduler_generate_load_resource_kind == "pytorchjob" %}
+      jobs_suspended=$(jq '[.items[] | select(.spec.runPolicy.suspend == true)] | length' <<< $jobs_json)
+      {% endif %}
 
       if [[ "$jobs_failed" != 0 ]]; then
-        echo "Found $jobs_failed failed Jobs(s), aborting."
+        echo "Found $jobs_failed failed {{ scheduler_generate_load_resource_kind }}(s), aborting."
         exit 1 # fatal
       fi
 
+      {% if scheduler_generate_load_resource_kind == "pytorchjob" %}
+      if [[ "$jobs_suspended" != 0 ]]; then
+         echo "$jobs_active/$jobs_count {{ scheduler_generate_load_resource_kind }} still active."
+         echo "$jobs_suspended/$jobs_count {{ scheduler_generate_load_resource_kind }} still suspended. Continue waiting ...."
+         exit 2 # retry
+      fi
+      {% endif %}
+
       if [[ "$jobs_active" != 0 ]]; then
-         echo "$jobs_active/$jobs_count Jobs still active. Continue waiting ...."
+         echo "$jobs_active/$jobs_count {{ scheduler_generate_load_resource_kind }} still active. Continue waiting ...."
          exit 2 # retry
       fi
 
-      echo "All the Jobs have completed successfully. All done."
+      echo "All the {{ scheduler_generate_load_resource_kind }}s have completed successfully. All done."
       exit 0 # done
     register: jobs_completed
     retries: 180
@@ -136,15 +154,15 @@
     until: jobs_completed.rc == 1 or jobs_completed.rc == 0
     # failed when fatal
     failed_when: jobs_completed.rc != 0
-    when: scheduler_generate_load_mode != "mcad"
+    when: scheduler_generate_load_resource_kind == "job" or scheduler_generate_load_resource_kind == "pytorchjob"
 
-  - name: Count how many jobs succeeded
+  - name: Count how many resource succeeded
     shell:
       set -o pipefail;
-      oc get jobs -n {{ scheduler_generate_load_namespace }} -ojson | jq '[.items[] | select(.status.succeeded)] | length'
+      oc get {{ scheduler_generate_load_resource_kind }} -n {{ scheduler_generate_load_namespace }} -ojson | jq '[.items[] | select({{ status_path }}.succeeded)] | length'
     register: job_succeeded
     failed_when: job_succeeded.stdout | int != scheduler_generate_load_count
-    when: scheduler_generate_load_mode != "mcad"
+    when: scheduler_generate_load_resource_kind == "job" or scheduler_generate_load_resource_kind == "pytorchjob"
 
   always:
   - name: Create a configmap for the end of the test timestamp
@@ -152,45 +170,34 @@
       oc create configmap end -n "{{ scheduler_generate_load_namespace }}" ;
       oc get cm start end -oyaml -n "{{ scheduler_generate_load_namespace }}" > "{{ artifact_extra_logs_dir }}/start_end_cm.yaml"
 
-  - name: Capture the state of the AppWrappers
-    shell: |
-      oc get appwrappers -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.json"
-      if [[ {{ scheduler_generate_load_count }} -lt 150 ]]; then
-        oc get appwrappers -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.yaml"
-        oc describe appwrappers -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/appwrappers.desc"
-      fi
-      oc get appwrappers -n {{ scheduler_generate_load_namespace }} -ojson | jq '.items[] | .metadata.name + " ==> "+ .status.state' -r >"{{ artifact_extra_logs_dir }}/appwrappers.status"
-    when: scheduler_generate_load_mode == "mcad"
-    ignore_errors: true
-
   - name: Capture the state of the Jobs
     shell: |
-      oc get jobs -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.json"
-      oc get jobs -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.status"
-      if [[ {{ scheduler_generate_load_count }} -lt 150 ]]; then
-        oc get jobs -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.yaml"
-        oc describe jobs -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/jobs.desc"
-      fi
+      oc get {{ scheduler_generate_load_resource_kind }} -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/{{ scheduler_generate_load_resource_kind }}.json"
+      oc get {{ scheduler_generate_load_resource_kind }} -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/{{ scheduler_generate_load_resource_kind }}.status"
+      {% if not is_large_test %}
+      oc get {{ scheduler_generate_load_resource_kind }} -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/{{ scheduler_generate_load_resource_kind }}.yaml"
+      oc describe {{ scheduler_generate_load_resource_kind }} -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/{{ scheduler_generate_load_resource_kind }}.desc"
+      {% endif %}
     ignore_errors: true
 
   - name: Capture the state of the Pods
     shell: |
       oc get pods -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.json"
       oc get pods -owide -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.status"
-      if [[ {{ scheduler_generate_load_count * scheduler_generate_load_pod_count }} -lt 150 ]]; then
-        oc get pods -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"
-        oc describe pods -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
-      fi
+      {% if not is_large_test %}
+      oc get pods -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"1
+      oc describe pods -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
+      {% endif %}
     ignore_errors: true
 
   - name: Capture the state of the workloads
     shell: |
       oc get workloads -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.json"
       oc get workloads -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.status"
-      if [[ {{ scheduler_generate_load_count }} -lt 150 ]]; then
-        oc get workloads -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.yaml"
-        oc describe workloads -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.desc"
-      fi
+      {% if not is_large_test %}
+      oc get workloads -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.yaml"
+      oc describe workloads -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/workloads.desc"
+      {% endif %}
     when: scheduler_generate_load_mode == "kueue"
     ignore_errors: true
 
@@ -198,10 +205,10 @@
     shell: |
       oc get podgroups -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.json"
       oc get podgroups -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.status"
-      if [[ {{ scheduler_generate_load_count }} -lt 150 ]]; then
-        oc get podgroups -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.yaml"
-        oc describe podgroups -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.desc"
-      fi
+      {% if not is_large_test %}
+      oc get podgroups -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.yaml"
+      oc describe podgroups -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/podgroups.desc"
+      {% endif %}
     when: scheduler_generate_load_mode == "coscheduling"
     ignore_errors: true
 

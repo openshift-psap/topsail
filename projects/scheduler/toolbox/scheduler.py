@@ -29,6 +29,7 @@ class Scheduler:
             distribution="poisson",
             scheduler_load_generator="projects/scheduler/subprojects/scheduler-load-generator/generator.py",
             kueue_queue="local-queue",
+            resource_kind="job",
     ):
         """
         Generate scheduler load
@@ -48,6 +49,7 @@ class Scheduler:
           distribution: the distribution method to use to spread the resource creation over the requested timespan
           scheduler_load_generator: the path of the scheduler load generator to launch
           kueue_queue: the name of the Kueue queue to use
+          resource_kind: the kind of resource created by the load generator
         """
 
         return RunAnsibleRole(locals())

@@ -19,7 +19,7 @@ from . import prom as workload_prom
 register_important_file = None # will be when importing store/__init__.py
 
 artifact_dirnames = types.SimpleNamespace()
-artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_db"
+artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "**/*__cluster__dump_prometheus_db"
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
 artifact_dirnames.SCHEDULER_GENERATE_LOAD_DIR = "*__scheduler__generate_load"
 artifact_dirnames.SCHEDULER_CLEANUP = "*__scheduler__cleanup"
@@ -30,7 +30,6 @@ artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
 IMPORTANT_FILES = [
     "config.yaml",
-    "test_case_config.yaml",
     ".uuid",
 
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",
@@ -40,8 +39,10 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.RHODS_CAPTURE_STATE_DIR}/rhods.version",
     f"{artifact_dirnames.RHODS_CAPTURE_STATE_DIR}/rhods.createdAt",
 
+    f"{artifact_dirnames.SCHEDULER_GENERATE_LOAD_DIR}/_ansible.play.yaml",
     f"{artifact_dirnames.SCHEDULER_GENERATE_LOAD_DIR}/pods.json",
     f"{artifact_dirnames.SCHEDULER_GENERATE_LOAD_DIR}/jobs.json",
+    f"{artifact_dirnames.SCHEDULER_GENERATE_LOAD_DIR}/pytorchjob.json",
     f"{artifact_dirnames.SCHEDULER_GENERATE_LOAD_DIR}/appwrappers.json",
     f"{artifact_dirnames.SCHEDULER_GENERATE_LOAD_DIR}/workloads.json",
 
@@ -71,19 +72,20 @@ def parse_once(results, dirname):
     results.test_case_config = _parse_test_case_config(dirname)
     results.test_case_properties = _parse_test_case_properties(results.test_case_config)
 
+    results.target_kind = "AppWrapper" if results.test_case_properties.mode == "mcad" \
+        else results.test_case_properties.resource_kind.title()
+
     if results.test_case_properties.mode == "mcad":
         results.target_kind_name = "AppWrapper"
     elif results.test_case_properties.mode == "job":
-        results.target_kind_name = "K8s Job"
+        results.target_kind_name = f"K8s {results.target_kind}"
     else:
-        results.target_kind_name = f"{results.test_case_properties.mode.title()} Job"
-
-    results.target_kind = "AppWrapper" if results.test_case_properties.mode == "mcad" else "Job"
+        results.target_kind_name = f"{results.test_case_properties.mode.title()} {results.target_kind}"
 
     results.metrics = _extract_metrics(dirname)
 
     results.pod_times = _parse_pod_times(dirname)
-    results.resource_times = _parse_resource_times(dirname, results.test_case_properties.mode)
+    results.resource_times = _parse_resource_times(dirname, results.test_case_properties.mode, results.test_case_properties.resource_kind)
     results.test_start_end_time = _parse_test_start_end_time(dirname)
     if results.test_case_properties.mode == "mcad":
         results.cleanup_times = _parse_cleanup_start_end_time(dirname)
@@ -130,7 +132,10 @@ def _parse_pod_times(dirname):
       pod_times.append(pod_time)
 
       pod_time.pod_name = pod["metadata"]["name"]
-      pod_friendly_name = pod["metadata"]["labels"]["job-name"]
+
+      pod_friendly_name = pod["metadata"]["labels"].get("job-name")
+      if pod_friendly_name is None:
+          pod_friendly_name = pod["metadata"]["labels"].get("training.kubeflow.org/job-name")
 
       pod_time.pod_friendly_name = pod_friendly_name
       pod_time.hostname = pod["spec"].get("nodeName")
@@ -225,8 +230,24 @@ def __parse_workload_times(item, resource_times):
                 core_helpers_store_parsers.K8S_TIME_FMT)
 
 
+def __parse_pytorchjob_times(item, resource_times):
+    resource_times.conditions["ETCD Created"] = resource_times.creation
+
+    resource_times.completion = \
+        datetime.datetime.strptime(
+            item["status"].get("completionTime"),
+            core_helpers_store_parsers.K8S_TIME_FMT) \
+            if item["status"].get("completionTime") else None
+
+    for condition in item["status"]["conditions"]:
+        resource_times.conditions[condition["reason"]] = \
+            datetime.datetime.strptime(
+                condition["lastTransitionTime"],
+                core_helpers_store_parsers.K8S_TIME_FMT)
+
+
 @ignore_file_not_found
-def _parse_resource_times(dirname, mode):
+def _parse_resource_times(dirname, mode, resource_type):
     all_resource_times = {}
 
     if not artifact_paths.SCHEDULER_GENERATE_LOAD_DIR:
@@ -270,10 +291,13 @@ def _parse_resource_times(dirname, mode):
                 __parse_job_times(item, resource_times)
             elif kind == "Workload":
                 __parse_workload_times(item, resource_times)
+            elif kind == "PyTorchJob":
+                __parse_pytorchjob_times(item, resource_times)
             else:
-                logging.Warning(f"Completion time parsing not supported for resource type {kind}.")
+                logging.warning(f"Completion time parsing not supported for resource type {kind}.")
 
-    parse("jobs.json")
+
+    parse(f"{resource_type}.json")
 
     if mode == "mcad":
         parse("appwrappers.json")
@@ -334,10 +358,14 @@ def _parse_cleanup_start_end_time(dirname):
 
 @ignore_file_not_found
 def _parse_test_case_config(dirname):
-    filename =  "test_case_config.yaml"
-
-    with open(register_important_file(dirname, filename)) as f:
-        test_case_config = yaml.safe_load(f)
+    test_case_config = {}
+    with open(register_important_file(dirname, artifact_paths.SCHEDULER_GENERATE_LOAD_DIR / "_ansible.play.yaml")) as f:
+        play = yaml.safe_load(f)
+        play_vars = play[0]["vars"]
+        for key, value in play_vars.items():
+            _, found, name = key.partition("scheduler_generate_load_")
+            if not found: continue
+            test_case_config[name] = value
 
     return test_case_config
 
@@ -346,10 +374,11 @@ def _parse_test_case_properties(test_case_config):
     test_case_properties = types.SimpleNamespace()
 
     test_case_properties.count = test_case_config["count"]
-    test_case_properties.pod_count = test_case_config["pod"]["count"]
-    test_case_properties.pod_runtime = test_case_config["pod"]["runtime"]
+    test_case_properties.pod_count = test_case_config["pod_count"]
+    test_case_properties.pod_runtime = test_case_config["pod_runtime"]
     test_case_properties.total_pod_count = test_case_properties.count * test_case_properties.pod_count
     test_case_properties.mode = test_case_config["mode"]
+    test_case_properties.resource_kind = test_case_config["resource_kind"]
     test_case_properties.launch_duration = test_case_config["timespan"]
 
     return test_case_properties
