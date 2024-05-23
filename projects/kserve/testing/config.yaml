@@ -198,6 +198,7 @@ ci_presets:
     - flan-t5-xxl
     - llama-2-13b-chat-hf
     - llama-2-70b-chat-hf
+    - mistral-7b-instruct-v02
     - mpt-7b-instruct2
     - codellama-34b-instruct-hf
     matbench.lts.horreum.test_name: rhoai-kserve-single
