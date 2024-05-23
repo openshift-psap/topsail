@@ -129,7 +129,8 @@ def _get_median_runtime(results, kind):
     durations = []
     for resource_name, resource_times in results.resource_times.items():
         if resource_times.kind.lower() != kind.lower(): continue
-
+        if resource_times.duration is None:
+            continue
         durations.append(resource_times.duration)
 
     if len(durations) <= 2:
@@ -142,7 +143,11 @@ def _get_pod_median_runtime(results):
     durations = []
 
     for pod_times in results.pod_times:
-        duration = pod_times.container_finished - pod_times.start_time
+        try:
+            duration = pod_times.container_finished - pod_times.start_time
+        except AttributeError:
+            continue
+
         durations.append(duration.total_seconds())
 
     if len(durations) <= 2:
