@@ -37,4 +37,4 @@ echo "Running evaluation script"
 echo "model=$MODEL_PATH"
 echo "data_path=$DATASET_DEST"
 echo "Dataset size: $(cat $DATASET_DEST | wc -l) lines"
-exec python /tmp/fms-hf-tuning/scripts/run_evaluation.py --model=$MODEL_PATH --data_path=$DATASET_DEST
+exec python /tmp/fms-hf-tuning/scripts/run_evaluation.py --model=$MODEL_PATH --data_path=$DATASET_DEST --output_dir=/mnt/output/fine-tuning

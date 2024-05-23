@@ -78,20 +78,37 @@
     fail: msg="Pod in error state"
     when: wait_pod_start.stdout in ["Error", "Init:Error", "CrashLoopBackOff"]
 
+  - name: Get the name of the eval pod
+    shell:
+      set -o pipefail;
+      oc get pods -ltraining.kubeflow.org/job-name={{ fine_tuning_evaluate_model_name }}
+        -n {{ fine_tuning_evaluate_model_namespace }} -oname
+        | cut -d/ -f2
+    register: eval_pod_name_cmd
+
   - name: Wait for the main container to finish running
+    shell:
+      set -o pipefail;
+      oc get pod {{ eval_pod_name_cmd.stdout }}
+         -n {{ fine_tuning_evaluate_model_namespace }}
+         -ojson
+        | jq ".status.containerStatuses[] | select(.state.terminated != null) | .name" -r
+    register: wait_pod_start
+    retries: 180
+    delay: 30
+    until: '"pytorch" in wait_pod_start.stdout'
+
+  - name: Check on final status of Pod
     shell:
       set -o pipefail;
       oc get pods -ltraining.kubeflow.org/job-name={{ fine_tuning_evaluate_model_name }}
          -n {{ fine_tuning_evaluate_model_namespace }}
          --no-headers | awk '{print $3}'
-    register: wait_pod_start
-    retries: 180
-    delay: 30
-    until: wait_pod_start.stdout != "Running"
+    register: fail_on_pytorch_cmd
 
   - name: Fail if the Pod did not complete properly
-    fail: msg="Pod in '{{ wait_pod_start.stdout }}' state"
-    when: wait_pod_start.stdout not in ["Completed"]
+    fail: msg="Pod in '{{ fail_on_pytorch_cmd.stdout }}' state"
+    when: fail_on_pytorch_cmd.stdout not in ["Running", "NotReady"]
 
   always:
   - name: Capture the state of the InferenceService Pod resource
@@ -147,4 +164,14 @@
       oc describe pytorchjob/{{ fine_tuning_evaluate_model_name }}
          -n {{ fine_tuning_evaluate_model_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.desc
+    ignore_errors: true
+
+  - name: Copy the result files
+    shell:
+      oc cp {{ fine_tuning_evaluate_model_namespace }}/{{ eval_pod_name_cmd.stdout }}:/mnt/output/fine-tuning {{ artifact_extra_logs_dir }}/artifacts/ -c export
+    ignore_errors: true
+
+  - name: Delete the Pod
+    shell:
+      oc delete pod {{ eval_pod_name_cmd.stdout }} -n {{ fine_tuning_evaluate_model_namespace }}
     ignore_errors: true

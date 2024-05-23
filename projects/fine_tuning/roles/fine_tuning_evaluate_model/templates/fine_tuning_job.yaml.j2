@@ -57,7 +57,14 @@ spec:
               limits:
                 nvidia.com/gpu: "{{ fine_tuning_evaluate_model_gpu }}"
 {% endif %}
-
+          - name: export
+            image: {{ fine_tuning_evaluate_model_container_image }}
+            imagePullPolicy: IfNotPresent
+            command: [bash, "-c", "--"]
+            args: ["while true; do sleep 30; done;"]
+            volumeMounts:
+            - name: output-volume
+              mountPath: /mnt/output
           volumes:
           - name: storage-volume
             persistentVolumeClaim:
