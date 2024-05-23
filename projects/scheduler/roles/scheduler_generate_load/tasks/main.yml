@@ -91,7 +91,7 @@
       echo "All the AppWrappers have completed successfully. All done."
       exit 0 # done
     register: appwrappers_completed
-    retries: 120
+    retries: 720
     delay: 30
     # until fatal or done
     until: appwrappers_completed.rc == 1 or appwrappers_completed.rc == 0
@@ -149,7 +149,7 @@
       echo "All the {{ scheduler_generate_load_resource_kind }}s have completed successfully. All done."
       exit 0 # done
     register: jobs_completed
-    retries: 180
+    retries: 720
     delay: 30
     # until fatal or done
     until: jobs_completed.rc == 1 or jobs_completed.rc == 0
