@@ -382,7 +382,7 @@ def matbench_run_one():
 
 def _run_test_many_model(test_settings):
     run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
-                                extra=test_settings | dict(prepare_only=True))
+                                extra=test_settings | dict(prepare_only=True, delete_other=True))
     artifact_dir = list(env.ARTIFACT_DIR.glob("*__fine_tuning__run_fine_tuning_job"))[-1]
 
     fine_tuning_job_base = artifact_dir / "src" / "pytorchjob_fine_tuning.yaml"
