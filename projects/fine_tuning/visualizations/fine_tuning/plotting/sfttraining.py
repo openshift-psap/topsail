@@ -36,7 +36,8 @@ def generateSFTTrainingData(entries, x_key, _variables, sfttraining_key, compute
             datum[x_key] = entry.settings.__dict__[x_key]
 
         datum[sfttraining_key] = getattr(entry.results.sft_training_metrics, sfttraining_key, 0)
-        datum["name"] = entry.get_name(variables)
+
+        datum["name"] = entry.get_name(variables if variables else [x_key])
 
         data.append(datum)
 
@@ -104,11 +105,13 @@ class SFTTraining():
         elif cfg__efficiency:
             y_key += "_efficiency"
 
-        fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
+        if has_gpu or has_speedup:
+            fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
 
-
-        for i in range(len(fig.data)):
-            fig.data[i].update(mode='lines+markers+text')
+            for i in range(len(fig.data)):
+                fig.data[i].update(mode='lines+markers+text')
+        else:
+            fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
 
         if has_gpu:
             fig.update_xaxes(title="Number of GPUs used for the fine-tuning")
@@ -136,4 +139,11 @@ class SFTTraining():
 
         # ❯ or ❮
 
-        return fig, ""
+        msg = []
+        max_row_idx = df.idxmax()[y_key]
+        min_row_idx = df.idxmin()[y_key]
+        msg.append(f"Max: {df[y_key].values[max_row_idx]:.2f} {y_units} ({df['name'].values[max_row_idx]}, "+ ("worst" if y_lower_better else "best") +")")
+        msg.append(html.Br())
+        msg.append(f"Min: {df[y_key].values[min_row_idx]:.2f} {y_units} ({df['name'].values[min_row_idx]}, "+ ("best" if y_lower_better else "worst") +")")
+
+        return fig, msg
