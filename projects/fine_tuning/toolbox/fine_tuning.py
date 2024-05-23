@@ -35,6 +35,7 @@ class Fine_Tuning:
             use_flash_attn=False,
 
             prepare_only=False,
+            delete_other=False,
     ):
         """
         Run a simple fine-tuning Job.
@@ -59,6 +60,7 @@ class Fine_Tuning:
           use_flash_attn: Enables/disables Flash Attention
 
           prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
+          delete_other: if True, delete the other PyTorchJobs before running
         """
 
         return RunAnsibleRole(locals())
