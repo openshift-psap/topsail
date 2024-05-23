@@ -28,6 +28,11 @@ ci_presets:
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
   # ---
 
+  dgx_single_model:
+    tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+    tests.fine_tuning.test_settings.gpu: 1
+
   multi_model:
     tests.fine_tuning.multi_model.enabled: true
     tests.fine_tuning.test_settings.model_name: null
