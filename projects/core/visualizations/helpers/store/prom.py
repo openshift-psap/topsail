@@ -291,22 +291,22 @@ def _get_apiserver_errcodes(cluster_role, register):
 
     return all_metrics
 
-def get_gpu_usage_metrics(cluster_role, register):
+def get_gpu_usage_metrics(cluster_role, register, container):
     all_metrics = []
 
     gpu_usage_metrics = [
-        {f"{cluster_role.title()} GPU memory used": 'DCGM_FI_DEV_FB_USED{exported_container="kserve-container"}'},
-        {f"{cluster_role.title()} GPU memory used (all GPUs)": 'sum(DCGM_FI_DEV_FB_USED{exported_container="kserve-container"})'},
-        {f"{cluster_role.title()} GPU active computes": 'DCGM_FI_PROF_SM_ACTIVE{exported_container="kserve-container"}'},
-        {f"{cluster_role.title()} GPU memory transfer utilization": 'DCGM_FI_DEV_MEM_COPY_UTIL{exported_container="kserve-container"}'},
-        {f"{cluster_role.title()} GPU memory unallocated": 'DCGM_FI_DEV_FB_FREE{exported_container="kserve-container"}'},
-        {f"{cluster_role.title()} GPU memory transfer (rx)": 'DCGM_FI_PROF_PCIE_RX_BYTES{exported_container="kserve-container"}'},
-        {f"{cluster_role.title()} GPU memory transfer (tx)": 'DCGM_FI_PROF_PCIE_TX_BYTES{exported_container="kserve-container"}'},
-        {f"{cluster_role.title()} GPU compute utilization (not 100% accurate)": 'DCGM_FI_DEV_GPU_UTIL{exported_container="kserve-container"}'},
-        {f"{cluster_role.title()} GPU engine usage (not 100% accurate)": 'DCGM_FI_PROF_GR_ENGINE_ACTIVE{exported_container="kserve-container"}'},
-        {f"{cluster_role.title()} GPU active fp16 pipe": 'DCGM_FI_PROF_PIPE_FP16_ACTIVE{exported_container="kserve-container"}'},
-        {f"{cluster_role.title()} GPU active fp32 pipe": 'DCGM_FI_PROF_PIPE_FP32_ACTIVE{exported_container="kserve-container"}'},
-        {f"{cluster_role.title()} GPU active fp64 pipe": 'DCGM_FI_PROF_PIPE_FP64_ACTIVE{exported_container="kserve-container"}'},
+        {f"{cluster_role.title()} GPU memory used": f'DCGM_FI_DEV_FB_USED{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU memory used (all GPUs)": f'sum(DCGM_FI_DEV_FB_USED{{exported_container="{container}"}})'},
+        {f"{cluster_role.title()} GPU active computes": f'DCGM_FI_PROF_SM_ACTIVE{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU memory transfer utilization": f'DCGM_FI_DEV_MEM_COPY_UTIL{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU memory unallocated": f'DCGM_FI_DEV_FB_FREE{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU memory transfer (rx)": f'DCGM_FI_PROF_PCIE_RX_BYTES{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU memory transfer (tx)": f'DCGM_FI_PROF_PCIE_TX_BYTES{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU compute utilization (not 100% accurate)": f'DCGM_FI_DEV_GPU_UTIL{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU engine usage (not 100% accurate)": f'DCGM_FI_PROF_GR_ENGINE_ACTIVE{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU active fp16 pipe": f'DCGM_FI_PROF_PIPE_FP16_ACTIVE{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU active fp32 pipe": f'DCGM_FI_PROF_PIPE_FP32_ACTIVE{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU active fp64 pipe": f'DCGM_FI_PROF_PIPE_FP64_ACTIVE{{exported_container="{container}"}}'},
 
     ]
     all_metrics += gpu_usage_metrics
@@ -360,7 +360,7 @@ def get_gpu_usage_metrics(cluster_role, register):
     return all_metrics
 
 
-def get_cluster_metrics(cluster_role, *, container_labels=[], gpu=True, register=False):
+def get_cluster_metrics(cluster_role, *, container_labels=[], gpu_container=False, register=False):
     all_metrics = []
     all_metrics += _get_cluster_mem_cpu(cluster_role, register)
     all_metrics += _get_control_plane_nodes(cluster_role, register)
@@ -370,7 +370,7 @@ def get_cluster_metrics(cluster_role, *, container_labels=[], gpu=True, register
     if container_labels:
         all_metrics += _get_container_mem_cpu(cluster_role, register, container_labels)
 
-    if gpu:
-        all_metrics += get_gpu_usage_metrics(cluster_role, register)
+    if gpu_container:
+        all_metrics += get_gpu_usage_metrics(cluster_role, register, container=gpu_container)
 
     return all_metrics
