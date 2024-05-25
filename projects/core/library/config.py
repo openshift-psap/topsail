@@ -71,7 +71,7 @@ class Config:
                 value = yaml.safe_load(_value) # convert the string as YAML would do
 
                 MAGIC_DEFAULT_VALUE = object()
-                current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False)
+                current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False, warn=False)
                 if current_value == MAGIC_DEFAULT_VALUE:
                     if "." in key:
                         raise ValueError(f"Config key '{key}' does not exist, and cannot create it at the moment :/")
@@ -141,7 +141,7 @@ class Config:
                 raise RuntimeError(msg)
 
         try:
-            self.get_config(jsonpath, value, print=False) # will raise an exception if the jsonpath does not exist
+            self.get_config(jsonpath, print=False) # will raise an exception if the jsonpath does not exist
             jsonpath_ng.parse(jsonpath).update(self.config, value)
         except Exception as ex:
             logging.error(f"set_config: {jsonpath}={value} --> {ex}")

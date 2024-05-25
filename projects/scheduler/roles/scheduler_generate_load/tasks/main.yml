@@ -59,8 +59,9 @@
 
   - name: Define the variables
     set_fact:
-      success_states: "{{ scheduler_generate_load_states_target | map('to_json') | join(', ') }}"
-      failed_states: "{{ scheduler_generate_load_states_unexpected | map('to_json') | join(', ') }}"
+      success_states: "{{ scheduler_generate_load_aw_states_target | map('to_json') | join(', ') }}"
+      failed_states: "{{ scheduler_generate_load_aw_states_unexpected | map('to_json') | join(', ') }}"
+    when: scheduler_generate_load_mode == "mcad"
 
   - name: Wait for the AppWrappers to complete
     shell: |
@@ -90,7 +91,7 @@
       echo "All the AppWrappers have completed successfully. All done."
       exit 0 # done
     register: appwrappers_completed
-    retries: 120
+    retries: 720
     delay: 30
     # until fatal or done
     until: appwrappers_completed.rc == 1 or appwrappers_completed.rc == 0
@@ -148,7 +149,7 @@
       echo "All the {{ scheduler_generate_load_resource_kind }}s have completed successfully. All done."
       exit 0 # done
     register: jobs_completed
-    retries: 180
+    retries: 720
     delay: 30
     # until fatal or done
     until: jobs_completed.rc == 1 or jobs_completed.rc == 0
@@ -185,10 +186,34 @@
       oc get pods -ojson -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.json"
       oc get pods -owide -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.status"
       {% if not is_large_test %}
-      oc get pods -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"1
+      oc get pods -oyaml -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.yaml"
       oc describe pods -n {{ scheduler_generate_load_namespace }} > "{{ artifact_extra_logs_dir }}/pods.desc"
       {% endif %}
     ignore_errors: true
+
+  - name: Create the test Pod logs directory
+    file:
+      path: "{{ artifact_extra_logs_dir }}/logs"
+      state: directory
+      mode: '0755'
+
+  - name: Get the names of the tester_pods
+    command:
+      oc get pods -oname -n {{ scheduler_generate_load_namespace }}
+    register: pod_names_cmd
+    ignore_errors: true
+    # mute to reduce the log length
+    no_log: true
+
+  - name: Get the logs of the tester Pod
+    shell:
+      oc logs {{ item }} --all-containers --prefix
+         -n {{ scheduler_generate_load_namespace }}
+         > "{{ artifact_extra_logs_dir }}/logs/$(basename "{{ item }}").log"
+    loop: "{{ pod_names_cmd.stdout_lines }}"
+    ignore_errors: true
+    # mute to reduce the log length
+    no_log: true
 
   - name: Capture the state of the workloads
     shell: |

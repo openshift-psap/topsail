@@ -12,6 +12,10 @@
     mode: '0755'
   when: not fine_tuning_run_fine_tuning_job_prepare_only
 
+- name: Make the name k8s safe
+  set_fact:
+    job_name_safe: "{{ fine_tuning_run_fine_tuning_job_name | replace('.', '-') | replace('_', '-') }}"
+
 - name: Prepare the config file template
   template:
     src: "{{ fine_tuning_job_config_template }}"
@@ -29,7 +33,7 @@
   shell:
     set -o pipefail;
 
-    oc create cm {{ fine_tuning_run_fine_tuning_job_name }}-config
+    oc create cm {{ job_name_safe }}-config
        -n {{ fine_tuning_run_fine_tuning_job_namespace }}
        --from-file=config.json=<(cat "{{ artifact_extra_logs_dir }}/src/config.json")
        --dry-run=client
@@ -41,7 +45,7 @@
   shell:
     set -o pipefail;
 
-    oc create cm {{ fine_tuning_run_fine_tuning_job_name }}-entrypoint
+    oc create cm {{ job_name_safe }}-entrypoint
        -n {{ fine_tuning_run_fine_tuning_job_namespace }}
        --from-file=$(find "{{ fine_tuning_job_entrypoint_dir }}" -maxdepth 1 -not -type d | tr '\n' ,)/dev/null
        --dry-run=client
@@ -58,10 +62,7 @@
 - name: Delete the fine-tuning job, if it exists
   command:
     oc delete -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml" --ignore-not-found
-
-- name: Cleanup the other pytorchjobs
-  command:
-    oc delete pytorchjobs --all -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+  when: fine_tuning_run_fine_tuning_job_delete_other | bool
 
 - name: Exit the play in 'prepare_only' mode
   meta: end_play
@@ -76,7 +77,7 @@
   - name: Wait for the Pod to start running
     shell:
       set -o pipefail;
-      oc get pods -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+      oc get pods -ltraining.kubeflow.org/job-name={{ job_name_safe }}
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          --no-headers | awk '{print $3}'
     register: wait_pod_start
@@ -91,7 +92,7 @@
   - name: Wait for the main container to finish running
     shell:
       set -o pipefail;
-      oc get pods -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+      oc get pods -ltraining.kubeflow.org/job-name={{ job_name_safe }}
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          --no-headers | awk '{print $3}'
     register: wait_pod_start
@@ -109,31 +110,31 @@
       set -o pipefail;
 
       oc get pod
-         -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+         -ltraining.kubeflow.org/job-name={{ job_name_safe }}
          -ojson
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pod.json;
 
       oc get pod
-         -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+         -ltraining.kubeflow.org/job-name={{ job_name_safe }}
          -oyaml
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pod.yaml;
 
       oc get pod
-         -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+         -ltraining.kubeflow.org/job-name={{ job_name_safe }}
          -owide
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pod.status;
 
       oc describe pod
-         -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+         -ltraining.kubeflow.org/job-name={{ job_name_safe }}
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
 
       oc logs $(
         oc get pod
-           -ltraining.kubeflow.org/job-name={{ fine_tuning_run_fine_tuning_job_name }}
+           -ltraining.kubeflow.org/job-name={{ job_name_safe }}
            -n {{ fine_tuning_run_fine_tuning_job_namespace }}
            -oname | head -1)
         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
@@ -144,17 +145,17 @@
     shell:
       set -o pipefail;
 
-      oc get pytorchjob/{{ fine_tuning_run_fine_tuning_job_name }}
+      oc get pytorchjob/{{ job_name_safe }}
          -oyaml
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.yaml;
 
-      oc get pytorchjob/{{ fine_tuning_run_fine_tuning_job_name }}
+      oc get pytorchjob/{{ job_name_safe }}
          -owide
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.status;
 
-      oc describe pytorchjob/{{ fine_tuning_run_fine_tuning_job_name }}
+      oc describe pytorchjob/{{ job_name_safe }}
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.desc
     ignore_errors: true

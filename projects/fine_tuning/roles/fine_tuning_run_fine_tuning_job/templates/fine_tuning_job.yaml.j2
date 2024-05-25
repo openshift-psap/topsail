@@ -1,7 +1,7 @@
 apiVersion: kubeflow.org/v1
 kind: PyTorchJob
 metadata:
-  name: {{ fine_tuning_run_fine_tuning_job_name }}
+  name: {{ job_name_safe }}
   namespace: {{ fine_tuning_run_fine_tuning_job_namespace }}
 spec:
   pytorchReplicaSpecs:
@@ -62,9 +62,9 @@ spec:
               claimName: {{ fine_tuning_run_fine_tuning_job_pvc_name }}
           - name: config-volume
             configMap:
-              name: {{ fine_tuning_run_fine_tuning_job_name }}-config
+              name: {{ job_name_safe }}-config
           - name: entrypoint-volume
             configMap:
-              name: {{ fine_tuning_run_fine_tuning_job_name }}-entrypoint
+              name: {{ job_name_safe }}-entrypoint
           - name: output-volume
             emptyDir: {}

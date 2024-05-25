@@ -275,7 +275,7 @@ class TimeInStateDistributionReport():
 
         state_names = [] # set() do not preserve the order
         for resource_name, resource_times in entry.results.resource_times.items():
-            if resource_times.kind not in ("AppWrapper", "Workload"): continue
+            if resource_times.kind not in ("AppWrapper", "Workload", "PyTorchJob"): continue
             for condition_name, condition_ts in resource_times.conditions.items():
                 if condition_name not in state_names:
                     state_names.append(condition_name)
@@ -285,6 +285,7 @@ class TimeInStateDistributionReport():
                             set_config(dict(state=state_name), args))
 
         return None, header
+
 
 class ResourceCreationReport():
     def __init__(self):

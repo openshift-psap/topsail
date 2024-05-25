@@ -78,7 +78,7 @@ class GpuUsageReport():
         header += [html.H2("GPU Usage")]
         args_as_timeline = report.set_config(dict(as_timeline=True), args)
 
-        for metric_spec in core_prom_store.get_gpu_usage_metrics("sutest", register=False):
+        for metric_spec in core_prom_store.get_gpu_usage_metrics("sutest", register=False, container="pytorch"):
             plot_name = list(metric_spec.keys())[0]
             header += [html.H3(plot_name)]
 

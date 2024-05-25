@@ -13,9 +13,9 @@ import matrix_benchmarking.common as common
 def register():
     ExecutionDistribution()
 
-def generateAppWrappersTimeInState(entry):
+def generateTimeInState(entry):
     data = []
-    for resource_name, resource_times in entry.results.resource_times.items():
+    for resource_times in entry.results.resource_times.values():
 
         current_name = None
         current_start = None
@@ -41,6 +41,7 @@ def generateAppWrappersTimeInState(entry):
             ))
     return data
 
+
 class ExecutionDistribution():
     def __init__(self):
         self.name = "Execution time distribution"
@@ -63,7 +64,7 @@ class ExecutionDistribution():
 
         cfg__show_only_state = cfg.get("state", False)
 
-        data = generateAppWrappersTimeInState(entry)
+        data = generateTimeInState(entry)
 
         if not data:
             return None, "No data to plot ..."
@@ -81,10 +82,10 @@ class ExecutionDistribution():
         fig.update_layout(xaxis_title="Step timelength (in seconds)")
 
         if cfg__show_only_state:
-            title = f"Distribution of the time spent<br>in the <b>{cfg__show_only_state}</b> AppWrapper state"
+            title = f"Distribution of the time spent<br>in the <b>{cfg__show_only_state}</b> state"
             fig.layout.update(showlegend=False)
         else:
-            title = f"Distribution of the time spent in each of the different AppWrappers state"
+            title = f"Distribution of the time spent in each of the different state"
 
         fig.update_layout(title=title, title_x=0.5)
 
@@ -106,17 +107,17 @@ class ExecutionDistribution():
                 else:
                     return f"{sec/60:.1f} minutes"
 
-            msg += [f"{len(df)} AppWrappers went in the ", html.B(cfg__show_only_state), " state."]
+            msg += [f"{len(df)} {entry.results.target_kind_name}s went in the ", html.B(cfg__show_only_state), " state."]
             msg.append(html.Br())
             msg += [f"It took them ", html.B(f"between {time(df.Duration.min())} and {time(df.Duration.max())}"), " to complete this step."]
             msg.append(html.Br())
-            msg.append(f"25% of the AppWrappers were in this state during {time(q1)} [Q1]")
+            msg.append(f"25% of the {entry.results.target_kind_name} were in this state during {time(q1)} [Q1]")
             msg.append(html.Br())
-            msg.append(f"50% of the AppWrappers were in this state during {time(med)} (+ {time(med-q1)}) [median]")
+            msg.append(f"50% of the {entry.results.target_kind_name} were in this state during {time(med)} (+ {time(med-q1)}) [median]")
             msg.append(html.Br())
-            msg.append(f"75% of the AppWrappers were in this state during {time(q3)} (+ {time(q3-med)}) [Q3]")
+            msg.append(f"75% of the {entry.results.target_kind_name} were in this state during {time(q3)} (+ {time(q3-med)}) [Q3]")
             msg.append(html.Br())
-            msg.append(f"90% of the AppWrappers were in this state during {time(q90)} (+ {time(q90-q3)}) [90th quantile]")
+            msg.append(f"90% of the {entry.results.target_kind_name} were in this state during {time(q90)} (+ {time(q90-q3)}) [90th quantile]")
             msg.append(html.Br())
             msg.append(f"There are {time(q3 - q1)} between Q1 and Q3.")
             msg.append(html.Br())

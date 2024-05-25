@@ -23,7 +23,7 @@ def get_sutest_metrics(register=False):
 
     all_metrics += [{"up": "up"}] # for the test start/end timestamp
 
-    all_metrics += core_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS)
+    all_metrics += core_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS, gpu_container="pytorch")
 
 
     return all_metrics

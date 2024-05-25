@@ -138,6 +138,8 @@ def prepare_namespace(test_settings):
         set_namespace_annotations()
         download_data_sources(test_settings)
 
+    run.run(f"oc delete pytorchjobs -n {namespace} --all")
+
     if not config.ci_artifacts.get_config("tests.fine_tuning.many_model.enabled"):
         return
 

@@ -94,7 +94,7 @@ def prepare_matbench_test_files(job_index=None):
             print(str(uuid.uuid4()), file=f)
 
 
-def _run_test(test_override_values, job_index=None):
+def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
 
     test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings") | test_override_values
@@ -116,7 +116,7 @@ def _run_test(test_override_values, job_index=None):
         reset_prometheus()
 
     with env.NextArtifactDir("test_fine_tuning"):
-        test_artifact_dir = env.ARTIFACT_DIR
+        test_artifact_dir_p[0] = env.ARTIFACT_DIR
 
         prepare_matbench_test_files(job_index)
 
@@ -135,7 +135,7 @@ def _run_test(test_override_values, job_index=None):
 
             exc = None
             if not do_multi_model:
-                exc = run.run_and_catch(exc, dump_prometheus)
+                exc = run.run_and_catch(exc, generate_prom_results, "single-model")
 
             if config.ci_artifacts.get_config("tests.capture_state"):
                 exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)
@@ -150,10 +150,10 @@ def _run_test(test_override_values, job_index=None):
         logging.warning(f"Test configuration failed: \n{yaml.dump(test_settings, sort_keys=False)}")
 
 
-    return test_artifact_dir, failed
+    return failed
 
 
-def _run_test_multi_model():
+def _run_test_multi_model(test_artifact_dir_p):
     if (model_name := config.ci_artifacts.get_config("tests.fine_tuning.test_settings.model_name")) is not None:
         logging.warning(f"tests.fine_tuning.test_settings.model_name should be 'null' for the multi-model test. Current value ({model_name}) ignored.")
 
@@ -167,7 +167,7 @@ def _run_test_multi_model():
         job_name = f"job-{job_index}-{model_name}"
 
         with env.NextArtifactDir(f"multi_model_{model_name}", lock=lock, counter_p=counter_p):
-            test_artifact_dir, test_failed = _run_test(dict(model_name=model_name, name=job_name), job_index=job_index)
+            test_failed = _run_test([None], dict(model_name=model_name, name=job_name), job_index=job_index)
 
         if test_failed:
             logging.warning(f"_run_test_multi_model: test {job_name=} failed :/")
@@ -178,10 +178,10 @@ def _run_test_multi_model():
     reset_prometheus()
 
     with env.NextArtifactDir("multi_model"):
+        test_artifact_dir_p[0] = env.ARTIFACT_DIR
         try:
             job_index = 0
             with run.Parallel("multi_model", dedicated_dir=False, exit_on_exception=False) as parallel:
-                test_artifact_dir = env.ARTIFACT_DIR
                 for model in multi_models:
                     for idx in range(model.get("replicas", 1)):
                         parallel.delayed(run_in_env, job_index, model["name"])
@@ -197,10 +197,10 @@ def _run_test_multi_model():
         finally:
             generate_prom_results("multi-model")
 
-    return test_artifact_dir, failed
+    return failed
 
 
-def _run_test_and_visualize(test_override_values=None):
+def _run_test_and_visualize(test_artifact_dir_p, test_override_values=None):
     failed = True
     do_matbenchmarking = test_override_values is None and config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.enabled")
     do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
@@ -210,21 +210,21 @@ def _run_test_and_visualize(test_override_values=None):
         logging.error(msg)
         raise ValueError(msg)
 
-    test_artifact_dir = None
+    test_artifact_dir_p = [None]
     try:
         if do_multi_model:
             logging.info("_run_test_and_visualize: testing in multi-model mode")
-            test_artifact_dir, failed = _run_test_multi_model()
+            failed = _run_test_multi_model(test_artifact_dir_p)
 
         elif do_matbenchmarking:
             logging.info("_run_test_and_visualize: testing in matbenchmarking mode")
-            test_artifact_dir, failed = _run_test_matbenchmarking()
+            failed = _run_test_matbenchmarking(test_artifact_dir_p)
 
         else:
             logging.info("_run_test_and_visualize: testing in single-model mode")
             if test_override_values is None:
                 test_override_values = config.ci_artifacts.get_config("tests.fine_tuning.test_settings")
-            test_artifact_dir, failed = _run_test(test_override_values)
+            failed = _run_test(test_artifact_dir_p, test_override_values)
 
     finally:
         dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
@@ -234,11 +234,11 @@ def _run_test_and_visualize(test_override_values=None):
         elif dry_mode:
             logging.info(f"Running in dry mode, skipping the visualization.")
 
-        elif test_artifact_dir is not None:
-            generate_visualization(do_matbenchmarking, test_artifact_dir)
+        elif test_artifact_dir_p[0] is not None:
+            generate_visualization(do_matbenchmarking, test_artifact_dir_p[0])
 
         else:
-            logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
+            logging.warning("Not generating the visualization as the test artifact directory hasn't been set.")
 
     logging.info(f"_run_test_and_visualize: Test {'failed' if failed else 'passed'}.")
 
@@ -298,7 +298,8 @@ def test(dry_mode=None, do_visualize=None, capture_prom=None):
         config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
 
     try:
-        failed = _run_test_and_visualize()
+        test_artifact_dir_p = [None] # not used
+        failed = _run_test_and_visualize(test_artifact_dir_p)
         return failed
     except Exception as e:
         logging.error(f"*** Caught an exception during _run_test_and_visualize: {e.__class__.__name__}: {e}")
@@ -310,11 +311,11 @@ def test(dry_mode=None, do_visualize=None, capture_prom=None):
         raise
 
 
-def _run_test_matbenchmarking():
+def _run_test_matbenchmarking(test_artifact_dir_p):
     visualize.prepare_matbench()
 
     with env.NextArtifactDir("matbenchmarking"):
-        test_artifact_dir = env.ARTIFACT_DIR
+        test_artifact_dir_p[0] = env.ARTIFACT_DIR
         benchmark_values = copy.deepcopy(config.ci_artifacts.get_config("tests.fine_tuning.test_settings"))
         remove_none_values(benchmark_values)
 
@@ -350,7 +351,7 @@ def _run_test_matbenchmarking():
         if failed:
             logging.error(f"_run_test_matbenchmarking: matbench benchmark failed :/")
 
-    return test_artifact_dir, failed
+    return failed
 
 
 def remove_none_values(d):
@@ -382,7 +383,7 @@ def matbench_run_one():
 
 def _run_test_many_model(test_settings):
     run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
-                                extra=test_settings | dict(prepare_only=True))
+                                extra=test_settings | dict(prepare_only=True, delete_other=True))
     artifact_dir = list(env.ARTIFACT_DIR.glob("*__fine_tuning__run_fine_tuning_job"))[-1]
 
     fine_tuning_job_base = artifact_dir / "src" / "pytorchjob_fine_tuning.yaml"

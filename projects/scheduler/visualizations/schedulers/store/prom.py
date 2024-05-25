@@ -104,7 +104,7 @@ def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
     all_metrics = []
-    all_metrics += core_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS, gpu=False)
+    all_metrics += core_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS, gpu_container="pytorch")
     all_metrics += get_scheduling_metrics(cluster_role, register)
 
     all_metrics += [

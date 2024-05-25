@@ -20,23 +20,23 @@ def register():
 
 
 
-def ResourceMappingTimeline_generate_raw_data(entry):
+def ResourceMappingTimeline_generate_raw_data(results):
     data = []
 
-    start_time = entry.results.test_start_end_time.start
+    start_time = results.test_start_end_time.start
 
-    hostnames_index = list(entry.results.nodes_info.keys()).index
+    hostnames_index = list(results.nodes_info.keys()).index
 
     def delta(ts):
         return (ts - start_time).total_seconds() / 60
 
-    for pod_time in entry.results.pod_times:
+    for pod_time in results.pod_times:
         pod_name = pod_time.pod_friendly_name
 
         hostname = pod_time.hostname or "No hostname"
         shortname = hostname.replace(".compute.internal", "").replace(".us-west-2", "").replace(".ec2.internal", "")
 
-        finish = getattr(pod_time, "container_finished", False) or entry.results.test_start_end_time.end
+        finish = getattr(pod_time, "container_finished", False) or results.test_start_end_time.end
 
         try:
             hostname_index = hostnames_index(hostname)
@@ -64,12 +64,12 @@ def ResourceMappingTimeline_generate_raw_data(entry):
     return data
 
 
-def ResourceMappingTimeline_generate_data_by_node(entry):
-    raw_data = ResourceMappingTimeline_generate_raw_data(entry)
+def ResourceMappingTimeline_generate_data_by_node(results):
+    raw_data = ResourceMappingTimeline_generate_raw_data(results)
     if not raw_data:
         return []
 
-    start_time = entry.results.test_start_end_time.start
+    start_time = results.test_start_end_time.start
     def delta(ts):
         return (ts - start_time).total_seconds() / 60
 
@@ -101,15 +101,15 @@ def ResourceMappingTimeline_generate_data_by_node(entry):
 
     for node in node_pod_count.keys():
         data.insert(0, dict(
-            Time = entry.results.test_start_end_time.start,
-            Delta = delta(entry.results.test_start_end_time.start),
+            Time = results.test_start_end_time.start,
+            Delta = delta(results.test_start_end_time.start),
             Count = 0,
             NodeName = node,
         ))
 
         data.append(dict(
-            Time = entry.results.test_start_end_time.end,
-            Delta = delta(entry.results.test_start_end_time.end),
+            Time = results.test_start_end_time.end,
+            Delta = delta(results.test_start_end_time.end),
             Count = 0,
             NodeName = node,
         ))
@@ -117,14 +117,14 @@ def ResourceMappingTimeline_generate_data_by_node(entry):
     return data
 
 
-def ResourceMappingTimeline_generate_data_by_pod(entry):
-    raw_data = ResourceMappingTimeline_generate_raw_data(entry)
+def ResourceMappingTimeline_generate_data_by_pod(results):
+    raw_data = ResourceMappingTimeline_generate_raw_data(results)
     if not raw_data:
         return []
 
     df = pd.DataFrame(raw_data).sort_values(by="Time")
 
-    start_time = entry.results.test_start_end_time.start
+    start_time = results.test_start_end_time.start
     def delta(ts):
         return (ts - start_time).total_seconds() / 60
 
@@ -159,6 +159,36 @@ def ResourceMappingTimeline_generate_data_by_pod(entry):
 
     return data
 
+def ResourceMappingTimeline_generate_data_by_all(results):
+    raw_data = ResourceMappingTimeline_generate_raw_data(results)
+    if not raw_data:
+        return []
+
+    df = pd.DataFrame(raw_data).sort_values(by="Time")
+
+    start_time = results.test_start_end_time.start
+    def delta(ts):
+        return (ts - start_time).total_seconds() / 60
+
+    YOTA = datetime.timedelta(microseconds=1)
+    concurrency = 0
+    data = []
+    for index, row in df.iterrows():
+        data.append(dict(
+            Delta = delta(row.Time - YOTA),
+            Count = concurrency,
+        ))
+
+        concurrency += row.Inc
+
+        data.append(dict(
+            Delta = delta(row.Time + YOTA),
+            Count = concurrency,
+        ))
+
+    return data
+
+
 class ResourceMappingTimeline():
     def __init__(self):
         self.name = "Resource Mapping Timeline"
@@ -181,9 +211,9 @@ class ResourceMappingTimeline():
             pass # entry is set
 
         if cfg__by_pod:
-            data = ResourceMappingTimeline_generate_data_by_pod(entry)
+            data = ResourceMappingTimeline_generate_data_by_pod(entry.results)
         else:
-            data = ResourceMappingTimeline_generate_data_by_node(entry)
+            data = ResourceMappingTimeline_generate_data_by_node(entry.results)
 
         if not data:
             return None, "Not data available ..."

@@ -92,14 +92,15 @@ def _parse_sft_training_logs(dirname):
     sft_training_metrics = types.SimpleNamespace()
     with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f:
         for line in f.readlines():
-            if line.startswith("{'train_runtime'"):
-                results = json.loads(line.replace("'", '"'))
-                # {'train_runtime': 1.5203, 'train_samples_per_second': 6.578, 'train_steps_per_second': 0.658, 'train_tokens_per_second': 306.518, 'train_loss': 4.817451000213623, 'epoch': 1.0}
+            _garbage, found, line_data = line.strip().partition("{'train_runtime'")
+            if not found: continue
+            results = json.loads((found + line_data).replace("'", '"'))
+            # {'train_runtime': 1.5203, 'train_samples_per_second': 6.578, 'train_steps_per_second': 0.658, 'train_tokens_per_second': 306.518, 'train_loss': 4.817451000213623, 'epoch': 1.0}
 
-                # this will raise a KeyError if a key is missing in `results`
-                # this means that we are not parsing the data we're expecting.
-                for key in SFT_TRAINER_RESULTS_KEYS:
-                    setattr(sft_training_metrics, key, results[key])
+            # this will raise a KeyError if a key is missing in `results`
+            # this means that we are not parsing the data we're expecting.
+            for key in SFT_TRAINER_RESULTS_KEYS:
+                setattr(sft_training_metrics, key, results[key])
 
     return sft_training_metrics
 

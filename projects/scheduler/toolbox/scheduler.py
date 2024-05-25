@@ -18,8 +18,8 @@ class Scheduler:
             namespace,
             base_name="sched-test-",
             job_template_name="sleeper",
-            states_target=["Completed"],
-            states_unexpected=["Failed"],
+            aw_states_target=None,
+            aw_states_unexpected=None,
             mode="job",
             count=3,
             pod_count=1,
@@ -43,8 +43,8 @@ class Scheduler:
           pod_count: number of Pods to create in each of the AppWrappers
           pod_runtime: run time parameter to pass to the Pod
           pod_requests: requests to pass to the Pod definition
-          states_target: list of expected target states
-          states_unexpected: list of states that fail the test
+          aw_states_target: list of expected AppWrapper target states
+          aw_states_unexpected: list of AppWrapper states that fail the test
           timespan: number of minutes over which the resources should be created
           distribution: the distribution method to use to spread the resource creation over the requested timespan
           scheduler_load_generator: the path of the scheduler load generator to launch

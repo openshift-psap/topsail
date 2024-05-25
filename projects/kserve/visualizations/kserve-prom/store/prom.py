@@ -80,7 +80,7 @@ def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
     all_metrics = []
-    all_metrics += core_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS)
+    all_metrics += core_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS, gpu_container="kserve-container")
     all_metrics += _get_rhoai_resource_usage(cluster_role, register)
 
     return all_metrics
