@@ -27,6 +27,8 @@ def generateSFTTrainingData(entries, x_key, _variables, sfttraining_key, compute
 
 
     variables = [v for v in _variables if v != x_key]
+    if not variables and x_key != "gpu":
+        variables += [x_key]
 
     for entry in entries:
         datum = dict()
@@ -37,7 +39,7 @@ def generateSFTTrainingData(entries, x_key, _variables, sfttraining_key, compute
 
         datum[sfttraining_key] = getattr(entry.results.sft_training_metrics, sfttraining_key, 0)
 
-        datum["name"] = entry.get_name(variables if variables else [x_key])
+        datum["name"] = entry.get_name(variables)
 
         data.append(datum)
 
@@ -110,6 +112,7 @@ class SFTTraining():
 
             for i in range(len(fig.data)):
                 fig.data[i].update(mode='lines+markers+text')
+                fig.update_yaxes(rangemode='tozero')
         else:
             fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
 
@@ -132,7 +135,7 @@ class SFTTraining():
             what = f", in {y_units}"
 
         y_title = f"Fine-tuning {y_title}{what}. "
-        title = y_title + "<br>"+("Lower is better" if y_lower_better else "Higher is better") + "."
+        title = y_title + "<br>"+("Lower is better" if y_lower_better else "Higher is better")
         fig.update_yaxes(title=("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else ""))
         fig.update_layout(title=title, title_x=0.5,)
         fig.update_layout(legend_title_text="Configuration")
@@ -140,10 +143,29 @@ class SFTTraining():
         # ❯ or ❮
 
         msg = []
-        max_row_idx = df.idxmax()[y_key]
         min_row_idx = df.idxmin()[y_key]
-        msg.append(f"Max: {df[y_key].values[max_row_idx]:.2f} {y_units} ({df['name'].values[max_row_idx]}, "+ ("worst" if y_lower_better else "best") +")")
-        msg.append(html.Br())
-        msg.append(f"Min: {df[y_key].values[min_row_idx]:.2f} {y_units} ({df['name'].values[min_row_idx]}, "+ ("best" if y_lower_better else "worst") +")")
+        max_row_idx = df.idxmax()[y_key]
+
+        min_count = df['gpu' if has_gpu else 'name'][min_row_idx]
+        max_count = df['gpu' if has_gpu else 'name'][max_row_idx]
+
+        if has_gpu:
+            min_name = f"{min_count} GPU" + "s" if min_count > 1 else ""
+            max_name = f"{max_count} GPU" + "s" if max_count > 1 else ""
+        else:
+            min_name = f"{x_key}={min_count}"
+            max_name = f"{x_key}={max_count}"
+
+        if cfg__efficiency:
+            units = ""
+        elif cfg__speedup:
+            units = "x"
+        else:
+            units = y_units
+
+        if len(data) > 1:
+            msg.append(f"Max: {df[y_key][max_row_idx]:.2f} {units} ({max_name}, "+ ("slowest" if y_lower_better else "fastest") +")")
+            msg.append(html.Br())
+            msg.append(f"Min: {df[y_key][min_row_idx]:.2f} {units} ({min_name}, "+ ("fastest" if y_lower_better else "slowest") +")")
 
         return fig, msg
