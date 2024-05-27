@@ -62,6 +62,7 @@ ci_presets:
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
     tests.fine_tuning.many_model.count: 64
+    tests.fine_tuning.many_model.timespan: 64
   # ---
 
   metal:
