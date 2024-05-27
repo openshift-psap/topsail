@@ -166,7 +166,7 @@ def cleanup(mute=True):
 
 def update_serving_runtime_images(runtime=None):
     if runtime == "vllm":
-        #TODO when RHOAI is ready we will get the vLLM image from a template as well
+        # TODO when RHOAI is ready we will get the vLLM image from a template as well
         # For now, it should be set in the config.yaml
         return
     

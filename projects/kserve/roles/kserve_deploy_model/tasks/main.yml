@@ -100,11 +100,13 @@
     src: "{{ servingruntime_patch_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/patch/patch-servingruntime.yaml"
     mode: '0400'
+
 - name: Apply the templates for this inferenceservice
   template:
     src: "{{ inferenceservice_patch_template }}"
     dest: "{{ artifact_extra_logs_dir }}/src/patch/patch-inferenceservice.yaml"
     mode: '0400'
+
 - name: Apply the templates for kustomization.yaml
   template:
     src: "{{ kustomization_patch_template }}"
@@ -113,7 +115,7 @@
 
 - name: Build the ServingRuntime and InferenceService with kustomize
   shell:
-    oc kustomize {{ artifact_extra_logs_dir }}/src/patch/ >> {{ artifact_extra_logs_dir }}/src/serving-runtime-and-isvc.yaml
+    oc kustomize {{ artifact_extra_logs_dir }}/src/patch/ > {{ artifact_extra_logs_dir }}/src/serving-runtime-and-isvc.yaml
 
 # --server-side is required here because multiple concurrent users
 # might try to create the ServingRuntime simultaneously.
