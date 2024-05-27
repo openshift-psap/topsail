@@ -216,5 +216,5 @@ def preload_image():
 
     with run.Parallel("preload_serving_runtime") as parallel:
         parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.kserve.image"), "kserve")
-        if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
-            parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.transformer.image"), "transformer")
+        #if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        #    parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.transformer.image"), "transformer")
