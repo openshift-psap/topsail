@@ -200,7 +200,7 @@ def _run_test_multi_model(test_artifact_dir_p):
     return failed
 
 
-def _run_test_and_visualize(test_artifact_dir_p, test_override_values=None):
+def _run_test_and_visualize(test_override_values=None):
     failed = True
     do_matbenchmarking = test_override_values is None and config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.enabled")
     do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
@@ -298,8 +298,7 @@ def test(dry_mode=None, do_visualize=None, capture_prom=None):
         config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
 
     try:
-        test_artifact_dir_p = [None] # not used
-        failed = _run_test_and_visualize(test_artifact_dir_p)
+        failed = _run_test_and_visualize()
         return failed
     except Exception as e:
         logging.error(f"*** Caught an exception during _run_test_and_visualize: {e.__class__.__name__}: {e}")
