@@ -12,6 +12,9 @@ import matrix_benchmarking.common as common
 
 def register():
     ExecutionDistribution()
+    WaitingTimeDistribution()
+    WaitingTimeTimeline()
+    SchedulingOrder()
 
 def generateTimeInState(entry):
     data = []
@@ -125,3 +128,158 @@ class ExecutionDistribution():
             msg.append(html.Br())
 
         return fig, msg
+
+def generateWaitingTimeDistribution(entry):
+    data = []
+    missing = 0
+
+    for resource_times in entry.results.resource_times.values():
+        if resource_times.kind.lower() != entry.results.test_case_properties.resource_kind: continue
+        try:
+            waiting_time = (resource_times.start - resource_times.creation).total_seconds() / 60
+
+            data.append(dict(waiting_time=waiting_time, name=resource_times.name))
+        except Exception:
+            missing += 1
+            pass
+
+    return missing, data
+
+
+class WaitingTimeDistribution():
+    def __init__(self):
+        self.name = "Waiting Time Distribution"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
+        if expe_cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            pass # entry is set
+
+        missing, data = generateWaitingTimeDistribution(entry)
+
+        if not data:
+            return None, "No data to plot ..."
+
+        df = pd.DataFrame(data)
+
+        fig = px.histogram(df, x="waiting_time",
+                           marginal="box",
+                           barmode="overlay",
+                           hover_data=df.columns)
+
+        fig.update_yaxes(title="Number of objects")
+        fig.update_xaxes(title="Waiting time, in minutes after the start time")
+
+        fig.update_layout(title=f"{entry.results.target_kind_name} Waiting Time", title_x=0.5)
+
+        msg = []
+        if missing != 0:
+            msg += [f"{missing} {entry.results.target_kind_name} didn't run to completion."]
+
+        return fig, msg
+
+
+class WaitingTimeTimeline():
+    def __init__(self):
+        self.name = "Waiting Time Timeline"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
+        if expe_cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            pass # entry is set
+
+        missing, data = generateWaitingTimeDistribution(entry)
+
+        if not data:
+            return None, "No data to plot ..."
+
+        df = pd.DataFrame(data)
+        df = df.sort_values(by=["name"])
+        fig = px.bar(df, x="name", y="waiting_time",
+                     hover_data=df.columns)
+
+        fig.update_yaxes(title="Wait duration")
+        fig.update_xaxes(title="Waiting time, in minutes after the start time")
+
+        fig.update_layout(title=f"{entry.results.target_kind_name} Waiting Time", title_x=0.5)
+
+        msg = []
+        if missing != 0:
+            msg += [f"{missing} {entry.results.target_kind_name} didn't run to completion."]
+
+        return fig, msg
+
+
+def generateSchedulingOrder(entry):
+    data = []
+
+    for resource_times in entry.results.resource_times.values():
+        if resource_times.kind.lower() != entry.results.test_case_properties.resource_kind: continue
+        try:
+            start_time = resource_times.start
+            resource_id = int(resource_times.name.split("-")[-1])
+            data.append(dict(start_time=start_time, resource_id=resource_id,
+                             resource_name=resource_times.name))
+        except Exception:
+            pass
+
+    return data
+
+
+class SchedulingOrder():
+    def __init__(self):
+        self.name = "Scheduling Order"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
+        if expe_cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            pass # entry is set
+
+        data = generateSchedulingOrder(entry)
+
+        if not data:
+            return None, "No data to plot ..."
+
+        df = pd.DataFrame(data)
+        df = df.sort_values(by=["start_time"])
+        df['start_idx'] = range(len(df))
+
+        fig = px.bar(df, x="start_idx", y="resource_id",
+                     hover_data=df.columns)
+
+        fig.update_yaxes(title="Resource ID")
+        fig.update_xaxes(title="Start index")
+
+        fig.update_layout(title=f"{entry.results.target_kind_name} Start Order", title_x=0.5)
+
+        return fig, []
