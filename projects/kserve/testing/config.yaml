@@ -454,9 +454,9 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 728129
-    channel: fast
-    version: 2.9.1
+    tag: 717355
+    channel: stable
+    version: 2.8.2
     version_name: rc1
   operator:
     # set to true to stop the RHODS operator
