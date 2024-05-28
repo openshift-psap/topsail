@@ -178,7 +178,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: "quay.io/modh/fms-hf-tuning:01b3824c9aba22d9d0695399681e6f0507840e7f"
+  image: "quay.io/modh/fms-hf-tuning:bd8bf628cd739c7a201a976bc3c1096785353f1a"
   pvc_name: fine-tuning-storage
   sources:
     twitter_complaints_small.json:
