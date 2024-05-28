@@ -36,6 +36,7 @@ class Fine_Tuning:
 
             prepare_only=False,
             delete_other=False,
+            store_model=None,
     ):
         """
         Run a simple fine-tuning Job.
@@ -61,6 +62,7 @@ class Fine_Tuning:
 
           prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
           delete_other: if True, delete the other PyTorchJobs before running
+          store_model: if None, don't store tuned model in PVC, if "foo" store model using name "foo"
         """
 
         return RunAnsibleRole(locals())
@@ -87,7 +89,7 @@ class Fine_Tuning:
             per_device_train_batch_size=4,
             per_device_eval_batch_size=4,
             use_flash_attn=False,
-
+            store_model=None,
     ):
         """
         Run a simple fine-tuning Job.
@@ -110,6 +112,7 @@ class Fine_Tuning:
           per_device_train_batch_size: batch size to use for the model fine-tuning training
           per_device_eval_batch_size: batch size to use for the model fine-tuning evaluation
           use_flash_attn: Enables/disables Flash Attention
+          store_model: if None, get model from default location, otherwise fetch model under this name in the PVC
         """
 
         return RunAnsibleRole(locals())

@@ -97,7 +97,7 @@ def prepare_matbench_test_files(job_index=None):
 def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
     eval_only_mode = config.ci_artifacts.get_config("tests.fine_tuning.eval_only_mode")
-    run_evaluation = eval_only_mode | config.ci_artifacts.get_config("tests.fine_tuning.evaluate_model")
+    run_evaluation = eval_only_mode or config.ci_artifacts.get_config("tests.fine_tuning.evaluate_model")
 
     test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings") | test_override_values
 
