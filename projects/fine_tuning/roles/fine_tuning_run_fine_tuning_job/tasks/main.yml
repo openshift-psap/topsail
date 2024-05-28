@@ -96,7 +96,7 @@
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          --no-headers | awk '{print $3}'
     register: wait_pod_start
-    retries: 180
+    retries: 720
     delay: 30
     until: wait_pod_start.stdout != "Running"
 
