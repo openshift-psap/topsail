@@ -556,15 +556,15 @@ tests:
 
     model:
       consolidated: false
-      model: flan-t5-small
+      name: flan-t5-small
       runtime: standalone_tgis
       replicas: 2
   e2e:
     namespace: kserve-e2e
     mode: single # single, longevity or multi
     models:
-    - flan-t5-small
-    - flan-t5-small
+    - name: flan-t5-small
+    - name: flan-t5-small
     consolidated_models: {} # will be filled at runtime
     limits_equals_requests: false
     delete_others: true
