@@ -8,6 +8,8 @@ import uuid
 import time
 import threading
 import traceback
+import datetime
+import json
 
 from projects.core.library import env, config, run, visualize, matbenchmark
 import prepare_finetuning
@@ -112,6 +114,8 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     prepare_finetuning.prepare_namespace(test_settings)
     failed = True
 
+    _start_ts = datetime.datetime.now()
+    start_ts = None
     if not do_multi_model:
         reset_prometheus()
 
@@ -122,16 +126,21 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
         try:
             if dry_mode:
-                logging.info("tests.dry_mode is enabled, NOT running with {test_settings} | {do_multi_model=} | {do_many_model=}")
+                logging.info(f"tests.dry_mode is enabled, NOT running with {test_settings} | {do_multi_model=} | {do_many_model=}")
             elif do_many_model:
                 _run_test_many_model(test_settings)
             else:
+                start_ts = _start_ts
+
                 run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
                                             extra=test_settings)
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                 print(1 if failed else 0, file=f)
+
+            if start_ts:
+                save_test_start_end(start_ts, test_settings)
 
             exc = None
             if not do_multi_model:
@@ -351,6 +360,20 @@ def _run_test_matbenchmarking(test_artifact_dir_p):
             logging.error(f"_run_test_matbenchmarking: matbench benchmark failed :/")
 
     return failed
+
+
+def save_test_start_end(start_ts, settings, end_ts=None):
+    if end_ts is None:
+        end_ts = datetime.datetime.now()
+
+    with open(env.ARTIFACT_DIR / "test_start_end.json", "w") as f:
+        json.dump(dict(
+            start=start_ts.astimezone().isoformat(),
+            end=end_ts.astimezone().isoformat(),
+            settings=settings,
+        ), f, indent=4)
+
+        print("", file=f)
 
 
 def remove_none_values(d):
