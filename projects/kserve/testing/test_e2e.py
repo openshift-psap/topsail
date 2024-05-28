@@ -395,8 +395,8 @@ def validate_model(namespace, *, model_name, inference_service_names, runtime, a
         raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
         method=config.ci_artifacts.get_config("kserve.inference_service.validation.method")
     )
-    if validate_kwargs["raw_deployment"]:
-        validate_kwargs["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
+
+    validate_kwargs["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
 
     validate_kwargs["artifact_dir_suffix"] = artifact_dir_suffix
     validate_kwargs["runtime"] = runtime
