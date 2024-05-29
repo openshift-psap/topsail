@@ -96,6 +96,8 @@ ci_presets:
   cluster_icelake:
     clusters.sutest.compute.machineset.type: "Icelake"
 
+  cluster_a30:
+    clusters.sutest.compute.machineset.type: "Cluster A30-24GB"
 secrets:
   dir:
     name: psap-ods-secret
@@ -111,6 +113,7 @@ clusters:
   metal_profiles:
     p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
     e26-h23-000-r650: cluster_icelake
+    cc37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
   create:
     type: single # can be: single, ocp, managed
     keep: false
