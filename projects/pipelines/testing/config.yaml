@@ -199,7 +199,7 @@ tests:
     pipelines_per_user: 1
     runs_per_pipeline: 1
     run_delay: 10
-    wait_for_run_complete: false
+    wait_for_run_completion: false
     user_pipeline_delay: 5
     sleep_factor: 1
     user_batch_size: 1

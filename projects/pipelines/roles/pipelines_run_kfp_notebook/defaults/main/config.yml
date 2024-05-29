@@ -43,4 +43,4 @@ pipelines_run_kfp_notebook_capture_prom_db: false
 pipelines_run_kfp_notebook_capture_extra_artifacts: true
 
 # Whether to wait for one runs completion before starting the next
-pipelines_run_kfp_notebook_wait_for_run_complete: false
+pipelines_run_kfp_notebook_wait_for_run_completion: false

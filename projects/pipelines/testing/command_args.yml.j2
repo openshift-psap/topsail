@@ -70,7 +70,7 @@ pipelines run_kfp_notebook:
   notebook_filename: {{ tests.pipelines.notebook_filename }}
   notebook_directory: {{ tests.pipelines.notebook_directory }}
   capture_extra_artifacts: {{ tests.pipelines.capture_extra_artifacts }}
-  wait_for_run_complete: {{ tests.pipelines.wait_for_run_complete }}
+  wait_for_run_completion: {{ tests.pipelines.wait_for_run_completion }}
 
 pipelines capture_state:
   namespace: {{ rhods.pipelines.namespace }}
