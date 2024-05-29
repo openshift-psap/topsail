@@ -62,6 +62,8 @@ spec:
           value: "{{ run_count }}"
         - name: RUN_DELAY
           value: "{{ run_delay }}"
+        - name: WAIT_FOR_RUN_COMPLETE
+          value: "{{ pipelines_run_kfp_notebook_wait_for_run_complete }}"
         image: {{ notebook_image_address }}
         imagePullPolicy: Always
         livenessProbe:

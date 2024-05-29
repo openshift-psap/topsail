@@ -40,6 +40,7 @@ class Pipelines:
                          capture_artifacts=True,
                          capture_prom_db=False,
                          capture_extra_artifacts=True,
+                         wait_for_run_complete=False,
                          ):
         """
         Run a notebook in a given notebook image.
@@ -58,6 +59,7 @@ class Pipelines:
           capture_artifacts: If False, disable the post-test artifact collection.
           capture_prom_db: If True, captures the Prometheus DB of the systems.
           capture_extra_artifacts: whether to capture extra descriptions and YAML's
+          wait_for_run_complete: Whether to wait for one runs completion before starting the next
         """
 
         return RunAnsibleRole(locals())
