@@ -203,7 +203,9 @@ rhods:
     managed_rhoi: false
   operator:
     # set to true to stop the RHODS operator
-    stop: false
+    stop: true
+    kueue_image: quay.io/modh/kueue:519fdc19c8a3a6bfad517be866356a5e0eed715b
+    kto_image: quay.io/modh/training-operator:693295eb0d69fe1d9fc577ac3f885243e7c69c40
 
 gpu:
   prepare_cluster: false

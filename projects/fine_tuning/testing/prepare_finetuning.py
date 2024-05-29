@@ -52,6 +52,20 @@ def prepare_rhoai():
         name=None if has_dsc else "default-dsc",
     )
 
+    if not config.ci_artifacts.get_config("rhods.operator.stop"):
+        return
+
+    operator_name = "opendatahub-operator-controller-manager" if config.ci_artifacts.get_config("rhods.catalog.opendatahub") else "rhods-operator"
+    run.run(f"oc scale deploy/{operator_name} --replicas=0 -n redhat-ods-operator")
+    time.sleep(10)
+
+    if kueue_image := config.ci_artifacts.get_config("rhods.operator.kueue_image"):
+        run.run(f"oc set image deploy/kueue-controller-manager training-operator={kueue_image} -n redhat-ods-applications")
+
+    if kto_image := config.ci_artifacts.get_config("rhods.operator.kto_image"):
+        run.run(f"oc set image deploy/kubeflow-training-operator manager={kto_image} -n redhat-ods-applications")
+
+
 def set_namespace_annotations():
     metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
     dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
