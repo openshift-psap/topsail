@@ -6,9 +6,20 @@
     oc create ns redhat-ods-applications --dry-run=client -oyaml | oc apply -f-
     oc create ns redhat-ods-monitoring --dry-run=client -oyaml | oc apply -f-
 
-- name: Distinguish ODH from RHOAI
+- name: Deploy in ODH mode
+  when: rhods_deploy_ods_opendatahub
   set_fact:
-    catalog_name: "{% if rhods_deploy_ods_opendatahub %}opendatahub-catalog{% else %}addon-managed-odh-catalog{% endif %}"
+    catalog_name: "opendatahub-catalog"
+
+- name: Deploy in managed mode
+  when: not rhods_deploy_ods_opendatahub and rhods_deploy_ods_managed_rhoai
+  set_fact:
+    catalog_name: "addon-managed-odh-catalog"
+
+- name: Deploy in self-managed mode
+  when: not rhods_deploy_ods_managed_rhoai and not rhods_deploy_ods_opendatahub
+  set_fact:
+    catalog_name: "custom-odh-catalog"
 
 - name: Create the src directory
   file:

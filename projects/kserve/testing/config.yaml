@@ -458,6 +458,8 @@ rhods:
     channel: stable
     version: 2.8.2
     version_name: rc1
+    opendatahub: false
+    managed_rhoai: false
   operator:
     # set to true to stop the RHODS operator
     stop: false
