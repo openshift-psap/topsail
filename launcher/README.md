@@ -21,6 +21,8 @@ sudo dnf install toolbox
 * You need to have TOPSAIL cloned locally
 ```
 git clone https://github.com/openshift-psap/topsail.git
+cd topsail
+git submodule update --init
 ```
 
 Configuration
