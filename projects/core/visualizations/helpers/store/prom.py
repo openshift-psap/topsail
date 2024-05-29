@@ -51,6 +51,7 @@ def _get_container_mem(cluster_role, labels):
     metric_name = "_".join(f"{k}={v}" for k, v in labels.items())
 
     return [
+        {f"{cluster_role}__container_memory_working_set_bytes__{metric_name}": "container_memory_working_set_bytes{"+labels_str+"}"},
         {f"{cluster_role}__container_memory_usage_bytes__{metric_name}": "container_memory_usage_bytes{"+labels_str+"}"},
         {f"{cluster_role}__container_memory_rss__{metric_name}": "container_memory_rss{"+labels_str+"}"},
         {f"{cluster_role}__container_memory_requests__{metric_name}": "kube_pod_container_resource_requests{"+labels_str+",resource='memory'}"},
