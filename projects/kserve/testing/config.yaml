@@ -270,6 +270,9 @@ ci_presets:
     - name: codellama-34b-instruct-hf
       testing:
         size: large
+    - name: mixtral-8x7b
+      testing:
+        size: large
     matbench.lts.horreum.test_name: rhoai-kserve-single
     matbench.lts.opensearch.index: rhoai-kserve-single
 
