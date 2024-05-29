@@ -1,0 +1,20 @@
+#! /bin/bash
+
+set -o pipefail
+set -o errexit
+set -o nounset
+set -o errtrace
+# set -x
+
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $THIS_DIR/topsail_host_config
+
+if [[ "$#" == 0 ]]; then
+    command="cd $TOPSAIL_HOME && $TOPSAIL_TOOLBOX_COMMAND"
+else
+    command="$@"
+fi
+
+TOPSAIL_TOOLBOX_NAME=topsail_kserve-e2e
+
+exec toolbox run -c $TOPSAIL_TOOLBOX_NAME -- bash -c "eval '$(cat "$THIS_DIR/topsail_container_env" | envsubst)' $command"

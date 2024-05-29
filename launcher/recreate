@@ -1,0 +1,27 @@
+#! /bin/bash
+
+set -o pipefail
+set -o errexit
+set -o nounset
+set -o errtrace
+set -x
+
+CONTAINER_NAME=${1:-}
+CONTAINER_IMAGE=${2:-}
+
+if [[ -z "$CONTAINER_NAME" ]]; then
+    echo "ERROR: $0 must receive a container name"
+    exit 1
+fi
+
+if [[ -z "$CONTAINER_IMAGE" ]]; then
+    echo "ERROR: $0 must receive a container image"
+    exit 1
+fi
+
+if podman inspect --type container $CONTAINER_NAME &>/dev/null; then
+  podman stop $CONTAINER_NAME || podman stop $CONTAINER_NAME
+  toolbox rm $CONTAINER_NAME
+fi
+
+toolbox create $CONTAINER_NAME --image $CONTAINER_IMAGE

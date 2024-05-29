@@ -1,0 +1,21 @@
+#! /bin/bash
+
+set -o pipefail
+set -o errexit
+set -o nounset
+set -o errtrace
+set -x
+
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $THIS_DIR/topsail_host_config
+
+CONTAINER_NAME=topsail_kserve-e2e
+BASE_IMAGE=localhost/topsail
+EXTENTION_FILE=$TOPSAIL_HOME/projects/kserve/testing/images/Containerfile.e2e_test_user
+
+podman build $TOPSAIL_HOME \
+       --tag $CONTAINER_NAME \
+       --file $EXTENTION_FILE \
+       --from $BASE_IMAGE
+
+$THIS_DIR/recreate "$CONTAINER_NAME" "$CONTAINER_NAME"

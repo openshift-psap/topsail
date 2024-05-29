@@ -1,0 +1,27 @@
+#! /bin/bash
+
+set -o pipefail
+set -o errexit
+set -o nounset
+set -o errtrace
+set -x
+
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $THIS_DIR/topsail_host_config
+
+CONTAINER_FILE=$TOPSAIL_HOME/build/Dockerfile
+image_name=topsail
+CONTAINER_IMAGE=$image_name
+CONTAINER_NAME=$image_name
+
+podman build $TOPSAIL_HOME -f $CONTAINER_FILE -t $CONTAINER_IMAGE --squash-all
+
+OVERLAY="FROM hell
+ENTRYPOINT []
+CMD []
+
+RUN dnf install -y --quiet zsh flatpak-spawn
+"
+podman build --tag $CONTAINER_IMAGE --file <(echo "$OVERLAY") --from $CONTAINER_IMAGE
+
+$THIS_DIR/recreate "$CONTAINER_NAME" "$CONTAINER_IMAGE"

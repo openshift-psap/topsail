@@ -1,0 +1,7 @@
+# defined here the path to your local TOPSAIL repository
+TOPSAIL_HOME=$HOME/path/to/topsail
+
+# change here if you prefer another shell
+TOPSAIL_TOOLBOX_COMMAND=bash
+
+TOPSAIL_TOOLBOX_NAME=topsail
