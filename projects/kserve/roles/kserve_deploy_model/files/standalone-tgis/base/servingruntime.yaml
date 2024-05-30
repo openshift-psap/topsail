@@ -34,6 +34,7 @@ spec:
       initialDelaySeconds: 30
     ports:
     - containerPort: 8033
+      name: h2c
       protocol: TCP
     volumeMounts:
     - name: cache-volume
