@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: kserve-e2e-perf # Overwritten by template
 
 resources:
-- ../vllm/models/codellama-34b-instruct-hf/ # Overwritten by template
+- ../vllm/models/mixtral-8x7b/ # Overwritten by template
 
 patches:
 - path: patch-servingruntime.yaml

@@ -270,6 +270,10 @@ ci_presets:
     - name: codellama-34b-instruct-hf
       testing:
         size: large
+    - name: mistral-7b-instruct-v02
+      testing:
+        size: small
+        max_concurrency: 64
     - name: mixtral-8x7b
       testing:
         size: large

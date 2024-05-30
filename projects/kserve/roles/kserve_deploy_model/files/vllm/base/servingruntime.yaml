@@ -27,6 +27,16 @@ spec:
         nvidia.com/gpu: 1
       limits:
         nvidia.com/gpu: 1
+    volumeMounts:
+      - name: tmp
+        mountPath: /tmp
+      - name: home
+        mountPath: /home/vllm
+  volumes:
+    - name: tmp
+      emptyDir: {}
+    - name: home
+      emptyDir: {}
   multiModel: false
   supportedModelFormats:
   - autoSelect: true

@@ -35,4 +35,4 @@
 # {% endif %}"
 - op: replace
   path: /spec/predictor/minReplicas
-  value: 2 # {{ kserve_deploy_model_inference_service_min_replicas }}
+  value: 1 # {{ kserve_deploy_model_inference_service_min_replicas }}
