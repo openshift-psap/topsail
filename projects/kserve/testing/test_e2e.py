@@ -671,7 +671,9 @@ def test_consolidated_model(consolidated_model, namespace=None):
 
     llm_load_test_args = config.ci_artifacts.get_config("tests.e2e.llm_load_test.args")
 
-    size_name = consolidated_model["testing"]["size"]
+    # small if not set
+    size_name = consolidated_model.get("testing", {}).get("size", "small")
+
     model_max_concurrency = consolidated_model["testing"].get("max_concurrency")
 
     llm_load_test_dataset_sample_args = config.ci_artifacts.get_config(f"tests.e2e.llm_load_test.dataset_size.{size_name}")
