@@ -663,7 +663,10 @@ def test_consolidated_model(consolidated_model, namespace=None):
 
         host = f"{svc_name}.{namespace}.svc.cluster.local"
     else:
-        host_url = run.run(f"oc get inferenceservice/{inference_service_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
+        host_url = run.run(f"oc get inferenceservice/{inference_service_name} -n {namespace} -ojsonpath={{.status.components.predictor.url}}", capture_stdout=True).stdout
+        # In validate we use oc get ksvc \
+        # -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }} \
+        # -n {{ kserve_validate_model_namespace }} -ojsonpath='{.items[0].status.url}' 
         host = host_url.lstrip("https://")
         if host == "":
             raise RuntimeError(f"Failed to get the hostname for InferenceService {namespace}/{inference_service_name}")
