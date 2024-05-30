@@ -210,3 +210,9 @@
        deploy/mariadb-{{ dspa_application_name }}
        mysqldump -u root mlpipeline > "{{ artifact_extra_logs_dir }}/database.sql"
   when: pipelines_capture_state_capture_extra_artifacts
+
+- name: Get a snapshot of the DSPO
+  shell:
+    oc describe pod -lapp.opendatahub.io/data-science-pipelines-operator=true
+      -n redhat-ods-applications
+      > "{{ artifact_extra_logs_dir }}/dspo.desc"
