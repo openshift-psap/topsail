@@ -322,26 +322,27 @@ def get_gpu_usage_metrics(cluster_role, register, container):
 
             y_divisor = 1
 
-            if rq.startswith("DCGM_FI_DEV_FB_"):
+            if "DCGM_FI_DEV_FB_" in rq:
                 y_title = f"{name} (in GiB)"
                 y_divisor = 1024
-            elif rq.startswith("DCGM_FI_PROF_PCIE_"):
+
+            elif "DCGM_FI_PROF_PCIE_" in rq:
                 y_title = "Memory transfer (in MiB/s)"
                 y_divisor = 1024
-            elif rq in ('DCGM_FI_DEV_GPU_UTIL', 'DCGM_FI_PROF_GR_ENGINE_ACTIVE'):
+            elif "DCGM_FI_DEV_GPU_UTIL" in rq or "DCGM_FI_PROF_GR_ENGINE_ACTIVE" in rq:
                 y_title = "Compute usage (in %)"
-                if rq == 'DCGM_FI_PROF_GR_ENGINE_ACTIVE':
+                if "DCGM_FI_PROF_GR_ENGINE_ACTIVE" in rq:
                     y_divisor = 0.01
-            elif rq == "DCGM_FI_DEV_MEM_COPY_UTIL":
+            elif "DCGM_FI_DEV_MEM_COPY_UTIL" in rq:
                 y_title = "GPU transfer bus usage (in %)"
-            elif rq == "DCGM_FI_PROF_SM_ACTIVE":
+            elif "DCGM_FI_PROF_SM_ACTIVE" in rq:
                 y_title = "The ratio of cycles an SM has at least 1 warp assigned (in %)"
                 y_divisor = 0.01
-            elif rq == "DCGM_FI_PROF_SM_OCCUPANCY":
-                y_title = "The ratio of number of warps resident on an SM (in %)."
+            elif "DCGM_FI_PROF_SM_OCCUPANCY" in rq:
+                y_title = "The ratio of number of warps resident on an SM (in %)"
                 y_divisor = 0.01
-            elif rq.startswith("DCGM_FI_PROF_PIPE_FP"):
-                y_title = "Ratio of cycles the fp pipes are active (in %)."
+            elif "DCGM_FI_PROF_PIPE_FP" in rq:
+                y_title = "Ratio of cycles the fp pipes are active (in %)"
                 y_divisor = 0.01
             else:
                 y_title = "(no name)"

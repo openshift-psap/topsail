@@ -28,6 +28,12 @@ ci_presets:
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
   # ---
 
+  dgx_single_model_multi_dataset:
+    extends: [dgx_single_model]
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.test_settings.gpu: 1
+    tests.fine_tuning.test_settings.dataset_replication: [1, 2, 4, 8]
+
   dgx_single_model_multi_gpu:
     extends: [dgx_single_model]
     tests.fine_tuning.matbenchmarking.enabled: true
@@ -62,6 +68,7 @@ ci_presets:
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
     tests.fine_tuning.many_model.count: 64
+    tests.fine_tuning.many_model.timespan: 64
   # ---
 
   metal:
@@ -89,6 +96,8 @@ ci_presets:
   cluster_icelake:
     clusters.sutest.compute.machineset.type: "Icelake"
 
+  cluster_a30:
+    clusters.sutest.compute.machineset.type: "Cluster A30-24GB"
 secrets:
   dir:
     name: psap-ods-secret
@@ -104,6 +113,7 @@ clusters:
   metal_profiles:
     p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
     e26-h23-000-r650: cluster_icelake
+    cc37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
   create:
     type: single # can be: single, ocp, managed
     keep: false
@@ -171,7 +181,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: "quay.io/modh/fms-hf-tuning:01b3824c9aba22d9d0695399681e6f0507840e7f"
+  image: "quay.io/modh/fms-hf-tuning:bd8bf628cd739c7a201a976bc3c1096785353f1a"
   pvc_name: fine-tuning-storage
   sources:
     twitter_complaints_small.json:
