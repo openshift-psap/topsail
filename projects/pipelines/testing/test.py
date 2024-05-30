@@ -215,12 +215,10 @@ def prepare_cluster():
     # Update the MAX_CONCURRENT_RECONCILES if needed
     max_concurrent_reconciles = config.ci_artifacts.get_config("tests.pipelines.max_concurrent_reconciles")
     if max_concurrent_reconciles is not None:
-        updated_param = {
-            "data": {
-                "MAX_CONCURRENT_RECONCILES": str(max_concurrent_reconciles)
-            }
-        }
-        run.run(f"oc patch cm data-science-pipelines-operator-dspo-parameters -n redhat-ods-applications --patch '{json.dumps(updated_param)}'")
+        run.run(f"oc set env deployment/data-science-pipelines-operator-controller-manager MAX_CONCURRENT_RECONCILES={str(max_concurrent_reconciles)} -n redhat-ods-applications")
+        # This is less than ideal, but I couldn't find a succinct way to wait until the pods
+        # from this deployment have all succesfully been redeployed
+        time.sleep(30)
 
 @entrypoint()
 def pipelines_run_one():
