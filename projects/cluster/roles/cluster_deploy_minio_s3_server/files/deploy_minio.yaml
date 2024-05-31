@@ -54,7 +54,7 @@ spec:
               name: minio
               key: MINIO_ROOT_PASSWORD
       - name: ubi8 # this container is used to export data out of the container, with tar/oc cp
-        image: quay.io/centos/centos:stream8
+        image: quay.io/centos/centos:stream9
         command: [bash, -c]
         args:
         - |

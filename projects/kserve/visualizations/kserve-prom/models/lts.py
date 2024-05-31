@@ -26,9 +26,9 @@ class Settings(matbench_models.ExclusiveModel):
 
 
 class GpuMetadata(matbench_models.ExclusiveModel):
-    product: str
-    memory: float
-    count: int
+    product: Optional[str]
+    memory: Optional[float]
+    count: Optional[int]
 
 
 LTS_SCHEMA_VERSION = "1.0"
