@@ -28,5 +28,8 @@ plugin_options:
   host: "{{ llm_load_test_run_host}}"
   port: "{{ llm_load_test_run_port}}"
 {% endif %}
+{% if llm_load_test_run_use_tls %}
+  use_tls: True
+{% endif %}
 extra_metadata:
   replicas: 1

@@ -650,6 +650,8 @@ def test_consolidated_model(consolidated_model, namespace=None):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
         return
 
+    llm_load_test_args = config.ci_artifacts.get_config("tests.e2e.llm_load_test.args")
+
     if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
         svc_name = run.run(f"oc get svc -lserving.kserve.io/inferenceservice={inference_service_name} -ojsonpath={{.items[0].metadata.name}} -n {namespace}", capture_stdout=True).stdout
         if not svc_name:
@@ -671,8 +673,9 @@ def test_consolidated_model(consolidated_model, namespace=None):
         if host == "":
             raise RuntimeError(f"Failed to get the hostname for InferenceService {namespace}/{inference_service_name}")
         port = 443
-
-    llm_load_test_args = config.ci_artifacts.get_config("tests.e2e.llm_load_test.args")
+        
+        if llm_load_test_args.get("plugin") == "tgis_grpc_plugin":
+            llm_load_test_args["use_tls"] = True
 
     # small if not set
     size_name = consolidated_model.get("testing", {}).get("size", "small")

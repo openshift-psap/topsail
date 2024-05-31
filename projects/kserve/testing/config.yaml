@@ -566,7 +566,7 @@ tests:
     model:
       consolidated: false
       name: flan-t5-small
-      runtime: standalone_tgis
+      runtime: standalone-tgis
       replicas: 2
   e2e:
     namespace: kserve-e2e
