@@ -74,7 +74,7 @@ ci_presets:
 
   multi_node_training:
     tests.fine_tuning.test_settings.worker_replicas: 1
-
+    fine_tuning.pvc.access_mode: ReadWriteMany
 
   # ---
 
@@ -190,6 +190,9 @@ gpu:
 fine_tuning:
   image: "quay.io/modh/fms-hf-tuning:bd8bf628cd739c7a201a976bc3c1096785353f1a"
   pvc_name: fine-tuning-storage
+  pvc:
+    name: fine-tuning-storage
+    access_mode: ReadWriteOnce
   sources:
     twitter_complaints_small.json:
       type: dataset
