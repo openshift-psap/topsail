@@ -29,6 +29,12 @@ fine_tuning_run_fine_tuning_job_dataset_replication: 1
 # name of the transformation to apply to the dataset
 fine_tuning_run_fine_tuning_job_dataset_transform: null
 
+# if True, and the dataset has to be transformed/duplicated, save and/or load it from the PVC
+fine_tuning_run_fine_tuning_job_dataset_prefer_cache: true
+
+# if True, only prepare the dataset cache file and do not run the fine-tuning.
+fine_tuning_run_fine_tuning_job_dataset_prepare_cache_only: false
+
 # the image to use for the fine-tuning container
 fine_tuning_run_fine_tuning_job_container_image: quay.io/modh/fms-hf-tuning:01b3824c9aba22d9d0695399681e6f0507840e7f
 

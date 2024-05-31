@@ -8,18 +8,38 @@ set -x
 
 echo "Source dataset: $DATASET_SOURCE"
 
-if [[ "${DATASET_TRANSFORM:-}" ]]; then
-    echo "Dataset transformation: $DATASET_TRANSFORM"
+prepare_dataset() {
+    if [[ -f "${DATASET_PREFER_CACHE:-}" ]]; then
+        echo "Found dataset cache file $DATASET_PREFER_CACHE. Not regenerating it."
+        cp "$DATASET_PREFER_CACHE" "$DATASET_DEST"
+        return
+    fi
 
-    python "$DATASET_TRANSFORM" "$DATASET_SOURCE" "$DATASET_DEST"
-else
-    cp "$DATASET_SOURCE" "$DATASET_DEST"
-fi
+    if [[ "${DATASET_TRANSFORM:-}" ]]; then
+        echo "Dataset transformation: $DATASET_TRANSFORM"
 
-if [[ "${DATASET_REPLICATION:-1}" != 1 ]]; then
-    echo "Dataset replication factor: $DATASET_REPLICATION"
-    python /mnt/entrypoint/convert_replicate.py "$DATASET_DEST" /tmp/temp_ds.json "$DATASET_REPLICATION"
-    mv /tmp/temp_ds.json "$DATASET_DEST"
+        python "$DATASET_TRANSFORM" "$DATASET_SOURCE" "$DATASET_DEST"
+    else
+        cp "$DATASET_SOURCE" "$DATASET_DEST"
+    fi
+
+    if [[ "${DATASET_REPLICATION:-1}" != 1 ]]; then
+        echo "Dataset replication factor: $DATASET_REPLICATION"
+        python /mnt/entrypoint/convert_replicate.py "$DATASET_DEST" /tmp/temp_ds.json "$DATASET_REPLICATION"
+        mv /tmp/temp_ds.json "$DATASET_DEST"
+    fi
+
+    if [[ -n "${DATASET_PREFER_CACHE:-}" ]]; then
+        echo "Saving dataset cache into $DATASET_PREFER_CACHE"
+        cp "$DATASET_DEST" "$DATASET_PREFER_CACHE"
+    fi
+}
+
+prepare_dataset
+
+if [[ "${DATASET_PREPARE_CACHE_ONLY:-0}" == true ]]; then
+    echo "DATASET_PREPARE_CACHE_ONLY is set, stopping here."
+    exit 0
 fi
 
 echo "SFT-Trainer configuration:"
