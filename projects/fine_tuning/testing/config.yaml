@@ -69,6 +69,13 @@ ci_presets:
     tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
     tests.fine_tuning.many_model.count: 64
     tests.fine_tuning.many_model.timespan: 64
+
+  # ---
+
+  multi_node_training:
+    tests.fine_tuning.test_settings.worker_replicas: 1
+    fine_tuning.pvc.access_mode: ReadWriteMany
+
   # ---
 
   metal:
@@ -183,6 +190,9 @@ gpu:
 fine_tuning:
   image: "quay.io/modh/fms-hf-tuning:bd8bf628cd739c7a201a976bc3c1096785353f1a"
   pvc_name: fine-tuning-storage
+  pvc:
+    name: fine-tuning-storage
+    access_mode: ReadWriteOnce
   sources:
     twitter_complaints_small.json:
       type: dataset
@@ -231,6 +241,7 @@ tests:
       per_device_train_batch_size: 4
       per_device_eval_batch_size: 4
       # ---
+      worker_replicas: 0
     many_model:
       enabled: false
       count: 20

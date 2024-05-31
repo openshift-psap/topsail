@@ -77,7 +77,7 @@
   - name: Wait for the Pod to start running
     shell:
       set -o pipefail;
-      oc get pods -ltraining.kubeflow.org/job-name={{ job_name_safe }}
+      oc get pods -ltraining.kubeflow.org/job-name={{ job_name_safe }} -ltraining.kubeflow.org/job-role=master
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          --no-headers | awk '{print $3}'
     register: wait_pod_start
@@ -92,7 +92,7 @@
   - name: Wait for the main container to finish running
     shell:
       set -o pipefail;
-      oc get pods -ltraining.kubeflow.org/job-name={{ job_name_safe }}
+      oc get pods -ltraining.kubeflow.org/job-name={{ job_name_safe }} -ltraining.kubeflow.org/job-role=master
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          --no-headers | awk '{print $3}'
     register: wait_pod_start

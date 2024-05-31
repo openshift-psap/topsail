@@ -65,7 +65,8 @@ fine_tuning run_fine_tuning_job:
 cluster download_to_pvc:
   name: SET_AT_RUNTIME
 
-  pvc_name: "{{ fine_tuning.pvc_name }}"
+  pvc_name: "{{ fine_tuning.pvc.name }}"
+  pvc_access_mode: "{{ fine_tuning.pvc.access_mode }}"
   namespace: "{{ tests.fine_tuning.namespace }}"
 
   source: SET_AT_RUNTIME

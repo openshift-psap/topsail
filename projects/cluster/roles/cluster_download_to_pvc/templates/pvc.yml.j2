@@ -5,7 +5,7 @@ metadata:
   namespace: {{ cluster_download_to_pvc_namespace }}
 spec:
   accessModes:
-    - ReadWriteOnce
+    - {{ cluster_download_to_pvc_pvc_access_mode }}
   resources:
     requests:
       storage: 80Gi

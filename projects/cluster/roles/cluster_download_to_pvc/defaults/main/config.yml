@@ -27,3 +27,6 @@ cluster_download_to_pvc_storage_dir: /
 
 # if True, clears the storage directory before downloading.
 cluster_download_to_pvc_clean_first: false
+
+# the access mode to request when creating the PVC
+cluster_download_to_pvc_pvc_access_mode: ReadWriteOnce

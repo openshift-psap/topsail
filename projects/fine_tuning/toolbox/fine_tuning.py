@@ -36,6 +36,8 @@ class Fine_Tuning:
 
             prepare_only=False,
             delete_other=False,
+
+            worker_replicas=1,
     ):
         """
         Run a simple fine-tuning Job.
@@ -61,6 +63,8 @@ class Fine_Tuning:
 
           prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
           delete_other: if True, delete the other PyTorchJobs before running
+
+          worker_replicas: number of worker replicas to deploy
         """
 
         return RunAnsibleRole(locals())

@@ -59,6 +59,14 @@
   command:
     oc apply -f "{{ artifact_extra_logs_dir }}/src/pvc.yaml"
 
+- name: Check if the PVC has the right access mode
+  when: has_pvc_cmd.rc == 0
+  command:
+    oc get -f "{{ artifact_extra_logs_dir }}/src/pvc.yaml"
+       -ojsonpath={.spec.accessModes[0]}
+  register: pvc_access_mode
+  failed_when: cluster_download_to_pvc_pvc_access_mode not in pvc_access_mode.stdout
+
 - name: Apply the Pod template
   template:
     src: "{{ pod_template }}"

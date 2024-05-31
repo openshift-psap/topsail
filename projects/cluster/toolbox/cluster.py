@@ -617,6 +617,7 @@ class Cluster:
             creds="",
             storage_dir="/",
             clean_first=False,
+            pvc_access_mode="ReadWriteOnce",
     ):
         """
         Downloads the a dataset into a PVC of the cluster
@@ -629,6 +630,7 @@ class Cluster:
             creds: Path to credentials to use for accessing the dataset.
             clean_first: if True, clears the storage directory before downloading.
             storage_dir: the path where to store the downloaded files, in the PVC
+            pvc_access_mode: the access mode to request when creating the PVC
         """
 
         return RunAnsibleRole(locals())

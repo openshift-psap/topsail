@@ -32,10 +32,27 @@ else
     echo "No GPU seem to be available."
 fi
 
-if [[ -z "${NUM_GPUS:-1}" || "${NUM_GPUS:-1}" == 1 ]]; then
-    echo "Running with a single process"
-    exec python launch_training.py
-fi
+if [[ $WORLD_SIZE == 1 ]]; then
+    echo "Running on a single machine."
 
-echo "Running with $NUM_GPUS GPUs"
-exec python /app/accelerate_launch.py
+    if [[ -z "${NUM_GPUS:-1}" || "${NUM_GPUS:-1}" == 1 ]]; then
+        echo "Running with a single GPU"
+        exec python launch_training.py
+    else
+        echo "Running with a $NUM_GPUS GPUs"
+        exec  python /app/accelerate_launch.py
+    fi
+fi
+echo "Running on $WORLD_SIZE machines with $NUM_GPUS GPUs each."
+
+exec accelerate launch \
+     --debug \
+     --machine_rank $RANK \
+     --num_machines $WORLD_SIZE \
+     --num_processes $WORLD_SIZE \
+     --main_process_ip $MASTER_ADDR \
+     --main_process_port $MASTER_PORT \
+     --mixed_precision no \
+     --dynamo_backend no \
+     --multi_gpu \
+     launch_training.py
