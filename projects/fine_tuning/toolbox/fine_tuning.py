@@ -40,7 +40,7 @@ class Fine_Tuning:
             prepare_only=False,
             delete_other=False,
 
-            worker_replicas=1,
+            worker_replicas=0,
     ):
         """
         Run a simple fine-tuning Job.
