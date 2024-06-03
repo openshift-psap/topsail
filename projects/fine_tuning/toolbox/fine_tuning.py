@@ -33,14 +33,12 @@ class Fine_Tuning:
             cpu=1,
             request_equals_limits=False,
 
-            per_device_train_batch_size=4,
-            per_device_eval_batch_size=4,
-            use_flash_attn=False,
-
             prepare_only=False,
             delete_other=False,
 
             worker_replicas=0,
+
+            hyper_parameters={},
     ):
         """
         Run a simple fine-tuning Job.
@@ -64,14 +62,12 @@ class Fine_Tuning:
           cpu: the number of CPU cores to request for the fine-tuning job (in cores)
           request_equals_limits: if True, sets the 'limits' of the job with the same value as the request.
 
-          per_device_train_batch_size: batch size to use for the model fine-tuning training
-          per_device_eval_batch_size: batch size to use for the model fine-tuning evaluation
-          use_flash_attn: Enables/disables Flash Attention
-
           prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
           delete_other: if True, delete the other PyTorchJobs before running
 
           worker_replicas: number of worker replicas to deploy
+
+          hyper_parameters: dictionnary of hyper-parameters to pass to sft-trainer
         """
 
         return RunAnsibleRole(locals())
