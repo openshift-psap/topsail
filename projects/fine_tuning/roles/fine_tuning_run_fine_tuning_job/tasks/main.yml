@@ -42,27 +42,29 @@
       > "{{ artifact_extra_logs_dir }}/src/config_final.json"
 
 - name: Prepare the config ConfigMap
-  shell:
+  shell: |
     set -o pipefail;
 
-    oc create cm {{ job_name_safe }}-config
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       --from-file=config.json=<(cat "{{ artifact_extra_logs_dir }}/src/config_final.json")
-       --dry-run=client
-       -oyaml
-       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_config.yaml"
+    oc create cm {{ job_name_safe }}-config \
+       -n {{ fine_tuning_run_fine_tuning_job_namespace }} \
+       --from-file=config.json=<(cat "{{ artifact_extra_logs_dir }}/src/config_final.json") \
+       --dry-run=client \
+       -oyaml \
+       | yq '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
+       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_config.yaml" \
        | oc apply -f-
 
 - name: Prepare the entrypoint ConfigMap
-  shell:
+  shell: |
     set -o pipefail;
 
-    oc create cm {{ job_name_safe }}-entrypoint
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-       --from-file=$(find "{{ fine_tuning_job_entrypoint_dir }}" -maxdepth 1 -not -type d | tr '\n' ,)/dev/null
-       --dry-run=client
-       -oyaml
-       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml"
+    oc create cm {{ job_name_safe }}-entrypoint \
+       -n {{ fine_tuning_run_fine_tuning_job_namespace }} \
+       --from-file=$(find "{{ fine_tuning_job_entrypoint_dir }}" -maxdepth 1 -not -type d | tr '\n' ,)/dev/null \
+       --dry-run=client \
+       -oyaml \
+       | yq '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
+       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml" \
        | oc apply -f-
 
 - name: Prepare the template file
@@ -74,6 +76,14 @@
 - name: Delete the fine-tuning job, if it exists
   command:
     oc delete -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml" --ignore-not-found
+  when: fine_tuning_run_fine_tuning_job_delete_other | bool
+
+- name: Delete the fine-tuning job configmaps, if any
+  command:
+    oc delete configmap
+       -ltopsail.fine-tuning-jobname={{ job_name_safe }}
+       --ignore-not-found
+       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
   when: fine_tuning_run_fine_tuning_job_delete_other | bool
 
 - name: Exit the play in 'prepare_only' mode
