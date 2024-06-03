@@ -103,6 +103,9 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
     do_many_model = config.ci_artifacts.get_config("tests.fine_tuning.many_model.enabled")
 
+    test_settings["hyper_parameters"] = {k: v for k, v in test_settings["hyper_parameters"].items()
+                                         if v is not None}
+
     logging.info(f"Test configuration to run: \n{yaml.dump(test_settings, sort_keys=False)}")
 
     sources = config.ci_artifacts.get_config(f"fine_tuning.sources")
@@ -336,6 +339,16 @@ def _run_test_matbenchmarking(test_artifact_dir_p):
             test_configuration[k] = v
             del benchmark_values[k]
 
+        hyper_parameters = test_configuration.get("hyper_parameters", {})
+
+        for k in list(hyper_parameters.keys()):
+            v = hyper_parameters[k]
+            if not isinstance(v, list):
+                continue
+
+            benchmark_values[f"hyper_parameters.{k}"] = v
+            del hyper_parameters[k]
+
         path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()])
 
         expe_name = "expe"
@@ -398,7 +411,18 @@ def matbench_run_one():
         with open(env.ARTIFACT_DIR / "test_config.yaml") as f:
             test_config = yaml.safe_load(f)
 
-        failed = _run_test_and_visualize(test_config | settings)
+        if "hyper_parameters" not in test_config:
+            test_config["hyper_parameters"] = {}
+
+        for k, v in settings.items():
+            prefix, is_hyper_param, suffix = k.partition("hyper_parameters.")
+            if not is_hyper_param:
+                test_config[k] = v
+                continue
+
+            test_config["hyper_parameters"][suffix] = v
+
+        failed = _run_test_and_visualize(test_config)
 
     sys.exit(1 if failed else 0)
 
