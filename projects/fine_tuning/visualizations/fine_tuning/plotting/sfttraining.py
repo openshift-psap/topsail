@@ -177,8 +177,8 @@ class SFTTraining():
             units = y_units
 
         if len(data) > 1:
-            msg.append(f"Max: {df[y_key][max_row_idx]:.2f} {units} ({max_name}, "+ ("slowest" if y_lower_better else "fastest") +")")
+            msg.append(("Slowest" if y_lower_better else "Fastest") + f": {df[y_key][max_row_idx]:.2f} {units} ({max_name})")
             msg.append(html.Br())
-            msg.append(f"Min: {df[y_key][min_row_idx]:.2f} {units} ({min_name}, "+ ("fastest" if y_lower_better else "slowest") +")")
+            msg.append(("Fastest" if y_lower_better else "Slowest") + f": {df[y_key][min_row_idx]:.2f} {units} ({min_name})")
 
         return fig, msg
