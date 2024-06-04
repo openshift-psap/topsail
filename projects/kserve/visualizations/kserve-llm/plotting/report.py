@@ -168,7 +168,7 @@ class ThroughputReport():
 
     def do_plot(self, *args):
         header = []
-        header += [html.H1("llm-load-test Thoughput")]
+        header += [html.H1("llm-load-test Throughput")]
 
         header += Plot_and_Text(f"Throughput", set_config(dict(bar_plot=True), args))
         header += html.Br()

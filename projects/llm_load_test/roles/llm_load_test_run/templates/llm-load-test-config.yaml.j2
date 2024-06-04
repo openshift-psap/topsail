@@ -22,6 +22,7 @@ plugin_options:
   interface: "{{ llm_load_test_run_interface }}"
 {% if llm_load_test_run_plugin == 'openai_plugin' %}
   host: "http://{{ llm_load_test_run_host}}:{{ llm_load_test_run_port}}"
+  endpoint: "/v1/completions"
   model_name: "/mnt/models/"
 {% else %}
   model_name: "{{ llm_load_test_run_model_id }}"
