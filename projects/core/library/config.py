@@ -291,6 +291,10 @@ def init(base_dir, apply_preset_from_pr_args=False):
     config_path = _set_config_environ(base_dir)
     ci_artifacts = Config(config_path)
 
+    if os.environ.get("TOPSAIL_LOCAL_CI_MULTI") == "true":
+        logging.info("config.init: running in a local-ci multi Pod, skipping apply_config_overrides and apply_preset_from_pr_args.")
+        return
+
     ci_artifacts.apply_config_overrides()
 
     if apply_preset_from_pr_args:
