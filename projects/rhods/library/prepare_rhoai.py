@@ -94,13 +94,15 @@ def uninstall_servicemesh(mute=True):
         run.run(f"oc delete {crd} --all -A", check=False)
 
     installed_csv_cmd = run.run(f"oc get csv -oname -n {namespace} "
-                                f"-loperators.coreos.com/{manifest_name}.{namespace}", capture_stdout=mute)
+                                f"-loperators.coreos.com/{manifest_name}.{namespace}", capture_stdout=True)
 
     if not installed_csv_cmd.stdout:
         logging.info(f"{manifest_name} operator is not installed")
+        return
 
     run.run(f"oc delete sub/{manifest_name} -n {namespace} --ignore-not-found")
     run.run(f"oc delete csv -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}")
+    run.run(f"oc delete installplan -n {namespace} -loperators.coreos.com/{manifest_name}.{namespace}")
 
     for crd in cleanup.get("crds", []):
         run.run(f"oc delete crd/{crd} --ignore-not-found")
