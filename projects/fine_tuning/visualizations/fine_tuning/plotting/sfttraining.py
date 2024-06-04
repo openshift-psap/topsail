@@ -4,6 +4,7 @@ import logging
 import datetime
 import math
 import copy
+import numbers
 
 import statistics as stats
 
@@ -107,8 +108,20 @@ class SFTTraining():
         elif cfg__efficiency:
             y_key += "_efficiency"
 
+
         if has_gpu or has_speedup:
-            fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
+            do_line_plot = True
+
+        elif len(variables) == 1:
+            do_line_plot = all(isinstance(v, numbers.Number) for v in list(variables.values())[0])
+
+        else:
+            do_line_plot = False
+
+
+        if do_line_plot:
+            color = None if len(variables) == 1 else "name"
+            fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color=color)
 
             for i in range(len(fig.data)):
                 fig.data[i].update(mode='lines+markers+text')
@@ -164,8 +177,8 @@ class SFTTraining():
             units = y_units
 
         if len(data) > 1:
-            msg.append(f"Max: {df[y_key][max_row_idx]:.2f} {units} ({max_name}, "+ ("slowest" if y_lower_better else "fastest") +")")
+            msg.append(("Slowest" if y_lower_better else "Fastest") + f": {df[y_key][max_row_idx]:.2f} {units} ({max_name})")
             msg.append(html.Br())
-            msg.append(f"Min: {df[y_key][min_row_idx]:.2f} {units} ({min_name}, "+ ("fastest" if y_lower_better else "slowest") +")")
+            msg.append(("Fastest" if y_lower_better else "Slowest") + f": {df[y_key][min_row_idx]:.2f} {units} ({min_name})")
 
         return fig, msg
