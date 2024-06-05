@@ -87,10 +87,18 @@ SFT_TRAINER_SUMMARY_KEYS = {
     "train_tokens_per_second": types.SimpleNamespace(lower_better=False, units="tokens/second"),
 }
 
+SFT_TRAINER_PROGRESS_KEYS = {
+    "loss": types.SimpleNamespace(),
+    "grad_norm": types.SimpleNamespace(),
+    "learning_rate": types.SimpleNamespace(),
+    "epoch": types.SimpleNamespace(),
+}
+
 @core_helpers_store_parsers.ignore_file_not_found
 def _parse_sfttrainer_logs(dirname):
     sfttrainer_metrics = types.SimpleNamespace()
     sfttrainer_metrics.summary = types.SimpleNamespace()
+    sfttrainer_metrics.progress = []
 
     def parse_summary(key, data):
         summary = json.loads((key + data).replace("'", '"'))
@@ -101,11 +109,28 @@ def _parse_sfttrainer_logs(dirname):
         for key in SFT_TRAINER_SUMMARY_KEYS:
             setattr(sfttrainer_metrics.summary, key, summary[key])
 
+    def parse_progress(key, data):
+        progress_json = json.loads((key + data).replace("'", '"'))
+        # {'loss': 7.3438, 'grad_norm': 173.0, 'learning_rate': 9.755282581475769e-06, 'epoch': 1.0}
+
+        # this will raise a KeyError if a key is missing in `results`
+        # this means that we are not parsing the data we're expecting.
+        progress = types.SimpleNamespace()
+        for key in SFT_TRAINER_PROGRESS_KEYS:
+            setattr(progress, key, progress_json[key])
+        sfttrainer_metrics.progress.append(progress)
+
+
     with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f:
         for line in f.readlines():
             _garbage, found_summary, line_data = line.strip().partition("{'train_runtime'")
             if found_summary:
                 parse_summary(found_summary, line_data)
+
+            _garbage, found_progress, line_data = line.strip().partition("{'loss'")
+            if found_progress:
+                parse_progress(found_progress, line_data)
+
 
     return sfttrainer_metrics
 
