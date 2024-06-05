@@ -247,6 +247,7 @@ tests:
         per_device_train_batch_size: null
         gradient_accumulation_steps: null
         num_train_epochs: null
+        max_seq_length: null
     many_model:
       enabled: false
       count: 20
