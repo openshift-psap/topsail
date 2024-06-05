@@ -88,10 +88,10 @@ SFT_TRAINER_SUMMARY_KEYS = {
 }
 
 SFT_TRAINER_PROGRESS_KEYS = {
-    "loss": types.SimpleNamespace(),
-    "grad_norm": types.SimpleNamespace(),
-    "learning_rate": types.SimpleNamespace(),
-    "epoch": types.SimpleNamespace(),
+    "loss": types.SimpleNamespace(lower_better=True, ),
+    "grad_norm": types.SimpleNamespace(lower_better=True,),
+    "learning_rate": types.SimpleNamespace(lower_better=False),
+    "epoch": types.SimpleNamespace(plot=False),
 }
 
 @core_helpers_store_parsers.ignore_file_not_found

@@ -21,6 +21,7 @@ from . import error_report, report
 
 def register():
     SFTTrainerSummary()
+    SFTTrainerProgress()
 
 
 def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compute_speedup=False):
@@ -181,3 +182,74 @@ class SFTTrainerSummary():
             msg.append(("Fastest" if y_lower_better else "Slowest") + f": {df[y_key][min_row_idx]:.2f} {units} ({min_name})")
 
         return fig, msg
+
+
+def generateSFTTrainerProgressData(entries, x_key, variables, progress_key):
+    data = []
+
+    for entry in entries:
+        progress_entries = entry.results.sfttrainer_metrics.progress
+        entry_name = entry.get_name(variables)
+
+        for progress in progress_entries:
+            datum = dict()
+            datum[x_key] = getattr(progress, x_key)
+            datum[progress_key] = getattr(progress, progress_key, None)
+            datum["name"] = entry_name
+            data.append(datum)
+
+    return data
+
+
+class SFTTrainerProgress():
+    def __init__(self):
+        self.name = "SFTTrainer Progress"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        cfg__progress_key = cfg.get("progress_key", False)
+
+        if not cfg__progress_key:
+            raise ValueError("'progress_key' is a mandatory parameter ...")
+
+        from ..store import parsers
+        progress_key_properties = parsers.SFT_TRAINER_PROGRESS_KEYS[cfg__progress_key]
+
+        entries = common.Matrix.all_records(settings, setting_lists)
+
+        x_key = "epoch"
+
+        data = generateSFTTrainerProgressData(entries, x_key, variables, cfg__progress_key)
+        df = pd.DataFrame(data)
+
+        if df.empty:
+            return None, "Not data available ..."
+
+        df = df.sort_values(by=[x_key], ascending=False)
+
+        y_key = cfg__progress_key
+        y_lower_better = progress_key_properties.lower_better
+
+        fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
+
+        for i in range(len(fig.data)):
+            fig.data[i].update(mode='lines+markers+text')
+            fig.update_yaxes(rangemode='tozero')
+
+        fig.update_xaxes(title="epochs")
+
+        y_title = f"Training {y_key}. "
+        title = f"Fine-tuning '{y_key}' progress over the training {x_key}s"
+        title += "<br>"+("Lower is better" if y_lower_better else "Higher is better")
+        y_title += ("Lower is better" if y_lower_better else "Higher is better")
+        fig.update_yaxes(title=("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else ""))
+        fig.update_layout(title=title, title_x=0.5)
+        fig.update_layout(legend_title_text="Configuration")
+
+        return fig, ""

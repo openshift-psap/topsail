@@ -102,8 +102,8 @@ class SFTTrainerReport():
 
         header += html.Br()
         header += html.Br()
-        header += [html.H2("SFT-Trainer metrics")]
         from ..store import parsers
+        header += [html.H2("SFTTrainer Summary metrics")]
 
         for key in parsers.SFT_TRAINER_SUMMARY_KEYS:
             header += [html.H3(key)]
@@ -113,6 +113,15 @@ class SFTTrainerReport():
 
             header += Plot_and_Text("SFTTrainer Summary", set_config(dict(summary_key=key, speedup=True), args))
             header += Plot_and_Text("SFTTrainer Summary", set_config(dict(summary_key=key, efficiency=True), args))
+
+        header += [html.H2("SFTTrainer Progress metrics")]
+
+        for key, properties in parsers.SFT_TRAINER_PROGRESS_KEYS.items():
+            if not getattr(properties, "plot", True):
+                continue
+
+            header += [html.H3(key)]
+            header += Plot_and_Text("SFTTrainer Progress", set_config(dict(progress_key=key), args))
 
 
         return None, header
