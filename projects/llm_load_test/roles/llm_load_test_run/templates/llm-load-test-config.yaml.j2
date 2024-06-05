@@ -31,6 +31,8 @@ plugin_options:
 {% endif %}
 {% if llm_load_test_run_use_tls %}
   use_tls: True
+{% else %}
+  use_tls: False
 {% endif %}
 extra_metadata:
   replicas: 1
