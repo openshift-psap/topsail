@@ -16,6 +16,14 @@
   set_fact:
     job_name_safe: "{{ fine_tuning_run_fine_tuning_job_name | replace('.', '-') | replace('_', '-') }}"
 
+- name: Delete the fine-tuning job configmaps, if any
+  command:
+    oc delete configmap
+       -ltopsail.fine-tuning-jobname={{ job_name_safe }}
+       --ignore-not-found
+       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+  when: fine_tuning_run_fine_tuning_job_delete_other | bool
+
 - name: Prepare the config file template
   template:
     src: "{{ fine_tuning_job_config_template }}"
@@ -76,14 +84,6 @@
 - name: Delete the fine-tuning job, if it exists
   command:
     oc delete -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml" --ignore-not-found
-  when: fine_tuning_run_fine_tuning_job_delete_other | bool
-
-- name: Delete the fine-tuning job configmaps, if any
-  command:
-    oc delete configmap
-       -ltopsail.fine-tuning-jobname={{ job_name_safe }}
-       --ignore-not-found
-       -n {{ fine_tuning_run_fine_tuning_job_namespace }}
   when: fine_tuning_run_fine_tuning_job_delete_other | bool
 
 - name: Exit the play in 'prepare_only' mode
