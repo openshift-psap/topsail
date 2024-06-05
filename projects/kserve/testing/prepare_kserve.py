@@ -166,11 +166,12 @@ def cleanup(mute=True):
 
 def update_serving_runtime_images(runtime=None):
     if runtime == "vllm":
-        # TODO when RHOAI is ready we will get the vLLM image from a template as well
-        # For now, it should be set in the config.yaml
-        return
-    
-    TEMPLATE_CMD = "oc get template/caikit-tgis-serving-template -n redhat-ods-applications"
+        TEMPLATE_NAME = "vllm-runtime-template"
+    else:
+        TEMPLATE_NAME  = "tgis-grpc-serving-template"
+
+    TEMPLATE_CMD = f"oc get template/{TEMPLATE_NAME} -n redhat-ods-applications"
+
     logging.info("Ensure that the Dashboard template resource is available ...")
     try:
         run.run(TEMPLATE_CMD, capture_stdout=True)
