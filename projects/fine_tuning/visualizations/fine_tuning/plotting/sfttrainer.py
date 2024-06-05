@@ -20,12 +20,11 @@ import matrix_benchmarking.common as common
 from . import error_report, report
 
 def register():
-    SFTTraining()
+    SFTTrainerSummary()
 
 
-def generateSFTTrainingData(entries, x_key, _variables, sfttraining_key, compute_speedup=False):
+def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compute_speedup=False):
     data = []
-
 
     variables = [v for v in _variables if v != x_key]
     if not variables and x_key != "gpu":
@@ -38,7 +37,7 @@ def generateSFTTrainingData(entries, x_key, _variables, sfttraining_key, compute
         else:
             datum[x_key] = entry.settings.__dict__[x_key]
 
-        datum[sfttraining_key] = getattr(entry.results.sft_training_metrics, sfttraining_key, 0)
+        datum[summary_key] = getattr(entry.results.sfttrainer_metrics.summary, summary_key, None)
 
         datum["name"] = entry.get_name(variables)
 
@@ -50,21 +49,21 @@ def generateSFTTrainingData(entries, x_key, _variables, sfttraining_key, compute
     ref = None
     for datum in data:
         if datum[x_key] == 1:
-            ref = datum[sfttraining_key]
+            ref = datum[summary_key]
 
     if not ref:
         return data, None
 
     for datum in data:
-        datum[f"{sfttraining_key}_speedup"] = speedup = ref / datum[sfttraining_key]
-        datum[f"{sfttraining_key}_efficiency"] = speedup / datum[x_key]
+        datum[f"{summary_key}_speedup"] = speedup = ref / datum[summary_key]
+        datum[f"{summary_key}_efficiency"] = speedup / datum[x_key]
 
     return data, ref
 
 
-class SFTTraining():
+class SFTTrainerSummary():
     def __init__(self):
-        self.name = "SFTTraining"
+        self.name = "SFTTrainer Summary"
         self.id_name = self.name
 
         table_stats.TableStats._register_stat(self)
@@ -74,15 +73,15 @@ class SFTTraining():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        cfg__sft_key = cfg.get("sfttraining_key", False)
+        cfg__summary_key = cfg.get("summary_key", False)
         cfg__speedup = cfg.get("speedup", False)
         cfg__efficiency = cfg.get("efficiency", False)
 
         from ..store import parsers
-        key_properties = parsers.SFT_TRAINER_RESULTS_KEYS[cfg__sft_key]
+        summary_key_properties = parsers.SFT_TRAINER_SUMMARY_KEYS[cfg__summary_key]
 
-        if not cfg__sft_key:
-            raise ValueError("'sfttraining_key' is a mandatory parameter ...")
+        if not cfg__summary_key:
+            raise ValueError("'summary_key' is a mandatory parameter ...")
 
         entries = common.Matrix.all_records(settings, setting_lists)
 
@@ -91,7 +90,7 @@ class SFTTraining():
 
         compute_speedup = has_gpu
 
-        data, has_speedup = generateSFTTrainingData(entries, x_key, variables, cfg__sft_key, compute_speedup)
+        data, has_speedup = generateSFTTrainerSummaryData(entries, x_key, variables, cfg__summary_key, compute_speedup)
         df = pd.DataFrame(data)
 
         if df.empty:
@@ -99,7 +98,7 @@ class SFTTraining():
 
         df = df.sort_values(by=[x_key], ascending=False)
 
-        y_key = cfg__sft_key
+        y_key = cfg__summary_key
         if (cfg__speedup or cfg__efficiency) and not has_speedup:
             return None, "Cannot compute the speedup & efficiency (reference value not found)"
 
@@ -134,8 +133,8 @@ class SFTTraining():
         else:
             fig.update_xaxes(title=x_key)
 
-        y_title = getattr(key_properties, "title", "speed")
-        y_units = key_properties.units
+        y_title = getattr(summary_key_properties, "title", "speed")
+        y_units = summary_key_properties.units
 
         if cfg__speedup:
             what = " speedup"
@@ -144,7 +143,7 @@ class SFTTraining():
             what = " efficiency"
             y_lower_better = False
         else:
-            y_lower_better = key_properties.lower_better
+            y_lower_better = summary_key_properties.lower_better
             what = f", in {y_units}"
 
         y_title = f"Fine-tuning {y_title}{what}. "
