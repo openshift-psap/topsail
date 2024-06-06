@@ -236,6 +236,22 @@ ci_presets:
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
     export_artifacts.enabled: true
 
+  cpt_single_model_gating_mistral:
+    extends: [e2e_perf, gating, 3min, raw, use_intlab_minio]
+    # kserve.model.directory_prefix: cpt
+    tests.e2e.models:
+    - name: mistral-7b-instruct-v02
+      testing:
+        size: small
+        max_concurrency: 32
+    matbench.lts.horreum.test_name: rhoai-kserve-single
+    matbench.lts.opensearch.index: rhoai-kserve-single
+
+    tests.e2e.matbenchmark.enabled: true
+    # small models will stop at 32
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
+    export_artifacts.enabled: true
+
   # --
   # single-model vLLM
   # --
