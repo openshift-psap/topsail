@@ -72,7 +72,6 @@ def _find_test_timestamps(dirname):
     FILENAME = "test_start_end.json"
     logging.info(f"Searching for {FILENAME} ...")
     for test_timestamp_filename in sorted(dirname.glob(f"**/{FILENAME}")):
-
         with open(register_important_file(dirname, test_timestamp_filename.relative_to(dirname))) as f:
             try:
                 data = json.load(f)
@@ -84,11 +83,11 @@ def _find_test_timestamps(dirname):
                 test_timestamp.settings = data["settings"]
                 if "expe" in test_timestamp.settings:
                     del test_timestamp.settings["expe"]
-                if "e2e_test" in test_timestamp.settings:
-                    del test_timestamp.settings["e2e_test"]
-                if "model_name" in test_timestamp.settings:
-                    test_timestamp.settings["*model_name"] = test_timestamp.settings["model_name"]
-                    del test_timestamp.settings["model_name"]
+
+                if hyper_parameters := test_timestamp.settings.pop("hyper_parameters"):
+                    for hyper_parameter_name, value in hyper_parameters.items():
+                        test_timestamp.settings[f"hyper_parameters.{hyper_parameter_name}"] = value
+
 
                 test_timestamps.append(test_timestamp)
             except Exception as e:

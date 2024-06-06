@@ -68,3 +68,11 @@ workloads:
       # post_scale_down:
       #   command: kserve test cluster_scale_down
       #   always_run: true
+
+
+  fine_tuning:
+    command_group: rhods
+    test_args:
+    steps:
+      test:
+        command: fine_tuning test test_ci

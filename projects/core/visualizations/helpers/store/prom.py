@@ -298,6 +298,7 @@ def get_gpu_usage_metrics(cluster_role, register, container):
         {f"{cluster_role.title()} GPU memory used": f'DCGM_FI_DEV_FB_USED{{exported_container="{container}"}}'},
         {f"{cluster_role.title()} GPU memory used (all GPUs)": f'sum(DCGM_FI_DEV_FB_USED{{exported_container="{container}"}})'},
         {f"{cluster_role.title()} GPU active computes": f'DCGM_FI_PROF_SM_ACTIVE{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU computes occupancy": f'DCGM_FI_PROF_SM_OCCUPANCY{{exported_container="{container}"}}'},
         {f"{cluster_role.title()} GPU memory transfer utilization": f'DCGM_FI_DEV_MEM_COPY_UTIL{{exported_container="{container}"}}'},
         {f"{cluster_role.title()} GPU memory unallocated": f'DCGM_FI_DEV_FB_FREE{{exported_container="{container}"}}'},
         {f"{cluster_role.title()} GPU memory transfer (rx)": f'DCGM_FI_PROF_PCIE_RX_BYTES{{exported_container="{container}"}}'},
