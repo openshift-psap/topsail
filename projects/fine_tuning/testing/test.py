@@ -72,7 +72,7 @@ def prepare_ci():
     """
 
     prepare_finetuning.prepare()
-
+    sys.exit(1)
 
 @entrypoint()
 def test_ci():

@@ -48,7 +48,7 @@ def prepare_rhoai():
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
     run.run_toolbox(
         "rhods", "update_datasciencecluster",
-        enable=["kueue", "codeflare", "trainingoperator"],
+        enable=["kueue", "codeflare", "trainingoperator", "workbenches"],
         name=None if has_dsc else "default-dsc",
     )
 

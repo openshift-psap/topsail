@@ -181,7 +181,7 @@ rhods:
     version: 2.10.0
     version_name: rc1
     opendatahub: false
-    managed_rhoi: true
+    managed_rhoai: false
   operator:
     # set to true to stop the RHODS operator
     stop: false
