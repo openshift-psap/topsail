@@ -7,10 +7,8 @@ spec:
     model:
       storageUri: s3://psap-hf-models/mistral-7b/mistral-7b
       env:
-      - name: DEPLOYMENT_FRAMEWORK
-        value: tgis_native
       - name: FLASH_ATTENTION
-        value: "true"
+        value: "false"
       - name: MAX_NEW_TOKENS
         value: "4095"
       - name: MAX_SEQUENCE_LENGTH
