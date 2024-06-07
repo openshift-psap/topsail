@@ -8,7 +8,7 @@
 
 - name: Distinguish ODH from RHOAI
   set_fact:
-    catalog_name: "{% if rhods_deploy_ods_opendatahub %}opendatahub-catalog{% else %}addon-managed-odh-catalog{% endif %}"
+    catalog_name: "{% if rhods_deploy_ods_opendatahub %}opendatahub-catalog{% elif rhods_deploy_ods_managed_rhoai %}addon-managed-odh-catalog{% else %}self-managed-rhoai-catalog{% endif %}"
 
 - name: Create the src directory
   file:
