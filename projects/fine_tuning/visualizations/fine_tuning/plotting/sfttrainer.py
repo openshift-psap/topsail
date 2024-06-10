@@ -5,7 +5,7 @@ import datetime
 import math
 import copy
 import numbers
-
+import numpy
 import statistics as stats
 
 import plotly.subplots
@@ -158,6 +158,9 @@ class SFTTrainerSummary():
         msg = []
         min_row_idx = df.idxmin()[y_key]
         max_row_idx = df.idxmax()[y_key]
+
+        if any(map(numpy.isnan, [min_row_idx, max_row_idx])):
+            return fig, ["Max or Min is NaN"]
 
         min_count = df['gpu' if has_gpu else 'name'][min_row_idx]
         max_count = df['gpu' if has_gpu else 'name'][max_row_idx]
