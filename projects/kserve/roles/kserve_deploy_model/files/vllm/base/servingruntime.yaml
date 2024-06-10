@@ -30,8 +30,16 @@ spec:
     volumeMounts:
       - name: home
         mountPath: /home/vllm
+      - name: cache
+        mountPath: /.cache
+      - name: config
+        mountPath: /.config
   volumes:
     - name: home
+      emptyDir: {}
+    - name: cache
+      emptyDir: {}
+    - name: config
       emptyDir: {}
   multiModel: false
   supportedModelFormats:
