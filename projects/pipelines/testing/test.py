@@ -65,13 +65,15 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     return decorator
 # ---
 
-def customize_rhods():
-    if not config.ci_artifacts.get_config("rhods.operator.stop"):
-        return
-
+def rhoai_down():
+    # Pause RHOAI by scaling replicas -> 0
     run.run("oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator")
-    time.sleep(10)
+    run.run("oc wait --for jsonpath='{.status.availableReplicas}'=0 deployment.apps/rhods-operator -n redhat-ods-operator --timeout=2m")
 
+def rhoai_up():
+    # Resume RHOAI by scaling replicas -> 1
+    run.run("oc scale deploy/rhods-operator --replicas=1 -n redhat-ods-operator")
+    run.run("oc wait --for jsonpath='{.status.availableReplicas}'=1 deployment.apps/rhods-operator -n redhat-ods-operator --timeout=2m")
 
 def install_ocp_pipelines():
     installed_csv_cmd = run.run("oc get csv -oname", capture_stdout=True)
@@ -106,7 +108,8 @@ def prepare_rhods():
 
     run.run_toolbox("rhods", "update_datasciencecluster", enable=["datasciencepipelines", "workbenches"],
                     name=None if has_dsc else "default-dsc")
-    customize_rhods()
+
+    rhoai_down()
 
     run.run_toolbox_from_config("cluster", "deploy_ldap")
 
@@ -215,6 +218,7 @@ def prepare_cluster():
     # Update the MAX_CONCURRENT_RECONCILES if needed
     max_concurrent_reconciles = config.ci_artifacts.get_config("tests.pipelines.max_concurrent_reconciles")
     if max_concurrent_reconciles is not None:
+        rhoai_down() # Pause RHOAI so we can edit a variable in the DSPO
         run.run(f"oc set env deployment/data-science-pipelines-operator-controller-manager MAX_CONCURRENT_RECONCILES={str(max_concurrent_reconciles)} -n redhat-ods-applications")
         # This is less than ideal, but I couldn't find a succinct way to wait until the pods
         # from this deployment have all succesfully been redeployed
@@ -337,6 +341,7 @@ def cleanup_cluster():
     Restores the cluster to its original state
     """
 
+    rhoai_up()
     common.cleanup_cluster()
 
     cleanup_scale_test()
