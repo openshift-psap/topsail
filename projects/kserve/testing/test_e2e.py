@@ -97,7 +97,8 @@ def test_ci():
     # in the OCP CI, the config is passed from 'prepare' to 'test', so this is a NOOP
     # in the Perf CI environment, the config isn't passed, so this is mandatory.
     runtime = config.ci_artifacts.get_config("kserve.model.runtime")
-    prepare_kserve.update_serving_runtime_images(runtime)
+    if config.ci_artifacts.get_config("kserve.model.serving_runtime.update_image"):
+        prepare_kserve.update_serving_runtime_images(runtime)
 
     mode = config.ci_artifacts.get_config("tests.e2e.mode")
     try:

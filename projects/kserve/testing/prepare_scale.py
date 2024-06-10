@@ -56,6 +56,8 @@ def prepare():
     # must be after prepare_kserve.prepare and before prepare_kserve.preload_image
     # must not be in a parallel group, because it updates the config file
     runtime = config.ci_artifacts.get_config("kserve.model.runtime")
+    if config.ci_artifacts.get_config("kserve.model.serving_runtime.update_image"):
+        prepare_kserve.update_serving_runtime_images(runtime)
     prepare_kserve.update_serving_runtime_images(runtime)
 
     with run.Parallel("prepare_scale2") as parallel:

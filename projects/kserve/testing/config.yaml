@@ -548,6 +548,7 @@ kserve:
   model: # Applied to all models if set
     runtime: standalone-tgis
     serving_runtime:
+      update_image: true
       kserve:
         image: quay.io/opendatahub/text-generation-inference:fast
   customize:
