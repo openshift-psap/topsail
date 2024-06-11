@@ -9,6 +9,8 @@ import matrix_benchmarking.common as common
 
 def register():
     SFTTrainerReport()
+    SFTTrainerHyperParametersReport()
+
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
     _settings = dict(settings)
@@ -122,6 +124,53 @@ class SFTTrainerReport():
 
             header += [html.H3(key)]
             header += Plot_and_Text("SFTTrainer Progress", set_config(dict(progress_key=key), args))
+
+
+        return None, header
+
+
+class SFTTrainerHyperParametersReport():
+    def __init__(self):
+        self.name = "report: SFTTrainer HyperParameters report"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+
+        header += [html.P("These plots show an overview of the metrics extracted from SFTTrainer logs.")]
+
+        header += html.Br()
+        header += html.Br()
+        from ..store import parsers
+
+        header += [html.H2("SFTTrainer Summary metrics. Hyper-parameters study.")]
+
+        if "gpu" in variables:
+            filter_key = "gpu"
+
+            gpu_counts = variables.pop("gpu")
+            ordered_vars.remove("gpu")
+        else:
+            filter_key = None
+            gpu_counts = [None]
+
+        for x_key in ordered_vars or [None]:
+            if x_key is not None:
+                header += [html.H2(f"by {x_key}")]
+
+            for summary_key in parsers.SFT_TRAINER_SUMMARY_KEYS:
+                header += [html.H4(f"Metric: {summary_key}")]
+                for gpu_count in gpu_counts:
+                    if gpu_count is not None:
+                        header += [html.H4(f"with {gpu_count} GPU{'s' if gpu_count > 1 else ''} per job")]
+
+                    header += Plot_and_Text("SFTTrainer Summary", set_config(dict(summary_key=summary_key, filter_key=filter_key, filter_value=gpu_count, x_key=x_key), args))
 
 
         return None, header

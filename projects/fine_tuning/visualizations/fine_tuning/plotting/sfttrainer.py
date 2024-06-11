@@ -24,7 +24,7 @@ def register():
     SFTTrainerProgress()
 
 
-def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compute_speedup=False):
+def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compute_speedup=False, filter_key=None, filter_value=None):
     data = []
 
     variables = [v for v in _variables if v != x_key]
@@ -32,6 +32,9 @@ def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compu
         variables += [x_key]
 
     for entry in entries:
+        if filter_key is not None and entry.get_settings()[filter_key] != filter_value:
+            continue
+
         datum = dict()
         if x_key == "gpu":
             datum[x_key] = entry.results.allocated_resources.gpu
@@ -40,7 +43,7 @@ def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compu
 
         datum[summary_key] = getattr(entry.results.sfttrainer_metrics.summary, summary_key, None)
 
-        datum["name"] = entry.get_name(variables)
+        datum["name"] = entry.get_name(variables).replace("hyper_parameters.", "")
 
         data.append(datum)
 
@@ -78,6 +81,10 @@ class SFTTrainerSummary():
         cfg__speedup = cfg.get("speedup", False)
         cfg__efficiency = cfg.get("efficiency", False)
 
+        cfg__filter_key = cfg.get("filter_key", None)
+        cfg__filter_value = cfg.get("filter_value", False)
+        cfg__x_key = cfg.get("x_key", None)
+
         from ..store import parsers
         summary_key_properties = parsers.SFT_TRAINER_SUMMARY_KEYS[cfg__summary_key]
 
@@ -86,12 +93,15 @@ class SFTTrainerSummary():
 
         entries = common.Matrix.all_records(settings, setting_lists)
 
-        has_gpu = "gpu" in ordered_vars
-        x_key = "gpu" if has_gpu else (ordered_vars[0] if ordered_vars else "expe")
+        has_gpu = "gpu" in ordered_vars and cfg__filter_key != "gpu"
+
+        x_key =  cfg__x_key
+        if x_key is None:
+            x_key = "gpu" if has_gpu else (ordered_vars[0] if ordered_vars else "expe")
 
         compute_speedup = has_gpu
 
-        data, has_speedup = generateSFTTrainerSummaryData(entries, x_key, variables, cfg__summary_key, compute_speedup)
+        data, has_speedup = generateSFTTrainerSummaryData(entries, x_key, variables, cfg__summary_key, compute_speedup, cfg__filter_key, cfg__filter_value)
         df = pd.DataFrame(data)
 
         if df.empty:
@@ -114,7 +124,8 @@ class SFTTrainerSummary():
 
         elif len(variables) == 1:
             do_line_plot = all(isinstance(v, numbers.Number) for v in list(variables.values())[0])
-
+        elif x_key.startswith("hyper_parameters."):
+            do_line_plot = True
         else:
             do_line_plot = False
 
@@ -141,6 +152,7 @@ class SFTTrainerSummary():
 
         y_title = getattr(summary_key_properties, "title", "speed")
         y_units = summary_key_properties.units
+        x_name = x_key.replace("hyper_parameters.", "")
 
         if cfg__speedup:
             what = " speedup"
@@ -154,10 +166,16 @@ class SFTTrainerSummary():
 
         y_title = f"Fine-tuning {y_title}{what}. "
         title = y_title + "<br>"+("Lower is better" if y_lower_better else "Higher is better")
+
+        if cfg__filter_key == "gpu":
+            gpu_count = cfg__filter_value
+            title += f". {gpu_count} GPU{'s' if gpu_count > 1 else ''}."
+
         fig.update_yaxes(title=("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else ""))
         fig.update_layout(title=title, title_x=0.5,)
         fig.update_layout(legend_title_text="Configuration")
 
+        fig.update_xaxes(title=x_name)
         # ❯ or ❮
 
         msg = []
@@ -174,8 +192,8 @@ class SFTTrainerSummary():
             min_name = f"{min_count} GPU" + ("s" if min_count > 1 else "")
             max_name = f"{max_count} GPU" + ("s" if max_count > 1 else "")
         else:
-            min_name = f"{x_key}={min_count}"
-            max_name = f"{x_key}={max_count}"
+            min_name = min_count
+            max_name = max_count
 
         if cfg__efficiency:
             units = ""
