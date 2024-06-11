@@ -64,25 +64,94 @@ ci_presets:
     tests.pipelines.notebook_filename: kfp_iris.ipynb
     tests.pipelines.notebook_directory: projects/pipelines/testing/notebooks/iris
 
-  single_project:
-    tests.pipelines.project_count: 1
+  sequential:
+    tests.pipelines.wait_for_run_completion: true
 
-  mixed_light:
-    tests.pipelines.user_count: 4
-    tests.pipelines.pipelines_per_user: 2
-    tests.pipelines.project_count: 2
+  concurrent:
+    tests.pipelines.wait_for_run_completion: false
 
-  mixed_workload:
-    tests.pipelines.user_count: 25
-    tests.pipelines.pipelines_per_user: 4
-    tests.pipelines.project_count: 5
-
-  multiple_runs:
+  smoke:
+    extends: [concurrent]
     tests.pipelines.user_count: 1
     tests.pipelines.pipelines_per_user: 1
+    tests.pipelines.user_pipeline_delay: 1
     tests.pipelines.project_count: 1
+    tests.pipelines.runs_per_pipeline: 1
+    tests.pipelines.run_delay: 1
+    tests.pipelines.capture_extra_artifacts: true
+
+  longevity:
+    extends: [sequential]
+    tests.pipelines.user_count: 10
+    tests.pipelines.pipelines_per_user: 1
+    tests.pipelines.user_pipeline_delay: 10
+    tests.pipelines.project_count: 1
+    tests.pipelines.runs_per_pipeline: 1
+    tests.pipelines.run_delay: 5
+    tests.pipelines.capture_extra_artifacts: false
+
+  large_project:
+    extends: [sequential]
+    tests.pipelines.user_count: 50
+    tests.pipelines.pipelines_per_user: 2
+    tests.pipelines.user_pipeline_delay: 5
     tests.pipelines.runs_per_pipeline: 2
-    tests.pipelines.run_delay: 15
+    tests.pipelines.run_delay: 5
+    tests.pipelines.project_count: 1
+    tests.pipelines.capture_extra_artifacts: false
+
+  many_projects:
+    extends: [sequential]
+    tests.pipelines.user_count: 50
+    tests.pipelines.pipelines_per_user: 2
+    tests.pipelines.user_pipeline_delay: 5
+    tests.pipelines.runs_per_pipeline: 2
+    tests.pipelines.run_delay: 5
+    tests.pipelines.project_count: 25
+    tests.pipelines.capture_extra_artifacts: false
+
+  large_project_concurrent:
+    extends: [concurrent]
+    tests.pipelines.user_count: 50
+    tests.pipelines.pipelines_per_user: 2
+    tests.pipelines.user_pipeline_delay: 5
+    tests.pipelines.runs_per_pipeline: 2
+    tests.pipelines.run_delay: 5
+    tests.pipelines.project_count: 1
+    tests.pipelines.capture_extra_artifacts: false
+
+  many_projects_concurrent:
+    extends: [concurrent]
+    tests.pipelines.user_count: 50
+    tests.pipelines.pipelines_per_user: 2
+    tests.pipelines.user_pipeline_delay: 5
+    tests.pipelines.runs_per_pipeline: 2
+    tests.pipelines.run_delay: 5
+    tests.pipelines.project_count: 25
+    tests.pipelines.capture_extra_artifacts: false
+
+  many_runs:
+    extends: [sequential]
+    tests.pipelines.user_count: 50
+    tests.pipelines.pipelines_per_user: 1
+    tests.pipelines.user_pipeline_delay: 1
+    tests.pipelines.runs_per_pipeline: 8
+    tests.pipelines.run_delay: 5
+    tests.pipelines.project_count: 5
+    tests.pipelines.capture_extra_artifacts: false
+
+  baseline:
+    extends: [sequential]
+    tests.pipelines.user_count: 50
+    tests.pipelines.pipelines_per_user: 2
+    tests.pipelines.user_pipeline_delay: 1
+    tests.pipelines.runs_per_pipeline: 2
+    tests.pipelines.run_delay: 5
+    tests.pipelines.project_count: 5
+    tests.pipelines.capture_extra_artifacts: false
+
+  large_mcr:
+    tests.pipelines.max_concurrent_reconciles: 25
 
 secrets:
   dir:
