@@ -171,8 +171,8 @@ class SFTTrainerSummary():
         max_count = df['gpu' if has_gpu else 'name'][max_row_idx]
 
         if has_gpu:
-            min_name = f"{min_count} GPU" + "s" if min_count > 1 else ""
-            max_name = f"{max_count} GPU" + "s" if max_count > 1 else ""
+            min_name = f"{min_count} GPU" + ("s" if min_count > 1 else "")
+            max_name = f"{max_count} GPU" + ("s" if max_count > 1 else "")
         else:
             min_name = f"{x_key}={min_count}"
             max_name = f"{x_key}={max_count}"
