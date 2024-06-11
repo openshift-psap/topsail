@@ -482,6 +482,15 @@ def download(results_dirname):
         do_download=True,
     )
 
+    env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
+    secret_path = os.environ.get(env_key)
+    secret_filename = config.ci_artifacts.get_config("secrets.aws_credentials")
+
+    if not env_key or not secret_path or not secret_filename:
+        logging.warning(f"secrets.dir.env_key or ${secret_path} not set or {secret_filename=}. Cannot set AWS_SHARED_CREDENTIALS_FILE")
+    else:
+        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = secret_path + "/.awscred"
+
     if url:
         download_args["url"] = url
     elif url_file:
