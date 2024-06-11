@@ -67,13 +67,13 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
 
 def rhoai_down():
     # Pause RHOAI by scaling replicas -> 0
-    if run.run(f'oc get deploy/rhods-operator -n redhat-ods-operator 2>/dev/null', check=False).returncode != 0:
+    if run.run(f'oc get deploy/rhods-operator -n redhat-ods-operator 2>/dev/null', check=False).returncode == 0:
         run.run("oc scale deploy/rhods-operator --current-replicas=1 --replicas=0 -n redhat-ods-operator")
         run.run("oc wait --for jsonpath='{.status.availableReplicas}'=0 deployment.apps/rhods-operator -n redhat-ods-operator --timeout=2m")
 
 def rhoai_up():
     # Resume RHOAI by scaling replicas -> 1
-    if run.run(f'oc get deploy/rhods-operator -n redhat-ods-operator 2>/dev/null', check=False).returncode != 0:
+    if run.run(f'oc get deploy/rhods-operator -n redhat-ods-operator 2>/dev/null', check=False).returncode == 0:
         run.run("oc scale deploy/rhods-operator --current-replicas=0 --replicas=1 -n redhat-ods-operator")
         run.run("oc wait --for jsonpath='{.status.availableReplicas}'=1 deployment.apps/rhods-operator -n redhat-ods-operator --timeout=2m")
 
