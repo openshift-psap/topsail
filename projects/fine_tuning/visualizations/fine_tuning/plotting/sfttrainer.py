@@ -121,11 +121,16 @@ class SFTTrainerSummary():
 
         if do_line_plot:
             color = None if len(variables) == 1 else "name"
-            fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color=color)
+            text = None if len(variables) > 3 else y_key
+            fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color=color, text=text)
 
             for i in range(len(fig.data)):
                 fig.data[i].update(mode='lines+markers+text')
                 fig.update_yaxes(rangemode='tozero')
+
+            fig.update_traces(textposition='top center')
+            fig.update_traces(texttemplate="%{y:.2f}")
+
         else:
             fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
 
