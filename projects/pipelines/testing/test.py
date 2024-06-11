@@ -69,7 +69,7 @@ def rhoai_down():
     # Pause RHOAI by scaling replicas -> 0
     if run.run(f'oc get deploy/rhods-operator -n redhat-ods-operator 2>/dev/null', check=False).returncode == 0:
         run.run("oc patch deployment.apps/rhods-operator -n redhat-ods-operator --type merge -p '{\"spec\": {\"replicas\": 0}}'")
-        run.run("oc wait --for jsonpath='{.status.availableReplicas}'=0 deployment.apps/rhods-operator -n redhat-ods-operator --timeout=5m")
+        run.run("oc wait --for jsonpath='{.spec.replicas}'=0 deployment.apps/rhods-operator -n redhat-ods-operator --timeout=5m")
 
 def rhoai_up():
     # Resume RHOAI by scaling replicas -> 1
