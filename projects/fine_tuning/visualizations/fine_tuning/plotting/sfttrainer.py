@@ -151,7 +151,7 @@ class SFTTrainerSummary():
             fig.update_traces(textposition='top center')
 
         else:
-            fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
+            fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name", barmode='group')
 
         if has_gpu:
             fig.update_xaxes(title="Number of GPUs used for the fine-tuning")
