@@ -109,12 +109,7 @@ class SFTTrainerReport():
 
         for key in parsers.SFT_TRAINER_SUMMARY_KEYS:
             header += [html.H3(key)]
-            header += Plot_and_Text("SFTTrainer Summary", set_config(dict(summary_key=key), args))
-
-            if "gpu" not in ordered_vars: continue
-
-            header += Plot_and_Text("SFTTrainer Summary", set_config(dict(summary_key=key, speedup=True), args))
-            header += Plot_and_Text("SFTTrainer Summary", set_config(dict(summary_key=key, efficiency=True), args))
+            header += Plot_and_Text("SFTTrainer Summary", set_config(dict(summary_key=key, speedup=True, efficiency=True), args))
 
         header += [html.H2("SFTTrainer Progress metrics")]
 

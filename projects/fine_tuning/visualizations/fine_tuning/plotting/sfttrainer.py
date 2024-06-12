@@ -24,7 +24,7 @@ def register():
     SFTTrainerProgress()
 
 
-def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compute_speedup=False, filter_key=None, filter_value=None):
+def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compute_speedup=False, filter_key=None, filter_value=None, y_lower_better=True):
     data = []
 
     variables = [v for v in _variables if v != x_key]
@@ -44,6 +44,8 @@ def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compu
         datum[summary_key] = getattr(entry.results.sfttrainer_metrics.summary, summary_key, None)
 
         datum["name"] = entry.get_name(variables).replace("hyper_parameters.", "")
+        datum["text"] = "{:.2f}".format(datum[summary_key])
+        datum["is_computed"] = False
 
         data.append(datum)
 
@@ -58,9 +60,23 @@ def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compu
     if not ref:
         return data, None
 
-    for datum in data:
-        datum[f"{summary_key}_speedup"] = speedup = ref / datum[summary_key]
-        datum[f"{summary_key}_efficiency"] = speedup / datum[x_key]
+    for src_datum in data[:]:
+
+        perfect_datum = src_datum.copy()
+        perfect_datum["is_computed"] = True
+        perfect_datum["name"] = (perfect_datum["name"] + " perfect scaling").strip()
+        perfect_datum[summary_key] = value = ref / src_datum[x_key] \
+            if y_lower_better else ref * src_datum[x_key]
+
+        if src_datum[x_key] != 1:
+            speedup = ref / src_datum[summary_key]
+            efficiency = speedup / src_datum[x_key]
+            perfect_datum["text"] = f"{value:.2f}<br>speedup: {speedup:.1f}<br>efficiency: {efficiency:.2f}"
+
+        data.append(perfect_datum)
+
+        if not src_datum["name"]:
+            src_datum["name"] = summary_key
 
     return data, ref
 
@@ -87,6 +103,7 @@ class SFTTrainerSummary():
 
         from ..store import parsers
         summary_key_properties = parsers.SFT_TRAINER_SUMMARY_KEYS[cfg__summary_key]
+        y_lower_better = summary_key_properties.lower_better
 
         if not cfg__summary_key:
             raise ValueError("'summary_key' is a mandatory parameter ...")
@@ -101,7 +118,7 @@ class SFTTrainerSummary():
 
         compute_speedup = has_gpu
 
-        data, has_speedup = generateSFTTrainerSummaryData(entries, x_key, variables, cfg__summary_key, compute_speedup, cfg__filter_key, cfg__filter_value)
+        data, has_speedup = generateSFTTrainerSummaryData(entries, x_key, variables, cfg__summary_key, compute_speedup, cfg__filter_key, cfg__filter_value, y_lower_better)
         df = pd.DataFrame(data)
 
         if df.empty:
@@ -110,14 +127,6 @@ class SFTTrainerSummary():
         df = df.sort_values(by=[x_key], ascending=False)
 
         y_key = cfg__summary_key
-        if (cfg__speedup or cfg__efficiency) and not has_speedup:
-            return None, "Cannot compute the speedup & efficiency (reference value not found)"
-
-        if cfg__speedup:
-            y_key += "_speedup"
-        elif cfg__efficiency:
-            y_key += "_efficiency"
-
 
         if has_gpu or has_speedup:
             do_line_plot = True
@@ -131,8 +140,8 @@ class SFTTrainerSummary():
 
 
         if do_line_plot:
-            color = None if len(variables) == 1 else "name"
-            text = None if len(variables) > 3 else y_key
+            color = None if (len(variables) == 1 and not has_speedup) else "name"
+            text = None if len(variables) > 3 else "text"
             fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color=color, text=text)
 
             for i in range(len(fig.data)):
@@ -140,7 +149,6 @@ class SFTTrainerSummary():
                 fig.update_yaxes(rangemode='tozero')
 
             fig.update_traces(textposition='top center')
-            fig.update_traces(texttemplate="%{y:.2f}")
 
         else:
             fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
@@ -154,15 +162,8 @@ class SFTTrainerSummary():
         y_units = summary_key_properties.units
         x_name = x_key.replace("hyper_parameters.", "")
 
-        if cfg__speedup:
-            what = " speedup"
-            y_lower_better = False
-        elif cfg__efficiency:
-            what = " efficiency"
-            y_lower_better = False
-        else:
-            y_lower_better = summary_key_properties.lower_better
-            what = f", in {y_units}"
+        y_lower_better = summary_key_properties.lower_better
+        what = f", in {y_units}"
 
         y_title = f"Fine-tuning {y_title}{what}. "
         title = y_title + "<br>"+("Lower is better" if y_lower_better else "Higher is better")
@@ -179,14 +180,17 @@ class SFTTrainerSummary():
         # ❯ or ❮
 
         msg = []
-        min_row_idx = df.idxmin()[y_key]
-        max_row_idx = df.idxmax()[y_key]
+
+        values_df = df['gpu' if has_gpu else 'name'][df["is_computed"] != True]
+
+        min_row_idx = values_df.idxmin()
+        max_row_idx = values_df.idxmax()
 
         if any(map(numpy.isnan, [min_row_idx, max_row_idx])):
             return fig, ["Max or Min is NaN"]
 
-        min_count = df['gpu' if has_gpu else 'name'][min_row_idx]
-        max_count = df['gpu' if has_gpu else 'name'][max_row_idx]
+        min_count = values_df[min_row_idx]
+        max_count = values_df[max_row_idx]
 
         if has_gpu:
             min_name = f"{min_count} GPU" + ("s" if min_count > 1 else "")
@@ -203,9 +207,14 @@ class SFTTrainerSummary():
             units = y_units
 
         if len(data) > 1:
-            msg.append(("Slowest" if y_lower_better else "Fastest") + f": {df[y_key][max_row_idx]:.2f} {units} ({max_name})")
-            msg.append(html.Br())
-            msg.append(("Fastest" if y_lower_better else "Slowest") + f": {df[y_key][min_row_idx]:.2f} {units} ({min_name})")
+            if y_lower_better:
+                msg.append(f"Fastest: {df[y_key][max_row_idx]:.2f} {units} ({max_name})")
+                msg.append(html.Br())
+                msg.append(f"Slowest: {df[y_key][min_row_idx]:.2f} {units} ({min_name})")
+            else:
+                msg.append(f"Fastest: {df[y_key][max_row_idx]:.2f} {units} ({max_name})")
+                msg.append(html.Br())
+                msg.append(f"Slowest: {df[y_key][min_row_idx]:.2f} {units} ({min_name})")
 
         return fig, msg
 
