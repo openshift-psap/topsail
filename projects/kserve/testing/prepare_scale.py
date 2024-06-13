@@ -3,7 +3,7 @@ import pathlib
 import os
 import yaml
 
-from projects.core.library import env, config, run, merge_dicts, sizing
+from projects.core.library import env, config, run, sizing, merge_dicts
 import prepare_kserve
 
 from projects.gpu_operator.library import prepare_gpu_operator
@@ -55,7 +55,10 @@ def prepare():
 
     # must be after prepare_kserve.prepare and before prepare_kserve.preload_image
     # must not be in a parallel group, because it updates the config file
-    prepare_kserve.update_serving_runtime_images()
+    runtime = config.ci_artifacts.get_config("kserve.model.runtime")
+    if config.ci_artifacts.get_config("kserve.model.serving_runtime.update_image"):
+        prepare_kserve.update_serving_runtime_images(runtime)
+    prepare_kserve.update_serving_runtime_images(runtime)
 
     with run.Parallel("prepare_scale2") as parallel:
         # must be after prepare_kserve.update_serving_runtime_images
@@ -128,64 +131,30 @@ def cluster_scale_down(to_zero=False):
         parallel.delayed(run.run_toolbox_from_config, "cluster", "set_scale", prefix="sutest", extra=extra)
         parallel.delayed(run.run_toolbox_from_config, "cluster", "set_scale", prefix="driver", extra=extra)
 
+def consolidate_model_config(config_location=None, model_config=None, index=None, show=True):
 
-def get_file_config(file_model_name):
-    with open(TESTING_THIS_DIR / "models" / f"{file_model_name}.yaml") as f:
-        return yaml.safe_load(f)
-
-
-def get_base_config(model_name):
-    # base = testing/models/<model_name>
-    base_config = get_file_config(model_name)
-
-    extends_name = base_config.pop("extends", False)
-    if not extends_name: return base_config # end of recusion
-
-    config_to_extend = get_base_config(extends_name) # recursive call
-
-    return merge_dicts(config_to_extend, base_config)
-
-
-def consolidate_model_config(config_location=None, _model_name=None, index=None, show=True):
-    # test = <config_location>
     test_config = config.ci_artifacts.get_config(config_location) if config_location \
         else {}
 
-    model_name = _model_name or test_config.get("name")
-    if isinstance(model_name, dict):
-        __model_name = list(model_name.keys())[0]
-        test_config = merge_dicts(test_config, model_name[__model_name])
-        model_name = test_config.get("name")
-        test_config["name"] = __model_name
-    else:
-        test_config["name"] = model_name
+    model_config = merge_dicts(test_config, model_config)
 
+    # model_config.name must be set
+    isvc_name = model_config.get("name")
+
+    if not isvc_name:
+        raise RuntimeError(f"Couldn't find a name for consolidating the model configuration ... {config_location}={test_config} and model_name={model_config}")
+
+    model_name = model_config.get("model")
+
+    # If model_config.model is not set, assume name is model
     if not model_name:
-        raise RuntimeError(f"Couldn't find a name for consolidating the model configuration ... {config_location}={test_config} and model_name={_model_name}")
-
-    if model_name == "help":
-        logging.info("")
-        logging.info("Available models:")
-        for a_model_name in (TESTING_THIS_DIR / "models").glob("*.yaml"):
-            logging.info(f"- {a_model_name.stem}")
-
-        raise SystemExit(0)
-
-    model_directory_prefix = config.ci_artifacts.get_config("kserve.model.directory_prefix")
-    if model_directory_prefix:
-        model_name = model_directory_prefix + "/" + model_name
-
-    base_config = get_base_config(model_name)
+        model_name = model_config.get("name")
+        model_config["model"] = model_config.get("name")
 
     # kserve_model = config(kserve.model)
     kserve_model_config = config.ci_artifacts.get_config("kserve.model")
 
-    # model = base
-    model_config = base_config
-    # model += kserve_model
     model_config = merge_dicts(model_config, kserve_model_config)
-    # base += test
-    model_config = merge_dicts(model_config, test_config)
 
     if index is not None:
         model_config["index"] = index
@@ -198,3 +167,4 @@ def consolidate_model_config(config_location=None, _model_name=None, index=None,
         logging.info(f"Consolidated configuration for model '{model_name}':\n{dump}")
 
     return model_config
+

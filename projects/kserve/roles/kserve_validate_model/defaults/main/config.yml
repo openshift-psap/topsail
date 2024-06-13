@@ -7,17 +7,13 @@
 # Mandatory value
 kserve_validate_model_inference_service_names:
 
-# the gRPC method to call
-# Mandatory value
-kserve_validate_model_method:
-
 # number of query to perform
 # Mandatory value
 kserve_validate_model_query_count:
 
-# name of the container flavor to use in the serving runtime (tgis+caikit or tgis)
+# name of the runtime used (standalone-tgis or vllm)
 # Mandatory value
-kserve_validate_model_sr_container_flavor:
+kserve_validate_model_runtime:
 
 # the model-id to pass to the inference service
 kserve_validate_model_model_id: not-used
@@ -27,6 +23,9 @@ kserve_validate_model_namespace:
 
 # if True, do not try to configure anything related to Serverless. Works only in-cluster at the moment.
 kserve_validate_model_raw_deployment: false
+
+# the gRPC method to call #TODO remove?
+kserve_validate_model_method: null
 
 # if not empty, the proto file to pass to grpcurl
 kserve_validate_model_proto: null

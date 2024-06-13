@@ -1,5 +1,0 @@
-extends: base
-serving_runtime:
-  container_flavor: tgis+caikit
-inference_service:
-  model_format: caikit

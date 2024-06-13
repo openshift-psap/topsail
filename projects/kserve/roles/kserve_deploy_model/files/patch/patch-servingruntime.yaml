@@ -1,0 +1,12 @@
+# {% if kserve_deploy_model_sr_name %}
+# - op: replace
+#   path: /metadata/name
+#   value: {{ kserve_deploy_model_sr_name }}
+
+- op: test
+  path: /spec/containers/0/name
+  value: kserve-container
+
+- op: replace
+  path: /spec/containers/0/image
+  value: quay.io/wxpe/tgis-vllm:release.2ac2b2d # {{ kserve_deploy_model_sr_kserve_image }}

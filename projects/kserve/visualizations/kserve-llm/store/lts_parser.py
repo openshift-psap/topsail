@@ -59,7 +59,7 @@ def _is_streaming(results):
 
 
 def generate_lts_settings(lts_metadata, results, import_settings):
-    gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu])
+    gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu and node_info.gpu.product])
     gpu_names = "|".join(gpus)
 
     lts_settings = types.SimpleNamespace()
@@ -72,7 +72,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.rhoai_version = lts_metadata.rhods_version
     lts_settings.deployment_mode = "RawDeployment" if results.test_config.get("kserve.raw_deployment.enabled") else "Serverless"
     lts_settings.model_name = import_settings["model_name"]
-    lts_settings.runtime_image = results.test_config.get("kserve.model.serving_runtime.kserve.image").split(":")[1]
+    lts_settings.runtime_image = results.test_config.get("kserve.model.serving_runtime.kserve.image")
     lts_settings.min_pod_replicas = results.inference_service.min_replicas
     lts_settings.max_pod_replicas = results.inference_service.max_replicas
     lts_settings.virtual_users = results.test_config.get("tests.e2e.llm_load_test.args.concurrency")

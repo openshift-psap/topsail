@@ -30,6 +30,9 @@ llm_load_test_run_src_path: projects/llm_load_test/subprojects/llm-load-test/
 # Whether to stream the llm-load-test requests
 llm_load_test_run_streaming: true
 
+# Whether to set use_tls: True (grpc in Serverless mode)
+llm_load_test_run_use_tls: false
+
 # Number of concurrent simulated users sending requests
 llm_load_test_run_concurrency: 16
 

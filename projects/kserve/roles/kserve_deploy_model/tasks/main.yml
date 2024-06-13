@@ -40,84 +40,94 @@
     oc create configmap $NAME -n {{ kserve_deploy_model_namespace }}
     oc label cm/$NAME topsail.time-tracking=yes -n {{ kserve_deploy_model_namespace }}
 
-# Secret
-
-- name: Prepare the secret parameters
-  shell: |
-    set -o pipefail;
-    set -e
-
-    cat "{{ kserve_deploy_model_secret_env_file_name }}" | sha256sum > {{ artifact_extra_logs_dir }}/artifacts/secret_env_file.sha256sum
-
-    secret_data=$(cat "{{ kserve_deploy_model_secret_env_file_name }}" \
-     | yq '.["{{ kserve_deploy_model_secret_env_file_key }}"] | to_entries | map( { key: .key, value: .value|tostring|@base64 }) | from_entries')
-
-    if [[ -z "$secret_data" ]]; then
-      echo "Could not find key '{{ kserve_deploy_model_secret_env_file_key }}' in file {{ kserve_deploy_model_secret_env_file_name }}. Aborting."
-      exit 1
-    fi
-    oc create secret generic {{ kserve_deploy_model_sr_name }}-secret \
-       -n {{ kserve_deploy_model_namespace }} \
-       -ojson \
-       --dry-run=client \
-       | jq --argjson data "$secret_data" '.data = $data' \
-       | oc apply -f-
-
-    oc describe secret/{{ kserve_deploy_model_sr_name }}-secret \
-       -n {{ kserve_deploy_model_namespace }} \
-       > {{ artifact_extra_logs_dir }}/artifacts/env-secrets.desc
-
-  when: kserve_deploy_model_secret_env_file_name != None
-
 # Serving Runtime
 
-- name: Prepare the caikit-tgis-config template
-  when: kserve_deploy_model_sr_container_flavor == "tgis+caikit"
+# Fail if "files/{{ kserve_deploy_model_runtime }}" don't exist
+- name: Check if runtime deployment files exist
+  debug:
+    msg: "Checking if path {{ role_path }}/files/{{ kserve_deploy_model_runtime }} exists"
+
+- name: Check for runtime
+  ansible.builtin.stat:
+    path: "{{ role_path }}/files/{{ kserve_deploy_model_runtime }}"
+  register: runtime_dir
+
+- name: Fail if doesn't exist
+  fail: msg="The files for deploying this runtime do not exist"
+  when: not (runtime_dir.stat.isdir is defined and runtime_dir.stat.isdir)
+
+# Fail if "files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}" doesn't exist
+- name: Check if template files exist
+  debug:
+    msg: "Checking if path {{ role_path }}/files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }} exists"
+
+- name: Check for model files
+  ansible.builtin.stat: path="{{ role_path }}/files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}"
+  register: model_dir
+
+- name: Fail if the model files don't exist
+  fail: msg="Model files don't exist at files/{{ kserve_deploy_model_runtime }}/models/{{ kserve_deploy_model_model_name }}"
+  when: not (model_dir.stat.isdir is defined and model_dir.stat.isdir)
+
+# Fail if "templates/" don't exist
+- name: Check if template files exist
+  debug:
+    msg: "Checking if path {{ role_path }}/templates exists"
+
+- name: Check for runtime templates
+  ansible.builtin.stat: path="{{ role_path }}/templates"
+  register: runtime_templates_dir
+
+- name: Fail if doesn't exist
+  fail: msg="Runtime template files don't exist"
+  when: not (runtime_templates_dir.stat.isdir is defined and runtime_templates_dir.stat.isdir)
+
+- name: Copy the kustomize files for this runtime
+  copy:
+    src: "files/{{ kserve_deploy_model_runtime }}/"
+    dest: "{{ artifact_extra_logs_dir }}/src/{{ kserve_deploy_model_runtime }}"
+    mode: '0400'
+    directory_mode: '0755'
+
+- name: Create the patch directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/patch/"
+    state: directory
+    mode: '0755'
+
+- name: Apply the templates for this runtime
   template:
-    src: "{{ caikit_tgit_config_template }}"
-    dest: "{{ artifact_extra_logs_dir }}/src/caikit_tgit_config.yaml"
+    src: "{{ servingruntime_patch_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/patch/patch-servingruntime.yaml"
     mode: '0400'
 
-- name: Prepare the ServingRuntime template
+- name: Apply the templates for this inferenceservice
   template:
-    src: "{{ serving_runtime_template }}"
-    dest: "{{ artifact_extra_logs_dir }}/src/serving_runtime.yaml"
+    src: "{{ inferenceservice_patch_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/patch/patch-inferenceservice.yaml"
     mode: '0400'
 
-- name: Create or update the Caikit TGIS config
-  when: kserve_deploy_model_sr_container_flavor == "tgis+caikit"
+- name: Apply the templates for kustomization.yaml
+  template:
+    src: "{{ kustomization_patch_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/patch/kustomization.yaml"
+    mode: '0400'
+
+- name: Build the ServingRuntime and InferenceService with kustomize
   shell:
-    set -o pipefail;
-
-    oc create cm {{ kserve_deploy_model_sr_name }}-caikit-tgis-config
-       -n {{ kserve_deploy_model_namespace }}
-       --from-file=caikit.yml="{{ artifact_extra_logs_dir }}/src/caikit_tgit_config.yaml"
-       --dry-run=client
-       -oyaml
-       | oc apply -f-
-
+    oc kustomize {{ artifact_extra_logs_dir }}/src/patch/ > {{ artifact_extra_logs_dir }}/src/serving-runtime-and-isvc.yaml
 
 # --server-side is required here because multiple concurrent users
 # might try to create the ServingRuntime simultaneously.
 # https://github.com/kubernetes/kubernetes/issues/44165
-- name: Create the ServingRuntime
+- name: Create the ServingRuntime and InferenceService
   command:
     oc apply
       --server-side
-      -f "{{ artifact_extra_logs_dir }}/src/serving_runtime.yaml"
+      -f "{{ artifact_extra_logs_dir }}/src/serving-runtime-and-isvc.yaml"
 
 
-# Inference Service
-
-- name: Prepare the InferenceService template
-  template:
-    src: "{{ inference_service_template }}"
-    dest: "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
-    mode: '0400'
-
-- name: Create the InferenceService
-  command:
-    oc apply -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
+# Wait for the InferenceService Pod to run
 
 - name: Prepare the InferenceService
   block:
@@ -151,7 +161,7 @@
     delay: 10
     until: inference_service_pod_nodename.stdout | length > 0
 
-  - name: Wait for the InferenceService Pod to be fetch the model from S3
+  - name: Wait for the InferenceService Pod to fetch the model from S3
     shell: |
       set -e;
 
@@ -175,9 +185,9 @@
           exit 3;
       fi;
 
-      echo "Container terminated without reboot, all good :)" >&2
+      echo "initContainer terminated without reboot, all good :)" >&2
 
-    # wait 60 minutes
+    # wait up to 60 minutes
     retries: 120
     delay: 30
     register: inference_service_pod_fetching_cmd
@@ -195,8 +205,9 @@
         echo "ERROR: restart detected ($restart_count), aborting.";
         exit 2;
       fi;
-      oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml" \
-         -ojsonpath={.status.modelStatus.states.targetModelState}
+      oc get inferenceservice/{{ kserve_deploy_model_inference_service_name }} \
+         -ojsonpath={.status.modelStatus.states.targetModelState} \
+         -n {{ kserve_deploy_model_namespace }}
     register: inference_service_state_cmd
     # wait up to 90 minutes
     retries: 180
@@ -243,13 +254,15 @@
 
   - name: Capture the state of the InferenceService resource
     shell:
-      oc get -f "{{ artifact_extra_logs_dir }}/src/inference_service.yaml"
+      oc get inferenceservice/{{ kserve_deploy_model_inference_service_name }}
+         -n {{ kserve_deploy_model_namespace }}
          -oyaml
          > {{ artifact_extra_logs_dir }}/artifacts/inference_service.yaml
 
   - name: Capture the state of the ServingRuntime resource
     shell:
-      oc get -f "{{ artifact_extra_logs_dir }}/src/serving_runtime.yaml"
+      oc get servingruntime/{{ kserve_deploy_model_sr_name }}
+         -n {{ kserve_deploy_model_namespace }}
          -oyaml
          > {{ artifact_extra_logs_dir }}/artifacts/serving_runtime.yaml
 

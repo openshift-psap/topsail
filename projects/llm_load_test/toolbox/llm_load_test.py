@@ -22,6 +22,7 @@ class Llm_Load_Test:
             model_id="not-used",
             src_path="projects/llm_load_test/subprojects/llm-load-test/",
             streaming=True,
+            use_tls=False,
             concurrency=16,
             max_input_tokens=1024,
             max_output_tokens=512,
@@ -40,6 +41,7 @@ class Llm_Load_Test:
           model_id: The ID of the model to pass along with the GRPC call
           src_path: Path where llm-load-test has been cloned
           streaming: Whether to stream the llm-load-test requests
+          use_tls: Whether to set use_tls: True (grpc in Serverless mode)
           concurrency: Number of concurrent simulated users sending requests
           max_input_tokens: max input tokens in llm load test to filter the dataset
           max_sequence_tokens: max sequence tokens in llm load test to filter the dataset

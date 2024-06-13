@@ -1,0 +1,84 @@
+---
+- name: Ensure that GRPCurl is available
+  shell:
+    which grpcurl
+
+- name: Create the artifact directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}"
+    state: directory
+    mode: '0755'
+
+- name: Get the name of the model endpoint
+  shell: |
+    set -o pipefail;
+    {% if kserve_validate_model_raw_deployment %}
+    if test -e /run/secrets/kubernetes.io/serviceaccount/namespace; then
+      # inside the cluster
+      svc_name=$(oc get svc \
+                      -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }} \
+                      -ojsonpath={.items[0].metadata.name} \
+                      -n {{ kserve_validate_model_namespace }});
+
+      echo "http://${svc_name}.{{ kserve_validate_model_namespace }}.svc.cluster.local:8080"
+    else
+      # outside the cluster
+      # port-forwaring enabled in the next task
+      echo "localhost:8080"
+    fi
+    {% else %}
+    oc get ksvc \
+       -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }} \
+       -n {{ kserve_validate_model_namespace }} \
+       -ojsonpath='{.items[0].status.url}' \
+       | sed 's|https:/http:/||' \
+       | sed 's/$/:8080/'
+    {% endif %}
+  register: model_endpoint_cmd
+
+- name: Wait for the model to answer successfully
+  shell: |
+    set -o pipefail;
+    set -e;
+
+    {% if kserve_validate_model_raw_deployment %}
+    if ! test -e /run/secrets/kubernetes.io/serviceaccount/namespace; then
+      oc port-forward svc/{{ kserve_validate_model_inference_service_name }}-predictor 8080:80 -n {{ kserve_validate_model_namespace }} &
+      oc_pid=$!
+      trap "kill -9 $oc_pid" SIGINT SIGTERM EXIT
+
+      # I cannot find any better at the moment :/
+      # curl localhost:8080 could do the job ... but it leads to a 'read: connection reset by peer' :|
+      sleep 5;
+    fi
+    {% endif %}
+
+    dest="{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}/answers.json"
+    query="{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}/questions.json"
+    status_code="{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}/status"
+
+    CURL_DATA='{
+              "model": "/mnt/models/",
+              "prompt": "At what temperature does Nitrogen boil?",
+              "max_tokens": 100,
+              "temperature": 0
+            }'
+
+    echo $CURL_DATA >> "$query"
+    for i in {1..{{ kserve_validate_model_query_count }}}; do
+      curl --silent --output $dest --write-out "%{http_code}" \
+        {{ model_endpoint_cmd.stdout }}/v1/completions \
+        -H "Content-Type: application/json" \
+        -d "${CURL_DATA}" > "$status_code"
+
+      HTTP_CODE=$(cat ${status_code})
+      if [[ ${HTTP_CODE} -lt 200 || ${HTTP_CODE} -gt 299 ]] ; then
+        echo "non 200 status code"
+        exit 1
+      fi
+      echo "Call $i/{{ kserve_validate_model_query_count }} passed"
+    done
+  register: curl_working_cmd
+  retries: 5
+  delay: 30
+  until: curl_working_cmd.rc == 0

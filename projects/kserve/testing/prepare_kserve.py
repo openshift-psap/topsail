@@ -60,7 +60,7 @@ def customize_rhods():
             break
         tries -= 1
         if tries == 0:
-            raise RuntimeException("RHODS Operator pod didn't disappear ...")
+            raise RuntimeError("RHODS Operator pod didn't disappear ...")
         time.sleep(2)
 
     if config.ci_artifacts.get_config("rhods.operator.customize.kserve.enabled"):
@@ -164,8 +164,14 @@ def cleanup(mute=True):
                 undeploy_operator(operator)
 
 
-def update_serving_runtime_images():
-    TEMPLATE_CMD = "oc get template/caikit-tgis-serving-template -n redhat-ods-applications"
+def update_serving_runtime_images(runtime=None):
+    if runtime == "vllm":
+        TEMPLATE_NAME = "vllm-runtime-template"
+    else:
+        TEMPLATE_NAME  = "tgis-grpc-serving-template"
+
+    TEMPLATE_CMD = f"oc get template/{TEMPLATE_NAME} -n redhat-ods-applications"
+
     logging.info("Ensure that the Dashboard template resource is available ...")
     try:
         run.run(TEMPLATE_CMD, capture_stdout=True)
@@ -178,10 +184,10 @@ def update_serving_runtime_images():
         return run.run(cmd, capture_stdout=True).stdout
 
     kserve_image = get_image("kserve-container")
-    transformer_image = get_image("transformer-container")
+    #transformer_image = get_image("transformer-container")
 
     config.ci_artifacts.set_config("kserve.model.serving_runtime.kserve.image", kserve_image.strip())
-    config.ci_artifacts.set_config("kserve.model.serving_runtime.transformer.image", transformer_image.strip())
+    #config.ci_artifacts.set_config("kserve.model.serving_runtime.transformer.image", transformer_image.strip())
 
 
 def preload_image():
@@ -211,5 +217,5 @@ def preload_image():
 
     with run.Parallel("preload_serving_runtime") as parallel:
         parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.kserve.image"), "kserve")
-        if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
-            parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.transformer.image"), "transformer")
+        #if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        #    parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.transformer.image"), "transformer")

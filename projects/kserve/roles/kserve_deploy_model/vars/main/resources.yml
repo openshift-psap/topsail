@@ -1,3 +1,3 @@
-caikit_tgit_config_template: templates/caikit-tgis-config.yaml.j2
-serving_runtime_template: templates/serving_runtime.yaml.j2
-inference_service_template: templates/inference_service.yaml.j2
+servingruntime_patch_template: templates/patch-servingruntime.yaml.j2
+inferenceservice_patch_template: templates/patch-inferenceservice.yaml.j2
+kustomization_patch_template: templates/kustomization.yaml.j2

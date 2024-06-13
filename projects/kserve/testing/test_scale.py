@@ -227,11 +227,10 @@ def run_one():
 
 def run_one_test(namespace, job_index):
     models_per_namespace = config.ci_artifacts.get_config("tests.scale.model.replicas")
-    inference_service_basename = config.ci_artifacts.get_config("tests.scale.model.name")
+    model_name = config.ci_artifacts.get_config("tests.scale.model.name")
     container_flavor = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.container_flavor")
 
     all_inference_service_names = []
-    import test_e2e
 
     for model_idx in range(models_per_namespace):
         inference_service_name = f"u{job_index}-m{model_idx}"
@@ -244,13 +243,13 @@ def run_one_test(namespace, job_index):
         run.run_toolbox_from_config("kserve", "deploy_model", extra=deploy_extra, artifact_dir_suffix=f"_{inference_service_name}")
         run.run(f'echo "model_{model_idx}_deployed: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
 
-        test_e2e.validate_model(namespace, model_name=inference_service_name, container_flavor=container_flavor)
+        test_e2e.validate_model(namespace, model_name=model_name, inference_service_names=[inference_service_name], runtime=container_flavor)
 
         run.run(f'echo "model_{model_idx}_validated: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')
 
         all_inference_service_names += [inference_service_name]
-
-    test_e2e.validate_model(namespace, model_names=all_inference_service_names, container_flavor=container_flavor,
+    # TODO test this. May not work as of new vLLM changes
+    test_e2e.validate_model(namespace, model_name=model_name, inference_service_names=all_inference_service_names, runtime=container_flavor,
                             artifact_dir_suffix=f"_all")
 
     run.run(f'echo "model_all_validated: $(date)" >> "{env.ARTIFACT_DIR}/progress_ts.yaml"')

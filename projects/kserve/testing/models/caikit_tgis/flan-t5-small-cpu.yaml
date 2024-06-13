@@ -1,7 +1,0 @@
-extends: caikit_tgis/flan-t5-small-gpu
-serving_runtime:
-  kserve:
-    resource_request:
-      nvidia.com/gpu: 0
-      cpu: 5
-      memory: 2

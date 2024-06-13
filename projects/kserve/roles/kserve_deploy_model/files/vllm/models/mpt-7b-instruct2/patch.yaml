@@ -1,0 +1,18 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    model:
+      storageUri: s3://psap-hf-models/mpt-7b-instruct2/mpt-7b-instruct2
+      args:
+      - --max-model-len=2048
+      - --uvicorn-log-level=debug
+      resources:
+        requests:
+          cpu: "2"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          nvidia.com/gpu: "1"

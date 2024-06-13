@@ -1,0 +1,3 @@
+namePrefix:
+- path: metadata/name
+- path: spec/predictor/model/runtime

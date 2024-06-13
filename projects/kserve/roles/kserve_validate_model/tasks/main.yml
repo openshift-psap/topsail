@@ -3,4 +3,4 @@
   loop: "{{ kserve_validate_model_inference_service_names }}"
   loop_control:
     loop_var: kserve_validate_model_inference_service_name
-  include_tasks: validate_model.yaml
+  include_tasks: validate_model_{{ kserve_validate_model_runtime }}.yaml

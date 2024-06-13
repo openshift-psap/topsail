@@ -1,0 +1,23 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  annotations:
+    # Overwritten by templates
+    serving.kserve.io/enable-prometheus-scraping: "true"
+    serving.kserve.io/deploymentMode: "RawDeployment"
+  labels:
+    opendatahub.io/dashboard: "true"
+  name: isvc
+spec:
+  predictor:
+    minReplicas: 1 # Overwritten by templates
+    serviceAccountName: sa
+    model:
+      modelFormat:
+        name: pytorch
+      runtime: standalone-tgis-servingruntime # Overwritten by templates
+      storageUri: s3://override
+      resources:
+        requests:
+          cpu: "2"
+          memory: "10Gi"

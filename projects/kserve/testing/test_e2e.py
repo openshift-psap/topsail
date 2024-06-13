@@ -2,11 +2,18 @@
 
 import sys, os
 import pathlib
+
+from projects.core.library import config
+TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
+
+RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
+ARTIF_DIR = os.environ.get("ARTIFACT_DIR")
+print(f"STARTING test_e2e with RUN_DIR= { RUN_DIR }, ARTIFACT_DIR = { ARTIF_DIR }")
+
 import subprocess
 import logging
 import datetime
 import time
-import functools
 import json
 import yaml
 import uuid
@@ -15,11 +22,10 @@ import fire
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
+from projects.core.library import env, run, visualize, matbenchmark
 import prepare_scale, test_scale, prepare_kserve
-from projects.core.library import env, config, run, visualize, matbenchmark
-TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
-RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
+print(f"STARTING test_e2e with RUN_DIR= { RUN_DIR }, ARTIFACT_DIR = { ARTIF_DIR }")
 os.chdir(TOPSAIL_DIR)
 
 # ---
@@ -30,26 +36,13 @@ def consolidate_model_namespace(consolidated_model):
     model_index = consolidated_model["index"]
     return f"{namespace_prefix}-{model_index}"
 
-
-def consolidate_model(index=None, name=None, show=True):
-    if name is None:
-        model_list = config.ci_artifacts.get_config("tests.e2e.models")
-        if index >= len(model_list):
-            raise IndexError(f"Requested model index #{index}, but only {len(model_list)} are defined. {model_list}")
-
-        model_name = model_list[index]
-    else:
-        model_name = name
-
-    return prepare_scale.consolidate_model_config(_model_name=model_name, index=index, show=show)
-
-
-def consolidate_models(index=None, use_job_index=False, model_name=None, namespace=None, save=True):
+def consolidate_models(index=None, use_job_index=False, name=None, namespace=None, save=True):
+    # name is the name field in the tests.e2e.models list used to uniquely identify it.
     consolidated_models = []
-    if model_name and namespace:
-        consolidated_models.append(consolidate_model(name=model_name))
-    elif index is not None and model_name:
-        consolidated_models.append(consolidate_model(index=index, name=model_name))
+    if name and namespace:
+        consolidated_models.append(consolidate_model(name=name))
+    elif index is not None and name:
+        consolidated_models.append(consolidate_model(index=index, name=name))
     elif index is not None:
         consolidated_models.append(consolidate_model(index=index))
     elif use_job_index:
@@ -77,6 +70,25 @@ def consolidate_models(index=None, use_job_index=False, model_name=None, namespa
 
     return consolidated_models
 
+
+def consolidate_model(index=None, name=None, show=True):
+    model_list = config.ci_artifacts.get_config("tests.e2e.models")
+    if name is None:
+        if index >= len(model_list):
+            raise IndexError(f"Requested model index #{index}, but only {len(model_list)} are defined. {model_list}")
+
+        model_config = model_list[index]
+    else:
+        for model_def in model_list:
+            if model_def.get("name") == name:
+                model_config = model_def
+                break
+    
+        if not model_config:
+            raise IndexError(f"Could not find model with name {name} for in model list. {model_list}")
+    
+    return prepare_scale.consolidate_model_config(model_config=model_config, index=index, show=show)
+
 # ---
 
 def test_ci():
@@ -84,7 +96,10 @@ def test_ci():
 
     # in the OCP CI, the config is passed from 'prepare' to 'test', so this is a NOOP
     # in the Perf CI environment, the config isn't passed, so this is mandatory.
-    prepare_kserve.update_serving_runtime_images()
+    runtime = config.ci_artifacts.get_config("kserve.model.runtime")
+    if config.ci_artifacts.get_config("kserve.model.serving_runtime.update_image"):
+        prepare_kserve.update_serving_runtime_images(runtime)
+
     mode = config.ci_artifacts.get_config("tests.e2e.mode")
     try:
         if mode == "single":
@@ -132,7 +147,7 @@ def deploy_models_concurrently():
 def deploy_one_model(index: int = None, use_job_index: bool = False, model_name: str = None):
     "Deploys one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
 
-    consolidate_models(index=index, use_job_index=use_job_index, model_name=model_name)
+    consolidate_models(index=index, use_job_index=use_job_index, name=model_name)
     deploy_consolidated_models()
 
 
@@ -301,7 +316,7 @@ def test_one_model(index: int = None, use_job_index: bool = False, model_name: s
         with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
             yaml.dump(dict(mode="multi-model_concurrent"), f, indent=4)
 
-    consolidate_models(index=index, use_job_index=True, model_name=model_name, namespace=namespace)
+    consolidate_models(index=index, use_job_index=True, name=model_name, namespace=namespace)
     test_consolidated_models()
 
 # ---
@@ -366,24 +381,26 @@ def launch_deploy_consolidated_model(consolidated_model):
         deploy_consolidated_model(consolidated_model)
 
 
-def validate_model(namespace, *, model_name=None, model_names=None, container_flavor, artifact_dir_suffix=None):
-    if model_name and model_names:
-        raise ValueError("validate_model: cannot receive model_name and model_names")
-    if not (model_name or model_names):
-        raise ValueError("validate_model: must receive model_name or model_names")
+def validate_model(namespace, *, model_name, inference_service_names, runtime, artifact_dir_suffix=None):
+    #if model_name and inference_service_names:
+    #    raise ValueError("validate_model: cannot receive model_name and inference_service_names")
+    #if not (model_name or inference_service_names):
+    #    raise ValueError("validate_model: must receive model_name or inference_service_names")
 
     validate_kwargs = dict(
         namespace=namespace,
-        inference_service_names=model_names or [model_name],
-        method=config.ci_artifacts.get_config("kserve.inference_service.validation.method"),
+        inference_service_names=inference_service_names,
+        model_id=model_name,
+        runtime=runtime,
         query_count=config.ci_artifacts.get_config("kserve.inference_service.validation.query_count"),
         raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
+        method=config.ci_artifacts.get_config("kserve.inference_service.validation.method")
     )
-    if validate_kwargs["raw_deployment"]:
-        validate_kwargs["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
+
+    validate_kwargs["proto"] = config.ci_artifacts.get_config("kserve.inference_service.validation.proto")
 
     validate_kwargs["artifact_dir_suffix"] = artifact_dir_suffix
-    validate_kwargs["sr_container_flavor"] = container_flavor
+    validate_kwargs["runtime"] = runtime
 
     run.run_toolbox("kserve", "validate_model", **validate_kwargs)
 
@@ -401,82 +418,31 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
 
     logging.info(f"Deploying a consolidated model. Changing the test namespace to '{namespace}'")
 
-    if "nvidia.com/gpu_memory" in consolidated_model["serving_runtime"].get("kserve", {}).get("resource_request",{}):
-        logging.info(f"Ignoring nvidia.com/gpu_memory resource request, not yet used")
-        del consolidated_model["serving_runtime"]["kserve"]["resource_request"]["nvidia.com/gpu_memory"]
-
-    if mute_logs is None:
-        mute_logs = config.ci_artifacts.get_config("kserve.model.serving_runtime.mute_logs")
-
     if delete_others is None:
         delete_others = config.ci_artifacts.get_config("tests.e2e.delete_others")
 
+    #TODO
+    #if limits_equals_requests is None:
+    #    limits_equals_requests = consolidated_model["serving_runtime"].get("limits_equals_requests")
 
-    # first choice:  from the function arg (cli)
-    # second choice: from the model settings
-    # third choice:  from the configuration
-    if limits_equals_requests is None:
-        limits_equals_requests = consolidated_model["serving_runtime"].get("limits_equals_requests")
-
-        if limits_equals_requests is None:
-            limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
-
-
-    serving_runtime_name = consolidated_model["serving_runtime"].get("name", model_name)
-
+    #    if limits_equals_requests is None:
+    #        limits_equals_requests = config.ci_artifacts.get_config("tests.e2e.limits_equals_requests")
 
     # mandatory fields
     args_dict = dict(
         namespace=namespace,
-        sr_name=serving_runtime_name,
+        runtime=consolidated_model["runtime"],
+        model_name=consolidated_model["model"],
+        sr_name=consolidated_model["runtime"],
         sr_kserve_image=consolidated_model["serving_runtime"]["kserve"]["image"],
-        sr_kserve_resource_request=consolidated_model["serving_runtime"]["kserve"]["resource_request"],
-
-        sr_transformer_image=consolidated_model["serving_runtime"]["transformer"]["image"],
-        sr_transformer_resource_request=consolidated_model["serving_runtime"]["transformer"]["resource_request"],
-        sr_mute_logs=mute_logs,
-
-        inference_service_name=model_name,
-        inference_service_model_format=consolidated_model["inference_service"]["model_format"],
-        storage_uri=consolidated_model["inference_service"]["storage_uri"],
-        sa_name=config.ci_artifacts.get_config("kserve.sa_name"),
-
+        inference_service_name=consolidated_model["name"],
         delete_others=delete_others,
-        limits_equals_requests=limits_equals_requests,
+        #limits_equals_requests=limits_equals_requests
     )
 
     # optional fields
     try: args_dict["inference_service_min_replicas"] = consolidated_model["inference_service"]["min_replicas"]
     except KeyError: pass
-
-    if (secret_key := consolidated_model.get("secret_key")) != None:
-        import test
-        secret_env_file = test.PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.kserve_model_secret_settings")
-        if not secret_env_file.exists():
-            raise FileNotFoundError(f"Watsonx model secret settings file does not exist :/ {secret_env_file}")
-
-        args_dict["secret_env_file_name"] = secret_env_file
-        args_dict["secret_env_file_key"] = secret_key
-    else:
-        logging.warning("No secret env key defined for this model")
-
-
-    if (extra_env := consolidated_model["serving_runtime"].get("transformer", {}).get("extra_env")):
-        if not isinstance(extra_env, dict):
-            raise ValueError(f"serving_runtime.transformer.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
-        args_dict["sr_transformer_extra_env_values"] = extra_env
-
-    if (extra_env := consolidated_model["serving_runtime"].get("kserve", {}).get("extra_env")):
-        if not isinstance(extra_env, dict):
-            raise ValueError(f"serving_runtime.kserve.extra_env must be a dict. Got a {extra_env.__class__.__name__}: '{extra_env}'")
-        args_dict["sr_kserve_extra_env_values"] = extra_env
-
-    args_dict["sr_container_flavor"] = consolidated_model["serving_runtime"]["container_flavor"]
-
-    if "nvidia.com/gpu" in consolidated_model["serving_runtime"].get("kserve", {}).get("resource_request",{}):
-        num_gpus = consolidated_model["serving_runtime"]["kserve"]["resource_request"]["nvidia.com/gpu"]
-        if num_gpus > 1:
-            args_dict["sr_shared_memory"]=True
 
     args_dict["raw_deployment"] = config.ci_artifacts.get_config("kserve.raw_deployment.enabled")
 
@@ -492,7 +458,7 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
             try:
                 deploy_model_dir = list(env.ARTIFACT_DIR.glob("*__kserve__deploy_model"))[0]
             except Exception as e:
-                logging.error("Faile to get the deploy directory :/", e)
+                logging.exception("Failed to get the deploy directory:%s", e)
                 logging.info(f"Using {env.ARTIFACT_DIR} as a fallback.")
                 deploy_model_dir = env.ARTIFACT_DIR
 
@@ -513,8 +479,10 @@ def deploy_consolidated_model(consolidated_model, namespace=None, mute_logs=None
                 ), f, indent=4)
                 print("", file=f)
 
+# python3.9 run_toolbox.py kserve validate_model '--inference_service_names=["mpt-7b-instruct2-isvc"]' --method="none" --query_count=3 --runtime="vllm" --model_id=flan-t5-xl --namespace=watsonx-e2e-perf --raw_deployment=True --proto=projects/kserve/testing/protos/tgis_generation.proto
+
         if config.ci_artifacts.get_config("tests.e2e.validate_model"):
-            validate_model(namespace, model_name=model_name, container_flavor=args_dict["sr_container_flavor"])
+            validate_model(namespace, inference_service_names=[args_dict["inference_service_name"]], model_name=model_name, runtime=args_dict["runtime"])
 
     except Exception as e:
         logging.error(f"Deployment of {model_name} failed :/ {e.__class__.__name__}: {e}")
@@ -558,6 +526,7 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
     with context:
         settings_filename = "settings.model.yaml" if matbenchmarking else "settings.yaml"
 
+        logging.info("Putting settings files in ARTIFACT_DIR: %s", env.ARTIFACT_DIR)
         with open(env.ARTIFACT_DIR / settings_filename, "w") as f:
             settings = dict(
                 e2e_test=True,
@@ -634,6 +603,9 @@ def matbenchmark_run_llm_load_test(namespace, llm_load_test_args, model_max_conc
 
 
 def run_one_matbench():
+    cwd = pathlib.Path(os.getcwd()) # for run_one_matbench
+    logging.info("In run_one_matbench. CWD: %s, RUN_DIR: %s, ARTIFACT_DIR: %s", cwd, RUN_DIR, env.ARTIFACT_DIR)
+
     with env.TempArtifactDir(RUN_DIR):
         with open(env.ARTIFACT_DIR / "settings.yaml") as f:
             settings = yaml.safe_load(f)
@@ -665,39 +637,57 @@ def run_one_matbench():
 def test_consolidated_model(consolidated_model, namespace=None):
     logging.info(f"Testing model '{consolidated_model['name']}")
 
-    model_name = consolidated_model["name"]
+    inference_service_name = consolidated_model["name"]
+    model_name = consolidated_model["model"]
     if namespace is None:
         namespace = consolidated_model.get("namespace")
     if namespace is None:
         namespace = consolidate_model_namespace(consolidated_model)
 
     if config.ci_artifacts.get_config("tests.e2e.validate_model"):
-        validate_model(namespace, model_name=model_name, container_flavor=consolidated_model["serving_runtime"]["container_flavor"])
+        validate_model(namespace, inference_service_names=[inference_service_name], model_name=model_name, runtime=consolidated_model["runtime"])
 
-    if not (use_llm_load_test := config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
+    if not (config.ci_artifacts.get_config("tests.e2e.llm_load_test.enabled")):
         logging.info("tests.e2e.llm_load_test.enabled is not set, stopping the testing.")
         return
 
-    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
-        svc_name = run.run(f"oc get svc -lserving.kserve.io/inferenceservice={model_name} -ojsonpath={{.items[0].metadata.name}} -n {namespace}", capture_stdout=True).stdout
-        if not svc_name:
-            raise RuntimeError(f"Failed to get the hostname for Service of InferenceService {namespace}/{model_name}")
-        port = 8033
-        host = f"{svc_name}.{namespace}.svc.cluster.local"
-    else:
-        host_url = run.run(f"oc get inferenceservice/{model_name} -n {namespace} -ojsonpath={{.status.url}}", capture_stdout=True).stdout
-        host = host_url.lstrip("https://")
-        if host == "":
-            raise RuntimeError(f"Failed to get the hostname for InferenceService {namespace}/{model_name}")
-        port = 443
-
     llm_load_test_args = config.ci_artifacts.get_config("tests.e2e.llm_load_test.args")
 
-    size_name = consolidated_model["testing"]["size"]
+    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+        svc_name = run.run(f"oc get svc -lserving.kserve.io/inferenceservice={inference_service_name} -ojsonpath={{.items[0].metadata.name}} -n {namespace}", capture_stdout=True).stdout
+        if not svc_name:
+            raise RuntimeError(f"Failed to get the hostname for Service of InferenceService {namespace}/{model_name}")
+         
+        # TODO this should probably be based on whether we are using http or gRPC.
+        if config.ci_artifacts.get_config("kserve.model.runtime") == "vllm":
+            port = 8080
+        else: # Assume TGIS gRPC
+            port = 8033
+
+        host = f"{svc_name}.{namespace}.svc.cluster.local"
+    else:
+        host_url = run.run(f"oc get inferenceservice/{inference_service_name} -n {namespace} -ojsonpath={{.status.components.predictor.url}}", capture_stdout=True).stdout
+        # In validate we use oc get ksvc \
+        # -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }} \
+        # -n {{ kserve_validate_model_namespace }} -ojsonpath='{.items[0].status.url}' 
+        host = host_url.lstrip("https://")
+        if host == "":
+            raise RuntimeError(f"Failed to get the hostname for InferenceService {namespace}/{inference_service_name}")
+        port = 443
+        
+        if llm_load_test_args.get("plugin") == "tgis_grpc_plugin":
+            llm_load_test_args["use_tls"] = True
+
+    # small if not set
+    size_name = consolidated_model.get("testing", {}).get("size", "small")
+
     model_max_concurrency = consolidated_model["testing"].get("max_concurrency")
 
     llm_load_test_dataset_sample_args = config.ci_artifacts.get_config(f"tests.e2e.llm_load_test.dataset_size.{size_name}")
     llm_load_test_args |= llm_load_test_dataset_sample_args
+
+    if llm_load_test_args.get("plugin") == "openai_plugin":
+        model_name = "/mnt/models/"
 
     args_dict = dict(
         host=host,
@@ -710,7 +700,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
     if config.ci_artifacts.get_config("tests.e2e.matbenchmark.enabled"):
         matbenchmark_run_llm_load_test(namespace, args_dict, model_max_concurrency)
     elif model_max_concurrency and args_dict["concurrency"] > model_max_concurrency:
-        logging.warning(f"Requested concurrency ({args_dict['concurrency']}) is higher than the model limit ({max_concurrency})")
+        logging.warning(f"Requested concurrency ({args_dict['concurrency']}) is higher than the model limit ({model_max_concurrency})")
     else:
         try:
             run.run_toolbox("llm_load_test", "run", **args_dict)

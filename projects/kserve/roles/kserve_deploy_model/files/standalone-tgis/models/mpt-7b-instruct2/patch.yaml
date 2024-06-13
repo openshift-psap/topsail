@@ -1,0 +1,24 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    model:
+      storageUri: s3://psap-hf-models/mpt-7b-instruct2/mpt-7b-instruct2
+      env:
+      - name: DEPLOYMENT_FRAMEWORK
+        value: hf_transformers
+      - name: FLASH_ATTENTION
+        value: "false"
+      - name: MAX_NEW_TOKENS
+        value: "2047"
+      - name: MAX_SEQUENCE_LENGTH
+        value: "2048"
+      resources:
+        requests:
+          cpu: "2"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          nvidia.com/gpu: "1"
