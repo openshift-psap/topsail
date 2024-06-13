@@ -180,7 +180,7 @@ class SFTTrainerSummary():
 
         msg = []
 
-        values_df = df['gpu' if has_gpu else 'name'][df["is_computed"] != True]
+        values_df = df[y_key][df["is_computed"] != True]
 
         min_row_idx = values_df.idxmin()
         max_row_idx = values_df.idxmax()
@@ -207,13 +207,17 @@ class SFTTrainerSummary():
 
         if len(data) > 1:
             if y_lower_better:
-                msg.append(f"Fastest: {df[y_key][max_row_idx]:.2f} {units} ({max_name})")
-                msg.append(html.Br())
-                msg.append(f"Slowest: {df[y_key][min_row_idx]:.2f} {units} ({min_name})")
+                fastest = df[y_key][min_row_idx]
+                slowest = df[y_key][max_row_idx]
             else:
-                msg.append(f"Fastest: {df[y_key][max_row_idx]:.2f} {units} ({max_name})")
-                msg.append(html.Br())
-                msg.append(f"Slowest: {df[y_key][min_row_idx]:.2f} {units} ({min_name})")
+                fastest = df[y_key][max_row_idx]
+                slowest = df[y_key][min_row_idx]
+
+            slower = (fastest-slowest)/fastest
+            faster = (fastest-slowest)/slowest
+            msg.append(f"Fastest: {fastest:.2f} {y_units} ({abs(faster)*100:.0f}% faster, best)")
+            msg.append(html.Br())
+            msg.append(f"Slowest: {slowest:.2f} {y_units} ({abs(slower)*100:.0f}% slower)")
 
         return fig, msg
 
