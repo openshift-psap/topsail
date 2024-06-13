@@ -81,14 +81,14 @@ spec:
         command: [bash, -c]
         args:
         - |
-             set -o errexit
-             set -o pipefail
-             set -o nounset
-             set -o errtrace
-             set -x
-             cd /usr/local/bin
-             curl -Ssf "$RSYNC_RPM_URL" | rpm2archive | tar xz ./usr/bin/rsync --strip-components=3
-             sleep inf
+          set -o errexit
+          set -o pipefail
+          set -o nounset
+          set -o errtrace
+          set -x
+          cd /usr/local/bin
+          curl -Ssf "$RSYNC_RPM_URL" | rpm2archive | tar xz ./usr/bin/rsync --strip-components=3
+          sleep inf
         env:
         - name: RSYNC_RPM_URL
           value: "https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/rsync-3.2.3-20.el9.x86_64.rpm"
@@ -119,38 +119,39 @@ spec:
           mountPath: /artifacts
         args:
         - |
-           echo "Waiting for Minio server to launch ..."
+          echo "Waiting for Minio server to launch ..."
 
            while true; do
              curl -sSf -k "$MINIO_SERVER_ADDR" > /dev/null || retcode=$?
 
-             [[ $retcode != 7 ]] && break
-             sleep 5 # Connection refused, server not ready
-           done
-           echo "Minio is running, configuring it ..."
+            [[ $retcode != 7 ]] && break
+            sleep 5 # Connection refused, server not ready
+          done
+          echo "Minio is running, configuring it ..."
 
            _mc() {
              mc --config-dir /tmp --insecure "$@"
            }
            MINIO_SERVER_NAME=minio
+
            # using 'bash -c' so that the secrets don't get printed by 'set -x'
 
-           # create a local server alias
-           bash -c 'echo -e "$MINIO_ROOT_USER\n$MINIO_ROOT_PASSWORD"' \
-              | _mc alias set "$MINIO_SERVER_NAME" "$MINIO_SERVER_ADDR"
+          # create a local server alias
+          bash -c 'echo -e "$MINIO_ROOT_USER\n$MINIO_ROOT_PASSWORD"' \
+             | _mc alias set "$MINIO_SERVER_NAME" "$MINIO_SERVER_ADDR"
 
-           # create a user in the server
-           bash -c 'echo -e "$MINIO_S3_ACCESS_KEY\n$MINIO_S3_SECRET_KEY"' \
-              | _mc admin user add "$MINIO_SERVER_NAME"
+          # create a user in the server
+          bash -c 'echo -e "$MINIO_S3_ACCESS_KEY\n$MINIO_S3_SECRET_KEY"' \
+             | _mc admin user add "$MINIO_SERVER_NAME"
 
-           # give privileges to the user
-           _mc admin policy set "$MINIO_SERVER_NAME" consoleAdmin "user=$MINIO_S3_ACCESS_KEY"
+          # give privileges to the user
+          _mc admin policy set "$MINIO_SERVER_NAME" consoleAdmin "user=$MINIO_S3_ACCESS_KEY"
 
-           # create default bucket
-           _mc mb "minio/$MINIO_S3_BUCKET_NAME"
+          # create default bucket
+          _mc mb "minio/$MINIO_S3_BUCKET_NAME"
 
-           echo "All done, Minio is configured!"
-           sleep +inf
+          echo "All done, Minio is configured!"
+          sleep +inf
         env:
         - name: MINIO_SERVER_ADDR
           value: https://localhost:9000

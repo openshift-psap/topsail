@@ -1,4 +1,3 @@
----
 - name: Create the src directory
   file:
     path: "{{ artifact_extra_logs_dir }}/src"
@@ -6,38 +5,18 @@
     mode: '0755'
 
 - name: Create namespace for images if does not exist
-  shell:
-    set -o pipefail;
-    oc create namespace "{{ cluster_build_push_image_namespace }}"
-       --dry-run=client
-       -oyaml
-    | tee "{{ artifact_extra_logs_dir }}/src/000_namespace.yml"
-    | oc apply -f-
+  shell: set -o pipefail; oc create namespace "{{ cluster_build_push_image_namespace }}" --dry-run=client -oyaml | tee "{{ artifact_extra_logs_dir }}/src/000_namespace.yml" | oc apply -f-
 
 - name: Create the imagestream, if does not exist
-  shell:
-    set -o pipefail &&
-    oc create imagestream "{{ cluster_build_push_image_image_local_name }}"
-       --dry-run=client
-       -oyaml
-    | tee "{{ artifact_extra_logs_dir }}/src/001_imagestream.yml"
-    | oc create
-         -f-
-         -n "{{ cluster_build_push_image_namespace }}"
+  shell: set -o pipefail && oc create imagestream "{{ cluster_build_push_image_image_local_name }}" --dry-run=client -oyaml | tee "{{ artifact_extra_logs_dir }}/src/001_imagestream.yml" | oc create -f- -n "{{ cluster_build_push_image_namespace }}"
   # this task may safely fail if the imagestream is created by this role running in parallel for another image
   failed_when: false
 
 - name: Ensure that the imagestream exists
-  command:
-    oc get imagestream "{{ cluster_build_push_image_image_local_name }}"
-       -n "{{ cluster_build_push_image_namespace }}"
-       -oname
+  command: oc get imagestream "{{ cluster_build_push_image_image_local_name }}" -n "{{ cluster_build_push_image_namespace }}" -oname
 
 - name: Check if the image is already built
-  command:
-    oc get
-       "istag/{{ cluster_build_push_image_image_local_name }}:{{ cluster_build_push_image_tag }}"
-       -n "{{ cluster_build_push_image_namespace }}"
+  command: oc get "istag/{{ cluster_build_push_image_image_local_name }}:{{ cluster_build_push_image_tag }}" -n "{{ cluster_build_push_image_namespace }}"
   register: has_image
   failed_when: false
 
@@ -49,10 +28,7 @@
   when: cluster_build_push_image_remote_repo | length
   block:
   - name: Check if the helper image is already built
-    command:
-      oc get
-         "istag/{{ cluster_build_push_image_image_local_name }}:helper"
-         -n "{{ cluster_build_push_image_namespace }}"
+    command: oc get "istag/{{ cluster_build_push_image_image_local_name }}:helper" -n "{{ cluster_build_push_image_namespace }}"
     register: has_helper_image
     failed_when: false
 

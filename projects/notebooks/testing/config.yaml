@@ -12,7 +12,7 @@ ci_presets:
     clusters.create.ocp.workers.type: m6i.2xlarge
     clusters.create.ocp.compute.type: m6i.2xlarge
     tests.notebooks.users.sleep_factor: 3.0
-    tests.notebooks.test_flavor: ods-ci
+    tests.notebooks.test_flavor: dashboard-scale-test
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
     tests.notebooks.repeat: 2
     tests.notebooks.identifier: scale_test
@@ -179,7 +179,7 @@ clusters:
     lab:
       name: null
     compute:
-      dedicated: true
+      dedicated: false
       autoscaling:
         enabled: false
       machineset:
@@ -193,7 +193,7 @@ clusters:
     compute:
       autoscaling:
         enabled: false
-      dedicated: true
+      dedicated: false
       machineset:
         name: test-pods
         count: null
@@ -257,12 +257,12 @@ tests:
     # The test flavor to run. Can be: ods-ci, notebook-performance or gating
     test_flavor: ods-ci
     identifier: unspecified
-    minio_bucket_name: notebooks
+    minio_bucket_name: ds-pipeline-dspa
     # number of test repetition to perform
     repeat: 1
     users:
       # number of users to simulate
-      count: 4
+      count: 5
       # offset to add to the Pod user index when computing the user name
       start_offset: 0
       # how long to wait between user starts, multiplied by the user index
@@ -283,7 +283,7 @@ tests:
     artifacts_collected: no-screenshot-except-failed-and-zero
     # Should be true to capture Prometheus databases and properly generate the cluster usage metrics
     # Can be overriden by CI_ARTIFACTS_CAPTURE_PROM_DB
-    capture_prom_db: true
+    capture_prom_db: false
     notebook:
       # name of the RHODS notebook size to select when launching the notebook.
       size_name: *notebook_size_name
@@ -341,7 +341,7 @@ tests:
         instance_types:
         - m6i.xlarge
         benchmarks:
-          # name of the benchmark to pass to the notebook
+        # name of the benchmark to pass to the notebook
         - name: pyperf_bm_go.py
           # number of times the benchmark should be executed within one repeat.
           number: 20
