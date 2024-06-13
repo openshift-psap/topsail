@@ -94,8 +94,6 @@ class SFTTrainerSummary():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg__summary_key = cfg.get("summary_key", False)
-        cfg__speedup = cfg.get("speedup", False)
-        cfg__efficiency = cfg.get("efficiency", False)
 
         cfg__filter_key = cfg.get("filter_key", None)
         cfg__filter_value = cfg.get("filter_value", False)
@@ -138,10 +136,9 @@ class SFTTrainerSummary():
         else:
             do_line_plot = False
 
-
+        text = None if len(variables) > 3 else "text"
         if do_line_plot:
             color = None if (len(variables) == 1 and not has_speedup) else "name"
-            text = None if len(variables) > 3 else "text"
             fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color=color, text=text)
 
             for i in range(len(fig.data)):
@@ -151,7 +148,7 @@ class SFTTrainerSummary():
             fig.update_traces(textposition='top center')
 
         else:
-            fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name", barmode='group')
+            fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name", barmode='group', text=text)
 
         if has_gpu:
             fig.update_xaxes(title="Number of GPUs used for the fine-tuning")
@@ -181,7 +178,7 @@ class SFTTrainerSummary():
 
         msg = []
 
-        values_df = df['gpu' if has_gpu else 'name'][df["is_computed"] != True]
+        values_df = df[y_key][df["is_computed"] != True]
 
         min_row_idx = values_df.idxmin()
         max_row_idx = values_df.idxmax()
@@ -199,22 +196,19 @@ class SFTTrainerSummary():
             min_name = min_count
             max_name = max_count
 
-        if cfg__efficiency:
-            units = ""
-        elif cfg__speedup:
-            units = "x"
-        else:
-            units = y_units
-
         if len(data) > 1:
             if y_lower_better:
-                msg.append(f"Fastest: {df[y_key][max_row_idx]:.2f} {units} ({max_name})")
-                msg.append(html.Br())
-                msg.append(f"Slowest: {df[y_key][min_row_idx]:.2f} {units} ({min_name})")
+                fastest = df[y_key][min_row_idx]
+                slowest = df[y_key][max_row_idx]
             else:
-                msg.append(f"Fastest: {df[y_key][max_row_idx]:.2f} {units} ({max_name})")
-                msg.append(html.Br())
-                msg.append(f"Slowest: {df[y_key][min_row_idx]:.2f} {units} ({min_name})")
+                fastest = df[y_key][max_row_idx]
+                slowest = df[y_key][min_row_idx]
+
+            slower = (fastest-slowest)/fastest
+            faster = (fastest-slowest)/slowest
+            msg.append(f"Fastest: {fastest:.2f} {y_units} ({abs(faster)*100:.0f}% faster, best)")
+            msg.append(html.Br())
+            msg.append(f"Slowest: {slowest:.2f} {y_units} ({abs(slower)*100:.0f}% slower)")
 
         return fig, msg
 
