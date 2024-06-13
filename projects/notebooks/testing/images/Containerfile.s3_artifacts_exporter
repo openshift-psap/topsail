@@ -1,6 +1,6 @@
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
-RUN dnf -y --quiet install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
+RUN dnf -y --quiet install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
  && dnf install -y --quiet s3cmd gettext \
  && dnf clean all
 
