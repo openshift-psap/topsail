@@ -138,10 +138,9 @@ class SFTTrainerSummary():
         else:
             do_line_plot = False
 
-
+        text = None if len(variables) > 3 else "text"
         if do_line_plot:
             color = None if (len(variables) == 1 and not has_speedup) else "name"
-            text = None if len(variables) > 3 else "text"
             fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color=color, text=text)
 
             for i in range(len(fig.data)):
@@ -151,7 +150,7 @@ class SFTTrainerSummary():
             fig.update_traces(textposition='top center')
 
         else:
-            fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name", barmode='group')
+            fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name", barmode='group', text=text)
 
         if has_gpu:
             fig.update_xaxes(title="Number of GPUs used for the fine-tuning")
