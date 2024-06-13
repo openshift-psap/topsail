@@ -94,8 +94,6 @@ class SFTTrainerSummary():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg__summary_key = cfg.get("summary_key", False)
-        cfg__speedup = cfg.get("speedup", False)
-        cfg__efficiency = cfg.get("efficiency", False)
 
         cfg__filter_key = cfg.get("filter_key", None)
         cfg__filter_value = cfg.get("filter_value", False)
@@ -197,13 +195,6 @@ class SFTTrainerSummary():
         else:
             min_name = min_count
             max_name = max_count
-
-        if cfg__efficiency:
-            units = ""
-        elif cfg__speedup:
-            units = "x"
-        else:
-            units = y_units
 
         if len(data) > 1:
             if y_lower_better:
