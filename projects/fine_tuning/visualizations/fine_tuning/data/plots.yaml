@@ -3,4 +3,5 @@ visualize:
   generate:
   - "report: Error report"
   - "report: SFTTrainer report"
+  - "report: SFTTrainer HyperParameters report"
   - "report: LTS Documentation"

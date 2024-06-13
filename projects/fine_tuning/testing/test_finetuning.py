@@ -191,9 +191,22 @@ def _run_test_multi_model(test_artifact_dir_p):
 
     with env.NextArtifactDir("multi_model"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
+
         try:
             job_index = 0
-            with run.Parallel("multi_model", dedicated_dir=False, exit_on_exception=False) as parallel:
+            with env.NextArtifactDir("multi_model_reference"):
+                with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
+                    yaml.dump(dict(mode="multi-model_reference"), f, indent=4)
+
+                for model in multi_models:
+                    run_in_env(job_index, model["name"])
+                    job_index += model.get("replicas", 1)
+
+            job_index = 0
+            with run.Parallel("multi_model_concurrent", dedicated_dir=True, exit_on_exception=False) as parallel:
+                with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
+                    yaml.dump(dict(mode="multi-model_concurrent"), f, indent=4)
+
                 for model in multi_models:
                     for idx in range(model.get("replicas", 1)):
                         parallel.delayed(run_in_env, job_index, model["name"])
