@@ -57,11 +57,10 @@ if [[ $WORLD_SIZE == 1 ]]; then
 
     if [[ -z "${NUM_GPUS:-1}" || "${NUM_GPUS:-1}" == 1 ]]; then
         echo "Running with a single GPU"
-        exec python launch_training.py
     else
         echo "Running with a $NUM_GPUS GPUs"
-        exec  python /app/accelerate_launch.py
     fi
+    exec  python /app/accelerate_launch.py
 fi
 echo "Running on $WORLD_SIZE machines with $NUM_GPUS GPUs each."
 
