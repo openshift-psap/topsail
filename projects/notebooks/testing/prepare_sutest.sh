@@ -1,5 +1,12 @@
 #! /bin/bash
 
+prepare_sutest_deploy_operator() {
+    switch_sutest_cluster
+
+    process_ctrl::run_in_bg \
+        ./run_toolbox.py from_config cluster deploy_operator --catalog=redhat-operators --manifest_name=openshift-pipelines-operator-rh --namespace=all
+}
+
 prepare_sutest_deploy_rhods() {
     switch_sutest_cluster
 
@@ -44,6 +51,7 @@ prepare_sutest_scale_cluster() {
 
 prepare_sutest_cluster() {
     switch_sutest_cluster
+    prepare_sutest_deploy_operator
     prepare_sutest_deploy_rhods
     prepare_sutest_deploy_ldap
     prepare_sutest_scale_cluster
@@ -134,7 +142,7 @@ sutest_wait_rhods_launch() {
         ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration
     fi
 
-    ./run_toolbox.py rhods update_datasciencecluster --enable [dashboard,workbenches]
+    ./run_toolbox.py rhods update_datasciencecluster --enable [dashboard,workbenches,datasciencepipelines]
     ./run_toolbox.py rhods wait_ods
 
     if test_config rhods.operator.stop; then
