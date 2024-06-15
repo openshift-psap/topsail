@@ -6,6 +6,9 @@ set -o nounset
 set -o errtrace
 set -x
 
+echo "Transformer version"
+pip freeze | grep transformers
+
 echo "Source dataset: $DATASET_SOURCE"
 
 prepare_dataset() {
