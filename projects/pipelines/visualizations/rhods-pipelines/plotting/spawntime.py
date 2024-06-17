@@ -564,7 +564,7 @@ class RunDuration():
                             "User Name": f"User #{user_idx:03d}",
                             "Resource": resource_name,
                             "Run Name": resource_key,
-                            "Runtime": (user_data.workflow_start_times[resource_name.split("/")[1]] - user_data.complete_run_times[workflow_run_name]).total_seconds(),
+                            "Runtime": (user_data.complete_run_times[workflow_run_name] - user_data.workflow_start_times[resource_name.split("/")[1]]).total_seconds(),
                         })
         if not data:
             return None, "No data available"
