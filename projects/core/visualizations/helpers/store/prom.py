@@ -301,14 +301,16 @@ def get_gpu_usage_metrics(cluster_role, register, container):
         {f"{cluster_role.title()} GPU computes occupancy": f'DCGM_FI_PROF_SM_OCCUPANCY{{exported_container="{container}"}}'},
         {f"{cluster_role.title()} GPU memory transfer utilization": f'DCGM_FI_DEV_MEM_COPY_UTIL{{exported_container="{container}"}}'},
         {f"{cluster_role.title()} GPU memory unallocated": f'DCGM_FI_DEV_FB_FREE{{exported_container="{container}"}}'},
-        {f"{cluster_role.title()} GPU memory transfer (rx)": f'DCGM_FI_PROF_PCIE_RX_BYTES{{exported_container="{container}"}}'},
-        {f"{cluster_role.title()} GPU memory transfer (tx)": f'DCGM_FI_PROF_PCIE_TX_BYTES{{exported_container="{container}"}}'},
+
         {f"{cluster_role.title()} GPU compute utilization (not 100% accurate)": f'DCGM_FI_DEV_GPU_UTIL{{exported_container="{container}"}}'},
         {f"{cluster_role.title()} GPU engine usage (not 100% accurate)": f'DCGM_FI_PROF_GR_ENGINE_ACTIVE{{exported_container="{container}"}}'},
         {f"{cluster_role.title()} GPU active fp16 pipe": f'DCGM_FI_PROF_PIPE_FP16_ACTIVE{{exported_container="{container}"}}'},
         {f"{cluster_role.title()} GPU active fp32 pipe": f'DCGM_FI_PROF_PIPE_FP32_ACTIVE{{exported_container="{container}"}}'},
         {f"{cluster_role.title()} GPU active fp64 pipe": f'DCGM_FI_PROF_PIPE_FP64_ACTIVE{{exported_container="{container}"}}'},
-
+        {f"{cluster_role.title()} GPU NVLink transfer (rx)": f'DCGM_FI_PROF_NVLINK_RX_BYTES{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU NVLink transfer (tx)": f'DCGM_FI_PROF_NVLINK_TX_BYTES{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU PCIe transfer (rx)": f'DCGM_FI_PROF_PCIE_RX_BYTES{{exported_container="{container}"}}'},
+        {f"{cluster_role.title()} GPU PCIe transfer (tx)": f'DCGM_FI_PROF_PCIE_TX_BYTES{{exported_container="{container}"}}'},
     ]
     all_metrics += gpu_usage_metrics
 
@@ -327,8 +329,8 @@ def get_gpu_usage_metrics(cluster_role, register, container):
                 y_title = f"{name} (in GiB)"
                 y_divisor = 1024
 
-            elif "DCGM_FI_PROF_PCIE_" in rq:
-                y_title = "Memory transfer (in MiB/s)"
+            elif "DCGM_FI_PROF_PCIE_" in rq or "DCGM_FI_PROF_NVLINK" in rq:
+                y_title = "Data transfer (in MiB/s)"
                 y_divisor = 1024
             elif "DCGM_FI_DEV_GPU_UTIL" in rq or "DCGM_FI_PROF_GR_ENGINE_ACTIVE" in rq:
                 y_title = "Compute usage (in %)"
