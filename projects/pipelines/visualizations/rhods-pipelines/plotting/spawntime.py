@@ -17,6 +17,7 @@ def register():
     ResourceCreationTimeline()
     ResourceCreationDelay()
     RunCreationDelay()
+    RunDuration()
 
 def add_progress(entry, hide_failed_users, only_prefix=[], remove_prefix=True):
     data = []
@@ -511,6 +512,105 @@ class RunCreationDelay():
             what = "Pipelines "
 
         title = f"{what}Run Creation Delay Distribution"
+
+        fig.update_layout(title=title, title_x=0.5,)
+
+        return fig, msg
+
+class RunDuration():
+    def __init__(self):
+        self.name = "Run Duration"
+        self.id_name = self.name
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        expe_cnt = common.Matrix.count_records(settings, setting_lists)
+        if expe_cnt != 1:
+            return {}, f"ERROR: only one experiment must be selected. Found {expe_cnt}."
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            pass # entry is set
+
+        cfg__dspa_only = cfg.get("dspa_only", False)
+        cfg__pipeline_task_only = cfg.get("pipeline_task_only", False)
+
+        workflow_mapping = {}
+        workflow_ordering = {}
+        data = []
+        # Assemble the workflow names
+        for user_idx, user_data in entry.results.user_data.items():
+            for resource_name, creation_time in user_data.resource_times.items():
+                resource_type, resource_id = resource_name.split("/")
+                if resource_type == "Workflow":
+                    workflow_mapping[resource_id] = user_idx
+                    if user_idx not in workflow_ordering:
+                        workflow_ordering[user_idx] = []
+                    workflow_ordering[user_idx].append({"name": resource_name, "creation_time": creation_time})
+                    workflow_ordering[user_idx] = sorted(workflow_ordering[user_idx], key=lambda x: x["creation_time"])
+        for user_idx, user_data in entry.results.user_data.items():
+            for resource_name, creation_time in user_data.resource_times.items():
+                resource_key = re.sub(r'n([0-9]+)-', "nX-", resource_name)
+                if resource_name.split("/")[0] == "Workflow":
+                    workflow_run_name = user_data.workflow_run_names[resource_name.split("/")[1]]
+                    resource_key = f"Workflow/{workflow_run_name}"
+                    resource_key = resource_key.replace(f"user{user_idx}-", "")
+                    data.append({
+                            "User Index": int(user_idx),
+                            "User Name": f"User #{user_idx:03d}",
+                            "Resource": resource_name,
+                            "Run Name": resource_key,
+                            "Runtime": (user_data.workflow_start_times[resource_name.split("/")[1]] - user_data.complete_run_times[workflow_run_name]).total_seconds(),
+                        })
+        if not data:
+            return None, "No data available"
+
+        data_df = pd.DataFrame(data)
+        data_df = data_df.sort_values(by=["Run Name"])
+
+        stats_data = []
+        base_value = 0
+        run_steps = data_df["Run Name"].unique()
+        msg = []
+
+        for run_step in run_steps:
+            step_df = data_df[data_df["Run Name"] == run_step]
+            q1, median, q3 = stats.quantiles(step_df["Runtime"]) if len(step_df["Runtime"]) > 1 else (step_df["Runtime"].iloc[0], step_df["Runtime"].iloc[0], step_df["Runtime"].iloc[0])
+            q1_dist = median-q1
+            q3_dist = q3-median
+            stats_data.append(dict(
+                Runs=run_step,
+                MedianDuration=median,
+                Q1=q1_dist,
+                Q3=q3_dist,
+                UserCount=str(entry.results.user_count),
+            ))
+
+            q1_txt = f"-{q1_dist:.0f}s" if round(q1_dist) >= 2 else ""
+            q3_txt = f"+{q3_dist:.0f}s" if round(q3_dist) >= 2 else ""
+            msg += [f"{run_step}: {median:.0f}s {q1_txt}{q3_txt}", html.Br()]
+
+        stats_df = pd.DataFrame(stats_data)
+
+        fig = px.bar(stats_df,
+                     x="Runs", y="MedianDuration", color="Runs",
+                     error_y_minus="Q1", error_y="Q3",
+                     title="Median Run Runtime")
+
+        fig.update_layout(xaxis_title="Runs in Order of Execution")
+        fig.update_layout(yaxis_title="Full Run Runtime (in seconds)")
+
+        what = ""
+        if cfg__dspa_only:
+            what = "DSPApplication "
+        if cfg__pipeline_task_only:
+            what = "Pipelines "
+
+        title = f"{what}Run Runtimes"
 
         fig.update_layout(title=title, title_x=0.5,)
 
