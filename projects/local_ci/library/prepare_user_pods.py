@@ -48,12 +48,19 @@ def prepare_base_image_container(namespace):
     if config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr"):
         delete_istags(namespace)
 
+
     istag = config.get_command_arg("cluster", "build_push_image", "_istag", prefix="base_image")
 
-    if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
-        logging.info(f"Image '{istag}' already exists in namespace '{namespace}'. Don't build it.")
-    else:
-        run.run_toolbox_from_config("cluster", "build_push_image", prefix="base_image")
+    run.run(f"oc get secrets -n {namespace} > {env.ARTIFACT_DIR}/secrets.before.status")
+    run.run(f"oc get sa -oyaml -n {namespace} > {env.ARTIFACT_DIR}/sa.before.yaml")
+    try:
+        if run.run(f"oc get istag {istag} -n {namespace} -oname 2>/dev/null", check=False).returncode == 0:
+            logging.info(f"Image '{istag}' already exists in namespace '{namespace}'. Don't build it.")
+        else:
+            run.run_toolbox_from_config("cluster", "build_push_image", prefix="base_image")
+    finally:
+        run.run(f"oc get secrets -n {namespace} > {env.ARTIFACT_DIR}/secrets.after.status")
+        run.run(f"oc get sa -oyaml -n {namespace} > {env.ARTIFACT_DIR}/sa.after.yaml")
 
     if not config.ci_artifacts.get_config("base_image.extend.enabled", False):
         logging.info("Base image extention not enabled.")
