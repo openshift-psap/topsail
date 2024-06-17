@@ -1,0 +1,61 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/before"
+    state: directory
+    mode: '0755'
+
+- name: Capture the state of the API Services
+  shell:
+    oc get apiservices > "{{ artifact_extra_logs_dir }}/artifacts/before/api_services.status"
+
+- name: Capture the state of the ClusterOperators
+  shell:
+    oc get clusteroperators > "{{ artifact_extra_logs_dir }}/artifacts/before/cluster_operators.status"
+
+- name: Wait for the Clusteroperators and APIServices to be available
+  block:
+  - name: Wait for all the Clusteroperators to be available for more than 5 minutes
+    shell:
+      set -o pipefail;
+
+      oc get co -ojson | jq '.items[].status.conditions[] | select(.type == "Available") | .lastTransitionTime | fromdate - now' -r | sort -n | tail -1
+    register: lowest_availability_duration_cmd # eg: -183942.29
+    until: lowest_availability_duration_cmd.stdout|float|abs > 300
+    retries: 15
+    delay: 30
+
+  - name: Wait for all the APIServices to be available
+    shell:
+      set -o pipefail;
+
+      oc get apiservices -ojson | jq '.items[] | select(.status.conditions[] | .type == "Available" and .status == "False") | .metadata.name' -r
+    register: apiservices_unavailable
+    until: not apiservices_unavailable.stdout
+    retries: 15
+    delay: 30
+
+  - name: Ensure that the PackageManifests are available
+    shell:
+      oc get packagemanifests > "{{ artifact_extra_logs_dir }}/artifacts/package_manifests.status"
+    register: has_packagemanifest
+    until: has_packagemanifest.rc == 0
+    retries: 10
+    delay: 30
+
+  - name: Ensure that the Projects are available
+    shell:
+      oc get projects > "{{ artifact_extra_logs_dir }}/artifacts/projects.status"
+    register: has_projects
+    until: has_projects.rc == 0
+    retries: 10
+    delay: 30
+
+  always:
+  - name: Capture the state of the ClusterOperators
+    shell:
+      oc get clusteroperators > "{{ artifact_extra_logs_dir }}/artifacts/cluster_operators.status"
+
+  - name: Capture the state of the APIServices
+    shell:
+      oc get apiservices > "{{ artifact_extra_logs_dir }}/artifacts/api_services.status"

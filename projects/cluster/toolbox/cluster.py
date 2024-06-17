@@ -634,3 +634,12 @@ class Cluster:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("cluster_wait_fully_awake")
+    @AnsibleMappedParams
+    def wait_fully_awake(self):
+        """
+        Waits for the cluster to be fully awake after Hive restart
+        """
+
+        return RunAnsibleRole(locals())
