@@ -82,12 +82,12 @@ ci_presets:
 
   longevity:
     extends: [sequential]
-    tests.pipelines.user_count: 10
+    tests.pipelines.user_count: 50
     tests.pipelines.pipelines_per_user: 1
     tests.pipelines.user_pipeline_delay: 1
-    tests.pipelines.project_count: 1
+    tests.pipelines.project_count: 5
     tests.pipelines.runs_per_pipeline: 10
-    tests.pipelines.run_delay: 5
+    tests.pipelines.run_delay: 300
     tests.pipelines.capture_extra_artifacts: false
 
   longevity_large:
