@@ -271,6 +271,7 @@ tests:
       gpu: 0
       dataset_replication: 1
       worker_replicas: 0
+      container_image: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
       hyper_parameters:
