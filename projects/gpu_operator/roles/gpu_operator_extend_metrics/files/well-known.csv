@@ -6,3 +6,9 @@ DCGM_FI_PROF_SM_OCCUPANCY,       gauge, The ratio of number of warps resident on
 DCGM_FI_PROF_PIPE_FP64_ACTIVE,   gauge, Ratio of cycles the fp64 pipes are active (in %).
 DCGM_FI_PROF_PIPE_FP32_ACTIVE,   gauge, Ratio of cycles the fp32 pipes are active (in %).
 DCGM_FI_PROF_PIPE_FP16_ACTIVE,   gauge, Ratio of cycles the fp16 pipes are active (in %).
+
+DCGM_FI_PROF_NVLINK_TX_BYTES, gauge, NVLink Transmit Bandwidth
+DCGM_FI_PROF_NVLINK_RX_BYTES, gauge, NVLink Reception Bandwidth
+DCGM_FI_PROF_PCIE_TX_BYTES, gauge, PCIe Transmit Bandwidth
+DCGM_FI_PROF_PCIE_RX_BYTES, gauge, PCIe Reception Bandwidth
+
