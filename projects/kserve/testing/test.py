@@ -11,7 +11,7 @@ import functools
 import yaml
 import fire
 
-from projects.core.library import env, config, run, visualize, configure_logging, export
+from projects.core.library import env, config, run, visualize, configure_logging, export, common
 configure_logging()
 from projects.local_ci.library import prepare_user_pods
 
@@ -207,6 +207,8 @@ def cleanup_cluster(mute=False):
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
+
+    common.cleanup_cluster()
 
     if not config.ci_artifacts.get_config("prepare.cleanup.enabled"):
         logging.warning("prepare.cleanup.enabled not enabled, cleanup only the test namespaces.")
