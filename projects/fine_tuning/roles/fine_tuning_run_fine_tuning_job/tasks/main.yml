@@ -58,7 +58,7 @@
        --from-file=config.json=<(cat "{{ artifact_extra_logs_dir }}/src/config_final.json") \
        --dry-run=client \
        -oyaml \
-       | yq '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
+       | yq -Y '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
        | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_config.yaml" \
        | oc apply -f-
 
@@ -71,7 +71,7 @@
        --from-file=$(find "{{ fine_tuning_job_entrypoint_dir }}" -maxdepth 1 -not -type d | tr '\n' ,)/dev/null \
        --dry-run=client \
        -oyaml \
-       | yq '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
+       | yq -Y '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
        | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml" \
        | oc apply -f-
 
