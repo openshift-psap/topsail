@@ -116,6 +116,7 @@ Create and Launch Workbench
     Create Workbench    workbench_title=elyra_${IMAGE}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}_${IMAGE}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
   END
   Start Workbench     workbench_title=elyra_${IMAGE}    timeout=300s
+  Sleep   30 seconds 
   Launch And Access Workbench Elyra Pipelines    workbench_title=elyra_${IMAGE}
   Capture Page Screenshot
   Clone Git Repository And Open    https://github.com/redhat-rhods-qe/ods-ci-notebooks-main
@@ -202,4 +203,3 @@ Launch And Access Workbench Elyra Pipelines
     ELSE
         Fail   msg=Cannot Launch And Access Workbench ${workbench_title} because it is not running...
     END
-

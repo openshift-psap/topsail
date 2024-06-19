@@ -64,15 +64,3 @@ notebooks_dashboard_scale_test_toleration_key:
 # If True, captures the Prometheus DB of the systems.
 # Type: Bool
 notebooks_dashboard_scale_test_capture_prom_db: true
-
-
-notebooks_dashboard_scale_test_notebook_url:
-
-notebooks_dashboard_scale_test_notebook_image_name: s2i-generic-data-science-notebook
-
-notebooks_dashboard_scale_test_stop_notebooks_on_exit: true
-
-# Notebook size.
-notebooks_ods_ci_scale_test_notebook_size_name: Small
-
-notebooks_ods_ci_scale_test_username_prefix:
