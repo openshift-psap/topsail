@@ -222,7 +222,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: "quay.io/modh/fms-hf-tuning:bd8bf628cd739c7a201a976bc3c1096785353f1a"
+  image: "quay.io/modh/fms-hf-tuning:release"
   pvc_name: fine-tuning-storage
   pvc:
     name: fine-tuning-storage
