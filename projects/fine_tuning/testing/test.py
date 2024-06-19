@@ -13,7 +13,7 @@ import uuid
 import yaml
 import fire
 
-from projects.core.library import env, config, run, visualize, export
+from projects.core.library import env, config, run, visualize, export, common
 import prepare_finetuning, test_finetuning
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -114,6 +114,8 @@ def cleanup_cluster(mute=False):
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
+
+    common.cleanup_cluster()
 
     prepare_finetuning.cleanup_cluster()
 
