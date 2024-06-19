@@ -1,0 +1,26 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: List all the busy-cluster resources
+  shell:
+    set -o pipefail;
+    echo "Counting the {{ kind }} ...";
+
+    oc get {{ kind }} -A --no-headers
+       -l{{ busy_cluster_status_namespace_label_key }}={{ busy_cluster_status_namespace_label_value }}
+       | nl | tee "{{ artifact_extra_logs_dir }}/artifacts/{{ kind }}.status" | wc -l
+  loop:
+  - namespace
+  - configmaps
+  - secrets
+  - pods
+  - jobs
+  - deployments
+  - replicasets
+  - services
+  loop_control:
+    loop_var: kind

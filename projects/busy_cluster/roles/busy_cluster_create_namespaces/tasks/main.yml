@@ -1,0 +1,33 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Instantiate the namespace template
+  template:
+    src: "{{ busy_cluster_create_namespaces_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/namespace_template.yaml"
+    mode: '0400'
+
+- name: Create the namespaces
+  shell: |
+    set -o pipefail;
+    seq -f "%03g" {{ busy_cluster_create_namespaces_count }} | while  read i; do
+      cat "{{ artifact_extra_logs_dir }}/src/namespace_template.yaml" | yq -y --arg name "{{ busy_cluster_create_namespaces_prefix }}-$i" '.metadata.name = $name'
+      echo "---"
+    done > "{{ artifact_extra_logs_dir }}/src/namespaces_x{{ busy_cluster_create_namespaces_count }}.yaml"
+
+- name: Log a message
+  debug: msg="Creating {{ busy_cluster_create_namespaces_count }} namespaces in the next command ..."
+
+- name: Create the namespaces
+  shell:
+    time oc apply -f "{{ artifact_extra_logs_dir }}/src/namespaces_x{{ busy_cluster_create_namespaces_count }}.yaml" > "{{ artifact_extra_logs_dir }}/artifacts/namespace.apply.log"

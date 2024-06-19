@@ -1,0 +1,31 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Busy_Cluster.create_configmaps
+
+# Parameters
+# the label key to use to locate the namespaces to populate
+busy_cluster_create_configmaps_namespace_label_key: busy-cluster.topsail
+
+# the label value to use to locate the namespaces to populate
+busy_cluster_create_configmaps_namespace_label_value: 'yes'
+
+# prefix to give to the configmaps/secrets to create
+busy_cluster_create_configmaps_prefix: busy
+
+# number of configmaps/secrets to create
+busy_cluster_create_configmaps_count: 10
+
+# dict of the key/value labels to set for the configmap/secrets
+busy_cluster_create_configmaps_labels: {}
+
+# if True, creates secrets instead of configmaps
+busy_cluster_create_configmaps_as_secrets: false
+
+# number of entries to create
+busy_cluster_create_configmaps_entries: 10
+
+# length of an entry value
+busy_cluster_create_configmaps_entry_values_length: 1024
+
+# the prefix to use to create the entry values
+busy_cluster_create_configmaps_entry_keys_prefix: entry-

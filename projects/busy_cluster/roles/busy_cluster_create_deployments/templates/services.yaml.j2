@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ busy_cluster_create_deployments_prefix }} # overriden with prefix+number when created
+  labels:
+    busy-cluster.topsail: "yes"
+{% for k, v in busy_cluster_create_deployments_labels.items() %}
+    {{ k }}: "{{ v }}"
+{% endfor %}
+spec:
+  selector:
+    app: {{ busy_cluster_create_deployments_prefix }} # overriden with prefix+number when created
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

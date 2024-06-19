@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: {% if not busy_cluster_create_configmaps_as_secrets %}ConfigMap{% else %}Secret{% endif +%}
+metadata:
+  name: {{ busy_cluster_create_configmaps_prefix }} # overriden with prefix+number when created
+  annotations:
+    entry_count: "{{ busy_cluster_create_configmaps_entries }}"
+    entry_values_length: "{{ busy_cluster_create_configmaps_entry_values_length }}"
+{% if busy_cluster_create_configmaps_as_secrets %}
+    not)_real_secrets: "true" # to avoid any doubt :)
+{% endif +%}
+  labels:
+    busy-cluster.topsail: "yes"
+{% for k, v in busy_cluster_create_configmaps_labels.items() %}
+    {{ k }}: "{{ v }}"
+{% endfor %}
+data:
+{% for idx in range(busy_cluster_create_configmaps_entries) %}
+    {%- set random_string = lookup('password', '/dev/null length='+(busy_cluster_create_configmaps_entry_values_length|string)+' chars=ascii_letters,digits') %}
+    {{ busy_cluster_create_configmaps_entry_keys_prefix }}{{ idx}}: "{{ random_string }}"
+{% endfor %}

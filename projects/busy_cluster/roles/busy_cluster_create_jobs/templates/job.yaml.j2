@@ -1,0 +1,33 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ busy_cluster_create_jobs_prefix }} # overriden with prefix+number when created
+  labels:
+    busy-cluster.topsail: "yes"
+{% for k, v in busy_cluster_create_jobs_labels.items() %}
+    {{ k }}: "{{ v }}"
+{% endfor %}
+spec:
+  parallelism: {{ busy_cluster_create_jobs_replicas }}
+  completions: {{ busy_cluster_create_jobs_replicas }}
+  activeDeadlineSeconds: 36000
+  backoffLimit: 0
+  completionMode: Indexed
+
+  template:
+    metadata:
+      labels:
+        busy-cluster.topsail: "yes"
+{% for k, v in busy_cluster_create_jobs_labels.items() %}
+        {{ k }}: "{{ v }}"
+{% endfor %}
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: registry.redhat.io/ubi9
+        command: [bash, -cx]
+        args:
+        - |
+          sleep {{ busy_cluster_create_jobs_runtime }}

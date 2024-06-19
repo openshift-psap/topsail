@@ -1,0 +1,47 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Save the kind type
+  set_fact:
+    kind: "{% if not busy_cluster_create_configmaps_as_secrets %}configmap{% else %}secret{% endif %}"
+
+- name: Instantiate the template
+  template:
+    src: "{{ busy_cluster_create_configmaps_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/{{ kind }}s.yaml"
+    mode: '0400'
+
+- name: List all the namespaces matching the label selector
+  command:
+    oc get ns
+       -l{{ busy_cluster_create_configmaps_namespace_label_key }}={{ busy_cluster_create_configmaps_namespace_label_value }}
+       -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+  register: busy_cluster_namespaces_cmd
+
+- name: Fail if there is no namespace matching the label selector
+  fail: msg="No namespace match the '{{ busy_cluster_create_configmaps_namespace_label_key }}={{ busy_cluster_create_configmaps_namespace_label_value }}' label selector"
+  when: not busy_cluster_namespaces_cmd.stdout
+
+- name: Prepare the configmaps
+  shell: |
+    set -o pipefail;
+
+    seq -f "%03g" {{ busy_cluster_create_configmaps_count }} | while  read i; do
+      cat "{{ artifact_extra_logs_dir }}/src/{{ kind }}s.yaml" | yq -y --arg name "{{ busy_cluster_create_configmaps_prefix }}-$i" '.metadata.name = $name'
+      echo "---"
+    done > "{{ artifact_extra_logs_dir }}/src/{{ kind }}s_x{{ busy_cluster_create_configmaps_count }}.yaml"
+
+- name: Log a message
+  debug: msg="Next task will create {{ busy_cluster_create_configmaps_count }} {{ kind }}s x {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces = {{ busy_cluster_create_configmaps_count * busy_cluster_namespaces_cmd.stdout_lines|length}} objects"
+
+- name: Create the configmaps in the busy-cluster namespaces
+  loop: "{{ busy_cluster_namespaces_cmd.stdout_lines }}"
+  shell:
+    time oc apply -n "{{ namespace }}"
+      -f "{{ artifact_extra_logs_dir }}/src/{{ kind }}s_x{{ busy_cluster_create_configmaps_count }}.yaml"
+  loop_control:
+    loop_var: namespace

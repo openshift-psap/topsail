@@ -1,0 +1,13 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Busy_Cluster.create_namespaces
+
+# Parameters
+# prefix to give to the namespaces to create
+busy_cluster_create_namespaces_prefix: busy-namespace
+
+# number of namespaces to create
+busy_cluster_create_namespaces_count: 10
+
+# dict of the key/value labels to set for the namespace
+busy_cluster_create_namespaces_labels: {}

@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ busy_cluster_create_namespaces_prefix }} # overriden with prefix+number when created
+  labels:
+    busy-cluster.topsail: "yes"
+{% for k, v in busy_cluster_create_namespaces_labels.items() %}
+    {{ k }}: "{{ v }}"
+{% endfor %}
+spec: {}
+status: {}

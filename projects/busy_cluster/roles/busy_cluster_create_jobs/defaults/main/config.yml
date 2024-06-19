@@ -1,0 +1,25 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Busy_Cluster.create_jobs
+
+# Parameters
+# the label key to use to locate the namespaces to populate
+busy_cluster_create_jobs_namespace_label_key: busy-cluster.topsail
+
+# the label value to use to locate the namespaces to populate
+busy_cluster_create_jobs_namespace_label_value: 'yes'
+
+# prefix to give to the deployments to create
+busy_cluster_create_jobs_prefix: busy
+
+# number of deployments to create
+busy_cluster_create_jobs_count: 10
+
+# dict of the key/value labels to set for the deployments
+busy_cluster_create_jobs_labels: {}
+
+# the number of parallel tasks to execute
+busy_cluster_create_jobs_replicas: 2
+
+# the runtime of the Job Pods in seconds, of inf
+busy_cluster_create_jobs_runtime: 120

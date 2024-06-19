@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ busy_cluster_create_deployments_prefix }} # overriden with prefix+number when created
+  labels:
+    busy-cluster.topsail: "yes"
+{% for k, v in busy_cluster_create_deployments_labels.items() %}
+    {{ k }}: "{{ v }}"
+{% endfor %}
+spec:
+  replicas: {{ busy_cluster_create_deployments_replicas }}
+  selector:
+    matchLabels:
+      app: {{ busy_cluster_create_deployments_prefix }} # overriden with prefix+number when created
+  template:
+    metadata:
+      labels:
+        busy-cluster.topsail: "yes"
+{% for k, v in busy_cluster_create_deployments_labels.items() %}
+        {{ k }}: "{{ v }}"
+{% endfor %}
+        app: {{ busy_cluster_create_deployments_prefix }} # overriden with prefix+number when created
+    spec:
+      containers:
+      - name: main
+{% if busy_cluster_create_deployments_image_pull_back_off %}
+        image: registry.example.com/invalid:image
+{% else %}
+        image: registry.redhat.io/ubi9
+{% endif %}
+        ports:
+        - containerPort: 80
+        command: [bash, -cx]
+        args:
+        - |
+{% if busy_cluster_create_deployments_crash_loop_back_off %}
+{% if busy_cluster_create_deployments_crash_loop_back_off in [True] %}
+         echo "crashLoopBackOff enabled with a delay of {{ busy_cluster_create_deployments_crash_loop_back_off }} seconds."
+         sleep {{ busy_cluster_create_deployments_crash_loop_back_off }};
+{% endif %}
+         echo "crashLoopBackOff!"
+         false
+{% else %}
+         echo "Running happily forever"
+         exec sleep +inf
+{% endif %}
