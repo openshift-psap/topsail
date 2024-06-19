@@ -142,6 +142,7 @@ def download_data_sources(test_settings):
 
 def prepare_namespace(test_settings):
     namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
+    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
 
     if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
@@ -152,15 +153,16 @@ def prepare_namespace(test_settings):
         set_namespace_annotations()
         download_data_sources(test_settings)
 
-    run.run(f"oc delete pytorchjobs -n {namespace} --all")
-    run.run(f"oc delete cm -n {namespace} -ltopsail.fine-tuning-jobname")
+    if not dry_mode:
+        run.run(f"oc delete pytorchjobs -n {namespace} --all")
+        run.run(f"oc delete cm -n {namespace} -ltopsail.fine-tuning-jobname")
 
     if not config.ci_artifacts.get_config("tests.fine_tuning.many_model.enabled"):
         return
 
     from projects.scheduler.testing.prepare import prepare_kueue_queue
     local_kueue_name = config.ci_artifacts.get_config("tests.fine_tuning.many_model.kueue_name")
-    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
+
     prepare_kueue_queue(False, namespace, local_kueue_name)
 
 
