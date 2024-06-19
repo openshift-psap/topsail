@@ -196,6 +196,8 @@ class Config:
 
             self.apply_preset(profile)
 
+            run.run_toolbox("cluster", "wait_fully_awake")
+
             return True
 
         logging.info("Not running in OpenShift CI, no light environment to detect.")
