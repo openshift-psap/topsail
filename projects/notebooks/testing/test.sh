@@ -32,6 +32,8 @@ source "$TESTING_NOTEBOOKS_DIR/cluster_helpers.sh"
 if [[ "${OPENSHIFT_CI:-}" == true && "${JOB_NAME_SAFE:-}" == "light" ]]; then
     cp "$KUBECONFIG" "${SHARED_DIR}/driver_kubeconfig"
     cp "$KUBECONFIG" "${SHARED_DIR}/sutest_kubeconfig"
+
+    ./run_toolbox.py cluster wait_fully_awake
 fi
 
 KUBECONFIG_DRIVER="${KUBECONFIG_DRIVER:-${KUBECONFIG:-}}" # cluster driving the test
