@@ -246,6 +246,15 @@ fine_tuning:
       type: model
       source_dir: 'https://huggingface.co/bigcode'
 
+    llama-2-7b-hf:
+      type: model
+      source_dir: 'https://huggingface.co/meta-llama'
+      # automated download not working, needs HuggingFace authentication
+
+    llama-2-13b-hf:
+      type: model
+      source_dir: 'https://huggingface.co/meta-llama'
+      # automated download not working, needs HuggingFace authentication
 tests:
   capture_prom: true
   capture_prom_uwm: false
