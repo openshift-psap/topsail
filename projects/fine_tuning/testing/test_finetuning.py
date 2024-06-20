@@ -73,7 +73,10 @@ def generate_prom_results(expe_name):
 
     dump_prometheus()
 
-    if config.ci_artifacts.get_config("tests.capture_state"):
+
+    if (config.ci_artifacts.get_config("tests.capture_state")
+        and not config.ci_artifacts.get_config("tests.dry_mode")
+        ):
         run.run_toolbox("rhods", "capture_state", mute_stdout=True)
         run.run_toolbox("cluster", "capture_environment", mute_stdout=True)
 
@@ -113,6 +116,8 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
     if transform := dataset_source.get("transform", False):
         test_settings["dataset_transform"] = transform
+
+    remove_none_values(test_settings)
 
     prepare_finetuning.prepare_namespace(test_settings)
     failed = True

@@ -618,6 +618,7 @@ class Cluster:
             storage_dir="/",
             clean_first=False,
             pvc_access_mode="ReadWriteOnce",
+            pvc_size="80Gi"
     ):
         """
         Downloads the a dataset into a PVC of the cluster
@@ -631,6 +632,7 @@ class Cluster:
             clean_first: if True, clears the storage directory before downloading.
             storage_dir: the path where to store the downloaded files, in the PVC
             pvc_access_mode: the access mode to request when creating the PVC
+            pvc_size: the size of the PVC to request, when creating it
         """
 
         return RunAnsibleRole(locals())

@@ -222,7 +222,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: "quay.io/modh/fms-hf-tuning:bd8bf628cd739c7a201a976bc3c1096785353f1a"
+  image: "quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3" # latest as of 2024-06-20 (RHOAI 2.10)
   pvc_name: fine-tuning-storage
   pvc:
     name: fine-tuning-storage
@@ -246,6 +246,15 @@ fine_tuning:
       type: model
       source_dir: 'https://huggingface.co/bigcode'
 
+    llama-2-7b-hf:
+      type: model
+      source_dir: 'https://huggingface.co/meta-llama'
+      # automated download not working, needs HuggingFace authentication
+
+    llama-2-13b-hf:
+      type: model
+      source_dir: 'https://huggingface.co/meta-llama'
+      # automated download not working, needs HuggingFace authentication
 tests:
   capture_prom: true
   capture_prom_uwm: false
@@ -271,6 +280,7 @@ tests:
       gpu: 0
       dataset_replication: 1
       worker_replicas: 0
+      container_image: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
       hyper_parameters:

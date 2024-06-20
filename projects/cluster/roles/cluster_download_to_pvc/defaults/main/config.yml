@@ -30,3 +30,6 @@ cluster_download_to_pvc_clean_first: false
 
 # the access mode to request when creating the PVC
 cluster_download_to_pvc_pvc_access_mode: ReadWriteOnce
+
+# the size of the PVC to request, when creating it
+cluster_download_to_pvc_pvc_size: 80Gi

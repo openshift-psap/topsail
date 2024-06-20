@@ -44,7 +44,7 @@ def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compu
         datum[summary_key] = getattr(entry.results.sfttrainer_metrics.summary, summary_key, None)
 
         datum["name"] = entry.get_name(variables).replace("hyper_parameters.", "")
-        datum["text"] = "{:.2f}".format(datum[summary_key])
+        datum["text"] = "{:.2f}".format(datum[summary_key]) if datum[summary_key] is not None else "None"
         datum["is_computed"] = False
 
         data.append(datum)
