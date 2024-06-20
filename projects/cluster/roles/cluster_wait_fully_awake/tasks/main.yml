@@ -67,3 +67,7 @@
   - name: Capture the state of the APIServices
     shell:
       oc get apiservices > "{{ artifact_extra_logs_dir }}/artifacts/api_services.status"
+
+  - name: Capture the yaml of OpenShift APIServer
+    shell:
+      oc get Deployment.apps/apiserver -n openshift-apiserver -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/openshift-apiserver.apiserver.yaml"
