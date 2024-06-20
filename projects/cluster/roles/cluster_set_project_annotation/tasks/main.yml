@@ -1,4 +1,24 @@
 ---
+- name: Wait for the ClusterOperators and APIServices to be available
+  block:
+  - name: Wait for all the Clusteroperators to be available for more than 5 minutes
+    shell:
+      set -o pipefail;
+
+      oc get co/openshift-apiserver -ojson | jq -r '.status.conditions[] | select(.type == "Available") | .status'
+    register: ocp_api_server_available_cmd
+    until: ocp_api_server_available_cmd.stdout == "True"
+    retries: 15
+    delay: 30
+  always:
+  - name: Capture the state of the Cluster Operators
+    shell:
+      oc get clusteroperators > "{{ artifact_extra_logs_dir }}/cluster_operators.status"
+
+  - name: Capture the state of the API Services
+    shell:
+      oc get apiservices > "{{ artifact_extra_logs_dir }}/api_services.status"
+
 - name: Set the annotation cluster-wide
   when: cluster_set_project_annotation_all|bool
   include_tasks: cluster_set.yaml
