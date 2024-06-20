@@ -222,7 +222,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: "quay.io/modh/fms-hf-tuning:release"
+  image: "quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3" # latest as of 2024-06-20 (RHOAI 2.10)
   pvc_name: fine-tuning-storage
   pvc:
     name: fine-tuning-storage
