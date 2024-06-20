@@ -38,15 +38,20 @@
 - name: Wait for the Clusteroperators and APIServices to be available
   block:
   - name: Wait for all the Clusteroperators to be available for more than 5 minutes
-    shell:
+    shell: |
       set -o pipefail;
 
-      oc get co -ojson | jq -r
-      '.items[].status.conditions[]
-        | select(.type == "Available" and .status == "True")
-        | .lastTransitionTime
-        | fromdate - now'
-      | sort -n | tail -1
+      oc get co -ojson | jq -r -c \
+       '.items[]
+        | select(.status.conditions[]
+        | .type == "Available" and .status == "True")
+        | {"lastTransitionTime": (.status.conditions[] | select(.type == "Available" and .status == "True") | .lastTransitionTime),
+           "name": .metadata.name}' \
+        | sort -n \
+        | tail -1 \
+        | tee /dev/stderr \
+        | jq '.lastTransitionTime | fromdate - now'
+
     register: lowest_availability_duration_cmd # eg: -183942.29
     until: lowest_availability_duration_cmd.stdout|float|abs > 300
     retries: 15
