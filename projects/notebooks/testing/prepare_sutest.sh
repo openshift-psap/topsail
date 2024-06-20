@@ -129,13 +129,10 @@ sutest_wait_rhods_launch() {
         sutest_customize_rhods_before_wait
     fi
 
-    local dedicated="{}" # set the toleration/node-selector annotations
-    if ! test_config clusters.sutest.compute.dedicated; then
-        dedicated="{value: ''}" # delete the toleration/node-selector annotations, if it exists
+    if test_config clusters.sutest.compute.dedicated; then
+        ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector
+        ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration
     fi
-
-    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated"
-    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated"
 
     ./run_toolbox.py rhods update_datasciencecluster --enable [dashboard,workbenches]
     ./run_toolbox.py rhods wait_ods
@@ -204,8 +201,10 @@ sutest_wait_rhods_launch() {
     fi
 
     # for the rhods-notebooks project
-    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix rhods_notebooks_node_selector --extra "$dedicated"
-    ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix rhods_notebooks_toleration --extra "$dedicated"
+    if test_config clusters.sutest.compute.dedicated; then
+        ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix rhods_notebooks_node_selector
+        ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix rhods_notebooks_toleration
+    fi
 }
 
 
