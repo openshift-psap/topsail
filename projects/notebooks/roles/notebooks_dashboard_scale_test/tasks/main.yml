@@ -131,7 +131,7 @@
     state: directory
     mode: '0755'
 
-- name: Set S3_HOST_BASE
+- name: Set s3_host_base
   block:
   - name: Expose the service
     command: oc expose svc minio -n {{ notebooks_dashboard_scale_test_minio_namespace }}
@@ -143,13 +143,13 @@
     register: hostname_result
     when: expose_result.changed or expose_result.rc == 0
 
-  - name: Set S3_HOST_BASE fact
+  - name: Set s3_host_base fact
     set_fact:
-      S3_HOST_BASE: "http://{{ hostname_result.stdout }}"
+      s3_host_base: "http://{{ hostname_result.stdout }}"
 
-  - name: Debug the S3_HOST_BASE variable (optional)
+  - name: Debug the s3_host_base variable (optional)
     debug:
-      msg: "S3_HOST_BASE is set to {{ S3_HOST_BASE }}"
+      msg: "s3_host_base is set to {{ s3_host_base }}"
 
 
 - name: Instantiate the RHODS tester job template
