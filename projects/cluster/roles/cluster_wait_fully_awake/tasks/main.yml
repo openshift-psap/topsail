@@ -19,7 +19,12 @@
     shell:
       set -o pipefail;
 
-      oc get co -ojson | jq '.items[].status.conditions[] | select(.type == "Available") | .lastTransitionTime | fromdate - now' -r | sort -n | tail -1
+      oc get co -ojson | jq -r
+      '.items[].status.conditions[]
+        | select(.type == "Available" and .status == "True")
+        | .lastTransitionTime
+        | fromdate - now'
+      | sort -n | tail -1
     register: lowest_availability_duration_cmd # eg: -183942.29
     until: lowest_availability_duration_cmd.stdout|float|abs > 300
     retries: 15
@@ -29,7 +34,10 @@
     shell:
       set -o pipefail;
 
-      oc get apiservices -ojson | jq '.items[] | select(.status.conditions[] | .type == "Available" and .status == "False") | .metadata.name' -r
+      oc get apiservices -ojson | jq -r
+      '.items[]
+        | select(.status.conditions[] | .type == "Available" and .status == "False")
+        | .metadata.name'
     register: apiservices_unavailable
     until: not apiservices_unavailable.stdout
     retries: 15
