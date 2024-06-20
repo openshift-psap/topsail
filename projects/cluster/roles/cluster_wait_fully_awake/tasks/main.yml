@@ -13,6 +13,28 @@
   shell:
     oc get clusteroperators > "{{ artifact_extra_logs_dir }}/artifacts/before/cluster_operators.status"
 
+- name: Show the cluster age
+  command:
+    oc get clusterversion/version
+
+- name: Compute the cluster age in seconds
+  shell:
+    set -o pipefail;
+
+    oc get clusterversion/version -ojson | jq '.metadata.creationTimestamp | fromdate - now'
+  register: cluster_age_cmd
+
+- name: Approve the CSCR when the cluster has been hibernated (> 3h and <10d)
+  when: cluster_age_cmd|float|abs > 3*60*60 and cluster_age_cmd|float|abs < 10*24*60*60
+  block:
+  - name: Approve the CSCR
+    shell: |
+      {{ lookup('file', approve_csrs_file) }}
+    register: approved_csr
+    until: false
+    retries: 20
+    delay: 30
+
 - name: Wait for the Clusteroperators and APIServices to be available
   block:
   - name: Wait for all the Clusteroperators to be available for more than 5 minutes
