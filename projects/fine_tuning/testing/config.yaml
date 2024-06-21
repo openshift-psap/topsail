@@ -266,6 +266,11 @@ fine_tuning:
       source_dir: 'https://huggingface.co/meta-llama/'
       secret_key: secrets.git_credentials
 
+    flan-t5-xl-3b:
+      type: model
+      source_dir: 'https://huggingface.co/google/'
+      secret_key: secrets.git_credentials
+
 tests:
   capture_prom: true
   capture_prom_uwm: false
