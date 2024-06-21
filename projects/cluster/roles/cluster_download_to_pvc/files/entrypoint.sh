@@ -75,4 +75,14 @@ cd "${STORAGE_DIR}"
 
 find "./${SOURCE_NAME}" ! -path '*/.git/*' -type f -exec sha256sum {} \;
 
+echo "---"
+
+du -sh "./${SOURCE_NAME}"
+
+echo "---"
+
+df -h "${STORAGE_DIR}"
+
+echo "---"
+
 exit 0
