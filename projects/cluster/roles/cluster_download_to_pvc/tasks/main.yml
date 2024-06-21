@@ -37,11 +37,11 @@
        -n {{ cluster_download_to_pvc_namespace }}
        --dry-run=client
        -oyaml
-       > {{ artifact_extra_logs_dir }}/configmap_entrypoint.yaml
+       > {{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml
 
 - name: Create the entrypoint ConfigMap resource
   command:
-    oc apply -f {{ artifact_extra_logs_dir }}/configmap_entrypoint.yaml
+    oc apply -f {{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml
 
 - name: Apply the PVC template
   template:
