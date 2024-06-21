@@ -64,20 +64,10 @@
     command: echo "Red Hat OpenShift AI"
     register: rhods_dashboard_product_name
 
-  - name: Get the image name description
-    command: oc get imagestream "{{ notebooks_dashboard_scale_test_notebook_image_name }}" -n redhat-ods-applications -ojsonpath='{.metadata.annotations.opendatahub\.io/notebook-image-name}'
-    register: notebook_image_name_descr_cmd
-
   - name: Save the computed variables
     set_fact:
       rhods_dashboard_product_name: "{{ rhods_dashboard_product_name.stdout }}"
-      notebook_image_name_descr: "{{ notebook_image_name_descr_cmd.stdout }}"
 
-# - name: Terminate the notebooks
-#   environment:
-#     KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
-#   shell: set -o pipefail; oc get notebooks -A -ojsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' | xargs --no-run-if-empty --replace bash -c "oc annotate notebook/{} --overwrite kubeflow-resource-stopped=stopped-by-ci-artifacts -oname" > /dev/null
-#   when: notebooks_dashboard_scale_test_stop_notebooks_on_exit
 
 - name: Get the ODS-CI sample var file
   shell: oc debug istag/{{ notebooks_dashboard_scale_test_ods_ci_istag }} -n {{ tester_namespace }} -- cat test-variables.yml > /tmp/test-variables.yml.example

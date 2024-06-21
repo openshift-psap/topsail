@@ -103,7 +103,7 @@ Create Pipeline Server To s3
   Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
   Wait Until Page Contains No Spinner    
   Element Should Be Enabled     ${PIPELINE_IMPORT_BUTTON}
-  Sleep  1 minutes
+  Sleep  180 seconds
 
   Capture Page Screenshot
 

@@ -224,7 +224,6 @@ class Notebooks:
             state_signal_redis_server="",
             toleration_key="",
             capture_prom_db: bool = True,
-            notebook_image_name="",
     ):
         """
         End-to-end scale testing of ROAI dashboard scale test, at user level.
