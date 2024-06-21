@@ -103,8 +103,10 @@ def download_data_sources(test_settings):
         multi_models = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.models")
         for model in multi_models:
             sources_name.append(model["name"])
-    else:
+    elif isinstance(model_name, str):
         sources_name.append(model_name)
+    else:
+        sources_name += model_name
 
     def do_download(extra, secret_key=None):
         name = extra["name"]
@@ -147,7 +149,12 @@ def download_data_sources(test_settings):
 
 
     def download_from_registry(registry_source_name):
-        source_name, _, registry_name = registry_source_name.partition("@")
+        source_name, found, registry_name = registry_source_name.partition("@")
+        if not found:
+            registry_name = config.ci_artifacts.get_config("fine_tuning.model_registry")
+            if not registry_name:
+                raise ValueError("Registry not specified :/")
+
         registry = sources[registry_name]
 
         source = registry["source_dir"] + source_name
@@ -157,9 +164,8 @@ def download_data_sources(test_settings):
 
         do_download(extra, secret_key=registry.get("secret_key", None))
 
-
     for source_name in sources_name:
-        if "@" in source_name:
+        if "@" in source_name or (config.ci_artifacts.get_config("fine_tuning.model_registry") and source_name not in sources):
             download_from_registry(source_name)
         else:
             download_from_source(source_name)
