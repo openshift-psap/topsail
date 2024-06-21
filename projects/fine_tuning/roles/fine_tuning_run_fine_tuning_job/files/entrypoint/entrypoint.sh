@@ -55,6 +55,19 @@ else
     echo "No GPU seem to be available."
 fi
 
+if [[ "${SLEEP_FOREVER:-}" ]]; then
+    set +x
+    echo "Sleep flag enabled, sleeping forever."
+    echo "Fine-tuning command:"
+    cat <<EOF
+oc rsh -n $(cat /run/secrets/kubernetes.io/serviceaccount/namespace) $(cat /proc/sys/kernel/hostname)
+cp \$SFT_TRAINER_CONFIG_JSON_PATH .
+export SFT_TRAINER_CONFIG_JSON_PATH=\$PWD/config.json
+python /app/accelerate_launch.py
+EOF
+    exec sleep inf
+fi
+
 if [[ $WORLD_SIZE == 1 ]]; then
     echo "Running on a single machine."
 
@@ -63,7 +76,7 @@ if [[ $WORLD_SIZE == 1 ]]; then
     else
         echo "Running with a $NUM_GPUS GPUs"
     fi
-    exec  python /app/accelerate_launch.py
+    exec python /app/accelerate_launch.py
 fi
 echo "Running on $WORLD_SIZE machines with $NUM_GPUS GPUs each."
 
