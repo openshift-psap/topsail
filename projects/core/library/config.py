@@ -45,6 +45,7 @@ class Config:
             logging.error(msg)
             raise ValueError(msg)
 
+        logging.info(f"Loading configuration from {self.config_path} ...")
         with open(self.config_path) as config_f:
             self.config = yaml.safe_load(config_f)
 
