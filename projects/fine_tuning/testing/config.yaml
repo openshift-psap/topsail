@@ -228,6 +228,12 @@ fine_tuning:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
   sources:
+    hf:
+      type: model-registry
+      registry_type: model
+      source_dir: 'https://huggingface.co/'
+      secret_key: secrets.git_credentials
+
     twitter_complaints_small.json:
       type: dataset
       source_dir: 'https://raw.githubusercontent.com/foundation-model-stack/fms-hf-tuning/b48249fab3df124d6b85cc8ce59b9e5a66ea6dcb/tests/data'
@@ -241,36 +247,6 @@ fine_tuning:
       type: model
       source_dir: 's3://psap-watsonx-models/fine-tuning/bigscience'
       secret_key: secrets.aws_credentials
-
-    gpt_bigcode-santacoder:
-      type: model
-      source_dir: 'https://huggingface.co/bigcode'
-
-    llama-2-7b-hf:
-      type: model
-      source_dir: 'https://huggingface.co/meta-llama'
-      secret_key: secrets.git_credentials
-
-    llama-2-13b-hf:
-      type: model
-      source_dir: 'https://huggingface.co/meta-llama'
-      secret_key: secrets.git_credentials
-
-    granite-7b-lab:
-      type: model
-      source_dir: 'https://huggingface.co/instructlab'
-      secret_key: secrets.git_credentials
-
-    llama-2-13b-chat-hf:
-      type: model
-      source_dir: 'https://huggingface.co/meta-llama/'
-      secret_key: secrets.git_credentials
-
-    flan-t5-xl-3b:
-      type: model
-      source_dir: 'https://huggingface.co/google/'
-      secret_key: secrets.git_credentials
-
 tests:
   capture_prom: true
   capture_prom_uwm: false
