@@ -149,7 +149,7 @@ secrets:
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   opensearch_instances: opensearch.yaml
   aws_credentials: .awscred
-
+  git_credentials: git-credentials
 clusters:
   metal_profiles:
     p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
@@ -249,12 +249,23 @@ fine_tuning:
     llama-2-7b-hf:
       type: model
       source_dir: 'https://huggingface.co/meta-llama'
-      # automated download not working, needs HuggingFace authentication
+      secret_key: secrets.git_credentials
 
     llama-2-13b-hf:
       type: model
       source_dir: 'https://huggingface.co/meta-llama'
-      # automated download not working, needs HuggingFace authentication
+      secret_key: secrets.git_credentials
+
+    granite-7b-lab:
+      type: model
+      source_dir: 'https://huggingface.co/instructlab'
+      secret_key: secrets.git_credentials
+
+    llama-2-13b-chat-hf:
+      type: model
+      source_dir: 'https://huggingface.co/meta-llama/'
+      secret_key: secrets.git_credentials
+
 tests:
   capture_prom: true
   capture_prom_uwm: false
