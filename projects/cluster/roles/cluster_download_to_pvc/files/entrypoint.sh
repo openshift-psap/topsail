@@ -21,6 +21,16 @@ if [[ "$DOWNLOAD_SOURCE" == "https://huggingface.co/"* ]];
 then
     dnf install --quiet -y git-lfs
 
+    if [[ "${CRED_FILE:-}" ]];
+    then
+        echo "Enabling git 'store' credential helper ..."
+        sha256sum "${CRED_FILE}"
+
+        git config --global credential.helper "store --file=$CRED_FILE"
+    else
+        echo "No credential file passed."
+    fi
+
     git clone "$DOWNLOAD_SOURCE" "$STORAGE_DIR/${SOURCE_NAME}" --depth=1
 
 elif [[ "$DOWNLOAD_SOURCE" == "s3://"* ]];
