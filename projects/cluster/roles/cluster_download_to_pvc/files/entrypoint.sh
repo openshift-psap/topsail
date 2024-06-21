@@ -31,7 +31,7 @@ then
         echo "No credential file passed."
     fi
 
-    git clone "$DOWNLOAD_SOURCE" "$STORAGE_DIR/${SOURCE_NAME}" --depth=1 \
+    time git clone "$DOWNLOAD_SOURCE" "$STORAGE_DIR/${SOURCE_NAME}" --depth=1 \
         |& grep -v 'unable to get credential storage lock in 1000 ms: Read-only file system'
 
 elif [[ "$DOWNLOAD_SOURCE" == "s3://"* ]];
@@ -55,7 +55,7 @@ then
 
     export AWS_SHARED_CREDENTIALS_FILE=$CRED_FILE
 
-    aws s3 cp "$DOWNLOAD_SOURCE" "${STORAGE_DIR}/${SOURCE_NAME}" --recursive --quiet
+    time aws s3 cp "$DOWNLOAD_SOURCE" "${STORAGE_DIR}/${SOURCE_NAME}" --recursive --quiet
 else
     cd "${STORAGE_DIR}"
 
