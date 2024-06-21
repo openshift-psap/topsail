@@ -106,24 +106,17 @@ def download_data_sources(test_settings):
     else:
         sources_name.append(model_name)
 
+    def do_download(extra, secret_key=None):
+        name = extra["name"]
+        if pvc_name in run.run(f"oc get pvc -n {namespace} -oname -l{name}=yes", check=False, capture_stdout=True).stdout:
+            logging.info(f"PVC {pvc_name} already has data source '{name}'. Not downloading it again.")
+            return
 
-    for source_name in sources_name:
-        if pvc_name in run.run(f"oc get pvc -n {namespace} -oname -l{source_name}=yes", check=False, capture_stdout=True).stdout:
-            logging.info(f"PVC {pvc_name} already has data source '{source_name}'")
-            continue
+        logging.info(f"PVC {pvc_name} does not container data source '{name}'. Downloading it ...")
 
-        logging.info(f"PVC {pvc_name} does not container data source '{source_name}'. Downloading it ...")
+        # ---
 
-        if source_name not in sources:
-            msg = f"Source '{source_name}' not in {', '.join(sources.keys())} ..."
-            logging.error(msg)
-            raise ValueError(msg)
-
-        source = sources[source_name]["source_dir"].rstrip("/") + "/" + source_name
-        storage_dir = "/" + sources[source_name]["type"]
-        extra = dict(source=source, storage_dir=storage_dir, name=source_name)
-
-        if secret_key := sources[source_name].get("secret_key", None):
+        if secret_key:
             env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
             cred_file = pathlib.Path(os.environ[env_key]) / config.ci_artifacts.get_config(secret_key)
             if not cred_file.exists():
@@ -135,9 +128,50 @@ def download_data_sources(test_settings):
 
         if dry_mode:
             logging.info(f"tests.dry_mode is not, skipping running download_to_pvc({extra})")
-            continue
+            return
 
         run.run_toolbox_from_config("cluster", "download_to_pvc", extra=extra)
+
+
+    def download_from_source(source_name):
+        if source_name not in sources:
+            msg = f"Source '{source_name}' not in {', '.join(sources.keys())} ..."
+            logging.error(msg)
+            raise ValueError(msg)
+
+        source = sources[source_name]["source_dir"].rstrip("/") + "/" + source_name
+        storage_dir = "/" + sources[source_name]["type"]
+        extra = dict(source=source, storage_dir=storage_dir, name=source_name)
+
+        do_download(extra, secret_key=sources[source_name].get("secret_key", None))
+
+
+    def download_from_registry(registry_source_name):
+        source_name, _, registry_name = registry_source_name.partition("@")
+        registry = sources[registry_name]
+
+        source = registry["source_dir"] + source_name
+        storage_dir = "/" + registry["registry_type"]
+        name = get_safe_model_name(source_name)
+        extra = dict(source=source, storage_dir=storage_dir, name=name)
+
+        do_download(extra, secret_key=registry.get("secret_key", None))
+
+
+    for source_name in sources_name:
+        if "@" in source_name:
+            download_from_registry(source_name)
+        else:
+            download_from_source(source_name)
+
+
+def get_safe_model_name(origin_model_name):
+    if "@" in origin_model_name:
+        model_name, _, _registry_name = origin_model_name.partition("@")
+    else:
+        model_name = origin_model_name
+
+    return pathlib.Path(model_name).name.lower().replace("_", "-")
 
 
 def prepare_namespace(test_settings):

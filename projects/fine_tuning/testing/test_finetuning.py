@@ -140,6 +140,7 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
             else:
                 start_ts = _start_ts
 
+                test_settings["model_name"] = prepare_finetuning.get_safe_model_name(test_settings["model_name"])
                 run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
                                             extra=test_settings)
             failed = False
@@ -182,8 +183,8 @@ def _run_test_multi_model(test_artifact_dir_p):
     counter_p = [0]
     def run_in_env(job_index, model_name):
         job_name = f"job-{job_index}-{model_name}"
-
-        with env.NextArtifactDir(f"multi_model_{model_name}", lock=lock, counter_p=counter_p):
+        safe_model_name = prepare_finetuning.get_safe_model_name(model_name)
+        with env.NextArtifactDir(f"multi_model_{safe_model_name}", lock=lock, counter_p=counter_p):
             test_failed = _run_test([None], dict(model_name=model_name, name=job_name), job_index=job_index)
 
         if test_failed:
