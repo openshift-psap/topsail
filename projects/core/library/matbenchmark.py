@@ -91,7 +91,7 @@ def run_benchmark(args, dry_run=False):
 
     BENCHMARK_CMD_BASE = "matbench benchmark"
     cmd_args = " ".join([f"{k}={v}" for k, v in args.items()])
-    cmd = f"{BENCHMARK_CMD_BASE} {cmd_args}"
+    cmd = f"CI_ARTIFACTS_FROM_CONFIG_FILE={config.ci_artifacts.config_path} {BENCHMARK_CMD_BASE} {cmd_args}"
 
     with open(env.ARTIFACT_DIR / "benchmark.cmd", "w") as f:
         print(cmd, file =f)
