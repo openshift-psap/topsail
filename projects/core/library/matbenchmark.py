@@ -86,7 +86,7 @@ def set_benchmark_args(benchmark_file, expe_name, results_dirname=None):
     return args
 
 
-def run_benchmark(args):
+def run_benchmark(args, dry_run=False):
     logging.info(f"Running MatrixBenchmarking rehearsal with '{args['--benchmark_file']}'...")
 
     BENCHMARK_CMD_BASE = "matbench benchmark"
@@ -104,6 +104,10 @@ def run_benchmark(args):
     except Exception as e:
         logging.error(f"MatrixBenchmark benchmark rehearsal failed. See '{rehearsal_log_file}' for further detals.")
         return True # failed
+
+    if dry_run:
+        logging.info("Dry-run enabled, skipping the benchmark execution.")
+        return
 
     try:
         run.run(f"{cmd} --run 2>&1 | tee -a '{test_log_file}'")
