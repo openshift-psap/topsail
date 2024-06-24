@@ -241,7 +241,9 @@ class Config:
 
 
 def _set_config_environ(base_dir):
-    config_path = env.ARTIFACT_DIR / "config.yaml"
+    config_path = pathlib.Path(
+        os.environ.get("CI_ARTIFACTS_FROM_CONFIG_FILE", env.ARTIFACT_DIR / "config.yaml")
+    )
 
     os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
     if "CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE" not in os.environ:
