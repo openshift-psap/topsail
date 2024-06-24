@@ -86,12 +86,12 @@ def set_benchmark_args(benchmark_file, expe_name, results_dirname=None):
     return args
 
 
-def run_benchmark(args):
+def run_benchmark(args, dry_run=False):
     logging.info(f"Running MatrixBenchmarking rehearsal with '{args['--benchmark_file']}'...")
 
     BENCHMARK_CMD_BASE = "matbench benchmark"
     cmd_args = " ".join([f"{k}={v}" for k, v in args.items()])
-    cmd = f"{BENCHMARK_CMD_BASE} {cmd_args}"
+    cmd = f"CI_ARTIFACTS_FROM_CONFIG_FILE={config.ci_artifacts.config_path} {BENCHMARK_CMD_BASE} {cmd_args}"
 
     with open(env.ARTIFACT_DIR / "benchmark.cmd", "w") as f:
         print(cmd, file =f)
@@ -104,6 +104,10 @@ def run_benchmark(args):
     except Exception as e:
         logging.error(f"MatrixBenchmark benchmark rehearsal failed. See '{rehearsal_log_file}' for further detals.")
         return True # failed
+
+    if dry_run:
+        logging.info("Dry-run enabled, skipping the benchmark execution.")
+        return
 
     try:
         run.run(f"{cmd} --run 2>&1 | tee -a '{test_log_file}'")

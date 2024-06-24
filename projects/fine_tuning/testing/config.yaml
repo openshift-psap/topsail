@@ -62,6 +62,28 @@ ci_presets:
     tests.fine_tuning.multi_model.enabled: true
     tests.fine_tuning.test_settings.model_name: null
 
+  ibm_models:
+    fine_tuning.pvc.size: 2000Gi
+    tests.fine_tuning.test_settings.dataset_name: twitter_complaints_small.json
+    tests.fine_tuning.matbenchmarking.enabled: true
+    fine_tuning.model_registry: hf
+    tests.fine_tuning.test_settings.model_name:
+      - ibm-granite/granite-8b-code-base
+      - ibm-granite/granite-8b-code-instruct
+      - ibm-granite/granite-34b-code-instruct
+      - ibm-granite/granite-3b-code-instruct
+      - meta-llama/Meta-Llama-3-8B-Instruct
+      - mistralai/Mixtral-8x7B-Instruct-v0.1
+      - meta-llama/Llama-2-13b-chat-hf
+      - instructlab/merlinite-7b-lab
+      - ibm/merlinite-7b
+      - meta-llama/Llama-2-70b-chat-hf
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
+    tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
+    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
+    tests.fine_tuning.test_settings.gpu: [4, 8]
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
   dgx_multi_model_ref:
     tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
@@ -149,7 +171,7 @@ secrets:
   brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
   opensearch_instances: opensearch.yaml
   aws_credentials: .awscred
-
+  git_credentials: git-credentials
 clusters:
   metal_profiles:
     p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
@@ -223,11 +245,18 @@ gpu:
 
 fine_tuning:
   image: "quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3" # latest as of 2024-06-20 (RHOAI 2.10)
-  pvc_name: fine-tuning-storage
   pvc:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
+    size: 80Gi
+  model_registry: null # if set to a fine_tuning_sources.* model registry, all the lookups will be done in this registry
   sources:
+    hf:
+      type: model-registry
+      registry_type: model
+      source_dir: 'https://huggingface.co/'
+      secret_key: secrets.git_credentials
+
     twitter_complaints_small.json:
       type: dataset
       source_dir: 'https://raw.githubusercontent.com/foundation-model-stack/fms-hf-tuning/b48249fab3df124d6b85cc8ce59b9e5a66ea6dcb/tests/data'
@@ -241,20 +270,6 @@ fine_tuning:
       type: model
       source_dir: 's3://psap-watsonx-models/fine-tuning/bigscience'
       secret_key: secrets.aws_credentials
-
-    gpt_bigcode-santacoder:
-      type: model
-      source_dir: 'https://huggingface.co/bigcode'
-
-    llama-2-7b-hf:
-      type: model
-      source_dir: 'https://huggingface.co/meta-llama'
-      # automated download not working, needs HuggingFace authentication
-
-    llama-2-13b-hf:
-      type: model
-      source_dir: 'https://huggingface.co/meta-llama'
-      # automated download not working, needs HuggingFace authentication
 tests:
   capture_prom: true
   capture_prom_uwm: false
@@ -288,6 +303,7 @@ tests:
         gradient_accumulation_steps: null
         num_train_epochs: null
         max_seq_length: null
+        peft_method: null
     many_model:
       enabled: false
       count: 20

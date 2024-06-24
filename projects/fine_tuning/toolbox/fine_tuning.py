@@ -39,6 +39,8 @@ class Fine_Tuning:
             worker_replicas=0,
 
             hyper_parameters={},
+
+            sleep_forever=False,
     ):
         """
         Run a simple fine-tuning Job.
@@ -68,6 +70,8 @@ class Fine_Tuning:
           worker_replicas: number of worker replicas to deploy
 
           hyper_parameters: dictionnary of hyper-parameters to pass to sft-trainer
+
+          sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
         """
 
         return RunAnsibleRole(locals())

@@ -16,6 +16,10 @@
   set_fact:
     data_source_name: "{{ cluster_download_to_pvc_name | replace('.', '-') | replace('_', '-') }}"
 
+- name: Store the name of the objects
+  set_fact:
+    download_name: download-{{ data_source_name }}-to-{{ cluster_download_to_pvc_pvc_name }}
+
 - name: Delete the creds secret, if it exists
   command:
     oc delete secret/download-secret-{{ data_source_name }}
@@ -25,23 +29,23 @@
 
 - name: Create the s3 secret
   command:
-    oc create secret generic download-secret-{{ data_source_name }}
+    oc create secret generic {{ download_name }}
        -n {{ cluster_download_to_pvc_namespace }}
        --from-file=cred={{ cluster_download_to_pvc_creds }}
   when: cluster_download_to_pvc_creds | length > 0
 
 - name: Create the entrypoint ConfigMap file
   shell:
-    oc create cm download-to-pvc-{{ data_source_name }}
+    oc create cm {{ download_name }}-entrypoint
        --from-file="entrypoint.sh={{ entrypoint }}"
        -n {{ cluster_download_to_pvc_namespace }}
        --dry-run=client
        -oyaml
-       > {{ artifact_extra_logs_dir }}/configmap_entrypoint.yaml
+       > {{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml
 
 - name: Create the entrypoint ConfigMap resource
   command:
-    oc apply -f {{ artifact_extra_logs_dir }}/configmap_entrypoint.yaml
+    oc apply -f {{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml
 
 - name: Apply the PVC template
   template:
@@ -106,21 +110,21 @@
   always:
   - name: Delete the creds secret, if it was created
     command:
-      oc delete secret/download-secret-{{ data_source_name }}
+      oc delete secret/{{ download_name }}
          -n {{ cluster_download_to_pvc_namespace }}
          --ignore-not-found=true
     when: cluster_download_to_pvc_creds | length > 0
 
   - name: Get the logs of the download Pod (debug)
     shell:
-      oc logs download-{{ data_source_name }}-to-{{ cluster_download_to_pvc_pvc_name }}
+      oc logs {{ download_name }}
          -n {{ cluster_download_to_pvc_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pod.log
     ignore_errors: true
 
   - name: Get the description of the download Pod (debug)
     shell:
-      oc describe pod/download-{{ data_source_name }}-to-{{ cluster_download_to_pvc_pvc_name }}
+      oc describe pod/{{ download_name }}
          -n {{ cluster_download_to_pvc_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
     ignore_errors: true

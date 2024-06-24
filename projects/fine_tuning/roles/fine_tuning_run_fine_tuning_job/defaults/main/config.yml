@@ -61,3 +61,6 @@ fine_tuning_run_fine_tuning_job_worker_replicas: 0
 
 # dictionnary of hyper-parameters to pass to sft-trainer
 fine_tuning_run_fine_tuning_job_hyper_parameters: {}
+
+# if true, sleeps forever instead of running the fine-tuning command.
+fine_tuning_run_fine_tuning_job_sleep_forever: false
