@@ -54,7 +54,7 @@
 
     register: lowest_availability_duration_cmd # eg: -183942.29
     until: lowest_availability_duration_cmd.stdout|float|abs > 300
-    retries: 15
+    retries: 45
     delay: 30
 
   - name: Wait for all the APIServices to be available
