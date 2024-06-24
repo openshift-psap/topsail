@@ -4,7 +4,7 @@ prepare_sutest_deploy_operator() {
     switch_sutest_cluster
 
     process_ctrl::run_in_bg \
-        ./run_toolbox.py from_config cluster deploy_operator --catalog=redhat-operators --manifest_name=openshift-pipelines-operator-rh --namespace=all
+        ./run_toolbox.py  cluster deploy_operator --catalog=redhat-operators --manifest_name=openshift-pipelines-operator-rh --namespace=all
 }
 
 prepare_sutest_deploy_rhods() {

@@ -201,7 +201,6 @@ notebooks dashboard_scale_test:
   namespace: {{ tests.notebooks.namespace }}
   artifacts_collected: {{ tests.notebooks.artifacts_collected }}
   idp_name: {{ ldap.idp_name }}
-  notebook_image_name: {{ tests.notebooks.notebook.image_name }}
   artifacts_exporter_istag: "{{ tests.notebooks.imagestream_name }}:{{ artifacts_exporter_tag }}"
   ods_ci_istag: "{{ tests.notebooks.imagestream_name }}:{{ ods_ci_tag }}"
   ods_ci_test_case: {{ tests.notebooks.ods_ci.test_case }}
