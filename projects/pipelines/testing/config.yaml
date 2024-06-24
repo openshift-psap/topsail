@@ -233,10 +233,10 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 741931
+    tag: 752355
     channel: fast
     version: 2.10.0
-    version_name: rc1
+    version_name: rc4
   pipelines:
     application:
       name: sample
