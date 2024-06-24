@@ -212,6 +212,9 @@ def prepare_cluster():
     """
     prepare_user_pods.apply_prefer_pr()
 
+    if config.ci_artifacts.get_config("clusters.create.ocp.deploy_cluster.target") == "cluster_light":
+        run.run_toolbox("cluster", "wait_fully_awake")
+
     with run.Parallel("prepare_cluster") as parallel:
         parallel.delayed(prepare_test_driver_namespace)
         parallel.delayed(prepare_sutest_scale_up)
