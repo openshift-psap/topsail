@@ -55,7 +55,7 @@ sutest/cluster set_project_annotation/scale_test_toleration:
 fine_tuning run_fine_tuning_job:
   name: {{ tests.fine_tuning.test_settings.job_name }}
   namespace: "{{ tests.fine_tuning.namespace }}"
-  pvc_name: "{{ fine_tuning.pvc_name }}"
+  pvc_name: "{{ fine_tuning.pvc.name }}"
   container_image: "{{ fine_tuning.image }}"
 
   model_name: {{ tests.fine_tuning.test_settings.model_name }}
@@ -67,6 +67,7 @@ cluster download_to_pvc:
 
   pvc_name: "{{ fine_tuning.pvc.name }}"
   pvc_access_mode: "{{ fine_tuning.pvc.access_mode }}"
+  pvc_size: "{{ fine_tuning.pvc.size }}"
   namespace: "{{ tests.fine_tuning.namespace }}"
 
   source: SET_AT_RUNTIME

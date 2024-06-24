@@ -93,7 +93,7 @@ def download_data_sources(test_settings):
     model_name = test_settings["model_name"]
     dataset_name = test_settings["dataset_name"]
 
-    pvc_name = config.ci_artifacts.get_config("fine_tuning.pvc_name")
+    pvc_name = config.ci_artifacts.get_config("fine_tuning.pvc.name")
     sources = config.ci_artifacts.get_config(f"fine_tuning.sources")
 
     dry_mode = config.ci_artifacts.get_config("tests.dry_mode")

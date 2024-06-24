@@ -63,6 +63,7 @@ ci_presets:
     tests.fine_tuning.test_settings.model_name: null
 
   ibm_models:
+    fine_tuning.pvc.size: 2000Gi
     tests.fine_tuning.test_settings.dataset_name: twitter_complaints_small.json
     tests.fine_tuning.matbenchmarking.enabled: true
     fine_tuning.model_registry: hf
@@ -244,10 +245,10 @@ gpu:
 
 fine_tuning:
   image: "quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3" # latest as of 2024-06-20 (RHOAI 2.10)
-  pvc_name: fine-tuning-storage
   pvc:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
+    size: 80Gi
   model_registry: null # if set to a fine_tuning_sources.* model registry, all the lookups will be done in this registry
   sources:
     hf:
