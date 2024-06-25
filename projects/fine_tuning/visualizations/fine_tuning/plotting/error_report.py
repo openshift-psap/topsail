@@ -77,8 +77,10 @@ def _get_test_setup(entry):
     metrics = yaml.safe_load(json.dumps(entry.results.sfttrainer_metrics, default=functools.partial(json_dumper, strict=False)))
     if metrics.get("progress") or metrics.get("summary"):
         exec_info += [html.Li([f"Fine-tuning metrics:", html.Code(yaml.dump(metrics), style={"white-space": "pre-wrap"})])]
-
     setup_info += [html.Ul(exec_info)]
+
+    if entry.results.locations.job_logs:
+        setup_info += [html.Li(html.A("Job logs", href=entry.results.from_local_env.artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]
 
     return setup_info
 
