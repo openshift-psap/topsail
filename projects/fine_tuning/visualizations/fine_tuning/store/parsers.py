@@ -59,6 +59,7 @@ def parse_once(results, dirname):
     results.sfttrainer_metrics = _parse_sfttrainer_logs(dirname)
     results.allocated_resources = _parse_allocated_resources(dirname)
     results.finish_reason = _parse_finish_reason(dirname)
+    results.locations = _prepare_file_locations(dirname)
 
 
 @core_helpers_store_parsers.ignore_file_not_found
@@ -177,3 +178,11 @@ def _parse_finish_reason(dirname):
         finish_reason.message = "Couldn't locate the Pod/container status"
 
     return finish_reason
+
+def _prepare_file_locations(dirname):
+    locations = types.SimpleNamespace()
+    locations.job_logs = register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")
+    if not locations.job_logs.exists():
+        locations.job_logs = None
+
+    return locations
