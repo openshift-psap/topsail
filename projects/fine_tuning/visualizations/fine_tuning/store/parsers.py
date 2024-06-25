@@ -58,6 +58,7 @@ def parse_once(results, dirname):
 
     results.sfttrainer_metrics = _parse_sfttrainer_logs(dirname)
     results.allocated_resources = _parse_allocated_resources(dirname)
+    results.finish_reason = _parse_finish_reason(dirname)
 
 
 @core_helpers_store_parsers.ignore_file_not_found
@@ -151,3 +152,28 @@ def _parse_allocated_resources(dirname):
         allocated_resources.gpu = 0
 
     return allocated_resources
+
+
+def _parse_finish_reason(dirname):
+    finish_reason = types.SimpleNamespace()
+    finish_reason.exit_code = None
+    finish_reason.message = "Parsing did not complete"
+
+    with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.json")) as f:
+        pod_def = json.load(f)
+
+    try:
+        pod_status = pod_def["items"][0]["status"]
+        container_status = pod_status["containerStatuses"]
+
+        if container_terminated_state := container_status[0]["state"].get("terminated"):
+            finish_reason.exit_code = container_terminated_state["exitCode"]
+            finish_reason.message = container_terminated_state.get("message")
+        else:
+            finish_reason.exit_code = None
+            finish_reason.message = "Container did not terminate"
+    except (IndexError, KeyError) as e:
+        finish_reason.exit_code = None
+        finish_reason.message = "Couldn't locate the Pod/container status"
+
+    return finish_reason
