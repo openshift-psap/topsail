@@ -275,6 +275,18 @@ sutest_cleanup() {
         ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated" > /dev/null
         ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated" > /dev/null
     fi
+
+    echo "Checking for Openshift pipelines Operator"
+    if oc get subscription openshift-pipelines-operator-rh -n openshift-operators &>/dev/null; then
+        echo "Uninstalling OpenShift Pipelines Operator"
+        oc delete subscription openshift-pipelines-operator-rh -n openshift-operators
+        if oc get clusterserviceversion -n openshift-operators | grep openshift-pipelines-operator-rh &>/dev/null; then
+            oc delete clusterserviceversion $(oc get clusterserviceversion -n openshift-operators | grep openshift-pipelines-operator-rh | awk '{print $1}') -n openshift-operators
+        fi
+    else
+        echo "OpenShift Pipelines Operator not found"
+    fi
+
 }
 
 sutest_cleanup_rhods() {
