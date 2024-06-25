@@ -39,7 +39,7 @@ def dict_get_from_path(dict_obj, path, default=None):
 
 
 @ignore_file_not_found
-def parse_env(dirname, test_config, capture_state_operators_dir):
+def parse_env(dirname, test_config, capture_state_dir):
     from_env = types.SimpleNamespace()
 
     ansible_env = {}
@@ -50,12 +50,15 @@ def parse_env(dirname, test_config, capture_state_operators_dir):
     from_env.test.ci_engine = None
     from_env.test.urls = {}
 
-    with open(register_important_file(dirname, capture_state_operators_dir / "_ansible.env")) as f:
+    if not capture_state_dir:
+        logging.warning("no capture_state_dir received. Cannot parse the execution environment.")
+        return from_env
+
+    with open(register_important_file(dirname, capture_state_dir / "_ansible.env")) as f:
         for line in f.readlines():
             k, _, v = line.strip().partition("=")
 
             ansible_env[k] = v
-
 
     # ---
     # eg 003__notebook_performance/003__sutest_notebooks__benchmark_performance/
@@ -172,6 +175,10 @@ def parse_test_uuid(dirname):
 def parse_nodes_info(dirname, capture_state_dir, sutest_cluster=True):
     nodes_info = {}
 
+    if not capture_state_dir:
+        logging.warning("no capture_state_dir received. Cannot parse the node information.")
+        return nodes_info
+
     nodes_file = capture_state_dir / "nodes.json"
     with open(register_important_file(dirname, nodes_file)) as f:
         nodeList = json.load(f)
@@ -262,6 +269,10 @@ def parse_rhods_info(dirname, capture_state_dir, version_name=None):
 
 @ignore_file_not_found
 def parse_ocp_version(dirname, capture_state_dir):
+    if not capture_state_dir:
+        logging.warning("no capture_state_dir received. Cannot parse OCP version")
+        return ""
+
     ocp_version_files = list((dirname / capture_state_dir).glob("ocp_version.y*ml"))
 
     if not ocp_version_files:
