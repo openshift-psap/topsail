@@ -68,6 +68,10 @@ def _parse_start_end_time(dirname):
     test_start_end_time.start = None
     test_start_end_time.end = None
 
+    if not artifact_paths.CLUSTER_CAPTURE_ENV_DIR:
+        logging.warning("no capture_state_dir received. Cannot parse the test start/end times.")
+        return test_start_end_time
+
     with open(register_important_file(dirname, artifact_paths.CLUSTER_CAPTURE_ENV_DIR / "_ansible.log")) as f:
         for line in f.readlines():
             time_str = line.partition(",")[0] # ignore the MS
