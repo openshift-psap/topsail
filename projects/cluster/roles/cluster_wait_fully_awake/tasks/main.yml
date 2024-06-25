@@ -50,8 +50,8 @@
         | sort -n \
         | tail -1 \
         | tee /dev/stderr \
-        | jq '.lastTransitionTime | fromdate - now'
-
+        | jq '.lastTransitionTime | fromdate - now' \
+        || true # never let the command fail
     register: lowest_availability_duration_cmd # eg: -183942.29
     until: lowest_availability_duration_cmd.stdout|float|abs > 300
     retries: 45
@@ -65,6 +65,7 @@
       '.items[]
         | select(.status.conditions[] | .type == "Available" and .status == "False")
         | .metadata.name'
+        || true # never let the command fail
     register: apiservices_unavailable
     until: not apiservices_unavailable.stdout
     retries: 15
