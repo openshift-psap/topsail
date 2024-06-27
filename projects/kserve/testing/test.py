@@ -39,7 +39,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
         if not PSAP_ODS_SECRET_PATH.exists():
             raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-        run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
+        run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"', check=False)
 
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
     is_metal = config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
