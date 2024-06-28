@@ -291,8 +291,13 @@ def generate_visualization(do_matbenchmarking, test_artifact_dir):
             exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
 
     prom_plot_workload = config.ci_artifacts.get_config("tests.prom_plot_workload")
-    if not prom_plot_workload:
-        logging.info(f"Setting tests.prom_plot_workload isn't set, nothing else to generate.")
+    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
+
+    if not prom_plot_workload or not capture_prom:
+        if not capture_prom:
+            logging.info(f"Setting tests.capture_prom is disabled, skipping Prometheus visualization.")
+        else:
+            logging.info(f"Setting tests.prom_plot_workload isn't set, nothing else to generate.")
 
         if exc:
             raise exc
