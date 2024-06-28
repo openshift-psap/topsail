@@ -25,7 +25,9 @@
   register: cluster_age_cmd
 
 - name: Approve the CSCR when the cluster has been hibernated (> 3h and <10d)
-  when: cluster_age_cmd|float|abs > 3*60*60 and cluster_age_cmd|float|abs < 10*24*60*60
+  when:
+  - cluster_age_cmd|float|abs > 3*60*60
+  - cluster_age_cmd|float|abs < 10*24*60*60
   block:
   - name: Approve the CSCR
     shell: |
