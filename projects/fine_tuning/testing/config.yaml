@@ -21,7 +21,7 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: null
     tests.fine_tuning.test_settings.dataset_replication: 1
     tests.fine_tuning.test_settings.dataset_name: twitter_complaints_small.json
-    tests.fine_tuning.test_settings.model_name: bloom-560m
+    tests.fine_tuning.test_settings.model_name: bigscience/bloom-560m@hf
 
   gpu:
     gpu.prepare_cluster: true
@@ -322,7 +322,7 @@ tests:
         replicas: 2
     test_settings:
       name: fine-tuning
-      model_name: bloom-560m
+      model_name: bigscience/bloom-560m@hf
       dataset_name: twitter_complaints_small.json
       gpu: 0
       dataset_replication: 1
