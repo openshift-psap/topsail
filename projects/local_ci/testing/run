@@ -73,8 +73,8 @@ def local_ci_prepare():
     # Prepare the ServiceAccount
     #
 
-    run.run(f"oc create serviceaccount {service_account} -n {namespace} --dry-run=client -oyaml | oc apply -f-")
-    run.run(f"oc adm policy add-cluster-role-to-user {role} -z {service_account} -n {namespace}")
+    #run.run(f"oc create serviceaccount {service_account} -n {namespace} --dry-run=client -oyaml | oc apply -f-")
+    #run.run(f"oc adm policy add-cluster-role-to-user {role} -z {service_account} -n {namespace}")
 
     #
     # Prepare the Secrets
