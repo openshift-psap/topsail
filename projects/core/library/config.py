@@ -91,7 +91,7 @@ class Config:
             raise
 
         logging.info(f"Applying preset '{name}' ==> {values}")
-        if not values:
+        if values is None:
             raise ValueError(f"Preset '{name}' does not exists")
 
         presets = self.get_config("ci_presets.names", print=False) or []
