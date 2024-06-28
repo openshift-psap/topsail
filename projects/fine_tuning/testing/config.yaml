@@ -64,23 +64,26 @@ ci_presets:
 
   ibm_models:
     fine_tuning.pvc.size: 2000Gi
-    tests.fine_tuning.test_settings.dataset_name: twitter_complaints_small.json
     tests.fine_tuning.matbenchmarking.enabled: true
     fine_tuning.model_registry: hf
     tests.fine_tuning.test_settings.model_name:
       - ibm-granite/granite-8b-code-base
       - ibm-granite/granite-8b-code-instruct
-      - ibm-granite/granite-34b-code-instruct
+      # - ibm-granite/granite-34b-code-instruct
       - ibm-granite/granite-3b-code-instruct
       - meta-llama/Meta-Llama-3-8B-Instruct
-      - mistralai/Mixtral-8x7B-Instruct-v0.1
-      - meta-llama/Llama-2-13b-chat-hf
+      # - mistralai/Mixtral-8x7B-Instruct-v0.1
+      # - meta-llama/Llama-2-13b-chat-hf
       - instructlab/merlinite-7b-lab
       - ibm/merlinite-7b
-      - meta-llama/Llama-2-70b-chat-hf
+      # - meta-llama/Llama-2-70b-chat-hf
+      - instructlab/granite-7b-lab
+      - meta-llama/llama-2-7b-hf
     tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
     tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+    tests.fine_tuning.test_settings.dataset_replication: 0.1
     tests.fine_tuning.test_settings.gpu: [4, 8]
     tests.fine_tuning.matbenchmarking.stop_on_error: false
 

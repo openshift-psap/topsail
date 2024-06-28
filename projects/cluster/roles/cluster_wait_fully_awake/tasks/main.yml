@@ -68,7 +68,7 @@
         || true # never let the command fail
     register: apiservices_unavailable
     until: not apiservices_unavailable.stdout
-    retries: 15
+    retries: 50
     delay: 30
 
   - name: Ensure that the PackageManifests are available

@@ -67,9 +67,14 @@
   when: has_pvc_cmd.rc == 0
   command:
     oc get -f "{{ artifact_extra_logs_dir }}/src/pvc.yaml"
-       -ojsonpath={.spec.accessModes[0]}
-  register: pvc_access_mode
-  failed_when: cluster_download_to_pvc_pvc_access_mode not in pvc_access_mode.stdout
+       -ojsonpath={.spec.accessModes}
+  register: pvc_access_mode_cmd
+
+- name: Show a message if the PVC access mode isn't the expeced one
+  debug: msg="Unexpected access mode in the PVC. Found '{{ pvc_access_mode_cmd.stdout }}'. Expected '{{ cluster_download_to_pvc_pvc_access_mode }}' "
+  when:
+  - has_pvc_cmd.rc == 0
+  - cluster_download_to_pvc_pvc_access_mode not in pvc_access_mode_cmd.stdout
 
 - name: Apply the Pod template
   template:

@@ -38,6 +38,8 @@ then
         echo "Clone failed :/"
         exit 1
     fi
+    rm -rf "$STORAGE_DIR/${SOURCE_NAME}/.git"
+
 elif [[ "$DOWNLOAD_SOURCE" == "s3://"* ]];
 then
     if [[ -z "${CRED_FILE:-}" ]];

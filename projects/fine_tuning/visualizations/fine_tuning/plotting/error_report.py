@@ -4,6 +4,8 @@ from collections import defaultdict
 import os
 import base64
 import pathlib
+import json, yaml
+import functools
 
 from dash import html
 from dash import dcc
@@ -11,6 +13,7 @@ from dash import dcc
 from matrix_benchmarking.common import Matrix
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
+from matrix_benchmarking.parse import json_dumper
 
 from . import report
 
@@ -46,7 +49,7 @@ def _get_test_setup(entry):
 
         purpose_str = f" {purpose} nodes"
         if purpose == "control_plane": purpose_str = f" nodes running OpenShift control plane"
-        if purpose == "infra": purpose_str = " nodes, running the OpenShift and RHODS infrastructure Pods"
+        if purpose == "infra": purpose_str = " nodes, running the OpenShift and RHOAI infrastructure Pods"
 
         if not nodes:
             node_count = 0
@@ -55,13 +58,32 @@ def _get_test_setup(entry):
             node_count = len(nodes)
             node_type = list(nodes)[0].instance_type
 
+        if node_count == 0:
+            continue
+
         nodes_info_li = [f"{node_count} ", html.Code(node_type), purpose_str]
 
         nodes_info += [html.Li(nodes_info_li)]
 
     setup_info += [html.Ul(nodes_info)]
 
+    setup_info += [html.Li([f"Job execution"])]
+    exec_info = []
+    if entry.results.finish_reason.exit_code:
+        exec_info += [html.Li([f"Exit code:", html.Code(entry.results.finish_reason.exit_code)])]
+    if entry.results.finish_reason.message:
+        exec_info += [html.Li([f"Exit message:", html.Code(entry.results.finish_reason.message, style={"white-space": "pre-wrap"})])]
+
+    metrics = yaml.safe_load(json.dumps(entry.results.sfttrainer_metrics, default=functools.partial(json_dumper, strict=False)))
+    if metrics.get("progress") or metrics.get("summary"):
+        exec_info += [html.Li([f"Fine-tuning metrics:", html.Code(yaml.dump(metrics), style={"white-space": "pre-wrap"})])]
+    setup_info += [html.Ul(exec_info)]
+
+    if entry.results.locations.job_logs:
+        setup_info += [html.Li(html.A("Job logs", href=entry.results.from_local_env.artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]
+
     return setup_info
+
 
 class ErrorReport():
     def __init__(self):
