@@ -22,7 +22,7 @@
 
 - name: Delete the creds secret, if it exists
   command:
-    oc delete secret/download-secret-{{ data_source_name }}
+    oc delete secret/{{ download_name }}
        -n {{ cluster_download_to_pvc_namespace }}
        --ignore-not-found=true
   when: cluster_download_to_pvc_creds | length > 0
