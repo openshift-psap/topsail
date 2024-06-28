@@ -156,6 +156,13 @@ ci_presets:
 
   # ---
 
+  cluster_ibm_dgx:
+    extends: ["metal"]
+    clusters.sutest.compute.machineset.type: "IBM-DGX A100-80GB"
+    tests.fine_tuning.namespace: rhoai-tuning-test
+    fine_tuning.pvc.name: rhoai-tuning-test
+    tests.capture_prom: false
+
   cluster_dgx:
     clusters.sutest.compute.machineset.type: "DGX A100-40GB"
 
@@ -274,7 +281,7 @@ fine_tuning:
       source_dir: 's3://psap-watsonx-models/fine-tuning/bigscience'
       secret_key: secrets.aws_credentials
 tests:
-  capture_prom: true
+  capture_prom: false
   capture_prom_uwm: false
   capture_state: true
   prom_plot_workload: projects.fine_tuning.visualizations.fine_tuning_prom
