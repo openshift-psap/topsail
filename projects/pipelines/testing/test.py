@@ -224,10 +224,14 @@ def prepare_cluster():
     max_concurrent_reconciles = config.ci_artifacts.get_config("tests.pipelines.max_concurrent_reconciles")
     if max_concurrent_reconciles is not None:
         rhoai_down() # Pause RHOAI so we can edit a variable in the DSPO
+        generation_cmd = run.run("oc get -ojson deployment/data-science-pipelines-operator-controller-manager -n redhat-ods-applications | jq '.status.observedGeneration' -r", capture_stdout=True)
+        current_generation = int(generation_cmd.stdout)
+        next_gen = current_generation + 1
         run.run(f"oc set env deployment/data-science-pipelines-operator-controller-manager MAX_CONCURRENT_RECONCILES={str(max_concurrent_reconciles)} -n redhat-ods-applications")
-        # This is less than ideal, but I couldn't find a succinct way to wait until the pods
-        # from this deployment have all succesfully been redeployed
-        time.sleep(30)
+        # Wait for the generation to have been incremented (the controller recognizes a new
+        # version is necessary, and then for new replica to take over 2->1
+        run.run(f"oc wait --for jsonpath='{{.status.observedGeneration}}'={str(next_gen)} deployment/data-science-pipelines-operator-controller-manager -n redhat-ods-applications --timeout=5m")
+        run.run("oc wait --for jsonpath='{.status.replicas}'=1 deployment/data-science-pipelines-operator-controller-manager -n redhat-ods-applications --timeout=5m")
 
 @entrypoint()
 def pipelines_run_one():
