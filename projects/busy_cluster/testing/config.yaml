@@ -1,0 +1,49 @@
+ci_presets:
+  # name of the presets to apply, or null if no preset
+  name: null
+  # list of names of the presets to apply, or a single name, or null if no preset
+  names: null
+
+  cluster_dgx: {}
+    # clusters.sutest.compute.machineset.type: "DGX A100-40GB"
+
+  cluster_icelake: {}
+    # clusters.sutest.compute.machineset.type: "Icelake"
+
+  metal: {}
+
+  # ---
+
+  light:
+    clusters.cleanup_on_exit: true
+
+secrets:
+  dir:
+    name: psap-ods-secret
+    env_key: PSAP_ODS_SECRET_PATH
+  # name of the file containing the properties of LDAP secrets
+  s3_ldap_password_file: s3_ldap.passwords
+  keep_cluster_password_file: get_cluster.password
+  brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+  opensearch_instances: opensearch.yaml
+  aws_credentials: .awscred
+  git_credentials: git-credentials
+
+clusters:
+  metal_profiles:
+    p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
+    e26-h23-000-r650: cluster_icelake
+  cleanup_on_exit: false
+
+rhods:
+  catalog:
+    image: brew.registry.redhat.io/rh-osbs/iib
+    tag: 752361
+    channel: fast
+    version: 2.10.0
+    version_name: rc4
+    opendatahub: false
+    managed_rhoi: true
+  operator:
+    # set to true to stop the RHODS operator
+    stop: false
