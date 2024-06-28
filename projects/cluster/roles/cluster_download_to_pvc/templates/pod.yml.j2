@@ -36,6 +36,8 @@ spec:
       subPath: entrypoint.sh
     - name: storage
       mountPath: /storage
+  serviceAccount: rhoai-tuning-test-sa
+  serviceAccountName: rhoai-tuning-test-sa
   volumes:
 {% if cluster_download_to_pvc_creds | length %}
   - name: download-secret
