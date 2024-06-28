@@ -1,5 +1,5 @@
 base_image:
-  namespace: topsail
+  namespace: rhoai-tuning-test
   imagestream: topsail
   repo:
     url: https://github.com/openshift-psap/topsail/
