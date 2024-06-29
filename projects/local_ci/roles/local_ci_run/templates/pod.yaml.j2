@@ -73,7 +73,7 @@ spec:
       set -o errtrace
       set -x
 
-      trap 'touch "$ARTIFACT_DIR/.local_ci_done"' EXIT
+      trap 'echo $? > "$ARTIFACT_DIR/.local_ci_done"' ERR
 
       cat > "$ARTIFACT_DIR/variable_overrides" <<EOF
       PR_POSITIONAL_ARG_0="{{ local_ci_run_test_name }}"
@@ -90,6 +90,8 @@ spec:
       {{ local_ci_run_init_command }} &> "${ARTIFACT_DIR}/init.log"
 {% endif %}
       run {{ local_ci_run_ci_command }} |& tee "${ARTIFACT_DIR}/run.log"
+      echo 0 > "$ARTIFACT_DIR/.local_ci_done"
+
     image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
     imagePullPolicy: Always
     securityContext:
@@ -168,7 +170,6 @@ spec:
       set -x
       echo 'The main container is done ...'
 
-      declare failed=0
 {% if local_ci_run_export %}
       echo "Running the export command ..."
 
@@ -199,7 +200,7 @@ spec:
 {% endif %}
       echo 'All done, bye.'
 
-      exit $failed
+      exit "$(cat $ARTIFACT_DIR/.local_ci_done)"
 
     image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
     imagePullPolicy: Always
