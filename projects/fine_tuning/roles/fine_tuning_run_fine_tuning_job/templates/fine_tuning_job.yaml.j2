@@ -45,6 +45,8 @@ spec:
             - name: SLEEP_FOREVER
               value: "true"
 {% endif %}
+            - name: MODEL_NAME
+              value: "{{ fine_tuning_run_fine_tuning_job_model_name}}"
             volumeMounts:
             - name: storage-volume
               mountPath: /mnt/storage
