@@ -104,6 +104,12 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: [4, 8]
     tests.fine_tuning.matbenchmarking.stop_on_error: false
 
+  ibm_larger_models:
+    fine_tuning.model_registry: hf
+    tests.fine_tuning.test_settings.model_name:
+    - meta-llama/Meta-Llama-3-70B-Instruct
+    - mistralai/Mixtral-8x7B-Instruct-v0.1
+    - ibm-granite/granite-34b-code-instruct
 
   dgx_multi_model_ref:
     tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
