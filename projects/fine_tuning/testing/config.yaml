@@ -101,11 +101,24 @@ ci_presets:
     tests.fine_tuning.matbenchmarking.stop_on_error: false
 
   ibm_larger_models:
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+    # -- #
     fine_tuning.model_registry: hf
     tests.fine_tuning.test_settings.model_name:
-    - meta-llama/Meta-Llama-3-70B-Instruct
+    # - meta-llama/Meta-Llama-3-70B-Instruct
     - mistralai/Mixtral-8x7B-Instruct-v0.1
     - ibm-granite/granite-34b-code-instruct
+    # -- #
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+    tests.fine_tuning.test_settings.dataset_replication: 0.1
+    tests.fine_tuning.test_settings.gpu: 8
+    # -- #
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
+    tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
+    tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
+    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
+    tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
 
   dgx_multi_model_ref:
     tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
