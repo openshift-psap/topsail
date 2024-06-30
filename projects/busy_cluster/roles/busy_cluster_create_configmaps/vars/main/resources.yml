@@ -1,0 +1,2 @@
+---
+busy_cluster_create_configmaps_template: templates/template.yaml.j2

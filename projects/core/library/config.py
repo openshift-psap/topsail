@@ -11,6 +11,7 @@ import jsonpath_ng
 
 from . import env
 from . import run
+from . import common
 
 VARIABLE_OVERRIDES_FILENAME = "variable_overrides"
 PR_ARG_KEY = "PR_POSITIONAL_ARG_"
@@ -90,7 +91,7 @@ class Config:
             raise
 
         logging.info(f"Applying preset '{name}' ==> {values}")
-        if not values:
+        if values is None:
             raise ValueError(f"Preset '{name}' does not exists")
 
         presets = self.get_config("ci_presets.names", print=False) or []
@@ -197,7 +198,7 @@ class Config:
 
             self.apply_preset(profile)
 
-            run.run_toolbox("cluster", "wait_fully_awake")
+            common.prepare_light_cluster()
 
             return True
 

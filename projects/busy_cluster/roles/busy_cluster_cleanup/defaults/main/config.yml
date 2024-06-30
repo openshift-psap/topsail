@@ -1,0 +1,10 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Busy_Cluster.cleanup
+
+# Parameters
+# the label key to use to locate the namespaces to cleanup
+busy_cluster_cleanup_namespace_label_key: busy-cluster.topsail
+
+# the label value to use to locate the namespaces to cleanup
+busy_cluster_cleanup_namespace_label_value: 'yes'

@@ -1,0 +1,50 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Instantiate the job template
+  template:
+    src: "{{ busy_cluster_create_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/jobs.yaml"
+    mode: '0400'
+
+- name: List all the namespaces matching the label selector
+  command:
+    oc get ns
+       -l{{ busy_cluster_create_jobs_namespace_label_key }}={{ busy_cluster_create_jobs_namespace_label_value }}
+       -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+  register: busy_cluster_namespaces_cmd
+
+- name: Fail if there is no namespace matching the label selector
+  fail: msg="No namespace match the '{{ busy_cluster_create_jobs_namespace_label_key }}={{ busy_cluster_create_jobs_namespace_label_value }}' label selector"
+  when: not busy_cluster_namespaces_cmd.stdout
+
+# ---
+
+- name: Prepare the jobs
+  shell: |
+    set -o pipefail;
+
+    seq -f "%03g" {{ busy_cluster_create_jobs_count }} | while  read job_idx; do
+      cat "{{ artifact_extra_logs_dir }}/src/jobs.yaml" \
+        | yq -y --arg name "{{ busy_cluster_create_jobs_prefix }}-$job_idx" \
+        ' .metadata.name = $name'
+      echo "---"
+    done > "{{ artifact_extra_logs_dir }}/src/jobs_x{{ busy_cluster_create_jobs_count }}.yaml"
+
+- name: Log a message for the job creation
+  debug: msg="Next task will create {{ busy_cluster_create_jobs_count }} jobs x {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces = {{ busy_cluster_create_jobs_count * busy_cluster_namespaces_cmd.stdout_lines|length}} objects"
+
+- name: Log a message for the pod count
+  debug: msg="The jobs will create {{ busy_cluster_create_jobs_count }} jobs x {{ busy_cluster_create_jobs_replicas }} replicas x {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces = {{ busy_cluster_create_jobs_count * busy_cluster_namespaces_cmd.stdout_lines|length * busy_cluster_create_jobs_replicas }} Pods"
+
+- name: Create the jobs in the busy-cluster namespaces
+  loop: "{{ busy_cluster_namespaces_cmd.stdout_lines }}"
+  shell:
+     time oc apply -n "{{ namespace }}"
+      -f "{{ artifact_extra_logs_dir }}/src/jobs_x{{ busy_cluster_create_jobs_count }}.yaml"
+  loop_control:
+    loop_var: namespace

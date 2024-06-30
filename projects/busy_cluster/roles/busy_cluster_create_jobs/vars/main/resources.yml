@@ -1,0 +1,2 @@
+---
+busy_cluster_create_template: templates/job.yaml.j2

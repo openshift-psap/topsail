@@ -1,0 +1,88 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Instantiate the deployment template
+  template:
+    src: "{{ busy_cluster_create_deployments_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/deployments.yaml"
+    mode: '0400'
+
+- name: Instantiate the services template
+  template:
+    src: "{{ busy_cluster_create_deployments_services_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/services.yaml"
+    mode: '0400'
+  when: busy_cluster_create_deployments_services | int > 0
+
+- name: List all the namespaces matching the label selector
+  command:
+    oc get ns
+       -l{{ busy_cluster_create_deployments_namespace_label_key }}={{ busy_cluster_create_deployments_namespace_label_value }}
+       -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+  register: busy_cluster_namespaces_cmd
+
+- name: Fail if there is no namespace matching the label selector
+  fail: msg="No namespace match the '{{ busy_cluster_create_deployments_namespace_label_key }}={{ busy_cluster_create_deployments_namespace_label_value }}' label selector"
+  when: not busy_cluster_namespaces_cmd.stdout
+
+# ---
+
+- name: Prepare the deployments
+  shell: |
+    set -o pipefail;
+
+    seq -f "%03g" {{ busy_cluster_create_deployments_count }} | while  read deploy_idx; do
+      cat "{{ artifact_extra_logs_dir }}/src/deployments.yaml" \
+        | yq -y --arg name "{{ busy_cluster_create_deployments_prefix }}-$deploy_idx" \
+        ' .metadata.name = $name
+        | .spec.selector.matchLabels.app = $name
+        | .spec.template.metadata.labels.app = $name'
+      echo "---"
+    done > "{{ artifact_extra_logs_dir }}/src/deployments_x{{ busy_cluster_create_deployments_count }}.yaml"
+
+- name: Log a message for the deployments creation
+  debug: msg="Next task will create {{ busy_cluster_create_deployments_count }} deployments x {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces = {{ busy_cluster_create_deployments_count * busy_cluster_namespaces_cmd.stdout_lines|length}} objects"
+
+- name: Create the deployments in the busy-cluster namespaces
+  loop: "{{ busy_cluster_namespaces_cmd.stdout_lines }}"
+  shell:
+     time oc apply -n "{{ namespace }}"
+      -f "{{ artifact_extra_logs_dir }}/src/deployments_x{{ busy_cluster_create_deployments_count }}.yaml"
+  loop_control:
+    loop_var: namespace
+
+# ---
+- name: Prepare the services
+  when: busy_cluster_create_deployments_services | int > 0
+  block:
+  - name: Prepare the services
+    shell: |
+      set -o pipefail;
+      set -e;
+
+      seq -f "%03g" {{ busy_cluster_create_deployments_count }} | while  read deploy_idx; do
+        seq -f "%03g" {{ busy_cluster_create_deployments_services }} | while  read svc_idx; do
+          cat "{{ artifact_extra_logs_dir }}/src/services.yaml" \
+            | yq -y \
+            --arg deploy_name "{{ busy_cluster_create_deployments_prefix }}-$deploy_idx" \
+            --arg svc_name "{{ busy_cluster_create_deployments_prefix }}-${deploy_idx}-svc${svc_idx}" \
+            ' .metadata.name = $svc_name
+            | .spec.selector.app = $deploy_name'
+          echo "---"
+        done
+      done > "{{ artifact_extra_logs_dir }}/src/services_x{{ busy_cluster_create_deployments_count }}_x{{ busy_cluster_create_deployments_services }}.yaml"
+
+  - name: Log a message for the services creation
+    debug: msg="Next task will create {{ busy_cluster_create_deployments_count }} x {{ busy_cluster_create_deployments_services }} x {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces = {{ busy_cluster_create_deployments_count * busy_cluster_namespaces_cmd.stdout_lines|length * busy_cluster_create_deployments_services }} objects"
+
+  - name: Create the configmaps in the busy-cluster namespaces
+    loop: "{{ busy_cluster_namespaces_cmd.stdout_lines }}"
+    shell:
+       time oc apply -n "{{ namespace }}"
+        -f "{{ artifact_extra_logs_dir }}/src/services_x{{ busy_cluster_create_deployments_count }}_x{{ busy_cluster_create_deployments_services }}.yaml"
+    loop_control:
+      loop_var: namespace

@@ -11,7 +11,7 @@ import functools
 import yaml
 import fire
 
-from projects.core.library import env, config, run, visualize, configure_logging, export
+from projects.core.library import env, config, run, visualize, configure_logging, export, common
 configure_logging()
 from projects.local_ci.library import prepare_user_pods
 
@@ -39,7 +39,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
         if not PSAP_ODS_SECRET_PATH.exists():
             raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-        run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
+        run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"', check=False)
 
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
     is_metal = config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
@@ -207,6 +207,8 @@ def cleanup_cluster(mute=False):
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
+
+    common.cleanup_cluster()
 
     if not config.ci_artifacts.get_config("prepare.cleanup.enabled"):
         logging.warning("prepare.cleanup.enabled not enabled, cleanup only the test namespaces.")

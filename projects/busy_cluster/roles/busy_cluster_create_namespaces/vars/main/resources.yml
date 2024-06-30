@@ -1,0 +1,2 @@
+---
+busy_cluster_create_namespaces_template: templates/namespace.yaml.j2

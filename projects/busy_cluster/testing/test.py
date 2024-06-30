@@ -14,10 +14,8 @@ import yaml
 import fire
 
 from projects.core.library import env, config, run, visualize, export, common
-import prepare_finetuning, test_finetuning
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 LIGHT_PROFILE = "light"
 METAL_PROFILE = "metal"
@@ -37,7 +35,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
         if not PSAP_ODS_SECRET_PATH.exists():
             raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-        run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
+        run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"', check=False)
 
     config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
     is_metal = config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
@@ -48,6 +46,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
 
         if not profile_applied:
             raise ValueError("Bare-metal cluster not recognized :/ ")
+
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     def decorator(fct):
@@ -63,7 +62,6 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
         return wrapper
     return decorator
 
-# ---
 
 @entrypoint()
 def prepare_ci():
@@ -71,7 +69,11 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
 
-    prepare_finetuning.prepare()
+    run.run_toolbox("busy_cluster", "create_namespaces")
+    run.run_toolbox("busy_cluster", "create_configmaps")
+    run.run_toolbox("busy_cluster", "create_configmaps", as_secrets=True)
+    run.run_toolbox("busy_cluster", "create_deployments")
+    run.run_toolbox("busy_cluster", "create_jobs")
 
 
 @entrypoint()
@@ -80,73 +82,20 @@ def test_ci():
     Runs the test from the CI
     """
 
-    try:
-        test_artifact_dir_p = [None]
-        test_artifact_dir_p[0] = env.ARTIFACT_DIR
+    run.run_toolbox("busy_cluster", "status")
 
-        failed = test_finetuning.test()
-        logging.info("test_finetuning.test " + ("failed" if failed else "passed"))
-
-        return 1 if failed else 0
-    finally:
-        run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
-
-        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
-            cleanup_cluster()
-
-        export.export_artifacts(env.ARTIFACT_DIR, test_step="test_ci")
-
-
-@entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
-def generate_plots_from_pr_args():
-    """
-    Generates the visualization reports from the PR arguments
-    """
-
-    visualize.download_and_generate_visualizations()
-
-    export.export_artifacts(env.ARTIFACT_DIR, test_step="plot")
+    if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+        cleanup_cluster_ci()
 
 
 @entrypoint()
-def cleanup_cluster(mute=False):
+def cleanup_cluster_ci():
     """
-    Restores the cluster to its original state
-    """
-    # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
-
-    common.cleanup_cluster()
-
-    prepare_finetuning.cleanup_cluster()
-
-
-@entrypoint(ignore_secret_path=True)
-def generate_plots(results_dirname):
-    visualize.generate_from_dir(str(results_dirname))
-
-
-@entrypoint(ignore_secret_path=True)
-def export_artifacts(artifacts_dirname):
-    export.export_artifacts(artifacts_dirname)
-
-@entrypoint(ignore_secret_path=True)
-def prepare_namespace():
-    """
-    Prepares the namespace where the fine-tuning jobs will be executed
+    Runs the cluster cleanup
     """
 
-    return prepare_finetuning.prepare_namespace()
+    run.run_toolbox("busy_cluster", "cleanup")
 
-
-@entrypoint()
-def matbench_run_one():
-    """
-    Runs one test as part of a MatrixBenchmark benchmark
-    """
-
-    test_finetuning.matbench_run_one()
-
-# ---
 
 class Entrypoint:
     """
@@ -154,18 +103,10 @@ class Entrypoint:
     """
 
     def __init__(self):
-        self.cleanup_cluster_ci = cleanup_cluster
-
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
-        self.export_artifacts = export_artifacts
+        self.cleanup_cluster_ci = cleanup_cluster_ci
 
-        self.generate_plots_from_pr_args = generate_plots_from_pr_args
-        self.generate_plots = generate_plots
-        self.prepare_namespace = prepare_namespace
-
-        self.matbench_run_one = matbench_run_one
-# ---
 
 def main():
     # Print help rather than opening a pager

@@ -15,7 +15,7 @@ import json
 import yaml
 import fire
 
-from projects.core.library import env, config, run, visualize, sizing
+from projects.core.library import env, config, run, visualize, sizing, common
 from projects.rhods.library import prepare_rhoai
 from projects.local_ci.library import prepare_user_pods
 
@@ -338,6 +338,8 @@ def cleanup_cluster():
     """
     Restores the cluster to its original state
     """
+
+    common.cleanup_cluster()
 
     cleanup_scale_test()
 

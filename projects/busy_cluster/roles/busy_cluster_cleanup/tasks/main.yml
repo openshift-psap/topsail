@@ -1,0 +1,17 @@
+---
+- name: List all the namespaces matching the label selector
+  command:
+    oc get ns
+       -l{{ busy_cluster_cleanup_namespace_label_key }}={{ busy_cluster_cleanup_namespace_label_value }}
+       -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+  register: busy_cluster_namespaces_cmd
+
+- name: Log a message
+  debug: msg="Next task will delete {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces"
+
+- name: Create the configmaps in the busy-cluster namespaces
+  loop: "{{ busy_cluster_namespaces_cmd.stdout_lines }}"
+  command:
+    oc delete namespace "{{ namespace }}"
+  loop_control:
+    loop_var: namespace

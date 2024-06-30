@@ -1,0 +1,3 @@
+---
+busy_cluster_create_deployments_template: templates/deployments.yaml.j2
+busy_cluster_create_deployments_services_template: templates/services.yaml.j2
