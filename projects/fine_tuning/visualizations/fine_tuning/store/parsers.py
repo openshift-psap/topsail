@@ -179,13 +179,18 @@ def _parse_finish_reason(dirname):
 
     return finish_reason
 
+
 def _prepare_file_locations(dirname):
     locations = types.SimpleNamespace()
 
     locations.job_logs = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log"
-    register_important_file(dirname, locations.job_logs)
+    job_logs_file = register_important_file(dirname, locations.job_logs)
 
-    if not pathlib.Path(locations.job_logs).exists():
+    if not job_logs_file.exists():
         locations.job_logs = None
+    else:
+        logging.info(f"Job log file {job_logs_file} does not exist ...")
+
+    locations.config_file = (job_logs_file.parent.parent / "src" / "config_final.json").relative_to(dirname)
 
     return locations
