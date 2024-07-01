@@ -329,11 +329,13 @@ tests:
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
       hyper_parameters:
+        # hyper-parameters need to be listed here to allow setting their value in the presets
         per_device_train_batch_size: null
         gradient_accumulation_steps: null
         num_train_epochs: null
         max_seq_length: null
         peft_method: null
+        use_flash_attn: null
     many_model:
       enabled: false
       count: 20
