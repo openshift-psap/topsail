@@ -67,6 +67,8 @@ def _get_test_setup(entry):
 
     setup_info += [html.Ul(nodes_info)]
 
+    setup_info += [html.Li([f"Job configuration:", html.Code(yaml.dump(entry.results.job_config), style={"white-space": "pre-wrap"})])]
+
     setup_info += [html.Li([f"Job execution"])]
     exec_info = []
     if entry.results.finish_reason.exit_code:
@@ -80,7 +82,8 @@ def _get_test_setup(entry):
     setup_info += [html.Ul(exec_info)]
 
     if entry.results.locations.job_logs:
-        setup_info += [html.Li(html.A("Job logs", href=entry.results.from_local_env.artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]
+        setup_info += [html.Li(html.A("Job logs", href=artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]
+    setup_info += [html.Li(html.A("Fine-tuning config", href=artifacts_basedir / entry.results.locations.config_file, target="_blank"))]
 
     return setup_info
 

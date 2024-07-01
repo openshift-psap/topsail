@@ -21,7 +21,7 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: null
     tests.fine_tuning.test_settings.dataset_replication: 1
     tests.fine_tuning.test_settings.dataset_name: twitter_complaints_small.json
-    tests.fine_tuning.test_settings.model_name: bloom-560m
+    tests.fine_tuning.test_settings.model_name: bigscience/bloom-560m@hf
 
   gpu:
     gpu.prepare_cluster: true
@@ -62,30 +62,50 @@ ci_presets:
     tests.fine_tuning.multi_model.enabled: true
     tests.fine_tuning.test_settings.model_name: null
 
-  ibm_models:
+  ibm_40gb_models:
     fine_tuning.pvc.size: 2000Gi
     tests.fine_tuning.matbenchmarking.enabled: true
     fine_tuning.model_registry: hf
     tests.fine_tuning.test_settings.model_name:
-      - ibm-granite/granite-8b-code-base
-      - ibm-granite/granite-8b-code-instruct
-      # - ibm-granite/granite-34b-code-instruct
-      - ibm-granite/granite-3b-code-instruct
-      - meta-llama/Meta-Llama-3-8B-Instruct
-      # - mistralai/Mixtral-8x7B-Instruct-v0.1
-      # - meta-llama/Llama-2-13b-chat-hf
-      - instructlab/merlinite-7b-lab
-      - ibm/merlinite-7b
-      # - meta-llama/Llama-2-70b-chat-hf
-      - instructlab/granite-7b-lab
-      - meta-llama/llama-2-7b-hf
+    - ibm-granite/granite-8b-code-base
+    - ibm-granite/granite-8b-code-instruct
+    - ibm-granite/granite-3b-code-instruct
+    - meta-llama/Meta-Llama-3-8B-Instruct
+    - instructlab/merlinite-7b-lab
+    - ibm/merlinite-7b
+    - instructlab/granite-7b-lab
+    - meta-llama/llama-2-7b-hf
     tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
     tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.dataset_replication: 0.1
+    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+  ibm_large_models:
+    extends: [cluster_ibm_dgx]
+    tests.fine_tuning.matbenchmarking.enabled: true
+    fine_tuning.model_registry: hf
+    tests.fine_tuning.test_settings.model_name:
+    - meta-llama/Meta-Llama-3-8B-Instruct
+    - meta-llama/Llama-2-13b-chat-hf
+    - ibm-granite/granite-8b-code-instruct
+    - ibm-granite/granite-20b-code-instruct
+    # tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
+    tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
+    # tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+    tests.fine_tuning.test_settings.dataset_replication: 0.1
     tests.fine_tuning.test_settings.gpu: [4, 8]
     tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+  ibm_larger_models:
+    fine_tuning.model_registry: hf
+    tests.fine_tuning.test_settings.model_name:
+    - meta-llama/Meta-Llama-3-70B-Instruct
+    - mistralai/Mixtral-8x7B-Instruct-v0.1
+    - ibm-granite/granite-34b-code-instruct
 
   dgx_multi_model_ref:
     tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
@@ -155,6 +175,13 @@ ci_presets:
     matbench.lts.opensearch.instance: smoke
 
   # ---
+
+  cluster_ibm_dgx:
+    extends: ["metal"]
+    clusters.sutest.compute.machineset.type: "IBM-DGX A100-80GB"
+    tests.fine_tuning.namespace: rhoai-tuning-test
+    fine_tuning.pvc.name: rhoai-tuning-test
+    tests.capture_prom: false
 
   cluster_dgx:
     clusters.sutest.compute.machineset.type: "DGX A100-40GB"
@@ -274,7 +301,7 @@ fine_tuning:
       source_dir: 's3://psap-watsonx-models/fine-tuning/bigscience'
       secret_key: secrets.aws_credentials
 tests:
-  capture_prom: true
+  capture_prom: false
   capture_prom_uwm: false
   capture_state: true
   prom_plot_workload: projects.fine_tuning.visualizations.fine_tuning_prom
@@ -293,7 +320,7 @@ tests:
         replicas: 2
     test_settings:
       name: fine-tuning
-      model_name: bloom-560m
+      model_name: bigscience/bloom-560m@hf
       dataset_name: twitter_complaints_small.json
       gpu: 0
       dataset_replication: 1
@@ -302,11 +329,13 @@ tests:
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
       hyper_parameters:
+        # hyper-parameters need to be listed here to allow setting their value in the presets
         per_device_train_batch_size: null
         gradient_accumulation_steps: null
         num_train_epochs: null
         max_seq_length: null
         peft_method: null
+        use_flash_attn: null
     many_model:
       enabled: false
       count: 20
