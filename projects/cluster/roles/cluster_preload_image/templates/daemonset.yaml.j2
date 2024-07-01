@@ -12,11 +12,11 @@ spec:
       labels:
         name: {{ cluster_preload_image_name }}
     spec:
-{% if cluster_preload_image_node_selector_key|length %}
+{% if cluster_preload_image_node_selector_key | length %}
       nodeSelector:
         {{ cluster_preload_image_node_selector_key }}: "{{ cluster_preload_image_node_selector_value }}"
 {% endif %}
-{% if cluster_preload_image_pod_toleration_key|length %}
+{% if cluster_preload_image_pod_toleration_key | length %}
       tolerations:
       - key: "{{ cluster_preload_image_pod_toleration_key }}"
         operator: "Exists"

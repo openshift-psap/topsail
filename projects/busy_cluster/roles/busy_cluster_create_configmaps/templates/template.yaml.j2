@@ -16,6 +16,6 @@ metadata:
 {% endfor %}
 data:
 {% for idx in range(busy_cluster_create_configmaps_entries) %}
-    {%- set random_string = lookup('password', '/dev/null length='+(busy_cluster_create_configmaps_entry_values_length|string)+' chars=ascii_letters,digits') %}
+    {%- set random_string = lookup('password', '/dev/null length='+(busy_cluster_create_configmaps_entry_values_length | string)+' chars=ascii_letters,digits') %}
     {{ busy_cluster_create_configmaps_entry_keys_prefix }}{{ idx}}: "{{ random_string }}"
 {% endfor %}

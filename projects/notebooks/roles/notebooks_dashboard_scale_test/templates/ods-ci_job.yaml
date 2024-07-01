@@ -91,7 +91,7 @@ spec:
         - name: dashboard-scale-test-entrypoint
           mountPath: /mnt/dashboard-scale-test-entrypoint
       restartPolicy: Never
-{% if notebooks_dashboard_scale_test_toleration_key|length %}
+{% if notebooks_dashboard_scale_test_toleration_key | length %}
       tolerations:
       - effect: NoSchedule
         key: {{ notebooks_dashboard_scale_test_toleration_key }}

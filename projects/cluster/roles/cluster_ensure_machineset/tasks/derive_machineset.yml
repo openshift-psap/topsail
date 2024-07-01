@@ -58,7 +58,7 @@
 
     jq <<< "$new_machineset_json" > "{{ artifact_extra_logs_dir }}/new_machineset.json"
        --arg disk_size {{ cluster_ensure_machineset_disk_size }}
-       '.spec.template.spec.providerSpec.value.blockDevices[0].ebs.volumeSize = ($disk_size|tonumber)'
+       '.spec.template.spec.providerSpec.value.blockDevices[0].ebs.volumeSize = ($disk_size | tonumber)'
 
 - name: Create/Update the new MachineSet resource
   command: oc apply -f '{{ artifact_extra_logs_dir }}/new_machineset.json'

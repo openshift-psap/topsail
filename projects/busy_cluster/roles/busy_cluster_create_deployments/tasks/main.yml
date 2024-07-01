@@ -45,7 +45,7 @@
     done > "{{ artifact_extra_logs_dir }}/src/deployments_x{{ busy_cluster_create_deployments_count }}.yaml"
 
 - name: Log a message for the deployments creation
-  debug: msg="Next task will create {{ busy_cluster_create_deployments_count }} deployments x {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces = {{ busy_cluster_create_deployments_count * busy_cluster_namespaces_cmd.stdout_lines|length}} objects"
+  debug: msg="Next task will create {{ busy_cluster_create_deployments_count }} deployments x {{ busy_cluster_namespaces_cmd.stdout_lines | length }} namespaces = {{ busy_cluster_create_deployments_count * busy_cluster_namespaces_cmd.stdout_lines | length }} objects"
 
 - name: Create the deployments in the busy-cluster namespaces
   loop: "{{ busy_cluster_namespaces_cmd.stdout_lines }}"
@@ -77,7 +77,7 @@
       done > "{{ artifact_extra_logs_dir }}/src/services_x{{ busy_cluster_create_deployments_count }}_x{{ busy_cluster_create_deployments_services }}.yaml"
 
   - name: Log a message for the services creation
-    debug: msg="Next task will create {{ busy_cluster_create_deployments_count }} x {{ busy_cluster_create_deployments_services }} x {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces = {{ busy_cluster_create_deployments_count * busy_cluster_namespaces_cmd.stdout_lines|length * busy_cluster_create_deployments_services }} objects"
+    debug: msg="Next task will create {{ busy_cluster_create_deployments_count }} x {{ busy_cluster_create_deployments_services }} x {{ busy_cluster_namespaces_cmd.stdout_lines | length }} namespaces = {{ busy_cluster_create_deployments_count * busy_cluster_namespaces_cmd.stdout_lines | length * busy_cluster_create_deployments_services }} objects"
 
   - name: Create the configmaps in the busy-cluster namespaces
     loop: "{{ busy_cluster_namespaces_cmd.stdout_lines }}"

@@ -104,7 +104,7 @@
       set -o pipefail;
       oc get OAuth/cluster -ojson
          | jq --argjson idp "$(yq . "{{ artifact_extra_logs_dir }}/oauth_ldap.yaml" -c)"
-              '.spec.identityProviders[.spec.identityProviders|length] |= $idp'
+              '.spec.identityProviders[.spec.identityProviders | length] |= $idp'
          | oc apply -f-
     when: cluster_deploy_ldap_idp_name not in oauth_idp_names_cmd.stdout
 
