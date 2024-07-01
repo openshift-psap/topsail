@@ -34,6 +34,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
     f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.log",
     f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.json",
+    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/_ansible.play.yaml",
 ]
 
 
@@ -60,6 +61,7 @@ def parse_once(results, dirname):
     results.allocated_resources = _parse_allocated_resources(dirname)
     results.finish_reason = _parse_finish_reason(dirname)
     results.locations = _prepare_file_locations(dirname)
+    results.job_config = _parse_job_config(dirname)
 
 
 @core_helpers_store_parsers.ignore_file_not_found
@@ -194,3 +196,19 @@ def _prepare_file_locations(dirname):
     locations.config_file = (job_logs_file.parent.parent / "src" / "config_final.json").relative_to(dirname)
 
     return locations
+
+
+def _parse_job_config(dirname):
+    job_config = {}
+
+    PREFIX = "fine_tuning_run_fine_tuning_job_"
+
+    with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "_ansible.play.yaml")) as f:
+        ansible_play = yaml.safe_load(f)
+
+    for k, v in ansible_play[0]["vars"].items():
+        if not k.startswith(PREFIX): continue
+
+        job_config[k.replace(PREFIX, "")] = v
+
+    return job_config
