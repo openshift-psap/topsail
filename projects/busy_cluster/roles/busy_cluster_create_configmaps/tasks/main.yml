@@ -36,7 +36,7 @@
     done > "{{ artifact_extra_logs_dir }}/src/{{ kind }}s_x{{ busy_cluster_create_configmaps_count }}.yaml"
 
 - name: Log a message
-  debug: msg="Next task will create {{ busy_cluster_create_configmaps_count }} {{ kind }}s x {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces = {{ busy_cluster_create_configmaps_count * busy_cluster_namespaces_cmd.stdout_lines|length}} objects"
+  debug: msg="Next task will create {{ busy_cluster_create_configmaps_count }} {{ kind }}s x {{ busy_cluster_namespaces_cmd.stdout_lines | length }} namespaces = {{ busy_cluster_create_configmaps_count * busy_cluster_namespaces_cmd.stdout_lines | length }} objects"
 
 - name: Create the configmaps in the busy-cluster namespaces
   loop: "{{ busy_cluster_namespaces_cmd.stdout_lines }}"

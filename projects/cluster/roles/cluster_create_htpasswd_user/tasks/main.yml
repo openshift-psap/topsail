@@ -40,7 +40,7 @@
     set -o pipefail;
     oc get OAuth/cluster -ojson
        | jq --argjson idp "$(yq . "{{ artifact_extra_logs_dir }}/oauth_htpasswd.yaml" -c)"
-            '.spec.identityProviders[.spec.identityProviders|length] |= $idp'
+            '.spec.identityProviders[.spec.identityProviders | length] |= $idp'
        | oc apply -f-
 
 - name: Delete the group, if it exists

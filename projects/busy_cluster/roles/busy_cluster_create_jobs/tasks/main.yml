@@ -36,10 +36,10 @@
     done > "{{ artifact_extra_logs_dir }}/src/jobs_x{{ busy_cluster_create_jobs_count }}.yaml"
 
 - name: Log a message for the job creation
-  debug: msg="Next task will create {{ busy_cluster_create_jobs_count }} jobs x {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces = {{ busy_cluster_create_jobs_count * busy_cluster_namespaces_cmd.stdout_lines|length}} objects"
+  debug: msg="Next task will create {{ busy_cluster_create_jobs_count }} jobs x {{ busy_cluster_namespaces_cmd.stdout_lines | length }} namespaces = {{ busy_cluster_create_jobs_count * busy_cluster_namespaces_cmd.stdout_lines | length }} objects"
 
 - name: Log a message for the pod count
-  debug: msg="The jobs will create {{ busy_cluster_create_jobs_count }} jobs x {{ busy_cluster_create_jobs_replicas }} replicas x {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces = {{ busy_cluster_create_jobs_count * busy_cluster_namespaces_cmd.stdout_lines|length * busy_cluster_create_jobs_replicas }} Pods"
+  debug: msg="The jobs will create {{ busy_cluster_create_jobs_count }} jobs x {{ busy_cluster_create_jobs_replicas }} replicas x {{ busy_cluster_namespaces_cmd.stdout_lines | length }} namespaces = {{ busy_cluster_create_jobs_count * busy_cluster_namespaces_cmd.stdout_lines | length * busy_cluster_create_jobs_replicas }} Pods"
 
 - name: Create the jobs in the busy-cluster namespaces
   loop: "{{ busy_cluster_namespaces_cmd.stdout_lines }}"

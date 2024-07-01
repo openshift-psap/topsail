@@ -123,7 +123,7 @@ spec:
         - name: rhods-notebook-locust-entrypoint
           mountPath: /mnt/rhods-notebook-locust-entrypoint
       restartPolicy: Never
-{% if notebooks_locust_scale_test_toleration_key|length %}
+{% if notebooks_locust_scale_test_toleration_key | length %}
       tolerations:
       - effect: NoSchedule
         key: {{ notebooks_locust_scale_test_toleration_key }}

@@ -13,16 +13,16 @@ spec:
     image: registry.access.redhat.com/ubi8/ubi
     command: [bash, /mnt/entrypoint/entrypoint.sh]
     env:
-{% if benchmarking_deploy_coco_dataset_s3_cred|length %}
+{% if benchmarking_deploy_coco_dataset_s3_cred | length %}
     - name: CRED_FILE
       value: /etc/s3-secret/cococred.csv
 {% endif %}
-{% if benchmarking_deploy_coco_dataset_storage_dir|length %}
+{% if benchmarking_deploy_coco_dataset_storage_dir | length %}
     - name: STORAGE_DIR
       value: {{ benchmarking_deploy_coco_dataset_storage_dir }}
 {% endif %}
     volumeMounts:
-{% if benchmarking_deploy_coco_dataset_s3_cred|length %}
+{% if benchmarking_deploy_coco_dataset_s3_cred | length %}
     - name: s3-secret
       mountPath: /etc/s3-secret
       readOnly: true
@@ -34,7 +34,7 @@ spec:
     - name: storage
       mountPath: /storage/
   volumes:
-{% if benchmarking_deploy_coco_dataset_s3_cred|length %}
+{% if benchmarking_deploy_coco_dataset_s3_cred | length %}
   - name: s3-secret
     secret:
       secretName: s3-secret

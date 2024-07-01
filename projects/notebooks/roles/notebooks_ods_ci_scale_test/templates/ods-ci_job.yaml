@@ -119,7 +119,7 @@ spec:
         - name: rhods-notebook-ux-e2e-scale-test-entrypoint
           mountPath: /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint
       restartPolicy: Never
-{% if notebooks_ods_ci_scale_test_toleration_key|length %}
+{% if notebooks_ods_ci_scale_test_toleration_key | length %}
       tolerations:
       - effect: NoSchedule
         key: {{ notebooks_ods_ci_scale_test_toleration_key }}

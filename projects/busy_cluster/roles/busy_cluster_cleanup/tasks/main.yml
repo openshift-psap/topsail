@@ -7,7 +7,7 @@
   register: busy_cluster_namespaces_cmd
 
 - name: Log a message
-  debug: msg="Next task will delete {{ busy_cluster_namespaces_cmd.stdout_lines|length }} namespaces"
+  debug: msg="Next task will delete {{ busy_cluster_namespaces_cmd.stdout_lines | length }} namespaces"
 
 - name: Create the configmaps in the busy-cluster namespaces
   loop: "{{ busy_cluster_namespaces_cmd.stdout_lines }}"
