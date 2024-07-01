@@ -80,7 +80,7 @@ def _get_test_setup(entry):
     setup_info += [html.Ul(exec_info)]
 
     if entry.results.locations.job_logs:
-        setup_info += [html.Li(html.A("Job logs", href=entry.results.from_local_env.artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]
+        setup_info += [html.Li(html.A("Job logs", href=artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]
 
     return setup_info
 

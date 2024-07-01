@@ -181,8 +181,11 @@ def _parse_finish_reason(dirname):
 
 def _prepare_file_locations(dirname):
     locations = types.SimpleNamespace()
-    locations.job_logs = register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")
-    if not locations.job_logs.exists():
+
+    locations.job_logs = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log"
+    register_important_file(dirname, locations.job_logs)
+
+    if not pathlib.Path(locations.job_logs).exists():
         locations.job_logs = None
 
     return locations
