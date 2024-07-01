@@ -25,17 +25,18 @@
   register: cluster_age_cmd
 
 - name: Approve the CSCR when the cluster has been hibernated (> 3h and <10d)
-  when:
-  - cluster_age_cmd|float|abs > 3*60*60
-  - cluster_age_cmd|float|abs < 10*24*60*60
+  # when:
+  # - cluster_age_cmd|float|abs > 3*60*60
+  # - cluster_age_cmd|float|abs < 10*24*60*60
   block:
   - name: Approve the CSCR
     shell: |
       {{ lookup('file', approve_csrs_file) }}
     register: approved_csr
     until: false
-    retries: 20
-    delay: 30
+    retries: 3
+    delay: 1
+    failed_when: false
 
 - name: Wait for the Clusteroperators and APIServices to be available
   block:
