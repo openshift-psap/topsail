@@ -49,8 +49,11 @@ echo "# SFT-Trainer configuration:"
 cat "$SFT_TRAINER_CONFIG_JSON_PATH"
 
 echo "# sha256sum of the $MODEL_NAME files"
-time find "/mnt/storage/model/$MODEL_NAME" ! -path '*/.git/*' -type f -exec sha256sum {} \;
-du -sh "/mnt/storage/model/$MODEL_NAME"
+if [[ -f "/mnt/storage/model/{$MODEL_NAME}.sha256sum" ]]; then
+    cat "/mnt/storage/model/{$MODEL_NAME}.sha256sum"
+else
+    time find "/mnt/storage/model/$MODEL_NAME" ! -path '*/.git/*' -type f -exec sha256sum {} \; | tee -a "/mnt/storage/model/{$MODEL_NAME}.sha256sum"
+fi
 
 if [[ -e /dev/nvidiactl ]]; then
     echo "# GPU available:"
