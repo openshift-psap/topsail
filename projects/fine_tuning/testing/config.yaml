@@ -314,7 +314,7 @@ fine_tuning:
       source_dir: 's3://psap-watsonx-models/fine-tuning/bigscience'
       secret_key: secrets.aws_credentials
 tests:
-  capture_prom: false
+  capture_prom: true
   capture_prom_uwm: false
   capture_state: true
   prom_plot_workload: projects.fine_tuning.visualizations.fine_tuning_prom
