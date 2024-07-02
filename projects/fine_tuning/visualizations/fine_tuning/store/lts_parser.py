@@ -36,7 +36,10 @@ def generate_lts_metadata(results, import_settings):
 def generate_lts_results(results):
     results_lts = types.SimpleNamespace()
 
-    results_lts.skeleton_results = True
+    results_lts.dataset_tokens_per_second = results.sfttrainer_metrics.summary.train_tokens_per_second
+    num_gpus = results.job_config["gpu"]
+    results_lts.gpu_hours_per_million_tokens = 1/results.sfttrainer_metrics.summary.train_tokens_per_second * 1000000 / 60 / 60 * num_gpus
+    results_lts.train_samples_per_second = results.sfttrainer_metrics.summary.train_samples_per_second
 
     return results_lts
 
@@ -59,10 +62,23 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.kpi_settings_version = models_lts.KPI_SETTINGS_VERSION
 
     lts_settings.ocp_version = results.ocp_version
+    lts_settings.rhoai_version = results.rhods_info.full_version
+    lts_settings.container_image = results.job_config["model_name"]
+    lts_settings.instance_type = results.test_config.get("clusters.sutest.compute.machineset.type")
+
+    lts_settings.model_name = results.job_config["model_name"]
+    lts_settings.tuning_method = results.tuning_config.get("peft_method", "none")
+    if lts_settings.tuning_method in ("none" , None):
+        lts_settings.tuning_method = "full"
+
+    lts_settings.accelerator_type = gpu_names or "no accelerator"
+    lts_settings.accelerator_count = results.job_config["gpu"]
+    lts_settings.batch_size = results.tuning_config["per_device_train_batch_size"] * lts_settings.accelerator_count
 
     lts_settings.ci_engine = results.from_env.test.ci_engine
     lts_settings.run_id = results.from_env.test.run_id
     lts_settings.test_path = results.from_env.test.test_path
+
     lts_settings.urls = results.from_env.test.urls
 
     return lts_settings

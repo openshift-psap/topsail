@@ -83,7 +83,7 @@ def _get_test_setup(entry):
 
     if entry.results.locations.job_logs:
         setup_info += [html.Li(html.A("Job logs", href=artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]
-    setup_info += [html.Li(html.A("Fine-tuning config", href=artifacts_basedir / entry.results.locations.config_file, target="_blank"))]
+    setup_info += [html.Li(html.A("Fine-tuning config", href=artifacts_basedir / entry.results.locations.tuning_config_file, target="_blank"))]
 
     return setup_info
 

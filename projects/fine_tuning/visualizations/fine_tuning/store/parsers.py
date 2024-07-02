@@ -24,6 +24,7 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
 artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tuning_job"
+artifact_dirnames.RHODS_CAPTURE_STATE = "*__rhods__capture_state"
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
 IMPORTANT_FILES = [
@@ -32,9 +33,12 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/_ansible.log",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
+    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/src/config_final.json",
     f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.log",
     f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.json",
     f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/_ansible.play.yaml",
+    f"{artifact_dirnames.RHODS_CAPTURE_STATE}/rhods.createdAt",
+    f"{artifact_dirnames.RHODS_CAPTURE_STATE}/rhods.version",
 ]
 
 
@@ -54,6 +58,7 @@ def parse_once(results, dirname):
     results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
     results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
     results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
+    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, artifact_paths.RHODS_CAPTURE_STATE, results.test_config.get("rhods.catalog.version_name"))
 
     results.test_start_end_time = _parse_start_end_time(dirname)
 
@@ -62,7 +67,7 @@ def parse_once(results, dirname):
     results.finish_reason = _parse_finish_reason(dirname)
     results.locations = _prepare_file_locations(dirname)
     results.job_config = _parse_job_config(dirname)
-
+    results.tuning_config = _parse_tuning_config(dirname, results.locations.tuning_config_file)
 
 @core_helpers_store_parsers.ignore_file_not_found
 def _parse_start_end_time(dirname):
@@ -150,7 +155,6 @@ def _parse_allocated_resources(dirname):
 
     try:
         allocated_resources.gpu = int(pod_def["items"][0]["spec"]["containers"][0]["resources"]["limits"]["nvidia.com/gpu"])
-        print(allocated_resources.gpu)
     except (IndexError, KeyError):
         allocated_resources.gpu = 0
 
@@ -190,10 +194,9 @@ def _prepare_file_locations(dirname):
 
     if not job_logs_file.exists():
         locations.job_logs = None
-    else:
         logging.info(f"Job log file {job_logs_file} does not exist ...")
 
-    locations.config_file = (job_logs_file.parent.parent / "src" / "config_final.json").relative_to(dirname)
+    locations.tuning_config_file = (job_logs_file.parent.parent / "src" / "config_final.json").relative_to(dirname)
 
     return locations
 
@@ -212,3 +215,10 @@ def _parse_job_config(dirname):
         job_config[k.replace(PREFIX, "")] = v
 
     return job_config
+
+
+def _parse_tuning_config(dirname, tuning_config_file_location):
+    with open(register_important_file(dirname, tuning_config_file_location)) as f:
+        tuning_config = json.load(f)
+
+    return tuning_config
