@@ -11,12 +11,11 @@ from . import kpi
 KPI_SETTINGS_VERSION = "1.0"
 class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
-
-    instance_type: str
-    accelerator_name: str
-
     ocp_version: matbench_models.SemVer
     rhoai_version: matbench_models.SemVer
+    instance_type: str
+
+    accelerator_name: str
 
     ci_engine: str
     run_id: str
