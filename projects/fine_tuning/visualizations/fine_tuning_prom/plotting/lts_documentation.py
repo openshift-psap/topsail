@@ -81,6 +81,7 @@ def generateOneLtsDocumentationReport(entry, kpi_data):
         labels_str = ", ".join(f"{k}=\"{v}\"" for k, v in labels.items())
         kpis += [html.Li([html.P([html.Code(f"# HELP {name} {kpi.help}"), html.Br(),
                                   html.Code(f"# UNIT {name} {kpi.unit}"), html.Br(),
+                                  html.Code(f"# VALUE {kpi.value}"), html.Br(),
                                   html.Code(f"{name}{{{labels_str}}} {kpi.value}")])])]
 
         kpi_entry |= kpi.__dict__
