@@ -198,15 +198,11 @@ ci_presets:
     extends: [e2e_perf, gating, 3min, raw, use_intlab_minio]
     # kserve.model.directory_prefix: cpt
     tests.e2e.models:
-    - name: flan-t5-xl
-      testing:
-        size: small
-        max_concurrency: 32
     - name: flan-t5-xxl
       testing:
         size: small
         max_concurrency: 32
-    - name: japanese-llama-2-7b-instruct
+    - name: llama-3-8b-instruct
       testing:
         size: small
         max_concurrency: 32
@@ -222,10 +218,20 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 32
-    - name: llama-2-70b-chat-hf
+    - name: llama-3-70b-instruct
       testing:
         size: large
     - name: codellama-34b-instruct-hf
+      testing:
+        size: large
+    - name: granite-3b-code-instruct
+      testing:
+        size: small
+    - name: granite-8b-code-instruct
+      testing:
+        size: small
+        max_concurrency: 64
+    - name: granite-20b-code-instruct
       testing:
         size: large
     matbench.lts.horreum.test_name: rhoai-kserve-single
@@ -268,7 +274,7 @@ ci_presets:
   vllm_cpt_single_model_gating:
     extends: [e2e_perf, gating, 3min, raw, use_intlab_minio, vllm]
     tests.e2e.models:
-    - name: japanese-llama-2-7b-instruct
+    - name: llama-3-8b-instruct
       testing:
        size: small
        max_concurrency: 64
@@ -280,7 +286,7 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 64
-    - name: llama-2-70b-chat-hf
+    - name: llama-3-70b-instruct
       testing:
         size: large
     - name: codellama-34b-instruct-hf
@@ -291,6 +297,16 @@ ci_presets:
         size: small
         max_concurrency: 64
     - name: mixtral-8x7b
+      testing:
+        size: large
+    - name: granite-3b-code-instruct
+      testing:
+        size: small
+    - name: granite-8b-code-instruct
+      testing:
+        size: small
+        max_concurrency: 64
+    - name: granite-20b-code-instruct
       testing:
         size: large
     matbench.lts.horreum.test_name: rhoai-kserve-single

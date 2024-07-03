@@ -18,8 +18,8 @@ spec:
       runtime: vllm-servingruntime # Overwritten by templates
       storageUri: s3://override
       args:
-      - --dtype=float16
       - --tensor-parallel-size=1
+      - --dtype=auto
       resources:
         requests:
           cpu: "2"
