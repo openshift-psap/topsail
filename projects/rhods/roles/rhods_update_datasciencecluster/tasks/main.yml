@@ -144,3 +144,9 @@
     shell:
       oc get datasciencecluster/{{ datasciencecluster_name }} -oyaml
          > "{{ artifact_extra_logs_dir }}/artifacts/datascience_cluster.yaml"
+
+  - name: Capture the logs of the RHOAI operator
+    shell:
+      oc logs {{ operator_name_cmd.stdout }}
+        -n "{{ ods_namespace }}"
+        > "{{ artifact_extra_logs_dir }}/artifacts/operator.log"
