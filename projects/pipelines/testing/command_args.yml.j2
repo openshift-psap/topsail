@@ -69,12 +69,14 @@ pipelines run_kfp_notebook:
   dsp_application_name: {{ rhods.pipelines.application.name }}
   notebook_filename: {{ tests.pipelines.notebook_filename }}
   notebook_directory: {{ tests.pipelines.notebook_directory }}
+  capture_extra_artifacts: {{ tests.pipelines.capture_extra_artifacts }}
+  wait_for_run_completion: {{ tests.pipelines.wait_for_run_completion }}
 
 pipelines capture_state:
   namespace: {{ rhods.pipelines.namespace }}
   dsp_application_name: {{ rhods.pipelines.application.name }}
   user_id: SET_AT_RUNTIME
-  user_count: {{ tests.pipelines.user_count }}
+  capture_extra_artifacts: {{ tests.pipelines.capture_extra_artifacts }}
 
 base_image/cluster build_push_image:
   namespace: "{{ base_image.namespace }}"

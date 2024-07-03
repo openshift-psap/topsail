@@ -38,3 +38,9 @@ pipelines_run_kfp_notebook_capture_artifacts: true
 
 # If True, captures the Prometheus DB of the systems.
 pipelines_run_kfp_notebook_capture_prom_db: false
+
+# whether to capture extra descriptions and YAML's
+pipelines_run_kfp_notebook_capture_extra_artifacts: true
+
+# Whether to wait for one runs completion before starting the next
+pipelines_run_kfp_notebook_wait_for_run_completion: false

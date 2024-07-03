@@ -162,6 +162,10 @@ class UserExecutionOverviewReport():
         header += Plot_and_Text(f"Run Creation Delay", set_config(dict(dspa_only=True), args))
         header += ["This plot shows how long the delay is between when a Run is submitted via the API and when the root Workflow of the Pipeline is created. The lower the better."]
 
+        header += [html.H2("Run Duration")]
+        header += Plot_and_Text(f"Run Duration", set_config(dict(dspa_only=True), args))
+        header += ["This plot shows the duration between when the user triggers a Run and when the user sees the Run is completed. The lower the better."]
+
         return None, header
 
 

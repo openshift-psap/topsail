@@ -39,6 +39,8 @@ class Pipelines:
                          stop_on_exit=True,
                          capture_artifacts=True,
                          capture_prom_db=False,
+                         capture_extra_artifacts=True,
+                         wait_for_run_completion=False,
                          ):
         """
         Run a notebook in a given notebook image.
@@ -56,6 +58,8 @@ class Pipelines:
           stop_on_exit: If False, keep the notebook running after the test.
           capture_artifacts: If False, disable the post-test artifact collection.
           capture_prom_db: If True, captures the Prometheus DB of the systems.
+          capture_extra_artifacts: whether to capture extra descriptions and YAML's
+          wait_for_run_completion: Whether to wait for one runs completion before starting the next
         """
 
         return RunAnsibleRole(locals())
@@ -63,7 +67,7 @@ class Pipelines:
 
     @AnsibleRole("pipelines_capture_state")
     @AnsibleMappedParams
-    def capture_state(self, dsp_application_name="", namespace="", user_id="", user_count=0):
+    def capture_state(self, dsp_application_name="", namespace="", user_id="", capture_extra_artifacts=True):
         """
         Captures the state of a Data Science Pipeline Application in a given namespace.
 
@@ -71,7 +75,7 @@ class Pipelines:
           dsp_application_name: the name of the application
           namespace: the namespace in which the application was deployed
           user_id: identifier of the user to capture
-          user_count: how many total users there are in the scale test being run
+          capture_extra_artifacts: whether to capture extra descriptions and YAML's
         """
 
         return RunAnsibleRole(locals())

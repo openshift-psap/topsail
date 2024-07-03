@@ -6,10 +6,6 @@
       - "mariadb"
       - "minio"
 
-- name: Check if the test is small (< 50 users)
-  set_fact:
-    is_small_test: "{% if pipelines_capture_state_user_count < 50 %}true{% else %}false{% endif %}"
-
 - name: Get the name of the current project
   command:
     oc project --short
@@ -45,32 +41,32 @@
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/events.status"
   ignore_errors: true
-  when: is_small_test
+  when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Get the json definition of the events
   shell:
     oc get events -ojson
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/events.json"
-  when: is_small_test
+  when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Save the workflow status
   shell:
     oc get workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.status"
   ignore_errors: true
-  when: is_small_test
+  when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Save the pipeline description
   shell:
     oc describe workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.desc"
   ignore_errors: true
-  when: is_small_test
+  when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Save the pipeline definition
   shell:
     oc get -oyaml workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.yaml"
   ignore_errors: true
-  when: is_small_test
+  when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Save the pipeline JSON definition
   shell:
@@ -102,7 +98,7 @@
        -n "{{ namespace }}"
        > "{{ artifact_extra_logs_dir }}/pods.status"
   register: dspa_pod_names_cmd
-  when: is_small_test
+  when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Get the names of the pods
   shell: |
@@ -130,7 +126,7 @@
        --all-containers --prefix
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.log"
   ignore_errors: true
-  when: is_small_test
+  when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Capture the description of the application pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
@@ -139,7 +135,7 @@
        -n {{ namespace }}
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.desc"
   ignore_errors: true
-  when: is_small_test
+  when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Capture the yaml definition of the pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
@@ -149,7 +145,7 @@
        -oyaml
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.yaml"
   ignore_errors: true
-  when: is_small_test
+  when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Capture the json definition of the pods
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
@@ -213,4 +209,10 @@
     oc rsh -n {{ namespace }}
        deploy/mariadb-{{ dspa_application_name }}
        mysqldump -u root mlpipeline > "{{ artifact_extra_logs_dir }}/database.sql"
-  when: is_small_test
+  when: pipelines_capture_state_capture_extra_artifacts
+
+- name: Get a snapshot of the DSPO
+  shell:
+    oc describe pod -lapp.opendatahub.io/data-science-pipelines-operator=true
+      -n redhat-ods-applications
+      > "{{ artifact_extra_logs_dir }}/dspo.desc"

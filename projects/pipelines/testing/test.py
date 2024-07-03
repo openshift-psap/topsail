@@ -65,13 +65,17 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     return decorator
 # ---
 
-def customize_rhods():
-    if not config.ci_artifacts.get_config("rhods.operator.stop"):
-        return
+def rhoai_down():
+    # Pause RHOAI by scaling replicas -> 0
+    if run.run(f'oc get deploy/rhods-operator -n redhat-ods-operator 2>/dev/null', check=False).returncode == 0:
+        run.run("oc patch deployment.apps/rhods-operator -n redhat-ods-operator --type merge -p '{\"spec\": {\"replicas\": 0}}'")
+        run.run("oc wait --for jsonpath='{.spec.replicas}'=0 deployment.apps/rhods-operator -n redhat-ods-operator --timeout=5m")
 
-    run.run("oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator")
-    time.sleep(10)
-
+def rhoai_up():
+    # Resume RHOAI by scaling replicas -> 1
+    if run.run(f'oc get deploy/rhods-operator -n redhat-ods-operator 2>/dev/null', check=False).returncode == 0:
+        run.run("oc patch deployment.apps/rhods-operator -n redhat-ods-operator --type merge -p '{\"spec\": {\"replicas\": 1}}'")
+        run.run("oc wait --for jsonpath='{.status.availableReplicas}'=1 deployment.apps/rhods-operator -n redhat-ods-operator --timeout=5m")
 
 def install_ocp_pipelines():
     installed_csv_cmd = run.run("oc get csv -oname", capture_stdout=True)
@@ -106,7 +110,8 @@ def prepare_rhods():
 
     run.run_toolbox("rhods", "update_datasciencecluster", enable=["datasciencepipelines", "workbenches"],
                     name=None if has_dsc else "default-dsc")
-    customize_rhods()
+
+    rhoai_down()
 
     run.run_toolbox_from_config("cluster", "deploy_ldap")
 
@@ -207,6 +212,9 @@ def prepare_cluster():
     """
     prepare_user_pods.apply_prefer_pr()
 
+    if config.ci_artifacts.get_config("clusters.create.ocp.deploy_cluster.target") == "cluster_light":
+        run.run_toolbox("cluster", "wait_fully_awake")
+
     with run.Parallel("prepare_cluster") as parallel:
         parallel.delayed(prepare_test_driver_namespace)
         parallel.delayed(prepare_sutest_scale_up)
@@ -215,12 +223,15 @@ def prepare_cluster():
     # Update the MAX_CONCURRENT_RECONCILES if needed
     max_concurrent_reconciles = config.ci_artifacts.get_config("tests.pipelines.max_concurrent_reconciles")
     if max_concurrent_reconciles is not None:
-        updated_param = {
-            "data": {
-                "MAX_CONCURRENT_RECONCILES": str(max_concurrent_reconciles)
-            }
-        }
-        run.run(f"oc patch cm data-science-pipelines-operator-dspo-parameters -n redhat-ods-applications --patch '{json.dumps(updated_param)}'")
+        rhoai_down() # Pause RHOAI so we can edit a variable in the DSPO
+        generation_cmd = run.run("oc get -ojson deployment/data-science-pipelines-operator-controller-manager -n redhat-ods-applications | jq '.status.observedGeneration' -r", capture_stdout=True)
+        current_generation = int(generation_cmd.stdout)
+        next_gen = current_generation + 1
+        run.run(f"oc set env deployment/data-science-pipelines-operator-controller-manager MAX_CONCURRENT_RECONCILES={str(max_concurrent_reconciles)} -n redhat-ods-applications")
+        # Wait for the generation to have been incremented (the controller recognizes a new
+        # version is necessary, and then for new replica to take over 2->1
+        run.run(f"oc wait --for jsonpath='{{.status.observedGeneration}}'={str(next_gen)} deployment/data-science-pipelines-operator-controller-manager -n redhat-ods-applications --timeout=5m")
+        run.run("oc wait --for jsonpath='{.status.replicas}'=1 deployment/data-science-pipelines-operator-controller-manager -n redhat-ods-applications --timeout=5m")
 
 @entrypoint()
 def pipelines_run_one():
@@ -339,6 +350,7 @@ def cleanup_cluster():
     Restores the cluster to its original state
     """
 
+    rhoai_up()
     common.cleanup_cluster()
 
     cleanup_scale_test()
