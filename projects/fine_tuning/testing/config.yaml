@@ -62,10 +62,16 @@ ci_presets:
     tests.fine_tuning.multi_model.enabled: true
     tests.fine_tuning.test_settings.model_name: null
 
-  ibm_40gb_models:
+  hf_evaluation:
     fine_tuning.pvc.size: 2000Gi
     tests.fine_tuning.matbenchmarking.enabled: true
     fine_tuning.model_registry: hf
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+    tests.fine_tuning.test_settings.dataset_replication: 0.1
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+  ibm_40gb_models:
+    extends: [hf_evaluation]
     tests.fine_tuning.test_settings.model_name:
     - ibm-granite/granite-8b-code-base
     - ibm-granite/granite-8b-code-instruct
@@ -78,15 +84,10 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
     tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
-    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
-    tests.fine_tuning.test_settings.dataset_replication: 0.1
     tests.fine_tuning.test_settings.gpu: 8
-    tests.fine_tuning.matbenchmarking.stop_on_error: false
 
   ibm_large_models:
-    extends: [cluster_ibm_dgx]
-    tests.fine_tuning.matbenchmarking.enabled: true
-    fine_tuning.model_registry: hf
+    extends: [hf_evaluation]
     tests.fine_tuning.test_settings.model_name:
     - meta-llama/Meta-Llama-3-8B-Instruct
     - meta-llama/Llama-2-13b-chat-hf
@@ -95,28 +96,30 @@ ci_presets:
     # tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
     # tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
-    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
-    tests.fine_tuning.test_settings.dataset_replication: 0.1
     tests.fine_tuning.test_settings.gpu: [4, 8]
-    tests.fine_tuning.matbenchmarking.stop_on_error: false
 
   ibm_larger_models:
-    tests.fine_tuning.matbenchmarking.enabled: true
-    tests.fine_tuning.matbenchmarking.stop_on_error: false
-    # -- #
-    fine_tuning.model_registry: hf
+    extends: [hf_evaluation]
     tests.fine_tuning.test_settings.model_name:
-    # - meta-llama/Meta-Llama-3-70B-Instruct
     - mistralai/Mixtral-8x7B-Instruct-v0.1
     - ibm-granite/granite-34b-code-instruct
-    # -- #
-    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
-    tests.fine_tuning.test_settings.dataset_replication: 0.1
-    tests.fine_tuning.test_settings.gpu: 8
     # -- #
     tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
     tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
+    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
+    tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
+
+  ibm_largest_models:
+    extends: [hf_evaluation]
+    tests.fine_tuning.test_settings.model_name:
+    - meta-llama/Meta-Llama-3-70B-Instruct
+    # -- #
+    tests.fine_tuning.test_settings.gpu: 8
+    # -- #
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
+    tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
+    tests.fine_tuning.test_settings.hyper_parameters.peft_method: "lora"
     tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
     tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
 
@@ -220,6 +223,7 @@ clusters:
     p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
     e26-h23-000-r650: cluster_icelake
     cc37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
+    fmaas-devstage-backen-9cjgj-worker-a100-il-rdma-3-nc7c8: cluster_ibm_dgx
   create:
     type: single # can be: single, ocp, managed
     keep: false
