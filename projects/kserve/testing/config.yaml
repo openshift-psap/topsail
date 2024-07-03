@@ -493,9 +493,9 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 741931
-    channel: stable
-    version: 2.10.0
+    tag: 757487
+    channel: fast
+    version: 2.11.0
     version_name: rc1
     opendatahub: false
     managed_rhoai: false
