@@ -7,10 +7,20 @@ from pydantic import BaseModel, Field
 import matrix_benchmarking.models as matbench_models
 from . import kpi
 
-KPI_SETTINGS_VERSION = "1.1"
+KPI_SETTINGS_VERSION = "1.0"
 class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
     ocp_version: matbench_models.SemVer
+    rhoai_version: matbench_models.SemVer
+    instance_type: str
+
+    accelerator_type: str
+    accelerator_count: int
+
+    model_name: str
+    tuning_method: str
+    batch_size: int
+    container_image: str
 
     ci_engine: str
     run_id: str
@@ -29,14 +39,16 @@ class Metadata(matbench_models.Metadata):
 
 
 class Results(matbench_models.ExclusiveModel):
-    skeleton_results: bool
+    dataset_tokens_per_second: float
+    gpu_hours_per_million_tokens: float
+    train_samples_per_second: float
 
 
-class SkeletonKPI(matbench_models.KPI, Settings): pass
+class KPI(matbench_models.KPI, Settings): pass
 
-SkeletonKPIs = matbench_models.getKPIsModel("SkeletonKPIs", __name__, kpi.KPIs, SkeletonKPI)
+KPIs = matbench_models.getKPIsModel("KPIs", __name__, kpi.KPIs, KPI)
 
 class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata
     results: Results
-    kpis: SkeletonKPIs
+    kpis: KPIs

@@ -71,10 +71,13 @@ def parse_env(dirname, test_config, capture_state_dir):
         _prefix, _, from_env.test.test_path = source_url.partition(f"{from_env.test.run_id}/artifacts/")
     else:
         try:
-            from_env.test.test_path = str((current_artifact_dir / dirname).relative_to(base_artifact_dir))
+            if str(current_artifact_dir).endswith(str(dirname)):
+                base = pathlib.Path(str(current_artifact_dir).replace(str(dirname), ""))
+                from_env.test.test_path = str((base / dirname).relative_to(base_artifact_dir))
+            else:
+                from_env.test.test_path = str((current_artifact_dir / dirname).relative_to(base_artifact_dir))
         except ValueError:
             from_env.test.test_path = str(dirname)
-
 
     if ansible_env.get("TOPSAIL_LOCAL_CI") == "true":
         from_env.test.ci_engine = "TOPSAIL_LOCAL_CI"
