@@ -21,9 +21,15 @@ os.chdir(TOPSAIL_DIR)
 
 
 def reset_prometheus(delay=60):
-    if not config.ci_artifacts.get_config("tests.capture_prom"):
+    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
+    if not capture_prom:
         logging.info("tests.capture_prom is disabled, skipping Prometheus DB reset")
         return
+
+    prom_start_ts = datetime.datetime.now()
+
+    if capture_prom == "with-queries":
+        return prom_start_ts
 
     if config.ci_artifacts.get_config("tests.dry_mode"):
         logging.info("tests.dry_mode is enabled, skipping Prometheus DB reset")
@@ -37,15 +43,46 @@ def reset_prometheus(delay=60):
     logging.info(f"Wait {delay}s for Prometheus to restart collecting data ...")
     time.sleep(delay)
 
+    return prom_start_ts # not used at the moment. Returned for consistency.
 
-def dump_prometheus(delay=60):
-    if not config.ci_artifacts.get_config("tests.capture_prom"):
+
+def dump_prometheus(prom_start_ts, delay=60):
+    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
+    if not capture_prom:
         logging.info("tests.capture_prom is disabled, skipping Prometheus DB dump")
         return
 
     if config.ci_artifacts.get_config("tests.dry_mode"):
         logging.info("tests.dry_mode is enabled, skipping Prometheus DB dump")
         return
+
+    if capture_prom == "with-queries":
+        if config.ci_artifacts.get_config("tests.capture_prom_uwm"):
+            logging.error("tests.capture_prom_uwm not supported with capture Prom with queries")
+
+        prom_end_ts = datetime.datetime.now()
+        args = dict(
+            duration_s = (prom_end_ts - prom_start_ts).total_seconds(),
+            promquery_file = TESTING_THIS_DIR / "metrics.txt",
+            dest_dir = env.ARTIFACT_DIR / "metrics",
+            namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace"),
+        )
+
+        with env.NextArtifactDir("cluster__dump_prometheus_dbs"):
+            run.run_toolbox("cluster", "query_prometheus_db", **args)
+            with env.NextArtifactDir("cluster__dump_prometheus_db"):
+                with open(env.ARTIFACT_DIR / "prometheus.tar.dummy", "w") as f:
+                    print(f"""This file is a dummy.
+Metrics have been queried from Prometheus and saved into {args['dest_dir']}.
+Keep this file here, so that 'projects/fine_tuning/visualizations/fine_tuning_prom/store/parsers.py' things Prometheus metrics have been captured,
+and it directly processes the cached files from the metrics directory.""", file=f)
+                nodes = run.run("oc get nodes -ojson", capture_stdout=True)
+                with open(env.ARTIFACT_DIR / "nodes.json", "w") as f:
+                    print(nodes.stdout.strip(), file=f)
+
+        return
+
+    # prom_start_ts not used when during full prometheus dump.
 
     logging.info(f"Wait {delay}s for Prometheus to finish collecting data ...")
     time.sleep(delay)
@@ -56,7 +93,7 @@ def dump_prometheus(delay=60):
             parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
 
 
-def generate_prom_results(expe_name):
+def generate_prom_results(expe_name, prom_start_ts):
     anchor_file = env.ARTIFACT_DIR / ".matbench_prom_db_dir"
     if anchor_file.exists():
         raise ValueError(f"File {anchor_file} already exist. It should be in a dedicated directory.")
@@ -71,8 +108,7 @@ def generate_prom_results(expe_name):
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
         yaml.dump(config.ci_artifacts.config, f, indent=4)
 
-    dump_prometheus()
-
+    dump_prometheus(prom_start_ts)
 
     if (config.ci_artifacts.get_config("tests.capture_state")
         and not config.ci_artifacts.get_config("tests.dry_mode")
@@ -125,7 +161,7 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     _start_ts = datetime.datetime.now()
     start_ts = None
     if not do_multi_model:
-        reset_prometheus()
+        prom_start_ts = reset_prometheus()
 
     with env.NextArtifactDir("test_fine_tuning"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
@@ -153,7 +189,7 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
             exc = None
             if not do_multi_model:
-                exc = run.run_and_catch(exc, generate_prom_results, "single-model")
+                exc = run.run_and_catch(exc, generate_prom_results, "single-model", prom_start_ts)
 
             if config.ci_artifacts.get_config("tests.capture_state"):
                 exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)
@@ -193,7 +229,7 @@ def _run_test_multi_model(test_artifact_dir_p):
             with lock:
                 failed = True
 
-    reset_prometheus()
+    prom_start_ts = reset_prometheus()
 
     with env.NextArtifactDir("multi_model"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
@@ -226,7 +262,7 @@ def _run_test_multi_model(test_artifact_dir_p):
             with lock:
                 failed = True
         finally:
-            generate_prom_results("multi-model")
+            generate_prom_results("multi-model", prom_start_ts)
 
     return failed
 
