@@ -58,7 +58,7 @@ def get_kpi_labels(lts_payload):
 
 
 def generate_lts_settings(lts_metadata, results, import_settings):
-    gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu])
+    gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu and node_info.gpu.product])
     gpu_names = "|".join(map(str, gpus))
 
     lts_settings = types.SimpleNamespace()
