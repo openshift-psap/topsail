@@ -263,6 +263,57 @@ class Cluster:
 
         return RunAnsibleRole(locals())
 
+    @AnsibleRole("cluster_query_prometheus_db")
+    @AnsibleMappedParams
+    def query_prometheus_db(
+            self,
+            promquery_file,
+            dest_dir,
+            namespace,
+            duration_s=0,
+            start_ts=None,
+            end_ts=None,
+    ):
+        """
+        Query Prometheus with a list of PromQueries read in a file
+
+        The metrics_file is a multi-line list, with first the name of the metric, prefixed with '#'
+        Then the definition of the metric, than can spread on multiple lines, until the next # is found.
+
+        Example:
+          promquery_file:
+            # sutest__cluster_cpu_capacity
+            sum(cluster:capacity_cpu_cores:sum)
+            # sutest__cluster_memory_requests
+               sum(
+                    kube_pod_resource_request{resource="memory"}
+                    *
+                    on(node) group_left(role) (
+                      max by (node) (kube_node_role{role=~".+"})
+                    )
+                  )
+            # openshift-operators CPU request
+            sum(kube_pod_container_resource_requests{namespace=~'openshift-operators',resource='cpu'})
+            # openshift-operators CPU limit
+            sum(kube_pod_container_resource_limits{namespace=~'openshift-operators',resource='cpu'})
+            # openshift-operators CPU usage
+            sum(rate(container_cpu_usage_seconds_total{namespace=~'openshift-operators'}[5m]))
+
+        Args:
+          promquery_file: file where the Prometheus Queries are stored. See the example above to understand the format.
+          dest_dir: directory where the metrics should be stored
+          duration_s: the duration of the history to query
+          namespace: the namespace where the metrics should searched for
+          start_ts: the start timestamp of the history to query. Incompatible with duration_s flag.
+          end_ts: the end timestamp of the history to query. Incompatible with duration_s flag.
+        """
+
+        if duration_s and (start_ts or end_ts):
+            logging.error(f"duration_s={duration_s} and start_ts={start_ts}/end_ts={end_ts} cannot be passed together")
+            sys.exit(1)
+
+        return RunAnsibleRole(locals())
+
     @AnsibleRole("cluster_destroy_ocp")
     @AnsibleMappedParams
     def destroy_ocp(self, region="", tag="", confirm=False, tag_value="owned", openshift_install="openshift-install"):

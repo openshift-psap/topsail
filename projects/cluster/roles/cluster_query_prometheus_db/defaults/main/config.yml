@@ -1,0 +1,25 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.query_prometheus_db
+
+# Parameters
+# file where the Prometheus Queries are stored. See the example above to understand the format.
+# Mandatory value
+cluster_query_prometheus_db_promquery_file:
+
+# directory where the metrics should be stored
+# Mandatory value
+cluster_query_prometheus_db_dest_dir:
+
+# the namespace where the metrics should searched for
+# Mandatory value
+cluster_query_prometheus_db_namespace:
+
+# the duration of the history to query
+cluster_query_prometheus_db_duration_s: 0
+
+# the start timestamp of the history to query. Incompatible with duration_s flag.
+cluster_query_prometheus_db_start_ts: null
+
+# the end timestamp of the history to query. Incompatible with duration_s flag.
+cluster_query_prometheus_db_end_ts: null

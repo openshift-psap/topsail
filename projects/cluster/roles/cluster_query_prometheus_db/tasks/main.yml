@@ -1,0 +1,52 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Make sure that the dest directory exists
+  file:
+    path: "{{ cluster_query_prometheus_db_dest_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Ensure that the PromQuery file exists
+  stat:
+    path: "{{ cluster_query_prometheus_db_promquery_file }}"
+  register: promquery_file_stat
+  failed_when: not promquery_file_stat.stat.exists
+
+- name: Ensure that the user-monitoring is enabled
+  shell:
+    set -o pipefail;
+
+    oc get cm/cluster-monitoring-config -n openshift-monitoring -ojsonpath={.data} | jq '.["config.yaml"]' -r | yq .enableUserWorkload
+  register: has_user_monitoring_cmd
+  failed_when: has_user_monitoring_cmd.stdout != "true"
+
+- name: Save the metrics file
+  command:
+    cp "{{ cluster_query_prometheus_db_promquery_file }}" "{{ artifact_extra_logs_dir }}/src/metrics.txt"
+
+- name: Show the dest directory
+  debug: msg="Saving the metrics into {{ cluster_query_prometheus_db_dest_dir }}"
+
+- name: Parse the promquery file
+  shell:
+    set -o pipefail;
+
+    python3 {{ query_prometheus }}
+           "{{ cluster_query_prometheus_db_promquery_file }}"
+           "{{ cluster_query_prometheus_db_dest_dir }}"
+           --duration_s "{{ cluster_query_prometheus_db_duration_s }}"
+           --start_ts "{{ cluster_query_prometheus_db_start_ts }}"
+           --end_ts "{{ cluster_query_prometheus_db_end_ts }}"
+           --namespace "{{ cluster_query_prometheus_db_namespace }}"
+           | tee "{{ artifact_extra_logs_dir }}/artifacts/query_prometheus.log"
