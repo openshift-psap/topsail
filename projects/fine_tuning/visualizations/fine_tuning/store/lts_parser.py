@@ -66,7 +66,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
 
     lts_settings.ocp_version = results.ocp_version
     lts_settings.rhoai_version = results.rhods_info.full_version
-    lts_settings.container_image = results.job_config["model_name"]
+    lts_settings.container_image = results.job_config["container_image"]
     lts_settings.instance_type = results.test_config.get("clusters.sutest.compute.machineset.type")
 
     lts_settings.model_name = results.job_config["model_name"]
