@@ -39,7 +39,7 @@ class Metadata(matbench_models.Metadata):
 
 
 class Results(matbench_models.ExclusiveModel):
-    dataset_tokens_per_second: float
+    train_tokens_per_second: float
     gpu_hours_per_million_tokens: float
     train_samples_per_second: float
 
