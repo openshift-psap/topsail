@@ -275,10 +275,10 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 752361
+    tag: 757482
     channel: fast
-    version: 2.10.0
-    version_name: rc4
+    version: 2.11.0
+    version_name: rc1
     opendatahub: false
     managed_rhoi: true
   operator:
