@@ -204,14 +204,19 @@ def parse_nodes_info(dirname, capture_state_dir, sutest_cluster=True):
         node_info.infra = not node_info.control_plane
 
         if node["metadata"]["labels"].get("nvidia.com/gpu.present"):
+            product = node["metadata"]["labels"].get("nvidia.com/gpu.product")
+            if not product:
+                node_info.gpu = None
+                continue
+
             node_info.gpu = types.SimpleNamespace()
 
-            node_info.gpu.product = node["metadata"]["labels"].get("nvidia.com/gpu.product")
+            node_info.gpu.product = product
             if node["metadata"]["labels"].get("nvidia.com/gpu.memory"):
                 node_info.gpu.memory = int(node["metadata"]["labels"].get("nvidia.com/gpu.memory")) / 1000
             if node["metadata"]["labels"].get("nvidia.com/gpu.count"):
                 node_info.gpu.count = int(node["metadata"]["labels"].get("nvidia.com/gpu.count"))
-                
+
         else :
             node_info.gpu = None
 
