@@ -98,6 +98,7 @@ SFT_TRAINER_SUMMARY_KEYS = {
     "train_samples_per_second": types.SimpleNamespace(lower_better=False, units="samples/second"),
     "train_steps_per_second": types.SimpleNamespace(lower_better=False, units="steps/second"),
     "train_tokens_per_second": types.SimpleNamespace(lower_better=False, units="tokens/second"),
+    "dataset_tokens_per_second": types.SimpleNamespace(lower_better=False, units="tokens/second", computed=True),
 }
 
 # dataset stats: {"total_tokens": 356, "total_samples": 10, "avg_tokens_per_sample": 36, "max_seq_token": 50}
@@ -130,6 +131,7 @@ def _parse_sfttrainer_logs(dirname):
         # this will raise a KeyError if a key is missing in `summary`
         # this means that we are not parsing the data we're expecting.
         for key in SFT_TRAINER_SUMMARY_KEYS:
+            if SFT_TRAINER_SUMMARY_KEYS[key].__dict__.get("computed", False): continue
             setattr(sfttrainer_metrics.summary, key, summary[key])
 
     def parse_progress(key, data):
@@ -165,6 +167,8 @@ def _parse_sfttrainer_logs(dirname):
             _garbage, found_dataset_stats, line_data = line.strip().partition("dataset stats: ")
             if found_dataset_stats:
                 parse_dataset_stats(line_data)
+
+    sfttrainer_metrics.summary.dataset_tokens_per_second = sfttrainer_metrics.dataset_stats.total_tokens / sfttrainer_metrics.summary.train_runtime
 
     return sfttrainer_metrics
 
