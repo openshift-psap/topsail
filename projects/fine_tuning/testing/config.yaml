@@ -189,7 +189,7 @@ ci_presets:
     clusters.sutest.compute.machineset.type: "IBM-DGX A100-80GB"
     tests.fine_tuning.namespace: rhoai-tuning-test
     fine_tuning.pvc.name: rhoai-tuning-test
-    tests.capture_prom: false
+    tests.capture_prom: with-queries
 
   cluster_dgx:
     clusters.sutest.compute.machineset.type: "DGX A100-40GB"
@@ -331,7 +331,7 @@ tests:
       name: fine-tuning
       model_name: bigscience/bloom-560m@hf
       dataset_name: twitter_complaints_small.json
-      gpu: 0
+      gpu: 1
       dataset_replication: 1
       worker_replicas: 0
       container_image: null

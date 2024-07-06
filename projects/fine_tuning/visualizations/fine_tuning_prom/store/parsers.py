@@ -84,7 +84,7 @@ def _find_test_timestamps(dirname):
                 if "expe" in test_timestamp.settings:
                     del test_timestamp.settings["expe"]
 
-                if hyper_parameters := test_timestamp.settings.pop("hyper_parameters"):
+                if hyper_parameters := test_timestamp.settings.pop("hyper_parameters", None):
                     for hyper_parameter_name, value in hyper_parameters.items():
                         test_timestamp.settings[f"hyper_parameters.{hyper_parameter_name}"] = value
 

@@ -98,7 +98,17 @@ SFT_TRAINER_SUMMARY_KEYS = {
     "train_samples_per_second": types.SimpleNamespace(lower_better=False, units="samples/second"),
     "train_steps_per_second": types.SimpleNamespace(lower_better=False, units="steps/second"),
     "train_tokens_per_second": types.SimpleNamespace(lower_better=False, units="tokens/second"),
+    "dataset_tokens_per_second": types.SimpleNamespace(lower_better=False, units="tokens/second", computed=True),
 }
+
+# dataset stats: {"total_tokens": 356, "total_samples": 10, "avg_tokens_per_sample": 36, "max_seq_token": 50}
+
+DATASET_STATS_KEYS = [
+    "total_tokens",
+    "total_samples",
+    "avg_tokens_per_sample",
+    "max_seq_token",
+]
 
 SFT_TRAINER_PROGRESS_KEYS = {
     "loss": types.SimpleNamespace(lower_better=True, ),
@@ -112,6 +122,7 @@ def _parse_sfttrainer_logs(dirname):
     sfttrainer_metrics = types.SimpleNamespace()
     sfttrainer_metrics.summary = types.SimpleNamespace()
     sfttrainer_metrics.progress = []
+    sfttrainer_metrics.dataset_stats = types.SimpleNamespace()
 
     def parse_summary(key, data):
         summary = json.loads((key + data).replace("'", '"'))
@@ -120,6 +131,7 @@ def _parse_sfttrainer_logs(dirname):
         # this will raise a KeyError if a key is missing in `summary`
         # this means that we are not parsing the data we're expecting.
         for key in SFT_TRAINER_SUMMARY_KEYS:
+            if SFT_TRAINER_SUMMARY_KEYS[key].__dict__.get("computed", False): continue
             setattr(sfttrainer_metrics.summary, key, summary[key])
 
     def parse_progress(key, data):
@@ -133,6 +145,14 @@ def _parse_sfttrainer_logs(dirname):
             setattr(progress, key, progress_json[key])
         sfttrainer_metrics.progress.append(progress)
 
+    def parse_dataset_stats(data):
+        dataset_stats = json.loads(data)
+
+        # this will raise a KeyError if a key is missing in `dataset_stats`
+        # this means that we are not parsing the data we're expecting.
+        for key in DATASET_STATS_KEYS:
+            setattr(sfttrainer_metrics.dataset_stats, key, dataset_stats[key])
+
 
     with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f:
         for line in f.readlines():
@@ -144,6 +164,11 @@ def _parse_sfttrainer_logs(dirname):
             if found_progress:
                 parse_progress(found_progress, line_data)
 
+            _garbage, found_dataset_stats, line_data = line.strip().partition("dataset stats: ")
+            if found_dataset_stats:
+                parse_dataset_stats(line_data)
+
+    sfttrainer_metrics.summary.dataset_tokens_per_second = sfttrainer_metrics.dataset_stats.total_tokens / sfttrainer_metrics.summary.train_runtime
 
     return sfttrainer_metrics
 

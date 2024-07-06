@@ -39,7 +39,8 @@ def generate_lts_results(results):
     if not results.sfttrainer_metrics.summary:
         return results_lts
 
-    results_lts.dataset_tokens_per_second = results.sfttrainer_metrics.summary.train_tokens_per_second
+    results_lts.train_tokens_per_second = results.sfttrainer_metrics.summary.train_tokens_per_second
+    results_lts.dataset_tokens_per_second = results.sfttrainer_metrics.summary.dataset_tokens_per_second
     num_gpus = results.job_config["gpu"]
     results_lts.gpu_hours_per_million_tokens = 1/results.sfttrainer_metrics.summary.train_tokens_per_second * 1000000 / 60 / 60 * num_gpus
     results_lts.train_samples_per_second = results.sfttrainer_metrics.summary.train_samples_per_second
@@ -58,7 +59,7 @@ def get_kpi_labels(lts_payload):
 
 
 def generate_lts_settings(lts_metadata, results, import_settings):
-    gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu])
+    gpus = set([node_info.gpu.product for node_info in results.nodes_info.values() if node_info.gpu and node_info.gpu.product])
     gpu_names = "|".join(map(str, gpus))
 
     lts_settings = types.SimpleNamespace()
@@ -66,7 +67,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
 
     lts_settings.ocp_version = results.ocp_version
     lts_settings.rhoai_version = results.rhods_info.full_version
-    lts_settings.container_image = results.job_config["model_name"]
+    lts_settings.container_image = results.job_config["container_image"]
     lts_settings.instance_type = results.test_config.get("clusters.sutest.compute.machineset.type")
 
     lts_settings.model_name = results.job_config["model_name"]

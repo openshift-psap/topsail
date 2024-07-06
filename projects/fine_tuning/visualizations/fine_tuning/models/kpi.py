@@ -8,7 +8,11 @@ KPIs = {} # populated by the @matbench_models.KPIMetadata decorator
 
 # ---
 
-@matbench_models.KPIMetadata(help="Number of tokens processed per seconds", unit="tokens/s")
+@matbench_models.KPIMetadata(help="Number of train tokens processed per seconds", unit="tokens/s")
+def train_tokens_per_second(lts_payload):
+    return lts_payload.results.train_tokens_per_second
+
+@matbench_models.KPIMetadata(help="Number of dataset tokens processed per seconds", unit="tokens/s")
 def dataset_tokens_per_second(lts_payload):
     return lts_payload.results.dataset_tokens_per_second
 

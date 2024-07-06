@@ -26,7 +26,7 @@ class Fine_Tuning:
             dataset_transform=None,
             dataset_prefer_cache=True,
             dataset_prepare_cache_only=False,
-            container_image="quay.io/modh/fms-hf-tuning:01b3824c9aba22d9d0695399681e6f0507840e7f",
+            container_image="quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3",
 
             gpu=0,
             memory=10,

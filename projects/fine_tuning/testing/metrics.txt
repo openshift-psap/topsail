@@ -1,0 +1,172 @@
+# sutest__cluster_memory_capacity
+sum(cluster:capacity_memory_bytes:sum)
+# sutest__cluster_memory_usage
+   sum(
+        (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+        *
+        on(instance) group_left(role) (
+          label_replace(max by (node) (kube_node_role{role=~".+"}), "instance", "$1", "node", "(.*)")
+        )
+      )
+
+# sutest__cluster_memory_requests
+   sum(
+        kube_pod_resource_request{resource="memory"}
+        *
+        on(node) group_left(role) (
+          max by (node) (kube_node_role{role=~".+"})
+        )
+      )
+
+# sutest__cluster_cpu_requests
+   sum(
+        kube_pod_resource_request{resource="cpu"}
+        *
+        on(node) group_left(role) (
+          max by (node) (kube_node_role{role=~".+"})
+        )
+      )
+
+# sutest__cluster_cpu_usage
+   sum(
+        (
+          1 - rate(node_cpu_seconds_total{mode="idle"}[2m])
+          *
+          on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:{pod=~"node-exporter.+"}
+        )
+        *
+        on(node) group_left(role) (
+          max by (node) (kube_node_role{role=~".+"})
+        )
+      )
+
+# sutest__cluster_cpu_capacity
+sum(cluster:capacity_cpu_cores:sum)
+# Sutest API Server Requests (successes)
+sum by (code) (increase(apiserver_request_total{code=~"2.."}[2m]))
+# Sutest API Server Requests (client errors)
+sum by (code) (increase(apiserver_request_total{code=~"4.."}[2m]))
+# Sutest API Server Requests (server errors)
+sum by (code) (increase(apiserver_request_total{code=~"5.."}[2m]))
+# Sutest API Server GET Requests duration
+histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb="GET", subresource!="log"}[2m])) by (resource,subresource,le)) > 0
+# Sutest API Server PUT Requests duration
+histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb="PUT", subresource!="log"}[2m])) by (resource,subresource,le)) > 0
+# Sutest API Server LIST Requests duration
+histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb="LIST", subresource!="log"}[2m])) by (resource,subresource,le)) > 0
+# Sutest API Server PATCH Requests duration
+histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb="PATCH", subresource!="log"}[2m])) by (resource,subresource,le)) > 0
+# Sutest Control Plane Node CPU usage
+sum(irate(node_cpu_seconds_total[2m])) by (mode, instance)
+# Sutest Control Plane Node CPU idle
+sum(irate(node_cpu_seconds_total{mode="idle"}[2m])) by (mode, instance)
+# sutest__container_memory_working_set_bytes__namespace=fine-tuning-testing_container=pytorch
+container_memory_working_set_bytes{namespace=~'$NAMESPACE',container=~'pytorch'}
+# sutest__container_memory_usage_bytes__namespace=fine-tuning-testing_container=pytorch
+container_memory_usage_bytes{namespace=~'$NAMESPACE',container=~'pytorch'}
+# sutest__container_memory_rss__namespace=fine-tuning-testing_container=pytorch
+container_memory_rss{namespace=~'$NAMESPACE',container=~'pytorch'}
+# sutest__container_memory_requests__namespace=fine-tuning-testing_container=pytorch
+kube_pod_container_resource_requests{namespace=~'$NAMESPACE',container=~'pytorch',resource='memory'}
+# sutest__container_memory_limits__namespace=fine-tuning-testing_container=pytorch
+kube_pod_container_resource_limits{namespace=~'$NAMESPACE',container=~'pytorch',resource='memory'}
+# sutest__container_max_memory__namespace=fine-tuning-testing_container=pytorch
+container_memory_max_usage_bytes{namespace=~'$NAMESPACE',container=~'pytorch'}
+# sutest__container_cpu__namespace=fine-tuning-testing_container=pytorch
+rate(container_cpu_usage_seconds_total{namespace=~'$NAMESPACE',container=~'pytorch'}[5m])
+# sutest__container_sum_cpu__namespace=fine-tuning-testing_container=pytorch
+sum(rate(container_cpu_usage_seconds_total{namespace=~'$NAMESPACE',container=~'pytorch'}[5m]))
+# sutest__container_cpu_requests__namespace=fine-tuning-testing_container=pytorch
+kube_pod_container_resource_requests{namespace=~'$NAMESPACE',container=~'pytorch',resource='cpu'}
+# sutest__container_cpu_limits__namespace=fine-tuning-testing_container=pytorch
+kube_pod_container_resource_limits{namespace=~'$NAMESPACE',container=~'pytorch',resource='cpu'}
+# sutest__container_memory_working_set_bytes__namespace=redhat-ods-applications_pod=kueue-controller-manager-.*
+container_memory_working_set_bytes{namespace=~'redhat-ods-applications',pod=~'kueue-controller-manager-.*'}
+# sutest__container_memory_usage_bytes__namespace=redhat-ods-applications_pod=kueue-controller-manager-.*
+container_memory_usage_bytes{namespace=~'redhat-ods-applications',pod=~'kueue-controller-manager-.*'}
+# sutest__container_memory_rss__namespace=redhat-ods-applications_pod=kueue-controller-manager-.*
+container_memory_rss{namespace=~'redhat-ods-applications',pod=~'kueue-controller-manager-.*'}
+# sutest__container_memory_requests__namespace=redhat-ods-applications_pod=kueue-controller-manager-.*
+kube_pod_container_resource_requests{namespace=~'redhat-ods-applications',pod=~'kueue-controller-manager-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=redhat-ods-applications_pod=kueue-controller-manager-.*
+kube_pod_container_resource_limits{namespace=~'redhat-ods-applications',pod=~'kueue-controller-manager-.*',resource='memory'}
+# sutest__container_max_memory__namespace=redhat-ods-applications_pod=kueue-controller-manager-.*
+container_memory_max_usage_bytes{namespace=~'redhat-ods-applications',pod=~'kueue-controller-manager-.*'}
+# sutest__container_cpu__namespace=redhat-ods-applications_pod=kueue-controller-manager-.*
+rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-applications',pod=~'kueue-controller-manager-.*'}[5m])
+# sutest__container_sum_cpu__namespace=redhat-ods-applications_pod=kueue-controller-manager-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-applications',pod=~'kueue-controller-manager-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=redhat-ods-applications_pod=kueue-controller-manager-.*
+kube_pod_container_resource_requests{namespace=~'redhat-ods-applications',pod=~'kueue-controller-manager-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=redhat-ods-applications_pod=kueue-controller-manager-.*
+kube_pod_container_resource_limits{namespace=~'redhat-ods-applications',pod=~'kueue-controller-manager-.*',resource='cpu'}
+# sutest__container_memory_working_set_bytes__namespace=redhat-ods-applications_pod=codeflare-operator-manager-.*
+container_memory_working_set_bytes{namespace=~'redhat-ods-applications',pod=~'codeflare-operator-manager-.*'}
+# sutest__container_memory_usage_bytes__namespace=redhat-ods-applications_pod=codeflare-operator-manager-.*
+container_memory_usage_bytes{namespace=~'redhat-ods-applications',pod=~'codeflare-operator-manager-.*'}
+# sutest__container_memory_rss__namespace=redhat-ods-applications_pod=codeflare-operator-manager-.*
+container_memory_rss{namespace=~'redhat-ods-applications',pod=~'codeflare-operator-manager-.*'}
+# sutest__container_memory_requests__namespace=redhat-ods-applications_pod=codeflare-operator-manager-.*
+kube_pod_container_resource_requests{namespace=~'redhat-ods-applications',pod=~'codeflare-operator-manager-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=redhat-ods-applications_pod=codeflare-operator-manager-.*
+kube_pod_container_resource_limits{namespace=~'redhat-ods-applications',pod=~'codeflare-operator-manager-.*',resource='memory'}
+# sutest__container_max_memory__namespace=redhat-ods-applications_pod=codeflare-operator-manager-.*
+container_memory_max_usage_bytes{namespace=~'redhat-ods-applications',pod=~'codeflare-operator-manager-.*'}
+# sutest__container_cpu__namespace=redhat-ods-applications_pod=codeflare-operator-manager-.*
+rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-applications',pod=~'codeflare-operator-manager-.*'}[5m])
+# sutest__container_sum_cpu__namespace=redhat-ods-applications_pod=codeflare-operator-manager-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-applications',pod=~'codeflare-operator-manager-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=redhat-ods-applications_pod=codeflare-operator-manager-.*
+kube_pod_container_resource_requests{namespace=~'redhat-ods-applications',pod=~'codeflare-operator-manager-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=redhat-ods-applications_pod=codeflare-operator-manager-.*
+kube_pod_container_resource_limits{namespace=~'redhat-ods-applications',pod=~'codeflare-operator-manager-.*',resource='cpu'}
+# sutest__container_memory_working_set_bytes__namespace=redhat-ods-applications_pod=kubeflow-training-operator-.*
+container_memory_working_set_bytes{namespace=~'redhat-ods-applications',pod=~'kubeflow-training-operator-.*'}
+# sutest__container_memory_usage_bytes__namespace=redhat-ods-applications_pod=kubeflow-training-operator-.*
+container_memory_usage_bytes{namespace=~'redhat-ods-applications',pod=~'kubeflow-training-operator-.*'}
+# sutest__container_memory_rss__namespace=redhat-ods-applications_pod=kubeflow-training-operator-.*
+container_memory_rss{namespace=~'redhat-ods-applications',pod=~'kubeflow-training-operator-.*'}
+# sutest__container_memory_requests__namespace=redhat-ods-applications_pod=kubeflow-training-operator-.*
+kube_pod_container_resource_requests{namespace=~'redhat-ods-applications',pod=~'kubeflow-training-operator-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=redhat-ods-applications_pod=kubeflow-training-operator-.*
+kube_pod_container_resource_limits{namespace=~'redhat-ods-applications',pod=~'kubeflow-training-operator-.*',resource='memory'}
+# sutest__container_max_memory__namespace=redhat-ods-applications_pod=kubeflow-training-operator-.*
+container_memory_max_usage_bytes{namespace=~'redhat-ods-applications',pod=~'kubeflow-training-operator-.*'}
+# sutest__container_cpu__namespace=redhat-ods-applications_pod=kubeflow-training-operator-.*
+rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-applications',pod=~'kubeflow-training-operator-.*'}[5m])
+# sutest__container_sum_cpu__namespace=redhat-ods-applications_pod=kubeflow-training-operator-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-applications',pod=~'kubeflow-training-operator-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=redhat-ods-applications_pod=kubeflow-training-operator-.*
+kube_pod_container_resource_requests{namespace=~'redhat-ods-applications',pod=~'kubeflow-training-operator-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=redhat-ods-applications_pod=kubeflow-training-operator-.*
+kube_pod_container_resource_limits{namespace=~'redhat-ods-applications',pod=~'kubeflow-training-operator-.*',resource='cpu'}
+# Sutest GPU memory used
+DCGM_FI_DEV_FB_USED{exported_container="pytorch"}
+# Sutest GPU memory used (all GPUs)
+sum(DCGM_FI_DEV_FB_USED{exported_container="pytorch"})
+# Sutest GPU active computes
+DCGM_FI_PROF_SM_ACTIVE{exported_container="pytorch"}
+# Sutest GPU computes occupancy
+DCGM_FI_PROF_SM_OCCUPANCY{exported_container="pytorch"}
+# Sutest GPU memory transfer utilization
+DCGM_FI_DEV_MEM_COPY_UTIL{exported_container="pytorch"}
+# Sutest GPU memory unallocated
+DCGM_FI_DEV_FB_FREE{exported_container="pytorch"}
+# Sutest GPU compute utilization (not 100% accurate)
+DCGM_FI_DEV_GPU_UTIL{exported_container="pytorch"}
+# Sutest GPU engine usage (not 100% accurate)
+DCGM_FI_PROF_GR_ENGINE_ACTIVE{exported_container="pytorch"}
+# Sutest GPU active fp16 pipe
+DCGM_FI_PROF_PIPE_FP16_ACTIVE{exported_container="pytorch"}
+# Sutest GPU active fp32 pipe
+DCGM_FI_PROF_PIPE_FP32_ACTIVE{exported_container="pytorch"}
+# Sutest GPU active fp64 pipe
+DCGM_FI_PROF_PIPE_FP64_ACTIVE{exported_container="pytorch"}
+# Sutest GPU NVLink transfer (rx)
+DCGM_FI_PROF_NVLINK_RX_BYTES{exported_container="pytorch"}
+# Sutest GPU NVLink transfer (tx)
+DCGM_FI_PROF_NVLINK_TX_BYTES{exported_container="pytorch"}
+# Sutest GPU PCIe transfer (rx)
+DCGM_FI_PROF_PCIE_RX_BYTES{exported_container="pytorch"}
+# Sutest GPU PCIe transfer (tx)
+DCGM_FI_PROF_PCIE_TX_BYTES{exported_container="pytorch"}

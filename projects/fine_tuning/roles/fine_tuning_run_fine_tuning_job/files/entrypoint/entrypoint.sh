@@ -12,9 +12,11 @@ pip freeze | grep transformers
 echo "Source dataset: $DATASET_SOURCE"
 
 prepare_dataset() {
-    if [[ -f "${DATASET_PREFER_CACHE:-}" ]]; then
+    MAX_SEQ_LENGTH=$(cat $SFT_TRAINER_CONFIG_JSON_PATH | grep max_seq_length | awk '{print $2}' | cut -d"," -f1)
+    DATASET_PREFER_CACHE_FILE="/mnt/storage/dataset/$(basename "${DATASET_TRANSFORM:-}")_replicate_${DATASET_REPLICATION}_max${MAX_SEQ_LENGTH}tokens_$(basename "${DATASET_SOURCE}")"
+    if [[ -n "${DATASET_PREFER_CACHE:-}" && -f "${DATASET_PREFER_CACHE_FILE:-}" ]]; then
         echo "Found dataset cache file $DATASET_PREFER_CACHE. Not regenerating it."
-        cp "$DATASET_PREFER_CACHE" "$DATASET_DEST"
+        cp "$DATASET_PREFER_CACHE_FILE" "$DATASET_DEST"
         return
     fi
 
@@ -33,12 +35,14 @@ prepare_dataset() {
     fi
 
     if [[ -n "${DATASET_PREFER_CACHE:-}" ]]; then
-        echo "Saving dataset cache into $DATASET_PREFER_CACHE"
-        cp "$DATASET_DEST" "$DATASET_PREFER_CACHE"
+        echo "Saving dataset cache into $DATASET_PREFER_CACHE_FILE"
+        cp "$DATASET_DEST" "$DATASET_PREFER_CACHE_FILE"
     fi
 }
 
 prepare_dataset
+
+python /mnt/entrypoint/study_dataset.py
 
 if [[ "${DATASET_PREPARE_CACHE_ONLY:-0}" == true ]]; then
     echo "DATASET_PREPARE_CACHE_ONLY is set, stopping here."
