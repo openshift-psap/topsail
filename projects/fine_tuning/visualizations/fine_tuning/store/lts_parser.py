@@ -36,7 +36,7 @@ def generate_lts_metadata(results, import_settings):
 def generate_lts_results(results):
     results_lts = types.SimpleNamespace()
 
-    if not results.sfttrainer_metrics.summary:
+    if not results.sfttrainer_metrics.summary or not results.sfttrainer_metrics.summary.__dict__:
         return results_lts
 
     results_lts.train_tokens_per_second = results.sfttrainer_metrics.summary.train_tokens_per_second
