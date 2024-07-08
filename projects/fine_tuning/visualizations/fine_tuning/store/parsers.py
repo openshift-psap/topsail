@@ -172,7 +172,6 @@ def _parse_sfttrainer_logs(dirname):
         sfttrainer_metrics.summary.dataset_tokens_per_second = sfttrainer_metrics.dataset_stats.total_tokens / sfttrainer_metrics.summary.train_runtime
     except AttributeError as e:
         logging.warning(f"Could not compute 'dataset_tokens_per_second': {e}")
-        sfttrainer_metrics.summary.dataset_tokens_per_second = None
 
     return sfttrainer_metrics
 
