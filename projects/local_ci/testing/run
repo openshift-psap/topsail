@@ -91,7 +91,7 @@ def local_ci_prepare():
 @entrypoint()
 def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True, step=None,
                  check_clean_diff=True, check_branch_synced=True, pr_config=None, retrieve_artifacts=True,
-                 test_args=None):
+                 test_args=None, wait=False):
     """
     Runs a CI workload.
 
@@ -106,6 +106,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
       pr_config: Optional path to a PR config file (avoids fetching Github PR json).
       retrieve_artifacts: If False, do not retrieve locally the test artifacts.
       test_args: List of arguments to give to the test. Overrides what is found in the configuration file.
+      wait: If true, wait for the namespace to have no Pod running before running (instead of failing).
     """
     namespace = config.ci_artifacts.get_config("base_image.namespace")
 
@@ -164,18 +165,27 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
         logging.fatal(f"Invalid step name {step} for workload {workload}. Expected one of '{', '.join(workload_data['steps'])}'")
         sys.exit(1)
 
+    delay = 10 if wait is True else wait
+    while True:
+        logging.info(f"Checking that no Pod is running in {namespace} ...")
+        running = run.run(f"oc get pod --field-selector=status.phase==Running -oname -n {namespace}", capture_stdout=True).stdout.strip()
+
+        if not running:
+            break
+
+        if running and not wait:
+            logging.fatal(f"Found Pods running in {namespace}, bailing out.")
+            sys.exit(1)
+
+        print(running)
+        logging.info(f"Found Pods running in {namespace}. Waiting {delay}s and trying again.")
+        time.sleep(delay)
+
+    logging.info("Cleanup up the workflow Pods ...")
+
     steps = workload_data["steps"] \
         if not step else [step]
 
-    try:
-        logging.info(f"Checking that no Pod is running in {namespace} ...")
-        run.run(f"oc get pod --field-selector=status.phase==Running -oname -n {namespace} | grep .")
-        logging.fatal(f"Found Pods running in {namespace}, bailing out.")
-        sys.exit(1)
-    except subprocess.CalledProcessError:
-        pass
-
-    logging.info("Cleanup up the workflow Pods ...")
     for step_idx, step_name in enumerate(steps):
         run.run(f"oc delete pod/{workload}-{step_idx:03d}-{step_name} -n {namespace} --ignore-not-found")
 
