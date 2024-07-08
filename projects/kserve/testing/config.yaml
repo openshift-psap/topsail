@@ -516,10 +516,10 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 757487
+    tag: 761570
     channel: fast
     version: 2.11.0
-    version_name: rc1
+    version_name: rc2
     opendatahub: false
     managed_rhoai: false
   operator:
