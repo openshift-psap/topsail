@@ -42,7 +42,7 @@ def generate_lts_results(results):
     results_lts.train_tokens_per_second = results.sfttrainer_metrics.summary.train_tokens_per_second
     results_lts.dataset_tokens_per_second = results.sfttrainer_metrics.summary.dataset_tokens_per_second
     num_gpus = results.job_config["gpu"]
-    results_lts.gpu_hours_per_million_tokens = 1/results.sfttrainer_metrics.summary.train_tokens_per_second * 1000000 / 60 / 60 * num_gpus
+    results_lts.gpu_hours_per_million_tokens = 1/results.sfttrainer_metrics.summary.dataset_tokens_per_second * 1000000 / 60 / 60 * num_gpus
     results_lts.train_samples_per_second = results.sfttrainer_metrics.summary.train_samples_per_second
 
     return results_lts
