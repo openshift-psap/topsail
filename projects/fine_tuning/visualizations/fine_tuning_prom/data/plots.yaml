@@ -6,3 +6,5 @@ visualize:
   - "report: GPU Usage"
   - "report: LTS"
   - "report: LTS Documentation"
+  - "report: Prometheus Summary Report"
+  - "report: Prometheus Summary By Model Report"
