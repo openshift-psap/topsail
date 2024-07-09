@@ -19,6 +19,8 @@ CACHE_FILENAME = "fine-tuning-prom.cache.pickle"
 IMPORTANT_FILES = parsers.IMPORTANT_FILES
 TEST_DIR_FILE = ".matbench_prom_db_dir"
 
+IGNORE_EXIT_CODE = None
+
 from ..models import lts as models_lts
 
 local_store = core_helpers_store.BaseStore(
@@ -56,6 +58,27 @@ def _duplicated_directory(import_key, old_location, new_location):
 
 
 def store_parse_directory(results_dir, expe, dirname):
+    if not IGNORE_EXIT_CODE:
+        try:
+            with open(dirname / "exit_code") as f:
+                content = f.read().strip()
+                if not content:
+                    logging.info(f"{dirname}: exit_code is empty, skipping ...")
+                    return
+
+            exit_code = int(content)
+        except FileNotFoundError as e:
+            exit_code = 404
+
+        except Exception as e:
+            logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ... ({e})")
+            return
+
+        if exit_code != 0:
+            logging.info(f"{dirname}: exit_code == {exit_code}, skipping ...")
+            return
+
+
     with open(dirname / TEST_DIR_FILE) as f:
         name = f.read().strip()
 
