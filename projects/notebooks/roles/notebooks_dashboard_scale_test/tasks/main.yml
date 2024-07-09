@@ -68,6 +68,16 @@
     set_fact:
       rhods_dashboard_product_name: "{{ rhods_dashboard_product_name.stdout }}"
 
+- name: Run customCABundle.sh script
+  shell: |
+    set -o pipefail;
+    set -e;
+
+    oc -n {{ notebooks_dashboard_scale_test_minio_namespace }} get configmap kube-root-ca.crt -oyaml | yq '.data["ca.crt"]' -r > /tmp/ca-bundle.crt
+    oc patch dscinitialization default-dsci \
+       --type='json' \
+       -p='[{"op":"replace","path":"/spec/trustedCABundle/customCABundle","value":"'"$(awk '{printf "%s\\n", $0}' /tmp/ca-bundle.crt)"'"}]'
+
 
 - name: Get the ODS-CI sample var file
   shell: oc debug istag/{{ notebooks_dashboard_scale_test_ods_ci_istag }} -n {{ tester_namespace }} -- cat test-variables.yml > /tmp/test-variables.yml.example
@@ -123,19 +133,13 @@
 
 - name: Set s3_host_base
   block:
-  - name: Expose the service
-    command: oc expose svc minio -n {{ notebooks_dashboard_scale_test_minio_namespace }}
-    register: expose_result
-    ignore_errors: true
-
   - name: Get the route hostname
-    command: oc get route/minio -o jsonpath={.spec.host} -n {{ notebooks_dashboard_scale_test_minio_namespace }}
+    command: oc get route/minio-secure -o jsonpath={.spec.host} -n {{ notebooks_dashboard_scale_test_minio_namespace }}
     register: hostname_result
-    when: expose_result.changed or expose_result.rc == 0
 
   - name: Set s3_host_base fact
     set_fact:
-      s3_host_base: "http://{{ hostname_result.stdout }}"
+      s3_host_base: "{{ hostname_result.stdout }}"
 
   - name: Debug the s3_host_base variable (optional)
     debug:

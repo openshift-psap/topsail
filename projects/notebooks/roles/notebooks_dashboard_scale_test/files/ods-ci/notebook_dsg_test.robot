@@ -103,7 +103,7 @@ Create Pipeline Server To s3
   Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
   Wait Until Page Contains No Spinner    
   Element Should Be Enabled     ${PIPELINE_IMPORT_BUTTON}
-  Sleep  180 seconds
+  Sleep  1 minutes
 
   Capture Page Screenshot
 
@@ -116,7 +116,6 @@ Create and Launch Workbench
     Create Workbench    workbench_title=elyra_${IMAGE}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}_${IMAGE}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
   END
   Start Workbench     workbench_title=elyra_${IMAGE}    timeout=300s
-  Sleep   30 seconds 
   Launch And Access Workbench Elyra Pipelines    workbench_title=elyra_${IMAGE}
   Capture Page Screenshot
   Clone Git Repository And Open    https://github.com/redhat-rhods-qe/ods-ci-notebooks-main
@@ -132,7 +131,7 @@ Check of Pipeline Runs
   ${pipeline_run_name} =    Get Pipeline Run Name
   Switch To Pipeline Execution Page
   Is Data Science Project Details Page Open   ${PROJECT_NAME}
-  Verify Pipeline Run Is Completed    ${pipeline_run_name}    timeout=5m
+  Verify Elyra Pipeline Run    ${pipeline_run_name}    timeout=5m
 
 
 *** Keywords ***
@@ -203,3 +202,23 @@ Launch And Access Workbench Elyra Pipelines
     ELSE
         Fail   msg=Cannot Launch And Access Workbench ${workbench_title} because it is not running...
     END
+
+Verify Elyra Pipeline Run 
+    [Documentation]    Verifys Elyra Pipeline runs are sucessfull
+    [Arguments]    ${pipeline_run_name}    ${timeout}=10m
+    Open Pipeline Elyra Pipeline Run    ${pipeline_run_name}
+    Wait Until Page Contains Element    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    timeout=${timeout}
+    Capture Page Screenshot  
+
+
+Open Pipeline Elyra Pipeline Run
+    [Documentation]    Open the Pipeline Run detail.
+    [Arguments]    ${pipeline_run_name}
+    Navigate To Page    Data Science Pipelines    Runs
+    ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page
+    Wait Until Page Contains Element    xpath=//*[@data-testid="active-runs-tab"]      timeout=30s
+    Click Element    xpath=//*[@data-testid="active-runs-tab"]
+    Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']
+    Click Element    xpath=//span[text()='${pipeline_run_name}']
+    Wait Until Element Is Visible    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    2m
+    Element Should Contain    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    Succeeded

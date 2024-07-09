@@ -51,7 +51,6 @@ prepare_sutest_scale_cluster() {
 
 prepare_sutest_cluster() {
     switch_sutest_cluster
-    prepare_sutest_deploy_operator
     prepare_sutest_deploy_rhods
     prepare_sutest_deploy_ldap
     prepare_sutest_scale_cluster
@@ -82,6 +81,11 @@ prepare_ocp_sutest_deploy_rhods() {
         oc adm groups new dedicated-admins
         oc adm policy add-cluster-role-to-group cluster-admin dedicated-admins
     fi
+
+    # Extract ca.crt content from ConfigMap and patch DSCI custom resource
+    oc -n notebook-scale-test-minio get configmap kube-root-ca.crt -o jsonpath='{.data.ca\.crt}' > ca-bundle.crt
+    export crt_content=ca-bundle.crt
+    oc patch dscinitialization default-dsci --type='json' -p="[{'op':'replace','path':'/spec/trustedCABundle/customCABundle','value':'$(awk '{printf "%s\\n", $0}' $crt_content)'}]"
 }
 
 sutest_customize_rhods_before_wait() {
