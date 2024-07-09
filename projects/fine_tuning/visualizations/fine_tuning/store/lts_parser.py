@@ -42,7 +42,7 @@ def generate_lts_results(results):
     results_lts.train_tokens_per_second = results.sfttrainer_metrics.summary.train_tokens_per_second
     results_lts.dataset_tokens_per_second = results.sfttrainer_metrics.summary.dataset_tokens_per_second
     num_gpus = results.job_config["gpu"]
-    results_lts.gpu_hours_per_million_tokens = 1/results.sfttrainer_metrics.summary.train_tokens_per_second * 1000000 / 60 / 60 * num_gpus
+    results_lts.gpu_hours_per_million_tokens = 1/results.sfttrainer_metrics.summary.dataset_tokens_per_second * 1000000 / 60 / 60 * num_gpus
     results_lts.train_samples_per_second = results.sfttrainer_metrics.summary.train_samples_per_second
 
     return results_lts
@@ -78,6 +78,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.accelerator_type = gpu_names or "no accelerator"
     lts_settings.accelerator_count = results.job_config["gpu"]
     lts_settings.batch_size = results.tuning_config["per_device_train_batch_size"] * lts_settings.accelerator_count
+    lts_settings.max_seq_length = results.tuning_config["max_seq_length"]
 
     lts_settings.ci_engine = results.from_env.test.ci_engine
     lts_settings.run_id = results.from_env.test.run_id

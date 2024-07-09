@@ -20,6 +20,7 @@ class Settings(matbench_models.ExclusiveModel):
     model_name: str
     tuning_method: str
     batch_size: int
+    max_seq_length: int
     container_image: str
 
     ci_engine: str
