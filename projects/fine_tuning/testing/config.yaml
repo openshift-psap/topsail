@@ -89,6 +89,44 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
     tests.fine_tuning.test_settings.gpu: 8
 
+  ibm_regression:
+    extends: [hf_evaluation]
+    tests.fine_tuning.test_settings.model_name:
+    - ibm-granite/granite-3b-code-instruct
+    - ibm/merlinite-7b
+    - meta-llama/Llama-2-13b-chat-hf
+    - ibm-granite/granite-20b-code-instruct
+    - ibm-granite/granite-34b-code-instruct
+    tests.fine_tuning.test_settings.gpu: [2, 4, 8]
+    tests.fine_tuning.test_settings.container_image:
+    - quay.io/modh/fms-hf-tuning:main-abbb2e2dfac0f92a34714147f3bd4696758037c6 # 4.41
+    - quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3 # latest as of 2024-06-20 (RHOAI 2.10)
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
+    tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
+    tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
+    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
+    tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
+
+  ibm_comparison_granite_20b:
+    extends: [hf_evaluation]
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-20b-code-instruct
+    tests.fine_tuning.test_settings.gpu: 4
+    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: [512, 1024, 2048, 4096]
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: [1, 2, 4, 8]
+    tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
+    tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
+    tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
+
+  ibm_comparison_llama3_8b:
+    extends: [hf_evaluation]
+    tests.fine_tuning.test_settings.model_name: meta-llama/Meta-Llama-3-8B-Instruct
+    tests.fine_tuning.test_settings.gpu: 4
+    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: [512, 1024, 2048, 4096, 8192]
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: [1, 2, 4, 8, 16, 32]
+    tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
+    tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
+    tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
+
   ibm_80gb_models:
     extends: [hf_evaluation]
     tests.fine_tuning.test_settings.container_image:
