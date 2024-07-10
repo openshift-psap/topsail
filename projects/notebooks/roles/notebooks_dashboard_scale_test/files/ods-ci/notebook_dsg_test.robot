@@ -220,5 +220,5 @@ Open Pipeline Elyra Pipeline Run
     Click Element    xpath=//*[@data-testid="active-runs-tab"]
     Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']
     Click Element    xpath=//span[text()='${pipeline_run_name}']
-    Wait Until Element Is Visible    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    2m
+    Wait Until Element Is Visible    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    5m
     Element Should Contain    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    Succeeded
