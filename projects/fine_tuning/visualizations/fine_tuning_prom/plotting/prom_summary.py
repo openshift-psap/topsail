@@ -103,7 +103,8 @@ class GPUTotalMemoryUsage():
 
         text = None if len(variables) > 3 else "text"
         if do_line_plot:
-            color = None if (len(variables) == 1 and not has_speedup) else "name"
+            color = None if (len(variables) == 1) else "name"
+
             fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color=color, text=text)
 
             for i in range(len(fig.data)):
