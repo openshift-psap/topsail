@@ -79,6 +79,7 @@ def consolidate_model(index=None, name=None, show=True):
 
         model_config = model_list[index]
     else:
+        model_config = None
         for model_def in model_list:
             if model_def.get("name") == name:
                 model_config = model_def
