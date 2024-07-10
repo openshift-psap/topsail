@@ -104,6 +104,9 @@ def store_parse_directory(results_dir, expe, dirname):
 
 
 def parse_data(results_dir=None):
+    global IGNORE_EXIT_CODE
+    IGNORE_EXIT_CODE = os.environ.get("MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE", "false") == "true"
+
     store.register_custom_rewrite_settings(_rewrite_settings)
 
     if results_dir is None:

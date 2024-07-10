@@ -28,10 +28,10 @@ def register():
 def generatePromSummaryData(entries, x_key, metric_name, _variables, filter_key=None, filter_value=None):
     data = []
 
-    variables = [v for v in _variables if v != x_key and v!= filter_key]
+    variables = dict(_variables)
 
-    if not variables and x_key != "gpu":
-        variables += [x_key]
+    if x_key in variables:
+        del variables[x_key]
 
     for entry in entries:
         if filter_key is not None and entry.get_settings()[filter_key] != filter_value:
@@ -50,6 +50,7 @@ def generatePromSummaryData(entries, x_key, metric_name, _variables, filter_key=
         datum["y"] = max_val / 1024
 
         datum["name"] = entry.get_name(variables).replace("hyper_parameters.", "")
+
         datum["text"] = "{:.2f}".format(datum["y"]) if datum["y"] is not None else "None"
 
         data.append(datum)
@@ -103,7 +104,8 @@ class GPUTotalMemoryUsage():
 
         text = None if len(variables) > 3 else "text"
         if do_line_plot:
-            color = None if (len(variables) == 1 and not has_speedup) else "name"
+            color = None if (len(variables) == 1) else "name"
+
             fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color=color, text=text)
 
             for i in range(len(fig.data)):
@@ -132,6 +134,8 @@ class GPUTotalMemoryUsage():
         fig.update_layout(title=title, title_x=0.5,)
         fig.update_layout(legend_title_text="Configuration")
 
+        if len(variables) == 1:
+            fig.layout.update(showlegend=False)
         fig.update_xaxes(title=x_name)
         # ❯ or ❮
         msg = []
@@ -158,7 +162,12 @@ class PromSummaryReport():
         plot_name = "GPU Total Memory Usage"
         header += [html.H3(plot_name)]
 
-        header += report.Plot_and_Text(f"Prom Summary: {plot_name}", args)
+        ordered_vars, settings, _setting_lists, variables, cfg = args
+        for _ in range(len(ordered_vars)):
+            first_var = ordered_vars[0]
+            header += [html.H3(f"by {first_var}")]
+            header += report.Plot_and_Text(f"Prom Summary: {plot_name}", args)
+            ordered_vars.append(ordered_vars.pop(0))
 
         return None, header
 
@@ -186,7 +195,14 @@ class PromSummaryByModelReport():
         else:
             gpu_counts = [None]
 
-        for model_name in variables.get("model_namez", [None]):
+        model_names = variables.get("model_name", [])
+        if model_names:
+            ordered_vars.remove("model_name")
+            variables.pop("model_name")
+        else:
+            model_names.append(None)
+
+        for model_name in model_names:
             plot_name = "GPU Total Memory Usage"
             header += [html.H3(((model_name + " | ") if model_name else "") + plot_name)]
             for gpu_count in gpu_counts:
@@ -198,7 +214,7 @@ class PromSummaryByModelReport():
                 for settings_group in setting_lists:
                     current_group = []
                     for (k, v) in settings_group:
-                        #if k == "model_name" and v != model_name: continue
+                        if k == "model_name" and v != model_name: continue
                         if k == "gpu" and v != gpu_count: continue
                         current_group.append((k, v, ))
                     if current_group:
