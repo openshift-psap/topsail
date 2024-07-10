@@ -84,10 +84,10 @@ def consolidate_model(index=None, name=None, show=True):
             if model_def.get("name") == name:
                 model_config = model_def
                 break
-    
+
         if not model_config:
             raise IndexError(f"Could not find model with name {name} for in model list. {model_list}")
-    
+
     return prepare_scale.consolidate_model_config(model_config=model_config, index=index, show=show)
 
 # ---
@@ -658,7 +658,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
         svc_name = run.run(f"oc get svc -lserving.kserve.io/inferenceservice={inference_service_name} -ojsonpath={{.items[0].metadata.name}} -n {namespace}", capture_stdout=True).stdout
         if not svc_name:
             raise RuntimeError(f"Failed to get the hostname for Service of InferenceService {namespace}/{model_name}")
-         
+
         # TODO this should probably be based on whether we are using http or gRPC.
         if config.ci_artifacts.get_config("kserve.model.runtime") == "vllm":
             port = 8080
@@ -670,12 +670,12 @@ def test_consolidated_model(consolidated_model, namespace=None):
         host_url = run.run(f"oc get inferenceservice/{inference_service_name} -n {namespace} -ojsonpath={{.status.components.predictor.url}}", capture_stdout=True).stdout
         # In validate we use oc get ksvc \
         # -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }} \
-        # -n {{ kserve_validate_model_namespace }} -ojsonpath='{.items[0].status.url}' 
+        # -n {{ kserve_validate_model_namespace }} -ojsonpath='{.items[0].status.url}'
         host = host_url.lstrip("https://")
         if host == "":
             raise RuntimeError(f"Failed to get the hostname for InferenceService {namespace}/{inference_service_name}")
         port = 443
-        
+
         if llm_load_test_args.get("plugin") == "tgis_grpc_plugin":
             llm_load_test_args["use_tls"] = True
 
