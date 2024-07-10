@@ -72,9 +72,6 @@ ci_presets:
 
   ibm_40gb_models:
     extends: [hf_evaluation]
-    tests.fine_tuning.test_settings.container_image:
-    - quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05 # latest as of 2024-07-08 (RHOAI 2.11)
-    - quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3 # latest as of 2024-06-20 (RHOAI 2.10)
     tests.fine_tuning.test_settings.model_name:
     - ibm-granite/granite-3b-code-instruct
     - instructlab/granite-7b-lab
@@ -84,10 +81,16 @@ ci_presets:
     - ibm/merlinite-7b
     - instructlab/merlinite-7b-lab
     - meta-llama/llama-2-7b-hf
+    - meta-llama/Llama-2-13b-chat-hf
+    - ibm-granite/granite-20b-code-instruct
+    # -- #
+    tests.fine_tuning.test_settings.gpu: 8
+    # -- #
     tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
+    tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
     tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
-    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
 
   ibm_regression:
     extends: [hf_evaluation]
@@ -133,8 +136,6 @@ ci_presets:
     - quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05 # latest as of 2024-07-08 (RHOAI 2.11)
     - quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3 # latest as of 2024-06-20 (RHOAI 2.10)
     tests.fine_tuning.test_settings.model_name:
-    - meta-llama/Llama-2-13b-chat-hf
-    - ibm-granite/granite-20b-code-instruct
     - ibm-granite/granite-34b-code-instruct
     - mistralai/Mixtral-8x7B-Instruct-v0.1
     # -- #
