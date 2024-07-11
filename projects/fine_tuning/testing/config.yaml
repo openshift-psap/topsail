@@ -349,6 +349,7 @@ tests:
         max_seq_length: null
         peft_method: null
         use_flash_attn: null
+    test_extra_settings: {} # fine-grain configuration when matbenchmarking
     many_model:
       enabled: false
       count: 20

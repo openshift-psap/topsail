@@ -272,6 +272,11 @@ def _run_test_and_visualize(test_override_values=None):
     do_matbenchmarking = test_override_values is None and config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.enabled")
     do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
 
+    if not do_matbenchmarking and config.ci_artifacts.get_config("tests.fine_tuning.test_extra_settings"):
+        msg = "Cannot use 'test_extra_settings' when 'tests.fine_tuning.tests.fine_tuning.matbenchmarking' isn't enabled."
+        logging.error(msg)
+        raise ValueError(msg)
+
     if do_matbenchmarking and do_multi_model:
         msg = "Cannot do matbenchmarking and multi-model at the same time"
         logging.error(msg)
