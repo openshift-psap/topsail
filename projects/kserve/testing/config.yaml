@@ -546,11 +546,11 @@ kserve:
       method: fmaas.GenerationService/Generate
       proto: projects/kserve/testing/protos/tgis_generation.proto
   model: # Applied to all models if set
-    runtime: standalone-tgis
+    runtime: vllm
     serving_runtime:
-      update_image: true
+      update_image: false
       kserve:
-        image: quay.io/opendatahub/text-generation-inference:fast
+        image: quay.io/modh/vllm:rhoai-2.10-2cf4d15
   customize:
     serverless:
       enabled: false
@@ -584,7 +584,7 @@ tests:
     model:
       consolidated: false
       name: flan-t5-small
-      runtime: standalone-tgis
+      runtime: vllm
       replicas: 2
   e2e:
     namespace: kserve-e2e
@@ -595,13 +595,10 @@ tests:
         size: small
         max_concurrency: 16
     - name: flan-t5-small
-      testing:
-        size: small
-        max_concurrency: 16
     consolidated_models: {} # will be filled at runtime
     limits_equals_requests: false
-    delete_others: true
-    validate_model: true
+    delete_others: false
+    validate_model: false
     capture_state: true
     matbenchmark:
       enabled: false
@@ -611,12 +608,12 @@ tests:
       args:
         src_path: projects/llm_load_test/subprojects/llm-load-test/
 
-        duration: 60
-        concurrency: 16
-        plugin: tgis_grpc_plugin
-        interface: grpc
+        duration: 240
+        concurrency: 4
+        plugin: openai_plugin
+        interface: https
         streaming: true
-        endpoint: null # only used with openai plugin
+        endpoint: "/v1/completions" # only used with openai plugin
       dataset_size:
         small:
           max_input_tokens: 2047
@@ -646,7 +643,7 @@ matbench:
   # directory to plot. Set by topsail/testing/visualize.py before launching the visualization
   test_directory: null
   lts:
-    generate: true
+    generate: false
     horreum:
       test_name: null
     opensearch:
