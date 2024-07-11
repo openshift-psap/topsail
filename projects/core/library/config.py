@@ -242,25 +242,33 @@ class Config:
 
 
 def _set_config_environ(base_dir):
-    config_path = pathlib.Path(
-        os.environ.get("CI_ARTIFACTS_FROM_CONFIG_FILE", env.ARTIFACT_DIR / "config.yaml")
-    )
+    reloading = False
+    config_path_final = pathlib.Path(env.ARTIFACT_DIR / "config.yaml")
 
-    os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path)
+    config_file_src = None
+    if (env_config_file_src := os.environ.get("CI_ARTIFACTS_FROM_CONFIG_FILE")):
+        config_file_src = env_config_file_src
+        logging.info(f"Loading the configuration from CI_ARTIFACTS_FROM_CONFIG_FILE={config_file_src} ...")
+
+    elif ((shared_dir_file_src := pathlib.Path(os.environ.get("SHARED_DIR", "/not-a-directory")) / "config.yaml")
+          and shared_dir_file_src.exists()):
+        config_file_src = shared_dir_file_src
+        logging.info(f"Reloading the config file from SHARED_DIR {config_file_src} ...")
+    else:
+        config_file_src = base_dir / "config.yaml"
+        logging.info(f"Reloading the config file from TOPSAIL project directory {config_file_src} ...")
+
+    os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path_final)
+
     if "CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE" not in os.environ:
         os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yml.j2")
 
-    if shared_dir := os.environ.get("SHARED_DIR"):
-        shared_dir_config_path = pathlib.Path(shared_dir) / "config.yaml"
-        if shared_dir_config_path.exists():
-            logging.info(f"Reloading the config file from {shared_dir_config_path} ...")
-            shutil.copyfile(shared_dir_config_path, config_path)
+    if not pathlib.Path(config_file_src) == config_path_final:
 
-    if not config_path.exists():
-        shutil.copyfile(base_dir / "config.yaml", config_path)
+        logging.info(f"Copying the configuration from {config_file_src} to the artifact dir ...")
+        shutil.copyfile(config_file_src, config_path_final)
 
-
-    return config_path
+    return config_path_final
 
 
 def get_command_arg(group, command, arg, prefix=None, suffix=None, mute=False):
