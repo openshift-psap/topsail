@@ -482,7 +482,7 @@ def matbench_run_one():
 
             test_config["hyper_parameters"][suffix] = v
 
-        failed = _run_test_and_visualize(test_config)
+        failed = _run_test([None], test_config)
 
     sys.exit(1 if failed else 0)
 
