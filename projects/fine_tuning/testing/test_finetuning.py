@@ -411,15 +411,15 @@ def _run_test_matbenchmarking(test_artifact_dir_p):
 
         path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()])
 
-        expe_name = "expe"
+        expe_to_run = dict(expe=benchmark_values)
+
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
             script_tpl=f"{sys.argv[0]} matbench_run_one",
             stop_on_error=config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.stop_on_error"),
             common_settings=dict(),
             test_files={"test_config.yaml": test_configuration},
-            expe_name=expe_name,
-            benchmark_values=benchmark_values,
+            expe_to_run=expe_to_run,
         )
 
         logging.info(f"Benchmark configuration to run: \n{yaml.dump(json_benchmark_file, sort_keys=False)}")
