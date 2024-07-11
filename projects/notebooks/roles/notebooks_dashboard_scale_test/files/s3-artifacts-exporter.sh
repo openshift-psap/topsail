@@ -71,9 +71,9 @@ configure_s3
 
 find "${ARTIFACT_DIR}"
 
-s3cmd put \
+s3cmd put  --no-check-certificate \
       "${ARTIFACT_DIR}"/* \
-      "https://$S3_BUCKET_NAME/$BUCKET_DEST_DIR/$HOSTNAME/" \
+      "s3://$S3_BUCKET_NAME/$BUCKET_DEST_DIR/$HOSTNAME/" \
       --recursive --no-preserve --no-progress --stats --quiet
 
 exit $retcode

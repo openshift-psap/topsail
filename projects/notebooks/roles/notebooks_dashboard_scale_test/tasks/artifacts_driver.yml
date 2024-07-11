@@ -48,7 +48,7 @@
   command:
     oc -n {{ notebooks_dashboard_scale_test_minio_namespace }} -c mc
        exec "{{ minio_podname_cmd.stdout }}"
-       -- bash -c 'mkdir -p /artifacts/to_export && mc --config-dir /tmp cp minio/{{ notebooks_dashboard_scale_test_minio_bucket_name }}/ /artifacts/to_export --recursive --quiet > /dev/null'
+       -- bash -c 'mkdir -p /artifacts/to_export && mc --config-dir /tmp cp minio/{{ notebooks_dashboard_scale_test_minio_bucket_name }}/ /artifacts/to_export --insecure --recursive --quiet > /dev/null'
   when: 'test_artifacts_collected != "none"'
   ignore_errors: true
 
