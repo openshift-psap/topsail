@@ -120,8 +120,20 @@ ci_presets:
   ibm_lora_models:
     extends: [hf_evaluation, dgx_small_footprint]
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "lora"
-    tests.fine_tuning.test_settings.model_name:
-    - meta-llama/Meta-Llama-3-70B-Instruct
+    tests.fine_tuning.test_extra_settings:
+    - name: granite-familiy
+      model_name:
+      - ibm-granite/granite-34b-code-instruct
+      hyper_parameters:
+        raw_lists:
+          target_modules: ["all-linear"]
+        lora_dropout: 0.05
+        lora_alpha: 16
+        r: 8
+    - name: llama-family
+      model_name:
+      - meta-llama/Llama-2-13b-chat-hf
+      - meta-llama/Meta-Llama-3-70B-Instruct
 
   dgx_multi_model_ref:
     tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
@@ -353,6 +365,11 @@ tests:
         max_seq_length: null
         peft_method: null
         use_flash_attn: null
+        # LoRA hyper-parameters:
+        r: null
+        lora_dropout: null
+        lora_alpha: null
+        target_modules: null
     test_extra_settings: {} # fine-grain configuration when matbenchmarking
     many_model:
       enabled: false
