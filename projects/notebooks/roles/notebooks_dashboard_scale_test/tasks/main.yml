@@ -162,11 +162,11 @@
 - name: Empty the Minio S3 bucket
   shell: |
     oc -c mc -n {{ notebooks_dashboard_scale_test_minio_namespace }} rsh $(oc get pod -lapp=minio -n {{ notebooks_dashboard_scale_test_minio_namespace }} -oname) \
-       mc --config-dir /tmp rm minio/{{ notebooks_dashboard_scale_test_minio_bucket_name }}/ --recursive --force --quiet >/dev/null;
+       mc --config-dir /tmp rm --insecure --recursive --force --quiet minio/{{ notebooks_dashboard_scale_test_minio_bucket_name }}/ >/dev/null;
     oc -c mc -n {{ notebooks_dashboard_scale_test_minio_namespace }} rsh $(oc get pod -lapp=minio -n {{ notebooks_dashboard_scale_test_minio_namespace }} -oname) \
        rm -rf /artifacts/to_export > /dev/null
     oc -c mc -n {{ notebooks_dashboard_scale_test_minio_namespace }} rsh $(oc get pod -lapp=minio -n {{ notebooks_dashboard_scale_test_minio_namespace }} -oname) \
-       mc --config-dir /tmp cp /etc/os-release minio/{{ notebooks_dashboard_scale_test_minio_bucket_name }}; # without it, cp may fail if the bucket is empty
+       mc --config-dir /tmp cp --insecure /etc/os-release minio/{{ notebooks_dashboard_scale_test_minio_bucket_name }}; # without it, cp may fail if the bucket is empty
   failed_when: false
 
 - name: Delete S3 secret minio
