@@ -5,8 +5,6 @@ set -o pipefail
 set -o nounset
 set -x
 
-cd /tmp/ods-ci/ods_ci
-
 JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-0}
 STATE_SIGNAL_BARRIER=/mnt/dashboard-scale-test-entrypoint/state-signal_barrier.py
 STATE_SIGNAL_DELAY=-1 # delay for all the Pods to reach the entry barrier
@@ -27,9 +25,10 @@ sed "s/#{USER_INDEX}/${USER_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.
 
 cp /mnt/dashboard-scale-test-entrypoint/* .
 
-# workaround: HOME=/tmp isn't a writeable directory
+# Workaround: /tmp is readonly, HOME isn't
 
-export HOME=/tmp/ods-ci # move to a writable HOME
+export TMPDIR=$HOME/tmp
+mkdir "$TMPDIR"
 
 # Use StateSignal-barrier to wait for all the Pods to be ready
 python3 -m ensurepip --user
