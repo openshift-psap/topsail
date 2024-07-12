@@ -489,6 +489,9 @@ def matbench_run_one():
 
             test_config["hyper_parameters"][suffix] = v
 
+        if raw_lists := test_config["hyper_parameters"].pop("raw_lists", None):
+            test_config["hyper_parameters"] |= raw_lists
+
         failed = _run_test([None], test_config)
 
     sys.exit(1 if failed else 0)
