@@ -419,7 +419,7 @@ def _run_test_matbenchmarking(test_artifact_dir_p):
 
             expe_to_run[expe_name] = benchmark_values
 
-        path_tpl = "/".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()])
+        path_tpl = "{settings[name]}"
 
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
