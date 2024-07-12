@@ -70,7 +70,9 @@
         | .metadata.name'
         || true # never let the command fail
     register: apiservices_unavailable
-    until: not apiservices_unavailable.stdout
+    until:
+    - not apiservices_unavailable.stdout
+    - not apiservices_unavailable.stderr
     retries: 50
     delay: 30
 
