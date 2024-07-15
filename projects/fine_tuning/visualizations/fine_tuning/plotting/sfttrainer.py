@@ -112,7 +112,14 @@ class SFTTrainerSummary():
 
         x_key =  cfg__x_key
         if x_key is None:
-            x_key = "gpu" if has_gpu else (ordered_vars[0] if ordered_vars else "expe")
+            if has_gpu:
+                x_key = "gpu"
+            elif "model_name" in ordered_vars:
+                x_key = "model_name"
+            elif ordered_vars:
+                x_key = ordered_vars[0]
+            else:
+                x_key = "expe"
 
         compute_speedup = has_gpu
 
