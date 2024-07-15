@@ -53,7 +53,7 @@ fi
 echo "statesignal_ready: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 
 # end of the workaround: HOME=/tmp isn't a writeable directory
-export HOME=/tmp # move back to the default HOME
+export TMPDIR=$HOME/tmp # move back to the default HOME
 
 # Sleep for a while to avoid DDoSing OAuth
 
