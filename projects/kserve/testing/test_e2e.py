@@ -146,10 +146,10 @@ def deploy_models_concurrently():
     run.run_toolbox_from_config("local_ci", "run_multi", suffix="deploy_concurrently", artifact_dir_suffix="_deploy")
 
 
-def deploy_one_model(index: int = None, use_job_index: bool = False, model_name: str = None):
+def deploy_one_model(index: int = None, use_job_index: bool = False, model_name: str = None, namespace: str = None):
     "Deploys one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
 
-    consolidate_models(index=index, use_job_index=use_job_index, name=model_name)
+    consolidate_models(index=index, use_job_index=use_job_index, name=model_name, namespace=namespace)
     deploy_consolidated_models()
 
 
@@ -311,15 +311,46 @@ def multi_model_test_concurrently(expe_name="multi-model_concurrent", with_kserv
                 generate_prom_results(expe_name, prom_start_ts)
 
 
-def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None, namespace: str = None):
+def test_one_model(
+        index: int = None,
+        use_job_index: bool = False,
+        model_name: str = None,
+        namespace: str = None,
+        do_visualize: bool = None,
+        capture_prom = None,
+):
     "Tests one of the configured models, according to the index parameter or JOB_COMPLETION_INDEX"
 
     if use_job_index:
         with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
             yaml.dump(dict(mode="multi-model_concurrent"), f, indent=4)
 
+    if capture_prom is not None:
+        config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
+
+    if namespace is not None:
+        config.ci_artifacts.set_config("tests.e2e.namespace", namespace)
+
+    prom_start_ts = reset_prometheus()
+
     consolidate_models(index=index, use_job_index=True, name=model_name, namespace=namespace)
     test_consolidated_models()
+
+    generate_prom_results("test_one_model", prom_start_ts)
+
+    if do_visualize is None:
+        do_visualize = config.ci_artifacts.get_config("tests.visualize")
+
+    if not do_visualize:
+        logging.info("Not generating the visualization because it isn't activated.")
+    else:
+        results_dir = env.ARTIFACT_DIR
+        with env.NextArtifactDir("plots"):
+            visualize.prepare_matbench()
+            import test
+            test.generate_plots(results_dir)
+
+        run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
 
 # ---
 
