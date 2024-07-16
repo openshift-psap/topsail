@@ -44,7 +44,9 @@ def reset_prometheus(delay=60):
     logging.info(f"Wait {delay}s for Prometheus to restart collecting data ...")
     time.sleep(delay)
 
-    return prom_start_ts # not used at the moment. Returned for consistency.
+    # at the moment, only used when capture_prom == "with-queries".
+    # Returned for consistency.
+    return prom_start_ts
 
 
 def dump_prometheus(prom_start_ts, delay=60):
