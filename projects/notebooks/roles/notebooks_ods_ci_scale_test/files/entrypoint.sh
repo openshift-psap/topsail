@@ -28,9 +28,11 @@ sed "s/#{USER_INDEX}/${USER_INDEX}/g" /mnt/ods-ci-test-variables/test-variables.
 cp /mnt/rhods-notebook-ux-e2e-scale-test-entrypoint/* .
 
 if [[ "$DRIVER_RUNNING_ON_SPOT_INSTANCES" == "False" ]]; then
-    # workaround: HOME=/tmp isn't a writeable directory
+    # Workaround: /tmp is readonly, HOME isn't
+    export HOME=/tmp/ods-ci/ods_ci
 
-    export HOME=/tmp/ods-ci # move to a writable HOME
+    export TMPDIR=$HOME/tmp
+    mkdir "$TMPDIR"
 
     # Use StateSignal-barrier to wait for all the Pods to be ready
     python3 -m ensurepip --user
@@ -107,7 +109,8 @@ test_exit_code=0
     --extra-robot-args "--exitonfailure" \
     |& tee "${ARTIFACT_DIR}/test.log") || test_exit_code=$?
 
-mv "$ARTIFACT_DIR"/ods-ci-*/* "$ARTIFACT_DIR" || true
+mv /tmp/ods-ci/ods_ci/tmp/ods-ci* "$ARTIFACT_DIR" || true
+#mv "$ARTIFACT_DIR"/ods-ci-*/* "$ARTIFACT_DIR" || true
 
 if [[ "$test_exit_code" != 0 && "$USER_COUNT" -gt 100 && "$JOB_COMPLETION_INDEX" != 0 ]]; then
     # test failed

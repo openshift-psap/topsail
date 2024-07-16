@@ -76,6 +76,26 @@
     retries: 50
     delay: 30
 
+  - name: Wait for all the Clusteroperators to be available for more than 5 minutes
+    shell: |
+      set -o pipefail;
+
+      oc get co -ojson | jq -r -c \
+       '.items[]
+        | select(.status.conditions[]
+        | .type == "Available" and .status == "True")
+        | {"lastTransitionTime": (.status.conditions[] | select(.type == "Available" and .status == "True") | .lastTransitionTime),
+           "name": .metadata.name}' \
+        | sort -n \
+        | tail -1 \
+        | tee /dev/stderr \
+        | jq '.lastTransitionTime | fromdate - now' \
+        || true # never let the command fail
+    register: lowest_availability_duration_cmd # eg: -183942.29
+    until: lowest_availability_duration_cmd.stdout|float|abs > 300
+    retries: 45
+    delay: 30
+
   - name: Ensure that the PackageManifests are available
     shell:
       oc get packagemanifests > "{{ artifact_extra_logs_dir }}/artifacts/package_manifests.status"

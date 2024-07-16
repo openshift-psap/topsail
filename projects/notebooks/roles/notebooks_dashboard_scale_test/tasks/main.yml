@@ -60,7 +60,7 @@
   shell:
     oc debug istag/{{ notebooks_dashboard_scale_test_ods_ci_istag }}
        -n {{ tester_namespace }}
-       -- cat ods_ci/test-variables.yml > /tmp/test-variables.yml.example
+       -- cat test-variables.yml > /tmp/test-variables.yml.example
 
 - name: Apply the ODS-CI template
   shell: |

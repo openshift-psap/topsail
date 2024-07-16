@@ -203,9 +203,9 @@ spec:
           aws_secret_access_key = $user_password
           EOF'
 
-          S3_ENDPOINT_URL="http://minio.$MINIO_NAMESPACE.svc.cluster.local:9000"
+          S3_ENDPOINT_URL="https://minio.$MINIO_NAMESPACE.svc.cluster.local:9000"
           _aws() {
-            aws "--endpoint-url=$S3_ENDPOINT_URL" "$@"
+            aws --no-verify-ssl "--endpoint-url=$S3_ENDPOINT_URL" "$@"
           }
 
           dest="s3://$S3_BUCKET_NAME/ci-pod-$JOB_COMPLETION_INDEX"
