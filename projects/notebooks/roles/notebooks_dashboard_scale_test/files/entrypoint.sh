@@ -5,6 +5,8 @@ set -o pipefail
 set -o nounset
 set -x
 
+cd /tmp/ods-ci/ods_ci
+
 JOB_COMPLETION_INDEX=${JOB_COMPLETION_INDEX:-0}
 STATE_SIGNAL_BARRIER=/mnt/dashboard-scale-test-entrypoint/state-signal_barrier.py
 STATE_SIGNAL_DELAY=-1 # delay for all the Pods to reach the entry barrier
@@ -27,7 +29,9 @@ cp /mnt/dashboard-scale-test-entrypoint/* .
 
 # Workaround: /tmp is readonly, HOME isn't
 
+export HOME=/tmp/ods-ci/ods_ci
 export TMPDIR=$HOME/tmp
+
 mkdir "$TMPDIR"
 
 # Use StateSignal-barrier to wait for all the Pods to be ready
@@ -53,7 +57,7 @@ fi
 echo "statesignal_ready: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 
 # end of the workaround: HOME=/tmp isn't a writeable directory
-export TMPDIR=$HOME/tmp # move back to the default HOME
+export HOME=/tmp # move back to the default HOME
 
 # Sleep for a while to avoid DDoSing OAuth
 
@@ -74,7 +78,7 @@ test_exit_code=0
     --extra-robot-args "--exitonfailure" \
     |& tee "${ARTIFACT_DIR}/test.log") || test_exit_code=$?
 
-mv "$ARTIFACT_DIR"/ods-ci-*/* "$ARTIFACT_DIR" || true
+mv /tmp/ods-ci/ods_ci/tmp/ods-ci* "$ARTIFACT_DIR" || true
 
 if [[ "$test_exit_code" != 0 && "$USER_COUNT" -gt 100 && "$JOB_COMPLETION_INDEX" != 0 ]]; then
     # test failed
