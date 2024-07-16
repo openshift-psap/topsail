@@ -749,7 +749,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
         # In validate we use oc get ksvc \
         # -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }} \
         # -n {{ kserve_validate_model_namespace }} -ojsonpath='{.items[0].status.url}'
-        host = host_url.lstrip("https://")
+        host = host_url.removeprefix("https://")
         if host == "":
             raise RuntimeError(f"Failed to get the hostname for InferenceService {namespace}/{inference_service_name}")
         port = 443
