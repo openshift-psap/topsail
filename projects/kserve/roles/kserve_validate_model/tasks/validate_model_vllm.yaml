@@ -1,8 +1,4 @@
 ---
-- name: Ensure that GRPCurl is available
-  shell:
-    which grpcurl
-
 - name: Create the artifact directory
   file:
     path: "{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}"
