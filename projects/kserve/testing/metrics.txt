@@ -1,0 +1,512 @@
+# sutest__cluster_memory_capacity
+sum(cluster:capacity_memory_bytes:sum)
+# sutest__cluster_memory_usage
+   sum(
+        (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+        *
+        on(instance) group_left(role) (
+          label_replace(max by (node) (kube_node_role{role=~".+"}), "instance", "$1", "node", "(.*)")
+        )
+      )
+
+# sutest__cluster_memory_requests
+   sum(
+        kube_pod_resource_request{resource="memory"}
+        *
+        on(node) group_left(role) (
+          max by (node) (kube_node_role{role=~".+"})
+        )
+      )
+
+# sutest__cluster_cpu_requests
+   sum(
+        kube_pod_resource_request{resource="cpu"}
+        *
+        on(node) group_left(role) (
+          max by (node) (kube_node_role{role=~".+"})
+        )
+      )
+
+# sutest__cluster_cpu_usage
+   sum(
+        (
+          1 - rate(node_cpu_seconds_total{mode="idle"}[2m])
+          *
+          on(namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:{pod=~"node-exporter.+"}
+        )
+        *
+        on(node) group_left(role) (
+          max by (node) (kube_node_role{role=~".+"})
+        )
+      )
+
+# sutest__cluster_cpu_capacity
+sum(cluster:capacity_cpu_cores:sum)
+# sutest__container_memory_usage_bytes__namespace=openshift-kube-apiserver_pod=['!~kube-apiserver-guard.*', 'kube-apiserver-.*']
+container_memory_usage_bytes{namespace=~'openshift-kube-apiserver',pod!~'kube-apiserver-guard.*',pod=~'kube-apiserver-.*'}
+# sutest__container_memory_rss__namespace=openshift-kube-apiserver_pod=['!~kube-apiserver-guard.*', 'kube-apiserver-.*']
+container_memory_rss{namespace=~'openshift-kube-apiserver',pod!~'kube-apiserver-guard.*',pod=~'kube-apiserver-.*'}
+# sutest__container_memory_requests__namespace=openshift-kube-apiserver_pod=['!~kube-apiserver-guard.*', 'kube-apiserver-.*']
+kube_pod_container_resource_requests{namespace=~'openshift-kube-apiserver',pod!~'kube-apiserver-guard.*',pod=~'kube-apiserver-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=openshift-kube-apiserver_pod=['!~kube-apiserver-guard.*', 'kube-apiserver-.*']
+kube_pod_container_resource_limits{namespace=~'openshift-kube-apiserver',pod!~'kube-apiserver-guard.*',pod=~'kube-apiserver-.*',resource='memory'}
+# sutest__container_max_memory__namespace=openshift-kube-apiserver_pod=['!~kube-apiserver-guard.*', 'kube-apiserver-.*']
+container_memory_max_usage_bytes{namespace=~'openshift-kube-apiserver',pod!~'kube-apiserver-guard.*',pod=~'kube-apiserver-.*'}
+# sutest__container_cpu__namespace=openshift-kube-apiserver_pod=['!~kube-apiserver-guard.*', 'kube-apiserver-.*']
+rate(container_cpu_usage_seconds_total{namespace=~'openshift-kube-apiserver',pod!~'kube-apiserver-guard.*',pod=~'kube-apiserver-.*'}[5m])
+# sutest__container_sum_cpu__namespace=openshift-kube-apiserver_pod=['!~kube-apiserver-guard.*', 'kube-apiserver-.*']
+sum(rate(container_cpu_usage_seconds_total{namespace=~'openshift-kube-apiserver',pod!~'kube-apiserver-guard.*',pod=~'kube-apiserver-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=openshift-kube-apiserver_pod=['!~kube-apiserver-guard.*', 'kube-apiserver-.*']
+kube_pod_container_resource_requests{namespace=~'openshift-kube-apiserver',pod!~'kube-apiserver-guard.*',pod=~'kube-apiserver-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=openshift-kube-apiserver_pod=['!~kube-apiserver-guard.*', 'kube-apiserver-.*']
+kube_pod_container_resource_limits{namespace=~'openshift-kube-apiserver',pod!~'kube-apiserver-guard.*',pod=~'kube-apiserver-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=openshift-etcd_pod=['!~etcd-guard-.*', 'etcd-.*']
+container_memory_usage_bytes{namespace=~'openshift-etcd',pod!~'etcd-guard-.*',pod=~'etcd-.*'}
+# sutest__container_memory_rss__namespace=openshift-etcd_pod=['!~etcd-guard-.*', 'etcd-.*']
+container_memory_rss{namespace=~'openshift-etcd',pod!~'etcd-guard-.*',pod=~'etcd-.*'}
+# sutest__container_memory_requests__namespace=openshift-etcd_pod=['!~etcd-guard-.*', 'etcd-.*']
+kube_pod_container_resource_requests{namespace=~'openshift-etcd',pod!~'etcd-guard-.*',pod=~'etcd-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=openshift-etcd_pod=['!~etcd-guard-.*', 'etcd-.*']
+kube_pod_container_resource_limits{namespace=~'openshift-etcd',pod!~'etcd-guard-.*',pod=~'etcd-.*',resource='memory'}
+# sutest__container_max_memory__namespace=openshift-etcd_pod=['!~etcd-guard-.*', 'etcd-.*']
+container_memory_max_usage_bytes{namespace=~'openshift-etcd',pod!~'etcd-guard-.*',pod=~'etcd-.*'}
+# sutest__container_cpu__namespace=openshift-etcd_pod=['!~etcd-guard-.*', 'etcd-.*']
+rate(container_cpu_usage_seconds_total{namespace=~'openshift-etcd',pod!~'etcd-guard-.*',pod=~'etcd-.*'}[5m])
+# sutest__container_sum_cpu__namespace=openshift-etcd_pod=['!~etcd-guard-.*', 'etcd-.*']
+sum(rate(container_cpu_usage_seconds_total{namespace=~'openshift-etcd',pod!~'etcd-guard-.*',pod=~'etcd-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=openshift-etcd_pod=['!~etcd-guard-.*', 'etcd-.*']
+kube_pod_container_resource_requests{namespace=~'openshift-etcd',pod!~'etcd-guard-.*',pod=~'etcd-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=openshift-etcd_pod=['!~etcd-guard-.*', 'etcd-.*']
+kube_pod_container_resource_limits{namespace=~'openshift-etcd',pod!~'etcd-guard-.*',pod=~'etcd-.*',resource='cpu'}
+# Sutest API Server Requests (successes)
+sum by (code) (increase(apiserver_request_total{code=~"2.."}[2m]))
+# Sutest API Server Requests (client errors)
+sum by (code) (increase(apiserver_request_total{code=~"4.."}[2m]))
+# Sutest API Server Requests (server errors)
+sum by (code) (increase(apiserver_request_total{code=~"5.."}[2m]))
+# Sutest API Server GET Requests duration
+histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb="GET", subresource!="log"}[2m])) by (resource,subresource,le)) > 0
+# Sutest API Server PUT Requests duration
+histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb="PUT", subresource!="log"}[2m])) by (resource,subresource,le)) > 0
+# Sutest API Server LIST Requests duration
+histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb="LIST", subresource!="log"}[2m])) by (resource,subresource,le)) > 0
+# Sutest API Server PATCH Requests duration
+histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb="PATCH", subresource!="log"}[2m])) by (resource,subresource,le)) > 0
+# Sutest Control Plane Node CPU usage
+sum(irate(node_cpu_seconds_total[2m])) by (mode, instance)
+# Sutest Control Plane Node CPU idle
+sum(irate(node_cpu_seconds_total{mode="idle"}[2m])) by (mode, instance)
+# sutest__container_memory_usage_bytes__namespace=kserve.*_container=kserve-container
+container_memory_usage_bytes{namespace=~'kserve.*',container=~'kserve-container'}
+# sutest__container_memory_rss__namespace=kserve.*_container=kserve-container
+container_memory_rss{namespace=~'$KSERVE.*',container=~'kserve-container'}
+# sutest__container_memory_requests__namespace=kserve.*_container=kserve-container
+kube_pod_container_resource_requests{namespace=~'$KSERVE.*',container=~'kserve-container',resource='memory'}
+# sutest__container_memory_limits__namespace=kserve.*_container=kserve-container
+kube_pod_container_resource_limits{namespace=~'$KSERVE.*',container=~'kserve-container',resource='memory'}
+# sutest__container_max_memory__namespace=kserve.*_container=kserve-container
+container_memory_max_usage_bytes{namespace=~'$KSERVE.*',container=~'kserve-container'}
+# sutest__container_cpu__namespace=kserve.*_container=kserve-container
+rate(container_cpu_usage_seconds_total{namespace=~'$KSERVE.*',container=~'kserve-container'}[5m])
+# sutest__container_sum_cpu__namespace=kserve.*_container=kserve-container
+sum(rate(container_cpu_usage_seconds_total{namespace=~'$KSERVE.*',container=~'kserve-container'}[5m]))
+# sutest__container_cpu_requests__namespace=kserve.*_container=kserve-container
+kube_pod_container_resource_requests{namespace=~'$KSERVE.*',container=~'kserve-container',resource='cpu'}
+# sutest__container_cpu_limits__namespace=kserve.*_container=kserve-container
+kube_pod_container_resource_limits{namespace=~'$KSERVE.*',container=~'kserve-container',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=kserve.*_container=transformer-container
+container_memory_usage_bytes{namespace=~'$KSERVE.*',container=~'transformer-container'}
+# sutest__container_memory_rss__namespace=kserve.*_container=transformer-container
+container_memory_rss{namespace=~'$KSERVE.*',container=~'transformer-container'}
+# sutest__container_memory_requests__namespace=kserve.*_container=transformer-container
+kube_pod_container_resource_requests{namespace=~'$KSERVE.*',container=~'transformer-container',resource='memory'}
+# sutest__container_memory_limits__namespace=kserve.*_container=transformer-container
+kube_pod_container_resource_limits{namespace=~'$KSERVE.*',container=~'transformer-container',resource='memory'}
+# sutest__container_max_memory__namespace=kserve.*_container=transformer-container
+container_memory_max_usage_bytes{namespace=~'$KSERVE.*',container=~'transformer-container'}
+# sutest__container_cpu__namespace=kserve.*_container=transformer-container
+rate(container_cpu_usage_seconds_total{namespace=~'$KSERVE.*',container=~'transformer-container'}[5m])
+# sutest__container_sum_cpu__namespace=kserve.*_container=transformer-container
+sum(rate(container_cpu_usage_seconds_total{namespace=~'$KSERVE.*',container=~'transformer-container'}[5m]))
+# sutest__container_cpu_requests__namespace=kserve.*_container=transformer-container
+kube_pod_container_resource_requests{namespace=~'$KSERVE.*',container=~'transformer-container',resource='cpu'}
+# sutest__container_cpu_limits__namespace=kserve.*_container=transformer-container
+kube_pod_container_resource_limits{namespace=~'$KSERVE.*',container=~'transformer-container',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=kserve.*_container=istio-proxy
+container_memory_usage_bytes{namespace=~'$KSERVE.*',container=~'istio-proxy'}
+# sutest__container_memory_rss__namespace=kserve.*_container=istio-proxy
+container_memory_rss{namespace=~'$KSERVE.*',container=~'istio-proxy'}
+# sutest__container_memory_requests__namespace=kserve.*_container=istio-proxy
+kube_pod_container_resource_requests{namespace=~'$KSERVE.*',container=~'istio-proxy',resource='memory'}
+# sutest__container_memory_limits__namespace=kserve.*_container=istio-proxy
+kube_pod_container_resource_limits{namespace=~'$KSERVE.*',container=~'istio-proxy',resource='memory'}
+# sutest__container_max_memory__namespace=kserve.*_container=istio-proxy
+container_memory_max_usage_bytes{namespace=~'$KSERVE.*',container=~'istio-proxy'}
+# sutest__container_cpu__namespace=kserve.*_container=istio-proxy
+rate(container_cpu_usage_seconds_total{namespace=~'$KSERVE.*',container=~'istio-proxy'}[5m])
+# sutest__container_sum_cpu__namespace=kserve.*_container=istio-proxy
+sum(rate(container_cpu_usage_seconds_total{namespace=~'$KSERVE.*',container=~'istio-proxy'}[5m]))
+# sutest__container_cpu_requests__namespace=kserve.*_container=istio-proxy
+kube_pod_container_resource_requests{namespace=~'$KSERVE.*',container=~'istio-proxy',resource='cpu'}
+# sutest__container_cpu_limits__namespace=kserve.*_container=istio-proxy
+kube_pod_container_resource_limits{namespace=~'$KSERVE.*',container=~'istio-proxy',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=kserve.*_container=queue-proxy
+container_memory_usage_bytes{namespace=~'$KSERVE.*',container=~'queue-proxy'}
+# sutest__container_memory_rss__namespace=kserve.*_container=queue-proxy
+container_memory_rss{namespace=~'$KSERVE.*',container=~'queue-proxy'}
+# sutest__container_memory_requests__namespace=kserve.*_container=queue-proxy
+kube_pod_container_resource_requests{namespace=~'$KSERVE.*',container=~'queue-proxy',resource='memory'}
+# sutest__container_memory_limits__namespace=kserve.*_container=queue-proxy
+kube_pod_container_resource_limits{namespace=~'$KSERVE.*',container=~'queue-proxy',resource='memory'}
+# sutest__container_max_memory__namespace=kserve.*_container=queue-proxy
+container_memory_max_usage_bytes{namespace=~'$KSERVE.*',container=~'queue-proxy'}
+# sutest__container_cpu__namespace=kserve.*_container=queue-proxy
+rate(container_cpu_usage_seconds_total{namespace=~'$KSERVE.*',container=~'queue-proxy'}[5m])
+# sutest__container_sum_cpu__namespace=kserve.*_container=queue-proxy
+sum(rate(container_cpu_usage_seconds_total{namespace=~'$KSERVE.*',container=~'queue-proxy'}[5m]))
+# sutest__container_cpu_requests__namespace=kserve.*_container=queue-proxy
+kube_pod_container_resource_requests{namespace=~'$KSERVE.*',container=~'queue-proxy',resource='cpu'}
+# sutest__container_cpu_limits__namespace=kserve.*_container=queue-proxy
+kube_pod_container_resource_limits{namespace=~'$KSERVE.*',container=~'queue-proxy',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=redhat-ods-applications_pod=kserve-controller-manager-.*
+container_memory_usage_bytes{namespace=~'redhat-ods-applications',pod=~'kserve-controller-manager-.*'}
+# sutest__container_memory_rss__namespace=redhat-ods-applications_pod=kserve-controller-manager-.*
+container_memory_rss{namespace=~'redhat-ods-applications',pod=~'kserve-controller-manager-.*'}
+# sutest__container_memory_requests__namespace=redhat-ods-applications_pod=kserve-controller-manager-.*
+kube_pod_container_resource_requests{namespace=~'redhat-ods-applications',pod=~'kserve-controller-manager-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=redhat-ods-applications_pod=kserve-controller-manager-.*
+kube_pod_container_resource_limits{namespace=~'redhat-ods-applications',pod=~'kserve-controller-manager-.*',resource='memory'}
+# sutest__container_max_memory__namespace=redhat-ods-applications_pod=kserve-controller-manager-.*
+container_memory_max_usage_bytes{namespace=~'redhat-ods-applications',pod=~'kserve-controller-manager-.*'}
+# sutest__container_cpu__namespace=redhat-ods-applications_pod=kserve-controller-manager-.*
+rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-applications',pod=~'kserve-controller-manager-.*'}[5m])
+# sutest__container_sum_cpu__namespace=redhat-ods-applications_pod=kserve-controller-manager-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-applications',pod=~'kserve-controller-manager-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=redhat-ods-applications_pod=kserve-controller-manager-.*
+kube_pod_container_resource_requests{namespace=~'redhat-ods-applications',pod=~'kserve-controller-manager-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=redhat-ods-applications_pod=kserve-controller-manager-.*
+kube_pod_container_resource_limits{namespace=~'redhat-ods-applications',pod=~'kserve-controller-manager-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=redhat-ods-applications_pod=odh-model-controller-.*
+container_memory_usage_bytes{namespace=~'redhat-ods-applications',pod=~'odh-model-controller-.*'}
+# sutest__container_memory_rss__namespace=redhat-ods-applications_pod=odh-model-controller-.*
+container_memory_rss{namespace=~'redhat-ods-applications',pod=~'odh-model-controller-.*'}
+# sutest__container_memory_requests__namespace=redhat-ods-applications_pod=odh-model-controller-.*
+kube_pod_container_resource_requests{namespace=~'redhat-ods-applications',pod=~'odh-model-controller-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=redhat-ods-applications_pod=odh-model-controller-.*
+kube_pod_container_resource_limits{namespace=~'redhat-ods-applications',pod=~'odh-model-controller-.*',resource='memory'}
+# sutest__container_max_memory__namespace=redhat-ods-applications_pod=odh-model-controller-.*
+container_memory_max_usage_bytes{namespace=~'redhat-ods-applications',pod=~'odh-model-controller-.*'}
+# sutest__container_cpu__namespace=redhat-ods-applications_pod=odh-model-controller-.*
+rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-applications',pod=~'odh-model-controller-.*'}[5m])
+# sutest__container_sum_cpu__namespace=redhat-ods-applications_pod=odh-model-controller-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-applications',pod=~'odh-model-controller-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=redhat-ods-applications_pod=odh-model-controller-.*
+kube_pod_container_resource_requests{namespace=~'redhat-ods-applications',pod=~'odh-model-controller-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=redhat-ods-applications_pod=odh-model-controller-.*
+kube_pod_container_resource_limits{namespace=~'redhat-ods-applications',pod=~'odh-model-controller-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=istio-system_pod=istio-egressgateway-.*
+container_memory_usage_bytes{namespace=~'istio-system',pod=~'istio-egressgateway-.*'}
+# sutest__container_memory_rss__namespace=istio-system_pod=istio-egressgateway-.*
+container_memory_rss{namespace=~'istio-system',pod=~'istio-egressgateway-.*'}
+# sutest__container_memory_requests__namespace=istio-system_pod=istio-egressgateway-.*
+kube_pod_container_resource_requests{namespace=~'istio-system',pod=~'istio-egressgateway-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=istio-system_pod=istio-egressgateway-.*
+kube_pod_container_resource_limits{namespace=~'istio-system',pod=~'istio-egressgateway-.*',resource='memory'}
+# sutest__container_max_memory__namespace=istio-system_pod=istio-egressgateway-.*
+container_memory_max_usage_bytes{namespace=~'istio-system',pod=~'istio-egressgateway-.*'}
+# sutest__container_cpu__namespace=istio-system_pod=istio-egressgateway-.*
+rate(container_cpu_usage_seconds_total{namespace=~'istio-system',pod=~'istio-egressgateway-.*'}[5m])
+# sutest__container_sum_cpu__namespace=istio-system_pod=istio-egressgateway-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'istio-system',pod=~'istio-egressgateway-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=istio-system_pod=istio-egressgateway-.*
+kube_pod_container_resource_requests{namespace=~'istio-system',pod=~'istio-egressgateway-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=istio-system_pod=istio-egressgateway-.*
+kube_pod_container_resource_limits{namespace=~'istio-system',pod=~'istio-egressgateway-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=istio-system_pod=istio-ingressgateway-.*
+container_memory_usage_bytes{namespace=~'istio-system',pod=~'istio-ingressgateway-.*'}
+# sutest__container_memory_rss__namespace=istio-system_pod=istio-ingressgateway-.*
+container_memory_rss{namespace=~'istio-system',pod=~'istio-ingressgateway-.*'}
+# sutest__container_memory_requests__namespace=istio-system_pod=istio-ingressgateway-.*
+kube_pod_container_resource_requests{namespace=~'istio-system',pod=~'istio-ingressgateway-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=istio-system_pod=istio-ingressgateway-.*
+kube_pod_container_resource_limits{namespace=~'istio-system',pod=~'istio-ingressgateway-.*',resource='memory'}
+# sutest__container_max_memory__namespace=istio-system_pod=istio-ingressgateway-.*
+container_memory_max_usage_bytes{namespace=~'istio-system',pod=~'istio-ingressgateway-.*'}
+# sutest__container_cpu__namespace=istio-system_pod=istio-ingressgateway-.*
+rate(container_cpu_usage_seconds_total{namespace=~'istio-system',pod=~'istio-ingressgateway-.*'}[5m])
+# sutest__container_sum_cpu__namespace=istio-system_pod=istio-ingressgateway-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'istio-system',pod=~'istio-ingressgateway-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=istio-system_pod=istio-ingressgateway-.*
+kube_pod_container_resource_requests{namespace=~'istio-system',pod=~'istio-ingressgateway-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=istio-system_pod=istio-ingressgateway-.*
+kube_pod_container_resource_limits{namespace=~'istio-system',pod=~'istio-ingressgateway-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=istio-system_pod=istiod-data-science-smcp-.*
+container_memory_usage_bytes{namespace=~'istio-system',pod=~'istiod-data-science-smcp-.*'}
+# sutest__container_memory_rss__namespace=istio-system_pod=istiod-data-science-smcp-.*
+container_memory_rss{namespace=~'istio-system',pod=~'istiod-data-science-smcp-.*'}
+# sutest__container_memory_requests__namespace=istio-system_pod=istiod-data-science-smcp-.*
+kube_pod_container_resource_requests{namespace=~'istio-system',pod=~'istiod-data-science-smcp-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=istio-system_pod=istiod-data-science-smcp-.*
+kube_pod_container_resource_limits{namespace=~'istio-system',pod=~'istiod-data-science-smcp-.*',resource='memory'}
+# sutest__container_max_memory__namespace=istio-system_pod=istiod-data-science-smcp-.*
+container_memory_max_usage_bytes{namespace=~'istio-system',pod=~'istiod-data-science-smcp-.*'}
+# sutest__container_cpu__namespace=istio-system_pod=istiod-data-science-smcp-.*
+rate(container_cpu_usage_seconds_total{namespace=~'istio-system',pod=~'istiod-data-science-smcp-.*'}[5m])
+# sutest__container_sum_cpu__namespace=istio-system_pod=istiod-data-science-smcp-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'istio-system',pod=~'istiod-data-science-smcp-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=istio-system_pod=istiod-data-science-smcp-.*
+kube_pod_container_resource_requests{namespace=~'istio-system',pod=~'istiod-data-science-smcp-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=istio-system_pod=istiod-data-science-smcp-.*
+kube_pod_container_resource_limits{namespace=~'istio-system',pod=~'istiod-data-science-smcp-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=knative-serving_pod=activator-.*
+container_memory_usage_bytes{namespace=~'knative-serving',pod=~'activator-.*'}
+# sutest__container_memory_rss__namespace=knative-serving_pod=activator-.*
+container_memory_rss{namespace=~'knative-serving',pod=~'activator-.*'}
+# sutest__container_memory_requests__namespace=knative-serving_pod=activator-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'activator-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=knative-serving_pod=activator-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'activator-.*',resource='memory'}
+# sutest__container_max_memory__namespace=knative-serving_pod=activator-.*
+container_memory_max_usage_bytes{namespace=~'knative-serving',pod=~'activator-.*'}
+# sutest__container_cpu__namespace=knative-serving_pod=activator-.*
+rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'activator-.*'}[5m])
+# sutest__container_sum_cpu__namespace=knative-serving_pod=activator-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'activator-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=knative-serving_pod=activator-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'activator-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=knative-serving_pod=activator-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'activator-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=knative-serving_pod=autoscaler-.*
+container_memory_usage_bytes{namespace=~'knative-serving',pod=~'autoscaler-.*'}
+# sutest__container_memory_rss__namespace=knative-serving_pod=autoscaler-.*
+container_memory_rss{namespace=~'knative-serving',pod=~'autoscaler-.*'}
+# sutest__container_memory_requests__namespace=knative-serving_pod=autoscaler-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'autoscaler-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=knative-serving_pod=autoscaler-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'autoscaler-.*',resource='memory'}
+# sutest__container_max_memory__namespace=knative-serving_pod=autoscaler-.*
+container_memory_max_usage_bytes{namespace=~'knative-serving',pod=~'autoscaler-.*'}
+# sutest__container_cpu__namespace=knative-serving_pod=autoscaler-.*
+rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'autoscaler-.*'}[5m])
+# sutest__container_sum_cpu__namespace=knative-serving_pod=autoscaler-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'autoscaler-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=knative-serving_pod=autoscaler-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'autoscaler-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=knative-serving_pod=autoscaler-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'autoscaler-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=knative-serving_pod=autoscaler-hpa-.*
+container_memory_usage_bytes{namespace=~'knative-serving',pod=~'autoscaler-hpa-.*'}
+# sutest__container_memory_rss__namespace=knative-serving_pod=autoscaler-hpa-.*
+container_memory_rss{namespace=~'knative-serving',pod=~'autoscaler-hpa-.*'}
+# sutest__container_memory_requests__namespace=knative-serving_pod=autoscaler-hpa-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'autoscaler-hpa-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=knative-serving_pod=autoscaler-hpa-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'autoscaler-hpa-.*',resource='memory'}
+# sutest__container_max_memory__namespace=knative-serving_pod=autoscaler-hpa-.*
+container_memory_max_usage_bytes{namespace=~'knative-serving',pod=~'autoscaler-hpa-.*'}
+# sutest__container_cpu__namespace=knative-serving_pod=autoscaler-hpa-.*
+rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'autoscaler-hpa-.*'}[5m])
+# sutest__container_sum_cpu__namespace=knative-serving_pod=autoscaler-hpa-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'autoscaler-hpa-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=knative-serving_pod=autoscaler-hpa-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'autoscaler-hpa-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=knative-serving_pod=autoscaler-hpa-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'autoscaler-hpa-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=knative-serving_pod=controller-.*
+container_memory_usage_bytes{namespace=~'knative-serving',pod=~'controller-.*'}
+# sutest__container_memory_rss__namespace=knative-serving_pod=controller-.*
+container_memory_rss{namespace=~'knative-serving',pod=~'controller-.*'}
+# sutest__container_memory_requests__namespace=knative-serving_pod=controller-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'controller-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=knative-serving_pod=controller-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'controller-.*',resource='memory'}
+# sutest__container_max_memory__namespace=knative-serving_pod=controller-.*
+container_memory_max_usage_bytes{namespace=~'knative-serving',pod=~'controller-.*'}
+# sutest__container_cpu__namespace=knative-serving_pod=controller-.*
+rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'controller-.*'}[5m])
+# sutest__container_sum_cpu__namespace=knative-serving_pod=controller-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'controller-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=knative-serving_pod=controller-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'controller-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=knative-serving_pod=controller-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'controller-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=knative-serving_pod=domain-mapping-.*
+container_memory_usage_bytes{namespace=~'knative-serving',pod=~'domain-mapping-.*'}
+# sutest__container_memory_rss__namespace=knative-serving_pod=domain-mapping-.*
+container_memory_rss{namespace=~'knative-serving',pod=~'domain-mapping-.*'}
+# sutest__container_memory_requests__namespace=knative-serving_pod=domain-mapping-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'domain-mapping-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=knative-serving_pod=domain-mapping-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'domain-mapping-.*',resource='memory'}
+# sutest__container_max_memory__namespace=knative-serving_pod=domain-mapping-.*
+container_memory_max_usage_bytes{namespace=~'knative-serving',pod=~'domain-mapping-.*'}
+# sutest__container_cpu__namespace=knative-serving_pod=domain-mapping-.*
+rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'domain-mapping-.*'}[5m])
+# sutest__container_sum_cpu__namespace=knative-serving_pod=domain-mapping-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'domain-mapping-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=knative-serving_pod=domain-mapping-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'domain-mapping-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=knative-serving_pod=domain-mapping-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'domain-mapping-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=knative-serving_pod=domainmapping-webhook-.*
+container_memory_usage_bytes{namespace=~'knative-serving',pod=~'domainmapping-webhook-.*'}
+# sutest__container_memory_rss__namespace=knative-serving_pod=domainmapping-webhook-.*
+container_memory_rss{namespace=~'knative-serving',pod=~'domainmapping-webhook-.*'}
+# sutest__container_memory_requests__namespace=knative-serving_pod=domainmapping-webhook-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'domainmapping-webhook-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=knative-serving_pod=domainmapping-webhook-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'domainmapping-webhook-.*',resource='memory'}
+# sutest__container_max_memory__namespace=knative-serving_pod=domainmapping-webhook-.*
+container_memory_max_usage_bytes{namespace=~'knative-serving',pod=~'domainmapping-webhook-.*'}
+# sutest__container_cpu__namespace=knative-serving_pod=domainmapping-webhook-.*
+rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'domainmapping-webhook-.*'}[5m])
+# sutest__container_sum_cpu__namespace=knative-serving_pod=domainmapping-webhook-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'domainmapping-webhook-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=knative-serving_pod=domainmapping-webhook-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'domainmapping-webhook-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=knative-serving_pod=domainmapping-webhook-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'domainmapping-webhook-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=knative-serving_pod=net-istio-controller-.*
+container_memory_usage_bytes{namespace=~'knative-serving',pod=~'net-istio-controller-.*'}
+# sutest__container_memory_rss__namespace=knative-serving_pod=net-istio-controller-.*
+container_memory_rss{namespace=~'knative-serving',pod=~'net-istio-controller-.*'}
+# sutest__container_memory_requests__namespace=knative-serving_pod=net-istio-controller-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'net-istio-controller-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=knative-serving_pod=net-istio-controller-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'net-istio-controller-.*',resource='memory'}
+# sutest__container_max_memory__namespace=knative-serving_pod=net-istio-controller-.*
+container_memory_max_usage_bytes{namespace=~'knative-serving',pod=~'net-istio-controller-.*'}
+# sutest__container_cpu__namespace=knative-serving_pod=net-istio-controller-.*
+rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'net-istio-controller-.*'}[5m])
+# sutest__container_sum_cpu__namespace=knative-serving_pod=net-istio-controller-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'net-istio-controller-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=knative-serving_pod=net-istio-controller-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'net-istio-controller-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=knative-serving_pod=net-istio-controller-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'net-istio-controller-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=knative-serving_pod=net-istio-webhook-.*
+container_memory_usage_bytes{namespace=~'knative-serving',pod=~'net-istio-webhook-.*'}
+# sutest__container_memory_rss__namespace=knative-serving_pod=net-istio-webhook-.*
+container_memory_rss{namespace=~'knative-serving',pod=~'net-istio-webhook-.*'}
+# sutest__container_memory_requests__namespace=knative-serving_pod=net-istio-webhook-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'net-istio-webhook-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=knative-serving_pod=net-istio-webhook-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'net-istio-webhook-.*',resource='memory'}
+# sutest__container_max_memory__namespace=knative-serving_pod=net-istio-webhook-.*
+container_memory_max_usage_bytes{namespace=~'knative-serving',pod=~'net-istio-webhook-.*'}
+# sutest__container_cpu__namespace=knative-serving_pod=net-istio-webhook-.*
+rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'net-istio-webhook-.*'}[5m])
+# sutest__container_sum_cpu__namespace=knative-serving_pod=net-istio-webhook-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'net-istio-webhook-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=knative-serving_pod=net-istio-webhook-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'net-istio-webhook-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=knative-serving_pod=net-istio-webhook-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'net-istio-webhook-.*',resource='cpu'}
+# sutest__container_memory_usage_bytes__namespace=knative-serving_pod=webhook-.*
+container_memory_usage_bytes{namespace=~'knative-serving',pod=~'webhook-.*'}
+# sutest__container_memory_rss__namespace=knative-serving_pod=webhook-.*
+container_memory_rss{namespace=~'knative-serving',pod=~'webhook-.*'}
+# sutest__container_memory_requests__namespace=knative-serving_pod=webhook-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'webhook-.*',resource='memory'}
+# sutest__container_memory_limits__namespace=knative-serving_pod=webhook-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'webhook-.*',resource='memory'}
+# sutest__container_max_memory__namespace=knative-serving_pod=webhook-.*
+container_memory_max_usage_bytes{namespace=~'knative-serving',pod=~'webhook-.*'}
+# sutest__container_cpu__namespace=knative-serving_pod=webhook-.*
+rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'webhook-.*'}[5m])
+# sutest__container_sum_cpu__namespace=knative-serving_pod=webhook-.*
+sum(rate(container_cpu_usage_seconds_total{namespace=~'knative-serving',pod=~'webhook-.*'}[5m]))
+# sutest__container_cpu_requests__namespace=knative-serving_pod=webhook-.*
+kube_pod_container_resource_requests{namespace=~'knative-serving',pod=~'webhook-.*',resource='cpu'}
+# sutest__container_cpu_limits__namespace=knative-serving_pod=webhook-.*
+kube_pod_container_resource_limits{namespace=~'knative-serving',pod=~'webhook-.*',resource='cpu'}
+# Sutest GPU memory used
+DCGM_FI_DEV_FB_USED{exported_container="kserve-container"}
+# Sutest GPU memory used (all GPUs)
+sum(DCGM_FI_DEV_FB_USED{exported_container="kserve-container"})
+# Sutest GPU active computes
+DCGM_FI_PROF_SM_ACTIVE{exported_container="kserve-container"}
+# Sutest GPU computes occupancy
+DCGM_FI_PROF_SM_OCCUPANCY{exported_container="kserve-container"}
+# Sutest GPU memory transfer utilization
+DCGM_FI_DEV_MEM_COPY_UTIL{exported_container="kserve-container"}
+# Sutest GPU memory unallocated
+DCGM_FI_DEV_FB_FREE{exported_container="kserve-container"}
+# Sutest GPU compute utilization (not 100% accurate)
+DCGM_FI_DEV_GPU_UTIL{exported_container="kserve-container"}
+# Sutest GPU engine usage (not 100% accurate)
+DCGM_FI_PROF_GR_ENGINE_ACTIVE{exported_container="kserve-container"}
+# Sutest GPU active fp16 pipe
+DCGM_FI_PROF_PIPE_FP16_ACTIVE{exported_container="kserve-container"}
+# Sutest GPU active fp32 pipe
+DCGM_FI_PROF_PIPE_FP32_ACTIVE{exported_container="kserve-container"}
+# Sutest GPU active fp64 pipe
+DCGM_FI_PROF_PIPE_FP64_ACTIVE{exported_container="kserve-container"}
+# Sutest GPU NVLink transfer (rx)
+DCGM_FI_PROF_NVLINK_RX_BYTES{exported_container="kserve-container"}
+# Sutest GPU NVLink transfer (tx)
+DCGM_FI_PROF_NVLINK_TX_BYTES{exported_container="kserve-container"}
+# Sutest GPU PCIe transfer (rx)
+DCGM_FI_PROF_PCIE_RX_BYTES{exported_container="kserve-container"}
+# Sutest GPU PCIe transfer (tx)
+DCGM_FI_PROF_PCIE_TX_BYTES{exported_container="kserve-container"}
+# redhat-ods-.* CPU request
+sum(kube_pod_container_resource_requests{namespace=~'redhat-ods-.*',resource='cpu'})
+# redhat-ods-.* CPU limit
+sum(kube_pod_container_resource_limits{namespace=~'redhat-ods-.*',resource='cpu'})
+# redhat-ods-.* CPU usage
+sum(rate(container_cpu_usage_seconds_total{namespace=~'redhat-ods-.*'}[5m]))
+# redhat-ods-.* memory request
+sum(kube_pod_container_resource_requests{namespace=~'redhat-ods-.*',resource='memory'})
+# redhat-ods-.* memory limit
+sum(kube_pod_container_resource_limits{namespace=~'redhat-ods-.*',resource='memory'})
+# redhat-ods-.* memory usage
+sum(container_memory_rss{namespace=~'redhat-ods-.*'})
+# knative-.* CPU request
+sum(kube_pod_container_resource_requests{namespace=~'knative-.*',resource='cpu'})
+# knative-.* CPU limit
+sum(kube_pod_container_resource_limits{namespace=~'knative-.*',resource='cpu'})
+# knative-.* CPU usage
+sum(rate(container_cpu_usage_seconds_total{namespace=~'knative-.*'}[5m]))
+# knative-.* memory request
+sum(kube_pod_container_resource_requests{namespace=~'knative-.*',resource='memory'})
+# knative-.* memory limit
+sum(kube_pod_container_resource_limits{namespace=~'knative-.*',resource='memory'})
+# knative-.* memory usage
+sum(container_memory_rss{namespace=~'knative-.*'})
+# istio-system CPU request
+sum(kube_pod_container_resource_requests{namespace=~'istio-system',resource='cpu'})
+# istio-system CPU limit
+sum(kube_pod_container_resource_limits{namespace=~'istio-system',resource='cpu'})
+# istio-system CPU usage
+sum(rate(container_cpu_usage_seconds_total{namespace=~'istio-system'}[5m]))
+# istio-system memory request
+sum(kube_pod_container_resource_requests{namespace=~'istio-system',resource='memory'})
+# istio-system memory limit
+sum(kube_pod_container_resource_limits{namespace=~'istio-system',resource='memory'})
+# istio-system memory usage
+sum(container_memory_rss{namespace=~'istio-system'})
+# openshift-operators CPU request
+sum(kube_pod_container_resource_requests{namespace=~'openshift-operators',resource='cpu'})
+# openshift-operators CPU limit
+sum(kube_pod_container_resource_limits{namespace=~'openshift-operators',resource='cpu'})
+# openshift-operators CPU usage
+sum(rate(container_cpu_usage_seconds_total{namespace=~'openshift-operators'}[5m]))
+# openshift-operators memory request
+sum(kube_pod_container_resource_requests{namespace=~'openshift-operators',resource='memory'})
+# openshift-operators memory limit
+sum(kube_pod_container_resource_limits{namespace=~'openshift-operators',resource='memory'})
+# openshift-operators memory usage
+sum(container_memory_rss{namespace=~'openshift-operators'})
+# kserve-e2e.* CPU request
+sum(kube_pod_container_resource_requests{namespace=~'$NAMESPACE.*',resource='cpu'})
+# kserve-e2e.* CPU limit
+sum(kube_pod_container_resource_limits{namespace=~'$NAMESPACE.*',resource='cpu'})
+# kserve-e2e.* CPU usage
+sum(rate(container_cpu_usage_seconds_total{namespace=~'$NAMESPACE.*'}[5m]))
+# kserve-e2e.* memory request
+sum(kube_pod_container_resource_requests{namespace=~'$NAMESPACE.*',resource='memory'})
+# kserve-e2e.* memory limit
+sum(kube_pod_container_resource_limits{namespace=~'$NAMESPACE.*',resource='memory'})
+# kserve-e2e.* memory usage
+sum(container_memory_rss{namespace=~'$NAMESPACE.*'})

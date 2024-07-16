@@ -5,6 +5,7 @@ import pathlib
 
 from projects.core.library import config
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
+TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
 ARTIF_DIR = os.environ.get("ARTIFACT_DIR")
@@ -165,13 +166,13 @@ def multi_model_test_sequentially(locally=False):
 
     # launch the remote execution
 
-    reset_prometheus()
+    prom_start_ts = reset_prometheus()
     with env.NextArtifactDir("multi_model_test_sequentially"):
         try:
             run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially",
                                         artifact_dir_suffix="_test_sequentially")
         finally:
-            generate_kserve_prom_results("multi-model_sequential")
+            generate_prom_results("multi-model_sequential", prom_start_ts)
 
 
 def test_models_longevity():
@@ -185,7 +186,7 @@ def test_models_longevity():
     logging.info(f"Longevity test started at:     {start}")
     logging.info(f"Longevity test will finish at: {finish}")
 
-    reset_prometheus()
+    prom_start_ts = reset_prometheus()
 
     deploy_models_concurrently()
 
@@ -243,7 +244,7 @@ def test_models_longevity():
                 run_final_test = False
                 break
 
-    generate_kserve_prom_results("longevity")
+    generate_prom_results("longevity", prom_start_ts)
 
 
 def multi_model_deploy_and_test():
@@ -274,8 +275,8 @@ def single_model_deploy_and_test_sequentially(locally=False):
     failed = []
     for consolidated_model in consolidated_models:
         with env.NextArtifactDir(consolidated_model['name']):
+            prom_start_ts = reset_prometheus()
             try:
-                reset_prometheus()
 
                 deploy_consolidated_model(consolidated_model)
 
@@ -286,7 +287,7 @@ def single_model_deploy_and_test_sequentially(locally=False):
                     print(f"{consolidated_model['name']} failed: {e.__class__.__name__}: {e}", file=f)
                 exc = e
 
-            generate_kserve_prom_results("single_model")
+            generate_prom_results("single_model", prom_start_ts)
 
             run.run_and_catch(exc, undeploy_consolidated_model, consolidated_model)
 
@@ -299,7 +300,7 @@ def multi_model_test_concurrently(expe_name="multi-model_concurrent", with_kserv
     "Tests all the configured models concurrently (all at the same time)"
 
     if with_kserve_prom:
-        reset_prometheus()
+        prom_start_ts = reset_prometheus()
 
     with env.NextArtifactDir("multi_model_test_concurrently"):
         try:
@@ -307,7 +308,7 @@ def multi_model_test_concurrently(expe_name="multi-model_concurrent", with_kserv
             run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_concurrently", artifact_dir_suffix="_test_concurrently")
         finally:
             if with_kserve_prom:
-                generate_kserve_prom_results(expe_name)
+                generate_prom_results(expe_name, prom_start_ts)
 
 
 def test_one_model(index: int = None, use_job_index: bool = False, model_name: str = None, namespace: str = None):
@@ -323,32 +324,78 @@ def test_one_model(index: int = None, use_job_index: bool = False, model_name: s
 # ---
 
 def reset_prometheus(delay=60):
-    if not config.ci_artifacts.get_config("tests.capture_prom"):
+    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
+    if not capture_prom:
         logging.info("tests.capture_prom is disabled, skipping Prometheus DB reset")
         return
 
+    prom_start_ts = datetime.datetime.now()
+
+    if capture_prom == "with-queries":
+        return prom_start_ts
+
     with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
         parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
-        parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+        if config.ci_artifacts.get_config("tests.capture_prom_uwm"):
+            parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
 
     logging.info(f"Wait {delay}s for Prometheus to restart collecting data ...")
     time.sleep(delay)
 
+    # at the moment, only used when capture_prom == "with-queries".
+    # Returned for consistency.
+    return prom_start_ts
 
-def dump_prometheus(delay=60):
-    if not config.ci_artifacts.get_config("tests.capture_prom"):
+
+def dump_prometheus(prom_start_ts, delay=60):
+    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
+
+    if not capture_prom:
         logging.info("tests.capture_prom is disabled, skipping Prometheus DB dump")
         return
+
+    if config.ci_artifacts.get_config("tests.dry_mode"):
+        logging.info("tests.dry_mode is enabled, skipping Prometheus DB dump")
+        return
+
+    if capture_prom == "with-queries":
+        if config.ci_artifacts.get_config("tests.capture_prom_uwm"):
+            logging.error("tests.capture_prom_uwm not supported with capture Prom with queries")
+
+        prom_end_ts = datetime.datetime.now()
+        args = dict(
+            duration_s = (prom_end_ts - prom_start_ts).total_seconds(),
+            promquery_file = TESTING_THIS_DIR / "metrics.txt",
+            dest_dir = env.ARTIFACT_DIR / "metrics",
+            namespace = config.ci_artifacts.get_config("tests.e2e.namespace"),
+        )
+
+        with env.NextArtifactDir("cluster__dump_prometheus_dbs"):
+            run.run_toolbox("cluster", "query_prometheus_db", **args)
+            with env.NextArtifactDir("cluster__dump_prometheus_db"):
+                with open(env.ARTIFACT_DIR / "prometheus.tar.dummy", "w") as f:
+                    print(f"""This file is a dummy.
+Metrics have been queried from Prometheus and saved into {args['dest_dir']}.
+Keep this file here, so that 'projects/fine_tuning/visualizations/fine_tuning_prom/store/parsers.py' things Prometheus metrics have been captured,
+and it directly processes the cached files from the metrics directory.""", file=f)
+                nodes = run.run("oc get nodes -ojson", capture_stdout=True)
+                with open(env.ARTIFACT_DIR / "nodes.json", "w") as f:
+                    print(nodes.stdout.strip(), file=f)
+
+        return
+
+    # prom_start_ts not used when during full prometheus dump.
 
     logging.info(f"Wait {delay}s for Prometheus to finish collecting data ...")
     time.sleep(delay)
 
     with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
         parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True)
-        parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
+        if config.ci_artifacts.get_config("tests.capture_prom_uwm"):
+            parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
 
 
-def generate_kserve_prom_results(expe_name):
+def generate_prom_results(expe_name, prom_start_ts):
     anchor_file = env.ARTIFACT_DIR / ".matbench_prom_db_dir"
     if anchor_file.exists():
         raise ValueError(f"File {anchor_file} already exist. It should be in a dedicated directory.")
@@ -363,7 +410,7 @@ def generate_kserve_prom_results(expe_name):
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
         yaml.dump(config.ci_artifacts.config, f, indent=4)
 
-    dump_prometheus()
+    dump_prometheus(prom_start_ts)
 
     raw_deployment = config.ci_artifacts.get_config("kserve.raw_deployment.enabled")
     run.run_toolbox("kserve", "capture_operators_state", raw_deployment=raw_deployment, run_kwargs=dict(capture_stdout=True))

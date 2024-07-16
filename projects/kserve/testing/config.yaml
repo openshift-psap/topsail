@@ -571,6 +571,7 @@ tests:
   dry_mode: false
   visualize: true
   capture_prom: true
+  capture_prom_uwm: false
   prom_plot_workload: projects.kserve.visualizations.kserve-prom
   prom_plot_index_suffix: -prom
   scale:
