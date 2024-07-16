@@ -170,7 +170,8 @@ def get_lane(x_col, ref_value, pct, name):
 def get_regression_lanes(y_col_name, x_col, y_col, default_op):
     ref_name, ref_value = find_reference_point(x_col, y_col, default_op)
 
-    diff_pct = [-round((1 - y/ref_value)*100) for y in y_col if not math.isnan(y)]
+    diff_pct = [-round((1 - y/ref_value)*100) for y in y_col if not math.isnan(y)] \
+        if ref_value != 0 else [0]
 
     ROUND = 5
     round_pcts = set([0, 5, -5] + [ROUND * round(pct/ROUND) for pct in diff_pct])

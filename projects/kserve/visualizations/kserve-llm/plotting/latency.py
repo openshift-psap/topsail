@@ -117,11 +117,12 @@ class LatencyDistribution():
             msg.append(f"The median is {med:.0f} {unit}.")
             msg.append(html.Br())
             q3_q1 = q3 - q1
-            msg.append(f"There are {q3_q1:.0f} {unit} between Q1 and Q3 ({q3_q1/med*100:.1f}% of the median).")
-            msg.append(html.Br())
-            q100_q0 = q100 - q0
-            msg.append(f"There are {q100 - q0:.0f} {unit} between min and max ({q100_q0/med*100:.1f}% of the median).")
-            msg.append(html.Br())
+            if med != 0:
+                msg.append(f"There are {q3_q1:.0f} {unit} between Q1 and Q3 ({q3_q1/med*100:.1f}% of the median).")
+                msg.append(html.Br())
+                q100_q0 = q100 - q0
+                msg.append(f"There are {q100 - q0:.0f} {unit} between min and max ({q100_q0/med*100:.1f}% of the median).")
+                msg.append(html.Br())
 
         return fig, msg
 
