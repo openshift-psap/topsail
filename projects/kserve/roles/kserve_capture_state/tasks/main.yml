@@ -21,18 +21,6 @@
        > "{{ artifact_extra_logs_dir }}/pods.desc"
   ignore_errors: true
 
-- name: Save the state of all the resources
-  shell: |
-    oc get all -n "{{ namespace }}" \
-       > "{{ artifact_extra_logs_dir }}/all.status"
-    oc get all -n "{{ namespace }}" -oyaml \
-       > "{{ artifact_extra_logs_dir }}/all.yaml"
-    oc get all -n "{{ namespace }}" -ojson \
-       > "{{ artifact_extra_logs_dir }}/all.json"
-    oc describe all -n "{{ namespace }}" \
-       > "{{ artifact_extra_logs_dir }}/all.desc"
-  ignore_errors: true
-
 - name: Save the state of the serving resources
   shell: |
     oc get inferenceservice,servingruntime -n "{{ namespace }}" \
