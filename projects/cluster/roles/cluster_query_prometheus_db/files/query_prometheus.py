@@ -28,6 +28,24 @@ def get_k8s_token_proxy():
         token = kubeconfig["users"][0]["user"].get("token")
         proxy = kubeconfig["clusters"][0]["cluster"].get("proxy-url")
 
+    if token is None:
+        logging.info("Couldn't locate the token. Trying to create one ...")
+        NAME = "topsail-prometheus-token"
+        NAMESPACE = "openshift-monitoring"
+
+        create_secret_cmd = f"""\
+        oc create secret generic {NAME} -n {NAMESPACE} \
+           --type=kubernetes.io/service-account-token \
+           --dry-run=client -ojson \
+        | jq '.metadata.annotations={{"kubernetes.io/service-account.name": "prometheus-k8s"}}' \
+        | oc apply -f-"""
+
+        subprocess.run(create_secret_cmd, shell=True, check=True)
+
+        extract_token_cmd = f"oc extract secret/{NAME} -n {NAMESPACE}\
+                            --keys=token --to=-"
+        token = subprocess.run(extract_token_cmd, capture_output = True, text = True, shell=True, check=True).stdout.strip()
+
     return token, proxy
 
 
@@ -53,6 +71,9 @@ def get_queries(metrics_file):
 
 
 def get_prometheus_route():
+    if pathlib.Path("/run/secrets/kubernetes.io/serviceaccount/namespace").exists():
+        return "prometheus-k8s.openshift-monitoring:9091"
+
     result = subprocess.run(
         "oc get route -n openshift-monitoring prometheus-k8s -ojsonpath='{.status.ingress[0].host}'",
         capture_output = True, text = True, shell=True,

@@ -49,4 +49,5 @@
            --start_ts "{{ cluster_query_prometheus_db_start_ts }}"
            --end_ts "{{ cluster_query_prometheus_db_end_ts }}"
            --namespace "{{ cluster_query_prometheus_db_namespace }}"
-           | tee "{{ artifact_extra_logs_dir }}/artifacts/query_prometheus.log"
+           > "{{ artifact_extra_logs_dir }}/artifacts/query_prometheus.log"
+           2>&1

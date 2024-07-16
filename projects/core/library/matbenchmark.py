@@ -31,13 +31,16 @@ def _json_dumper(obj, strict=False):
         raise RuntimeError(f"No default serializer for object of type {obj.__class__}: {obj}")
 
 
-def prepare_benchmark_file(path_tpl:str,
-                           script_tpl:str,
-                           stop_on_error:bool,
-                           common_settings:dict,
-                           test_files:dict,
-                           expe_name:str,
-                           benchmark_values:dict):
+def prepare_benchmark_file(
+        path_tpl:str,
+        script_tpl:str,
+        stop_on_error:bool,
+        common_settings:dict,
+        test_files:dict,
+        expe_name:str = None,
+        benchmark_values:dict = None,
+        expe_to_run: dict = None,
+):
 
     json_benchmark_file = {}
     json_benchmark_file["--path_tpl"] = path_tpl
@@ -46,11 +49,13 @@ def prepare_benchmark_file(path_tpl:str,
     json_benchmark_file["--stop_on_error"] = stop_on_error
     json_benchmark_file["test_files"] = test_files
     json_benchmark_file["common_settings"] = common_settings
-    json_benchmark_file["expe_to_run"] = [expe_name]
-
-
-    json_benchmark_file[expe_name] = expe = {}
-    expe[expe_name] = benchmark_values
+    if expe_to_run:
+        json_benchmark_file["--expe_to_run"] = list(expe_to_run.keys())
+        json_benchmark_file["expe"] = expe_to_run
+    else:
+        json_benchmark_file["--expe_to_run"] = [expe_name]
+        json_benchmark_file[expe_name] = expe = {}
+        expe[expe_name] = benchmark_values
 
     return json_benchmark_file
 
@@ -72,7 +77,7 @@ def save_benchmark_file(benchmark_file_content, dirname=None, name="benchmark.ya
     return benchmark_file, yaml_content
 
 
-def set_benchmark_args(benchmark_file, expe_name, results_dirname=None):
+def set_benchmark_args(benchmark_file, expe_name=None, results_dirname=None):
     if results_dirname is None:
         results_dirname = benchmark_file.parent
 
@@ -81,7 +86,8 @@ def set_benchmark_args(benchmark_file, expe_name, results_dirname=None):
     args["--workload"] = config.ci_artifacts.get_config("matbench.workload")
     args["--benchmark_file"] = str(benchmark_file)
     args["--results_dirname"] = str(results_dirname)
-    args["--expe_to_run"] = expe_name
+    if expe_name:
+        args["--expe_to_run"] = expe_name
 
     return args
 

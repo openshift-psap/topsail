@@ -10,8 +10,9 @@ import threading
 import traceback
 import datetime
 import json
+from collections import defaultdict
 
-from projects.core.library import env, config, run, visualize, matbenchmark
+from projects.core.library import env, config, run, visualize, matbenchmark, merge_dicts
 import prepare_finetuning
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -43,7 +44,9 @@ def reset_prometheus(delay=60):
     logging.info(f"Wait {delay}s for Prometheus to restart collecting data ...")
     time.sleep(delay)
 
-    return prom_start_ts # not used at the moment. Returned for consistency.
+    # at the moment, only used when capture_prom == "with-queries".
+    # Returned for consistency.
+    return prom_start_ts
 
 
 def dump_prometheus(prom_start_ts, delay=60):
@@ -272,6 +275,11 @@ def _run_test_and_visualize(test_override_values=None):
     do_matbenchmarking = test_override_values is None and config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.enabled")
     do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
 
+    if not do_matbenchmarking and config.ci_artifacts.get_config("tests.fine_tuning.test_extra_settings"):
+        msg = "Cannot use 'test_extra_settings' when 'tests.fine_tuning.tests.fine_tuning.matbenchmarking' isn't enabled."
+        logging.error(msg)
+        raise ValueError(msg)
+
     if do_matbenchmarking and do_multi_model:
         msg = "Cannot do matbenchmarking and multi-model at the same time"
         logging.error(msg)
@@ -386,47 +394,49 @@ def _run_test_matbenchmarking(test_artifact_dir_p):
     visualize.prepare_matbench()
 
     with env.NextArtifactDir("matbenchmarking"):
+        test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings")
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
-        benchmark_values = copy.deepcopy(config.ci_artifacts.get_config("tests.fine_tuning.test_settings"))
-        remove_none_values(benchmark_values)
 
-        test_configuration = {}
-        for k in list(benchmark_values.keys()):
-            v = benchmark_values[k]
-            if isinstance(v, list):
-                continue
+        test_extra_settings_lst = config.ci_artifacts.get_config("tests.fine_tuning.test_extra_settings")
+        expe_to_run = dict()
 
-            test_configuration[k] = v
-            del benchmark_values[k]
+        names = defaultdict(int)
+        for idx, test_extra_settings in enumerate(test_extra_settings_lst or [None]):
+            benchmark_values = copy.deepcopy(test_settings)
+            if test_extra_settings is not None:
+                merge_dicts(benchmark_values, test_extra_settings)
 
-        hyper_parameters = test_configuration.get("hyper_parameters", {})
+            remove_none_values(benchmark_values)
 
-        for k in list(hyper_parameters.keys()):
-            v = hyper_parameters[k]
-            if not isinstance(v, list):
-                continue
+            name = benchmark_values["name"]
+            names[name] += 1
+            cnt = names[name] - 1
 
-            benchmark_values[f"hyper_parameters.{k}"] = v
-            del hyper_parameters[k]
+            expe_name = f"{name}_{idx}" if cnt != 0 else name
 
-        path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()])
+            hyper_parameters = benchmark_values.pop("hyper_parameters", {})
 
-        expe_name = "expe"
+            for k, v in hyper_parameters.items():
+                benchmark_values[f"hyper_parameters.{k}"] = v
+
+            expe_to_run[expe_name] = benchmark_values
+
+        path_tpl = "{settings[name]}"
+
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
             script_tpl=f"{sys.argv[0]} matbench_run_one",
             stop_on_error=config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.stop_on_error"),
             common_settings=dict(),
-            test_files={"test_config.yaml": test_configuration},
-            expe_name=expe_name,
-            benchmark_values=benchmark_values,
+            test_files={},
+            expe_to_run=expe_to_run,
         )
 
         logging.info(f"Benchmark configuration to run: \n{yaml.dump(json_benchmark_file, sort_keys=False)}")
 
         benchmark_file, yaml_content = matbenchmark.save_benchmark_file(json_benchmark_file)
 
-        args = matbenchmark.set_benchmark_args(benchmark_file, expe_name)
+        args = matbenchmark.set_benchmark_args(benchmark_file)
 
         failed = matbenchmark.run_benchmark(args)
         if failed:
@@ -468,8 +478,7 @@ def matbench_run_one():
         with open(env.ARTIFACT_DIR / "skip", "w") as f:
             print("Results are in a subdirectory, not here.", file=f)
 
-        with open(env.ARTIFACT_DIR / "test_config.yaml") as f:
-            test_config = yaml.safe_load(f)
+        test_config = {}
 
         if "hyper_parameters" not in test_config:
             test_config["hyper_parameters"] = {}
@@ -482,7 +491,10 @@ def matbench_run_one():
 
             test_config["hyper_parameters"][suffix] = v
 
-        failed = _run_test_and_visualize(test_config)
+        if raw_lists := test_config["hyper_parameters"].pop("raw_lists", None):
+            test_config["hyper_parameters"] |= raw_lists
+
+        failed = _run_test([None], test_config)
 
     sys.exit(1 if failed else 0)
 

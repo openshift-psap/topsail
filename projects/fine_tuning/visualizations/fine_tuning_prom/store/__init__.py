@@ -45,6 +45,7 @@ is_cache_file = local_store.is_cache_file
 is_important_file = local_store.is_important_file
 
 def _rewrite_settings(settings_dict):
+    settings_dict.pop("hyper_parameters.raw_lists", None)
     return settings_dict
 
 # ---
