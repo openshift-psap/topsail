@@ -27,6 +27,7 @@ class Llm_Load_Test:
             max_input_tokens=1024,
             max_output_tokens=512,
             max_sequence_tokens=1536,
+            endpoint="/v1/completions",
             ):
         """
         Load test the wisdom model
@@ -46,6 +47,7 @@ class Llm_Load_Test:
           max_input_tokens: max input tokens in llm load test to filter the dataset
           max_sequence_tokens: max sequence tokens in llm load test to filter the dataset
           max_output_tokens: max output tokens in llm load test to filter the dataset
+          endpoint: name of the endpoint to query (for openai plugin only)
         """
 
         return RunAnsibleRole(locals())
