@@ -119,7 +119,11 @@ def run_benchmark(args, dry_run=False):
         run.run(f"{cmd} --run 2>&1 | tee -a '{test_log_file}'")
         logging.info("Benchmark done.")
     except Exception as e:
-        logging.error(f"MatrixBenchmark benchmark failed.")
+        msg = f"MatrixBenchmark benchmark failed."
+        logging.error(msg)
+        with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
+            print(msg, file=f)
+
         return True # failed
 
     return False # didn't fail
