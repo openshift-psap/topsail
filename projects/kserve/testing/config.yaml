@@ -616,7 +616,7 @@ tests:
         plugin: tgis_grpc_plugin
         interface: grpc
         streaming: true
-
+        endpoint: null # only used with openai plugin
       dataset_size:
         small:
           max_input_tokens: 2047
