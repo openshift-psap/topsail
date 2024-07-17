@@ -119,21 +119,36 @@ ci_presets:
 
   ibm_lora_models:
     extends: [hf_evaluation, dgx_small_footprint]
-    tests.fine_tuning.test_settings.hyper_parameters.peft_method: "lora"
+    tests.fine_tuning.test_settings.model_name: null # for consistency. Set in 'test_extra_settings'
+    tests.fine_tuning.test_settings.dataset_name: news-tokens-16384plus-entries-4096.jsonl
+    tests.fine_tuning.test_settings.dataset_replication: 1
+    tests.fine_tuning.test_settings.gpu: [2, 4]
+    tests.fine_tuning.test_settings.hyper_parameters:
+      peft_method: "lora"
+      torch_dtype: bfloat16
+      use_flash_attn: true
+      max_steps: -1
+      per_device_train_batch_size: [2, 16]
+      max_seq_length: [512, 2048]
+      gradient_accumulation_steps: 4
+      save_strategy: "no"
+      warmup_ratio: 0.03
+      num_train_epochs: 1
+      gradient_checkpointing: true
+      packing: false
+      r: 4
+      lora_alpha: 16
     tests.fine_tuning.test_extra_settings:
-    - name: granite-familiy
+    - name: llama-13b
       model_name:
-      - ibm-granite/granite-34b-code-instruct
+      - meta-llama/Llama-2-13b-hf
       hyper_parameters:
-        raw_lists:
-          target_modules: ["all-linear"]
-        lora_dropout: 0.05
-        lora_alpha: 16
-        r: 8
-    - name: llama-family
+        raw_lists: {target_modules: ["q_proj", "k_proj"]}
+    - name: granite-20b-v2
       model_name:
-      - meta-llama/Llama-2-13b-chat-hf
-      - meta-llama/Meta-Llama-3-70B-Instruct
+      - ibm-granite/granite-20b-code-base
+      hyper_parameters:
+        raw_lists: {target_modules: ["c_attn", "c_proj"]}
 
   dgx_multi_model_ref:
     tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
