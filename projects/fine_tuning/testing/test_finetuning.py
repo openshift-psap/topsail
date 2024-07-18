@@ -156,6 +156,9 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     if transform := dataset_source.get("transform", False):
         test_settings["dataset_transform"] = transform
 
+    if prefer_cache := dataset_source.get("prefer_cache") is not None:
+        test_settings["dataset_prefer_cache"] = prefer_cache
+
     remove_none_values(test_settings)
 
     prepare_finetuning.prepare_namespace(test_settings)
