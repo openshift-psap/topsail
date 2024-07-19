@@ -7,7 +7,7 @@ training_data_path: "/mnt/output/dataset.json" # aka DATASET_DEST
 model_name_or_path: "/mnt/storage/model/{{ fine_tuning_run_fine_tuning_job_model_name }}"
 tokenizer_name_or_path: "/mnt/storage/model/{{ fine_tuning_run_fine_tuning_job_model_name }}"
 
-response_template: "\n### Label:"
+response_template: "{{ fine_tuning_run_fine_tuning_job_dataset_response_template }}"
 
 output_dir: "/mnt/output/fine-tuning"
 
