@@ -340,6 +340,11 @@ fine_tuning:
       source_dir: https://raw.githubusercontent.com/openshift-psap/topsail/main/projects/fine_tuning/roles/fine_tuning_run_fine_tuning_job/files/entrypoint/
       transform: generate_synthetic_dataset.py
 
+    news-tokens-16384plus-entries-4096.jsonl:
+      type: dataset
+      source_dir: /manually/populated
+      response_template: "\n### Response:"
+
     alpaca_data.json:
       type: dataset
       source_dir: 'https://raw.githubusercontent.com/gururise/AlpacaDataCleaned/main'
