@@ -159,6 +159,9 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     if prefer_cache := dataset_source.get("prefer_cache") is not None:
         test_settings["dataset_prefer_cache"] = prefer_cache
 
+    if (response_template := dataset_source.get("response_template")) is not None:
+        test_settings["dataset_response_template"] = response_template
+
     remove_none_values(test_settings)
 
     prepare_finetuning.prepare_namespace(test_settings)
