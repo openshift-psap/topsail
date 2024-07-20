@@ -44,6 +44,9 @@ prepare_dataset
 
 python /mnt/entrypoint/study_dataset.py
 
+echo "# sha256sum of the dataset files"
+sha256sum "$DATASET_SOURCE" "$DATASET_DEST"
+
 if [[ "${DATASET_PREPARE_CACHE_ONLY:-0}" == true ]]; then
     echo "DATASET_PREPARE_CACHE_ONLY is set, stopping here."
     exit 0
