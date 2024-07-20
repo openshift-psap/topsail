@@ -93,7 +93,7 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
 
     if capture_stdout: args["stdout"] = subprocess.PIPE
     if capture_stderr: args["stderr"] = subprocess.PIPE
-
+    if check: args["check"] = True
     if stdin_file:
         if not hasattr(stdin_file, "fileno"):
             raise ValueError("Argument 'stdin_file' must be an open file (with a file descriptor)")
@@ -102,20 +102,10 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
     if protect_shell:
         command = f"set -o errexit;set -o pipefail;set -o nounset;set -o errtrace;{command}"
 
-    proc = subprocess.Popen(command, start_new_session=True, **args)
-    try:
-        ret = proc.wait()
-        if check and ret != 0:
-            raise subprocess.CalledProcessError(proc.returncode, proc.args)
+    proc = subprocess.run(command, **args)
 
-    except KeyboardInterrupt:
-        print("")
-        logging.error("Received a KeyboardInterrupt. Killing the process group...")
-        os.killpg(os.getpgid(proc.pid), signal.SIGINT)
-        raise
-
-    if capture_stdout: proc.stdout = proc.stdout.read().decode("utf8")
-    if capture_stderr: proc.stderr = proc.stderr.read().decode("utf8")
+    if capture_stdout: proc.stdout = proc.stdout.decode("utf8")
+    if capture_stderr: proc.stderr = proc.stderr.decode("utf8")
 
     return proc
 
