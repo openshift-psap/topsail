@@ -80,6 +80,7 @@ ci_presets:
     - ibm-granite/granite-34b-code-instruct
     tests.fine_tuning.test_settings.gpu: [2, 4, 8]
     tests.fine_tuning.test_settings.container_image:
+    - quay.io/modh/fms-hf-tuning:main-5e965e4676bff71f0c4e8219a59aba37ce542083 # 4.42
     - quay.io/modh/fms-hf-tuning:main-abbb2e2dfac0f92a34714147f3bd4696758037c6 # 4.41
     - quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05 # RHOAI 2.11 image
 
