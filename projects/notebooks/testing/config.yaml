@@ -16,7 +16,7 @@ ci_presets:
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
     tests.notebooks.repeat: 2
     tests.notebooks.identifier: scale_test
-    
+
   # run the notebook gating tests
   # (DSG and Jupyter scale tests, notebook performance)
   notebook_gating_scale_test:
