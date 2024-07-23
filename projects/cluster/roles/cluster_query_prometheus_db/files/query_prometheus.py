@@ -22,7 +22,12 @@ def get_k8s_token_proxy():
         proxy = None
 
     else:
-        with open(os.environ["KUBECONFIG"]) as f:
+        kubeconfig_path := os.environ.get("KUBECONFIG")
+
+        if not kubeconfig_path: # this makes it safe if KUBECONFIG == ""
+            kubeconfig_path = pathlib.Path(os.environ["HOME"])  / ".kube/config"
+
+        with open(kubeconfig) as f:
             kubeconfig = yaml.safe_load(f)
 
         token = kubeconfig["users"][0]["user"].get("token")
