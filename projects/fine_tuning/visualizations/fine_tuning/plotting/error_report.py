@@ -67,6 +67,8 @@ def _get_test_setup(entry):
 
     setup_info += [html.Ul(nodes_info)]
 
+    setup_info += [html.Li([f"Test UUID:", html.Code(entry.results.test_uuid, style={"white-space": "pre-wrap"})])]
+
     setup_info += [html.Li([f"Job configuration:", html.Code(yaml.dump(entry.results.job_config), style={"white-space": "pre-wrap"})])]
 
     setup_info += [html.Li([f"Job execution"])]
