@@ -183,7 +183,7 @@
 
 - name: Delete S3 secret minio
   command:
-    oc delete secret/minio 
+    oc delete secret/minio
        -n {{ tester_namespace }}
        --ignore-not-found
 
