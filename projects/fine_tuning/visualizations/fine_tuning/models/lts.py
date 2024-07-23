@@ -43,8 +43,12 @@ class Results(matbench_models.ExclusiveModel):
     train_tokens_per_second: float
     dataset_tokens_per_second: float
     gpu_hours_per_million_tokens: float
+    dataset_tokens_per_second_per_gpu: float
+    train_tokens_per_gpu_per_second: float
     train_samples_per_second: float
-
+    train_runtime: float
+    train_steps_per_second: float
+    avg_tokens_per_sample: float
 
 class KPI(matbench_models.KPI, Settings): pass
 

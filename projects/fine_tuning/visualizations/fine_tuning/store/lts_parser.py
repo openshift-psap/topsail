@@ -39,12 +39,23 @@ def generate_lts_results(results):
     if not results.sfttrainer_metrics.summary or not results.sfttrainer_metrics.summary.__dict__:
         return results_lts
 
-    results_lts.train_tokens_per_second = results.sfttrainer_metrics.summary.train_tokens_per_second
-    results_lts.dataset_tokens_per_second = results.sfttrainer_metrics.summary.dataset_tokens_per_second
     num_gpus = results.job_config["gpu"]
+    if not num_gpus:
+        num_gpus = 1 # prevent div by 0 crashes
+
+    train_tokens_per_second = results.sfttrainer_metrics.summary.train_tokens_per_second * num_gpus
+    results_lts.train_tokens_per_second = train_tokens_per_second
+    results_lts.dataset_tokens_per_second = results.sfttrainer_metrics.summary.dataset_tokens_per_second
+
     results_lts.gpu_hours_per_million_tokens = 1/results.sfttrainer_metrics.summary.dataset_tokens_per_second * 1000000 / 60 / 60 * num_gpus
     results_lts.train_samples_per_second = results.sfttrainer_metrics.summary.train_samples_per_second
 
+    results_lts.train_steps_per_second = results.sfttrainer_metrics.summary.train_steps_per_second
+    results_lts.train_runtime = results.sfttrainer_metrics.summary.train_runtime
+    results_lts.train_tokens_per_gpu_per_second = train_tokens_per_second / num_gpus
+
+    results_lts.dataset_tokens_per_second_per_gpu = results.sfttrainer_metrics.summary.dataset_tokens_per_second / num_gpus
+    results_lts.avg_tokens_per_sample = results.sfttrainer_metrics.dataset_stats.avg_tokens_per_sample
     return results_lts
 
 
