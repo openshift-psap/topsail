@@ -60,6 +60,8 @@
        rsync "{{ minio_podname_cmd.stdout }}:/artifacts/to_export/" "{{ artifact_extra_logs_dir }}" --quiet
 
     rm -f "{{ artifact_extra_logs_dir }}/os-release"
+    rm -f "{{ artifact_extra_logs_dir }}/Standard Data Science Pipeline*"
+    rm -f "{{ artifact_extra_logs_dir }}/pipelines"
   when: 'test_artifacts_collected != "none"'
   ignore_errors: true
 

@@ -78,7 +78,7 @@ test_exit_code=0
     --extra-robot-args "--exitonfailure" \
     |& tee "${ARTIFACT_DIR}/test.log") || test_exit_code=$?
 
-mv /tmp/ods-ci/ods_ci/tmp/ods-ci* "$ARTIFACT_DIR" || true
+mv /tmp/ods-ci/ods_ci/tmp/ods-ci*/* "$ARTIFACT_DIR" || true
 
 if [[ "$test_exit_code" != 0 && "$USER_COUNT" -gt 100 && "$JOB_COMPLETION_INDEX" != 0 ]]; then
     # test failed
@@ -95,6 +95,5 @@ echo "$test_exit_code" > "${ARTIFACT_DIR}/test.exit_code"
 
 echo "Test finished with $test_exit_code errors."
 echo "test_execution: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
-rm ${ARTIFACT_DIR}/Standard Data Science Pipeline-*
 
 exit 0 # always exit 0, we'll decide later if this is a success or a failure
