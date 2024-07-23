@@ -121,16 +121,13 @@
     yq -yi .TEST_USER.PASSWORD=\"${TEST_USER_PASSWORD}\" "$TEST_VAR_FULL"
 
 - name: Delete the ODS-CI secret, it it exists
-  command: 
-    oc delete secret ods-ci-test-variables
-       -n {{ tester_namespace }}
-       --ignore-not-found
+  command: oc delete secret ods-ci-test-variables -n {{ tester_namespace }} --ignore-not-found
 
 - name: Create the ODS-CI secret
-  command:
+  command: 
     oc create secret generic ods-ci-test-variables
-       --from-file test-variables.yml=/tmp/test-variables.yml
-       -n {{ tester_namespace }}
+      --from-file test-variables.yml=/tmp/test-variables.yml
+      -n {{ tester_namespace }}
 
 - name: Delete the ODS-CI secret file
   file:
@@ -160,10 +157,10 @@
     mode: '0400'
 
 - name: Delete the RHODS test entrypoint, if it exists
-  command:
+  command: 
     oc delete cm/dashboard-scale-test-entrypoint
-       -n {{ tester_namespace }}
-       --ignore-not-found
+      -n {{ tester_namespace }}
+      --ignore-not-found
 
 - name: Create the RHODS test entrypoint
   command:
@@ -191,9 +188,7 @@
   shell: |
     set -o pipefail; 
     set -e; 
-
     ADMIN_PASSWORD=$(cat "{{ notebooks_dashboard_scale_test_secret_properties_file }}" | grep admin_password | cut -d= -f2); 
-      
     oc create secret generic minio -n "{{ notebooks_dashboard_scale_test_namespace }}" "--from-literal=MINIO_ROOT_PASSWORD=$ADMIN_PASSWORD" "--from-literal=MINIO_S3_ACCESS_KEY=minio" 
 
 - name: Delete the RHODS tester job, if it exists
