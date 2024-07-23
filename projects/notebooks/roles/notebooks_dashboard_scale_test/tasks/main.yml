@@ -1,3 +1,4 @@
+---
 - name: Ensure that the secret properties file exists
   stat:
     path: "{{ notebooks_dashboard_scale_test_secret_properties_file }}"
@@ -32,8 +33,6 @@
 
 
 - name: Fetch RHODS endpoints from the SUT cluster
-  environment:
-    KUBECONFIG: '{{ sut_cluster_kubeconfig }}'
   block:
   - name: Test the connectivity of the SUT cluster
     command: oc whoami --show-console
@@ -51,11 +50,15 @@
     register: oc_api_url_cmd
 
   - name: Get the RHODS CSV name
-    shell: set -o pipefail; oc get csv -oname -n redhat-ods-operator | grep rhods-operator
+    shell:
+      set -o pipefail;
+      oc get csv -oname -n redhat-ods-operator | grep rhods-operator
     register: rhods_csv_cmd
 
   - name: Get the RHODS version
-    shell: set -o pipefail; oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
+    shell:
+      set -o pipefail;
+      oc get {{ rhods_csv_cmd.stdout }} -n redhat-ods-operator -oname | grep rhods-operator | cut -d/ -f2 | cut -d. -f2-
     register: rhods_version_cmd
 
   - name: Get the Dashboard Product name (to distinguish RHODS from ODH). Currently hardcoded to RHODS.
@@ -118,7 +121,7 @@
     yq -yi .TEST_USER.PASSWORD=\"${TEST_USER_PASSWORD}\" "$TEST_VAR_FULL"
 
 - name: Delete the ODS-CI secret, it it exists
-  command:
+  command: 
     oc delete secret ods-ci-test-variables
        -n {{ tester_namespace }}
        --ignore-not-found
@@ -143,18 +146,12 @@
 - name: Set s3_host_base
   block:
   - name: Get the route hostname
-    command: 
-      oc get route/minio-secure -o jsonpath={.spec.host} -n {{ notebooks_dashboard_scale_test_minio_namespace }}
+    command: oc get route/minio-secure -o jsonpath={.spec.host} -n {{ notebooks_dashboard_scale_test_minio_namespace }}
     register: hostname_result
-
+    
   - name: Set s3_host_base fact
     set_fact:
       s3_host_base: "{{ hostname_result.stdout }}"
-
-  - name: Debug the s3_host_base variable (optional)
-    debug:
-      msg: "s3_host_base is set to {{ s3_host_base }}"
-
 
 - name: Instantiate the RHODS tester job template
   template:
@@ -192,13 +189,12 @@
 
 - name: Create minio Secret
   shell: |
-      set -o pipefail; 
-      set -e; 
+    set -o pipefail; 
+    set -e; 
+
+    ADMIN_PASSWORD=$(cat "{{ notebooks_dashboard_scale_test_secret_properties_file }}" | grep admin_password | cut -d= -f2); 
       
-      SECRET_KEY=$(cat "{{ notebooks_dashboard_scale_test_secret_properties_file }}" | grep user_password | cut -d= -f2); 
-      ADMIN_PASSWORD=$(cat "{{ notebooks_dashboard_scale_test_secret_properties_file }}" | grep admin_password | cut -d= -f2); 
-      
-      oc create secret generic minio -n "{{ notebooks_dashboard_scale_test_namespace }}" "--from-literal=MINIO_ROOT_PASSWORD=$ADMIN_PASSWORD" "--from-literal=MINIO_S3_ACCESS_KEY=minio" "--from-literal=MINIO_S3_SECRET_KEY=$SECRET_KEY" 
+    oc create secret generic minio -n "{{ notebooks_dashboard_scale_test_namespace }}" "--from-literal=MINIO_ROOT_PASSWORD=$ADMIN_PASSWORD" "--from-literal=MINIO_S3_ACCESS_KEY=minio" 
 
 - name: Delete the RHODS tester job, if it exists
   command:
@@ -251,8 +247,7 @@
   until: wait_rhods_test_job_start.stdout
 
 - name: Wait for the RHODS tester job to terminate
-  command: 
-    oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ tester_namespace }}
+  command: oc get jobs/ods-ci -ojsonpath={.status.active} -n {{ tester_namespace }}
   register: wait_rhods_test_job
   retries: 180
   delay: 60

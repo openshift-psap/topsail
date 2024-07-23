@@ -1,4 +1,5 @@
 #! /bin/bash
+
 prepare_sutest_deploy_rhods() {
     switch_sutest_cluster
 
@@ -26,7 +27,6 @@ prepare_sutest_scale_cluster() {
     if [[ "$compute_nodes_count" == "null" ]]; then
         compute_nodes_count=$(cluster_helpers::get_compute_node_count sutest)
     fi
-
 
     ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
                      --extra "{scale: $compute_nodes_count}"
@@ -73,7 +73,6 @@ prepare_ocp_sutest_deploy_rhods() {
         oc adm groups new dedicated-admins
         oc adm policy add-cluster-role-to-group cluster-admin dedicated-admins
     fi
-
 }
 
 sutest_customize_rhods_before_wait() {
@@ -138,7 +137,7 @@ sutest_wait_rhods_launch() {
     if [[ $(get_config tests.notebooks.test_flavor) == dashboard-scale-test ]]; then
         to_enable="${to_enable},datasciencepipelines"
     fi
-./run_toolbox.py rhods update_datasciencecluster --enable "[$to_enable]"
+    ./run_toolbox.py rhods update_datasciencecluster --enable "[$to_enable]"
     ./run_toolbox.py rhods wait_ods
 
     if test_config rhods.operator.stop; then

@@ -23,7 +23,6 @@ ${DASHBOARD_PRODUCT_NAME}      "%{DASHBOARD_PRODUCT_NAME}"
 
 ${PROJECT_NAME}                ${TEST_USER.USERNAME}
 ${ACCESS_KEY}                  %{S3_ACCESS_KEY}
-${SECRET_KEY}                  %{S3_SECRET_KEY}
 ${HOST_BASE}                   %{S3_HOSTNAME}
 ${HOST_BUCKET}                 %{S3_BUCKET_NAME}
 
@@ -59,14 +58,12 @@ Login to RHODS Dashboard
   Go To  ${ODH_DASHBOARD_URL}
   Login To RHODS Dashboard  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
 
-
 Go to RHODS Dashboard
   [Tags]  Dashboard
 
   Wait For Condition  return document.title == ${DASHBOARD_PRODUCT_NAME}  timeout=3 minutes
   Wait Until Page Contains  Launch application  timeout=3 minutes
   Capture Page Screenshot
-
 
 Go to the Project page
   [Tags]  Dashboard
@@ -90,12 +87,11 @@ Create S3 Data Connection Creation
 
   ${data_connection_exists}  ${error}=  Run Keyword and Ignore Error  Data Connection Should Not Be Listed  ${DC_NAME}
   IF  '${data_connection_exists}' != 'PASS'
-    Create S3 Data Connection   project_title=${PROJECT_NAME}   dc_name=${DC_NAME}    aws_access_key=${ACCESS_KEY}    aws_secret_access=${SECRET_KEY}   aws_bucket_name=${HOST_BUCKET}  aws_s3_endpoint=${HOST_BASE}
+    Create S3 Data Connection   project_title=${PROJECT_NAME}   dc_name=${DC_NAME}    aws_access_key=${ACCESS_KEY}    aws_secret_access=${TEST_USER.PASSWORD}   aws_bucket_name=${HOST_BUCKET}  aws_s3_endpoint=${HOST_BASE}
   ELSE
-    Recreate S3 Data Connection   project_title=${PROJECT_NAME}   dc_name=${DC_NAME}    aws_access_key=${ACCESS_KEY}    aws_secret_access=${SECRET_KEY}   aws_bucket_name=${HOST_BUCKET}  aws_s3_endpoint=${HOST_BASE}
+    Recreate S3 Data Connection   project_title=${PROJECT_NAME}   dc_name=${DC_NAME}    aws_access_key=${ACCESS_KEY}    aws_secret_access=${TEST_USER.PASSWORD}   aws_bucket_name=${HOST_BUCKET}  aws_s3_endpoint=${HOST_BASE}
   END
   Capture Page Screenshot
-
 
 Create Pipeline Server To s3
   [Tags]  Dashboard

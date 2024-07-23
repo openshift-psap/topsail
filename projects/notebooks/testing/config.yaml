@@ -66,20 +66,10 @@ ci_presets:
     tests.notebook_performance.test_only_one_image: true
 
   dashboard_scale_test:
-    clusters.create.ocp.tags.Project: PSAP/RHODS/scale_test
-    tests.notebooks.users.count: 300
-    clusters.create.ocp.control_plane.type: m6i.2xlarge
-    clusters.create.ocp.workers.type: m6i.2xlarge
-    clusters.create.ocp.compute.type: m6i.2xlarge
-    tests.notebooks.users.sleep_factor: 3.0
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
     tests.notebooks.test_flavor: dashboard-scale-test
     tests.notebooks.minio_bucket_name: ds-pipeline-dspa
-    tests.notebooks.identifier: scale_test
-    tests.notebooks.capture_prom_db: true
-    clusters.sutest.compute.dedicated: true
-    clusters.driver.compute.dedicated: true
-
+    
   cleanup:
     tests.notebooks.cleanup.on_exit.skip_if_le_than_users: 0
     tests.notebooks.cleanup.on_exit.driver.delete_test_namespaces: true
@@ -274,7 +264,7 @@ tests:
     repeat: 1
     users:
       # number of users to simulate
-      count: 5
+      count: 4
       # offset to add to the Pod user index when computing the user name
       start_offset: 0
       # how long to wait between user starts, multiplied by the user index

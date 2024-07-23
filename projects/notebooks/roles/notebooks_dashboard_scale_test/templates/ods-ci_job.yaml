@@ -51,17 +51,12 @@ spec:
           value: "{{ notebooks_dashboard_scale_test_user_index_offset }}"
         - name: REDIS_SERVER
           value: "{{ notebooks_dashboard_scale_test_state_signal_redis_server }}"
-        - name: DASHBOARD_PRODUCT_NAME
-          value: "{{ rhods_dashboard_product_name }}"
         - name: S3_BUCKET_NAME
           value: "{{ notebooks_dashboard_scale_test_minio_bucket_name }}"
         - name: MINIO_NAMESPACE
           value: "{{ notebooks_dashboard_scale_test_minio_namespace }}"
-        - name: S3_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: minio
-              key: MINIO_S3_SECRET_KEY
+        - name: DASHBOARD_PRODUCT_NAME
+          value: "{{ rhods_dashboard_product_name }}"
         - name: S3_ACCESS_KEY
           valueFrom:
             secretKeyRef:
