@@ -4,7 +4,6 @@ RUN dnf -y --quiet install https://dl.fedoraproject.org/pub/epel/epel-release-la
  && dnf install -y --quiet s3cmd gettext \
  && dnf clean all
 
-
 # indicate that MD5 isn't used for security purposes, otherwise FIPS cluster block it
 # see https://github.com/s3tools/s3cmd/issues/876#issuecomment-468888560
 RUN sed -i 's/md5()/md5(usedforsecurity=False)/g' /usr/lib/python*/site-packages/S3/{S3,Utils}.py

@@ -1,12 +1,4 @@
 #! /bin/bash
-
-prepare_sutest_deploy_operator() {
-    switch_sutest_cluster
-
-    process_ctrl::run_in_bg \
-        ./run_toolbox.py  cluster deploy_operator --catalog=redhat-operators --manifest_name=openshift-pipelines-operator-rh --namespace=all
-}
-
 prepare_sutest_deploy_rhods() {
     switch_sutest_cluster
 
@@ -142,7 +134,11 @@ sutest_wait_rhods_launch() {
         ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration
     fi
 
-    ./run_toolbox.py rhods update_datasciencecluster --enable [dashboard,workbenches,datasciencepipelines]
+    to_enable=dashboard,workbenches
+    if [[ $(get_config tests.notebooks.test_flavor) == dashboard-scale-test ]]; then
+        to_enable="${to_enable},datasciencepipelines"
+    fi
+./run_toolbox.py rhods update_datasciencecluster --enable "[$to_enable]"
     ./run_toolbox.py rhods wait_ods
 
     if test_config rhods.operator.stop; then
@@ -275,18 +271,6 @@ sutest_cleanup() {
         ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix node_selector --extra "$dedicated" > /dev/null
         ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration --extra "$dedicated" > /dev/null
     fi
-
-    echo "Checking for Openshift pipelines Operator"
-    if oc get subscription openshift-pipelines-operator-rh -n openshift-operators &>/dev/null; then
-        echo "Uninstalling OpenShift Pipelines Operator"
-        oc delete subscription openshift-pipelines-operator-rh -n openshift-operators
-        if oc get clusterserviceversion -n openshift-operators | grep openshift-pipelines-operator-rh &>/dev/null; then
-            oc delete clusterserviceversion $(oc get clusterserviceversion -n openshift-operators | grep openshift-pipelines-operator-rh | awk '{print $1}') -n openshift-operators
-        fi
-    else
-        echo "OpenShift Pipelines Operator not found"
-    fi
-
 }
 
 sutest_cleanup_rhods() {

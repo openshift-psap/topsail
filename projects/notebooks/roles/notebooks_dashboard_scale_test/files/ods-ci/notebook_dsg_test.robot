@@ -22,10 +22,6 @@ Suite Teardown  Tear Down
 ${DASHBOARD_PRODUCT_NAME}      "%{DASHBOARD_PRODUCT_NAME}"
 
 ${PROJECT_NAME}                ${TEST_USER.USERNAME}
-${WORKBENCH_NAME}              ${TEST_USER.USERNAME}
-
-# ${NOTEBOOK_SIZE_NAME}          %{NOTEBOOK_SIZE_NAME}
-
 ${ACCESS_KEY}                  %{S3_ACCESS_KEY}
 ${SECRET_KEY}                  %{S3_SECRET_KEY}
 ${HOST_BASE}                   %{S3_HOSTNAME}
@@ -44,6 +40,9 @@ ${SVG_INTERACTABLE}            /*[name()="g" and @class="d3-canvas-group"]
 ${SVG_PIPELINE_NODES}          /*[name()="g" and @class="d3-nodes-links-group"]
 ${SVG_SINGLE_NODE}             /*[name()="g" and contains(@class, "d3-draggable")]
 ${EXPECTED_COLOR}              rgb(0, 102, 204)
+${EXPERIMENT_NAME}             standard data science pipeline
+${NOTEBOOK_SPAWN_WAIT_TIME}    20 minutes
+${WORKBENCH_NAME}              elyra_${IMAGE}
 
 ${ODH_DASHBOARD_DO_NOT_WAIT_FOR_SPINNER_PAGE}  ${true}
 
@@ -107,23 +106,59 @@ Create Pipeline Server To s3
 
   Capture Page Screenshot
 
+Create and Start the Workbench
+  [Tags]  Notebook  Spawn
 
-Create and Launch Workbench 
-  [Tags]  Dashboard
-
-  ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  elyra_${IMAGE}
+  ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' == 'FAIL'  
-    Create Workbench    workbench_title=elyra_${IMAGE}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}_${IMAGE}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
+    Create Workbench    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}_${IMAGE}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
   END
-  Start Workbench     workbench_title=elyra_${IMAGE}    timeout=300s
-  Launch And Access Workbench Elyra Pipelines    workbench_title=elyra_${IMAGE}
+  Start Workbench     workbench_title=${WORKBENCH_NAME}    timeout=300s
   Capture Page Screenshot
+  Workbench Status Should Be      workbench_title=${WORKBENCH_NAME}   status=${WORKBENCH_STATUS_RUNNING}
+  ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Just Launch Workbench  elyra_${IMAGE}
+
+  ${app_is_ready} =    Run Keyword And Return Status    Page Should Not Contain  Application is not available
+  IF  ${app_is_ready} != True
+    Log     message=Workaround for RHODS-5912: reload the page    level=WARN
+    Capture Page Screenshot  bug_5912_application_not_available.png
+    oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
+    ${oa_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=oauth-proxy
+    ${jl_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=${WORKBENCH_NAME}
+    Create File  ${OUTPUTDIR}/pod_logs.txt  OAuth\n-----\n\n${oa_logs} \nJupyterLab\n----------\n\n${jl_logs}
+
+    ${endpoints}=  Oc Get  kind=Endpoints  namespace=${PROJECT_NAME}
+    ${route}=  Oc Get  kind=Route  name=${WORKBENCH_NAME}  namespace=${PROJECT_NAME}  api_version=route.openshift.io/v1
+    ${endpoints_str}=  Convert to String  ${endpoints}
+    Create File  ${OUTPUTDIR}/bug_5912.endpoints  ${endpoints_str}
+    ${route_str}=  Convert to String  ${route}
+    Create File  ${OUTPUTDIR}/bug_5912.route  ${route_str}
+
+    ${current_url}=   Get Location
+    Create File  ${OUTPUTDIR}/bug_5912.url  ${current_url}
+
+    ${current_html} =    SeleniumLibrary.Get Source
+    Create File  ${OUTPUTDIR}/bug_5912.html  ${current_html}
+
+    ${browser log entries}=    Get Browser Console Log Entries
+    ${browser log entries str}=   Convert To String  ${browser log entries}
+    Create File  ${OUTPUTDIR}/bug_5912_browser_log_entries.yaml  ${browser log entries str}
+
+    Sleep  5s
+    Reload Page
+    Page Should Not Contain  Application is not available
+  END
+  Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}  ${PROJECT_NAME}
+  Capture Page Screenshot
+  Wait Until Element Is Visible  xpath=//li[@title="File Browser (Ctrl+Shift+F)"]
+  Click Element  xpath=//li[@title="File Browser (Ctrl+Shift+F)"]
   Clone Git Repository And Open    https://github.com/redhat-rhods-qe/ods-ci-notebooks-main
   ...    ods-ci-notebooks-main/notebooks/500__jupyterhub/pipelines/v2/elyra/run-pipelines-on-data-science-pipelines/hello-generic-world.pipeline  # robocop: disable
   Verify Hello World Pipeline Elements
   Set Runtime Image In All Nodes    runtime_image=Datascience with Python 3.9 (UBI9)
   Run Pipeline    pipeline_name=${IMAGE} Pipeline
   Wait Until Page Contains Element    xpath=//a[.="Run Details."]    timeout=30s
+  Capture Page Screenshot
 
 Check of Pipeline Runs
   [Tags]  Dashboard
@@ -131,11 +166,9 @@ Check of Pipeline Runs
   ${pipeline_run_name} =    Get Pipeline Run Name
   Switch To Pipeline Execution Page
   Is Data Science Project Details Page Open   ${PROJECT_NAME}
-  Verify Elyra Pipeline Run    ${pipeline_run_name}    timeout=5m
-
+  Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=5m    experiment_name=${EXPERIMENT_NAME}
 
 *** Keywords ***
-
 
 Just Launch Workbench
     [Arguments]     ${workbench_title}
@@ -205,20 +238,22 @@ Launch And Access Workbench Elyra Pipelines
 
 Verify Elyra Pipeline Run 
     [Documentation]    Verifys Elyra Pipeline runs are sucessfull
-    [Arguments]    ${pipeline_run_name}    ${timeout}=10m
-    Open Pipeline Elyra Pipeline Run    ${pipeline_run_name}
+    [Arguments]    ${pipeline_run_name}    ${timeout}=10m   ${experiment_name}=Default
+    Open Pipeline Elyra Pipeline Run    ${pipeline_run_name}    ${experiment_name}
     Wait Until Page Contains Element    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    timeout=${timeout}
     Capture Page Screenshot  
 
 
 Open Pipeline Elyra Pipeline Run
     [Documentation]    Open the Pipeline Run detail.
-    [Arguments]    ${pipeline_run_name}
-    Navigate To Page    Data Science Pipelines    Runs
-    ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page
+    [Arguments]    ${pipeline_run_name}    ${experiment_name}=Default
+    Navigate To Page    Experiments    Experiments and runs
+    ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page    timeout=30s
+    Wait Until Element Is Visible    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]    10s
+    Click Element    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]
+    ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page     timeout=30s
     Wait Until Page Contains Element    xpath=//*[@data-testid="active-runs-tab"]      timeout=30s
     Click Element    xpath=//*[@data-testid="active-runs-tab"]
     Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']
     Click Element    xpath=//span[text()='${pipeline_run_name}']
-    Wait Until Element Is Visible    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    5m
-    Element Should Contain    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    Succeeded
+    Wait Until Page Contains Element    xpath=//div[@data-test-id='topology']

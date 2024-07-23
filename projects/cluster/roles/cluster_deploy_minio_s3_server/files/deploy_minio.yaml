@@ -133,7 +133,6 @@ spec:
              mc --config-dir /tmp --insecure "$@"
            }
            MINIO_SERVER_NAME=minio
-
            # using 'bash -c' so that the secrets don't get printed by 'set -x'
 
           # create a local server alias

@@ -95,5 +95,6 @@ echo "$test_exit_code" > "${ARTIFACT_DIR}/test.exit_code"
 
 echo "Test finished with $test_exit_code errors."
 echo "test_execution: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
+rm ${ARTIFACT_DIR}/Standard Data Science Pipeline-*
 
 exit 0 # always exit 0, we'll decide later if this is a success or a failure

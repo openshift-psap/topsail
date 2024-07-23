@@ -12,10 +12,26 @@ ci_presets:
     clusters.create.ocp.workers.type: m6i.2xlarge
     clusters.create.ocp.compute.type: m6i.2xlarge
     tests.notebooks.users.sleep_factor: 3.0
-    tests.notebooks.test_flavor: dashboard-scale-test
+    tests.notebooks.test_flavor: ods-ci
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
     tests.notebooks.repeat: 2
     tests.notebooks.identifier: scale_test
+    
+  # run the DSG Dashboard Scale Test
+  dashboard_scale_test:
+    clusters.create.ocp.tags.Project: PSAP/RHODS/scale_test
+    tests.notebooks.users.count: 300
+    clusters.create.ocp.control_plane.type: m6i.2xlarge
+    clusters.create.ocp.workers.type: m6i.2xlarge
+    clusters.create.ocp.compute.type: m6i.2xlarge
+    tests.notebooks.users.sleep_factor: 3.0
+    tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
+    tests.notebooks.test_flavor: dashboard-scale-test
+    tests.notebooks.minio_bucket_name: ds-pipeline-dspa
+    tests.notebooks.identifier: scale_test
+    tests.notebooks.capture_prom_db: true
+    clusters.sutest.compute.dedicated: true
+    clusters.driver.compute.dedicated: true
 
   # run the notebook gating tests
   # (DSG and Jupyter scale tests, notebook performance)
