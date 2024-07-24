@@ -381,7 +381,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
         env_file = pathlib.Path(".env.generated.yaml")
         generate_opensearch_config_yaml_env(env_file)
     except FileNotFoundError:
-        logging.warning("Opensearch secret file does not exist: {e}")
+        logging.warning(f"Opensearch secret file does not exist: {e}")
         do_analyze_lts = False
         do_upload_lts = False
 
