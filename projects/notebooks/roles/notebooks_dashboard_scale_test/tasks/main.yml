@@ -27,11 +27,6 @@
     test_artifacts_collected: "{{ notebooks_dashboard_scale_test_artifacts_collected }}"
     capture_prom_db: "{{ notebooks_dashboard_scale_test_capture_prom_db }}"
 
-- name: Set system-under-test == driver-cluster if no system-under-test (SUT) is provided
-  set_fact:
-    sut_cluster_kubeconfig: "{{ notebooks_dashboard_scale_test_sut_cluster_kubeconfig | default(lookup('env', 'KUBECONFIG'), true) }}"
-
-
 - name: Fetch RHODS endpoints from the SUT cluster
   block:
   - name: Test the connectivity of the SUT cluster

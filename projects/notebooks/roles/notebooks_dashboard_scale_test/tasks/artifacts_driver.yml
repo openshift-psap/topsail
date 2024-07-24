@@ -59,8 +59,8 @@
     oc -n {{ notebooks_dashboard_scale_test_minio_namespace }} -c ubi8 \
        rsync "{{ minio_podname_cmd.stdout }}:/artifacts/to_export/" "{{ artifact_extra_logs_dir }}" --quiet
 
-    rm -f "{{ artifact_extra_logs_dir }}/os-release" \
-    find "{{ artifact_extra_logs_dir }}/" -type d -name "Standard Data Science Pipeline*" -exec rm -rf {} + \
+    rm -f "{{ artifact_extra_logs_dir }}/os-release"
+    find "{{ artifact_extra_logs_dir }}/" -type d -name "Standard Data Science Pipeline*" -exec rm -rf {} +
     rm -rf "{{ artifact_extra_logs_dir }}/pipelines"
   when: 'test_artifacts_collected != "none"'
   ignore_errors: true

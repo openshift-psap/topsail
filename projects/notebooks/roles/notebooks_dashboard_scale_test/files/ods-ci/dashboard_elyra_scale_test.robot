@@ -145,9 +145,9 @@ Create and Start the Workbench
     Page Should Not Contain  Application is not available
   END
   Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}  ${PROJECT_NAME}
+  Wait Until JupyterLab Is Loaded    timeout=60s   
   Capture Page Screenshot
-  Wait Until Element Is Visible  xpath=//li[@title="File Browser (Ctrl+Shift+F)"]
-  Click Element  xpath=//li[@title="File Browser (Ctrl+Shift+F)"]
+  Navigate Home (Root folder) In JupyterLab Sidebar File Browser
   Clone Git Repository And Open    https://github.com/redhat-rhods-qe/ods-ci-notebooks-main
   ...    ods-ci-notebooks-main/notebooks/500__jupyterhub/pipelines/v2/elyra/run-pipelines-on-data-science-pipelines/hello-generic-world.pipeline  # robocop: disable
   Verify Hello World Pipeline Elements

@@ -66,7 +66,7 @@ ci_presets:
     tests.notebook_performance.test_only_one_image: true
 
   dashboard_scale_test:
-    tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
+    tests.notebooks.ods_ci.test_case: dashboard_elyra_scale_test.robot
     tests.notebooks.test_flavor: dashboard-scale-test
     tests.notebooks.minio_bucket_name: ds-pipeline-dspa
 
@@ -259,7 +259,7 @@ tests:
     # The test flavor to run. Can be: ods-ci, notebook-performance or gating
     test_flavor: ods-ci
     identifier: unspecified
-    minio_bucket_name: ds-pipeline-dspa
+    minio_bucket_name: notebooks
     # number of test repetition to perform
     repeat: 1
     users:
@@ -285,7 +285,7 @@ tests:
     artifacts_collected: no-screenshot-except-failed-and-zero
     # Should be true to capture Prometheus databases and properly generate the cluster usage metrics
     # Can be overriden by CI_ARTIFACTS_CAPTURE_PROM_DB
-    capture_prom_db: false
+    capture_prom_db: true
     notebook:
       # name of the RHODS notebook size to select when launching the notebook.
       size_name: *notebook_size_name
