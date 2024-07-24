@@ -231,6 +231,9 @@ ci_presets:
 
   cluster_a30:
     clusters.sutest.compute.machineset.type: "Cluster A30-24GB"
+
+  cluster_t4:
+    clusters.sutest.compute.machineset.type: "Tesla T4-16GB"
 secrets:
   dir:
     name: psap-ods-secret
@@ -248,6 +251,7 @@ clusters:
     e26-h23-000-r650: cluster_icelake
     cc37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
     fmaas-devstage-backen-9cjgj-worker-a100-il-rdma-3-nc7c8: cluster_ibm_dgx
+    y37-h11-000-r740xd.rdu3.labs.perfscale.redhat.com: cluster_t4
   create:
     type: single # can be: single, ocp, managed
     keep: false
