@@ -22,34 +22,19 @@ def get_k8s_token_proxy():
         proxy = None
 
     else:
-        kubeconfig_path := os.environ.get("KUBECONFIG")
+        kubeconfig_path = os.environ.get("KUBECONFIG")
 
         if not kubeconfig_path: # this makes it safe if KUBECONFIG == ""
             kubeconfig_path = pathlib.Path(os.environ["HOME"])  / ".kube/config"
 
-        with open(kubeconfig) as f:
+        with open(kubeconfig_path) as f:
             kubeconfig = yaml.safe_load(f)
 
-        token = kubeconfig["users"][0]["user"].get("token")
         proxy = kubeconfig["clusters"][0]["cluster"].get("proxy-url")
+        token = None
 
     if token is None:
-        logging.info("Couldn't locate the token. Trying to create one ...")
-        NAME = "topsail-prometheus-token"
-        NAMESPACE = "openshift-monitoring"
-
-        create_secret_cmd = f"""\
-        oc create secret generic {NAME} -n {NAMESPACE} \
-           --type=kubernetes.io/service-account-token \
-           --dry-run=client -ojson \
-        | jq '.metadata.annotations={{"kubernetes.io/service-account.name": "prometheus-k8s"}}' \
-        | oc apply -f-"""
-
-        subprocess.run(create_secret_cmd, shell=True, check=True)
-
-        extract_token_cmd = f"oc extract secret/{NAME} -n {NAMESPACE}\
-                            --keys=token --to=-"
-        token = subprocess.run(extract_token_cmd, capture_output = True, text = True, shell=True, check=True).stdout.strip()
+        token = subprocess.run("oc whoami -t", capture_output=True, text=True, shell=True, check=True).stdout.strip()
 
     return token, proxy
 
