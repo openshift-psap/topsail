@@ -41,7 +41,7 @@ ${SVG_SINGLE_NODE}             /*[name()="g" and contains(@class, "d3-draggable"
 ${EXPECTED_COLOR}              rgb(0, 102, 204)
 ${EXPERIMENT_NAME}             standard data science pipeline
 ${NOTEBOOK_SPAWN_WAIT_TIME}    20 minutes
-${WORKBENCH_NAME}              elyra_${IMAGE}
+${WORKBENCH_NAME}              ${TEST_USER.USERNAME}
 
 ${ODH_DASHBOARD_DO_NOT_WAIT_FOR_SPINNER_PAGE}  ${true}
 
@@ -112,7 +112,7 @@ Create and Start the Workbench
   Start Workbench     workbench_title=${WORKBENCH_NAME}    timeout=300s
   Capture Page Screenshot
   Workbench Status Should Be      workbench_title=${WORKBENCH_NAME}   status=${WORKBENCH_STATUS_RUNNING}
-  ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Just Launch Workbench  elyra_${IMAGE}
+  ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Just Launch Workbench  ${WORKBENCH_NAME}
 
   ${app_is_ready} =    Run Keyword And Return Status    Page Should Not Contain  Application is not available
   IF  ${app_is_ready} != True
@@ -144,8 +144,10 @@ Create and Start the Workbench
     Reload Page
     Page Should Not Contain  Application is not available
   END
-  Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}  ${PROJECT_NAME}
-  Wait Until JupyterLab Is Loaded    timeout=60s   
+  # Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}  ${PROJECT_NAME}
+  # Wait Until JupyterLab Is Loaded    timeout=60s   
+  Access To Workbench    username=${TEST_USER.USERNAME}    password=${TEST_USER.PASSWORD}
+        ...    auth_type=${TEST_USER.AUTH_TYPE}
   Capture Page Screenshot
   Navigate Home (Root folder) In JupyterLab Sidebar File Browser
   Clone Git Repository And Open    https://github.com/redhat-rhods-qe/ods-ci-notebooks-main

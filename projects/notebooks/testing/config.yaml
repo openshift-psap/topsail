@@ -218,7 +218,7 @@ rhods:
     image: brew.registry.redhat.io/rh-osbs/iib
     tag: 752361
     channel: fast
-    version: 2.10.0
+    version: 2.11.0
     version_name: rc4
     opendatahub: false
     managed_rhoi: true
@@ -293,7 +293,7 @@ tests:
       image_name: s2i-generic-data-science-notebook
     ods_ci:
       # ODS-CI test case to execute.
-      test_case: notebook_dsg_test.robot
+      test_case: dashboard_elyra_scale_test.robot
       # mode in which the ODS-CI test should be executed
       image:
         repo: https://github.com/red-hat-data-services/ods-ci.git
