@@ -59,7 +59,7 @@ spec:
           value: "{{ rhods_dashboard_product_name }}"
         - name: S3_ACCESS_KEY
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               name: minio
               key: MINIO_S3_ACCESS_KEY
         - name: S3_HOSTNAME
