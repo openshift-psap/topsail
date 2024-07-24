@@ -227,8 +227,8 @@ def _run_test_multi_model(test_artifact_dir_p):
     lock = threading.Lock()
     counter_p = [0]
     def run_in_env(job_index, model_name):
-        job_name = f"job-{job_index}-{model_name}"
         safe_model_name = prepare_finetuning.get_safe_model_name(model_name)
+        job_name = f"job-{job_index}-{safe_model_name}"
         with env.NextArtifactDir(f"multi_model_{safe_model_name}", lock=lock, counter_p=counter_p):
             test_failed = _run_test([None], dict(model_name=model_name, name=job_name), job_index=job_index)
 
