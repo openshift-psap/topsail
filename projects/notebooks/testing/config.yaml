@@ -215,8 +215,8 @@ ldap:
 
 rhods:
   catalog:
-    image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 752361
+    image: registry-proxy.engineering.redhat.com/rh-osbs/iib
+    tag: 765081
     channel: fast
     version: 2.11.0
     version_name: rc4
