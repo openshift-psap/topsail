@@ -44,3 +44,6 @@ llm_load_test_run_max_output_tokens: 512
 
 # max sequence tokens in llm load test to filter the dataset
 llm_load_test_run_max_sequence_tokens: 1536
+
+# name of the endpoint to query (for openai plugin only)
+llm_load_test_run_endpoint: /v1/completions

@@ -57,3 +57,14 @@
   - name: Fail if llm-load-test did not generate content
     fail: msg="llm-load-test did not generate content. See logs in '{{ artifact_extra_logs_dir }}/logs/run.log'"
     when: llm_load_test_has_content.rc == 1
+
+  - name: Get the number of requests that succeeded
+    shell:
+      set -o pipefail;
+      cat {{ artifact_extra_logs_dir }}/output/output.json | jq '.summary.total_failures == .summary.total_requests'
+    register: llm_load_test_no_success
+    failed_when: false
+
+  - name: Fail if no request succeeded
+    fail: msg="llm-load-test calls did not succeed. See logs in '{{ artifact_extra_logs_dir }}/logs/run.log'"
+    when: llm_load_test_no_success.stdout == "true"

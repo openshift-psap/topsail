@@ -1,8 +1,4 @@
 ---
-- name: Ensure that GRPCurl is available
-  shell:
-    which grpcurl
-
 - name: Create the artifact directory
   file:
     path: "{{ artifact_extra_logs_dir }}/{{ kserve_validate_model_inference_service_name }}"
@@ -32,7 +28,7 @@
        -n {{ kserve_validate_model_namespace }} \
        -ojsonpath='{.items[0].status.url}' \
        | sed 's|https:/http:/||' \
-       | sed 's/$/:8080/'
+       | sed 's/$/:443/'
     {% endif %}
   register: model_endpoint_cmd
 
@@ -66,14 +62,14 @@
 
     echo $CURL_DATA >> "$query"
     for i in {1..{{ kserve_validate_model_query_count }}}; do
-      curl --silent --output $dest --write-out "%{http_code}" \
+      curl --output $dest --write-out "%{http_code}" \
         {{ model_endpoint_cmd.stdout }}/v1/completions \
         -H "Content-Type: application/json" \
         -d "${CURL_DATA}" > "$status_code"
 
       HTTP_CODE=$(cat ${status_code})
       if [[ ${HTTP_CODE} -lt 200 || ${HTTP_CODE} -gt 299 ]] ; then
-        echo "non 200 status code"
+        echo "non 200 status code ($HTTP_CODE)"
         exit 1
       fi
       echo "Call $i/{{ kserve_validate_model_query_count }} passed"
