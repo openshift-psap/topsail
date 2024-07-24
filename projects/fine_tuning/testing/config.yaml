@@ -35,7 +35,7 @@ ci_presets:
     tests.fine_tuning.test_settings.dataset_replication: [1, 2, 4, 8]
 
   dgx_single_full:
-    tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
+    tests.fine_tuning.test_settings.model_name: bigcode/gpt_bigcode-santacoder@hf
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.gpu: [1, 2, 4, 8]
     tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: [8, 10, 12, 14, 16, 18]
@@ -54,7 +54,7 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: [1, 2, 4, 6, 8]
 
   dgx_single_model:
-    tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
+    tests.fine_tuning.test_settings.model_name: bigcode/gpt_bigcode-santacoder@hf
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.gpu: 1
 
@@ -80,6 +80,7 @@ ci_presets:
     - ibm-granite/granite-34b-code-instruct
     tests.fine_tuning.test_settings.gpu: [2, 4, 8]
     tests.fine_tuning.test_settings.container_image:
+    - quay.io/modh/fms-hf-tuning:main-5e965e4676bff71f0c4e8219a59aba37ce542083 # 4.42
     - quay.io/modh/fms-hf-tuning:main-abbb2e2dfac0f92a34714147f3bd4696758037c6 # 4.41
     - quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05 # RHOAI 2.11 image
 
@@ -119,32 +120,42 @@ ci_presets:
 
   ibm_lora_models:
     extends: [hf_evaluation, dgx_small_footprint]
-    tests.fine_tuning.test_settings.hyper_parameters.peft_method: "lora"
+    tests.fine_tuning.test_settings.model_name: null # for consistency. Set in 'test_extra_settings'
+    tests.fine_tuning.test_settings.dataset_name: news-tokens-16384plus-entries-4096.jsonl
+    tests.fine_tuning.test_settings.dataset_replication: 1
+    tests.fine_tuning.test_settings.gpu: [2, 4]
+    tests.fine_tuning.test_settings.hyper_parameters:
+      peft_method: "lora"
+      torch_dtype: bfloat16
+      use_flash_attn: true
+      max_steps: -1
+      per_device_train_batch_size: [2, 16]
+      max_seq_length: [512, 2048]
+      gradient_accumulation_steps: 4
+      save_strategy: "no"
+      warmup_ratio: 0.03
+      num_train_epochs: 1
+      gradient_checkpointing: true
+      packing: false
+      r: 4
+      lora_alpha: 16
     tests.fine_tuning.test_extra_settings:
-    - name: granite-familiy
+    - name: llama-13b
       model_name:
-      - ibm-granite/granite-34b-code-instruct
+      - meta-llama/Llama-2-13b-hf
       hyper_parameters:
-        raw_lists:
-          target_modules: ["all-linear"]
-        lora_dropout: 0.05
-        lora_alpha: 16
-        r: 8
-    - name: llama-family
+        raw_lists: {target_modules: ["q_proj", "k_proj"]}
+    - name: granite-20b-v2
       model_name:
-      - meta-llama/Llama-2-13b-chat-hf
-      - meta-llama/Meta-Llama-3-70B-Instruct
-
-  dgx_multi_model_ref:
-    tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
-    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
-    tests.fine_tuning.matbenchmarking.enabled: true
-    tests.fine_tuning.test_settings.gpu: [1, 2, 4]
+      - ibm-granite/granite-20b-code-base
+      hyper_parameters:
+        raw_lists: {target_modules: ["c_attn", "c_proj"]}
 
   dgx_multi_model_8:
     extends: [multi_model]
+    fine_tuning.model_registry: hf
     tests.fine_tuning.multi_model.models:
-    - name: gpt_bigcode-santacoder
+    - name: bigcode/gpt_bigcode-santacoder
       replicas: 8
     tests.fine_tuning.test_settings.gpu: 1
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
@@ -152,14 +163,14 @@ ci_presets:
   dgx_multi_model_4:
     extends: [dgx_multi_model_8]
     tests.fine_tuning.multi_model.models:
-    - name: gpt_bigcode-santacoder
+    - name: bigcode/gpt_bigcode-santacoder
       replicas: 4
     tests.fine_tuning.test_settings.gpu: 2
 
   dgx_multi_model_2:
     extends: [dgx_multi_model_8]
     tests.fine_tuning.multi_model.models:
-    - name: gpt_bigcode-santacoder
+    - name: bigcode/gpt_bigcode-santacoder
       replicas: 2
     tests.fine_tuning.test_settings.gpu: 4
 
@@ -173,7 +184,8 @@ ci_presets:
 
     tests.fine_tuning.test_settings.gpu: 2
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
-    tests.fine_tuning.test_settings.model_name: gpt_bigcode-santacoder
+    fine_tuning.model_registry: hf
+    tests.fine_tuning.test_settings.model_name: bigcode/gpt_bigcode-santacoder
     tests.fine_tuning.many_model.count: 64
     tests.fine_tuning.many_model.timespan: 64
 
@@ -303,7 +315,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: "quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05" # RHOAI 2.11 image
+  image: "quay.io/modh/fms-hf-tuning:release-ec50c3d7dc09f50d9885f25efc3d2fc98a379709" # RHOAI 2.12 image
   pvc:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
@@ -319,6 +331,16 @@ fine_tuning:
     twitter_complaints_small.json:
       type: dataset
       source_dir: 'https://raw.githubusercontent.com/foundation-model-stack/fms-hf-tuning/b48249fab3df124d6b85cc8ce59b9e5a66ea6dcb/tests/data'
+
+    synthetic_dataset.txt:
+      type: dataset
+      source_dir: https://raw.githubusercontent.com/openshift-psap/topsail/main/projects/fine_tuning/roles/fine_tuning_run_fine_tuning_job/files/entrypoint/
+      transform: generate_synthetic_dataset.py
+
+    news-tokens-16384plus-entries-4096.jsonl:
+      type: dataset
+      source_dir: /manually/populated
+      response_template: "\n### Response:"
 
     alpaca_data.json:
       type: dataset

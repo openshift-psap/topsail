@@ -163,11 +163,38 @@ class PromSummaryReport():
         header += [html.H3(plot_name)]
 
         ordered_vars, settings, _setting_lists, variables, cfg = args
+
+        setting_lists = copy.deepcopy(_setting_lists)
+
         for _ in range(len(ordered_vars)):
             first_var = ordered_vars[0]
             header += [html.H3(f"by {first_var}")]
             header += report.Plot_and_Text(f"Prom Summary: {plot_name}", args)
             ordered_vars.append(ordered_vars.pop(0))
+
+        if "gpu" in variables:
+            gpu_counts = variables.pop("gpu")
+            ordered_vars.remove("gpu")
+        else:
+            gpu_counts = [None]
+
+        header += [html.H2("GPU Usage, by GPU count")]
+
+        for gpu_count in gpu_counts:
+            if gpu_count is not None:
+                header += [html.H4(f"with {gpu_count} GPU{'s' if gpu_count > 1 else ''} per job")]
+
+            _setting_lists[:] = []
+
+            for settings_group in setting_lists:
+                current_group = []
+                for (k, v) in settings_group:
+                    if k == "gpu" and v != gpu_count: continue
+                    current_group.append((k, v, ))
+                if current_group:
+                    _setting_lists.append(current_group)
+
+            header += report.Plot_and_Text(f"Prom Summary: {plot_name}", args)
 
         return None, header
 

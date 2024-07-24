@@ -198,7 +198,8 @@ class Config:
 
             self.apply_preset(profile)
 
-            common.prepare_light_cluster()
+            if os.environ.get("HOSTNAME") == "light-prepare":
+                common.prepare_light_cluster()
 
             return True
 

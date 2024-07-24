@@ -9,7 +9,7 @@ def load_fms_hf_tuning_configuration():
     config_file = os.environ.get("SFT_TRAINER_CONFIG_JSON_PATH")
     if not config_file:
         logging.warn("No SFT_TRAINER_CONFIG_JSON_PATH available...")
-        return None
+        return {}
 
     with open(config_file) as f:
         config = json.load(f)
