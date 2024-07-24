@@ -293,7 +293,7 @@ tests:
       image_name: s2i-generic-data-science-notebook
     ods_ci:
       # ODS-CI test case to execute.
-      test_case: dashboard_elyra_scale_test.robot
+      test_case: notebook_dsg_test.robot
       # mode in which the ODS-CI test should be executed
       image:
         repo: https://github.com/red-hat-data-services/ods-ci.git
