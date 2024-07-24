@@ -123,7 +123,7 @@ def download_data_sources(test_settings):
             cred_file = pathlib.Path(os.environ[env_key]) / config.ci_artifacts.get_config(secret_key)
             if not cred_file.exists():
                 msg = f"Credential file '{cred_file}' does not exist (${env_key} / *{secret_key})"
-                logging.error(lsg)
+                logging.error(msg)
                 raise ValueError(msg)
 
             extra["creds"] = str(cred_file)
