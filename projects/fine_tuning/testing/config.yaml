@@ -151,16 +151,11 @@ ci_presets:
       hyper_parameters:
         raw_lists: {target_modules: ["c_attn", "c_proj"]}
 
-  dgx_multi_model_ref:
-    tests.fine_tuning.test_settings.model_name: bigcode/gpt_bigcode-santacoder@hf
-    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
-    tests.fine_tuning.matbenchmarking.enabled: true
-    tests.fine_tuning.test_settings.gpu: [1, 2, 4]
-
   dgx_multi_model_8:
     extends: [multi_model]
+    fine_tuning.model_registry: hf
     tests.fine_tuning.multi_model.models:
-    - name: bigcode/gpt_bigcode-santacoder@hf
+    - name: bigcode/gpt_bigcode-santacoder
       replicas: 8
     tests.fine_tuning.test_settings.gpu: 1
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
@@ -168,14 +163,14 @@ ci_presets:
   dgx_multi_model_4:
     extends: [dgx_multi_model_8]
     tests.fine_tuning.multi_model.models:
-    - name: bigcode/gpt_bigcode-santacoder@hf
+    - name: bigcode/gpt_bigcode-santacoder
       replicas: 4
     tests.fine_tuning.test_settings.gpu: 2
 
   dgx_multi_model_2:
     extends: [dgx_multi_model_8]
     tests.fine_tuning.multi_model.models:
-    - name: bigcode/gpt_bigcode-santacoder@hf
+    - name: bigcode/gpt_bigcode-santacoder
       replicas: 2
     tests.fine_tuning.test_settings.gpu: 4
 
@@ -189,7 +184,8 @@ ci_presets:
 
     tests.fine_tuning.test_settings.gpu: 2
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
-    tests.fine_tuning.test_settings.model_name: bigcode/gpt_bigcode-santacoder@hf
+    fine_tuning.model_registry: hf
+    tests.fine_tuning.test_settings.model_name: bigcode/gpt_bigcode-santacoder
     tests.fine_tuning.many_model.count: 64
     tests.fine_tuning.many_model.timespan: 64
 
