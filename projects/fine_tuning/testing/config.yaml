@@ -62,6 +62,12 @@ ci_presets:
     tests.fine_tuning.multi_model.enabled: true
     tests.fine_tuning.test_settings.model_name: null
 
+  ibm_release_comparison:
+    tests.fine_tuning.test_settings.container_image:
+    - quay.io/modh/fms-hf-tuning:release-ec50c3d7dc09f50d9885f25efc3d2fc98a379709 # RHOAI-2.12
+    - quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05 # RHOAI-2.11
+    - quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3 # RHOAI-2.10
+
   hf_evaluation:
     fine_tuning.pvc.size: 2000Gi
     tests.fine_tuning.matbenchmarking.enabled: true
