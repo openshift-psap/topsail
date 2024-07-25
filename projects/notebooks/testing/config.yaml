@@ -66,7 +66,9 @@ ci_presets:
     tests.notebook_performance.test_only_one_image: true
 
   dashboard_scale_test:
+    tests.notebooks.ods_ci.test_case: dashboard_elyra_scale_test.robot
     tests.notebooks.test_flavor: dashboard-scale-test
+    tests.notebooks.minio_bucket_name: ds-pipeline-dspa
 
   cleanup:
     tests.notebooks.cleanup.on_exit.skip_if_le_than_users: 0
@@ -214,9 +216,9 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 752361
+    tag: 765081
     channel: fast
-    version: 2.10.0
+    version: 2.11.0
     version_name: rc4
     opendatahub: false
     managed_rhoi: true
@@ -341,7 +343,7 @@ tests:
         instance_types:
         - m6i.xlarge
         benchmarks:
-          # name of the benchmark to pass to the notebook
+        # name of the benchmark to pass to the notebook
         - name: pyperf_bm_go.py
           # number of times the benchmark should be executed within one repeat.
           number: 20

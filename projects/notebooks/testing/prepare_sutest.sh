@@ -28,7 +28,6 @@ prepare_sutest_scale_cluster() {
         compute_nodes_count=$(cluster_helpers::get_compute_node_count sutest)
     fi
 
-
     ./run_toolbox.py from_config cluster set_scale --prefix="sutest" \
                      --extra "{scale: $compute_nodes_count}"
 
@@ -134,7 +133,11 @@ sutest_wait_rhods_launch() {
         ./run_toolbox.py from_config cluster set_project_annotation --prefix sutest --suffix toleration
     fi
 
-    ./run_toolbox.py rhods update_datasciencecluster --enable [dashboard,workbenches]
+    to_enable=dashboard,workbenches
+    if [[ $(get_config tests.notebooks.test_flavor) == dashboard-scale-test ]]; then
+        to_enable="${to_enable},datasciencepipelines"
+    fi
+    ./run_toolbox.py rhods update_datasciencecluster --enable "[$to_enable]"
     ./run_toolbox.py rhods wait_ods
 
     if test_config rhods.operator.stop; then
