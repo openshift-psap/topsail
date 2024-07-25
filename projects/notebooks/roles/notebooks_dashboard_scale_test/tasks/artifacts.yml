@@ -34,10 +34,8 @@
 
 - name: Generate MatrixBenchmark settings file
   shell: |
-    cat <<EOF > "{{ artifact_extra_logs_dir }}/settings"
-    test_case={{ notebooks_dashboard_scale_test_ods_ci_test_case }}
-    exclude_tags={{ notebooks_dashboard_scale_test_ods_ci_exclude_tags }}
-    user_count={{ notebooks_dashboard_scale_test_user_count }}
+    cat <<EOF > "{{ artifact_extra_logs_dir }}/settings.yaml"
+    user_count: {{ notebooks_dashboard_scale_test_user_count }}
     EOF
   ignore_errors: true
 
