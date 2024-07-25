@@ -1,0 +1,6 @@
+prometheus_api_client
+xmltodict
+scipy
+
+jsonpath_ng
+pydantic
