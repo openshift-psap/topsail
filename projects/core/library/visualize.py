@@ -377,18 +377,19 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     if replotting and not config.ci_artifacts.get_config("matbench.lts.opensearch.export.enabled_on_replot", None):
         do_upload_lts = False
 
-    try:
-        env_file = pathlib.Path(".env.generated.yaml")
-        generate_opensearch_config_yaml_env(env_file)
-    except FileNotFoundError:
-        logging.warning(f"Opensearch secret file does not exist: {e}")
-        do_analyze_lts = False
-        do_upload_lts = False
+    if do_analyze_lts or do_upload_lts:
+        try:
+            env_file = pathlib.Path(".env.generated.yaml")
+            generate_opensearch_config_yaml_env(env_file)
+        except Exception as e:
+            logging.warning(f"Couldn't generate OpenSearch credential file: {e}")
+            do_analyze_lts = False
+            do_upload_lts = False
 
-        fail_on_regression = config.ci_artifacts.get_config("matbench.lts.regression_analyses.fail_test_on_regression")
-        fail_on_upload = config.ci_artifacts.get_config("matbench.lts.opensearch.export.fail_test_on_fail")
-        if fail_on_upload or fail_on_regression:
-            errors += ["opensearch secret missing"]
+            fail_on_regression = config.ci_artifacts.get_config("matbench.lts.regression_analyses.fail_test_on_regression")
+            fail_on_upload = config.ci_artifacts.get_config("matbench.lts.opensearch.export.fail_test_on_fail")
+            if fail_on_upload or fail_on_regression:
+                errors += ["opensearch secret cannot be generated"]
 
     if do_analyze_lts:
         step_idx += 1
