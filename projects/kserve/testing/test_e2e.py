@@ -843,7 +843,7 @@ def main():
 if __name__ == "__main__":
     try:
         from test import init
-        init(ignore_secret_path=False, apply_preset_from_pr_args=True)
+        init(ignore_secret_path=True, apply_preset_from_pr_args=True)
 
         sys.exit(main())
     except subprocess.CalledProcessError as e:
