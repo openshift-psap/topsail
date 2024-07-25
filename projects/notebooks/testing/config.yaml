@@ -69,6 +69,11 @@ ci_presets:
     tests.notebooks.ods_ci.test_case: dashboard_elyra_scale_test.robot
     tests.notebooks.test_flavor: dashboard-scale-test
     tests.notebooks.minio_bucket_name: ds-pipeline-dspa
+    matbench.lts.generate: false
+    matbench.opensearch.upload: false
+    matbench.regression_analyses.enabled: false
+    matbench.workload: rhods-dashboard-pipelines
+    matbench.config_file: plots.yaml
 
   cleanup:
     tests.notebooks.cleanup.on_exit.skip_if_le_than_users: 0

@@ -1,0 +1,19 @@
+visualize:
+- id: notebook_scale_test
+  generate:
+  - "report: Error report"
+  - "gating report: Functional and Spawn Time"
+  - "gating report: Health Check"
+  - "report: Performance report"
+  - "report: Pod-Node Mapping"
+  - "report: User Execution Overview"
+  - "report: Launch Time and Execution Time Distribution"
+  - "report: RHODS Cluster CPU/Memory Usage"
+  - "report: Driver Cluster CPU/Memory Usage"
+  - "report: Authentication System"
+  - "report: Control Plane Nodes Load"
+  - "report: RHODS metrics"
+  - "report: Notebook Performance"
+  - "report: Price Estimation"
+  - "report: LTS Documentation"
+  - "multi: Notebook Spawn Time"
