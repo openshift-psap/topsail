@@ -1,0 +1,68 @@
+apiVersion: kubeflow.org/v1
+kind: PyTorchJob
+metadata:
+  name: {{ job_name_safe }}
+  namespace: {{ fine_tuning_run_quality_evaluation_namespace }}
+spec:
+  pytorchReplicaSpecs:
+    Master:
+      replicas: 1
+      restartPolicy: Never
+      template: &job_template
+        spec:
+          containers:
+          - name: pytorch
+            image: {{ fine_tuning_run_quality_evaluation_container_image }}
+            imagePullPolicy: IfNotPresent
+            command: [bash, "/mnt/entrypoint/{{ fine_tuning_job_entrypoint_name }}"]
+            env:
+            - name: CONFIG_JSON_PATH
+              value: /mnt/config/config.json
+{% if fine_tuning_run_quality_evaluation_gpu %}
+            - name: NUM_GPUS
+              value: "{{ fine_tuning_run_quality_evaluation_gpu }}"
+{% endif %}
+{% if fine_tuning_run_quality_evaluation_sleep_forever %}
+            - name: SLEEP_FOREVER
+              value: "true"
+{% endif %}
+            - name: MODEL_NAME
+              value: "{{ fine_tuning_run_quality_evaluation_model_name}}"
+            volumeMounts:
+            - name: storage-volume
+              mountPath: /mnt/storage
+            - name: entrypoint-volume
+              mountPath: /mnt/entrypoint
+            - name: config-volume
+              mountPath: /mnt/config
+            - name: output-volume
+              mountPath: /mnt/output
+            resources:
+              requests: &request_block
+{% if fine_tuning_run_quality_evaluation_gpu %}
+                nvidia.com/gpu: "{{ fine_tuning_run_quality_evaluation_gpu }}"
+{% endif %}
+                memory: "{{ fine_tuning_run_quality_evaluation_memory }}Gi"
+                cpu: "{{ fine_tuning_run_quality_evaluation_cpu }}"
+{% if fine_tuning_run_quality_evaluation_gpu %}
+              limits:
+                nvidia.com/gpu: "{{ fine_tuning_run_quality_evaluation_gpu }}"
+{% endif %}
+          volumes:
+          - name: storage-volume
+            persistentVolumeClaim:
+              claimName: {{ fine_tuning_run_quality_evaluation_pvc_name }}
+          - name: config-volume
+            configMap:
+              name: {{ job_name_safe }}-config
+          - name: entrypoint-volume
+            configMap:
+              name: {{ job_name_safe }}-entrypoint
+          - name: output-volume
+            emptyDir: {}
+{% if fine_tuning_run_quality_evaluation_worker_replicas > 0 %}
+    Worker:
+      replicas: {{ fine_tuning_run_quality_evaluation_worker_replicas }}
+      restartPolicy: Never
+      template: *job_template
+{% endif %}

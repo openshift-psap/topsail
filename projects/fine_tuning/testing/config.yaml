@@ -216,6 +216,15 @@ ci_presets:
 
   # ---
 
+  quality_evaluation:
+    tests.fine_tuning.quality_evaluation.enabled: true
+    tests.capture_prom: false
+    matbench.workload: projects.fine_tuning.visualizations.quality_evaluation
+    matbench.lts.generate: false
+    tests.capture_state: false
+    tests.fine_tuning.test_settings.name: quality-evaluation
+  # ---
+
   cluster_ibm_dgx:
     extends: ["metal"]
     clusters.sutest.compute.machineset.type: "IBM-DGX A100-80GB"
@@ -398,6 +407,9 @@ tests:
       count: 20
       kueue_name: local-queue
       timespan: 0
+    quality_evaluation:
+      enabled: false
+      image: registry.redhat.io/ubi9
 matbench:
   preset: null
   workload: projects.fine_tuning.visualizations.fine_tuning
