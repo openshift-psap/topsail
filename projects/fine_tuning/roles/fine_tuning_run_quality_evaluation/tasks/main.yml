@@ -1,0 +1,198 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Make the name k8s safe
+  set_fact:
+    job_name_safe: "{{ fine_tuning_run_quality_evaluation_name | replace('.', '-') | replace('_', '-') }}"
+
+- name: Delete the fine-tuning job configmaps, if any
+  command:
+    oc delete configmap
+       -ltopsail.fine-tuning-jobname={{ job_name_safe }}
+       --ignore-not-found
+       -n {{ fine_tuning_run_quality_evaluation_namespace }}
+
+- name: Prepare the config file template
+  template:
+    src: "{{ fine_tuning_job_config_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/config_base.yaml"
+    mode: '0400'
+
+- name: Save the hype-parameters overrides into a file
+  shell: |
+    set -o pipefail;
+
+    cat << EOF | yq -y > "{{ artifact_extra_logs_dir }}/src/config_override.yaml"
+    {{ fine_tuning_run_quality_evaluation_hyper_parameters | to_yaml }}
+    EOF
+
+- name: Convert the config to json
+  shell:
+    set -o pipefail;
+
+    cat "{{ artifact_extra_logs_dir }}/src/config_base.yaml"
+    {% if fine_tuning_run_quality_evaluation_hyper_parameters %}
+        "{{ artifact_extra_logs_dir }}/src/config_override.yaml"
+    {% endif %}
+        | yq
+      > "{{ artifact_extra_logs_dir }}/src/config_final.json"
+
+- name: Prepare the config ConfigMap
+  shell: |
+    set -o pipefail;
+
+    oc create cm {{ job_name_safe }}-config \
+       -n {{ fine_tuning_run_quality_evaluation_namespace }} \
+       --from-file=config.json=<(cat "{{ artifact_extra_logs_dir }}/src/config_final.json") \
+       --dry-run=client \
+       -oyaml \
+       | yq -Y '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
+       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_config.yaml" \
+       | oc apply -f-
+
+- name: Prepare the entrypoint ConfigMap
+  shell: |
+    set -o pipefail;
+
+    oc create cm {{ job_name_safe }}-entrypoint \
+       -n {{ fine_tuning_run_quality_evaluation_namespace }} \
+       --from-file=$(find "{{ fine_tuning_job_entrypoint_dir }}" -maxdepth 1 -not -type d | tr '\n' ,)/dev/null \
+       --dry-run=client \
+       -oyaml \
+       | yq -Y '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
+       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml" \
+       | oc apply -f-
+
+- name: Prepare the template file
+  template:
+    src: "{{ fine_tuning_job_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/pytorchjob_quality_evaluation.yaml"
+    mode: '0400'
+
+- name: Delete the fine-tuning job, if it exists
+  command:
+    oc delete -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_quality_evaluation.yaml" --ignore-not-found
+
+- name: Create the fine-tuning job
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_quality_evaluation.yaml"
+
+- name: Finish here if sleeping forever
+  when: fine_tuning_run_quality_evaluation_sleep_forever | bool
+  meta: end_play
+
+- name: Wait for the job completion
+  block:
+  - name: Wait for the Pod to start running
+    shell:
+      set -o pipefail;
+      oc get pods -l 'training.kubeflow.org/job-name in ({{ job_name_safe }}), training.kubeflow.org/job-role in (master)'
+         -n {{ fine_tuning_run_quality_evaluation_namespace }}
+         --no-headers | awk '{print $3}'
+    register: wait_pod_start
+    retries: 20
+    delay: 5
+    until: wait_pod_start.stdout in ["Running", "Error", "Init:Error", "Completed", "NotReady", "CrashLoopBackOff", "ContainerCreating", "ImagePullBackOff"]
+
+  - name: Fail if the Pod did not start successfully
+    fail: msg="Pod in error state"
+    when: wait_pod_start.stdout in ["Error", "Init:Error", "CrashLoopBackOff", "ImagePullBackOff"]
+
+  - name: Wait for the Pod to fetch the image
+    when: wait_pod_start.stdout in ["ContainerCreating"]
+    block:
+      - name: Wait for the Pod to fetch the image
+        shell:
+          set -o pipefail;
+          oc get pods -l 'training.kubeflow.org/job-name in ({{ job_name_safe }}), training.kubeflow.org/job-role in (master)'
+             -n {{ fine_tuning_run_quality_evaluation_namespace }}
+             --no-headers | awk '{print $3}'
+        register: wait_pod_fetch
+        retries: 720
+        delay: 10
+        until: wait_pod_fetch.stdout in ["Running", "Error", "Init:Error", "Completed", "NotReady", "CrashLoopBackOff", "ImagePullBackOff"]
+
+      - name: Fail if the Pod did not start successfully
+        fail: msg="Pod in error state"
+        when: wait_pod_fetch.stdout in ["Error", "Init:Error", "CrashLoopBackOff", "ImagePullBackOff"]
+
+  - name: Wait for the main container to finish running
+    shell:
+      set -o pipefail;
+      oc get pods -l 'training.kubeflow.org/job-name in ({{ job_name_safe }}), training.kubeflow.org/job-role in (master)'
+         -n {{ fine_tuning_run_quality_evaluation_namespace }}
+         --no-headers | awk '{print $3}'
+    register: wait_pod_start
+    retries: 720
+    delay: 30
+    until: wait_pod_start.stdout != "Running"
+
+  - name: Fail if the Pod did not complete properly
+    fail: msg="Pod in '{{ wait_pod_start.stdout }}' state"
+    when: wait_pod_start.stdout not in ["Completed"]
+
+  always:
+  - name: Capture the state of the fine-tuning Pod resource
+    shell:
+      set -o pipefail;
+
+      oc get pod
+         -ltraining.kubeflow.org/job-name={{ job_name_safe }}
+         -ojson
+         -n {{ fine_tuning_run_quality_evaluation_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.json;
+
+      oc get pod
+         -ltraining.kubeflow.org/job-name={{ job_name_safe }}
+         -oyaml
+         -n {{ fine_tuning_run_quality_evaluation_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.yaml;
+
+      oc get pod
+         -ltraining.kubeflow.org/job-name={{ job_name_safe }}
+         -owide
+         -n {{ fine_tuning_run_quality_evaluation_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.status;
+
+      oc describe pod
+         -ltraining.kubeflow.org/job-name={{ job_name_safe }}
+         -n {{ fine_tuning_run_quality_evaluation_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
+
+      oc logs $(
+        oc get pod
+           -ltraining.kubeflow.org/job-name={{ job_name_safe }}
+           -n {{ fine_tuning_run_quality_evaluation_namespace }}
+           -oname | head -1)
+        -n {{ fine_tuning_run_quality_evaluation_namespace }}
+        > {{ artifact_extra_logs_dir }}/artifacts/pod.log
+    ignore_errors: true
+
+  - name: Capture the state of the fine-tuning Pod resource
+    shell:
+      set -o pipefail;
+
+      oc get pytorchjob/{{ job_name_safe }}
+         -oyaml
+         -n {{ fine_tuning_run_quality_evaluation_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.yaml;
+
+      oc get pytorchjob/{{ job_name_safe }}
+         -owide
+         -n {{ fine_tuning_run_quality_evaluation_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.status;
+
+      oc describe pytorchjob/{{ job_name_safe }}
+         -n {{ fine_tuning_run_quality_evaluation_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.desc
+    ignore_errors: true

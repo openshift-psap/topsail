@@ -1,0 +1,41 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Fine_Tuning.run_quality_evaluation
+
+# Parameters
+# the name of the fine-tuning job to create
+# Mandatory value
+fine_tuning_run_quality_evaluation_name:
+
+# the name of the namespace where the scheduler load will be generated
+# Mandatory value
+fine_tuning_run_quality_evaluation_namespace:
+
+# the name of the PVC where the model and dataset are stored
+# Mandatory value
+fine_tuning_run_quality_evaluation_pvc_name:
+
+# the name of the model to use inside the /dataset directory of the PVC
+# Mandatory value
+fine_tuning_run_quality_evaluation_model_name:
+
+# the image to use for the fine-tuning container
+fine_tuning_run_quality_evaluation_container_image: registry.redhat.io/ubi9
+
+# the number of GPUs to request for the fine-tuning job
+fine_tuning_run_quality_evaluation_gpu: 0
+
+# the number of RAM gigs to request for to the fine-tuning job (in Gigs)
+fine_tuning_run_quality_evaluation_memory: 10
+
+# the number of CPU cores to request for the fine-tuning job (in cores)
+fine_tuning_run_quality_evaluation_cpu: 1
+
+# number of worker replicas to deploy
+fine_tuning_run_quality_evaluation_worker_replicas: 0
+
+# dictionnary of hyper-parameters to pass to sft-trainer
+fine_tuning_run_quality_evaluation_hyper_parameters: {}
+
+# if true, sleeps forever instead of running the fine-tuning command.
+fine_tuning_run_quality_evaluation_sleep_forever: false

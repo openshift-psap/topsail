@@ -1,0 +1,7 @@
+---
+fine_tuning_job_template: templates/quality_evaluation_job.yaml.j2
+
+fine_tuning_job_entrypoint_dir: projects/fine_tuning/roles/fine_tuning_run_quality_evaluation/files/entrypoint
+fine_tuning_job_entrypoint_name: entrypoint.sh
+fine_tuning_job_config_template: templates/base_config.yaml.j2
+__safe: [fine_tuning_job_entrypoint_name]
