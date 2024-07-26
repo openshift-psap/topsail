@@ -58,7 +58,10 @@ class From_Config:
             # parse the file as yaml and dump it a string,
             # to resolve yaml aliases
             command_args = f.read()
-
+            
+        def log_warning(msg):
+            logging.warning(msg)
+            
         def raise_exception(msg):
             raise Exception(msg)
 
@@ -75,7 +78,8 @@ class From_Config:
 
         jinja2.filters.FILTERS["or_env"] = or_env
         jinja2.filters.FILTERS["raise_exception"] = raise_exception
-
+        jinja2.filters.FILTERS["log_warning"] = log_warning
+        
         command_args_tpl = jinja2.Template(command_args)
         try:
             command_args_rendered = command_args_tpl.render(config)

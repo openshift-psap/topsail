@@ -1,6 +1,7 @@
 {% set secrets_location = false | or_env(secrets.dir.env_key) %}
 {% if not secrets_location %}
-  {{ ("ERROR: secrets_location must be defined (secrets.dir.name="+ secrets.dir.name|string +" or env(secrets.dir.env_key=" + secrets.dir.env_key|string + ")) ") | raise_exception }}
+  {{ ("ERROR: secrets_location must be defined (secrets.dir.name="+ secrets.dir.name|string +" or env(secrets.dir.env_key=" + secrets.dir.env_key|string + ")) ") | log_warning }}
+  {% set secrets_location = "/secret/locatation/not/set" %}
 {% endif %}
 {% set s3_ldap_password_location = secrets_location + "/" + secrets.s3_ldap_password_file %}
 

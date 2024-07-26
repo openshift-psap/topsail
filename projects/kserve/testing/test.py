@@ -250,7 +250,7 @@ def generate_plots(results_dirname):
 
         with (
                 config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload),
-                config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export", False),
+                config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export.enabled", False),
                 config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")
         ):
             visualize.prepare_matbench()
@@ -270,7 +270,7 @@ def generate_plots(results_dirname):
 
                 with (
                         env.NextArtifactDir(f"{prom_workload}__{dirname}"),
-                        config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export", False),
+                        config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export.enabled", False),
                 ):
                     logging.info(f"Generating the plots with workload={prom_workload} for {current_results_dirname}")
                     try:
