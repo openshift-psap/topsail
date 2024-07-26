@@ -144,6 +144,7 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings") | test_override_values
     do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
     do_many_model = config.ci_artifacts.get_config("tests.fine_tuning.many_model.enabled")
+    do_quality_evaluation = config.ci_artifacts.get_config("tests.fine_tuning.quality_evaluation.enabled")
 
     test_settings["hyper_parameters"] = {k: v for k, v in test_settings["hyper_parameters"].items()
                                          if v is not None}
@@ -172,16 +173,20 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     if not do_multi_model:
         prom_start_ts = reset_prometheus()
 
-    with env.NextArtifactDir("test_fine_tuning"):
+    test_dir_name = "evaluate_quality" if do_quality_evaluation \
+        else "test_fine_tuning"
+    with env.NextArtifactDir(test_dir_name):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
 
         prepare_matbench_test_files(job_index)
 
         try:
             if dry_mode:
-                logging.info(f"tests.dry_mode is enabled, NOT running with {test_settings} | {do_multi_model=} | {do_many_model=}")
+                logging.info(f"tests.dry_mode is enabled, NOT running with {test_settings} | {do_multi_model=} | {do_many_model=} | {do_quality_evaluation=}")
             elif do_many_model:
                 _run_test_many_model(test_settings)
+            elif do_quality_evaluation:
+                _run_test_quality_evaluation(test_settings)
             else:
                 start_ts = _start_ts
 
@@ -274,6 +279,15 @@ def _run_test_multi_model(test_artifact_dir_p):
             generate_prom_results("multi-model", prom_start_ts)
 
     return failed
+
+def _run_test_quality_evaluation(test_settings):
+    test_settings["model_name"] = prepare_finetuning.get_safe_model_name(test_settings["model_name"])
+    test_settings.pop("dataset_name")
+    test_settings.pop("dataset_replication")
+
+    test_settings["container_image"] = config.ci_artifacts.get_config("tests.fine_tuning.quality_evaluation.image")
+    run.run_toolbox_from_config("fine_tuning", "run_quality_evaluation",
+                                extra=test_settings)
 
 
 def _run_test_and_visualize(test_override_values=None):
