@@ -155,6 +155,7 @@ class SFTTrainerSummary():
             fig.update_traces(textposition='top center')
 
         else:
+            df = df.sort_values(by=["name", x_key], ascending=True)
             fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name", barmode='group', text=text)
 
         if has_gpu:
