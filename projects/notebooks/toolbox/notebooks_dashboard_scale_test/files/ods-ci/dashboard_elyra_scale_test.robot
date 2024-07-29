@@ -95,10 +95,11 @@ Create S3 Data Connection Creation
 
 Create Pipeline Server To s3
   [Tags]  Dashboard
-  Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
-  Wait Until Page Contains No Spinner    
-  Element Should Be Enabled     ${PIPELINE_IMPORT_BUTTON}
-  Sleep  1 minutes
+  oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
+  Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PRJ_TITLE}
+  Verify There Is No "Error Displaying Pipelines" After Creating Pipeline Server
+  Verify That There Are No Sample Pipelines After Creating Pipeline Server
+  Wait Until Pipeline Server Is Deployed    project_title=${PRJ_TITLE}
 
   Capture Page Screenshot
 
