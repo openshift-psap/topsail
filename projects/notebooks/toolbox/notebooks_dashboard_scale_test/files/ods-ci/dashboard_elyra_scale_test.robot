@@ -96,7 +96,7 @@ Create S3 Data Connection Creation
 Create Pipeline Server To s3
   [Tags]  Dashboard
   oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
-  Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
+  Create Pipeline Server Elyra    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
   Verify There Is No "Error Displaying Pipelines" After Creating Pipeline Server
   Verify That There Are No Sample Pipelines After Creating Pipeline Server
   Wait Until Pipeline Server Is Deployed    project_title=${PROJECT_NAME}
@@ -256,3 +256,33 @@ Open Pipeline Elyra Pipeline Run
     Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']
     Click Element    xpath=//span[text()='${pipeline_run_name}']
     Wait Until Page Contains Element    xpath=//div[@data-test-id='topology']
+
+Create Pipeline Server Elyra    # robocop: off=too-many-calls-in-keyword
+    [Documentation]    Creates the DS Pipeline server from DS Project details page
+    ...                It assumes the Data Connection is aleady created
+    ...                and you wants to use defaul DB configurations [TEMPORARY]
+    [Arguments]    ${dc_name}    ${project_title}
+    # Every 2 mins the frontend updates its cache and the client polls every 30seconds.
+    # So the longest you’d have to wait is 2.5 mins. Set 3 min just to make sure
+    Projects.Move To Tab    Pipelines
+    Wait Until Page Contains Element    ${PIPELINES_SERVER_BTN_XP}    timeout=180s
+    Element Should Be Enabled    ${PIPELINES_SERVER_BTN_XP}
+    Click Button    ${PIPELINES_SERVER_BTN_XP}
+    Wait Until Generic Modal Appears
+    Run Keyword And Continue On Failure    Element Should Be Disabled    ${PIPELINES_SERVER_CONFIG_BTN_XP}
+    Select Data Connection Elyra   dc_name=${dc_name}
+    Element Should Be Enabled    ${PIPELINES_SERVER_CONFIG_BTN_XP}
+    Click Element    ${PIPELINES_SERVER_CONFIG_BTN_XP}
+    Wait Until Generic Modal Disappears
+    Wait Until Project Is Open    project_title=${project_title}
+    ...    timeout-pre-spinner=5s    timeout-spinner=60s
+
+Select Data Connection Elyra
+    [Documentation]    Selects an existing data connection from the dropdown
+    ...                in the modal for Pipeline Server creation
+    [Arguments]    ${dc_name}
+    # robocop: off=line-too-long
+    Wait Until Page Contains Element    xpath://div[@class="pf-v5-c-form__group"][.//label//*[text()="Access key"]]//div[@data-ouia-component-type="PF5/Dropdown"]
+    Click Element                       xpath://div[@class="pf-v5-c-form__group"][.//label//*[text()="Access key"]]//div[@data-ouia-component-type="PF5/Dropdown"]
+    Wait Until Page Contains Element    xpath://button//*[text()="${dc_name}"]
+    Click Element    xpath://button//*[text()="${dc_name}"]
