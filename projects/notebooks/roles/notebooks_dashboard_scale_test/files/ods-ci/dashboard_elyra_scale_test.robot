@@ -75,7 +75,7 @@ Go to the Project page
 
   ${has_errors}  ${error}=  Run Keyword And Ignore Error  Project Should Be Listed  ${PROJECT_NAME}
   IF  '${has_errors}' != 'PASS'
-    Create Data Science Project  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
+    Create Data Science Project Elyra  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
   ELSE
     Open Data Science Project Details Page  ${PROJECT_NAME}
   END
@@ -176,7 +176,7 @@ Just Launch Workbench
     Switch Window   NEW
 
 Wait Until Page Contains No Spinner
-    [Arguments]     ${timeout}=30 seconds
+    [Arguments]     ${timeout}=1m
     Wait Until Page Does Not Contain Element   //*[contains(@class, 'pf-c-spinner')]  timeout=${timeout}
 
 Wait Until Workbench Is Starting
