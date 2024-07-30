@@ -99,7 +99,7 @@ Create Pipeline Server To s3
   Create Pipeline Server Elyra    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
   Verify There Is No "Error Displaying Pipelines" After Creating Pipeline Server
   Verify That There Are No Sample Pipelines After Creating Pipeline Server
-  Wait Until Pipeline Server Is Deployed    project_title=${PROJECT_NAME}
+  Wait Until Pipeline Server Is Deployed Elyra    project_title=${PROJECT_NAME}
 
   Capture Page Screenshot
 
@@ -286,3 +286,48 @@ Select Data Connection Elyra
     Click Element                       xpath://div[@class="pf-v5-c-form__group"][.//label//*[text()="Access key"]]//div[@data-ouia-component-type="PF5/Dropdown"]
     Wait Until Page Contains Element    xpath://button//*[text()="${dc_name}"]
     Click Element    xpath://button//*[text()="${dc_name}"]
+
+Wait Until Pipeline Server Is Deployed Elyra
+    [Documentation]    Waits until all the expected pods of the pipeline server
+    ...                are running
+    [Arguments]    ${project_title}
+    Wait Until Keyword Succeeds    10 times    10s
+    ...    Verify Pipeline Server Deployments Elyra    project_title=${project_title}
+
+Verify Pipeline Server Deployments Elyra    # robocop: disable
+    [Documentation]    Verifies the correct deployment of DS Pipelines in the rhods namespace
+    [Arguments]    ${project_title}
+
+    ${namespace}=    Get Openshift Namespace From Data Science Project
+    ...    project_title=${project_title}
+
+    @{all_pods}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=component=data-science-pipelines
+    Run Keyword And Continue On Failure    Length Should Be    ${all_pods}    7
+
+    @{pipeline_api_server}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-dspa
+    ${containerNames}=  Create List  oauth-proxy    ds-pipeline-api-server
+    Verify Deployment    ${pipeline_api_server}  1  2  ${containerNames}
+
+    @{pipeline_metadata_envoy}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-metadata-envoy-dspa
+    ${containerNames}=  Create List  container    oauth-proxy
+    Verify Deployment    ${pipeline_metadata_envoy}  1  2  ${containerNames}
+
+    @{pipeline_metadata_grpc}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-metadata-grpc-dspa
+    ${containerNames}=  Create List  container
+    Verify Deployment    ${pipeline_metadata_grpc}  1  1  ${containerNames}
+
+    @{pipeline_persistenceagent}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-persistenceagent-dspa
+    ${containerNames}=  Create List  ds-pipeline-persistenceagent
+    Verify Deployment    ${pipeline_persistenceagent}  1  1  ${containerNames}
+
+    @{pipeline_scheduledworkflow}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-scheduledworkflow-dspa
+    ${containerNames}=  Create List  ds-pipeline-scheduledworkflow
+    Verify Deployment    ${pipeline_scheduledworkflow}  1  1  ${containerNames}
+
+    @{pipeline_workflow_controller}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-workflow-controller-dspa
+    ${containerNames}=  Create List  ds-pipeline-workflow-controller
+    Verify Deployment    ${pipeline_workflow_controller}  1  1  ${containerNames}
+
+    @{mariadb}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=mariadb-dspa
+    ${containerNames}=  Create List  mariadb
+    Verify Deployment    ${mariadb}  1  1  ${containerNames}
