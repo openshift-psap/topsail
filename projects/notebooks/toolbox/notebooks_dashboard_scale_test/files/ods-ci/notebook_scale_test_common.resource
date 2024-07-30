@@ -1,6 +1,13 @@
 *** Settings ***
 Resource            tests/Resources/RHOSi.resource
 
+*** Variables ***
+${PROJECT_CREATE_BTN_XP}=     xpath=//button[text()="Create data science project"]
+${TITLE_INPUT_XP}=    xpath=//input[@id="manage-project-modal-name"]
+${GENERIC_CREATE_BTN_XP}=     xpath=//button[text()="Create"]
+${DESCR_INPUT_XP}=    xpath=//textarea[@id="manage-project-modal-description"]
+${RESOURCE_INPUT_XP}=    xpath=//input[@id="resource-manage-project-modal-name"]
+
 *** Keywords ***
 
 Setup
@@ -97,3 +104,41 @@ My Run Cell And Check For Errors
   Wait Until JupyterLab Code Cell Is Not Active  ${timeout}
   ${output} =  Get Text  (//div[contains(@class,"jp-OutputArea-output")])[last()]
   Should Not Match  ${output}  ERROR*
+
+Create Data Science Project Elyra
+    [Documentation]    Creates a DS Project with the given ${title}, ${description} and ${resource_name}.
+    ...    Reuse project if already exists: ${existing_project}
+    [Arguments]    ${title}    ${description}    ${resource_name}=${NONE}    ${existing_project}=${FALSE}
+    IF    ${existing_project}
+        ${existing_project}=  Run Keyword And Return Status
+        ...    Wait Until Page Contains Element    xpath://a[text()="${title}"]
+    END
+    IF    ${existing_project}
+        Log    DS Project '${title}' already exists, reusing project    console=True
+        Click Link      ${title}
+    ELSE
+        Wait Until Page Contains Element    ${PROJECT_CREATE_BTN_XP}
+        Click Button    ${PROJECT_CREATE_BTN_XP}
+        Wait Until Page Contains Element    ${TITLE_INPUT_XP}
+        Run Keyword And Warn On Failure     Element Should Be Disabled    ${GENERIC_CREATE_BTN_XP}
+        Input Text    ${TITLE_INPUT_XP}    ${title}
+        Input Text    ${DESCR_INPUT_XP}    ${description}
+        Run Keyword And Continue On Failure    Validate Generated Resource Name    project_title=${title}
+        IF    "${resource_name}" != "${NONE}"
+            Clear Element Text    ${RESOURCE_INPUT_XP}
+            Input Text    ${RESOURCE_INPUT_XP}    ${resource_name}
+        END
+        Wait Until Element Is Not Visible    xpath://button[@data-ouia-component-id='OUIA-Generated-Button-primary-5'][contains(@class, 'pf-m-disabled')]
+        Click Button    ${GENERIC_CREATE_BTN_XP}
+        Wait Until Generic Modal Disappears
+    END
+    Wait Until Project Is Open    project_title=${title}
+    ${open}=    Run Keyword And Return Status    Wait Until Project Is Open    project_title=${title}
+    IF    ${open} == ${FALSE}
+        ${is_home_open}=    Is Data Science Projects Page Open
+        IF    ${is_home_open} == ${TRUE}
+            Log    message=After DS Project ${title} creation, user did not get redirected to details page...(RHODS-8477)
+            ...    level=WARN
+            Fail
+        END
+    END
