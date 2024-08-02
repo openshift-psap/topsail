@@ -64,7 +64,7 @@ ci_presets:
 
   ibm_release_comparison:
     tests.fine_tuning.test_settings.container_image:
-    - quay.io/modh/fms-hf-tuning@sha256:2985c259c66e227417ed69365bb23ab92ed5022650672771e56070326b21d5f4 # RHOAI-2.12
+    - quay.io/modh/fms-hf-tuning:release-014bbf70f020a5ac5e40bfe5fb0285a5d7676a42 # RHOAI-2.12
     - quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05 # RHOAI-2.11
     - quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3 # RHOAI-2.10
 
