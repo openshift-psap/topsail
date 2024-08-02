@@ -131,8 +131,9 @@ ci_presets:
 
   vllm:
     kserve.model.runtime: vllm
-    # IBM image hardcoded until RHOAI includes an image in the release
-    kserve.model.serving_runtime.kserve.image: "quay.io/modh/vllm:rhoai-2.10-2cf4d15"
+    # To hardcode image:
+    # kserve.model.serving_runtime.kserve.image: "quay.io/opendatahub/vllm:stable"
+    # kserve.model.serving_runtime.update_image: False
     tests.e2e.llm_load_test.args.plugin: "openai_plugin"
     tests.e2e.llm_load_test.args.streaming: true
     tests.e2e.llm_load_test.args.interface: "http"
