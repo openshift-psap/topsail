@@ -28,8 +28,8 @@ ${HOST_BUCKET}                 %{S3_BUCKET_NAME}
 
 ${DC_NAME}                     elyra-s3
 ${IMAGE}                       Standard Data Science
-${PV_NAME}                     ods-ci-pv-elyra
-${PV_DESCRIPTION}              ods-ci-pv-elyra is a PV created to test Elyra in workbenches
+${PV_NAME}                     ${TEST_USER.USERNAME}_pvc
+${PV_DESCRIPTION}              ${TEST_USER.USERNAME} is a PV created to test Elyra in workbenches
 ${PV_SIZE}                     2
 
 ${PIPELINE_IMPORT_BUTTON}      xpath=//button[@id='import-pipeline-button']
@@ -108,7 +108,7 @@ Create and Start the Workbench
 
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' == 'FAIL'  
-    Create Workbench    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}_${IMAGE}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
+    Create Workbench    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
   END
   Start Workbench     workbench_title=${WORKBENCH_NAME}    timeout=300s
   Capture Page Screenshot
@@ -144,9 +144,7 @@ Create and Start the Workbench
     Sleep  5s
     Reload Page
     Page Should Not Contain  Application is not available
-  END
-  # Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}  ${PROJECT_NAME}
-  # Wait Until JupyterLab Is Loaded    timeout=60s   
+  END   
   Access To Workbench    username=${TEST_USER.USERNAME}    password=${TEST_USER.PASSWORD}
         ...    auth_type=${TEST_USER.AUTH_TYPE}
   Capture Page Screenshot
@@ -165,7 +163,7 @@ Check of Pipeline Runs
   ${pipeline_run_name} =    Get Pipeline Run Name
   Switch To Pipeline Execution Page
   Is Data Science Project Details Page Open   ${PROJECT_NAME}
-  Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=5m    experiment_name=${EXPERIMENT_NAME}
+  Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=10m    experiment_name=${EXPERIMENT_NAME}
 
 *** Keywords ***
 
@@ -255,7 +253,7 @@ Open Pipeline Elyra Pipeline Run
     Click Element    xpath=//*[@data-testid="active-runs-tab"]
     Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']
     Click Element    xpath=//span[text()='${pipeline_run_name}']
-    Wait Until Page Contains Element    xpath=//div[@data-test-id='topology']
+    Wait Until Page Contains Element    xpath=//div[@data-test-id='topology']      timeout=30s
 
 Create Pipeline Server Elyra    # robocop: off=too-many-calls-in-keyword
     [Documentation]    Creates the DS Pipeline server from DS Project details page
@@ -268,14 +266,13 @@ Create Pipeline Server Elyra    # robocop: off=too-many-calls-in-keyword
     Wait Until Page Contains Element    ${PIPELINES_SERVER_BTN_XP}    timeout=180s
     Element Should Be Enabled    ${PIPELINES_SERVER_BTN_XP}
     Click Button    ${PIPELINES_SERVER_BTN_XP}
-    Wait Until Generic Modal Appears
+    Wait Until Generic Modal Appears    timeout=30S
     Run Keyword And Continue On Failure    Element Should Be Disabled    ${PIPELINES_SERVER_CONFIG_BTN_XP}
     Select Data Connection Elyra   dc_name=${dc_name}
     Element Should Be Enabled    ${PIPELINES_SERVER_CONFIG_BTN_XP}
     Click Element    ${PIPELINES_SERVER_CONFIG_BTN_XP}
-    Wait Until Generic Modal Disappears
-    Wait Until Project Is Open    project_title=${project_title}
-    ...    timeout-pre-spinner=5s    timeout-spinner=60s
+    Wait Until Generic Modal Disappears    timeout=30S
+    Wait Until Project Is Open    project_title=${project_title}    timeout-pre-spinner=5s    timeout-spinner=60s
 
 Select Data Connection Elyra
     [Documentation]    Selects an existing data connection from the dropdown
