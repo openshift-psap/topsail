@@ -130,7 +130,7 @@ Create Data Science Project Elyra
         END
         Wait Until Element Is Not Visible    xpath://button[@data-ouia-component-id='OUIA-Generated-Button-primary-5'][contains(@class, 'pf-m-disabled')]
         Click Button    ${GENERIC_CREATE_BTN_XP}
-        Wait Until Generic Modal Disappears
+        Wait Until Generic Modal Disappears    timeout=2m
     END
     Wait Until Project Is Open    project_title=${title}
     ${open}=    Run Keyword And Return Status    Wait Until Project Is Open    project_title=${title}
