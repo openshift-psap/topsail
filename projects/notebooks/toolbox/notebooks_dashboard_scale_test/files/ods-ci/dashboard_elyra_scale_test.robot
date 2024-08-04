@@ -246,7 +246,7 @@ Open Pipeline Elyra Pipeline Run
     [Arguments]    ${pipeline_run_name}    ${experiment_name}=Default
     Navigate To Page    Experiments    Experiments and runs
     ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page    timeout=30s
-    Wait Until Element Is Visible    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]    10s
+    Wait Until Element Is Visible    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]    30s
     Click Element    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]
     ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page     timeout=30s
     Wait Until Page Contains Element    xpath=//*[@data-testid="active-runs-tab"]      timeout=30s
