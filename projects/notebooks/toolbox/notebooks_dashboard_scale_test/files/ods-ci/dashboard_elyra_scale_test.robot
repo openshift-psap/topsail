@@ -251,7 +251,7 @@ Open Pipeline Elyra Pipeline Run
     ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page     timeout=30s
     Wait Until Page Contains Element    xpath=//*[@data-testid="active-runs-tab"]      timeout=30s
     Click Element    xpath=//*[@data-testid="active-runs-tab"]
-    Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']
+    Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']      timeout=30s
     Click Element    xpath=//span[text()='${pipeline_run_name}']
     Wait Until Page Contains Element    xpath=//div[@data-test-id='topology']      timeout=30s
 
