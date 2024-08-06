@@ -104,7 +104,7 @@ Create Pipeline Server To s3
   Capture Page Screenshot
 
 Create and Start the Workbench
-  [Tags]  Notebook  Spawn
+  [Tags]  Dashboard
 
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' == 'FAIL'  

@@ -273,7 +273,7 @@ tests:
       # offset to add to the Pod user index when computing the user name
       start_offset: 0
       # how long to wait between user starts, multiplied by the user index
-      sleep_factor: 10.0
+      sleep_factor: 15.0
       # number of users to launch at the same time
       batch_size: 1
 
