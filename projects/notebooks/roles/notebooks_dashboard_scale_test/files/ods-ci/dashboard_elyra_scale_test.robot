@@ -28,8 +28,8 @@ ${HOST_BUCKET}                 %{S3_BUCKET_NAME}
 
 ${DC_NAME}                     elyra-s3
 ${IMAGE}                       Standard Data Science
-${PV_NAME}                     ods-ci-pv-elyra
-${PV_DESCRIPTION}              ods-ci-pv-elyra is a PV created to test Elyra in workbenches
+${PV_NAME}                     ${TEST_USER.USERNAME}_pvc
+${PV_DESCRIPTION}              ${TEST_USER.USERNAME} is a PV created to test Elyra in workbenches
 ${PV_SIZE}                     2
 
 ${PIPELINE_IMPORT_BUTTON}      xpath=//button[@id='import-pipeline-button']
@@ -75,7 +75,7 @@ Go to the Project page
 
   ${has_errors}  ${error}=  Run Keyword And Ignore Error  Project Should Be Listed  ${PROJECT_NAME}
   IF  '${has_errors}' != 'PASS'
-    Create Data Science Project  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
+    Create Data Science Project Elyra  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
   ELSE
     Open Data Science Project Details Page  ${PROJECT_NAME}
   END
@@ -95,19 +95,20 @@ Create S3 Data Connection Creation
 
 Create Pipeline Server To s3
   [Tags]  Dashboard
-  Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
-  Wait Until Page Contains No Spinner    
-  Element Should Be Enabled     ${PIPELINE_IMPORT_BUTTON}
-  Sleep  1 minutes
+  oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
+  Create Pipeline Server Elyra    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
+  Verify There Is No "Error Displaying Pipelines" After Creating Pipeline Server
+  Verify That There Are No Sample Pipelines After Creating Pipeline Server
+  Wait Until Pipeline Server Is Deployed Elyra    project_title=${PROJECT_NAME}
 
   Capture Page Screenshot
 
 Create and Start the Workbench
-  [Tags]  Notebook  Spawn
+  [Tags]  Dashboard
 
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' == 'FAIL'  
-    Create Workbench    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}_${IMAGE}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
+    Create Workbench    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
   END
   Start Workbench     workbench_title=${WORKBENCH_NAME}    timeout=300s
   Capture Page Screenshot
@@ -143,9 +144,7 @@ Create and Start the Workbench
     Sleep  5s
     Reload Page
     Page Should Not Contain  Application is not available
-  END
-  # Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}  ${PROJECT_NAME}
-  # Wait Until JupyterLab Is Loaded    timeout=60s   
+  END   
   Access To Workbench    username=${TEST_USER.USERNAME}    password=${TEST_USER.PASSWORD}
         ...    auth_type=${TEST_USER.AUTH_TYPE}
   Capture Page Screenshot
@@ -164,7 +163,7 @@ Check of Pipeline Runs
   ${pipeline_run_name} =    Get Pipeline Run Name
   Switch To Pipeline Execution Page
   Is Data Science Project Details Page Open   ${PROJECT_NAME}
-  Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=5m    experiment_name=${EXPERIMENT_NAME}
+  Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=10m    experiment_name=${EXPERIMENT_NAME}
 
 *** Keywords ***
 
@@ -175,7 +174,7 @@ Just Launch Workbench
     Switch Window   NEW
 
 Wait Until Page Contains No Spinner
-    [Arguments]     ${timeout}=30 seconds
+    [Arguments]     ${timeout}=1m
     Wait Until Page Does Not Contain Element   //*[contains(@class, 'pf-c-spinner')]  timeout=${timeout}
 
 Wait Until Workbench Is Starting
@@ -247,11 +246,85 @@ Open Pipeline Elyra Pipeline Run
     [Arguments]    ${pipeline_run_name}    ${experiment_name}=Default
     Navigate To Page    Experiments    Experiments and runs
     ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page    timeout=30s
-    Wait Until Element Is Visible    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]    10s
+    Wait Until Element Is Visible    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]    30s
     Click Element    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]
     ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page     timeout=30s
     Wait Until Page Contains Element    xpath=//*[@data-testid="active-runs-tab"]      timeout=30s
     Click Element    xpath=//*[@data-testid="active-runs-tab"]
-    Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']
+    Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']      timeout=30s
     Click Element    xpath=//span[text()='${pipeline_run_name}']
-    Wait Until Page Contains Element    xpath=//div[@data-test-id='topology']
+    Wait Until Page Contains Element    xpath=//div[@data-test-id='topology']      timeout=30s
+
+Create Pipeline Server Elyra    # robocop: off=too-many-calls-in-keyword
+    [Documentation]    Creates the DS Pipeline server from DS Project details page
+    ...                It assumes the Data Connection is aleady created
+    ...                and you wants to use defaul DB configurations [TEMPORARY]
+    [Arguments]    ${dc_name}    ${project_title}
+    # Every 2 mins the frontend updates its cache and the client polls every 30seconds.
+    # So the longest you’d have to wait is 2.5 mins. Set 3 min just to make sure
+    Projects.Move To Tab    Pipelines
+    Wait Until Page Contains Element    ${PIPELINES_SERVER_BTN_XP}    timeout=180s
+    Element Should Be Enabled    ${PIPELINES_SERVER_BTN_XP}
+    Click Button    ${PIPELINES_SERVER_BTN_XP}
+    Wait Until Generic Modal Appears    timeout=30S
+    Run Keyword And Continue On Failure    Element Should Be Disabled    ${PIPELINES_SERVER_CONFIG_BTN_XP}
+    Select Data Connection Elyra   dc_name=${dc_name}
+    Element Should Be Enabled    ${PIPELINES_SERVER_CONFIG_BTN_XP}
+    Click Element    ${PIPELINES_SERVER_CONFIG_BTN_XP}
+    Wait Until Generic Modal Disappears    timeout=30S
+    Wait Until Project Is Open    project_title=${project_title}    timeout-pre-spinner=5s    timeout-spinner=60s
+
+Select Data Connection Elyra
+    [Documentation]    Selects an existing data connection from the dropdown
+    ...                in the modal for Pipeline Server creation
+    [Arguments]    ${dc_name}
+    # robocop: off=line-too-long
+    Wait Until Page Contains Element    xpath://div[@class="pf-v5-c-form__group"][.//label//*[text()="Access key"]]//div[@data-ouia-component-type="PF5/Dropdown"]
+    Click Element                       xpath://div[@class="pf-v5-c-form__group"][.//label//*[text()="Access key"]]//div[@data-ouia-component-type="PF5/Dropdown"]
+    Wait Until Page Contains Element    xpath://button//*[text()="${dc_name}"]
+    Click Element    xpath://button//*[text()="${dc_name}"]
+
+Wait Until Pipeline Server Is Deployed Elyra
+    [Documentation]    Waits until all the expected pods of the pipeline server
+    ...                are running
+    [Arguments]    ${project_title}
+    Wait Until Keyword Succeeds    10 times    10s
+    ...    Verify Pipeline Server Deployments Elyra    project_title=${project_title}
+
+Verify Pipeline Server Deployments Elyra    # robocop: disable
+    [Documentation]    Verifies the correct deployment of DS Pipelines in the rhods namespace
+    [Arguments]    ${project_title}
+
+    ${namespace}=    Get Openshift Namespace From Data Science Project
+    ...    project_title=${project_title}
+
+    @{all_pods}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=component=data-science-pipelines
+    Run Keyword And Continue On Failure    Length Should Be    ${all_pods}    7
+
+    @{pipeline_api_server}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-dspa
+    ${containerNames}=  Create List  oauth-proxy    ds-pipeline-api-server
+    Verify Deployment    ${pipeline_api_server}  1  2  ${containerNames}
+
+    @{pipeline_metadata_envoy}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-metadata-envoy-dspa
+    ${containerNames}=  Create List  container    oauth-proxy
+    Verify Deployment    ${pipeline_metadata_envoy}  1  2  ${containerNames}
+
+    @{pipeline_metadata_grpc}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-metadata-grpc-dspa
+    ${containerNames}=  Create List  container
+    Verify Deployment    ${pipeline_metadata_grpc}  1  1  ${containerNames}
+
+    @{pipeline_persistenceagent}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-persistenceagent-dspa
+    ${containerNames}=  Create List  ds-pipeline-persistenceagent
+    Verify Deployment    ${pipeline_persistenceagent}  1  1  ${containerNames}
+
+    @{pipeline_scheduledworkflow}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-scheduledworkflow-dspa
+    ${containerNames}=  Create List  ds-pipeline-scheduledworkflow
+    Verify Deployment    ${pipeline_scheduledworkflow}  1  1  ${containerNames}
+
+    @{pipeline_workflow_controller}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-workflow-controller-dspa
+    ${containerNames}=  Create List  ds-pipeline-workflow-controller
+    Verify Deployment    ${pipeline_workflow_controller}  1  1  ${containerNames}
+
+    @{mariadb}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=mariadb-dspa
+    ${containerNames}=  Create List  mariadb
+    Verify Deployment    ${mariadb}  1  1  ${containerNames}
