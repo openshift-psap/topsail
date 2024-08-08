@@ -54,7 +54,7 @@ spec:
               mountPath: /mnt/entrypoint
             - name: config-volume
               mountPath: /mnt/config
-            - name: output-volume
+            - name: scratch-volume
               mountPath: /mnt/output
             resources:
               requests: &request_block
@@ -79,8 +79,17 @@ spec:
           - name: entrypoint-volume
             configMap:
               name: {{ job_name_safe }}-entrypoint
-          - name: output-volume
-            emptyDir: {}
+#           - name: output-volume
+#             emptyDir: {}
+          - name: scratch-volume
+            ephemeral:
+              volumeClaimTemplate:
+                metadata:
+                spec:
+                  accessModes: [ "ReadWriteOnce" ]
+                  resources:
+                    requests:
+                      storage: 500Gi
 {% if fine_tuning_run_fine_tuning_job_worker_replicas > 0 %}
     Worker:
       replicas: {{ fine_tuning_run_fine_tuning_job_worker_replicas }}
