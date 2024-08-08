@@ -1,0 +1,35 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    model:
+      storageUri: s3://psap-hf-models/granite-20b-code-instruct/granite-20b-code-instruct
+      args:
+      - --dtype=bfloat16
+      - --tensor-parallel-size=2
+      - --max-model-len=4096
+      resources:
+        requests:
+          cpu: "8"
+          memory: "20Gi"
+          nvidia.com/gpu: "2"
+        limits:
+          nvidia.com/gpu: "2"
+      volumeMounts:
+      - name: shared-memory
+        mountPath: /dev/shm
+      - name: tmp
+        mountPath: /tmp
+      - name: home
+        mountPath: /home/vllm
+    volumes:
+    - name: shared-memory
+      emptyDir:
+        medium: Memory
+        sizeLimit: 16Gi
+    - name: tmp
+      emptyDir: {}
+    - name: home
+      emptyDir: {}

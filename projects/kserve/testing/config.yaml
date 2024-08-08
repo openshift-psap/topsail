@@ -131,14 +131,15 @@ ci_presets:
 
   vllm:
     kserve.model.runtime: vllm
-    # IBM image hardcoded until RHOAI includes an image in the release
-    kserve.model.serving_runtime.kserve.image: "quay.io/modh/vllm:rhoai-2.10-2cf4d15"
+    # To hardcode image:
+    # kserve.model.serving_runtime.kserve.image: "quay.io/opendatahub/vllm:stable"
+    # kserve.model.serving_runtime.update_image: False
     tests.e2e.llm_load_test.args.plugin: "openai_plugin"
     tests.e2e.llm_load_test.args.streaming: true
     tests.e2e.llm_load_test.args.interface: "http"
+    tests.e2e.llm_load_test.args.endpoint: "/v1/completions"
       # tests.e2e.llm_load_test.args.model_name: "/mnt/models/"
       # tests.e2e.llm_load_test.args.host: "http://localhost:8033"
-      # tests.e2e.llm_load_test.args.endpoint: "/v1/chat/completions"
 
   # ---
 
@@ -194,19 +195,38 @@ ci_presets:
     matbench.lts.horreum.test_name: null
     matbench.lts.opensearch.index: rhoai-kserve-single-light
 
+  cpt_single_model_gating_llama_small_granite_20:
+    extends: [e2e_perf, gating, 3min, raw, use_intlab_minio]
+    # kserve.model.directory_prefix: cpt
+    tests.e2e.models:
+    - name: llama-3-8b-instruct
+      testing:
+       size: small
+       max_concurrency: 64
+    - name: japanese-llama-2-7b-instruct
+      testing:
+        size: small
+        max_concurrency: 64
+    - name: granite-20b-code-instruct
+      testing:
+        size: large
+    matbench.lts.horreum.test_name: rhoai-kserve-single
+    matbench.lts.opensearch.index: rhoai-kserve-single
+    tests.e2e.matbenchmark.enabled: true
+    # small models will stop at 32
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
+    export_artifacts.enabled: true
+
+
   cpt_single_model_gating:
     extends: [e2e_perf, gating, 3min, raw, use_intlab_minio]
     # kserve.model.directory_prefix: cpt
     tests.e2e.models:
-    - name: flan-t5-xl
-      testing:
-        size: small
-        max_concurrency: 32
     - name: flan-t5-xxl
       testing:
         size: small
         max_concurrency: 32
-    - name: japanese-llama-2-7b-instruct
+    - name: llama-3-8b-instruct
       testing:
         size: small
         max_concurrency: 32
@@ -222,10 +242,20 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 32
-    - name: llama-2-70b-chat-hf
+    - name: llama-3-70b-instruct
       testing:
         size: large
     - name: codellama-34b-instruct-hf
+      testing:
+        size: large
+    - name: granite-3b-code-instruct
+      testing:
+        size: small
+    - name: granite-8b-code-instruct
+      testing:
+        size: small
+        max_concurrency: 64
+    - name: granite-20b-code-instruct
       testing:
         size: large
     matbench.lts.horreum.test_name: rhoai-kserve-single
@@ -268,7 +298,7 @@ ci_presets:
   vllm_cpt_single_model_gating:
     extends: [e2e_perf, gating, 3min, raw, use_intlab_minio, vllm]
     tests.e2e.models:
-    - name: japanese-llama-2-7b-instruct
+    - name: llama-3-8b-instruct
       testing:
        size: small
        max_concurrency: 64
@@ -280,7 +310,7 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 64
-    - name: llama-2-70b-chat-hf
+    - name: llama-3-70b-instruct
       testing:
         size: large
     - name: codellama-34b-instruct-hf
@@ -291,6 +321,16 @@ ci_presets:
         size: small
         max_concurrency: 64
     - name: mixtral-8x7b
+      testing:
+        size: large
+    - name: granite-3b-code-instruct
+      testing:
+        size: small
+    - name: granite-8b-code-instruct
+      testing:
+        size: small
+        max_concurrency: 64
+    - name: granite-20b-code-instruct
       testing:
         size: large
     matbench.lts.horreum.test_name: rhoai-kserve-single
@@ -477,9 +517,9 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 741931
-    channel: stable
-    version: 2.10.0
+    tag: 781776
+    channel: fast
+    version: 2.12.0
     version_name: rc1
     opendatahub: false
     managed_rhoai: false

@@ -5,8 +5,16 @@ metadata:
 spec:
   predictor:
     model:
-      storageUri: s3://psap-hf-models/Llama-2-13b-chat-hf/Llama-2-13b-chat-hf
+      storageUri: s3://psap-hf-models/granite-20b-code-instruct/granite-20b-code-instruct
       env:
+      - name: MAX_BATCH_SIZE
+        value: "256"
+      - name: MAX_CONCURRENT_REQUESTS
+        value: "384"
+      - name: NUM_GPUS
+        value: "2"
+      - name: RAYON_NUM_THREADS
+        value: "4"
       - name: DEPLOYMENT_FRAMEWORK
         value: tgis_native
       - name: FLASH_ATTENTION
@@ -15,12 +23,10 @@ spec:
         value: "4095"
       - name: MAX_SEQUENCE_LENGTH
         value: "4096"
-      - name: BATCH_SAFETY_MARGIN
-        value: "40"
       resources:
         requests:
           cpu: "8"
-          memory: "40Gi"
-          nvidia.com/gpu: "1"
+          memory: "20Gi"
+          nvidia.com/gpu: "2"
         limits:
-          nvidia.com/gpu: "1"
+          nvidia.com/gpu: "2"

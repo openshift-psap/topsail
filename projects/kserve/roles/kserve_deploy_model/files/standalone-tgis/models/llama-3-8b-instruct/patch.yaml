@@ -5,7 +5,7 @@ metadata:
 spec:
   predictor:
     model:
-      storageUri: s3://psap-hf-models/Llama-2-13b-chat-hf/Llama-2-13b-chat-hf
+      storageUri: s3://psap-hf-models/Meta-Llama-3-8B-Instruct/Meta-Llama-3-8B-Instruct/
       env:
       - name: DEPLOYMENT_FRAMEWORK
         value: tgis_native
@@ -15,12 +15,10 @@ spec:
         value: "4095"
       - name: MAX_SEQUENCE_LENGTH
         value: "4096"
-      - name: BATCH_SAFETY_MARGIN
-        value: "40"
       resources:
         requests:
-          cpu: "8"
-          memory: "40Gi"
+          cpu: "2"
+          memory: "16Gi"
           nvidia.com/gpu: "1"
         limits:
           nvidia.com/gpu: "1"
