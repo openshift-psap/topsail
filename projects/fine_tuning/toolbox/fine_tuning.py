@@ -88,7 +88,7 @@ class Fine_Tuning:
 
             model_name,
 
-            container_image="registry.redhat.io/ubi9",
+            container_image="quay.io/rh-ee-kelchen/lm-eval",
 
             gpu=0,
             memory=10,
