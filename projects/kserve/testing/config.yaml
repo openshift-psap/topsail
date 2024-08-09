@@ -296,7 +296,7 @@ ci_presets:
     tests.e2e.llm_load_test.args.concurrency: 1   # Also supports List
     tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
-    export_artifacts.enabled: true
+    export_artifacts.enabled: false
     export_artifacts.bucket: rhods-baremetal-results
     export_artifacts.path_prefix: local-ci/rhods/kserve
   ##### PSAP 1474 End of Setup
