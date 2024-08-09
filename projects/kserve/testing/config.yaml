@@ -35,6 +35,9 @@ ci_presets:
   cluster_a30:
     clusters.sutest.compute.machineset.type: "PSAP A30 node"
 
+  cluster_t4:
+    clusters.sutest.compute.machineset.type: "PSAP T4 node"
+
   cluster_2xa100:
     clusters.sutest.compute.machineset.type: "Beaker A100-80GB"
 
@@ -287,6 +290,25 @@ ci_presets:
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
     export_artifacts.enabled: true
 
+  ##### PSAP 1474 Setup
+  rhoai_inference_performance_blog_setup:
+    extends: [vllm, e2e_perf]
+    tests.e2e.models:
+    - name: phi-2
+      testing:
+        size: small  # Determines the dataset size
+        max_concurrency: 128  # I guess, it defines cap on the concurrency
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.enabled: true
+    tests.e2e.llm_load_test.args.duration: 180
+    tests.e2e.llm_load_test.args.concurrency: 1     #Also supports List
+    tests.visualize: true
+    matbench.lts.opensearch.export.enabled: false
+    export_artifacts.enabled: false
+    export_artifacts.bucket: rhods-baremetal-results
+    export_artifacts.path_prefix: local-ci/rhods/kserve
+  ##### PSAP 1474 End of Setup
+
   # --
   # single-model vLLM
   # --
@@ -471,6 +493,7 @@ clusters:
     e26-h23-000-r650: cluster_icelake
     bb37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
     nvd-srv-02.nvidia.eng.rdu2.redhat.com: cluster_2xa100
+    x37-h13-000-r740xd.rdu3.labs.perfscale.redhat.com: cluster_t4
   create:
     type: single # can be: single, ocp, managed
     keep: false
