@@ -1,3 +1,5 @@
+
+
 from collections import defaultdict
 import re
 import logging
@@ -31,7 +33,7 @@ def generateQualityData(entry):
 
 class QualityEvaluation():
     def __init__(self):
-        self.name = "Quality Evaluation"
+        self.name = "Group Accuracies"
         self.id_name = self.name
 
         table_stats.TableStats._register_stat(self)
@@ -46,27 +48,24 @@ class QualityEvaluation():
         if not single_expe:
             return None, ["Only one expe was expected..."]
 
-
         for entry in common.Matrix.all_records(settings, setting_lists):
             pass # entry is set
 
-        data = generateQualityData(entry)
-        df = pd.DataFrame(data)
+        accuracies = entry.results.group_accuracies
+
+        df = pd.DataFrame(list(accuracies.items()), columns=['Group', 'Accuracy'])
         if df.empty:
             return None, "Nothing to plot"
 
-        fig = px.bar(df, hover_data=df.columns, x="name", y="value", barmode='group')
+        fig = px.bar(df, hover_data=df.columns, x="Group", y="Accuracy", barmode='group')
 
-        fig.update_xaxes(title="Color")
-        fig.update_yaxes(title="Value")
+        fig.update_xaxes(title="Group")
+        fig.update_yaxes(title="Accuracy")
 
-        model_name = entry.results.quality_configuration["model_name"]
-        title = f"Quality evaluation of {model_name}"
+        title = "Group Accuracies"
 
         fig.update_layout(title=title, title_x=0.5,)
-        fig.update_layout(legend_title_text="Configuration")
-
-        # ❯ or ❮
+        fig.update_layout(legend_title_text="Group Accuracies")
 
         msg = ["A text-based evaluation can go there."]
 
