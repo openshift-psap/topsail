@@ -69,7 +69,7 @@ def export_artifacts(artifacts_dirname, test_step=None):
         run_id = f"middleware_jenkins/{job_id}/{build_number}"
     else:
         logging.error("CI engine not recognized, cannot build the run id ...")
-        raise ValueError("CI engine not recognized, cannot build the run id ...")
+        return #raise ValueError("CI engine not recognized, cannot build the run id ...")
 
     if test_step:
         run_id += f"/{test_step}"
