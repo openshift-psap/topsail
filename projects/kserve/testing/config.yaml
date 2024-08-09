@@ -294,7 +294,7 @@ ci_presets:
     tests.e2e.llm_load_test.enabled: true
     tests.e2e.llm_load_test.args.duration: 120
     tests.e2e.llm_load_test.args.concurrency: 1   # Also supports List
-    tests.visualize: false
+    tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
     export_artifacts.enabled: true
     export_artifacts.bucket: rhods-baremetal-results
