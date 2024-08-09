@@ -282,6 +282,25 @@ ci_presets:
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
     export_artifacts.enabled: true
 
+  ##### PSAP 1474 Setup
+  rhoai_inference_performance_blog_setup:
+    extends: [raw, vllm, e2e_perf]
+    tests.e2e.models:
+    - name: granite-3b-code-instruct
+      testing:
+        size: small
+        max_concurrency: 128  # I guess, it defines cap on the concurrency
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.enabled: true
+    tests.e2e.llm_load_test.args.duration: 120
+    tests.e2e.llm_load_test.args.concurrency: 1   # Also supports List
+    tests.visualize: true
+    matbench.lts.opensearch.export.enabled: false
+    export_artifacts.enabled: false
+    export_artifacts.bucket: rhods-baremetal-results
+    export_artifacts.path_prefix: local-ci/rhods/kserve
+  ##### PSAP 1474 End of Setup
+
   # --
   # single-model vLLM
   # --
