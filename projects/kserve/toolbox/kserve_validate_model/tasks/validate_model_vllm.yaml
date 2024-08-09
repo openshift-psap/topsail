@@ -62,7 +62,7 @@
 
     echo $CURL_DATA >> "$query"
     for i in {1..{{ kserve_validate_model_query_count }}}; do
-      curl --silent --output $dest --write-out "%{http_code}" \
+      curl -k --silent --output $dest --write-out "%{http_code}" \
         {{ model_endpoint_cmd.stdout }}/v1/completions \
         -H "Content-Type: application/json" \
         -d "${CURL_DATA}" > "$status_code"
