@@ -40,7 +40,7 @@ def _rewrite_settings(settings_dict):
     settings_dict.pop("hyper_parameters.raw_lists", None)
 
     container_image = settings_dict.pop("container_image", None)
-    if container_image == "quay.io/modh/fms-hf-tuning:release-ec50c3d7dc09f50d9885f25efc3d2fc98a379709":
+    if container_image == "quay.io/modh/fms-hf-tuning:release-ec50c3d7dc09f50d9885f25efc3d2fc98a379709" or container_image == "quay.io/modh/fms-hf-tuning:release-014bbf70f020a5ac5e40bfe5fb0285a5d7676a42":
         container_image = "RHOAI 2.12 (rc)"
     elif container_image == "quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05":
         container_image = "RHOAI 2.11 (release)"
