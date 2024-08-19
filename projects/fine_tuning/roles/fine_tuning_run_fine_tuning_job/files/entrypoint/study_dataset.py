@@ -17,7 +17,7 @@ except Exception:
     fms_config = convert_dataset_helper.load_fms_hf_tuning_configuration()
 
     dataset = fms_config["training_data_path"]
-    tokenizer_name = fms_config["tokenizer_name_or_path"]
+    # tokenizer_name = fms_config["tokenizer_name_or_path"]
     max_seq_length = fms_config["max_seq_length"]
 
 logging.info("Loading the tokenizer ...")
