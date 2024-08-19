@@ -407,7 +407,7 @@ def test_ci():
         run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
 
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
-            pipelines_cleanup_cluster()
+            cleanup_cluster()
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
