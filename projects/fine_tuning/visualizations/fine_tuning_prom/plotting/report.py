@@ -13,6 +13,7 @@ except ImportError:
     error_report = None
 
 def register():
+    Aim()
     pass
 
 def set_vars(additional_settings, ordered_vars, settings, param_lists, variables, cfg):
@@ -87,3 +88,42 @@ def Plot_and_Text(name, args):
                        }))
 
     return data
+
+
+class Aim():
+    def __init__(self):
+        self.name = "AIM"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        import sys
+        sys.path.append("/usr/local/lib/python3.9/site-packages")
+        import aim
+        from aim.sdk.repo import Repo
+
+        repo = Repo.from_path("/home/kpouget/kserve/aim")
+
+        for entry in common.Matrix.all_records(settings, setting_lists):
+            run = aim.Run(
+                system_tracking_interval=None,
+                log_system_params=False,
+                capture_terminal_logs=False,
+                experiment=str(entry.results.test_uuid),
+            )
+
+            for k, v in entry.settings.__dict__.items():
+                run[k] = v
+
+
+            for name, metric in entry.results.metrics["sutest"].items():
+                if not metric: continue
+                for idx, (ts, value) in enumerate(metric[0].values.items()):
+                    run._tracker._track(value, ts, name, idx, context=None)
+
+        return None, "Nothing"
