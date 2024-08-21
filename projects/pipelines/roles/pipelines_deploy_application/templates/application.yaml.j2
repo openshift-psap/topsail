@@ -5,6 +5,10 @@ metadata:
   namespace: {{ pipelines_deploy_application_namespace }}
 spec:
   dspVersion: v2
+  apiServer:
+    image: quay.io/opendatahub/ds-pipelines-api-server:pr-74
+    argoDriverImage: quay.io/opendatahub/ds-pipelines-driver:pr-74
+    argoLauncherImage: quay.io/opendatahub/ds-pipelines-launcher:pr-74
   database:
     mariaDB:
       deploy: true
