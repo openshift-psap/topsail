@@ -158,8 +158,6 @@ class BaseStore():
         fn_add_to_matrix(results)
 
         with open(dirname / self.cache_filename, "wb") as f:
-            get_config = results.test_config.get
-            results.test_config.get = None
 
             self.prepare_for_pickle(results)
             self._prepare_for_pickle(results)
@@ -188,10 +186,10 @@ class BaseStore():
         return kpis
 
     def _prepare_for_pickle(self, results):
-        results.test_config.get = None
+        pass
 
     def _prepare_after_pickle(self, results):
-        results.test_config.get = get_yaml_get_key(results.test_config.name, results.test_config.yaml_file)
+        pass
 
     def prepare_for_pickle(self, results):
         pass
@@ -220,22 +218,25 @@ class BaseStore():
             yield lts_payload, lts_payload.metadata.start, lts_payload.metadata.end
 
 
-def get_yaml_get_key(filename, yaml_file):
-    def get(key, missing=...):
-        nonlocal yaml_file
+class _yaml_file_get():
+    def __init__(self, filename, yaml_file):
+        self.yaml_file = yaml_file
 
+    def get(self, key, missing=...):
         jsonpath_expression = jsonpath_ng.parse(f'$.{key}')
 
-        match = jsonpath_expression.find(yaml_file)
+        match = jsonpath_expression.find(self.yaml_file)
         if not match:
             if missing != ...:
                 return missing
 
-            raise KeyError(f"Key '{key}' not found in {filename} ...")
+            raise KeyError(f"Key '{key}' not found in {self.filename} ...")
 
         return match[0].value
 
-    return get
+def get_yaml_get_key(filename, yaml_file):
+
+    return _yaml_file_get(filename, yaml_file).get
 
 
 def validate_lts_payload(lts_payload_model, payload, import_settings, reraise=False):
