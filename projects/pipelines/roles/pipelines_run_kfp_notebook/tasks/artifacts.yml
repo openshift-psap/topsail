@@ -27,18 +27,26 @@
 
 - name: Save the pods status
   shell:
-    oc get pods -owide -lpipeline/runid -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.status"
+    oc get pods -owide -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.status"
   ignore_errors: true
 
 - name: Save the pods description
   shell:
-    oc describe pods  -lpipeline/runid -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.desc"
+    oc describe pods -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.desc"
   ignore_errors: true
   when: pipelines_run_kfp_notebook_capture_extra_artifacts
 
 - name: Save the pods definition
   shell:
-    oc get -oyaml pods  -lpipeline/runid -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.yaml"
+    oc get -oyaml pods -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/pods.yaml"
+  ignore_errors: true
+  when: pipelines_run_kfp_notebook_capture_extra_artifacts
+
+  # ---
+
+- name: Save the notebook yaml
+  shell:
+    oc get -oyaml notebooks -n "{{ notebook_namespace }}" > "{{ artifact_extra_logs_dir }}/artifacts/notebooks.yaml"
   ignore_errors: true
   when: pipelines_run_kfp_notebook_capture_extra_artifacts
 
