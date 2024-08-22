@@ -8,7 +8,7 @@ import matrix_benchmarking.models as matbench_models
 
 from . import kpi
 
-KPI_SETTINGS_VERSION = "1.0"
+KPI_SETTINGS_VERSION = "1.1"
 class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
     ocp_version: matbench_models.SemVer
@@ -44,6 +44,9 @@ class Metrics(matbench_models.ExclusiveModel):
     gpu_memory_used: matbench_models.PrometheusValues = Field(..., alias="Sutest GPU memory used")
     gpu_total_memory_used: matbench_models.PrometheusValues = Field(..., alias="Sutest GPU memory used (all GPUs)")
     gpu_active_computes: matbench_models.PrometheusValues = Field(..., alias="Sutest GPU active computes")
+
+    cpu_usage: matbench_models.PrometheusValues = Field(..., alias="sutest__container_sum_cpu__namespace=fine-tuning-testing_container=pytorch")
+    memory_usage: matbench_models.PrometheusValues = Field(..., alias="sutest__container_memory_usage_bytes__namespace=fine-tuning-testing_container=pytorch")
 
     # py_field_name: matbench_models.PrometheusValues = Field(..., alias="<metric description name>")
 
