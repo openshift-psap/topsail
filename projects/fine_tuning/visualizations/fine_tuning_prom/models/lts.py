@@ -8,7 +8,7 @@ import matrix_benchmarking.models as matbench_models
 
 from . import kpi
 
-KPI_SETTINGS_VERSION = "1.0"
+KPI_SETTINGS_VERSION = "1.1"
 class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
     ocp_version: matbench_models.SemVer
