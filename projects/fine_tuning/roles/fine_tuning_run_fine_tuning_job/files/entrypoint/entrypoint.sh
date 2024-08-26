@@ -106,3 +106,8 @@ time accelerate launch \
      --dynamo_backend no \
      --multi_gpu \
      launch_training.py
+
+if [ -d "/mnt/storage/generated/" ]; then
+ echo "Removing /mnt/storage/generated/..."
+ rm -rf /mnt/storage/generated/
+fi
