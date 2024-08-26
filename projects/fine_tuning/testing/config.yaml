@@ -64,7 +64,7 @@ ci_presets:
 
   ibm_release_comparison:
     tests.fine_tuning.test_settings.container_image:
-      - image-registry.openshift-image-registry.svc:5000/rhoai-tuning-test/fms-hf-tuning@sha256:94c3f37f7b9babbe3f2d986a0da989eb8c2909e841dc33618f8ce71f0420b51e # RHOAI-2.12 with transformers 4.40.0
+      - quay.io/modh/fms-hf-tuning:release-d4a201ac1eb3535a38c7f8a25289b085a91ee4ca # RHOAI-2.12 with fms-hf-tuning v1.2.0
 
   hf_evaluation:
     fine_tuning.pvc.size: 2000Gi
