@@ -139,7 +139,7 @@ ci_presets:
     # kserve.model.serving_runtime.update_image: False
     tests.e2e.llm_load_test.args.plugin: "openai_plugin"
     tests.e2e.llm_load_test.args.streaming: true
-    tests.e2e.llm_load_test.args.interface: "http"
+    tests.e2e.llm_load_test.args.interface: "https"
     tests.e2e.llm_load_test.args.endpoint: "/v1/completions"
       # tests.e2e.llm_load_test.args.model_name: "/mnt/models/"
       # tests.e2e.llm_load_test.args.host: "http://localhost:8033"
