@@ -292,7 +292,7 @@ ci_presets:
 
   ##### PSAP 1474 Setup
   rhoai_inference_performance_blog_setup:
-    extends: [vllm, e2e_perf]
+    extends: [vllm, e2e_perf, metal]
     tests.e2e.models:
     - name: phi-2
       testing:
@@ -300,8 +300,8 @@ ci_presets:
         max_concurrency: 128  # I guess, it defines cap on the concurrency
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.enabled: true
-    tests.e2e.llm_load_test.args.duration: 180
-    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32]     #Also supports List
+    tests.e2e.llm_load_test.args.duration: 180 
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256]    #Also supports List
     tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
     export_artifacts.enabled: false

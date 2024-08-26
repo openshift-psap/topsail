@@ -27,7 +27,6 @@
        -lserving.kserve.io/inferenceservice={{ kserve_validate_model_inference_service_name }} \
        -n {{ kserve_validate_model_namespace }} \
        -ojsonpath='{.items[0].status.url}' \
-       | sed 's|https:/http:/||' \
        | sed 's/$/:443/'
     {% endif %}
   register: model_endpoint_cmd
