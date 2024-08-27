@@ -34,7 +34,7 @@ per_device_train_batch_size: 4
 per_device_eval_batch_size: 4
 gradient_accumulation_steps: 4
 evaluation_strategy: 'no'
-save_strategy: epoch
+save_strategy: 'no'
 save_model_dir: "/mnt/storage/generated/{{ fine_tuning_run_fine_tuning_job_model_name }}"
 learning_rate: 1.0e-05
 weight_decay: 0
