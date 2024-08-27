@@ -46,7 +46,25 @@ is_mandatory_file = local_store.is_mandatory_file
 is_cache_file = local_store.is_cache_file
 is_important_file = local_store.is_important_file
 
+
+def rewrite_runtime_image(runtime_image):
+    if not runtime_image: return None
+
+    if "/" in runtime_image:
+        return runtime_image.split("/")[-1].split("@")[0]
+    else:
+        return "tgis-caikit"
+
 def _rewrite_settings(settings_dict):
+    settings_dict.pop("run_id", None)
+    settings_dict.pop("urls", None)
+    settings_dict.pop("test_path", None)
+
+    runtime_image = settings_dict.get("runtime_image", None)
+
+    if runtime_image:
+        settings_dict["runtime"] = rewrite_runtime_image(runtime_image)
+
     return settings_dict
 
 # delegate the parsing to the simple_store

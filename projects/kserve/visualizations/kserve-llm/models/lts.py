@@ -8,7 +8,11 @@ from enum import Enum
 import matrix_benchmarking.models as matbench_models
 from . import kpi
 
-KPI_SETTINGS_VERSION = "1.1"
+KPI_SETTINGS_VERSION = "1.2"
+# 1.2: add lower_better/higher_better flag
+# 1.1: expose the accelerator count
+# 1.0: first version
+
 class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
 

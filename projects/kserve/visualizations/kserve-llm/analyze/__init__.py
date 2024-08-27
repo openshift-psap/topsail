@@ -1,23 +1,35 @@
+import pandas as pd
+
 import matrix_benchmarking.common as common
 import logging
+
+from ..store import _rewrite_settings
+
+COMPARISON_KEY = "rhoai_version"
+
+_IGNORED_KEYS = ["runtime_image", "ocp_version"]
 
 def run():
     logging.info("Running the regression analyses ...")
 
-    for entry in common.Matrix.all_records():
-        lts_payload = entry.results
+    data = []
+    for ref_entry in common.Matrix.all_records():
+        lts_payload = ref_entry.results.lts
+
         if not hasattr(lts_payload, "kpis"):
-            logging.warning("Not KPIs available ...")
+            logging.warning("No KPIs available ...")
             continue
 
         kpis = lts_payload.kpis
 
-        print(kpis.tostr())
-        print()
-        print("---")
-        print()
-        pass
+        current_row = dict(ref=ref_entry)
 
-    number_of_failures = 0
+        for entry in common.LTS_Matrix.similar_records(ref_entry.results.lts.metadata.settings,
+                                                       ignore_keys=([COMPARISON_KEY] + _IGNORED_KEYS),
+                                                       rewrite_settings=_rewrite_settings,
+                                                       gathered=True):
+            current_row[entry.settings.rhoai_version] = entry
 
-    return number_of_failures
+        data.append(current_row)
+
+    return pd.DataFrame(data)
