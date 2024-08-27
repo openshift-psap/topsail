@@ -75,7 +75,7 @@ Go to the Project page
 
   ${has_errors}  ${error}=  Run Keyword And Ignore Error  Project Should Be Listed  ${PROJECT_NAME}
   IF  '${has_errors}' != 'PASS'
-    Create Data Science Project Elyra  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
+    Create Data Science Project  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
   ELSE
     Open Data Science Project Details Page  ${PROJECT_NAME}
   END
@@ -96,11 +96,10 @@ Create S3 Data Connection Creation
 Create Pipeline Server To s3
   [Tags]  Dashboard
   oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
-  Create Pipeline Server Elyra    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
+  Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
   Verify There Is No "Error Displaying Pipelines" After Creating Pipeline Server
   Verify That There Are No Sample Pipelines After Creating Pipeline Server
   Wait Until Pipeline Server Is Deployed Elyra    project_title=${PROJECT_NAME}
-
   Capture Page Screenshot
 
 Create and Start the Workbench
@@ -236,53 +235,9 @@ Launch And Access Workbench Elyra Pipelines
 Verify Elyra Pipeline Run 
     [Documentation]    Verifys Elyra Pipeline runs are sucessfull
     [Arguments]    ${pipeline_run_name}    ${timeout}=10m   ${experiment_name}=Default
-    Open Pipeline Elyra Pipeline Run    ${pipeline_run_name}    ${experiment_name}
+    # Open Pipeline Elyra Pipeline Run    ${pipeline_run_name}    ${experiment_name}
     Wait Until Page Contains Element    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    timeout=${timeout}
     Capture Page Screenshot  
-
-
-Open Pipeline Elyra Pipeline Run
-    [Documentation]    Open the Pipeline Run detail.
-    [Arguments]    ${pipeline_run_name}    ${experiment_name}=Default
-    Navigate To Page    Experiments    Experiments and runs
-    ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page    timeout=30s
-    Wait Until Element Is Visible    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]    30s
-    Click Element    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]
-    ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page     timeout=30s
-    Wait Until Page Contains Element    xpath=//*[@data-testid="active-runs-tab"]      timeout=30s
-    Click Element    xpath=//*[@data-testid="active-runs-tab"]
-    Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']      timeout=30s
-    Click Element    xpath=//span[text()='${pipeline_run_name}']
-    Wait Until Page Contains Element    xpath=//div[@data-test-id='topology']      timeout=30s
-
-Create Pipeline Server Elyra    # robocop: off=too-many-calls-in-keyword
-    [Documentation]    Creates the DS Pipeline server from DS Project details page
-    ...                It assumes the Data Connection is aleady created
-    ...                and you wants to use defaul DB configurations [TEMPORARY]
-    [Arguments]    ${dc_name}    ${project_title}
-    # Every 2 mins the frontend updates its cache and the client polls every 30seconds.
-    # So the longest you’d have to wait is 2.5 mins. Set 3 min just to make sure
-    Projects.Move To Tab    Pipelines
-    Wait Until Page Contains Element    ${PIPELINES_SERVER_BTN_XP}    timeout=180s
-    Element Should Be Enabled    ${PIPELINES_SERVER_BTN_XP}
-    Click Button    ${PIPELINES_SERVER_BTN_XP}
-    Wait Until Generic Modal Appears    timeout=30S
-    Run Keyword And Continue On Failure    Element Should Be Disabled    ${PIPELINES_SERVER_CONFIG_BTN_XP}
-    Select Data Connection Elyra   dc_name=${dc_name}
-    Element Should Be Enabled    ${PIPELINES_SERVER_CONFIG_BTN_XP}
-    Click Element    ${PIPELINES_SERVER_CONFIG_BTN_XP}
-    Wait Until Generic Modal Disappears    timeout=30S
-    Wait Until Project Is Open    project_title=${project_title}    timeout-pre-spinner=5s    timeout-spinner=60s
-
-Select Data Connection Elyra
-    [Documentation]    Selects an existing data connection from the dropdown
-    ...                in the modal for Pipeline Server creation
-    [Arguments]    ${dc_name}
-    # robocop: off=line-too-long
-    Wait Until Page Contains Element    xpath://div[@class="pf-v5-c-form__group"][.//label//*[text()="Access key"]]//div[@data-ouia-component-type="PF5/Dropdown"]
-    Click Element                       xpath://div[@class="pf-v5-c-form__group"][.//label//*[text()="Access key"]]//div[@data-ouia-component-type="PF5/Dropdown"]
-    Wait Until Page Contains Element    xpath://button//*[text()="${dc_name}"]
-    Click Element    xpath://button//*[text()="${dc_name}"]
 
 Wait Until Pipeline Server Is Deployed Elyra
     [Documentation]    Waits until all the expected pods of the pipeline server
