@@ -181,7 +181,7 @@ class BaseStore():
                 logging.error(f"Failed to generate KPI {name}: {e}")
                 kpi["value"] = None
 
-            kpis[name] =  types.SimpleNamespace(**kpi)
+            kpis[name] = types.SimpleNamespace(**kpi)
 
         return kpis
 
