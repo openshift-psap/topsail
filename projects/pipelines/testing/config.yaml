@@ -163,6 +163,10 @@ ci_presets:
   large_mcr:
     tests.pipelines.max_concurrent_reconciles: 25
 
+  gating:
+    matbench.lts.opensearch.export.enabled: true
+    matbench.lts.regression_analyses.enabled: true
+    matbench.lts.regression_analyses.fail_test_on_regression: false # not yet
 secrets:
   dir:
     name: psap-ods-secret
@@ -304,12 +308,16 @@ matbench:
       export:
         enabled: false
         enabled_on_replot: false
-        fail_test_on_fail: false
-      fail_test_on_fail: false
+        fail_test_on_fail: true
       instance: smoke
-      index: pipelines
+      index: topsail-pipelines
       index_prefix: ""
     regression_analyses:
       enabled: false
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: false
+export_artifacts:
+  enabled: false
+  bucket: rhoai-cpt-artifacts
+  path_prefix: cpt/pipelines
+  dest: null # will be set by the export code
