@@ -132,8 +132,8 @@ Create Data Science Project Elyra
         Click Button    ${GENERIC_CREATE_BTN_XP}
         Wait Until Generic Modal Disappears    timeout=5m
     END
-    Wait Until Project Is Open    project_title=${title}    timeout=5m
-    ${open}=    Run Keyword And Return Status    Wait Until Project Is Open    project_title=${title}    timeout=5m
+    Wait Until Project Is Open    project_title=${title}
+    ${open}=    Run Keyword And Return Status    Wait Until Project Is Open    project_title=${title}
     IF    ${open} == ${FALSE}
         ${is_home_open}=    Is Data Science Projects Page Open
         IF    ${is_home_open} == ${TRUE}
