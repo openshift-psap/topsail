@@ -75,7 +75,7 @@ Go to the Project page
 
   ${has_errors}  ${error}=  Run Keyword And Ignore Error  Project Should Be Listed  ${PROJECT_NAME}
   IF  '${has_errors}' != 'PASS'
-    Create Data Science Project  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
+    Create Data Science Project Elyra  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
   ELSE
     Open Data Science Project Details Page  ${PROJECT_NAME}
   END
