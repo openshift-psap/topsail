@@ -20,18 +20,15 @@ Suite Teardown  Tear Down
 *** Variables ***
 
 ${DASHBOARD_PRODUCT_NAME}      "%{DASHBOARD_PRODUCT_NAME}"
-
 ${PROJECT_NAME}                ${TEST_USER.USERNAME}
 ${ACCESS_KEY}                  %{S3_ACCESS_KEY}
 ${HOST_BASE}                   %{S3_HOSTNAME}
 ${HOST_BUCKET}                 %{S3_BUCKET_NAME}
-
 ${DC_NAME}                     elyra-s3
 ${IMAGE}                       Standard Data Science
 ${PV_NAME}                     ${TEST_USER.USERNAME}_pvc
 ${PV_DESCRIPTION}              ${TEST_USER.USERNAME} is a PV created to test Elyra in workbenches
 ${PV_SIZE}                     2
-
 ${PIPELINE_IMPORT_BUTTON}      xpath=//button[@id='import-pipeline-button']
 ${PIPELINES_SERVER_BTN_XP}     xpath=//*[@data-testid="create-pipeline-button"]
 ${SVG_CANVAS}                  //*[name()="svg" and @class="svg-area"]
@@ -42,7 +39,6 @@ ${EXPECTED_COLOR}              rgb(0, 102, 204)
 ${EXPERIMENT_NAME}             standard data science pipeline
 ${NOTEBOOK_SPAWN_WAIT_TIME}    20 minutes
 ${WORKBENCH_NAME}              ${TEST_USER.USERNAME}
-
 ${ODH_DASHBOARD_DO_NOT_WAIT_FOR_SPINNER_PAGE}  ${true}
 
 *** Test Cases ***
@@ -153,7 +149,7 @@ Create and Start the Workbench
   Verify Hello World Pipeline Elements
   Set Runtime Image In All Nodes    runtime_image=Datascience with Python 3.9 (UBI9)
   Run Pipeline    pipeline_name=${IMAGE} Pipeline
-  Wait Until Page Contains Element    xpath=//a[.="Run Details."]    timeout=30s
+  Wait Until Page Contains Element    xpath=//a[.="Run Details."]    timeout=1m
   Capture Page Screenshot
 
 Check of Pipeline Runs
@@ -211,7 +207,7 @@ Wait Until Pipeline Server Deployed
 
 Verify Hello World Pipeline Elements
     [Documentation]    Verifies that the example pipeline is displayed correctly by Elyra
-    Wait Until Page Contains Element    xpath=${SVG_CANVAS}     timeout=10s
+    Wait Until Page Contains Element    xpath=${SVG_CANVAS}     timeout=2m
     Maybe Migrate Pipeline
     Page Should Contain Element    xpath=${SVG_CANVAS}${SVG_INTERACTABLE}${SVG_PIPELINE_NODES}${SVG_SINGLE_NODE}//span[.="Load weather data"]  # robocop: disable
     Page Should Contain Element    xpath=${SVG_CANVAS}${SVG_INTERACTABLE}${SVG_PIPELINE_NODES}${SVG_SINGLE_NODE}//span[.="Part 1 - Data Cleaning.ipynb"]  # robocop: disable
