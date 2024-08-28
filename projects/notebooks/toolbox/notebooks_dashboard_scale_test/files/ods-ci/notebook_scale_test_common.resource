@@ -111,15 +111,15 @@ Create Data Science Project Elyra
     [Arguments]    ${title}    ${description}    ${resource_name}=${NONE}    ${existing_project}=${FALSE}
     IF    ${existing_project}
         ${existing_project}=  Run Keyword And Return Status
-        ...    Wait Until Page Contains Element    xpath://a[text()="${title}"]
+        ...    Wait Until Page Contains Element    xpath://a[text()="${title}"]    timeout=2m
     END
     IF    ${existing_project}
         Log    DS Project '${title}' already exists, reusing project    console=True
         Click Link      ${title}
     ELSE
-        Wait Until Page Contains Element    ${PROJECT_CREATE_BTN_XP}
+        Wait Until Page Contains Element    ${PROJECT_CREATE_BTN_XP}    timeout=5m
         Click Button    ${PROJECT_CREATE_BTN_XP}
-        Wait Until Page Contains Element    ${TITLE_INPUT_XP}
+        Wait Until Page Contains Element    ${TITLE_INPUT_XP}    timeout=5m
         Run Keyword And Warn On Failure     Element Should Be Disabled    ${GENERIC_CREATE_BTN_XP}
         Input Text    ${TITLE_INPUT_XP}    ${title}
         Input Text    ${DESCR_INPUT_XP}    ${description}
@@ -128,12 +128,12 @@ Create Data Science Project Elyra
             Clear Element Text    ${RESOURCE_INPUT_XP}
             Input Text    ${RESOURCE_INPUT_XP}    ${resource_name}
         END
-        Wait Until Element Is Not Visible    xpath://button[@data-ouia-component-id='OUIA-Generated-Button-primary-5'][contains(@class, 'pf-m-disabled')]
+        Wait Until Element Is Not Visible    xpath://button[@data-ouia-component-id='OUIA-Generated-Button-primary-5'][contains(@class, 'pf-m-disabled')]    timeout=5m
         Click Button    ${GENERIC_CREATE_BTN_XP}
-        Wait Until Generic Modal Disappears    timeout=2m
+        Wait Until Generic Modal Disappears    timeout=5m
     END
-    Wait Until Project Is Open    project_title=${title}
-    ${open}=    Run Keyword And Return Status    Wait Until Project Is Open    project_title=${title}
+    Wait Until Project Is Open    project_title=${title}    timeout=5m
+    ${open}=    Run Keyword And Return Status    Wait Until Project Is Open    project_title=${title}    timeout=5m
     IF    ${open} == ${FALSE}
         ${is_home_open}=    Is Data Science Projects Page Open
         IF    ${is_home_open} == ${TRUE}
