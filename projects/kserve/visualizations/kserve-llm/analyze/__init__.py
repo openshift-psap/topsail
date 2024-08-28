@@ -1,8 +1,8 @@
 import pandas as pd
 
-import matrix_benchmarking.common as common
 import logging
 
+import matrix_benchmarking.common as common
 from ..store import _rewrite_settings
 
 COMPARISON_KEY = "rhoai_version"
