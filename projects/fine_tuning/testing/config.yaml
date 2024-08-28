@@ -93,7 +93,7 @@ ci_presets:
     - quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05 # RHOAI 2.11 image
 
   dgx_small_footprint:
-    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.gpu: 4
     # -- #
     tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
     tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
