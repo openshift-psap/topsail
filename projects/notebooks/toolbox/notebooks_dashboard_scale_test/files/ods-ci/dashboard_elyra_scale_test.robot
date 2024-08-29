@@ -149,7 +149,7 @@ Create and Start the Workbench
   Verify Hello World Pipeline Elements
   Set Runtime Image In All Nodes    runtime_image=Datascience with Python 3.9 (UBI9)
   Run Pipeline    pipeline_name=${IMAGE} Pipeline
-  Wait Until Page Contains Element    xpath=//a[.="Run Details."]    timeout=1m
+  Wait Until Page Contains Element    xpath=//a[.="Run Details."]
   Capture Page Screenshot
 
 Check of Pipeline Runs
