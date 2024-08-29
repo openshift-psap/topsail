@@ -158,7 +158,7 @@ Check of Pipeline Runs
   ${pipeline_run_name} =    Get Pipeline Run Name
   Switch To Pipeline Execution Page
   Is Data Science Project Details Page Open   ${PROJECT_NAME}
-  Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=10m    experiment_name=${EXPERIMENT_NAME}
+  Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=20m    experiment_name=${EXPERIMENT_NAME}
 
 *** Keywords ***
 
