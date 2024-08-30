@@ -330,7 +330,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: "quay.io/modh/fms-hf-tuning:release-ec50c3d7dc09f50d9885f25efc3d2fc98a379709" # RHOAI 2.12 image
+  image: "quay.io/modh/fms-hf-tuning:release-2c365c9e8e48516154c42e10452fa2ceebef8ff6" # FMS v1.2.1
   pvc:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
