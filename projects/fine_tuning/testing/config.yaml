@@ -138,7 +138,6 @@ ci_presets:
       per_device_train_batch_size: [1, 2, 4, 8, 16, 32]
       max_seq_length: [512, 2048]
       gradient_accumulation_steps: 4
-      save_strategy: "no"
       warmup_ratio: 0.03
       num_train_epochs: 1
       gradient_checkpointing: true
