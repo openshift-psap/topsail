@@ -111,7 +111,8 @@ class Comparison():
         fig.update_yaxes(title=cfg__metric_name, range=[0, df[cfg__metric_name].max()*1.1])
         fig.update_xaxes(title=x_key, range=[0, df[x_key].max()*1.1])
 
-        title = f"Results of {cfg__model_name}"
+        subtitle = " ".join([f"{k}={v}" for k, v in settings.items() if k not in list(variables.keys()) + ["stats"]])
+        title = f"<b>{cfg__metric_name}</b><br>{subtitle}"
 
         fig.update_layout(title=title, title_x=0.5,)
         fig.update_layout(legend_title_text="Configuration")

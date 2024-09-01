@@ -135,10 +135,9 @@ ci_presets:
       torch_dtype: bfloat16
       use_flash_attn: true
       max_steps: -1
-      per_device_train_batch_size: [2, 16]
+      per_device_train_batch_size: [1, 2, 4, 8, 16, 32]
       max_seq_length: [512, 2048]
       gradient_accumulation_steps: 4
-      save_strategy: "no"
       warmup_ratio: 0.03
       num_train_epochs: 1
       gradient_checkpointing: true
@@ -330,7 +329,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: "quay.io/modh/fms-hf-tuning:release-ec50c3d7dc09f50d9885f25efc3d2fc98a379709" # RHOAI 2.12 image
+  image: "quay.io/modh/fms-hf-tuning:release-2c365c9e8e48516154c42e10452fa2ceebef8ff6" # FMS v1.2.1
   pvc:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
