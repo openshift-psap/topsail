@@ -8,7 +8,6 @@ import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 
 import projects.core.visualizations.helpers.store as core_helpers_store
-import projects.core.visualizations.helpers.store as core_helpers
 
 from . import parsers
 from . import lts_parser
@@ -23,7 +22,7 @@ class KserverLlmStore(core_helpers_store.BaseStore):
         results.llm_load_test_config.get = None
 
     def prepare_after_pickle(self, results):
-        results.llm_load_test_config.get = core_helpers.get_yaml_get_key(
+        results.llm_load_test_config.get = core_helpers_store.get_yaml_get_key(
             results.llm_load_test_config.name,
             results.llm_load_test_config.yaml_file
         )
@@ -56,14 +55,10 @@ def rewrite_runtime_image(runtime_image):
         return "tgis-caikit"
 
 def _rewrite_settings(settings_dict):
-    settings_dict.pop("run_id", None)
-    settings_dict.pop("urls", None)
-    settings_dict.pop("test_path", None)
-
     runtime_image = settings_dict.get("runtime_image", None)
 
     if runtime_image:
-        settings_dict["runtime"] = rewrite_runtime_image(runtime_image)
+        settings_dict["__runtime"] = rewrite_runtime_image(runtime_image)
 
     return settings_dict
 

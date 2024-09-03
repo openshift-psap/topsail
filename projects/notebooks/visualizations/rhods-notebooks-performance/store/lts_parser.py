@@ -29,7 +29,7 @@ def generate_lts_payload(results, import_settings, must_validate=False):
     json_lts = json.dumps(lts_payload, indent=4, default=functools.partial(json_dumper, strict=False))
     parsed_lts = json.loads(json_lts)
 
-    return models.lts.Payload.parse_obj(parsed_lts)
+    return lts_payload
 
 
 def generate_lts_settings(lts_metadata, import_settings):

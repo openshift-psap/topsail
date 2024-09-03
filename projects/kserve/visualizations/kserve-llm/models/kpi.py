@@ -8,7 +8,7 @@ KPIs = {} # populated by the @matbench_models.KPIMetadata decorator
 
 # Throughput
 
-@matbench_models.KPIMetadata(help="Model throughput", unit="tokens/s")
+@matbench_models.KPIMetadata(help="Model throughput", unit="tokens/s", lower_better=False)
 def kserve_llm_load_test_throughput(lts_payload):
     return lts_payload.results.throughput
 

@@ -145,16 +145,21 @@ ci_presets:
       r: 4
       lora_alpha: 16
     tests.fine_tuning.test_extra_settings:
-    - name: llama-13b
+    # - name: llama-13b
+    #   model_name:
+    #   - meta-llama/Llama-2-13b-hf
+    #   hyper_parameters:
+    #     raw_lists: {target_modules: ["q_proj", "k_proj"]}
+    # - name: granite-20b-v2
+    #   model_name:
+    #   - ibm-granite/granite-20b-code-base
+    #   hyper_parameters:
+    #     raw_lists: {target_modules: ["c_attn", "c_proj"]}
+    - name: granite-7b
       model_name:
-      - meta-llama/Llama-2-13b-hf
+      - ibm-granite/granite-7b-base
       hyper_parameters:
-        raw_lists: {target_modules: ["q_proj", "k_proj"]}
-    - name: granite-20b-v2
-      model_name:
-      - ibm-granite/granite-20b-code-base
-      hyper_parameters:
-        raw_lists: {target_modules: ["c_attn", "c_proj"]}
+        raw_lists: {target_modules: ["q_attn", "v_proj"]}
 
   dgx_multi_model_8:
     extends: [multi_model]
@@ -437,7 +442,6 @@ matbench:
         enabled: false
         enabled_on_replot: false
         fail_test_on_fail: true
-      fail_test_on_fail: false
       instance: smoke
       index: topsail-fine-tuning
       index_prefix: ""

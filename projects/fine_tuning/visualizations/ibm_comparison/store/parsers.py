@@ -34,6 +34,7 @@ IMPORTANT_FILES = [
 
     "from_ibm",
     "lora_multi_gpu_v.1.2.0.csv",
+    "granite-7b-base.csv",
 ]
 
 
@@ -63,21 +64,22 @@ def rename_ibm_models(name):
 
 
 RENAME_IBM_KEYS = {
-    "gpu_memory_utilization_max": "gpu_memory_usage_max_all_gpus",
+    "gpu_memory_utilization_max": "gpu_memory_usage_max",
     "avg_tokens_per_sample": "tokens_per_sample",
     "number_gpus": "accelerator_count",
     "model_max_length": "max_seq_length",
+    "tokens_per_sample": "max_seq_length",
 }
 
-def parse_ibm_results(__unused__results, dirname):
-    ibm_df = pd.read_csv(register_important_file(dirname, "lora_multi_gpu_v.1.2.0.csv"))
+def parse_ibm_results(__unused__results, dirname, filename):
+    ibm_df = pd.read_csv(register_important_file(dirname, filename))
 
     ibm_df = ibm_df[ibm_df["is_valid"] != 0]
-    ibm_df = ibm_df[ibm_df.gpu_model == "NVIDIA-A100-80GB-PCIe"]
     ibm_df = ibm_df[ibm_df.method == "lora"]
 
     ibm_df["orig_model_name"] = ibm_df["model_name"]
     ibm_df.model_name = ibm_df.model_name.apply(rename_ibm_models)
+
     ibm_df = ibm_df.rename(columns=RENAME_IBM_KEYS)
 
     settings = {"provider": "IBM"}
@@ -88,9 +90,9 @@ def parse_ibm_results(__unused__results, dirname):
 
         model_name = results.data["model_name"]
         if "mistral" in model_name: continue
-        if not ("llama-2-13b" in model_name.lower() or "granite-20b" in model_name.lower()): continue
+        if not ("llama-2-13b" in model_name.lower() or "granite-20b" in model_name.lower() or "granite-7b"): continue
 
-        for key in "batch_size", "model_name", "max_seq_length", "accelerator_count":
+        for key in "batch_size", "model_name", "max_seq_length", "accelerator_count", "gpu_model":
             value = results.data.pop(key)
             if isinstance(value, float):
                 value = int(value)
@@ -102,13 +104,12 @@ def parse_ibm_results(__unused__results, dirname):
                             results,
                             _duplicated_results)
 
-
 def parse_rh_results(__unused__results, dirname):
     fms_hf_tuning_df = pd.read_csv(register_important_file(dirname, "fine-tuning.csv"))
     prom_df = pd.read_csv(register_important_file(dirname, "prom.csv"))
 
     fine_tuning_df = fms_hf_tuning_df.merge(prom_df, on="test_uuid")
-    fine_tuning_df.gpu_memory_usage_max_all_gpus = fine_tuning_df.gpu_memory_usage_max_all_gpus.apply(lambda x: x/1024)
+    fine_tuning_df.gpu_total_memory_usage_max = fine_tuning_df.gpu_total_memory_usage_max.apply(lambda x: x/1024/1024)
 
     settings = {"provider": "Red Hat"}
 
@@ -124,7 +125,7 @@ def parse_rh_results(__unused__results, dirname):
                 value = int(value)
             settings[key] = value
             results.data[key] = value
-
+        settings["gpu_model"] = "NVIDIA-A100-SXM4-80GB"
         store.add_to_matrix(settings,
                             pathlib.Path(dirname),
                             results,
@@ -134,7 +135,8 @@ def parse_rh_results(__unused__results, dirname):
 
 def parse_once(results, dirname):
     if (dirname / "from_ibm").exists():
-        parse_ibm_results(results, dirname)
+        parse_ibm_results(results, dirname, "granite-7b-base.csv")
+        parse_ibm_results(results, dirname, "lora_multi_gpu_v.1.2.0.csv")
     elif (dirname / "from_rh").exists():
         parse_rh_results(results, dirname)
     else:
