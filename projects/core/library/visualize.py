@@ -245,8 +245,7 @@ def call_analyze_lts(step_idx, common_args, common_env_str):
     cmd = f"{common_env_str} matbench analyze_lts {analyze_args_str} |& tee > {log_file}"
 
     errors = []
-    retcode = run.run(cmd, check=False).returncode
-
+    retcode = run.run(cmd, check=False, cwd=env.ARTIFACT_DIR).returncode
 
     if retcode == 0:
         logging.info("The regression analyses did not detect any regression.")

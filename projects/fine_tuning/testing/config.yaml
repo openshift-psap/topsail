@@ -442,7 +442,6 @@ matbench:
         enabled: false
         enabled_on_replot: false
         fail_test_on_fail: true
-      fail_test_on_fail: false
       instance: smoke
       index: topsail-fine-tuning
       index_prefix: ""

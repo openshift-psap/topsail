@@ -258,7 +258,6 @@ def _parse_start_end_time(dirname):
 def _parse_regression_results(dirname):
     regression_results_file = dirname / "regression.json"
     if not regression_results_file.exists():
-        logging.info(f"{regression_results_file.name} does not exist, ignoring the parsing of the regression analyses results.")
         return None
 
     with open(regression_results_file) as f:
