@@ -9,7 +9,6 @@ TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
 ARTIF_DIR = os.environ.get("ARTIFACT_DIR")
-print(f"STARTING test_e2e with RUN_DIR= { RUN_DIR }, ARTIFACT_DIR = { ARTIF_DIR }")
 
 import subprocess
 import logging
