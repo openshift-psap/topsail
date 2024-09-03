@@ -20,7 +20,7 @@ fine_tuning_run_quality_evaluation_pvc_name:
 fine_tuning_run_quality_evaluation_model_name:
 
 # the image to use for the fine-tuning container
-fine_tuning_run_quality_evaluation_container_image: registry.redhat.io/ubi9
+fine_tuning_run_quality_evaluation_container_image: quay.io/rh-ee-kelchen/lm-eval
 
 # the number of GPUs to request for the fine-tuning job
 fine_tuning_run_quality_evaluation_gpu: 0
