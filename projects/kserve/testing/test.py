@@ -104,7 +104,6 @@ def test_ci():
                 logging.info("Not generating the visualization because it isn't activated.")
             elif test_artifact_dir_p[0] is not None:
                 with env.NextArtifactDir("plots"):
-                    visualize.prepare_matbench()
                     generate_plots(test_artifact_dir_p[0])
             else:
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
@@ -253,7 +252,6 @@ def generate_plots(results_dirname):
                 config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export.enabled", False),
                 config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")
         ):
-            visualize.prepare_matbench()
 
             with env.NextArtifactDir(f"{prom_workload}__all"):
                 logging.info(f"Generating the plots with workload={prom_workload}")

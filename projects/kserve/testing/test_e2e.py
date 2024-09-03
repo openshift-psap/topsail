@@ -346,7 +346,6 @@ def test_one_model(
     else:
         results_dir = env.ARTIFACT_DIR
         with env.NextArtifactDir("plots"):
-            visualize.prepare_matbench()
             import test
             test.generate_plots(results_dir)
 
@@ -636,7 +635,6 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
 
 
 def matbenchmark_run_llm_load_test(namespace, llm_load_test_args, model_max_concurrency):
-    visualize.prepare_matbench()
 
     with env.NextArtifactDir("matbenchmark__llm_load_test"):
         benchmark_values = {}
