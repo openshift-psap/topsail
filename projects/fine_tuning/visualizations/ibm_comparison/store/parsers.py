@@ -64,7 +64,7 @@ def rename_ibm_models(name):
 
 
 RENAME_IBM_KEYS = {
-    "gpu_memory_utilization_max": "gpu_memory_usage_max_all_gpus",
+    "gpu_memory_utilization_max": "gpu_memory_usage_max",
     "avg_tokens_per_sample": "tokens_per_sample",
     "number_gpus": "accelerator_count",
     "model_max_length": "max_seq_length",
@@ -75,7 +75,6 @@ def parse_ibm_results(__unused__results, dirname, filename):
     ibm_df = pd.read_csv(register_important_file(dirname, filename))
 
     ibm_df = ibm_df[ibm_df["is_valid"] != 0]
-    #ibm_df = ibm_df[ibm_df.gpu_model == "NVIDIA-A100-80GB-PCIe"]
     ibm_df = ibm_df[ibm_df.method == "lora"]
 
     ibm_df["orig_model_name"] = ibm_df["model_name"]
@@ -105,13 +104,12 @@ def parse_ibm_results(__unused__results, dirname, filename):
                             results,
                             _duplicated_results)
 
-
 def parse_rh_results(__unused__results, dirname):
     fms_hf_tuning_df = pd.read_csv(register_important_file(dirname, "fine-tuning.csv"))
     prom_df = pd.read_csv(register_important_file(dirname, "prom.csv"))
 
     fine_tuning_df = fms_hf_tuning_df.merge(prom_df, on="test_uuid")
-    #fine_tuning_df.gpu_memory_usage_max_all_gpus = fine_tuning_df.gpu_memory_usage_max_all_gpus.apply(lambda x: x/1024)
+    fine_tuning_df.gpu_total_memory_usage_max = fine_tuning_df.gpu_total_memory_usage_max.apply(lambda x: x/1024/1024)
 
     settings = {"provider": "Red Hat"}
 

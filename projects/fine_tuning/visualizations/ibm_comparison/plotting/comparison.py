@@ -20,34 +20,35 @@ import matrix_benchmarking.common as common
 
 METRICS = {
     "train_tokens_per_second": {
-        "title": "Train Tokens per Second for Different GPU and Batch Size Settings",
-        "label": "Train Tokens per Second",
+        "title": "Train Tokens per Second",
         "lower_better": False,
-        "same_as": "dataset_tokens_per_second",
+        "unit": "token/s",
     },
     "train_tokens_per_gpu_per_second": {
-        "title": "Train Tokens per GPU per Second for Different GPU and Batch Size Settings",
-        "label": "Train Tokens per GPU per Second",
+        "title": "Train Tokens per GPU per Second",
         "lower_better": False,
-        "same_as": "dataset_tokens_per_gpu_per_second",
+        "unit": "token/gpu/s",
     },
     "train_samples_per_second": {
-        "title": "Train Samples per Second for Different GPU and Batch Size Settings",
-        "label": "Train Samples per Second",
+        "title": "Train Samples per Second",
         "lower_better": False,
-        "same_as": None,
+        "unit": "samples/s",
     },
     "train_runtime": {
-        "title": "Train Runtime for Different GPU and Batch Size Settings",
-        "label": "Train Runtime",
+        "title": "Train Runtime",
         "lower_better": True,
-        "same_as": None,
+        "unit": "s",
     },
     "train_steps_per_second": {
-        "title": "Train Steps per Second for Different GPU and Batch Size Settings",
-        "label": "Train Steps per Second",
+        "title": "Train Steps per Second",
         "lower_better": False,
-        "same_as": None,
+        "unit": "steps/s",
+    },
+
+    "gpu_memory_usage_max": {
+        "title": "Max GPU memory usage",
+        "lower_better": True,
+        "unit": "GB",
     },
 }
 
@@ -62,6 +63,7 @@ def generateComparisonData(entries, x_key, variables, metric_name):
         data.append(dict(
             name=entry.get_name([v for v in variables if v is not x_key]),
         ))
+
         data[-1][x_key] = entry.results.data.get(x_key)
         data[-1][metric_name] = entry.results.data.get(metric_name)
 
@@ -112,10 +114,20 @@ class Comparison():
         fig.update_xaxes(title=x_key, range=[0, df[x_key].max()*1.1])
 
         subtitle = " ".join([f"{k}={v}" for k, v in settings.items() if k not in list(variables.keys()) + ["stats"]])
-        title = f"<b>{cfg__metric_name}</b><br>{subtitle}"
+        title = f"<b>{METRICS[cfg__metric_name]['title']}</b><br>{subtitle}"
 
         fig.update_layout(title=title, title_x=0.5,)
         fig.update_layout(legend_title_text="Configuration")
+
+        y_name = f"{METRICS[cfg__metric_name]['title']}, in {METRICS[cfg__metric_name]['unit']}"
+        if METRICS[cfg__metric_name]['lower_better']:
+            y_name = f"❮ {y_name}. Lower is better."
+        elif ref_kpi.lower_better is False:
+            y_name = f"{y_name}. Higher is better. ❯ "
+
+        fig.update_yaxes(title=y_name)
+        x_name = x_key.replace("_", " ").title()
+        fig.update_xaxes(title=x_name)
 
         # ❯ or ❮
 
