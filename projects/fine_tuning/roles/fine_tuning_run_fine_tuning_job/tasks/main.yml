@@ -93,6 +93,16 @@
   command:
     oc delete -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml" --ignore-not-found
 
+- name: Capture the Python package versions of the image
+  shell: |
+    MINI_POD_SPEC='{"apiVersion": "v1", "kind":"Pod","metadata":{"name":"test"},"spec":{"containers":[{"name":"cnt"}]}}'
+    IMAGE="{{ fine_tuning_run_fine_tuning_job_container_image }}"
+
+    oc debug -f <(echo "$MINI_POD_SPEC") \
+       --image=${IMAGE} \
+       -n {{ fine_tuning_run_fine_tuning_job_namespace }} \
+       -- pip freeze > "{{ artifact_extra_logs_dir }}/artifacts/pip-freeze.txt"
+
 - name: Exit the play in 'prepare_only' mode
   meta: end_play
   when: fine_tuning_run_fine_tuning_job_prepare_only | bool

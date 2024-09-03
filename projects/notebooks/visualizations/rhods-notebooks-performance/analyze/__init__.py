@@ -1,17 +1,18 @@
-import json
-import logging
+import projects.core.visualizations.helpers.analyze as core_helpers_analyze
 
-import matrix_benchmarking.common as common
+COMPARISON_KEYS = ["rhoai_version", "image_tag"]
+
+IGNORED_KEYS = ["ocp_version", "rhoai_version", "image"]
 
 
-def run():
-    logging.info(f"Received {common.Matrix.count_records()} new entries")
-    for entry in common.Matrix.all_records():
-        pass
+def _rewrite_settings(settings_dict):
+    del settings_dict["image"]
 
-    logging.info(f"Received {common.LTS_Matrix.count_records()} historic LTS entries")
-    for lts_entry in common.LTS_Matrix.all_records(): pass
+    if settings_dict["ci_engine"] == "Middleware Jenkins":
+        settings_dict["ci_engine"] = "PERFLAB_CI"
 
-    number_of_failures = 0
+    return settings_dict
 
-    return number_of_failures
+
+def prepare():
+    return core_helpers_analyze.prepare_regression_data(COMPARISON_KEYS, IGNORED_KEYS, _rewrite_settings)

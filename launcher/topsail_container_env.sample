@@ -1,9 +1,9 @@
 # defined here the path to your local TOPSAIL repository
-TOPSAIL_HOME=$HOME/path/to/topsail
+TOPSAIL_HOME="$HOME/path/to/topsail"
 
 # defined here the path to your TOPSAIL secrets
-PSAP_ODS_SECRET_PATH=$PSAP_ODS_SECRET_PATH
+PSAP_ODS_SECRET_PATH="$PSAP_ODS_SECRET_PATH"
 
-KUBECONFIG=$KUBECONFIG
+KUBECONFIG="$KUBECONFIG"
 
-PYTHONPATH=$TOPSAIL_HOME
+PYTHONPATH="$TOPSAIL_HOME"

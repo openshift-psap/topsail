@@ -1,23 +1,13 @@
-import matrix_benchmarking.common as common
 import logging
 
-def run():
-    logging.info("Running the regression analyses ...")
+import projects.core.visualizations.helpers.analyze as core_helpers_analyze
 
-    for entry in common.Matrix.all_records():
-        lts_payload = entry.results
-        if not hasattr(lts_payload, "kpis"):
-            logging.warning("Not KPIs available ...")
-            continue
+from ..store import _rewrite_settings
 
-        kpis = lts_payload.kpis
+COMPARISON_KEYS = ["rhoai_version"]
 
-        print(kpis.tostr())
-        print()
-        print("---")
-        print()
-        pass
+IGNORED_KEYS = ["runtime_image", "ocp_version"]
 
-    number_of_failures = 0
 
-    return number_of_failures
+def prepare():
+    return core_helpers_analyze.prepare_regression_data(COMPARISON_KEYS, IGNORED_KEYS, _rewrite_settings)

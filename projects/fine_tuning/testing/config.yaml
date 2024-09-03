@@ -133,7 +133,7 @@ ci_presets:
       torch_dtype: bfloat16
       use_flash_attn: true
       max_steps: -1
-      per_device_train_batch_size: [2, 16]
+      per_device_train_batch_size: [1, 2, 4, 8, 16, 32]
       max_seq_length: [512, 2048]
       gradient_accumulation_steps: 4
       warmup_ratio: 0.03
@@ -143,16 +143,21 @@ ci_presets:
       r: 4
       lora_alpha: 16
     tests.fine_tuning.test_extra_settings:
-    - name: llama-13b
+    # - name: llama-13b
+    #   model_name:
+    #   - meta-llama/Llama-2-13b-hf
+    #   hyper_parameters:
+    #     raw_lists: {target_modules: ["q_proj", "k_proj"]}
+    # - name: granite-20b-v2
+    #   model_name:
+    #   - ibm-granite/granite-20b-code-base
+    #   hyper_parameters:
+    #     raw_lists: {target_modules: ["c_attn", "c_proj"]}
+    - name: granite-7b
       model_name:
-      - meta-llama/Llama-2-13b-hf
+      - ibm-granite/granite-7b-base
       hyper_parameters:
-        raw_lists: {target_modules: ["q_proj", "k_proj"]}
-    - name: granite-20b-v2
-      model_name:
-      - ibm-granite/granite-20b-code-base
-      hyper_parameters:
-        raw_lists: {target_modules: ["c_attn", "c_proj"]}
+        raw_lists: {target_modules: ["q_attn", "v_proj"]}
 
   dgx_multi_model_8:
     extends: [multi_model]
@@ -327,7 +332,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: "quay.io/modh/fms-hf-tuning:release-2c365c9e8e48516154c42e10452fa2ceebef8ff6"
+  image: "quay.io/modh/fms-hf-tuning:release-2c365c9e8e48516154c42e10452fa2ceebef8ff6" # FMS v1.2.1
   pvc:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
@@ -435,7 +440,6 @@ matbench:
         enabled: false
         enabled_on_replot: false
         fail_test_on_fail: true
-      fail_test_on_fail: false
       instance: smoke
       index: topsail-fine-tuning
       index_prefix: ""

@@ -11,6 +11,8 @@ response_template: "{{ fine_tuning_run_fine_tuning_job_dataset_response_template
 
 output_dir: "/mnt/output/fine-tuning"
 
+save_model_dir: "/mnt/output/save-model-dir"
+
 accelerate_launch_args:
   num_processes: {{ fine_tuning_run_fine_tuning_job_gpu or 1 }}
   num_machines: {{ fine_tuning_run_fine_tuning_job_worker_replicas + 1 }}

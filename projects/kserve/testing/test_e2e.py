@@ -9,7 +9,6 @@ TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
 ARTIF_DIR = os.environ.get("ARTIFACT_DIR")
-print(f"STARTING test_e2e with RUN_DIR= { RUN_DIR }, ARTIFACT_DIR = { ARTIF_DIR }")
 
 import subprocess
 import logging
@@ -26,7 +25,6 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 from projects.core.library import env, run, visualize, matbenchmark
 import prepare_scale, test_scale, prepare_kserve
 
-print(f"STARTING test_e2e with RUN_DIR= { RUN_DIR }, ARTIFACT_DIR = { ARTIF_DIR }")
 os.chdir(TOPSAIL_DIR)
 
 # ---
@@ -346,7 +344,6 @@ def test_one_model(
     else:
         results_dir = env.ARTIFACT_DIR
         with env.NextArtifactDir("plots"):
-            visualize.prepare_matbench()
             import test
             test.generate_plots(results_dir)
 
@@ -636,7 +633,6 @@ def launch_test_consolidated_model(consolidated_model, dedicated_dir=True):
 
 
 def matbenchmark_run_llm_load_test(namespace, llm_load_test_args, model_max_concurrency):
-    visualize.prepare_matbench()
 
     with env.NextArtifactDir("matbenchmark__llm_load_test"):
         benchmark_values = {}
@@ -760,7 +756,7 @@ def test_consolidated_model(consolidated_model, namespace=None):
     # small if not set
     size_name = consolidated_model.get("testing", {}).get("size", "small")
 
-    model_max_concurrency = consolidated_model.get("testing", {}).get("max_concurrency", 16)
+    model_max_concurrency = consolidated_model.get("testing", {}).get("max_concurrency")
 
     llm_load_test_dataset_sample_args = config.ci_artifacts.get_config(f"tests.e2e.llm_load_test.dataset_size.{size_name}")
     llm_load_test_args |= llm_load_test_dataset_sample_args
