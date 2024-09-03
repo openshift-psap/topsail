@@ -44,7 +44,11 @@ class ComparisonReport():
         else:
             model_names = [settings["model_name"]]
 
-        header += [html.H2(f"Comparison report: {self.metric_name} | {ordered_vars[-1]}")]
+        title = f"Comparison report: {self.metric_name}"
+        if ordered_vars:
+            title += f" | {ordered_vars[-1]}"
+
+        header += [html.H2(title)]
         for model_name in model_names:
             setting_lists[:] = []
             setting_lists += [[(key, v) for v in variables[key]] for key in ordered_vars]
