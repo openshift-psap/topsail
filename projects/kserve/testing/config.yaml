@@ -297,7 +297,16 @@ ci_presets:
     - name: phi-2
       testing:
         size: small  # Determines the dataset size
-        max_concurrency: 128  # I guess, it defines cap on the concurrency
+        max_concurrency: 1  # I guess, it defines cap on the concurrency
+    - name: granite-8b-code-instruct
+      testing:
+        size: small
+        max_concurrency: 1
+    - name: llama-3-dot-1-8b
+      testing:
+        size: small
+        max_concurrency: 1
+
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.enabled: true
     tests.e2e.llm_load_test.args.duration: 180 
