@@ -25,7 +25,6 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 from projects.core.library import env, run, visualize, matbenchmark
 import prepare_scale, test_scale, prepare_kserve
 
-print(f"STARTING test_e2e with RUN_DIR= { RUN_DIR }, ARTIFACT_DIR = { ARTIF_DIR }")
 os.chdir(TOPSAIL_DIR)
 
 # ---
