@@ -112,4 +112,7 @@ def memory_usage_mean(lts_payload):
     if not metrics:
         return -1
 
-    return prom_parsing.single_mean(metrics)[0]
+    if len(metrics) == 1:
+        return prom_parsing.single_mean(metrics)[0]
+    else:
+        return prom_parsing.mean_mean(metrics)
