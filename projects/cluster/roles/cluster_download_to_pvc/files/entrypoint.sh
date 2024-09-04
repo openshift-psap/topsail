@@ -17,6 +17,12 @@ fi
 mkdir -p "$STORAGE_DIR"
 chmod ugo+w "$STORAGE_DIR"
 
+echo "---"
+
+df -h "${STORAGE_DIR}"
+
+echo "---"
+
 if [[ "$DOWNLOAD_SOURCE" == "https://huggingface.co/"* ]];
 then
     dnf install --quiet -y git-lfs
