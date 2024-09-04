@@ -249,7 +249,6 @@ def generate_plots(results_dirname):
 
         with (
                 config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload),
-                config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export.enabled", False),
                 config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")
         ):
 
