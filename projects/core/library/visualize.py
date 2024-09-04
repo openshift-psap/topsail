@@ -204,9 +204,13 @@ def call_download_lts(step_idx, common_args, common_env_str):
     cmd = f"{common_env_str} matbench download_lts {download_args_str} |& tee > {log_file}"
 
     errors = []
-    if run.run(cmd, check=False).returncode != 0:
-        logging.warning("An error happened while downloading the LTS payload ...")
-        errors.append(log_file.name)
+    if (err_code := run.run(cmd, check=False).returncode) != 0:
+        if err_code == 123: # No medium found
+            logging.warning("Couldn't download any LTS record, the index does not exist ...")
+            # not a fatal error, don't append it to `errors`
+        else:
+            logging.warning("An error happened while downloading the LTS payload ...")
+            errors.append(log_file.name)
 
     return errors
 
