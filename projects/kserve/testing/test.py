@@ -268,6 +268,7 @@ def generate_plots(results_dirname):
                 with (
                         env.NextArtifactDir(f"{prom_workload}__{dirname}"),
                         config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export.enabled", False),
+                        config.TempValue(config.ci_artifacts, "matbench.lts.regression_analyses.enabled", False),
                 ):
                     logging.info(f"Generating the plots with workload={prom_workload} for {current_results_dirname}")
                     try:
