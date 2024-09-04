@@ -19,15 +19,20 @@ import matrix_benchmarking.common as common
 
 
 METRICS = {
+    "dataset_tokens_per_second": {
+        "title": "Dataset Tokens per Second",
+        "lower_better": False,
+        "unit": "tokens/s",
+    },
     "train_tokens_per_second": {
         "title": "Train Tokens per Second",
         "lower_better": False,
-        "unit": "token/s",
+        "unit": "tokens/s",
     },
     "train_tokens_per_gpu_per_second": {
         "title": "Train Tokens per GPU per Second",
         "lower_better": False,
-        "unit": "token/gpu/s",
+        "unit": "tokens/gpu/s",
     },
     "train_samples_per_second": {
         "title": "Train Samples per Second",
@@ -122,7 +127,7 @@ class Comparison():
         y_name = f"{METRICS[cfg__metric_name]['title']}, in {METRICS[cfg__metric_name]['unit']}"
         if METRICS[cfg__metric_name]['lower_better']:
             y_name = f"❮ {y_name}. Lower is better."
-        elif ref_kpi.lower_better is False:
+        else:
             y_name = f"{y_name}. Higher is better. ❯ "
 
         fig.update_yaxes(title=y_name)
