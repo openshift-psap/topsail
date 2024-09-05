@@ -33,7 +33,7 @@ def get_driver_metrics(register=False):
     return all_metrics
 
 DSPA_CONTAINER_LABELS = [
-    {"DSPA Pods": dict(namespace="pipelines-test-.*", pod="ds-pipeline-.*")},
+    {"DSPA Pods": dict(namespace="pipelines-test-.*", pod="(ds-pipeline-.*)|(mariadb-.*)|(minio-.*)")},
 ]
 
 def get_dspa_metrics(register=False):
