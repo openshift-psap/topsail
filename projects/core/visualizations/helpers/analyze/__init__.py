@@ -4,7 +4,7 @@ import pandas as pd
 
 import matrix_benchmarking.common as common
 
-def prepare_regression_data(comparison_keys, ignored_keys, rewrite_settings):
+def prepare_regression_data(comparison_keys, ignored_keys, rewrite_settings, sorting_keys=[]):
     logging.info("Preparing the regression analyses records ...")
 
     data = []
@@ -39,4 +39,4 @@ def prepare_regression_data(comparison_keys, ignored_keys, rewrite_settings):
 
         data.append(current_row)
 
-    return pd.DataFrame(data), comparison_keys, ignored_keys
+    return pd.DataFrame(data), comparison_keys, ignored_keys, sorting_keys
