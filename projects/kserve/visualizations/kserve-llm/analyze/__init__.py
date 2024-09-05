@@ -13,6 +13,11 @@ IGNORED_KEYS = ["runtime_image", "ocp_version"]
 # the setting (kpi labels) keys *prefered* for sorting the entries in the regression report
 SORTING_KEYS = ["model_name", "virtual_users"]
 
+IGNORED_ENTRIES = {
+    "virtual_users": [4, 8, 32, 128]
+}
+
 def prepare():
     return core_helpers_analyze.prepare_regression_data(COMPARISON_KEYS, IGNORED_KEYS, _rewrite_settings,
-                                                        sorting_keys=SORTING_KEYS)
+                                                        sorting_keys=SORTING_KEYS,
+                                                        ignored_entries=IGNORED_ENTRIES)
