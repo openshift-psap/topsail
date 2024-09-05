@@ -19,10 +19,12 @@ def kserve_llm_load_test_throughput(lts_payload):
 def kserve_llm_load_test_tpot(lts_payload):
     return lts_payload.results.time_per_output_token.values
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="Min time per output token", unit="ms/token", lower_better=True)
 def kserve_llm_load_test_tpot_min(lts_payload):
     return lts_payload.results.time_per_output_token.min
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="Max time per output token", unit="ms/token", lower_better=True)
 def kserve_llm_load_test_tpot_max(lts_payload):
     return lts_payload.results.time_per_output_token.max
@@ -31,18 +33,22 @@ def kserve_llm_load_test_tpot_max(lts_payload):
 def kserve_llm_load_test_tpot_median(lts_payload):
     return lts_payload.results.time_per_output_token.median
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="Mean time per output token", unit="ms/token", lower_better=True)
 def kserve_llm_load_test_tpot_mean(lts_payload):
     return lts_payload.results.time_per_output_token.mean
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="80th Percentile time per output token", unit="ms/token", lower_better=True)
 def kserve_llm_load_test_tpot_p80(lts_payload):
     return lts_payload.results.time_per_output_token.percentile_80
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="90th Percentile time per output token", unit="ms/token", lower_better=True)
 def kserve_llm_load_test_tpot_p90(lts_payload):
     return lts_payload.results.time_per_output_token.percentile_90
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="95th Percentile time per output token", unit="ms/token", lower_better=True)
 def kserve_llm_load_test_tpot_p95(lts_payload):
     return lts_payload.results.time_per_output_token.percentile_95
@@ -69,18 +75,22 @@ def kserve_llm_load_test_itl_max(lts_payload):
 def kserve_llm_load_test_itl_median(lts_payload):
     return lts_payload.results.inter_token_latency.median if lts_payload.results.inter_token_latency else 0
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="Mean inter token latency", unit="ms", lower_better=True)
 def kserve_llm_load_test_itl_mean(lts_payload):
     return lts_payload.results.inter_token_latency.mean if lts_payload.results.inter_token_latency else 0
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="80th Percentile inter token latency", unit="ms", lower_better=True)
 def kserve_llm_load_test_itl_p80(lts_payload):
     return lts_payload.results.inter_token_latency.percentile_80 if lts_payload.results.inter_token_latency else 0
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="90th Percentile inter token latency", unit="ms", lower_better=True)
 def kserve_llm_load_test_itl_p90(lts_payload):
     return lts_payload.results.inter_token_latency.percentile_90 if lts_payload.results.inter_token_latency else 0
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="95th Percentile inter token latency", unit="ms", lower_better=True)
 def kserve_llm_load_test_itl_p95(lts_payload):
     return lts_payload.results.inter_token_latency.percentile_95 if lts_payload.results.inter_token_latency else 0
@@ -107,18 +117,22 @@ def kserve_llm_load_test_ttft_max(lts_payload):
 def kserve_llm_load_test_ttft_median(lts_payload):
     return lts_payload.results.time_to_first_token.median if lts_payload.results.time_to_first_token else 0
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="Mean time to first token", unit="ms", lower_better=True)
 def kserve_llm_load_test_ttft_mean(lts_payload):
     return lts_payload.results.time_to_first_token.mean if lts_payload.results.time_to_first_token else 0
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="80th Percentile time to first token", unit="ms", lower_better=True)
 def kserve_llm_load_test_ttft_p80(lts_payload):
     return lts_payload.results.time_to_first_token.percentile_80 if lts_payload.results.time_to_first_token else 0
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="90th Percentile time to first token", unit="ms", lower_better=True)
 def kserve_llm_load_test_ttft_p90(lts_payload):
     return lts_payload.results.time_to_first_token.percentile_90 if lts_payload.results.time_to_first_token else 0
 
+@matbench_models.IgnoredForRegression
 @matbench_models.KPIMetadata(help="95th Percentile time to first token", unit="ms", lower_better=True)
 def kserve_llm_load_test_ttft_p95(lts_payload):
     return lts_payload.results.time_to_first_token.percentile_95 if lts_payload.results.time_to_first_token else 0
@@ -133,6 +147,6 @@ def kserve_llm_load_test_ttft_p99(lts_payload):
 def kserve_llm_load_test_model_load_duration(lts_payload):
     return lts_payload.results.model_load_duration
 
-@matbench_models.KPIMetadata(help="Number of failure responses", unit="int", lower_better=True)
+@matbench_models.KPIMetadata(help="Number of failure responses", unit="x", lower_better=True)
 def kserve_llm_load_test_failures(lts_payload):
     return lts_payload.results.failures
