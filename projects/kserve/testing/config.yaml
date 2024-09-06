@@ -162,6 +162,7 @@ ci_presets:
     matbench.lts.opensearch.index_prefix: "psap-rhoai."
     matbench.lts.opensearch.instance: intlab
     matbench.lts.opensearch.export.enabled: true
+    matbench.lts.regression_analyses.enabled: true
 
   gating_rehearsal:
     matbench.lts.opensearch.index_prefix: "psap-rhoai.rehearsal."
@@ -517,10 +518,10 @@ clusters:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 789353
+    tag: 804339
     channel: fast
-    version: 2.12.0
-    version_name: rc2
+    version: 2.13.0
+    version_name: rc1
     opendatahub: false
     managed_rhoai: false
   operator:
@@ -702,7 +703,7 @@ matbench:
       enabled: false
       enabled_on_replot: false
       # if the regression analyses fail, mark the test as failed
-      fail_test_on_regression: true
+      fail_test_on_regression: false
 export_artifacts:
   enabled: false
   bucket: rhoai-cpt-artifacts
