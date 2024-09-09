@@ -191,6 +191,8 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
                 _run_test_quality_evaluation(test_settings)
             else:
                 start_ts = _start_ts
+                with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
+                    yaml.dump(dict(mode="single-model"), f, indent=4)
 
                 test_settings["model_name"] = prepare_finetuning.get_safe_model_name(test_settings["model_name"])
                 run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
