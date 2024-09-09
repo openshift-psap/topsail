@@ -158,6 +158,10 @@ ci_presets:
 
   # ---
 
+  gating_smoke:
+    matbench.lts.opensearch.export.enabled: true
+    matbench.lts.regression_analyses.enabled: true
+
   gating:
     matbench.lts.opensearch.index_prefix: "psap-rhoai."
     matbench.lts.opensearch.instance: intlab
