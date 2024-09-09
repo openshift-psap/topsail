@@ -36,6 +36,19 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.test_path = results.from_env.test.test_path
     lts_settings.urls = results.from_env.test.urls
 
+    lts_settings.test_mode = import_settings.get("mode")
+
+    if results.has_fine_tuning_dir:
+        lts_settings.accelerator_count = results.job_config["gpu"]
+        lts_settings.batch_size = results.tuning_config["per_device_train_batch_size"] * lts_settings.accelerator_count
+        lts_settings.max_seq_length = results.tuning_config["max_seq_length"]
+        lts_settings.container_image = results.job_config["container_image"]
+
+        lts_settings.model_name = results.job_config["model_name"]
+        lts_settings.tuning_method = results.tuning_config.get("peft_method", "none")
+        if lts_settings.tuning_method in ("none" , None):
+            lts_settings.tuning_method = "full"
+
     return lts_settings
 
 
