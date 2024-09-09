@@ -2,6 +2,7 @@ import types
 import datetime
 import yaml
 import logging
+import pathlib
 
 from .. import models
 from ..models import lts as models_lts
@@ -15,6 +16,10 @@ def generate_lts_payload(results, import_settings):
     # lts_payload.kpis is generated in the helper store
 
     return lts_payload
+
+
+def _is_streaming(results):
+    return results.test_config.get("tests.e2e.llm_load_test.args.streaming")
 
 
 def generate_lts_settings(lts_metadata, results, import_settings):
@@ -32,6 +37,18 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.rhoai_version = results.rhods_info.full_version
 
     lts_settings.deployment_mode = "RawDeployment" if results.test_config.get("kserve.raw_deployment.enabled") else "Serverless"
+
+    lts_settings.model_name = import_settings["model_name"]
+    lts_settings.runtime_image = results.test_config.get("kserve.model.serving_runtime.kserve.image")
+    lts_settings.min_pod_replicas = results.inference_service.min_replicas
+    lts_settings.max_pod_replicas = results.inference_service.max_replicas
+    lts_settings.virtual_users = results.test_config.get("tests.e2e.llm_load_test.args.concurrency")
+    lts_settings.test_duration = results.test_config.get("tests.e2e.llm_load_test.args.duration")
+
+    lts_settings.dataset_name = pathlib.Path(results.llm_load_test_config.get("dataset.file")).name
+
+    lts_settings.test_mode = import_settings.get("mode") or None
+    lts_settings.streaming = _is_streaming(results)
 
     lts_settings.ci_engine = results.from_env.test.ci_engine
     lts_settings.run_id = results.from_env.test.run_id
