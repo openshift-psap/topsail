@@ -224,6 +224,10 @@ ci_presets:
   use_smoke_os:
     matbench.lts.opensearch.instance: smoke
 
+  gating_smoke:
+    matbench.lts.opensearch.export.enabled: true
+    matbench.lts.regression_analyses.enabled: true
+
   # ---
 
   quality_evaluation:
