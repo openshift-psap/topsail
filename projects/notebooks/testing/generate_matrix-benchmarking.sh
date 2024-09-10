@@ -44,7 +44,7 @@ get_matbench_config() {
 
 
 generate_matbench::prepare_matrix_benchmarking() {
-    pip install --quiet --requirement "projects/core/subprojects/matrix-benchmarking/requirements.txt"
+    pip install --quiet --requirement "projects/matrix_benchmarking/subproject/requirements.txt"
     pip install --quiet --requirement "$WORKLOAD_STORAGE_DIR/requirements.txt"
 }
 
