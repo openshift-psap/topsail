@@ -4,7 +4,7 @@ import json
 
 import dateutil.parser
 
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
 from . import prom as workload_prom
 
@@ -40,19 +40,19 @@ def parse_always(results, dirname, import_settings):
 def parse_once(results, dirname):
     results.metrics = _extract_metrics(dirname)
 
-    results.test_uuid = core_helpers_store_parsers.parse_test_uuid(dirname)
-    results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
+    results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
+    results.test_config = helpers_store_parsers.parse_test_config(dirname)
     results.tests_timestamp = _find_test_timestamps(dirname)
 
     capture_state_dir = artifact_paths.CLUSTER_DUMP_PROM_DB_DIR
-    results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir) or {}
-    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
+    results.nodes_info = helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir) or {}
+    results.cluster_info = helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
     capture_state_dir = artifact_paths.RHODS_CAPTURE_STATE_DIR
-    results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
-    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
+    results.ocp_version = helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
+    results.rhods_info = helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
 
-    results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
+    results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
 
 
 def _extract_metrics(dirname):
@@ -64,7 +64,7 @@ def _extract_metrics(dirname):
         "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
     }
 
-    return core_helpers_store_parsers.extract_metrics(dirname, db_files)
+    return helpers_store_parsers.extract_metrics(dirname, db_files)
 
 
 def _find_test_timestamps(dirname):

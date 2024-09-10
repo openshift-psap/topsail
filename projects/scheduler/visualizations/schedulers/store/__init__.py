@@ -8,8 +8,8 @@ import os
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 
-import projects.core.visualizations.helpers.store as core_helpers_store
-import projects.core.visualizations.helpers.store as core_helpers
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers
 
 from . import parsers
 from . import lts_parser
@@ -19,7 +19,7 @@ from ..models import kpi as models_kpi
 CACHE_FILENAME = "cache.pickle"
 IMPORTANT_FILES = parsers.IMPORTANT_FILES
 
-local_store = core_helpers_store.BaseStore(
+local_store = helpers_store.BaseStore(
     cache_filename=CACHE_FILENAME, important_files=IMPORTANT_FILES,
     artifact_dirnames=parsers.artifact_dirnames, artifact_paths=parsers.artifact_paths,
     parse_always=parsers.parse_always, parse_once=parsers.parse_once,

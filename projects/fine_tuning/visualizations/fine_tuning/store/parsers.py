@@ -12,8 +12,8 @@ import jsonpath_ng
 
 import matrix_benchmarking.cli_args as cli_args
 
-import projects.core.visualizations.helpers.store as core_helpers_store
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -44,21 +44,21 @@ IMPORTANT_FILES = [
 
 def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
-    results.from_local_env = core_helpers_store_parsers.parse_local_env(dirname)
+    results.from_local_env = helpers_store_parsers.parse_local_env(dirname)
 
     pass
 
 
 def parse_once(results, dirname):
-    results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
-    results.test_uuid = core_helpers_store_parsers.parse_test_uuid(dirname)
+    results.test_config = helpers_store_parsers.parse_test_config(dirname)
+    results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
 
     capture_state_dir = artifact_paths.CLUSTER_CAPTURE_ENV_DIR
-    results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
-    results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
-    results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
-    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
-    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, artifact_paths.RHODS_CAPTURE_STATE, results.test_config.get("rhods.catalog.version_name"))
+    results.ocp_version = helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
+    results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
+    results.nodes_info = helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
+    results.cluster_info = helpers_store_parsers.extract_cluster_info(results.nodes_info)
+    results.rhods_info = helpers_store_parsers.parse_rhods_info(dirname, artifact_paths.RHODS_CAPTURE_STATE, results.test_config.get("rhods.catalog.version_name"))
 
     results.test_start_end_time = _parse_start_end_time(dirname)
 
@@ -69,7 +69,7 @@ def parse_once(results, dirname):
     results.job_config = _parse_job_config(dirname)
     results.tuning_config = _parse_tuning_config(dirname, results.locations.tuning_config_file)
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_start_end_time(dirname):
     ANSIBLE_LOG_TIME_FMT = '%Y-%m-%d %H:%M:%S'
 
@@ -117,7 +117,7 @@ SFT_TRAINER_PROGRESS_KEYS = {
     "epoch": types.SimpleNamespace(plot=False),
 }
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_sfttrainer_logs(dirname):
     sfttrainer_metrics = types.SimpleNamespace()
     sfttrainer_metrics.summary = types.SimpleNamespace()

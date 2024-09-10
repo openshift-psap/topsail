@@ -13,8 +13,8 @@ import jsonpath_ng
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
-import projects.core.visualizations.helpers.store as core_helpers_store
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
 from . import prom as workload_prom
 
@@ -40,20 +40,20 @@ IMPORTANT_FILES = [
 
 def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
-    results.from_local_env = core_helpers_store_parsers.parse_local_env(dirname)
+    results.from_local_env = helpers_store_parsers.parse_local_env(dirname)
 
     pass
 
 
 def parse_once(results, dirname):
-    results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
-    results.test_uuid = core_helpers_store_parsers.parse_test_uuid(dirname)
+    results.test_config = helpers_store_parsers.parse_test_config(dirname)
+    results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
 
     capture_state_dir = artifact_paths.CLUSTER_CAPTURE_ENV_DIR
-    results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
-    results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
-    results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
-    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
+    results.ocp_version = helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
+    results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
+    results.nodes_info = helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
+    results.cluster_info = helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
     results.metrics = _extract_metrics(dirname)
 
@@ -65,10 +65,10 @@ def _extract_metrics(dirname):
         "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
     }
 
-    return core_helpers_store_parsers.extract_metrics(dirname, db_files)
+    return helpers_store_parsers.extract_metrics(dirname, db_files)
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_start_end_time(dirname):
     ANSIBLE_LOG_TIME_FMT = '%Y-%m-%d %H:%M:%S'
 

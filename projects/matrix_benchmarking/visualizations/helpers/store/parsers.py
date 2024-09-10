@@ -12,7 +12,7 @@ import urllib
 import matrix_benchmarking.store.prom_db as store_prom_db
 import matrix_benchmarking.cli_args as cli_args
 
-import projects.core.visualizations.helpers.store as core_helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
 from . import k8s_quantity
 
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
@@ -307,7 +307,7 @@ def parse_test_config(dirname):
         yaml_file = test_config.yaml_file = {}
 
     test_config.name = f"topsail config ({test_config.filepath})"
-    test_config.get = core_helpers_store.get_yaml_get_key(test_config.name, yaml_file)
+    test_config.get = helpers_store.get_yaml_get_key(test_config.name, yaml_file)
 
     return test_config
 
