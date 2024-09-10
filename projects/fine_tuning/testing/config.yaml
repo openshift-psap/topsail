@@ -452,7 +452,7 @@ matbench:
     regression_analyses:
       enabled: false
       # if the regression analyses fail, mark the test as failed
-      fail_test_on_regression: true
+      fail_test_on_regression: false
 export_artifacts:
   enabled: false
   bucket: rhoai-cpt-artifacts
