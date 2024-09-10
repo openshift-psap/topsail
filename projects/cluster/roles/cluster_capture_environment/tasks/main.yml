@@ -87,7 +87,3 @@
   shell:
     oc get csv -A --show-labels | grep -v olm.copiedFrom > "{{ artifact_extra_logs_dir }}/csv.status"
   ignore_errors: true
-
-- name: Get the cluster CSV in json
-  shell:
-    oc get csv -A -ojson > "{{ artifact_extra_logs_dir }}/csv.json"
