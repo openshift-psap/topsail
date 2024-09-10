@@ -358,25 +358,28 @@ def generate_visualization(do_matbenchmarking, test_artifact_dir):
         else:
             exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
 
-    prom_plot_workload = config.ci_artifacts.get_config("tests.prom_plot_workload")
+    prom_workload = config.ci_artifacts.get_config("matbench.prom_workload")
     capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
 
-    if not prom_plot_workload or not capture_prom:
+    if not prom_workload or not capture_prom:
         if not capture_prom:
             logging.info(f"Setting tests.capture_prom is disabled, skipping Prometheus visualization.")
         else:
-            logging.info(f"Setting tests.prom_plot_workload isn't set, nothing else to generate.")
+            logging.info(f"Setting matbench.prom_workload isn't set, nothing else to generate.")
 
         if exc:
             raise exc
 
         return
 
+    index = config.ci_artifacts.get_config("matbench.lts.opensearch.index")
+    prom_index_suffix = config.ci_artifacts.get_config("matbench.lts.opensearch.prom_index_suffix")
     with (
             env.NextArtifactDir("prom_plots"),
-            config.TempValue(config.ci_artifacts, "matbench.workload", prom_plot_workload)
+            config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload),
+            config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")
     ):
-        logging.info(f"Generating the plots with workload={prom_plot_workload}")
+        logging.info(f"Generating the plots with workload={prom_workload}")
 
         exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
 
