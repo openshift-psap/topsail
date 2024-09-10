@@ -1,7 +1,8 @@
 import yaml
 import fire
 
-from projects.core.library import env, config, run, visualize, configure_logging, prepare_user_pods
+from projects.core.library import env, config, run, configure_logging, prepare_user_pods
+from projects.matrix_benchmarking.library import visualize
 configure_logging()
 
 

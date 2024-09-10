@@ -4,7 +4,6 @@ import sys, os
 import pathlib
 import subprocess
 import logging
-logging.getLogger().setLevel(logging.INFO)
 import datetime
 import time
 import functools
@@ -13,7 +12,9 @@ import uuid
 import yaml
 import fire
 
-from projects.core.library import env, config, run, visualize, export
+from projects.core.library import env, config, run, export, configure_logging
+configure_logging()
+from projects.matrix_benchmarking.library import visualize
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 

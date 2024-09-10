@@ -9,7 +9,8 @@ import functools
 
 import fire
 
-from projects.core.library import env, config, visualize
+from projects.core.library import env, config
+from projects.matrix_benchmarking.library import visualize
 
 import prepare_mcad, test_mcad
 import prepare_sdk_user, test_sdk_user

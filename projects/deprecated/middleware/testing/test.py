@@ -12,7 +12,8 @@ import functools
 import yaml
 import fire
 
-from projects.core.library import env, config, run, rhods, visualize
+from projects.core.library import env, config, run, rhods
+from projects.matrix_benchmarking.library import visualize
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 

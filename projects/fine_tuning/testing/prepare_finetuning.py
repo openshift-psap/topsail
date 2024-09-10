@@ -2,9 +2,10 @@ import os
 import pathlib
 import logging
 
-from projects.core.library import env, config, run, visualize, configure_logging, export
+from projects.core.library import env, config, run, configure_logging, export
 from projects.rhods.library import prepare_rhoai as prepare_rhoai_mod
 from projects.gpu_operator.library import prepare_gpu_operator
+from projects.matrix_benchmarking.library import visualize
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))

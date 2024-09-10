@@ -22,7 +22,9 @@ import fire
 
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
-from projects.core.library import env, run, visualize, matbenchmark
+from projects.core.library import env, run
+from projects.matrix_benchmarking.library import visualize, matbenchmark
+
 import prepare_scale, test_scale, prepare_kserve
 
 os.chdir(TOPSAIL_DIR)

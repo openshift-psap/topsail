@@ -11,8 +11,9 @@ import functools
 import yaml
 import fire
 
-from projects.core.library import env, config, run, visualize, configure_logging, export, common
+from projects.core.library import env, config, run, configure_logging, export, common
 configure_logging()
+from projects.matrix_benchmarking.library import visualize
 from projects.local_ci.library import prepare_user_pods
 
 import prepare_scale, test_scale, test_e2e

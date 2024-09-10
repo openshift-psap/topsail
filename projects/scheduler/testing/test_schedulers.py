@@ -6,7 +6,8 @@ import pathlib
 import yaml
 import uuid
 
-from projects.core.library import env, config, run, visualize, matbenchmark
+from projects.core.library import env, config, run
+from projects.matrix_benchmarking.library import visualize, matbenchmark
 import prepare
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent

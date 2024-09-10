@@ -4,7 +4,7 @@ import functools
 import yaml
 import json
 
-from . import env, config, run
+from projects.core.library import env, config, run
 
 
 def _json_dumper(obj, strict=False):
