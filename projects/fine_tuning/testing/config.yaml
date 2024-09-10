@@ -68,7 +68,6 @@ ci_presets:
     tests.fine_tuning.test_settings.container_image:
     - quay.io/modh/fms-hf-tuning:release-ec50c3d7dc09f50d9885f25efc3d2fc98a379709 # RHOAI-2.12
     - quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05 # RHOAI-2.11
-    - quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3 # RHOAI-2.10
 
   hf_evaluation:
     fine_tuning.pvc.size: 2000Gi
@@ -106,19 +105,15 @@ ci_presets:
     tests.fine_tuning.test_extra_settings:
     - name: granite-family
       model_name:
-      - ibm-granite/granite-3b-code-instruct
-      - instructlab/granite-7b-lab
       - ibm-granite/granite-8b-code-base
       - ibm-granite/granite-8b-code-instruct
       hyper_parameters:
         per_device_train_batch_size: 1
-    - name: llama-family
-      model_name:
-      - meta-llama/Meta-Llama-3-8B-Instruct
-      - meta-llama/llama-2-7b-hf
-      - meta-llama/Llama-2-13b-chat-hf
-      hyper_parameters:
-        per_device_train_batch_size: [1, 2]
+#    - name: llama-family
+#      model_name:
+#      - meta-llama/Meta-Llama-3-8B-Instruct
+#      hyper_parameters:
+#        per_device_train_batch_size: 1
 
   ibm_80gb_models:
     extends: [hf_evaluation, dgx_small_footprint]
