@@ -26,6 +26,8 @@ ci_presets:
   gpu:
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
+    tests.fine_tuning.test_settings.gpu: 1
+
   # ---
 
   dgx_single_model_multi_dataset:
