@@ -4,7 +4,7 @@ from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
-import projects.core.visualizations.helpers.store.prom as core_prom_store
+import projects.matrix_benchmarking.visualizations.helpers.store.prom as prom_store
 
 from ..store import prom
 from . import report
@@ -78,7 +78,7 @@ class GpuUsageReport():
         header += [html.H2("GPU Usage")]
         args_as_timeline = report.set_config(dict(as_timeline=True), args)
 
-        for metric_spec in core_prom_store.get_gpu_usage_metrics("sutest", register=False, container="pytorch"):
+        for metric_spec in prom_store.get_gpu_usage_metrics("sutest", register=False, container="pytorch"):
             plot_name = list(metric_spec.keys())[0]
             header += [html.H3(plot_name)]
 

@@ -9,7 +9,7 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 
-import projects.core.visualizations.helpers.store as core_helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
 
 from . import parsers
 from . import lts_parser
@@ -23,7 +23,7 @@ IGNORE_EXIT_CODE = None
 
 from ..models import lts as models_lts
 
-local_store = core_helpers_store.BaseStore(
+local_store = helpers_store.BaseStore(
     cache_filename=CACHE_FILENAME, important_files=IMPORTANT_FILES,
     extra_mandatory_files=[TEST_DIR_FILE],
     artifact_dirnames=parsers.artifact_dirnames, artifact_paths=parsers.artifact_paths,
@@ -38,7 +38,7 @@ local_store = core_helpers_store.BaseStore(
 )
 
 parsers.register_important_file = local_store.register_important_file
-core_helpers_store.register_important_file = local_store.register_important_file
+helpers_store.register_important_file = local_store.register_important_file
 build_lts_payloads = local_store.build_lts_payloads
 is_mandatory_file = local_store.is_mandatory_file
 is_cache_file = local_store.is_cache_file

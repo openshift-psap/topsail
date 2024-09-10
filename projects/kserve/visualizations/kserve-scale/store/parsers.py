@@ -10,7 +10,7 @@ import dateutil
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
 from . import prom as workload_prom
 
@@ -49,14 +49,14 @@ IMPORTANT_FILES = [
 
 def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
-    results.from_local_env = core_helpers_store_parsers.parse_local_env(dirname)
+    results.from_local_env = helpers_store_parsers.parse_local_env(dirname)
 
 
 def parse_once(results, dirname):
-    results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
+    results.test_config = helpers_store_parsers.parse_test_config(dirname)
 
     results.user_count = int(results.test_config.get("tests.scale.namespace.replicas"))
-    results.test_uuid = core_helpers_store_parsers.parse_test_uuid(dirname)
+    results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
 
     results.metrics = _extract_metrics(dirname)
     results.test_start_end_time = _parse_start_end_time(dirname)
@@ -66,20 +66,20 @@ def parse_once(results, dirname):
     results.pod_times = _parse_pod_times(dirname)
 
     capture_state_dir = artifact_paths.KSERVE_CAPTURE_OPERATORS_STATE_DIR
-    results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
-    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
-    results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
-    results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
-    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
+    results.ocp_version = helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
+    results.rhods_info = helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
+    results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
+    results.nodes_info = helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
+    results.cluster_info = helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
 def _extract_metrics(dirname):
     db_files = {
         "sutest": (str(artifact_paths.LOCAL_CI_RUN_MULTI_DIR / "prometheus_ocp.t*"), workload_prom.get_sutest_metrics()),
     }
 
-    return core_helpers_store_parsers.extract_metrics(dirname, db_files)
+    return helpers_store_parsers.extract_metrics(dirname, db_files)
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_start_end_time(dirname):
     test_start_end_time = types.SimpleNamespace()
     test_start_end_time.start = None
@@ -104,7 +104,7 @@ def _parse_start_end_time(dirname):
     return test_start_end_time
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_success_count(dirname):
     filename = pathlib.Path("000__local_ci__run_multi") / "success_count"
 
@@ -116,7 +116,7 @@ def _parse_success_count(dirname):
     return success_count
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_user_exit_code(dirname, ci_pod_dir):
     filename = (ci_pod_dir / "test.exit_code").relative_to(dirname)
     with open(register_important_file(dirname, filename)) as f:
@@ -125,7 +125,7 @@ def _parse_user_exit_code(dirname, ci_pod_dir):
     return exit_code
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_user_progress(dirname, ci_pod_dir):
     filename = (ci_pod_dir / "progress_ts.yaml").relative_to(dirname)
     with open(register_important_file(dirname, filename)) as f:
@@ -167,7 +167,7 @@ def _parse_file_locations(dirname):
     return file_locations
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_pod_times(dirname):
     filename = artifact_paths.KSERVE_CAPTURE_OPERATORS_STATE_DIR / "predictor_pods.json"
 
@@ -225,7 +225,7 @@ def _parse_pod_times(dirname):
     return pod_times
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_user_resource_times(dirname, ci_pod_dir):
     resource_times = {}
 
@@ -297,7 +297,7 @@ def _parse_user_resource_times(dirname, ci_pod_dir):
     return dict(resource_times)
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_user_grpc_calls(dirname, ci_pod_dir):
     grpc_calls = []
 

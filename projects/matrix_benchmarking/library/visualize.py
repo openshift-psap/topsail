@@ -77,7 +77,7 @@ def entrypoint(allow_no_config_file=False):
 def prepare_matbench():
 
     run.run(f"""
-    pip install --quiet --requirement "{TOPSAIL_DIR}/projects/core/subprojects/matrix-benchmarking/requirements.txt"
+    pip install --quiet --requirement "{TOPSAIL_DIR}/projects/matrix_benchmarking/subproject/requirements.txt"
     """)
 
 

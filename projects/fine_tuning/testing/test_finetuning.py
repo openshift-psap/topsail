@@ -12,7 +12,9 @@ import datetime
 import json
 from collections import defaultdict
 
-from projects.core.library import env, config, run, visualize, matbenchmark, merge_dicts
+from projects.core.library import env, config, run, merge_dicts
+from projects.matrix_benchmarking.library import visualize, matbenchmark
+
 import prepare_finetuning
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent

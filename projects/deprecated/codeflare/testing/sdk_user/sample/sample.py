@@ -5,8 +5,8 @@ from codeflare_sdk.cluster.cluster import Cluster, ClusterConfiguration
 from codeflare_sdk.job.jobs import DDPJobDefinition
 from time import sleep
 
-from projects.core.library import env, config, run, visualize
-
+from projects.core.library import env, config, run
+from projects.matrix_benchmarking.library import visualize
 
 def main():
     namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")

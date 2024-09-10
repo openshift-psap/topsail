@@ -16,9 +16,9 @@ import jsonpath_ng
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
-import projects.core.visualizations.helpers.store as core_helpers_store
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
-import projects.core.visualizations.helpers.store.k8s_quantity as k8s_quantity
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store.k8s_quantity as k8s_quantity
 
 from . import prom
 from . import theoretical
@@ -87,7 +87,7 @@ JUPYTER_USER_IDX_REGEX = r'[:letter:]*(\d+)-0$'
 def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
 
-    results.from_local_env = core_helpers_store_parsers.parse_local_env(dirname)
+    results.from_local_env = helpers_store_parsers.parse_local_env(dirname)
     pass
 
 
@@ -99,18 +99,18 @@ def parse_once(results, dirname):
     results.start_time = start
     results.end_time = end
 
-    results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
+    results.test_config = helpers_store_parsers.parse_test_config(dirname)
 
     results.user_count = results.test_config.get("tests.notebooks.users.count")
     results.location = dirname
 
-    results.test_uuid = core_helpers_store_parsers.parse_test_uuid(dirname)
+    results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
 
-    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, artifact_paths.ARTIFACT_SUTEST_DIR, results.test_config.get("rhods.catalog.version_name"))
-    results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, artifact_paths.ARTIFACT_SUTEST_DIR)
-    results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, artifact_paths.ARTIFACT_SUTEST_DIR.parent)
-    results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, artifact_paths.ARTIFACT_SUTEST_DIR)
-    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
+    results.rhods_info = helpers_store_parsers.parse_rhods_info(dirname, artifact_paths.ARTIFACT_SUTEST_DIR, results.test_config.get("rhods.catalog.version_name"))
+    results.ocp_version = helpers_store_parsers.parse_ocp_version(dirname, artifact_paths.ARTIFACT_SUTEST_DIR)
+    results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, artifact_paths.ARTIFACT_SUTEST_DIR.parent)
+    results.nodes_info = helpers_store_parsers.parse_nodes_info(dirname, artifact_paths.ARTIFACT_SUTEST_DIR)
+    results.cluster_info = helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
     results.metrics = _extract_metrics(dirname)
 
@@ -176,7 +176,7 @@ def _parse_ods_ci_pods_directory(dirname, output_dir):
     return ods_ci
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_start_end_times(dirname):
     ISO_FORMAT="%Y-%m-%d %H:%M:%S"
     with open(dirname / '_ansible.log', 'r') as file:
@@ -202,19 +202,19 @@ def _parse_start_end_times(dirname):
 
         return (start_time, end_time)
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_pr(dirname):
     with open(dirname.parent / "pull_request.json") as f: # not an important file
         return json.load(f)
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_pr_comments(dirname):
     with open(dirname.parent / "pull_request-comments.json") as f: # not an important file
         return json.load(f)
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_tester_job(dirname):
     job_info = types.SimpleNamespace()
 
@@ -254,7 +254,7 @@ def _parse_tester_job(dirname):
     return job_info
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_odh_dashboard_config(dirname, notebook_size_name):
     odh_dashboard_config = types.SimpleNamespace()
     odh_dashboard_config.path = None
@@ -290,7 +290,7 @@ def _parse_odh_dashboard_config(dirname, notebook_size_name):
 def _parse_resource_times(dirname):
     all_resource_times = defaultdict(dict)
 
-    @core_helpers_store_parsers.ignore_file_not_found
+    @helpers_store_parsers.ignore_file_not_found
     def parse(fname):
         print(f"Parsing {fname} ...")
 
@@ -335,7 +335,7 @@ def _parse_resource_times(dirname):
     return dict(all_resource_times)
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_notebook_times(dirname, pod_times):
     filenames = [fname.relative_to(dirname) for fname in
                  (dirname / pathlib.Path("artifacts-sutest")).glob("project_*/notebooks.json")]
@@ -370,7 +370,7 @@ def _parse_notebook_times(dirname, pod_times):
         with open(register_important_file(dirname, filename)) as f:
             _parse_notebook_times_file(json.load(f))
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_pod_times(dirname, test_config=None, is_notebook=False):
     if is_notebook:
         filenames = [fname.relative_to(dirname) for fname in
@@ -435,7 +435,7 @@ def _parse_pod_times(dirname, test_config=None, is_notebook=False):
 
     return pod_times, hostnames
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_notebook_perf_notebook(dirname):
     notebook_perf = types.SimpleNamespace()
 
@@ -482,9 +482,9 @@ def _extract_metrics(dirname):
         "rhods":  (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus_rhods.t*"), prom.get_rhods_metrics()),
     }
 
-    return core_helpers_store_parsers.extract_metrics(dirname, db_files)
+    return helpers_store_parsers.extract_metrics(dirname, db_files)
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_ods_ci_exit_code(dirname, output_dir):
     filename = output_dir / "test.exit_code"
 
@@ -499,7 +499,7 @@ def _parse_ods_ci_exit_code(dirname, output_dir):
             logging.warning(f"Failed to parse {filename}: {e}")
             return None
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_ods_ci_output_xml(dirname, output_dir):
     filename = output_dir / "output.xml"
     with open(register_important_file(dirname, filename)) as f:
@@ -526,14 +526,14 @@ def _parse_ods_ci_output_xml(dirname, output_dir):
     return ods_ci_output
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_notebook_benchmark(dirname, output_dir):
     filename = output_dir / "benchmark_measures.json"
     with open(register_important_file(dirname, filename)) as f:
         return json.load(f)
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_ods_ci_progress(dirname, output_dir):
     filename = output_dir / "progress_ts.yaml"
     with open(register_important_file(dirname, filename)) as f:

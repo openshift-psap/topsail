@@ -5,8 +5,8 @@ import yaml
 
 import dateutil.parser
 
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
-import projects.core.visualizations.helpers.store as core_helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
 
 from . import prom as workload_prom
 
@@ -51,18 +51,18 @@ def parse_always(results, dirname, import_settings):
 def parse_once(results, dirname):
     results.metrics = _extract_metrics(dirname)
 
-    results.test_uuid = core_helpers_store_parsers.parse_test_uuid(dirname)
-    results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
+    results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
+    results.test_config = helpers_store_parsers.parse_test_config(dirname)
     results.tests_timestamp = _find_test_timestamps(dirname)
 
     capture_state_dir = artifact_paths.KSERVE_CAPTURE_OPERATORS_STATE
-    results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir) or {}
-    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
+    results.nodes_info = helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir) or {}
+    results.cluster_info = helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
-    results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
-    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
+    results.ocp_version = helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
+    results.rhods_info = helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
 
-    results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
+    results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
 
     results.inference_service = _parse_inference_service(dirname)
     results.llm_load_test_config = _parse_llm_load_test_config(dirname)
@@ -77,7 +77,7 @@ def _extract_metrics(dirname):
         #"uwm": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_UWM_DIR / "prometheus.t*"), []),
     }
 
-    return core_helpers_store_parsers.extract_metrics(dirname, db_files)
+    return helpers_store_parsers.extract_metrics(dirname, db_files)
 
 
 def _find_test_timestamps(dirname):
@@ -111,7 +111,7 @@ def _find_test_timestamps(dirname):
     return test_timestamps
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_inference_service(dirname):
     if not artifact_paths.KSERVE_CAPTURE_STATE:
         logging.error(f"No '{artifact_dirnames.KSERVE_CAPTURE_STATE}' directory found in {dirname} ...")
@@ -135,13 +135,13 @@ def _parse_inference_service(dirname):
     inference_service_specs = [item for item in serving_def["items"] if item["kind"] == "InferenceService"]
     inference_service_specs = inference_service_specs[0]
 
-    inference_service.min_replicas = core_helpers_store_parsers.dict_get_from_path(inference_service_specs, "spec.predictor.minReplicas", default=None)
-    inference_service.max_replicas = core_helpers_store_parsers.dict_get_from_path(inference_service_specs, "spec.predictor.maxReplicas", default=None)
+    inference_service.min_replicas = helpers_store_parsers.dict_get_from_path(inference_service_specs, "spec.predictor.minReplicas", default=None)
+    inference_service.max_replicas = helpers_store_parsers.dict_get_from_path(inference_service_specs, "spec.predictor.maxReplicas", default=None)
 
     return inference_service
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_llm_load_test_config(dirname):
     if not artifact_paths.LLM_LOAD_TEST_RUN_DIR:
         return None
@@ -159,6 +159,6 @@ def _parse_llm_load_test_config(dirname):
         yaml_file = llm_load_test_config.yaml_file = {}
 
     llm_load_test_config.name = f"llm-load-test config {llm_config_file}"
-    llm_load_test_config.get = core_helpers_store.get_yaml_get_key(llm_load_test_config.name, yaml_file)
+    llm_load_test_config.get = helpers_store.get_yaml_get_key(llm_load_test_config.name, yaml_file)
 
     return llm_load_test_config

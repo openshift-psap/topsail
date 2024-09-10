@@ -11,9 +11,9 @@ import functools
 import yaml
 import fire
 
-from projects.core.library import env, config, run, visualize, configure_logging, export
+from projects.core.library import env, config, run, configure_logging, export
 configure_logging()
-
+from projects.matrix_benchmarking.library import visualize
 import prepare, test_schedulers
 
 

@@ -12,7 +12,8 @@ import functools
 import yaml
 import fire
 
-from projects.core.library import env, config, run, rhods, visualize
+from projects.core.library import env, config, run, rhods
+from projects.matrix_benchmarking.library import visualize
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 

@@ -11,8 +11,8 @@ import jsonpath_ng
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store.prom_db as store_prom_db
 
-import projects.core.visualizations.helpers.store as core_helpers_store
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
 from . import prom as workload_prom
 
@@ -64,11 +64,11 @@ def ignore_file_not_found(fn):
 
 def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
-    results.from_local_env = core_helpers_store_parsers.parse_local_env(dirname)
+    results.from_local_env = helpers_store_parsers.parse_local_env(dirname)
 
 
 def parse_once(results, dirname):
-    results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
+    results.test_config = helpers_store_parsers.parse_test_config(dirname)
     results.test_case_config = _parse_test_case_config(dirname)
     results.test_case_properties = _parse_test_case_properties(results.test_case_config)
 
@@ -95,12 +95,12 @@ def parse_once(results, dirname):
     results.file_locations = _parse_file_locations(dirname)
 
     capture_state_dir = artifact_paths.RHODS_CAPTURE_STATE_DIR
-    results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
-    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
-    results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
-    results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
-    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
-    results.test_uuid = core_helpers_store_parsers.parse_test_uuid(dirname)
+    results.ocp_version = helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
+    results.rhods_info = helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
+    results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
+    results.nodes_info = helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
+    results.cluster_info = helpers_store_parsers.extract_cluster_info(results.nodes_info)
+    results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
 
 
 @ignore_file_not_found
@@ -112,7 +112,7 @@ def _extract_metrics(dirname):
         "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
     }
 
-    return core_helpers_store_parsers.extract_metrics(dirname, db_files)
+    return helpers_store_parsers.extract_metrics(dirname, db_files)
 
 
 @ignore_file_not_found
@@ -141,15 +141,15 @@ def _parse_pod_times(dirname):
       pod_time.hostname = pod["spec"].get("nodeName")
 
       pod_time.creation_time = datetime.datetime.strptime(
-              pod["metadata"]["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+              pod["metadata"]["creationTimestamp"], helpers_store_parsers.K8S_TIME_FMT)
 
       start_time_str = pod["status"].get("startTime")
       pod_time.start_time = None if not start_time_str else \
-          datetime.datetime.strptime(start_time_str, core_helpers_store_parsers.K8S_TIME_FMT)
+          datetime.datetime.strptime(start_time_str, helpers_store_parsers.K8S_TIME_FMT)
       pod_time.conditions = {}
 
       for condition in pod["status"].get("conditions", []):
-          last_transition = datetime.datetime.strptime(condition["lastTransitionTime"], core_helpers_store_parsers.K8S_TIME_FMT)
+          last_transition = datetime.datetime.strptime(condition["lastTransitionTime"], helpers_store_parsers.K8S_TIME_FMT)
 
           pod_time.conditions[condition["type"]] = last_transition
 
@@ -164,7 +164,7 @@ def _parse_pod_times(dirname):
           try:
               finishedAt =  datetime.datetime.strptime(
                   containerStatus["state"]["terminated"]["finishedAt"],
-                  core_helpers_store_parsers.K8S_TIME_FMT)
+                  helpers_store_parsers.K8S_TIME_FMT)
           except KeyError: continue
 
           # take the last container_finished found
@@ -179,7 +179,7 @@ def __parse_appwrapper_times(item, resource_times):
     if "annotations" in item["metadata"] and "scheduleTime" in item["metadata"]["annotations"]:
         resource_times.conditions["OC Created"] = datetime.datetime.strptime(
             item["metadata"]["annotations"]["scheduleTime"],
-            core_helpers_store_parsers.K8S_TIME_FMT)
+            helpers_store_parsers.K8S_TIME_FMT)
 
     elif not missing_label_warning_printed:
         missing_label_warning_printed = True
@@ -193,7 +193,7 @@ def __parse_appwrapper_times(item, resource_times):
     if "controllerfirsttimestamp" in item["status"]:
         resource_times.conditions["Discovered"] = datetime.datetime.strptime(
             item["status"]["controllerfirsttimestamp"],
-            core_helpers_store_parsers.K8S_TIME_MILLI_FMT)
+            helpers_store_parsers.K8S_TIME_MILLI_FMT)
 
     for condition in item["status"].get("conditions", []):
         if condition.get("reason") != "PodsCompleted": continue
@@ -202,21 +202,21 @@ def __parse_appwrapper_times(item, resource_times):
         resource_times.completion = \
             datetime.datetime.strptime(
                 condition["lastUpdateMicroTime"],
-                core_helpers_store_parsers.K8S_TIME_MILLI_FMT)
+                helpers_store_parsers.K8S_TIME_MILLI_FMT)
         break
 
     for condition in item["status"]["conditions"]:
         resource_times.conditions[condition["type"]] = \
             datetime.datetime.strptime(
                 condition["lastUpdateMicroTime"],
-                core_helpers_store_parsers.K8S_TIME_MILLI_FMT)
+                helpers_store_parsers.K8S_TIME_MILLI_FMT)
 
 
 def __parse_job_times(item, resource_times):
     resource_times.completion = \
         datetime.datetime.strptime(
             item["status"].get("completionTime"),
-            core_helpers_store_parsers.K8S_TIME_FMT) \
+            helpers_store_parsers.K8S_TIME_FMT) \
             if item["status"].get("completionTime") else None
 
 
@@ -229,7 +229,7 @@ def __parse_workload_times(item, resource_times):
         resource_times.conditions[condition["reason"]] = \
             datetime.datetime.strptime(
                 condition["lastTransitionTime"],
-                core_helpers_store_parsers.K8S_TIME_FMT)
+                helpers_store_parsers.K8S_TIME_FMT)
 
 
 def __parse_pytorchjob_times(item, resource_times):
@@ -238,20 +238,20 @@ def __parse_pytorchjob_times(item, resource_times):
     resource_times.start = \
         datetime.datetime.strptime(
             item["status"].get("startTime"),
-            core_helpers_store_parsers.K8S_TIME_FMT) \
+            helpers_store_parsers.K8S_TIME_FMT) \
             if item["status"].get("startTime") else None
 
     resource_times.completion = \
         datetime.datetime.strptime(
             item["status"].get("completionTime"),
-            core_helpers_store_parsers.K8S_TIME_FMT) \
+            helpers_store_parsers.K8S_TIME_FMT) \
             if item["status"].get("completionTime") else None
 
     for condition in item["status"]["conditions"]:
         resource_times.conditions[condition["reason"]] = \
             datetime.datetime.strptime(
                 condition["lastTransitionTime"],
-                core_helpers_store_parsers.K8S_TIME_FMT)
+                helpers_store_parsers.K8S_TIME_FMT)
 
     if resource_times.start and resource_times.completion:
         resource_times.duration = (resource_times.completion - resource_times.start).total_seconds()
@@ -280,7 +280,7 @@ def _parse_resource_times(dirname, mode, resource_type):
 
             kind = item["kind"]
             creationTimestamp = datetime.datetime.strptime(
-                metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+                metadata["creationTimestamp"], helpers_store_parsers.K8S_TIME_FMT)
 
             name = metadata["name"]
             if kind == "Pod":
@@ -338,7 +338,7 @@ def _parse_test_start_end_time(dirname):
         name = cm["metadata"]["name"]
         ts = datetime.datetime.strptime(
             cm["metadata"]["creationTimestamp"],
-            core_helpers_store_parsers.K8S_TIME_FMT)
+            helpers_store_parsers.K8S_TIME_FMT)
         test_start_end_time.__dict__[name] = ts
 
     logging.debug(f'Start time: {test_start_end_time.start}')
@@ -360,7 +360,7 @@ def _parse_cleanup_start_end_time(dirname):
         name = cm["metadata"]["name"]
         ts = datetime.datetime.strptime(
             cm["metadata"]["creationTimestamp"],
-            core_helpers_store_parsers.K8S_TIME_FMT)
+            helpers_store_parsers.K8S_TIME_FMT)
         cleanup_times.__dict__[name] = ts
 
     logging.debug(f'Start time: {cleanup_times.start}')

@@ -7,7 +7,7 @@ from . import report
 from . import error_report
 from ..store import prom as prom_store
 
-import projects.core.visualizations.helpers.store.prom as core_prom_store
+import projects.matrix_benchmarking.visualizations.helpers.store.prom as helper_prom_store
 
 def register():
     SutestCpuMemoryReport()
@@ -103,7 +103,7 @@ class GpuUsageReport():
         header += [html.H2("GPU Usage")]
         args_as_timeline = report.set_config(dict(as_timeline=True), args)
 
-        for metric_spec in core_prom_store.get_gpu_usage_metrics("sutest", register=False, container="pytorch"):
+        for metric_spec in helper_prom_store.get_gpu_usage_metrics("sutest", register=False, container="pytorch"):
             plot_name = list(metric_spec.keys())[0]
             header += [html.H3(plot_name)]
 
