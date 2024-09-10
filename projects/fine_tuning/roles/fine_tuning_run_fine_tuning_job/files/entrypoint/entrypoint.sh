@@ -42,7 +42,11 @@ prepare_dataset() {
 
 prepare_dataset
 
-python /mnt/entrypoint/study_dataset.py
+CACHE_FILE="${DATASET_FILE}.study_dataset.cache"
+if [ ! -f "$CACHE_FILE" ]; then
+ python /mnt/entrypoint/study_dataset.py > "$CACHE_FILE"
+fi
+cat "$CACHE_FILE"
 
 echo "# sha256sum of the dataset files"
 sha256sum "$DATASET_SOURCE" "$DATASET_DEST"
