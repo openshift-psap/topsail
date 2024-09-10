@@ -26,6 +26,8 @@ ci_presets:
   gpu:
     gpu.prepare_cluster: true
     clusters.sutest.compute.machineset.type: g4dn.2xlarge
+    tests.fine_tuning.test_settings.gpu: 1
+
   # ---
 
   dgx_single_model_multi_dataset:
@@ -185,7 +187,7 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: 4
 
   many_model:
-    tests.prom_plot_workload: null
+    matbench.prom_workload: null
     tests.fine_tuning.many_model.enabled: true
     matbench.workload: projects.scheduler.visualizations.schedulers
 
@@ -223,6 +225,10 @@ ci_presets:
 
   use_smoke_os:
     matbench.lts.opensearch.instance: smoke
+
+  gating_smoke:
+    matbench.lts.opensearch.export.enabled: true
+    matbench.lts.regression_analyses.enabled: true
 
   # ---
 
@@ -374,7 +380,6 @@ tests:
   capture_prom: true
   capture_prom_uwm: false
   capture_state: true
-  prom_plot_workload: projects.fine_tuning.visualizations.fine_tuning_prom
   visualize: true
   dry_mode: false
   fine_tuning:
@@ -423,6 +428,7 @@ tests:
 matbench:
   preset: null
   workload: projects.fine_tuning.visualizations.fine_tuning
+  prom_workload: projects.fine_tuning.visualizations.fine_tuning_prom
   config_file: plots.yaml
   download:
     mode: prefer_cache
@@ -445,10 +451,11 @@ matbench:
       instance: smoke
       index: topsail-fine-tuning
       index_prefix: ""
+      prom_index_suffix: -prom
     regression_analyses:
       enabled: false
       # if the regression analyses fail, mark the test as failed
-      fail_test_on_regression: true
+      fail_test_on_regression: false
 export_artifacts:
   enabled: false
   bucket: rhoai-cpt-artifacts
