@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -14,10 +14,20 @@ class Settings(matbench_models.ExclusiveModel):
 
     instance_type: str
     accelerator_name: str
+    accelerator_count: Optional[int]
 
     ocp_version: matbench_models.SemVer
     rhoai_version: matbench_models.SemVer
     deployment_mode: str
+    model_name: str
+    runtime_image: str
+    min_pod_replicas: int
+    max_pod_replicas: Optional[int]
+    virtual_users: Union[int, List[int]]
+    test_duration: int
+    dataset_name: str
+    test_mode: str
+    streaming: bool
 
     ci_engine: str
     run_id: str

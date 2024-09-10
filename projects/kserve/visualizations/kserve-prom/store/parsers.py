@@ -1,10 +1,12 @@
 import types
 import logging
 import json
+import yaml
 
 import dateutil.parser
 
 import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
+import projects.core.visualizations.helpers.store as core_helpers_store
 
 from . import prom as workload_prom
 
@@ -12,20 +14,26 @@ register_important_file = None # will be when importing store/__init__.py
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db"
-artifact_dirnames.CLUSTER_DUMP_PROM_DB_UWM_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db_uwm"
+#artifact_dirnames.CLUSTER_DUMP_PROM_DB_UWM_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db_uwm"
 artifact_dirnames.KSERVE_CAPTURE_OPERATORS_STATE = "*__kserve__capture_operators_state"
+artifact_dirnames.KSERVE_CAPTURE_STATE = "*__kserve__capture_state"
+artifact_dirnames.LLM_LOAD_TEST_RUN_DIR = "**/*__llm_load_test__run"
+
 artifact_paths = types.SimpleNamespace()
 
 IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/prometheus.t*",
     f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR}/nodes.json",
 
-    f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_UWM_DIR}/prometheus.t*",
+    #f"{artifact_dirnames.CLUSTER_DUMP_PROM_DB_UWM_DIR}/prometheus.t*",
 
     f"{artifact_dirnames.KSERVE_CAPTURE_OPERATORS_STATE}/_ansible.env",
     f"{artifact_dirnames.KSERVE_CAPTURE_OPERATORS_STATE}/ocp_version.yaml",
     f"{artifact_dirnames.KSERVE_CAPTURE_OPERATORS_STATE}/rhods.createdAt",
     f"{artifact_dirnames.KSERVE_CAPTURE_OPERATORS_STATE}/rhods.version",
+    f"{artifact_dirnames.KSERVE_CAPTURE_OPERATORS_STATE}/nodes.json",
+    f"{artifact_dirnames.KSERVE_CAPTURE_STATE}/serving.json",
+    f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/src/llm_load_test.config.yaml",
 
     f"*/test_start_end.json", f"test_start_end.json",
     "config.yaml",
@@ -56,6 +64,8 @@ def parse_once(results, dirname):
 
     results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
 
+    results.inference_service = _parse_inference_service(dirname)
+    results.llm_load_test_config = _parse_llm_load_test_config(dirname)
 
 def _extract_metrics(dirname):
     if artifact_paths.CLUSTER_DUMP_PROM_DB_DIR is None:
@@ -99,3 +109,56 @@ def _find_test_timestamps(dirname):
 
     logging.info(f"Found {len(test_timestamps)}x {FILENAME}")
     return test_timestamps
+
+
+@core_helpers_store_parsers.ignore_file_not_found
+def _parse_inference_service(dirname):
+    if not artifact_paths.KSERVE_CAPTURE_STATE:
+        logging.error(f"No '{artifact_dirnames.KSERVE_CAPTURE_STATE}' directory found in {dirname} ...")
+        return
+
+    capture_state_dir = artifact_paths.KSERVE_CAPTURE_STATE
+    if isinstance(capture_state_dir, list):
+        capture_state_dir = capture_state_dir[-1]
+
+    inference_service = types.SimpleNamespace()
+    serving_file = capture_state_dir / "serving.json"
+
+    if (dirname / serving_file).exists():
+        with open(register_important_file(dirname, serving_file)) as f:
+            serving_def = json.load(f)
+
+    if not serving_def["items"]:
+        logging.error(f"No InferenceService found in {serving_file} ...")
+        return inference_service
+
+    inference_service_specs = [item for item in serving_def["items"] if item["kind"] == "InferenceService"]
+    inference_service_specs = inference_service_specs[0]
+
+    inference_service.min_replicas = core_helpers_store_parsers.dict_get_from_path(inference_service_specs, "spec.predictor.minReplicas", default=None)
+    inference_service.max_replicas = core_helpers_store_parsers.dict_get_from_path(inference_service_specs, "spec.predictor.maxReplicas", default=None)
+
+    return inference_service
+
+
+@core_helpers_store_parsers.ignore_file_not_found
+def _parse_llm_load_test_config(dirname):
+    if not artifact_paths.LLM_LOAD_TEST_RUN_DIR:
+        return None
+
+    llm_config_file = dirname / artifact_paths.LLM_LOAD_TEST_RUN_DIR / "src" / "llm_load_test.config.yaml"
+    register_important_file(dirname, llm_config_file.relative_to(dirname))
+
+    llm_load_test_config = types.SimpleNamespace()
+
+    with open(llm_config_file) as f:
+        yaml_file = llm_load_test_config.yaml_file = yaml.safe_load(f)
+
+    if not yaml_file:
+        logging.error(f"Config file '{llm_config_file}' is empty ...")
+        yaml_file = llm_load_test_config.yaml_file = {}
+
+    llm_load_test_config.name = f"llm-load-test config {llm_config_file}"
+    llm_load_test_config.get = core_helpers_store.get_yaml_get_key(llm_load_test_config.name, yaml_file)
+
+    return llm_load_test_config
