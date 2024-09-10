@@ -239,14 +239,13 @@ def generate_plots(results_dirname):
             visualize.generate_from_dir(str(results_dirname))
     finally:
         exc = None
-        prom_workload = config.ci_artifacts.get_config("tests.prom_plot_workload")
+        prom_workload = config.ci_artifacts.get_config("matbench.prom_workload")
         if not prom_workload:
-            logging.info(f"Setting tests.prom_plot_workload isn't set, nothing else to generate.")
+            logging.info(f"Setting matbench.prom_workload isn't set, nothing else to generate.")
             return
 
         index = config.ci_artifacts.get_config("matbench.lts.opensearch.index")
-        prom_index_suffix = config.ci_artifacts.get_config("tests.prom_plot_index_suffix")
-
+        prom_index_suffix = config.ci_artifacts.get_config("matbench.lts.opensearch.prom_index_suffix")
         with (
                 config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload),
                 config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")

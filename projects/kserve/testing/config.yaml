@@ -617,8 +617,6 @@ tests:
   visualize: true
   capture_prom: true
   capture_prom_uwm: false
-  prom_plot_workload: projects.kserve.visualizations.kserve-prom
-  prom_plot_index_suffix: -prom
   scale:
     sleep_factor: 1
     namespace:
@@ -679,6 +677,7 @@ tests:
 
 matbench:
   preset: null
+  prom_workload: projects.kserve.visualizations.kserve-prom
   workload: projects.kserve.visualizations.kserve-llm
   config_file: plots.yaml
   download:
@@ -702,7 +701,7 @@ matbench:
       instance: smoke
       index: rhoai-kserve-single
       index_prefix: ""
-
+      prom_index_suffix: -prom
     regression_analyses:
       enabled: false
       enabled_on_replot: false
