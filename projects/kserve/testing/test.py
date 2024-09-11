@@ -77,6 +77,7 @@ def prepare_ci():
     test_mode = config.project.get_config("tests.mode")
     if test_mode in ("scale", "e2e"):
         prepare_scale.prepare()
+        export.export_artifacts(env.ARTIFACT_DIR, test_step="prepare_ci")
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
@@ -219,6 +220,7 @@ def cleanup_cluster(mute=False):
         cleanup_sutest_crs()
 
         prepare_kserve.cleanup(mute)
+        export.export_artifacts(env.ARTIFACT_DIR, test_step="pre_clean_up")
 
 
 @entrypoint()
@@ -334,6 +336,7 @@ def cleanup_sutest_crs():
 def rebuild_driver_image(pr_number):
     namespace = config.project.get_config("base_image.namespace")
     prepare_user_pods.rebuild_driver_image(namespace, pr_number)
+    export.export_artifacts(env.ARTIFACT_DIR, test_step="rebuild_driver_image")
 
 
 @entrypoint(ignore_secret_path=True)
