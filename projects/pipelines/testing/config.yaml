@@ -160,6 +160,17 @@ ci_presets:
     tests.pipelines.project_count: 5
     tests.pipelines.capture_extra_artifacts: false
 
+  gating:
+    extends: [sequential]
+    tests.pipelines.user_count: 50
+    tests.pipelines.pipelines_per_user: 1
+    tests.pipelines.user_pipeline_delay: 1
+    tests.pipelines.runs_per_pipeline: 8
+    tests.pipelines.run_delay: 5
+    tests.pipelines.project_count: 5
+    tests.pipelines.sleep_factor: 5
+    tests.pipelines.capture_extra_artifacts: false
+
   large_mcr:
     tests.pipelines.max_concurrent_reconciles: 25
 
