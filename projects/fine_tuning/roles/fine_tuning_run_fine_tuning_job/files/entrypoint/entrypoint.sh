@@ -42,9 +42,9 @@ prepare_dataset() {
 
 prepare_dataset
 
-CACHE_FILE="${DATASET_FILE}.study_dataset.cache"
+CACHE_FILE="${DATASET_DEST}.study_dataset.cache"
 if [ ! -f "$CACHE_FILE" ]; then
- python /mnt/entrypoint/study_dataset.py > "$CACHE_FILE"
+    python /mnt/entrypoint/study_dataset.py > "$CACHE_FILE"
 fi
 cat "$CACHE_FILE"
 
