@@ -89,6 +89,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
         lts_settings.tuning_method = "full"
 
     lts_settings.accelerator_type = gpu_names or "no accelerator"
+
     replicas = 1 + results.job_config.get("worker_replicas", 0)
     accelerators_per_replica = results.job_config["gpu"]
 
@@ -98,6 +99,10 @@ def generate_lts_settings(lts_metadata, results, import_settings):
 
     lts_settings.batch_size = results.tuning_config["per_device_train_batch_size"] * lts_settings.accelerator_count
     lts_settings.max_seq_length = results.tuning_config["max_seq_length"]
+
+    lts_settings.lora_rank = results.tuning_config.get("r")
+    lts_settings.lora_alpha = results.tuning_config.get("lora_alpha")
+    lts_settings.lora_dropout = results.tuning_config.get("lora_dropout")
 
     lts_settings.ci_engine = results.from_env.test.ci_engine
     lts_settings.run_id = results.from_env.test.run_id

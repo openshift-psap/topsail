@@ -31,6 +31,10 @@ class Settings(matbench_models.ExclusiveModel):
     max_seq_length: Optional[int]
     container_image: Optional[str]
 
+    lora_rank: Optional[int]
+    lora_dropout: Optional[float]
+    lora_alpha: Optional[int]
+
     replicas: Optional[int]
     accelerators_per_replica: Optional[int]
 

@@ -26,6 +26,10 @@ class Settings(matbench_models.ExclusiveModel):
     replicas: int
     accelerators_per_replica: int
 
+    lora_rank: Optional[int]
+    lora_dropout: Optional[float]
+    lora_alpha: Optional[int]
+
     ci_engine: str
     run_id: str
     test_path: str

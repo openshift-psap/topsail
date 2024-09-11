@@ -57,6 +57,10 @@ def generate_lts_settings(lts_metadata, results, import_settings):
         if lts_settings.tuning_method in ("none" , None):
             lts_settings.tuning_method = "full"
 
+        lts_settings.lora_rank = results.tuning_config.get("r")
+        lts_settings.lora_alpha = results.tuning_config.get("lora_alpha")
+        lts_settings.lora_dropout = results.tuning_config.get("lora_dropout")
+
     return lts_settings
 
 
