@@ -42,7 +42,9 @@ def generate_lts_settings(lts_metadata, results, import_settings):
         lts_settings.accelerator_count = results.job_config["gpu"]
         lts_settings.batch_size = results.tuning_config["per_device_train_batch_size"] * lts_settings.accelerator_count
         lts_settings.max_seq_length = results.tuning_config["max_seq_length"]
-        lts_settings.container_image = results.job_config["container_image"]
+        # Revert to this when fms-hf-tuning has meaningful tags
+        # lts_settings.container_image = results.job_config["container_image"].split("/")[-1]
+        lts_settings.container_image = results.test_config.get("fine_tuning.image_name")
 
         lts_settings.model_name = results.job_config["model_name"]
         lts_settings.tuning_method = results.tuning_config.get("peft_method", "none")
