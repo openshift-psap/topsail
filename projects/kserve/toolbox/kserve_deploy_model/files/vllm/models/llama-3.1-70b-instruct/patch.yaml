@@ -1,0 +1,19 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1
+    model:
+      storageUri: s3://psap-1474-blog-models/meta-llama/Meta-Llama-3.1-70B-Instruct/ 
+      args:
+      - --dtype=bfloat16
+      - --tensor-parallel-size=8
+      - --max-model-len=4096
+      resources:
+        requests:
+          nvidia.com/gpu: "8"
+        limits:
+          nvidia.com/gpu: "8"

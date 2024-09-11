@@ -65,6 +65,11 @@ def export_artifacts(artifacts_dirname, test_step=None):
         job_id = job[4:].replace("/job/", "_")
 
         run_id = f"middleware_jenkins/{job_id}/{build_number}"
+
+    elif os.environ.get("JOB_NAME") == "local-ci":
+        run_id = os.environ["TEST_RUN_IDENTIFIER"]
+        test_step = ''
+    
     else:
         logging.error("CI engine not recognized, cannot build the run id ...")
         raise ValueError("CI engine not recognized, cannot build the run id ...")
