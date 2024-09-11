@@ -23,6 +23,9 @@ class Settings(matbench_models.ExclusiveModel):
     max_seq_length: int
     container_image: str
 
+    replicas: int
+    accelerators_per_replica: int
+
     ci_engine: str
     run_id: str
     test_path: str

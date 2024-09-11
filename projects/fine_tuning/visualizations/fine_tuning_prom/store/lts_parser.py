@@ -39,7 +39,13 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.test_mode = import_settings.get("mode")
 
     if results.has_fine_tuning_dir:
-        lts_settings.accelerator_count = results.job_config["gpu"]
+        replicas = 1 + results.job_config.get("worker_replicas", 0)
+        accelerators_per_replica = results.job_config["gpu"]
+
+        lts_settings.replicas = replicas
+        lts_settings.accelerators_per_replica = accelerators_per_replica
+        lts_settings.accelerator_count = replicas * accelerators_per_replica
+
         lts_settings.batch_size = results.tuning_config["per_device_train_batch_size"] * lts_settings.accelerator_count
         lts_settings.max_seq_length = results.tuning_config["max_seq_length"]
         # Revert to this when fms-hf-tuning has meaningful tags
