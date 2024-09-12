@@ -227,9 +227,10 @@ ci_presets:
     matbench.lts.opensearch.instance: smoke
 
   gating_smoke:
+    extends: [gpu, use_smoke_os]
     matbench.lts.opensearch.export.enabled: true
     matbench.lts.regression_analyses.enabled: true
-
+    'ci_presets.light["tests.fine_tuning.test_settings.gpu"]': 1
   # ---
 
   quality_evaluation:
