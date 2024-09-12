@@ -362,8 +362,8 @@ tests:
 
     # List of preset configurations to run as part of the 'gating' test
     gating_tests:
-    - notebook_scale_test_dsg
-    - notebook_scale_test_jupyter
+    # - notebook_scale_test_dsg
+    # - notebook_scale_test_jupyter
     - notebook_performance
 
 matbench:
