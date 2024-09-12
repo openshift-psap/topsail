@@ -32,17 +32,9 @@ Toolbox Documentation
 * :doc:`capture_environment <Cluster.capture_environment>`	 Captures the cluster environment
 * :doc:`create_htpasswd_adminuser <Cluster.create_htpasswd_adminuser>`	 Create an htpasswd admin user.
 * :doc:`create_osd <Cluster.create_osd>`	 Create an OpenShift Dedicated cluster.
-* :doc:`deploy_aws_efs <Cluster.deploy_aws_efs>`	 Deploy AWS EFS CSI driver and configure AWS accordingly.
-* :doc:`deploy_ldap <Cluster.deploy_ldap>`	 Deploy OpenLDAP and LDAP Oauth
-* :doc:`deploy_minio_s3_server <Cluster.deploy_minio_s3_server>`	 Deploy Minio S3 server
-* :doc:`deploy_nfs_provisioner <Cluster.deploy_nfs_provisioner>`	 Deploy NFS Provisioner
-* :doc:`deploy_nginx_server <Cluster.deploy_nginx_server>`	 Deploy an NGINX HTTP server
-* :doc:`deploy_opensearch <Cluster.deploy_opensearch>`	 Deploy OpenSearch and OpenSearch-Dashboards
 * :doc:`deploy_operator <Cluster.deploy_operator>`	 Deploy an operator from OperatorHub catalog entry.
-* :doc:`deploy_redis_server <Cluster.deploy_redis_server>`	 Deploy a redis server
 * :doc:`destroy_ocp <Cluster.destroy_ocp>`	 Destroy an OpenShift cluster
 * :doc:`destroy_osd <Cluster.destroy_osd>`	 Destroy an OpenShift Dedicated cluster.
-* :doc:`download_to_pvc <Cluster.download_to_pvc>`	 Downloads the a dataset into a PVC of the cluster
 * :doc:`dump_prometheus_db <Cluster.dump_prometheus_db>`	 Dump Prometheus database into a file
 * :doc:`fill_workernodes <Cluster.fill_workernodes>`	 Fills the worker nodes with place-holder Pods with the maximum available amount of a given resource name.
 * :doc:`preload_image <Cluster.preload_image>`	 Preload a container image on all the nodes of a cluster.
@@ -50,7 +42,6 @@ Toolbox Documentation
 * :doc:`reset_prometheus_db <Cluster.reset_prometheus_db>`	 Resets Prometheus database, by destroying its Pod
 * :doc:`set_project_annotation <Cluster.set_project_annotation>`	 Set an annotation on a given project, or for any new projects.
 * :doc:`set_scale <Cluster.set_scale>`	 Ensures that the cluster has exactly `scale` nodes with instance_type `instance_type`
-* :doc:`undeploy_ldap <Cluster.undeploy_ldap>`	 Undeploy OpenLDAP and LDAP Oauth
 * :doc:`update_pods_per_node <Cluster.update_pods_per_node>`	 Update the maximum number of Pods per Nodes, and Pods per Core See alse: https://docs.openshift.com/container-platform/4.14/nodes/nodes/nodes-nodes-managing-max-pods.html
 * :doc:`upgrade_to_image <Cluster.upgrade_to_image>`	 Upgrades the cluster to the given image
 * :doc:`wait_fully_awake <Cluster.wait_fully_awake>`	 Waits for the cluster to be fully awake after Hive restart
@@ -264,8 +255,10 @@ Toolbox Documentation
 
                 
 * :doc:`generate_ansible_default_settings <Repo.generate_ansible_default_settings>`	 Generate the `defaults/main/config.yml` file of the Ansible roles, based on the Python definition.
+* :doc:`generate_middleware_ci_secret_boilerplate <Repo.generate_middleware_ci_secret_boilerplate>`	 Generate the boilerplace code to include a new secret in the Middleware CI configuration
 * :doc:`generate_toolbox_related_files <Repo.generate_toolbox_related_files>`	 Generate the rst document and Ansible default settings, based on the Toolbox Python definition.
 * :doc:`generate_toolbox_rst_documentation <Repo.generate_toolbox_rst_documentation>`	 Generate the `doc/toolbox.generated/*.rst` file, based on the Toolbox Python definition.
+* :doc:`send_job_completion_notification <Repo.send_job_completion_notification>`	 Send a *job completion* notification to github and/or slack about the completion of a test job.
 * :doc:`validate_no_broken_link <Repo.validate_no_broken_link>`	 Ensure that all the symlinks point to a file
 * :doc:`validate_no_wip <Repo.validate_no_wip>`	 Ensures that none of the commits have the WIP flag in their message title.
 * :doc:`validate_role_files <Repo.validate_role_files>`	 Ensures that all the Ansible variables defining a filepath (`project/*/toolbox/`) do point to an existing file.
@@ -304,3 +297,32 @@ Toolbox Documentation
 * :doc:`create_mcad_canary <Scheduler.create_mcad_canary>`	 Create a canary for MCAD Appwrappers and track the time it takes to be scheduled
 * :doc:`deploy_mcad_from_helm <Scheduler.deploy_mcad_from_helm>`	 Deploys MCAD from helm
 * :doc:`generate_load <Scheduler.generate_load>`	 Generate scheduler load
+
+``server``
+**********
+
+::
+
+    Commands relating to the deployment of servers on OpenShift
+    
+
+                
+* :doc:`deploy_ldap <Server.deploy_ldap>`	 Deploy OpenLDAP and LDAP Oauth
+* :doc:`deploy_minio_s3_server <Server.deploy_minio_s3_server>`	 Deploy Minio S3 server
+* :doc:`deploy_nginx_server <Server.deploy_nginx_server>`	 Deploy an NGINX HTTP server
+* :doc:`deploy_opensearch <Server.deploy_opensearch>`	 Deploy OpenSearch and OpenSearch-Dashboards
+* :doc:`deploy_redis_server <Server.deploy_redis_server>`	 Deploy a redis server
+* :doc:`undeploy_ldap <Server.undeploy_ldap>`	 Undeploy OpenLDAP and LDAP Oauth
+
+``storage``
+***********
+
+::
+
+    Commands relating to OpenShift file storage
+    
+
+                
+* :doc:`deploy_aws_efs <Storage.deploy_aws_efs>`	 Deploy AWS EFS CSI driver and configure AWS accordingly.
+* :doc:`deploy_nfs_provisioner <Storage.deploy_nfs_provisioner>`	 Deploy NFS Provisioner
+* :doc:`download_to_pvc <Storage.download_to_pvc>`	 Downloads the a dataset into a PVC of the cluster

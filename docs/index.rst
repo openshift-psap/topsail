@@ -1,6 +1,6 @@
-=================================
-Red Hat PSAP TOPSAIL toolbox
-=================================
+=================================================
+Red Hat PSAP TOPSAIL test orchestration framework
+=================================================
 
 .. toctree::
    :maxdepth: 3
@@ -8,30 +8,40 @@ Red Hat PSAP TOPSAIL toolbox
 
    intro
    contributing
-   changelog
 
-.. _psap_ci:
 
-.. toctree::
-   :maxdepth: 3
-   :caption: PSAP Operator CI
-
-   ci/intro
-   ci/files
-
-.. _psap_toolbox:
+.. _understanding_topsail:
 
 .. toctree::
    :maxdepth: 3
-   :caption: PSAP Toolbox
+   :caption: Understanding The Architecture
 
-   toolbox/cluster
-   toolbox/entitlement
-   toolbox/gpu_operator
-   toolbox/nfd
-   toolbox/nto
-   toolbox/sro
-   toolbox/local-ci
-   toolbox/repo
+   understanding/orchestration
+   understanding/toolbox
+   understanding/visualization
+
+.. _extending_topsail:
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Extending The Architecture
+
+   extending/orchestration
+   extending/toolbox
+   extending/visualization
+
+.. _topsail_toolbox:
+
+.. toctree::
+   :maxdepth: 4
+   :caption: TOPSAIL's Toolbox
+
+   toolbox.generated/index
+
+.. _topsail_orchetrations:
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Test Orchestrations
 
 Documentation generated on |today| from |release|.
