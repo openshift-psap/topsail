@@ -205,8 +205,8 @@ generate_matbench::generate_visualization() {
 
         step_idx=$((step_idx + 1))
         regression_analyses_retcode=0
-        matbench analyze-lts --lts_results_dirname "$MATBENCH_RESULTS_DIRNAME/lts" \
-            |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_analyze_lts.log" \
+        (cd "$ARTIFACT_DIR" ; matbench analyze-lts --lts_results_dirname "$MATBENCH_RESULTS_DIRNAME/lts" \
+            |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_analyze_lts.log") \
             || regression_analyses_retcode=$?
 
         if [[ $regression_analyses_retcode == 0 ]]; then
