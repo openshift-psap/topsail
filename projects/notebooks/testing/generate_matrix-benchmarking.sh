@@ -209,6 +209,8 @@ generate_matbench::generate_visualization() {
             |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_analyze_lts.log") \
             || regression_analyses_retcode=$?
 
+        rm -f .env.yaml
+
         if [[ $regression_analyses_retcode == 0 ]]; then
             _info "The regression analyses did not hit any issue."
         else
@@ -225,8 +227,6 @@ generate_matbench::generate_visualization() {
                 _info "An error code #$regression_analyses_retcode happened during the regression analyses, but the 'fail_test_on_regression_fail' flag is not set. Ignoring."
             fi
         fi
-
-        rm -f .env.yaml
     fi
 
     #
