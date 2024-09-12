@@ -27,6 +27,7 @@ class Settings(matbench_models.ExclusiveModel):
 
     model_name: Optional[str]
     tuning_method: Optional[str]
+    per_device_train_batch_size: Optional[int]
     batch_size: Optional[int]
     max_seq_length: Optional[int]
     container_image: Optional[str]
