@@ -29,6 +29,7 @@ class Settings(matbench_models.ExclusiveModel):
     lora_rank: Optional[int]
     lora_dropout: Optional[float]
     lora_alpha: Optional[int]
+    lora_modules: Optional[str]
 
     ci_engine: str
     run_id: str

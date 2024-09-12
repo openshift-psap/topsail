@@ -60,6 +60,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
         lts_settings.lora_rank = results.tuning_config.get("r")
         lts_settings.lora_alpha = results.tuning_config.get("lora_alpha")
         lts_settings.lora_dropout = results.tuning_config.get("lora_dropout")
+        lts_settings.lora_modules = ", ".join(sorted(results.tuning_config.get("lora_modules", []))) or None
 
     return lts_settings
 
