@@ -1,4 +1,4 @@
-import projects.core.visualizations.helpers.store.prom as core_prom_store
+import projects.matrix_benchmarking.visualizations.helpers.store.prom as helper_prom_store
 import matrix_benchmarking.plotting.prom as plotting_prom
 
 
@@ -21,7 +21,7 @@ def get_scheduling_metrics(cluster_role, register):
 
             plotting_prom.Plot(
                 {name: rq}, f"Prom: {name}", None, "Cores",
-                get_metrics=core_prom_store.get_metrics(cluster_role),
+                get_metrics=helper_prom_store.get_metrics(cluster_role),
                 get_legend_name=get_legend_name,
                 show_queries_in_title=True,
                 show_legend=False,
@@ -40,7 +40,7 @@ def get_scheduling_metrics(cluster_role, register):
 
             plotting_prom.Plot(
                 {name: rq}, f"Prom: {name}", None, "Count",
-                get_metrics=core_prom_store.get_metrics(cluster_role),
+                get_metrics=helper_prom_store.get_metrics(cluster_role),
                 get_legend_name=get_legend_name,
                 show_queries_in_title=True,
                 show_legend=True,
@@ -59,7 +59,7 @@ def get_scheduling_metrics(cluster_role, register):
 
             plotting_prom.Plot(
                 {name: rq}, f"Prom: {name}", None, "Attempt Count",
-                get_metrics=core_prom_store.get_metrics(cluster_role),
+                get_metrics=helper_prom_store.get_metrics(cluster_role),
                 get_legend_name=get_legend_name,
                 show_queries_in_title=True,
                 show_legend=True,
@@ -80,7 +80,7 @@ def get_scheduling_metrics(cluster_role, register):
         if register:
             plotting_prom.Plot(
                 metrics, f"Prom: Batch Jobs Status", None, "Job Count",
-                get_metrics=core_prom_store.get_metrics(cluster_role),
+                get_metrics=helper_prom_store.get_metrics(cluster_role),
                 get_legend_name=get_legend_name,
                 show_queries_in_title=False,
                 show_legend=True,
@@ -104,7 +104,7 @@ def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
     all_metrics = []
-    all_metrics += core_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS, gpu_container="pytorch")
+    all_metrics += helper_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS, gpu_container="pytorch")
     all_metrics += get_scheduling_metrics(cluster_role, register)
 
     all_metrics += [

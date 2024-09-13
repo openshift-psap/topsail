@@ -1,10 +1,10 @@
 import types
 import logging
-import json
+import json, yaml
 
 import dateutil.parser
 
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
 from . import prom as workload_prom
 
@@ -13,6 +13,7 @@ register_important_file = None # will be when importing store/__init__.py
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db"
 artifact_dirnames.RHODS_CAPTURE_STATE_DIR = "*__rhods__capture_state"
+artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tuning_job"
 artifact_paths = types.SimpleNamespace()
 
 IMPORTANT_FILES = [
@@ -23,6 +24,9 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.RHODS_CAPTURE_STATE_DIR}/ocp_version.yaml",
     f"{artifact_dirnames.RHODS_CAPTURE_STATE_DIR}/rhods.createdAt",
     f"{artifact_dirnames.RHODS_CAPTURE_STATE_DIR}/rhods.version",
+
+    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/src/config_final.json",
+    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/_ansible.play.yaml",
 
     f"*/test_start_end.json", f"test_start_end.json",
     "config.yaml",
@@ -40,19 +44,26 @@ def parse_always(results, dirname, import_settings):
 def parse_once(results, dirname):
     results.metrics = _extract_metrics(dirname)
 
-    results.test_uuid = core_helpers_store_parsers.parse_test_uuid(dirname)
-    results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
+    results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
+    results.test_config = helpers_store_parsers.parse_test_config(dirname)
     results.tests_timestamp = _find_test_timestamps(dirname)
 
     capture_state_dir = artifact_paths.CLUSTER_DUMP_PROM_DB_DIR
-    results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir) or {}
-    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
+    results.nodes_info = helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir) or {}
+    results.cluster_info = helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
     capture_state_dir = artifact_paths.RHODS_CAPTURE_STATE_DIR
-    results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
-    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
+    results.ocp_version = helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
+    results.rhods_info = helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
 
-    results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
+    results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
+
+    # won't be populated if FINE_TUNING_RUN_FINE_TUNING_DIR is missing
+    results.has_fine_tuning_dir = bool(artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR)
+
+    results.locations = _prepare_file_locations(dirname)
+    results.job_config = _parse_job_config(dirname)
+    results.tuning_config = _parse_tuning_config(dirname, results.locations.tuning_config_file)
 
 
 def _extract_metrics(dirname):
@@ -64,7 +75,7 @@ def _extract_metrics(dirname):
         "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
     }
 
-    return core_helpers_store_parsers.extract_metrics(dirname, db_files)
+    return helpers_store_parsers.extract_metrics(dirname, db_files)
 
 
 def _find_test_timestamps(dirname):
@@ -95,3 +106,44 @@ def _find_test_timestamps(dirname):
 
     logging.info(f"Found {len(test_timestamps)}x {FILENAME}")
     return test_timestamps
+
+
+def _prepare_file_locations(dirname):
+    locations = types.SimpleNamespace()
+
+
+    if artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR:
+        locations.tuning_config_file = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "src" / "config_final.json"
+    else:
+        locations.tuning_config_file = None
+
+    return locations
+
+
+def _parse_job_config(dirname):
+    job_config = {}
+
+    if not artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR:
+        return job_config
+
+    PREFIX = "fine_tuning_run_fine_tuning_job_"
+
+    with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "_ansible.play.yaml")) as f:
+        ansible_play = yaml.safe_load(f)
+
+    for k, v in ansible_play[0]["vars"].items():
+        if not k.startswith(PREFIX): continue
+
+        job_config[k.replace(PREFIX, "")] = v
+
+    return job_config
+
+
+def _parse_tuning_config(dirname, tuning_config_file_location):
+    if not tuning_config_file_location:
+        return {}
+
+    with open(register_important_file(dirname, tuning_config_file_location)) as f:
+        tuning_config = json.load(f)
+
+    return tuning_config

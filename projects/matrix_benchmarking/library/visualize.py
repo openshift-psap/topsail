@@ -77,7 +77,7 @@ def entrypoint(allow_no_config_file=False):
 def prepare_matbench():
 
     run.run(f"""
-    pip install --quiet --requirement "{TOPSAIL_DIR}/projects/core/subprojects/matrix-benchmarking/requirements.txt"
+    pip install --quiet --requirement "{TOPSAIL_DIR}/projects/matrix_benchmarking/subproject/requirements.txt"
     """)
 
 
@@ -187,11 +187,19 @@ def generate_opensearch_config_yaml_env(dest):
         yaml.dump(env_doc, f, indent=4)
 
 
+def get_lts_directory(common_args):
+    workload = common_args["workload"]
+    results_dirname = common_args["results_dirname"]
+
+    return env.ARTIFACT_DIR / "lts" / workload
+
+
 def call_download_lts(step_idx, common_args, common_env_str):
     download_args = common_args.copy()
 
-    download_args["lts_results_dirname"] = pathlib.Path(download_args.pop("results_dirname")) / "lts"
+    download_args["lts_results_dirname"] = get_lts_directory(common_args)
 
+    download_args.pop("results_dirname")
     download_args.pop("workload")
     download_args.pop("workload_base_dir")
     download_args["force"] = True
@@ -238,7 +246,7 @@ def call_upload_lts(step_idx, common_args, common_env_str):
 
 def call_analyze_lts(step_idx, common_args, common_env_str):
     analyze_args = common_args.copy()
-    analyze_args["lts_results_dirname"] = pathlib.Path(analyze_args["results_dirname"]) / "lts"
+    analyze_args["lts_results_dirname"] = get_lts_directory(common_args)
     analyze_args_str = " ".join(f"'--{k}={v}'" for k, v in analyze_args.items())
 
     log_file = env.ARTIFACT_DIR / f"{step_idx}_matbench_analyze_lts.log"

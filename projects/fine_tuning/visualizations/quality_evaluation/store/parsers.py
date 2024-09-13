@@ -12,8 +12,8 @@ import jsonpath_ng
 
 import matrix_benchmarking.cli_args as cli_args
 
-import projects.core.visualizations.helpers.store as core_helpers_store
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -36,20 +36,20 @@ IMPORTANT_FILES = [
 
 def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
-    results.from_local_env = core_helpers_store_parsers.parse_local_env(dirname)
+    results.from_local_env = helpers_store_parsers.parse_local_env(dirname)
 
     pass
 
 
 def parse_once(results, dirname):
-    results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
-    results.test_uuid = core_helpers_store_parsers.parse_test_uuid(dirname)
+    results.test_config = helpers_store_parsers.parse_test_config(dirname)
+    results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
 
     results.quality_evaluation = _parse_quality_evaluation_logs(dirname)
     results.quality_configuration = _parse_quality_configuration(dirname)
 
 
-@core_helpers_store_parsers.ignore_file_not_found
+@helpers_store_parsers.ignore_file_not_found
 def _parse_quality_evaluation_logs(dirname):
     quality_evaluation = None
     json_text = []

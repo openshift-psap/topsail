@@ -19,9 +19,18 @@ class Settings(matbench_models.ExclusiveModel):
 
     model_name: str
     tuning_method: str
+    per_device_train_batch_size: int
     batch_size: int
     max_seq_length: int
     container_image: str
+
+    replicas: int
+    accelerators_per_replica: int
+
+    lora_rank: Optional[int]
+    lora_dropout: Optional[float]
+    lora_alpha: Optional[int]
+    lora_modules: Optional[str]
 
     ci_engine: str
     run_id: str

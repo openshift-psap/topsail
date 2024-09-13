@@ -15,8 +15,8 @@ import jsonpath_ng
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store as store
 
-import projects.core.visualizations.helpers.store as core_helpers_store
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
 register_important_file = None # will be when importing store/__init__.py
 

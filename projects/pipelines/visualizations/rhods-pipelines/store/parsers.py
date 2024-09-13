@@ -15,8 +15,8 @@ import matrix_benchmarking.store.prom_db as store_prom_db
 
 from . import prom as rhods_pipelines_prom
 
-import projects.core.visualizations.helpers.store as core_helpers_store
-import projects.core.visualizations.helpers.store.parsers as core_helpers_store_parsers
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -68,12 +68,12 @@ def ignore_file_not_found(fn):
 
 def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
-    results.from_local_env = core_helpers_store_parsers.parse_local_env(dirname)
+    results.from_local_env = helpers_store_parsers.parse_local_env(dirname)
 
 
 def parse_once(results, dirname):
-    results.test_config = core_helpers_store_parsers.parse_test_config(dirname)
-    results.test_uuid = core_helpers_store_parsers.parse_test_uuid(dirname)
+    results.test_config = helpers_store_parsers.parse_test_config(dirname)
+    results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
 
     results.user_count = int(results.test_config.get("tests.pipelines.user_count"))
     results.success_count = _parse_success_count(dirname)
@@ -83,11 +83,11 @@ def parse_once(results, dirname):
     results.metrics = _extract_metrics(dirname)
 
     capture_state_dir = artifact_paths.NOTEBOOKS_CAPTURE_STATE
-    results.ocp_version = core_helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
-    results.rhods_info = core_helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
-    results.from_env = core_helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
-    results.nodes_info = core_helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
-    results.cluster_info = core_helpers_store_parsers.extract_cluster_info(results.nodes_info)
+    results.ocp_version = helpers_store_parsers.parse_ocp_version(dirname, capture_state_dir)
+    results.rhods_info = helpers_store_parsers.parse_rhods_info(dirname, capture_state_dir, results.test_config.get("rhods.catalog.version_name"))
+    results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
+    results.nodes_info = helpers_store_parsers.parse_nodes_info(dirname, capture_state_dir)
+    results.cluster_info = helpers_store_parsers.extract_cluster_info(results.nodes_info)
 
 
 @ignore_file_not_found
@@ -119,7 +119,7 @@ def _parse_user_progress(dirname, ci_pod_dir):
 
     progress = {}
     for idx, (key, date_str) in enumerate(progress_src.items()):
-        progress[f"progress_ts.{idx:03d}__{key}"] = datetime.datetime.strptime(date_str, core_helpers_store_parsers.SHELL_DATE_TIME_FMT)
+        progress[f"progress_ts.{idx:03d}__{key}"] = datetime.datetime.strptime(date_str, helpers_store_parsers.SHELL_DATE_TIME_FMT)
 
     return progress
 
@@ -137,7 +137,7 @@ def _parse_user_ansible_progress(dirname, ci_pod_dir):
                 logging.warning(f"Empty Ansible log file in {filename} :/")
                 continue
             ts_str = last_line.split(",")[0]
-            ts = datetime.datetime.strptime(ts_str, core_helpers_store_parsers.ANSIBLE_LOG_DATE_TIME_FMT)
+            ts = datetime.datetime.strptime(ts_str, helpers_store_parsers.ANSIBLE_LOG_DATE_TIME_FMT)
             ansible_progress[f"ansible.{step_name}"] = ts
 
     return ansible_progress
@@ -179,13 +179,13 @@ def _parse_tester_job(dirname):
     job_info.creation_time = \
         datetime.datetime.strptime(
             job["status"]["startTime"],
-            core_helpers_store_parsers.K8S_TIME_FMT)
+            helpers_store_parsers.K8S_TIME_FMT)
 
     if job["status"].get("completionTime"):
         job_info.completion_time = \
             datetime.datetime.strptime(
                 job["status"]["completionTime"],
-                core_helpers_store_parsers.K8S_TIME_FMT)
+                helpers_store_parsers.K8S_TIME_FMT)
     else:
         job_info.completion_time = job_info.creation_time + datetime.timedelta(hours=1)
 
@@ -210,7 +210,7 @@ def _extract_metrics(dirname):
         "dspa": (f"{artifact_paths.LOCAL_CI__RUN_MULTI}/prometheus_ocp.t*", rhods_pipelines_prom.get_dspa_metrics()),
     }
 
-    return core_helpers_store_parsers.extract_metrics(dirname, db_files)
+    return helpers_store_parsers.extract_metrics(dirname, db_files)
 
 
 @ignore_file_not_found
@@ -253,14 +253,14 @@ def _parse_pod_times(dirname, ci_pod_dir):
         pod_time.hostname = pod["spec"].get("nodeName")
 
         pod_time.creation_time = datetime.datetime.strptime(
-                pod["metadata"]["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+                pod["metadata"]["creationTimestamp"], helpers_store_parsers.K8S_TIME_FMT)
 
         start_time_str = pod["status"].get("startTime")
         pod_time.start_time = None if not start_time_str else \
-            datetime.datetime.strptime(start_time_str, core_helpers_store_parsers.K8S_TIME_FMT)
+            datetime.datetime.strptime(start_time_str, helpers_store_parsers.K8S_TIME_FMT)
 
         for condition in pod["status"].get("conditions", []):
-            last_transition = datetime.datetime.strptime(condition["lastTransitionTime"], core_helpers_store_parsers.K8S_TIME_FMT)
+            last_transition = datetime.datetime.strptime(condition["lastTransitionTime"], helpers_store_parsers.K8S_TIME_FMT)
 
             if condition["type"] == "ContainersReady":
                 pod_time.containers_ready = last_transition
@@ -274,7 +274,7 @@ def _parse_pod_times(dirname, ci_pod_dir):
             try:
                 finishedAt =  datetime.datetime.strptime(
                     containerStatus["state"]["terminated"]["finishedAt"],
-                    core_helpers_store_parsers.K8S_TIME_FMT)
+                    helpers_store_parsers.K8S_TIME_FMT)
             except KeyError: continue
 
             # take the last container_finished found
@@ -328,7 +328,7 @@ def _parse_resource_times(dirname, ci_pod_dir):
 
                 kind = item["kind"]
                 creationTimestamp = datetime.datetime.strptime(
-                    metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+                    metadata["creationTimestamp"], helpers_store_parsers.K8S_TIME_FMT)
 
                 name = metadata["name"]
                 generate_name, found, suffix = name.rpartition("-")
@@ -369,7 +369,7 @@ def _parse_workflow_run_names(dirname, ci_pod_dir):
 
                 kind = item["kind"]
                 creationTimestamp = datetime.datetime.strptime(
-                    metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+                    metadata["creationTimestamp"], helpers_store_parsers.K8S_TIME_FMT)
 
                 name = metadata["name"]
                 generate_name, found, suffix = name.rpartition("-")
@@ -413,7 +413,7 @@ def _parse_workflow_start_times(dirname, ci_pod_dir):
                 status = item["status"]
                 kind = item["kind"]
                 creationTimestamp = datetime.datetime.strptime(
-                    metadata["creationTimestamp"], core_helpers_store_parsers.K8S_TIME_FMT)
+                    metadata["creationTimestamp"], helpers_store_parsers.K8S_TIME_FMT)
 
                 name = metadata["name"]
                 generate_name, found, suffix = name.rpartition("-")
@@ -429,7 +429,7 @@ def _parse_workflow_start_times(dirname, ci_pod_dir):
                             root_node = node_spec
                             break
                     all_workflow_start_times[f"{name}"] = datetime.datetime.strptime(
-                        root_node["startedAt"], core_helpers_store_parsers.K8S_TIME_FMT)
+                        root_node["startedAt"], helpers_store_parsers.K8S_TIME_FMT)
 
     parse("workflow.json")
 

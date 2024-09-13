@@ -4,7 +4,6 @@ import sys, os
 import pathlib
 import subprocess
 import logging
-logging.getLogger().setLevel(logging.INFO)
 import datetime
 import time
 import functools
@@ -15,9 +14,11 @@ import json
 import yaml
 import fire
 
-from projects.core.library import env, config, run, visualize, sizing, common
+from projects.core.library import env, config, run, sizing, common, configure_logging
+configure_logging()
 from projects.rhods.library import prepare_rhoai
 from projects.local_ci.library import prepare_user_pods
+from projects.matrix_benchmarking.library import visualize
 
 PIPELINES_OPERATOR_MANIFEST_NAME = "openshift-pipelines-operator-rh"
 

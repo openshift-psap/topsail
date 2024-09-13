@@ -7,7 +7,7 @@ import json
 import matrix_benchmarking.store as store
 import matrix_benchmarking.store.simple as store_simple
 
-import projects.core.visualizations.helpers.store as core_helpers_store
+import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
 
 from . import parsers
 from . import lts_parser
@@ -17,12 +17,12 @@ from ..models import kpi as models_kpi
 CACHE_FILENAME = "cache.pickle"
 IMPORTANT_FILES = parsers.IMPORTANT_FILES
 
-class KserverLlmStore(core_helpers_store.BaseStore):
+class KserverLlmStore(helpers_store.BaseStore):
     def prepare_for_pickle(self, results):
         results.llm_load_test_config.get = None
 
     def prepare_after_pickle(self, results):
-        results.llm_load_test_config.get = core_helpers_store.get_yaml_get_key(
+        results.llm_load_test_config.get = helpers_store.get_yaml_get_key(
             results.llm_load_test_config.name,
             results.llm_load_test_config.yaml_file
         )

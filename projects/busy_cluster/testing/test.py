@@ -13,7 +13,8 @@ import uuid
 import yaml
 import fire
 
-from projects.core.library import env, config, run, visualize, export, common
+from projects.core.library import env, config, run, export, common
+from projects.matrix_benchmarking.library import visualize
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))

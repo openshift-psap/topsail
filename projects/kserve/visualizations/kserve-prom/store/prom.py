@@ -1,4 +1,4 @@
-import projects.core.visualizations.helpers.store.prom as core_prom_store
+import projects.matrix_benchmarking.visualizations.helpers.store.prom as helper_prom_store
 import matrix_benchmarking.plotting.prom.cpu_memory as plotting_prom_cpu_memory
 
 # ---
@@ -63,11 +63,11 @@ def _get_rhoai_resource_usage(cluster_role, register):
 
         if not register: continue
         plotting_prom_cpu_memory.Plot(cpu, f"Namespace {namespace}: CPU usage",
-                                      get_metrics=core_prom_store.get_metrics(cluster_role),
+                                      get_metrics=helper_prom_store.get_metrics(cluster_role),
                                       as_timestamp=True, container_name=namespace,
                                       )
         plotting_prom_cpu_memory.Plot(mem, f"Namespace {namespace}: Mem usage",
-                                      get_metrics=core_prom_store.get_metrics(cluster_role),
+                                      get_metrics=helper_prom_store.get_metrics(cluster_role),
                                       as_timestamp=True, is_memory=True,
                                       skip_nodes=False,
                                       )
@@ -80,7 +80,7 @@ def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
     all_metrics = []
-    all_metrics += core_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS, gpu_container="kserve-container")
+    all_metrics += helper_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS, gpu_container="kserve-container")
     all_metrics += _get_rhoai_resource_usage(cluster_role, register)
 
     return all_metrics
