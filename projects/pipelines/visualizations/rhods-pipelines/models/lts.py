@@ -15,6 +15,9 @@ class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
 
     instance_type: str
+    user_count: int
+    run_count: int
+    project_count: int
 
     ocp_version: matbench_models.SemVer
     rhoai_version: matbench_models.SemVer

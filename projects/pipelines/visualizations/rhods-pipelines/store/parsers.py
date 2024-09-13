@@ -76,6 +76,8 @@ def parse_once(results, dirname):
     results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
 
     results.user_count = int(results.test_config.get("tests.pipelines.user_count"))
+    results.run_count = int(results.test_config.get("tests.pipelines.pipelines_per_user"))
+    results.project_count = int(results.test_config.get("tests.pipelines.project_count"))
     results.success_count = _parse_success_count(dirname)
     results.user_data = _parse_user_data(dirname, results.user_count)
     results.tester_job = _parse_tester_job(dirname)
