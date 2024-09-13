@@ -224,7 +224,7 @@ def prepare_cluster():
 
     num_projects = int(config.ci_artifacts.get_config("tests.pipelines.project_count"))
     namespace_prefix = config.ci_artifacts.get_config("rhods.pipelines.namespace")
-    project_delay = int(config.ci_artifacts.get_config("test.pipelines.sleep_factor"))
+    project_delay = int(config.ci_artifacts.get_config("tests.pipelines.sleep_factor"))
     for n in range(num_projects):
         namespace = f"{namespace_prefix}-n{n}"
         dspa_name = f"n{n}-sample"
