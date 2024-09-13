@@ -8,6 +8,17 @@ set -o nounset
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+save_run_logs() {
+    LOG_FILE=$ARTIFACT_DIR/run.log
+    if [[ -f "$LOG_FILE" ]]; then
+        mkdir -p "$ARTIFACT_DIR/_WARNING"
+        msg="WARNING: run: log file $LOG_FILE already exists"
+        echo $msg | tee -a "$ARTIFACT_DIR/_WARNING/msg"
+
+    fi
+    exec &> >(tee -a "$LOG_FILE")
+}
+
 ci_banner() {
     echo "===> Running PSAP CI Test suite <==="
 
@@ -64,15 +75,6 @@ prechecks() {
             oc get pods -n "$LOCAL_CI_NAMESPACE" | tee -a "$ARTIFACT_DIR/_ERROR"
             exit 1
         fi
-
-        LOG_FILE=$ARTIFACT_DIR/run.log
-        if [[ -f "$LOG_FILE" ]]; then
-            mkdir -p "$ARTIFACT_DIR/_WARNING"
-            msg="WARNING: run: log file $LOG_FILE already exists"
-            echo $msg | tee -a "$ARTIFACT_DIR/_WARNING/msg"
-
-        fi
-        exec &> >(tee -a "$LOG_FILE")
     fi
 
     if [[ "${OPENSHIFT_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
@@ -191,6 +193,7 @@ list_available() {
 ##############
 
 if [[ "${INSIDE_RUN:-}" != "y" ]]; then
+    save_run_logs
     ci_banner "$@"
     prechecks
     echo
