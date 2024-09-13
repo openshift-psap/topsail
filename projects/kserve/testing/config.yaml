@@ -297,7 +297,8 @@ ci_presets:
   rhoai_inference_performance_blog_setup:
     extends: [serverless, vllm, e2e_perf, metal]
     tests.e2e.models:
-    - name: llama-3.1-8b-instruct
+    - name: llama-3-1-8b-instruct
+      model: llama-3.1-8b-instruct
       testing:
         size: small
         max_concurrency: 256
