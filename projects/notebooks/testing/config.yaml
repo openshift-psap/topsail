@@ -302,7 +302,7 @@ tests:
       # mode in which the ODS-CI test should be executed
       image:
         repo: https://github.com/red-hat-data-services/ods-ci.git
-        ref: master
+        ref: releases/2.13.0
       # tags to exclude when running the robot test case
       excluded_tags: None
       # if true, only create the notebooks but don't start them
