@@ -160,8 +160,17 @@ ci_presets:
     tests.pipelines.project_count: 5
     tests.pipelines.capture_extra_artifacts: false
 
+  large_mcr:
+    tests.pipelines.max_concurrent_reconciles: 25
+
   gating:
-    extends: [sequential]
+    matbench.lts.opensearch.export.enabled: true
+    matbench.lts.regression_analyses.enabled: true
+    matbench.lts.regression_analyses.fail_test_on_regression: false # not yet
+
+
+  gating_test:
+    extends: [sequential, gating]
     tests.pipelines.user_count: 50
     tests.pipelines.pipelines_per_user: 1
     tests.pipelines.user_pipeline_delay: 1
@@ -171,13 +180,6 @@ ci_presets:
     tests.pipelines.sleep_factor: 5
     tests.pipelines.capture_extra_artifacts: false
 
-  large_mcr:
-    tests.pipelines.max_concurrent_reconciles: 25
-
-  gating:
-    matbench.lts.opensearch.export.enabled: true
-    matbench.lts.regression_analyses.enabled: true
-    matbench.lts.regression_analyses.fail_test_on_regression: false # not yet
 secrets:
   dir:
     name: psap-ods-secret
