@@ -11,7 +11,10 @@ spec:
       args:
       - --dtype=bfloat16
       - --tensor-parallel-size=1
-      - --max-model-len=4096 
+      - --max-model-len=4096
+      - --gpu-memory-utilization=0.95
+      - --num-scheduler-steps=5
+      - --enable-chunked-prefill
       resources:
         requests:
           nvidia.com/gpu: "1"

@@ -6,9 +6,13 @@ spec:
   predictor:
     model:
       storageUri: s3://psap-hf-models/granite-8b-code-instruct/granite-8b-code-instruct
-      # args:
-      # - --tensor-parallel-size=1
-      # - --max-model-len=4096
+      args:
+      - --dtype=bfloat16
+      - --tensor-parallel-size=1
+      - --max-model-len=4096
+      - --gpu-memory-utilization=0.95
+      - --num-scheduler-steps=5
+      - --enable-chunked-prefill
       resources:
         requests:
           cpu: "2"
