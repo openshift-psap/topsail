@@ -8,6 +8,17 @@ set -o nounset
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+save_run_logs() {
+    LOG_FILE=$ARTIFACT_DIR/run.log
+    if [[ -f "$LOG_FILE" ]]; then
+        mkdir -p "$ARTIFACT_DIR/_WARNING"
+        msg="WARNING: run: log file $LOG_FILE already exists"
+        echo $msg | tee -a "$ARTIFACT_DIR/_WARNING/msg"
+
+    fi
+    exec &> >(tee -a "$LOG_FILE")
+}
+
 ci_banner() {
     echo "===> Running PSAP CI Test suite <==="
 
@@ -64,15 +75,6 @@ prechecks() {
             oc get pods -n "$LOCAL_CI_NAMESPACE" | tee -a "$ARTIFACT_DIR/_ERROR"
             exit 1
         fi
-
-        LOG_FILE=$ARTIFACT_DIR/run.log
-        if [[ -f "$LOG_FILE" ]]; then
-            mkdir -p "$ARTIFACT_DIR/_WARNING"
-            msg="WARNING: run: log file $LOG_FILE already exists"
-            echo $msg | tee -a "$ARTIFACT_DIR/_WARNING/msg"
-
-        fi
-        exec &> >(tee -a "$LOG_FILE")
     fi
 
     if [[ "${OPENSHIFT_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
@@ -118,7 +120,7 @@ prechecks() {
     echo "Saving TOPSAIL git version into ${ARTIFACT_DIR}/topsail.git_version"
     (git describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/topsail.git_version
     # store `matrix-benchmarking` version in use
-    (git -C "$THIS_DIR/../projects/core/subprojects/matrix-benchmarking" describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/matbench.git_version
+    (git -C "$THIS_DIR/../projects/matrix_benchmarking/subproject/" describe HEAD --long --always || echo "git missing") > ${ARTIFACT_DIR}/matbench.git_version
 
     if [[ "${PULL_NUMBER:-}" ]]; then
         PR_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PULL_NUMBER"
@@ -191,6 +193,7 @@ list_available() {
 ##############
 
 if [[ "${INSIDE_RUN:-}" != "y" ]]; then
+    save_run_logs
     ci_banner "$@"
     prechecks
     echo
