@@ -297,19 +297,23 @@ ci_presets:
   rhoai_inference_performance_blog_setup:
     extends: [serverless, vllm, e2e_perf, metal]
     tests.e2e.models:
-    - name: phi-2
+    - name: llama-3.1-8b-instruct
       testing:
-        size: small  # Determines the dataset size
-        max_concurrency: 1  # I guess, it defines cap on the concurrency
+        size: small
+        max_concurrency: 256
+    - name: granite-8b-code-instruct
+      testing:
+        size: small
+        max_concurrency: 256
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.enabled: true
-    tests.e2e.llm_load_test.args.duration: 60 
+    tests.e2e.llm_load_test.args.duration: 180
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256]    #Also supports List
     tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
     export_artifacts.enabled: true 
     export_artifacts.bucket: psap-1474-results
-    export_artifacts.path_prefix: dry-run
+    export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge
   ##### PSAP 1474 End of Setup
 
   # --
