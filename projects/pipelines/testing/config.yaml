@@ -180,6 +180,17 @@ ci_presets:
     tests.pipelines.sleep_factor: 5
     tests.pipelines.capture_extra_artifacts: false
 
+  gating_smoke:
+    extends: [sequential, gating]
+    tests.pipelines.user_count: 5
+    tests.pipelines.pipelines_per_user: 1
+    tests.pipelines.user_pipeline_delay: 1
+    tests.pipelines.runs_per_pipeline: 1
+    tests.pipelines.run_delay: 5
+    tests.pipelines.project_count: 1
+    tests.pipelines.sleep_factor: 5
+    tests.pipelines.capture_extra_artifacts: true
+
 secrets:
   dir:
     name: psap-ods-secret
