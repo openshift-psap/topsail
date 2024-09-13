@@ -3,7 +3,7 @@ import logging
 
 import logging
 
-import projects.core.visualizations.helpers.analyze as core_helpers_analyze
+import projects.matrix_benchmarking.visualizations.helpers.analyze as helpers_analyze
 
 from ..store import _rewrite_settings
 
@@ -20,6 +20,8 @@ IGNORED_ENTRIES = {
 }
 
 def prepare():
-    return core_helpers_analyze.prepare_regression_data(COMPARISON_KEYS, IGNORED_KEYS, _rewrite_settings,
-                                                        sorting_keys=SORTING_KEYS,
-                                                        ignored_entries=IGNORED_ENTRIES)
+    return helpers_analyze.prepare_regression_data(
+        COMPARISON_KEYS, IGNORED_KEYS, _rewrite_settings,
+        sorting_keys=SORTING_KEYS,
+        ignored_entries=IGNORED_ENTRIES
+    )
