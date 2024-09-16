@@ -222,15 +222,6 @@ def prepare_cluster():
         parallel.delayed(prepare_sutest_scale_up)
         parallel.delayed(prepare_rhods)
 
-    num_projects = int(config.ci_artifacts.get_config("tests.pipelines.project_count"))
-    namespace_prefix = config.ci_artifacts.get_config("rhods.pipelines.namespace")
-    project_delay = int(config.ci_artifacts.get_config("tests.pipelines.sleep_factor"))
-    for n in range(num_projects):
-        namespace = f"{namespace_prefix}-n{n}"
-        dspa_name = f"n{n}-sample"
-        prepare_project(namespace, dspa_name)
-        time.sleep(project_delay)
-
     # Update the MAX_CONCURRENT_RECONCILES if needed
     max_concurrent_reconciles = config.ci_artifacts.get_config("tests.pipelines.max_concurrent_reconciles")
     if max_concurrent_reconciles is not None:
@@ -395,6 +386,16 @@ def test_ci():
 
     cleanup_scale_test()
     prepare_user_pods.apply_prefer_pr()
+
+    # Pre-deploy projects for all users
+    num_projects = int(config.ci_artifacts.get_config("tests.pipelines.project_count"))
+    namespace_prefix = config.ci_artifacts.get_config("rhods.pipelines.namespace")
+    project_delay = int(config.ci_artifacts.get_config("tests.pipelines.sleep_factor"))
+    for n in range(num_projects):
+        namespace = f"{namespace_prefix}-n{n}"
+        dspa_name = f"n{n}-sample"
+        prepare_project(namespace, dspa_name)
+        time.sleep(project_delay)
 
     try:
         test_artifact_dir_p = [None]
