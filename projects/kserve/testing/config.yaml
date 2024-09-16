@@ -316,7 +316,7 @@ ci_presets:
     matbench.lts.opensearch.export.enabled: false
     export_artifacts.enabled: true 
     export_artifacts.bucket: psap-1474-results
-    export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge
+    export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge-vllm-0.6.1-with-multi-step-scheduling
   ##### PSAP 1474 End of Setup
 
   # --
