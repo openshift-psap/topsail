@@ -157,11 +157,11 @@ ci_presets:
        - ibm-granite/granite-20b-code-base
        hyper_parameters:
          raw_lists: {target_modules: ["c_attn", "c_proj"]}
-    - name: granite-7b
-      model_name:
-      - ibm-granite/granite-7b-base
-      hyper_parameters:
-        raw_lists: {target_modules: ["q_attn", "v_proj"]}
+     - name: granite-7b
+       model_name:
+       - ibm-granite/granite-7b-base
+       hyper_parameters:
+         raw_lists: {target_modules: ["q_attn", "v_proj"]}
 
   dgx_multi_model_8:
     extends: [multi_model]
