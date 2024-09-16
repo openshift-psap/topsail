@@ -310,6 +310,8 @@ ci_presets:
     tests.e2e.llm_load_test.enabled: true
     tests.e2e.llm_load_test.args.duration: 180
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256]    #Also supports List
+    kserve.model.serving_runtime.update_image: false
+    kserve.model.serving_runtime.kserve.image: quay.io/opendatahub/vllm@sha256:3c754a3dd2a42300407bd80c375d60e1b61377d9b0ed29f1049d6942b933063a
     tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
     export_artifacts.enabled: true 
