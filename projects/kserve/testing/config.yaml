@@ -308,15 +308,15 @@ ci_presets:
         max_concurrency: 256 
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.enabled: true
-    tests.e2e.llm_load_test.args.duration: 60 
-    tests.e2e.llm_load_test.args.concurrency: [256]    #Also supports List
+    tests.e2e.llm_load_test.args.duration: 180
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256]    #Also supports List
     kserve.model.serving_runtime.update_image: false
     kserve.model.serving_runtime.kserve.image: quay.io/opendatahub/vllm@sha256:d3d500464446e9b8af3b8a544f2b5693e55c0a2dba01de50dd34e8c93c026114
     tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
     export_artifacts.enabled: true 
     export_artifacts.bucket: psap-1474-results
-    export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge-vllm-0.6.1
+    export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge-vllm-0.6.1-with-multi-step-scheduling
   ##### PSAP 1474 End of Setup
 
   # --
