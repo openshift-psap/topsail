@@ -1,6 +1,0 @@
----
-serving_runtime_template: templates/serving_runtime.yml.j2
-inference_service_template: templates/inference_service.yml.j2
-model_serving_config_template: templates/model_serving_config.yml.j2
-wisdom_tester_pod: templates/wisdom-tester_pod.yml.j2
-wisdom_tester_entrypoint: projects/lightspeed/roles/wisdom_deploy_model/files/entrypoint.sh

@@ -361,7 +361,7 @@ fine_tuning:
 
     synthetic_dataset.txt:
       type: dataset
-      source_dir: https://raw.githubusercontent.com/openshift-psap/topsail/main/projects/fine_tuning/roles/fine_tuning_run_fine_tuning_job/files/entrypoint/
+      source_dir: https://raw.githubusercontent.com/openshift-psap/topsail/main/projects/fine_tuning/toolbox/fine_tuning_run_fine_tuning_job/files/entrypoint/
       transform: generate_synthetic_dataset.py
 
     news-tokens-16384plus-entries-4096.jsonl:

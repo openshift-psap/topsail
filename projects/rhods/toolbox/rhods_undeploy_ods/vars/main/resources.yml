@@ -1,0 +1,1 @@
+rhods_undeploy_ods_delete_cm: "{{ role_path }}/files/cm_delete.yml"

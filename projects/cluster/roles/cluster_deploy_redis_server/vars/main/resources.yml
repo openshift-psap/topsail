@@ -1,2 +1,0 @@
----
-cluster_deploy_redis_server_deployment: projects/cluster/roles/cluster_deploy_redis_server/files/deploy_redis.yaml

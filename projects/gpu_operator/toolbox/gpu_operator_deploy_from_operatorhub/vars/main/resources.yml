@@ -1,0 +1,4 @@
+---
+gpu_operator_resource_namespace_file: "{{ role_path }}/files/010_namespace.yml"
+gpu_operator_operatorhub_group: templates/010_operator_group.yml.j2
+gpu_operator_operatorhub_sub: templates/020_operator_sub.yml.j2

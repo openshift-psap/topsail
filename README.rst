@@ -53,10 +53,10 @@ TOPSAIL provides multiple levels of functionalities:
    component. The test orchestration Python code and configuration is
    stored in the ``projects/*/testing`` directory.
 2. the toolbox commands operate between the orchestration code and the
-   cluster. They are Ansible roles (``projects/*/roles``), in charge of
-   a specific task to prepare the cluster, run a given test, capture
-   the state of the cluster ... The Ansible roles have a thin Python
-   layer on top of them (based on the `Google Fire
+   cluster. They are Ansible roles (``projects/*/toolbox``), in charge
+   of a specific task to prepare the cluster, run a given test,
+   capture the state of the cluster ... The Ansible roles have a thin
+   Python layer on top of them (based on the `Google Fire
    <https://github.com/google/python-fire>`_ package) which provides a
    well-defined command-line interface (CLI). This CLI interface
    documents the parameters of the command, it allows its discovery
@@ -80,10 +80,10 @@ above.
   entrypoints (``test.py prepare_ci`` and ``test.py run_ci``) and possibly
   extra entrypoints for local interactions. It also contains the
   project configuration file (``config.yaml``)
-* the ``roles`` directory contains the Ansible roles that controls and
+* the ``toolbox`` directory contains the Ansible roles that controls and
   mutates the cluster during the cluster preparation and test
-* the ``toolbox`` directory contains the Python wrapper which provides a
-  well-defined CLI over the Ansible roles
+* the ``toolbox`` directory also contains the Python wrapper which
+  provides a well-defined CLI over the Ansible roles
 * the ``visualization`` directory contains the MatrixBenchmarking
   workload modules, which perform the post-processing step of the test
   (parsing, visualization, regression analyze)

@@ -88,7 +88,7 @@ def rebuild_driver_image(namespace, pr_number):
 
 
 def compute_driver_node_requirement(user_count):
-    # must match 'roles/local_ci/local_ci_run_multi/templates/job.yaml.j2'
+    # must match 'project/local_ci/toolbox/local_ci_run_multi/templates/job.yaml.j2'
     kwargs = dict(
         cpu = 0.250,
         memory = 2,

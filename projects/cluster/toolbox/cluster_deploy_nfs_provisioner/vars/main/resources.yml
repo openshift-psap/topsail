@@ -1,0 +1,2 @@
+---
+nfs_provisioner_files: "{{ role_path }}/files/nfs-server-and-provisioner/deploy"

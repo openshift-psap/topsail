@@ -1,0 +1,2 @@
+---
+reconfigure_machineset: "{{ role_path }}/scripts/reconfigure_machineset.sh"

@@ -1,0 +1,4 @@
+---
+notebooks_locust_scale_test_job: templates/locust_job.yaml
+notebooks_locust_scale_test_entrypoint_directory: "{{ role_path }}/files/locust-files"
+notebooks_locust_scale_test_s3_artifacts_exporter_sidecar: "{{ role_path }}/files/s3-artifacts-exporter.sh"

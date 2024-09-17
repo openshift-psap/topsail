@@ -1,2 +1,0 @@
-trimaran_setup_template: "projects/load-aware/roles/load_aware_deploy_trimaran/templates/trimaran.yaml.j2"
-trimaran_deploy_defaults: "projects/load-aware/roles/load_aware_deploy_trimaran/defaults/main/config.yml"

@@ -23,7 +23,7 @@ jobs:
 
     - name: Set ANSIBLE_ROLES_PATH
       run: |
-        EXTRA_ANSIBLE_ROLES_PATH=$(find "$(realpath ./projects)" -type d -name roles -print | tr '\n' ':')
+        EXTRA_ANSIBLE_ROLES_PATH=$(find "$(realpath ./projects)" -type d -name toolbox -print | tr '\n' ':')
         if [ -n "$ANSIBLE_ROLES_PATH" ]; then
           ANSIBLE_ROLES_PATH="$ANSIBLE_ROLES_PATH:$EXTRA_ANSIBLE_ROLES_PATH"
         else
@@ -45,8 +45,7 @@ jobs:
         #   playbook_1.yml
         #   playbook_2.yml
         targets: |
-          playbooks
-          roles
+          toolbox
         # [optional]
         # Arguments to override a package and its version to be set explicitly.
         # Must follow the example syntax.

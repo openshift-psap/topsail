@@ -1,0 +1,3 @@
+---
+load_timeline_generator: "{{ role_path }}/files/timeline.py"
+pod_start_scheduler: "{{ role_path }}/files/scheduler.py"

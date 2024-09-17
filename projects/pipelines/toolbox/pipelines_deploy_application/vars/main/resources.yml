@@ -1,0 +1,2 @@
+---
+pipelines_deploy_application_app_template: templates/application.yaml.j2

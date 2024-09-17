@@ -1,2 +1,0 @@
----
-reconfigure_machineset: projects/cluster/roles/cluster_ensure_machineset/scripts/reconfigure_machineset.sh

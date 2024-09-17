@@ -1,6 +1,0 @@
----
-utils_image_buildconfig: templates/image_buildconfig.yml.j2
-
-utils_helper_image_buildconfig: templates/helper_buildconfig.yml.j2
-utils_helper_image_push_script: projects/cluster/roles/cluster_build_push_image/files/run-image-push.sh
-utils_helper_image_push_pod: templates/push_helper_pod.yml.j2

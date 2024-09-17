@@ -1,0 +1,4 @@
+---
+entrypoint: '{{ role_path }}/files/entrypoint.sh'
+pod_template: 'templates/pod.yml.j2'
+pvc_template: 'templates/pvc.yml.j2'

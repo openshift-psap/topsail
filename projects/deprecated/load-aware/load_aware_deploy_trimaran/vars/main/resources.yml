@@ -1,0 +1,4 @@
+---
+user_applications_monitor_config: "{{ role_path }}/files/cluster-monitoring-config.yaml"
+trimaran_test_pod: "{{ role_path }}/files/trimaran-test-pod.yaml"
+trimaran_setup_template: "templates/trimaran.yaml.j2"

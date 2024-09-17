@@ -1,8 +1,0 @@
----
-notebooks_dashboard_scale_test_job: "templates/ods-ci_job.yaml"
-# The files below are directly accessed by the shell tasks. The paths _must_ work from the main topsail directory
-# it should be possible to re-write the corresponding tasks to use ansible lookup() function to avoid that.
-notebooks_dashboard_scale_test_entrypoint: "projects/notebooks/roles/notebooks_dashboard_scale_test/files/entrypoint.sh"
-notebooks_dashboard_scale_test_state_signal_barrier: "projects/notebooks/roles/notebooks_dashboard_scale_test/files/state-signal_barrier.py"
-notebooks_dashboard_scale_test_s3_artifacts_exporter_sidecar: "projects/notebooks/roles/notebooks_dashboard_scale_test/files/s3-artifacts-exporter.sh"
-notebooks_dashboard_scale_test_test_case_directory: "projects/notebooks/roles/notebooks_dashboard_scale_test/files/ods-ci/"

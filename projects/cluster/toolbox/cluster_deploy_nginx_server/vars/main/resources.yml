@@ -1,0 +1,3 @@
+---
+cluster_deploy_nginx_server_deployment: templates/deploy_nginx.yaml.j2
+cluster_deploy_nginx_server_config_file: templates/nginx.conf.j2

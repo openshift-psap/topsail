@@ -1,0 +1,4 @@
+---
+gpu_burn_pod: templates/gpu_burn_pod.yml
+gpu_burn_entrypoint: "{{ role_path }}/files/entrypoint.sh"
+gpu_burn_src_dir: "{{ role_path }}/files/gpu-burn"

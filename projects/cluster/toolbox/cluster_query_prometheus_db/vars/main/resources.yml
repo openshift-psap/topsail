@@ -1,0 +1,2 @@
+---
+query_prometheus: "{{ role_path }}/files/query_prometheus.py"

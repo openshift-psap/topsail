@@ -309,7 +309,7 @@ tests:
       only_create_notebooks: false
       stop_notebooks_on_exit: true
     test_pods:
-      # must be consistent with roles/notebooks_ods_ci_scale_test/templates/ods-ci_job.yaml
+      # must be consistent with projects/notebooks/toolbox/notebooks_ods_ci_scale_test/templates/ods-ci_job.yaml
       size:
         cpu: 0.2
         mem_gi: 0.75

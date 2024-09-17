@@ -1,0 +1,2 @@
+---
+pipelines_run_kfp_notebook_benchmark_notebook_template: templates/notebook.yaml

@@ -36,7 +36,7 @@ def _generate_config(component):
     for arg in doc.args or {}:
         args[arg.name] = arg
 
-    roles_dir = pathlib.Path(component.__module__.replace(".", "/")).parent.parent / "roles"
+    roles_dir = pathlib.Path(component.__module__.replace(".", "/")).parent.parent / "toolbox"
 
     dest = TOPSAIL_DIR / roles_dir / component.ansible_role / "defaults" / "main" / "config.yml"
 

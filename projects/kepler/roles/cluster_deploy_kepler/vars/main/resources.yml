@@ -1,2 +1,0 @@
-kepler_service_monitor: projects/kepler/roles/cluster_deploy_kepler/files/kepler-monitor.yaml
-kepler_location: /tmp/kepler

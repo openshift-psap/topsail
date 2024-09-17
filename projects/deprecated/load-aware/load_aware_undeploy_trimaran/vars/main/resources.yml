@@ -1,0 +1,3 @@
+---
+trimaran_setup_template: "templates/trimaran.yaml.j2"
+trimaran_deploy_defaults: "defaults/main/config.yml"

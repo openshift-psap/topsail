@@ -1,0 +1,2 @@
+---
+cluster_deploy_minio_s3_server_deployment: "{{ role_path }}/files/deploy_minio.yaml"
