@@ -18,7 +18,7 @@ class Nfd_Operator:
     @AnsibleMappedParams
     def deploy_from_operatorhub(self, channel=''):
         """
-        Deploys the GPU Operator from OperatorHub
+        Deploys the NFD Operator from OperatorHub
 
         Args:
             channel: The operator hub channel to deploy. e.g. 4.7

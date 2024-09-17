@@ -3,8 +3,8 @@ Contributing
 
 Thanks for taking the time to contribute!
 
-The following is a set of guidelines for contributing to ``TOPSAIL``. 
-These are mostly guidelines, feel free to propose changes to this 
+The following is a set of guidelines for contributing to ``TOPSAIL``.
+These are mostly guidelines, feel free to propose changes to this
 document in a pull request.
 
 ---
@@ -13,7 +13,7 @@ The primary goal of the repository is to serve as a central repository of the
 PSAP team's performance and scale test automation.
 
 The secondary goal of the repository is to offer a toolbox for setup
-and configuration of the cluster for consistently preparing the 
+and configuration of the cluster for consistently preparing the
 systems-under-test for manual experimentation and test development.
 
 Getting Started
@@ -156,7 +156,7 @@ folder, their structure is standard to Ansible like the following:
 
 .. code:: bash
 
-   roles/
+   toolbox/
    └── roles-example/
        ├── defaults
        │   └── main.yml

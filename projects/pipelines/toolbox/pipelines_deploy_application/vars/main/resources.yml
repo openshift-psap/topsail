@@ -1,1 +1,2 @@
-pipelines_deploy_application_app_template: projects/pipelines/roles/pipelines_deploy_application/templates/application.yaml.j2
+---
+pipelines_deploy_application_app_template: templates/application.yaml.j2

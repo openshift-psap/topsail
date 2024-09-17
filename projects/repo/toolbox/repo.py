@@ -20,7 +20,7 @@ class Repo:
     def validate_role_files():
         """
         Ensures that all the Ansible variables defining a
-        filepath (`roles/`) do point to an existing file.
+        filepath (`project/*/toolbox/`) do point to an existing file.
         """
         exit(role_files_main())
 

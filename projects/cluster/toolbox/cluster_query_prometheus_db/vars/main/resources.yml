@@ -1,2 +1,2 @@
 ---
-query_prometheus: projects/cluster/roles/cluster_query_prometheus_db/files/query_prometheus.py
+query_prometheus: "{{ role_path }}/files/query_prometheus.py"

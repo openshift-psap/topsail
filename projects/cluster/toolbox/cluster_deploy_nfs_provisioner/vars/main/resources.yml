@@ -1,2 +1,2 @@
 ---
-nfs_provisioner_files: projects/cluster/roles/cluster_deploy_nfs_provisioner/files/nfs-server-and-provisioner/deploy
+nfs_provisioner_files: "{{ role_path }}/files/nfs-server-and-provisioner/deploy"

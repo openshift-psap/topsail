@@ -1,3 +1,3 @@
 ---
-cluster_deploy_nginx_server_deployment: projects/cluster/roles/cluster_deploy_nginx_server/templates/deploy_nginx.yaml.j2
-cluster_deploy_nginx_server_config_file: projects/cluster/roles/cluster_deploy_nginx_server/templates/nginx.conf.j2
+cluster_deploy_nginx_server_deployment: templates/deploy_nginx.yaml.j2
+cluster_deploy_nginx_server_config_file: templates/nginx.conf.j2

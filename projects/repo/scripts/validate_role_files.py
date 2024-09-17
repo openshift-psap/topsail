@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 # This script ensures that all the Ansible variables defining a
-# filepath (`roles/`) do point to an existing file.
+# filepath (`projects/*/toolbox/`) do point to an existing file.
 
 import os
 import sys
@@ -13,8 +13,8 @@ logging.getLogger().setLevel(logging.INFO)
 SCRIPT_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TOPSAIL_DIR = SCRIPT_THIS_DIR.parent.parent.parent
 
-ROLES_VARS_GLOB = "projects/*/roles/*/vars/*/*"
-FILE_PREFIX = "roles/"
+ROLES_VARS_GLOB = "projects/*/toolbox/*/vars/*/*"
+FILE_PREFIX = "toolbox/"
 
 def validate_role_vars_files(dirname, yaml_doc):
     errors = []
@@ -108,7 +108,7 @@ def main():
     if "-h" in sys.argv or "--help" in sys.argv:
         logging.info("""\
 This script ensures that all the Ansible variables defining a
-filepath (`roles/`) do point to an existing file.""")
+filepath (`projects/*/toolbox/`) do point to an existing file.""")
         return 0
 
     logging.info(f"Searching for missing files in '{ROLES_VARS_GLOB}'")

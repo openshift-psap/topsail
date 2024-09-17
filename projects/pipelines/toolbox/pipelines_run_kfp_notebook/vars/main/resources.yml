@@ -1,1 +1,2 @@
-pipelines_run_kfp_notebook_benchmark_notebook_template: projects/pipelines/roles/pipelines_run_kfp_notebook/templates/notebook.yaml
+---
+pipelines_run_kfp_notebook_benchmark_notebook_template: templates/notebook.yaml

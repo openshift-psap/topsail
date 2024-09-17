@@ -13,13 +13,13 @@ sleep_duration = sys.argv[5]
 make_pod_config = ""
 test_pod_config = ""
 pod_configs = {}
-with open("projects/load-aware/roles/load_aware_scale_test/files/coreutils-make-pod.yaml", "r") as f:
+with open("projects/load-aware/toolbox/load_aware_scale_test/files/coreutils-make-pod.yaml", "r") as f:
     pod_configs["make"] = f.read()
 
-with open("projects/load-aware/roles/load_aware_scale_test/files/coreutils-test-pod.yaml", "r") as f:
+with open("projects/load-aware/toolbox/load_aware_scale_test/files/coreutils-test-pod.yaml", "r") as f:
     pod_configs["test"] = f.read()
 
-with open("projects/load-aware/roles/load_aware_scale_test/files/sleep-pod.yaml", "r") as f:
+with open("projects/load-aware/toolbox/load_aware_scale_test/files/sleep-pod.yaml", "r") as f:
     pod_configs["sleep"] = f.read()
 
 def run_pod(n, scheduler_name, workload_name):

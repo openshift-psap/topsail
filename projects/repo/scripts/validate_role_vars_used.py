@@ -16,7 +16,7 @@ logging.getLogger().setLevel(logging.INFO)
 SCRIPT_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TOPSAIL_DIR = SCRIPT_THIS_DIR.parent.parent.parent
 
-TOPSAIL_ROLES_GLOB = "projects/*/roles/*"
+TOPSAIL_ROLES_GLOB = "projects/*/toolbox/*"
 
 ROLE_VARS_GLOB = "vars/*/*"
 ROLE_DEFAULTS_GLOB = "defaults/*/*"

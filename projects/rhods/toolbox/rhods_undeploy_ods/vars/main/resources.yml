@@ -1,1 +1,1 @@
-rhods_undeploy_ods_delete_cm: projects/rhods/roles/rhods_undeploy_ods/files/cm_delete.yml
+rhods_undeploy_ods_delete_cm: "{{ role_path }}/files/cm_delete.yml"

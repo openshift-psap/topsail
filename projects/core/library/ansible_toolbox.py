@@ -197,7 +197,7 @@ class RunAnsibleRole:
         if current_roles_path := env.get("ANSIBLE_ROLES_PATH"):
             topsail_roles_list += [current_roles_path]
 
-        topsail_roles_list += [str(entry) for entry in (TOPSAIL_DIR / "projects").glob("*/roles")]
+        topsail_roles_list += [str(entry) for entry in (TOPSAIL_DIR / "projects").glob("*/toolbox")]
 
         env["ANSIBLE_ROLES_PATH"] = os.pathsep.join(topsail_roles_list)
         self.ansible_vars["roles_path"] = env["ANSIBLE_ROLES_PATH"]

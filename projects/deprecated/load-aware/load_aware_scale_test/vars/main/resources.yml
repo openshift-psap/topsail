@@ -1,2 +1,3 @@
-load_timeline_generator: "projects/load-aware/roles/load_aware_scale_test/files/timeline.py"
-pod_start_scheduler: "projects/load-aware/roles/load_aware_scale_test/files/scheduler.py"
+---
+load_timeline_generator: "{{ role_path }}/files/timeline.py"
+pod_start_scheduler: "{{ role_path }}/files/scheduler.py"

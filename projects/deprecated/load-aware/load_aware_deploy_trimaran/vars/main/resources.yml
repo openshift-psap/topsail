@@ -1,3 +1,4 @@
-user_applications_monitor_config: "projects/load-aware/roles/load_aware_deploy_trimaran/files/cluster-monitoring-config.yaml"
-trimaran_test_pod: "projects/load-aware/roles/load_aware_deploy_trimaran/files/trimaran-test-pod.yaml"
+---
+user_applications_monitor_config: "{{ role_path }}/files/cluster-monitoring-config.yaml"
+trimaran_test_pod: "{{ role_path }}/files/trimaran-test-pod.yaml"
 trimaran_setup_template: "templates/trimaran.yaml.j2"

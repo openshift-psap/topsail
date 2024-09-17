@@ -1,3 +1,3 @@
 ---
-wisdom_warmup_entrypoint: 'projects/lightspeed/roles/wisdom_warmup_model/files/entrypoint.sh'
+wisdom_warmup_entrypoint: '{{ role_path }}/files/entrypoint.sh'
 wisdom_warmup_pod_template: 'templates/wisdom-warmup_pod.yml.j2'

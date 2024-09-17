@@ -1,5 +1,5 @@
 ---
 # Manifest for installing NFD operator from OperatorHub
-nfd_operator_namespace: projects/gpu_operator/roles/nfd_operator_deploy_from_operatorhub/files/010_namespace.yml
+nfd_operator_namespace: "{{ role_path }}/files/010_namespace.yml"
 
 nfd_operator_operatorhub_sub: templates/030_operator_sub.yml.j2

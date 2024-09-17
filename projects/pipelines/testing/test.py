@@ -134,7 +134,7 @@ def compute_node_requirement(driver=False, sutest=False):
         machine_type = config.ci_artifacts.get_config("clusters.driver.compute.machineset.type")
 
     if sutest:
-        # must match 'roles/local_ci_run_multi/templates/job.yaml.j2'
+        # must match 'projects/local_ci/toolbox/local_ci_run_multi/templates/job.yaml.j2'
         cpu_count = 1
         memory = 2
         machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type")
