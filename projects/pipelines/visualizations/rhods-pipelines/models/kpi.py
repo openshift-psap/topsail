@@ -12,46 +12,66 @@ KPIs = {} # populated by the @matbench_models.KPIMetadata decorator
 def dsp_run_latency(lts_payload):
     return lts_payload.results.run_latency.values
 
+@matbench_models.Format("{:.2f}")
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Min run latency", unit="sec")
 def dsp_run_latency_min(lts_payload):
     return lts_payload.results.run_latency.min
 
+@matbench_models.Format("{:.2f}")
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Max run latency", unit="sec")
 def dsp_run_latency_max(lts_payload):
     return lts_payload.results.run_latency.max
 
+@matbench_models.Format("{:.2f}")
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Median run latency", unit="sec")
 def dsp_run_latency_median(lts_payload):
     return lts_payload.results.run_latency.median
+
+@matbench_models.Format("{:.2f}")
+@matbench_models.LowerBetter
+@matbench_models.KPIMetadata(help="99th percentile run latency", unit="sec")
+def dsp_run_latency_p99(lts_payload):
+    return lts_payload.results.run_latency.percentile_99
 
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="All values of the run duration", unit="List[sec]")
 def dsp_run_duration(lts_payload):
     return lts_payload.results.run_duration.values
 
+@matbench_models.Format("{:.2f}")
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Min run duration", unit="sec")
 def dsp_run_duration_min(lts_payload):
     return lts_payload.results.run_duration.min
 
+@matbench_models.Format("{:.2f}")
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Max run duration", unit="sec")
 def dsp_run_duration_max(lts_payload):
     return lts_payload.results.run_duration.max
 
+@matbench_models.Format("{:.2f}")
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Median run duration", unit="sec")
 def dsp_run_duration_median(lts_payload):
     return lts_payload.results.run_duration.median
 
+@matbench_models.Format("{:.2f}")
+@matbench_models.LowerBetter
+@matbench_models.KPIMetadata(help="99th percentile run duration", unit="sec")
+def dsp_run_duration_p99(lts_payload):
+    return lts_payload.results.run_duration.percentile_99
+
+@matbench_models.Format("{:.2f}")
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Seconds that run latency increases per run", unit="sec/run")
 def dsp_run_latency_degrade_speed(lts_payload):
     return lts_payload.results.run_latency.degrade_speed
 
+@matbench_models.Format("{:.2f}")
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Seconds that run duration increases per run", unit="sec/run")
 def dsp_run_duration_degrade_speed(lts_payload):

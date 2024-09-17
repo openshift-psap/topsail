@@ -78,6 +78,11 @@ def parse_once(results, dirname):
     results.user_count = int(results.test_config.get("tests.pipelines.user_count"))
     results.run_count = int(results.test_config.get("tests.pipelines.pipelines_per_user"))
     results.project_count = int(results.test_config.get("tests.pipelines.project_count"))
+    results.run_delay = int(results.test_config.get("tests.pipelines.run_delay"))
+    results.user_pipeline_delay = int(results.test_config.get("tests.pipelines.user_pipeline_delay"))
+    results.sleep_factor = int(results.test_config.get("tests.pipelines.sleep_factor"))
+    results.notebook = results.test_config.get("tests.pipelines.notebook_filename")
+
     results.success_count = _parse_success_count(dirname)
     results.user_data = _parse_user_data(dirname, results.user_count)
     results.tester_job = _parse_tester_job(dirname)

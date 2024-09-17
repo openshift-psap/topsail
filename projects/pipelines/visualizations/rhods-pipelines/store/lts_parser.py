@@ -29,6 +29,10 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.user_count = results.user_count
     lts_settings.run_count = results.run_count
     lts_settings.project_count = results.project_count
+    lts_settings.run_delay = results.run_delay
+    lts_settings.user_pipeline_delay = results.user_pipeline_delay
+    lts_settings.sleep_factor = results.sleep_factor
+    lts_settings.notebook = results.notebook
 
     lts_settings.ocp_version = results.ocp_version
     lts_settings.rhoai_version = results.rhods_info.full_version

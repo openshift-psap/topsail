@@ -18,6 +18,11 @@ class Settings(matbench_models.ExclusiveModel):
     user_count: int
     run_count: int
     project_count: int
+    run_delay: int
+    user_pipeline_delay: int
+    sleep_factor: int
+    project_count: int
+    notebook: str
 
     ocp_version: matbench_models.SemVer
     rhoai_version: matbench_models.SemVer

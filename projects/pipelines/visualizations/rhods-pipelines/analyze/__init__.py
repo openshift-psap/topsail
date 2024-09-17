@@ -11,6 +11,8 @@ IGNORED_KEYS = ["ocp_version"]
 # the setting (kpi labels) keys *prefered* for sorting the entries in the regression report
 SORTING_KEYS = []
 
+IGNORED_ENTRIES = {}
+
 def prepare():
     return helpers_analyze.prepare_regression_data(
         COMPARISON_KEYS, IGNORED_KEYS, _rewrite_settings,
