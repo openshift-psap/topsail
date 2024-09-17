@@ -136,7 +136,7 @@ Create and Start the Workbench
     ${browser log entries str}=   Convert To String  ${browser log entries}
     Create File  ${OUTPUTDIR}/bug_5912_browser_log_entries.yaml  ${browser log entries str}
 
-    Sleep  5s
+    Sleep  30s
     Reload Page
     Page Should Not Contain  Application is not available
   END   
