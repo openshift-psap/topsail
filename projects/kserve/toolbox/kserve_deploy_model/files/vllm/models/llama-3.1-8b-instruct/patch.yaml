@@ -13,7 +13,7 @@ spec:
       - --tensor-parallel-size=1
       - --max-model-len=4096
       - --gpu-memory-utilization=0.95
-      - --num-scheduler-steps=5
+      - --num-scheduler-steps=8
       resources:
         requests:
           nvidia.com/gpu: "1"
