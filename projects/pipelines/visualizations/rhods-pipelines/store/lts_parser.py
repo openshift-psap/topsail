@@ -6,6 +6,7 @@ import yaml
 import numpy as np
 from typing import List
 from functools import reduce
+import re
 
 from .. import models
 from ..models import lts as models_lts
@@ -50,7 +51,6 @@ def generate_lts_metadata(results, import_settings):
     lts_metadata.settings = dict(import_settings)
     lts_metadata.ocp_version = results.ocp_version
     lts_metadata.rhods_version = results.rhods_info.full_version
-    lts_metadata.user_count = results.user_count
     lts_metadata.config = yaml.dump(results.test_config.yaml_file, indent=4, default_flow_style=False, sort_keys=False, width=1000)
     lts_metadata.test_uuid = results.test_uuid
     lts_metadata.settings = generate_lts_settings(lts_metadata, results, dict(import_settings))
@@ -73,7 +73,7 @@ def _generate_run_latency(results):
     workflow_ordering = {}
     data = {}
     # Assemble the workflow names
-    for user_idx, user_data in entry.results.user_data.items():
+    for user_idx, user_data in results.user_data.items():
         for resource_name, creation_time in user_data.resource_times.items():
             resource_type, resource_id = resource_name.split("/")
             if resource_type == "Workflow":
@@ -82,7 +82,7 @@ def _generate_run_latency(results):
                     workflow_ordering[user_idx] = []
                 workflow_ordering[user_idx].append({"name": resource_name, "creation_time": creation_time})
                 workflow_ordering[user_idx] = sorted(workflow_ordering[user_idx], key=lambda x: x["creation_time"])
-    for user_idx, user_data in entry.results.user_data.items():
+    for user_idx, user_data in results.user_data.items():
         for resource_name, creation_time in user_data.resource_times.items():
             resource_key = re.sub(r'n([0-9]+)-', "nX-", resource_name)
             if resource_name.split("/")[0] == "Workflow":
@@ -96,7 +96,7 @@ def _generate_run_latency(results):
     run_latency = _generate_dsp_test_stats(list(reduce(lambda l, r: l + r, data.values(), [])))
     medians = np.array([np.median(d[1]) for d in sorted(data.items())])
     A = np.vstack([np.arange(len(medians)), np.ones(len(medians))]).T
-    slope, _ = np.linalg.lstsq(A, medians)[0]
+    slope, _ = np.linalg.lstsq(A, medians, rcond=None)[0]
     run_latency["degrade_speed"] = slope
     return types.SimpleNamespace(**run_latency)
 
@@ -107,7 +107,7 @@ def _generate_run_duration(results):
     workflow_ordering = {}
     data = {}
     # Assemble the workflow names
-    for user_idx, user_data in entry.results.user_data.items():
+    for user_idx, user_data in results.user_data.items():
         for resource_name, creation_time in user_data.resource_times.items():
             resource_type, resource_id = resource_name.split("/")
             if resource_type == "Workflow":
@@ -116,7 +116,7 @@ def _generate_run_duration(results):
                     workflow_ordering[user_idx] = []
                 workflow_ordering[user_idx].append({"name": resource_name, "creation_time": creation_time})
                 workflow_ordering[user_idx] = sorted(workflow_ordering[user_idx], key=lambda x: x["creation_time"])
-    for user_idx, user_data in entry.results.user_data.items():
+    for user_idx, user_data in results.user_data.items():
         for resource_name, creation_time in user_data.resource_times.items():
             resource_key = re.sub(r'n([0-9]+)-', "nX-", resource_name)
             if resource_name.split("/")[0] == "Workflow":
@@ -131,7 +131,7 @@ def _generate_run_duration(results):
     run_duration = _generate_dsp_test_stats(list(reduce(lambda l, r: l + r, data.values(), [])))
     medians = np.array([np.median(d[1]) for d in sorted(data.items())])
     A = np.vstack([np.arange(len(medians)), np.ones(len(medians))]).T
-    slope, _ = np.linalg.lstsq(A, medians)[0]
+    slope, _ = np.linalg.lstsq(A, medians, rcond=None)[0]
     run_duration["degrade_speed"] = slope
 
     return types.SimpleNamespace(**run_duration)
