@@ -27,6 +27,9 @@ def validate_role_vars_files(dirname, yaml_doc):
 
             continue
 
+        if "{{ role_path }}" in value:
+            value = value.replace("{{ role_path }}", str(dirname.relative_to(TOPSAIL_DIR)))
+
         if not isinstance(value, str):
             messages.append(f"{key}:{value} --> not a string ({value.__class__.__name__}), ignoring.")
             continue
@@ -57,6 +60,7 @@ def validate_role_vars_files(dirname, yaml_doc):
     return errors, messages
 
 def traverse_role_vars():
+    missing = 0
     errors = 0
     successes = 0
     for filename in TOPSAIL_DIR.glob(ROLES_VARS_GLOB):
@@ -66,9 +70,10 @@ def traverse_role_vars():
                 yaml_doc = yaml.safe_load(f)
             except yaml.YAMLError as e:
                 logging.warning(f"{filename} --> invalid YAML file ({e})")
+                errors += 1
                 continue
             except Exception as e:
-                logging.warning(f"{filename} --> invalid YAML file ({e})")
+                logging.warning(f"{filename} --> Exception :/ ({e})")
                 errors += 1
 
         if yaml_doc is None:
@@ -82,7 +87,7 @@ def traverse_role_vars():
         dirname = dirname.parent
 
         file_errors, messages = validate_role_vars_files(dirname, yaml_doc)
-        errors += len(file_errors)
+        missing += len(file_errors)
 
         if not file_errors:
             successes += 1
@@ -101,7 +106,7 @@ def traverse_role_vars():
 
         logging.info("\n")
 
-    return successes, errors
+    return successes, errors, missing
 
 
 def main():
@@ -112,10 +117,14 @@ filepath (`projects/*/toolbox/`) do point to an existing file.""")
         return 0
 
     logging.info(f"Searching for missing files in '{ROLES_VARS_GLOB}'")
-    successes, errors = traverse_role_vars()
+    successes, errors, missing = traverse_role_vars()
+
+    if missing:
+        logging.fatal(f"Found {missing} missing file{'s' if missing > 1 else ''}")
+        return 1
 
     if errors:
-        logging.fatal(f"Found {errors} missing file{'s' if errors > 1 else ''}")
+        logging.fatal(f"Hit {errors} parsing errors{'s' if missing > 1 else ''}")
         return 1
 
 
