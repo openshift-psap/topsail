@@ -218,7 +218,7 @@ if [[ -z "${1:-}" ]]; then
     echo
     list_available
 
-    false
+    exit 1
 fi
 
 target="${1}"
@@ -290,4 +290,4 @@ echo "FATAL: Unknown entrypoint '${second_target}' inside '${target}' directory 
 echo
 list_available "$target_entrypoint_dir"
 
-false
+exit 1
