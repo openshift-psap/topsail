@@ -311,12 +311,12 @@ ci_presets:
     tests.e2e.llm_load_test.args.duration: 180
     tests.e2e.llm_load_test.args.concurrency: [32, 64, 128, 256]    #Also supports List
     kserve.model.serving_runtime.update_image: false
-    kserve.model.serving_runtime.kserve.image: quay.io/modh/vllm@sha256:2e7f97b69d6e0aa7366ee6a841a7e709829136a143608bee859b1fe700c36d31
+    kserve.model.serving_runtime.kserve.image: quay.io/opendatahub/vllm@sha256:a23fe8096f112b7d3e2e6984babd9b52d798ef8629ddf836b3a3106f70fd5127 
     tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
     export_artifacts.enabled: true 
     export_artifacts.bucket: psap-1474-results
-    export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge-modh-vllm-v0.5.5
+    export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge-opendatahub-vllm-v0.6.1-post2
   
   # Test multiple vLLM forks
   vllm_forks:
