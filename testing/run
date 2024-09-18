@@ -37,7 +37,7 @@ ci_banner() {
     fi
 }
 
-prechecks() {
+precheck_artifact_dir() {
     if [ -z "${ARTIFACT_DIR:-}" ]; then
         if [[ "${OPENSHIFT_CI:-}" == true ]]; then
             echo "ARTIFACT_DIR not set, cannot proceed without it in OpenShift CI."
@@ -56,7 +56,9 @@ prechecks() {
     else
         echo "Using ARTIFACT_DIR=$ARTIFACT_DIR."
     fi
+}
 
+prechecks() {
     if [ -e "$ARTIFACT_DIR/FAILURES" ]; then
         echo "File '$ARTIFACT_DIR/FAILURES' already exists, cannot continue."
         exit 1
@@ -193,6 +195,7 @@ list_available() {
 ##############
 
 if [[ "${INSIDE_RUN:-}" != "y" ]]; then
+    precheck_artifact_dir
     save_run_logs
     ci_banner "$@"
     prechecks
