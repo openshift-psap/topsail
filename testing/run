@@ -274,7 +274,7 @@ postchecks() {
     fi
     echo "$(date) $status" | tee "$ARTIFACT_DIR/FINISHED"
 
-    if [[ "$3" == "test_ci" ]]; then
+    if [[ "$reason" == ERR || "$3" == "test_ci" ]]; then
         if [[ "${OPENSHIFT_CI:-}" == true || "${PERFLAB_CI:-}" == true ]]; then
             post_github_finish_message "$reason" "$status"
         fi
