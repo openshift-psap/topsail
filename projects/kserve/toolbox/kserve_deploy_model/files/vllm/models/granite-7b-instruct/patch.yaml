@@ -4,6 +4,8 @@ metadata:
   name: isvc
 spec:
   predictor:
+    minReplicas: 1
+    maxReplicas: 1
     model:
       storageUri: s3://psap-1474-blog-models/ibm-granite/granite-7b-instruct/ 
       args:
