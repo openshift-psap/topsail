@@ -296,7 +296,7 @@ ci_presets:
   # ---
   # PSAP 1474, Profiling AI models across different accelerators
   #
-  rhoai_inference_performance_blog_setup:
+  profile_llm_models:
     extends: [serverless, vllm, e2e_perf, metal]
     tests.e2e.models:
     - name: llama-3-1-8b-instruct
@@ -318,7 +318,18 @@ ci_presets:
     matbench.lts.opensearch.export.enabled: false
     export_artifacts.enabled: true 
     export_artifacts.bucket: psap-1474-results
-    export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge-opendatahub-vllm-v0.6.1-post2
+    #export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge-opendatahub-vllm-v0.6.1-post2
+  
+    #single_a10_g5_4xlarge:
+    #extends: [serverless, vllm, e2e_perf, metal, profile_llm_models]
+
+  # Try nested presets
+  nested_presets:
+    extends: [vllm_cpt_single_model_gating_light]
+    tests.e2e.llm_load_test.args.concurrency: [1]
+    export_artifacts.enabled: false
+    tests.e2e.llm_load_test.enabled: false
+    matbench.lts.opensearch.export.enabled: false
 
   # --
   # single-model vLLM
