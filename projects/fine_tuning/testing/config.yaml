@@ -257,6 +257,12 @@ ci_presets:
 
   cluster_a30:
     clusters.sutest.compute.machineset.type: "Cluster A30-24GB"
+
+  gating:
+    extends: [use_intlab_os]
+    matbench.lts.opensearch.export.enabled: true
+    matbench.lts.regression_analyses.enabled: true
+
 secrets:
   dir:
     name: psap-ods-secret
