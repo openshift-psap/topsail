@@ -1,0 +1,21 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    model:
+      storageUri: s3://psap-1474-blog-models/ibm-granite/granite-7b-instruct/ 
+      args:
+      - --dtype=bfloat16
+      - --tensor-parallel-size=1
+      - --max-model-len=4096
+      - --gpu-memory-utilization=0.95
+      - --num-scheduler-steps=5
+      resources:
+        requests:
+          cpu: "2"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          nvidia.com/gpu: "1"
