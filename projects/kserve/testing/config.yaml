@@ -293,7 +293,9 @@ ci_presets:
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
     export_artifacts.enabled: true
 
-  # PSAP 1474 Setup
+  # ---
+  # PSAP 1474, Profiling AI models across different accelerators
+  #
   rhoai_inference_performance_blog_setup:
     extends: [serverless, vllm, e2e_perf, metal]
     tests.e2e.models:
@@ -302,14 +304,14 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 256
-    #- name: granite-8b-code-instruct
-    #testing:
-    #size: small
-    #max_concurrency: 256 
+    - name: granite-7b-instruct
+      testing:
+        size: small
+        max_concurrency: 256 
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.enabled: true
     tests.e2e.llm_load_test.args.duration: 180
-    tests.e2e.llm_load_test.args.concurrency: [32, 64, 128, 256]    #Also supports List
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256]
     kserve.model.serving_runtime.update_image: false
     kserve.model.serving_runtime.kserve.image: quay.io/opendatahub/vllm@sha256:a23fe8096f112b7d3e2e6984babd9b52d798ef8629ddf836b3a3106f70fd5127 
     tests.visualize: true
