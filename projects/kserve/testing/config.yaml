@@ -296,8 +296,7 @@ ci_presets:
   # ---
   # PSAP 1474, Profiling AI models across different accelerators
   #
-  profile_llm_models:
-    extends: [serverless, vllm, e2e_perf, metal]
+  single_a10_l4_l40s_llm_models:
     tests.e2e.models:
     - name: llama-3-1-8b-instruct
       model: llama-3.1-8b-instruct
@@ -308,6 +307,8 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 256 
+
+  profiling_settings:
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.enabled: true
     tests.e2e.llm_load_test.args.duration: 180
@@ -316,22 +317,20 @@ ci_presets:
     kserve.model.serving_runtime.kserve.image: quay.io/opendatahub/vllm@sha256:a23fe8096f112b7d3e2e6984babd9b52d798ef8629ddf836b3a3106f70fd5127 
     tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
-    export_artifacts.enabled: true 
+    export_artifacts.enabled: true
     export_artifacts.bucket: psap-1474-results
-    #export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge-opendatahub-vllm-v0.6.1-post2
   
-    #single_a10_g5_4xlarge:
-    #extends: [serverless, vllm, e2e_perf, metal, profile_llm_models]
+  single_a10_g5_4xlarge:
+    extends: [serverless, vllm, e2e_perf, metal, single_a10_l4_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: single-A10
 
-  # Try nested presets
-  nested_presets:
-    extends: [vllm_cpt_single_model_gating_light]
-    tests.e2e.llm_load_test.args.concurrency: [1]
-    export_artifacts.enabled: false
-    tests.e2e.llm_load_test.enabled: true 
-    matbench.lts.opensearch.export.enabled: false
-    tests.e2e.matbenchmark.enabled: true
-    tests.e2e.llm_load_test.args.duration: 60
+  single_l4_g6_4xlarge:
+    extends: [serverless, vllm, e2e_perf, metal, single_a10_l4_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: single-L4
+
+  single_l40s_g6e_4xlarge:
+    extends: [serverless, vllm, e2e_perf, metal, single_a10_l4_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: single-L40S
 
   # --
   # single-model vLLM
