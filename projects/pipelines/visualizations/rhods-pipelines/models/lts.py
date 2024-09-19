@@ -16,12 +16,14 @@ class Settings(matbench_models.ExclusiveModel):
 
     instance_type: str
     user_count: int
-    run_count: int
+    pipelines_per_user: int
+    runs_per_pipeline: int
     project_count: int
     run_delay: int
     user_pipeline_delay: int
     sleep_factor: int
     project_count: int
+    wait_for_run_completion: bool
     notebook: str
 
     ocp_version: matbench_models.SemVer
