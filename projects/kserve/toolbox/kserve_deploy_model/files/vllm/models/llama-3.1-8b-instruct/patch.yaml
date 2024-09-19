@@ -16,6 +16,8 @@ spec:
       - --num-scheduler-steps=10
       resources:
         requests:
+          cpu: "2"
+          memory: "16Gi"
           nvidia.com/gpu: "1"
         limits:
           nvidia.com/gpu: "1"
