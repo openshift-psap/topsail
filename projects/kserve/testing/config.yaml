@@ -317,24 +317,6 @@ ci_presets:
     export_artifacts.enabled: true 
     export_artifacts.bucket: psap-1474-results
     export_artifacts.path_prefix: NVIDIAx1xA10xg5.8xlarge-opendatahub-vllm-v0.6.1-post2
-  
-  # Test multiple vLLM forks
-  vllm_forks:
-    extends: [serverless, vllm, e2e_perf, metal]
-    tests.e2e.models:
-    - name: llama-3-1-8b-instruct
-      model: llama-3.1-8b-instruct
-      testing:
-        size: small
-        max_concurrency: 1
-    tests.e2e.matbenchmark.enabled: true 
-    tests.e2e.llm_load_test.enabled: true 
-    kserve.model.serving_runtime.update_image: false
-    kserve.model.serving_runtime.kserve.image: quay.io/modh/vllm@sha256:2e7f97b69d6e0aa7366ee6a841a7e709829136a143608bee859b1fe700c36d31
-    matbench.lts.opensearch.export.enabled: false
-    export_artifacts.enabled: false
-    tests.visualize: true 
-    tests.e2e.llm_load_test.args.duration: 60
 
   # --
   # single-model vLLM
