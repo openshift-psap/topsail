@@ -4,6 +4,8 @@ metadata:
   name: isvc
 spec:
   predictor:
+    minReplicas: 1
+    maxReplicas: 1
     model:
       storageUri: s3://psap-1474-blog-models/ibm-granite/granite-34b-code-instruct-8k/ 
       args:
@@ -19,3 +21,19 @@ spec:
           nvidia.com/gpu: "4"
         limits:
           nvidia.com/gpu: "4"
+      volumeMounts:
+      - name: shared-memory
+        mountPath: /dev/shm
+      - name: tmp
+        mountPath: /tmp
+      - name: home
+        mountPath: /home/vllm
+    volumes:
+    - name: shared-memory
+      emptyDir:
+        medium: Memory
+        sizeLimit: 16Gi
+    - name: tmp
+      emptyDir: {}
+    - name: home
+      emptyDir: {}
