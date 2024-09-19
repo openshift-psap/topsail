@@ -328,8 +328,10 @@ ci_presets:
     extends: [vllm_cpt_single_model_gating_light]
     tests.e2e.llm_load_test.args.concurrency: [1]
     export_artifacts.enabled: false
-    tests.e2e.llm_load_test.enabled: false
+    tests.e2e.llm_load_test.enabled: true 
     matbench.lts.opensearch.export.enabled: false
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.args.duration: 60
 
   # --
   # single-model vLLM
