@@ -346,6 +346,7 @@ ci_presets:
   four_l40s_g6e_12xlarge:
     extends: [serverless, vllm, e2e_perf, metal, four_l40s_llm_models, profiling_settings]
     export_artifacts.path_prefix: four-L40S
+    tests.e2e.llm_load_test.args.concurrency: [1]
 
   # --
   # single-model vLLM
