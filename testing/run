@@ -143,140 +143,32 @@ prechecks() {
     echo "$ocp_version" > ${ARTIFACT_DIR}/ocp.version
 }
 
-do_post_to_github() {
-    echo POST
-    if ! [[ -f $PSAP_ODS_SECRET_PATH/github.token ]]; then
-        echo "WARNING: no github.token secret available in \$PSAP_ODS_SECRET_PATH ... "
-        return
-    fi
-    pr_number=$1
-    shift
-    message=$1
-    shift
-
-    if [[ "${PERFLAB_CI:-}" == true ]]; then
-        REPO_OWNER="openshift-psap"
-        REPO_NAME="topsail"
-    fi
-
-    data=$(jq -n --arg msg "$message" '.body = $msg') # this makes it safe(r) to json parsing errors
-
-    if curl -L --silent > /dev/null \
-         -X POST \
-         -H "Accept: application/vnd.github+json" \
-         -H "X-GitHub-Api-Version: 2022-11-28" \
-         https://api.github.com/repos/openshift-psap/topsail/issues/$pr_number/comments \
-         -d "$data" \
-         -K - <<< "-H \"Authorization: Bearer $(cat $PSAP_ODS_SECRET_PATH/github.token)\"" # do not leak the token because of the 'set -x' flag ...
-    then
-        echo "Message posted to Github $REPO_OWNER/$REPO_NAME PR #$pr_number"
-    fi
-}
-
-
-post_github_finish_message() {
-    reason=$1 # ERR or EXIT
-    shift
-    status=$1 # Test of '$@' succeeded/failed after ...
-    shift
-
-    if [[ "${OPENSHIFT_CI:-}" == true ]]; then
-        link="https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/pull/${REPO_OWNER}_${REPO_NAME}/${PULL_NUMBER}\
-/${JOB_NAME}/${BUILD_ID}/artifacts/${JOB_NAME_SAFE}/$(echo "$HOSTNAME" | sed s/${JOB_NAME_SAFE}-//)/artifacts/"
-        pr_number="$PULL_NUMBER"
-    elif [[ "${PERFLAB_CI:-}" == true ]]; then
-        if [[ "$PERFLAB_GIT_REF" != "refs/pull/"* ]]; then
-            echo "Running from the PerfLab without a PR. Nothing to Post on github."
-            return
-        fi
-        pr_number=$(echo "$PERFLAB_GIT_REF" | cut -d/ -f3)
-        link="https://$JENKINS_INSTANCE/$JENKINS_JOB/$JENKINS_BUILD_NUMBER/artifact/run/$JENKINS_JUMPHOST/$(echo "$ARTIFACT_DIR" | sed s+^/logs/artifacts/++)"
-    fi
-
-    message="**${status}**"
-
-    add_to_message() {
-        to_add=$1
-
-        message="$message
-${to_add}"
-    }
-
-    add_to_message ""
-    add_to_message "* Link to the [test results]($link)."
-    add_to_message "* Link to the [reports index]($link/reports_index.html)."
-    add_to_message ""
-
-    if [[ -f $ARTIFACT_DIR/variable_overrides ]]; then
-        add_to_message "
-**Test configuration**:
-\`\`\`
-$(cat "$ARTIFACT_DIR/variable_overrides")
-\`\`\`
-"
-    else
-        add_to_message "* Not test configuration (`variable_overrides`) available."
-        add_to_message
-    fi
-
-    if [[ "${PERFLAB_CI:-}" == true ]]; then
-        add_to_message "*[Test ran on the internal Perflab CI]*"
-    fi
-
-    add_to_message "*[TOPSAIL auto-generated message]*"
-
-    echo "@@@"
-    echo "$message"
-    echo "@@@"
-    do_post_to_github "$pr_number" "$message"
-}
-
 postchecks() {
-    touch $ARTIFACT_DIR/post
-
     reason=$1
     shift
 
     if [[ "$reason" == ERR ]]; then
-        # reason == ERR, something went wrong. Flag it with "$ARTIFACT_DIR/FAILURES"
-
         find "$ARTIFACT_DIR" -name FAILURE -exec bash -c "(echo -n '{} | '  ; cat {})" \; > "$ARTIFACT_DIR/FAILURES"
         touch "$ARTIFACT_DIR/FAILURES"
 
         if ! oc version >/dev/null 2>&1; then
-            # well-known reason for flake failures: the cluster is unreachable. Flag it.
             mkdir -p "$ARTIFACT_DIR/_FLAKE"
             echo "Cluster unreachable" >> "$ARTIFACT_DIR/_FLAKE/cluster_unreachable"
         fi
 
-        return
-    elif [[ "$reason" != EXIT ]]; then
-        echo "postchecks: unhandled exit reason: $reason" # shouldn't happen unless a new `trap` is added
-
-        return
-    fi
-
-    # reason == EXIT, we're at the end of the script execution
-
-    echo ""
-    if [[ "${start_time:-}" ]]; then
-        local end_time=$(date +%s)
-        local duration_seconds=$((end_time - start_time))
-        duration="after $(date -d "1970-01-01 + $duration_seconds seconds" "+%H hours %M minutes %S seconds")"
-    else
-        duration="(start_time missing :/)"
-    fi
-    if [ ! -e "$ARTIFACT_DIR/FAILURES" ]; then
-        status="Test of '$@' succeeded $duration."
-    else
-        status="Test of '$@' failed $duration."
-        reason=ERR
-    fi
-    echo "$(date) $status" | tee "$ARTIFACT_DIR/FINISHED"
-
-    if [[ "$reason" == ERR || "$3" == "test_ci" ]]; then
-        if [[ "${OPENSHIFT_CI:-}" == true || "${PERFLAB_CI:-}" == true ]]; then
-            post_github_finish_message "$reason" "$status"
+    elif [[ "$reason" == EXIT ]]; then
+        echo ""
+        if [[ "${start_time:-}" ]]; then
+            local end_time=$(date +%s)
+            local duration_seconds=$((end_time - start_time))
+            local duration="after $(date -d "1970-01-01 + $duration_seconds seconds" "+%H hours %M minutes %S seconds")"
+        else
+            local duration="(start_time missing :/)"
+        fi
+        if [ ! -e "$ARTIFACT_DIR/FAILURES" ]; then
+            echo "$(date) Test of '$@' succeeded $duration." | tee "$ARTIFACT_DIR/FINISHED"
+        else
+            echo "$(date) Test of '$@' failed $duration." | tee "$ARTIFACT_DIR/FINISHED"
         fi
     fi
 }
