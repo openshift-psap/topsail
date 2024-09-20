@@ -89,3 +89,86 @@ class Repo:
         failed = send_notif.send_job_completion_notification(reason, status, github, slack)
 
         exit(1 if failed else 0)
+
+    @staticmethod
+    def generate_middleware_ci_secret_boilerplate(name, description, varname=None):
+        """
+        Generate the boilerplace code to include a new secret in the Middleware CI configuration
+
+        Args:
+          name: name of the new secret to include
+          description: description of the secret to include
+          varname: optional short name of the file
+        """
+        if varname is None:
+            varname = name.replace(".", "_").replace("-", "_")
+
+        print(f"""
+0. Prepare the environment:
+
+- install 'git secret'
+- clone the middlewareperformance/lab-ci repository, `main` branch
+- clone the middlewareperformance/performance-lab-scripts repository, `wreicher-rhods` branch
+
+========================
+in the `perflab-ci` repo
+========================
+
+1 execute this command:
+
+```
+cp $PSAP_ODS_SECRET_PATH/{name} jobs/external-teams/rhods/
+```
+
+2. include this code in `jobs/external-teams/rhods/A00_dir.groovy`
+
+```
+        def {varname}_file = readFileFromWorkspace("jobs/external-teams/rhods/{name}")
+        configNode << 'org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl' {{
+          id('{varname}')
+          description('{description}')
+          fileName('{name}')
+          secretBytes(Base64.encoder.encodeToString({varname}_file.getBytes("UTF-8")))
+        }}
+```
+
+3. execute the following commands:
+
+```
+git secret add jobs/external-teams/rhods/{name}
+
+git secret hide -F -m -d  |& grep -v 'file not found'
+
+git add -p
+# .gitignore
+# .gitsecret/paths/mapping.cfg
+# jobs/external-teams/rhods/A00_dir.groovy
+
+git add jobs/external-teams/rhods/{name}.secret
+
+git commit -m "Add {name} secret to the RHODS/topsail project"
+```
+
+4. Open the PR against the `main` branch.
+
+========================
+in the `perflab-ci` repo
+========================
+
+1. in the `performance-lab-scripts`, edit the `Jenkinsfile`:
+```
+                        file(credentialsId: '{varname}', variable: '{varname}_file'),
+```
+and
+```
+                    writeFile file: 'secret/{name}', text: readFile({varname}_file)
+```
+
+2. execute the following commands:
+```
+git add -p Jenkinsfile
+git commit -m "Add {name} secret"
+```
+
+3. Open the PR against the `wreicher-rhods` branch.
+""")
