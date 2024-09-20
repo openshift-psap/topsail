@@ -156,19 +156,34 @@ postchecks() {
             echo "Cluster unreachable" >> "$ARTIFACT_DIR/_FLAKE/cluster_unreachable"
         fi
 
-    elif [[ "$reason" == EXIT ]]; then
-        echo ""
-        if [[ "${start_time:-}" ]]; then
-            local end_time=$(date +%s)
-            local duration_seconds=$((end_time - start_time))
-            local duration="after $(date -d "1970-01-01 + $duration_seconds seconds" "+%H hours %M minutes %S seconds")"
-        else
-            local duration="(start_time missing :/)"
-        fi
-        if [ ! -e "$ARTIFACT_DIR/FAILURES" ]; then
-            echo "$(date) Test of '$@' succeeded $duration." | tee "$ARTIFACT_DIR/FINISHED"
-        else
-            echo "$(date) Test of '$@' failed $duration." | tee "$ARTIFACT_DIR/FINISHED"
+        return
+    elif [[ "$reason" != EXIT ]]; then
+        echo "postchecks: unhandled exit reason: $reason" # shouldn't happen unless a new `trap` is added
+
+        return
+    fi
+
+    # reason == EXIT, we're at the end of the script execution
+
+    echo ""
+    if [[ "${start_time:-}" ]]; then
+        local end_time=$(date +%s)
+        local duration_seconds=$((end_time - start_time))
+        duration="after $(date -d "1970-01-01 + $duration_seconds seconds" "+%H hours %M minutes %S seconds")"
+    else
+        duration="(start_time missing :/)"
+    fi
+    if [ ! -e "$ARTIFACT_DIR/FAILURES" ]; then
+        status="Test of '$@' succeeded $duration."
+    else
+        status="Test of '$@' failed $duration."
+        reason=ERR
+    fi
+    echo "$(date) $status" | tee "$ARTIFACT_DIR/FINISHED"
+
+    if [[ "$reason" == ERR || "$3" == "test_ci" ]]; then
+        if [[ "${OPENSHIFT_CI:-}" == true || "${PERFLAB_CI:-}" == true || "${TOPSAIL_LOCAL_CI:-}" == true ]]; then
+            ./run_toolbox.py repo send_job_completion_notification "$reason" "$status"
         fi
     fi
 }
