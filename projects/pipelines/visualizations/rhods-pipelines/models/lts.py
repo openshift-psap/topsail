@@ -1,17 +1,30 @@
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
+from enum import Enum
 
 import matrix_benchmarking.models as matbench_models
-from .. import models as pipelines_models
-
 from . import kpi
 
 KPI_SETTINGS_VERSION = "1.0"
+# 1.0: first version
+
 class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
 
     instance_type: str
+    user_count: int
+    pipelines_per_user: int
+    runs_per_pipeline: int
+    project_count: int
+    run_delay: int
+    user_pipeline_delay: int
+    sleep_factor: int
+    project_count: int
+    wait_for_run_completion: bool
+    notebook: str
 
     ocp_version: matbench_models.SemVer
     rhoai_version: matbench_models.SemVer
@@ -22,42 +35,46 @@ class Settings(matbench_models.ExclusiveModel):
     urls: Optional[dict[str, str]]
 
 
-LTS_SCHEMA_VERSION = "1.1"
-# 1.1: add lts_schema_version and KPIs
-# 1.0: base version, no lts_schema_version setting
+class DSPTestStats(matbench_models.ExclusiveModel):
+    values: List[float]
+    min: float
+    max: float
+    median: float
+    mean: float
+    percentile_80: float
+    percentile_90: float
+    percentile_95: float
+    percentile_99: float
+    degrade_speed: float
 
+
+LTS_SCHEMA_VERSION = "1.0"
 class Metadata(matbench_models.Metadata):
     lts_schema_version: str
-    presets: List[str]
 
     settings: Settings
-
+    presets: List[str]
+    config: str
     ocp_version: matbench_models.SemVer
     rhods_version: matbench_models.SemVer
-    user_count: int
-    config: str
+
+    ci_engine: str = Field(default="Not set")
+    run_id: str = Field(default="Not set")
+    test_path: str = Field(default="Not set")
+    urls: Optional[dict[str, str]]
 
 
-class SutestMetrics(matbench_models.ExclusiveModel):
-    control_plane_node_cpu_idle: matbench_models.PrometheusValues = Field(..., alias="Sutest Control Plane Node CPU idle")
-    control_plane_node_cpu_usage: matbench_models.PrometheusValues = Field(..., alias="Sutest Control Plane Node CPU usage")
-    api_server_request_server_errors: matbench_models.PrometheusValues = Field(..., alias="Sutest API Server Requests (server errors)")
+class Results(matbench_models.ExclusiveModel):
+    run_latency: DSPTestStats
+    run_duration: DSPTestStats
 
 
-class Metrics(matbench_models.ExclusiveModel):
-    sutest: SutestMetrics
+class DSPPerformanceKPI(matbench_models.KPI, Settings): pass
 
-
-class Results(matbench_models.ExclusiveModel): pass
-
-
-class KPI(matbench_models.KPI, Settings): pass
-
-KPIs = matbench_models.getKPIsModel("KPIs", __name__, kpi.KPIs, KPI)
+DSPPerformanceKPIs = matbench_models.getKPIsModel("DSPPerformanceKPIs", __name__, kpi.KPIs, DSPPerformanceKPI)
 
 
 class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata
     results: Results
-
-    kpis: Optional[KPIs]
+    kpis: Optional[DSPPerformanceKPIs]

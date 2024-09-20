@@ -93,10 +93,12 @@ def uninstall_ocp_pipelines():
     run.run(f"oc delete csv -n {PIPELINES_OPERATOR_NAMESPACE} -loperators.coreos.com/{PIPELINES_OPERATOR_MANIFEST_NAME}.{PIPELINES_OPERATOR_NAMESPACE}")
 
 
-def create_dsp_application():
-    dspa_name = config.ci_artifacts.get_config("rhods.pipelines.application.name")
+def create_dsp_application(dspa_name):
+    old_dspa_name = config.ci_artifacts.get_config("rhods.pipelines.application.name")
+    config.ci_artifacts.set_config("rhods.pipelines.application.name", dspa_name)
     if run.run(f'oc get dspa/"{dspa_name}" 2>/dev/null', check=False).returncode != 0:
         run.run_toolbox_from_config("pipelines", "deploy_application")
+    config.ci_artifacts.set_config("rhods.pipelines.application.name", old_dspa_name)
 
 @entrypoint()
 def prepare_rhods():
@@ -111,8 +113,6 @@ def prepare_rhods():
 
     run.run_toolbox("rhods", "update_datasciencecluster", enable=["datasciencepipelines", "workbenches"],
                     name=None if has_dsc else "default-dsc")
-
-    rhoai_down()
 
     run.run_toolbox_from_config("cluster", "deploy_ldap")
 
@@ -135,8 +135,8 @@ def compute_node_requirement(driver=False, sutest=False):
 
     if sutest:
         # must match 'projects/local_ci/toolbox/local_ci_run_multi/templates/job.yaml.j2'
-        cpu_count = 1
-        memory = 2
+        cpu_count = 2
+        memory = 4
         machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type")
 
     kwargs = dict(
@@ -149,13 +149,12 @@ def compute_node_requirement(driver=False, sutest=False):
     return sizing.main(**kwargs)
 
 
-@entrypoint()
-def prepare_pipelines_namespace():
+def prepare_project(namespace, dspa_name):
     """
     Prepares the namespace for running a pipelines scale test.
     """
-
-    namespace = config.ci_artifacts.get_config("rhods.pipelines.namespace")
+    old_namespace = config.ci_artifacts.get_config("rhods.pipelines.namespace")
+    config.ci_artifacts.set_config("rhods.pipelines.namespace", namespace)
     if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
     else:
@@ -174,6 +173,9 @@ def prepare_pipelines_namespace():
     run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="pipelines_node_selector", extra=dedicated)
     run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="pipelines_toleration" , extra=dedicated)
 
+    create_dsp_application(dspa_name)
+
+    config.ci_artifacts.set_config("rhods.pipelines.namespace", old_namespace)
 
 @entrypoint()
 def prepare_test_driver_namespace():
@@ -205,7 +207,6 @@ def prepare_sutest_scale_up():
 
     run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest", extra=extra)
 
-
 @entrypoint()
 def prepare_cluster():
     """
@@ -230,7 +231,7 @@ def prepare_cluster():
         next_gen = current_generation + 1
         run.run(f"oc set env deployment/data-science-pipelines-operator-controller-manager MAX_CONCURRENT_RECONCILES={str(max_concurrent_reconciles)} -n redhat-ods-applications")
         # Wait for the generation to have been incremented (the controller recognizes a new
-        # version is necessary, and then for new replica to take over 2->1
+        # version is necessary), then for new replica to take over 2->1
         run.run(f"oc wait --for jsonpath='{{.status.observedGeneration}}'={str(next_gen)} deployment/data-science-pipelines-operator-controller-manager -n redhat-ods-applications --timeout=5m")
         run.run("oc wait --for jsonpath='{.status.replicas}'=1 deployment/data-science-pipelines-operator-controller-manager -n redhat-ods-applications --timeout=5m")
 
@@ -241,7 +242,6 @@ def pipelines_run_one():
     """
 
     project_count = config.ci_artifacts.get_config("tests.pipelines.project_count")
-    user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
     pipelines_per_user = config.ci_artifacts.get_config("tests.pipelines.pipelines_per_user")
 
     uid = "-1"
@@ -257,9 +257,6 @@ def pipelines_run_one():
         config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
 
     try:
-
-        prepare_pipelines_namespace()
-        create_dsp_application()
 
         if not config.ci_artifacts.get_config("tests.pipelines.deploy_pipeline"):
             return
@@ -390,6 +387,16 @@ def test_ci():
     cleanup_scale_test()
     prepare_user_pods.apply_prefer_pr()
 
+    # Pre-deploy projects for all users
+    num_projects = int(config.ci_artifacts.get_config("tests.pipelines.project_count"))
+    namespace_prefix = config.ci_artifacts.get_config("rhods.pipelines.namespace")
+    project_delay = int(config.ci_artifacts.get_config("tests.pipelines.sleep_factor"))
+    for n in range(num_projects):
+        namespace = f"{namespace_prefix}-n{n}"
+        dspa_name = f"n{n}-sample"
+        prepare_project(namespace, dspa_name)
+        time.sleep(project_delay)
+
     try:
         test_artifact_dir_p = [None]
         try:
@@ -408,7 +415,7 @@ def test_ci():
         run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
 
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
-            pipelines_cleanup_cluster()
+            cleanup_cluster()
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
 def generate_plots_from_pr_args():
@@ -432,7 +439,6 @@ class Pipelines:
     def __init__(self):
         self.prepare_cluster = prepare_cluster
         self.prepare_rhods = prepare_rhods
-        self.prepare_pipelines_namespace = prepare_pipelines_namespace
         self.prepare_test_driver_namespace = prepare_test_driver_namespace
         self.prepare_sutest_scale_up = prepare_sutest_scale_up
         self.rebuild_driver_image = rebuild_driver_image
