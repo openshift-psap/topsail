@@ -319,6 +319,14 @@ ci_presets:
         size: large
         max_concurrency: 256
 
+  eight_l40s_llm_models:
+    tests.e2e.models:
+    - name: llama-3-1-70b-instruct
+      model: llama-3.1-70b-instruct
+      testing:
+        size: large
+        max_concurrency: 256
+
   profiling_settings:
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.enabled: true
@@ -346,6 +354,10 @@ ci_presets:
   four_l40s_g6e_12xlarge:
     extends: [serverless, vllm, e2e_perf, metal, four_l40s_llm_models, profiling_settings]
     export_artifacts.path_prefix: four-L40S
+
+  eight_l40s_g6e_48xlarge:
+    extends: [serverless, vllm, e2e_perf, metal, eight_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: eight-L40S
 
   # --
   # single-model vLLM
