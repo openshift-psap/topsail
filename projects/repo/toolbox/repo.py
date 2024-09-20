@@ -63,3 +63,29 @@ class Repo:
         """
         projects.repo.scripts.ansible_default_config.generate_all(projects.core.library.ansible_toolbox.Toolbox())
         exit(0)
+
+    @staticmethod
+    def send_job_completion_notification(
+            reason: str,
+            status: str,
+            github = True,
+            slack = True,
+    ):
+        """
+        Send a *job completion* notification to github and/or slack about the completion of a test job.
+
+        A *job completion* notification is the message sent at the end of a CI job.
+
+        Args:
+          reason: reason of the job completion. Can be ERR or EXIT.
+          status: a status message to write at the top of the notification.
+          github: enable or disable sending the *job completion* notification to Github
+          slack: enable or disable sending the *job completion* notification to Slack
+        """
+
+        # lazy import to avoid loading this vvv anytime `./run_toolbox.py` is launched
+        import projects.repo.toolbox.notifications.send as send_notif
+
+        failed = send_notif.send_job_completion_notification(reason, status, github, slack)
+
+        exit(1 if failed else 0)
