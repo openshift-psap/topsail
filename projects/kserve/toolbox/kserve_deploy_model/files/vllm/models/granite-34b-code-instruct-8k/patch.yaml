@@ -4,13 +4,13 @@ metadata:
   name: isvc
 spec:
   predictor:
-    minReplicas: 1
-    maxReplicas: 1
+    minReplicas: 4
+    maxReplicas: 4
     model:
       storageUri: s3://psap-1474-blog-models/ibm-granite/granite-34b-code-instruct-8k/ 
       args:
       - --dtype=bfloat16
-      - --tensor-parallel-size=4
+      - --tensor-parallel-size=2
       - --max-model-len=4096
       - --gpu-memory-utilization=0.95
       - --num-scheduler-steps=5

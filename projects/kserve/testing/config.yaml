@@ -359,6 +359,10 @@ ci_presets:
     extends: [serverless, vllm, e2e_perf, metal, eight_l40s_llm_models, profiling_settings]
     export_artifacts.path_prefix: eight-L40S
 
+  eight_a100_p4d_24xlarge_tp_2_replicas_4:
+    extends: [serverless, vllm, e2e_perf, metal, four_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: eight-A100-tp-2-replicas-4
+
   # --
   # single-model vLLM
   # --
