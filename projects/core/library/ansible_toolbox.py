@@ -23,10 +23,13 @@ class Toolbox:
 
     def __init__(self):
         for toolbox_file in (TOPSAIL_DIR / "projects").glob("*/toolbox/*.py"):
+            if toolbox_file.name.startswith("."): continue
 
             project_toolbox_module = str(toolbox_file.relative_to(TOPSAIL_DIR).with_suffix("")).replace(os.path.sep, ".")
-
-            mod = importlib.import_module(project_toolbox_module)
+            try:
+                mod = importlib.import_module(project_toolbox_module)
+            except:
+                import pdb;pdb.set_trace()
             toolbox_name = toolbox_file.with_suffix("").name
 
             if toolbox_name.startswith("_"): continue
