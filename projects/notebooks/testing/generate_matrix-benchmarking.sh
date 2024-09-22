@@ -138,25 +138,27 @@ generate_matbench::generate_visualization() {
         return 1
     fi
 
-    #
-    # Generate LTS
-    #
+    if test_config matbench.lts.generate; then
+        #
+        # Generate LTS
+        #
 
-    step_idx=$((step_idx + 1))
-    retcode=0
-    if ! matbench parse --output_lts $ARTIFACT_DIR/lts_payload.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_generate_lts.log"; then
-        _warning "An error happened while generating the LTS payload from $MATBENCH_RESULTS_DIRNAME :/."
-        retcode=1
-    fi
+        step_idx=$((step_idx + 1))
+        retcode=0
+        if ! matbench parse --output_lts $ARTIFACT_DIR/lts_payload.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_generate_lts.log"; then
+            _warning "An error happened while generating the LTS payload from $MATBENCH_RESULTS_DIRNAME :/."
+            retcode=1
+        fi
 
-    #
-    # Generate LTS schema
-    #
+        #
+        # Generate LTS schema
+        #
 
-    step_idx=$((step_idx + 1))
-    if ! matbench generate_lts_schema --file $ARTIFACT_DIR/lts_payload.schema.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_generate_lts_schema.log"; then
-        _warning "An error happened while generating the LTS Notebook JSON Schema :/"
-        retcode=1
+        step_idx=$((step_idx + 1))
+        if ! matbench generate_lts_schema --file $ARTIFACT_DIR/lts_payload.schema.json |& tee > "$ARTIFACT_DIR/${step_idx}_matbench_generate_lts_schema.log"; then
+            _warning "An error happened while generating the LTS Notebook JSON Schema :/"
+            retcode=1
+        fi
     fi
 
     generate_opensearch_config() {
@@ -190,8 +192,8 @@ generate_matbench::generate_visualization() {
     # Download the LTS results
     # Analyze the current results against LTS results
     #
-
-    if test_config matbench.lts.regression_analyses.enabled; then
+    if test_config matbench.lts.generate && \
+            test_config matbench.lts.generate; then
         generate_opensearch_config
 
         step_idx=$((step_idx + 1))
@@ -233,7 +235,8 @@ generate_matbench::generate_visualization() {
     # Upload LTS results
     #
 
-    if test_config matbench.lts.opensearch.upload; then
+    if test_config matbench.lts.regression_analyses.enabled && \
+            test_config matbench.lts.opensearch.upload; then
         generate_opensearch_config
 
         step_idx=$((step_idx + 1))
