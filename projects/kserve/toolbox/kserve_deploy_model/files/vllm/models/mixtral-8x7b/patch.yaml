@@ -4,23 +4,23 @@ metadata:
   name: isvc
 spec:
   predictor:
-    minReplicas: 4
-    maxReplicas: 4
+    minReplicas: 2
+    maxReplicas: 2
     model:
       storageUri: s3://psap-hf-models/mixtral-8x7b/mixtral-8x7b
       args:
       - --dtype=bfloat16
-      - --tensor-parallel-size=2
+      - --tensor-parallel-size=4
       - --max-model-len=4096
       - --gpu-memory-utilization=0.95
       - --num-scheduler-steps=5
       resources:
         requests:
-          cpu: "4"
+          cpu: "8"
           memory: "40Gi"
-          nvidia.com/gpu: "2"
+          nvidia.com/gpu: "4"
         limits:
-          nvidia.com/gpu: "2"
+          nvidia.com/gpu: "4"
       volumeMounts:
       - name: shared-memory
         mountPath: /dev/shm
