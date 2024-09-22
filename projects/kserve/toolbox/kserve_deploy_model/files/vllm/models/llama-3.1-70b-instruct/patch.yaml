@@ -4,13 +4,13 @@ metadata:
   name: isvc
 spec:
   predictor:
-    minReplicas: 1
-    maxReplicas: 1
+    minReplicas: 2
+    maxReplicas: 2
     model:
       storageUri: s3://psap-1474-blog-models/meta-llama/Meta-Llama-3.1-70B-Instruct/ 
       args:
       - --dtype=bfloat16
-      - --tensor-parallel-size=8
+      - --tensor-parallel-size=4
       - --max-model-len=4096
       - --gpu-memory-utilization=0.95
       - --num-scheduler-steps=5
@@ -18,9 +18,9 @@ spec:
         requests:
           cpu: "16"
           memory: "40Gi"
-          nvidia.com/gpu: "8"
+          nvidia.com/gpu: "4"
         limits:
-          nvidia.com/gpu: "8"
+          nvidia.com/gpu: "4"
       volumeMounts:
       - name: shared-memory
         mountPath: /dev/shm
