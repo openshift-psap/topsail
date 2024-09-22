@@ -212,7 +212,7 @@
     # wait up to 90 minutes
     retries: 180
     delay: 30
-    until: inference_service_state_cmd.stdout == "Loaded" or inference_service_state_cmd.stdout == "FailedToLoad" or inference_service_state_cmd.rc != 0
+    until: inference_service_state_cmd.stdout == "Loaded" or inference_service_state_cmd.stdout == "FailedToLoad" or inference_service_state_cmd.rc == 2
     failed_when: inference_service_state_cmd.stdout != "Loaded" or inference_service_state_cmd.rc != 0
 
   - name: Capture the state of the InferenceService Pod resource
