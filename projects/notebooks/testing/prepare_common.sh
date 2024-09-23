@@ -25,6 +25,10 @@ switch_cluster() {
     export ARTIFACT_TOOLBOX_NAME_PREFIX="${cluster_role}_"
 }
 
+generate_report_index() {
+    python3 "$TESTING_UTILS_DIR/generate_plot_index.py" > "$ARTIFACT_DIR/reports_index.html" || true
+}
+
 capture_environment() {
     switch_sutest_cluster
 

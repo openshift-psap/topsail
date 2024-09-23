@@ -199,6 +199,7 @@ main() {
 
             local BASE_ARTIFACT_DIR=$ARTIFACT_DIR
 
+            process_ctrl__finalizers+=("generate_report_index")
             process_ctrl__finalizers+=("export ARTIFACT_DIR=$BASE_ARTIFACT_DIR/999__teardown") # switch to the 'teardown' artifacts directory
             process_ctrl__finalizers+=("mkdir -p $BASE_ARTIFACT_DIR/999__teardown")
             process_ctrl__finalizers+=("capture_environment")

@@ -1,23 +1,18 @@
-import matrix_benchmarking.common as common
-import logging
+import projects.matrix_benchmarking.visualizations.helpers.analyze as helpers_analyze
 
-def run():
-    logging.info("Hello world :)")
+COMPARISON_KEYS = ["rhoai_version", "image_tag"]
 
-    for entry in common.Matrix.all_records():
-        lts_payload = entry.results
-        if not hasattr(lts_payload, "kpis"):
-            logging.warning("Not KPIs available ...")
-            continue
+IGNORED_KEYS = ["ocp_version", "rhoai_version", "image"]
 
-        kpis = lts_payload.kpis
 
-        print(kpis.tostr())
-        print()
-        print("---")
-        print()
-        pass
+def _rewrite_settings(settings_dict):
+    del settings_dict["image"]
 
-    number_of_failures = 0
+    if settings_dict["ci_engine"] == "Middleware Jenkins":
+        settings_dict["ci_engine"] = "PERFLAB_CI"
 
-    return number_of_failures
+    return settings_dict
+
+
+def prepare():
+    return helpers_analyze.prepare_regression_data(COMPARISON_KEYS, IGNORED_KEYS, _rewrite_settings)
