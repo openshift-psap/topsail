@@ -22,6 +22,7 @@ def fetch_pr_creation_time(org: str, repo: str, pr_number: str):
     }
 
     url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pr_number}"
+    logging.info(f"slack: fetch_pr_creation_time: {url}")
 
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
