@@ -143,7 +143,7 @@ def get_slack_notification_message(reason, status, pr_number, artifacts_link):
     return message
 
 
-def send_job_completion_notification_to_slack(pr_number, artifacts_link, reason, status):
+def send_job_completion_notification_to_slack(reason, status, pr_number, artifacts_link):
     client = slack_api.init_client()
     org, repo = get_org_repo()
 
