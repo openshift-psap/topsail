@@ -18,6 +18,9 @@ def send_job_completion_notification(reason, status, github=True, slack=False):
     pr_number = get_pr_number()
     artifacts_link = get_artifacts_link()
 
+    if os.environ.get("PERFLAB_CI") == "true" and not pr_number:
+        github = False
+
     failed = False
     if github and not send_job_completion_notification_to_github(reason, status, pr_number, artifacts_link):
         failed = True
@@ -119,7 +122,7 @@ def get_pr_number():
     elif os.environ.get("PERFLAB_CI") == "true":
         git_ref = os.environ["PERFLAB_GIT_REF"]
         if not git_ref.startswith("refs/pull/"):
-            logging.warning("Perflab job not running from a PR, no PR number available.")
+            logging.debug("Perflab job not running from a PR, no PR number available.")
             return
 
         return git_ref.split("/")[2]
@@ -143,7 +146,6 @@ def get_artifacts_link():
 
 
     elif os.environ.get("PERFLAB_CI") == "true":
-        pr_number = get_pr_number()
         artifact_dir = os.environ['ARTIFACT_DIR'].removeprefix("/logs/artifacts/")
 
         return (f"https://{os.environ['JENKINS_INSTANCE']}/{os.environ['JENKINS_JOB']}/{os.environ['JENKINS_BUILD_NUMBER']}/" +
