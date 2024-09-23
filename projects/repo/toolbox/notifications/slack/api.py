@@ -59,13 +59,13 @@ def search_message(client, pr_number: str, user_token: str):
 
         except SlackApiError as e:
             logging.warning(f"Error fetching history: {e}")
-            return None, False
+            return None
 
         for message in history:
             if pr_number in message["text"]:
-                return message["ts"], True
+                return message["ts"]
 
-    return None, False
+    return None
 
 
 def send_message(
