@@ -15,7 +15,7 @@ DEFAULT_MESSAGE = "🧵 Thread for PR #{}"
 def fetch_pr_creation_time(pr_number: str, user_token: str):
     """Fetch the PR creation time to filter out Slack messages."""
     headers = {
-        "Authorization": f"token {user_token}",
+        "Authorization": f"Bearer {user_token}",
         "Accept": "application/vnd.github.v3+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }

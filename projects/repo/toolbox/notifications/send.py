@@ -115,7 +115,7 @@ def send_job_completion_notification_to_slack(pr_number, artifacts_link, reason,
     message = get_github_notification_message(reason, status, pr_number, artifacts_link)  # rename function in case this works
 
     if not main_ts:
-        main_ts = slack_api.send_message(client)  # sends default message
+        main_ts = slack_api.send_message(client, pr_number=pr_number)  # sends default message
         _, ok = slack_api.send_message(client, message, main_ts)
     else:
         _, ok = slack_api.send_message(client, message, main_ts)
