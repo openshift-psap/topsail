@@ -363,13 +363,13 @@ ci_presets:
     extends: [serverless, vllm, e2e_perf, metal, four_l40s_llm_models, profiling_settings]
     export_artifacts.path_prefix: eight-L40S-TP-4-REP-2
 
-  eight_a100_p4d_24xlarge_tp_2_replicas_4:
+  eight_a100_nvidia-dgx_A100_SXM4_40GB_tp_4:
     extends: [serverless, vllm, e2e_perf, metal, four_l40s_llm_models, profiling_settings]
-    export_artifacts.path_prefix: eight-A100-tp-2-replicas-4
+    export_artifacts.path_prefix: eight-nvidia-dgx-A100-SXM4-40GB-TP-4-REP-2
 
-  eight_a100_p4d_24xlarge_tp_4_replicas_2:
+  eight_a100_nvidia-dgx_A100_SXM4_40GB_tp_8:
     extends: [serverless, vllm, e2e_perf, metal, eight_l40s_llm_models, profiling_settings]
-    export_artifacts.path_prefix: eight-A100-tp-4-replicas-2
+    export_artifacts.path_prefix: eight-nvidia-dgx-A100-SXM4-40GB-TP-8-REP-1
 
   # --
   # single-model vLLM
