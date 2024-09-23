@@ -12,10 +12,10 @@ CHANNEL_ID = "C07NS5TAKPA"
 DEFAULT_MESSAGE = "🧵 Thread for PR #{}"
 
 
-def fetch_pr_creation_time(org: str, repo: str, pr_number: str, user_token: str):
-    """Fetch the PR creation time to filter out Slack messages."""
+def fetch_pr_creation_time(org: str, repo: str, pr_number: str):
+    """Fetch the PR creation time to filter out Slack messages.
+    No user_token is needed to list PRs of public repositories."""
     headers = {
-        "Authorization": f"Bearer {user_token}",
         "Accept": "application/vnd.github.v3+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
@@ -32,14 +32,14 @@ def fetch_pr_creation_time(org: str, repo: str, pr_number: str, user_token: str)
         logging.error(f"Error fetching PR creation time: {response.text}")
 
 
-def search_message(client, org: str, repo: str, pr_number: str, user_token: str):
+def search_message(client, org: str, repo: str, pr_number: str):
     """Searches for a message matching the pattern.
     Returns thread ts if successful."""
     has_more = False
     history = []
     cursor = None
 
-    pr_created_at = fetch_pr_creation_time(org, repo, pr_number, user_token)
+    pr_created_at = fetch_pr_creation_time(org, repo, pr_number)
 
     while not has_more:
         try:

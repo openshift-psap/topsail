@@ -145,19 +145,16 @@ def get_slack_notification_message(reason, status, pr_number, artifacts_link):
 
 def send_job_completion_notification_to_slack(pr_number, artifacts_link, reason, status):
     client = slack_api.init_client()
-
     org, repo = get_org_repo()
-    pem_file, client_id = get_github_secrets()
-    github_user_token = github_api.get_user_token(pem_file, client_id, org, repo)
 
-    main_ts = slack_api.search_message(client, org, repo, pr_number, github_user_token)
-    message = get_slack_notification_message(reason, status, pr_number, artifacts_link)
+    main_ts = slack_api.search_message(client, org, repo, pr_number)
+    message = "test message"
 
     if not main_ts:
         main_ts = slack_api.send_message(client, pr_number=pr_number)  # sends default message
-        _, ok = slack_api.send_message(client, message, main_ts)
+        _, ok = slack_api.send_message(client, message=message, main_ts=main_ts)
     else:
-        _, ok = slack_api.send_message(client, message, main_ts)
+        _, ok = slack_api.send_message(client, message=message, main_ts=main_ts)
 
     return ok
 
