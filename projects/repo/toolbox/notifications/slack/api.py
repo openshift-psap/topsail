@@ -1,36 +1,16 @@
 import logging
 import os
 import pathlib
-import requests
 
-from datetime import datetime
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+
+import projects.repo.toolbox.notifications.github.api as github_api
 
 
 CHANNEL_ID = "C07NS5TAKPA"
 MAX_CALLS = 10
 DEFAULT_MESSAGE = "🧵 Thread for PR #{}"
-
-
-def fetch_pr_creation_time(org: str, repo: str, pr_number: str):
-    """Fetch the PR creation time to filter out Slack messages.
-    No user_token is needed to list PRs of public repositories."""
-    headers = {
-        "Accept": "application/vnd.github.v3+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
-
-    url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pr_number}"
-
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        pr_data = response.json()
-        created_at = pr_data["created_at"]
-        return datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ").timestamp()
-
-    else:
-        logging.error(f"Error fetching PR creation time: {response.text}")
 
 
 def search_message(client, org: str, repo: str, pr_number: str):
@@ -41,7 +21,7 @@ def search_message(client, org: str, repo: str, pr_number: str):
     cursor = None
     calls = 0
 
-    pr_created_at = fetch_pr_creation_time(org, repo, pr_number)
+    pr_created_at = github_api.fetch_pr_creation_time(org, repo, pr_number)
 
     while not has_more and calls < MAX_CALLS:
         try:
