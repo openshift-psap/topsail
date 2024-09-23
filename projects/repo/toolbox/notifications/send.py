@@ -148,7 +148,7 @@ def send_job_completion_notification_to_slack(reason, status, pr_number, artifac
     org, repo = get_org_repo()
 
     main_ts = slack_api.search_message(client, org, repo, pr_number)
-    message = "test message"
+    message = get_slack_notification_message(reason, status, pr_number, artifacts_link)
 
     if not main_ts:
         main_ts = slack_api.send_message(client, pr_number=pr_number)  # sends default message
