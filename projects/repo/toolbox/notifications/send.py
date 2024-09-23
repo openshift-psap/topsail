@@ -104,6 +104,45 @@ def get_github_notification_message(reason, status, pr_number, artifacts_link):
     return message
 
 
+def get_slack_notification_message(reason, status, pr_number, artifacts_link):
+    message=f"""\
+**{status}**
+
+* Link to the <{artifacts_link}|test results>.
+"""
+    if (pathlib.Path(os.environ.get("ARTIFACTS_DIR", "")) / "reports_index.html").exists():
+        message += f"""
+* Link to the <{artifacts_link}/reports_index.html|reports index>.
+"""
+    else:
+        message += f"""
+* No reports index generated...
+"""
+
+    if (var_over := pathlib.Path(os.environ.get("ARTIFACTS_DIR", "")) / "variable_overrides").exists():
+        with open(var_over) as f:
+            message += f"""
+**Test configuration**:
+```
+{f.readlines().strip()}
+```
+"""
+    else:
+        message += """
+* Not test configuration (`variable_overrides`) available.
+"""
+    if os.environ.get("PERFLAB_CI") == "true":
+        message += """
+*[Test ran on the internal Perflab CI]*
+"""
+
+    message += """
+*[TOPSAIL auto-generated message]*
+"""
+
+    return message
+
+
 def send_job_completion_notification_to_slack(pr_number, artifacts_link, reason, status):
     client = slack_api.init_client()
 
@@ -112,7 +151,7 @@ def send_job_completion_notification_to_slack(pr_number, artifacts_link, reason,
     github_user_token = github_api.get_user_token(pem_file, client_id, org, repo)
 
     main_ts = slack_api.search_message(client, org, repo, pr_number, github_user_token)
-    message = get_github_notification_message(reason, status, pr_number, artifacts_link)  # rename function in case this works
+    message = get_slack_notification_message(reason, status, pr_number, artifacts_link)
 
     if not main_ts:
         main_ts = slack_api.send_message(client, pr_number=pr_number)  # sends default message
