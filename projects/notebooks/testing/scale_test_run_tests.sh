@@ -107,8 +107,6 @@ EOF
         _warning "Gating test failed :/"
     fi
 
-    python3 "$TESTING_UTILS_DIR/generate_plot_index.py" > "$ARTIFACT_DIR/report_index.html"
-
     return $failed
 }
 
