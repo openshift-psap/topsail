@@ -111,7 +111,7 @@ def send_job_completion_notification_to_slack(pr_number, artifacts_link, reason,
     pem_file, client_id = get_github_secrets()
     github_user_token = github_api.get_user_token(pem_file, client_id, org, repo)
 
-    main_ts = slack_api.search_message(client, pr_number, github_user_token)
+    main_ts = slack_api.search_message(client, org, repo, pr_number, github_user_token)
     message = get_github_notification_message(reason, status, pr_number, artifacts_link)  # rename function in case this works
 
     if not main_ts:

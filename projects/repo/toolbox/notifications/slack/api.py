@@ -12,7 +12,7 @@ CHANNEL_ID = "C07NS5TAKPA"
 DEFAULT_MESSAGE = "🧵 Thread for PR #{}"
 
 
-def fetch_pr_creation_time(pr_number: str, user_token: str):
+def fetch_pr_creation_time(org: str, repo: str, pr_number: str, user_token: str):
     """Fetch the PR creation time to filter out Slack messages."""
     headers = {
         "Authorization": f"Bearer {user_token}",
@@ -20,7 +20,7 @@ def fetch_pr_creation_time(pr_number: str, user_token: str):
         "X-GitHub-Api-Version": "2022-11-28",
     }
 
-    url = f"https://api.github.com/repos/openshift-psap/topsail/pulls/{pr_number}"
+    url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pr_number}"
 
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
@@ -32,14 +32,14 @@ def fetch_pr_creation_time(pr_number: str, user_token: str):
         logging.error(f"Error fetching PR creation time: {response.text}")
 
 
-def search_message(client, pr_number: str, user_token: str):
+def search_message(client, org: str, repo: str, pr_number: str, user_token: str):
     """Searches for a message matching the pattern.
     Returns thread ts if successful."""
     has_more = False
     history = []
     cursor = None
 
-    pr_created_at = fetch_pr_creation_time(pr_number, user_token)
+    pr_created_at = fetch_pr_creation_time(org, repo, pr_number, user_token)
 
     while not has_more:
         try:
