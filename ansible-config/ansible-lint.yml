@@ -23,3 +23,5 @@ skip_list:
   - 'ignore-errors'
   - 'fqcn'
   - 'var-naming[no-role-prefix]'
+  # Allow octal values
+  - 'yaml[octal-values]'
