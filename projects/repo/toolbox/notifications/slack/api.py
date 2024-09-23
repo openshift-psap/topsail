@@ -52,9 +52,10 @@ def search_message(client, pr_number: str, user_token: str):
 
             history = result["messages"]
             has_more = result["has_more"]
-            cursor = result["response_metadata"][
-                "next_cursor"
-            ]  # in case it is not in the first 20
+            if has_more:
+                cursor = result["response_metadata"][
+                    "next_cursor"
+                ]  # in case it is not in the first 20
 
         except SlackApiError as e:
             logging.warning(f"Error fetching history: {e}")
