@@ -183,7 +183,7 @@ postchecks() {
 
     if [[ "$reason" == ERR || "$3" == "test_ci" ]]; then
         if [[ "${OPENSHIFT_CI:-}" == true || "${PERFLAB_CI:-}" == true || "${TOPSAIL_LOCAL_CI:-}" == true ]]; then
-            ./run_toolbox.py repo send_job_completion_notification "$reason" "$status"
+            ./run_toolbox.py repo send_job_completion_notification "$reason" "$status" || true
         fi
     fi
 }
