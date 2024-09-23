@@ -9,6 +9,7 @@ from slack_sdk.errors import SlackApiError
 
 
 CHANNEL_ID = "C07NS5TAKPA"
+MAX_CALLS = 10
 DEFAULT_MESSAGE = "🧵 Thread for PR #{}"
 
 
@@ -38,10 +39,11 @@ def search_message(client, org: str, repo: str, pr_number: str):
     has_more = False
     history = []
     cursor = None
+    calls = 0
 
     pr_created_at = fetch_pr_creation_time(org, repo, pr_number)
 
-    while not has_more:
+    while not has_more and calls < MAX_CALLS:
         try:
             result = client.conversations_history(
                 channel=CHANNEL_ID,
@@ -64,6 +66,8 @@ def search_message(client, org: str, repo: str, pr_number: str):
         for message in history:
             if pr_number in message["text"]:
                 return message["ts"]
+
+        calls += 1
 
     return None
 
