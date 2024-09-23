@@ -97,7 +97,7 @@ def init_client():
         return None
 
     secret_dir = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH"))
-    token_file = secret_dir / "slack.token"
+    token_file = secret_dir / "topsail-bot.slack-token"
 
     with open(token_file, "r") as sf:
         client = WebClient(token=sf.read())
