@@ -3,6 +3,7 @@ import logging
 import pathlib
 
 import projects.repo.toolbox.notifications.github.api as github_api
+import projects.repo.toolbox.notifications.slack.api as slack_api
 
 
 def send_job_completion_notification(reason, status, github=True, slack=False):
@@ -104,8 +105,22 @@ def get_github_notification_message(reason, status, pr_number, artifacts_link):
 
 
 def send_job_completion_notification_to_slack(pr_number, artifacts_link, reason, status):
-    logging.warning("send_job_completion_notification_to_slack: not implemented yet")
-    pass
+    client = slack_api.init_client()
+
+    org, repo = get_org_repo()
+    pem_file, client_id = get_github_secrets()
+    github_user_token = github_api.get_user_token(pem_file, client_id, org, repo)
+
+    main_ts = slack_api.search_message(client, pr_number, github_user_token)
+    message = get_github_notification_message(reason, status, pr_number, artifacts_link)  # rename function in case this works
+
+    if not main_ts:
+        main_ts = slack_api.send_message(client)  # sends default message
+        _, ok = slack_api.send_message(client, message, main_ts)
+    else:
+        _, ok = slack_api.send_message(client, message, main_ts)
+
+    return ok
 
 ###
 
