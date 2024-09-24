@@ -14,3 +14,4 @@ state-signals==0.5.2
 kopf
 kubernetes
 pyjwt
+slack_sdk==3.33.0

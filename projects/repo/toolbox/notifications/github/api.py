@@ -1,5 +1,7 @@
 import requests
 import json
+import logging
+from datetime import datetime
 
 from . import gen_jwt
 
@@ -44,6 +46,22 @@ def send_notification(org, repo, user_token, pr_number, message):
         data=data_str,
         headers=headers,
     )
+
+
+def fetch_pr_data(org: str, repo: str, pr_number: str):
+    """Fetch the PR creation time to filter out Slack messages.
+    No user_token is needed to list PRs of public repositories."""
+    url = f"{BASE_URL}/repos/{org}/{repo}/pulls/{pr_number}"
+
+    response = requests.get(url, headers=COMMON_HEADERS)
+    if response.status_code == 200:
+        pr_data = response.json()
+        created_at = pr_data["created_at"]
+        title = pr_data["title"]
+        return datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ").timestamp(), title
+
+    logging.warning(f"Error fetching PR creation time: {response.text}")
+    return 0, None  # XXX: allow the notifications pipeline still to proceed
 
 
 if __name__ == "__main__":

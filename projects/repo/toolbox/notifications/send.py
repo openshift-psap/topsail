@@ -3,6 +3,7 @@ import logging
 import pathlib
 
 import projects.repo.toolbox.notifications.github.api as github_api
+import projects.repo.toolbox.notifications.slack.api as slack_api
 
 
 def send_job_completion_notification(reason, status, github=True, slack=False):
@@ -103,9 +104,67 @@ def get_github_notification_message(reason, status, pr_number, artifacts_link):
     return message
 
 
-def send_job_completion_notification_to_slack(pr_number, artifacts_link, reason, status):
-    logging.warning("send_job_completion_notification_to_slack: not implemented yet")
-    pass
+def get_slack_thread_message(reason, status, pr_number, artifacts_link):
+    message=f"""\
+*{status}*
+
+- Link to the <{artifacts_link}|test results>.
+"""
+    if (pathlib.Path(os.environ.get("ARTIFACTS_DIR", "")) / "reports_index.html").exists():
+        message += f"""
+- Link to the <{artifacts_link}/reports_index.html|reports index>.
+"""
+    else:
+        message += f"""
+- No reports index generated...
+"""
+
+    if (var_over := pathlib.Path(os.environ.get("ARTIFACTS_DIR", "")) / "variable_overrides").exists():
+        with open(var_over) as f:
+            message += f"""
+*Test configuration*:
+```
+{f.readlines().strip()}
+```
+"""
+    else:
+        message += """
+- Not test configuration (`variable_overrides`) available.
+"""
+    if os.environ.get("PERFLAB_CI") == "true":
+        message += """
+_[Test ran on the internal Perflab CI]_
+"""
+
+    message += """
+_[TOPSAIL auto-generated message]_
+"""
+
+    return message
+
+
+def get_slack_main_message(pr_number: str, pr_title: str):
+    """Generates the Slack's notification main thread message."""
+    return "🧵 Thread for PR <https://github.com/openshift-psap/topsail/pull/{pr_number}|#{pr_number}>: {pr_title}"
+
+
+def send_job_completion_notification_to_slack(reason, status, pr_number, artifacts_link):
+    client = slack_api.init_client()
+    org, repo = get_org_repo()
+
+    pr_created_at, pr_title = github_api.fetch_pr_data(org, repo, pr_number)
+    main_ts = slack_api.search_text(client, pr_number, not_before=pr_created_at)
+
+    thread_message = get_slack_thread_message(reason, status, pr_number, artifacts_link)
+
+    if not main_ts:
+        default_message = get_slack_main_message(pr_number, pr_title)
+        main_ts = slack_api.send_message(client, message=default_message)
+        _, ok = slack_api.send_message(client, message=thread_message, main_ts=main_ts)
+    else:
+        _, ok = slack_api.send_message(client, message=thread_message, main_ts=main_ts)
+
+    return ok
 
 ###
 
