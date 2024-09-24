@@ -44,7 +44,7 @@ def search_message(client, org: str, repo: str, pr_number: str):
             return None
 
         for message in history:
-            if pr_number in message["text"]:
+            if f"Thread for PR #{pr_number}" in message["text"]:
                 return message["ts"]
 
         calls += 1
