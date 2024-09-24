@@ -44,6 +44,11 @@ def search_text(client, pr_number: str, not_before):
 
         calls += 1
 
+        if calls == MAX_CALLS:
+            logging.warning(
+                "Slack text search stopped due to MAX_CALLS ({MAX_CALLS}) exceeded."
+            )
+
     return None
 
 
