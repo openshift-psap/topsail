@@ -112,6 +112,7 @@ def cluster_scale_up(user_count):
 
     run.run_toolbox_from_config("cluster", "set_scale", prefix="driver", extra=extra, artifact_dir_suffix="_driver")
 
+
 def prepare_user_pods(user_count):
     namespace = config.ci_artifacts.get_config("base_image.namespace")
 
