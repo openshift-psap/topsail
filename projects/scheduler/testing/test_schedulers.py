@@ -110,8 +110,6 @@ def remove_none_values(d):
 
 
 def _run_test_matbenchmarking(name, test_artifact_dir_p):
-    visualize.prepare_matbench()
-
     with env.NextArtifactDir("matbenchmarking"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
         benchmark_values = copy.deepcopy(config.ci_artifacts.get_config("tests.schedulers.test_settings"))
@@ -288,8 +286,6 @@ def _run_test_and_visualize(name, test_override_values=None):
 
         elif test_artifact_dir_p[0] is not None:
             with env.NextArtifactDir("plots"):
-                visualize.prepare_matbench()
-
                 if do_matbenchmarking:
                     visu_file = config.ci_artifacts.get_config("tests.schedulers.matbenchmarking.visu_file")
                     with config.TempValue(config.ci_artifacts, "matbench.config_file", visu_file):
