@@ -81,7 +81,6 @@ def test(dry_mode=None, visualize=None, capture_prom=None):
             elif test_artifact_dir_p[0] is not None:
                 next_count = env.next_artifact_index()
                 with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
-                    visualize.prepare_matbench()
                     visualize.generate_from_dir(test_artifact_dir_p[0])
             else:
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")

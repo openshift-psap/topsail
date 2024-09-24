@@ -101,8 +101,6 @@ def save_matbench_files(name, cfg):
 
 
 def _run_test_multiple_values(name, test_artifact_dir_p):
-    visualize.prepare_matbench()
-
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test_multiple_values"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
@@ -265,7 +263,6 @@ def _run_test_and_visualize(name, test_override_values=None):
         elif test_artifact_dir_p[0] is not None:
             next_count = env.next_artifact_index()
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
-                visualize.prepare_matbench()
 
                 if do_test_multiple_values:
                     matbench_config_file = config.ci_artifacts.get_config("tests.mcad.test_multiple_values.matbench_config_file")

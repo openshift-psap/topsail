@@ -348,8 +348,6 @@ def generate_visualization(do_matbenchmarking, test_artifact_dir):
     exc = None
 
     with env.NextArtifactDir("plots"):
-        visualize.prepare_matbench()
-
         if do_matbenchmarking:
             visu_file = config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.visu_file")
             with config.TempValue(config.ci_artifacts, "matbench.config_file", visu_file):
@@ -418,8 +416,6 @@ def test(dry_mode=None, do_visualize=None, capture_prom=None):
 
 
 def _run_test_matbenchmarking(test_artifact_dir_p):
-    visualize.prepare_matbench()
-
     with env.NextArtifactDir("matbenchmarking"):
         test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings")
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
