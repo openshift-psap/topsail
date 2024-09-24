@@ -71,7 +71,7 @@ def get_github_notification_message(reason, status, pr_number, artifacts_link):
 
 * Link to the [test results]({artifacts_link}).
 """
-    if (pathlib.Path(os.environ.get("ARTIFACTS_DIR", "")) / "reports_index.html").exists():
+    if (pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "reports_index.html").exists():
         message += f"""
 * Link to the [reports index]({artifacts_link}/reports_index.html).
 """
@@ -80,7 +80,7 @@ def get_github_notification_message(reason, status, pr_number, artifacts_link):
 * No reports index generated...
 """
 
-    if (var_over := pathlib.Path(os.environ.get("ARTIFACTS_DIR", "")) / "variable_overrides").exists():
+    if (var_over := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "variable_overrides").exists():
         with open(var_over) as f:
             message += f"""
 **Test configuration**:
@@ -110,7 +110,7 @@ def get_slack_thread_message(reason, status, pr_number, artifacts_link):
 
 - Link to the <{artifacts_link}|test results>.
 """
-    if (pathlib.Path(os.environ.get("ARTIFACTS_DIR", "")) / "reports_index.html").exists():
+    if (pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "reports_index.html").exists():
         message += f"""
 - Link to the <{artifacts_link}/reports_index.html|reports index>.
 """
@@ -119,7 +119,7 @@ def get_slack_thread_message(reason, status, pr_number, artifacts_link):
 - No reports index generated...
 """
 
-    if (var_over := pathlib.Path(os.environ.get("ARTIFACTS_DIR", "")) / "variable_overrides").exists():
+    if (var_over := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "variable_overrides").exists():
         with open(var_over) as f:
             message += f"""
 *Test configuration*:
