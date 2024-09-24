@@ -151,9 +151,11 @@ def send_job_completion_notification_to_slack(reason, status, pr_number, artifac
     message = "CI test message"
 
     if not main_ts:
+        logging.info(f"(send_job_completion_notification_to_slack) Sending message for PR: #{pr_number} - no main_ts")
         main_ts = slack_api.send_message(client, pr_number=pr_number)  # sends default message
         _, ok = slack_api.send_message(client, message=message, main_ts=main_ts)
     else:
+        logging.info(f"(send_job_completion_notification_to_slack) Sending message for PR: #{pr_number} - main_ts")
         _, ok = slack_api.send_message(client, message=message, main_ts=main_ts)
 
     return ok
