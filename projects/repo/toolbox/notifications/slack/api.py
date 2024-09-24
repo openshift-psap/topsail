@@ -5,17 +5,12 @@ import pathlib
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-import projects.repo.toolbox.notifications.github.api as github_api
-
 
 CHANNEL_ID = "C07NS5TAKPA"
 MAX_CALLS = 10
-DEFAULT_MESSAGE = (
-    "🧵 Thread for PR <https://github.com/openshift-psap/topsail/pull/{}|#{}>"
-)
 
 
-def search_message(client, org: str, repo: str, pr_number: str):
+def search_text(client, pr_number: str, not_before):
     """Searches for a message matching the pattern.
     Returns thread ts if successful."""
     has_more = False
@@ -23,14 +18,12 @@ def search_message(client, org: str, repo: str, pr_number: str):
     cursor = None
     calls = 0
 
-    pr_created_at = github_api.fetch_pr_creation_time(org, repo, pr_number)
-
     while not has_more and calls < MAX_CALLS:
         try:
             result = client.conversations_history(
                 channel=CHANNEL_ID,
                 limit=20,  # default 100
-                oldest=pr_created_at,
+                oldest=not_before,
                 cursor=cursor,
             )
 
@@ -54,13 +47,8 @@ def search_message(client, org: str, repo: str, pr_number: str):
     return None
 
 
-def send_message(
-    client, message: str = None, pr_number: str = None, main_ts: str = None
-):
+def send_message(client, message: str, main_ts: str = None):
     """Sends a message. Optionally to a thread."""
-    if not message:
-        message = DEFAULT_MESSAGE.format(pr_number, pr_number)
-
     try:
         result = client.chat_postMessage(
             channel=CHANNEL_ID,
