@@ -28,6 +28,7 @@ def install_servicemesh():
                     namespace="all",
                     artifact_dir_suffix="_service-mesh")
 
+
 def is_rhoai_installed():
     installed_csv_cmd = run.run(f"oc get csv -loperators.coreos.com/{RHODS_OPERATOR_MANIFEST_NAME}.{RHODS_NAMESPACE}"
                                 f" -n {RHODS_NAMESPACE}", capture_stdout=True, capture_stderr=True)
