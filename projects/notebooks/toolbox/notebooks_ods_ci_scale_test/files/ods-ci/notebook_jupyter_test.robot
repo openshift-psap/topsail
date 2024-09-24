@@ -48,7 +48,7 @@ Go to RHODS Dashboard
   [Tags]  Dashboard
 
   Wait For Condition  return document.title == ${DASHBOARD_PRODUCT_NAME}  timeout=3 minutes
-  Wait Until Page Contains  Launch application  timeout=60 seconds
+  Wait Until Page Contains  Data Science Projects  timeout=60 seconds
   Capture Page Screenshot
 
 

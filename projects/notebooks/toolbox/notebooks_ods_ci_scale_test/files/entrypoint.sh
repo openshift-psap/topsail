@@ -109,8 +109,7 @@ test_exit_code=0
     --extra-robot-args "--exitonfailure" \
     |& tee "${ARTIFACT_DIR}/test.log") || test_exit_code=$?
 
-mv /tmp/ods-ci/ods_ci/tmp/ods-ci* "$ARTIFACT_DIR" || true
-#mv "$ARTIFACT_DIR"/ods-ci-*/* "$ARTIFACT_DIR" || true
+mv /tmp/ods-ci/ods_ci/tmp/ods-ci*/* "$ARTIFACT_DIR" || true
 
 if [[ "$test_exit_code" != 0 && "$USER_COUNT" -gt 100 && "$JOB_COMPLETION_INDEX" != 0 ]]; then
     # test failed
