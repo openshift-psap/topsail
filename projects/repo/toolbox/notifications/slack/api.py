@@ -10,7 +10,9 @@ import projects.repo.toolbox.notifications.github.api as github_api
 
 CHANNEL_ID = "C07NS5TAKPA"
 MAX_CALLS = 10
-DEFAULT_MESSAGE = "🧵 Thread for PR #{}"
+DEFAULT_MESSAGE = (
+    "🧵 Thread for PR <https://github.com/openshift-psap/topsail/pull/{}|#{}>"
+)
 
 
 def search_message(client, org: str, repo: str, pr_number: str):
@@ -57,7 +59,7 @@ def send_message(
 ):
     """Sends a message. Optionally to a thread."""
     if not message:
-        message = DEFAULT_MESSAGE.format(pr_number)
+        message = DEFAULT_MESSAGE.format(pr_number, pr_number)
 
     try:
         result = client.chat_postMessage(
