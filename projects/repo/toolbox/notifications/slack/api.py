@@ -56,8 +56,6 @@ def send_message(
     client, message: str = None, pr_number: str = None, main_ts: str = None
 ):
     """Sends a message. Optionally to a thread."""
-    logging.info(f"Sending message for PR: #{pr_number}")
-
     if not message:
         message = DEFAULT_MESSAGE.format(pr_number)
 

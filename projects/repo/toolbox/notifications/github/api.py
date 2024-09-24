@@ -53,7 +53,6 @@ def fetch_pr_creation_time(org: str, repo: str, pr_number: str):
     No user_token is needed to list PRs of public repositories."""
     url = f"{BASE_URL}/repos/{org}/{repo}/pulls/{pr_number}"
 
-    logging.info(f"Trying to get the PR URL: {url}")
     response = requests.get(url, headers=COMMON_HEADERS)
     if response.status_code == 200:
         pr_data = response.json()
