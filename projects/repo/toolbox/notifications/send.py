@@ -145,7 +145,7 @@ _[TOPSAIL auto-generated message]_
 
 def get_slack_main_message(pr_number: str, pr_title: str):
     """Generates the Slack's notification main thread message."""
-    return "🧵 Thread for PR <https://github.com/openshift-psap/topsail/pull/{pr_number}|#{pr_number}>: {pr_title}"
+    return f"🧵 Thread for PR <https://github.com/openshift-psap/topsail/pull/{pr_number}|#{pr_number}>: {pr_title}"
 
 
 def send_job_completion_notification_to_slack(reason, status, pr_number, artifacts_link):
