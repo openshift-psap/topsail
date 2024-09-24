@@ -85,7 +85,7 @@ def get_github_notification_message(reason, status, pr_number, artifacts_link):
             message += f"""
 **Test configuration**:
 ```
-{f.readlines().strip()}
+{f.read().strip()}
 ```
 """
     else:
@@ -124,7 +124,7 @@ def get_slack_thread_message(reason, status, pr_number, artifacts_link):
             message += f"""
 *Test configuration*:
 ```
-{f.readlines().strip()}
+{f.read().strip()}
 ```
 """
     else:
