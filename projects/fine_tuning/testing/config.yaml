@@ -129,16 +129,16 @@ ci_presets:
   ibm_lora_models:
     extends: [hf_evaluation, dgx_small_footprint]
     tests.fine_tuning.test_settings.model_name: null # for consistency. Set in 'test_extra_settings'
-    tests.fine_tuning.test_settings.dataset_name: news-tokens-16384plus-entries-4096.jsonl
-    tests.fine_tuning.test_settings.dataset_replication: 1
-    tests.fine_tuning.test_settings.gpu: [2, 4]
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+    tests.fine_tuning.test_settings.dataset_replication: 0.1
+    tests.fine_tuning.test_settings.gpu: [2]
     tests.fine_tuning.test_settings.hyper_parameters:
       peft_method: "lora"
       torch_dtype: bfloat16
       use_flash_attn: true
       max_steps: -1
-      per_device_train_batch_size: [1, 2, 4, 8, 16, 32]
-      max_seq_length: [512, 2048]
+      per_device_train_batch_size: [2, 8]
+      max_seq_length: [1024]
       gradient_accumulation_steps: 4
       warmup_ratio: 0.03
       num_train_epochs: 1
@@ -147,21 +147,21 @@ ci_presets:
       r: 4
       lora_alpha: 16
     tests.fine_tuning.test_extra_settings:
-    # - name: llama-13b
-    #   model_name:
-    #   - meta-llama/Llama-2-13b-hf
-    #   hyper_parameters:
-    #     raw_lists: {target_modules: ["q_proj", "k_proj"]}
-    # - name: granite-20b-v2
-    #   model_name:
-    #   - ibm-granite/granite-20b-code-base
-    #   hyper_parameters:
-    #     raw_lists: {target_modules: ["c_attn", "c_proj"]}
-    - name: granite-7b
-      model_name:
-      - ibm-granite/granite-7b-base
-      hyper_parameters:
-        raw_lists: {target_modules: ["q_attn", "v_proj"]}
+     - name: llama-13b
+       model_name:
+       - meta-llama/Llama-2-13b-hf
+       hyper_parameters:
+         raw_lists: {target_modules: ["q_proj", "k_proj"]}
+     - name: granite-20b-v2
+       model_name:
+       - ibm-granite/granite-20b-code-base
+       hyper_parameters:
+         raw_lists: {target_modules: ["c_attn", "c_proj"]}
+     - name: granite-7b
+       model_name:
+       - ibm-granite/granite-7b-base
+       hyper_parameters:
+         raw_lists: {target_modules: ["q_attn", "v_proj"]}
 
   dgx_multi_model_8:
     extends: [multi_model]
@@ -257,6 +257,12 @@ ci_presets:
 
   cluster_a30:
     clusters.sutest.compute.machineset.type: "Cluster A30-24GB"
+
+  gating:
+    extends: [use_intlab_os]
+    matbench.lts.opensearch.export.enabled: true
+    matbench.lts.regression_analyses.enabled: true
+
 secrets:
   dir:
     name: psap-ods-secret
