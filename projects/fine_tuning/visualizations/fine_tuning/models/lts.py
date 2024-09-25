@@ -32,6 +32,9 @@ class Settings(matbench_models.ExclusiveModel):
     lora_alpha: Optional[int]
     lora_modules: Optional[str]
 
+    dataset_name: str
+    dataset_replication: int
+
     ci_engine: str
     run_id: str
     test_path: str
