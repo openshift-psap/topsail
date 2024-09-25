@@ -110,3 +110,8 @@ def uninstall_servicemesh(mute=True):
 
     for ns in cleanup.get("namespaces", []):
         run.run(f"timeout 300 oc delete ns {ns} --ignore-not-found")
+
+def is_component_deployed(component: str):
+    is_deployed = run.run(f"oc get dsc -ojsonpath='{{.items[0].status.installedComponents.{component}}}'", check=False, capture_stdout=True).stdout == "true"
+
+    return is_deployed

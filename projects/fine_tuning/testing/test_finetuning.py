@@ -310,8 +310,13 @@ def _run_test_and_visualize(test_override_values=None):
         logging.error(msg)
         raise ValueError(msg)
 
-    if prepare_rhoai_mod.is_rhoai_installed():
+    if not prepare_rhoai_mod.is_rhoai_installed():
         msg = "RHOAI not installed, cluster not prepared for fine-tuning"
+        logging.error(msg)
+        raise RuntimeError(msg)
+
+    if not prepare_rhoai_mod.is_component_deployed("trainingoperator"):
+        msg = "Training Operator not installed, cluster not prepared for fine-tuning"
         logging.error(msg)
         raise RuntimeError(msg)
 
