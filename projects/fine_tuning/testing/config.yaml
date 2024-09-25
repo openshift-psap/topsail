@@ -169,7 +169,7 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: [2, 4]
     tests.fine_tuning.test_settings.hyper_parameters:
       peft_method: "lora"
-      quantized_lora_config: {auto_gptq: ["triton_v2"]}
+      auto_gptq: ["triton_v2"]
       torch_dtype: float16
       fp16: true
       use_flash_attn: true
