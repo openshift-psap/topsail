@@ -40,6 +40,7 @@ def prepare_gpu():
 
 
 def prepare_rhoai():
+    return
     if not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
@@ -68,9 +69,10 @@ def prepare_rhoai():
 
 
 def set_namespace_annotations():
-    metal = config.project.get_config("clusters.sutest.is_metal")
-    dedicated = config.project.get_config("clusters.sutest.compute.dedicated")
-    namespace = config.project.get_config("tests.fine_tuning.namespace")
+    return
+    metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
+    dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
+    namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
 
     if metal:
         logging.info("Running in a bare-metal environment, not setting the namespace node-isolation annotations")
