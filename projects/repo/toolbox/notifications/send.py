@@ -90,21 +90,37 @@ def get_github_notification_message(reason, status, pr_number, artifacts_link):
 """
     else:
         message += """
-* Not test configuration (`variable_overrides`) available.
+* No test configuration (`variable_overrides`) available.
 """
+
+    if (failures := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "FAILURES").exists():
+        with open(failures) as f:
+            HEAD = 10
+            lines = f.readlines()
+            NL = "\n"
+            message += f"""
+*Failure indicator*:
+```
+{NL.join(lines[:HEAD])}
+{"[...]" if len(lines) > HEAD else ""}
+```
+""" if lines else f"""
+*Failure indicator*: Empty. (See [run.log]({artifacts_link}/run.log))
+"""
+
     if os.environ.get("PERFLAB_CI") == "true":
         message += """
 *[Test ran on the internal Perflab CI]*
 """
 
-    message += """
-*[TOPSAIL auto-generated message]*
-"""
-
     return message
 
 
-def get_slack_thread_message(reason, status, pr_number, artifacts_link):
+# Warning:
+# Slack API messages format is different from the GUI
+# https://api.slack.com/reference/surfaces/formatting
+
+def get_slack_thread_message(reason, status, pr_data, artifacts_link):
     message=f"""\
 *{status}*
 
@@ -131,46 +147,77 @@ def get_slack_thread_message(reason, status, pr_number, artifacts_link):
         message += """
 - Not test configuration (`variable_overrides`) available.
 """
+
+    if (failures := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "FAILURES").exists():
+        with open(failures) as f:
+            HEAD = 10
+            lines = f.readlines()
+            NL = "\n"
+            message += f"""
+*Failure indicator*:
+```
+{NL.join(lines[:HEAD])}
+{"[...]" if len(lines) > HEAD else ""}
+```
+""" if lines else f"""
+*Failure indicator*: Empty. (See <{artifacts_link}/run.log|run.log>)
+"""
+
     if os.environ.get("PERFLAB_CI") == "true":
         message += """
 _[Test ran on the internal Perflab CI]_
 """
 
-    message += """
-_[TOPSAIL auto-generated message]_
-"""
-
     return message
 
+def get_slack_channel_message_anchor(pr_number):
+    if pr_number:
+        return f"Thread for PR #{pr_number}"
+    else:
+        return "Thread for tests without PRs"
 
-def get_slack_main_message(pr_number: str, pr_title: str):
+
+def get_slack_channel_message(anchor: str, pr_data: dict):
     """Generates the Slack's notification main thread message."""
-    return f"🧵 Thread for PR <https://github.com/openshift-psap/topsail/pull/{pr_number}|#{pr_number}>: {pr_title}"
+
+    org, repo = get_org_repo()
+
+    message = f"🧵 {anchor}"
+
+    if not pr_data:
+        return message
+
+    # see eg https://api.github.com/repos/openshift-psap/topsail/pulls/362 for the content of 'pr_data'
+    message += f"""
+
+```{pr_data['title']}```
+
+Link to the <{pr_data['html_url']}|PR>.
+"""
+
+
+    return message
 
 
 def send_job_completion_notification_to_slack(reason, status, pr_number, artifacts_link):
     client = slack_api.init_client()
     org, repo = get_org_repo()
 
-    pr_created_at, pr_title = github_api.fetch_pr_data(org, repo, pr_number)
-    main_ts = slack_api.search_text(client, pr_number, not_before=pr_created_at)
+    pr_created_at, pr_data = github_api.fetch_pr_data(org, repo, pr_number)
 
-    thread_message = get_slack_thread_message(reason, status, pr_number, artifacts_link)
+    anchor = get_slack_channel_message_anchor(pr_number)
 
-    if not main_ts:
-        default_message = get_slack_main_message(pr_number, pr_title)
-        main_ts = slack_api.send_message(client, message=default_message)
-        _, ok = slack_api.send_message(client, message=thread_message, main_ts=main_ts)
-    else:
-        _, ok = slack_api.send_message(client, message=thread_message, main_ts=main_ts)
+    channel_msg_ts = slack_api.search_text(client, anchor, not_before=pr_created_at)
+
+    if not channel_msg_ts:
+        channel_message = get_slack_channel_message(anchor, pr_data)
+        channel_msg_ts = slack_api.send_message(client, message=channel_message)
+
+    thread_message = get_slack_thread_message(reason, status, pr_data, artifacts_link)
+    _, ok = slack_api.send_message(client, message=thread_message, main_ts=channel_msg_ts)
 
     return ok
 
-###
-
-def genetate_github_message():
-    pr_number = get_pr_number()
-    link = get_artifacts_link()
 
 ###
 
@@ -201,14 +248,14 @@ def get_artifacts_link():
 
         return (f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/" +
                 f"pull/{os.environ['REPO_OWNER']}_{os.environ['REPO_NAME']}/{os.environ['PULL_NUMBER']}" +
-                f"/{os.environ['JOB_NAME']}/{os.environ['BUILD_ID']}/artifacts/{os.environ['JOB_NAME_SAFE']}/{test_name}/artifacts/")
+                f"/{os.environ['JOB_NAME']}/{os.environ['BUILD_ID']}/artifacts/{os.environ['JOB_NAME_SAFE']}/{test_name}/artifacts")
 
 
     elif os.environ.get("PERFLAB_CI") == "true":
-        artifact_dir = os.environ['ARTIFACT_DIR'].removeprefix("/logs/artifacts/")
+        artifact_dir = os.environ['ARTIFACT_DIR'].removeprefix("/logs/artifacts")
 
         return (f"https://{os.environ['JENKINS_INSTANCE']}/{os.environ['JENKINS_JOB']}/{os.environ['JENKINS_BUILD_NUMBER']}/" +
-                f"artifact/run/{os.environ['JENKINS_JUMPHOST']}/{artifact_dir})")
+                f"artifact/run/{os.environ['JENKINS_JUMPHOST']}/{artifact_dir}")
     elif os.environ.get("TOPSAIL_LOCAL_CI") == "true":
         logging.warning("LocalCI links not supported yet.")
         return
