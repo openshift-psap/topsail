@@ -166,11 +166,6 @@ def send_job_completion_notification_to_slack(reason, status, pr_number, artifac
 
     return ok
 
-###
-
-def genetate_github_message():
-    pr_number = get_pr_number()
-    link = get_artifacts_link()
 
 ###
 
