@@ -10,7 +10,7 @@ CHANNEL_ID = "C07NS5TAKPA"
 MAX_CALLS = 10
 
 
-def search_text(client, pr_number: str, not_before):
+def search_text(client, message_anchor: str, not_before):
     """Searches for a message matching the pattern.
     Returns thread ts if successful."""
     has_more = False
@@ -19,6 +19,8 @@ def search_text(client, pr_number: str, not_before):
     calls = 0
 
     while not has_more and calls < MAX_CALLS:
+        calls += 1
+
         try:
             result = client.conversations_history(
                 channel=CHANNEL_ID,
@@ -39,15 +41,13 @@ def search_text(client, pr_number: str, not_before):
             return None
 
         for message in history:
-            if f"Thread for PR #{pr_number}" in message["text"]:
-                return message["ts"]
+            if message_anchor not in message["text"]:
+                continue
 
-        calls += 1
+            return message["ts"]
 
-        if calls == MAX_CALLS:
-            logging.warning(
-                "Slack text search stopped due to MAX_CALLS ({MAX_CALLS}) exceeded."
-            )
+    if calls == MAX_CALLS:
+        logging.info(f"Slack text search stopped due to MAX_CALLS ({MAX_CALLS}) exceeded.")
 
     return None
 

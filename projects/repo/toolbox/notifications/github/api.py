@@ -54,14 +54,15 @@ def fetch_pr_data(org: str, repo: str, pr_number: str):
     url = f"{BASE_URL}/repos/{org}/{repo}/pulls/{pr_number}"
 
     response = requests.get(url, headers=COMMON_HEADERS)
-    if response.status_code == 200:
-        pr_data = response.json()
-        created_at = pr_data["created_at"]
-        title = pr_data["title"]
-        return datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ").timestamp(), title
+    if not response.ok:
+        logging.warning(f"Error fetching PR creation time: {response.text}")
 
-    logging.warning(f"Error fetching PR creation time: {response.text}")
-    return 0, None  # XXX: allow the notifications pipeline still to proceed
+        return 0, None  # XXX: allow the notifications pipeline still to proceed
+
+    pr_data = response.json()
+    created_at = pr_data["created_at"]
+
+    return datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ").timestamp(), pr_data
 
 
 if __name__ == "__main__":
