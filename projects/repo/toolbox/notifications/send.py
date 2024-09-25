@@ -99,7 +99,7 @@ def get_github_notification_message(reason, status, pr_number, artifacts_link):
             lines = f.readlines()
 
             message += f"""
-*Failure indicator*:
+*[Failure indicator]({artifacts_link}/FAILURES)*:
 ```
 {"".join(lines[:HEAD])}
 {"[...]" if len(lines) > HEAD else ""}
@@ -154,7 +154,7 @@ def get_slack_thread_message(reason, status, pr_data, artifacts_link):
             lines = f.readlines()
 
             message += f"""
-*Failure indicator*:
+*<{artifacts_link}/FAILURES|Failure indicator>*:
 ```
 {"".join(lines[:HEAD])}
 {"[...]" if len(lines) > HEAD else ""}
