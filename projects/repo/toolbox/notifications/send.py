@@ -113,10 +113,6 @@ def get_github_notification_message(reason, status, pr_number, artifacts_link):
 *[Test ran on the internal Perflab CI]*
 """
 
-    message += """
-*[TOPSAIL auto-generated message]*
-"""
-
     return message
 
 
@@ -171,10 +167,6 @@ def get_slack_thread_message(reason, status, pr_number, artifacts_link):
     if os.environ.get("PERFLAB_CI") == "true":
         message += """
 _[Test ran on the internal Perflab CI]_
-"""
-
-    message += """
-_[TOPSAIL auto-generated message]_
 """
 
     return message
