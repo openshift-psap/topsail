@@ -14,6 +14,7 @@ from collections import defaultdict
 
 from projects.core.library import env, config, run, merge_dicts
 from projects.matrix_benchmarking.library import visualize, matbenchmark
+from projects.rhods.library import prepare_rhoai as prepare_rhoai_mod
 
 import prepare_finetuning
 
@@ -308,6 +309,11 @@ def _run_test_and_visualize(test_override_values=None):
         msg = "Cannot do matbenchmarking and multi-model at the same time"
         logging.error(msg)
         raise ValueError(msg)
+
+    if prepare_rhoai_mod.is_rhoai_installed():
+        msg = "RHOAI not installed, cluster not prepared for fine-tuning"
+        logging.error(msg)
+        raise RuntimeError(msg)
 
     test_artifact_dir_p = [None]
     try:
