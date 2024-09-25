@@ -161,6 +161,35 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.raw_lists: {target_modules: ["q_proj", "k_proj"]}
 
 
+  ibm_qlora_models:
+    extends: [hf_evaluation, dgx_small_footprint]
+    tests.fine_tuning.test_settings.model_name: null # for consistency. Set in 'test_extra_settings'
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+    tests.fine_tuning.test_settings.dataset_replication: 1
+    tests.fine_tuning.test_settings.gpu: [2, 4]
+    tests.fine_tuning.test_settings.hyper_parameters:
+      peft_method: "lora"
+      quantized_lora_config: {auto_gptq: ["triton_v2"]}
+      torch_dtype: float16
+      fp16: true
+      use_flash_attn: true
+      max_steps: -1
+      per_device_train_batch_size: [1, 2, 4, 8, 16, 32]
+      max_seq_length: [512, 2048]
+      gradient_accumulation_steps: 4
+      warmup_ratio: 0.03
+      num_train_epochs: 1
+      gradient_checkpointing: true
+      packing: false
+      r: 4
+      lora_alpha: 16
+    tests.fine_tuning.test_extra_settings:
+    - name: granite-7b
+      model_name:
+      - ibm-granite/granite-7b-base
+      hyper_parameters:
+        raw_lists: {target_modules: ["q_attn", "v_proj"]}
+
   dgx_multi_model_8:
     extends: [multi_model]
     fine_tuning.model_registry: hf
@@ -346,7 +375,8 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: quay.io/modh/fms-hf-tuning:v2.0.0
+  image: quay.io/modh/fms-hf-tuning:v2.0.1
+  image_name: fms-hf-tuning:v2.0.1
   pvc:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
