@@ -104,6 +104,10 @@ def get_github_notification_message(reason, status, pr_number, artifacts_link):
     return message
 
 
+# Warning:
+# Slack API messages format is different from the GUI
+# https://api.slack.com/reference/surfaces/formatting
+
 def get_slack_thread_message(reason, status, pr_number, artifacts_link):
     message=f"""\
 *{status}*
