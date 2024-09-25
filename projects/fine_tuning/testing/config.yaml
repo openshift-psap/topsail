@@ -446,6 +446,9 @@ tests:
         num_train_epochs: null
         max_seq_length: null
         peft_method: null
+        auto_gptq: null
+        torch_dtype: null
+        fp16: null
         use_flash_attn: null
         # LoRA hyper-parameters:
         r: null
