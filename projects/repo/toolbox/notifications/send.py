@@ -203,7 +203,7 @@ def get_artifacts_link():
         artifact_dir = os.environ['ARTIFACT_DIR'].removeprefix("/logs/artifacts/")
 
         return (f"https://{os.environ['JENKINS_INSTANCE']}/{os.environ['JENKINS_JOB']}/{os.environ['JENKINS_BUILD_NUMBER']}/" +
-                f"artifact/run/{os.environ['JENKINS_JUMPHOST']}/{artifact_dir})")
+                f"artifact/run/{os.environ['JENKINS_JUMPHOST']}/{artifact_dir}")
     elif os.environ.get("TOPSAIL_LOCAL_CI") == "true":
         logging.warning("LocalCI links not supported yet.")
         return
