@@ -99,15 +99,15 @@ def get_common_message(reason, status, get_link, get_italics, get_bold):
 """
 
     message  += f"""
-* Link to the {get_link("test results", "")}.
+• Link to the {get_link("test results", "")}.
 """
     if (pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "reports_index.html").exists():
         message += f"""
-* Link to the {get_link("reports index", "reports_index.html")}.
+• Link to the {get_link("reports index", "reports_index.html")}.
 """
     else:
         message += f"""
-* No reports index generated...
+• No reports index generated...
 """
 
     if (var_over := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "variable_overrides").exists():
@@ -120,7 +120,7 @@ def get_common_message(reason, status, get_link, get_italics, get_bold):
 """
     else:
         message += """
-* No test configuration (`variable_overrides`) available.
+• No test configuration (`variable_overrides`) available.
 """
 
     if os.environ.get("PERFLAB_CI") == "true":
@@ -333,5 +333,5 @@ def get_perflab_ci_extra_footer_message(get_link):
     link = f"rebuild/parameterized"
 
     return f"""
-* Link to the {get_link("Rebuild page", link, base=base)}.
+• Link to the {get_link("Rebuild page", link, base=base)}.
 """
