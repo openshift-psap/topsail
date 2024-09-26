@@ -48,8 +48,12 @@ def _rewrite_settings(settings_dict):
     settings_dict.pop("hyper_parameters.raw_lists", None)
 
     container_image = settings_dict.pop("container_image", None)
-    if container_image == "quay.io/modh/fms-hf-tuning:release-ec50c3d7dc09f50d9885f25efc3d2fc98a379709":
-        container_image = "RHOAI 2.12 (rc)"
+    if container_image == "quay.io/modh/fms-hf-tuning:main-80aed7ae98acfe90e7a37df1d722ecc47fa8159e":
+        container_image = "RHOAI 2.14 (nightly)"
+    elif container_image == "quay.io/modh/fms-hf-tuning:v1.2.2-10e588f73aa91a00e14d5f8f707d5fcebc8c3c79":
+        container_image = "RHOAI 2.13 (release)"
+    elif container_image == "quay.io/modh/fms-hf-tuning:release-014bbf70f020a5ac5e40bfe5fb0285a5d7676a42":
+        container_image = "RHOAI 2.12 (release)"
     elif container_image == "quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05":
         container_image = "RHOAI 2.11 (release)"
     elif container_image == "quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3":
