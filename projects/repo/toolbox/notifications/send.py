@@ -6,7 +6,7 @@ import projects.repo.toolbox.notifications.github.api as github_api
 import projects.repo.toolbox.notifications.slack.api as slack_api
 
 
-def send_job_completion_notification(reason, status, github=True, slack=False):
+def send_job_completion_notification(reason, status, github=True, slack=False, dry_run=False):
     if os.environ.get("TOPSAIL_LOCAL_CI_MULTI") == "true":
         logging.info("No notification to send from Local-CI multi.")
         # this avoid sending spurious messages ...
@@ -22,17 +22,17 @@ def send_job_completion_notification(reason, status, github=True, slack=False):
         github = False
 
     failed = False
-    if github and not send_job_completion_notification_to_github(reason, status, pr_number):
+    if github and not send_job_completion_notification_to_github(reason, status, pr_number, dry_run):
         failed = True
 
-    if slack and not send_job_completion_notification_to_slack(reason, status, pr_number):
+    if slack and not send_job_completion_notification_to_slack(reason, status, pr_number, dry_run):
         failed = True
 
     return failed
 
 ###
 
-def send_job_completion_notification_to_github(reason, status, pr_number):
+def send_job_completion_notification_to_github(reason, status, pr_number, dry_run):
     message = get_github_notification_message(reason, status, pr_number)
 
     org, repo = get_org_repo()
@@ -56,6 +56,14 @@ def send_job_completion_notification_to_github(reason, status, pr_number):
         return
 
     user_token = github_api.get_user_token(pem_file, client_id, org, repo)
+    if dry_run:
+        logging.info(f"Github notification:\n{message}")
+        logging.info(f"***")
+        logging.info(f"***")
+        logging.info(f"***\n")
+
+        return True
+
     resp = github_api.send_notification(org, repo, user_token, pr_number, message)
 
     if not resp.ok:
@@ -183,7 +191,7 @@ Link to the <{pr_data['html_url']}|PR>.
     return message
 
 
-def send_job_completion_notification_to_slack(reason, status, pr_number):
+def send_job_completion_notification_to_slack(reason, status, pr_number, dry_run):
     client = slack_api.init_client()
     org, repo = get_org_repo()
 
@@ -191,13 +199,30 @@ def send_job_completion_notification_to_slack(reason, status, pr_number):
 
     anchor = get_slack_channel_message_anchor(pr_number)
 
-    channel_msg_ts = slack_api.search_text(client, anchor, not_before=pr_created_at)
+    channel_msg_ts, channel_message = slack_api.search_channel_message(client, anchor, not_before=pr_created_at)
 
     if not channel_msg_ts:
         channel_message = get_slack_channel_message(anchor, pr_data)
-        channel_msg_ts = slack_api.send_message(client, message=channel_message)
+
+        if dry_run:
+            logging.info(f"Posting Slack channel notification ...")
+        else:
+            channel_msg_ts = slack_api.send_message(client, message=channel_message)
+
+
+    if dry_run:
+        logging.info(f"Slack channel notification:\n{channel_message}")
 
     thread_message = get_slack_thread_message(reason, status, pr_data)
+
+    if dry_run:
+        logging.info(f"Slack thread notification:\n{thread_message}")
+        logging.info(f"***")
+        logging.info(f"***")
+        logging.info(f"***\n")
+
+        return True
+
     _, ok = slack_api.send_message(client, message=thread_message, main_ts=channel_msg_ts)
 
     return ok
@@ -241,7 +266,7 @@ def get_ci_base_link(needs_view_suffix=False):
 
         return ((f"https://{os.environ['JENKINS_INSTANCE']}/{os.environ['JENKINS_JOB']}/{os.environ['JENKINS_BUILD_NUMBER']}/" +
                 f"artifact/run/{os.environ['JENKINS_JUMPHOST']}/{artifact_dir}"),
-                ("" if needs_view_suffix else "/*view*/"))
+                ("/*view*/" if needs_view_suffix else ""))
 
     elif os.environ.get("TOPSAIL_LOCAL_CI") == "true":
         logging.warning("LocalCI links not supported yet.")
