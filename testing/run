@@ -144,7 +144,7 @@ postchecks() {
     shift
 
     if [[ "$reason" == ERR ]]; then
-        find "$ARTIFACT_DIR" -name FAILURE -exec bash -c "(echo -n '{} | '  ; cat {})" \; > "$ARTIFACT_DIR/FAILURES"
+        find "$ARTIFACT_DIR" -name FAILURE | sort | xargs -I% bash -c "(echo -n '% | '  ; cat %)" \; > "$ARTIFACT_DIR/FAILURES"
         touch "$ARTIFACT_DIR/FAILURES"
 
         if ! oc version >/dev/null 2>&1; then
