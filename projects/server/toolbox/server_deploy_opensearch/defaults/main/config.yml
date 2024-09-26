@@ -1,0 +1,14 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Server.deploy_opensearch
+
+# Parameters
+# Path of a file containing the properties of LDAP secrets.
+# Mandatory value
+server_deploy_opensearch_secret_properties_file:
+
+# namespace in which the application will be deployed
+server_deploy_opensearch_namespace: opensearch
+
+# name to give to the opensearch instance
+server_deploy_opensearch_name: opensearch

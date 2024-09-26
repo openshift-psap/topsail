@@ -1,2 +1,0 @@
----
-cluster_deploy_redis_server_deployment: "{{ role_path }}/files/deploy_redis.yaml"

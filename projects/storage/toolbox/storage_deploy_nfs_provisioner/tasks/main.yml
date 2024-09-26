@@ -1,0 +1,53 @@
+---
+- name: Create the namespace, if it does not exist
+  shell:
+    set -o pipefail;
+    oc create ns "{{ storage_deploy_nfs_provisioner_namespace }}" -oyaml --dry-run=client | oc apply -f-
+
+- name: Create the storage PVC
+  shell:
+    set -o pipefail;
+    cat "{{ nfs_provisioner_files }}/export-pv-claim.yaml"
+       |  yq --arg storage_size "{{ storage_deploy_nfs_provisioner_pvc_size }}" '.spec.resources.requests.storage = $storage_size'
+       |  yq --arg storage_sc "{{ storage_deploy_nfs_provisioner_pvc_sc }}" '.spec.storageClassName = $storage_sc'
+       | oc apply -f- -n "{{ storage_deploy_nfs_provisioner_namespace }}"
+
+- name: Create the SCC
+  command:
+    oc apply
+       -f "{{ nfs_provisioner_files }}/scc.yaml"
+       -n "{{ storage_deploy_nfs_provisioner_namespace }}"
+
+- name: Create the RBAC
+  shell: |
+    set -o pipefail
+    cat "{{ nfs_provisioner_files }}/rbac.yaml" \
+      | sed 's/namespace: nfs-provisioner/namespace: {{ storage_deploy_nfs_provisioner_namespace }}/g' \
+      | oc apply \
+          -f "{{ nfs_provisioner_files }}/rbac.yaml" \
+          -n "{{ storage_deploy_nfs_provisioner_namespace }}"
+
+- name: Create the ServiceAccount/Service/Deployment
+  command:
+    oc apply
+          -f "{{ nfs_provisioner_files }}/deployment.yaml"
+          -n "{{ storage_deploy_nfs_provisioner_namespace }}"
+
+- name: Create the StorageClass
+  shell:
+    set -o pipefail;
+    cat "{{ nfs_provisioner_files }}/class.yaml"
+       | yq --arg name "{{ storage_deploy_nfs_provisioner_storage_class_name }}" '.metadata.name = $name'
+       | oc apply -f-
+
+- name: Unset the current default storage class
+  command:
+    oc annotate sc storageclass.kubernetes.io/is-default-class=false --all --overwrite
+  when: storage_deploy_nfs_provisioner_default_sc | bool
+
+- name: Mark as nfs-provisioner storage class as default storage class
+  command:
+    oc annotate sc "{{ storage_deploy_nfs_provisioner_storage_class_name }}"
+       storageclass.kubernetes.io/is-default-class=true
+       --overwrite
+  when: storage_deploy_nfs_provisioner_default_sc | bool

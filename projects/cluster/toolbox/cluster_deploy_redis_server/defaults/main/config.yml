@@ -1,8 +1,0 @@
-# Auto-generated file, do not edit manually ...
-# Toolbox generate command: repo generate_ansible_default_settings
-# Source component: Cluster.deploy_redis_server
-
-# Parameters
-# namespace where the server will be deployed. Will be create if it doesn't exist.
-# Mandatory value
-cluster_deploy_redis_server_namespace:

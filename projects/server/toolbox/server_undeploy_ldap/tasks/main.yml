@@ -1,0 +1,39 @@
+---
+- name: Delete the LDAP resources
+  command: oc delete -f "{{ cluster_deploy_ldap_resources }}" --ignore-not-found
+
+- name: Create the LDAP bind secret resource
+  command: oc delete -f "{{ cluster_deploy_ldap_bind_secret_template }}" --ignore-not-found
+
+- name: Create the LDAP secret resource
+  command: oc delete -f "{{ cluster_deploy_ldap_secret_template }}" --ignore-not-found
+
+- name: Delete the LDAP OAuth resource
+  when:
+  - not server_undeploy_ldap_use_rosa
+  - not server_undeploy_ldap_use_ocm
+  shell:
+    set -o pipefail;
+    oc get OAuth/cluster -ojson
+       | jq 'del(.spec.identityProviders[] | select(.name == "{{ server_undeploy_ldap_idp_name }}"))'
+       | oc apply -f-
+
+- name: Delete the ldap namespace
+  command:
+    oc delete namespace openldap --ignore-not-found
+
+- name: Undeploy on ROSA
+  when: server_undeploy_ldap_use_rosa | bool
+  block:
+  - name: Delete the IDP resource
+    command:
+      rosa delete idp "{{ server_undeploy_ldap_idp_name }}"
+          --cluster "{{ server_undeploy_ldap_cluster_name }}"
+
+- name: Undeploy on OCM
+  when: server_undeploy_ldap_use_ocm | bool
+  block:
+  - name: Delete the IDP resource
+    command:
+      ocm delete idp "{{ server_undeploy_ldap_idp_name }}"
+          --cluster "{{ server_undeploy_ldap_cluster_name }}"

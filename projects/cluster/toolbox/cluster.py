@@ -147,82 +147,6 @@ class Cluster:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("cluster_deploy_aws_efs")
-    @AnsibleMappedParams
-    def deploy_aws_efs(self):
-        """
-        Deploy AWS EFS CSI driver and configure AWS accordingly.
-
-        Assumes that AWS (credentials, Ansible module, Python module) is properly configured in the system.
-        """
-
-        return RunAnsibleRole()
-
-    @AnsibleRole("cluster_deploy_nfs_provisioner")
-    @AnsibleMappedParams
-    def deploy_nfs_provisioner(self, namespace="nfs-provisioner",
-                               pvc_sc="gp3-csi", pvc_size="10Gi",
-                               storage_class_name="nfs-provisioner", default_sc=False):
-        """
-        Deploy NFS Provisioner
-
-        Args:
-          namespace: The namespace where the resources will be deployed
-          pvc_sc: The name of the storage class to use for the NFS-provisioner PVC
-          pvc_size: The size of the PVC to give to the NFS-provisioner
-          storage_class_name: The name of the storage class that will be created
-          default_sc: Set to true to mark the storage class as default in the cluster
-        """
-
-        return RunAnsibleRole(locals())
-
-    @AnsibleRole("cluster_deploy_minio_s3_server")
-    @AnsibleConstant("Name of the user/access key to use to connect to the Minio server",
-                     "access_key", "minio")
-    @AnsibleConstant("Name of the Minio admin user",
-                     "root_user", "admin")
-    @AnsibleMappedParams
-    def deploy_minio_s3_server(self, secret_properties_file, namespace="minio", bucket_name="myBucket"):
-        """
-        Deploy Minio S3 server
-
-        Example of secret properties file:
-
-        user_password=passwd
-        admin_password=adminpasswd
-
-        Args:
-            secret_properties_file: Path of a file containing the properties of S3 secrets.
-            namespace: Namespace in which Minio should be deployed.
-            bucket_name: The name of the default bucket to create in Minio.
-        """
-
-        return RunAnsibleRole(locals())
-
-    @AnsibleRole("cluster_deploy_nginx_server")
-    @AnsibleMappedParams
-    def deploy_nginx_server(self, namespace, directory):
-        """
-        Deploy an NGINX HTTP server
-
-        Args:
-            namespace: namespace where the server will be deployed. Will be create if it doesn't exist.
-            directory: directory containing the files to serve on the HTTP server.
-        """
-
-        return RunAnsibleRole(locals())
-
-    @AnsibleRole("cluster_deploy_redis_server")
-    @AnsibleMappedParams
-    def deploy_redis_server(self, namespace):
-        """
-        Deploy a redis server
-
-        Args:
-            namespace: namespace where the server will be deployed. Will be create if it doesn't exist.
-        """
-
-        return RunAnsibleRole(locals())
 
     @AnsibleRole("cluster_prometheus_db")
     @AnsibleConstant("Directory to dump on the Prometheus Pod", "directory", "/prometheus")
@@ -376,53 +300,6 @@ class Cluster:
 
         Args:
           cluster_name: The name of the cluster to destroy.
-        """
-
-        return RunAnsibleRole(locals())
-
-    @AnsibleRole("cluster_deploy_ldap")
-    @AnsibleConstant("Name of the admin user",
-                     "admin_user", "admin")
-    @AnsibleMappedParams
-    def deploy_ldap(self,
-                    idp_name, username_prefix, username_count: int, secret_properties_file,
-                    use_ocm=False, use_rosa=False,
-                    cluster_name=None,
-                    wait=False):
-        """
-        Deploy OpenLDAP and LDAP Oauth
-
-        Example of secret properties file:
-
-        admin_password=adminpasswd
-
-        Args:
-          idp_name: Name of the LDAP identity provider.
-          username_prefix: Prefix for the creation of the users (suffix is 0..username_count)
-          username_count: Number of users to create.
-          secret_properties_file: Path of a file containing the properties of LDAP secrets.
-          use_ocm: If true, use `ocm create idp` to deploy the LDAP identity provider.
-          use_rosa: If true, use `rosa create idp` to deploy the LDAP identity provider.
-          cluster_name: Cluster to use when using OCM or ROSA.
-          wait: If True, waits for the first user (0) to be able to login into the cluster.
-        """
-
-        return RunAnsibleRole(locals())
-
-    @AnsibleRole("cluster_undeploy_ldap")
-    @AnsibleMappedParams
-    def undeploy_ldap(self, idp_name,
-                      use_ocm=False, use_rosa=False,
-                      cluster_name=None,
-                      ):
-        """
-        Undeploy OpenLDAP and LDAP Oauth
-
-        Args:
-          idp_name: Name of the LDAP identity provider.
-          use_ocm: If true, use `ocm delete idp` to delete the LDAP identity provider.
-          use_rosa: If true, use `rosa delete idp` to delete the LDAP identity provider.
-          cluster_name: Cluster to use when using OCM or ROSA.
         """
 
         return RunAnsibleRole(locals())
@@ -633,60 +510,6 @@ class Cluster:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("cluster_deploy_opensearch")
-    @AnsibleMappedParams
-    def deploy_opensearch(self,
-                          secret_properties_file,
-                          namespace="opensearch",
-                          name="opensearch",
-
-                    ):
-        """
-        Deploy OpenSearch and OpenSearch-Dashboards
-
-        Example of secret properties file:
-
-        user_password=passwd
-        admin_password=adminpasswd
-
-        Args:
-          namespace: namespace in which the application will be deployed
-          name: name to give to the opensearch instance
-          secret_properties_file: Path of a file containing the properties of LDAP secrets.
-        """
-
-        return RunAnsibleRole(locals())
-
-    @AnsibleRole("cluster_download_to_pvc")
-    @AnsibleMappedParams
-    def download_to_pvc(
-            self,
-            name,
-            source,
-            pvc_name,
-            namespace,
-            creds="",
-            storage_dir="/",
-            clean_first=False,
-            pvc_access_mode="ReadWriteOnce",
-            pvc_size="80Gi"
-    ):
-        """
-        Downloads the a dataset into a PVC of the cluster
-
-        Args:
-            name: Name of the data source
-            source: URL of the source data
-            pvc_name: Name of the PVC that will be create to store the dataset files.
-            namespace: Name of the namespace in which the PVC will be created
-            creds: Path to credentials to use for accessing the dataset.
-            clean_first: if True, clears the storage directory before downloading.
-            storage_dir: the path where to store the downloaded files, in the PVC
-            pvc_access_mode: the access mode to request when creating the PVC
-            pvc_size: the size of the PVC to request, when creating it
-        """
-
-        return RunAnsibleRole(locals())
 
     @AnsibleRole("cluster_wait_fully_awake")
     @AnsibleMappedParams

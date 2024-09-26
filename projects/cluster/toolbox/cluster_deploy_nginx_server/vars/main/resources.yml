@@ -1,3 +1,0 @@
----
-cluster_deploy_nginx_server_deployment: "{{ role_path }}/files/deploy_nginx.yaml"
-cluster_deploy_nginx_server_config_file: "{{ role_path }}/files/nginx.conf"

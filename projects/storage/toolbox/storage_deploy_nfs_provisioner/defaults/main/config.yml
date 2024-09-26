@@ -1,0 +1,19 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Storage.deploy_nfs_provisioner
+
+# Parameters
+# The namespace where the resources will be deployed
+storage_deploy_nfs_provisioner_namespace: nfs-provisioner
+
+# The name of the storage class to use for the NFS-provisioner PVC
+storage_deploy_nfs_provisioner_pvc_sc: gp3-csi
+
+# The size of the PVC to give to the NFS-provisioner
+storage_deploy_nfs_provisioner_pvc_size: 10Gi
+
+# The name of the storage class that will be created
+storage_deploy_nfs_provisioner_storage_class_name: nfs-provisioner
+
+# Set to true to mark the storage class as default in the cluster
+storage_deploy_nfs_provisioner_default_sc: false

@@ -1,0 +1,9 @@
+---
+server_deploy_ldap_secret_template: "{{ role_path }}/templates/secret.yml"
+server_deploy_ldap_bind_secret_template: "{{ role_path }}/templates/bind-secret.yml"
+
+server_deploy_ldap_resources: "{{ role_path }}/files/deploy-ldap.yml"
+server_deploy_ldap_secret_generator: "{{ role_path }}/files/ldapgen.py"
+server_deploy_ldap_oauth: "{{ role_path }}/templates/oauth-ldap.yml.j2"
+
+server_deploy_ldap_ocm_idp: "{{ role_path }}/templates/ocm_identity.json"

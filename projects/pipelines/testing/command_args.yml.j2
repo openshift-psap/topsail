@@ -4,13 +4,13 @@
 {% endif %}
 {% set s3_ldap_password_location = secrets_location + "/" + secrets.s3_ldap_password_file %}
 
-cluster deploy_ldap:
+server deploy_ldap:
   idp_name: {{ ldap.idp_name }}
   secret_properties_file: {{ s3_ldap_password_location }}
   username_count: {{ ldap.users.count }}
   username_prefix: {{ ldap.users.prefix }}
 
-cluster undeploy_ldap:
+server undeploy_ldap:
   idp_name: {{ ldap.idp_name }}
 
 rhods deploy_ods:
@@ -88,7 +88,7 @@ base_image/cluster build_push_image:
   git_ref: "{{ base_image.repo.ref }}" # may be overwritten at runtime with the PR ref
   dockerfile_path: "{{ base_image.repo.dockerfile_path }}"
 
-cluster deploy_redis_server:
+server deploy_redis_server:
 {% set redis_internal_address = "redis."+base_image.namespace+".svc" %}
   namespace: "{{ base_image.namespace }}"
 
@@ -114,7 +114,7 @@ local_ci run_multi:
 
   git_pull: null #refs/pull/716/merge
 
-cluster deploy_minio_s3_server:
+server deploy_minio_s3_server:
   namespace: "{{ base_image.namespace }}"
   secret_properties_file: {{ s3_ldap_password_location }}
   bucket_name: {{ base_image.minio.bucket_name }}

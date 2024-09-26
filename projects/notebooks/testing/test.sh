@@ -241,7 +241,7 @@ main() {
             ;;
         "undeploy_ldap")
             switch_sutest_cluster
-            ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
+            ./run_toolbox.py from_config server undeploy_ldap  > /dev/null
             return 0
             ;;
         "prepare_driver_cluster")

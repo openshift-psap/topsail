@@ -1,0 +1,121 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Check if the project exists
+  command:
+    oc get ns {{ server_deploy_opensearch_namespace }} -oname
+  failed_when: false
+  register: has_ns_cmd
+
+- name: Create the namespace if it does not exist
+  command:
+    oc new-project {{ server_deploy_opensearch_namespace }} --skip-config-write
+  when: has_ns_cmd.rc == 1
+
+- name: Create the OpenSearch SA
+  shell:
+    set -o pipefail;
+
+    oc create sa opensearch-{{ server_deploy_opensearch_name }}
+       -n {{ server_deploy_opensearch_namespace }}
+       --dry-run=client -oyaml
+       | oc apply -f-
+
+- name: Allow the Pod to run as user 1000
+  command:
+    oc adm policy add-scc-to-user anyuid
+       -z opensearch-{{ server_deploy_opensearch_name }}
+       -n {{ server_deploy_opensearch_namespace }}
+
+- name: Apply the Dashboards configuration template
+  template:
+    src: "{{ opensearch_dashboards_configuration }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/opensearch_dashboards.yaml"
+    mode: '0700'
+
+- name: Create the Dashboards configuration ConfigMap
+  shell:
+    set -o pipefail;
+
+    oc create cm opensearch-dashboards-config-{{ server_deploy_opensearch_name }}
+       -n {{ server_deploy_opensearch_namespace }}
+       --from-file=opensearch_dashboards.yml={{ artifact_extra_logs_dir }}/src/opensearch_dashboards.yaml
+       -oyaml --dry-run=client
+       | oc apply -f-
+
+
+- name: Apply the OpenSearch user configuration template
+  template:
+    src: "{{ opensearch_internal_users }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/internal_users.yaml"
+    mode: '0700'
+
+- name: Create the OpenSearch admin user password
+  shell:
+    set -o pipefail;
+    PASS=$(cat "{{ server_deploy_opensearch_secret_properties_file }}" | grep admin_password | cut -d= -f2);
+    oc create secret generic opensearch-user-creds-{{ server_deploy_opensearch_name }}
+       --from-literal=OPENSEARCH_PASSWORD=$PASS
+       -n {{ server_deploy_opensearch_namespace }}
+       -oyaml --dry-run=client
+       | oc apply -f-
+
+- name: Create the OpenSearch users ConfigMap
+  shell:
+    set -o pipefail;
+
+    oc create cm opensearch-users-config-{{ server_deploy_opensearch_name }}
+       -n {{ server_deploy_opensearch_namespace }}
+       --from-file=internal_users.yml={{ artifact_extra_logs_dir }}/src/internal_users.yaml
+       -oyaml --dry-run=client
+       | oc apply -f-
+
+- name: Apply the Deployment template
+  template:
+    src: "{{ opensearch_deployment }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/deploy.yaml"
+    mode: '0700'
+
+- name: Instantiate the Deployment
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/deploy.yaml"
+
+- name: Expose the OpenSearch route
+  shell:
+    set -o pipefail;
+
+    oc create route passthrough {{ server_deploy_opensearch_name }}
+       --service={{ server_deploy_opensearch_name }}
+       --port=tcp-opensearch
+       -n {{ server_deploy_opensearch_namespace }}
+       --dry-run=client -oyaml | oc apply -f-
+
+- name: Expose the Dashboard route
+  shell:
+    set -o pipefail;
+
+    oc create route edge {{ server_deploy_opensearch_name }}-dashboards
+       --service={{ server_deploy_opensearch_name }}
+       --port tcp-os-dashboards
+       -n {{ server_deploy_opensearch_namespace }}
+       --dry-run=client -oyaml | oc apply -f-
+
+- name: Wait for the deployment to be ready
+  command:
+    oc get deploy {{ server_deploy_opensearch_name }}
+       -n {{ server_deploy_opensearch_namespace }}
+       -ojsonpath={.status.unavailableReplicas}
+  register: deployments_not_ready_cmd
+  retries: 20
+  delay: 15
+  until: not deployments_not_ready_cmd.stdout

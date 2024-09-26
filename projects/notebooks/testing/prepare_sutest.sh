@@ -10,7 +10,7 @@ prepare_sutest_deploy_ldap() {
     switch_sutest_cluster
 
     process_ctrl::run_in_bg \
-        ./run_toolbox.py from_config cluster deploy_ldap
+        ./run_toolbox.py from_config server deploy_ldap
 }
 
 prepare_sutest_scale_cluster() {
@@ -260,7 +260,7 @@ sutest_cleanup() {
     if test_config tests.notebooks.cleanup.on_exit.sutest.uninstall_ldap; then
         echo "Uninstaling LDAP IDP"
 
-        ./run_toolbox.py from_config cluster undeploy_ldap  > /dev/null
+        ./run_toolbox.py from_config server undeploy_ldap  > /dev/null
     fi
 
     if test_config tests.notebooks.cleanup.on_exit.sutest.remove_dsg_notebook_dedicated_toleration; then

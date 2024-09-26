@@ -114,7 +114,7 @@ def prepare_rhods():
     run.run_toolbox("rhods", "update_datasciencecluster", enable=["datasciencepipelines", "workbenches"],
                     name=None if has_dsc else "default-dsc")
 
-    run.run_toolbox_from_config("cluster", "deploy_ldap")
+    run.run_toolbox_from_config("server", "deploy_ldap")
 
     install_ocp_pipelines()
 

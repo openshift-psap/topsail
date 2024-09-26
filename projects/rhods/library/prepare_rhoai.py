@@ -72,7 +72,7 @@ def uninstall_ldap(mute=True):
         logging.info("OpenLDAP is not installed")
         return
 
-    run.run_toolbox_from_config("cluster", "undeploy_ldap", mute_stdout=mute)
+    run.run_toolbox_from_config("server", "undeploy_ldap", mute_stdout=mute)
 
 
 def uninstall_servicemesh(mute=True):
