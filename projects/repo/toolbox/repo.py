@@ -70,6 +70,7 @@ class Repo:
             status: str,
             github = True,
             slack = True,
+            dry_run = False,
     ):
         """
         Send a *job completion* notification to github and/or slack about the completion of a test job.
@@ -81,12 +82,13 @@ class Repo:
           status: a status message to write at the top of the notification.
           github: enable or disable sending the *job completion* notification to Github
           slack: enable or disable sending the *job completion* notification to Slack
+          dry_run: if enabled, don't send any notification, just show the message in the logs
         """
 
         # lazy import to avoid loading this vvv anytime `./run_toolbox.py` is launched
         import projects.repo.toolbox.notifications.send as send_notif
 
-        failed = send_notif.send_job_completion_notification(reason, status, github, slack)
+        failed = send_notif.send_job_completion_notification(reason, status, github, slack, dry_run)
 
         exit(1 if failed else 0)
 

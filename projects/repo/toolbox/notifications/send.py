@@ -6,7 +6,7 @@ import projects.repo.toolbox.notifications.github.api as github_api
 import projects.repo.toolbox.notifications.slack.api as slack_api
 
 
-def send_job_completion_notification(reason, status, github=True, slack=False):
+def send_job_completion_notification(reason, status, github=True, slack=False, dry_run=False):
     if os.environ.get("TOPSAIL_LOCAL_CI_MULTI") == "true":
         logging.info("No notification to send from Local-CI multi.")
         # this avoid sending spurious messages ...
@@ -17,24 +17,23 @@ def send_job_completion_notification(reason, status, github=True, slack=False):
         slack = False # don't send them to slack either, link/pr_number helpers not implemented yet
 
     pr_number = get_pr_number()
-    artifacts_link = get_artifacts_link()
 
     if os.environ.get("PERFLAB_CI") == "true" and not pr_number:
         github = False
 
     failed = False
-    if github and not send_job_completion_notification_to_github(reason, status, pr_number, artifacts_link):
+    if github and not send_job_completion_notification_to_github(reason, status, pr_number, dry_run):
         failed = True
 
-    if slack and not send_job_completion_notification_to_slack(reason, status, pr_number, artifacts_link):
+    if slack and not send_job_completion_notification_to_slack(reason, status, pr_number, dry_run):
         failed = True
 
     return failed
 
 ###
 
-def send_job_completion_notification_to_github(reason, status, pr_number, artifacts_link):
-    message = get_github_notification_message(reason, status, pr_number, artifacts_link)
+def send_job_completion_notification_to_github(reason, status, pr_number, dry_run):
+    message = get_github_notification_message(reason, status, pr_number)
 
     org, repo = get_org_repo()
     pem_file, client_id = get_github_secrets()
@@ -57,6 +56,14 @@ def send_job_completion_notification_to_github(reason, status, pr_number, artifa
         return
 
     user_token = github_api.get_user_token(pem_file, client_id, org, repo)
+    if dry_run:
+        logging.info(f"Github notification:\n{message}")
+        logging.info(f"***")
+        logging.info(f"***")
+        logging.info(f"***\n")
+
+        return True
+
     resp = github_api.send_notification(org, repo, user_token, pr_number, message)
 
     if not resp.ok:
@@ -65,110 +72,102 @@ def send_job_completion_notification_to_github(reason, status, pr_number, artifa
     return resp.ok
 
 
-def get_github_notification_message(reason, status, pr_number, artifacts_link):
-    message=f"""\
-**{status}**
+def get_github_notification_message(reason, status, pr_number):
+    def get_link(name, path, needs_view_suffix=False, base=None):
+        return f"[{name}]({get_ci_link(path, needs_view_suffix, base)})"
 
-* Link to the [test results]({artifacts_link}).
+    def get_italics(text):
+        return f"*{text}*"
+
+    def get_bold(text):
+        return f"**{text}**"
+
+    status_icon = ":red_circle:" if reason == "ERR" \
+        else ":green_circle:"
+
+    return get_common_message(reason, f"{status_icon} {status} {status_icon}", get_link, get_italics, get_bold)
+
+
+def get_common_message(reason, status, get_link, get_italics, get_bold):
+    message = ""
+
+    if os.environ.get("PERFLAB_CI") == "true":
+        message += get_perflab_ci_extra_header_message(get_link)
+        message += "\n\n"
+    message += f"""\
+{get_bold(status)}
+"""
+
+    message  += f"""
+• Link to the {get_link("test results", "")}.
 """
     if (pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "reports_index.html").exists():
         message += f"""
-* Link to the [reports index]({artifacts_link}/reports_index.html).
+• Link to the {get_link("reports index", "reports_index.html")}.
 """
     else:
         message += f"""
-* No reports index generated...
+• No reports index generated...
 """
 
     if (var_over := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "variable_overrides").exists():
         with open(var_over) as f:
             message += f"""
-**Test configuration**:
+{get_bold("Test configuration")}:
 ```
 {f.read().strip()}
 ```
 """
     else:
         message += """
-* No test configuration (`variable_overrides`) available.
+• No test configuration (`variable_overrides`) available.
 """
+
+    if os.environ.get("PERFLAB_CI") == "true":
+        message += get_perflab_ci_extra_footer_message(get_link)
+
 
     if (failures := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "FAILURES").exists():
         with open(failures) as f:
             HEAD = 10
             lines = f.readlines()
-            NL = "\n"
+
             message += f"""
-*Failure indicator*:
+*{get_link("Failure indicator", "FAILURES", needs_view_suffix=True)}*:
 ```
-{NL.join(lines[:HEAD])}
+{"".join(lines[:HEAD])}
 {"[...]" if len(lines) > HEAD else ""}
 ```
 """ if lines else f"""
-*Failure indicator*: Empty. (See [run.log]({artifacts_link}/run.log))
+*Failure indicator*: Empty. (See {get_link("run.log", "run.log")})
 """
 
     if os.environ.get("PERFLAB_CI") == "true":
-        message += """
-*[Test ran on the internal Perflab CI]*
+        message += f"""
+{get_italics("[Test ran on the internal Perflab CI]")}
 """
 
     return message
-
 
 # Warning:
 # Slack API messages format is different from the GUI
 # https://api.slack.com/reference/surfaces/formatting
 
-def get_slack_thread_message(reason, status, pr_data, artifacts_link):
-    message=f"""\
-*{status}*
+def get_slack_thread_message(reason, status, pr_data):
+    def get_link(name, path, needs_view_suffix=False, base=None):
+        return f"<{get_ci_link(path, needs_view_suffix, base)}|{name}>"
 
-- Link to the <{artifacts_link}|test results>.
-"""
-    if (pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "reports_index.html").exists():
-        message += f"""
-- Link to the <{artifacts_link}/reports_index.html|reports index>.
-"""
-    else:
-        message += f"""
-- No reports index generated...
-"""
+    def get_italics(text):
+        return f"_{text}_"
 
-    if (var_over := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "variable_overrides").exists():
-        with open(var_over) as f:
-            message += f"""
-*Test configuration*:
-```
-{f.read().strip()}
-```
-"""
-    else:
-        message += """
-- Not test configuration (`variable_overrides`) available.
-"""
+    def get_bold(text):
+        return f"*{text}*"
 
-    if (failures := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "FAILURES").exists():
-        with open(failures) as f:
-            HEAD = 10
-            lines = f.readlines()
-            NL = "\n"
-            message += f"""
-*Failure indicator*:
-```
-{NL.join(lines[:HEAD])}
-{"[...]" if len(lines) > HEAD else ""}
-```
-""" if lines else f"""
-*Failure indicator*: Empty. (See <{artifacts_link}/run.log|run.log>)
-"""
+    status_icon = ":no-red-circle:" if reason == "ERR" \
+        else ":done-circle-check:"
 
-    if os.environ.get("PERFLAB_CI") == "true":
-        message += """
-_[Test ran on the internal Perflab CI]_
-"""
+    return get_common_message(reason, f"{status_icon} {status}", get_link, get_italics, get_bold)
 
-    return message
 
 def get_slack_channel_message_anchor(pr_number):
     if pr_number:
@@ -195,11 +194,10 @@ def get_slack_channel_message(anchor: str, pr_data: dict):
 Link to the <{pr_data['html_url']}|PR>.
 """
 
-
     return message
 
 
-def send_job_completion_notification_to_slack(reason, status, pr_number, artifacts_link):
+def send_job_completion_notification_to_slack(reason, status, pr_number, dry_run):
     client = slack_api.init_client()
     org, repo = get_org_repo()
 
@@ -207,13 +205,30 @@ def send_job_completion_notification_to_slack(reason, status, pr_number, artifac
 
     anchor = get_slack_channel_message_anchor(pr_number)
 
-    channel_msg_ts = slack_api.search_text(client, anchor, not_before=pr_created_at)
+    channel_msg_ts, channel_message = slack_api.search_channel_message(client, anchor, not_before=pr_created_at)
 
     if not channel_msg_ts:
         channel_message = get_slack_channel_message(anchor, pr_data)
-        channel_msg_ts = slack_api.send_message(client, message=channel_message)
 
-    thread_message = get_slack_thread_message(reason, status, pr_data, artifacts_link)
+        if dry_run:
+            logging.info(f"Posting Slack channel notification ...")
+        else:
+            channel_msg_ts = slack_api.send_message(client, message=channel_message)
+
+
+    if dry_run:
+        logging.info(f"Slack channel notification:\n{channel_message}")
+
+    thread_message = get_slack_thread_message(reason, status, pr_data)
+
+    if dry_run:
+        logging.info(f"Slack thread notification:\n{thread_message}")
+        logging.info(f"***")
+        logging.info(f"***")
+        logging.info(f"***\n")
+
+        return True
+
     _, ok = slack_api.send_message(client, message=thread_message, main_ts=channel_msg_ts)
 
     return ok
@@ -242,33 +257,39 @@ def get_pr_number():
         return
 
 
-def get_artifacts_link():
+def get_ci_base_link(needs_view_suffix=False):
     if os.environ.get("OPENSHIFT_CI") == "true":
         test_name = os.environ["HOSTNAME"].removeprefix(os.environ['JOB_NAME_SAFE']+"-")
 
-        return (f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/" +
-                f"pull/{os.environ['REPO_OWNER']}_{os.environ['REPO_NAME']}/{os.environ['PULL_NUMBER']}" +
-                f"/{os.environ['JOB_NAME']}/{os.environ['BUILD_ID']}/artifacts/{os.environ['JOB_NAME_SAFE']}/{test_name}/artifacts")
+        return ((f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/" +
+                 f"pull/{os.environ['REPO_OWNER']}_{os.environ['REPO_NAME']}/{os.environ['PULL_NUMBER']}" +
+                 f"/{os.environ['JOB_NAME']}/{os.environ['BUILD_ID']}/artifacts/{os.environ['JOB_NAME_SAFE']}/{test_name}/artifacts"),
+                "")
 
 
     elif os.environ.get("PERFLAB_CI") == "true":
         artifact_dir = os.environ['ARTIFACT_DIR'].removeprefix("/logs/artifacts")
 
-        return (f"https://{os.environ['JENKINS_INSTANCE']}/{os.environ['JENKINS_JOB']}/{os.environ['JENKINS_BUILD_NUMBER']}/" +
-                f"artifact/run/{os.environ['JENKINS_JUMPHOST']}/{artifact_dir}")
+        return ((f"https://{os.environ['JENKINS_INSTANCE']}/{os.environ['JENKINS_JOB']}/{os.environ['JENKINS_BUILD_NUMBER']}/" +
+                f"artifact/run/{os.environ['JENKINS_JUMPHOST']}/{artifact_dir}"),
+                ("/*view*/" if needs_view_suffix else ""))
+
     elif os.environ.get("TOPSAIL_LOCAL_CI") == "true":
         logging.warning("LocalCI links not supported yet.")
-        return
+
+        return None, None
     else:
         logging.warning("Test not running from a well-known CI engine, cannot extract the artifacts link.")
 
-        return None
+        return None, None
+
 
 def get_org_repo():
     if os.environ.get("OPENSHIFT_CI") == "true":
         return os.environ['REPO_OWNER'], os.environ['REPO_NAME']
     else:
         return "openshift-psap", "topsail"
+
 
 def get_github_secrets():
     if not os.environ.get("PSAP_ODS_SECRET_PATH"):
@@ -290,3 +311,27 @@ def get_github_secrets():
         client_id = f.read().strip()
 
     return pem_file, client_id
+
+
+def get_ci_link(path, needs_view_suffix=False, base=None):
+    if base is None:
+        base, suffix = get_ci_base_link(needs_view_suffix)
+    else:
+        suffix = None
+
+    link = base + (f"/{path}" if path else "") + (suffix if suffix else "")
+
+    return link
+
+
+def get_perflab_ci_extra_header_message(get_link):
+    return f"```Jenkins Job #{os.environ['JENKINS_BUILD_NUMBER']}```"
+
+
+def get_perflab_ci_extra_footer_message(get_link):
+    base = get_ci_base_link()[0].partition("/artifact/run")[0]
+    link = f"rebuild/parameterized"
+
+    return f"""
+• Link to the {get_link("Rebuild page", link, base=base)}.
+"""

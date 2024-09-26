@@ -10,7 +10,7 @@ CHANNEL_ID = "C07NS5TAKPA"
 MAX_CALLS = 10
 
 
-def search_text(client, message_anchor: str, not_before):
+def search_channel_message(client, message_anchor: str, not_before):
     """Searches for a message matching the pattern.
     Returns thread ts if successful."""
     has_more = False
@@ -38,18 +38,18 @@ def search_text(client, message_anchor: str, not_before):
 
         except SlackApiError as e:
             logging.warning(f"Error fetching history: {e}")
-            return None
+            return None, None
 
         for message in history:
             if message_anchor not in message["text"]:
                 continue
 
-            return message["ts"]
+            return message["ts"], message["text"]
 
     if calls == MAX_CALLS:
         logging.info(f"Slack text search stopped due to MAX_CALLS ({MAX_CALLS}) exceeded.")
 
-    return None
+    return None, None
 
 
 def send_message(client, message: str, main_ts: str = None):
