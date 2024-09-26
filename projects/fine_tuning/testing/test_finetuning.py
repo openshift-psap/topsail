@@ -528,7 +528,17 @@ def matbench_run_one():
         if raw_lists := test_config["hyper_parameters"].pop("raw_lists", None):
             test_config["hyper_parameters"] |= raw_lists
 
-        failed = _run_test([None], test_config)
+        skip = False
+        if skip_if := test_config["hyper_parameters"].pop("skip_if", None):
+            for k, v in skip_if.items():
+                if test_config["hyper_parameters"].get(k) != v:
+                    continue
+                skip = True
+                break
+
+
+        failed = _run_test([None], test_config) \
+            if not skip else False
 
     sys.exit(1 if failed else 0)
 

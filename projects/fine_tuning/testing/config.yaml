@@ -144,7 +144,7 @@ ci_presets:
     - model_name:
       - mistralai/Mixtral-8x7B-v0.1
       hyper_parameters.per_device_train_batch_size: 1
-      hyper_parameters.skip_if: {hyper_parameters.peft_method: "none"}
+      hyper_parameters.skip_if: {peft_method: "none"}
 
   ibm_80gb_models:
     extends: [hf_evaluation, dgx_small_footprint]
@@ -422,7 +422,10 @@ tests:
         lora_dropout: null
         lora_alpha: null
         target_modules: null
+        #
         raw_lists: null
+        skip_if: {}
+
     test_extra_settings: {} # fine-grain configuration when matbenchmarking
     many_model:
       enabled: false
