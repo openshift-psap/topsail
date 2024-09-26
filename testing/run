@@ -65,10 +65,6 @@ prechecks() {
     fi
 
     if [[ "${PERFLAB_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
-        # in the perflab CI, the tty columns returns 10240, making Ansible print as many stars at the end of the play
-        # this is a workaround to avoid that.
-        stty cols 80
-
         LOCAL_CI_NAMESPACE=topsail
         echo "Checking for local-ci Pods running in the cluster ..."
         if oc get pods --field-selector=status.phase==Running -oname -n "$LOCAL_CI_NAMESPACE" | grep .; then
