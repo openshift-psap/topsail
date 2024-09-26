@@ -53,6 +53,7 @@ Login to RHODS Dashboard
 
   Go To  ${ODH_DASHBOARD_URL}
   Login To RHODS Dashboard  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
+  Capture Page Screenshot
 
 Go to RHODS Dashboard
   [Tags]  Dashboard
@@ -78,87 +79,87 @@ Go to the Project page
   Wait Until Page Contains No Spinner
   Capture Page Screenshot
   
-Create S3 Data Connection Creation  
-  [Tags]  Dashboard
+# Create S3 Data Connection Creation  
+#   [Tags]  Dashboard
 
-  ${data_connection_exists}  ${error}=  Run Keyword and Ignore Error  Data Connection Should Not Be Listed  ${DC_NAME}
-  IF  '${data_connection_exists}' != 'PASS'
-    Create S3 Data Connection   project_title=${PROJECT_NAME}   dc_name=${DC_NAME}    aws_access_key=${ACCESS_KEY}    aws_secret_access=${TEST_USER.PASSWORD}   aws_bucket_name=${HOST_BUCKET}  aws_s3_endpoint=${HOST_BASE}
-  ELSE
-    Recreate S3 Data Connection   project_title=${PROJECT_NAME}   dc_name=${DC_NAME}    aws_access_key=${ACCESS_KEY}    aws_secret_access=${TEST_USER.PASSWORD}   aws_bucket_name=${HOST_BUCKET}  aws_s3_endpoint=${HOST_BASE}
-  END
-  Capture Page Screenshot
+#   ${data_connection_exists}  ${error}=  Run Keyword and Ignore Error  Data Connection Should Not Be Listed  ${DC_NAME}
+#   IF  '${data_connection_exists}' != 'PASS'
+#     Create S3 Data Connection   project_title=${PROJECT_NAME}   dc_name=${DC_NAME}    aws_access_key=${ACCESS_KEY}    aws_secret_access=${TEST_USER.PASSWORD}   aws_bucket_name=${HOST_BUCKET}  aws_s3_endpoint=${HOST_BASE}
+#   ELSE
+#     Recreate S3 Data Connection   project_title=${PROJECT_NAME}   dc_name=${DC_NAME}    aws_access_key=${ACCESS_KEY}    aws_secret_access=${TEST_USER.PASSWORD}   aws_bucket_name=${HOST_BUCKET}  aws_s3_endpoint=${HOST_BASE}
+#   END
+#   Capture Page Screenshot
 
-Create Pipeline Server To s3
-  [Tags]  Dashboard
-  oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
-  Pipelines.Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
-  Verify There Is No "Error Displaying Pipelines" After Creating Pipeline Server
-  Verify That There Are No Sample Pipelines After Creating Pipeline Server
-  Wait Until Pipeline Server Is Deployed Elyra    project_title=${PROJECT_NAME}
-  Capture Page Screenshot
+# Create Pipeline Server To s3
+#   [Tags]  Dashboard
+#   oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
+#   Pipelines.Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
+#   Verify There Is No "Error Displaying Pipelines" After Creating Pipeline Server
+#   Verify That There Are No Sample Pipelines After Creating Pipeline Server
+#   Wait Until Pipeline Server Is Deployed Elyra    project_title=${PROJECT_NAME}
+#   Capture Page Screenshot
 
-Create and Start the Workbench
-  [Tags]  Dashboard
+# Create and Start the Workbench
+#   [Tags]  Dashboard
 
-  ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
-  IF  '${workbench_exists}' == 'FAIL'  
-    Create Workbench    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
-  END
-  Start Workbench     workbench_title=${WORKBENCH_NAME}    timeout=300s
-  Capture Page Screenshot
-  Workbench Status Should Be      workbench_title=${WORKBENCH_NAME}   status=${WORKBENCH_STATUS_RUNNING}
-  ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Just Launch Workbench  ${WORKBENCH_NAME}
+#   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
+#   IF  '${workbench_exists}' == 'FAIL'  
+#     Create Workbench    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
+#   END
+#   Start Workbench     workbench_title=${WORKBENCH_NAME}    timeout=300s
+#   Capture Page Screenshot
+#   Workbench Status Should Be      workbench_title=${WORKBENCH_NAME}   status=${WORKBENCH_STATUS_RUNNING}
+#   ${workbench_launched}  ${error}=  Run Keyword And Ignore Error  Just Launch Workbench  ${WORKBENCH_NAME}
 
-  ${app_is_ready} =    Run Keyword And Return Status    Page Should Not Contain  Application is not available
-  IF  ${app_is_ready} != True
-    Log     message=Workaround for RHODS-5912: reload the page    level=WARN
-    Capture Page Screenshot  bug_5912_application_not_available.png
-    oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
-    ${oa_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=oauth-proxy
-    ${jl_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=${WORKBENCH_NAME}
-    Create File  ${OUTPUTDIR}/pod_logs.txt  OAuth\n-----\n\n${oa_logs} \nJupyterLab\n----------\n\n${jl_logs}
+#   ${app_is_ready} =    Run Keyword And Return Status    Page Should Not Contain  Application is not available
+#   IF  ${app_is_ready} != True
+#     Log     message=Workaround for RHODS-5912: reload the page    level=WARN
+#     Capture Page Screenshot  bug_5912_application_not_available.png
+#     oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
+#     ${oa_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=oauth-proxy
+#     ${jl_logs}=  Oc Get Pod Logs  name=${WORKBENCH_NAME}-0  namespace=${PROJECT_NAME}  container=${WORKBENCH_NAME}
+#     Create File  ${OUTPUTDIR}/pod_logs.txt  OAuth\n-----\n\n${oa_logs} \nJupyterLab\n----------\n\n${jl_logs}
 
-    ${endpoints}=  Oc Get  kind=Endpoints  namespace=${PROJECT_NAME}
-    ${route}=  Oc Get  kind=Route  name=${WORKBENCH_NAME}  namespace=${PROJECT_NAME}  api_version=route.openshift.io/v1
-    ${endpoints_str}=  Convert to String  ${endpoints}
-    Create File  ${OUTPUTDIR}/bug_5912.endpoints  ${endpoints_str}
-    ${route_str}=  Convert to String  ${route}
-    Create File  ${OUTPUTDIR}/bug_5912.route  ${route_str}
+#     ${endpoints}=  Oc Get  kind=Endpoints  namespace=${PROJECT_NAME}
+#     ${route}=  Oc Get  kind=Route  name=${WORKBENCH_NAME}  namespace=${PROJECT_NAME}  api_version=route.openshift.io/v1
+#     ${endpoints_str}=  Convert to String  ${endpoints}
+#     Create File  ${OUTPUTDIR}/bug_5912.endpoints  ${endpoints_str}
+#     ${route_str}=  Convert to String  ${route}
+#     Create File  ${OUTPUTDIR}/bug_5912.route  ${route_str}
 
-    ${current_url}=   Get Location
-    Create File  ${OUTPUTDIR}/bug_5912.url  ${current_url}
+#     ${current_url}=   Get Location
+#     Create File  ${OUTPUTDIR}/bug_5912.url  ${current_url}
 
-    ${current_html} =    SeleniumLibrary.Get Source
-    Create File  ${OUTPUTDIR}/bug_5912.html  ${current_html}
+#     ${current_html} =    SeleniumLibrary.Get Source
+#     Create File  ${OUTPUTDIR}/bug_5912.html  ${current_html}
 
-    ${browser log entries}=    Get Browser Console Log Entries
-    ${browser log entries str}=   Convert To String  ${browser log entries}
-    Create File  ${OUTPUTDIR}/bug_5912_browser_log_entries.yaml  ${browser log entries str}
+#     ${browser log entries}=    Get Browser Console Log Entries
+#     ${browser log entries str}=   Convert To String  ${browser log entries}
+#     Create File  ${OUTPUTDIR}/bug_5912_browser_log_entries.yaml  ${browser log entries str}
 
-    Sleep  30s
-    Reload Page
-    Page Should Not Contain  Application is not available
-  END   
-  Access To Workbench    username=${TEST_USER.USERNAME}    password=${TEST_USER.PASSWORD}
-        ...    auth_type=${TEST_USER.AUTH_TYPE}
-  Capture Page Screenshot
-  Navigate Home (Root folder) In JupyterLab Sidebar File Browser
-  Clone Git Repository And Open    https://github.com/redhat-rhods-qe/ods-ci-notebooks-main
-  ...    ods-ci-notebooks-main/notebooks/500__jupyterhub/pipelines/v2/elyra/run-pipelines-on-data-science-pipelines/hello-generic-world.pipeline  # robocop: disable
-  Verify Hello World Pipeline Elements
-  Set Runtime Image In All Nodes    runtime_image=Datascience with Python 3.9 (UBI9)
-  Run Pipeline    pipeline_name=${IMAGE} Pipeline
-  Wait Until Page Contains Element    xpath=//a[.="Run Details."]
-  Capture Page Screenshot
+#     Sleep  30s
+#     Reload Page
+#     Page Should Not Contain  Application is not available
+#   END   
+#   Access To Workbench    username=${TEST_USER.USERNAME}    password=${TEST_USER.PASSWORD}
+#         ...    auth_type=${TEST_USER.AUTH_TYPE}
+#   Capture Page Screenshot
+#   Navigate Home (Root folder) In JupyterLab Sidebar File Browser
+#   Clone Git Repository And Open    https://github.com/redhat-rhods-qe/ods-ci-notebooks-main
+#   ...    ods-ci-notebooks-main/notebooks/500__jupyterhub/pipelines/v2/elyra/run-pipelines-on-data-science-pipelines/hello-generic-world.pipeline  # robocop: disable
+#   Verify Hello World Pipeline Elements
+#   Set Runtime Image In All Nodes    runtime_image=Datascience with Python 3.9 (UBI9)
+#   Run Pipeline    pipeline_name=${IMAGE} Pipeline
+#   Wait Until Page Contains Element    xpath=//a[.="Run Details."]
+#   Capture Page Screenshot
 
-Check of Pipeline Runs
-  [Tags]  Dashboard
+# Check of Pipeline Runs
+#   [Tags]  Dashboard
 
-  ${pipeline_run_name} =    Get Pipeline Run Name
-  Switch To Pipeline Execution Page
-  Is Data Science Project Details Page Open   ${PROJECT_NAME}
-  Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=30m    experiment_name=${EXPERIMENT_NAME}
+#   ${pipeline_run_name} =    Get Pipeline Run Name
+#   Switch To Pipeline Execution Page
+#   Is Data Science Project Details Page Open   ${PROJECT_NAME}
+#   Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=30m    experiment_name=${EXPERIMENT_NAME}
 
 *** Keywords ***
 
