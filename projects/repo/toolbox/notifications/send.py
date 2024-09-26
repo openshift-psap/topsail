@@ -82,7 +82,10 @@ def get_github_notification_message(reason, status, pr_number):
     def get_bold(text):
         return f"**{text}**"
 
-    return get_common_message(reason, status, get_link, get_italics, get_bold)
+    status_icon = ":red_circle:" if reason == "ERR" \
+        else ":green_circle:"
+
+    return get_common_message(reason, f"{status_icon} {status} {status_icon}", get_link, get_italics, get_bold)
 
 
 def get_common_message(reason, status, get_link, get_italics, get_bold):
@@ -160,7 +163,10 @@ def get_slack_thread_message(reason, status, pr_data):
     def get_bold(text):
         return f"*{text}*"
 
-    return get_common_message(reason, status, get_link, get_italics, get_bold)
+    status_icon = ":no-red-circle:" if reason == "ERR" \
+        else ":done-circle-check:"
+
+    return get_common_message(reason, f"{status_icon} {status}", get_link, get_italics, get_bold)
 
 
 def get_slack_channel_message_anchor(pr_number):
