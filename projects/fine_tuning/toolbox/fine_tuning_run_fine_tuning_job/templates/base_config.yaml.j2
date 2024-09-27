@@ -25,7 +25,7 @@ accelerate_launch_args:
   tpu_use_sudo: false
 {% if (fine_tuning_run_fine_tuning_job_gpu or 1) > 1 %}
   use_fsdp: true
-  offload_params: true
+  fsdp_offload_params: true
 {% endif %}
 # below are the *default* values. They might be overwritten when 'config_final.json' is generated.
 
