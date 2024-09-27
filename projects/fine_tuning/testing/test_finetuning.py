@@ -453,6 +453,10 @@ def _run_test_matbenchmarking(test_artifact_dir_p):
             for k, v in hyper_parameters.items():
                 benchmark_values[f"hyper_parameters.{k}"] = v
 
+            # reapply to ensure that the 'test_extra_settings' are applied on top of the test_settings
+            if test_extra_settings is not None:
+                merge_dicts(benchmark_values, test_extra_settings)
+
             expe_to_run[expe_name] = benchmark_values
 
         path_tpl = "{settings[name]}"
