@@ -169,10 +169,15 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: [2, 4]
     tests.fine_tuning.test_settings.hyper_parameters:
       peft_method: "lora"
-      # auto_gptq: ["triton_v2"]
-      # torch_dtype: float16
-      # fp16: true
-      bnb: ["fp4"]  # bits and bytes quantization
+      # qlora arguments: https://github.com/foundation-model-stack/fms-hf-tuning?tab=readme-ov-file#fms-acceleration
+      auto_gptq: ["triton_v2"]
+      torch_dtype: float16
+      fp16: true
+      fast_kernels: [true, true, true]
+      padding_free: ["huggingface"]
+      multipack: [16]
+      fused_lora: ["auto_gptq", true]
+      # qlora args
       use_flash_attn: true
       max_steps: -1
       per_device_train_batch_size: [1, 2, 4, 8, 16, 32]
