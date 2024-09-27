@@ -107,18 +107,13 @@ ci_presets:
     - name: granite-family
       model_name:
       - ibm-granite/granite-3b-code-instruct
-      - instructlab/granite-7b-lab
-      - ibm-granite/granite-8b-code-base
-      - ibm-granite/granite-8b-code-instruct
       hyper_parameters:
         per_device_train_batch_size: 1
     - name: llama-family
       model_name:
-      - meta-llama/Meta-Llama-3-8B-Instruct
       - meta-llama/llama-2-7b-hf
-      - meta-llama/Llama-2-13b-chat-hf
       hyper_parameters:
-        per_device_train_batch_size: [1, 2]
+        per_device_train_batch_size: 1
 
   ibm_80gb_models:
     extends: [hf_evaluation, dgx_small_footprint]
