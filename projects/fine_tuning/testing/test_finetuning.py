@@ -453,6 +453,10 @@ def _run_test_matbenchmarking(test_artifact_dir_p):
             for k, v in hyper_parameters.items():
                 benchmark_values[f"hyper_parameters.{k}"] = v
 
+            # reapply to ensure that the 'test_extra_settings' are applied on top of the test_settings
+            if test_extra_settings is not None:
+                merge_dicts(benchmark_values, test_extra_settings)
+
             expe_to_run[expe_name] = benchmark_values
 
         path_tpl = "{settings[name]}"
@@ -528,7 +532,17 @@ def matbench_run_one():
         if raw_lists := test_config["hyper_parameters"].pop("raw_lists", None):
             test_config["hyper_parameters"] |= raw_lists
 
-        failed = _run_test([None], test_config)
+        skip = False
+        if skip_if := test_config["hyper_parameters"].pop("skip_if", None):
+            for k, v in skip_if.items():
+                if test_config["hyper_parameters"].get(k) != v:
+                    continue
+                skip = True
+                break
+
+
+        failed = _run_test([None], test_config) \
+            if not skip else False
 
     sys.exit(1 if failed else 0)
 

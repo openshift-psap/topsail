@@ -40,6 +40,9 @@ class Settings(matbench_models.ExclusiveModel):
     replicas: Optional[int]
     accelerators_per_replica: Optional[int]
 
+    dataset_name: Optional[str]
+    dataset_replication: Optional[int]
+
     ci_engine: str
     run_id: str
     test_path: str

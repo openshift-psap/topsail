@@ -2,6 +2,7 @@
 
 import sys
 import pathlib
+import random
 
 import convert_dataset_helper
 
@@ -47,18 +48,23 @@ if 0 < factor < 1:
     print(f"Saving {factor}x {src}: {newline_count}/{orig_length} lines ...")
 
     with open(src) as src_f:
-        with open(dst, "a") as dst_f:
-            lines = 0
-            while lines < newline_count:
-                line = src_f.readline()
+        data = src_f.readlines()
 
-                if convert_dataset_helper.get_token_count(tokenizer, line) > max_seq_length:
-                    if factor == FACTOR: # count them only once
-                        samples_too_long += 1
-                    continue
+    # use a fixed seed to get always the same results
+    random.Random(4).shuffle(data)
+    data_it = iter(data)
+    with open(dst, "a") as dst_f:
+        lines = 0
+        while lines < newline_count:
+            line = next(data_it)
 
-                print(line.strip(), file=dst_f)
-                lines += 1
+            if convert_dataset_helper.get_token_count(tokenizer, line) > max_seq_length:
+                if factor == FACTOR: # count them only once
+                    samples_too_long += 1
+                continue
+
+            print(line.strip(), file=dst_f)
+            lines += 1
 
 
 with open(dst) as dst_f:

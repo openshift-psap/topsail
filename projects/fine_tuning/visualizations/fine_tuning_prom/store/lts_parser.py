@@ -63,6 +63,9 @@ def generate_lts_settings(lts_metadata, results, import_settings):
         lts_settings.lora_dropout = results.tuning_config.get("lora_dropout")
         lts_settings.lora_modules = ", ".join(sorted(results.tuning_config.get("target_modules", []))) or None
 
+        lts_settings.dataset_name = results.job_config["dataset_name"]
+        lts_settings.dataset_replication = results.job_config["dataset_replication"]
+
     return lts_settings
 
 
