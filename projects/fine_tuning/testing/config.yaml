@@ -180,8 +180,8 @@ ci_presets:
       # qlora args
       use_flash_attn: true
       max_steps: -1
-      per_device_train_batch_size: [1, 2, 4, 8, 16, 32]
-      max_seq_length: [512, 2048]
+      per_device_train_batch_size: [1] # this for now, until it works
+      max_seq_length: [512]
       gradient_accumulation_steps: 4
       warmup_ratio: 0.03
       num_train_epochs: 1
@@ -190,11 +190,11 @@ ci_presets:
       r: 4
       lora_alpha: 16
     tests.fine_tuning.test_extra_settings:
-    - name: granite-7b
+    - name: llama2-70b-chat-gptq
       model_name:
-      - ibm-granite/granite-7b-base
+      - TheBloke/Llama-2-70B-Chat-GPTQ
       hyper_parameters:
-        raw_lists: {target_modules: ["q_attn", "v_proj"]}
+        raw_lists: {target_modules: ["q_proj", "k_proj"]}
 
   dgx_multi_model_8:
     extends: [multi_model]
