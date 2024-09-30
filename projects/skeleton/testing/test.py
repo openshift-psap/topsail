@@ -126,8 +126,6 @@ def test_ci():
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
         finally:
-            run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
-
             if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
                 cleanup_cluster()
 

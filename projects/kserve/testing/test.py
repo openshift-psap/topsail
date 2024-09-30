@@ -110,9 +110,6 @@ def test_ci():
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
         finally:
-            if do_visualize:
-                run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
-
             if horreum_test := config.ci_artifacts.get_config("matbench.lts.horreum.test_name"):
                 logging.info(f"Saving Horreum test name: {horreum_test}")
                 with open(env.ARTIFACT_DIR / "test_name.horreum", "w") as f:

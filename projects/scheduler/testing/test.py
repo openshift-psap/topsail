@@ -87,8 +87,6 @@ def test_ci():
         test_schedulers.test()
     finally:
         matbenchmarking = config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.enabled")
-        if do_visualize:
-            run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
 
         if horreum_test := config.ci_artifacts.get_config("matbench.lts.horreum.test_name"):
             logging.info(f"Saving Horreum test name: {horreum_test}")

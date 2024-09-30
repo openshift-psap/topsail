@@ -161,6 +161,11 @@ postchecks() {
 
     # reason == EXIT, we're at the end of the script execution
 
+    echo "Generating the reports index ..."
+    testing/utils/generate_plot_index.py > "$ARTIFACT_DIR/reports_index.html" || true
+    # don't keep it if empty
+    [[ -s  "$ARTIFACT_DIR/reports_index.html" ]] || rm "$ARTIFACT_DIR/reports_index.html"
+
     echo ""
     if [[ "${start_time:-}" ]]; then
         local end_time=$(date +%s)
