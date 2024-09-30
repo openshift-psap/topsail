@@ -14,7 +14,7 @@ __aliases:
     pod_toleration_effect: {{ clusters.driver.compute.machineset.taint.effect }}
     pod_toleration_key: {{ clusters.driver.compute.machineset.taint.key }}
 
-cluster deploy_ldap:
+server deploy_ldap:
   idp_name: {{ ldap.idp_name }}
   secret_properties_file: {{ s3_ldap_password_location }}
   username_count: {{ ldap.users.count }}
@@ -128,19 +128,18 @@ cluster preload_image/notebook:
   pod_toleration_effect: {{ clusters.sutest.compute.machineset.taint.effect }}
   pod_toleration_key: "{{ clusters.sutest.compute.machineset.taint.key }}"
 
-cluster deploy_redis_server:
+server deploy_redis_server:
 {% set redis_namespace = tests.notebooks.namespace + "-redis" %}
 {% set redis_internal_address = "redis."+redis_namespace+".svc" %}
   namespace: {{ redis_namespace }}
 
-
-cluster deploy_minio_s3_server:
+server deploy_minio_s3_server:
 {% set minio_namespace = tests.notebooks.namespace + "-minio" %}
   namespace: {{ minio_namespace }}
   secret_properties_file: {{ s3_ldap_password_location }}
   bucket_name: {{ tests.notebooks.minio_bucket_name }}
 
-cluster deploy_nginx_server:
+server deploy_nginx_server:
 {% set nginx_namespace = tests.notebooks.namespace + "-nginx" %}
   namespace: {{ nginx_namespace }}
   directory: {{ tests.notebooks.ipynb.uploaded_directory }}
@@ -193,9 +192,8 @@ driver/cluster set_scale/cleanup:
 notebooks cleanup:
   username_prefix: {{ ldap.users.prefix }}
 
-cluster undeploy_ldap:
+server undeploy_ldap:
   idp_name: {{ ldap.idp_name }}
-
 
 notebooks dashboard_scale_test:
   namespace: {{ tests.notebooks.namespace }}

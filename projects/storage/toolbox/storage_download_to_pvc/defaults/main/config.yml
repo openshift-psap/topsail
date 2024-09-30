@@ -1,0 +1,35 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Storage.download_to_pvc
+
+# Parameters
+# Name of the data source
+# Mandatory value
+storage_download_to_pvc_name:
+
+# URL of the source data
+# Mandatory value
+storage_download_to_pvc_source:
+
+# Name of the PVC that will be create to store the dataset files.
+# Mandatory value
+storage_download_to_pvc_pvc_name:
+
+# Name of the namespace in which the PVC will be created
+# Mandatory value
+storage_download_to_pvc_namespace:
+
+# Path to credentials to use for accessing the dataset.
+storage_download_to_pvc_creds:
+
+# the path where to store the downloaded files, in the PVC
+storage_download_to_pvc_storage_dir: /
+
+# if True, clears the storage directory before downloading.
+storage_download_to_pvc_clean_first: false
+
+# the access mode to request when creating the PVC
+storage_download_to_pvc_pvc_access_mode: ReadWriteOnce
+
+# the size of the PVC to request, when creating it
+storage_download_to_pvc_pvc_size: 80Gi

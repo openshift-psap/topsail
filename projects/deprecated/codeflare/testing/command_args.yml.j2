@@ -85,11 +85,11 @@ extended_image/cluster build_push_image:
   dockerfile_path: "{{ base_image.extend.local_dockerfile_path }}"
   from_imagetag: "{{ base_image.imagestream }}:{{ base_image.repo.tag }}"
 
-cluster deploy_redis_server:
+server deploy_redis_server:
 {% set redis_internal_address = "redis."+base_image.namespace+".svc" %}
   namespace: "{{ base_image.namespace }}"
 
-cluster deploy_minio_s3_server:
+server deploy_minio_s3_server:
   namespace: "{{ base_image.namespace }}"
   secret_properties_file: {{ s3_ldap_password_location }}
   bucket_name: {{ base_image.minio.bucket_name }}

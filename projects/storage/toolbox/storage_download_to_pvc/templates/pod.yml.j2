@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Pod
+metadata:
+ name: {{ download_name }}
+ namespace: {{ storage_download_to_pvc_namespace }}
+ labels:
+   download-to-pvc: "yes"
+spec:
+  restartPolicy: Never
+  containers:
+  - name: downloader
+    image: registry.access.redhat.com/ubi8/ubi
+    command: [bash, /mnt/entrypoint/entrypoint.sh]
+    env:
+    - name: DOWNLOAD_SOURCE
+      value: "{{ storage_download_to_pvc_source }}"
+{% if storage_download_to_pvc_creds | length %}
+    - name: CRED_FILE
+      value: /mnt/download-secret/cred
+{% endif %}
+    - name: SOURCE_NAME
+      value: {{ storage_download_to_pvc_name }}
+    - name: STORAGE_DIR
+      value: /storage/{{ storage_download_to_pvc_storage_dir }}
+    - name: CLEAN_FIRST
+      value: "{{ storage_download_to_pvc_clean_first }}"
+    volumeMounts:
+{% if storage_download_to_pvc_creds | length %}
+    - name: download-secret
+      mountPath: /mnt/download-secret
+      readOnly: true
+{% endif %}
+    - name: entrypoint-cm
+      mountPath: /mnt/entrypoint/entrypoint.sh
+      readOnly: true
+      subPath: entrypoint.sh
+    - name: storage
+      mountPath: /storage
+  volumes:
+{% if storage_download_to_pvc_creds | length %}
+  - name: download-secret
+    secret:
+      secretName: {{ download_name }}
+{% endif %}
+  - name: storage
+    persistentVolumeClaim:
+      claimName: {{ storage_download_to_pvc_pvc_name }}
+  - name: entrypoint-cm
+    configMap:
+      defaultMode: 0777
+      name: {{ download_name }}-entrypoint

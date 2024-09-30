@@ -6,7 +6,7 @@ run_ods_ci_test() {
     local test_mode=$(get_config tests.notebooks.ods_ci.test_mode)
 
     if ! test_config clusters.sutest.is_metal; then
-        local nginx_namespace=$(get_command_arg namespace cluster deploy_nginx_server)
+        local nginx_namespace=$(get_command_arg namespace server deploy_nginx_server)
         local nginx_hostname=$(oc get route/nginx -n "$nginx_namespace" -ojsonpath={.spec.host})
         if [[ -z "$nginx_hostname" ]]; then
             _error "Could not get NGINX notebook server address ...."

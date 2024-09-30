@@ -51,10 +51,10 @@ prepare_driver_cluster() {
     process_ctrl::run_in_bg driver_build_and_preload_ods_ci_image
     process_ctrl::run_in_bg driver_build_and_preload_image "artifacts-exporter"
 
-    process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_minio_s3_server
-    process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_nginx_server
+    process_ctrl::run_in_bg ./run_toolbox.py from_config server deploy_minio_s3_server
+    process_ctrl::run_in_bg ./run_toolbox.py from_config server deploy_nginx_server
 
-    process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_redis_server
+    process_ctrl::run_in_bg ./run_toolbox.py from_config server deploy_redis_server
 }
 
 prepare_driver_scale_cluster() {
@@ -113,9 +113,9 @@ driver_cleanup() {
     if test_config tests.notebooks.cleanup.on_exit.driver.delete_test_namespaces; then
         echo "Deleting the driver scale test namespaces"
         ods_ci_test_namespace=$(get_config tests.notebooks.namespace)
-        statesignal_redis_namespace=$(get_command_arg namespace cluster deploy_redis_server)
-        nginx_notebook_namespace=$(get_command_arg namespace cluster deploy_nginx_server)
-        minio_namespace=$(get_command_arg namespace cluster deploy_minio_s3_server)
+        statesignal_redis_namespace=$(get_command_arg namespace server deploy_redis_server)
+        nginx_notebook_namespace=$(get_command_arg namespace server deploy_nginx_server)
+        minio_namespace=$(get_command_arg namespace server deploy_minio_s3_server)
 
         oc delete namespace --ignore-not-found \
            "$ods_ci_test_namespace" \

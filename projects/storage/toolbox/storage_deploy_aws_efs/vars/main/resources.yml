@@ -1,0 +1,3 @@
+---
+storage_deploy_aws_efs_csi_driver: templates/cluster-csi-driver.yml.j2
+storage_deploy_aws_efs_storage_class: templates/storage-class.yml.j2

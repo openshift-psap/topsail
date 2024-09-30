@@ -1,0 +1,23 @@
+{
+  "kind": "IdentityProvider",
+  "ldap": {
+    "insecure": true,
+    "url": "ldap://openldap.openldap.svc.cluster.local:1389/dc=example,dc=org?uid",
+    "attributes": {
+      "id": [
+        "dn"
+      ],
+      "name": [
+        "cn"
+      ],
+      "preferred_username": [
+        "uid"
+      ]
+    },
+    "bind_dn": "cn=admin,dc=example,dc=org",
+    "bind_password": "$cluster_ldap_adminpassword"
+  },
+  "mapping_method": "claim",
+  "name": "$server_deploy_ldap_idp_name",
+  "type": "LDAPIdentityProvider"
+}

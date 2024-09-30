@@ -70,7 +70,7 @@ fine_tuning run_quality_evaluation:
 
   model_name: {{ tests.fine_tuning.test_settings.model_name }}
 
-cluster download_to_pvc:
+storage download_to_pvc:
   name: SET_AT_RUNTIME
 
   pvc_name: "{{ fine_tuning.pvc.name }}"

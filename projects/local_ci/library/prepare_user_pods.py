@@ -141,14 +141,14 @@ def prepare_user_pods(user_count):
         #
 
         if config.ci_artifacts.get_config("base_image.startup_synchronization.enabled", True):
-            parallel.delayed(run.run_toolbox_from_config, "cluster", "deploy_redis_server")
+            parallel.delayed(run.run_toolbox_from_config, "server", "deploy_redis_server")
 
         #
         # Deploy Minio
         #
 
         if config.ci_artifacts.get_config("base_image.minio.enabled", True):
-            parallel.delayed(run.run_toolbox_from_config, "cluster", "deploy_minio_s3_server")
+            parallel.delayed(run.run_toolbox_from_config, "server", "deploy_minio_s3_server")
 
     #
     # Prepare the driver namespace annotations

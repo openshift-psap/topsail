@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ storage_download_to_pvc_pvc_name }}
+  namespace: {{ storage_download_to_pvc_namespace }}
+spec:
+  accessModes:
+    - {{ storage_download_to_pvc_pvc_access_mode }}
+  resources:
+    requests:
+      storage: {{ storage_download_to_pvc_pvc_size }}

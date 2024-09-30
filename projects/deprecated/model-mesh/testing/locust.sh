@@ -81,7 +81,7 @@ prepare_driver_cluster() {
     process_ctrl::run_in_bg build_and_preload_artifacts_exporter_image
     process_ctrl::run_in_bg build_and_preload_api_scale_test_image
 
-    process_ctrl::run_in_bg ./run_toolbox.py from_config cluster deploy_minio_s3_server
+    process_ctrl::run_in_bg ./run_toolbox.py from_config server deploy_minio_s3_server
 }
 
 prepare_sutest_cluster() {

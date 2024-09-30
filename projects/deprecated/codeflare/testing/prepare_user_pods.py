@@ -113,13 +113,13 @@ def prepare_user_pods(namespace):
     # Deploy Redis server for Pod startup synchronization
     #
 
-    run.run_toolbox_from_config("cluster deploy_redis_server")
+    run.run_toolbox_from_config("server deploy_redis_server")
 
     #
     # Deploy Minio
     #
 
-    run.run_toolbox_from_config("cluster deploy_minio_s3_server")
+    run.run_toolbox_from_config("server deploy_minio_s3_server")
 
     #
     # Prepare the ServiceAccount

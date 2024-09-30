@@ -133,7 +133,7 @@ def download_data_sources(test_settings):
             logging.info(f"tests.dry_mode is not, skipping running download_to_pvc({extra})")
             return
 
-        run.run_toolbox_from_config("cluster", "download_to_pvc", extra=extra)
+        run.run_toolbox_from_config("storage", "download_to_pvc", extra=extra)
 
 
     def download_from_source(source_name):
