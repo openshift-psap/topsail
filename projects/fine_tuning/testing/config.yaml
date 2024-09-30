@@ -184,6 +184,7 @@ ci_presets:
       auto_gptq: ["triton_v2"]
       torch_dtype: "float16"
       fp16: true
+      log_level: "debug"
     tests.fine_tuning.test_extra_settings:
     - name: llama2-70b-chat-gptq
       model_name:
