@@ -69,6 +69,7 @@ def parse_once(results, dirname):
     results.job_config = _parse_job_config(dirname)
     results.tuning_config = _parse_tuning_config(dirname, results.locations.tuning_config_file)
 
+
 @helpers_store_parsers.ignore_file_not_found
 def _parse_start_end_time(dirname):
     ANSIBLE_LOG_TIME_FMT = '%Y-%m-%d %H:%M:%S'
@@ -116,6 +117,7 @@ SFT_TRAINER_PROGRESS_KEYS = {
     "learning_rate": types.SimpleNamespace(lower_better=False),
     "epoch": types.SimpleNamespace(plot=False),
 }
+
 
 @helpers_store_parsers.ignore_file_not_found
 def _parse_sfttrainer_logs(dirname):
@@ -175,7 +177,7 @@ def _parse_sfttrainer_logs(dirname):
 
     return sfttrainer_metrics
 
-
+@helpers_store_parsers.ignore_file_not_found
 def _parse_allocated_resources(dirname):
     allocated_resources = types.SimpleNamespace()
     with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.json")) as f:
@@ -188,7 +190,7 @@ def _parse_allocated_resources(dirname):
 
     return allocated_resources
 
-
+@helpers_store_parsers.ignore_file_not_found
 def _parse_finish_reason(dirname):
     finish_reason = types.SimpleNamespace()
     finish_reason.exit_code = None
@@ -229,6 +231,7 @@ def _prepare_file_locations(dirname):
     return locations
 
 
+@helpers_store_parsers.ignore_file_not_found
 def _parse_job_config(dirname):
     job_config = {}
 
@@ -245,6 +248,7 @@ def _parse_job_config(dirname):
     return job_config
 
 
+@helpers_store_parsers.ignore_file_not_found
 def _parse_tuning_config(dirname, tuning_config_file_location):
     with open(register_important_file(dirname, tuning_config_file_location)) as f:
         tuning_config = json.load(f)
