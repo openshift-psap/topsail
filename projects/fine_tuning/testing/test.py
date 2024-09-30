@@ -91,8 +91,6 @@ def test_ci():
 
         return 1 if failed else 0
     finally:
-        run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
-
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 

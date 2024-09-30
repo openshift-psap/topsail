@@ -349,8 +349,6 @@ def test_one_model(
             import test
             test.generate_plots(results_dir)
 
-        run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
-
 # ---
 
 def reset_prometheus(delay=60):

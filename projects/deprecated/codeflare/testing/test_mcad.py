@@ -72,8 +72,6 @@ def test(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_no
 
             raise RuntimeError(msg)
     finally:
-        run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/report_index.html", check=False)
-
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 

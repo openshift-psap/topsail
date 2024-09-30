@@ -142,8 +142,6 @@ def test_ci():
               config.TempValue(config.ci_artifacts, "matbench.config_file", matbench_config_file)):
             visualize.generate_from_dir(results_dir)
 
-        run.run(f"testing/utils/generate_plot_index.py > {env.ARTIFACT_DIR}/reports_index.html", check=False)
-
         if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 
