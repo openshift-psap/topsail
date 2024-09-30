@@ -14,7 +14,6 @@ def send_job_completion_notification(reason, status, github=True, slack=False, d
 
     if os.environ.get("TOPSAIL_LOCAL_CI") == "true":
         github = False # don't post notifications to github for LOCAL-CI runs. They stay private.
-        slack = False # don't send them to slack either, link/pr_number helpers not implemented yet
 
     pr_number = get_pr_number()
 
@@ -73,8 +72,8 @@ def send_job_completion_notification_to_github(reason, status, pr_number, dry_ru
 
 
 def get_github_notification_message(reason, status, pr_number):
-    def get_link(name, path, needs_view_suffix=False, base=None):
-        return f"[{name}]({get_ci_link(path, needs_view_suffix, base)})"
+    def get_link(name, path, is_raw_file=False, base=None, is_dir=False):
+        return f"[{name}]({get_ci_link(path, is_raw_file, base, is_dir)})"
 
     def get_italics(text):
         return f"*{text}*"
@@ -99,7 +98,7 @@ def get_common_message(reason, status, get_link, get_italics, get_bold):
 """
 
     message  += f"""
-• Link to the {get_link("test results", "")}.
+• Link to the {get_link("test results", "", is_dir=True)}.
 """
     if (pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "reports_index.html").exists():
         message += f"""
@@ -133,13 +132,13 @@ def get_common_message(reason, status, get_link, get_italics, get_bold):
             lines = f.readlines()
 
             message += f"""
-*{get_link("Failure indicator", "FAILURES", needs_view_suffix=True)}*:
+*{get_link("Failure indicator", "FAILURES", is_raw_file=True)}*:
 ```
 {"".join(lines[:HEAD])}
 {"[...]" if len(lines) > HEAD else ""}
 ```
 """ if lines else f"""
-*Failure indicator*: Empty. (See {get_link("run.log", "run.log")})
+*Failure indicator*: Empty. (See {get_link("run.log", "run.log", is_raw_file=True)})
 """
 
     if os.environ.get("PERFLAB_CI") == "true":
@@ -154,8 +153,8 @@ def get_common_message(reason, status, get_link, get_italics, get_bold):
 # https://api.slack.com/reference/surfaces/formatting
 
 def get_slack_thread_message(reason, status, pr_data):
-    def get_link(name, path, needs_view_suffix=False, base=None):
-        return f"<{get_ci_link(path, needs_view_suffix, base)}|{name}>"
+    def get_link(name, path, is_raw_file=False, base=None, is_dir=False):
+        return f"<{get_ci_link(path, is_raw_file, base, is_dir)}|{name}>"
 
     def get_italics(text):
         return f"_{text}_"
@@ -199,6 +198,9 @@ Link to the <{pr_data['html_url']}|PR>.
 
 def send_job_completion_notification_to_slack(reason, status, pr_number, dry_run):
     client = slack_api.init_client()
+    if not client:
+        return
+
     org, repo = get_org_repo()
 
     pr_created_at, pr_data = github_api.fetch_pr_data(org, repo, pr_number)
@@ -249,15 +251,15 @@ def get_pr_number():
         return git_ref.split("/")[2]
 
     elif os.environ.get("TOPSAIL_LOCAL_CI") == "true":
-        logging.warning("LocalCI PR number not supported yet.")
-        return
+        return os.environ["PULL_NUMBER"]
 
     else:
         logging.warning("Test not running from a well-known CI engine, cannot extract a PR number.")
         return
 
 
-def get_ci_base_link(needs_view_suffix=False):
+# returns a tuple (base_link, link_suffix)
+def get_ci_base_link(is_raw_file=False, is_dir=False):
     if os.environ.get("OPENSHIFT_CI") == "true":
         test_name = os.environ["HOSTNAME"].removeprefix(os.environ['JOB_NAME_SAFE']+"-")
 
@@ -272,12 +274,14 @@ def get_ci_base_link(needs_view_suffix=False):
 
         return ((f"https://{os.environ['JENKINS_INSTANCE']}/{os.environ['JENKINS_JOB']}/{os.environ['JENKINS_BUILD_NUMBER']}/" +
                 f"artifact/run/{os.environ['JENKINS_JUMPHOST']}/{artifact_dir}"),
-                ("/*view*/" if needs_view_suffix else ""))
+                ("/*view*/" if is_raw_file else ""))
 
     elif os.environ.get("TOPSAIL_LOCAL_CI") == "true":
-        logging.warning("LocalCI links not supported yet.")
+        bucket_name = os.environ.get("TOPSAIL_LOCAL_CI_BUCKET_NAME")
+        job_name_safe = os.environ.get("JOB_NAME_SAFE")
+        run_id = os.environ.get("TEST_RUN_IDENTIFIER")
 
-        return None, None
+        return f"https://{bucket_name}.s3.amazonaws.com/{'index.html#' if is_dir else ''}local-ci/{job_name_safe}/{run_id}{'/' if is_dir else ''}", ""
     else:
         logging.warning("Test not running from a well-known CI engine, cannot extract the artifacts link.")
 
@@ -313,9 +317,9 @@ def get_github_secrets():
     return pem_file, client_id
 
 
-def get_ci_link(path, needs_view_suffix=False, base=None):
+def get_ci_link(path, is_raw_file=False, base=None, is_dir=False):
     if base is None:
-        base, suffix = get_ci_base_link(needs_view_suffix)
+        base, suffix = get_ci_base_link(is_raw_file, is_dir)
     else:
         suffix = None
 
