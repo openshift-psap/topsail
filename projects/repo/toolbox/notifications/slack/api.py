@@ -13,12 +13,12 @@ MAX_CALLS = 10
 def search_channel_message(client, message_anchor: str, not_before):
     """Searches for a message matching the pattern.
     Returns thread ts if successful."""
-    has_more = False
+    has_more = True
     history = []
     cursor = None
     calls = 0
 
-    while not has_more and calls < MAX_CALLS:
+    while has_more and calls < MAX_CALLS:
         calls += 1
 
         try:
