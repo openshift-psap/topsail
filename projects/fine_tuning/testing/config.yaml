@@ -165,19 +165,10 @@ ci_presets:
     extends: [hf_evaluation, dgx_small_footprint]
     tests.fine_tuning.test_settings.model_name: null # for consistency. Set in 'test_extra_settings'
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
-    tests.fine_tuning.test_settings.dataset_replication: 1
-    tests.fine_tuning.test_settings.gpu: [2, 4]
+    tests.fine_tuning.test_settings.dataset_replication: .1
+    tests.fine_tuning.test_settings.gpu: [2]
     tests.fine_tuning.test_settings.hyper_parameters:
       peft_method: "lora"
-      # qlora arguments: https://github.com/foundation-model-stack/fms-hf-tuning?tab=readme-ov-file#fms-acceleration
-      auto_gptq: ["triton_v2"]
-      torch_dtype: float16
-      fp16: true
-      # fast_kernels: [true, true, true]
-      # padding_free: ["huggingface"]
-      # multipack: [16]
-      # fused_lora: ["auto_gptq", true]
-      # qlora args
       use_flash_attn: true
       max_steps: -1
       per_device_train_batch_size: [1] # this for now, until it works
@@ -189,6 +180,10 @@ ci_presets:
       packing: false
       r: 4
       lora_alpha: 16
+      # qlora arguments: https://github.com/foundation-model-stack/fms-hf-tuning?tab=readme-ov-file#fms-acceleration
+      auto_gptq: ["triton_v2"]
+      torch_dtype: "float16"
+      fp16: true
     tests.fine_tuning.test_extra_settings:
     - name: llama2-70b-chat-gptq
       model_name:
