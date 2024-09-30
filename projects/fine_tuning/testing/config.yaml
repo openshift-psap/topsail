@@ -181,14 +181,15 @@ ci_presets:
       r: 4
       lora_alpha: 16
       # qlora arguments: https://github.com/foundation-model-stack/fms-hf-tuning?tab=readme-ov-file#fms-acceleration
-      auto_gptq: ["triton_v2"]
+      auto_gptq:
+        raw_lists: ["triton_v2"]
       torch_dtype: "float16"
       fp16: true
       log_level: "debug"
     tests.fine_tuning.test_extra_settings:
-    - name: llama2-70b-chat-gptq
+    - name: meta-llama3-8b-gptq
       model_name:
-      - TheBloke/Llama-2-70B-Chat-GPTQ
+      - TechxGenus/Meta-Llama-3-8B-GPTQ
       hyper_parameters:
         raw_lists: {target_modules: ["q_proj", "k_proj"]}
 
