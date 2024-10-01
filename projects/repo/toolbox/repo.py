@@ -1,10 +1,11 @@
 import os
 import pathlib
-
+import sys
 
 from projects.repo.scripts.validate_role_files import main as role_files_main
 from projects.repo.scripts.validate_role_vars_used import main as role_vars_used_main
 import projects.repo.scripts.ansible_default_config
+import projects.repo.scripts.toolbox_rst_documentation
 
 import projects.core.library.ansible_toolbox
 
@@ -59,7 +60,7 @@ class Repo:
     @staticmethod
     def generate_ansible_default_settings():
         """
-        Generate the 'defaults/main/config.yml' file of the Ansible roles, based on the Python definition.
+        Generate the `defaults/main/config.yml` file of the Ansible roles, based on the Python definition.
         """
         projects.repo.scripts.ansible_default_config.generate_all(projects.core.library.ansible_toolbox.Toolbox())
         exit(0)
@@ -174,3 +175,24 @@ git commit -m "Add {name} secret"
 
 3. Open the PR against the `wreicher-rhods` branch.
 """)
+
+    @staticmethod
+    def generate_toolbox_rst_documentation():
+        """
+        Generate the `doc/toolbox.generated/*.rst` file, based on the Toolbox Python definition.
+        """
+        projects.repo.scripts.toolbox_rst_documentation.generate_all(projects.core.library.ansible_toolbox.Toolbox())
+        exit(0)
+
+    @staticmethod
+    def generate_toolbox_related_files():
+        """
+        Generate the rst document and Ansible default settings, based on the Toolbox Python definition.
+        """
+        sys.argv[2] = "generate_toolbox_rst_documentation"
+        projects.repo.scripts.toolbox_rst_documentation.generate_all(projects.core.library.ansible_toolbox.Toolbox())
+
+        sys.argv[2] = "generate_ansible_default_settings"
+        projects.repo.scripts.ansible_default_config.generate_all(projects.core.library.ansible_toolbox.Toolbox())
+
+        exit(0)

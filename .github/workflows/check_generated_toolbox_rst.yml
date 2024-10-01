@@ -1,0 +1,46 @@
+# Ensure Ansible 'default' files match the Python entrypoint
+name: Ansible defaults match
+
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 */8 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install fire pyyaml jsonpath_ng joblib
+
+      - name: "Ensure that Ansible 'default' files match the Python entrypoint"
+        run: |
+          ./run_toolbox.py repo generate_toolbox_rst_documentation
+
+      - name: Show the difference between the commited files and the regenerated Ansible files
+        run: |
+          git diff
+
+      - name: Fail the test if there is a mismatch between the roles defaults and the Python entrypoints
+        run: |
+          changes=$(git diff | wc -l)
+          if [ "$changes" -ne "0" ]; then
+              echo "
+              There is a mismatch between the roles
+              defaults and the Python entrypoints.
+              Make sure you run:
+              ./run_toolbox.py repo generate_toolbox_rst_documentation
+              When making changes to the Python entrypoints.
+              "
+              exit  1
+          fi

@@ -22,11 +22,9 @@ class Cluster:
         their replica parameters will not be modified.
         Otherwise,
         - If there's only one machineset with the given instance type, its replicas will be set to the value of this parameter.
-
-        - If there are other machinesets with non-zero replicas, the playbook will fail, unless the 'force_scale' parameter is
+        - If there are other machinesets with non-zero replicas, the playbook will fail, unless the `force` parameter is
         set to true. In that case, the number of replicas of the other machinesets will be zeroed before setting the replicas
         of the first machineset to the value of this parameter."
-
         - If `--base-machineset=machineset` flag is passed, `machineset` machineset will be used to derive the new
         machinetset (otherwise, the first machinetset of the listing will be used). This is useful if the desired `instance_type`
         is only available in some specific regions and, controlled by different machinesets.
@@ -205,6 +203,8 @@ class Cluster:
         Then the definition of the metric, than can spread on multiple lines, until the next # is found.
 
         Example:
+        ::
+
           promquery_file:
             # sutest__cluster_cpu_capacity
             sum(cluster:capacity_cpu_cores:sum)
