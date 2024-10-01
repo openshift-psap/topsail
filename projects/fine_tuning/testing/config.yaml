@@ -191,7 +191,7 @@ ci_presets:
       model_name:
       - TechxGenus/Meta-Llama-3-8B-GPTQ
       hyper_parameters:
-        raw_lists: {target_modules: ["q_proj", "k_proj"]}
+        raw_lists: {target_modules: ["all-linear"]}
 
   dgx_multi_model_8:
     extends: [multi_model]
