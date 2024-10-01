@@ -260,6 +260,7 @@ ci_presets:
     extends: [use_intlab_os]
     matbench.lts.opensearch.export.enabled: true
     matbench.lts.regression_analyses.enabled: true
+    export_artifacts.enabled: true
 
 secrets:
   dir:
