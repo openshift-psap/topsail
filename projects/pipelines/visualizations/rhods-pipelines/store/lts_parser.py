@@ -101,7 +101,7 @@ def _generate_run_latency(results):
 
     all_points = list(reduce(lambda l, r: l + r, data.values(), []))
     run_latency = _generate_dsp_test_stats(all_points)
-    if len(all_points) <= 0:
+    if not all_points:
         run_latency["degrade_speed"] = 0.0
     else:
         medians = np.array([np.median(d[1]) for d in sorted(data.items())])
@@ -141,7 +141,7 @@ def _generate_run_duration(results):
 
     all_points = list(reduce(lambda l, r: l + r, data.values(), []))
     run_duration = _generate_dsp_test_stats(all_points)
-    if len(all_points) <= 0:
+    if not all_points:
         run_duration["degrade_speed"] = 0.0
     else:
         medians = np.array([np.median(d[1]) for d in sorted(data.items())])
@@ -156,7 +156,7 @@ def _generate_dsp_test_stats(data: List[float]) -> Dict[str, float]:
 
     # Some of the Numpy functions panic on 0-length arrays
     # so we need to check this explicitly
-    if len(data) <= 0:
+    if not data:
         test_stats = {
             "values": data,
             "min": 0.0,
