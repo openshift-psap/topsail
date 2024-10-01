@@ -181,8 +181,6 @@ ci_presets:
       r: 4
       lora_alpha: 16
       # qlora arguments: https://github.com/foundation-model-stack/fms-hf-tuning?tab=readme-ov-file#fms-acceleration
-      auto_gptq:
-        raw_lists: ["triton_v2"]
       torch_dtype: "float16"
       fp16: true
       log_level: "debug"
@@ -191,7 +189,9 @@ ci_presets:
       model_name:
       - TechxGenus/Meta-Llama-3-8B-GPTQ
       hyper_parameters:
-        raw_lists: {target_modules: ["all-linear"]}
+        raw_lists:
+          target_modules: ["all-linear"]
+          auto_gptq: ["triton_v2"]
 
   dgx_multi_model_8:
     extends: [multi_model]
