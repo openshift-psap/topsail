@@ -33,11 +33,11 @@ class Configure:
         if "ARTIFACT_DIR" not in os.environ:
             os.environ["ARTIFACT_DIR"] = str(pathlib.Path("/tmp") / project)
 
-        if "CI_ARTIFACTS_CONFIG_INITED" in os.environ:
+        if "TOPSAIL_CONFIG_INITED" in os.environ:
             logging.error("Already initialize ...")
             sys.exit(1)
         else:
-            os.environ["CI_ARTIFACTS_CONFIG_INITED"] = "true"
+            os.environ["TOPSAIL_CONFIG_INITED"] = "true"
 
         env.init()
 
@@ -53,9 +53,9 @@ class Configure:
         if show_export or shell:
             print(f"""
 export ARTIFACT_DIR={os.environ['ARTIFACT_DIR']}
-export CI_ARTIFACTS_FROM_CONFIG_FILE={os.environ['CI_ARTIFACTS_FROM_CONFIG_FILE']}
-export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE={os.environ['CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE']}
-export CI_ARTIFACTS_CONFIG_INITED={os.environ['CI_ARTIFACTS_CONFIG_INITED']}
+export TOPSAIL_FROM_CONFIG_FILE={os.environ['TOPSAIL_FROM_CONFIG_FILE']}
+export TOPSAIL_FROM_COMMAND_ARGS_FILE={os.environ['TOPSAIL_FROM_COMMAND_ARGS_FILE']}
+export TOPSAIL_CONFIG_INITED={os.environ['TOPSAIL_CONFIG_INITED']}
         """)
 
         if shell:
@@ -80,7 +80,7 @@ export CI_ARTIFACTS_CONFIG_INITED={os.environ['CI_ARTIFACTS_CONFIG_INITED']}
           presets: a list of presets to apply
         """
 
-        if "CI_ARTIFACTS_CONFIG_INITED" not in os.environ:
+        if "TOPSAIL_CONFIG_INITED" not in os.environ:
             logging.error("Configuration not initialized ...")
             sys.exit(1)
 
@@ -91,22 +91,22 @@ export CI_ARTIFACTS_CONFIG_INITED={os.environ['CI_ARTIFACTS_CONFIG_INITED']}
             logging.error("Need to pass --preset or --presets parameters")
             sys.exit(1)
 
-        name = config.ci_artifacts.get_config("ci_presets.name") or "Manual config"
-        config.ci_artifacts.set_config("ci_presets.names", [])
+        name = config.project.get_config("ci_presets.name") or "Manual config"
+        config.project.set_config("ci_presets.names", [])
 
         found = False
         if preset:
             found = True
-            config.ci_artifacts.apply_preset(preset, do_dump=False)
+            config.project.apply_preset(preset, do_dump=False)
             name = f"{name} | {preset}"
 
         if presets:
             found = True
             for _preset in presets:
-                config.ci_artifacts.apply_preset(_preset, do_dump=False)
+                config.project.apply_preset(_preset, do_dump=False)
                 name = f"{name} | {_preset}"
 
-        config.ci_artifacts.set_config("ci_presets.name", name)
+        config.project.set_config("ci_presets.name", name)
         print()
         logging.info(f"Configuration name: {name}")
 
@@ -118,25 +118,25 @@ export CI_ARTIFACTS_CONFIG_INITED={os.environ['CI_ARTIFACTS_CONFIG_INITED']}
           key: the key to lookup in the configuration file
         """
 
-        if "CI_ARTIFACTS_CONFIG_INITED" not in os.environ:
+        if "TOPSAIL_CONFIG_INITED" not in os.environ:
             logging.error("Configuration not initialized ...")
             sys.exit(1)
 
         env.init()
         config.init(env.ARTIFACT_DIR)
         print("---")
-        print(config.ci_artifacts.get_config(key, print=False))
+        print(config.project.get_config(key, print=False))
 
     def name(self):
         """
         Gives the name of the current configuration
         """
 
-        if "CI_ARTIFACTS_CONFIG_INITED" not in os.environ:
+        if "TOPSAIL_CONFIG_INITED" not in os.environ:
             logging.error("Configuration not initialized ...")
             sys.exit(1)
 
         env.init()
         config.init(env.ARTIFACT_DIR)
         print("---")
-        print(config.ci_artifacts.get_config("ci_presets.name", print=False))
+        print(config.project.get_config("ci_presets.name", print=False))

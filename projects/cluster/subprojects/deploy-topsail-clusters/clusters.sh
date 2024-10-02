@@ -9,9 +9,9 @@ set -x
 PROJECTS_CLUSTER_SUBPROJECT_DEPLOY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 TESTING_UTILS_DIR="${PROJECTS_CLUSTER_SUBPROJECT_DEPLOY_DIR}/../../../../testing/utils"
 
-if [[ -z "${CI_ARTIFACTS_FROM_CONFIG_FILE:-}" ]]; then
-    echo "WARNING: CI_ARTIFACTS_FROM_CONFIG_FILE is not set. Commands relying on 'get_config' won't work ..."
-    export CI_ARTIFACTS_FROM_CONFIG_FILE="/CI_ARTIFACTS_FROM_CONFIG_FILE/not/set"
+if [[ -z "${TOPSAIL_FROM_CONFIG_FILE:-}" ]]; then
+    echo "WARNING: TOPSAIL_FROM_CONFIG_FILE is not set. Commands relying on 'get_config' won't work ..."
+    export TOPSAIL_FROM_CONFIG_FILE="/TOPSAIL_FROM_CONFIG_FILE/not/set"
 fi
 
 source "$TESTING_UTILS_DIR/process_ctrl.sh"

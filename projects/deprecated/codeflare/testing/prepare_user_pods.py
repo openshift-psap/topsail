@@ -8,7 +8,7 @@ TESTING_CODEFLARE_DIR = pathlib.Path(__file__).absolute().parent
 TESTING_UTILS_DIR = TESTING_CODEFLARE_DIR.parent / "utils"
 
 def apply_prefer_pr():
-    if not config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr"):
+    if not config.project.get_config("base_image.repo.ref_prefer_pr"):
         return
 
     pr_number = None
@@ -35,8 +35,8 @@ def apply_prefer_pr():
     pr_ref = f"refs/pull/{pr_number}/merge"
 
     logging.info(f"Setting '{pr_ref}' as ref for building the base image")
-    config.ci_artifacts.set_config("base_image.repo.ref", pr_ref)
-    config.ci_artifacts.set_config("base_image.repo.tag", f"pr-{pr_number}")
+    config.project.set_config("base_image.repo.ref", pr_ref)
+    config.project.set_config("base_image.repo.tag", f"pr-{pr_number}")
 
 
 def prepare_base_image_container(namespace):
@@ -47,7 +47,7 @@ def prepare_base_image_container(namespace):
     else:
         run.run_toolbox_from_config("cluster", "build_push_image", prefix="base_image")
 
-    if not config.ci_artifacts.get_config("base_image.extend.enabled"):
+    if not config.project.get_config("base_image.extend.enabled"):
         logging.info("Base image extention not enabled.")
         return
 
@@ -59,8 +59,8 @@ def compute_driver_node_requirement():
     kwargs = dict(
         cpu = 0.250,
         memory = 2,
-        machine_type = config.ci_artifacts.get_config("clusters.driver.compute.machineset.type"),
-        user_count = config.ci_artifacts.get_config("tests.sdk_user.user_count"),
+        machine_type = config.project.get_config("clusters.driver.compute.machineset.type"),
+        user_count = config.project.get_config("tests.sdk_user.user_count"),
         )
 
     return sizing.main(**kwargs)
@@ -70,10 +70,10 @@ def compute_node_requirement(**kwargs):
     return sizing.main(**kwargs)
 
 def prepare_user_pods(namespace):
-    config.ci_artifacts.set_config("base_image.namespace", namespace)
+    config.project.set_config("base_image.namespace", namespace)
 
-    service_account = config.ci_artifacts.get_config("base_image.user.service_account")
-    role = config.ci_artifacts.get_config("base_image.user.role")
+    service_account = config.project.get_config("base_image.user.service_account")
+    role = config.project.get_config("base_image.user.role")
 
     #
     # Prepare the driver namespace
@@ -81,7 +81,7 @@ def prepare_user_pods(namespace):
     if run.run(f'oc get project -oname "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f"oc new-project '{namespace}' --skip-config-write >/dev/null")
 
-    dedicated = "{}" if config.ci_artifacts.get_config("clusters.driver.compute.dedicated") \
+    dedicated = "{}" if config.project.get_config("clusters.driver.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
     run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="driver", suffix="test_node_selector", extra=dedicated)
@@ -91,8 +91,8 @@ def prepare_user_pods(namespace):
     # Prepare the driver machineset
     #
 
-    if not config.ci_artifacts.get_config("clusters.driver.is_metal"):
-        nodes_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
+    if not config.project.get_config("clusters.driver.is_metal"):
+        nodes_count = config.project.get_config("clusters.driver.compute.machineset.count")
         extra = {}
         if nodes_count is None:
             node_count = compute_driver_node_requirement()
@@ -133,7 +133,7 @@ def prepare_user_pods(namespace):
     # Prepare the Secret
     #
 
-    secret_name = config.ci_artifacts.get_config("secrets.dir.name")
-    secret_env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
+    secret_name = config.project.get_config("secrets.dir.name")
+    secret_env_key = config.project.get_config("secrets.dir.env_key")
 
     run.run(f"oc create secret generic {secret_name} --from-file=$(echo ${secret_env_key}/* | tr ' ' ,) -n {namespace} --dry-run=client -oyaml | oc apply -f-")

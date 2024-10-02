@@ -16,7 +16,7 @@
             "notebooks.opendatahub.io/last-image-selection": "s2i-generic-data-science-notebook:py3.8-v1",
             "notebooks.opendatahub.io/inject-oauth": "true",
             "opendatahub.io/username": "{{ name }}",
-            "ci-artifacts/base-url": "/notebook/{{ namespace }}/{{ name }}"
+            "topsail/base-url": "/notebook/{{ namespace }}/{{ name }}"
         },
         "name": "{{ name }}",
         "namespace": "{{ namespace }}"

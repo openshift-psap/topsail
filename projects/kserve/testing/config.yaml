@@ -569,7 +569,7 @@ base_image:
     local_dockerfile_path: projects/kserve/testing/images/Containerfile.e2e_test_user
     tag: e2e-test-user
   user:
-    service_account: ci-artifacts
+    service_account: topsail
     role: cluster-admin
   minio:
     bucket_name: kserve-test-bucket

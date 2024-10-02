@@ -44,12 +44,12 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
         if not PSAP_ODS_SECRET_PATH.exists():
             raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-    config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
-    is_metal = config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
+    config.project.detect_apply_light_profile(LIGHT_PROFILE)
+    is_metal = config.project.detect_apply_metal_profile(METAL_PROFILE)
 
     if is_metal:
-        metal_profiles = config.ci_artifacts.get_config("clusters.metal_profiles")
-        profile_applied = config.ci_artifacts.detect_apply_cluster_profile(metal_profiles)
+        metal_profiles = config.project.get_config("clusters.metal_profiles")
+        profile_applied = config.project.detect_apply_cluster_profile(metal_profiles)
 
         if not profile_applied:
             raise ValueError("Bare-metal cluster not recognized :/ ")
@@ -94,11 +94,11 @@ def uninstall_ocp_pipelines():
 
 
 def create_dsp_application(dspa_name):
-    old_dspa_name = config.ci_artifacts.get_config("rhods.pipelines.application.name")
-    config.ci_artifacts.set_config("rhods.pipelines.application.name", dspa_name)
+    old_dspa_name = config.project.get_config("rhods.pipelines.application.name")
+    config.project.set_config("rhods.pipelines.application.name", dspa_name)
     if run.run(f'oc get dspa/"{dspa_name}" 2>/dev/null', check=False).returncode != 0:
         run.run_toolbox_from_config("pipelines", "deploy_application")
-    config.ci_artifacts.set_config("rhods.pipelines.application.name", old_dspa_name)
+    config.project.set_config("rhods.pipelines.application.name", old_dspa_name)
 
 @entrypoint()
 def prepare_rhods():
@@ -106,7 +106,7 @@ def prepare_rhods():
     Prepares the cluster for running RHODS pipelines scale tests.
     """
 
-    token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
+    token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.brew_registry_redhat_io_token_file")
     prepare_rhoai.install(token_file)
 
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
@@ -131,19 +131,19 @@ def compute_node_requirement(driver=False, sutest=False):
         # --> 2668
         cpu_count = 1.5
         memory = 3
-        machine_type = config.ci_artifacts.get_config("clusters.driver.compute.machineset.type")
+        machine_type = config.project.get_config("clusters.driver.compute.machineset.type")
 
     if sutest:
         # must match 'projects/local_ci/toolbox/local_ci_run_multi/templates/job.yaml.j2'
         cpu_count = 2
         memory = 4
-        machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type")
+        machine_type = config.project.get_config("clusters.sutest.compute.machineset.type")
 
     kwargs = dict(
         cpu = cpu_count,
         memory = memory,
         machine_type = machine_type,
-        user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+        user_count = config.project.get_config("tests.pipelines.user_count")
         )
 
     return sizing.main(**kwargs)
@@ -153,8 +153,8 @@ def prepare_project(namespace, dspa_name):
     """
     Prepares the namespace for running a pipelines scale test.
     """
-    old_namespace = config.ci_artifacts.get_config("rhods.pipelines.namespace")
-    config.ci_artifacts.set_config("rhods.pipelines.namespace", namespace)
+    old_namespace = config.project.get_config("rhods.pipelines.namespace")
+    config.project.set_config("rhods.pipelines.namespace", namespace)
     if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
     else:
@@ -163,11 +163,11 @@ def prepare_project(namespace, dspa_name):
 
     run.run(f"oc label namespace/{namespace} opendatahub.io/dashboard=true --overwrite")
 
-    label_key = config.ci_artifacts.get_config("rhods.pipelines.namespace_label.key")
-    label_value = config.ci_artifacts.get_config("rhods.pipelines.namespace_label.value")
+    label_key = config.project.get_config("rhods.pipelines.namespace_label.key")
+    label_value = config.project.get_config("rhods.pipelines.namespace_label.value")
     run.run(f"oc label namespace/{namespace} '{label_key}={label_value}' --overwrite")
 
-    dedicated = "{}" if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated") \
+    dedicated = "{}" if config.project.get_config("clusters.sutest.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
     run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="pipelines_node_selector", extra=dedicated)
@@ -175,15 +175,15 @@ def prepare_project(namespace, dspa_name):
 
     create_dsp_application(dspa_name)
 
-    config.ci_artifacts.set_config("rhods.pipelines.namespace", old_namespace)
+    config.project.set_config("rhods.pipelines.namespace", old_namespace)
 
 @entrypoint()
 def prepare_test_driver_namespace():
     """
-    Prepares the cluster for running the multi-user ci-artifacts operations
+    Prepares the cluster for running the multi-user TOPSAIL operations
     """
 
-    user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+    user_count = config.project.get_config("tests.pipelines.user_count")
     with run.Parallel("prepare_driver") as parallel:
 
         parallel.delayed(prepare_user_pods.prepare_user_pods, user_count)
@@ -196,10 +196,10 @@ def prepare_sutest_scale_up():
     Scales up the SUTest cluster with the right number of nodes
     """
 
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+    if config.project.get_config("clusters.sutest.is_metal"):
         return
 
-    node_count = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.count")
+    node_count = config.project.get_config("clusters.sutest.compute.machineset.count")
     extra = dict()
     if node_count is None:
         node_count = compute_node_requirement(sutest=True)
@@ -214,7 +214,7 @@ def prepare_cluster():
     """
     prepare_user_pods.apply_prefer_pr()
 
-    if config.ci_artifacts.get_config("clusters.create.ocp.deploy_cluster.target") == "cluster_light":
+    if config.project.get_config("clusters.create.ocp.deploy_cluster.target") == "cluster_light":
         run.run_toolbox("cluster", "wait_fully_awake")
 
     with run.Parallel("prepare_cluster") as parallel:
@@ -223,7 +223,7 @@ def prepare_cluster():
         parallel.delayed(prepare_rhods)
 
     # Update the MAX_CONCURRENT_RECONCILES if needed
-    max_concurrent_reconciles = config.ci_artifacts.get_config("tests.pipelines.max_concurrent_reconciles")
+    max_concurrent_reconciles = config.project.get_config("tests.pipelines.max_concurrent_reconciles")
     if max_concurrent_reconciles is not None:
         rhoai_down() # Pause RHOAI so we can edit a variable in the DSPO
         generation_cmd = run.run("oc get -ojson deployment/data-science-pipelines-operator-controller-manager -n redhat-ods-applications | jq '.status.observedGeneration' -r", capture_stdout=True)
@@ -241,27 +241,27 @@ def pipelines_run_one():
     Runs a single Pipeline scale test.
     """
 
-    project_count = config.ci_artifacts.get_config("tests.pipelines.project_count")
-    pipelines_per_user = config.ci_artifacts.get_config("tests.pipelines.pipelines_per_user")
+    project_count = config.project.get_config("tests.pipelines.project_count")
+    pipelines_per_user = config.project.get_config("tests.pipelines.pipelines_per_user")
 
     uid = "-1"
     if user_index := os.environ.get("JOB_COMPLETION_INDEX"):
         uid = user_index
 
-        namespace = config.ci_artifacts.get_config("rhods.pipelines.namespace")
+        namespace = config.project.get_config("rhods.pipelines.namespace")
         ns_index = int(user_index) % int(project_count)
         new_namespace = f"{namespace}-n{ns_index}"
         logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
-        config.ci_artifacts.set_config("rhods.pipelines.namespace", new_namespace)
+        config.project.set_config("rhods.pipelines.namespace", new_namespace)
         application_name = f"n{ns_index}-sample"
-        config.ci_artifacts.set_config("rhods.pipelines.application.name", application_name)
+        config.project.set_config("rhods.pipelines.application.name", application_name)
 
     try:
 
-        if not config.ci_artifacts.get_config("tests.pipelines.deploy_pipeline"):
+        if not config.project.get_config("tests.pipelines.deploy_pipeline"):
             return
 
-        user_pipeline_delay = int(config.ci_artifacts.get_config("tests.pipelines.user_pipeline_delay"))
+        user_pipeline_delay = int(config.project.get_config("tests.pipelines.user_pipeline_delay"))
         for pipeline_num in range(pipelines_per_user):
             logging.info(f"Running run_kfp_notebook for pipeline {pipeline_num}")
             notebook_name = f"user{uid}-pl{pipeline_num}"
@@ -294,12 +294,12 @@ def _pipelines_run_many(test_artifact_dir_p):
 
     def prepare_matbench_files():
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-            yaml.dump(config.ci_artifacts.config, f, indent=4)
+            yaml.dump(config.project.config, f, indent=4)
 
         with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
             print(str(uuid.uuid4()), file=f)
 
-        user_count = config.ci_artifacts.get_config("tests.pipelines.user_count")
+        user_count = config.project.get_config("tests.pipelines.user_count")
         with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
             yaml.dump(dict(user_count=user_count), f, indent=4)
 
@@ -337,8 +337,8 @@ def cleanup_scale_test():
     #
     # delete the pipelines namespaces
     #
-    label_key = config.ci_artifacts.get_config("rhods.pipelines.namespace_label.key")
-    label_value = config.ci_artifacts.get_config("rhods.pipelines.namespace_label.value")
+    label_key = config.project.get_config("rhods.pipelines.namespace_label.key")
+    label_value = config.project.get_config("rhods.pipelines.namespace_label.value")
     run.run(f"oc delete ns -l{label_key}={label_value} --ignore-not-found")
 
 
@@ -374,7 +374,7 @@ def cleanup_cluster():
     #
     # delete the test driver namespace
     #
-    base_image_ns = config.ci_artifacts.get_config("base_image.namespace")
+    base_image_ns = config.project.get_config("base_image.namespace")
     run.run(f"oc delete ns '{base_image_ns}' --ignore-not-found")
 
 
@@ -388,9 +388,9 @@ def test_ci():
     prepare_user_pods.apply_prefer_pr()
 
     # Pre-deploy projects for all users
-    num_projects = int(config.ci_artifacts.get_config("tests.pipelines.project_count"))
-    namespace_prefix = config.ci_artifacts.get_config("rhods.pipelines.namespace")
-    project_delay = int(config.ci_artifacts.get_config("tests.pipelines.sleep_factor"))
+    num_projects = int(config.project.get_config("tests.pipelines.project_count"))
+    namespace_prefix = config.project.get_config("rhods.pipelines.namespace")
+    project_delay = int(config.project.get_config("tests.pipelines.sleep_factor"))
     for n in range(num_projects):
         namespace = f"{namespace_prefix}-n{n}"
         dspa_name = f"n{n}-sample"
@@ -410,7 +410,7 @@ def test_ci():
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
     finally:
-        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+        if config.project.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
@@ -424,7 +424,7 @@ def generate_plots(results_dirname):
 
 @entrypoint()
 def rebuild_driver_image(pr_number):
-    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    namespace = config.project.get_config("base_image.namespace")
     prepare_user_pods.rebuild_driver_image(namespace, pr_number)
 
 class Pipelines:

@@ -1,8 +1,8 @@
 kind: ImageStream
 apiVersion: image.openshift.io/v1
 metadata:
-  name: ci-artifacts
-  namespace: ci-artifacts
+  name: topsail
+  namespace: topsail
   labels:
-    app: ci-artifacts
+    app: topsail
 spec: {}

@@ -35,21 +35,21 @@ Parameters
 
 * The namespace in which the image.
 
-* default value: ``ci-artifacts``
+* default value: ``topsail``
 
 
 ``istag``  
 
 * The imagestream tag to use.
 
-* default value: ``ci-artifacts:main``
+* default value: ``topsail:main``
 
 
 ``job_name``  
 
 * The name to give to the Job running the CI command.
 
-* default value: ``ci-artifacts``
+* default value: ``topsail``
 
 
 ``service_account``  
@@ -96,7 +96,7 @@ Parameters
 
 ``use_local_config``  
 
-* If true, gives the local configuration file ($CI_ARTIFACTS_FROM_CONFIG_FILE) to the Pods.
+* If true, gives the local configuration file ($TOPSAIL_FROM_CONFIG_FILE) to the Pods.
 
 * default value: ``True``
 

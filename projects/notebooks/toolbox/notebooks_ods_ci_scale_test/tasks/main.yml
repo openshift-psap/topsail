@@ -101,7 +101,7 @@
     oc get notebooks -A -ojsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' |
       xargs --no-run-if-empty --replace
             bash -c "oc annotate notebook/{} --overwrite
-                 kubeflow-resource-stopped=stopped-by-ci-artifacts
+                 kubeflow-resource-stopped=stopped-by-topsail
                  -oname" > /dev/null
   when: notebooks_ods_ci_scale_test_stop_notebooks_on_exit
 

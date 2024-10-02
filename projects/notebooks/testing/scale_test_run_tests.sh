@@ -48,7 +48,7 @@ run_normal_tests_and_plots() {
 run_gating_tests_and_plots() {
     local BASE_ARTIFACT_DIR="$ARTIFACT_DIR"
 
-    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$ARTIFACT_DIR/config.base.yaml"
+    cp "$TOPSAIL_FROM_CONFIG_FILE" "$ARTIFACT_DIR/config.base.yaml"
     local test_idx=0
     local failed=0
 
@@ -69,7 +69,7 @@ EOF
         fi
 
         # restore the initial configuration
-        cp "$BASE_ARTIFACT_DIR/config.base.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
+        cp "$BASE_ARTIFACT_DIR/config.base.yaml" "$TOPSAIL_FROM_CONFIG_FILE"
 
         apply_preset "$preset"
 

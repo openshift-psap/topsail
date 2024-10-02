@@ -12,10 +12,10 @@ metadata:
     opendatahub.io/username: "{{ notebook_name }}"
     openshift.io/description: "{{ notebook_name }} workbench"
     openshift.io/display-name: "{{ notebook_name }}"
-    ci-artifacts/base-url: "{{ notebook_base_url }}"
+    topsail/base-url: "{{ notebook_base_url }}"
   labels:
     app: "{{ notebook_name }}"
-    ci-artifacts.single-notebook-perf: "true"
+    topsail.single-notebook-perf: "true"
     opendatahub.io/dashboard: "true"
     opendatahub.io/odh-managed: "true"
     opendatahub.io/user: "{{ notebook_name }}"
@@ -25,7 +25,7 @@ spec:
     metadata:
       labels:
         app: "{{ notebook_name }}"
-        ci-artifacts.single-notebook-perf: "true"
+        topsail.single-notebook-perf: "true"
         opendatahub.io/dashboard: "true"
     spec:
       affinity:

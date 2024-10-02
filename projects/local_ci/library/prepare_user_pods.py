@@ -8,7 +8,7 @@ import re
 from projects.core.library import env, config, run, sizing
 
 def apply_prefer_pr(pr_number=None):
-    if not config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr"):
+    if not config.project.get_config("base_image.repo.ref_prefer_pr"):
         return
 
     if pr_number is not None:
@@ -40,12 +40,12 @@ def apply_prefer_pr(pr_number=None):
     pr_ref = f"refs/pull/{pr_number}/merge"
 
     logging.info(f"Setting '{pr_ref}' as ref for building the base image")
-    config.ci_artifacts.set_config("base_image.repo.ref", pr_ref)
-    config.ci_artifacts.set_config("base_image.repo.tag", f"pr-{pr_number}")
+    config.project.set_config("base_image.repo.ref", pr_ref)
+    config.project.set_config("base_image.repo.tag", f"pr-{pr_number}")
 
 
 def prepare_base_image_container(namespace):
-    if config.ci_artifacts.get_config("base_image.repo.ref_prefer_pr"):
+    if config.project.get_config("base_image.repo.ref_prefer_pr"):
         delete_istags(namespace)
 
 
@@ -62,7 +62,7 @@ def prepare_base_image_container(namespace):
         run.run(f"oc get secrets -n {namespace} > {env.ARTIFACT_DIR}/secrets.after.status")
         run.run(f"oc get sa -oyaml -n {namespace} > {env.ARTIFACT_DIR}/sa.after.yaml")
 
-    if not config.ci_artifacts.get_config("base_image.extend.enabled", False):
+    if not config.project.get_config("base_image.extend.enabled", False):
         logging.info("Base image extention not enabled.")
         return
 
@@ -74,7 +74,7 @@ def delete_istags(namespace):
 
     run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
 
-    if config.ci_artifacts.get_config("base_image.extend.enabled", False):
+    if config.project.get_config("base_image.extend.enabled", False):
         istag = config.get_command_arg("cluster", "build_push_image", "_istag", prefix="extended_image")
         run.run(f"oc delete istag {istag} -n {namespace} --ignore-not-found")
 
@@ -92,7 +92,7 @@ def compute_driver_node_requirement(user_count):
     kwargs = dict(
         cpu = 0.250,
         memory = 2,
-        machine_type = config.ci_artifacts.get_config("clusters.driver.compute.machineset.type"),
+        machine_type = config.project.get_config("clusters.driver.compute.machineset.type"),
         user_count = user_count,
         )
 
@@ -100,10 +100,10 @@ def compute_driver_node_requirement(user_count):
 
 
 def cluster_scale_up(user_count):
-    if config.ci_artifacts.get_config("clusters.driver.is_metal"):
+    if config.project.get_config("clusters.driver.is_metal"):
         return
 
-    node_count = config.ci_artifacts.get_config("clusters.driver.compute.machineset.count")
+    node_count = config.project.get_config("clusters.driver.compute.machineset.count")
 
     if node_count is None:
         node_count = compute_driver_node_requirement(user_count)
@@ -114,10 +114,10 @@ def cluster_scale_up(user_count):
 
 
 def prepare_user_pods(user_count):
-    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    namespace = config.project.get_config("base_image.namespace")
 
-    service_account = config.ci_artifacts.get_config("base_image.user.service_account")
-    role = config.ci_artifacts.get_config("base_image.user.role")
+    service_account = config.project.get_config("base_image.user.service_account")
+    role = config.project.get_config("base_image.user.role")
 
     #
     # Prepare the driver namespace
@@ -125,7 +125,7 @@ def prepare_user_pods(user_count):
     if run.run(f'oc get project -oname "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f"oc new-project '{namespace}' --skip-config-write >/dev/null")
 
-    dedicated = "{}" if config.ci_artifacts.get_config("clusters.driver.compute.dedicated") \
+    dedicated = "{}" if config.project.get_config("clusters.driver.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
     with run.Parallel("prepare_user_pods") as parallel:
@@ -140,14 +140,14 @@ def prepare_user_pods(user_count):
         # Deploy Redis server for Pod startup synchronization
         #
 
-        if config.ci_artifacts.get_config("base_image.startup_synchronization.enabled", True):
+        if config.project.get_config("base_image.startup_synchronization.enabled", True):
             parallel.delayed(run.run_toolbox_from_config, "server", "deploy_redis_server")
 
         #
         # Deploy Minio
         #
 
-        if config.ci_artifacts.get_config("base_image.minio.enabled", True):
+        if config.project.get_config("base_image.minio.enabled", True):
             parallel.delayed(run.run_toolbox_from_config, "server", "deploy_minio_s3_server")
 
     #
@@ -169,8 +169,8 @@ def prepare_user_pods(user_count):
     # Prepare the Secret
     #
 
-    secret_name = config.ci_artifacts.get_config("secrets.dir.name")
-    secret_env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
+    secret_name = config.project.get_config("secrets.dir.name")
+    secret_env_key = config.project.get_config("secrets.dir.env_key")
 
     secret_yaml_str = run.run(f"oc create secret generic {secret_name} --from-file=$(find ${secret_env_key}/* -maxdepth 1 -not -type d | tr '\\n' ,)/dev/null -n {namespace} --dry-run=client -oyaml", capture_stdout=True).stdout
     secret_yaml = yaml.safe_load(secret_yaml_str)
@@ -208,5 +208,5 @@ def save_and_create(name, content, namespace, is_secret=False):
 
 
 def cleanup_cluster():
-    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    namespace = config.project.get_config("base_image.namespace")
     run.run(f"oc delete ns {namespace} --ignore-not-found")

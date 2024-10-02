@@ -426,7 +426,7 @@ class Cluster:
             self,
             image_local_name,
             tag,
-            namespace="ci-artifacts",
+            namespace,
             remote_repo="",
             remote_auth_file="",
             git_repo="",

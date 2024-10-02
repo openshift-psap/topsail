@@ -2,17 +2,17 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: ci-artifacts
-  name: ci-artifacts
-  namespace: ci-artifacts
+    app: topsail
+  name: topsail
+  namespace: topsail
 spec:
   containers:
-  - name: ci-artifacts
+  - name: topsail
     command:
     - /bin/bash
     - -xc
     - "{{ local_ci_command }}"
-    image: "image-registry.openshift-image-registry.svc:5000/ci-artifacts/ci-artifacts:{{ local_ci_image_tag }}" # set by `build.yaml` ansible script
+    image: "image-registry.openshift-image-registry.svc:5000/topsail/topsail:{{ local_ci_image_tag }}" # set by `build.yaml` ansible script
     imagePullPolicy: Always
     env:
     - name: EXTRA_ANSIBLE_OPTS

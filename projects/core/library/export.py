@@ -15,11 +15,9 @@ from projects.core.library import config, run, env
 
 def init():
     env.init()
-    config_file = os.environ.get("CI_ARTIFACTS_FROM_CONFIG_FILE")
+    config_file = os.environ.get("TOPSAIL_FROM_CONFIG_FILE")
     if not config_file:
-        raise RuntimeError("CI_ARTIFACTS_FROM_CONFIG_FILE must be set. Please source your `configure.sh` before running this file.")
-
-
+        raise RuntimeError("TOPSAIL_FROM_CONFIG_FILE must be set. Please source your `configure.sh` before running this file.")
 
     config.init(pathlib.Path(config_file).parent)
 
@@ -41,12 +39,12 @@ def export_artifacts(artifacts_dirname, test_step=None):
         logging.info("export_artifacts: in the PerfLab. Ignoring step export.")
         return
 
-    if not config.ci_artifacts.get_config("export_artifacts.enabled"):
+    if not config.project.get_config("export_artifacts.enabled"):
         logging.info("export_artifacts.enabled not set, nothing to do here.")
         return
 
-    bucket = config.ci_artifacts.get_config("export_artifacts.bucket")
-    path_prefix = config.ci_artifacts.get_config("export_artifacts.path_prefix")
+    bucket = config.project.get_config("export_artifacts.bucket")
+    path_prefix = config.project.get_config("export_artifacts.path_prefix")
     if not path_prefix:
         path_prefix = ""
 
@@ -79,10 +77,10 @@ def export_artifacts(artifacts_dirname, test_step=None):
     with open(env.ARTIFACT_DIR / "export.url", "w") as f:
         print(export_url, file=f)
 
-    config.ci_artifacts.set_config("export_artifacts.dest", export_url)
+    config.project.set_config("export_artifacts.dest", export_url)
 
     logging.info(f"Exporting to {export_dest} ({export_url})")
-    aws_creds_filename = config.ci_artifacts.get_config("secrets.aws_credentials")
+    aws_creds_filename = config.project.get_config("secrets.aws_credentials")
     run.run(f"AWS_SHARED_CREDENTIALS_FILE=\"$PSAP_ODS_SECRET_PATH/{aws_creds_filename}\" aws s3 cp --recursive \"{artifacts_dirname}\" \"{export_dest}\" --acl public-read &> {env.ARTIFACT_DIR / 'aws_s3_cp.log'}")
 
 

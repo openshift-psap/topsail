@@ -17,7 +17,7 @@ class JupyterLab(common.ContextBase):
     def go_to_jupyterlab_page(self, workbench_obj, workbench_route):
         k8s_workbench = workbench_obj.k8s_obj
         try:
-            base_url = k8s_workbench["metadata"]["annotations"]["ci-artifacts/base-url"]
+            base_url = k8s_workbench["metadata"]["annotations"]["topsail/base-url"]
         except KeyError:
             name = k8s_workbench["metadata"]["name"]
             namespace = k8s_workbench["metadata"]["namespace"]

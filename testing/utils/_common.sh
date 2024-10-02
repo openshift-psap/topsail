@@ -16,7 +16,7 @@ fi
 ### Artifacts directory
 
 if [ -z "${ARTIFACT_DIR:-}" ]; then
-    export ARTIFACT_DIR="/tmp/ci-artifacts_$(date +%Y%m%d)"
+    export ARTIFACT_DIR="/tmp/topsail_$(date +%Y%m%d)"
     echo "Using '$ARTIFACT_DIR' to store the test artifacts (default value for ARTIFACT_DIR)."
 else
     echo "Using '$ARTIFACT_DIR' to store the test artifacts."

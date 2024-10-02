@@ -9,7 +9,7 @@
 from_config run
 ===============
 
-Run ``ci-artifacts`` toolbox commands from a single config file.
+Run ``topsail`` toolbox commands from a single config file.
 
 
 
@@ -30,12 +30,12 @@ Parameters
 
 ``config_file``  
 
-* Configuration file from which the parameters will be looked up. Can be passed via the CI_ARTIFACTS_FROM_CONFIG_FILE environment variable.
+* Configuration file from which the parameters will be looked up. Can be passed via the TOPSAIL_FROM_CONFIG_FILE environment variable.
 
 
 ``command_args_file``  
 
-* Command argument configuration file. Can be passed via the CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE environment variable.
+* Command argument configuration file. Can be passed via the TOPSAIL_FROM_COMMAND_ARGS_FILE environment variable.
 
 
 ``prefix``  

@@ -40,12 +40,12 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
 
         run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
 
-    config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
-    is_metal = config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
+    config.project.detect_apply_light_profile(LIGHT_PROFILE)
+    is_metal = config.project.detect_apply_metal_profile(METAL_PROFILE)
 
     if is_metal:
-        metal_profiles = config.ci_artifacts.get_config("clusters.metal_profiles")
-        profile_applied = config.ci_artifacts.detect_apply_cluster_profile(metal_profiles)
+        metal_profiles = config.project.get_config("clusters.metal_profiles")
+        profile_applied = config.project.detect_apply_cluster_profile(metal_profiles)
 
         if not profile_applied:
             raise ValueError("Bare-metal cluster not recognized :/ ")
@@ -69,7 +69,7 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
+    test_mode = config.project.get_config("tests.mode")
     prepare.prepare()
 
 
@@ -79,23 +79,23 @@ def test_ci():
     Runs the test from the CI
     """
 
-    do_visualize = config.ci_artifacts.get_config("tests.visualize")
+    do_visualize = config.project.get_config("tests.visualize")
 
     try:
         test_artifact_dir_p = [None]
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
         test_schedulers.test()
     finally:
-        matbenchmarking = config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.enabled")
+        matbenchmarking = config.project.get_config("tests.fine_tuning.matbenchmarking.enabled")
 
-        if horreum_test := config.ci_artifacts.get_config("matbench.lts.horreum.test_name"):
+        if horreum_test := config.project.get_config("matbench.lts.horreum.test_name"):
             logging.info(f"Saving Horreum test name: {horreum_test}")
             with open(env.ARTIFACT_DIR / "test_name.horreum", "w") as f:
                 print(horreum_test, file=f)
         else:
             logging.info(f"No Horreum test name to save")
 
-        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+        if config.project.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster(mute=True)
 
         export.export_artifacts(env.ARTIFACT_DIR, "test_ci")
@@ -108,7 +108,7 @@ def generate_plots_from_pr_args():
     """
 
     try:
-        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"]) / config.ci_artifacts.get_config("secrets.aws_credentials"))
+        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"]) / config.project.get_config("secrets.aws_credentials"))
     except Exception as e:
         logging.warning(f"Failed to set AWS_SHARED_CREDENTIALS_FILE: {e}")
 
@@ -195,7 +195,7 @@ def run_kwok_job_controller():
     if not controller_path.exists():
         raise FileNotFoundError(f"Controller file not found: {controller_path}")
 
-    namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
+    namespace = config.project.get_config("tests.schedulers.namespace")
 
     run.run(f"kopf run {controller_path} -n {namespace}")
 

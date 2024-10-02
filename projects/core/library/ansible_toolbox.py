@@ -140,8 +140,8 @@ class RunAnsibleRole:
         env = os.environ.copy()
 
         if env.get("ARTIFACT_DIR") is None:
-            ci_artifact_base_dir = pathlib.Path(env.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
-            env["ARTIFACT_DIR"] = str(ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d')}")
+            topsail_base_dir = pathlib.Path(env.get("TOPSAIL_BASE_DIR", "/tmp"))
+            env["ARTIFACT_DIR"] = str(topsail_base_dir / f"topsail_{time.strftime('%Y%m%d')}")
 
         artifact_dir = pathlib.Path(env["ARTIFACT_DIR"])
         artifact_dir.mkdir(parents=True, exist_ok=True)

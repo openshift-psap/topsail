@@ -12,13 +12,13 @@ local_ci_run_multi_ci_command:
 local_ci_run_multi_user_count: 1
 
 # The namespace in which the image.
-local_ci_run_multi_namespace: ci-artifacts
+local_ci_run_multi_namespace: topsail
 
 # The imagestream tag to use.
-local_ci_run_multi_istag: ci-artifacts:main
+local_ci_run_multi_istag: topsail:main
 
 # The name to give to the Job running the CI command.
-local_ci_run_multi_job_name: ci-artifacts
+local_ci_run_multi_job_name: topsail
 
 # Name of the ServiceAccount to use for running the Pod.
 local_ci_run_multi_service_account: default
@@ -44,7 +44,7 @@ local_ci_run_multi_minio_secret_key_key: null
 # Optional path to the variable_overrides config file (avoids fetching Github PR json).
 local_ci_run_multi_variable_overrides: null
 
-# If true, gives the local configuration file ($CI_ARTIFACTS_FROM_CONFIG_FILE) to the Pods.
+# If true, gives the local configuration file ($TOPSAIL_FROM_CONFIG_FILE) to the Pods.
 local_ci_run_multi_use_local_config: true
 
 # If True, captures the Prometheus DB of the systems.

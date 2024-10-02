@@ -83,7 +83,7 @@ def set_benchmark_args(benchmark_file, expe_name=None, results_dirname=None):
 
     args = {}
 
-    args["--workload"] = config.ci_artifacts.get_config("matbench.workload")
+    args["--workload"] = config.project.get_config("matbench.workload")
     args["--benchmark_file"] = str(benchmark_file)
     args["--results_dirname"] = str(results_dirname)
     if expe_name:
@@ -97,7 +97,7 @@ def run_benchmark(args, dry_run=False):
 
     BENCHMARK_CMD_BASE = "matbench benchmark"
     cmd_args = " ".join([f"{k}={v}" for k, v in args.items()])
-    cmd = f"CI_ARTIFACTS_FROM_CONFIG_FILE={config.ci_artifacts.config_path} {BENCHMARK_CMD_BASE} {cmd_args}"
+    cmd = f"TOPSAIL_FROM_CONFIG_FILE={config.project.config_path} {BENCHMARK_CMD_BASE} {cmd_args}"
 
     with open(env.ARTIFACT_DIR / "benchmark.cmd", "w") as f:
         print(cmd, file =f)

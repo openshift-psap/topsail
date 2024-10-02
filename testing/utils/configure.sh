@@ -1,7 +1,7 @@
 #! /bin/bash
 
-if [[ -z "${CI_ARTIFACTS_FROM_CONFIG_FILE:-}" ]]; then
-    echo "ERROR: CI_ARTIFACTS_FROM_CONFIG_FILE not set, cannot proceed."
+if [[ -z "${TOPSAIL_FROM_CONFIG_FILE:-}" ]]; then
+    echo "ERROR: TOPSAIL_FROM_CONFIG_FILE not set, cannot proceed."
     exit 1
 fi
 
@@ -14,7 +14,7 @@ test_config() {
 get_config() {
     key=$1
 
-    yq -M -r ".$key" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
+    yq -M -r ".$key" "$TOPSAIL_FROM_CONFIG_FILE"
 }
 
 set_config() {
@@ -30,10 +30,10 @@ set_config() {
         value="''"
     fi
 
-    yq --yaml-roundtrip --in-place --argjson value "$(echo "$value" | yq)" ".$key = \$value" "$CI_ARTIFACTS_FROM_CONFIG_FILE"
+    yq --yaml-roundtrip --in-place --argjson value "$(echo "$value" | yq)" ".$key = \$value" "$TOPSAIL_FROM_CONFIG_FILE"
 
     if [[ "${ARTIFACT_DIR:-}" ]]; then
-        cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "${ARTIFACT_DIR}" || true
+        cp "$TOPSAIL_FROM_CONFIG_FILE" "${ARTIFACT_DIR}" || true
     fi
 }
 
@@ -122,7 +122,7 @@ flat_config() {
     if [[ "$prefix" ]]; then
         prefix="$prefix "
     fi
-    local yaml_file=$CI_ARTIFACTS_FROM_CONFIG_FILE
+    local yaml_file=$TOPSAIL_FROM_CONFIG_FILE
     local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
 
     yq -y . "$yaml_file" |\

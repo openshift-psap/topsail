@@ -12,7 +12,7 @@ TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
 source "$TESTING_NOTEBOOKS_DIR/configure.sh"
 source "$TESTING_UTILS_DIR/logging.sh"
 
-ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/ci-artifacts_$(date +%Y%m%d)}
+ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/topsail_$(date +%Y%m%d)}
 
 export MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE=$(get_config matbench.ignore_exit_code)
 
@@ -38,7 +38,7 @@ else
 fi
 
 get_matbench_config() {
-    CI_ARTIFACTS_FROM_CONFIG_FILE=$WORKLOAD_STORAGE_DIR/data/$(get_config matbench.config_file) \
+    TOPSAIL_FROM_CONFIG_FILE=$WORKLOAD_STORAGE_DIR/data/$(get_config matbench.config_file) \
         get_config "$@"
 }
 

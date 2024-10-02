@@ -11,19 +11,19 @@ local_ci_run_ci_command:
 local_ci_run_pr_number: null
 
 # The Github repo to use.
-local_ci_run_git_repo: https://github.com/openshift-psap/ci-artifacts
+local_ci_run_git_repo: https://github.com/openshift-psap/topsail
 
 # The Github ref to use.
 local_ci_run_git_ref: main
 
 # The namespace in which the image.
-local_ci_run_namespace: ci-artifacts
+local_ci_run_namespace: topsail
 
 # The imagestream tag to use.
-local_ci_run_istag: ci-artifacts:main
+local_ci_run_istag: topsail:main
 
 # The name to give to the Pod running the CI command.
-local_ci_run_pod_name: ci-artifacts
+local_ci_run_pod_name: topsail
 
 # Name of the ServiceAccount to use for running the Pod.
 local_ci_run_service_account: default

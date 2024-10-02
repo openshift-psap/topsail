@@ -16,7 +16,7 @@ def prepare():
         parallel.delayed(scale_up_sutest)
 
 
-    test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings")
+    test_settings = config.project.get_config("tests.fine_tuning.test_settings")
     with run.Parallel("prepare2") as parallel:
         parallel.delayed(prepare_gpu)
         parallel.delayed(prepare_namespace, test_settings)
@@ -26,14 +26,14 @@ def prepare():
 
 
 def prepare_gpu():
-    if not config.ci_artifacts.get_config("gpu.prepare_cluster"):
+    if not config.project.get_config("gpu.prepare_cluster"):
         return
 
     prepare_gpu_operator.prepare_gpu_operator()
 
-    if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
-        toleration_key = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.key")
-        toleration_effect = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.effect")
+    if config.project.get_config("clusters.sutest.compute.dedicated"):
+        toleration_key = config.project.get_config("clusters.sutest.compute.machineset.taint.key")
+        toleration_effect = config.project.get_config("clusters.sutest.compute.machineset.taint.effect")
         prepare_gpu_operator.add_toleration(toleration_effect, toleration_key)
 
     prepare_gpu_operator.wait_ready(enable_time_sharing=False, wait_stack_deployed=False, wait_metrics=False)
@@ -43,7 +43,7 @@ def prepare_rhoai():
     if not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-    token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
+    token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.brew_registry_redhat_io_token_file")
     prepare_rhoai_mod.install(token_file)
 
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
@@ -53,24 +53,24 @@ def prepare_rhoai():
         name=None if has_dsc else "default-dsc",
     )
 
-    if not config.ci_artifacts.get_config("rhods.operator.stop"):
+    if not config.project.get_config("rhods.operator.stop"):
         return
 
-    operator_name = "opendatahub-operator-controller-manager" if config.ci_artifacts.get_config("rhods.catalog.opendatahub") else "rhods-operator"
+    operator_name = "opendatahub-operator-controller-manager" if config.project.get_config("rhods.catalog.opendatahub") else "rhods-operator"
     run.run(f"oc scale deploy/{operator_name} --replicas=0 -n redhat-ods-operator")
     time.sleep(10)
 
-    if kueue_image := config.ci_artifacts.get_config("rhods.operator.kueue_image"):
+    if kueue_image := config.project.get_config("rhods.operator.kueue_image"):
         run.run(f"oc set image deploy/kueue-controller-manager training-operator={kueue_image} -n redhat-ods-applications")
 
-    if kto_image := config.ci_artifacts.get_config("rhods.operator.kto_image"):
+    if kto_image := config.project.get_config("rhods.operator.kto_image"):
         run.run(f"oc set image deploy/kubeflow-training-operator manager={kto_image} -n redhat-ods-applications")
 
 
 def set_namespace_annotations():
-    metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
-    dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
-    namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
+    metal = config.project.get_config("clusters.sutest.is_metal")
+    dedicated = config.project.get_config("clusters.sutest.compute.dedicated")
+    namespace = config.project.get_config("tests.fine_tuning.namespace")
 
     if metal:
         logging.info("Running in a bare-metal environment, not setting the namespace node-isolation annotations")
@@ -80,7 +80,7 @@ def set_namespace_annotations():
         logging.info("Running without dedicated nodes, not setting the namespace node-isolation annotations")
         return
 
-    if config.ci_artifacts.get_config("tests.dry_mode"):
+    if config.project.get_config("tests.dry_mode"):
         logging.info("tests.dry_mode is not, skipping setting the node-isolation namespace annotation")
         return
 
@@ -90,18 +90,18 @@ def set_namespace_annotations():
 
 
 def download_data_sources(test_settings):
-    namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
+    namespace = config.project.get_config("tests.fine_tuning.namespace")
     model_name = test_settings["model_name"]
     dataset_name = test_settings["dataset_name"]
 
-    pvc_name = config.ci_artifacts.get_config("fine_tuning.pvc.name")
-    sources = config.ci_artifacts.get_config(f"fine_tuning.sources")
+    pvc_name = config.project.get_config("fine_tuning.pvc.name")
+    sources = config.project.get_config(f"fine_tuning.sources")
 
-    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
+    dry_mode = config.project.get_config("tests.dry_mode")
 
     sources_name = [dataset_name]
     if model_name is None:
-        multi_models = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.models")
+        multi_models = config.project.get_config("tests.fine_tuning.multi_model.models")
         for model in multi_models:
             sources_name.append(model["name"])
     elif isinstance(model_name, str):
@@ -120,8 +120,8 @@ def download_data_sources(test_settings):
         # ---
 
         if secret_key:
-            env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
-            cred_file = pathlib.Path(os.environ[env_key]) / config.ci_artifacts.get_config(secret_key)
+            env_key = config.project.get_config("secrets.dir.env_key")
+            cred_file = pathlib.Path(os.environ[env_key]) / config.project.get_config(secret_key)
             if not cred_file.exists():
                 msg = f"Credential file '{cred_file}' does not exist (${env_key} / *{secret_key})"
                 logging.error(msg)
@@ -152,7 +152,7 @@ def download_data_sources(test_settings):
     def download_from_registry(registry_source_name):
         source_name, found, registry_name = registry_source_name.partition("@")
         if not found:
-            registry_name = config.ci_artifacts.get_config("fine_tuning.model_registry")
+            registry_name = config.project.get_config("fine_tuning.model_registry")
             if not registry_name:
                 raise ValueError("Registry not specified :/")
 
@@ -166,7 +166,7 @@ def download_data_sources(test_settings):
         do_download(extra, secret_key=registry.get("secret_key", None))
 
     for source_name in sources_name:
-        if "@" in source_name or (config.ci_artifacts.get_config("fine_tuning.model_registry") and source_name not in sources):
+        if "@" in source_name or (config.project.get_config("fine_tuning.model_registry") and source_name not in sources):
             download_from_registry(source_name)
         else:
             download_from_source(source_name)
@@ -182,8 +182,8 @@ def get_safe_model_name(origin_model_name):
 
 
 def prepare_namespace(test_settings):
-    namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
-    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
+    namespace = config.project.get_config("tests.fine_tuning.namespace")
+    dry_mode = config.project.get_config("tests.dry_mode")
 
     if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
@@ -198,20 +198,20 @@ def prepare_namespace(test_settings):
         run.run(f"oc delete pytorchjobs -n {namespace} --all")
         run.run(f"oc delete cm -n {namespace} -ltopsail.fine-tuning-jobname")
 
-    if not config.ci_artifacts.get_config("tests.fine_tuning.many_model.enabled"):
+    if not config.project.get_config("tests.fine_tuning.many_model.enabled"):
         return
 
     from projects.scheduler.testing.prepare import prepare_kueue_queue
-    local_kueue_name = config.ci_artifacts.get_config("tests.fine_tuning.many_model.kueue_name")
+    local_kueue_name = config.project.get_config("tests.fine_tuning.many_model.kueue_name")
 
     prepare_kueue_queue(False, namespace, local_kueue_name)
 
 
 def scale_up_sutest():
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+    if config.project.get_config("clusters.sutest.is_metal"):
         return
 
-    node_count = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.count")
+    node_count = config.project.get_config("clusters.sutest.compute.machineset.count")
 
     if node_count is None:
         node_count = 1
@@ -237,16 +237,16 @@ def cleanup_sutest_ns():
 
 
 def cleanup_sutest_ns():
-    namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace")
+    namespace = config.project.get_config("tests.fine_tuning.namespace")
     # do not delete it ... (to save the PVC)
     # empty the namespace
 
 
 def cluster_scale_down(to_zero):
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+    if config.project.get_config("clusters.sutest.is_metal"):
         return
 
-    machineset_name = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.name")
+    machineset_name = config.project.get_config("clusters.sutest.compute.machineset.name")
     has_machineset = run.run(f"oc get machineset {machineset_name} -n openshift-machine-api -oname --ignore-not-found", capture_stdout=True).stdout
     if not has_machineset:
         logging.info(f"No {machineset_name} machineset. Nothing to scale down.")
@@ -257,10 +257,10 @@ def cluster_scale_down(to_zero):
 
 
 def preload_image():
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+    if config.project.get_config("clusters.sutest.is_metal"):
         return
 
-    if not config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
+    if not config.project.get_config("clusters.sutest.compute.dedicated"):
         return
 
     def preload(image, name):
@@ -277,4 +277,4 @@ def preload_image():
                 if i+1 == RETRIES:
                     raise
 
-    preload(config.ci_artifacts.get_config("fine_tuning.image"), "fine-tuning-image")
+    preload(config.project.get_config("fine_tuning.image"), "fine-tuning-image")

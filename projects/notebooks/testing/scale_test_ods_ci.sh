@@ -31,7 +31,7 @@ run_ods_ci_test() {
         local last_test_dir=$(printf "%s\n" "$ARTIFACT_DIR"/*__*/ | tail -1)
         cp "$last_test_dir/"{failed_tests,success_count} "$ARTIFACT_DIR" 2>/dev/null 2>/dev/null || true
 
-        cp  "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$last_test_dir/config.yaml" || true
+        cp  "$TOPSAIL_FROM_CONFIG_FILE" "$last_test_dir/config.yaml" || true
         set_config matbench.test_directory "$last_test_dir"
 
     else

@@ -21,7 +21,7 @@
     oc create configmap
        {{ local_ci_run_multi_job_name }}-config
        -n {{ local_ci_run_multi_namespace }}
-       --from-file=config.yaml=$CI_ARTIFACTS_FROM_CONFIG_FILE
+       "--from-file=config.yaml=$TOPSAIL_FROM_CONFIG_FILE"
        --dry-run=client
        -oyaml
        | tee "{{ artifact_extra_logs_dir }}/src/001_config.yaml"

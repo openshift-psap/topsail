@@ -10,7 +10,7 @@ spec:
     kubernetes.io/hostname: {{ benchmarking_run_mlperf_ssd_node_hostname }}
   containers:
   - name: mlperf
-    image: quay.io/openshift-psap/ci-artifacts:mlperf-ssd-training-benchmark
+    image: quay.io/openshift-psap/topsail:mlperf-ssd-training-benchmark
     resources:
       limits:
         nvidia.com/gpu: 1

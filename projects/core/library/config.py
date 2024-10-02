@@ -16,7 +16,7 @@ from . import common
 VARIABLE_OVERRIDES_FILENAME = "variable_overrides"
 PR_ARG_KEY = "PR_POSITIONAL_ARG_"
 
-ci_artifacts = None # will be set in init()
+project = None # the project config will be populated in init()
 
 class TempValue(object):
     def __init__(self, config, key, value):
@@ -247,9 +247,9 @@ def _set_config_environ(base_dir):
     config_path_final = pathlib.Path(env.ARTIFACT_DIR / "config.yaml")
 
     config_file_src = None
-    if (env_config_file_src := os.environ.get("CI_ARTIFACTS_FROM_CONFIG_FILE")):
+    if (env_config_file_src := os.environ.get("TOPSAIL_FROM_CONFIG_FILE")):
         config_file_src = env_config_file_src
-        logging.info(f"Loading the configuration from CI_ARTIFACTS_FROM_CONFIG_FILE={config_file_src} ...")
+        logging.info(f"Loading the configuration from TOPSAIL_FROM_CONFIG_FILE={config_file_src} ...")
 
     elif ((shared_dir_file_src := pathlib.Path(os.environ.get("SHARED_DIR", "/not-a-directory")) / "config.yaml")
           and shared_dir_file_src.exists()):
@@ -259,10 +259,10 @@ def _set_config_environ(base_dir):
         config_file_src = base_dir / "config.yaml"
         logging.info(f"Reloading the config file from TOPSAIL project directory {config_file_src} ...")
 
-    os.environ["CI_ARTIFACTS_FROM_CONFIG_FILE"] = str(config_path_final)
+    os.environ["TOPSAIL_FROM_CONFIG_FILE"] = str(config_path_final)
 
-    if "CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE" not in os.environ:
-        os.environ["CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yml.j2")
+    if "TOPSAIL_FROM_COMMAND_ARGS_FILE" not in os.environ:
+        os.environ["TOPSAIL_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yml.j2")
 
     if not pathlib.Path(config_file_src) == config_path_final:
 
@@ -297,22 +297,22 @@ def get_jsonpath(config, jsonpath):
 
 
 def init(base_dir, apply_preset_from_pr_args=False):
-    global ci_artifacts
+    global project
 
-    if ci_artifacts:
-        logging.info("config.init: already configured.")
+    if project:
+        logging.info("config.init: project config already configured.")
         return
 
     config_path = _set_config_environ(base_dir)
-    ci_artifacts = Config(config_path)
+    project = Config(config_path)
 
     if os.environ.get("TOPSAIL_LOCAL_CI_MULTI") == "true":
         logging.info("config.init: running in a local-ci multi Pod, skipping apply_config_overrides and apply_preset_from_pr_args.")
         return
 
-    ci_artifacts.apply_config_overrides()
+    project.apply_config_overrides()
 
     if apply_preset_from_pr_args:
-        ci_artifacts.apply_preset_from_pr_args()
+        project.apply_preset_from_pr_args()
         # reapply to force overrides on top of presets
-        ci_artifacts.apply_config_overrides()
+        project.apply_config_overrides()

@@ -118,7 +118,7 @@
       oc get notebooks -oname -n {{ rhods_notebook_namespace }} |
         xargs --no-run-if-empty --replace
               oc annotate {} --overwrite
-                 kubeflow-resource-stopped=stopped-by-ci-artifacts
+                 kubeflow-resource-stopped=stopped-by-topsail
                  -n {{ rhods_notebook_namespace }}
                  -oname > /dev/null
 
@@ -215,7 +215,7 @@
          -ojsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}'
            | xargs --no-run-if-empty --replace
                bash -c "oc annotate notebook/{}
-                           --overwrite kubeflow-resource-stopped=stopped-by-ci-artifacts
+                           --overwrite kubeflow-resource-stopped=stopped-by-topsail
                            -oname" > /dev/null
     when:
     - has_notebooks_crd.rc == 0

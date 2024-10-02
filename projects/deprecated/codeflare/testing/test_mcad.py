@@ -27,17 +27,17 @@ def test(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_no
 
 
     if dry_mode is not None:
-        config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
+        config.project.set_config("tests.dry_mode", dry_mode)
     if visualize is not None:
-        config.ci_artifacts.set_config("tests.visualize", visualize)
+        config.project.set_config("tests.visualize", visualize)
     if capture_prom is not None:
-        config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
+        config.project.set_config("tests.capture_prom", capture_prom)
     if prepare_nodes is not None:
-        config.ci_artifacts.set_config("tests.mcad.prepare_nodes", prepare_nodes)
+        config.project.set_config("tests.mcad.prepare_nodes", prepare_nodes)
 
     try:
         failed_tests = []
-        tests_to_run = config.ci_artifacts.get_config("tests.mcad.tests_to_run") \
+        tests_to_run = config.project.get_config("tests.mcad.tests_to_run") \
             if not name else [name]
 
         for name in tests_to_run:
@@ -59,7 +59,7 @@ def test(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_no
                     if isinstance(e, bdb.BdbQuit):
                         raise
 
-                if failed_tests and config.ci_artifacts.get_config("tests.mcad.stop_on_error"):
+                if failed_tests and config.project.get_config("tests.mcad.stop_on_error"):
                     logging.info("Error detected, and tests.mcad.stop_on_error is set. Aborting.")
                     break
 
@@ -72,7 +72,7 @@ def test(name=None, dry_mode=None, visualize=None, capture_prom=None, prepare_no
 
             raise RuntimeError(msg)
     finally:
-        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+        if config.project.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 
 
@@ -92,7 +92,7 @@ def save_matbench_files(name, cfg):
         yaml.dump(dict(mcad_load_test=True, name=name), f)
 
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-        yaml.dump(config.ci_artifacts.config, f, indent=4)
+        yaml.dump(config.project.config, f, indent=4)
 
     with open(env.ARTIFACT_DIR / "test_case_config.yaml", "w") as f:
         yaml.dump(cfg, f)
@@ -102,7 +102,7 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
     next_count = env.next_artifact_index()
     with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__mcad_load_test_multiple_values"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
-        benchmark_values = config.ci_artifacts.get_config("tests.mcad.test_multiple_values.settings")
+        benchmark_values = config.project.get_config("tests.mcad.test_multiple_values.settings")
 
         path_tpl = "_".join([f"{k}={{settings[{k}]}}" for k in benchmark_values.keys()]) + "_"
 
@@ -110,7 +110,7 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
             script_tpl=f"{sys.argv[0]} mcad_run_one_matbench",
-            stop_on_error=config.ci_artifacts.get_config("tests.mcad.stop_on_error"),
+            stop_on_error=config.project.get_config("tests.mcad.stop_on_error"),
             common_settings=dict(name=name),
             expe_name=expe_name,
             benchmark_values=benchmark_values
@@ -130,11 +130,11 @@ def _run_test_multiple_values(name, test_artifact_dir_p):
 
 
 def _run_test(name, test_artifact_dir_p, test_override_values=None):
-    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
-    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
-    prepare_nodes = config.ci_artifacts.get_config("tests.mcad.prepare_nodes")
+    dry_mode = config.project.get_config("tests.dry_mode")
+    capture_prom = config.project.get_config("tests.capture_prom")
+    prepare_nodes = config.project.get_config("tests.mcad.prepare_nodes")
 
-    test_templates_file = TESTING_THIS_DIR / config.ci_artifacts.get_config("tests.mcad.test_templates_file")
+    test_templates_file = TESTING_THIS_DIR / config.project.get_config("tests.mcad.test_templates_file")
     with open(test_templates_file) as f:
         test_templates = yaml.safe_load(f)
 
@@ -243,7 +243,7 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
 
 def _run_test_and_visualize(name, test_override_values=None):
     failed = True
-    do_test_multiple_values = test_override_values is None and config.ci_artifacts.get_config("tests.mcad.test_multiple_values.enabled")
+    do_test_multiple_values = test_override_values is None and config.project.get_config("tests.mcad.test_multiple_values.enabled")
     try:
         test_artifact_dir_p = [None]
         if do_test_multiple_values:
@@ -251,8 +251,8 @@ def _run_test_and_visualize(name, test_override_values=None):
         else:
             failed = _run_test(name, test_artifact_dir_p, test_override_values)
     finally:
-        dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
-        if not config.ci_artifacts.get_config("tests.visualize"):
+        dry_mode = config.project.get_config("tests.dry_mode")
+        if not config.project.get_config("tests.visualize"):
             logging.info(f"Visualization disabled.")
 
         elif dry_mode:
@@ -263,8 +263,8 @@ def _run_test_and_visualize(name, test_override_values=None):
             with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
 
                 if do_test_multiple_values:
-                    matbench_config_file = config.ci_artifacts.get_config("tests.mcad.test_multiple_values.matbench_config_file")
-                    with config.TempValue(config.ci_artifacts, "matbench.config_file", matbench_config_file):
+                    matbench_config_file = config.project.get_config("tests.mcad.test_multiple_values.matbench_config_file")
+                    with config.TempValue(config.project, "matbench.config_file", matbench_config_file):
                          visualize.generate_from_dir(test_artifact_dir_p[0])
                 else:
                      visualize.generate_from_dir(test_artifact_dir_p[0])
@@ -285,8 +285,8 @@ def run_one_matbench():
     name = settings.pop("name")
 
     with env.TempArtifactDir(os.getcwd()):
-        ci_artifacts_base_dir = TESTING_THIS_DIR.parent.parent
-        os.chdir(ci_artifacts_base_dir)
+        topsail_base_dir = TESTING_THIS_DIR.parent.parent
+        os.chdir(topsail_base_dir)
 
         failed = _run_test_and_visualize(name, settings)
 

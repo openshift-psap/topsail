@@ -31,7 +31,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     config.init(TESTING_THIS_DIR)
 
     if apply_preset_from_pr_args:
-        config.ci_artifacts.apply_preset_from_pr_args()
+        config.project.apply_preset_from_pr_args()
 
     if not ignore_secret_path:
         if not PSAP_ODS_SECRET_PATH.exists():
@@ -52,7 +52,7 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
 @entrypoint()
 def prepare_es():
     "Prepares the OpenSearch instance"
-    secret_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.password_file")
+    secret_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.password_file")
 
     run.run_toolbox_from_config("cluster", "deploy_opensearch", extra=dict(secret_properties_file=str(secret_file)))
 
@@ -69,9 +69,9 @@ def prepare_cpt_backend():
 def deploy():
     "Deploys the CPT Dashboard"
 
-    es_namespace = config.ci_artifacts.get_config("opensearch.namespace")
-    es_instance = config.ci_artifacts.get_config("opensearch.name")
-    secret_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.password_file")
+    es_namespace = config.project.get_config("opensearch.namespace")
+    es_instance = config.project.get_config("opensearch.name")
+    secret_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.password_file")
 
     es_url = "https://" + run.run(f"oc get route/{es_instance} -n {es_namespace} -ojsonpath={{.spec.host}}", capture_stdout=True).stdout
     run.run_toolbox_from_config("cpt", "deploy_cpt_dashboard",
@@ -96,12 +96,12 @@ def test_ci():
 
 @entrypoint()
 def cleanup_cluster_ci():
-    if config.ci_artifacts.get_config("clusters.cleanup.opensearch"):
-        es_namespace = config.ci_artifacts.get_config("opensearch.namespace")
+    if config.project.get_config("clusters.cleanup.opensearch"):
+        es_namespace = config.project.get_config("opensearch.namespace")
         run.run(f"oc delete ns {es_namespace}")
 
-    if config.ci_artifacts.get_config("clusters.cleanup.cpt.dashboard"):
-        cpt_dashboard_namespace = config.ci_artifacts.get_config("cpt_dashboard.namespace")
+    if config.project.get_config("clusters.cleanup.cpt.dashboard"):
+        cpt_dashboard_namespace = config.project.get_config("cpt_dashboard.namespace")
         run.run(f"oc delete ns {cpt_dashboard_namespace}")
 
 # ---

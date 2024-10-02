@@ -33,7 +33,7 @@ fi
 
 if [[ "${CONFIG_DEST_DIR:-}" ]]; then
     if [[ -e "$CONFIG_DEST_DIR/config.yaml" ]]; then
-        cp "$CONFIG_DEST_DIR/config.yaml" "$CI_ARTIFACTS_FROM_CONFIG_FILE" || true
+        cp "$CONFIG_DEST_DIR/config.yaml" "$TOPSAIL_FROM_CONFIG_FILE" || true
         echo "Configuration file reloaded from '$CONFIG_DEST_DIR/config.yaml'"
     fi
 fi
@@ -41,5 +41,5 @@ fi
 bash "$TESTING_UTILS_DIR/configure_overrides.sh"
 
 if [[ "${ARTIFACT_DIR:-}" ]]; then
-    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "${ARTIFACT_DIR}" || true
+    cp "$TOPSAIL_FROM_CONFIG_FILE" "${ARTIFACT_DIR}" || true
 fi

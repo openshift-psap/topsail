@@ -175,7 +175,7 @@ notebooks ods_ci_scale_test:
 {% else %}
   notebook_url: SET_AT_RUNTIME # set at runtime
 {% endif %}
-  capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
+  capture_prom_db: {{ "" | or_env("TOPSAIL_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
   only_create_notebooks: {{ tests.notebooks.ods_ci.only_create_notebooks }}
   stop_notebooks_on_exit: {{ tests.notebooks.ods_ci.stop_notebooks_on_exit }}
 
@@ -212,4 +212,4 @@ notebooks dashboard_scale_test:
   user_count: {{ tests.notebooks.users.count }}
   user_index_offset: {{ tests.notebooks.users.start_offset }}
   username_prefix: {{ ldap.users.prefix }}
-  capture_prom_db: {{ "" | or_env("CI_ARTIFACTS_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}
+  capture_prom_db: {{ "" | or_env("TOPSAIL_CAPTURE_PROM_DB") | default(tests.notebooks.capture_prom_db, true) }}

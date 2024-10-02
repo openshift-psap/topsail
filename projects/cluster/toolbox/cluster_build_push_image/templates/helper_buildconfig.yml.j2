@@ -2,8 +2,6 @@
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
-  labels:
-    app: ci-artifacts
   name: {{ cluster_build_push_image_image_local_name }}-helper
 spec:
   output:

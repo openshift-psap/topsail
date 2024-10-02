@@ -151,7 +151,7 @@ orchestration reads it alter its behavior. It's as simple as that.
 
 ::
 
-    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
+    capture_prom = config.project.get_config("tests.capture_prom")
     if not capture_prom:
         logging.info("tests.capture_prom is disabled, skipping Prometheus DB reset")
         return
@@ -196,9 +196,9 @@ So the way to launch the RHOAI deployement should be:
 ::
 
     run.run_toolbox("rhods", "deploy_ods"
-                    catalog_image=config.ci_artifacts.get_config("rhods.catalog.image"),
-                    tag=config.ci_artifacts.get_config("rhods.catalog.tag"),
-                    channel=config.ci_artifacts.get_config("rhods.catalog.channel"),
+                    catalog_image=config.project.get_config("rhods.catalog.image"),
+                    tag=config.project.get_config("rhods.catalog.tag"),
+                    channel=config.project.get_config("rhods.catalog.channel"),
                     ...)
 
 Instead, the orchestration can use the ``command_args.yaml.j2`` file:
@@ -401,5 +401,4 @@ will execute the 4 functions in dedicated threads.
 
 Mind that the configuration **cannot** be updated inside a parallel
 region (eg,
-``config.ci_artifacts.set_config("tests.scale.model.consolidated",
-True)``).
+``config.project.set_config("tests.scale.model.consolidated", True)``).

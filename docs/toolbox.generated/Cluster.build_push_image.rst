@@ -32,8 +32,6 @@ Parameters
 
 * Namespace where the local image will be built.
 
-* default value: ``ci-artifacts``
-
 
 ``remote_repo``  
 

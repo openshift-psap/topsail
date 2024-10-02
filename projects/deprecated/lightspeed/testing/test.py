@@ -34,12 +34,12 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     config.init(TESTING_THIS_DIR)
 
     if apply_preset_from_pr_args:
-        config.ci_artifacts.apply_preset_from_pr_args()
+        config.project.apply_preset_from_pr_args()
 
     if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-    config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
+    config.project.detect_apply_light_profile(LIGHT_PROFILE)
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -54,7 +54,7 @@ def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
 # ---
 
 def install_rhods():
-    token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
+    token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.brew_registry_redhat_io_token_file")
     rhods.install(token_file)
 
     run.run_toolbox("rhods", "wait_ods")
@@ -62,10 +62,10 @@ def install_rhods():
     # run.run_toolbox_from_config("cluster", "deploy_ldap")
 
 def max_gpu_nodes():
-    test_cases = config.ci_artifacts.get_config("tests.ansible_llm.test_cases")
+    test_cases = config.project.get_config("tests.ansible_llm.test_cases")
     replicas_list, concurrency_list = zip(*test_cases)
 
-    mpx_test_cases = config.ci_artifacts.get_config("tests.ansible_llm.multiplexed_test_cases")
+    mpx_test_cases = config.project.get_config("tests.ansible_llm.multiplexed_test_cases")
     mpx_replicas_list, concurrency_list = zip(*mpx_test_cases)
 
     return max(replicas_list + mpx_replicas_list)
@@ -91,16 +91,16 @@ def prepare_ci():
     return None
 
 def init_config():
-    config.ci_artifacts.set_config("tests.config.s3_creds_model_secret_path", str(WISDOM_SECRET_PATH / "s3-secret.yaml"))
-    config.ci_artifacts.set_config("tests.config.quay_secret_path", str(WISDOM_SECRET_PATH / "quay-secret.yaml"))
-    config.ci_artifacts.set_config("tests.config.protos_path", str(WISDOM_PROTOS_SECRET_PATH))
+    config.project.set_config("tests.config.s3_creds_model_secret_path", str(WISDOM_SECRET_PATH / "s3-secret.yaml"))
+    config.project.set_config("tests.config.quay_secret_path", str(WISDOM_SECRET_PATH / "quay-secret.yaml"))
+    config.project.set_config("tests.config.protos_path", str(WISDOM_PROTOS_SECRET_PATH))
 
-    config.ci_artifacts.set_config("tests.config.s3_creds_results_secret_path", str(WISDOM_SECRET_PATH / "credentials"))
-    config.ci_artifacts.set_config("tests.config.dataset_path", str(WISDOM_SECRET_PATH / "llm-load-test-dataset.json"))
+    config.project.set_config("tests.config.s3_creds_results_secret_path", str(WISDOM_SECRET_PATH / "credentials"))
+    config.project.set_config("tests.config.dataset_path", str(WISDOM_SECRET_PATH / "llm-load-test-dataset.json"))
 
 
 def deploy_and_warmup_model(replicas):
-    config.ci_artifacts.set_config("tests.config.replicas", replicas)
+    config.project.set_config("tests.config.replicas", replicas)
     run.run_toolbox_from_config("wisdom deploy_model")
 
     # Warmup
@@ -116,12 +116,12 @@ def run_ci():
 
     init_config()
 
-    test_namespace=config.ci_artifacts.get_config("tests.config.test_namespace")
-    tester_imagestream_name=config.ci_artifacts.get_config("tests.config.tester_imagestream_name")
-    tester_image_tag=config.ci_artifacts.get_config("tests.config.tester_image_tag")
+    test_namespace=config.project.get_config("tests.config.test_namespace")
+    tester_imagestream_name=config.project.get_config("tests.config.tester_imagestream_name")
+    tester_image_tag=config.project.get_config("tests.config.tester_image_tag")
 
     # Purely to test:
-    protos_path=config.ci_artifacts.get_config("tests.config.protos_path")
+    protos_path=config.project.get_config("tests.config.protos_path")
     print(f"Protos path: {protos_path}")
 
     args = dict(
@@ -137,23 +137,23 @@ def run_ci():
     max_replicas = max_gpu_nodes()
     run.run_toolbox("cluster", "set_scale", instance="g5.2xlarge", scale=max_replicas)
 
-    test_cases = config.ci_artifacts.get_config("tests.ansible_llm.test_cases")
+    test_cases = config.project.get_config("tests.ansible_llm.test_cases")
     for replicas, concurrency in test_cases:
         global dataset_path
 
         deploy_and_warmup_model(replicas)
 
         total_requests = 32 * concurrency
-        config.ci_artifacts.set_config("tests.config.concurrency", concurrency)
-        config.ci_artifacts.set_config("tests.config.requests", total_requests)
+        config.project.set_config("tests.config.concurrency", concurrency)
+        config.project.set_config("tests.config.requests", total_requests)
 
         logging.info(f"Running load_test with replicas: {replicas}, concurrency: {concurrency} and total_requests: {total_requests}")
 
         run.run_toolbox_from_config("wisdom", "run_llm_load_test")
 
     # Switch to multiplexed dataset
-    config.ci_artifacts.set_config("tests.config.dataset_path", str(WISDOM_SECRET_PATH / "llm-load-test-multiplexed-dataset.json"))
-    multiplexed_test_cases = config.ci_artifacts.get_config("tests.ansible_llm.multiplexed_test_cases")
+    config.project.set_config("tests.config.dataset_path", str(WISDOM_SECRET_PATH / "llm-load-test-multiplexed-dataset.json"))
+    multiplexed_test_cases = config.project.get_config("tests.ansible_llm.multiplexed_test_cases")
     for replicas, concurrency in multiplexed_test_cases:
 
         # There will be <concurrency> num instances of ghz. However, some instances
@@ -168,9 +168,9 @@ def run_ci():
         deploy_and_warmup_model(replicas)
 
         # There are 8 threads running the same configuration, so the total concurrency should be divided by 8
-        config.ci_artifacts.set_config("tests.config.concurrency", int(concurrency/8))
-        config.ci_artifacts.set_config("tests.config.requests", requests_per_instance)
-        config.ci_artifacts.set_config("tests.config.max_duration", max_duration)
+        config.project.set_config("tests.config.concurrency", int(concurrency/8))
+        config.project.set_config("tests.config.requests", requests_per_instance)
+        config.project.set_config("tests.config.max_duration", max_duration)
 
         run.run_toolbox_from_config("wisdom", "run_llm_load_test_multiplexed")
 

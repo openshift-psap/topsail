@@ -48,9 +48,9 @@ def local_ci_prepare():
     Prepares the cluster for running Local-CI commands.
     """
 
-    namespace = config.ci_artifacts.get_config("base_image.namespace")
-    service_account = config.ci_artifacts.get_config("base_image.user.service_account")
-    role = config.ci_artifacts.get_config("base_image.user.role")
+    namespace = config.project.get_config("base_image.namespace")
+    service_account = config.project.get_config("base_image.user.service_account")
+    role = config.project.get_config("base_image.user.role")
 
     #
     # Prepare the container image
@@ -80,7 +80,7 @@ def local_ci_prepare():
     # Prepare the Secrets
     #
 
-    for secret_name, secret_data in config.ci_artifacts.get_config("secrets").items():
+    for secret_name, secret_data in config.project.get_config("secrets").items():
         secret_env_key = secret_data["env_key"]
 
         run.run(f"oc create secret generic {secret_name} --from-file=${secret_env_key} -n {namespace} --dry-run=client -oyaml | oc apply -f-")
@@ -108,7 +108,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
       test_args: List of arguments to give to the test. Overrides what is found in the configuration file.
       wait: If true, wait for the namespace to have no Pod running before running (instead of failing).
     """
-    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    namespace = config.project.get_config("base_image.namespace")
 
     if pr_config and not pathlib.Path(pr_config).exists():
         logging.fatal(f"--pr-config={pr_config} config file does not exist, aborting.")
@@ -138,13 +138,13 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
             logging.info("Pass the flag --check-branch-synced=False or --check-clean-diff=False to bypass this.")
             sys.exit(1)
 
-    workloads = config.ci_artifacts.get_config("workloads")
+    workloads = config.project.get_config("workloads")
     if not workload in workloads:
         logging.fatal(f"Invalid workload '{workload}'. Must be in {', '.join(workloads.keys())}")
         sys.exit(1)
 
-    env_ci_artifact_base_dir = pathlib.Path(os.environ.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
-    ci_artifact_base_dir = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d-%H%M')}" / workload
+    env_topsail_base_dir = pathlib.Path(os.environ.get("TOPSAIL_BASE_DIR", "/tmp"))
+    topsail_base_dir = env_topsail_base_dir / f"topsail_{time.strftime('%Y%m%d-%H%M')}" / workload
 
     workload_data = workloads[workload]
     command_group = workload_data["command_group"]
@@ -197,7 +197,7 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
 
         step_dirname = f"{step_idx:03d}__{step_name}"
 
-        os.environ["ARTIFACT_DIR"] = str(ci_artifact_base_dir / step_dirname)
+        os.environ["ARTIFACT_DIR"] = str(topsail_base_dir / step_dirname)
         command = workload_data["steps"][step_name]["command"]
 
         extra = dict(

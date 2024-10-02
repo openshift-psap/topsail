@@ -29,16 +29,16 @@ def test(name=None, dry_mode=None, do_visualize=None, capture_prom=None, prepare
     """
 
     if dry_mode is not None:
-        config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
+        config.project.set_config("tests.dry_mode", dry_mode)
     if do_visualize is not None:
-        config.ci_artifacts.set_config("tests.visualize", do_visualize)
+        config.project.set_config("tests.visualize", do_visualize)
     if capture_prom is not None:
-        config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
+        config.project.set_config("tests.capture_prom", capture_prom)
     if prepare_nodes is not None:
-        config.ci_artifacts.set_config("tests.schedulers.prepare_nodes", prepare_nodes)
+        config.project.set_config("tests.schedulers.prepare_nodes", prepare_nodes)
 
     failed_tests = []
-    tests_to_run = config.ci_artifacts.get_config("tests.schedulers.tests_to_run") \
+    tests_to_run = config.project.get_config("tests.schedulers.tests_to_run") \
         if not name else [name]
 
     for name in tests_to_run:
@@ -59,7 +59,7 @@ def test(name=None, dry_mode=None, do_visualize=None, capture_prom=None, prepare
                 if isinstance(e, bdb.BdbQuit):
                     raise
 
-            if failed_tests and config.ci_artifacts.get_config("tests.schedulers.stop_on_error"):
+            if failed_tests and config.project.get_config("tests.schedulers.stop_on_error"):
                 logging.info("Error detected, and tests.schedulers.stop_on_error is set. Aborting.")
                 break
 
@@ -90,7 +90,7 @@ def save_matbench_files(name, cfg):
         yaml.dump(dict(scheduler_load_test=True, name=name), f)
 
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-        yaml.dump(config.ci_artifacts.config, f, indent=4)
+        yaml.dump(config.project.config, f, indent=4)
 
     with open(env.ARTIFACT_DIR / "test_case_config.yaml", "w") as f:
         yaml.dump(cfg, f)
@@ -112,7 +112,7 @@ def remove_none_values(d):
 def _run_test_matbenchmarking(name, test_artifact_dir_p):
     with env.NextArtifactDir("matbenchmarking"):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
-        benchmark_values = copy.deepcopy(config.ci_artifacts.get_config("tests.schedulers.test_settings"))
+        benchmark_values = copy.deepcopy(config.project.get_config("tests.schedulers.test_settings"))
         remove_none_values(benchmark_values)
 
         test_configuration = {}
@@ -130,7 +130,7 @@ def _run_test_matbenchmarking(name, test_artifact_dir_p):
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
             script_tpl=f"{sys.argv[0]} matbench_run_one",
-            stop_on_error=config.ci_artifacts.get_config("tests.schedulers.stop_on_error"),
+            stop_on_error=config.project.get_config("tests.schedulers.stop_on_error"),
             common_settings=dict(name=name),
             test_files={"test_config.yaml": test_configuration},
             expe_name=expe_name,
@@ -151,11 +151,11 @@ def _run_test_matbenchmarking(name, test_artifact_dir_p):
 
 
 def _run_test(name, test_artifact_dir_p, test_override_values=None):
-    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
-    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
-    prepare_nodes = config.ci_artifacts.get_config("tests.schedulers.prepare_nodes")
+    dry_mode = config.project.get_config("tests.dry_mode")
+    capture_prom = config.project.get_config("tests.capture_prom")
+    prepare_nodes = config.project.get_config("tests.schedulers.prepare_nodes")
 
-    test_templates_file = TESTING_THIS_DIR / config.ci_artifacts.get_config("tests.schedulers.test_templates_file")
+    test_templates_file = TESTING_THIS_DIR / config.project.get_config("tests.schedulers.test_templates_file")
     with open(test_templates_file) as f:
         test_templates = yaml.safe_load(f)
 
@@ -267,18 +267,18 @@ def _run_test(name, test_artifact_dir_p, test_override_values=None):
 
 def _run_test_and_visualize(name, test_override_values=None):
     failed = True
-    do_matbenchmarking = test_override_values is None and config.ci_artifacts.get_config("tests.schedulers.matbenchmarking.enabled")
+    do_matbenchmarking = test_override_values is None and config.project.get_config("tests.schedulers.matbenchmarking.enabled")
     try:
         test_artifact_dir_p = [None]
         if do_matbenchmarking:
             failed = _run_test_matbenchmarking(name, test_artifact_dir_p)
         else:
             if test_override_values is None:
-                test_override_values = config.ci_artifacts.get_config("tests.schedulers.test_settings")
+                test_override_values = config.project.get_config("tests.schedulers.test_settings")
             failed = _run_test(name, test_artifact_dir_p, test_override_values)
     finally:
-        dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
-        if not config.ci_artifacts.get_config("tests.visualize"):
+        dry_mode = config.project.get_config("tests.dry_mode")
+        if not config.project.get_config("tests.visualize"):
             logging.info(f"Visualization disabled.")
 
         elif dry_mode:
@@ -287,8 +287,8 @@ def _run_test_and_visualize(name, test_override_values=None):
         elif test_artifact_dir_p[0] is not None:
             with env.NextArtifactDir("plots"):
                 if do_matbenchmarking:
-                    visu_file = config.ci_artifacts.get_config("tests.schedulers.matbenchmarking.visu_file")
-                    with config.TempValue(config.ci_artifacts, "matbench.config_file", visu_file):
+                    visu_file = config.project.get_config("tests.schedulers.matbenchmarking.visu_file")
+                    with config.TempValue(config.project, "matbench.config_file", visu_file):
                          visualize.generate_from_dir(test_artifact_dir_p[0])
                 else:
                      visualize.generate_from_dir(test_artifact_dir_p[0])
