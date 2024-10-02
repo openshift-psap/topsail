@@ -8,6 +8,7 @@ set -x
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $THIS_DIR/topsail_host_config
+source $THIS_DIR/has_toolbox
 
 CONTAINER_NAME=${1:-}
 CONTAINER_IMAGE=${2:-}
@@ -24,15 +25,10 @@ fi
 
 if podman inspect --type container $CONTAINER_NAME &>/dev/null; then
   podman stop $CONTAINER_NAME || podman stop $CONTAINER_NAME
-
-  if [[ "$(uname)" == "Darwin" ]]; then
-   podman rm $CONTAINER_NAME
-  else
-   toolbox rm $CONTAINER_NAME
-  fi
+  podman rm $CONTAINER_NAME
 fi
 
-if [[ "$(uname)" == "Darwin" ]]; then
+if [ "$HAS_TOOLBOX" = "n" ]; then
  podman run --name $CONTAINER_NAME -v "$TOPSAIL_HOME:/topsail" --detach --tty --entrypoint /bin/bash $CONTAINER_IMAGE
 else
  toolbox create $CONTAINER_NAME --image $CONTAINER_IMAGE

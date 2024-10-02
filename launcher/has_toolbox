@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+if toolbox --help > /dev/null 2>&1; then
+ export HAS_TOOLBOX=y
+else
+ export HAS_TOOLBOX=n
+fi

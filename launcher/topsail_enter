@@ -9,6 +9,7 @@ set -o errtrace
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 set -a
 source $THIS_DIR/topsail_host_config
+source $THIS_DIR/has_toolbox
 set +a
 
 if [[ "$#" == 0 ]]; then
@@ -18,8 +19,8 @@ else
 fi
 
 env=$(cat $THIS_DIR/topsail_container_env | envsubst)
-if [[ "$(uname)" == "Darwin" ]]; then
- 
+
+if [ "$HAS_TOOLBOX" = "n" ]; then
  env_args=()
  while IFS= read -r line; do
   line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
