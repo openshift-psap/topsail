@@ -31,9 +31,6 @@ def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compu
     if not variables and x_key != "gpu":
         variables += [x_key]
 
-    variables.remove("hyper_parameters.max_seq_length")
-    variables.remove("expe")
-
 
     for entry in entries:
         if filter_key is not None and entry.get_settings()[filter_key] != filter_value:
