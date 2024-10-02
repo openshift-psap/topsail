@@ -6,3 +6,11 @@ TOPSAIL_TOOLBOX_COMMAND=bash
 
 # in mac, same as CONTAINER_NAME
 TOPSAIL_TOOLBOX_NAME=topsail
+
+has_toolbox() {
+    if toolbox --help > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}

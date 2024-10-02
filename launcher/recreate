@@ -24,12 +24,19 @@ if [[ -z "$CONTAINER_IMAGE" ]]; then
 fi
 
 if podman inspect --type container $CONTAINER_NAME &>/dev/null; then
-  podman stop $CONTAINER_NAME || podman stop $CONTAINER_NAME
-  podman rm $CONTAINER_NAME
+    podman stop $CONTAINER_NAME || podman stop $CONTAINER_NAME
+    podman rm $CONTAINER_NAME
 fi
 
-if [ "$HAS_TOOLBOX" = "n" ]; then
- podman run --name $CONTAINER_NAME -v "$TOPSAIL_HOME:/topsail" --detach --tty --entrypoint /bin/bash $CONTAINER_IMAGE
+if has_toolbox; then
+    toolbox create $CONTAINER_NAME \
+            --image $CONTAINER_IMAGE
 else
- toolbox create $CONTAINER_NAME --image $CONTAINER_IMAGE
+    podman run \
+           --name $CONTAINER_NAME \
+           -v "$TOPSAIL_HOME:/topsail" \
+           --detach \
+           --tty \
+           --entrypoint /bin/bash \
+           $CONTAINER_IMAGE
 fi
