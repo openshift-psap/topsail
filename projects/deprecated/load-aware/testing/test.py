@@ -35,12 +35,12 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     config.init(TESTING_THIS_DIR)
 
     if apply_preset_from_pr_args:
-        config.ci_artifacts.apply_preset_from_pr_args()
+        config.project.apply_preset_from_pr_args()
 
     if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-    config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
+    config.project.detect_apply_light_profile(LIGHT_PROFILE)
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -61,7 +61,7 @@ def prepare_ci():
     Prepares the cluster and the namespace for running Load-Aware scale tests
     """
 
-    test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
+    test_namespace = config.project.get_config("load_aware.scale_test.namespace")
     run.run(f"oc create ns {test_namespace}")
 
     run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest")
@@ -94,10 +94,10 @@ def _run_test(test_artifact_dir_p, scheduler_name):
             print(f"scheduler={scheduler_name}", file=f)
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-            yaml.dump(config.ci_artifacts.config, f, indent=4)
+            yaml.dump(config.project.config, f, indent=4)
 
         # clean up pods from previous test
-        test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
+        test_namespace = config.project.get_config("load_aware.scale_test.namespace")
         run.run(f"oc delete pods --all -n {test_namespace} --ignore-not-found")
         run.run_toolbox("cluster reset_prometheus_db")
 
@@ -123,7 +123,7 @@ def test_ci():
     """
 
     try:
-        for scheduler_name in config.ci_artifacts.get_config("load_aware.schedulers"):
+        for scheduler_name in config.project.get_config("load_aware.schedulers"):
             try:
                 test_artifact_dir_p = [None]
                 _run_test(test_artifact_dir_p, scheduler_name)
@@ -136,13 +136,13 @@ def test_ci():
                     logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
     finally:
         results_dir = env.ARTIFACT_DIR
-        matbench_config_file = config.ci_artifacts.get_config("load_aware.matbench_comparison_file")
+        matbench_config_file = config.project.get_config("load_aware.matbench_comparison_file")
         next_count = env.next_artifact_index()
         with (env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__comparison_plots"),
-              config.TempValue(config.ci_artifacts, "matbench.config_file", matbench_config_file)):
+              config.TempValue(config.project, "matbench.config_file", matbench_config_file)):
             visualize.generate_from_dir(results_dir)
 
-        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+        if config.project.get_config("clusters.cleanup_on_exit"):
             cleanup_cluster()
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
@@ -161,7 +161,7 @@ def cleanup_cluster():
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running on bare-metal environments.
     logging.info("Cleaning up cluster and uninstall pipelines")
-    test_namespace = config.ci_artifacts.get_config("load_aware.scale_test.namespace")
+    test_namespace = config.project.get_config("load_aware.scale_test.namespace")
     run.run("oc delete ns {test_namespace} --ignore-not-found")
     run.run_toolbox("load_aware undeploy_trimaran")
     run.run_toolbox("cluster undeploy_kepler")

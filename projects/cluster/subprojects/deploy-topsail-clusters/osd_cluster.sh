@@ -34,7 +34,7 @@ create_cluster() {
 
     echo "Create cluster $cluster_name..."
     set_config clusters.sutest.managed.name "$cluster_name"
-    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$CONFIG_DEST_DIR/config.yaml" || true
+    cp "$TOPSAIL_FROM_CONFIG_FILE" "$CONFIG_DEST_DIR/config.yaml" || true
 
     KUBECONFIG="$CONFIG_DEST_DIR/${cluster_role}_kubeconfig"
     touch "$KUBECONFIG"

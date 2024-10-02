@@ -16,13 +16,13 @@ def _run_many(test_artifact_dir_p):
     # returned to the caller even if the test fails and raises an
     # exception (so that we can run the visualization even if the test
     # failed)
-    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
+    dry_mode = config.project.get_config("tests.dry_mode")
 
     def prepare_matbench_files():
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-            yaml.dump(config.ci_artifacts.config, f, indent=4)
+            yaml.dump(config.project.config, f, indent=4)
 
-        user_count = config.ci_artifacts.get_config("tests.sdk_user.user_count")
+        user_count = config.project.get_config("tests.sdk_user.user_count")
         with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
             settings = dict(user_count=user_count)
             yaml.dump(settings, f, default_flow_style=False, sort_keys=False)
@@ -65,11 +65,11 @@ def test(dry_mode=None, visualize=None, capture_prom=None):
     prepare_user_pods.apply_prefer_pr()
 
     if visualize is not None:
-        config.ci_artifacts.set_config("tests.visualize", visualize)
+        config.project.set_config("tests.visualize", visualize)
     if capture_prom is not None:
-        config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
+        config.project.set_config("tests.capture_prom", capture_prom)
     if dry_mode is not None:
-        config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
+        config.project.set_config("tests.dry_mode", dry_mode)
 
     try:
         test_artifact_dir_p = [None]
@@ -86,7 +86,7 @@ def test(dry_mode=None, visualize=None, capture_prom=None):
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
     finally:
-        if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+        if config.project.get_config("clusters.cleanup_on_exit"):
             prepare_sdk_user.cleanup_cluster()
 
 
@@ -98,25 +98,25 @@ def run_one():
     logging.info("Runs one codeflare SDK user test")
     job_index = os.environ.get("JOB_COMPLETION_INDEX")
     if job_index is not None:
-        namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
+        namespace = config.project.get_config("tests.sdk_user.namespace")
         new_namespace = f"{namespace}-user-{job_index}"
         logging.info(f"Running in a parallel job. Changing the pipeline test namespace to '{new_namespace}'")
-        config.ci_artifacts.set_config("tests.sdk_user.namespace", new_namespace)
+        config.project.set_config("tests.sdk_user.namespace", new_namespace)
     else:
         job_index = 0
 
-    namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
+    namespace = config.project.get_config("tests.sdk_user.namespace")
     prepare_sdk_user.prepare_user_namespace()
 
-    if user_index := config.ci_artifacts.get_config("tests.sdk_user.user_index") is not None:
+    if user_index := config.project.get_config("tests.sdk_user.user_index") is not None:
         msg = f"The user index 'tests.sdk_user.user_index' should have been null at this point. Value: {user_index}"
         logging.error(msg)
         raise ValueError(msg)
 
-    config.ci_artifacts.set_config("tests.sdk_user.user_index", job_index)
+    config.project.set_config("tests.sdk_user.user_index", job_index)
 
-    user_directory = config.ci_artifacts.get_config("tests.sdk_user.user_code.directory")
-    user_entrypoint = config.ci_artifacts.get_config("tests.sdk_user.user_code.entrypoint")
+    user_directory = config.project.get_config("tests.sdk_user.user_code.directory")
+    user_entrypoint = config.project.get_config("tests.sdk_user.user_code.entrypoint")
 
 
     def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):

@@ -12,8 +12,8 @@ def prepare():
 
     prepare_common.prepare_common()
 
-    namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
-    config.ci_artifacts.set_config("base_image.namespace", namespace)
+    namespace = config.project.get_config("tests.sdk_user.namespace")
+    config.project.set_config("base_image.namespace", namespace)
     prepare_user_pods.prepare_user_pods()
 
     prepare_sutest_scale_up()
@@ -37,14 +37,14 @@ def cleanup_cluster():
 import prepare_user_pods
 
 def prepare_sutest_scale_up():
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+    if config.project.get_config("clusters.sutest.is_metal"):
         return
 
     node_count = prepare_user_pods.compute_node_requirement(
-        cpu = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.cpu"),
-        memory = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.memory"),
-        machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type"),
-        user_count = config.ci_artifacts.get_config("tests.sdk_user.user_count"),
+        cpu = config.project.get_config("tests.sdk_user.ray_cluster.cpu"),
+        memory = config.project.get_config("tests.sdk_user.ray_cluster.memory"),
+        machine_type = config.project.get_config("clusters.sutest.compute.machineset.type"),
+        user_count = config.project.get_config("tests.sdk_user.user_count"),
     )
 
     extra = {}
@@ -54,7 +54,7 @@ def prepare_sutest_scale_up():
 
 
 def prepare_user_namespace():
-    namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
+    namespace = config.project.get_config("tests.sdk_user.namespace")
 
     if run.run(f'oc get project -oname "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
@@ -62,7 +62,7 @@ def prepare_user_namespace():
         logging.warning(f"Project '{namespace}' already exists.")
         (env.ARTIFACT_DIR / "USER_PROJECT_ALREADY_EXISTS").touch()
 
-    dedicated = "{}" if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated") \
+    dedicated = "{}" if config.project.get_config("clusters.sutest.compute.dedicated") \
         else '{value: ""}' # delete the toleration/node-selector annotations, if it exists
 
     run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="user_sdk_node_selector", extra=extra, mute_stdout=True)

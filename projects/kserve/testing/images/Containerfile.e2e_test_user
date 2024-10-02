@@ -1,7 +1,7 @@
 # based on https://github.com/openshift-psap/llm-load-test/blob/d503eba7f530a610d068b98f7f6bb12d62a98b69/build/Containerfile
 
 # not used by the buildconfig should not be prefix with the image registry location
-FROM ci-artifacts:main
+FROM topsail:main
 
 # install `grpcurl`
 ARG GRPCURL_VERSION=1.8.7

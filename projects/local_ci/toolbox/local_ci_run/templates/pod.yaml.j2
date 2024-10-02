@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: ci-artifacts
+    app: topsail
     test: {{ local_ci_run_pod_name }}
   name: {{ local_ci_run_pod_name }}
   namespace: {{ local_ci_run_namespace }}
@@ -57,7 +57,7 @@ spec:
       name: artifacts
 {% if local_ci_run_update_git %}
     - mountPath: /opt/topsail/src
-      name: ci-artifacts-repo
+      name: topsail-repo
 {% endif %}
   serviceAccount: "{{ local_ci_run_service_account }}"
   containers:
@@ -145,7 +145,7 @@ spec:
       name: artifacts
 {% if local_ci_run_update_git %}
     - mountPath: /opt/topsail/src
-      name: ci-artifacts-repo
+      name: topsail-repo
 {% endif %}
 {% if local_ci_run_secret_name %}
     - mountPath: /secrets/{{ local_ci_run_secret_name }}
@@ -235,7 +235,7 @@ spec:
       name: artifacts
 {% if local_ci_run_update_git %}
     - mountPath: /opt/topsail/src
-      name: ci-artifacts-repo
+      name: topsail-repo
 {% endif %}
 {% if local_ci_run_secret_name %}
     - mountPath: /secrets/{{ local_ci_run_secret_name }}
@@ -246,7 +246,7 @@ spec:
   - name: artifacts
     emptyDir: {}
 {% if local_ci_run_update_git %}
-  - name: ci-artifacts-repo
+  - name: topsail-repo
     emptyDir: {}
 {% endif %}
 {% if local_ci_run_secret_name %}

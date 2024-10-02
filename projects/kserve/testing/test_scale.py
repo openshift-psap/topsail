@@ -10,8 +10,8 @@ from projects.core.library import env, config, run
 import prepare_scale
 
 def test(test_artifact_dir_p=None):
-    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
-    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
+    dry_mode = config.project.get_config("tests.dry_mode")
+    capture_prom = config.project.get_config("tests.capture_prom")
 
     if dry_mode:
         capture_prom = False
@@ -24,7 +24,7 @@ def test(test_artifact_dir_p=None):
             yaml.dump(dict(scale_test=True), f, indent=4)
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-            yaml.dump(config.ci_artifacts.config, f, indent=4)
+            yaml.dump(config.project.config, f, indent=4)
 
         with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
             print(str(uuid.uuid4()), file=f)
@@ -41,7 +41,7 @@ def test(test_artifact_dir_p=None):
             if not dry_mode:
                 try:
                     run.run_toolbox("kserve", "capture_operators_state",
-                                    raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
+                                    raw_deployment=config.project.get_config("kserve.raw_deployment.enabled"),
                                     mute_stdout=True)
                 finally:
                     run.run_toolbox("cluster", "capture_environment", mute_stdout=True)
@@ -64,11 +64,11 @@ def prepare_user_sutest_namespace(namespace):
         return
 
 
-    label = config.ci_artifacts.get_config("tests.scale.namespace.label")
+    label = config.project.get_config("tests.scale.namespace.label")
     run.run(f"oc label ns/{namespace} {label} --overwrite")
 
-    metal = config.ci_artifacts.get_config("clusters.sutest.is_metal")
-    dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
+    metal = config.project.get_config("clusters.sutest.is_metal")
+    dedicated = config.project.get_config("clusters.sutest.compute.dedicated")
     if not metal and dedicated:
         extra = dict(project=namespace)
         run.run_toolbox_from_config("cluster", "set_project_annotation", prefix="sutest", suffix="scale_test_node_selector", extra=extra, mute_stdout=True)
@@ -77,7 +77,7 @@ def prepare_user_sutest_namespace(namespace):
     with env.NextArtifactDir("deploy_storage_configuration"):
         deploy_storage_configuration(namespace)
 
-    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+    if not config.project.get_config("kserve.raw_deployment.enabled"):
         deploy_istio_sidecar(namespace)
 
     run.run(f"oc label ns/{namespace} topsail.prepared=true")
@@ -119,8 +119,8 @@ def deploy_storage_configuration(namespace):
     access_key = None
     secret_key = None
 
-    vault_key = config.ci_artifacts.get_config("secrets.dir.env_key")
-    model_s3_cred_filename = config.ci_artifacts.get_config("secrets.model_s3_cred")
+    vault_key = config.project.get_config("secrets.dir.env_key")
+    model_s3_cred_filename = config.project.get_config("secrets.model_s3_cred")
     model_s3_cred_file = pathlib.Path(os.environ[vault_key]) / model_s3_cred_filename
     logging.info(f"Reading the models S3 credentials from '{model_s3_cred_filename}' ...")
     with open(model_s3_cred_file) as f:
@@ -138,7 +138,7 @@ def deploy_storage_configuration(namespace):
             not_found += ["aws_secret_access_key"]
         raise ValueError(f"{not_found} not found in {model_s3_cred_file} ...")
 
-    storage_config = config.ci_artifacts.get_config("kserve.storage_config")
+    storage_config = config.project.get_config("kserve.storage_config")
 
     storage_secret = f"""\
 apiVersion: v1
@@ -161,7 +161,7 @@ stringData:
 
     # Service Account
 
-    service_account_name = config.ci_artifacts.get_config("kserve.sa_name")
+    service_account_name = config.project.get_config("kserve.sa_name")
     service_account = f"""\
 apiVersion: v1
 kind: ServiceAccount
@@ -179,20 +179,20 @@ def run_one():
 
     job_index = os.environ.get("JOB_COMPLETION_INDEX")
     if job_index is not None:
-        namespace = config.ci_artifacts.get_config("tests.scale.namespace.name")
+        namespace = config.project.get_config("tests.scale.namespace.name")
         new_namespace = f"{namespace}-u{job_index}"
         logging.info(f"Running in a parallel job. Changing the test namespace to '{new_namespace}'")
-        config.ci_artifacts.set_config("tests.scale.namespace.name", new_namespace)
+        config.project.set_config("tests.scale.namespace.name", new_namespace)
     else:
         job_index = 0
 
-    namespace = config.ci_artifacts.get_config("tests.scale.namespace.name")
+    namespace = config.project.get_config("tests.scale.namespace.name")
     sync_file = pathlib.Path("/tmp/test_done")
     sync_file.unlink(missing_ok=True)
 
     try:
         prepare_scale.consolidate_model_config("tests.scale.model")
-        config.ci_artifacts.set_config("tests.scale.model.consolidated", True)
+        config.project.set_config("tests.scale.model.consolidated", True)
 
         prepare_user_sutest_namespace(namespace)
 
@@ -226,9 +226,9 @@ def run_one():
 
 
 def run_one_test(namespace, job_index):
-    models_per_namespace = config.ci_artifacts.get_config("tests.scale.model.replicas")
-    model_name = config.ci_artifacts.get_config("tests.scale.model.name")
-    container_flavor = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.container_flavor")
+    models_per_namespace = config.project.get_config("tests.scale.model.replicas")
+    model_name = config.project.get_config("tests.scale.model.name")
+    container_flavor = config.project.get_config("tests.scale.model.serving_runtime.container_flavor")
 
     all_inference_service_names = []
 
@@ -237,7 +237,7 @@ def run_one_test(namespace, job_index):
 
         deploy_extra = dict(
             inference_service_name=inference_service_name,
-            raw_deployment=config.ci_artifacts.get_config("kserve.raw_deployment.enabled"),
+            raw_deployment=config.project.get_config("kserve.raw_deployment.enabled"),
         )
 
         run.run_toolbox_from_config("kserve", "deploy_model", extra=deploy_extra, artifact_dir_suffix=f"_{inference_service_name}")

@@ -42,12 +42,12 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
 
         run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"', check=False)
 
-    config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
-    is_metal = config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
+    config.project.detect_apply_light_profile(LIGHT_PROFILE)
+    is_metal = config.project.detect_apply_metal_profile(METAL_PROFILE)
 
     if is_metal:
-        metal_profiles = config.ci_artifacts.get_config("clusters.metal_profiles")
-        profile_applied = config.ci_artifacts.detect_apply_cluster_profile(metal_profiles)
+        metal_profiles = config.project.get_config("clusters.metal_profiles")
+        profile_applied = config.project.detect_apply_cluster_profile(metal_profiles)
 
         if not profile_applied:
             raise ValueError("Bare-metal cluster not recognized :/ ")
@@ -70,11 +70,11 @@ def prepare_ci():
     """
     Prepares the cluster and the namespace for running the tests
     """
-    if not config.ci_artifacts.get_config("prepare.enabled"):
+    if not config.project.get_config("prepare.enabled"):
         logging.warning("prepare.enabled not enabled, nothing to do.")
         return
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
+    test_mode = config.project.get_config("tests.mode")
     if test_mode in ("scale", "e2e"):
         prepare_scale.prepare()
     else:
@@ -87,9 +87,9 @@ def test_ci():
     Runs the test from the CI
     """
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
+    test_mode = config.project.get_config("tests.mode")
 
-    do_visualize = config.ci_artifacts.get_config("tests.visualize")
+    do_visualize = config.project.get_config("tests.visualize")
 
     try:
         test_artifact_dir_p = [None]
@@ -110,14 +110,14 @@ def test_ci():
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
         finally:
-            if horreum_test := config.ci_artifacts.get_config("matbench.lts.horreum.test_name"):
+            if horreum_test := config.project.get_config("matbench.lts.horreum.test_name"):
                 logging.info(f"Saving Horreum test name: {horreum_test}")
                 with open(env.ARTIFACT_DIR / "test_name.horreum", "w") as f:
                     print(horreum_test, file=f)
             else:
                 logging.info(f"No Horreum test name to save")
 
-            if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+            if config.project.get_config("clusters.cleanup_on_exit"):
                 cleanup_cluster(mute=True)
 
             export.export_artifacts(env.ARTIFACT_DIR, "test_ci")
@@ -135,13 +135,13 @@ def scale_test(dry_mode=None, capture_prom=None, do_visualize=None):
     """
 
     if dry_mode is not None:
-        config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
+        config.project.set_config("tests.dry_mode", dry_mode)
 
     if capture_prom is not None:
-        config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
+        config.project.set_config("tests.capture_prom", capture_prom)
 
     if do_visualize is not None:
-        config.ci_artifacts.set_config("tests.visualize", do_visualize)
+        config.project.set_config("tests.visualize", do_visualize)
 
     test_scale.test()
 
@@ -157,25 +157,25 @@ def run_one(dry_mode=None, capture_prom=None, do_visualize=None):
       capture_prom: if False, do not capture Prometheus database
     """
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
+    test_mode = config.project.get_config("tests.mode")
 
     if test_mode != "scale":
         raise KeyError(f"Invalid test mode: {test_mode}")
 
     if dry_mode is not None:
-        config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
+        config.project.set_config("tests.dry_mode", dry_mode)
 
     if capture_prom is not None:
-        config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
+        config.project.set_config("tests.capture_prom", capture_prom)
 
     if do_visualize is not None:
-        config.ci_artifacts.set_config("tests.visualize", do_visualize)
+        config.project.set_config("tests.visualize", do_visualize)
 
     test_scale.run_one()
 
 
 def _run_test(test_artifact_dir_p):
-    test_mode = config.ci_artifacts.get_config("tests.mode")
+    test_mode = config.project.get_config("tests.mode")
     if test_mode == "scale":
         test_scale.test(test_artifact_dir_p)
     else:
@@ -189,7 +189,7 @@ def generate_plots_from_pr_args():
     """
 
     try:
-        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"]) / config.ci_artifacts.get_config("secrets.aws_credentials"))
+        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(pathlib.Path(os.environ["PSAP_ODS_SECRET_PATH"]) / config.project.get_config("secrets.aws_credentials"))
     except Exception as e:
         logging.warning(f"Failed to set AWS_SHARED_CREDENTIALS_FILE: {e}")
 
@@ -207,7 +207,7 @@ def cleanup_cluster(mute=False):
 
     common.cleanup_cluster()
 
-    if not config.ci_artifacts.get_config("prepare.cleanup.enabled"):
+    if not config.project.get_config("prepare.cleanup.enabled"):
         logging.warning("prepare.cleanup.enabled not enabled, cleanup only the test namespaces.")
         cleanup_sutest_ns()
         return
@@ -232,21 +232,21 @@ def cleanup_rhoai(mute=False):
 @entrypoint(ignore_secret_path=True)
 def generate_plots(results_dirname):
     try:
-        main_workload = config.ci_artifacts.get_config("matbench.workload")
+        main_workload = config.project.get_config("matbench.workload")
         with env.NextArtifactDir(f"{main_workload}_plots"):
             visualize.generate_from_dir(str(results_dirname))
     finally:
         exc = None
-        prom_workload = config.ci_artifacts.get_config("matbench.prom_workload")
+        prom_workload = config.project.get_config("matbench.prom_workload")
         if not prom_workload:
             logging.info(f"Setting matbench.prom_workload isn't set, nothing else to generate.")
             return
 
-        index = config.ci_artifacts.get_config("matbench.lts.opensearch.index")
-        prom_index_suffix = config.ci_artifacts.get_config("matbench.lts.opensearch.prom_index_suffix")
+        index = config.project.get_config("matbench.lts.opensearch.index")
+        prom_index_suffix = config.project.get_config("matbench.lts.opensearch.prom_index_suffix")
         with (
-                config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload),
-                config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")
+                config.TempValue(config.project, "matbench.workload", prom_workload),
+                config.TempValue(config.project, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")
         ):
 
             with env.NextArtifactDir(f"{prom_workload}__all"):
@@ -264,8 +264,8 @@ def generate_plots(results_dirname):
 
                 with (
                         env.NextArtifactDir(f"{prom_workload}__{dirname}"),
-                        config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.export.enabled", False),
-                        config.TempValue(config.ci_artifacts, "matbench.lts.regression_analyses.enabled", False),
+                        config.TempValue(config.project, "matbench.lts.opensearch.export.enabled", False),
+                        config.TempValue(config.project, "matbench.lts.regression_analyses.enabled", False),
                 ):
                     logging.info(f"Generating the plots with workload={prom_workload} for {current_results_dirname}")
                     try:
@@ -309,7 +309,7 @@ def cleanup_sutest_ns():
     Cleans up the SUTest namespaces
     """
 
-    label = config.ci_artifacts.get_config("tests.scale.namespace.label")
+    label = config.project.get_config("tests.scale.namespace.label")
     run.run(f"oc delete ns -l{label}")
 
 
@@ -326,13 +326,13 @@ def cleanup_sutest_crs():
 
     prepare_kserve.dsc_enable_kserve()
 
-    for cr_name in config.ci_artifacts.get_config("prepare.cleanup.crds"):
+    for cr_name in config.project.get_config("prepare.cleanup.crds"):
         run.run(f"oc delete {cr_name} --all -A")
 
 
 @entrypoint()
 def rebuild_driver_image(pr_number):
-    namespace = config.ci_artifacts.get_config("base_image.namespace")
+    namespace = config.project.get_config("base_image.namespace")
     prepare_user_pods.rebuild_driver_image(namespace, pr_number)
 
 

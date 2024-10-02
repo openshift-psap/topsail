@@ -92,7 +92,7 @@
 
 - name: Define the search labels
   set_fact:
-    notebook_search_labels: "-lci-artifacts.single-notebook-perf=true -lapp={{ notebook_name }}"
+    notebook_search_labels: "-ltopsail.single-notebook-perf=true -lapp={{ notebook_name }}"
 
 - name: Delete the notebook files ConfigMap, if it exists
   command:

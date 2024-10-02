@@ -25,41 +25,41 @@ def init(allow_no_config_file=False):
     global matbench_config, matbench_workload, workload_storage_dir
 
     env.init()
-    config_file = os.environ.get("CI_ARTIFACTS_FROM_CONFIG_FILE")
+    config_file = os.environ.get("TOPSAIL_FROM_CONFIG_FILE")
     if not config_file and not allow_no_config_file:
-        raise RuntimeError("CI_ARTIFACTS_FROM_CONFIG_FILE must be set. Please source your `configure.sh` before running this file.")
+        raise RuntimeError("TOPSAIL_FROM_CONFIG_FILE must be set. Please source your `configure.sh` before running this file.")
 
     if not config_file:
-        logging.info("Running without CI_ARTIFACTS_FROM_CONFIG_FILE, skipping most of the initialization")
+        logging.info("Running without TOPSAIL_FROM_CONFIG_FILE, skipping most of the initialization")
         return
 
     config.init(pathlib.Path(config_file).parent)
 
-    is_plot_test = config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "", warn=False).endswith("-plot")
+    is_plot_test = config.project.get_config("PR_POSITIONAL_ARG_0", "", warn=False).endswith("-plot")
     if is_plot_test:
-        pr_arg_1 = config.ci_artifacts.get_config("PR_POSITIONAL_ARG_1", "")
+        pr_arg_1 = config.project.get_config("PR_POSITIONAL_ARG_1", "")
         if not pr_arg_1:
             raise ValueError("PR_POSITIONAL_ARG_1 should have been set ...")
 
-        config.ci_artifacts.set_config("matbench.preset", pr_arg_1, dump_command_args=False)
+        config.project.set_config("matbench.preset", pr_arg_1, dump_command_args=False)
 
-    matbench_workload = config.ci_artifacts.get_config("matbench.workload")
+    matbench_workload = config.project.get_config("matbench.workload")
 
     workload_storage_dir = pathlib.Path(matbench_workload.replace(".", "/"))
 
     if is_plot_test:
-        config.ci_artifacts.set_config("matbench.preset", config.ci_artifacts.get_config("PR_POSITIONAL_ARG_1", None), dump_command_args=False)
+        config.project.set_config("matbench.preset", config.project.get_config("PR_POSITIONAL_ARG_1", None), dump_command_args=False)
 
-    matbench_preset = config.ci_artifacts.get_config("matbench.preset")
+    matbench_preset = config.project.get_config("matbench.preset")
     if not matbench_preset:
         pass # no preset defined, nothing to do
     elif "://" in str(matbench_preset):
-        config.ci_artifacts.set_config("matbench.download.url", matbench_preset, dump_command_args=False)
+        config.project.set_config("matbench.download.url", matbench_preset, dump_command_args=False)
     else:
-        config.ci_artifacts.set_config("matbench.config_file", f"{matbench_preset}.yaml", dump_command_args=False)
-        config.ci_artifacts.set_config("matbench.download.url_file", workload_storage_dir / "data" / f"{matbench_preset}.yaml", dump_command_args=False)
+        config.project.set_config("matbench.config_file", f"{matbench_preset}.yaml", dump_command_args=False)
+        config.project.set_config("matbench.download.url_file", workload_storage_dir / "data" / f"{matbench_preset}.yaml", dump_command_args=False)
 
-    matbench_config = config.Config(workload_storage_dir / "data" / config.ci_artifacts.get_config("matbench.config_file"))
+    matbench_config = config.Config(workload_storage_dir / "data" / config.project.get_config("matbench.config_file"))
 
 
 def entrypoint(allow_no_config_file=False):
@@ -96,7 +96,7 @@ def call_parse(step_idx, common_args, common_env):
     parse_env = common_env.copy()
     parse_args = common_args.copy()
 
-    mode = config.ci_artifacts.get_config("matbench.download.mode")
+    mode = config.project.get_config("matbench.download.mode")
     if mode != "prefer_cache":
         logging.info(f"Download mode set to '{mode}', ignoring the parser cache.")
         parse_env["MATBENCH_STORE_IGNORE_CACHE"] = "y"
@@ -163,14 +163,14 @@ def call_generate_lts_schema(step_idx, common_args):
 
 
 def generate_opensearch_config_yaml_env(dest):
-    instance = config.ci_artifacts.get_config("matbench.lts.opensearch.instance")
+    instance = config.project.get_config("matbench.lts.opensearch.instance")
 
-    _index = config.ci_artifacts.get_config("matbench.lts.opensearch.index")
-    index_prefix = config.ci_artifacts.get_config("matbench.lts.opensearch.index_prefix") or ""
+    _index = config.project.get_config("matbench.lts.opensearch.index")
+    index_prefix = config.project.get_config("matbench.lts.opensearch.index_prefix") or ""
     index = f"{index_prefix}{_index}"
 
-    vault_key = config.ci_artifacts.get_config("secrets.dir.env_key")
-    opensearch_instances_file = config.ci_artifacts.get_config("secrets.opensearch_instances")
+    vault_key = config.project.get_config("secrets.dir.env_key")
+    opensearch_instances_file = config.project.get_config("secrets.opensearch_instances")
 
     with open(pathlib.Path(os.environ[vault_key]) / opensearch_instances_file) as f:
         instances_file_doc = yaml.safe_load(f)
@@ -357,7 +357,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     #
 
     do_generate_lts = generate_lts if generate_lts is not None \
-        else config.ci_artifacts.get_config("matbench.lts.generate", None)
+        else config.project.get_config("matbench.lts.generate", None)
 
     if do_generate_lts:
         step_idx += 1
@@ -366,7 +366,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
         step_idx += 1
         errors += call_generate_lts_schema(step_idx, common_args)
 
-    if config.ci_artifacts.get_config("matbench.download.save_to_artifacts"):
+    if config.project.get_config("matbench.download.save_to_artifacts"):
         shutil.copytree(common_args["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
 
     #
@@ -374,18 +374,18 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     # Analyze the new results for regression against the historical results
     #
 
-    replotting = config.ci_artifacts.get_config("PR_POSITIONAL_ARG_0", "").endswith("-plot")
+    replotting = config.project.get_config("PR_POSITIONAL_ARG_0", "").endswith("-plot")
 
     do_analyze_lts = analyze_lts if analyze_lts is not None \
-        else config.ci_artifacts.get_config("matbench.lts.regression_analyses.enabled", None)
+        else config.project.get_config("matbench.lts.regression_analyses.enabled", None)
 
-    if replotting and not config.ci_artifacts.get_config("matbench.lts.regression_analyses.enabled_on_replot", None):
+    if replotting and not config.project.get_config("matbench.lts.regression_analyses.enabled_on_replot", None):
         do_analyze_lts = False
 
     do_upload_lts = upload_lts if upload_lts is not None \
-        else config.ci_artifacts.get_config("matbench.lts.opensearch.export.enabled", None)
+        else config.project.get_config("matbench.lts.opensearch.export.enabled", None)
 
-    if replotting and not config.ci_artifacts.get_config("matbench.lts.opensearch.export.enabled_on_replot", None):
+    if replotting and not config.project.get_config("matbench.lts.opensearch.export.enabled_on_replot", None):
         do_upload_lts = False
 
     if do_analyze_lts or do_upload_lts:
@@ -397,8 +397,8 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
             do_analyze_lts = False
             do_upload_lts = False
 
-            fail_on_regression = config.ci_artifacts.get_config("matbench.lts.regression_analyses.fail_test_on_regression")
-            fail_on_upload = config.ci_artifacts.get_config("matbench.lts.opensearch.export.fail_test_on_fail")
+            fail_on_regression = config.project.get_config("matbench.lts.regression_analyses.fail_test_on_regression")
+            fail_on_upload = config.project.get_config("matbench.lts.opensearch.export.fail_test_on_fail")
             if fail_on_upload or fail_on_regression:
                 errors += ["opensearch secret cannot be generated"]
 
@@ -412,7 +412,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
         errors += analyze_lts_errors
 
         if regression_detected:
-            if config.ci_artifacts.get_config("matbench.lts.regression_analyses.fail_test_on_regression"):
+            if config.project.get_config("matbench.lts.regression_analyses.fail_test_on_regression"):
                 errors += ["regression detected"]
             else:
                 logging.warning("A regression has been detected, but ignored as per matbench.lts.regression_analyses.fail_test_on_regression")
@@ -424,7 +424,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     if do_upload_lts:
         step_idx += 1
         upload_lts_errors = call_upload_lts(step_idx, common_args, common_env_str)
-        if config.ci_artifacts.get_config("matbench.lts.opensearch.export.fail_test_on_fail"):
+        if config.project.get_config("matbench.lts.opensearch.export.fail_test_on_fail"):
             errors += upload_lts_errors
         elif upload_lts_errors:
             logging.warning("An error happened during the LTS load. Ignoring as per matbench.lts.opensearch.export.fail_test_on_fail.")
@@ -463,19 +463,19 @@ def generate_from_dir(results_dirname, generate_lts=None):
 def get_common_matbench_args_env(results_dirname):
     common_args = dict()
     common_args["results_dirname"] = results_dirname
-    common_args["workload"] = config.ci_artifacts.get_config("matbench.workload")
+    common_args["workload"] = config.project.get_config("matbench.workload")
 
     common_args["workload_base_dir"] = str(TOPSAIL_DIR)
 
     common_env = dict()
-    common_env["MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE"] = "true" if config.ci_artifacts.get_config("matbench.ignore_exit_code") else "false"
+    common_env["MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE"] = "true" if config.project.get_config("matbench.ignore_exit_code") else "false"
 
     return common_args, common_env
 
 
 def download(results_dirname):
-    url = config.ci_artifacts.get_config("matbench.download.url")
-    url_file = config.ci_artifacts.get_config("matbench.download.url_file")
+    url = config.project.get_config("matbench.download.url")
+    url_file = config.project.get_config("matbench.download.url_file")
 
     if url:
         with open(env.ARTIFACT_DIR / "source_url", "w") as f:
@@ -490,13 +490,13 @@ def download(results_dirname):
 
     download_args = common_args.copy()
     download_args |= dict(
-        mode=config.ci_artifacts.get_config("matbench.download.mode"),
+        mode=config.project.get_config("matbench.download.mode"),
         do_download=True,
     )
 
-    env_key = config.ci_artifacts.get_config("secrets.dir.env_key")
+    env_key = config.project.get_config("secrets.dir.env_key")
     secret_path = os.environ.get(env_key)
-    secret_filename = config.ci_artifacts.get_config("secrets.aws_credentials")
+    secret_filename = config.project.get_config("secrets.aws_credentials")
 
     if not env_key or not secret_path or not secret_filename:
         logging.warning(f"secrets.dir.env_key or ${secret_path} not set or {secret_filename=}. Cannot set AWS_SHARED_CREDENTIALS_FILE")

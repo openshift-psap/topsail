@@ -59,7 +59,7 @@
 
 - name: Define the test environment
   set_fact:
-    notebook_search_labels: "-lci-artifacts.single-notebook-perf=true -lapp={{ notebook_name }}"
+    notebook_search_labels: "-ltopsail.single-notebook-perf=true -lapp={{ notebook_name }}"
     notebooks_ods_ci_scale_test_username_prefix: "{{ notebook_name }}"
 
 - name: Delete the notebook files ConfigMap, if it exists

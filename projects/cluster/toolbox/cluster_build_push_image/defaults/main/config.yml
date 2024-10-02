@@ -12,7 +12,8 @@ cluster_build_push_image_image_local_name:
 cluster_build_push_image_tag:
 
 # Namespace where the local image will be built.
-cluster_build_push_image_namespace: ci-artifacts
+# Mandatory value
+cluster_build_push_image_namespace:
 
 # Remote image repo to push to. If undefined, the image will not be pushed.
 cluster_build_push_image_remote_repo:

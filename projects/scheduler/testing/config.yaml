@@ -185,7 +185,7 @@ base_image:
     ref_prefer_pr: true
     dockerfile_path: build/Dockerfile
   user:
-    service_account: ci-artifacts
+    service_account: topsail
     role: cluster-admin
   minio:
     enabled: false

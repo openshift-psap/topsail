@@ -12,7 +12,7 @@ from projects.core.library.ansible_toolbox import RunAnsibleRole
 
 class From_Config:
     """
-    Run `ci-artifacts` toolbox commands from a single config file
+    Run TOPSAIL toolbox commands from a single config file
     """
     @staticmethod
     def run(group, command,
@@ -23,13 +23,13 @@ class From_Config:
             show_args=False,
             ):
         """
-        Run `ci-artifacts` toolbox commands from a single config file.
+        Run `topsail` toolbox commands from a single config file.
 
         Args:
           group: Group from which the command belongs.
           command: Command to call, within the group.
-          config_file: Configuration file from which the parameters will be looked up. Can be passed via the CI_ARTIFACTS_FROM_CONFIG_FILE environment variable.
-          command_args_file: Command argument configuration file. Can be passed via the CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE environment variable.
+          config_file: Configuration file from which the parameters will be looked up. Can be passed via the TOPSAIL_FROM_CONFIG_FILE environment variable.
+          command_args_file: Command argument configuration file. Can be passed via the TOPSAIL_FROM_COMMAND_ARGS_FILE environment variable.
           prefix: Prefix to apply to the role name to lookup the command options.
           suffix: Suffix to apply to the role name to lookup the command options.
           extra: Extra arguments to pass to the commands. Use the dictionnary notation: '{arg1: val1, arg2: val2}'.
@@ -37,15 +37,15 @@ class From_Config:
         """
 
         if not config_file:
-            config_file = os.getenv("CI_ARTIFACTS_FROM_CONFIG_FILE", None)
+            config_file = os.getenv("TOPSAIL_FROM_CONFIG_FILE", None)
         if not config_file:
-            logging.error("--config_file flag or CI_ARTIFACTS_FROM_CONFIG_FILE env var must have a value.")
+            logging.error("--config_file flag or TOPSAIL_FROM_CONFIG_FILE env var must have a value.")
             raise SystemExit(1)
 
         if not command_args_file:
-            command_args_file = os.getenv("CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE", None)
+            command_args_file = os.getenv("TOPSAIL_FROM_COMMAND_ARGS_FILE", None)
         if not command_args_file:
-            logging.error("--command_args_file flag or CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE env var must have a value.")
+            logging.error("--command_args_file flag or TOPSAIL_FROM_COMMAND_ARGS_FILE env var must have a value.")
             raise SystemExit(1)
 
         from projects.core.library.ansible_toolbox import Toolbox
@@ -58,10 +58,10 @@ class From_Config:
             # parse the file as yaml and dump it a string,
             # to resolve yaml aliases
             command_args = f.read()
-            
+
         def log_warning(msg):
             logging.warning(msg)
-            
+
         def raise_exception(msg):
             raise Exception(msg)
 
@@ -79,7 +79,7 @@ class From_Config:
         jinja2.filters.FILTERS["or_env"] = or_env
         jinja2.filters.FILTERS["raise_exception"] = raise_exception
         jinja2.filters.FILTERS["log_warning"] = log_warning
-        
+
         command_args_tpl = jinja2.Template(command_args)
         try:
             command_args_rendered = command_args_tpl.render(config)

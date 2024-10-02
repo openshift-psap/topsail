@@ -50,7 +50,7 @@ def enable_kserve_raw_deployment():
 
 
 def customize_rhods():
-    if not config.ci_artifacts.get_config("rhods.operator.stop"):
+    if not config.project.get_config("rhods.operator.stop"):
         return
 
     run.run("oc scale deploy/rhods-operator --replicas=0 -n redhat-ods-operator")
@@ -63,9 +63,9 @@ def customize_rhods():
             raise RuntimeError("RHODS Operator pod didn't disappear ...")
         time.sleep(2)
 
-    if config.ci_artifacts.get_config("rhods.operator.customize.kserve.enabled"):
-        cpu = config.ci_artifacts.get_config("rhods.operator.customize.kserve.cpu")
-        mem = config.ci_artifacts.get_config("rhods.operator.customize.kserve.memory")
+    if config.project.get_config("rhods.operator.customize.kserve.enabled"):
+        cpu = config.project.get_config("rhods.operator.customize.kserve.cpu")
+        mem = config.project.get_config("rhods.operator.customize.kserve.memory")
         run.run(f"oc get deploy/kserve-controller-manager -n redhat-ods-applications -ojson "
                 f"| jq --arg mem '{mem}' --arg cpu '{cpu}' '.spec.template.spec.containers[0].resources.limits.cpu = $cpu | .spec.template.spec.containers[0].resources.limits.memory = $mem' "
                 f"| oc apply -f-")
@@ -73,9 +73,9 @@ def customize_rhods():
 
 
 def customize_kserve():
-    if config.ci_artifacts.get_config("kserve.customize.serverless.enabled"):
-        egress_mem = config.ci_artifacts.get_config("kserve.customize.serverless.egress.limits.memory")
-        ingress_mem = config.ci_artifacts.get_config("kserve.customize.serverless.ingress.limits.memory")
+    if config.project.get_config("kserve.customize.serverless.enabled"):
+        egress_mem = config.project.get_config("kserve.customize.serverless.egress.limits.memory")
+        ingress_mem = config.project.get_config("kserve.customize.serverless.ingress.limits.memory")
         run.run(f"oc get smcp/data-science-smcp -n istio-system -ojson "
                 f"| jq --arg egress_mem '{egress_mem}' --arg ingress_mem '{ingress_mem}' "
                 "'.spec.gateways.egress.runtime.container.resources.limits.memory = $egress_mem | .spec.gateways.ingress.runtime.container.resources.limits.memory = $ingress_mem' "
@@ -85,7 +85,7 @@ def customize_kserve():
 
 def dsc_enable_kserve():
     extra_settings = {}
-    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+    if config.project.get_config("kserve.raw_deployment.enabled"):
         extra_settings["spec.components.kserve.serving.managementState"] = "Removed"
 
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
@@ -100,11 +100,11 @@ def prepare():
     if not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-    token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
+    token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.brew_registry_redhat_io_token_file")
 
-    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+    if not config.project.get_config("kserve.raw_deployment.enabled"):
         with run.Parallel("prepare_kserve") as parallel:
-            for operator in config.ci_artifacts.get_config("prepare.operators"):
+            for operator in config.project.get_config("prepare.operators"):
                 parallel.delayed(run.run_toolbox, "cluster", "deploy_operator",
                                  catalog=operator['catalog'],
                                  manifest_name=operator['name'],
@@ -115,7 +115,7 @@ def prepare():
 
     dsc_enable_kserve()
 
-    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+    if not config.project.get_config("kserve.raw_deployment.enabled"):
         with env.NextArtifactDir("prepare_poc"):
             try:
                 run.run(f"projects/kserve/testing/poc/prepare.sh |& tee -a {env.ARTIFACT_DIR}/run.log")
@@ -126,7 +126,7 @@ def prepare():
     customize_rhods()
     customize_kserve()
 
-    if config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+    if config.project.get_config("kserve.raw_deployment.enabled"):
         enable_kserve_raw_deployment()
 
 
@@ -158,9 +158,9 @@ def undeploy_operator(operator, mute=True):
 def cleanup(mute=True):
     prepare_rhoai.uninstall(mute)
 
-    if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
+    if not config.project.get_config("kserve.raw_deployment.enabled"):
         with run.Parallel("cleanup_kserve") as parallel:
-            for operator in config.ci_artifacts.get_config("prepare.operators"):
+            for operator in config.project.get_config("prepare.operators"):
                 undeploy_operator(operator)
 
 
@@ -186,15 +186,15 @@ def update_serving_runtime_images(runtime=None):
     kserve_image = get_image("kserve-container")
     #transformer_image = get_image("transformer-container")
 
-    config.ci_artifacts.set_config("kserve.model.serving_runtime.kserve.image", kserve_image.strip())
-    #config.ci_artifacts.set_config("kserve.model.serving_runtime.transformer.image", transformer_image.strip())
+    config.project.set_config("kserve.model.serving_runtime.kserve.image", kserve_image.strip())
+    #config.project.set_config("kserve.model.serving_runtime.transformer.image", transformer_image.strip())
 
 
 def preload_image():
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+    if config.project.get_config("clusters.sutest.is_metal"):
         return
 
-    if not config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
+    if not config.project.get_config("clusters.sutest.compute.dedicated"):
         return
 
     # this is required to properly create the namespace used to preload the image
@@ -216,6 +216,6 @@ def preload_image():
                     raise
 
     with run.Parallel("preload_serving_runtime") as parallel:
-        parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.kserve.image"), "kserve")
-        #if not config.ci_artifacts.get_config("kserve.raw_deployment.enabled"):
-        #    parallel.delayed(preload, config.ci_artifacts.get_config("kserve.model.serving_runtime.transformer.image"), "transformer")
+        parallel.delayed(preload, config.project.get_config("kserve.model.serving_runtime.kserve.image"), "kserve")
+        #if not config.project.get_config("kserve.raw_deployment.enabled"):
+        #    parallel.delayed(preload, config.project.get_config("kserve.model.serving_runtime.transformer.image"), "transformer")

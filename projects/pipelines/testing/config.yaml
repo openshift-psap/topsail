@@ -283,7 +283,7 @@ rhods:
 
 base_image:
   namespace: pipelines-scale-test
-  imagestream: ci-artifacts
+  imagestream: topsail
   repo:
     url: https://github.com/openshift-psap/topsail/
     tag: main
@@ -291,7 +291,7 @@ base_image:
     ref_prefer_pr: true
     dockerfile_path: build/Dockerfile
   user:
-    service_account: ci-artifacts
+    service_account: topsail
     role: cluster-admin
   minio:
     bucket_name: pipelines-scale-test-bucket

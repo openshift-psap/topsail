@@ -9,19 +9,19 @@ from projects.core.library import env, config, run
 from projects.matrix_benchmarking.library import visualize
 
 def main():
-    namespace = config.ci_artifacts.get_config("tests.sdk_user.namespace")
-    user_idx = config.ci_artifacts.get_config("tests.sdk_user.user_index")
-    user_count = config.ci_artifacts.get_config("tests.sdk_user.user_count")
+    namespace = config.project.get_config("tests.sdk_user.namespace")
+    user_idx = config.project.get_config("tests.sdk_user.user_index")
+    user_count = config.project.get_config("tests.sdk_user.user_count")
 
     logging.info(f"Hello world, working with namespace {namespace} with {user_idx}/{user_count}")
 
-    name = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.name")
-    workers = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.workers")
-    cpu = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.cpu")
-    memory = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.memory")
-    gpu = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.gpu")
+    name = config.project.get_config("tests.sdk_user.ray_cluster.name")
+    workers = config.project.get_config("tests.sdk_user.ray_cluster.workers")
+    cpu = config.project.get_config("tests.sdk_user.ray_cluster.cpu")
+    memory = config.project.get_config("tests.sdk_user.ray_cluster.memory")
+    gpu = config.project.get_config("tests.sdk_user.ray_cluster.gpu")
 
-    image = config.ci_artifacts.get_config("tests.sdk_user.ray_cluster.image")
+    image = config.project.get_config("tests.sdk_user.ray_cluster.image")
 
     # Create our cluster and submit appwrapper
     cluster = Cluster(ClusterConfiguration(
@@ -48,8 +48,8 @@ def main():
     cluster.status()
     cluster.details()
 
-    job_name = config.ci_artifacts.get_config("tests.sdk_user.job.name")
-    job_script = config.ci_artifacts.get_config("tests.sdk_user.job.script")
+    job_name = config.project.get_config("tests.sdk_user.job.name")
+    job_script = config.project.get_config("tests.sdk_user.job.script")
 
     job_def = DDPJobDefinition(name=job_name,
                                script=job_script,

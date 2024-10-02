@@ -16,7 +16,7 @@ if [ -z "${ARTIFACT_DIR:-}" ]; then
         false
     fi
 
-    export ARTIFACT_DIR="${CI_ARTIFACT_BASE_DIR:-/tmp}/ci-artifacts_$(date +%Y%m%d)"
+    export ARTIFACT_DIR="${TOPSAIL_BASE_DIR:-/tmp}/topsail_$(date +%Y%m%d)"
     mkdir -p "$ARTIFACT_DIR"
 
     echo "Using ARTIFACT_DIR=$ARTIFACT_DIR as default artifacts directory."
@@ -131,8 +131,8 @@ generate_plots() {
 }
 
 apply_presets_from_args() {
-    cp "$CI_ARTIFACTS_FROM_CONFIG_FILE" "$ARTIFACT_DIR" || true
-    export CI_ARTIFACTS_FROM_CONFIG_FILE="$ARTIFACT_DIR/$(basename "$CI_ARTIFACTS_FROM_CONFIG_FILE")"
+    cp "$TOPSAIL_FROM_CONFIG_FILE" "$ARTIFACT_DIR" || true
+    export TOPSAIL_FROM_CONFIG_FILE="$ARTIFACT_DIR/$(basename "$TOPSAIL_FROM_CONFIG_FILE")"
 
     while [[ "${1:-}" ]]; do
         apply_preset "$1"
@@ -251,7 +251,7 @@ main() {
             ;;
         "run_test_and_plot")
             local failed=0
-            export CI_ARTIFACTS_CAPTURE_PROM_DB=1
+            export TOPSAIL_CAPTURE_PROM_DB=1
 
             run_test || failed=1
 

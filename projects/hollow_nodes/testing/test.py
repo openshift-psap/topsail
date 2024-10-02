@@ -21,7 +21,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     #config.init(TESTING_THIS_DIR)
 
     #if apply_preset_from_pr_args:
-    #    config.ci_artifacts.apply_preset_from_pr_args()
+    #    config.project.apply_preset_from_pr_args()
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):

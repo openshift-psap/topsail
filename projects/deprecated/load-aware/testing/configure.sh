@@ -14,11 +14,11 @@ fi
 TOPSAIL_DIR="$(cd "$TESTING_THIS_DIR/../../.." >/dev/null 2>&1 && pwd )"
 TESTING_UTILS_DIR="$TOPSAIL_DIR/testing/utils"
 
-export CI_ARTIFACTS_FROM_COMMAND_ARGS_FILE=${TESTING_THIS_DIR}/command_args.yml.j2
+export TOPSAIL_FROM_COMMAND_ARGS_FILE=${TESTING_THIS_DIR}/command_args.yml.j2
 
-if [[ -z "${CI_ARTIFACTS_FROM_CONFIG_FILE:-}" ]]; then
-    export CI_ARTIFACTS_FROM_CONFIG_FILE=${TESTING_THIS_DIR}/config.yaml
+if [[ -z "${TOPSAIL_FROM_CONFIG_FILE:-}" ]]; then
+    export TOPSAIL_FROM_CONFIG_FILE=${TESTING_THIS_DIR}/config.yaml
 fi
-echo "Using '$CI_ARTIFACTS_FROM_CONFIG_FILE' as configuration file."
+echo "Using '$TOPSAIL_FROM_CONFIG_FILE' as configuration file."
 
 source "$TESTING_UTILS_DIR/configure.sh"

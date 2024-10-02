@@ -17,11 +17,11 @@ class Local_Ci:
     @AnsibleMappedParams
     def run(self, ci_command,
             pr_number=None,
-            git_repo="https://github.com/openshift-psap/ci-artifacts",
+            git_repo="https://github.com/openshift-psap/topsail",
             git_ref="main",
-            namespace="ci-artifacts",
-            istag="ci-artifacts:main",
-            pod_name="ci-artifacts",
+            namespace="topsail",
+            istag="topsail:main",
+            pod_name="topsail",
             service_account="default",
             secret_name=None,
             secret_env_key=None,
@@ -74,9 +74,9 @@ class Local_Ci:
     @AnsibleMappedParams
     def run_multi(self, ci_command,
                   user_count: int = 1,
-                  namespace="ci-artifacts",
-                  istag="ci-artifacts:main",
-                  job_name="ci-artifacts",
+                  namespace="topsail",
+                  istag="topsail:main",
+                  job_name="topsail",
                   service_account="default",
                   secret_name=None,
                   secret_env_key=None,
@@ -112,7 +112,7 @@ class Local_Ci:
             minio_bucket_name: Name of the bucket in the Minio server.
             minio_secret_key_key: Key inside 'secret_env_key' containing the secret to access the Minio bucket. Must be in the form 'user_password=SECRET_KEY'.
             variable_overrides: Optional path to the variable_overrides config file (avoids fetching Github PR json).
-            use_local_config: If true, gives the local configuration file ($CI_ARTIFACTS_FROM_CONFIG_FILE) to the Pods.
+            use_local_config: If true, gives the local configuration file ($TOPSAIL_FROM_CONFIG_FILE) to the Pods.
             capture_prom_db: If True, captures the Prometheus DB of the systems.
             git_pull: If True, update the repo in the image with the latest version of the build ref before running the command in the Pods.
             state_signal_redis_server: Optional address of the Redis server to pass to StateSignal synchronization. If empty, do not perform any synchronization.

@@ -85,7 +85,7 @@ class WorkbenchObj(common.ContextBase):
             return
         logging.info(f"Stopping the workbench {self.namespace}/{self.name} ...")
 
-        data = '[{"op":"add","path":"/metadata/annotations/kubeflow-resource-stopped","value":"stopped-by-ci-artifacts"}]'
+        data = '[{"op":"add","path":"/metadata/annotations/kubeflow-resource-stopped","value":"stopped-by-topsail"}]'
         response = self.client.patch(**url_name(Workbench.URL, namespace=self.namespace, name=self.name, _descr="(stop)"),
                           headers={"Content-Type": "application/json"},
                                      data=data)

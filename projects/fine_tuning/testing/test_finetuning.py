@@ -25,7 +25,7 @@ os.chdir(TOPSAIL_DIR)
 
 
 def reset_prometheus(delay=60):
-    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
+    capture_prom = config.project.get_config("tests.capture_prom")
     if not capture_prom:
         logging.info("tests.capture_prom is disabled, skipping Prometheus DB reset")
         return
@@ -35,13 +35,13 @@ def reset_prometheus(delay=60):
     if capture_prom == "with-queries":
         return prom_start_ts
 
-    if config.ci_artifacts.get_config("tests.dry_mode"):
+    if config.project.get_config("tests.dry_mode"):
         logging.info("tests.dry_mode is enabled, skipping Prometheus DB reset")
         return
 
     with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
         parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
-        if config.ci_artifacts.get_config("tests.capture_prom_uwm"):
+        if config.project.get_config("tests.capture_prom_uwm"):
             parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
 
     logging.info(f"Wait {delay}s for Prometheus to restart collecting data ...")
@@ -53,17 +53,17 @@ def reset_prometheus(delay=60):
 
 
 def dump_prometheus(prom_start_ts, delay=60):
-    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
+    capture_prom = config.project.get_config("tests.capture_prom")
     if not capture_prom:
         logging.info("tests.capture_prom is disabled, skipping Prometheus DB dump")
         return
 
-    if config.ci_artifacts.get_config("tests.dry_mode"):
+    if config.project.get_config("tests.dry_mode"):
         logging.info("tests.dry_mode is enabled, skipping Prometheus DB dump")
         return
 
     if capture_prom == "with-queries":
-        if config.ci_artifacts.get_config("tests.capture_prom_uwm"):
+        if config.project.get_config("tests.capture_prom_uwm"):
             logging.error("tests.capture_prom_uwm not supported with capture Prom with queries")
 
         prom_end_ts = datetime.datetime.now()
@@ -71,7 +71,7 @@ def dump_prometheus(prom_start_ts, delay=60):
             duration_s = (prom_end_ts - prom_start_ts).total_seconds(),
             promquery_file = TESTING_THIS_DIR / "metrics.txt",
             dest_dir = env.ARTIFACT_DIR / "metrics",
-            namespace = config.ci_artifacts.get_config("tests.fine_tuning.namespace"),
+            namespace = config.project.get_config("tests.fine_tuning.namespace"),
         )
 
         with env.NextArtifactDir("cluster__dump_prometheus_dbs"):
@@ -95,7 +95,7 @@ and it directly processes the cached files from the metrics directory.""", file=
 
     with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
         parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True)
-        if config.ci_artifacts.get_config("tests.capture_prom_uwm"):
+        if config.project.get_config("tests.capture_prom_uwm"):
             parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
 
 
@@ -112,12 +112,12 @@ def generate_prom_results(expe_name, prom_start_ts):
         print(str(uuid.uuid4()), file=f)
 
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-        yaml.dump(config.ci_artifacts.config, f, indent=4)
+        yaml.dump(config.project.config, f, indent=4)
 
     dump_prometheus(prom_start_ts)
 
-    if (config.ci_artifacts.get_config("tests.capture_state")
-        and not config.ci_artifacts.get_config("tests.dry_mode")
+    if (config.project.get_config("tests.capture_state")
+        and not config.project.get_config("tests.dry_mode")
         ):
         run.run_toolbox("rhods", "capture_state", mute_stdout=True)
         run.run_toolbox("cluster", "capture_environment", mute_stdout=True)
@@ -135,26 +135,26 @@ def prepare_matbench_test_files(job_index=None):
         yaml.dump(settings, f, indent=4)
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-            yaml.dump(config.ci_artifacts.config, f, indent=4)
+            yaml.dump(config.project.config, f, indent=4)
 
         with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
             print(str(uuid.uuid4()), file=f)
 
 
 def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
-    dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
+    dry_mode = config.project.get_config("tests.dry_mode")
 
-    test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings") | test_override_values
-    do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
-    do_many_model = config.ci_artifacts.get_config("tests.fine_tuning.many_model.enabled")
-    do_quality_evaluation = config.ci_artifacts.get_config("tests.fine_tuning.quality_evaluation.enabled")
+    test_settings = config.project.get_config("tests.fine_tuning.test_settings") | test_override_values
+    do_multi_model = config.project.get_config("tests.fine_tuning.multi_model.enabled")
+    do_many_model = config.project.get_config("tests.fine_tuning.many_model.enabled")
+    do_quality_evaluation = config.project.get_config("tests.fine_tuning.quality_evaluation.enabled")
 
     test_settings["hyper_parameters"] = {k: v for k, v in test_settings["hyper_parameters"].items()
                                          if v is not None}
 
     logging.info(f"Test configuration to run: \n{yaml.dump(test_settings, sort_keys=False)}")
 
-    sources = config.ci_artifacts.get_config(f"fine_tuning.sources")
+    sources = config.project.get_config(f"fine_tuning.sources")
     dataset_source = sources[test_settings["dataset_name"]]
 
     if transform := dataset_source.get("transform", False):
@@ -210,7 +210,7 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
             if not do_multi_model:
                 exc = run.run_and_catch(exc, generate_prom_results, "single-model", prom_start_ts)
 
-            if config.ci_artifacts.get_config("tests.capture_state"):
+            if config.project.get_config("tests.capture_state"):
                 exc = run.run_and_catch(exc, run.run_toolbox, "cluster", "capture_environment", mute_stdout=True)
                 exc = run.run_and_catch(exc, run.run_toolbox, "rhods", "capture_state", mute_stdout=True)
 
@@ -227,10 +227,10 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
 
 def _run_test_multi_model(test_artifact_dir_p):
-    if (model_name := config.ci_artifacts.get_config("tests.fine_tuning.test_settings.model_name")) is not None:
+    if (model_name := config.project.get_config("tests.fine_tuning.test_settings.model_name")) is not None:
         logging.warning(f"tests.fine_tuning.test_settings.model_name should be 'null' for the multi-model test. Current value ({model_name}) ignored.")
 
-    multi_models = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.models")
+    multi_models = config.project.get_config("tests.fine_tuning.multi_model.models")
 
     failed = False
 
@@ -290,17 +290,17 @@ def _run_test_quality_evaluation(test_settings):
     test_settings.pop("dataset_name")
     test_settings.pop("dataset_replication")
 
-    test_settings["container_image"] = config.ci_artifacts.get_config("tests.fine_tuning.quality_evaluation.image")
+    test_settings["container_image"] = config.project.get_config("tests.fine_tuning.quality_evaluation.image")
     run.run_toolbox_from_config("fine_tuning", "run_quality_evaluation",
                                 extra=test_settings)
 
 
 def _run_test_and_visualize(test_override_values=None):
     failed = True
-    do_matbenchmarking = test_override_values is None and config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.enabled")
-    do_multi_model = config.ci_artifacts.get_config("tests.fine_tuning.multi_model.enabled")
+    do_matbenchmarking = test_override_values is None and config.project.get_config("tests.fine_tuning.matbenchmarking.enabled")
+    do_multi_model = config.project.get_config("tests.fine_tuning.multi_model.enabled")
 
-    if not do_matbenchmarking and config.ci_artifacts.get_config("tests.fine_tuning.test_extra_settings"):
+    if not do_matbenchmarking and config.project.get_config("tests.fine_tuning.test_extra_settings"):
         msg = "Cannot use 'test_extra_settings' when 'tests.fine_tuning.tests.fine_tuning.matbenchmarking' isn't enabled."
         logging.error(msg)
         raise ValueError(msg)
@@ -333,12 +333,12 @@ def _run_test_and_visualize(test_override_values=None):
         else:
             logging.info("_run_test_and_visualize: testing in single-model mode")
             if test_override_values is None:
-                test_override_values = config.ci_artifacts.get_config("tests.fine_tuning.test_settings")
+                test_override_values = config.project.get_config("tests.fine_tuning.test_settings")
             failed = _run_test(test_artifact_dir_p, test_override_values)
 
     finally:
-        dry_mode = config.ci_artifacts.get_config("tests.dry_mode")
-        if not config.ci_artifacts.get_config("tests.visualize"):
+        dry_mode = config.project.get_config("tests.dry_mode")
+        if not config.project.get_config("tests.visualize"):
             logging.info(f"Visualization disabled.")
 
         elif dry_mode:
@@ -360,15 +360,15 @@ def generate_visualization(do_matbenchmarking, test_artifact_dir):
 
     with env.NextArtifactDir("plots"):
         if do_matbenchmarking:
-            visu_file = config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.visu_file")
-            with config.TempValue(config.ci_artifacts, "matbench.config_file", visu_file):
+            visu_file = config.project.get_config("tests.fine_tuning.matbenchmarking.visu_file")
+            with config.TempValue(config.project, "matbench.config_file", visu_file):
                 exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
 
         else:
             exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
 
-    prom_workload = config.ci_artifacts.get_config("matbench.prom_workload")
-    capture_prom = config.ci_artifacts.get_config("tests.capture_prom")
+    prom_workload = config.project.get_config("matbench.prom_workload")
+    capture_prom = config.project.get_config("tests.capture_prom")
 
     if not prom_workload or not capture_prom:
         if not capture_prom:
@@ -381,12 +381,12 @@ def generate_visualization(do_matbenchmarking, test_artifact_dir):
 
         return
 
-    index = config.ci_artifacts.get_config("matbench.lts.opensearch.index")
-    prom_index_suffix = config.ci_artifacts.get_config("matbench.lts.opensearch.prom_index_suffix")
+    index = config.project.get_config("matbench.lts.opensearch.index")
+    prom_index_suffix = config.project.get_config("matbench.lts.opensearch.prom_index_suffix")
     with (
             env.NextArtifactDir("prom_plots"),
-            config.TempValue(config.ci_artifacts, "matbench.workload", prom_workload),
-            config.TempValue(config.ci_artifacts, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")
+            config.TempValue(config.project, "matbench.workload", prom_workload),
+            config.TempValue(config.project, "matbench.lts.opensearch.index", f"{index}{prom_index_suffix}")
     ):
         logging.info(f"Generating the plots with workload={prom_workload}")
 
@@ -407,11 +407,11 @@ def test(dry_mode=None, do_visualize=None, capture_prom=None):
     """
 
     if dry_mode is not None:
-        config.ci_artifacts.set_config("tests.dry_mode", dry_mode)
+        config.project.set_config("tests.dry_mode", dry_mode)
     if do_visualize is not None:
-        config.ci_artifacts.set_config("tests.visualize", do_visualize)
+        config.project.set_config("tests.visualize", do_visualize)
     if capture_prom is not None:
-        config.ci_artifacts.set_config("tests.capture_prom", capture_prom)
+        config.project.set_config("tests.capture_prom", capture_prom)
 
     try:
         failed = _run_test_and_visualize()
@@ -428,10 +428,10 @@ def test(dry_mode=None, do_visualize=None, capture_prom=None):
 
 def _run_test_matbenchmarking(test_artifact_dir_p):
     with env.NextArtifactDir("matbenchmarking"):
-        test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings")
+        test_settings = config.project.get_config("tests.fine_tuning.test_settings")
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
 
-        test_extra_settings_lst = config.ci_artifacts.get_config("tests.fine_tuning.test_extra_settings")
+        test_extra_settings_lst = config.project.get_config("tests.fine_tuning.test_extra_settings")
         expe_to_run = dict()
 
         names = defaultdict(int)
@@ -464,7 +464,7 @@ def _run_test_matbenchmarking(test_artifact_dir_p):
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
             script_tpl=f"{sys.argv[0]} matbench_run_one",
-            stop_on_error=config.ci_artifacts.get_config("tests.fine_tuning.matbenchmarking.stop_on_error"),
+            stop_on_error=config.project.get_config("tests.fine_tuning.matbenchmarking.stop_on_error"),
             common_settings=dict(),
             test_files={},
             expe_to_run=expe_to_run,

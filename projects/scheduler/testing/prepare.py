@@ -17,11 +17,11 @@ def prepare():
 
     with run.Parallel("prepare1") as parallel:
         parallel.delayed(prepare_rhoai)
-        if config.ci_artifacts.get_config("tests.deploy_coscheduling"):
+        if config.project.get_config("tests.deploy_coscheduling"):
             parallel.delayed(prepare_coscheduling)
 
-        if config.ci_artifacts.get_config("kwok.enabled"):
-            user_count = config.ci_artifacts.get_config("kwok.job_controller.count")
+        if config.project.get_config("kwok.enabled"):
+            user_count = config.project.get_config("kwok.job_controller.count")
             parallel.delayed(prepare_user_pods.prepare_user_pods, user_count)
             parallel.delayed(prepare_user_pods.cluster_scale_up, user_count)
             parallel.delayed(run.run_toolbox, "kwok", "deploy_kwok_controller")
@@ -30,7 +30,7 @@ def prepare():
         parallel.delayed(prepare_gpu)
         parallel.delayed(prepare_scheduler_namespace)
 
-        if config.ci_artifacts.get_config("kwok.enabled"):
+        if config.project.get_config("kwok.enabled"):
             parallel.delayed(prepare_kwok_job_controller)
 
 
@@ -64,7 +64,7 @@ def prepare_coscheduling():
 
 
 def prepare_scheduler_namespace():
-    namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
+    namespace = config.project.get_config("tests.schedulers.namespace")
 
     if run.run(f'oc get project -oname "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
@@ -72,7 +72,7 @@ def prepare_scheduler_namespace():
         logging.warning(f"Project '{namespace}' already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
 
-    dedicated = config.ci_artifacts.get_config("clusters.sutest.compute.dedicated")
+    dedicated = config.project.get_config("clusters.sutest.compute.dedicated")
 
     if dedicated:
         extra = dict(project=namespace)
@@ -85,17 +85,17 @@ def prepare_scheduler_namespace():
 
 def prepare_kueue_queue(dry_mode, namespace=None, local_queue_name=None):
     if namespace is None:
-        namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
+        namespace = config.project.get_config("tests.schedulers.namespace")
 
     if local_queue_name is None:
-        local_queue_name = config.ci_artifacts.get_config("tests.schedulers.kueue.queue_name")
+        local_queue_name = config.project.get_config("tests.schedulers.kueue.queue_name")
 
     with env.NextArtifactDir(f"prepare_kueue"):
-        if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+        if config.project.get_config("clusters.sutest.is_metal"):
             node_label_selector = "node-role.kubernetes.io/worker"
         else:
-            node_label_selector_key = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.key")
-            node_label_selector_value = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.value")
+            node_label_selector_key = config.project.get_config("clusters.sutest.compute.machineset.taint.key")
+            node_label_selector_value = config.project.get_config("clusters.sutest.compute.machineset.taint.value")
             node_label_selector = f"{node_label_selector_key}={node_label_selector_value}"
 
         # sum of the (CPU capacity - 2) for all of the worker nodes
@@ -127,14 +127,14 @@ def prepare_kueue_queue(dry_mode, namespace=None, local_queue_name=None):
 
 
 def prepare_gpu():
-    if not config.ci_artifacts.get_config("gpu.prepare_cluster"):
+    if not config.project.get_config("gpu.prepare_cluster"):
         return
 
     prepare_gpu_operator.prepare_gpu_operator()
 
-    if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
-        toleration_key = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.key")
-        toleration_effect = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.effect")
+    if config.project.get_config("clusters.sutest.compute.dedicated"):
+        toleration_key = config.project.get_config("clusters.sutest.compute.machineset.taint.key")
+        toleration_effect = config.project.get_config("clusters.sutest.compute.machineset.taint.effect")
         prepare_gpu_operator.add_toleration(toleration_effect, toleration_key)
 
     prepare_gpu_operator.wait_ready(enable_time_sharing=False, wait_stack_deployed=False, wait_metrics=False)
@@ -144,7 +144,7 @@ def prepare_rhoai():
     if not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
-    token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
+    token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.brew_registry_redhat_io_token_file")
     prepare_rhoai_mod.install(token_file)
 
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
@@ -156,7 +156,7 @@ def prepare_rhoai():
 
 
 def cleanup_namespace_test():
-    namespace = config.ci_artifacts.get_config("tests.schedulers.namespace")
+    namespace = config.project.get_config("tests.schedulers.namespace")
     run.run(f"oc delete namespace '{namespace}' --ignore-not-found")
 
 
@@ -165,10 +165,10 @@ def cleanup_rhoai(mute=True):
 
 
 def cluster_scale_down(to_zero):
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+    if config.project.get_config("clusters.sutest.is_metal"):
         return
 
-    machineset_name = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.name")
+    machineset_name = config.project.get_config("clusters.sutest.compute.machineset.name")
     has_machineset = run.run(f"oc get machineset {machineset_name} -n openshift-machine-api -oname --ignore-not-found", capture_stdout=True).stdout
     if not has_machineset:
         logging.info(f"No {machineset_name} machineset. Nothing to scale down.")
@@ -213,7 +213,7 @@ def do_prepare_nodes(cfg, dry_mode):
     if want_kwok_nodes:
         return do_prepare_kwok_nodes(cfg, dry_mode)
 
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+    if config.project.get_config("clusters.sutest.is_metal"):
         # cleanup the config
         # easier to read in the reports
         try: del cfg["node"]
@@ -235,7 +235,7 @@ def do_prepare_nodes(cfg, dry_mode):
     if not cfg["node"].get("wait_gpus", True):
         return
 
-    if not config.ci_artifacts.get_config("tests.want_gpu"):
+    if not config.project.get_config("tests.want_gpu"):
         msg = "Cannot wait for GPUs when tests.want_gpu is disabled ..."
         logging.error(msg)
         raise ValueError(msg)

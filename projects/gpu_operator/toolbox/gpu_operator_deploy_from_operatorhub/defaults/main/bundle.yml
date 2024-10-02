@@ -1,8 +1,8 @@
 ---
 # special case for psap quay master bundle:
 # force-override the operator image to use our nightly built one
-psap_quay_master_bundle: quay.io/openshift-psap/ci-artifacts:gpu-operator_bundle_latest
-psap_quay_master_operator: quay.io/openshift-psap/ci-artifacts:gpu-operator_operator_latest
+psap_quay_master_bundle: quay.io/openshift-psap/topsail:gpu-operator_bundle_latest
+psap_quay_master_operator: quay.io/openshift-psap/topsail:gpu-operator_operator_latest
 
 deploy_bundle_package_name: gpu-operator-certified
 deploy_bundle_namespace: "{{ gpu_operator_operator_namespace }}"

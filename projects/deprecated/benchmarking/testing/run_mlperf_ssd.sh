@@ -19,7 +19,7 @@ MAXDR=30
 
 
 assess_benchmark_stats () {
-    artifact_dir=${ARTIFACT_DIR:-"/tmp/ci-artifacts_$(date +%Y%m%d)"}
+    artifact_dir=${ARTIFACT_DIR:-"/tmp/topsail_$(date +%Y%m%d)"}
     sample_rate=$(cat "${artifact_dir}/benchmarking_run_ssd_sample_rate.log" | cut -d" " -f1)
     bench_duration=$(cat "${artifact_dir}/benchmarking_run_ssd_bench_duration.log" | cut -d" " -f1)
     if (( $(echo "$MINSR > $sample_rate" |bc -l) )) ; then

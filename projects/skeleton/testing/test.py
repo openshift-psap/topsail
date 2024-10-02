@@ -39,12 +39,12 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
 
         run.run(f'sha256sum "$PSAP_ODS_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
 
-    config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
-    is_metal = config.ci_artifacts.detect_apply_metal_profile(METAL_PROFILE)
+    config.project.detect_apply_light_profile(LIGHT_PROFILE)
+    is_metal = config.project.detect_apply_metal_profile(METAL_PROFILE)
 
     if is_metal:
-        metal_profiles = config.ci_artifacts.get_config("clusters.metal_profiles")
-        profile_applied = config.ci_artifacts.detect_apply_cluster_profile(metal_profiles)
+        metal_profiles = config.project.get_config("clusters.metal_profiles")
+        profile_applied = config.project.detect_apply_cluster_profile(metal_profiles)
 
         if not profile_applied:
             raise ValueError("Bare-metal cluster not recognized :/ ")
@@ -82,13 +82,13 @@ def _run_test(test_artifact_dir_p):
             yaml.dump(dict(dummy=True), f, indent=4)
 
         with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-            yaml.dump(config.ci_artifacts.config, f, indent=4)
+            yaml.dump(config.project.config, f, indent=4)
 
         with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
             print(str(uuid.uuid4()), file=f)
 
-        sleep_duration = config.ci_artifacts.get_config("tests.sleep_duration")
-        capture_prometheus = config.ci_artifacts.get_config("tests.capture_prometheus")
+        sleep_duration = config.project.get_config("tests.sleep_duration")
+        capture_prometheus = config.project.get_config("tests.capture_prometheus")
         failed = True
         try:
             if capture_prometheus:
@@ -126,7 +126,7 @@ def test_ci():
                 logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
         finally:
-            if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+            if config.project.get_config("clusters.cleanup_on_exit"):
                 cleanup_cluster()
 
             export.export_artifacts(env.ARTIFACT_DIR, test_step="test_ci")

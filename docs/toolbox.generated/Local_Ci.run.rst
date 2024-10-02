@@ -32,7 +32,7 @@ Parameters
 
 * The Github repo to use.
 
-* default value: ``https://github.com/openshift-psap/ci-artifacts``
+* default value: ``https://github.com/openshift-psap/topsail``
 
 
 ``git_ref``  
@@ -46,21 +46,21 @@ Parameters
 
 * The namespace in which the image.
 
-* default value: ``ci-artifacts``
+* default value: ``topsail``
 
 
 ``istag``  
 
 * The imagestream tag to use.
 
-* default value: ``ci-artifacts:main``
+* default value: ``topsail:main``
 
 
 ``pod_name``  
 
 * The name to give to the Pod running the CI command.
 
-* default value: ``ci-artifacts``
+* default value: ``topsail``
 
 
 ``service_account``  

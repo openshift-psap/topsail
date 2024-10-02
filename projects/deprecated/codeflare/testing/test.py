@@ -32,13 +32,13 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     config.init(TESTING_THIS_DIR)
 
     if apply_preset_from_pr_args:
-        config.ci_artifacts.apply_preset_from_pr_args()
+        config.project.apply_preset_from_pr_args()
 
     if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
 
-    config.ci_artifacts.detect_apply_light_profile(LIGHT_PROFILE)
+    config.project.detect_apply_light_profile(LIGHT_PROFILE)
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -59,7 +59,7 @@ def test_ci():
         Runs the test from the CI
     """
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
+    test_mode = config.project.get_config("tests.mode")
     if test_mode == "mcad":
         return test_mcad.test()
     elif test_mode == "sdk_user":
@@ -106,7 +106,7 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
+    test_mode = config.project.get_config("tests.mode")
     if test_mode == "mcad":
         prepare_mcad.prepare()
     elif test_mode == "sdk_user":
@@ -121,7 +121,7 @@ def cleanup_cluster():
     Restores the cluster to its original state
     """
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
+    test_mode = config.project.get_config("tests.mode")
     if test_mode == "mcad":
         return prepare_mcad.cleanup_cluster()
     elif test_mode == "sdk_user":

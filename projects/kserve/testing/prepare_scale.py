@@ -12,14 +12,14 @@ from projects.local_ci.library import prepare_user_pods
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
 def prepare_gpu():
-    if not config.ci_artifacts.get_config("gpu.prepare_cluster"):
+    if not config.project.get_config("gpu.prepare_cluster"):
         return
 
     prepare_gpu_operator.prepare_gpu_operator()
 
-    if config.ci_artifacts.get_config("clusters.sutest.compute.dedicated"):
-        toleration_key = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.key")
-        toleration_effect = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.taint.effect")
+    if config.project.get_config("clusters.sutest.compute.dedicated"):
+        toleration_key = config.project.get_config("clusters.sutest.compute.machineset.taint.key")
+        toleration_effect = config.project.get_config("clusters.sutest.compute.machineset.taint.effect")
         prepare_gpu_operator.add_toleration(toleration_effect, toleration_key)
 
     prepare_gpu_operator.wait_ready()
@@ -30,13 +30,13 @@ def prepare():
     Prepares the cluster and the namespace for running the KServe scale tests
     """
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
+    test_mode = config.project.get_config("tests.mode")
     if test_mode == "scale":
         consolidate_model_config("tests.scale.model")
-        config.ci_artifacts.set_config("tests.scale.model.consolidated", True)
-        user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
+        config.project.set_config("tests.scale.model.consolidated", True)
+        user_count = config.project.get_config("tests.scale.namespace.replicas")
     elif test_mode in ("e2e", "prepare_only"):
-        user_count = len(config.ci_artifacts.get_config("tests.e2e.models"))
+        user_count = len(config.project.get_config("tests.e2e.models"))
     else:
         raise KeyError(f"Invalid test mode: {test_mode}")
 
@@ -48,15 +48,15 @@ def prepare():
         parallel.delayed(scale_up_sutest)
 
         # prepare the driver cluster
-        namespace = config.ci_artifacts.get_config("base_image.namespace")
+        namespace = config.project.get_config("base_image.namespace")
 
         parallel.delayed(prepare_user_pods.prepare_user_pods, user_count)
         parallel.delayed(prepare_user_pods.cluster_scale_up, user_count)
 
     # must be after prepare_kserve.prepare and before prepare_kserve.preload_image
     # must not be in a parallel group, because it updates the config file
-    runtime = config.ci_artifacts.get_config("kserve.model.runtime")
-    if config.ci_artifacts.get_config("kserve.model.serving_runtime.update_image"):
+    runtime = config.project.get_config("kserve.model.runtime")
+    if config.project.get_config("kserve.model.serving_runtime.update_image"):
         prepare_kserve.update_serving_runtime_images(runtime)
     prepare_kserve.update_serving_runtime_images(runtime)
 
@@ -68,17 +68,17 @@ def prepare():
 
 
 def scale_compute_sutest_node_requirement():
-    ns_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
-    models_per_ns = config.ci_artifacts.get_config("tests.scale.model.replicas")
+    ns_count = config.project.get_config("tests.scale.namespace.replicas")
+    models_per_ns = config.project.get_config("tests.scale.model.replicas")
     models_count = ns_count * models_per_ns
 
-    cpu_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.kserve.resource_request.cpu") + config.ci_artifacts.get_config("tests.scale.model.serving_runtime.kserve.resource_request.cpu")
-    mem_rq = config.ci_artifacts.get_config("tests.scale.model.serving_runtime.transformer.resource_request.memory") + config.ci_artifacts.get_config("tests.scale.model.serving_runtime.transformer.resource_request.memory")
+    cpu_rq = config.project.get_config("tests.scale.model.serving_runtime.kserve.resource_request.cpu") + config.project.get_config("tests.scale.model.serving_runtime.kserve.resource_request.cpu")
+    mem_rq = config.project.get_config("tests.scale.model.serving_runtime.transformer.resource_request.memory") + config.project.get_config("tests.scale.model.serving_runtime.transformer.resource_request.memory")
 
     kwargs = dict(
         cpu = cpu_rq,
         memory = mem_rq,
-        machine_type = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.type"),
+        machine_type = config.project.get_config("clusters.sutest.compute.machineset.type"),
         user_count = models_count,
         )
 
@@ -89,17 +89,17 @@ def scale_compute_sutest_node_requirement():
 
 
 def e2e_compute_sutest_node_requirement():
-    if config.ci_artifacts.get_config("tests.e2e.mode") == "single":
+    if config.project.get_config("tests.e2e.mode") == "single":
         return 1
 
-    return len(config.ci_artifacts.get_config("tests.e2e.models"))
+    return len(config.project.get_config("tests.e2e.models"))
 
 def scale_up_sutest():
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+    if config.project.get_config("clusters.sutest.is_metal"):
         return
 
-    test_mode = config.ci_artifacts.get_config("tests.mode")
-    node_count = config.ci_artifacts.get_config("clusters.sutest.compute.machineset.count")
+    test_mode = config.project.get_config("tests.mode")
+    node_count = config.project.get_config("clusters.sutest.compute.machineset.count")
     if node_count is not None:
         logging.info(f"Using the sutest node count from the configuration: {node_count}")
     elif test_mode == "scale":
@@ -114,8 +114,8 @@ def scale_up_sutest():
 
 
 def cluster_scale_up():
-    namespace = config.ci_artifacts.get_config("base_image.namespace")
-    user_count = config.ci_artifacts.get_config("tests.scale.namespace.replicas")
+    namespace = config.project.get_config("base_image.namespace")
+    user_count = config.project.get_config("tests.scale.namespace.replicas")
 
     with run.Parallel("cluster_scale_up") as parallel:
         parallel.delayed(prepare_user_pods.cluster_scale_up, user_count)
@@ -123,7 +123,7 @@ def cluster_scale_up():
 
 
 def cluster_scale_down(to_zero=False):
-    if config.ci_artifacts.get_config("clusters.sutest.is_metal"):
+    if config.project.get_config("clusters.sutest.is_metal"):
         return
 
     extra = dict(scale=0 if to_zero else 1)
@@ -133,7 +133,7 @@ def cluster_scale_down(to_zero=False):
 
 def consolidate_model_config(config_location=None, model_config=None, index=None, show=True):
 
-    test_config = config.ci_artifacts.get_config(config_location) if config_location \
+    test_config = config.project.get_config(config_location) if config_location \
         else {}
 
     model_config = merge_dicts(test_config, model_config)
@@ -152,7 +152,7 @@ def consolidate_model_config(config_location=None, model_config=None, index=None
         model_config["model"] = model_config.get("name")
 
     # kserve_model = config(kserve.model)
-    kserve_model_config = config.ci_artifacts.get_config("kserve.model")
+    kserve_model_config = config.project.get_config("kserve.model")
 
     model_config = merge_dicts(model_config, kserve_model_config)
 
@@ -160,7 +160,7 @@ def consolidate_model_config(config_location=None, model_config=None, index=None
         model_config["index"] = index
 
     if config_location:
-        config.ci_artifacts.set_config(config_location, model_config)
+        config.project.set_config(config_location, model_config)
 
     if show:
         dump = yaml.dump(model_config,  default_flow_style=False, sort_keys=False).strip()

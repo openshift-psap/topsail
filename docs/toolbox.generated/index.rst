@@ -88,7 +88,7 @@ Toolbox Documentation
 
 ::
 
-    Run `ci-artifacts` toolbox commands from a single config file.
+    Run `topsail` toolbox commands from a single config file.
     
 
                 

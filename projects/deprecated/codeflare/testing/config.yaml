@@ -184,9 +184,9 @@ gpu:
 
 base_image: # only used in sdk_user test mode
   namespace: codeflare-sdk-user-test-driver
-  imagestream: ci-artifacts
+  imagestream: topsail
   repo:
-    url: https://github.com/openshift-psap/ci-artifacts/
+    url: https://github.com/openshift-psap/topsail/
     tag: main
     ref: main
     ref_prefer_pr: true
@@ -196,7 +196,7 @@ base_image: # only used in sdk_user test mode
     local_dockerfile_path: projects/codeflare/testing/images/Containerfile.codeflare_sdk
     tag: codeflare-sdk
   user:
-    service_account: ci-artifacts
+    service_account: topsail
     role: cluster-admin
   minio:
     bucket_name: pipelines-scale-test-bucket

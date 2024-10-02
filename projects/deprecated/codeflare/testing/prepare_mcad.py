@@ -6,7 +6,7 @@ import prepare_odh, prepare_common, prepare_gpu
 
 
 def prepare_mcad_test():
-    namespace = config.ci_artifacts.get_config("tests.mcad.namespace")
+    namespace = config.project.get_config("tests.mcad.namespace")
     if run.run(f'oc get project -oname "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
     else:
@@ -15,7 +15,7 @@ def prepare_mcad_test():
 
 
 def cleanup_mcad_test():
-    namespace = config.ci_artifacts.get_config("tests.mcad.namespace")
+    namespace = config.project.get_config("tests.mcad.namespace")
     run.run(f"oc delete namespace '{namespace}' --ignore-not-found")
 
 
@@ -32,7 +32,7 @@ def prepare_test_nodes(name, cfg, dry_mode):
     run.run_toolbox_from_config("cluster", "set_scale", extra=extra)
 
     if cfg["node"].get("wait_gpus", True):
-        if not config.ci_artifacts.get_config("tests.want_gpu"):
+        if not config.project.get_config("tests.want_gpu"):
             logging.error("Cannot wait for GPUs when tests.want_gpu is disabled ...")
         else:
             run.run_toolbox("gpu_operator", "wait_stack_deployed")

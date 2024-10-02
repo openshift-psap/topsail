@@ -32,7 +32,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     config.init(TESTING_THIS_DIR)
 
     if apply_preset_from_pr_args:
-        config.ci_artifacts.apply_preset_from_pr_args()
+        config.project.apply_preset_from_pr_args()
 
     if not ignore_secret_path and not PSAP_ODS_SECRET_PATH.exists():
         raise RuntimeError("Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
@@ -56,7 +56,7 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
 
-    token_file = PSAP_ODS_SECRET_PATH / config.ci_artifacts.get_config("secrets.brew_registry_redhat_io_token_file")
+    token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.brew_registry_redhat_io_token_file")
     rhods.install(token_file)
 
 
@@ -66,7 +66,7 @@ def test_ci():
     Runs the test from the CI
     """
 
-    if config.ci_artifacts.get_config("clusters.cleanup_on_exit"):
+    if config.project.get_config("clusters.cleanup_on_exit"):
         cleanup_cluster()
 
 

@@ -2,15 +2,15 @@ apiVersion: v1
 kind: BuildConfig
 metadata:
   labels:
-    app: ci-artifacts
+    app: topsail
   name: image-builder
-  namespace: ci-artifacts
+  namespace: topsail
 spec:
   output:
     to:
       kind: ImageStreamTag
-      name: ci-artifacts:{{ local_ci_image_tag }}
-      namespace: ci-artifacts
+      name: topsail:{{ local_ci_image_tag }}
+      namespace: topsail
   resources: {}
   source:
     type: Git

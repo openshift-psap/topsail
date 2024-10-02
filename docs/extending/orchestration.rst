@@ -373,7 +373,7 @@ Example:
           parallel.delayed(scale_up_sutest)
 
 
-      test_settings = config.ci_artifacts.get_config("tests.fine_tuning.test_settings")
+      test_settings = config.project.get_config("tests.fine_tuning.test_settings")
       with run.Parallel("prepare2") as parallel:
           parallel.delayed(prepare_gpu)
           parallel.delayed(prepare_namespace, test_settings)
@@ -410,12 +410,11 @@ Example:
 The ``config`` module
 '''''''''''''''''''''
 
-* the ``config.ci_artifacts.get_config(<config key>)`` helper command
-  to access the configuration. Uses the inline Json format. In the
-  object path, ``ci_artifacts`` is the former name of TOPSAIL. This
-  object holds the main configuration.
+* the ``config.project.get_config(<config key>)`` helper command to
+  access the configuration. Uses the inline Json format.  This object
+  holds the main project configuration.
 
-* the ``config.ci_artifacts.set_config(<config key>, <value>)`` helper
+* the ``config.project.set_config(<config key>, <value>)`` helper
   command to update the configuration. Sometimes, it is convenient to
   store values in the configuration (eg, coming from the
   command-line). Mind that this is not thread-safe (an error is raised
@@ -509,7 +508,7 @@ S3 server, and stored locally for post-processing.
 
     @entrypoint()
     def rebuild_driver_image(pr_number):
-        namespace = config.ci_artifacts.get_config("base_image.namespace")
+        namespace = config.project.get_config("base_image.namespace")
         prepare_user_pods.rebuild_driver_image(namespace, pr_number)
 
 * ``cluster_scale_up(user_count)`` scales up the cluster with the

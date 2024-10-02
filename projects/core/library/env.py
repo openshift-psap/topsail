@@ -53,8 +53,8 @@ def init():
         artifact_dir = pathlib.Path(os.environ["ARTIFACT_DIR"])
 
     else:
-        env_ci_artifact_base_dir = pathlib.Path(os.environ.get("CI_ARTIFACT_BASE_DIR", "/tmp"))
-        artifact_dir = env_ci_artifact_base_dir / f"ci-artifacts_{time.strftime('%Y%m%d-%H%M')}"
+        env_topsail_base_dir = pathlib.Path(os.environ.get("TOPSAIL_BASE_DIR", "/tmp"))
+        artifact_dir = env_topsail_base_dir / f"topsail_{time.strftime('%Y%m%d-%H%M')}"
 
         artifact_dir.mkdir(parents=True, exist_ok=True)
         os.environ["ARTIFACT_DIR"] = str(artifact_dir)
