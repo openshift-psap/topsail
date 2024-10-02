@@ -8,8 +8,8 @@ set -o errtrace
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 set -a
-source $THIS_DIR/topsail_host_config
-source $THIS_DIR/has_toolbox
+source "$THIS_DIR"/topsail_host_config
+source "$THIS_DIR"/has_toolbox
 set +a
 
 if [[ "$#" == 0 ]]; then
