@@ -44,12 +44,12 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     config.project.detect_apply_light_profile(LIGHT_PROFILE)
     is_metal = config.project.detect_apply_metal_profile(METAL_PROFILE)
 
-    if is_metal:
-        metal_profiles = config.project.get_config("clusters.metal_profiles")
-        profile_applied = config.project.detect_apply_cluster_profile(metal_profiles)
+    metal_profiles = config.project.get_config("clusters.metal_profiles")
+    profile_applied = config.project.detect_apply_cluster_profile(metal_profiles)
 
-        if not profile_applied:
-            raise ValueError("Bare-metal cluster not recognized :/ ")
+    if is_metal and not profile_applied:
+        raise ValueError("Bare-metal cluster not recognized :/ ")
+
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
     def decorator(fct):
