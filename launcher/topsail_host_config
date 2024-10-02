@@ -4,4 +4,5 @@ TOPSAIL_HOME=$HOME/topsail
 # change here if you prefer another shell
 TOPSAIL_TOOLBOX_COMMAND=bash
 
+# in mac, same as CONTAINER_NAME
 TOPSAIL_TOOLBOX_NAME=topsail

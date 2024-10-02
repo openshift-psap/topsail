@@ -18,4 +18,17 @@ else
 fi
 
 env=$(cat $THIS_DIR/topsail_container_env | envsubst)
-exec toolbox run -c $TOPSAIL_TOOLBOX_NAME -- bash -c "set -a; $env ; set +a; $command"
+if [[ "$(uname)" == "Darwin" ]]; then
+ 
+ env_args=()
+ while IFS= read -r line; do
+  line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+  [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue  # skip comments and empty lines
+  processed_line=$(echo "$line" | envsubst)
+  env_args+=("--env" "$processed_line")
+ done <<< "$env"
+
+ podman exec "${env_args[@]}" -it "$TOPSAIL_TOOLBOX_NAME" /bin/bash
+else
+ exec toolbox run -c $TOPSAIL_TOOLBOX_NAME -- bash -c "set -a; $env ; set +a; $command"
+fi

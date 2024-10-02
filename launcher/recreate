@@ -6,6 +6,9 @@ set -o nounset
 set -o errtrace
 set -x
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $THIS_DIR/topsail_host_config
+
 CONTAINER_NAME=${1:-}
 CONTAINER_IMAGE=${2:-}
 
@@ -21,7 +24,16 @@ fi
 
 if podman inspect --type container $CONTAINER_NAME &>/dev/null; then
   podman stop $CONTAINER_NAME || podman stop $CONTAINER_NAME
-  toolbox rm $CONTAINER_NAME
+
+  if [[ "$(uname)" == "Darwin" ]]; then
+   podman rm $CONTAINER_NAME
+  else
+   toolbox rm $CONTAINER_NAME
+  fi
 fi
 
-toolbox create $CONTAINER_NAME --image $CONTAINER_IMAGE
+if [[ "$(uname)" == "Darwin" ]]; then
+ podman run --name $CONTAINER_NAME -v "$TOPSAIL_HOME:/topsail" --detach --tty --entrypoint /bin/bash $CONTAINER_IMAGE
+else
+ toolbox create $CONTAINER_NAME --image $CONTAINER_IMAGE
+fi
