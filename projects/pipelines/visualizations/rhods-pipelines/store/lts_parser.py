@@ -4,7 +4,7 @@ import pytz
 import pathlib
 import yaml
 import numpy as np
-from typing import List
+from typing import Dict, List
 from functools import reduce
 import re
 
@@ -99,11 +99,16 @@ def _generate_run_latency(results):
                     data[resource_key] = []
                 data[resource_key].append((user_data.workflow_start_times[resource_name.split("/")[1]] - user_data.submit_run_times[workflow_run_name]).total_seconds())
 
-    run_latency = _generate_dsp_test_stats(list(reduce(lambda l, r: l + r, data.values(), [])))
-    medians = np.array([np.median(d[1]) for d in sorted(data.items())])
-    A = np.vstack([np.arange(len(medians)), np.ones(len(medians))]).T
-    slope, _ = np.linalg.lstsq(A, medians, rcond=None)[0]
-    run_latency["degrade_speed"] = slope
+    all_points = list(reduce(lambda l, r: l + r, data.values(), []))
+    run_latency = _generate_dsp_test_stats(all_points)
+    if not all_points:
+        run_latency["degrade_speed"] = 0.0
+    else:
+        medians = np.array([np.median(d[1]) for d in sorted(data.items())])
+        A = np.vstack([np.arange(len(medians)), np.ones(len(medians))]).T
+        slope, _ = np.linalg.lstsq(A, medians, rcond=None)[0]
+        run_latency["degrade_speed"] = slope
+
     return types.SimpleNamespace(**run_latency)
 
 def _generate_run_duration(results):
@@ -134,26 +139,48 @@ def _generate_run_duration(results):
                         data[resource_key] = []
                     data[resource_key].append((user_data.complete_run_times[workflow_run_name] - user_data.workflow_start_times[resource_name.split("/")[1]]).total_seconds())
 
-    run_duration = _generate_dsp_test_stats(list(reduce(lambda l, r: l + r, data.values(), [])))
-    medians = np.array([np.median(d[1]) for d in sorted(data.items())])
-    A = np.vstack([np.arange(len(medians)), np.ones(len(medians))]).T
-    slope, _ = np.linalg.lstsq(A, medians, rcond=None)[0]
-    run_duration["degrade_speed"] = slope
+    all_points = list(reduce(lambda l, r: l + r, data.values(), []))
+    run_duration = _generate_dsp_test_stats(all_points)
+    if not all_points:
+        run_duration["degrade_speed"] = 0.0
+    else:
+        medians = np.array([np.median(d[1]) for d in sorted(data.items())])
+        A = np.vstack([np.arange(len(medians)), np.ones(len(medians))]).T
+        slope, _ = np.linalg.lstsq(A, medians, rcond=None)[0]
+        run_duration["degrade_speed"] = slope
 
     return types.SimpleNamespace(**run_duration)
 
-def _generate_dsp_test_stats(data: List[float]):
+def _generate_dsp_test_stats(data: List[float]) -> Dict[str, float]:
     test_stats = {}
 
-    test_stats["values"] = data
-    test_stats["min"] = np.min(data)
-    test_stats["max"] = np.max(data)
-    test_stats["median"] = np.median(data)
-    test_stats["mean"] = np.mean(data)
-    test_stats["percentile_80"] = np.percentile(data, 80)
-    test_stats["percentile_90"] = np.percentile(data, 90)
-    test_stats["percentile_95"] = np.percentile(data, 95)
-    test_stats["percentile_99"] = np.percentile(data, 99)
+    # Some of the Numpy functions panic on 0-length arrays
+    # so we need to check this explicitly
+    if not data:
+        test_stats = {
+            "values": data,
+            "min": 0.0,
+            "max": 0.0,
+            "median": 0.0,
+            "mean": 0.0,
+            "percentile_80": 0.0,
+            "percentile_90": 0.0,
+            "percentile_95": 0.0,
+            "percentile_99": 0.0,
+        }
+    else:
+        test_stats = {
+            "values": data,
+            "min": np.min(data),
+            "max": np.max(data),
+            "median": np.median(data),
+            "mean": np.mean(data),
+            "percentile_80": np.percentile(data, 80),
+            "percentile_90": np.percentile(data, 90),
+            "percentile_95": np.percentile(data, 95),
+            "percentile_99": np.percentile(data, 99),
+        }
+
 
     return test_stats
 
