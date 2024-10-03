@@ -110,8 +110,8 @@
          -ocustom-columns=phase:status.phase
     register: wait_downloader_pod_cmd
     until: "'Succeeded' in wait_downloader_pod_cmd.stdout or 'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout or not wait_downloader_pod_cmd.stdout"
-    retries: 600
-    delay: 10
+    retries: 900
+    delay: 20
   always:
   - name: Delete the creds secret, if it was created
     command:
