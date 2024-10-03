@@ -38,6 +38,7 @@ is_important_file = local_store.is_important_file
 
 def _rewrite_settings(settings_dict):
     settings_dict.pop("hyper_parameters.raw_lists", None)
+    settings_dict.pop("hyper_parameters", None)
 
     container_image = settings_dict.pop("container_image", None)
     if container_image == "quay.io/modh/fms-hf-tuning:release-ec50c3d7dc09f50d9885f25efc3d2fc98a379709":
