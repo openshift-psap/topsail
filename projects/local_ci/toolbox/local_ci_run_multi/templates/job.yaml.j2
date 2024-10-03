@@ -102,7 +102,7 @@ spec:
           sleep "$sleep_delay"
           echo "launch_delay: $(date)" >> "${ARTIFACT_DIR}/progress_ts.yaml"
 
-          if ! "$HOME"/testing/run {{ local_ci_run_multi_ci_command }} |& tee "${ARTIFACT_DIR}/run.log"; then
+          if ! "$HOME"/testing/run {{ local_ci_run_multi_ci_command }}; then
               safe_exit 1
           fi
 

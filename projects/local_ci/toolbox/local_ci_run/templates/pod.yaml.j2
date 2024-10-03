@@ -89,7 +89,7 @@ spec:
       echo "Running the init command ..."
       {{ local_ci_run_init_command }} &> "${ARTIFACT_DIR}/init.log"
 {% endif %}
-      run {{ local_ci_run_ci_command }} |& tee "${ARTIFACT_DIR}/run.log"
+      run {{ local_ci_run_ci_command }}
       echo 0 > "$ARTIFACT_DIR/.local_ci_done"
 
     image: "image-registry.openshift-image-registry.svc:5000/{{ local_ci_run_namespace }}/{{ local_ci_run_istag }}"
