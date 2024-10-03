@@ -273,6 +273,7 @@ secrets:
   opensearch_instances: opensearch.yaml
   aws_credentials: .awscred
   git_credentials: git-credentials
+  dmf_token: dmf.token
 clusters:
   metal_profiles:
     p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
@@ -353,6 +354,12 @@ fine_tuning:
     size: 80Gi
   model_registry: null # if set to a fine_tuning_sources.* model registry, all the lookups will be done in this registry
   sources:
+    dmf:
+      type: model-registry
+      registry_type: model
+      source_dir: "dmf://"
+      secret_key: "secrets.dmf_token"
+      download_pod_image_key: "fine_tuning.image"
     hf:
       type: model-registry
       registry_type: model
