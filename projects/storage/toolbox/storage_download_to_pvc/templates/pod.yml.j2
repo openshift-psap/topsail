@@ -9,7 +9,7 @@ spec:
   restartPolicy: Never
   containers:
   - name: downloader
-    image: registry.access.redhat.com/ubi8/ubi
+    image: {{ storage_download_to_pvc_image }}
     command: [bash, /mnt/entrypoint/entrypoint.sh]
     env:
     - name: DOWNLOAD_SOURCE

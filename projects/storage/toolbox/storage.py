@@ -56,7 +56,8 @@ class Storage:
             storage_dir="/",
             clean_first=False,
             pvc_access_mode="ReadWriteOnce",
-            pvc_size="80Gi"
+            pvc_size="80Gi",
+            image="registry.access.redhat.com/ubi9/ubi",
     ):
         """
         Downloads the a dataset into a PVC of the cluster
@@ -71,6 +72,7 @@ class Storage:
             storage_dir: the path where to store the downloaded files, in the PVC
             pvc_access_mode: the access mode to request when creating the PVC
             pvc_size: the size of the PVC to request, when creating it
+            image: the image to use for running the download Pod
         """
 
         return RunAnsibleRole(locals())

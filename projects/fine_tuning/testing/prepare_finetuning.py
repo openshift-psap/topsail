@@ -109,7 +109,7 @@ def download_data_sources(test_settings):
     else:
         sources_name += model_name
 
-    def do_download(extra, secret_key=None):
+    def do_download(extra, secret_key=None, image=None):
         name = extra["name"]
         if pvc_name in run.run(f"oc get pvc -n {namespace} -oname -l{name}=yes", check=False, capture_stdout=True).stdout:
             logging.info(f"PVC {pvc_name} already has data source '{name}'. Not downloading it again.")
@@ -118,6 +118,9 @@ def download_data_sources(test_settings):
         logging.info(f"PVC {pvc_name} does not container data source '{name}'. Downloading it ...")
 
         # ---
+
+        if image:
+            extra["image"] = image
 
         if secret_key:
             env_key = config.project.get_config("secrets.dir.env_key")
@@ -146,7 +149,11 @@ def download_data_sources(test_settings):
         storage_dir = "/" + sources[source_name]["type"]
         extra = dict(source=source, storage_dir=storage_dir, name=source_name)
 
-        do_download(extra, secret_key=sources[source_name].get("secret_key", None))
+        do_download(
+            extra,
+            secret_key=sources[source_name].get("secret_key", None),
+            image=sources[source_name].get("download_pod_image_key", None),
+        )
 
 
     def download_from_registry(registry_source_name):
@@ -163,7 +170,12 @@ def download_data_sources(test_settings):
         name = get_safe_model_name(source_name)
         extra = dict(source=source, storage_dir=storage_dir, name=name)
 
-        do_download(extra, secret_key=registry.get("secret_key", None))
+        do_download(
+            extra,
+            secret_key=registry.get("secret_key", None),
+            image=sources[source_name].get("download_pod_image_key", None),
+        )
+
 
     for source_name in sources_name:
         if "@" in source_name or (config.project.get_config("fine_tuning.model_registry") and source_name not in sources):

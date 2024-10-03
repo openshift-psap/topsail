@@ -68,3 +68,10 @@ Parameters
 
 * default value: ``80Gi``
 
+
+``image``  
+
+* The image to use for running the download Pod
+
+* default value: ``registry.access.redhat.com/ubi9/ubi``
+
