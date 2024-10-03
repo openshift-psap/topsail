@@ -171,8 +171,8 @@ ci_presets:
       peft_method: "lora"
       use_flash_attn: true
       max_steps: -1
-      per_device_train_batch_size: [1] # this for now, until it works
-      max_seq_length: [512]
+      per_device_train_batch_size: 1 # this for now, until it works
+      max_seq_length: [512, 1014]
       gradient_accumulation_steps: 4
       warmup_ratio: 0.03
       num_train_epochs: 1
@@ -184,14 +184,13 @@ ci_presets:
       torch_dtype: "float16"
       fp16: true
       log_level: "debug"
+      raw_lists:
+        auto_gptq: ["triton_v2"]
     tests.fine_tuning.test_extra_settings:
     - name: meta-llama3-8b-gptq
-      model_name:
-      - TechxGenus/Meta-Llama-3-8B-GPTQ
-      hyper_parameters:
-        raw_lists:
+      model_name: TechxGenus/Meta-Llama-3-8B-GPTQ
+      hyper_parameters.raw_lists:
           target_modules: ["all-linear"]
-          auto_gptq: ["triton_v2"]
 
   dgx_multi_model_8:
     extends: [multi_model]
