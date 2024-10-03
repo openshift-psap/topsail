@@ -155,10 +155,10 @@ git commit -m "Add {name} secret to the RHODS/topsail project"
 4. Open the PR against the `main` branch.
 
 ========================
-in the `perflab-ci` repo
+in the `performance-lab-scripts` repo
 ========================
 
-1. in the `performance-lab-scripts`, edit the `Jenkinsfile`:
+1. edit the `Jenkinsfile`:
 ```
                         file(credentialsId: '{varname}', variable: '{varname}_file'),
 ```
