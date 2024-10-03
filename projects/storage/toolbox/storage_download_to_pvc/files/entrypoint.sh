@@ -15,7 +15,7 @@ if [[ "$CLEAN_FIRST" == True ]]; then
 fi
 
 mkdir -p "$STORAGE_DIR"
-chmod ugo+w "$STORAGE_DIR"
+chmod ugo+w "$STORAGE_DIR" || true
 
 echo "---"
 
