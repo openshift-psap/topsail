@@ -56,13 +56,7 @@ def _duplicated_directory(import_key, old_location, new_location):
 
 
 def store_parse_directory(results_dir, expe, dirname):
-    with open(dirname / TEST_DIR_FILE) as f:
-        name = f.read().strip()
-
-    if not name:
-        name = dirname.name
-
-    import_settings = store_simple.parse_settings(dirname, name)
+    import_settings = store_simple.parse_settings(dirname)
 
     def add_to_matrix(results, extra_settings=None):
         store.add_to_matrix(import_settings | (extra_settings or {}),
