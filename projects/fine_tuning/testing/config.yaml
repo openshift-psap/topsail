@@ -161,6 +161,37 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.raw_lists: {target_modules: ["q_proj", "k_proj"]}
 
 
+  ibm_qlora_models:
+    extends: [hf_evaluation, dgx_small_footprint]
+    tests.fine_tuning.test_settings.model_name: null # for consistency. Set in 'test_extra_settings'
+    tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
+    tests.fine_tuning.test_settings.dataset_replication: .5
+    tests.fine_tuning.test_settings.gpu: [8]
+    tests.fine_tuning.test_settings.hyper_parameters:
+      peft_method: "lora"
+      use_flash_attn: true
+      max_steps: -1
+      per_device_train_batch_size: 1 # this for now, until it works
+      max_seq_length: [512, 1014]
+      gradient_accumulation_steps: 4
+      warmup_ratio: 0.03
+      num_train_epochs: 1
+      gradient_checkpointing: true
+      packing: false
+      r: 4
+      lora_alpha: 16
+      # qlora arguments: https://github.com/foundation-model-stack/fms-hf-tuning?tab=readme-ov-file#fms-acceleration
+      torch_dtype: "float16"
+      fp16: true
+      log_level: "debug"
+      raw_lists:
+        auto_gptq: ["triton_v2"]
+    tests.fine_tuning.test_extra_settings:
+    - name: meta-llama3-8b-gptq
+      model_name: TechxGenus/Meta-Llama-3-8B-GPTQ
+      hyper_parameters.raw_lists:
+          target_modules: ["all-linear"]
+
   dgx_multi_model_8:
     extends: [multi_model]
     fine_tuning.model_registry: hf
@@ -347,7 +378,8 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: quay.io/modh/fms-hf-tuning:v2.0.0
+  image: quay.io/modh/fms-hf-tuning:v2.0.1
+  image_name: fms-hf-tuning:v2.0.1
   pvc:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
@@ -423,6 +455,9 @@ tests:
         num_train_epochs: null
         max_seq_length: null
         peft_method: null
+        auto_gptq: null
+        torch_dtype: null
+        fp16: null
         use_flash_attn: null
         # LoRA hyper-parameters:
         r: null
