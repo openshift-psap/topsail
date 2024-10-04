@@ -94,22 +94,32 @@
 - name: Wait for the download and delete the secret
   block:
   - name: Wait for the downloader Pod to start
-    command:
+    shell:
+      set -o pipefail;
+
       oc get -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
          --no-headers
-         -ocustom-columns=phase:status.phase
-    register: wait_downloader_pod_start
-    until: "'Pending' not in wait_downloader_pod_start.stdout "
+         | awk '{print $3}'
+    register: wait_downloader_pod_start_status
+    until: "'Pending' not in wait_downloader_pod_start_status.stdout "
     retries: 30
     delay: 10
 
   - name: Wait for the downloader Pod to terminate
-    command:
+    shell:
+      set -o pipefail;
+
       oc get -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
          --no-headers
-         -ocustom-columns=phase:status.phase
+         | awk '{print $3}'
+
     register: wait_downloader_pod_cmd
-    until: "'Succeeded' in wait_downloader_pod_cmd.stdout or 'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout or not wait_downloader_pod_cmd.stdout"
+    until: "'Succeeded' in wait_downloader_pod_cmd.stdout
+    or 'Failed' in wait_downloader_pod_cmd.stdout
+    or 'Error' in wait_downloader_pod_cmd.stdout
+    or 'ErrImagePull' in wait_downloader_pod_cmd.stdout
+    or 'ImagePullBackOff' in wait_downloader_pod_cmd.stdout
+    or not wait_downloader_pod_cmd.stdout"
     retries: 900
     delay: 20
   always:
@@ -149,5 +159,5 @@
        --overwrite
 
 - name: Fail if the the downloader Pod failed
-  when: "'Failed' in wait_downloader_pod_cmd.stdout or 'Error' in wait_downloader_pod_cmd.stdout"
-  fail: msg="The download failed ..."
+  when: "'Succeeded' not in wait_downloader_pod_cmd.stdout"
+  fail: msg="The download failed ({{ wait_downloader_pod_cmd.stdout }})..."
