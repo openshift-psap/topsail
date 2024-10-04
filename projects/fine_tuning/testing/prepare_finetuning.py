@@ -109,7 +109,7 @@ def download_data_sources(test_settings):
     else:
         sources_name += model_name
 
-    def do_download(extra, secret_key=None, image=None):
+    def do_download(extra, secret_key=None, image_key=None):
         name = extra["name"]
         if pvc_name in run.run(f"oc get pvc -n {namespace} -oname -l{name}=yes", check=False, capture_stdout=True).stdout:
             logging.info(f"PVC {pvc_name} already has data source '{name}'. Not downloading it again.")
@@ -119,8 +119,8 @@ def download_data_sources(test_settings):
 
         # ---
 
-        if image:
-            extra["image"] = image
+        if image_key:
+            extra["image"] = config.project.get_config(image_key)
 
         if secret_key:
             env_key = config.project.get_config("secrets.dir.env_key")
@@ -152,7 +152,7 @@ def download_data_sources(test_settings):
         do_download(
             extra,
             secret_key=sources[source_name].get("secret_key", None),
-            image=sources[source_name].get("download_pod_image_key", None),
+            image_key=sources[source_name].get("download_pod_image_key", None),
         )
 
 
@@ -173,7 +173,7 @@ def download_data_sources(test_settings):
         do_download(
             extra,
             secret_key=registry.get("secret_key", None),
-            image=sources[source_name].get("download_pod_image_key", None),
+            image_key=registry.get("download_pod_image_key", None),
         )
 
 
