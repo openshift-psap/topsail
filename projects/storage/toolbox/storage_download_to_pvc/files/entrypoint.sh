@@ -136,7 +136,7 @@ echo "All done!"
 
 cd "${STORAGE_DIR}"
 
-find "./${SOURCE_NAME}" ! -path '*/.git/*' -type f -exec sha256sum {} \; | tee -a "${SOURCE_NAME}.sha256sum"
+time find "./${SOURCE_NAME}" ! -path '*/.git/*' -type f -exec sha256sum {} \; | tee -a "${SOURCE_NAME}.sha256sum"
 
 echo "---"
 
