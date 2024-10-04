@@ -159,6 +159,10 @@ def parse_env(dirname, test_config, capture_state_dir):
 
             s3_path = f"middleware_jenkins/{job_id}/{build_number}"
 
+        elif ansible_env.get("TOPSAIL_LOCAL_CI") == "true":
+            test_identifier = ansible_env.get("TEST_RUN_IDENTIFIER")
+            s3_path = f"{test_identifier}"
+
         from_env.test.urls |= dict(
             RHOAI_CPT_S3=f"https://{bucket}.s3.eu-central-1.amazonaws.com/index.html#{path_prefix}/{s3_path}/{from_env.test.test_path}/"
         )
