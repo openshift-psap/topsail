@@ -111,7 +111,7 @@ EOF
 
     dmf model ls -n "$namespace" "$model_label" -t model_shared
 
-    dmf model pull -n "$namespace" "$model_label" -t model_shared --dir $(realpath "$STORAGE_DIR/${SOURCE_NAME}.tmp")
+    time dmf model pull -n "$namespace" "$model_label" -t model_shared --dir $(realpath "$STORAGE_DIR/${SOURCE_NAME}.tmp")
     # this ^^^ stores the model in $dir/$model_label.$revision ...
 
     echo "Moving the model to its final storage location ..."
