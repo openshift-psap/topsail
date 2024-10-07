@@ -283,10 +283,10 @@ def log_has_errors(log_file):
 
     with open(log_file) as log_f:
         for line in log_f.readlines():
-            has_error |= line.startswith("ERROR")
-            has_error |= line.startswith("FAILED:")
-            has_error |= line.startswith("Traceback (most recent call last)")
-            if not has_error:
+            has_errors |= line.startswith("ERROR")
+            has_errors |= line.startswith("FAILED:")
+            has_errors |= line.startswith("Traceback (most recent call last)")
+            if not has_errors:
                 continue
 
             with open(env.ARTIFACT_DIR / "FAILURE", "a") as fail_f:
