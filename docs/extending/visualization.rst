@@ -89,9 +89,7 @@ store.
    store_simple.register_custom_parse_results(local_store.parse_directory)
 
 The ``simple`` store searches for a ``settings.yaml`` file and an
-``exit_code`` file (mostly ignored nowadays. The exit code handling
-should be improved ... Should be ``0`` unless
-``MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE=true`` is set).
+``exit_code`` file.
 
 When these two files are found, the parsing of a test begins, and the
 current directory is considered a test root directory.
