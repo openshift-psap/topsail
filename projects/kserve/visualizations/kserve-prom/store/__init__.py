@@ -58,15 +58,16 @@ def _duplicated_directory(import_key, old_location, new_location):
 def store_parse_directory(results_dir, expe, dirname):
     import_settings = store_simple.parse_settings(dirname)
 
+    EXIT_CODE = 0
     def add_to_matrix(results, extra_settings=None):
         store.add_to_matrix(import_settings | (extra_settings or {}),
                             pathlib.Path(dirname),
-                            results,
+                            results, EXIT_CODE,
                             _duplicated_directory)
 
     try:
         logging.info(f"Parsing {dirname} ...")
-        extra_settings__results = local_store.parse_directory(add_to_matrix, dirname, import_settings)
+        extra_settings__results = local_store.parse_directory(add_to_matrix, dirname, import_settings, EXIT_CODE)
     except Exception as e:
         logging.error(f"Failed to parse {dirname} ...")
         logging.info(f"       {e.__class__.__name__}: {e}")
