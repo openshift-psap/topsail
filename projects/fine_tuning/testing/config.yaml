@@ -188,15 +188,15 @@ ci_presets:
     tests.fine_tuning.test_extra_settings:
     # QLoRA
     - model_name: rhoai/mistral-7b-v0.3-gptq
-      raw_lists:
+      hyper_parameters.raw_lists:
         auto_gptq: ["triton_v2"]
         target_modules: ["all-linear"]
-      torch_dtype: "float16"
-      fp16: true
+      hyper_parameters.torch_dtype: "float16"
+      hyper_parameters.fp16: true
 
     # LoRA
     - model_name: mistralai/Mistral-7B-v0.3
-      raw_lists:
+      hyper_parameters.raw_lists:
         target_modules: ["all-linear"]
 
   ibm_lora_qlora_models:
