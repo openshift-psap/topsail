@@ -38,7 +38,8 @@ def generatePromSummaryData(entries, x_key, metric_name, _variables, filter_key=
             continue
 
         datum = dict()
-        datum[x_key] = entry.settings.__dict__[x_key]
+        datum[x_key] = entry.settings.__dict__[x_key] \
+            if x_key else None
 
         metrics = entry.results.metrics["sutest"][metric_name]
         max_val = 0
@@ -77,7 +78,7 @@ class GPUTotalMemoryUsage():
 
         has_gpu = "gpu" in ordered_vars and cfg__filter_key != "gpu"
 
-        x_key = "gpu" if has_gpu else (ordered_vars[0] if ordered_vars else "expe")
+        x_key = "gpu" if has_gpu else (ordered_vars[0] if ordered_vars else None)
 
         metric_name = "Sutest GPU memory used (all GPUs)"
         y_title = "GPU memory usage (all the GPUs)"
@@ -89,7 +90,8 @@ class GPUTotalMemoryUsage():
         if df.empty:
             return None, "Not data available ..."
 
-        df = df.sort_values(by=[x_key], ascending=False)
+        if x_key:
+            df = df.sort_values(by=[x_key], ascending=False)
 
         y_key = "y"
         if has_gpu:
@@ -97,6 +99,8 @@ class GPUTotalMemoryUsage():
 
         elif len(variables) == 1:
             do_line_plot = all(isinstance(v, numbers.Number) for v in list(variables.values())[0])
+        elif x_key is None:
+            do_line_plot = False
         elif x_key.startswith("hyper_parameters."):
             do_line_plot = True
         else:
@@ -123,7 +127,7 @@ class GPUTotalMemoryUsage():
         else:
             fig.update_xaxes(title=x_key)
 
-        x_name = x_key.replace("hyper_parameters.", "")
+        x_name = x_key.replace("hyper_parameters.", "") if x_key else "single expe"
 
         y_lower_better = True
         what = f", in {y_units}"
