@@ -23,14 +23,14 @@ prepare_dataset() {
     if [[ "${DATASET_TRANSFORM:-}" ]]; then
         echo "Dataset transformation: $DATASET_TRANSFORM"
 
-        python "$DATASET_TRANSFORM" "$DATASET_SOURCE" "$DATASET_DEST"
+        time python "$DATASET_TRANSFORM" "$DATASET_SOURCE" "$DATASET_DEST"
     else
         cp "$DATASET_SOURCE" "$DATASET_DEST"
     fi
 
     if [[ "${DATASET_REPLICATION:-1}" != 1 ]]; then
         echo "Dataset replication factor: $DATASET_REPLICATION"
-        python /mnt/entrypoint/convert_replicate.py "$DATASET_DEST" /tmp/temp_ds.json "$DATASET_REPLICATION"
+        time python /mnt/entrypoint/convert_replicate.py "$DATASET_DEST" /tmp/temp_ds.json "$DATASET_REPLICATION"
         mv /tmp/temp_ds.json "$DATASET_DEST"
     fi
 
@@ -44,7 +44,7 @@ prepare_dataset
 
 CACHE_FILE="${DATASET_DEST}.study_dataset.cache"
 if [ ! -f "$CACHE_FILE" ]; then
-    python /mnt/entrypoint/study_dataset.py > "$CACHE_FILE"
+    time python /mnt/entrypoint/study_dataset.py > "$CACHE_FILE"
 fi
 cat "$CACHE_FILE"
 
