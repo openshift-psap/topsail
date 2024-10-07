@@ -66,9 +66,11 @@ spec:
               mountPath: /mnt/config
             - name: output-volume
               mountPath: /mnt/output
+            - name: tmp-volume
+              mountPath: /tmp
             resources:
               requests: &request_block
-                ephemeral-storage: "500Gi"
+                ephemeral-storage: "2000Gi"
 {% if fine_tuning_run_fine_tuning_job_gpu %}
                 nvidia.com/gpu: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
 {% endif %}
@@ -94,17 +96,11 @@ spec:
           - name: entrypoint-volume
             configMap:
               name: {{ job_name_safe }}-entrypoint
-          #- name: output-volume
-          #  emptyDir: {}
           - name: output-volume
-            ephemeral:
-              volumeClaimTemplate:
-                metadata:
-                spec:
-                  accessModes: [ "ReadWriteOnce" ]
-                  resources:
-                    requests:
-                      storage: 500Gi
+            emptyDir: {}
+          - name: tmp-volume
+            emptyDir: {}
+
 {% if fine_tuning_run_fine_tuning_job_worker_replicas > 0 %}
     Worker:
       replicas: {{ fine_tuning_run_fine_tuning_job_worker_replicas }}
