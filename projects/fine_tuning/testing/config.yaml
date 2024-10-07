@@ -196,6 +196,7 @@ ci_presets:
 
     # LoRA
     - model_name: mistralai/Mistral-7B-v0.3
+      fine_tuning.model_registry: hf
       hyper_parameters.raw_lists:
         target_modules: ["all-linear"]
 
