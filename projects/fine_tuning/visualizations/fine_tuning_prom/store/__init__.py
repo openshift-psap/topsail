@@ -19,8 +19,6 @@ CACHE_FILENAME = "fine-tuning-prom.cache.pickle"
 IMPORTANT_FILES = parsers.IMPORTANT_FILES
 TEST_DIR_FILE = ".matbench_prom_db_dir"
 
-IGNORE_EXIT_CODE = None
-
 from ..models import lts as models_lts
 
 local_store = helpers_store.BaseStore(
@@ -71,37 +69,32 @@ def _duplicated_directory(import_key, old_location, new_location):
 
 
 def store_parse_directory(results_dir, expe, dirname):
-    if not IGNORE_EXIT_CODE:
-        try:
-            with open(dirname / "exit_code") as f:
-                content = f.read().strip()
-                if not content:
-                    logging.info(f"{dirname}: exit_code is empty, skipping ...")
-                    return
+    try:
+        with open(dirname / "exit_code") as f:
+            content = f.read().strip()
+            if not content:
+                logging.info(f"{dirname}: exit_code is empty, skipping ...")
+                return
 
-            exit_code = int(content)
-        except FileNotFoundError as e:
-            exit_code = 404
+        exit_code = int(content)
+    except FileNotFoundError as e:
+        exit_code = 404
 
-        except Exception as e:
-            logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ... ({e})")
-            return
-
-        if exit_code != 0:
-            logging.info(f"{dirname}: exit_code == {exit_code}, skipping ...")
-            return
+    except Exception as e:
+        logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ... ({e})")
+        exit_code = -1
 
     import_settings = store_simple.parse_settings(dirname)
 
     def add_to_matrix(results, extra_settings=None):
         store.add_to_matrix(import_settings | (extra_settings or {}),
                             pathlib.Path(dirname),
-                            results,
+                            results, exit_code,
                             _duplicated_directory)
 
     try:
         logging.info(f"Parsing {dirname} ...")
-        extra_settings__results = local_store.parse_directory(add_to_matrix, dirname, import_settings)
+        extra_settings__results = local_store.parse_directory(add_to_matrix, dirname, import_settings, exit_code)
     except Exception as e:
         logging.error(f"Failed to parse {dirname} ...")
         logging.info(f"       {e.__class__.__name__}: {e}")
@@ -110,9 +103,6 @@ def store_parse_directory(results_dir, expe, dirname):
 
 
 def parse_data(results_dir=None):
-    global IGNORE_EXIT_CODE
-    IGNORE_EXIT_CODE = os.environ.get("MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE", "false") == "true"
-
     store.register_custom_rewrite_settings(_rewrite_settings)
 
     if results_dir is None:
