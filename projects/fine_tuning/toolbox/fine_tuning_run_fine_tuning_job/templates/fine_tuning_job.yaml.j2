@@ -68,6 +68,7 @@ spec:
               mountPath: /mnt/output
             resources:
               requests: &request_block
+                ephemeral-storage: "500Gi"
 {% if fine_tuning_run_fine_tuning_job_gpu %}
                 nvidia.com/gpu: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
 {% endif %}
