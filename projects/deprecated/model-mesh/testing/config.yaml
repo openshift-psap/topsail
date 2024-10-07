@@ -17,4 +17,3 @@ matbench:
     url_file:
     # if true, copy the results downloaded by `matbench download` into the artifacts directory
     save_to_artifacts: false
-  ignore_exit_code: true
