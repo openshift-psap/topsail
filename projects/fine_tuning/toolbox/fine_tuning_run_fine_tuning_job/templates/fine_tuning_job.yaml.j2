@@ -56,6 +56,8 @@ spec:
             - name: MODEL_NAME
               value: "{{ fine_tuning_run_fine_tuning_job_model_name}}"
             volumeMounts:
+            - mountPath: /dev/shm
+              name: cache-volume
             - name: storage-volume
               mountPath: /mnt/storage
             - name: entrypoint-volume
@@ -78,6 +80,10 @@ spec:
                 nvidia.com/gpu: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
 {% endif %}
           volumes:
+          - name: cache-volume
+            emptyDir:
+              medium: Memory
+              sizeLimit: 512Mi
           - name: storage-volume
             persistentVolumeClaim:
               claimName: {{ fine_tuning_run_fine_tuning_job_pvc_name }}
