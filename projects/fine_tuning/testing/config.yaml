@@ -169,7 +169,6 @@ ci_presets:
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.dataset_replication: 0.2
     tests.fine_tuning.test_settings.gpu: 8
-    fine_tuning.model_registry: dmf
 
     tests.fine_tuning.test_settings.hyper_parameters:
       peft_method: "lora"
@@ -187,7 +186,7 @@ ci_presets:
 
     tests.fine_tuning.test_extra_settings:
     # QLoRA
-    - model_name: rhoai/mistral-7b-v0.3-gptq
+    - model_name: rhoai/mistral-7b-v0.3-gptq@dmf
       hyper_parameters.raw_lists:
         auto_gptq: ["triton_v2"]
         target_modules: ["all-linear"]
@@ -195,8 +194,7 @@ ci_presets:
       hyper_parameters.fp16: true
 
     # LoRA
-    - model_name: mistralai/Mistral-7B-v0.3
-      fine_tuning.model_registry: hf
+    - model_name: mistralai/Mistral-7B-v0.3@hf
       hyper_parameters.raw_lists:
         target_modules: ["all-linear"]
 
