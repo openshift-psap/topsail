@@ -111,7 +111,7 @@ EOF
 
     dmf model ls -n "$namespace" "$model_label" -t model_shared
 
-    dmf model pull -n "$namespace" "$model_label" -t model_shared --dir $(realpath "$STORAGE_DIR/${SOURCE_NAME}.tmp")
+    time dmf model pull -n "$namespace" "$model_label" -t model_shared --dir $(realpath "$STORAGE_DIR/${SOURCE_NAME}.tmp")
     # this ^^^ stores the model in $dir/$model_label.$revision ...
 
     echo "Moving the model to its final storage location ..."
@@ -136,7 +136,7 @@ echo "All done!"
 
 cd "${STORAGE_DIR}"
 
-find "./${SOURCE_NAME}" ! -path '*/.git/*' -type f -exec sha256sum {} \; | tee -a "${SOURCE_NAME}.sha256sum"
+time find "./${SOURCE_NAME}" ! -path '*/.git/*' -type f -exec sha256sum {} \; | tee -a "${SOURCE_NAME}.sha256sum"
 
 echo "---"
 

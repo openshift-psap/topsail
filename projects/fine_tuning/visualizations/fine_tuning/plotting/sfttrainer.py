@@ -28,7 +28,7 @@ def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compu
     data = []
 
     variables = [v for v in _variables if v != x_key]
-    if not variables and x_key != "gpu":
+    if not variables and x_key != "gpu" and x_key is not None:
         variables += [x_key]
 
 
@@ -39,6 +39,8 @@ def generateSFTTrainerSummaryData(entries, x_key, _variables, summary_key, compu
         datum = dict()
         if x_key == "gpu":
             datum[x_key] = entry.results.allocated_resources.gpu
+        elif x_key is None:
+            datum[x_key] = "Single entry"
         else:
             datum[x_key] = entry.settings.__dict__[x_key]
 
@@ -120,7 +122,7 @@ class SFTTrainerSummary():
             elif ordered_vars:
                 x_key = ordered_vars[0]
             else:
-                x_key = "expe"
+                x_key = None
 
         compute_speedup = has_gpu
 
@@ -130,7 +132,8 @@ class SFTTrainerSummary():
         if df.empty:
             return None, "Not data available ..."
 
-        df = df.sort_values(by=[x_key], ascending=False)
+        if x_key is not None:
+            df = df.sort_values(by=[x_key], ascending=False)
 
         y_key = cfg__summary_key
 
@@ -139,6 +142,8 @@ class SFTTrainerSummary():
 
         elif len(variables) == 1:
             do_line_plot = all(isinstance(v, numbers.Number) for v in list(variables.values())[0])
+        elif x_key is None:
+            do_line_plot = False
         elif x_key.startswith("hyper_parameters."):
             do_line_plot = True
         else:
@@ -156,7 +161,8 @@ class SFTTrainerSummary():
             fig.update_traces(textposition='top center')
 
         else:
-            df = df.sort_values(by=["name", x_key], ascending=True)
+            if x_key is not None:
+                df = df.sort_values(by=["name", x_key], ascending=True)
             fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name", barmode='group', text=text)
 
         if has_gpu:
@@ -166,7 +172,7 @@ class SFTTrainerSummary():
 
         y_title = getattr(summary_key_properties, "title", "speed")
         y_units = summary_key_properties.units
-        x_name = x_key.replace("hyper_parameters.", "")
+        x_name = (x_key or "single expe").replace("hyper_parameters.", "")
 
         y_lower_better = summary_key_properties.lower_better
         what = f", in {y_units}"
