@@ -171,8 +171,9 @@ class RunAnsibleRole:
         if self.py_command_args:
             with open(artifact_extra_logs_dir / "_python.gen.cmd", "w") as f:
                 print(f"{sys.argv[0]} {self.group} {self.command} \\", file=f)
-                for key, value in self.py_command_args.items():
-                    print(f"   --{key}='{value}' \\", file=f)
+                for key, _value in self.py_command_args.items():
+                    value = shlex.quote(str(_value))
+                    print(f"   --{key}={value} \\", file=f)
                 print("   --", file=f)
 
             with open(artifact_extra_logs_dir / "_python.args.yaml", "w") as f:
