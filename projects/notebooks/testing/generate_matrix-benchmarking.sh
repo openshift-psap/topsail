@@ -191,7 +191,7 @@ generate_matbench::generate_visualization() {
     # Analyze the current results against LTS results
     #
     if test_config matbench.lts.generate && \
-            test_config matbench.lts.generate; then
+            test_config matbench.lts.regression_analyses.enabled; then
         generate_opensearch_config
 
         step_idx=$((step_idx + 1))
