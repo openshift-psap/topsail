@@ -14,8 +14,9 @@ from dash import html
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
+import projects.matrix_benchmarking.visualizations.helpers.plotting.report as report
 
-from . import error_report, report
+from . import error_report
 
 def register():
     ErrorDistribution()

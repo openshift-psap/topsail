@@ -1,13 +1,13 @@
 from dash import html
 
-from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 import projects.matrix_benchmarking.visualizations.helpers.store.prom as prom_store
+import projects.matrix_benchmarking.visualizations.helpers.plotting.report as report
 
 from ..store import prom
-from . import report
+
 try:
     from . import error_report
 except ImportError:

@@ -6,7 +6,8 @@ from . import resource_creation
 from . import grpc_distribution
 from . import conditions
 from . import load_time
-from . import lts_documentation
+
+import projects.matrix_benchmarking.visualizations.helpers.plotting.lts_documentation as lts_documentation
 
 def register():
     error_report.register()

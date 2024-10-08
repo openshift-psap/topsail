@@ -5,7 +5,7 @@ from dash import dcc
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
-from . import report
+import projects.matrix_benchmarking.visualizations.helpers.plotting.report as report
 
 def register():
     GatingReportFunctionalSpawn()

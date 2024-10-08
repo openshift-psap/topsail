@@ -1,10 +1,9 @@
 from dash import html
 
-from . import report
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
-from . import error_report
+import projects.matrix_benchmarking.visualizations.helpers.plotting.report as report
 
 def register():
     SutestCpuMemoryReport()
