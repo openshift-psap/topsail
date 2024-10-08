@@ -261,9 +261,9 @@ ldap:
 rhods:
   catalog:
     image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 804339
+    tag: 832648
     channel: fast
-    version: 2.13.0
+    version: 2.14.0
     version_name: rc1
   pipelines:
     application:
