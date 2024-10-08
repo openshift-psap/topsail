@@ -98,10 +98,11 @@ def parse_ibm_results(__unused__results, dirname, filename):
                 value = int(value)
             settings[key] = value
             results.data[key] = value
+        EXIT_CODE = 0
 
         store.add_to_matrix(settings,
                             pathlib.Path(dirname),
-                            results,
+                            results, EXIT_CODE,
                             _duplicated_results)
 
 def parse_rh_results(__unused__results, dirname):
@@ -126,9 +127,11 @@ def parse_rh_results(__unused__results, dirname):
             settings[key] = value
             results.data[key] = value
         settings["gpu_model"] = "NVIDIA-A100-SXM4-80GB"
+
+        EXIT_CODE = 0
         store.add_to_matrix(settings,
                             pathlib.Path(dirname),
-                            results,
+                            results, EXIT_CODE,
                             _duplicated_results)
 
 

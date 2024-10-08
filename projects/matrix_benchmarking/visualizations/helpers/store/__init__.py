@@ -122,7 +122,7 @@ class BaseStore():
         return results
 
 
-    def parse_directory(self, fn_add_to_matrix, dirname, import_settings):
+    def parse_directory(self, fn_add_to_matrix, dirname, import_settings, exit_code):
         ignore_cache = os.environ.get("MATBENCH_STORE_IGNORE_CACHE", False) in ("yes", "y", "true", "True")
         if not ignore_cache:
             try:
@@ -136,7 +136,7 @@ class BaseStore():
         if results:
             # reloaded from cache
             self.parse_always(results, dirname, import_settings)
-            self.parse_lts(results, import_settings)
+            self.parse_lts(results, import_settings, exit_code)
 
             fn_add_to_matrix(results)
 
@@ -148,7 +148,7 @@ class BaseStore():
 
         self.parse_once(results, dirname)
         self.parse_always(results, dirname, import_settings)
-        self.parse_lts(results, import_settings)
+        self.parse_lts(results, import_settings, exit_code)
 
         fn_add_to_matrix(results)
 
@@ -164,13 +164,15 @@ class BaseStore():
 
         print("parsing done :)")
 
-    def parse_lts(self, results, import_settings):
+    def parse_lts(self, results, import_settings, exit_code):
         if not self.lts_payload_model:
             return
 
         results.lts = lts_payload = self.generate_lts_payload(results, import_settings)
         if self.models_kpis:
             lts_payload.kpis = self.generate_lts_kpis(lts_payload)
+
+        lts_payload.metadata.exit_code = exit_code
 
         validate_lts_payload(self.lts_payload_model, lts_payload, import_settings, reraise=False)
 

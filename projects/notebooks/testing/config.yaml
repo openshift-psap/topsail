@@ -376,7 +376,6 @@ matbench:
     url_file:
     # if true, copy the results downloaded by `matbench download` into the artifacts directory
     save_to_artifacts: false
-  ignore_exit_code: true
   # directory to plot. Set by notebook_scale_test.sh before launching the visualization
   test_directory: null
   lts:
@@ -384,13 +383,13 @@ matbench:
     horreum:
       test_name: null
     opensearch:
-      upload: true
+      upload: false
       fail_test_on_upload_fail: false
       instance: smoke
       index: rhoai-notebooks-scale
       index_prefix: ""
     regression_analyses:
-      enabled: true
+      enabled: false
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression_fail: false
 export_artifacts:

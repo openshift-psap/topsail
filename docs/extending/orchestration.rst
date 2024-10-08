@@ -201,7 +201,6 @@ orchestration layer.
       url_file:
       # if true, copy the results downloaded by `matbench download` into the artifacts directory
       save_to_artifacts: false
-    ignore_exit_code: true
     # directory to plot. Set by testing/common/visualize.py before launching the visualization
     test_directory: null
     lts:

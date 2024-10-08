@@ -50,8 +50,6 @@ def _rewrite_settings(settings_dict):
     if "launcher" in settings_dict:
         del settings_dict["test_case"]
 
-    del settings_dict["expe"]
-
     if settings_dict.get("mode") == "notebook_perf":
         for k in ("image", "benchmark_name", "benchmark_repeat", "benchmark_number", "notebook_file_name", "instance_type", "exclude_tags", "test_case"):
             try: del settings_dict[k]

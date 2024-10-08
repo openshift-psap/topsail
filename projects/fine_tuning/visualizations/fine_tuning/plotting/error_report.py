@@ -69,10 +69,13 @@ def _get_test_setup(entry):
 
     setup_info += [html.Li([f"Test UUID:", html.Code(entry.results.test_uuid, style={"white-space": "pre-wrap"})])]
 
-    setup_info += [html.Li([f"Job configuration:", html.Code(yaml.dump(entry.results.job_config), style={"white-space": "pre-wrap"})])]
+    setup_info += [html.Li([f"Job configuration:",
+                            html.A(html.Code("config_final.json"), href=artifacts_basedir / entry.results.locations.tuning_config_file, target="_blank"),
+                            html.Code(yaml.dump(entry.results.job_config), style={"white-space": "pre-wrap"})])]
 
     setup_info += [html.Li([f"Job execution"])]
     exec_info = []
+
     if entry.results.finish_reason.exit_code:
         exec_info += [html.Li([f"Exit code:", html.Code(entry.results.finish_reason.exit_code)])]
     if entry.results.finish_reason.message:
@@ -81,11 +84,13 @@ def _get_test_setup(entry):
     metrics = yaml.safe_load(json.dumps(entry.results.sfttrainer_metrics, default=functools.partial(json_dumper, strict=False)))
     if metrics.get("progress") or metrics.get("summary"):
         exec_info += [html.Li([f"Fine-tuning metrics:", html.Code(yaml.dump(metrics), style={"white-space": "pre-wrap"})])]
-    setup_info += [html.Ul(exec_info)]
 
     if entry.results.locations.job_logs:
-        setup_info += [html.Li(html.A("Job logs", href=artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]
-    setup_info += [html.Li(html.A("Fine-tuning config", href=artifacts_basedir / entry.results.locations.tuning_config_file, target="_blank"))]
+        exec_info += [html.Li(html.A("Job logs", href=artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]
+    setup_info += [html.Ul(exec_info)]
+
+    if entry.exit_code is not None:
+        setup_info += [html.Li([f"Test exit code:", html.Code(entry.results.finish_reason.exit_code)])]
 
     return setup_info
 

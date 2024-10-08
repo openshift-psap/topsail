@@ -14,8 +14,6 @@ source "$TESTING_UTILS_DIR/logging.sh"
 
 ARTIFACT_DIR=${ARTIFACT_DIR:-/tmp/topsail_$(date +%Y%m%d)}
 
-export MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE=$(get_config matbench.ignore_exit_code)
-
 export MATBENCH_WORKLOAD_BASE_DIR=$TOPSAIL_DIR
 export MATBENCH_WORKLOAD=projects.notebooks.visualizations.$(get_config matbench.workload)
 WORKLOAD_STORAGE_DIR="$(echo "$MATBENCH_WORKLOAD" | tr . /)"
@@ -193,7 +191,7 @@ generate_matbench::generate_visualization() {
     # Analyze the current results against LTS results
     #
     if test_config matbench.lts.generate && \
-            test_config matbench.lts.generate; then
+            test_config matbench.lts.regression_analyses.enabled; then
         generate_opensearch_config
 
         step_idx=$((step_idx + 1))

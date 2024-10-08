@@ -17,7 +17,6 @@ modules.  The post-processing steps are configured within the
         url_file:
         # if true, copy the results downloaded by `matbench download` into the artifacts directory
         save_to_artifacts: false
-      ignore_exit_code: true
       # directory to plot. Set by testing/common/visualize.py before launching the visualization
       test_directory: null
       lts:
@@ -90,9 +89,7 @@ store.
    store_simple.register_custom_parse_results(local_store.parse_directory)
 
 The ``simple`` store searches for a ``settings.yaml`` file and an
-``exit_code`` file (mostly ignored nowadays. The exit code handling
-should be improved ... Should be ``0`` unless
-``MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE=true`` is set).
+``exit_code`` file.
 
 When these two files are found, the parsing of a test begins, and the
 current directory is considered a test root directory.
