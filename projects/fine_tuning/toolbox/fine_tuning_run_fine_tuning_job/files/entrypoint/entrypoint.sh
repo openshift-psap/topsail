@@ -86,6 +86,9 @@ EOF
     exec sleep inf
 fi
 
+echo "Creating DLprof report directory"
+mkdir -p /mnt/storage/dlprof_results
+
 if [[ $WORLD_SIZE == 1 ]]; then
     echo "Running on a single machine."
 
@@ -94,12 +97,24 @@ if [[ $WORLD_SIZE == 1 ]]; then
     else
         echo "Running with a $NUM_GPUS GPUs"
     fi
-    time python /app/accelerate_launch.py
+     dlprof \
+        --mode pytorch \
+        --reports summary,detail,iteration,kernel,tensor,thread \
+        --output_path /mnt/storage/dlprof_results \
+        --verbose \
+        --performance_graph_output pdf \
+        python /app/accelerate_launch.py
     exit 0
 fi
 echo "Running on $WORLD_SIZE machines with $NUM_GPUS GPUs each."
 
-time accelerate launch \
+dlprof \
+     --mode pytorch \
+     --reports summary,detail,iteration,kernel,tensor,thread \
+     --output_path /mnt/storage/dlprof_results \
+     --verbose \
+     --performance_graph_output pdf \
+     accelerate launch \
      --debug \
      --machine_rank $RANK \
      --num_machines $WORLD_SIZE \
