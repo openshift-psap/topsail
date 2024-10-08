@@ -8,6 +8,7 @@ from . import conditions
 from . import load_time
 
 import projects.matrix_benchmarking.visualizations.helpers.plotting.lts_documentation as lts_documentation
+import projects.matrix_benchmarking.visualizations.helpers.plotting.kpi_table as kpi_table
 
 def register():
     error_report.register()
@@ -20,3 +21,4 @@ def register():
     conditions.register()
     load_time.register()
     lts_documentation.register()
+    kpi_table.register()

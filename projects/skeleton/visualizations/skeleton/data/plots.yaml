@@ -5,3 +5,4 @@ visualize:
   - "report: Sutest Cluster CPU/Memory Usage"
   - "report: Control Plane Nodes Load"
   - "report: LTS Documentation"
+  - "report: KPI Table Report"
