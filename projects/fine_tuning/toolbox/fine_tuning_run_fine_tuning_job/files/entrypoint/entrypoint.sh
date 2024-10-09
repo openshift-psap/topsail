@@ -99,10 +99,8 @@ if [[ $WORLD_SIZE == 1 ]]; then
     fi
      dlprof \
         --mode pytorch \
-        --reports summary,detail,iteration,kernel,tensor,thread \
+        --reports all \
         --output_path /mnt/storage/dlprof_results \
-        --verbose \
-        --performance_graph_output pdf \
         python /app/accelerate_launch.py
     exit 0
 fi
@@ -110,10 +108,8 @@ echo "Running on $WORLD_SIZE machines with $NUM_GPUS GPUs each."
 
 dlprof \
      --mode pytorch \
-     --reports summary,detail,iteration,kernel,tensor,thread \
+     --reports all \
      --output_path /mnt/storage/dlprof_results \
-     --verbose \
-     --performance_graph_output pdf \
      accelerate launch \
      --debug \
      --machine_rank $RANK \
