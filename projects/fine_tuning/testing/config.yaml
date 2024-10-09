@@ -422,7 +422,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: quay.io/modh/fms-hf-tuning:v2.0.1-profile
+  image: image-registry.openshift-image-registry.svc:5000/rhoai-tuning-test/fms-hf-tuning:v2.0.1-profile
   image_name: fms-hf-tuning:v2.0.1-profile
   pvc:
     name: fine-tuning-storage
