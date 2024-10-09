@@ -181,7 +181,9 @@ class Config:
             if not config_key.startswith(PR_ARG_KEY): continue
             if config_key == f"{PR_ARG_KEY}0": continue
 
-            for preset in self.get_config(config_key).strip().split(" "):
+            presets = self.get_config(config_key)
+            if not presets: continue
+            for preset in presets.strip().split(" "):
                 self.apply_preset(preset)
 
     def detect_apply_light_profile(self, profile, name_suffix="light"):
