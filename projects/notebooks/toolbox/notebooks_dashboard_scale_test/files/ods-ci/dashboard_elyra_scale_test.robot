@@ -104,7 +104,7 @@ Create and Start the Workbench
 
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' == 'FAIL'  
-    Create Workbench    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
+    Create Workbench Elyra    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
   END
   Start Workbench     workbench_title=${WORKBENCH_NAME}    timeout=300s
   Capture Page Screenshot
@@ -280,3 +280,65 @@ Verify Pipeline Server Deployments Elyra    # robocop: disable
     @{mariadb}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=mariadb-dspa
     ${containerNames}=  Create List  mariadb
     Verify Deployment    ${mariadb}  1  1  ${containerNames}
+
+
+
+Create Workbench Elyra
+    [Documentation]     Creates a new workbench in a Data Science project. It assumes
+    ...                 the DS Project data. It allows to add new or existent PV storage,
+    ...                 add Environment variables and select Jupyter image
+    [Arguments]     ${workbench_title}  ${workbench_description}  ${prj_title}   ${image_name}   ${deployment_size}
+    ...             ${storage}  ${pv_existent}   ${pv_name}  ${pv_description}  ${pv_size}    ${gpus}=${NONE}
+    ...             ${press_cancel}=${FALSE}  ${version}=default  ${envs}=${NONE}
+    ...             ${data_connection}=${NONE}
+    Open Data Science Project Details Page       project_title=${prj_title}    tab_id=workbenches
+    Wait Until Element Is Enabled    ${WORKBENCH_CREATE_BTN_XP}
+    Click Element    ${WORKBENCH_CREATE_BTN_XP}
+    Wait Until Page Contains Element    ${WORKBENCH_NAME_INPUT_XP}
+    Run Keyword And Continue On Failure     Element Should Be Disabled    ${WORKBENCH_CREATE_BTN_2_XP}
+    Input Text    ${WORKBENCH_NAME_INPUT_XP}    ${workbench_title}
+    Input Text    ${WORKBENCH_DESCR_TXT_XP}    ${workbench_description}
+    Run Keyword And Continue On Failure     Element Should Be Disabled    ${WORKBENCH_CREATE_BTN_2_XP}
+    Select Workbench Jupyter Image    image_name=${image_name}    version=${version}
+    IF    "${deployment_size}" != "${NONE}"    Select Workbench Container Size    size_name=${deployment_size}
+    IF    "${gpus}" != "${NONE}"    Select Workbench Number Of GPUs    gpus=${gpus}
+    IF    "${envs}" != "${NONE}"
+        ${envs_copy}=    Copy List    ${envs}    deepcopy=${TRUE}
+        Add Environment Variables In Workbench    env_variables=${envs_copy}
+    END
+    IF    "${data_connection}" != "${NONE}"
+        Add Existing Data Connection In Workbench    data_connection=${data_connection}
+    END
+    ${version_check}=  Is RHODS Version Greater Or Equal Than  1.20.0
+    IF  ${version_check}==True
+        Run Keyword And Continue On Failure    Page Should Not Contain Element
+        ...    xpath=//input[contains(@name,"ephemeral")]
+    END
+    IF    "${storage}" == "Persistent"
+        IF    ${pv_existent} == ${TRUE}
+            # Use the `Jump to section` links in the page to scroll the section into view
+            Click Element    //a[@href="#cluster-storage"]
+            Click Element    xpath=//input[@name="persistent-existing-storage-type-radio"]
+            Select An Existent PV   name=${pv_name}
+        ELSE IF   ${pv_existent} == ${FALSE}
+            # Use the `Jump to section` links in the page to scroll the section into view
+            Click Element    //a[@href="#cluster-storage"]
+            Click Element   xpath=//input[@name="persistent-new-storage-type-radio"]
+            Fill In New PV Data    name=${pv_name}    description=${pv_description}  size=${pv_size}
+            Log    msg=Delete PVC '${pv_name}' before creating new one via the Workbench dialog
+            Delete PVC In Project From CLI    pvc_title=${pv_name}    project_title=${prj_title}
+        ELSE
+            Log    msg="pv_existent" argument not set, using default PV settings   level=WARN
+            Delete PVC In Project From CLI    pvc_title=${workbench_title}    project_title=${prj_title}
+        END
+    ELSE
+        Click Element   xpath=//input[@name="ephemeral-storage-type-radio"]
+    END
+    IF    ${press_cancel} == ${TRUE}
+        Click Button    ${GENERIC_CANCEL_BTN_XP}
+    ELSE
+        Wait Until Element Is Enabled    ${WORKBENCH_CREATE_BTN_2_XP}
+        Click Button    ${WORKBENCH_CREATE_BTN_2_XP}
+    END
+    Wait Until Element Is Not Visible    //form    1m
+    Open Data Science Project Details Page       project_title=${prj_title}    tab_id=workbenches
