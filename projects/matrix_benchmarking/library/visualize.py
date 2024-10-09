@@ -38,17 +38,19 @@ def init(allow_no_config_file=False):
     is_plot_test = config.project.get_config("PR_POSITIONAL_ARG_0", "", warn=False).endswith("-plot")
     if is_plot_test:
         pr_arg_1 = config.project.get_config("PR_POSITIONAL_ARG_1", "")
-        if not pr_arg_1:
-            raise ValueError("PR_POSITIONAL_ARG_1 should have been set ...")
+        if not pr_arg_1 and not config.project.get_config("matbench.preset"):
+            raise ValueError("PR_POSITIONAL_ARG_1 or matbench.preset should have been set ...")
 
-        config.project.set_config("matbench.preset", pr_arg_1, dump_command_args=False)
+        # remove the matbench preset from the main config and store it in matbench.preset
+        config.project.set_config("PR_POSITIONAL_ARG_1", None)
+        config.project.set_config("matbench.preset", pr_arg_1,
+                                  dump_command_args=False)
+
+        config.project.apply_preset_from_pr_args()
 
     matbench_workload = config.project.get_config("matbench.workload")
 
     workload_storage_dir = pathlib.Path(matbench_workload.replace(".", "/"))
-
-    if is_plot_test:
-        config.project.set_config("matbench.preset", config.project.get_config("PR_POSITIONAL_ARG_1", None), dump_command_args=False)
 
     matbench_preset = config.project.get_config("matbench.preset")
     if not matbench_preset:
