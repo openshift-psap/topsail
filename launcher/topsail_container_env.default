@@ -7,3 +7,6 @@ PSAP_ODS_SECRET_PATH="$PSAP_ODS_SECRET_PATH"
 KUBECONFIG="$KUBECONFIG"
 
 PYTHONPATH="$TOPSAIL_HOME"
+
+# so that it is properly exposed in the container
+HOME=$HOME

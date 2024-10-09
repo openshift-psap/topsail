@@ -28,14 +28,16 @@ git submodule update --init
 Configuration
 -------------
 
-* Prepare and edit `topsail_host_config`
+* Duplicate and customize `topsail_host_config.default` if you need
 ```
-cp topsail_host_config{.sample,}
+cp topsail_host_config{.default,.custom}
+vi topsail_host_config.custom
 ```
 
-* Prepare and edit `topsail_container_env`
+* Duplicate and customize `topsail_container_env.default` if you need
 ```
-cp topsail_host_config{.sample,}
+cp topsail_host_config{.default,.custom}
+vi topsail_host_config.custom
 ```
 
 Usage
