@@ -1,2 +1,4 @@
 __pycache__
 .env*
+launcher/topsail_container_env
+launcher/topsail_host_config
