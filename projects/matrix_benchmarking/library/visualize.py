@@ -518,10 +518,7 @@ def download(results_dirname):
 
 @entrypoint()
 def download_and_generate_visualizations(results_dirname="/tmp/matrix_benchmarking_results"):
-    prepare_matbench()
-
     download(results_dirname)
-
     generate_visualizations(results_dirname)
 
 
