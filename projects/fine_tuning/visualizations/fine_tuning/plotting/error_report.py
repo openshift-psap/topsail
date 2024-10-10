@@ -15,7 +15,8 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 from matrix_benchmarking.parse import json_dumper
 
-from . import report
+import projects.matrix_benchmarking.visualizations.helpers.plotting.report as report
+
 
 def register():
     ErrorReport()

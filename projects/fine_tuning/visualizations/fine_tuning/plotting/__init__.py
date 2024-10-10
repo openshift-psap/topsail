@@ -1,6 +1,6 @@
 from . import error_report
-from . import lts_documentation
 from . import sfttrainer
+import projects.matrix_benchmarking.visualizations.helpers.plotting.lts_documentation as lts_documentation
 
 def register():
     error_report.register()

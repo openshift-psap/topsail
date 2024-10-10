@@ -9,7 +9,8 @@ from . import progress
 from . import compare_test_speed
 from . import compare_report
 from . import scheduling
-from . import lts_documentation
+import projects.matrix_benchmarking.visualizations.helpers.plotting.lts_documentation as lts_documentation
+
 
 def register():
     error_report.register()

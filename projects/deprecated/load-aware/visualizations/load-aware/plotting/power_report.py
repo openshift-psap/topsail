@@ -1,6 +1,6 @@
 from dash import html
 
-from . import report
+import projects.matrix_benchmarking.visualizations.helpers.plotting.report as report
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 

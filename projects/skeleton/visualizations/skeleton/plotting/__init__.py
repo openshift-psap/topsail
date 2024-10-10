@@ -1,7 +1,8 @@
 from . import error_report
 from ..store import prom
 from . import prom_report
-from . import lts_documentation
+
+import projects.matrix_benchmarking.visualizations.helpers.plotting.lts_documentation as lts_documentation
 
 def register():
     error_report.register()

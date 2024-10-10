@@ -16,7 +16,6 @@ from . import notebook_performance
 from . import perf_report
 from . import multi_notebook_spawn_time
 from . import gating_report
-from . import lts_documentation
 
 from ..store import prom
 
@@ -33,5 +32,4 @@ def register():
     perf_report.register()
     multi_notebook_spawn_time.register()
     gating_report.register()
-    lts_documentation.register()
     prom.register()
