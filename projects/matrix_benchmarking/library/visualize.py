@@ -47,6 +47,7 @@ def init(allow_no_config_file=False):
                                   dump_command_args=False)
 
         config.project.apply_preset_from_pr_args()
+        config.project.apply_config_overrides()
 
     matbench_workload = config.project.get_config("matbench.workload")
 
