@@ -113,6 +113,22 @@ def _get_cluster_cpu(cluster_role):
         {f"{cluster_role}__cluster_cpu_capacity": "sum(cluster:capacity_cpu_cores:sum)"}
     ]
 
+
+def _get_pod_disk_queries(cluster_role, labels):
+    labels_str = _labels_to_string(labels, exclude="container")
+
+    metric_name = "_".join(f"{k}={v}" for k, v in labels.items() if k != "container")
+
+    return [
+        {f"{cluster_role}__container_memory_working_set_bytes__{metric_name}": "container_memory_working_set_bytes{"+labels_str+"}"},
+        {f"{cluster_role}__container_memory_usage_bytes__{metric_name}": "container_memory_usage_bytes{"+labels_str+"}"},
+        {f"{cluster_role}__container_memory_rss__{metric_name}": "container_memory_rss{"+labels_str+"}"},
+        {f"{cluster_role}__container_memory_requests__{metric_name}": "kube_pod_container_resource_requests{"+labels_str+",resource='memory'}"},
+        {f"{cluster_role}__container_memory_limits__{metric_name}": "kube_pod_container_resource_limits{"+labels_str+",resource='memory'}"},
+        {f"{cluster_role}__container_max_memory__{metric_name}": "container_memory_max_usage_bytes{"+labels_str+"}"},
+    ]
+
+
 # ---
 
 def _get_cluster_mem_cpu(cluster_role, register):
@@ -165,6 +181,29 @@ def _get_container_mem_cpu(cluster_role, register, label_sets):
                                       get_metrics=get_metrics(cluster_role),
                                       as_timestamp=True, is_memory=True,
                                       )
+
+    return all_metrics
+
+
+def _get_disk_usage_metrics(cluster_role, register, label_sets, disk_metrics_names):
+    all_metrics = []
+
+    for plot_name_labels in label_sets:
+        plot_name, labels = list(plot_name_labels.items())[0]
+        if plot_name not in disk_metrics_names: continue
+
+        disk_queries = _get_pod_disk_queries(cluster_role, labels)
+        all_metrics += disk_queries
+
+        if not register: continue
+
+        plotting_prom.Plot(
+            disk, f"Prom: z{plot_name}: Disk usage",
+            get_metrics=get_metrics(cluster_role),
+            as_timestamp=True,
+            title="Disk usage", y_title="in MB/s",
+            y_divisor=1024*1024,
+        )
 
     return all_metrics
 
@@ -365,7 +404,10 @@ def get_gpu_usage_metrics(cluster_role, register, container):
     return all_metrics
 
 
-def get_cluster_metrics(cluster_role, *, container_labels=[], gpu_container=False, register=False):
+def get_cluster_metrics(cluster_role, *, container_labels=[],
+                        gpu_container=False,
+                        disk_metrics_names=[],
+                        register=False):
     all_metrics = []
     all_metrics += _get_cluster_mem_cpu(cluster_role, register)
     all_metrics += _get_control_plane_nodes(cluster_role, register)
@@ -377,5 +419,8 @@ def get_cluster_metrics(cluster_role, *, container_labels=[], gpu_container=Fals
 
     if gpu_container:
         all_metrics += get_gpu_usage_metrics(cluster_role, register, container=gpu_container)
+
+    if disk_metrics_names:
+        all_metrics += _get_disk_usage_metrics(cluster_role, register, container_labels, disk_metrics_names)
 
     return all_metrics
