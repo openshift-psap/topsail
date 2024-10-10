@@ -29,24 +29,23 @@ ci_presets:
     tests.notebooks.identifier: gating_test
     tests.notebooks.test_flavor: gating
     # modify the presets, as they will be applied by the gating test
-    'ci_presets.notebook_performance["tests.notebooks.notebook_performance.tests[0].instance_types"]': [m6i.2xlarge]
+    'ci_presets.notebook_performance["tests.notebooks.notebook_performance.tests[0].instance_types"]': [ m6i.2xlarge ]
     'ci_presets.notebook_scale_test["tests.notebooks.identifier"]': "notebook_gating_test:scale_test"
     'ci_presets.notebook_performance["tests.notebooks.identifier"]': "notebook_gating_test:performance_test"
 
   notebook_gating_scale_test_light:
-    extends: [notebook_gating_scale_test]
+    extends: [ notebook_gating_scale_test ]
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 4
     'ci_presets.notebook_scale_test["tests.notebooks.repeat"]': 1
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
 
-
   notebook_scale_test_dsg:
-    extends: [notebook_scale_test]
+    extends: [ notebook_scale_test ]
     tests.notebooks.ods_ci.test_case: notebook_dsg_test.robot
 
   # run the Jupyter Notebook scale test
   notebook_scale_test_jupyter:
-    extends: [notebook_scale_test]
+    extends: [ notebook_scale_test ]
     tests.notebooks.ods_ci.test_case: notebook_jupyter_test.robot
 
   # run the notebook image performance test on RHODS (benchmark mode)
@@ -62,7 +61,7 @@ ci_presets:
     matbench.lts.opensearch.index: rhoai-notebooks-performance
 
   notebook_performance_light:
-    extends: [notebook_performance]
+    extends: [ notebook_performance ]
     tests.notebook_performance.test_only_one_image: true
 
   dashboard_scale_test:
@@ -112,7 +111,7 @@ ci_presets:
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 4
 
   light:
-    extends: [light_cluster, notebooks_light]
+    extends: [ light_cluster, notebooks_light ]
 
   metal:
     clusters.sutest.is_metal: true
@@ -126,14 +125,14 @@ ci_presets:
     clusters.create.ocp.use_fips: true
 
   icelake:
-    extends: [metal]
+    extends: [ metal ]
     clusters.create.ocp.compute.type: icelake
     clusters.driver.compute.dedicated: false
     clusters.sutest.compute.dedicated: false
     'ci_presets.notebook_performance["clusters.sutest.compute.dedicated"]': false
 
   icelake_notebook_gating_test:
-    extends: [notebook_gating_scale_test, metal, icelake, use_intlab_os]
+    extends: [ notebook_gating_scale_test, metal, icelake, use_intlab_os ]
     'ci_presets.notebook_scale_test["tests.notebooks.users.count"]': 150
 
   use_intlab_os:
@@ -302,7 +301,7 @@ tests:
       # mode in which the ODS-CI test should be executed
       image:
         repo: https://github.com/red-hat-data-services/ods-ci.git
-        ref: releases/2.13.0
+        ref: master
       # tags to exclude when running the robot test case
       excluded_tags: None
       # if true, only create the notebooks but don't start them
@@ -357,7 +356,8 @@ tests:
       # for faster smoke testing
       test_only_one_image: false
 
-    dashboard_scale_test: # enabled by setting 'tests.notebooks.test_flavor: dashboard-scale-test'
+    dashboard_scale_test:
+      # enabled by setting 'tests.notebooks.test_flavor: dashboard-scale-test'
       option: true
 
     # List of preset configurations to run as part of the 'gating' test
@@ -373,8 +373,8 @@ matbench:
   download:
     mode: prefer_cache
     url:
-    url_file:
-    # if true, copy the results downloaded by `matbench download` into the artifacts directory
+    url_file: # if true, copy the results downloaded by `matbench download` into the artifacts directory
+
     save_to_artifacts: false
   # directory to plot. Set by notebook_scale_test.sh before launching the visualization
   test_directory: null
