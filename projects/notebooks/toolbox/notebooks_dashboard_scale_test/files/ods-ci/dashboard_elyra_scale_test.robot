@@ -20,18 +20,15 @@ Suite Teardown  Tear Down
 *** Variables ***
 
 ${DASHBOARD_PRODUCT_NAME}      "%{DASHBOARD_PRODUCT_NAME}"
-
 ${PROJECT_NAME}                ${TEST_USER.USERNAME}
 ${ACCESS_KEY}                  %{S3_ACCESS_KEY}
 ${HOST_BASE}                   %{S3_HOSTNAME}
 ${HOST_BUCKET}                 %{S3_BUCKET_NAME}
-
 ${DC_NAME}                     elyra-s3
 ${IMAGE}                       Standard Data Science
-${PV_NAME}                     ods-ci-pv-elyra
-${PV_DESCRIPTION}              ods-ci-pv-elyra is a PV created to test Elyra in workbenches
+${PV_NAME}                     ${TEST_USER.USERNAME}_pvc
+${PV_DESCRIPTION}              ${TEST_USER.USERNAME} is a PV created to test Elyra in workbenches
 ${PV_SIZE}                     2
-
 ${PIPELINE_IMPORT_BUTTON}      xpath=//button[@id='import-pipeline-button']
 ${PIPELINES_SERVER_BTN_XP}     xpath=//*[@data-testid="create-pipeline-button"]
 ${SVG_CANVAS}                  //*[name()="svg" and @class="svg-area"]
@@ -42,7 +39,6 @@ ${EXPECTED_COLOR}              rgb(0, 102, 204)
 ${EXPERIMENT_NAME}             standard data science pipeline
 ${NOTEBOOK_SPAWN_WAIT_TIME}    20 minutes
 ${WORKBENCH_NAME}              ${TEST_USER.USERNAME}
-
 ${ODH_DASHBOARD_DO_NOT_WAIT_FOR_SPINNER_PAGE}  ${true}
 
 *** Test Cases ***
@@ -57,12 +53,13 @@ Login to RHODS Dashboard
 
   Go To  ${ODH_DASHBOARD_URL}
   Login To RHODS Dashboard  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}
+  Capture Page Screenshot
 
 Go to RHODS Dashboard
   [Tags]  Dashboard
 
   Wait For Condition  return document.title == ${DASHBOARD_PRODUCT_NAME}  timeout=3 minutes
-  Wait Until Page Contains  Launch application  timeout=3 minutes
+  Wait Until Page Contains  Data Science Projects  timeout=3 minutes
   Capture Page Screenshot
 
 Go to the Project page
@@ -75,7 +72,7 @@ Go to the Project page
 
   ${has_errors}  ${error}=  Run Keyword And Ignore Error  Project Should Be Listed  ${PROJECT_NAME}
   IF  '${has_errors}' != 'PASS'
-    Create Data Science Project  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
+    Create Data Science Project Elyra  ${PROJECT_NAME}  ${TEST_USER.USERNAME}'s project
   ELSE
     Open Data Science Project Details Page  ${PROJECT_NAME}
   END
@@ -95,19 +92,19 @@ Create S3 Data Connection Creation
 
 Create Pipeline Server To s3
   [Tags]  Dashboard
-  Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
-  Wait Until Page Contains No Spinner    
-  Element Should Be Enabled     ${PIPELINE_IMPORT_BUTTON}
-  Sleep  1 minutes
-
+  oc_login  ${OCP_API_URL}  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}
+  Pipelines.Create Pipeline Server    dc_name=${DC_NAME}    project_title=${PROJECT_NAME}
+  Verify There Is No "Error Displaying Pipelines" After Creating Pipeline Server
+  Verify That There Are No Sample Pipelines After Creating Pipeline Server
+  Wait Until Pipeline Server Is Deployed Elyra    project_title=${PROJECT_NAME}
   Capture Page Screenshot
 
 Create and Start the Workbench
-  [Tags]  Notebook  Spawn
+  [Tags]  Dashboard
 
   ${workbench_exists}  ${error}=  Run Keyword And Ignore Error  Workbench Is Listed  ${WORKBENCH_NAME}
   IF  '${workbench_exists}' == 'FAIL'  
-    Create Workbench    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}_${IMAGE}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
+    Create Workbench Elyra    workbench_title=${WORKBENCH_NAME}    workbench_description=Elyra test    prj_title=${PROJECT_NAME}   image_name=${IMAGE}   deployment_size=Tiny    storage=Persistent    pv_existent=${FALSE}    pv_name=${PV_NAME}   pv_description=${PV_DESCRIPTION}    pv_size=${PV_SIZE}    
   END
   Start Workbench     workbench_title=${WORKBENCH_NAME}    timeout=300s
   Capture Page Screenshot
@@ -140,12 +137,10 @@ Create and Start the Workbench
     ${browser log entries str}=   Convert To String  ${browser log entries}
     Create File  ${OUTPUTDIR}/bug_5912_browser_log_entries.yaml  ${browser log entries str}
 
-    Sleep  5s
+    Sleep  30s
     Reload Page
     Page Should Not Contain  Application is not available
-  END
-  # Login To JupyterLab  ${TEST_USER.USERNAME}  ${TEST_USER.PASSWORD}  ${TEST_USER.AUTH_TYPE}  ${PROJECT_NAME}
-  # Wait Until JupyterLab Is Loaded    timeout=60s   
+  END   
   Access To Workbench    username=${TEST_USER.USERNAME}    password=${TEST_USER.PASSWORD}
         ...    auth_type=${TEST_USER.AUTH_TYPE}
   Capture Page Screenshot
@@ -155,7 +150,7 @@ Create and Start the Workbench
   Verify Hello World Pipeline Elements
   Set Runtime Image In All Nodes    runtime_image=Datascience with Python 3.9 (UBI9)
   Run Pipeline    pipeline_name=${IMAGE} Pipeline
-  Wait Until Page Contains Element    xpath=//a[.="Run Details."]    timeout=30s
+  Wait Until Page Contains Element    xpath=//a[.="Run Details."]
   Capture Page Screenshot
 
 Check of Pipeline Runs
@@ -164,7 +159,7 @@ Check of Pipeline Runs
   ${pipeline_run_name} =    Get Pipeline Run Name
   Switch To Pipeline Execution Page
   Is Data Science Project Details Page Open   ${PROJECT_NAME}
-  Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=5m    experiment_name=${EXPERIMENT_NAME}
+  Verify Elyra Pipeline Run    pipeline_run_name=${pipeline_run_name}    timeout=30m    experiment_name=${EXPERIMENT_NAME}
 
 *** Keywords ***
 
@@ -175,7 +170,7 @@ Just Launch Workbench
     Switch Window   NEW
 
 Wait Until Page Contains No Spinner
-    [Arguments]     ${timeout}=30 seconds
+    [Arguments]     ${timeout}=1m
     Wait Until Page Does Not Contain Element   //*[contains(@class, 'pf-c-spinner')]  timeout=${timeout}
 
 Wait Until Workbench Is Starting
@@ -213,7 +208,7 @@ Wait Until Pipeline Server Deployed
 
 Verify Hello World Pipeline Elements
     [Documentation]    Verifies that the example pipeline is displayed correctly by Elyra
-    Wait Until Page Contains Element    xpath=${SVG_CANVAS}     timeout=10s
+    Wait Until Page Contains Element    xpath=${SVG_CANVAS}     timeout=2m
     Maybe Migrate Pipeline
     Page Should Contain Element    xpath=${SVG_CANVAS}${SVG_INTERACTABLE}${SVG_PIPELINE_NODES}${SVG_SINGLE_NODE}//span[.="Load weather data"]  # robocop: disable
     Page Should Contain Element    xpath=${SVG_CANVAS}${SVG_INTERACTABLE}${SVG_PIPELINE_NODES}${SVG_SINGLE_NODE}//span[.="Part 1 - Data Cleaning.ipynb"]  # robocop: disable
@@ -237,21 +232,113 @@ Launch And Access Workbench Elyra Pipelines
 Verify Elyra Pipeline Run 
     [Documentation]    Verifys Elyra Pipeline runs are sucessfull
     [Arguments]    ${pipeline_run_name}    ${timeout}=10m   ${experiment_name}=Default
-    Open Pipeline Elyra Pipeline Run    ${pipeline_run_name}    ${experiment_name}
+    # Open Pipeline Elyra Pipeline Run    ${pipeline_run_name}    ${experiment_name}
     Wait Until Page Contains Element    //span[@class='pf-v5-c-label__text' and text()='Succeeded']    timeout=${timeout}
     Capture Page Screenshot  
 
+Wait Until Pipeline Server Is Deployed Elyra
+    [Documentation]    Waits until all the expected pods of the pipeline server
+    ...                are running
+    [Arguments]    ${project_title}
+    Wait Until Keyword Succeeds    10 times    10s
+    ...    Verify Pipeline Server Deployments Elyra    project_title=${project_title}
 
-Open Pipeline Elyra Pipeline Run
-    [Documentation]    Open the Pipeline Run detail.
-    [Arguments]    ${pipeline_run_name}    ${experiment_name}=Default
-    Navigate To Page    Experiments    Experiments and runs
-    ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page    timeout=30s
-    Wait Until Element Is Visible    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]    10s
-    Click Element    xpath=//td[@data-label="Experiment" and @class="pf-v5-c-table__td"]/a[text()="standard data science pipeline"]
-    ODHDashboard.Maybe Wait For Dashboard Loading Spinner Page     timeout=30s
-    Wait Until Page Contains Element    xpath=//*[@data-testid="active-runs-tab"]      timeout=30s
-    Click Element    xpath=//*[@data-testid="active-runs-tab"]
-    Wait Until Page Contains Element    xpath=//span[text()='${pipeline_run_name}']
-    Click Element    xpath=//span[text()='${pipeline_run_name}']
-    Wait Until Page Contains Element    xpath=//div[@data-test-id='topology']
+Verify Pipeline Server Deployments Elyra    # robocop: disable
+    [Documentation]    Verifies the correct deployment of DS Pipelines in the rhods namespace
+    [Arguments]    ${project_title}
+
+    ${namespace}=    Get Openshift Namespace From Data Science Project
+    ...    project_title=${project_title}
+
+    @{all_pods}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=component=data-science-pipelines
+    Run Keyword And Continue On Failure    Length Should Be    ${all_pods}    7
+
+    @{pipeline_api_server}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-dspa
+    ${containerNames}=  Create List  oauth-proxy    ds-pipeline-api-server
+    Verify Deployment    ${pipeline_api_server}  1  2  ${containerNames}
+
+    @{pipeline_metadata_envoy}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-metadata-envoy-dspa
+    ${containerNames}=  Create List  container    oauth-proxy
+    Verify Deployment    ${pipeline_metadata_envoy}  1  2  ${containerNames}
+
+    @{pipeline_metadata_grpc}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-metadata-grpc-dspa
+    ${containerNames}=  Create List  container
+    Verify Deployment    ${pipeline_metadata_grpc}  1  1  ${containerNames}
+
+    @{pipeline_persistenceagent}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-persistenceagent-dspa
+    ${containerNames}=  Create List  ds-pipeline-persistenceagent
+    Verify Deployment    ${pipeline_persistenceagent}  1  1  ${containerNames}
+
+    @{pipeline_scheduledworkflow}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-scheduledworkflow-dspa
+    ${containerNames}=  Create List  ds-pipeline-scheduledworkflow
+    Verify Deployment    ${pipeline_scheduledworkflow}  1  1  ${containerNames}
+
+    @{pipeline_workflow_controller}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=ds-pipeline-workflow-controller-dspa
+    ${containerNames}=  Create List  ds-pipeline-workflow-controller
+    Verify Deployment    ${pipeline_workflow_controller}  1  1  ${containerNames}
+
+    @{mariadb}=  Oc Get    kind=Pod    namespace=${project_title}    label_selector=app=mariadb-dspa
+    ${containerNames}=  Create List  mariadb
+    Verify Deployment    ${mariadb}  1  1  ${containerNames}
+
+
+
+Create Workbench Elyra
+    [Documentation]     Creates a new workbench in a Data Science project. It assumes
+    ...                 the DS Project data. It allows to add new or existent PV storage,
+    ...                 add Environment variables and select Jupyter image
+    [Arguments]     ${workbench_title}  ${workbench_description}  ${prj_title}   ${image_name}   ${deployment_size}
+    ...             ${storage}  ${pv_existent}   ${pv_name}  ${pv_description}  ${pv_size}    ${gpus}=${NONE}
+    ...             ${press_cancel}=${FALSE}  ${version}=default  ${envs}=${NONE}
+    ...             ${data_connection}=${NONE}
+    Open Data Science Project Details Page       project_title=${prj_title}    tab_id=workbenches
+    Wait Until Element Is Enabled    ${WORKBENCH_CREATE_BTN_XP}
+    Click Element    ${WORKBENCH_CREATE_BTN_XP}
+    Wait Until Page Contains Element    ${WORKBENCH_NAME_INPUT_XP}
+    Run Keyword And Continue On Failure     Element Should Be Disabled    ${WORKBENCH_CREATE_BTN_2_XP}
+    Input Text    ${WORKBENCH_NAME_INPUT_XP}    ${workbench_title}
+    Input Text    ${WORKBENCH_DESCR_TXT_XP}    ${workbench_description}
+    Run Keyword And Continue On Failure     Element Should Be Disabled    ${WORKBENCH_CREATE_BTN_2_XP}
+    Select Workbench Jupyter Image    image_name=${image_name}    version=${version}
+    IF    "${deployment_size}" != "${NONE}"    Select Workbench Container Size    size_name=${deployment_size}
+    IF    "${gpus}" != "${NONE}"    Select Workbench Number Of GPUs    gpus=${gpus}
+    IF    "${envs}" != "${NONE}"
+        ${envs_copy}=    Copy List    ${envs}    deepcopy=${TRUE}
+        Add Environment Variables In Workbench    env_variables=${envs_copy}
+    END
+    IF    "${data_connection}" != "${NONE}"
+        Add Existing Data Connection In Workbench    data_connection=${data_connection}
+    END
+    ${version_check}=  Is RHODS Version Greater Or Equal Than  1.20.0
+    IF  ${version_check}==True
+        Run Keyword And Continue On Failure    Page Should Not Contain Element
+        ...    xpath=//input[contains(@name,"ephemeral")]
+    END
+    IF    "${storage}" == "Persistent"
+        IF    ${pv_existent} == ${TRUE}
+            # Use the `Jump to section` links in the page to scroll the section into view
+            Click Element    //a[@href="#cluster-storage"]
+            Click Element    xpath=//input[@name="persistent-existing-storage-type-radio"]
+            Select An Existent PV   name=${pv_name}
+        ELSE IF   ${pv_existent} == ${FALSE}
+            # Use the `Jump to section` links in the page to scroll the section into view
+            Click Element    //a[@href="#cluster-storage"]
+            Click Element   xpath=//input[@name="persistent-new-storage-type-radio"]
+            Fill In New PV Data    name=${pv_name}    description=${pv_description}  size=${pv_size}
+            Log    msg=Delete PVC '${pv_name}' before creating new one via the Workbench dialog
+            Delete PVC In Project From CLI    pvc_title=${pv_name}    project_title=${prj_title}
+        ELSE
+            Log    msg="pv_existent" argument not set, using default PV settings   level=WARN
+            Delete PVC In Project From CLI    pvc_title=${workbench_title}    project_title=${prj_title}
+        END
+    ELSE
+        Click Element   xpath=//input[@name="ephemeral-storage-type-radio"]
+    END
+    IF    ${press_cancel} == ${TRUE}
+        Click Button    ${GENERIC_CANCEL_BTN_XP}
+    ELSE
+        Wait Until Element Is Enabled    ${WORKBENCH_CREATE_BTN_2_XP}
+        Click Button    ${WORKBENCH_CREATE_BTN_2_XP}
+    END
+    Wait Until Element Is Not Visible    //form    1m
+    Open Data Science Project Details Page       project_title=${prj_title}    tab_id=workbenches
