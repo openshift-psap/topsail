@@ -7,7 +7,11 @@ set -o errtrace
 set -x
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $THIS_DIR/topsail_host_config
+source "$THIS_DIR/topsail_host_config.default"
+if [[ -f "$THIS_DIR/topsail_host_config.custom" ]];
+then
+    source "$THIS_DIR/topsail_host_config.custom"
+fi
 
 CONTAINER_NAME=${1:-}
 CONTAINER_IMAGE=${2:-}

@@ -8,7 +8,11 @@ set -o errtrace
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 set -a
-source "$THIS_DIR"/topsail_host_config
+source "$THIS_DIR"/topsail_host_config.default
+if [[ -f "$THIS_DIR/topsail_host_config.custom" ]];
+then
+    source "$THIS_DIR/topsail_host_config.custom"
+fi
 set +a
 
 if [[ "$#" == 0 ]]; then
@@ -17,7 +21,12 @@ else
     command="$@"
 fi
 
-env=$(cat $THIS_DIR/topsail_container_env | envsubst)
+container_env=$(cat "$THIS_DIR/topsail_container_env.default")
+if [[ -f "$THIS_DIR/topsail_container_env.custom" ]];
+then
+    container_env=$(echo "$container_env"; cat "$THIS_DIR/topsail_container_env.custom")
+fi
+env=$(echo "$container_env" | envsubst)
 
 if has_toolbox; then
     exec toolbox run -c $TOPSAIL_TOOLBOX_NAME -- bash -c "set -a; $env ; set +a; $command"
