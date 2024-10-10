@@ -13,6 +13,9 @@ SUTEST_CONTAINER_LABELS = [
 
 # ---
 
+SUTEST_CONTAINER_DISK_METRICS_NAMES = [
+    "Fine-tuning Pods"
+]
 
 # ---
 
@@ -23,8 +26,12 @@ def get_sutest_metrics(register=False):
 
     all_metrics += [{"up": "up"}] # for the test start/end timestamp
 
-    all_metrics += helper_prom_store.get_cluster_metrics(cluster_role, register=register, container_labels=SUTEST_CONTAINER_LABELS, gpu_container="pytorch")
-
+    all_metrics += helper_prom_store.get_cluster_metrics(
+        cluster_role, register=register,
+        container_labels=SUTEST_CONTAINER_LABELS,
+        gpu_container="pytorch",
+        disk_metrics_names=SUTEST_CONTAINER_DISK_METRICS_NAMES,
+    )
 
     return all_metrics
 
