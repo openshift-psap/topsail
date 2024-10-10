@@ -10,3 +10,4 @@ visualize:
   - "report: Worker Nodes Load"
   - "report: GPU Usage"
   - "report: LTS Documentation"
+  - "report: KPI Table Report"

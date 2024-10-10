@@ -62,10 +62,11 @@ def generateOneLtsDocumentationReport(entry, kpi_data):
     header += [html.H2("metadata")]
     metadata = []
 
-    metadata += [html.Li([html.B("settings:"), html.Code(f"{k}: {v}" for k, v in lts.metadata.settings.__dict__.items())])]
+    metadata += [html.Li([html.B("urls:"), html.Ul([html.Li(html.A(k, href=v) for k, v in lts.metadata.settings.urls.items())])])]
     metadata += [html.Li([html.B("start:"), html.Code(lts.metadata.start)])]
     metadata += [html.Li([html.B("presets:"), html.Code(", ".join(lts.metadata.presets))])]
-    metadata += [html.Li([html.B("config:"), html.Code("(not shown for clarity)")])]
+    metadata += [html.Li([html.B("labels:"), html.Ul([html.Li(f"{k}: {v}") for k, v in lts.metadata.settings.__dict__.items() if k not in common.LTS_META_KEYS])])]
+
     header += [html.Ul(metadata)]
 
     header += [html.H2("kpis")]
@@ -74,26 +75,22 @@ def generateOneLtsDocumentationReport(entry, kpi_data):
     kpi_entry = dict()
     kpi_data.append(kpi_entry)
     for name, kpi in lts.kpis.items():
-        labels = {k:v for k, v in kpi.__dict__.items() if k not in ("unit", "help", "timestamp", "value")}
-        labels_str = ", ".join(f"{k}=\"{v}\"" for k, v in labels.items())
-        kpis += [html.Li([html.P([html.Code(f"# HELP {name} {kpi.help}"), html.Br(),
-                                  html.Code(f"# UNIT {kpi.unit}"), html.Br(),
-                                  html.Code(f"# VALUE {kpi.value}"), html.Br(),
-                                  html.Code(f"{name}{{{labels_str}}} {kpi.value}")])])]
+        kpis += [html.Li([html.P([
+            html.B(name), "⮕",
+            html.Code(f"{kpi.value} {kpi.unit}"), html.Br(),
+            html.I(kpi.help), html.Br(),
+        ])])]
 
         kpi_entry |= kpi.__dict__
-        kpi_entry.pop("value")
-        kpi_entry.pop("help")
-        kpi_entry.pop("unit")
-        kpi_entry.pop("kpi_settings_version")
+
         timestamp = kpi_entry.pop("@timestamp")
         kpi_entry["timestamp"] = str(timestamp)
+
+        for meta_key in common.LTS_META_KEYS:
+            kpi_entry.pop(meta_key, None)
+
         kpi_entry[name] = kpi.value
 
     header += [html.Ul(kpis)]
-
-    # header += [html.H2("results")]
-    # results = []
-    # header += [html.Ul(results)]
 
     return header

@@ -10,6 +10,7 @@ from . import compare_test_speed
 from . import compare_report
 from . import scheduling
 import projects.matrix_benchmarking.visualizations.helpers.plotting.lts_documentation as lts_documentation
+import projects.matrix_benchmarking.visualizations.helpers.plotting.kpi_table as kpi_table
 
 
 def register():
@@ -26,3 +27,4 @@ def register():
     compare_report.register()
     scheduling.register()
     lts_documentation.register()
+    kpi_table.register()
