@@ -5,5 +5,5 @@ visualize:
   - "report: Control Plane Nodes Load"
   - "report: GPU Usage"
   - "report: RHOAI Footprint"
-  - "report: LTS"
   - "report: LTS Documentation"
+  - "report: KPI Table Report"

@@ -499,7 +499,7 @@ def download(results_dirname):
 
     env_key = config.project.get_config("secrets.dir.env_key")
     secret_path = os.environ.get(env_key)
-    secret_filename = config.project.get_config("secrets.aws_credentials")
+    secret_filename = config.project.get_config("secrets.aws_credentials", None)
 
     if not env_key or not secret_path or not secret_filename:
         logging.warning(f"secrets.dir.env_key or ${secret_path} not set or {secret_filename=}. Cannot set AWS_SHARED_CREDENTIALS_FILE")
