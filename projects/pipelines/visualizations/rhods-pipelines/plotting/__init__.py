@@ -7,6 +7,9 @@ from . import prom_report
 from . import perf_report
 from . import mapping
 
+import projects.matrix_benchmarking.visualizations.helpers.plotting.lts_documentation as lts_documentation
+import projects.matrix_benchmarking.visualizations.helpers.plotting.kpi_table as kpi_table
+
 def register():
     error_report.register()
     spawntime.register()
@@ -15,3 +18,6 @@ def register():
     prom_report.register()
     perf_report.register()
     mapping.register()
+
+    lts_documentation.register()
+    kpi_table.register()
