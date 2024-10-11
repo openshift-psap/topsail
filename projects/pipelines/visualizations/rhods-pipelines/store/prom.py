@@ -1,7 +1,7 @@
 import logging
 
 import projects.matrix_benchmarking.visualizations.helpers.store.prom as helper_prom_store
-import matrix_benchmarking.plotting.prom.cpu_memory as plotting_prom_cpu_memory
+import projects.matrix_benchmarking.visualizations.helpers.plotting.prom.cpu_memory as plotting_prom_cpu_memory
 
 SUTEST_CONTAINER_LABELS = [
     {"ODH DSP Operator": dict(namespace="redhat-ods-applications", pod="data-science-pipelines-operator-controller-manager.*")},

@@ -1,5 +1,5 @@
 import projects.matrix_benchmarking.visualizations.helpers.store.prom as helper_prom_store
-import matrix_benchmarking.plotting.prom as plotting_prom
+import projects.matrix_benchmarking.visualizations.helpers.plotting.prom as plotting_prom
 
 
 SUTEST_CONTAINER_LABELS = [
