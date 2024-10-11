@@ -13,7 +13,7 @@ SUTEST_CONTAINER_LABELS = [
 
 # ---
 
-SUTEST_CONTAINER_DISK_METRICS_NAMES = [
+SUTEST_CONTAINER_EXTRA_METRICS_NAMES = [
     "Fine-tuning Pods"
 ]
 
@@ -30,7 +30,8 @@ def get_sutest_metrics(register=False):
         cluster_role, register=register,
         container_labels=SUTEST_CONTAINER_LABELS,
         gpu_container="pytorch",
-        disk_metrics_names=SUTEST_CONTAINER_DISK_METRICS_NAMES,
+        disk_metrics_names=SUTEST_CONTAINER_EXTRA_METRICS_NAMES,
+        network_metrics_names=SUTEST_CONTAINER_EXTRA_METRICS_NAMES,
     )
 
     return all_metrics
