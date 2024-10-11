@@ -27,7 +27,6 @@ import matrix_benchmarking.cli_args as cli_args
 from . import models
 from . import k8s_quantity
 from . import store_theoretical
-from . import store_thresholds
 from .plotting import prom as rhods_plotting_prom
 from . import lts_parser, lts
 
